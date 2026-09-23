@@ -111,13 +111,17 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       title: '价格提醒',
       onBack: widget.onBack,
       actions: <Widget>[
-        // `.topbar .seg`: the prototype's 新建 text pill. A bell glyph here
-        // reads as「打开通知」, not「新建一条提醒」(audit 2026-09-21 §G.7).
-        LoopSeg(
+        // The prototype's 新建 was a `.topbar .seg` text pill; decision 0087
+        // makes every top-bar control a glyph on the 44 grid. The glyph is
+        // `plus`, not `bell` — a bell here would read as 「打开通知」 rather
+        // than 「新建一条提醒」 (audit 2026-09-21 §G.7) — and the word 新建
+        // survives unchanged as the button's name and its tooltip.
+        LoopIconButton(
           key: const ValueKey<String>('alerts-create-action'),
+          icon: 'plus',
           label: '新建',
-          selected: false,
-          onSelected: blocked || state.busy
+          framed: true,
+          onPressed: blocked || state.busy
               ? null
               : () => unawaited(
                   _openEditor(

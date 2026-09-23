@@ -498,14 +498,16 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       title: '授权盘点',
       onBack: widget.onBack,
       actions: <Widget>[
-        // The prototype's 批量回收. One revoke is one signature, so a batch
-        // needs a write path that does not exist; the control keeps its shape
-        // and says so.
-        LoopSeg(
+        // The prototype's 批量回收, now a glyph like every other top-bar
+        // control (decision 0087). One revoke is one signature, so a batch
+        // needs a write path that does not exist; the control keeps its frame,
+        // its disabled paint and its answer to a tap, and the four characters
+        // it used to print are still its name.
+        LoopIconButton(
           key: const ValueKey<String>('approvals-batch-action'),
+          icon: 'blocked',
           label: '批量回收',
-          selected: false,
-          onSelected: null,
+          framed: true,
           onBlocked: () => LoopToast.show(
             context,
             message: '批量回收还没有开放。每一笔回收都是一次单独的签名。',

@@ -183,14 +183,30 @@ class LoopIconButton extends StatelessWidget {
     required this.label,
     super.key,
     this.onPressed,
+    this.onBlocked,
     this.color,
     this.toggled,
     this.framed = false,
   });
 
   final String icon;
+
+  /// What the control is, in words. It is the whole accessible name, the
+  /// tooltip a long press reveals, and — since decision 0087 turned every
+  /// top-bar word into a glyph — the only place the word 新建 / 完成 / 导出
+  /// still exists. A glyph-only control that is not named is unreachable by
+  /// anyone who cannot see it.
   final String label;
   final VoidCallback? onPressed;
+
+  /// What a tap does while [onPressed] is `null`.
+  ///
+  /// The same bargain [LoopSeg.onBlocked] strikes: a control that has no
+  /// source keeps the disabled paint and the disabled semantics, and still
+  /// answers the finger that pressed it instead of swallowing the tap. A
+  /// glyph needs this more than a word did — 批量回收 said what it was while
+  /// it sat there, and a grey shield does not.
+  final VoidCallback? onBlocked;
   final Color? color;
 
   /// `.tool-btn`: `--card` ground behind a `--line` hairline, 13 radius.
@@ -214,30 +230,38 @@ class LoopIconButton extends StatelessWidget {
       label: label,
       toggled: toggled,
       enabled: enabled,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(13),
-          child: Container(
-            width: LoopTouch.minimum,
-            height: LoopTouch.minimum,
-            decoration: framed
-                ? BoxDecoration(
-                    color: LoopGround.tintOf(context),
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(color: LoopGround.hairlineOf(context)),
-                  )
-                : null,
-            child: Center(
-              child: LoopIcon(
-                icon,
-                size: 19,
-                // A button with nothing behind it was drawn in full Chalk,
-                // exactly like one that works: the 兑换 chevron looked live,
-                // took the tap and changed nothing. A disabled control reads
-                // as disabled.
-                color: color ?? (enabled ? LoopColors.chalk : LoopColors.text3),
+      child: Tooltip(
+        message: label,
+        // The name is already spoken by the [Semantics] above. A tooltip that
+        // also published it made every top-bar control read its own name
+        // twice.
+        excludeFromSemantics: true,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onPressed ?? onBlocked,
+            borderRadius: BorderRadius.circular(13),
+            child: Container(
+              width: LoopTouch.minimum,
+              height: LoopTouch.minimum,
+              decoration: framed
+                  ? BoxDecoration(
+                      color: LoopGround.tintOf(context),
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(color: LoopGround.hairlineOf(context)),
+                    )
+                  : null,
+              child: Center(
+                child: LoopIcon(
+                  icon,
+                  size: 19,
+                  // A button with nothing behind it was drawn in full Chalk,
+                  // exactly like one that works: the 兑换 chevron looked live,
+                  // took the tap and changed nothing. A disabled control reads
+                  // as disabled.
+                  color:
+                      color ?? (enabled ? LoopColors.chalk : LoopColors.text3),
+                ),
               ),
             ),
           ),
