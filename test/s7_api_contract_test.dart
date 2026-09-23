@@ -125,6 +125,15 @@ Map<String, Object?> _assetRow({
 }) => <String, Object?>{
   'assetId': assetId,
   'symbol': symbol,
+  'logo': <String, Object?>{
+    'status': 'available',
+    'url':
+        'https://raw.githubusercontent.com/trustwallet/assets/master/'
+        'blockchains/smartchain/assets/'
+        '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82/logo.png',
+    'source': 'trustwallet',
+    'observedAt': null,
+  },
   'holding': holding,
   'referencePriceUsd': referencePriceUsd,
   'referencePriceQuality': quality,
@@ -1412,6 +1421,10 @@ void main() {
                 <String, Object?>{
                   'assetId': _usdtAssetId,
                   'symbol': 'USDT',
+                  'logo': <String, Object?>{
+                    'status': 'unavailable',
+                    'reasonCode': 'TOKEN_LOGO_ADDRESS_UNKNOWN',
+                  },
                   'reasonCode': 'COMMUNITY_WEIGHT_AMBIGUOUS',
                 },
               ],
@@ -1438,6 +1451,10 @@ void main() {
                   <String, Object?>{
                     'assetId': _usdtAssetId,
                     'symbol': null,
+                    'logo': <String, Object?>{
+                      'status': 'unavailable',
+                      'reasonCode': 'TOKEN_LOGO_ADDRESS_UNKNOWN',
+                    },
                     'reasonCode': 'MINING_PRICE_NOT_FRESH',
                   },
                 ],
@@ -3142,6 +3159,10 @@ void main() {
                 <String, Object?>{
                   'assetId': _usdtAssetId,
                   'symbol': 'USDT',
+                  'logo': <String, Object?>{
+                    'status': 'unavailable',
+                    'reasonCode': 'TOKEN_LOGO_ADDRESS_UNKNOWN',
+                  },
                   'reasonCode': 'MINING_PRICE_PAIR_NOT_FOUND',
                 },
               ],

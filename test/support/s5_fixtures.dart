@@ -225,6 +225,24 @@ Map<String, Object?> s5ValuationAvailable({
   'valueUsd': valueUsd,
 };
 
+/// The required `logo` block (contract §2a, decision 0072).
+Map<String, Object?> s5Logo({
+  String url =
+      'https://dd.dexscreener.com/ds-data/tokens/bsc/'
+      '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c.png',
+  String source = 'dexscreener',
+  String? observedAt = '2026-09-08T07:30:41.000Z',
+}) => <String, Object?>{
+  'status': 'available',
+  'url': url,
+  'source': source,
+  'observedAt': observedAt,
+};
+
+Map<String, Object?> s5LogoUnavailable([
+  String reasonCode = 'TOKEN_LOGO_ADDRESS_UNKNOWN',
+]) => <String, Object?>{'status': 'unavailable', 'reasonCode': reasonCode};
+
 Map<String, Object?> s5BalanceRow({
   String assetId = s5NativeAssetId,
   Object? balance,
@@ -235,6 +253,7 @@ Map<String, Object?> s5BalanceRow({
   'assetId': assetId,
   'symbol': assetId == s5NativeAssetId ? 'BNB' : 'WBNB',
   'name': assetId == s5NativeAssetId ? 'BNB' : 'Wrapped BNB',
+  'logo': s5Logo(),
   'decimals': 18,
   'address': assetId == s5NativeAssetId
       ? null
@@ -352,11 +371,13 @@ Map<String, Object?> s5WatchlistBody({int version = 1}) => <String, Object?>{
         <String, Object?>{
           'assetId': s5WbnbAssetId,
           'asset': s5AssetSummary(),
+          'logo': s5Logo(),
           'reasonCode': null,
         },
         <String, Object?>{
           'assetId': s5UsdtAssetId,
           'asset': null,
+          'logo': s5LogoUnavailable(),
           'reasonCode': 'ASSET_NOT_READABLE',
         },
       ],
@@ -380,6 +401,7 @@ Map<String, Object?> s5OverviewBody({
           <String, Object?>{
             'assetId': s5WbnbAssetId,
             'asset': s5AssetSummary(),
+            'logo': s5Logo(),
             'price': s5Fact(),
             'priceChange24h': s5Fact(value: '-3.2', ttlSeconds: 30),
           },
@@ -399,6 +421,7 @@ Map<String, Object?> s5OverviewBody({
           <String, Object?>{
             'assetId': s5WbnbAssetId,
             'asset': s5AssetSummary(),
+            'logo': s5Logo(),
             'price': s5Fact(
               quality: 'stale',
               reasonCode: 'MARKET_PROVIDER_RATE_LIMITED',
@@ -426,6 +449,7 @@ Map<String, Object?> s5AssetDetailBody({
   Object? security,
 }) => <String, Object?>{
   'asset': s5ChainAsset(),
+  'logo': s5Logo(),
   'capability': capability ?? s5Capability(),
   'price': s5Fact(),
   'priceChange24h': s5Fact(value: '0.27'),
@@ -603,6 +627,7 @@ Map<String, Object?> s5NewPairsBody({
                   },
                   'dexId': 'pancakeswap_v3',
                   'name': 'X / WBNB',
+                  'logo': s5Logo(),
                   'baseTokenAddress': s5Address,
                   'quoteTokenAddress': s5Address,
                   'registryAssetId': s5WbnbAssetId,
@@ -626,11 +651,13 @@ Map<String, Object?> s5NewPair({
   String name = 'X / WBNB',
   Object? quoteTokenAddress = s5Address,
   Object? registryAssetId = s5WbnbAssetId,
+  Object? logo,
 }) => <String, Object?>{
   'poolRef':
       poolRef ?? <String, Object?>{'kind': 'address', 'address': s5PoolAddress},
   'dexId': dexId,
   'name': name,
+  'logo': logo ?? s5Logo(),
   'baseTokenAddress': s5Address,
   'quoteTokenAddress': quoteTokenAddress,
   'registryAssetId': registryAssetId,
@@ -805,11 +832,13 @@ MarketAssetRow s5MarketRow({
   LoopFact? price,
   LoopFact? change,
   LoopAssetSummary? asset,
+  String? logoUrl,
 }) => MarketAssetRow(
   assetId: assetId,
   asset: asset ?? s5Summary(),
   price: price ?? s5FreshFact('747.39'),
   priceChange24h: change ?? s5FreshFact('0.27'),
+  logoUrl: logoUrl,
 );
 
 MarketOverview s5Overview({

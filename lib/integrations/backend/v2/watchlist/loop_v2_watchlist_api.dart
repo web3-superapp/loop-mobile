@@ -138,6 +138,8 @@ final class DioLoopV2WatchlistApi implements LoopV2WatchlistApi {
         final itemMap = LoopV2Contract.strictMap(rawItem, const <String>{
           'assetId',
           'asset',
+          // Required from decision 0072 on.
+          'logo',
           'reasonCode',
         });
         final assetId = LoopV2ChainCodec.requireAssetId(itemMap, 'assetId');
@@ -150,7 +152,12 @@ final class DioLoopV2WatchlistApi implements LoopV2WatchlistApi {
         // A row is either readable or explained; never both and never neither.
         if ((asset == null) != (reasonCode != null)) LoopV2ChainCodec.invalid();
         items.add(
-          WatchlistItem(assetId: assetId, asset: asset, reasonCode: reasonCode),
+          WatchlistItem(
+            assetId: assetId,
+            asset: asset,
+            reasonCode: reasonCode,
+            logoUrl: LoopV2ChainCodec.logoUrl(itemMap['logo']),
+          ),
         );
       }
       final key = LoopV2ChainCodec.requireString(

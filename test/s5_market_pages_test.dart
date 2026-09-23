@@ -50,7 +50,8 @@ void main() {
       // Watchlist — 自选管理 counted 47 while this block held 4 — so the tab
       // states what is on this page and calls nothing a total.
       expect(find.textContaining('个自选资产'), findsNothing);
-      expect(find.text('自选 · 这一页 1 条'), findsOneWidget);
+      // S78b: the one statistics line, and only counts on it.
+      expect(find.textContaining('自选 1 · '), findsOneWidget);
       expect(find.text('\$747.39'), findsWidgets);
       expect(find.textContaining('来源 DexScreener'), findsWidgets);
       expect(find.textContaining('观察于'), findsWidgets);
@@ -107,65 +108,58 @@ void main() {
       expect(find.text('0'), findsNothing);
     });
 
-    testWidgets('the new-pairs card prints what the page cannot list', (
+    testWidgets('新币 is a tab of this page, and reads only when opened', (
       tester,
     ) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(
-          overview: S5Answer<MarketOverview>(
-            value: s5Overview(newPairsAvailable: true, newPairsOmittedCount: 3),
+      final market = FakeMarketReadGateway(
+        overview: S5Answer<MarketOverview>(
+          value: s5Overview(newPairsAvailable: true),
+        ),
+        newPairs: S5Answer<MarketNewPairsPage>(
+          value: MarketNewPairsPage(
+            newPairs: MarketNewPairsAvailable(
+              source: LoopFactSource.geckoterminal,
+              fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
+              ttlSeconds: 60,
+              quality: LoopFactQuality.fresh,
+              reasonCode: null,
+              omittedCount: 0,
+              items: <MarketNewPair>[
+                MarketNewPair(
+                  poolRef: const MarketPoolAddressRef(s5PoolAddress),
+                  dexId: 'four-meme',
+                  name: 'YAMATA / BNB',
+                  baseTokenAddress: s5Address,
+                  quoteTokenAddress: marketZeroAddress,
+                  registryAssetId: null,
+                  createdAt: DateTime.utc(2026, 9, 8, 7, 30),
+                  reserveUsd: s5Decimal('3696'),
+                  volumeH24Usd: s5Decimal('1950'),
+                ),
+              ],
+            ),
+            riskScreening: const LoopUnavailable(
+              'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
+            ),
           ),
         ),
       );
+      await pumpS5Page(tester, const MarketScreen(), market: market);
 
-      final card = find.byKey(const ValueKey<String>('market-new-pairs-entry'));
-      await scrollToS5Section(tester, card);
-      expect(find.textContaining('另有 3 条数据无法解析'), findsOneWidget);
-      expect(find.text('不可用'), findsOneWidget);
-    });
+      // A reader on 自选 does not pay for a provider they did not ask for.
+      expect(market.newPairs.resolves, 0);
 
-    testWidgets('a readable new-pairs page leaves the card unqualified', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(
-          overview: S5Answer<MarketOverview>(
-            value: s5Overview(newPairsAvailable: true),
-          ),
-        ),
+      await tester.tap(find.byKey(const ValueKey<String>('market-tab-新币')));
+      await tester.pumpAndSettle();
+      expect(market.newPairs.resolves, 1);
+      expect(find.textContaining('four.meme'), findsOneWidget);
+      // The page of the same name is still one tap away, and still owns the
+      // risk screening and the whole warning.
+      expect(
+        find.byKey(const ValueKey<String>('market-new-pairs-page')),
+        findsOneWidget,
       );
-
-      final card = find.byKey(const ValueKey<String>('market-new-pairs-entry'));
-      await scrollToS5Section(tester, card);
-      expect(find.textContaining('无法解析'), findsNothing);
-      expect(find.text('已登记的池与新交易对，均标注出处'), findsOneWidget);
     });
-
-    testWidgets(
-      'an unreadable new-pairs page states the reason the page reports',
-      (tester) async {
-        await pumpS5Page(
-          tester,
-          const MarketScreen(),
-          market: FakeMarketReadGateway(
-            overview: S5Answer<MarketOverview>(value: s5Overview()),
-          ),
-        );
-
-        final card = find.byKey(
-          const ValueKey<String>('market-new-pairs-entry'),
-        );
-        await scrollToS5Section(tester, card);
-        // Two unavailable cards in 发现: the new-pairs one now carries the same
-        // reason code the new-pairs page reports.
-        expect(find.text('不可用'), findsNWidgets(2));
-        expect(find.textContaining('无法解析'), findsNothing);
-      },
-    );
 
     testWidgets('the trending block always states its ordering rule', (
       tester,
@@ -176,6 +170,8 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
+      await tester.tap(find.byKey(const ValueKey<String>('market-tab-热门')));
+      await tester.pumpAndSettle();
       expect(find.textContaining('按 DexScreener 24h 成交量排序'), findsOneWidget);
     });
 
@@ -412,15 +408,15 @@ void main() {
         find.byKey(const ValueKey<String>('candles-unavailable')),
         findsOneWidget,
       );
+      // Exactly once: the page draws one chart, and it is the K line.
       expect(find.textContaining('还没有 PancakeSwap V3 交易池'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('token-card-chart-unavailable')),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('1H 走势不可用，原因见下方 K 线。'), findsOneWidget);
     });
 
-    testWidgets('the card summarises; the fact list keeps the exact figure', (
+    testWidgets('the four cells summarise; the page prints no figure twice', (
       tester,
     ) async {
       await pumpS5Page(
@@ -429,39 +425,44 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      final card = find.byKey(const ValueKey<String>('token-card'));
-      // A metric cell is a third of a card wide, so it carries the magnitude
+      final cells = find.byKey(const ValueKey<String>('token-quote-cells'));
+      // A cell is a quarter of the screen wide, so it carries the magnitude
       // and a phrase, never a full figure and never a whole sentence.
       expect(
-        find.descendant(of: card, matching: find.text(r'$9.9M')),
+        find.descendant(of: cells, matching: find.text(r'$9.9M')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: card, matching: find.text('8M')),
+        find.descendant(of: cells, matching: find.text('8M')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: card, matching: find.text('未报告')),
+        find.descendant(of: cells, matching: find.text('未报告')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: card, matching: find.textContaining('9,876,543')),
-        findsNothing,
-      );
-      expect(
-        find.descendant(of: card, matching: find.textContaining('数据源没有报告')),
+        find.descendant(of: cells, matching: find.textContaining('9,876,543')),
         findsNothing,
       );
 
-      // The precise figure, and the server's whole sentence, are one screen
-      // below — unchanged by the summary above them.
+      // S78b: 24H 成交额 / 流动性 / 市值 / 持有人 are the four cells, so the
+      // block below carries only what they have no cell for, and one
+      // provenance line stands for the whole read.
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('fact-流动性')),
+        find.byKey(const ValueKey<String>('fact-完全稀释估值')),
       );
-      expect(find.text('9,876,543.21'), findsOneWidget);
-      expect(find.text('8,019,338'), findsOneWidget);
-      expect(find.text('数据源没有报告这一项。'), findsOneWidget);
+      expect(find.text('99,999,999'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('fact-流动性')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('fact-市值')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('fact-持有人数')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('fact-24H 成交额')), findsNothing);
+      expect(find.text('9,876,543.21'), findsNothing);
+      expect(find.text('1,234,567.89'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('token-facts-provenance')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('security facts render with their own source and time', (
@@ -831,9 +832,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('另有 6 条数据无法解析'), findsOneWidget);
-      // The provider's DEX string is printed as given, and a zero quote
-      // address reads as the coin.
-      expect(find.textContaining('four-meme'), findsOneWidget);
+      // The provider's DEX slug reads under the name the venue is known by,
+      // and a zero quote address reads as the coin.
+      expect(find.textContaining('four.meme'), findsOneWidget);
+      expect(find.textContaining('four-meme'), findsNothing);
       expect(find.textContaining('计价 BNB'), findsOneWidget);
     });
 
@@ -883,9 +885,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('未命名池'), findsOneWidget);
-      // Twice: the subtitle's DEX string, and the mark that fell back to it
-      // because there was no name to take a monogram from.
-      expect(find.textContaining('four-meme'), findsNWidgets(2));
+      // The subtitle names the venue; the mark falls back to the same slug and
+      // takes its two-character monogram from it, never the whole slug.
+      expect(find.textContaining('four.meme'), findsOneWidget);
+      expect(find.text('FO'), findsOneWidget);
     });
 
     testWidgets('a Uniswap V4 pool is shown and never opened', (tester) async {
@@ -944,7 +947,10 @@ void main() {
       );
       await scrollToS5Section(tester, v4Row);
       expect(v4Row, findsOneWidget);
-      expect(find.textContaining('Uniswap V4 池 · 暂不支持详情'), findsOneWidget);
+      // The venue reads as a venue. That the row does not open is said by the
+      // row having no tap and no chevron, not by a second refusal in its copy.
+      expect(find.textContaining('Uniswap V4'), findsOneWidget);
+      expect(find.textContaining('uniswap-v4-bsc'), findsNothing);
 
       await tester.tap(v4Row);
       await tester.pumpAndSettle();

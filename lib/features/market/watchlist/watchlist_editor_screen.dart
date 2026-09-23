@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
+import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -86,10 +87,10 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'WATCHLIST CONTROL',
+        kicker: marketWatchlistKicker,
         heading: state.isReady ? '${state.itemCount} 个自选资产' : '自选管理',
         caption: '排序与移除只影响自选列表，不改变钱包持仓，也不是行情事实。',
-        stamp: state.isDirty ? 'UNSAVED' : 'EDIT',
+        stamp: state.isDirty ? '未保存' : '编辑',
       ),
       // An edit surface takes no pull-to-refresh: a background re-read would
       // drop an ordering the user has not saved yet.

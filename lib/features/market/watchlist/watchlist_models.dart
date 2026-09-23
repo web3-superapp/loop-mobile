@@ -114,18 +114,28 @@ final class WatchlistItem {
     required String assetId,
     LoopAssetSummary? asset,
     String? reasonCode,
+    String? logoUrl,
   }) {
     if (!loopAssetIdPattern.hasMatch(assetId)) {
       throw const InvalidWatchlistContractException();
     }
-    return WatchlistItem._(assetId, asset, reasonCode);
+    return WatchlistItem._(assetId, asset, reasonCode, logoUrl);
   }
 
-  const WatchlistItem._(this.assetId, this.asset, this.reasonCode);
+  const WatchlistItem._(
+    this.assetId,
+    this.asset,
+    this.reasonCode,
+    this.logoUrl,
+  );
 
   final String assetId;
   final LoopAssetSummary? asset;
   final String? reasonCode;
+
+  /// The registry's published artwork, or `null` when there is none. A logo
+  /// is never an identity: only `assetId` keys a row (decision 0033).
+  final String? logoUrl;
 
   bool get isReadable => asset != null;
 

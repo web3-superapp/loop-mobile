@@ -513,6 +513,12 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'assetId',
       'symbol',
       'name',
+      // Required from decision 0072 on. `LoopAssetBalanceRow` lives in the
+      // Wallet slice, which this step does not own, so the block is validated
+      // and dropped: the read keeps working on a deployment that ships the
+      // field, and the Wallet rows pick the artwork up when that slice adds
+      // the field to its own model.
+      'logo',
       'decimals',
       'address',
       'balance',
@@ -520,6 +526,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'valuation',
       'crossCheck',
     });
+    LoopV2ChainCodec.logoUrl(map['logo']);
     return LoopAssetBalanceRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
       symbol: LoopV2ChainCodec.requireText(map, 'symbol', maxLength: 32),
@@ -704,6 +711,10 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
     final balance = LoopV2Contract.strictMap(raw, const <String>{
       'assetId',
       'symbol',
+      // Required from decision 0072 on. The Launch slot's tBNB arrives as
+      // `unavailable` with `TOKEN_LOGO_CHAIN_UNSUPPORTED`; validated and
+      // dropped, as above.
+      'logo',
       'decimals',
       'rawValue',
       'displayBalance',
@@ -712,6 +723,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'gasReserve',
       'snapshot',
     });
+    LoopV2ChainCodec.logoUrl(balance['logo']);
     final assetId = LoopV2ChainCodec.requireAssetId(balance, 'assetId');
     // The balance belongs to the slot it was read on; a row keyed to another
     // chain is a different fact and must not be rendered here.

@@ -483,6 +483,65 @@ abstract final class LoopV2ChainCodec {
     );
   }
 
+  /// The hosts the `logo.url` may name (contract §2a, decision 0072).
+  ///
+  /// The server filters twice and anchors the pattern in OpenAPI. The client
+  /// does not widen it: a URL whose host is not one of these three is treated
+  /// as no artwork at all, so a compromised or mis-projected row cannot make
+  /// the app fetch from an arbitrary origin.
+  static const Set<String> logoHosts = <String>{
+    'cdn.dexscreener.com',
+    'dd.dexscreener.com',
+    'raw.githubusercontent.com',
+  };
+
+  /// The required `logo` block every asset row now carries.
+  ///
+  /// Returns the address to load, or `null` when the server said it has none
+  /// (`unavailable`) — the surface then draws the monogram it already draws.
+  /// `source` and `observedAt` are read so the payload is validated in full,
+  /// and deliberately not returned: they are for provenance and triage, and a
+  /// logo is not a market fact (decision 0072).
+  ///
+  /// A logo is **not** an identity. It never merges, matches or names an
+  /// asset; only `assetId` does (decision 0033).
+  static String? logoUrl(Object? raw) {
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'status'},
+      const <String>{'url', 'source', 'observedAt', 'reasonCode'},
+    );
+    final status = map['status'];
+    if (status is! String) invalid();
+    switch (status) {
+      case 'unavailable':
+        if (map['url'] != null ||
+            map['source'] != null ||
+            map['observedAt'] != null) {
+          invalid();
+        }
+        requireText(map, 'reasonCode', maxLength: 64);
+        return null;
+      case 'available':
+        if (map['reasonCode'] != null) invalid();
+        final url = requireText(map, 'url', maxLength: 512);
+        final source = requireText(map, 'source', maxLength: 32);
+        if (source != 'dexscreener' && source != 'trustwallet') invalid();
+        if (map['observedAt'] != null) requireTimestamp(map, 'observedAt');
+        final uri = Uri.tryParse(url);
+        if (uri == null ||
+            uri.scheme != 'https' ||
+            uri.userInfo.isNotEmpty ||
+            uri.hasPort ||
+            !logoHosts.contains(uri.host)) {
+          invalid();
+        }
+        return url;
+      default:
+        invalid();
+    }
+  }
+
   /// The asset's provenance block.
   ///
   /// A registry asset names the chain call it was read from. An address the

@@ -19,7 +19,6 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -264,7 +263,7 @@ class _HolderDistributionScreenState
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'HOLDER LEDGER',
+        kicker: marketHoldersKicker,
         heading: count == null || count.value == null
             ? '持有人总数不可用'
             : '${loopFormatDecimal(count.value!, maxFractionDigits: 0)} 持有人',
@@ -413,7 +412,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'ACTIVITY TAPE',
+        kicker: marketTradesKicker,
         heading: block is MarketTradesAvailable
             ? '${block.items.length} 笔链上成交'
             : '最新链上成交记录',
@@ -609,14 +608,19 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'NEW PAIRS',
+        kicker: marketNewPairsKicker,
+        // While the list is still being read the hero states that, rather
+        // than repeating the page's own name back at the reader (walkthrough
+        // 2026-09-23, d05).
         heading: block is MarketNewPairsAvailable
             ? '${block.items.length} 个新对 · 高风险'
-            : '新币发现',
+            : state.isReady
+            ? '新的池暂时读不到'
+            : '正在读取新的池',
         caption: '先看流动性、合约状态与数据出处，再看短期价格。',
         // `.folio-stamp`: this page's subject is the risk, and the stamp is
         // where the prototype states it.
-        stamp: 'HIGH RISK',
+        stamp: marketNewPairsStamp,
       ),
       block: blocked
           ? _marketPageBlock(
@@ -657,82 +661,15 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                 LoopRecordGroup(
                   rows: <LoopRecordRow>[
                     for (final pair in block.items)
-                      LoopRecordRow(
-                        key: ValueKey<String>(
-                          'new-pair-${pair.poolRef.rowKey}',
-                        ),
-                        // `.row-ico`: every prototype row on this page is
-                        // headed by the pool's own token mark (§D item 7).
-                        // A pool whose Provider name was nothing but
-                        // display-unsafe code points is left without one; the
-                        // row still belongs to the reader, so it says the name
-                        // is missing and falls back to the DEX for the mark.
-                        leading: LoopTokenLogo(
-                          assetSymbol: pair.name.isEmpty
-                              ? pair.dexId
-                              : pair.name,
-                          fallbackMonogram: pair.name.isEmpty
-                              ? pair.dexId
-                              : pair.name,
-                        ),
-                        title: pair.name.isEmpty ? '未命名池' : pair.name,
-                        subtitle: <String>[
-                          // The provider's own DEX string, printed verbatim:
-                          // it is not a closed set.
-                          pair.dexId,
-                          // A Uniswap V4 pool lives inside the singleton: it
-                          // has no pair page, no chart and no address-keyed
-                          // facts, so the row says so instead of offering a
-                          // tap that would open nothing.
-                          if (pair.poolRef is MarketPoolIdRef)
-                            'Uniswap V4 池 · 暂不支持详情',
-                          // The watchlist holds registry assets. A pool whose
-                          // base token the registry does not carry has nothing
-                          // to add, and the row says so rather than offering a
-                          // star that would be refused.
-                          if (pair.poolRef is MarketPoolAddressRef &&
-                              pair.registryAssetId == null)
-                            '暂不支持加自选',
-                          // A zero quote address is the coin itself, not a
-                          // missing token.
-                          if (pair.quotesNativeCoin) '计价 BNB',
-
-                          // A pool minutes old holds fractions of a dollar.
-                          // Rounded to cents that printed 「$0」, which on a
-                          // page that promises to say why a figure is missing
-                          // rather than show a zero reads as "no liquidity at
-                          // all" — a pulled pool. Bounding it at 「<$1」 was
-                          // no better: a launchpad pool is quoted at 1e-6, so
-                          // the bound is true of every row and tells the
-                          // reader nothing. This row has the width for three
-                          // significant digits, and that is the figure.
-                          if (pair.reserveUsd != null)
-                            '储备 '
-                                '${loopFormatCompactFigure(pair.reserveUsd!, preciseBelowOne: true)}'
-                          else
-                            '储备暂时读不到',
-                          // The trailing slot holds the 24-hour figure; when
-                          // it is missing the row says so rather than leaving
-                          // an empty corner the reader has to explain.
-                          if (pair.volumeH24Usd == null) '24 小时成交额暂时读不到',
-                        ].join(' · '),
-                        subtitleMaxLines: 2,
-                        trailingBadge: pair.registryAssetId == null
+                      marketNewPairRow(
+                        pair,
+                        // The star is this page's write, so this page is the
+                        // one that hands it.
+                        watchAction: pair.registryAssetId == null
                             ? null
                             : _NewPairWatchAction(
                                 assetId: pair.registryAssetId!,
                               ),
-                        trailing: pair.volumeH24Usd == null
-                            ? null
-                            : loopFormatCompactFigure(
-                                pair.volumeH24Usd!,
-                                preciseBelowOne: true,
-                              ),
-                        // `.row-end .d`: the prototype's age column. It read
-                        // as the fourth fact of a two-line subtitle before.
-                        trailingCaption: pair.createdAt == null
-                            ? null
-                            : loopRelativeTime(pair.createdAt!),
                         onTap: !pair.opensDetail
                             ? null
                             : () => _open(
@@ -873,7 +810,7 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'PUBLIC WALLET WATCH',
+        kicker: marketSmartMoneyKicker,
         heading: '还没有可观察的地址',
         caption: '观察地址的动作是线索，不是跟单承诺或收益推荐。',
       ),

@@ -905,7 +905,12 @@ S5_SWAP_ENTRY_KEY = "'token-swap-entry'"
 # action row (audit 2026-09-21 §G.2). They must be shut by the same one gate
 # the entry button below them is shut by, so the page reads `swappable` in
 # exactly these two places and nowhere else.
-S5_SWAP_CARD_GATE = "tradable: detail?.capability.swappable ?? false,"
+# S78b replaced the Token Card with the approved design's quote header: the
+# 买入 / 卖出 pair is now `MarketTradeActions`, which takes the same one flag
+# under the same name. The invariant is unchanged — the pair is gated in
+# exactly one place, the entry button in exactly one other, and both read
+# `capability.swappable` directly — only the widget that receives it moved.
+S5_SWAP_CARD_GATE = "tradable: detail.capability.swappable,"
 S5_QR_ENCODER_PATH = Path("lib/core/qr/loop_qr_code.dart")
 S5_QR_ENCODER_IMPORTS = frozenset({"'package:flutter/foundation.dart'"})
 S5_HYPERLIQUID_IMPORT_ROOT = "package:loop_mobile/integrations/hyperliquid/"

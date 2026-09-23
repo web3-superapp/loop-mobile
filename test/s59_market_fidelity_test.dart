@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_screen.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
+import 'package:loop_mobile/features/market/market_mining_hooks.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/features/market/market_secondary_screens.dart';
@@ -14,7 +15,6 @@ import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_editor_screen.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
@@ -37,29 +37,33 @@ void main() {
   loopWatchGround();
 
   group('market · the row is the community\'s price face', () {
-    testWidgets('the hero states a reading, not the page\'s own name', (
-      tester,
-    ) async {
+    testWidgets('the page opens on the list, not on a hero', (tester) async {
       await pumpS5Page(
         tester,
         const MarketScreen(),
         market: FakeMarketReadGateway(),
       );
 
-      final folio = _folios(tester).first;
-      // `.folio-heading` carries a conclusion — the prototype's
-      // 「PEPE 领涨 +12.4%」 — and never the title in the bar above it.
-      expect(folio.heading, isNot('行情信号'));
-      expect(folio.heading, 'WBNB 领涨 +0.27%');
-      // `.folio-stamp` is a settled figure, not the module's name.
-      expect(folio.stamp, '1 WATCHED');
-      expect(folio.caption, contains('1 个自选'));
-      expect(folio.caption, contains('1 涨 0 跌'));
+      // S78b / approved design: 行情 is a price list. A Lime hero stated one
+      // row's change in 27pt and pushed the other seven below the fold.
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('market-search-field')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey<String>('market-tabs')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('market-stats')),
+        findsOneWidget,
+      );
+      expect(find.text('自选 1 · '), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('market-column-header')),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('a hero with no readable change never claims a leader', (
-      tester,
-    ) async {
+    testWidgets('a change nothing reported is counted nowhere', (tester) async {
       await pumpS5Page(
         tester,
         const MarketScreen(),
@@ -81,9 +85,17 @@ void main() {
         ),
       );
 
-      final folio = _folios(tester).first;
-      expect(folio.heading, '1 个自选 · 涨跌读不到');
-      expect(folio.caption, contains('1 项涨跌读不到'));
+      // A row whose change was not read is in neither count and is not
+      // announced: 「1 项涨跌读不到」 was USDT, which has no move to report
+      // (walkthrough 2026-09-23, d01). The row itself carries the block.
+      final stats = tester.widget<MarketStatsLine>(
+        find.byKey(const ValueKey<String>('market-stats')),
+      );
+      expect(stats.total, 1);
+      expect(stats.up, 0);
+      expect(stats.down, 0);
+      expect(stats.flat, 0);
+      expect(find.textContaining('读不到'), findsWidgets);
     });
 
     testWidgets('每行画 1H 走势线，并把出处收进整块的落款', (tester) async {
@@ -98,7 +110,7 @@ void main() {
       // The row's second line is no longer its provenance; the block's own
       // footer names the source once for the rows it just listed.
       expect(
-        find.byKey(const ValueKey<String>('market-watchlist-provenance')),
+        find.byKey(const ValueKey<String>('market-list-provenance')),
         findsOneWidget,
       );
       expect(find.textContaining('来源 DexScreener'), findsWidgets);
@@ -114,14 +126,30 @@ void main() {
         mining: _weightedRules(),
       );
 
-      final row = tester.widget<LoopRecordRow>(
+      // S78b: a development baseline publishes 1× for everything it lists, so
+      // a column of 「权重 1× · 开发基线」 in the accent colour said the same
+      // internal thing about every row and nothing about any of them
+      // (walkthrough 2026-09-23, d01). The row keeps the asset's own name.
+      final row = tester.widget<MarketAssetTile>(
         find.byKey(const ValueKey<String>('market-asset-$s5WbnbAssetId')).first,
       );
-      expect(row.subtitle, contains('权重 1×'));
-      // A development baseline labels every figure it produced.
-      expect(row.subtitle, contains(miningBaselineLabel));
-      // `.row-s .mining-accent`: the weight has its own voice inside the line.
-      expect(row.subtitleSpans, isNotNull);
+      expect(row.miningWeight, isNotNull);
+      expect(
+        marketAssetSubtitle(row.row, weight: row.miningWeight),
+        isNot(contains(miningBaselineLabel)),
+      );
+      expect(
+        marketAssetSubtitle(row.row, weight: row.miningWeight),
+        isNot(contains('权重')),
+      );
+      // A weight an approved, non-baseline version published is still shown.
+      expect(
+        marketAssetSubtitle(
+          row.row,
+          weight: const MarketMiningWeight(weight: '1.5', baseline: false),
+        ),
+        contains('权重 1.5×'),
+      );
     });
 
     testWidgets('a weight nothing published is left off, never shown as 1×', (
@@ -133,14 +161,17 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      final row = tester.widget<LoopRecordRow>(
+      final row = tester.widget<MarketAssetTile>(
         find.byKey(const ValueKey<String>('market-asset-$s5WbnbAssetId')).first,
       );
-      expect(row.subtitle, isNot(contains('权重')));
-      expect(row.subtitleSpans, isNull);
+      expect(row.miningWeight, isNull);
+      expect(
+        marketAssetSubtitle(row.row, weight: row.miningWeight),
+        isNot(contains('权重')),
+      );
     });
 
-    testWidgets('自选 is a text pill in the bar, not a bare glyph', (
+    testWidgets('the four lists are tabs, and switching keeps the page', (
       tester,
     ) async {
       await pumpS5Page(
@@ -149,51 +180,71 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      final seg = tester.widget<LoopSeg>(
-        find.byKey(const ValueKey<String>('market-watchlist-action')),
+      final tabs = tester.widget<MarketTabBar>(
+        find.byKey(const ValueKey<String>('market-tabs')),
       );
-      expect(seg.label, '自选');
-      expect(seg.onSelected, isNotNull);
+      expect(tabs.labels, <String>['自选', '热门', '涨幅榜', '新币']);
+      expect(tabs.selectedIndex, 0);
+
+      await tester.tap(find.byKey(const ValueKey<String>('market-tab-热门')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<MarketTabBar>(
+              find.byKey(const ValueKey<String>('market-tabs')),
+            )
+            .selectedIndex,
+        1,
+      );
+      // The page is still the same page: the bar did not go away and no
+      // skeleton replaced the list.
+      expect(
+        find.byKey(const ValueKey<String>('market-screen')),
+        findsOneWidget,
+      );
+      expect(find.byType(MarketAssetTile), findsWidgets);
     });
   });
 
-  group('token · the card is the page\'s first block', () {
-    testWidgets('原型没有 hero 的页不再多压一张', (tester) async {
+  group('token · the page opens on the quote', () {
+    testWidgets('no hero, no card — the price is the first thing on it', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const TokenDetailScreen(assetId: s5WbnbAssetId),
         market: FakeMarketReadGateway(),
       );
 
-      // No `page-primary` folio at all: the signature card is the primary
-      // region, exactly as `#scr-token` declares it.
       expect(find.byType(LoopFolioPrimary), findsNothing);
-      expect(find.byKey(const ValueKey<String>('token-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('token-card')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('token-quote')), findsOneWidget);
       expect(find.text('TOKEN FACTS'), findsNothing);
+      // `ETH / USD` over `Ethereum · BSC · 0x…`: the bar states the pair and
+      // what it is written against.
+      expect(find.text('WBNB / USD'), findsOneWidget);
+      expect(find.textContaining('Wrapped BNB · '), findsOneWidget);
     });
 
-    testWidgets('买入 与 卖出 留在卡上，关着，理由只说一次', (tester) async {
+    testWidgets('买入 与 卖出 are on the first screen, shut, and say why once', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const TokenDetailScreen(assetId: s5WbnbAssetId),
         market: FakeMarketReadGateway(),
       );
 
-      final card = tester.widget<LoopTokenCard>(
-        find.byKey(const ValueKey<String>('token-card')),
+      final buy = tester.widget<LoopButton>(
+        find.byKey(const ValueKey<String>('token-buy-action')),
       );
-      expect(card.actions.map((action) => action.label).toList(), <String>[
-        '买入',
-        '卖出',
-        '图表',
-      ]);
-      expect(card.actions.first.buy, isTrue);
-      // Shut, not hidden: the segment takes no tap while the gate is closed.
-      expect(card.actions.first.onTap, isNull);
-      expect(card.actions[1].onTap, isNull);
-      expect(card.actions[2].onTap, isNotNull);
-      // The card points at the one card that carries the whole sentence.
-      expect(card.model.footnotes, contains('买入与卖出当前不可用，原因见本页底部。'));
+      final sell = tester.widget<LoopButton>(
+        find.byKey(const ValueKey<String>('token-sell-action')),
+      );
+      // Shut, not hidden: the buttons take no tap while the gate is closed,
+      // and neither of them carries a reason of its own.
+      expect(buy.onPressed, isNull);
+      expect(sell.onPressed, isNull);
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-swap-unavailable')),
@@ -214,12 +265,11 @@ void main() {
         mining: _weightedRules(),
       );
 
-      final card = tester.widget<LoopTokenCard>(
-        find.byKey(const ValueKey<String>('token-card')),
-      );
-      // `.tcard-community` is the mining strip, not a provenance note.
-      expect(card.model.communityLine, contains('Mining Weight 1×'));
-      expect(card.model.communityIcon, 'mine');
+      // S78b: the weight is stated once, by the 挖矿数据 row, which is also
+      // the one place that opens 挖矿. 「Mining Weight 1× · 开发基线」 was on
+      // the first screen twice (walkthrough 2026-09-23, e01).
+      expect(find.textContaining('Mining Weight'), findsNothing);
+      expect(find.textContaining(miningBaselineLabel), findsNothing);
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-mining-weight')),
@@ -228,6 +278,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-mining-unavailable')),
         findsNothing,
       );
+      expect(find.textContaining('挖矿权重'), findsOneWidget);
     });
 
     testWidgets('no weight keeps the module-wide refusal, never a 1×', (
@@ -239,10 +290,6 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      final card = tester.widget<LoopTokenCard>(
-        find.byKey(const ValueKey<String>('token-card')),
-      );
-      expect(card.model.communityLine, isNot(contains('Mining Weight')));
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-mining-unavailable')),
@@ -272,7 +319,7 @@ void main() {
       expect(row.subtitle, startsWith('8,019,338 持有人'));
     });
 
-    testWidgets('a page that could not read the asset still opens as a card', (
+    testWidgets('a page still reading states that, and prints no figure', (
       tester,
     ) async {
       await pumpS5Page(
@@ -285,8 +332,9 @@ void main() {
       );
 
       expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(find.byKey(const ValueKey<String>('token-quote')), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('token-card-loading')),
+        find.byKey(const ValueKey<String>('token-state-loading')),
         findsOneWidget,
       );
     });
@@ -456,7 +504,8 @@ void main() {
         market: FakeMarketReadGateway(),
       );
       await expectChalk(tester, const SizedBox.shrink());
-      expect(_folios(tester).first.stamp, 'HIGH RISK');
+      expect(_folios(tester).first.stamp, marketNewPairsStamp);
+      expect(_folios(tester).first.kicker, marketNewPairsKicker);
     });
 
     testWidgets('smart-money keeps the prototype\'s two groups', (
@@ -470,7 +519,7 @@ void main() {
       await expectChalk(tester, const SizedBox.shrink());
       expect(find.text('关注地址'), findsOneWidget);
       expect(find.text('最近动向'), findsOneWidget);
-      expect(_folios(tester).first.kicker, 'PUBLIC WALLET WATCH');
+      expect(_folios(tester).first.kicker, marketSmartMoneyKicker);
     });
 
     testWidgets('alerts', (tester) async {

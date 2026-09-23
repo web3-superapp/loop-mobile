@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/market/alerts/alert_models.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_controller.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
@@ -131,7 +132,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'PRICE ALERTS',
+        kicker: marketAlertsKicker,
         // The list answers one cursor page at a time and the response carries
         // no total, so the armed count describes this page only. It is stated
         // as a count of what is listening exactly when the last page is in;

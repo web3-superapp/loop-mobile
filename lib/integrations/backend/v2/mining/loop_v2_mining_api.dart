@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_codec.dart';
@@ -231,6 +232,12 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       const <String>{
         'assetId',
         'symbol',
+        // Required from decision 0072 on. 挖矿 renders no artwork yet, so the
+        // block is validated and dropped: accepting it is what keeps a
+        // deployment that ships the field from failing every read here, and
+        // inventing a field on `MiningAssetRow` for a logo no page draws
+        // would be a model that lies about what the page shows.
+        'logo',
         'holding',
         'referencePriceUsd',
         'referencePriceQuality',
@@ -243,6 +250,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       // without the key prices every row the old way.
       const <String>{'referencePricePairAddress'},
     );
+    LoopV2ChainCodec.logoUrl(map['logo']);
     final quality = MiningReferencePriceQuality.tryParse(
       LoopV2S7Codec.requireEnum(map, 'referencePriceQuality', const <String>{
         'fresh',
@@ -299,8 +307,11 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'assetId',
       'symbol',
+      // Required from decision 0072 on; validated and dropped, as above.
+      'logo',
       'reasonCode',
     });
+    LoopV2ChainCodec.logoUrl(map['logo']);
     return MiningExcludedAsset(
       assetId: LoopV2S7Codec.requirePattern(
         map,
