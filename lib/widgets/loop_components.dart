@@ -5,6 +5,7 @@ import 'dart:ui' show PointMode;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 
 /// Global components of the Lime Ledger system (01 handover chapter 6.1),
@@ -1146,7 +1147,12 @@ class LoopRecordRow extends StatelessWidget {
   /// Small delta/status under the value (`.row-end .d`).
   final String? trailingCaption;
 
-  /// null: neutral (text3); true: `.up` Lime; false: `.down` Chalk.
+  /// null: neutral (text3); true: `.up` Lime; false: `.down` `danger`.
+  ///
+  /// The prototype paints `.down` in Chalk (`style-v2.css:221`), which is the
+  /// colour of every other word in the row: the caption said 「卖出」 in the
+  /// same ink as 「买入」 and the direction had to be read from the word.
+  /// Since decision 0086 a fall takes the application's one colour for it.
   final bool? trailingCaptionUp;
 
   /// `.row .badge`: a status pill instead of a mono figure. A row that carries
@@ -1265,8 +1271,8 @@ class LoopRecordRow extends StatelessWidget {
                     style: LoopTypography.figure(
                       11,
                       color: switch (trailingCaptionUp) {
-                        true => LoopColors.lime,
-                        false => LoopColors.chalk,
+                        true => LoopPriceMove.up.color,
+                        false => LoopPriceMove.down.color,
                         null => LoopColors.text3,
                       },
                     ),

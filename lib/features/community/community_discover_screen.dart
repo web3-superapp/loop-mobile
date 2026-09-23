@@ -145,15 +145,18 @@ class _CommunityDiscoverScreenState
         caption: '排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。',
         stamp: state.recommendation == null ? null : 'RULE',
       ),
+      // `.refined-page .folio-body>.segs{padding:0 16px 16px;gap:7px}` — the
+      // chips carry the prototype's own separation from the first row. LOOP
+      // had 10 under them and 8 between them (decision 0086).
       filters: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: <Widget>[
               for (final segment in CommunityDiscoverSegment.values)
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 7),
                   child: LoopSeg(
                     key: ValueKey<String>('discover-seg-${segment.name}'),
                     label: segment.label,

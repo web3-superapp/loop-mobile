@@ -195,7 +195,9 @@ void main() {
       contains(const FontFeature.tabularFigures()),
     );
     final down = tester.widget<Text>(find.text('-1.2%'));
-    expect(down.style?.color, LoopColors.chalk);
+    // 跌为红 (decision 0086): the prototype's `.down{color:var(--chalk)}` made
+    // a fall the same ink as the row's own words.
+    expect(down.style?.color, LoopColors.danger);
     await tester.tap(find.text('PEPE'));
     expect(opened, 'PEPE');
     expect(find.byType(LoopIcon), findsWidgets);

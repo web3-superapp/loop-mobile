@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_membership_contr
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 // ---------------------------------------------------------------------------
@@ -278,13 +279,26 @@ enum MarketMove {
   /// Not read. The block says so; the statistics line counts it nowhere.
   unread;
 
-  static MarketMove of(LoopFact change) {
-    final value = change.isAvailable ? change.value : null;
-    if (value == null) return MarketMove.unread;
-    if (value > Decimal.zero) return MarketMove.up;
-    if (value < Decimal.zero) return MarketMove.down;
-    return MarketMove.flat;
-  }
+  static MarketMove of(LoopFact change) => MarketMove.from(
+    LoopPriceMove.of(change.isAvailable ? change.value : null),
+  );
+
+  /// The application-wide direction, narrowed to this page's own names.
+  static MarketMove from(LoopPriceMove move) => switch (move) {
+    LoopPriceMove.up => MarketMove.up,
+    LoopPriceMove.down => MarketMove.down,
+    LoopPriceMove.flat => MarketMove.flat,
+    LoopPriceMove.unread => MarketMove.unread,
+  };
+
+  /// The application-wide direction this one stands for; the colour comes
+  /// from there and from nowhere else (decision 0086).
+  LoopPriceMove get shared => switch (this) {
+    MarketMove.up => LoopPriceMove.up,
+    MarketMove.down => LoopPriceMove.down,
+    MarketMove.flat => LoopPriceMove.flat,
+    MarketMove.unread => LoopPriceMove.unread,
+  };
 }
 
 /// `76×30`, radius 6: the solid 24-hour block the approved design puts at the
@@ -309,11 +323,7 @@ class MarketChangeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final move = MarketMove.of(fact);
-    final ground = switch (move) {
-      MarketMove.up => LoopColors.lime,
-      MarketMove.down => LoopColors.danger,
-      MarketMove.flat || MarketMove.unread => LoopColors.muted,
-    };
+    final ground = move.shared.ground;
     return Container(
       width: width,
       height: height,
@@ -579,11 +589,17 @@ class MarketTabBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     super.key,
+    this.keyPrefix = 'market-tab',
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+
+  /// Two strips of tabs now exist — the 行情 list's and 代币's lower half —
+  /// and a key that named only the label would collide the moment the two
+  /// pages ever shared a word.
+  final String keyPrefix;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -601,7 +617,7 @@ class MarketTabBar extends StatelessWidget {
             child: Material(
               type: MaterialType.transparency,
               child: InkWell(
-                key: ValueKey<String>('market-tab-${labels[index]}'),
+                key: ValueKey<String>('$keyPrefix-${labels[index]}'),
                 onTap: () => onSelected(index),
                 child: Container(
                   constraints: const BoxConstraints(
@@ -1482,6 +1498,105 @@ class MarketTradeActions extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// One end of the 24-hour window, as a quote-strip cell.
+///
+/// The window is the server's (decision 0074 §4.1) and only the server's: a
+/// high taken from whichever candle series this page happens to be holding
+/// would be a figure LOOP computed and presented as a reading. A refused or
+/// absent window prints 「—」 — not a zero, and not the last price.
+MarketStatCell marketRangeCell(
+  String label,
+  MarketRange24h? range, {
+  required bool high,
+}) => switch (range) {
+  MarketRange24hAvailable(high: final top, low: final bottom) => MarketStatCell(
+    label: label,
+    value: marketRowPrice(high ? top : bottom),
+    available: true,
+  ),
+  // A window the server refused, and a payload that carried none, read the
+  // same on screen: this page has no figure for the cell. The reason is not
+  // printed in a 88pt cell; it belongs to the provenance line.
+  MarketRange24hUnavailable() || null => MarketStatCell(
+    label: label,
+    value: marketMissingFigure,
+    available: false,
+  ),
+};
+
+/// What a cell prints where a figure it could not read would have gone.
+const String marketMissingFigure = '—';
+
+/// The pinned 买入 / 卖出 bar the approved design puts at the foot of 代币.
+///
+/// It is the same single gate [MarketTradeActions] reads, the same two labels
+/// and the same shut state; only the place changed. The pair used to sit in
+/// the scrolling column under the quote, which the reader leaves the moment
+/// they open the chart — on an exchange the two actions are reachable from
+/// wherever in the page the reader is (decision 0084's first unlanded item).
+///
+/// The bar carries no reason of its own: a closed gate is stated once, in full,
+/// by the card at the foot of the page. Two sentences for one closed switch is
+/// what 0084 §8 removed.
+class MarketTradeBar extends StatelessWidget {
+  const MarketTradeBar({
+    required this.tradable,
+    required this.onTrade,
+    super.key,
+  });
+
+  /// The one gate (`capability.swappable`). Never derived locally.
+  final bool tradable;
+  final VoidCallback onTrade;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        // The design fades the page into the bar rather than drawing a rule,
+        // so the rows underneath are seen to continue past it.
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0x00050604), LoopColors.ink, LoopColors.ink],
+          stops: <double>[0, 0.3, 1],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          12,
+          LoopSpacing.page,
+          12 + bottom,
+        ),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: LoopButton(
+                key: const ValueKey<String>('token-buy-action'),
+                label: '买入',
+                primary: true,
+                block: true,
+                onPressed: tradable ? onTrade : null,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: LoopButton(
+                key: const ValueKey<String>('token-sell-action'),
+                label: '卖出',
+                block: true,
+                onPressed: tradable ? onTrade : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// `.stat-grid`: two or three cells of label over figure.

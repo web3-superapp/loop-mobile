@@ -136,13 +136,17 @@ class _LoopCandlePainter extends CustomPainter {
   /// `.kline-body.kline-up{fill:var(--lime)}`.
   static const Color _upBody = LoopColors.lime;
 
-  /// `.kline-body.kline-down{fill:rgba(243,245,239,.14);stroke:rgba(243,245,239,.78)}`.
-  static const Color _downFill = Color(0x24F3F5EF);
-  static const Color _downStroke = Color(0xC7F3F5EF);
+  /// The prototype draws a falling body in translucent Chalk
+  /// (`.kline-body.kline-down{fill:rgba(243,245,239,.14);stroke:…,.78)}`), so
+  /// a chart of falling bars was the same white as the page's text and the
+  /// direction had to be read off the axis. Since decision 0086 a fall is the
+  /// application's one colour for a fall, at the prototype's own two weights.
+  static final Color _downFill = LoopColors.danger.withValues(alpha: 0.24);
+  static final Color _downStroke = LoopColors.danger.withValues(alpha: 0.86);
 
   /// `.kline-volume.kline-up` / `.kline-down`.
   static const Color _upVolume = Color(0x3DB8FF20);
-  static const Color _downVolume = Color(0x24F3F5EF);
+  static final Color _downVolume = LoopColors.danger.withValues(alpha: 0.28);
 
   @override
   void paint(Canvas canvas, Size size) {

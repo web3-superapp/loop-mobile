@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 /// `token` · one registry asset's facts.
 ///
@@ -46,8 +47,21 @@ class TokenDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<TokenDetailScreen> createState() => _TokenDetailScreenState();
 }
 
+/// The four tabs the approved design puts under the chart, in its order.
+enum TokenSectionTab {
+  community('社区'),
+  holders('持有人'),
+  trades('成交'),
+  about('简介');
+
+  const TokenSectionTab(this.label);
+
+  final String label;
+}
+
 class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
   LoopCandleInterval _interval = LoopCandleInterval.oneHour;
+  TokenSectionTab _tab = TokenSectionTab.community;
 
   void _open(String location) {
     final navigate = widget.onNavigate;
@@ -157,6 +171,19 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           .read(marketAssetControllerProvider(assetId).notifier)
           .reload,
       archetype: LoopPageArchetype.record,
+      // The approved design pins the two actions to the foot of the page:
+      // on an exchange they are reachable from wherever the reader is, and
+      // this page is long. Same single gate, same two labels, new place
+      // (decision 0086; 0084's first unlanded item). The bar is withheld
+      // while the page has no facts at all — there is nothing to trade on a
+      // page that is still a skeleton or a whole-page refusal.
+      bottomBar: detail == null || detail.capability.blocksEntirePage
+          ? null
+          : MarketTradeBar(
+              key: const ValueKey<String>('token-trade-bar'),
+              tradable: detail.capability.swappable,
+              onTrade: () => _open('/wallet/swap'),
+            ),
       // `ETH / USD` over `Ethereum · BSC · 0x2170…33f8`: the approved design's
       // top bar states the pair and, under it, what the pair is written
       // against. The quote currency is part of the reading — the price on the
@@ -232,17 +259,17 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             price: detail.price,
             change: detail.priceChange24h,
           ),
+          // The design's own four: the window first, then the two size
+          // figures. 持有人 and 流动性 move down to the 社区 tab's strip —
+          // neither is read while the reader is looking at the price.
           MarketQuoteCells(
             key: const ValueKey<String>('token-quote-cells'),
             cells: <MarketStatCell>[
+              marketRangeCell('24h 高', detail.range24h, high: true),
+              marketRangeCell('24h 低', detail.range24h, high: false),
               MarketStatCell.fact(
-                '24H 成交额',
+                '24h 成交额',
                 detail.volume24h,
-                formatter: loopFormatCompactFigure,
-              ),
-              MarketStatCell.fact(
-                '流动性',
-                detail.liquidityUsd,
                 formatter: loopFormatCompactFigure,
               ),
               MarketStatCell.fact(
@@ -250,19 +277,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                 detail.marketCap,
                 formatter: loopFormatCompactFigure,
               ),
-              MarketStatCell.fact(
-                '持有人',
-                detail.holderCount,
-                formatter: (value) =>
-                    loopFormatCompactFigure(value, usd: false),
-              ),
             ],
-          ),
-          // The two actions, on the first screen, shut by the one gate the
-          // card at the foot of the page states in a full sentence.
-          MarketTradeActions(
-            tradable: detail.capability.swappable,
-            onTrade: () => _open('/wallet/swap'),
           ),
           // Nothing could describe this contract for this request. The page
           // still stands — every figure below states its own reason — but it
@@ -298,104 +313,148 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                   detail.capability.reasonCode ??
                   'BSC_CHAIN_RUNTIME_UNAVAILABLE',
             ),
-          const LoopLabel('K 线'),
+          // 周期 + MA，一行，紧贴 K 线上方 —— the design's own control row.
+          // The chart carries the volume bars in the same panel, so the whole
+          // reading is on the first screen.
           _TokenCandleBlock(
             assetId: assetId,
             interval: _interval,
             onIntervalChanged: (value) => setState(() => _interval = value),
             onExpand: () => _open(MarketAssetRoute.chart(assetId)),
           ),
-          const LoopLabel('行情事实'),
-          // The card above already states 市值 / 流动性 / 持有人 in its three
-          // cells, with the same figures from the same read. Printing all
-          // five again one screen below put 265,378,213 on the page twice
-          // and made the reader check whether the two agreed (walkthrough
-          // 2026-09-23, e02). What is left here is what the card has no cell
-          // for; the card's own cells carry their reasons, and this block's
-          // footer names the source and the time for the whole set.
-          LoopSurfaceCard(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                LoopFactLine(label: '完全稀释估值', fact: detail.fdv),
-              ],
-            ),
-          ),
-          // The three figures the card states have no line of their own down
-          // here, so their source and time are stated once, for the three of
-          // them, and the line says which three it means.
-          MarketFactProvenance(
-            key: const ValueKey<String>('token-facts-provenance'),
-            prefix: '上方四格',
-            facts: <LoopFact>[
-              detail.volume24h,
-              detail.liquidityUsd,
-              detail.marketCap,
-              detail.holderCount,
+          // 社区 / 持有人 / 成交 / 简介 — the design's lower half. The page
+          // used to run every block down one column with a 「更多」 group of
+          // links at the foot; a reader looking for the holders had to scroll
+          // past the contract facts to find a row that opened another page.
+          // The tab strip keeps every block one tap away and the page one
+          // screen long. Switching a tab changes what is listed and nothing
+          // else: no read is re-issued and no figure moves.
+          MarketTabBar(
+            key: const ValueKey<String>('token-section-tabs'),
+            keyPrefix: 'token-tab',
+            labels: <String>[
+              for (final tab in TokenSectionTab.values) tab.label,
             ],
+            selectedIndex: TokenSectionTab.values.indexOf(_tab),
+            onSelected: (index) =>
+                setState(() => _tab = TokenSectionTab.values[index]),
           ),
-          _PrimaryPairCard(pair: detail.primaryPair),
-          const LoopLabel('社区'),
-          _CommunityBlock(
-            block: detail.community,
-            onOpenCommunity: (communityId) =>
-                _open('/community/profile?id=$communityId'),
-          ),
-          const LoopLabel('挖矿数据'),
-          // The one place this page states the weight. The Token Card's own
-          // Lime strip carried it too, so 「Mining Weight 1× · 开发基线」 was
-          // on the first screen twice (walkthrough 2026-09-23, e01); the card
-          // now states the community and this row states the weight, and the
-          // row is the one of the two that opens 挖矿. The development label
-          // is not printed beside the figure: which rules version published it
-          // is a property of the release, and 关于 is where the release is
-          // described.
-          if (miningWeight == null)
-            const LoopUnavailableCard(
-              key: ValueKey<String>('token-mining-unavailable'),
-              label: '挖矿权重与预估收益不可用',
-              reasonCode: 'MINING_RUNTIME_DEFERRED',
-            )
-          else
-            LoopPowerHint(
-              key: const ValueKey<String>('token-mining-weight'),
-              text: '挖矿权重',
-              figure: miningWeight.label,
-              onTap: () => _open('/mining'),
-            ),
-          const LoopLabel('合约事实'),
-          _SecurityBlock(block: detail.security),
-          const LoopNotice(
-            key: ValueKey<String>('token-facts-notice'),
-            title: '只给标注出处和时间的数据',
-            body: '这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。',
-          ),
-          const LoopLabel('通知'),
-          _TokenNotificationFeed(assetId: assetId),
-          const LoopLabel('更多'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('token-holders-entry'),
-                title: '持有人分布',
-                // A row's second line states the value it can read, and
-                // falls back to a description only when it cannot (audit
-                // 2026-09-21 §D+ item 11).
-                subtitle: detail.holderCount.isAvailable
-                    ? '${loopFormatDecimal(detail.holderCount.value!, maxFractionDigits: 0)} 持有人 · 分布与集中度暂时读不到'
-                    : '持有人总数与分布暂时读不到',
-                subtitleMaxLines: 2,
-                onTap: () => _open(MarketAssetRoute.holders(assetId)),
+          const SizedBox(height: 12),
+          ...switch (_tab) {
+            // 社区 lists the bound community as a row, as the design does,
+            // and follows it with the three figures the quote strip no longer
+            // has room for.
+            TokenSectionTab.community => <Widget>[
+              _CommunityBlock(
+                block: detail.community,
+                onOpenCommunity: (communityId) =>
+                    _open('/community/profile?id=$communityId'),
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('token-trades-entry'),
-                title: '交易活动',
-                subtitle: '已登记池的链上成交，带确认状态',
-                onTap: () => _open(MarketAssetRoute.trades(assetId)),
+              const SizedBox(height: 10),
+              MarketQuoteCells(
+                key: const ValueKey<String>('token-community-cells'),
+                cells: <MarketStatCell>[
+                  MarketStatCell.fact(
+                    '持有人',
+                    detail.holderCount,
+                    formatter: (value) =>
+                        loopFormatCompactFigure(value, usd: false),
+                  ),
+                  MarketStatCell.fact(
+                    '流动性',
+                    detail.liquidityUsd,
+                    formatter: loopFormatCompactFigure,
+                  ),
+                ],
+              ),
+              // The one place this page states the weight, and the one of the
+              // two that opens 挖矿. The development label is not printed
+              // beside the figure: which rules version published it is a
+              // property of the release, and 关于 describes the release.
+              if (miningWeight == null)
+                const LoopUnavailableCard(
+                  key: ValueKey<String>('token-mining-unavailable'),
+                  label: '挖矿权重与预估收益不可用',
+                  reasonCode: 'MINING_RUNTIME_DEFERRED',
+                )
+              else
+                LoopPowerHint(
+                  key: const ValueKey<String>('token-mining-weight'),
+                  text: '挖矿权重',
+                  figure: miningWeight.label,
+                  onTap: () => _open('/mining'),
+                ),
+            ],
+            TokenSectionTab.holders => <Widget>[
+              LoopRecordGroup(
+                rows: <LoopRecordRow>[
+                  LoopRecordRow(
+                    key: const ValueKey<String>('token-holders-entry'),
+                    title: '持有人分布',
+                    // A row's second line states the value it can read, and
+                    // falls back to a description only when it cannot.
+                    subtitle: detail.holderCount.isAvailable
+                        ? '${loopFormatDecimal(detail.holderCount.value!, maxFractionDigits: 0)} 持有人 · 分布与集中度暂时读不到'
+                        : '持有人总数与分布暂时读不到',
+                    subtitleMaxLines: 2,
+                    onTap: () => _open(MarketAssetRoute.holders(assetId)),
+                  ),
+                ],
+              ),
+              MarketFactProvenance(
+                key: const ValueKey<String>('token-holders-provenance'),
+                prefix: '持有人',
+                facts: <LoopFact>[detail.holderCount],
               ),
             ],
-          ),
+            TokenSectionTab.trades => <Widget>[
+              LoopRecordGroup(
+                rows: <LoopRecordRow>[
+                  LoopRecordRow(
+                    key: const ValueKey<String>('token-trades-entry'),
+                    title: '交易活动',
+                    subtitle: '已登记池的链上成交，带确认状态',
+                    onTap: () => _open(MarketAssetRoute.trades(assetId)),
+                  ),
+                ],
+              ),
+              _PrimaryPairCard(pair: detail.primaryPair),
+            ],
+            TokenSectionTab.about => <Widget>[
+              // The cells over the chart and under 社区 carry every figure the
+              // page holds except this one, which has no cell anywhere. What
+              // is left for 简介 is that figure, where the set came from, what
+              // the contract says, and the notifications this asset raised.
+              LoopSurfaceCard(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    LoopFactLine(label: '完全稀释估值', fact: detail.fdv),
+                  ],
+                ),
+              ),
+              MarketFactProvenance(
+                key: const ValueKey<String>('token-facts-provenance'),
+                prefix: '上方四格',
+                facts: <LoopFact>[
+                  detail.volume24h,
+                  detail.marketCap,
+                  detail.liquidityUsd,
+                  detail.holderCount,
+                ],
+              ),
+              const LoopLabel('合约事实'),
+              _SecurityBlock(block: detail.security),
+              const LoopNotice(
+                key: ValueKey<String>('token-facts-notice'),
+                title: '只给标注出处和时间的数据',
+                body: '这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。',
+              ),
+              const LoopLabel('通知'),
+              _TokenNotificationFeed(assetId: assetId),
+            ],
+          },
           // The only gate for a Swap entry point. The backend pins it to
           // false until D15, so the card's 买入 / 卖出 segments above are
           // drawn disabled and this card holds the one full sentence that
@@ -450,6 +509,11 @@ class _TokenCandleBlock extends ConsumerWidget {
       assetId: assetId,
       interval: interval,
       onIntervalChanged: onIntervalChanged,
+      // The design's own shape: the periods and the two averages on one line
+      // directly over the panel, the panel itself carrying the volume bars.
+      compactControls: true,
+      height: 236,
+      movingAveragePeriods: const <int>[7, 25],
       trailing: LoopIconButton(
         key: const ValueKey<String>('token-chart-expand'),
         icon: 'expand',
@@ -472,6 +536,7 @@ class TokenCandleSection extends ConsumerStatefulWidget {
     this.movingAveragePeriods = const <int>[],
     this.showVolume = true,
     this.footer,
+    this.compactControls = false,
   });
 
   final String assetId;
@@ -490,6 +555,12 @@ class TokenCandleSection extends ConsumerStatefulWidget {
   /// `.kline-tools`: the control row the owning page puts under the interval
   /// segments, inside the same terminal card.
   final Widget? footer;
+
+  /// The approved design's layout: the five periods and the moving-average
+  /// readout share **one** line directly above the panel, and the panel has no
+  /// card of its own. 代币 uses it. `chart-full` keeps the segmented bar under
+  /// the card, where it has a whole screen to spend.
+  final bool compactControls;
 
   @override
   ConsumerState<TokenCandleSection> createState() => _TokenCandleSectionState();
@@ -515,6 +586,39 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
     final series = state.value;
     final block = series?.candles;
 
+    final body = <Widget>[
+      if (widget.compactControls)
+        // 周期 + MA 读数，一行，紧贴 K 线上方 (the approved design). The
+        // averages are computed from the closes already on screen, so they
+        // are read out beside the control that chose them rather than
+        // borrowing the series' own provenance line.
+        _CompactChartControls(
+          selected: widget.interval,
+          onSelected: widget.onIntervalChanged,
+          periods: widget.movingAveragePeriods,
+          candles: block is MarketCandlesAvailable ? block.items : null,
+          trailing: widget.trailing,
+        )
+      else
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                // The provider's unit string is printed verbatim — it
+                // names the two assets and LOOP does not translate a
+                // fact — but it is not a heading, and standing alone it
+                // left this card labelled only 「USD per WBNB」.
+                block is MarketCandlesAvailable
+                    ? 'K 线 · 单位 ${block.priceUnit}'
+                    : 'K 线',
+                style: LoopMono.label,
+              ),
+            ),
+            if (widget.trailing != null) widget.trailing!,
+          ],
+        ),
+      const SizedBox(height: 8),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -523,24 +627,7 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      // The provider's unit string is printed verbatim — it
-                      // names the two assets and LOOP does not translate a
-                      // fact — but it is not a heading, and standing alone it
-                      // left this card labelled only 「USD per WBNB」.
-                      block is MarketCandlesAvailable
-                          ? 'K 线 · 单位 ${block.priceUnit}'
-                          : 'K 线',
-                      style: LoopMono.label,
-                    ),
-                  ),
-                  if (widget.trailing != null) widget.trailing!,
-                ],
-              ),
-              const SizedBox(height: 8),
+              ...body,
               if (!state.isReady || block == null)
                 LoopChainStateBlock(
                   keyPrefix: 'candles',
@@ -568,15 +655,20 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
                     height: widget.height,
                     movingAveragePeriods: widget.movingAveragePeriods,
                     showVolume: widget.showVolume,
+                    // The compact layout already reads the averages out on the
+                    // control line; repeating them under the OHLC row would
+                    // print MA7 twice on one screen.
+                    readOutAverages: !widget.compactControls,
                   ),
                 },
             ],
           ),
         ),
-        _IntervalBar(
-          selected: widget.interval,
-          onSelected: widget.onIntervalChanged,
-        ),
+        if (!widget.compactControls)
+          _IntervalBar(
+            selected: widget.interval,
+            onSelected: widget.onIntervalChanged,
+          ),
         if (widget.footer != null) widget.footer!,
       ],
     );
@@ -589,12 +681,16 @@ class _CandleBody extends StatelessWidget {
     required this.height,
     this.movingAveragePeriods = const <int>[],
     this.showVolume = true,
+    this.readOutAverages = true,
   });
 
   final MarketCandlesAvailable block;
   final double height;
   final List<int> movingAveragePeriods;
   final bool showVolume;
+
+  /// Whether the averages get their own line under the OHLC row.
+  final bool readOutAverages;
 
   @override
   Widget build(BuildContext context) {
@@ -621,7 +717,14 @@ class _CandleBody extends StatelessWidget {
             Text(
               'C ${loopFormatCandlePrice(last.close)}',
               style: LoopMono.body.copyWith(
-                color: last.isUp ? LoopColors.lime : LoopColors.chalk,
+                // A falling close used to be Chalk — the colour of O, H and L
+                // beside it — so the one figure on the line that carries a
+                // direction was the one figure that did not show it
+                // (decision 0086).
+                color: LoopPriceMove.between(
+                  open: last.open,
+                  close: last.close,
+                ).color,
               ),
             ),
           ],
@@ -629,7 +732,7 @@ class _CandleBody extends StatelessWidget {
         // `.kline-ma`: the averages the chart draws, read out above it. They
         // are computed here from the closes already on screen, so the line
         // says so rather than borrowing the series' source.
-        if (movingAveragePeriods.isNotEmpty) ...<Widget>[
+        if (readOutAverages && movingAveragePeriods.isNotEmpty) ...<Widget>[
           const SizedBox(height: 6),
           Wrap(
             key: const ValueKey<String>('candles-moving-averages'),
@@ -687,6 +790,12 @@ class _CandleBody extends StatelessWidget {
                   // the label is shown whenever the server sends one.
                   if (block.hasSourceLabel)
                     marketCandleLabelText(block.labelKey),
+                  // The compact layout has no card heading to carry the
+                  // provider's unit string, and 「2,770.44」 is only a reading
+                  // once the reader knows what it is priced in. It prints
+                  // verbatim, as it does in the heading: LOOP does not
+                  // translate a fact.
+                  if (!readOutAverages) '单位 ${block.priceUnit}',
                   // Source and pool are one clause: a provider top pool is
                   // charted but not indexed by LOOP, and saying 「来源
                   // GeckoTerminal」 apart from 「未登记池」 would let the chart
@@ -699,6 +808,91 @@ class _CandleBody extends StatelessWidget {
             ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+/// 周期 + MA 读数，一行 (approved design). Five periods on the left as compact
+/// chips, the two averages read out on the right.
+///
+/// It replaces a 44pt segmented bar **under** the chart card with a 28pt line
+/// **over** it, which is what puts the whole reading — price, window, periods,
+/// averages, candles and volume — on the first screen.
+class _CompactChartControls extends StatelessWidget {
+  const _CompactChartControls({
+    required this.selected,
+    required this.onSelected,
+    required this.periods,
+    required this.candles,
+    this.trailing,
+  });
+
+  final LoopCandleInterval selected;
+  final ValueChanged<LoopCandleInterval> onSelected;
+  final List<int> periods;
+
+  /// `null` while the series is not readable: the periods stay operable and
+  /// the readout says nothing rather than printing a stale average.
+  final List<LoopCandle>? candles;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final series = candles;
+    final labels = <String>[
+      if (series != null)
+        for (final period in periods)
+          ?loopCandleMovingAverageLabel(series, period),
+    ];
+    return Row(
+      children: <Widget>[
+        for (final interval in LoopCandleInterval.values)
+          Semantics(
+            button: true,
+            selected: interval == selected,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                key: ValueKey<String>('token-interval-${interval.wireName}'),
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => onSelected(interval),
+                child: Container(
+                  height: 28,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: interval == selected
+                        ? LoopColors.chalk.withValues(alpha: 0.1)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    interval.label,
+                    // The chosen period takes the ladder's own small title —
+                    // Chalk by default — and the rest take it at the grey the
+                    // tab strip uses, so the row has one weight and one size.
+                    style: interval == selected
+                        ? LoopType.titleSm
+                        : LoopType.titleSm.copyWith(color: LoopColors.text3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const Spacer(),
+        if (labels.isNotEmpty)
+          Flexible(
+            child: Text(
+              labels.join(' · '),
+              key: const ValueKey<String>('token-moving-averages'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: LoopType.figureXs,
+            ),
+          ),
+        if (trailing != null) ...<Widget>[const SizedBox(width: 4), trailing!],
       ],
     );
   }

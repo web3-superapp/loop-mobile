@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// The line above every recognised card. The reader is told the card was not
@@ -310,6 +311,7 @@ class ChatTokenCard extends ConsumerWidget {
       state: LoopTokenCardState.normal,
       model: LoopTokenCardModel(
         symbol: loopAssetSymbolLabel(asset),
+        logoUrl: detail.logoUrl,
         // With no ticker the heading is already the address, so the line
         // under it names the chain instead of printing the same string
         // twice in a second typeface.
@@ -325,9 +327,11 @@ class ChatTokenCard extends ConsumerWidget {
         change: detail.priceChange24h.isAvailable
             ? loopFormatPercent(detail.priceChange24h.value!)
             : null,
-        changeUp: detail.priceChange24h.isAvailable
-            ? detail.priceChange24h.value! >= Decimal.zero
-            : null,
+        move: LoopPriceMove.of(
+          detail.priceChange24h.isAvailable
+              ? detail.priceChange24h.value
+              : null,
+        ),
         metrics: <LoopTokenMetric>[
           _metric('市值', detail.marketCap),
           _metric('流动性', detail.liquidityUsd),

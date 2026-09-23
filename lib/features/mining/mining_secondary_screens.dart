@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -280,6 +281,17 @@ Map<String, String> _assetSymbols(MiningAssets assets) => <String, String>{
 LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
     LoopRecordRow(
       key: ValueKey<String>('mining-assets-excluded-${row.assetId}'),
+      leading: LoopTokenLogo(
+        assetSymbol:
+            row.symbol ??
+            miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
+        logoUrl: row.logoUrl,
+        size: 44,
+        semanticLabel: miningAssetTitle(
+          symbol: row.symbol,
+          assetId: row.assetId,
+        ),
+      ),
       title: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
       subtitle: row.symbol == null
           ? launchReasonCodeText(row.reasonCode)

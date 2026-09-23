@@ -618,6 +618,7 @@ class _AssetPickerSheet extends StatelessWidget {
             key: ValueKey<String>('swap-pick-${row.assetId}'),
             leading: LoopTokenLogo(
               assetSymbol: row.symbol,
+              logoUrl: row.logoUrl,
               fallbackMonogram: row.symbol,
             ),
             title: row.symbol,

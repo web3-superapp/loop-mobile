@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
@@ -477,11 +478,14 @@ void main() {
             'interval': '1h',
             'closes': <String>['1.5', '2.25', '2'],
             'observedAt': '2026-09-08T07:31:00.000Z',
+            'source': 'geckoterminal',
+            'quality': 'fresh',
           },
         ),
       );
       final series = row.sparkline!;
       expect(series.interval, LoopCandleInterval.oneHour);
+      expect(series.quality, LoopFactQuality.fresh);
       expect(series.closes, <Decimal>[
         s5Decimal('1.5'),
         s5Decimal('2.25'),
@@ -498,7 +502,7 @@ void main() {
           rowPayload(
             sparkline: <String, Object?>{
               'status': 'unavailable',
-              'reasonCode': 'MARKET_PROVIDER_RATE_LIMITED',
+              'reasonCode': 'MARKET_SPARKLINE_NOT_CACHED',
             },
           ),
         );
@@ -507,40 +511,79 @@ void main() {
       },
     );
 
-    test('a server that sends no key at all still renders the row', () async {
-      expect((await decode(rowPayload(withKey: false))).sparkline, isNull);
-      expect((await decode(rowPayload())).sparkline, isNull);
+    // Decision 0074 §3a froze the key as required. A row that arrives without
+    // it, or with a `null` in its place, is a payload this client does not
+    // understand — not a row that silently loses its line. This is the exact
+    // assertion S81a made in the other direction, inverted on the freeze.
+    test('a server that sends no key at all is an invalid payload', () async {
+      await expectLater(
+        decode(rowPayload(withKey: false)),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      await expectLater(
+        decode(rowPayload()),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    // Both halves of the refusal are checked: `status` must be the word the
+    // contract publishes, and `reasonCode` must be one of the seven it lists.
+    test('a refusal outside the published table is refused', () async {
+      await expectLater(
+        decode(
+          rowPayload(
+            sparkline: <String, Object?>{
+              'status': 'unavailable',
+              'reasonCode': 'MARKET_PROVIDER_RATE_LIMITED',
+            },
+          ),
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
     });
 
     test('a malformed available series is an invalid payload', () async {
+      Map<String, Object?> series({
+        Object? interval = '1h',
+        Object? closes = const <String>['1', '2'],
+        Object? observedAt = '2026-09-08T07:31:00.000Z',
+        Object? source = 'geckoterminal',
+        Object? quality = 'fresh',
+        Map<String, Object?> extra = const <String, Object?>{},
+      }) => <String, Object?>{
+        'status': 'available',
+        'interval': interval,
+        'closes': closes,
+        'observedAt': observedAt,
+        'source': source,
+        'quality': quality,
+        ...extra,
+      };
+
       for (final broken in <Object?>[
-        // An interval LOOP does not publish.
-        <String, Object?>{
-          'status': 'available',
-          'interval': '2h',
-          'closes': <String>['1', '2'],
-          'observedAt': '2026-09-08T07:31:00.000Z',
-        },
+        // The contract pins the interval to `1h`.
+        series(interval: '4h'),
         // A close that is a JSON number rather than a decimal string.
-        <String, Object?>{
-          'status': 'available',
-          'interval': '1h',
-          'closes': <Object?>[1.5],
-          'observedAt': '2026-09-08T07:31:00.000Z',
-        },
+        series(closes: <Object?>[1.5]),
         // No observation time.
-        <String, Object?>{
-          'status': 'available',
-          'interval': '1h',
-          'closes': <String>['1', '2'],
-        },
+        series(observedAt: null),
+        // A provider the contract does not name.
+        series(source: 'dexscreener'),
+        // A quality that says the block was not read is not `available`.
+        series(quality: 'unavailable'),
+        // The cache row holds twenty-four buckets and no more.
+        series(closes: <String>[for (var i = 0; i < 25; i += 1) '1']),
+        // An empty series is not a shape.
+        series(closes: const <String>[]),
         // A key the contract does not name.
+        series(extra: const <String, Object?>{'note': 'extra'}),
+        // A missing required key.
         <String, Object?>{
           'status': 'available',
           'interval': '1h',
           'closes': <String>['1', '2'],
           'observedAt': '2026-09-08T07:31:00.000Z',
-          'note': 'extra',
+          'source': 'geckoterminal',
         },
       ]) {
         await expectLater(

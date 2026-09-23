@@ -243,6 +243,43 @@ Map<String, Object?> s5LogoUnavailable([
   String reasonCode = 'TOKEN_LOGO_ADDRESS_UNKNOWN',
 ]) => <String, Object?>{'status': 'unavailable', 'reasonCode': reasonCode};
 
+/// The required row `sparkline` block (contract §3a, decision 0074).
+Map<String, Object?> s5Sparkline({
+  List<String> closes = const <String>['747.12', '747.48', '748.02'],
+  String quality = 'fresh',
+}) => <String, Object?>{
+  'status': 'available',
+  'interval': '1h',
+  'closes': closes,
+  'observedAt': '2026-09-23T11:00:00.000Z',
+  'source': 'geckoterminal',
+  'quality': quality,
+};
+
+Map<String, Object?> s5SparklineUnavailable([
+  String reasonCode = 'MARKET_SPARKLINE_NOT_CACHED',
+]) => <String, Object?>{'status': 'unavailable', 'reasonCode': reasonCode};
+
+/// The required `range24h` block (contract §4.1, decision 0074).
+Map<String, Object?> s5Range24h({
+  String high = '748.9',
+  String low = '746.5',
+  int bars = 24,
+  String quality = 'fresh',
+}) => <String, Object?>{
+  'status': 'available',
+  'high': high,
+  'low': low,
+  'bars': bars,
+  'observedAt': '2026-09-23T11:00:00.000Z',
+  'source': 'geckoterminal',
+  'quality': quality,
+};
+
+Map<String, Object?> s5Range24hUnavailable([
+  String reasonCode = 'MARKET_SPARKLINE_NOT_CACHED',
+]) => <String, Object?>{'status': 'unavailable', 'reasonCode': reasonCode};
+
 Map<String, Object?> s5BalanceRow({
   String assetId = s5NativeAssetId,
   Object? balance,
@@ -404,6 +441,7 @@ Map<String, Object?> s5OverviewBody({
             'logo': s5Logo(),
             'price': s5Fact(),
             'priceChange24h': s5Fact(value: '-3.2', ttlSeconds: 30),
+            'sparkline': s5Sparkline(),
           },
         ],
       },
@@ -427,6 +465,7 @@ Map<String, Object?> s5OverviewBody({
               reasonCode: 'MARKET_PROVIDER_RATE_LIMITED',
             ),
             'priceChange24h': s5UnavailableFact('MARKET_FACT_NOT_REPORTED'),
+            'sparkline': s5SparklineUnavailable(),
             'volume24h': s5Fact(value: '1234567.89'),
             'liquidityUsd': s5Fact(value: '9876543.21'),
           },
@@ -447,9 +486,11 @@ Map<String, Object?> s5AssetDetailBody({
   Object? capability,
   Object? community,
   Object? security,
+  Object? range24h,
 }) => <String, Object?>{
   'asset': s5ChainAsset(),
   'logo': s5Logo(),
+  'range24h': range24h ?? s5Range24h(),
   'capability': capability ?? s5Capability(),
   'price': s5Fact(),
   'priceChange24h': s5Fact(value: '0.27'),
@@ -943,14 +984,29 @@ MarketAssetDetail s5UnreadableDetail({
   holderCount: const LoopFact.unavailable('MARKET_FACT_NOT_REPORTED'),
 );
 
+/// The 24-hour window the token page's two cells read (decision 0074 §4.1).
+MarketRange24hAvailable s5Range({
+  String high = '748.90',
+  String low = '746.50',
+  int bars = 24,
+}) => MarketRange24hAvailable(
+  high: s5Decimal(high),
+  low: s5Decimal(low),
+  bars: bars,
+  observedAt: DateTime.utc(2026, 9, 8, 7, 30),
+);
+
 MarketAssetDetail s5Detail({
   LoopAssetCapability? capability,
   MarketSecurityBlock? security,
   MarketCommunityBlock? community,
   LoopFact? price,
+  MarketRange24h? range24h,
+  bool withRange = true,
 }) => MarketAssetDetail(
   asset: MarketAssetIdentitySettled(s5Asset()),
   capability: capability ?? s5ViewableCapability,
+  range24h: range24h ?? (withRange ? s5Range() : null),
   price: price ?? s5FreshFact('747.39'),
   priceChange24h: s5FreshFact('0.27'),
   liquidityUsd: s5FreshFact('9876543.21'),
@@ -1068,8 +1124,10 @@ LoopAssetBalanceRow s5Row({
   LoopValuation? valuation,
   LoopPendingAmount? pending,
   LoopBalanceCrossCheck? crossCheck,
+  String? logoUrl,
 }) => LoopAssetBalanceRow(
   assetId: assetId,
+  logoUrl: logoUrl,
   symbol: assetId == s5NativeAssetId ? 'BNB' : 'WBNB',
   name: assetId == s5NativeAssetId ? 'BNB' : 'Wrapped BNB',
   decimals: 18,

@@ -285,11 +285,17 @@ final class LoopAssetBalanceRow {
     required this.pending,
     required this.valuation,
     required this.crossCheck,
+    this.logoUrl,
   });
 
   final String assetId;
   final String symbol;
   final String name;
+
+  /// The registry's published artwork for this asset, or `null` when the
+  /// server published none (decision 0072). A logo is display only: it never
+  /// keys, merges or names a row — `assetId` does that alone.
+  final String? logoUrl;
   final int decimals;
   final String? address;
   final LoopBalanceAmount balance;
@@ -355,11 +361,15 @@ final class LoopLaunchChainNativeBalance {
     required this.spendableBalance,
     required this.gasReserve,
     required this.snapshot,
+    this.logoUrl,
   });
 
   final String assetId;
   final String symbol;
   final int decimals;
+
+  /// The registry's published artwork, or `null` (decision 0072).
+  final String? logoUrl;
 
   /// The exact integer minor-unit string, kept verbatim for auditing.
   final String rawValue;

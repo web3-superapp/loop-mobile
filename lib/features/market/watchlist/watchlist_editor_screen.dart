@@ -547,6 +547,18 @@ class _ReorderableWatchlist extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // The asset's own mark, on the same three-step fall
+                      // back every other LOOP row uses (decision 0086). A
+                      // list whose rows were a drag handle and two lines of
+                      // text read as settings, not as assets.
+                      LoopTokenLogo(
+                        key: ValueKey<String>('watchlist-logo-${item.assetId}'),
+                        assetSymbol: item.displayName,
+                        logoUrl: item.logoUrl,
+                        fallbackMonogram: item.displayName,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

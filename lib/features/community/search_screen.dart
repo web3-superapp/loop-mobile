@@ -255,11 +255,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           name: result.title,
           logoRef: result.avatarRef,
         ),
-        // The registry stores no logo for an asset (`avatarRef` is always
-        // null on this row), so the token face is the one every other LOOP
-        // list draws it with, from the symbol.
+        // `avatarRef` is always null on an asset row: the registry's artwork
+        // arrives in its own `logo` block (decision 0072), and the symbol's
+        // bundled face and then the monogram stand in when none was published.
         SearchResultType.asset => LoopTokenLogo(
           assetSymbol: result.title,
+          logoUrl: result.logoUrl,
           fallbackMonogram: result.title,
           size: 44,
         ),

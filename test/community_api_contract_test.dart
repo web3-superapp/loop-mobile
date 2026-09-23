@@ -1410,6 +1410,15 @@ void main() {
       expect(row.stableId, assetId);
       expect(row.title, 'USDT');
       expect(row.subtitle, 'Tether USD');
+      // Decision 0086: the asset row's published artwork reaches the model, so
+      // 搜索 draws the token's own mark. The user and community rows carry a
+      // `null` logo and keep drawing the identity atlas.
+      expect(
+        row.logoUrl,
+        'https://raw.githubusercontent.com/trustwallet/assets/master/'
+        'blockchains/smartchain/assets/'
+        '0x55d398326f99059fF775485246999027B3197955/logo.png',
+      );
       expect(
         row.destination,
         isA<SearchAssetDestination>().having(

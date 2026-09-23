@@ -279,9 +279,13 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       // the badge and the subtitle instead.
       key: ValueKey<String>('alert-${alert.alertId}'),
       // `.row-ico`: the prototype heads every alert with the asset's own
-      // token mark, so a list of thresholds is read by its assets first.
+      // token mark, so a list of thresholds is read by its assets first. The
+      // artwork comes from the same market read this row already watches for
+      // the current price (decision 0072/0086); the alert resource publishes
+      // none of its own.
       leading: LoopTokenLogo(
         assetSymbol: alert.displayName,
+        logoUrl: _logoFor(alert.assetId),
         fallbackMonogram: alert.displayName,
       ),
       // The threshold keeps its exact characters; only the separators that
@@ -319,6 +323,10 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     return detail?.price.value;
   }
 
+  /// The asset's published artwork, from the same read as the current price.
+  String? _logoFor(String assetId) =>
+      ref.watch(marketAssetControllerProvider(assetId)).value?.logoUrl;
+
   /// The name, symbol and id of one asset, resolved from whatever this page
   /// already read.
   ///
@@ -327,24 +335,23 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   /// setting a threshold cannot check it, and typing into it could only ever
   /// produce a different asset or an invalid one.
   _AlertAssetChoice? _assetChoiceFor(String assetId, LoopPriceAlert? existing) {
+    final detail = ref.watch(marketAssetControllerProvider(assetId)).value;
     final summary = existing?.asset;
     if (summary != null) {
       return _AlertAssetChoice(
         assetId: assetId,
         symbol: summary.symbol,
         name: summary.name,
+        logoUrl: detail?.logoUrl,
       );
     }
-    final settled = ref
-        .watch(marketAssetControllerProvider(assetId))
-        .value
-        ?.asset
-        .settled;
+    final settled = detail?.asset.settled;
     if (settled == null) return null;
     return _AlertAssetChoice(
       assetId: assetId,
       symbol: settled.symbol,
       name: settled.name,
+      logoUrl: detail?.logoUrl,
     );
   }
 
@@ -419,11 +426,15 @@ final class _AlertAssetChoice {
     required this.assetId,
     required this.symbol,
     required this.name,
+    this.logoUrl,
   });
 
   final String assetId;
   final String? symbol;
   final String? name;
+
+  /// The registry's published artwork for this asset (decision 0072).
+  final String? logoUrl;
 
   /// 「PEPE · Pepe」 — never the CAIP id, unless nothing named the asset, in
   /// which case the truncated id speaks for itself rather than a made-up
@@ -611,6 +622,7 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
                   leading: LoopTokenLogo(
                     assetSymbol:
                         choice.symbol ?? loopTruncatedAssetId(choice.assetId),
+                    logoUrl: choice.logoUrl,
                     fallbackMonogram: choice.monogram,
                   ),
                   title: choice.symbol ?? loopTruncatedAssetId(choice.assetId),
@@ -775,6 +787,7 @@ class _AlertAssetPickerSheetState
                       assetSymbol:
                           item.asset?.symbol ??
                           loopTruncatedAssetId(item.assetId),
+                      logoUrl: item.logoUrl,
                       fallbackMonogram:
                           item.asset?.symbol ??
                           loopTruncatedAssetId(item.assetId),
@@ -788,6 +801,7 @@ class _AlertAssetPickerSheetState
                         assetId: item.assetId,
                         symbol: item.asset?.symbol,
                         name: item.asset?.name,
+                        logoUrl: item.logoUrl,
                       ),
                     ),
                   ),

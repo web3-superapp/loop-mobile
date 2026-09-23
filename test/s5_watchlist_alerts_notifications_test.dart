@@ -534,6 +534,13 @@ void main() {
         ),
       );
 
+      // S82a: 简介 carries the contract facts and this asset's notifications.
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-section-tabs')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.pumpAndSettle();
       final row = find.byKey(ValueKey<String>('token-feed-$s5NotificationId'));
       await scrollToS5Section(tester, row);
       // Same rule as the trigger history: a source a reader cannot check is

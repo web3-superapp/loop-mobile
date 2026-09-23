@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 /// Token Card states (prototype `token-card-states`, `.tcard-signature`).
 enum LoopTokenCardState {
@@ -58,10 +59,11 @@ final class LoopTokenCardModel {
   const LoopTokenCardModel({
     required this.symbol,
     required this.identifier,
+    this.logoUrl,
     this.price,
     this.priceReason,
     this.change,
-    this.changeUp,
+    this.move = LoopPriceMove.unread,
     this.metrics = const <LoopTokenMetric>[],
     this.communityLine,
     this.communityIcon = 'chat',
@@ -76,6 +78,11 @@ final class LoopTokenCardModel {
 
   /// Short contract / identifier line under the symbol.
   final String identifier;
+
+  /// The registry's published artwork (decision 0072). The head falls back to
+  /// the bundled face and then to the monogram, exactly as every list row
+  /// does; the card never draws a mark LOOP made up for a token.
+  final String? logoUrl;
   final String? price;
 
   /// Why there is no [price]. Rendered in place of the figure when the owner
@@ -83,7 +90,11 @@ final class LoopTokenCardModel {
   /// unavailable fact states its reason or says nothing at all.
   final String? priceReason;
   final String? change;
-  final bool? changeUp;
+
+  /// Which way [change] went. [LoopPriceMove.unread] is also the value an
+  /// owner that never read the fact hands, and it borrows no direction's
+  /// colour.
+  final LoopPriceMove move;
   final List<LoopTokenMetric> metrics;
   final String? communityLine;
   final String communityIcon;
@@ -324,7 +335,11 @@ class _Head extends StatelessWidget {
       ),
       LoopTokenCardState.partial => _GlyphLogo(icon: 'question'),
       LoopTokenCardState.risk => _GlyphLogo(icon: 'phishing'),
-      _ => LoopTokenLogo(assetSymbol: model.symbol, size: 52),
+      _ => LoopTokenLogo(
+        assetSymbol: model.symbol,
+        logoUrl: model.logoUrl,
+        size: 52,
+      ),
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 12),
@@ -426,21 +441,22 @@ class _Head extends StatelessWidget {
                       // not Lime but the ground's own ink with a hairline
                       // underline (`.chalk-card :is(.up,…)`). Lime on Chalk
                       // is a contrast of 1.1: the figure is painted and not
-                      // there. `.down` is not in that rule and its Chalk is
-                      // just as invisible, so it takes the ground's secondary
-                      // ink rather than the token named for the dark page.
+                      // there. On the page's own dark ground the direction
+                      // takes the application's one colour for it, so a fall
+                      // on this card is the same red as a fall in the 行情
+                      // list (decision 0086); before it was Chalk, which is
+                      // the colour of every other word on the card.
                       style:
                           LoopTypography.figure(
                             11,
-                            color: switch ((model.changeUp, chalk)) {
-                              (true, false) => LoopColors.lime,
-                              (true, true) => LoopColors.ink,
-                              (false, false) => LoopColors.chalk,
-                              (false, true) => LoopColors.inkText2,
-                              (null, _) => secondary,
+                            color: switch ((model.move, chalk)) {
+                              (LoopPriceMove.unread, _) => secondary,
+                              (final move, false) => move.color,
+                              (LoopPriceMove.up, true) => LoopColors.ink,
+                              (_, true) => LoopColors.inkText2,
                             },
                           ).copyWith(
-                            decoration: model.changeUp == true && chalk
+                            decoration: model.move == LoopPriceMove.up && chalk
                                 ? TextDecoration.underline
                                 : null,
                             decorationThickness: 1,

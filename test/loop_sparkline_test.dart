@@ -114,6 +114,12 @@ void main() {
           find.byKey(const ValueKey<String>('token-quote-cells')),
           findsOneWidget,
         );
+        // S82a: the two actions moved into the pinned bar at the foot of the
+        // page, so they are reachable from wherever in the page the reader is.
+        expect(
+          find.byKey(const ValueKey<String>('token-trade-bar')),
+          findsOneWidget,
+        );
         expect(
           find.byKey(const ValueKey<String>('token-buy-action')),
           findsOneWidget,

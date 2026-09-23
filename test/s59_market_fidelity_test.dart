@@ -226,7 +226,7 @@ void main() {
       expect(find.textContaining('Wrapped BNB · '), findsOneWidget);
     });
 
-    testWidgets('买入 与 卖出 are on the first screen, shut, and say why once', (
+    testWidgets('买入 与 卖出 are pinned to the foot, shut, and say why once', (
       tester,
     ) async {
       await pumpS5Page(
@@ -235,14 +235,19 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
+      // S82a: the pair moved into the pinned bar at the foot of the page, so
+      // it is reachable from wherever in the page the reader is. Same one
+      // gate, same two labels, and still no reason on the buttons themselves.
+      expect(
+        find.byKey(const ValueKey<String>('token-trade-bar')),
+        findsOneWidget,
+      );
       final buy = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('token-buy-action')),
       );
       final sell = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('token-sell-action')),
       );
-      // Shut, not hidden: the buttons take no tap while the gate is closed,
-      // and neither of them carries a reason of its own.
       expect(buy.onPressed, isNull);
       expect(sell.onPressed, isNull);
       await scrollToS5Section(
@@ -253,6 +258,36 @@ void main() {
         find.textContaining(loopReasonCodeText('BSC_WRITES_DISABLED')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('an open gate opens the two controls in the same bar', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(
+          asset: S5Answer<MarketAssetDetail>(
+            value: s5Detail(
+              capability: const LoopAssetCapability(
+                viewable: true,
+                swappable: true,
+                value: LoopAssetCapabilityValue.swappable,
+                reasonCode: null,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final buy = tester.widget<LoopButton>(
+        find.byKey(const ValueKey<String>('token-buy-action')),
+      );
+      final sell = tester.widget<LoopButton>(
+        find.byKey(const ValueKey<String>('token-sell-action')),
+      );
+      expect(buy.onPressed, isNotNull);
+      expect(sell.onPressed, isNotNull);
     });
 
     testWidgets('a published weight replaces the module-wide refusal', (
@@ -309,10 +344,13 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
+      // S82a: the entry lives under the 持有人 tab of the page's lower half.
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('token-holders-entry')),
+        find.byKey(const ValueKey<String>('token-section-tabs')),
       );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-持有人')));
+      await tester.pumpAndSettle();
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('token-holders-entry')),
       );

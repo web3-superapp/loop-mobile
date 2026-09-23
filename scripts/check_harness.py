@@ -6374,11 +6374,16 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                     f"{relative} must remain read-only without execution navigation `{forbidden}`"
                 )
         # `style-v2.css` publishes ink / lime / chalk and its `.kline-body`
-        # rules are one hue: rising is solid Lime, falling is a hollow Chalk
-        # outline. A candle painted in a second hue is a colour the design
-        # system does not have (audit 2026-09-21 §D+ item 12).
+        # rules were one hue: rising solid Lime, falling a hollow Chalk
+        # outline (audit 2026-09-21 §D+ item 12). Decision 0086 gives a fall
+        # the application's second hue — `LoopColors.danger`, the `#FF6B82`
+        # of the approved Token design draft — because a chart of falling
+        # bars in the page's own text colour said nothing about direction
+        # (requester, 2026-09-23 "跌为红"). The invariant is unchanged in
+        # kind: **two** tokens and no others, both from `LoopColors`, one
+        # per direction. A third hue is still a colour the design system
+        # does not have.
         for forbidden in (
-            "LoopColors.danger",
             "LoopColors.mint",
             "LoopColors.vapor",
             "Colors.red",
@@ -6386,18 +6391,18 @@ def check_spot_candle_contract(root: Path) -> list[str]:
         ):
             if forbidden in source:
                 errors.append(
-                    f"{relative} must paint one hue: rising Lime, falling a "
-                    f"hollow Chalk outline; found `{forbidden}`"
+                    f"{relative} must paint two hues: rising Lime, falling "
+                    f"danger; found `{forbidden}`"
                 )
         for required in (
             "static const Color _upBody = LoopColors.lime;",
-            "static const Color _downFill = Color(0x24F3F5EF);",
-            "static const Color _downStroke = Color(0xC7F3F5EF);",
+            "static final Color _downFill = LoopColors.danger.withValues",
+            "static final Color _downStroke = LoopColors.danger.withValues",
         ):
             if required not in source:
                 errors.append(
-                    f"{relative} must paint one hue: rising Lime, falling a "
-                    f"hollow Chalk outline; missing `{required}`"
+                    f"{relative} must paint two hues: rising Lime, falling "
+                    f"danger; missing `{required}`"
                 )
 
     return errors

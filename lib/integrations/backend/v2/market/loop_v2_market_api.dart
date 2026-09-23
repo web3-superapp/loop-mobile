@@ -144,6 +144,11 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         'community',
         'security',
         'holderCount',
+        // Required from decision 0074 §4.1 on, on all three asset variants
+        // (registered, unregistered, native). The two cells over the chart
+        // read it and nothing else: the client never computes a high or a low
+        // from the candle series it happens to be holding.
+        'range24h',
         'contractVersion',
       });
       LoopV2ChainCodec.requireContractVersion(root);
@@ -161,6 +166,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         community: _community(root['community']),
         security: _security(root['security']),
         holderCount: LoopV2ChainCodec.fact(root['holderCount']),
+        range24h: _range24h(root['range24h']),
       );
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
@@ -343,27 +349,23 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       raw is Map && raw['status'] == 'unavailable';
 
   static MarketAssetRow _assetRow(Object? raw, {required bool trending}) {
-    final map = LoopV2Contract.strictMapWithOptional(
-      raw,
-      <String>{
-        'assetId',
-        'asset',
-        // Required from decision 0072 on: every row that names an asset names
-        // its artwork too, and a row without the key is an invalid payload
-        // rather than a row that silently loses its logo.
-        'logo',
-        'price',
-        'priceChange24h',
-        if (trending) 'volume24h',
-        if (trending) 'liquidityUsd',
-      },
-      // S81b delivers the row's 1H shape on the row itself. It is optional
-      // until that contract is frozen — a build that meets an older server
-      // must draw the list, not refuse it — and the key moves into the
-      // required set above the moment the frozen contract says it is always
-      // sent (decision 0085).
-      const <String>{'sparkline'},
-    );
+    final map = LoopV2Contract.strictMap(raw, <String>{
+      'assetId',
+      'asset',
+      // Required from decision 0072 on: every row that names an asset names
+      // its artwork too, and a row without the key is an invalid payload
+      // rather than a row that silently loses its logo.
+      'logo',
+      'price',
+      'priceChange24h',
+      // Required from decision 0074 §3a on. It was optional for exactly one
+      // build, while S81b's contract was being frozen; now every row carries
+      // the shape it draws, and a row without the key is an invalid payload
+      // rather than a line that silently disappears.
+      'sparkline',
+      if (trending) 'volume24h',
+      if (trending) 'liquidityUsd',
+    });
     return MarketAssetRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
       asset: LoopV2ChainCodec.assetSummary(map['asset']),
@@ -374,29 +376,41 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       liquidityUsd: trending
           ? LoopV2ChainCodec.fact(map['liquidityUsd'])
           : null,
-      sparkline: map.containsKey('sparkline')
-          ? _rowSparkline(map['sparkline'])
-          : null,
+      sparkline: _rowSparkline(map['sparkline']),
     );
   }
 
-  /// `{status, interval, closes[], observedAt}` — the row-level shape.
+  /// `{status, interval, closes[], observedAt, source, quality}` — the frozen
+  /// row-level shape (decision 0074 §3a).
   ///
   /// Anything but `available` is `null`: the row reserves its slot and draws
   /// nothing. A malformed `available` block is still an invalid payload, the
   /// same as every other fact LOOP reads — a shape that cannot be trusted is
   /// not drawn as a shape that can.
+  ///
+  /// `interval` is always `1h`, `source` always `geckoterminal`, and `closes`
+  /// carries one to twenty-four figures, oldest first. Each of those is
+  /// checked: a series that claims another interval, another provider or a
+  /// twenty-fifth bucket is not the series this contract describes.
   static MarketRowSparklineSeries? _rowSparkline(Object? raw) {
-    if (raw == null) return null;
     if (raw is! Map) LoopV2ChainCodec.invalid();
     if (raw['status'] != 'available') {
-      // Not read, and the reason is not a row-level statement. The payload is
-      // still checked for shape so a typo in `status` cannot pass as silence.
-      LoopV2Contract.strictMapWithOptional(
-        raw,
-        const <String>{'status'},
-        const <String>{'reasonCode', 'interval', 'closes', 'observedAt'},
+      // Not read. The reason is not a row-level statement — a 58pt row has
+      // nowhere to put one — but the payload is still checked for shape so a
+      // typo in `status` cannot pass as silence, and the reason itself must
+      // be one the contract publishes.
+      final refusal = LoopV2Contract.strictMap(raw, const <String>{
+        'status',
+        'reasonCode',
+      });
+      if (refusal['status'] != 'unavailable') LoopV2ChainCodec.invalid();
+      final reasonCode = LoopV2ChainCodec.requireReasonCode(
+        refusal,
+        'reasonCode',
       );
+      if (!_sparklineRefusals.contains(reasonCode)) {
+        LoopV2ChainCodec.invalid();
+      }
       return null;
     }
     final map = LoopV2Contract.strictMap(raw, const <String>{
@@ -404,14 +418,26 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       'interval',
       'closes',
       'observedAt',
+      'source',
+      'quality',
     });
-    final rawInterval = map['interval'];
-    if (rawInterval is! String) LoopV2ChainCodec.invalid();
-    final interval = LoopCandleInterval.tryParse(rawInterval);
-    if (interval == null) LoopV2ChainCodec.invalid();
+    if (map['interval'] != LoopCandleInterval.oneHour.wireName) {
+      LoopV2ChainCodec.invalid();
+    }
+    if (map['source'] != 'geckoterminal') LoopV2ChainCodec.invalid();
+    final rawQuality = map['quality'];
+    if (rawQuality is! String) LoopV2ChainCodec.invalid();
+    final quality = LoopFactQuality.tryParse(rawQuality);
+    // A shape that says it was not read is not an `available` shape.
+    if (quality == null || quality == LoopFactQuality.unavailable) {
+      LoopV2ChainCodec.invalid();
+    }
     final rawCloses = map['closes'];
-    if (rawCloses is! List) LoopV2ChainCodec.invalid();
-    if (rawCloses.length > _rowSparklineMaxCloses) LoopV2ChainCodec.invalid();
+    if (rawCloses is! List ||
+        rawCloses.isEmpty ||
+        rawCloses.length > _rowSparklineMaxCloses) {
+      LoopV2ChainCodec.invalid();
+    }
     final closes = <Decimal>[
       for (final close in rawCloses)
         LoopV2ChainCodec.requireDecimal(<String, Object?>{
@@ -419,15 +445,30 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         }, 'close'),
     ];
     return MarketRowSparklineSeries(
-      interval: interval,
+      interval: LoopCandleInterval.oneHour,
       observedAt: LoopV2ChainCodec.requireTimestamp(map, 'observedAt'),
       closes: closes,
+      quality: quality,
     );
   }
 
-  /// One day of `1h` buckets is what the line renders (`loopSparklineWindow`);
-  /// a payload longer than a week of them is not a row's shape.
-  static const int _rowSparklineMaxCloses = 200;
+  /// The cache row holds the last twenty-four 1H buckets and no more
+  /// (decision 0074 §3a).
+  static const int _rowSparklineMaxCloses = 24;
+
+  /// The one table decision 0074 publishes for a refused window — shared by
+  /// the row sparkline and by `range24h`, because both read the same cache
+  /// row. A code outside it is a payload this client does not understand, not
+  /// a reason it silently swallows.
+  static const Set<String> _sparklineRefusals = <String>{
+    'MARKET_PROVIDER_GECKOTERMINAL_DISABLED',
+    'MARKET_SPARKLINE_NOT_CACHED',
+    'MARKET_SPARKLINE_EXPIRED',
+    'MARKET_SPARKLINE_EMPTY',
+    'MARKET_FACT_CACHE_UNAVAILABLE',
+    'ASSET_NOT_READABLE',
+    'ASSET_BLOCKED',
+  };
 
   static MarketWatchlistBlock _watchlistBlock(Object? raw) {
     if (_isUnavailable(raw)) {
@@ -505,6 +546,63 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         ordering: ordering,
       ),
       items: items,
+    );
+  }
+
+  /// `{status, high, low, bars, observedAt, source, quality}` — the frozen
+  /// 24-hour window (decision 0074 §4.1).
+  ///
+  /// It reads the same warmed cache row as the row sparkline, so it carries
+  /// the same provider, the same quality ladder and the same refusal table. A
+  /// `high` below its `low` is not a window and is refused rather than drawn;
+  /// `bars` is one to twenty-four, and fewer than twenty-four is still
+  /// `available` — it means the asset has only that many hours of history.
+  static MarketRange24h _range24h(Object? raw) {
+    if (raw is! Map) LoopV2ChainCodec.invalid();
+    if (raw['status'] != 'available') {
+      final refusal = LoopV2Contract.strictMap(raw, const <String>{
+        'status',
+        'reasonCode',
+      });
+      if (refusal['status'] != 'unavailable') LoopV2ChainCodec.invalid();
+      final reasonCode = LoopV2ChainCodec.requireReasonCode(
+        refusal,
+        'reasonCode',
+      );
+      if (!_sparklineRefusals.contains(reasonCode)) {
+        LoopV2ChainCodec.invalid();
+      }
+      return MarketRange24hUnavailable(reasonCode);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'high',
+      'low',
+      'bars',
+      'observedAt',
+      'source',
+      'quality',
+    });
+    if (map['source'] != 'geckoterminal') LoopV2ChainCodec.invalid();
+    final rawQuality = map['quality'];
+    if (rawQuality is! String) LoopV2ChainCodec.invalid();
+    final quality = LoopFactQuality.tryParse(rawQuality);
+    if (quality == null || quality == LoopFactQuality.unavailable) {
+      LoopV2ChainCodec.invalid();
+    }
+    final high = LoopV2ChainCodec.requireDecimal(map, 'high');
+    final low = LoopV2ChainCodec.requireDecimal(map, 'low');
+    if (high < low) LoopV2ChainCodec.invalid();
+    final bars = map['bars'];
+    if (bars is! int || bars < 1 || bars > _rowSparklineMaxCloses) {
+      LoopV2ChainCodec.invalid();
+    }
+    return MarketRange24hAvailable(
+      high: high,
+      low: low,
+      bars: bars,
+      observedAt: LoopV2ChainCodec.requireTimestamp(map, 'observedAt'),
+      quality: quality,
     );
   }
 

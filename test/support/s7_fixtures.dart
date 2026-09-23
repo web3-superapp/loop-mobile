@@ -497,9 +497,11 @@ MiningAssetRow s7MiningAssetRow({
   String weight = '0.8',
   String power = '0',
   String? proxyAssetId,
+  String? logoUrl,
 }) => MiningAssetRow(
   assetId: assetId,
   symbol: symbol,
+  logoUrl: logoUrl,
   holding: holding,
   referencePriceUsd: referencePriceUsd,
   referencePriceQuality: proxyAssetId == null
