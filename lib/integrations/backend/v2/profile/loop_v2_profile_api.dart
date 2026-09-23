@@ -424,6 +424,10 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
               'communities': values.visibility.communities.wireValue,
               'tradeHistory': values.visibility.tradeHistory.wireValue,
             },
+            // A full replacement: the three gates are required on every write,
+            // so a presentation-only edit resubmits them unchanged.
+            for (final gate in PrivacySocialGate.values)
+              gate.wireValue: gate.wireFor(open: values.social[gate]),
           },
         },
         options: Options(
@@ -524,6 +528,9 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
       'discoverable',
       'anonymousMode',
       'visibility',
+      'friendRequests',
+      'groupInvites',
+      'directMessages',
     });
     final visibility = LoopV2Contract.strictMap(
       privacy['visibility'],
@@ -550,6 +557,20 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
             miningPower: _audience(visibility['miningPower']),
             communities: _audience(visibility['communities']),
             tradeHistory: _audience(visibility['tradeHistory']),
+          ),
+          social: PrivacySocialGates(
+            friendRequests: _socialGate(
+              PrivacySocialGate.friendRequests,
+              privacy[PrivacySocialGate.friendRequests.wireValue],
+            ),
+            directMessages: _socialGate(
+              PrivacySocialGate.directMessages,
+              privacy[PrivacySocialGate.directMessages.wireValue],
+            ),
+            groupInvites: _socialGate(
+              PrivacySocialGate.groupInvites,
+              privacy[PrivacySocialGate.groupInvites.wireValue],
+            ),
           ),
         ),
         updatedAt: _nullableTimestamp(root['updatedAt']),
@@ -595,6 +616,20 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
     }
     try {
       return PrivacyAudience.fromWire(value);
+    } on InvalidPrivacyContractException {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+  }
+
+  /// A gate the server did not send is not "open by default" on this side:
+  /// the client cannot tell a missing field from a retired one, and guessing
+  /// would show a switch that does not describe the admission rule in force.
+  bool _socialGate(PrivacySocialGate gate, Object? value) {
+    if (value is! String) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    try {
+      return gate.openFromWire(value);
     } on InvalidPrivacyContractException {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }

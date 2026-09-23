@@ -14,6 +14,13 @@ void main() {
       }
       expect(values.visibility, const PrivacyVisibility.defaults());
       expect(PrivacyVisibility(), const PrivacyVisibility.defaults());
+      // Decision 0070: a missing server row means open, so the client's
+      // version-0 projection reports the gates the admission checks apply.
+      for (final gate in PrivacySocialGate.values) {
+        expect(values.social[gate], isTrue, reason: gate.wireValue);
+      }
+      expect(values.social, const PrivacySocialGates.defaults());
+      expect(PrivacySocialGates(), const PrivacySocialGates.defaults());
       expect(resource.version, 0);
       expect(resource.values, values);
       expect(resource.updatedAt, isNull);
@@ -63,6 +70,102 @@ void main() {
         expect(facet.wireValue.toLowerCase(), isNot(contains('copy')));
         expect(facet.name.toLowerCase(), isNot(contains('copy')));
       }
+    });
+
+    test('carries exactly the three reviewed gates and their wire values', () {
+      const exactFieldNames = <PrivacySocialGate, String>{
+        PrivacySocialGate.friendRequests: 'friendRequests',
+        PrivacySocialGate.directMessages: 'directMessages',
+        PrivacySocialGate.groupInvites: 'groupInvites',
+      };
+      const exactOpenValues = <PrivacySocialGate, String>{
+        PrivacySocialGate.friendRequests: 'enabled',
+        PrivacySocialGate.directMessages: 'friends',
+        PrivacySocialGate.groupInvites: 'friends',
+      };
+      expect(exactFieldNames.length, PrivacySocialGate.values.length);
+
+      for (final gate in PrivacySocialGate.values) {
+        expect(gate.wireValue, exactFieldNames[gate]);
+        expect(gate.openWireValue, exactOpenValues[gate]);
+        expect(gate.label, isNotEmpty);
+        expect(gate.wireFor(open: true), exactOpenValues[gate]);
+        expect(gate.wireFor(open: false), 'disabled');
+        expect(gate.openFromWire(exactOpenValues[gate]!), isTrue);
+        expect(gate.openFromWire('disabled'), isFalse);
+
+        // Anything outside this gate's own two-value enum is a contract
+        // violation, never a silent close: the other gate's open value is
+        // rejected too.
+        for (final invalid in <String>[
+          '',
+          'Disabled',
+          'disabled ',
+          'self',
+          'everyone',
+          'true',
+          gate == PrivacySocialGate.friendRequests ? 'friends' : 'enabled',
+        ]) {
+          expect(
+            () => gate.openFromWire(invalid),
+            throwsA(isA<InvalidPrivacyContractException>()),
+            reason: '${gate.wireValue} <- $invalid',
+          );
+        }
+      }
+    });
+
+    test('closes one gate at a time and leaves the other eight values', () {
+      const defaults = PrivacyValues.defaults();
+      final closedDirect = defaults.withSocialGate(
+        PrivacySocialGate.directMessages,
+        open: false,
+      );
+
+      expect(closedDirect.social.directMessages, isFalse);
+      expect(closedDirect.social.friendRequests, isTrue);
+      expect(closedDirect.social.groupInvites, isTrue);
+      expect(closedDirect.discoverable, isFalse);
+      expect(closedDirect.anonymousMode, isFalse);
+      expect(closedDirect.visibility, const PrivacyVisibility.defaults());
+      // No source is mutated in place.
+      expect(defaults, const PrivacyValues.defaults());
+      expect(closedDirect, isNot(defaults));
+
+      // A display edit carries the gates along; a gate edit carries the
+      // display values along. The write replaces all nine either way.
+      final alsoAnonymous = closedDirect.withAnonymousMode(true);
+      expect(alsoAnonymous.social, closedDirect.social);
+      expect(
+        closedDirect
+            .withSocialGate(PrivacySocialGate.directMessages, open: true)
+            .social,
+        const PrivacySocialGates.defaults(),
+      );
+      expect(
+        PrivacySocialGates(friendRequests: false)
+            .withGate(PrivacySocialGate.groupInvites, open: false),
+        PrivacySocialGates(friendRequests: false, groupInvites: false),
+      );
+    });
+
+    test('distinguishes values that differ only by one gate', () {
+      const open = PrivacyValues.defaults();
+      final closed = open.withSocialGate(
+        PrivacySocialGate.groupInvites,
+        open: false,
+      );
+      final sameClosed = const PrivacyValues.defaults().withSocialGate(
+        PrivacySocialGate.groupInvites,
+        open: false,
+      );
+
+      expect(closed, sameClosed);
+      expect(closed.hashCode, sameClosed.hashCode);
+      expect(closed, isNot(open));
+      expect(closed.hashCode, isNot(open.hashCode));
+      expect(PrivacyValues.copyOf(closed), closed);
+      expect(PrivacyValues.copyOf(closed).social, closed.social);
     });
 
     test('edits discoverability, anonymous mode, and one facet at a time', () {

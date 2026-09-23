@@ -45,6 +45,9 @@ void main() {
     bool anonymousMode = false,
     String totalAssets = 'self',
     String miningPower = 'everyone',
+    String friendRequests = 'enabled',
+    String groupInvites = 'friends',
+    String directMessages = 'friends',
     int version = 1,
     String? updatedAt = '2026-09-07T01:00:00.000Z',
   }) => <String, Object?>{
@@ -57,6 +60,9 @@ void main() {
         'communities': 'everyone',
         'tradeHistory': 'self',
       },
+      'friendRequests': friendRequests,
+      'groupInvites': groupInvites,
+      'directMessages': directMessages,
     },
     'version': version,
     'updatedAt': updatedAt,
@@ -443,6 +449,89 @@ void main() {
     expect(resource.values.visibility.miningPower, PrivacyAudience.everyone);
   });
 
+  test('GET /v2/profile/privacy parses the three social gates', () async {
+    final api = DioLoopV2ProfileApi(
+      _dio((options, handler) {
+        handler.resolve(
+          _response(
+            options,
+            privacyBody(
+              friendRequests: 'disabled',
+              groupInvites: 'friends',
+              directMessages: 'disabled',
+            ),
+          ),
+        );
+      }),
+    );
+
+    final resource = await api.getPrivacy(
+      accessToken: 'token',
+      clientVersion: '0.1.0+1',
+    );
+
+    expect(resource.values.social.friendRequests, isFalse);
+    expect(resource.values.social.groupInvites, isTrue);
+    expect(resource.values.social.directMessages, isFalse);
+  });
+
+  test('a privacy payload without the three gates is rejected', () async {
+    // The retired shape (decision 0030) carried only the display values. A
+    // client that accepted it would have to invent the admission rule.
+    for (final field in <String>[
+      'friendRequests',
+      'groupInvites',
+      'directMessages',
+    ]) {
+      final api = DioLoopV2ProfileApi(
+        _dio((options, handler) {
+          final body = privacyBody();
+          (body['privacy']! as Map<String, Object?>).remove(field);
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getPrivacy(accessToken: 'token', clientVersion: '0.1.0+1'),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+        reason: field,
+      );
+    }
+  });
+
+  test('a gate value outside its own enum is rejected, never closed', () async {
+    for (final body in <Map<String, Object?>>[
+      // `friends` is not a friendRequests value, and `enabled` is not a
+      // directMessages value: each gate has its own two-value enum.
+      privacyBody(friendRequests: 'friends'),
+      privacyBody(directMessages: 'enabled'),
+      privacyBody(groupInvites: 'everyone'),
+      privacyBody(groupInvites: ''),
+    ]) {
+      final api = DioLoopV2ProfileApi(
+        _dio((options, handler) => handler.resolve(_response(options, body))),
+      );
+
+      await expectLater(
+        api.getPrivacy(accessToken: 'token', clientVersion: '0.1.0+1'),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    }
+
+    final nonString = DioLoopV2ProfileApi(
+      _dio((options, handler) {
+        final body = privacyBody();
+        (body['privacy']! as Map<String, Object?>)['directMessages'] = true;
+        handler.resolve(_response(options, body));
+      }),
+    );
+
+    await expectLater(
+      nonString.getPrivacy(accessToken: 'token', clientVersion: '0.1.0+1'),
+      throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+    );
+  });
+
   test('a copyTradeVisibility field is rejected, never ignored', () async {
     final api = DioLoopV2ProfileApi(
       _dio((options, handler) {
@@ -479,6 +568,8 @@ void main() {
       ),
     );
 
+    // Nine required values: the write is a full replacement, so a
+    // display-only edit still restates the three gates.
     expect(captured?.data, <String, Object?>{
       'expectedVersion': 1,
       'privacy': <String, Object?>{
@@ -490,9 +581,53 @@ void main() {
           'communities': 'self',
           'tradeHistory': 'self',
         },
+        'friendRequests': 'enabled',
+        'groupInvites': 'friends',
+        'directMessages': 'friends',
       },
     });
   });
+
+  test(
+    'PUT /v2/profile/privacy sends each gate its own closed value',
+    () async {
+      RequestOptions? captured;
+      final api = DioLoopV2ProfileApi(
+        _dio((options, handler) {
+          captured = options;
+          handler.resolve(
+            _response(
+              options,
+              privacyBody(
+                version: 2,
+                friendRequests: 'disabled',
+                directMessages: 'disabled',
+              ),
+            ),
+          );
+        }),
+      );
+
+      final saved = await api.replacePrivacy(
+        accessToken: 'token',
+        clientVersion: '0.1.0+1',
+        expectedVersion: 1,
+        values: const PrivacyValues.defaults()
+            .withSocialGate(PrivacySocialGate.friendRequests, open: false)
+            .withSocialGate(PrivacySocialGate.directMessages, open: false),
+      );
+
+      final privacy =
+          (captured?.data! as Map<String, Object?>)['privacy']!
+              as Map<String, Object?>;
+      expect(privacy['friendRequests'], 'disabled');
+      expect(privacy['directMessages'], 'disabled');
+      expect(privacy['groupInvites'], 'friends');
+      expect(privacy.length, 6);
+      expect(saved.values.social.friendRequests, isFalse);
+      expect(saved.values.social.groupInvites, isTrue);
+    },
+  );
 
   test('GET /v2/profile/avatars is public and rejects duplicates', () async {
     RequestOptions? captured;

@@ -302,7 +302,12 @@ class _FriendshipRequired extends StatelessWidget {
           message: '还不能直接私聊',
           reason: requestSent
               ? '消息请求已经发出。对方接受之前，这里不会出现会话。'
-              : '私聊需要双方成为好友。先发送一条消息请求，对方接受后这个会话才会打开。'
+              // The refusal does not enumerate: a missing friendship, a
+              // closed 私聊 switch in the other account's privacy centre and
+              // an account that does not exist all answer the same way
+              // (decision 0070).
+              : '私聊需要双方成为好友，并且对方没有在隐私中心关掉私聊。'
+                    '先发送一条消息请求，对方接受后这个会话才会打开。'
                     '这个结果不代表对方账号一定存在。',
         ),
         if (!requestSent)
