@@ -1,8 +1,18 @@
 # 0086 · 每个代币都戴自己的 logo，红色只表示下跌
 
-- Status: Accepted（需求方 2026-09-23 晚三条反馈；主代理接手 S82a 收口）
-- Date: 2026-09-23
-- Scope: loop-mobile `lib/widgets/loop_token_card.dart`、`loop_price_move.dart`（新）、`loop_pages.dart`（`bottomBar` 槽位）、market/token 页、发现页行、wallet/mining/search 三处 codec 与行组件、`scripts/check_harness.py` K 线配色守卫
+## Status
+
+Accepted 2026-09-23。S82a，客户端单侧；需求方当晚三条反馈，主代理接手收口。不新增路由，93 条路由清单不变。
+
+改动范围：`lib/widgets/loop_token_card.dart`、`lib/widgets/loop_price_move.dart`（新）、
+`lib/widgets/loop_pages.dart`（`bottomBar` 槽位）、`lib/features/market/**`（代币页与行）、
+发现社区页行组件、wallet / mining / search 三处 codec 与行组件、
+`scripts/check_harness.py`（K 线配色守卫改为两色）。
+
+## Alternatives considered
+
+- MA7 / MA25 用设计稿的蓝 #68B9FF / 橙 #F2B562：会给行情页引入第三、第四个色相，与 0084 §2「涨跌只有两色」相悖，暂保留 lime / chalk。
+- 24h 涨跌在本地由折线首尾推导：与后端 `range24h` 语义冲突（0074 已定义），不做。
 
 ## Context
 
