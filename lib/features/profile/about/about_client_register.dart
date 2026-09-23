@@ -105,7 +105,7 @@ const List<LoopOpenSourceEntry> loopClientOpenSourceEntries =
         license: 'MIT',
       ),
       LoopOpenSourceEntry(
-        name: 'Sora / IBM Plex Mono / Noto Sans SC',
+        name: 'IBM Plex Mono / Noto Sans SC',
         purpose: '界面字体',
         license: 'SIL OFL 1.1',
       ),

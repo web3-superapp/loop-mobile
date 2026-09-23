@@ -54,16 +54,15 @@ flutter:
     - assets/people/
     - assets/communities/
     - assets/icons/
-  # Sora is a variable font; weights are selected through FontVariation
-  # (see LoopTypography). IBM Plex Mono ships the three static weights the
-  # prototype uses. Noto Sans SC ships as three static instances of the
-  # upstream variable file, subset to the GB2312 repertoire plus CJK and
-  # fullwidth punctuation (7.0 MB total instead of 17.7 MB per weight); it
-  # carries every Han glyph the app renders. See decision 0069.
+  # The proportional voice is the platform's own UI sans (SF Pro on Apple,
+  # Roboto on Android) and is not bundled; decision 0080 dropped Sora with it.
+  # IBM Plex Mono stays for addresses, hashes and code — the one fixed-width
+  # job. Noto Sans SC ships as three static instances of the upstream variable
+  # file, subset to the GB2312 repertoire plus CJK and fullwidth punctuation
+  # (7.0 MB total instead of 17.7 MB per weight); it is the controlled Chinese
+  # face for every device whose own stack we do not trust. See decisions 0069
+  # and 0080.
   fonts:
-    - family: Sora
-      fonts:
-        - asset: assets/fonts/Sora-Variable.ttf
     - family: Noto Sans SC
       fonts:
         - asset: assets/fonts/NotoSansSC-Regular.ttf

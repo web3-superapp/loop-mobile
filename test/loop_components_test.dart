@@ -21,7 +21,7 @@ Future<void> _pump(WidgetTester tester, Widget child, {Size? size}) async {
 }
 
 void main() {
-  testWidgets('LoopTopbar renders a 44px back button and a 24/800 title', (
+  testWidgets('LoopTopbar renders a 44px back button and a 22/600 title', (
     tester,
   ) async {
     var backs = 0;
@@ -41,8 +41,9 @@ void main() {
     await tester.tap(back);
     expect(backs, 1);
     final title = tester.widget<Text>(find.text('无网络'));
-    expect(title.style?.fontSize, 24);
-    expect(title.style?.fontWeight, FontWeight.w800);
+    // Band 2 `headingLg`: 22 semibold since decision 0080.
+    expect(title.style?.fontSize, 22);
+    expect(title.style?.fontWeight, FontWeight.w600);
     expect(find.text('SYSTEM'), findsOneWidget);
     expect(find.bySemanticsLabel('搜索'), findsOneWidget);
   });
@@ -187,7 +188,12 @@ void main() {
     );
     final up = tester.widget<Text>(find.text('+4.8%'));
     expect(up.style?.color, LoopColors.lime);
-    expect(up.style?.fontFamily, LoopFonts.mono);
+    // Band 7: the page's own sans with tabular figures (decision 0080).
+    expect(up.style?.fontFamily, LoopFonts.system);
+    expect(
+      up.style?.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
+    );
     final down = tester.widget<Text>(find.text('-1.2%'));
     expect(down.style?.color, LoopColors.chalk);
     await tester.tap(find.text('PEPE'));
@@ -477,7 +483,11 @@ void main() {
       greaterThanOrEqualTo(LoopTouch.minimum),
     );
     final value = tester.widget<Text>(find.text('Swap'));
-    expect(value.style?.fontFamily, LoopFonts.mono);
+    expect(value.style?.fontFamily, LoopFonts.system);
+    expect(
+      value.style?.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
+    );
     expect(value.textAlign, TextAlign.right);
   });
 

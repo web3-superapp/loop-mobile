@@ -70,12 +70,12 @@ void main() {
       );
       // The whole name, in the same bar, with all four tools still in it.
       expect(title.didExceedMaxLines, isFalse);
-      expect(title.text.style!.fontSize, 18);
+      expect(title.text.style!.fontSize, 17);
       expect(find.byType(LoopIconButton), findsNWidgets(5));
       expect(tester.getSize(find.byType(LoopTopbar)).height, lessThan(90));
     });
 
-    testWidgets('an ordinary bar keeps the 24pt heading', (tester) async {
+    testWidgets('an ordinary bar keeps the full heading step', (tester) async {
       await tester.pumpWidget(_app(LoopTopbar(title: '关于', onBack: () {})));
       await tester.pump();
 
@@ -85,7 +85,7 @@ void main() {
             .text
             .style!
             .fontSize,
-        24,
+        22,
       );
     });
   });
