@@ -206,11 +206,39 @@ sealed class CommunityAiBrief {
   const CommunityAiBrief();
 }
 
+/// The summary for today is being written right now.
+///
+/// The server answers the overview read immediately and generates the brief
+/// behind it (loop-api S76b), because a summary that took twelve seconds to
+/// write was holding the whole page — and the socket closed before it
+/// arrived, so the reader was told a submission had gone unconfirmed over a
+/// page they had only opened.
+const communityAiBriefPendingReasonCode = 'COMMUNITY_AI_BRIEF_PENDING';
+
+/// The community's summary budget for today is spent.
+///
+/// Like the pending one it is a state rather than a failure — the rest of the
+/// overview is complete — but nothing the reader or the page can do brings it
+/// back before tomorrow, so it earns no re-read.
+const communityAiBriefQuotaExhaustedReasonCode = 'COMMUNITY_AI_QUOTA_EXHAUSTED';
+
 @immutable
 final class CommunityAiBriefUnavailable extends CommunityAiBrief {
   const CommunityAiBriefUnavailable(this.reasonCode);
 
   final String reasonCode;
+
+  /// Whether the summary is on its way rather than missing. It is the one
+  /// reason worth reading again without the reader asking.
+  bool get isGenerating => reasonCode == communityAiBriefPendingReasonCode;
+
+  /// Whether the absence is a state rather than something that went wrong.
+  ///
+  /// Two of the eight reasons are: the summary is being written, and today's
+  /// budget is spent. Neither is a failure of this read, so neither is said
+  /// in the failing voice.
+  bool get isNeutral =>
+      isGenerating || reasonCode == communityAiBriefQuotaExhaustedReasonCode;
 
   @override
   bool operator ==(Object other) =>
@@ -465,7 +493,10 @@ String communityAiReason(String? reasonCode) => switch (reasonCode) {
   'ANNOUNCEMENT_SOURCE_UNAVAILABLE' => '还没有接入公告和官方动态，这一项暂时答不了。',
   'AI_WRITE_LANE_NOT_DELIVERED' => 'AI 巡查还没有开放。',
   'COMMUNITY_ANALYTICS_NOT_DELIVERED' => '社区分析还没有开放。',
-  // Why today's summary is missing.
+  // Why today's summary is missing. The eight codes are a closed set; an
+  // unknown one still keeps a neutral sentence rather than a code.
+  communityAiBriefPendingReasonCode => '今日摘要生成中，稍后下拉刷新。',
+  communityAiBriefQuotaExhaustedReasonCode => '今日摘要配额已用完，明天再来。',
   'COMMUNITY_AI_MEMBERSHIP_REQUIRED' => '先加入这个社区，才能读到社区里的讨论。',
   'COMMUNITY_CHAT_NOT_CONNECTED' => '这个社区还没有开通官方群，没有可以总结的讨论。',
   'COMMUNITY_CHAT_NOT_OBSERVED' => '这次没能读到官方群的讨论。',
@@ -486,6 +517,33 @@ String communityAiKnowledgeLine(CommunityAiKnowledge knowledge) {
   return '知识源 ${knowledge.sourceCount} 项 · 更新于 '
       '${communityAiTimestamp(updatedAt)}';
 }
+
+/// The hero's two lines when there is no summary: what the state is, and what
+/// it means for the reader.
+///
+/// A summary that is being written and a budget that is spent are states, so
+/// they are headed as themselves; every other reason is this read failing to
+/// produce one, and says 「今日讨论读不到」 over the server's own sentence.
+({String heading, String caption}) communityAiBriefAbsence(
+  CommunityAiBriefUnavailable brief,
+) => switch (brief.reasonCode) {
+  communityAiBriefPendingReasonCode => (
+    heading: communityAiBriefPendingHeading,
+    caption: '正在根据今天的讨论生成，稍后下拉刷新。',
+  ),
+  communityAiBriefQuotaExhaustedReasonCode => (
+    heading: communityAiBriefQuotaHeading,
+    caption: '明天再来。这一页的其余内容不受影响。',
+  ),
+  _ => (heading: '今日讨论读不到', caption: communityAiReason(brief.reasonCode)),
+};
+
+/// The hero's heading while the summary is being written. It is a state, not
+/// a failure, so it neither says 「读不到」 nor offers a 重试.
+const communityAiBriefPendingHeading = '今日摘要生成中';
+
+/// The hero's heading once today's summary budget is spent.
+const communityAiBriefQuotaHeading = '今日摘要配额已用完';
 
 /// The hero's heading: how much was said in the window behind the summary.
 String communityAiBriefHeading(CommunityAiBriefAvailable brief) => brief.bounded

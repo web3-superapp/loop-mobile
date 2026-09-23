@@ -641,7 +641,18 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
 }
 
 /// Maps the V2 error catalogue onto the narrow feature-facing kinds.
-CommunityFailureKind communityFailureKindForV2(LoopBackendFailure failure) {
+///
+/// [write] is what the caller did, and it changes what an unreadable answer
+/// means. After a command the outcome is genuinely unresolved — the server
+/// may have applied it — and the reader is told not to submit again. After a
+/// GET there was no submission at all, so the same transport failure is a
+/// page that did not load (R3-2, already settled for the chain family in
+/// decision 0057 and repeated here after the AI overview read greeted a slow
+/// summary with 「结果未确认…不要重复提交」).
+CommunityFailureKind communityFailureKindForV2(
+  LoopBackendFailure failure, {
+  required bool write,
+}) {
   return switch (failure.code) {
     'PERMISSION_DENIED' ||
     'POLICY_BLOCKED' => CommunityFailureKind.permissionDenied,
@@ -661,9 +672,12 @@ CommunityFailureKind communityFailureKindForV2(LoopBackendFailure failure) {
       LoopBackendFailureKind.timeout => CommunityFailureKind.offline,
       LoopBackendFailureKind.cancelled => CommunityFailureKind.cancelled,
       // A payload the client could not parse leaves a write unresolved: the
-      // server may already have applied it.
+      // server may already have applied it. A read adopted nothing and
+      // submitted nothing, so it says only that.
       LoopBackendFailureKind.invalidPayload =>
-        CommunityFailureKind.outcomeUnknown,
+        write
+            ? CommunityFailureKind.outcomeUnknown
+            : CommunityFailureKind.invalidData,
       LoopBackendFailureKind.unavailable ||
       LoopBackendFailureKind.authentication ||
       LoopBackendFailureKind.invalidConfiguration =>

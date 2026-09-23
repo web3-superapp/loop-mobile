@@ -36,5 +36,6 @@ final class DioLoopV2SearchGateway implements SearchGateway {
       query: query,
       cursor: cursor,
     ),
+    write: false,
   );
 }

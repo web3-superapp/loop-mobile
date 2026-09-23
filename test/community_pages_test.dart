@@ -892,6 +892,30 @@ void main() {
       expect(find.textContaining('Community AI 还没有开放'), findsOneWidget);
     });
 
+    testWidgets('an open Community AI is not announced as closed', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(detail: testDetail()),
+        meta: testMetaSnapshot(
+          communityAi: LoopV2CapabilityAvailability.available,
+        ),
+      );
+
+      // The capability document is the only thing that decides this line: an
+      // available AI leaves nothing under the button, and the page no longer
+      // contradicts the working page the button opens.
+      expect(find.textContaining('Community AI 还没有开放'), findsNothing);
+      final reasons = find.byKey(
+        const ValueKey<String>('community-profile-action-reasons'),
+      );
+      await scrollToCommunitySection(tester, reasons);
+      // The other two controls keep their own reasons on the same line.
+      expect(find.textContaining('该社区还没有官方群频道。'), findsOneWidget);
+    });
+
     testWidgets('the verification state is stated once, in words', (
       tester,
     ) async {

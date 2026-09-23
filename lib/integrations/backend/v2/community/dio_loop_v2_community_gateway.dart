@@ -31,7 +31,7 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
   String get _clientVersion => _clientMetadata.clientVersion;
 
   Future<T> _read<T>(Future<T> Function(String accessToken) request) =>
-      executeCommunityRequest(_session, request);
+      executeCommunityRequest(_session, request, write: false);
 
   Future<T> _write<T>(
     String signature,
@@ -42,6 +42,7 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
       final result = await executeCommunityRequest(
         _session,
         (accessToken) => request(accessToken, key),
+        write: true,
       );
       _keyring.release(signature);
       return result;
@@ -246,15 +247,21 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
 
 /// Runs one authenticated S3 request and maps every transport failure onto the
 /// narrow feature-facing kind. No provider detail ever escapes.
+///
+/// [write] states whether a command was sent, and it is required because the
+/// two answers differ in what they tell the reader to do: only a command can
+/// leave an outcome unresolved. Every `_write` helper below passes `true`;
+/// every read passes `false`.
 Future<T> executeCommunityRequest<T>(
   LoopAuthenticatedSession session,
-  Future<T> Function(String accessToken) request,
-) async {
+  Future<T> Function(String accessToken) request, {
+  required bool write,
+}) async {
   try {
     return await session.execute(request);
   } on LoopBackendFailure catch (failure) {
     throw CommunityGatewayException(
-      communityFailureKindForV2(failure),
+      communityFailureKindForV2(failure, write: write),
       // The allowlisted scalars the envelope carried, nothing else from it.
       reasonCode: failure.detailsSafe?.reasonCode,
       scope: failure.detailsSafe?.scope,

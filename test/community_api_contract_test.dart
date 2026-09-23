@@ -846,7 +846,10 @@ void main() {
         } on LoopBackendFailure catch (failure) {
           expect(failure.code, 'PROFILE_ACTIVATION_REQUIRED');
           expect(failure.requestId, requestId);
-          expect(communityFailureKindForV2(failure).name, 'activationRequired');
+          expect(
+            communityFailureKindForV2(failure, write: true).name,
+            'activationRequired',
+          );
         }
       },
     );
@@ -1389,7 +1392,10 @@ void main() {
         } on LoopBackendFailure catch (failure) {
           expect(failure.code, 'RATE_LIMITED');
           expect(failure.retryable, isTrue);
-          expect(communityFailureKindForV2(failure).name, 'rateLimited');
+          expect(
+            communityFailureKindForV2(failure, write: false).name,
+            'rateLimited',
+          );
         }
       },
     );
@@ -1505,7 +1511,10 @@ void main() {
         fail('the member search must not succeed');
       } on LoopBackendFailure catch (failure) {
         expect(failure.code, 'RATE_LIMITED');
-        expect(communityFailureKindForV2(failure).name, 'rateLimited');
+        expect(
+          communityFailureKindForV2(failure, write: false).name,
+          'rateLimited',
+        );
       }
     });
 
@@ -1534,7 +1543,10 @@ void main() {
         fail('the governance view must not succeed');
       } on LoopBackendFailure catch (failure) {
         expect(failure.code, 'PERMISSION_DENIED');
-        expect(communityFailureKindForV2(failure).name, 'permissionDenied');
+        expect(
+          communityFailureKindForV2(failure, write: false).name,
+          'permissionDenied',
+        );
       }
     });
   });
