@@ -1346,6 +1346,15 @@ void main() {
       expect(cake.isProxiedPrice, isFalse);
       expect(cake.referencePriceProxyAssetId, isNull);
       expect(cake.blockNumber, '122037728');
+      // Decision 0086: the artwork the block carries reaches the row, so the
+      // 算力明细 draws the token's own mark instead of a monogram. S78b
+      // validated the block here and dropped it.
+      expect(
+        cake.logoUrl,
+        'https://raw.githubusercontent.com/trustwallet/assets/master/'
+        'blockchains/smartchain/assets/'
+        '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82/logo.png',
+      );
       // The chain's own coin has no pair of its own, so its price is the
       // declared proxy's and the row says which asset that is.
       final native = assets.included.last;
@@ -1436,6 +1445,9 @@ void main() {
       expect(assets.excluded.single.assetId, _usdtAssetId);
       expect(assets.excluded.single.symbol, 'USDT');
       expect(assets.excluded.single.reasonCode, 'COMMUNITY_WEIGHT_AMBIGUOUS');
+      // An excluded row's `unavailable` logo is a null on the model, and the
+      // row falls back to the bundled face and then the monogram.
+      expect(assets.excluded.single.logoUrl, isNull);
     });
 
     test(

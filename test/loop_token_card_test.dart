@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 const _pepe = LoopTokenCardModel(
@@ -12,7 +13,7 @@ const _pepe = LoopTokenCardModel(
   identifier: '0x6982…1933',
   price: r'$0.000013',
   change: '+4.8%',
-  changeUp: true,
+  move: LoopPriceMove.up,
   metrics: <LoopTokenMetric>[
     LoopTokenMetric('市值', r'$5.4B'),
     LoopTokenMetric('流动性', r'$42.8M'),
@@ -223,7 +224,7 @@ void main() {
               identifier: '...9B2ELOOP',
               price: r'$0.0024',
               change: '+712%',
-              changeUp: true,
+              move: LoopPriceMove.up,
               badge: 'GRADUATED',
               metrics: <LoopTokenMetric>[
                 LoopTokenMetric('市值', r'$2.4M'),
@@ -265,7 +266,7 @@ void main() {
               identifier: '0x3f8a...2b91',
               price: r'$0.0000079',
               change: '+842%',
-              changeUp: true,
+              move: LoopPriceMove.up,
               riskFacts: <LoopTokenRiskFact>[
                 LoopTokenRiskFact(
                   fact: '该合约含 mint 函数，发行方可增发',

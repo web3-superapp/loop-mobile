@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,6 +31,7 @@ import 'package:loop_mobile/integrations/communication/stream_video_providers.da
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// `community-profile` · one community record.
@@ -852,6 +852,7 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
             model: LoopTokenCardModel(
               symbol: symbol,
               identifier: loopTruncatedAssetId(widget.assetKey),
+              logoUrl: detail?.logoUrl,
               price: price != null && price.isAvailable
                   ? loopFormatUsd(price.value!)
                   : null,
@@ -863,9 +864,9 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
               change: change != null && change.isAvailable
                   ? loopFormatPercent(change.value!)
                   : null,
-              changeUp: change != null && change.isAvailable
-                  ? change.value! >= Decimal.zero
-                  : null,
+              move: LoopPriceMove.of(
+                change != null && change.isAvailable ? change.value : null,
+              ),
               metrics: <LoopTokenMetric>[
                 _metric('市值', detail?.marketCap),
                 _metric('流动性', detail?.liquidityUsd),

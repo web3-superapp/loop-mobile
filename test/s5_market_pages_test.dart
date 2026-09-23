@@ -308,9 +308,11 @@ void main() {
           findsOneWidget,
         );
         // The price unit is the pool's other token, never USD. It is the
-        // provider's own string, so it prints verbatim — inside a label that
-        // says what the card is.
-        expect(find.text('K 线 · 单位 USDT per WBNB'), findsOneWidget);
+        // provider's own string and prints verbatim. S82a gave the card's
+        // heading row to the periods and the averages, so the unit moved onto
+        // the provenance line under the panel, where the source and the time
+        // already are.
+        expect(find.textContaining('单位 USDT per WBNB'), findsOneWidget);
       },
     );
 
@@ -338,7 +340,7 @@ void main() {
         // The aggregate note is not swallowed by the proxy note; it sits in
         // the provenance line under the chart.
         expect(find.textContaining('按成交价折算'), findsOneWidget);
-        expect(find.text('K 线 · 单位 USD per WBNB'), findsOneWidget);
+        expect(find.textContaining('单位 USD per WBNB'), findsOneWidget);
       },
     );
 
@@ -427,27 +429,41 @@ void main() {
 
       final cells = find.byKey(const ValueKey<String>('token-quote-cells'));
       // A cell is a quarter of the screen wide, so it carries the magnitude
-      // and a phrase, never a full figure and never a whole sentence.
+      // and a phrase, never a full figure and never a whole sentence. The
+      // window is the server's own (decision 0074 §4.1) and prints at the
+      // list's price step.
       expect(
-        find.descendant(of: cells, matching: find.text(r'$9.9M')),
+        find.descendant(of: cells, matching: find.text(r'$748.90')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: cells, matching: find.text('8M')),
+        find.descendant(of: cells, matching: find.text(r'$746.50')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(of: cells, matching: find.text(r'$1.2M')),
+        findsOneWidget,
+      );
+      // 市值 was not reported, so its cell says so rather than printing 0.
       expect(
         find.descendant(of: cells, matching: find.text('未报告')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: cells, matching: find.textContaining('9,876,543')),
+        find.descendant(of: cells, matching: find.textContaining('1,234,567')),
         findsNothing,
       );
 
-      // S78b: 24H 成交额 / 流动性 / 市值 / 持有人 are the four cells, so the
-      // block below carries only what they have no cell for, and one
-      // provenance line stands for the whole read.
+      // S82a: 24h 高 / 24h 低 / 24h 成交额 / 市值 are the four cells the
+      // approved design puts over the chart; 持有人 and 流动性 moved to the
+      // 社区 tab's strip and 完全稀释估值 — the one figure with no cell
+      // anywhere — to 简介, with one provenance line for the whole read.
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-section-tabs')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('fact-完全稀释估值')),
@@ -474,6 +490,12 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-section-tabs')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-security-facts')),

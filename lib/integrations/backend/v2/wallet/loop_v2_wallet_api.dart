@@ -513,11 +513,9 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'assetId',
       'symbol',
       'name',
-      // Required from decision 0072 on. `LoopAssetBalanceRow` lives in the
-      // Wallet slice, which this step does not own, so the block is validated
-      // and dropped: the read keeps working on a deployment that ships the
-      // field, and the Wallet rows pick the artwork up when that slice adds
-      // the field to its own model.
+      // Required from decision 0072 on, projected onto the row since
+      // decision 0086: the balance list, the send picker and the swap picker
+      // all draw it.
       'logo',
       'decimals',
       'address',
@@ -526,9 +524,9 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'valuation',
       'crossCheck',
     });
-    LoopV2ChainCodec.logoUrl(map['logo']);
     return LoopAssetBalanceRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
+      logoUrl: LoopV2ChainCodec.logoUrl(map['logo']),
       symbol: LoopV2ChainCodec.requireText(map, 'symbol', maxLength: 32),
       name: LoopV2ChainCodec.requireText(map, 'name'),
       decimals: LoopV2ChainCodec.requireInt(map, 'decimals', maximum: 36),
@@ -712,8 +710,8 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'assetId',
       'symbol',
       // Required from decision 0072 on. The Launch slot's tBNB arrives as
-      // `unavailable` with `TOKEN_LOGO_CHAIN_UNSUPPORTED`; validated and
-      // dropped, as above.
+      // `unavailable` with `TOKEN_LOGO_CHAIN_UNSUPPORTED`; the row still
+      // carries the field so the Launch slot draws whatever is published.
       'logo',
       'decimals',
       'rawValue',
@@ -723,7 +721,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'gasReserve',
       'snapshot',
     });
-    LoopV2ChainCodec.logoUrl(balance['logo']);
+    final logoUrl = LoopV2ChainCodec.logoUrl(balance['logo']);
     final assetId = LoopV2ChainCodec.requireAssetId(balance, 'assetId');
     // The balance belongs to the slot it was read on; a row keyed to another
     // chain is a different fact and must not be rendered here.
@@ -738,6 +736,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       reasonCode: null,
       nativeBalance: LoopLaunchChainNativeBalance(
         assetId: assetId,
+        logoUrl: logoUrl,
         symbol: LoopV2ChainCodec.requireText(balance, 'symbol', maxLength: 32),
         decimals: LoopV2ChainCodec.requireInt(balance, 'decimals', maximum: 36),
         rawValue: LoopV2ChainCodec.requireRawAmount(balance, 'rawValue'),

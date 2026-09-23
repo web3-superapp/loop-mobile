@@ -232,11 +232,8 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       const <String>{
         'assetId',
         'symbol',
-        // Required from decision 0072 on. 挖矿 renders no artwork yet, so the
-        // block is validated and dropped: accepting it is what keeps a
-        // deployment that ships the field from failing every read here, and
-        // inventing a field on `MiningAssetRow` for a logo no page draws
-        // would be a model that lies about what the page shows.
+        // Required from decision 0072 on, and projected onto the row since
+        // decision 0086: the power breakdown draws the asset's own mark.
         'logo',
         'holding',
         'referencePriceUsd',
@@ -250,7 +247,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       // without the key prices every row the old way.
       const <String>{'referencePricePairAddress'},
     );
-    LoopV2ChainCodec.logoUrl(map['logo']);
+    final logoUrl = LoopV2ChainCodec.logoUrl(map['logo']);
     final quality = MiningReferencePriceQuality.tryParse(
       LoopV2S7Codec.requireEnum(map, 'referencePriceQuality', const <String>{
         'fresh',
@@ -278,6 +275,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     // pool: without it the reader cannot tell what the number was read from.
     if (quality.isDerived && pairAddress == null) LoopV2S7Codec.invalid();
     return MiningAssetRow(
+      logoUrl: logoUrl,
       referencePricePairAddress: pairAddress,
       assetId: LoopV2S7Codec.requirePattern(
         map,
@@ -307,12 +305,12 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'assetId',
       'symbol',
-      // Required from decision 0072 on; validated and dropped, as above.
+      // Required from decision 0072 on; projected, as above.
       'logo',
       'reasonCode',
     });
-    LoopV2ChainCodec.logoUrl(map['logo']);
     return MiningExcludedAsset(
+      logoUrl: LoopV2ChainCodec.logoUrl(map['logo']),
       assetId: LoopV2S7Codec.requirePattern(
         map,
         'assetId',

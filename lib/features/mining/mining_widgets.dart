@@ -774,6 +774,7 @@ LoopRecordRow miningCompositionRow(
     key: ValueKey<String>('$keyPrefix-${row.assetId}'),
     leading: LoopTokenLogo(
       assetSymbol: row.symbol ?? label,
+      logoUrl: row.logoUrl,
       size: 44,
       semanticLabel: label,
     ),

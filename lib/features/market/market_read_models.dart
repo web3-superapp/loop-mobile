@@ -58,9 +58,10 @@ final class MarketAssetRow {
 
 /// A row's own close-price series, as the row contract delivers it.
 ///
-/// Wire shape `{status, interval, closes[], observedAt}` (S81b). Only an
-/// `available` series becomes one of these; an `unavailable` one becomes
-/// `null` on the row, because a 58pt row has nowhere to put a reason.
+/// Wire shape `{status, interval, closes[], observedAt, source, quality}`
+/// (decision 0074 §3a). Only an `available` series becomes one of these; an
+/// `unavailable` one becomes `null` on the row, because a 58pt row has nowhere
+/// to put a reason.
 ///
 /// The closes stay [Decimal] like every other figure LOOP reads: the sparkline
 /// normalises to `double` inside its painter and nowhere else. The series is
@@ -71,11 +72,17 @@ final class MarketRowSparklineSeries {
     required this.interval,
     required this.observedAt,
     required List<Decimal> closes,
+    this.quality = LoopFactQuality.fresh,
   }) : closes = List<Decimal>.unmodifiable(closes);
 
   final LoopCandleInterval interval;
   final DateTime observedAt;
   final List<Decimal> closes;
+
+  /// How the cache row was read. Never `unavailable` — that variant becomes a
+  /// `null` series. `stale` and `proxied` are both drawn; the marker for them
+  /// belongs to the token page, which has the room for a sentence.
+  final LoopFactQuality quality;
 
   /// A series with fewer than two points draws no line; the slot stays empty
   /// rather than showing a dot that reads as a flat market.
@@ -416,6 +423,7 @@ final class MarketAssetDetail {
     required this.community,
     required this.security,
     required this.holderCount,
+    this.range24h,
   });
 
   final MarketAssetIdentity asset;
@@ -435,8 +443,62 @@ final class MarketAssetDetail {
   final MarketSecurityBlock security;
   final LoopFact holderCount;
 
+  /// The 24-hour high and low (decision 0074 §4.1).
+  ///
+  /// Required on the wire, so the only way this is `null` is an owner that
+  /// built the model itself — a fixture or a preview. A refused window is
+  /// [MarketRange24hUnavailable] with the server's own reason; both it and a
+  /// `null` render 「—」, and neither is ever a zero. The client never derives
+  /// a high or a low from the candle series it happens to be holding.
+  final MarketRange24h? range24h;
+
   /// The CAIP identity this document answers for.
   String get assetId => asset.assetId;
+}
+
+/// The `range24h` block of `GET /v2/market/assets/{assetId}`.
+///
+/// Wire shape `{status, high, low, bars, observedAt, source, quality}`
+/// (decision 0074 §4.1). It is read from the same warmed cache row as the row
+/// sparkline, so it carries the same quality ladder and the same refusal
+/// table; the request path never calls the provider for it.
+@immutable
+sealed class MarketRange24h {
+  const MarketRange24h();
+}
+
+@immutable
+final class MarketRange24hAvailable extends MarketRange24h {
+  const MarketRange24hAvailable({
+    required this.high,
+    required this.low,
+    required this.bars,
+    required this.observedAt,
+    this.quality = LoopFactQuality.fresh,
+  });
+
+  final Decimal high;
+  final Decimal low;
+
+  /// How many of the last twenty-four 1H buckets the window covers, 1–24.
+  /// Fewer than twenty-four is still an answer — it means the asset has only
+  /// that many hours of history — and the page may say so.
+  final int bars;
+  final DateTime observedAt;
+
+  /// `fresh` / `stale` / `proxied`, never `unavailable`. A `stale` window is
+  /// still drawn and carries the marker every other stale figure carries.
+  final LoopFactQuality quality;
+
+  /// Whether the window is shorter than a full day.
+  bool get isPartialWindow => bars < 24;
+}
+
+@immutable
+final class MarketRange24hUnavailable extends MarketRange24h {
+  const MarketRange24hUnavailable(this.reasonCode);
+
+  final String reasonCode;
 }
 
 // ---------------------------------------------------------------------------

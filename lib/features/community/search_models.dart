@@ -84,6 +84,7 @@ final class SearchResult {
     required this.memberCount,
     required this.verificationStatus,
     required this.destination,
+    this.logoUrl,
   });
 
   final SearchResultType resultType;
@@ -91,6 +92,11 @@ final class SearchResult {
   final String title;
   final String? subtitle;
   final String? avatarRef;
+
+  /// The registry's published token artwork on an asset row, `null` on a user
+  /// or community row (decision 0072). A logo is never an identity: only
+  /// [stableId] addresses the result.
+  final String? logoUrl;
 
   /// Present only for a community result; `null` renders nothing, never `0`.
   final int? memberCount;

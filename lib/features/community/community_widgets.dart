@@ -1112,6 +1112,13 @@ class CommunityApplicationStatusCard extends StatelessWidget {
 ///
 /// It is a function, not a widget, because [LoopRecordGroup] needs the row
 /// instances themselves to draw its dividers.
+///
+/// Its second line is the prototype's (`app-v2.js` `renderRow('community')`:
+/// `<div class="row-s">${d.members} 成员 · …</div>`) and the home page's own
+/// joined row — the count on the line, the right-hand side left to the
+/// chevron. It used to hold 「已验证」 alone while 「312 / 成员」 stood in a
+/// two-line value column, which spent a 70pt row on four words and read as a
+/// half-empty list (requester, 2026-09-23; decision 0086).
 LoopRecordRow communityDirectoryRow({
   required CommunitySummary community,
   required VoidCallback? onTap,
@@ -1132,9 +1139,7 @@ LoopRecordRow communityDirectoryRow({
       title: community.name,
       // The slug is the server's addressing handle; it told a reader browsing
       // the directory nothing 「mock-vol-01」 did not already hide.
-      subtitle: verification,
-      trailing: '${community.memberCount}',
-      trailingCaption: '成员',
+      subtitle: '$members · $verification',
       onTap: onTap,
       position: position,
       semanticLabel: '${community.name}，$verification，$members',

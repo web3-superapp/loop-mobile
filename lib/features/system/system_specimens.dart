@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// The mono eyebrow a component-specification page wears.
@@ -48,7 +49,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           identifier: '0x6982…1933',
           price: r'$0.0000082',
           change: '+12.4%',
-          changeUp: true,
+          move: LoopPriceMove.up,
           metrics: const <LoopTokenMetric>[
             LoopTokenMetric('市值', r'$3.4B'),
             LoopTokenMetric('流动性', r'$18.2M'),
@@ -95,7 +96,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           identifier: '...9B2ELOOP',
           price: r'$0.0024',
           change: '+712%',
-          changeUp: true,
+          move: LoopPriceMove.up,
           badge: 'GRADUATED',
           metrics: <LoopTokenMetric>[
             LoopTokenMetric('市值', r'$2.4M'),
@@ -139,7 +140,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           identifier: '0x3f8a...2b91',
           price: r'$0.0000079',
           change: '+842%',
-          changeUp: true,
+          move: LoopPriceMove.up,
           riskFacts: <LoopTokenRiskFact>[
             LoopTokenRiskFact(
               fact: '该合约含 mint 函数，发行方可增发',

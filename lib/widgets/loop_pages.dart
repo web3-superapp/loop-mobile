@@ -332,6 +332,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.onRefresh,
     this.subtitle,
     this.framedTools = false,
+    this.bottomBar,
   });
 
   final LoopPageArchetype archetype;
@@ -339,6 +340,18 @@ class LoopDashboardPage extends StatelessWidget {
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
+
+  /// A control strip pinned to the bottom of the page, over the scroll.
+  ///
+  /// The page that needs one is 代币: on an exchange the two actions are
+  /// reachable from any point in the page, and here they were at the top of a
+  /// column the reader leaves as soon as they open the chart (decision 0084's
+  /// first unlanded item). The bar does not scroll, it sits above the safe
+  /// area, and the sections reserve exactly its height so the last row is
+  /// never covered by it.
+  ///
+  /// A blocked page has no actions to offer, so [block] hides the bar too.
+  final Widget? bottomBar;
 
   /// The 11px line under the title (`LoopTopbar.subtitle`).
   final String? subtitle;
@@ -379,7 +392,8 @@ class LoopDashboardPage extends StatelessWidget {
         : loopChildPageBottomInset(context);
     final topPadding = MediaQuery.paddingOf(context).top;
     final refresh = block == null ? onRefresh : null;
-    return Semantics(
+    final bar = block == null ? bottomBar : null;
+    final body = Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, layoutMode),
       explicitChildNodes: true,
@@ -426,6 +440,78 @@ class LoopDashboardPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+    if (bar == null) return body;
+    // The bar is measured, not guessed: the scroll below reserves exactly the
+    // height this widget reports, so the page's last row clears it on every
+    // text scale without a constant anyone has to keep in step.
+    return _LoopPageBottomBar(
+      key: const ValueKey<String>('loop-page-bottom-bar'),
+      bar: bar,
+      builder: (context, reserved) {
+        final data = MediaQuery.of(context);
+        // Added to the device's own inset, never substituted for it: the bar
+        // already sits above the home indicator, and replacing the padding
+        // would let the last row end under it.
+        return MediaQuery(
+          data: data.copyWith(
+            padding: data.padding.copyWith(
+              bottom: data.padding.bottom + reserved,
+            ),
+          ),
+          child: body,
+        );
+      },
+    );
+  }
+}
+
+/// Lays [bar] over a page and tells the page how much room it takes.
+///
+/// The bar is laid out first; its height becomes the page's bottom padding
+/// through the ambient `MediaQuery`, which is the same channel
+/// [loopChildPageBottomInset] already reads.
+class _LoopPageBottomBar extends StatefulWidget {
+  const _LoopPageBottomBar({
+    required this.bar,
+    required this.builder,
+    super.key,
+  });
+
+  final Widget bar;
+  final Widget Function(BuildContext context, double reserved) builder;
+
+  @override
+  State<_LoopPageBottomBar> createState() => _LoopPageBottomBarState();
+}
+
+class _LoopPageBottomBarState extends State<_LoopPageBottomBar> {
+  final GlobalKey _barKey = GlobalKey();
+  double _height = 0;
+
+  void _measure() {
+    final box = _barKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final height = box.size.height;
+    if ((height - _height).abs() < 0.5) return;
+    setState(() => _height = height);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _measure();
+    });
+    return Stack(
+      children: <Widget>[
+        Positioned.fill(child: widget.builder(context, _height)),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: KeyedSubtree(key: _barKey, child: widget.bar),
+        ),
+      ],
     );
   }
 }

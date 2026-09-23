@@ -376,9 +376,14 @@ final class MiningAssetRow {
     required this.power,
     required this.blockNumber,
     this.referencePricePairAddress,
+    this.logoUrl,
   });
 
   final String assetId;
+
+  /// The registry's published artwork, or `null` when none was published
+  /// (decision 0072). Never an identity — `assetId` alone keys the row.
+  final String? logoUrl;
 
   /// The Asset Registry's own `symbol()` for [assetId], `BNB` for the chain's
   /// coin. It is `null` only when the registry has no row for the asset; the
@@ -418,12 +423,16 @@ final class MiningExcludedAsset {
     required this.assetId,
     required this.symbol,
     required this.reasonCode,
+    this.logoUrl,
   });
 
   final String assetId;
 
   /// The registry's own symbol, on the same terms as an included row.
   final String? symbol;
+
+  /// The registry's published artwork, or `null` (decision 0072).
+  final String? logoUrl;
 
   final String reasonCode;
 }

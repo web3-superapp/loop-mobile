@@ -116,18 +116,17 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
             'avatarRef',
             // Required on every domain from decision 0072 on: the asset rows
             // carry a logo projection and the user and community rows carry
-            // `null`. 搜索 draws the identity atlas, not token artwork, so
-            // the block is validated against the contract's host allow-list
-            // here and then dropped; the surfaces that draw one read it from
-            // their own models.
+            // `null`. Validated against the contract's host allow-list and,
+            // since decision 0086, projected — the asset row draws it, the
+            // other two still draw the identity atlas.
             'logo',
             'memberCount',
             'verificationStatus',
           },
         );
-        if (snapshot['logo'] != null) {
-          LoopV2ChainCodec.logoUrl(snapshot['logo']);
-        }
+        final logoUrl = snapshot['logo'] == null
+            ? null
+            : LoopV2ChainCodec.logoUrl(snapshot['logo']);
         // `assetDetail` is the one destination that carries a parameter; the
         // other two must not carry one, so a row that tried to hand an
         // `assetId` to a profile destination is refused rather than opened.
@@ -192,6 +191,7 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
               'avatarRef',
               LoopV2ProjectionCodec.avatarRefPattern,
             ),
+            logoUrl: logoUrl,
             memberCount: memberCount as int?,
             verificationStatus: verification as String?,
             destination: target,

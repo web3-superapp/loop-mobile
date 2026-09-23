@@ -269,6 +269,7 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
       onTap: onTap,
       leading: LoopTokenLogo(
         assetSymbol: row.symbol,
+        logoUrl: row.logoUrl,
         fallbackMonogram: row.symbol,
       ),
       title: row.symbol,
