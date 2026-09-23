@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -180,6 +181,17 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         }
       }
     }
+    // The provider session is asked for the moment this page opens, not after
+    // the room read and the join have both come back.
+    //
+    // 「正在准备语音连接」 stood on the review device for twenty to thirty
+    // seconds after a room was created (walkthrough 2026-09-23 · a34). That
+    // step — the LOOP identity, `POST /v2/video/token`, and the provider's own
+    // connection — needs nothing from the room, and it used to start only
+    // when the media surface mounted, which is after `GET …/current` and
+    // after the join. Watched here it runs beside them. It joins no call and
+    // opens no microphone; that still happens only inside the media surface.
+    if (!blocked) ref.watch(streamVideoAuthorizationProvider);
     // A room that is being shown is a room that keeps being read: the cues
     // from this device's own call, and a floor under them for a device that
     // holds no call at all.
@@ -242,8 +254,15 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     await controller.refreshRoom();
     if (!mounted) return;
     await controller.refreshHandRaises();
-    if (!mounted || !widget.expanded) return;
-    for (final view in VoiceRoomRosterView.values) {
+    if (!mounted) return;
+    // The lobby draws 「正在发言」 from this device's own call while it holds
+    // one, and from LOOP's speaker roster when it does not — so that roster
+    // is read again on both views, and the listener list only where it is
+    // shown.
+    final views = widget.expanded
+        ? VoiceRoomRosterView.values
+        : const <VoiceRoomRosterView>[VoiceRoomRosterView.speaker];
+    for (final view in views) {
       if (!mounted) return;
       await controller.loadRoster(view);
     }
@@ -294,11 +313,18 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         archetype: LoopFolioArchetype.listing,
         ring: false,
         kicker: widget.expanded ? 'VOICE SESSION' : 'VOICE LOBBY',
-        heading: voiceRoomHeading(snapshot),
-        caption: snapshot == null
-            ? '语音房状态暂时读不到，这里不显示人数。'
-            : '进入前请确认主持人、发言人与录音说明。',
-        stamp: voiceRoomStamp(snapshot),
+        heading: voiceRoomHeading(
+          snapshot,
+          phase: state.phase,
+          expanded: widget.expanded,
+        ),
+        // The hero and the block below it answer the same question, so they
+        // are written from the same two facts: what was read, and what it
+        // said. 「语音房状态读不到」 stood above 「当前没有进行中的语音房」 on
+        // the review device — one screen claiming both that it knows and that
+        // it does not.
+        caption: voiceRoomCaption(snapshot, phase: state.phase),
+        stamp: voiceRoomStamp(snapshot, expanded: widget.expanded),
       ),
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '语音房'),
@@ -349,9 +375,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         else ...<Widget>[
           if (!widget.expanded) ...<Widget>[
             // `#scr-voiceroom` opens on who is talking, then says how many
-            // are listening and where that list is. The room's four figures
-            // are this page's fine print and follow the controls, the way the
-            // prototype's own note does (audit 2026-09-20 · B.8 / D-5).
+            // are listening and where that list is. It carries no table of
+            // figures at all: the room's own counts are in the hero and in
+            // the top bar, and each of them counts the host (audit
+            // 2026-09-20 · B.8 / D-5; walkthrough 2026-09-23 · a37/a41).
             const LoopLabel('正在发言', tight: true),
             VoiceRoomSpeakerGrid(
               roster: state.roster(VoiceRoomRosterView.speaker),
@@ -363,7 +390,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               onRetry: () =>
                   unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
             ),
-            LoopLabel('听众 ${snapshot.participants.listenerCount}'),
+            LoopLabel('听众 ${VoiceRoomHeadcount.of(snapshot).listening}'),
             // 「听众列表在展开视图查看」 stood here as a sentence with no way
             // out of it: the reader on the review device read it and asked
             // where that view was. The way out is the control itself, and
@@ -379,7 +406,6 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 ),
               ),
           ],
-          if (widget.expanded) _RoomFacts(snapshot: snapshot),
           if (snapshot.viewer.hasJoined && snapshot.room.isJoinable)
             if (!snapshot.room.audioOpen)
               // The room is live in LOOP and not open on the provider's side.
@@ -432,27 +458,60 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 // and the surface says nothing about the audio until it does.
                 onCallStopped: controller.refreshRoom,
               ),
+          // `#scr-voiceroom-full`: 发言人 → 举手队列 → 主持人控制 → 控制条.
+          // The listener roster is LOOP's own addition — it is where the
+          // lobby's 「查看听众名单」 leads — so it follows the prototype's
+          // three blocks rather than splitting them.
           if (widget.expanded) ...<Widget>[
-            for (final view in VoiceRoomRosterView.values)
-              _RosterSection(
-                view: view,
-                state: state,
-                onRetry: () => unawaited(controller.loadRoster(view)),
-                onLoadMore: () => unawaited(controller.loadMoreRoster(view)),
-                onCommand: (member, command) =>
-                    _runMemberCommand(controller, member, command),
-              ),
-            const LoopLabel('举手队列'),
-            _HandRaiseQueue(state: state),
-          ],
-          if (snapshot.viewer.showsHostControls) ...<Widget>[
-            const LoopLabel('主持人控制'),
-            _HostControls(
+            _RosterSection(
+              view: VoiceRoomRosterView.speaker,
               state: state,
-              onMuteAll: () => _run(controller.muteAll, '已请求全体静音'),
-              onEnd: () => _endRoom(controller),
-              onInvite: (profileId) =>
-                  _run(() => controller.inviteSpeaker(profileId), '已邀请发言'),
+              // LOOP's speaker roster holds the parts it granted and never
+              // the host (decision 0052), so a room whose only voice is the
+              // host read as 「当前没有发言人」 while the host was talking.
+              // The host's own row is stated here, and the heading counts it.
+              leading: _hostSpeakerRow(snapshot),
+              onRetry: () =>
+                  unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
+              onLoadMore: () => unawaited(
+                controller.loadMoreRoster(VoiceRoomRosterView.speaker),
+              ),
+              onCommand: (member, command) =>
+                  _runMemberCommand(controller, member, command),
+            ),
+            // The queue resource is a host read, so only a host has a figure
+            // for it; a listener has its own place and nothing else, and
+            // 「举手队列 0」 over 「第 2 位」 would be one more contradiction.
+            LoopLabel(
+              snapshot.viewer.isHost
+                  ? '举手队列 ${state.handRaises.length}'
+                  : '举手队列',
+            ),
+            _HandRaiseQueue(state: state),
+            // A host whose only published control is 结束房间 gets no section
+            // here: that control lives in the bar below, on both views.
+            if (snapshot.viewer.showsHostControls &&
+                (snapshot.viewer.canInviteSpeakers ||
+                    snapshot.viewer.canMuteAll)) ...<Widget>[
+              const LoopLabel('主持人控制'),
+              _HostControls(
+                state: state,
+                onMuteAll: () => _run(controller.muteAll, '已请求全体静音'),
+                onInvite: (profileId) =>
+                    _run(() => controller.inviteSpeaker(profileId), '已邀请发言'),
+              ),
+            ],
+            _RosterSection(
+              view: VoiceRoomRosterView.listener,
+              state: state,
+              onRetry: () => unawaited(
+                controller.loadRoster(VoiceRoomRosterView.listener),
+              ),
+              onLoadMore: () => unawaited(
+                controller.loadMoreRoster(VoiceRoomRosterView.listener),
+              ),
+              onCommand: (member, command) =>
+                  _runMemberCommand(controller, member, command),
             ),
           ],
           _ViewerActions(
@@ -464,9 +523,21 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             onLeave: () => _leave(controller),
             onRaise: () => _raiseHand(controller),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
+            onEnd: () => _endRoom(controller),
             onBack: back,
           ),
-          if (!widget.expanded) _RoomFacts(snapshot: snapshot),
+          if (!snapshot.providerSync.confirmed)
+            LoopNotice(
+              key: const ValueKey<String>('voiceroom-provider-unconfirmed'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '服务商侧未确认',
+              // The server names which write is unconfirmed; the reader gets
+              // that in words. The name itself never reaches the screen — it
+              // used to be printed in brackets, verbatim.
+              body: voiceRoomProviderSyncText(snapshot.providerSync.reason),
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
           if (state.failureKind != null)
             LoopNotice(
               key: const ValueKey<String>('voiceroom-action-failure'),
@@ -479,31 +550,61 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               ),
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
-          if (snapshot.viewer.hasJoined && snapshot.room.isLive)
-            LoopNotice(
-              key: const ValueKey<String>('voiceroom-back-note'),
+          // `#scr-voiceroom` closes on one `.notice` about the provider, and
+          // `#scr-voiceroom-full` on none. 「返回不等于离开」 and 「主持人不能
+          // 离开房间」 said the same thing twice more below it; the one line
+          // that matters is in the hero's caption now.
+          if (!widget.expanded)
+            const LoopNotice(
+              key: ValueKey<String>('voiceroom-provider-note'),
               icon: 'info',
-              title: '返回不等于离开',
-              body: snapshot.viewer.isHost
-                  ? '返回只是把语音房收起：房间仍在进行，顶部会留一条提示，'
-                        '点它随时回来。主持人没有「离开」，'
-                        '真要结束请点这一页的「结束房间」。'
-                  : '返回只是把语音房收起：你仍然在房间里，顶部会留一条提示，'
-                        '点它随时回来。要真正离开，请点这一页的「离开」。',
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              title: 'Stream Video / Audio Rooms',
+              body: '语音连接、发言权限与在线状态由 Stream 提供。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
-          const LoopNotice(
-            key: ValueKey<String>('voiceroom-provider-note'),
-            icon: 'info',
-            title: '语音由 Stream 承载',
-            body:
-                '连接状态、发言权限与麦克风状态全部来自 Stream 的官方通话状态；'
-                'LOOP 只负责房间记录、角色与举手队列。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+
+  /// The host's own row at the top of `发言人`, which LOOP's roster has not
+  /// got.
+  ///
+  /// `GET …/members` lists the parts LOOP granted and the host is in neither
+  /// view (decision 0052), so a room whose only voice was the host printed
+  /// 「当前没有发言人」 while the host was talking — and the heading above it
+  /// counted a person the list did not show. The row states the one thing
+  /// that is certain about a live room: it has a host. Who that host is, is
+  /// only known here when it is the reader.
+  LoopRecordRow? _hostSpeakerRow(VoiceRoomSnapshot snapshot) {
+    if (!snapshot.room.isLive) return null;
+    final isSelf = snapshot.viewer.isHost;
+    final name = isSelf ? '我' : '主持人';
+    // Whether the host's microphone is open is the call's answer, and this
+    // device only holds the call when the reader is the host.
+    var speaking = false;
+    var open = false;
+    final heard = isSelf ? _liveSpeakers(snapshot) : null;
+    for (final speaker in heard?.speakers ?? const <AudioRoomSpeaker>[]) {
+      if (!speaker.isLocal) continue;
+      open = true;
+      speaking = speaker.isSpeaking;
+    }
+    return LoopRecordRow(
+      key: const ValueKey<String>('voiceroom-speaker-host'),
+      leading: LoopInitialsAvatar(label: name),
+      title: name,
+      subtitle: speaking
+          ? '主持人 · 发言中'
+          : open
+          ? '主持人 · 麦克风已开'
+          : '主持人',
+      trailingBadge: speaking
+          ? const LoopBadge('发言中', kind: LoopBadgeKind.up)
+          : null,
+      chevron: false,
+      position: LoopRowPosition.first,
     );
   }
 
@@ -791,157 +892,6 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   }
 }
 
-class _RoomFacts extends ConsumerWidget {
-  const _RoomFacts({required this.snapshot});
-
-  final VoiceRoomSnapshot snapshot;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final observed = snapshot.participants.observed;
-    // What this device's own call reports, when it holds one. It is the same
-    // reading the call panel below prints, so the two never disagree.
-    final live = ref.watch(audioRoomLivePresenceProvider);
-    final thisRoom = live != null && live.roomId == snapshot.room.roomId;
-    final connected = thisRoom && live.connected;
-    // A call that is putting itself back, or one that just stopped, is not a
-    // room this device never connected to: falling back to LOOP's earlier
-    // observation printed 「上次观察在线 0」 above a panel that had just said
-    // the count comes back with the connection. While that is true the row
-    // carries the panel's own sentence and no figure at all.
-    final livePhase = thisRoom ? live.phase : AudioRoomLivePhase.idle;
-    final interrupted = audioRoomLivePhaseNote(livePhase);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        const LoopLabel('房间'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            // Decision 0051 separates the three figures that were read as one
-            // number: who is connected now, who is allowed in, and who LOOP
-            // has joined. Each keeps its own sentence.
-            // While this device is in the call, the live figure is the one
-            // that belongs at the top of the room: it is what the reader can
-            // hear. LOOP's own earlier look at the provider is not shown
-            // beside it — 「上次观察在线 0」 standing above 「此刻在通话里 1
-            // 人」 was one screen saying two things about the same room.
-            if (connected)
-              LoopRecordRow(
-                key: const ValueKey<String>('voiceroom-live'),
-                title: '当前在线',
-                // A connection whose head count has not arrived says so. It
-                // used to print 0 for the first ten to fifteen seconds under
-                // a green 「已连接」 — the exact shape of 「我已加入语音房，但是
-                // 人数还是 0」.
-                subtitle: live.participantCount == null
-                    ? '这台设备已经连上这次通话，人数还在统计；和下面通话面板里的是同一个数。'
-                    : '这台设备连着这次通话时数到的人数，和下面通话面板里的是同一个数。',
-                subtitleMaxLines: 2,
-                trailing: live.participantCount == null
-                    ? '正在统计'
-                    : '${live.participantCount}',
-                position: LoopRowPosition.first,
-              )
-            else if (interrupted != null)
-              LoopRecordRow(
-                key: const ValueKey<String>('voiceroom-live'),
-                title: '语音连接',
-                subtitle: interrupted,
-                subtitleMaxLines: 2,
-                trailing: livePhase == AudioRoomLivePhase.reconnecting
-                    ? '重连中'
-                    : '已断开',
-                position: LoopRowPosition.first,
-              )
-            else
-              LoopRecordRow(
-                key: const ValueKey<String>('voiceroom-live'),
-                // Not connected: the only figure there is was taken when
-                // LOOP last looked at the provider, so the row says that in
-                // its title as well as its sentence. A 0 here beside a
-                // 「LOOP 已加入 5」 below is not a contradiction — it counts
-                // connections, and an account that joined may not have one
-                // yet — so the row says that too.
-                title: 'LOOP 上次观察在线',
-                subtitle: !observed.isAvailable
-                    ? communicationUnavailableReason(
-                        observed.unavailable!.reasonCode,
-                      )
-                    : observed.participantCount == null
-                    ? '这一项这次没有给出。'
-                    : 'LOOP 上次看到的通话人数，不含还没连上语音的人；'
-                          '观察于 ${communityObservedAtLabel(observed.observedAt!)}',
-                subtitleMaxLines: 2,
-                trailing: observed.participantCount == null
-                    ? communityMissingFigure
-                    : '${observed.participantCount}',
-                position: LoopRowPosition.first,
-              ),
-            LoopRecordRow(
-              key: const ValueKey<String>('voiceroom-observed'),
-              title: '服务商已授权成员',
-              subtitle: observed.isAvailable
-                  ? '服务商允许进入的账号，不代表现在连着；'
-                        '观察于 ${communityObservedAtLabel(observed.observedAt!)}'
-                  : communicationUnavailableReason(
-                      observed.unavailable!.reasonCode,
-                    ),
-              subtitleMaxLines: 2,
-              trailing: observed.isAvailable
-                  ? '${observed.memberCount}'
-                  : communityMissingFigure,
-              position: LoopRowPosition.middle,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('voiceroom-joined'),
-              title: 'LOOP 已加入',
-              subtitle: '在 LOOP 记录里已加入这个房间的人，含主持人。',
-              trailing: snapshot.participants.joinedCount == null
-                  ? communityMissingFigure
-                  : '${snapshot.participants.joinedCount}',
-              position: LoopRowPosition.middle,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('voiceroom-role-intent'),
-              title: '发言人 / 听众',
-              // Three facts on one line: a single line cut them at
-              // 「也不是…」, which drops the whole disclaimer this row exists
-              // for.
-              subtitle: '按 LOOP 记录的角色统计，不含主持人，也不是在线人数。',
-              subtitleMaxLines: 2,
-              trailing:
-                  '${snapshot.participants.speakerCount} / '
-                  '${snapshot.participants.listenerCount}',
-              position: LoopRowPosition.middle,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('voiceroom-role'),
-              title: '我的角色',
-              subtitle: snapshot.viewer.hasJoined
-                  ? '由 LOOP 授予，不是通话里的发言权限'
-                  : '尚未加入这个房间',
-              trailing: snapshot.viewer.role?.label ?? '未加入',
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
-        if (!snapshot.providerSync.confirmed)
-          LoopNotice(
-            key: const ValueKey<String>('voiceroom-provider-unconfirmed'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '服务商侧未确认',
-            // The server names which write is unconfirmed; the reader gets
-            // that in words. The name itself never reaches the screen — it
-            // used to be printed in brackets, verbatim.
-            body: voiceRoomProviderSyncText(snapshot.providerSync.reason),
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
-      ],
-    );
-  }
-}
-
 /// The official foreground call surface.
 ///
 /// It is mounted only after the LOOP join grant exists, and it receives only a
@@ -1106,10 +1056,15 @@ class _RosterSection extends StatelessWidget {
     required this.onRetry,
     required this.onLoadMore,
     required this.onCommand,
+    this.leading,
   });
 
   final VoiceRoomRosterView view;
   final VoiceRoomPageState state;
+
+  /// A row the server's roster does not carry — the host's own — drawn above
+  /// the page LOOP read. A view with one of these is never empty.
+  final LoopRecordRow? leading;
   final VoidCallback onRetry;
   final VoidCallback onLoadMore;
   final Future<void> Function(
@@ -1121,55 +1076,61 @@ class _RosterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final roster = state.roster(view);
-    final participants = state.snapshot!.participants;
+    final headcount = VoiceRoomHeadcount.of(state.snapshot!);
     final count = view == VoiceRoomRosterView.speaker
-        ? participants.speakerCount
-        : participants.listenerCount;
+        ? headcount.speaking
+        : headcount.listening;
     final slug = view.wireName;
+    final extra = leading;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         LoopLabel('${view.label} $count'),
-        switch (roster.phase) {
-          CommunityViewPhase.loading => LoopSkeleton(
-            key: ValueKey<String>('voiceroom-roster-$slug-loading'),
-            type: LoopSkeletonType.list,
-            rows: 2,
-          ),
-          // An empty roster that was read is a fact about the room; it is not
-          // the same sentence as a roster that could not be read.
-          CommunityViewPhase.empty => LoopEmpty(
-            key: ValueKey<String>('voiceroom-roster-$slug-empty'),
-            message: '当前没有${view.label}',
-            reason: view == VoiceRoomRosterView.speaker
-                ? 'LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。'
-                : 'LOOP 记录里这个房间还没有听众。主持人不在这份名单里。',
-          ),
-          CommunityViewPhase.offline => LoopOfflineState(
-            key: ValueKey<String>('voiceroom-roster-$slug-offline'),
-            pausedActions: const <String>['邀请上麦', '移出发言', '静音', '取消静音'],
-            onRetry: onRetry,
-          ),
-          CommunityViewPhase.permission => LoopPermissionState(
-            key: ValueKey<String>('voiceroom-roster-$slug-permission'),
-            icon: 'shield',
-            title: '没有权限查看${view.label}名单',
-            purpose: communityFailureReason(roster.failureKind),
-          ),
-          CommunityViewPhase.unavailable => LoopEmpty(
-            key: ValueKey<String>('voiceroom-roster-$slug-unavailable'),
-            icon: 'warn',
-            message: '${view.label}名单当前不可用',
-            reason: communityFailureReason(roster.failureKind),
-          ),
-          CommunityViewPhase.error => LoopErrorState(
-            key: ValueKey<String>('voiceroom-roster-$slug-error'),
-            title: '${view.label}名单读不到',
-            reason: communityFailureReason(roster.failureKind),
-            onRetry: onRetry,
-          ),
-          CommunityViewPhase.ready => _rows(context, roster),
-        },
+        if (extra != null && roster.phase == CommunityViewPhase.empty)
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[_positioned(extra, LoopRowPosition.single)],
+          )
+        else
+          switch (roster.phase) {
+            CommunityViewPhase.loading => LoopSkeleton(
+              key: ValueKey<String>('voiceroom-roster-$slug-loading'),
+              type: LoopSkeletonType.list,
+              rows: 2,
+            ),
+            // An empty roster that was read is a fact about the room; it is not
+            // the same sentence as a roster that could not be read.
+            CommunityViewPhase.empty => LoopEmpty(
+              key: ValueKey<String>('voiceroom-roster-$slug-empty'),
+              message: '当前没有${view.label}',
+              reason: view == VoiceRoomRosterView.speaker
+                  ? 'LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。'
+                  : 'LOOP 记录里这个房间还没有听众。主持人不在这份名单里。',
+            ),
+            CommunityViewPhase.offline => LoopOfflineState(
+              key: ValueKey<String>('voiceroom-roster-$slug-offline'),
+              pausedActions: const <String>['邀请上麦', '移出发言', '静音', '取消静音'],
+              onRetry: onRetry,
+            ),
+            CommunityViewPhase.permission => LoopPermissionState(
+              key: ValueKey<String>('voiceroom-roster-$slug-permission'),
+              icon: 'shield',
+              title: '没有权限查看${view.label}名单',
+              purpose: communityFailureReason(roster.failureKind),
+            ),
+            CommunityViewPhase.unavailable => LoopEmpty(
+              key: ValueKey<String>('voiceroom-roster-$slug-unavailable'),
+              icon: 'warn',
+              message: '${view.label}名单当前不可用',
+              reason: communityFailureReason(roster.failureKind),
+            ),
+            CommunityViewPhase.error => LoopErrorState(
+              key: ValueKey<String>('voiceroom-roster-$slug-error'),
+              title: '${view.label}名单读不到',
+              reason: communityFailureReason(roster.failureKind),
+              onRetry: onRetry,
+            ),
+            CommunityViewPhase.ready => _rows(context, roster),
+          },
         if (roster.isReady && roster.nextCursor != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -1191,21 +1152,28 @@ class _RosterSection extends StatelessWidget {
 
   Widget _rows(BuildContext context, VoiceRoomRosterState roster) {
     final slug = view.wireName;
+    final rows = <LoopRecordRow>[
+      ?leading,
+      for (var index = 0; index < roster.items.length; index += 1)
+        _row(
+          context,
+          roster.items[index],
+          key: ValueKey<String>(
+            'voiceroom-member-$slug-'
+            '${roster.items[index].publicProfileId ?? index}',
+          ),
+        ),
+    ];
     return LoopRecordGroup(
       rows: <LoopRecordRow>[
-        for (var index = 0; index < roster.items.length; index += 1)
-          _row(
-            context,
-            roster.items[index],
-            key: ValueKey<String>(
-              'voiceroom-member-$slug-'
-              '${roster.items[index].publicProfileId ?? index}',
-            ),
-            position: index == 0
-                ? (roster.items.length == 1
+        for (var index = 0; index < rows.length; index += 1)
+          _positioned(
+            rows[index],
+            index == 0
+                ? (rows.length == 1
                       ? LoopRowPosition.single
                       : LoopRowPosition.first)
-                : index == roster.items.length - 1
+                : index == rows.length - 1
                 ? LoopRowPosition.last
                 : LoopRowPosition.middle,
           ),
@@ -1213,11 +1181,28 @@ class _RosterSection extends StatelessWidget {
     );
   }
 
+  /// One row where it happens to fall, so a list that gained a row at the top
+  /// still draws one rounded group.
+  static LoopRecordRow _positioned(
+    LoopRecordRow row,
+    LoopRowPosition position,
+  ) => LoopRecordRow(
+    key: row.key,
+    leading: row.leading,
+    title: row.title,
+    subtitle: row.subtitle,
+    trailing: row.trailing,
+    trailingBadge: row.trailingBadge,
+    subtitleMaxLines: row.subtitleMaxLines,
+    chevron: row.chevron,
+    onTap: row.onTap,
+    position: position,
+  );
+
   LoopRecordRow _row(
     BuildContext context,
     VoiceRoomMember member, {
     required Key key,
-    required LoopRowPosition position,
   }) {
     final speaking = view == VoiceRoomRosterView.speaker;
     // Only the server's own row commands say the intent can be taken back
@@ -1234,19 +1219,21 @@ class _RosterSection extends StatelessWidget {
         : (member.handRaised
               ? const LoopBadge('已举手', kind: LoopBadgeKind.mining)
               : null);
+    final name = voiceRoomMemberName(member);
     return LoopRecordRow(
       key: key,
-      title: voiceRoomMemberName(member),
+      leading: LoopInitialsAvatar(label: name),
+      title: name,
+      // `#scr-voiceroom-full .row-s` is one short phrase — 发言中, 已静音,
+      // 第 3 位 — not an account of where the mark came from. The state
+      // itself is the badge on the right, so the phrase carries what the
+      // badge cannot: the way out of a mute this reader can undo.
       subtitle: speaking
           ? (member.muted
-                ? (canUnmute
-                      ? '主持人已在 LOOP 侧静音，麦克风状态以 Stream 为准；这一行可以取消'
-                      : '主持人已在 LOOP 侧静音，麦克风状态以 Stream 为准')
-                : '可以在这次通话里发言')
-          : (member.handRaised ? '等待主持人邀请发言' : '只收听，未申请发言'),
-      subtitleMaxLines: 2,
+                ? (canUnmute ? '点这一行可以取消静音' : '主持人已在 LOOP 侧静音')
+                : '可以发言')
+          : (member.handRaised ? '等待主持人邀请发言' : '收听中'),
       trailingBadge: badge,
-      position: position,
       // Exactly the server's commands for this row: a row with none is not
       // tappable, which is what a non-host viewer sees on every row.
       onTap: member.commands.isEmpty || state.busy
@@ -1330,9 +1317,10 @@ class _HandRaiseQueue extends StatelessWidget {
         rows: <LoopRecordRow>[
           LoopRecordRow(
             key: const ValueKey<String>('voiceroom-queue-self'),
+            leading: const LoopInitialsAvatar(label: '我'),
             title: '我',
-            subtitle: '等待主持人邀请',
-            trailing: '第 ${own.sequence} 位',
+            subtitle: '第 ${own.sequence} 位 · 等待邀请',
+            trailingBadge: LoopBadge(own.sequence, kind: LoopBadgeKind.mining),
             position: LoopRowPosition.single,
           ),
         ],
@@ -1353,13 +1341,22 @@ class _HandRaiseQueue extends StatelessWidget {
             key: ValueKey<String>(
               'voiceroom-queue-${entries[index].handRaise.handRaiseId}',
             ),
+            leading: LoopInitialsAvatar(
+              label: voiceRoomDisplayName(
+                entries[index].name,
+                isSelf: entries[index].isSelf,
+              ),
+            ),
             title: voiceRoomDisplayName(
               entries[index].name,
               isSelf: entries[index].isSelf,
             ),
-            subtitle: '第 ${entries[index].handRaise.sequence} 位',
+            // `#scr-voiceroom-full` 的队列行：序号在前，状态在后.
+            subtitle:
+                '第 ${entries[index].handRaise.sequence} 位 · '
+                '${entries[index].handRaise.isPending ? '等待邀请' : '已邀请'}',
             trailingBadge: LoopBadge(
-              entries[index].handRaise.isPending ? '等待邀请' : '已邀请',
+              entries[index].handRaise.sequence,
               kind: entries[index].handRaise.isPending
                   ? LoopBadgeKind.mute
                   : LoopBadgeKind.up,
@@ -1379,13 +1376,11 @@ class _HostControls extends StatelessWidget {
   const _HostControls({
     required this.state,
     required this.onMuteAll,
-    required this.onEnd,
     required this.onInvite,
   });
 
   final VoiceRoomPageState state;
   final Future<void> Function() onMuteAll;
-  final Future<void> Function() onEnd;
   final Future<void> Function(String publicProfileId) onInvite;
 
   @override
@@ -1441,24 +1436,19 @@ class _HostControls extends StatelessWidget {
         // publishes them per member. A hand raise is a *request* to speak,
         // never proof that the account is speaking, so this block never
         // offered a removal against the queue and no longer has to say so.
-        LoopButtonPair(
-          children: <Widget>[
-            if (snapshot.viewer.canMuteAll)
+        // 结束房间 is the host's own way out and travels with the other
+        // controls in the bar below, on both views.
+        if (snapshot.viewer.canMuteAll)
+          LoopButtonPair(
+            children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('voiceroom-mute-all'),
                 label: '全体静音',
                 icon: 'voice-off',
                 onPressed: busy ? null : () => unawaited(onMuteAll()),
               ),
-            if (snapshot.viewer.canEndRoom)
-              LoopButton(
-                key: const ValueKey<String>('voiceroom-end'),
-                label: '结束房间',
-                icon: 'warn',
-                onPressed: busy ? null : () => unawaited(onEnd()),
-              ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
   }
@@ -1471,6 +1461,7 @@ class _ViewerActions extends StatelessWidget {
     required this.onLeave,
     required this.onRaise,
     required this.onCancel,
+    required this.onEnd,
     required this.onBack,
   });
 
@@ -1479,6 +1470,10 @@ class _ViewerActions extends StatelessWidget {
   final Future<void> Function() onLeave;
   final Future<void> Function() onRaise;
   final Future<void> Function() onCancel;
+
+  /// The host's own exit. `DELETE …/members/me` refuses the host outright, so
+  /// the room's life cycle is the only thing the host can end.
+  final Future<void> Function() onEnd;
 
   /// The one way out of a room that has ended. Every other control on this
   /// page belongs to a room that is still running.
@@ -1534,20 +1529,26 @@ class _ViewerActions extends StatelessWidget {
     }
     if (viewer.isHost) {
       // `DELETE /v2/voice-rooms/{id}/members/me` refuses the host: the room's
-      // life cycle belongs to whoever opened it, so the only exit the server
-      // accepts is 结束房间. A 离开 button here was a command that could only
-      // ever come back as "没有权限".
-      return LoopEmpty(
-        key: const ValueKey<String>('voiceroom-host-no-leave'),
-        icon: 'info',
-        message: '主持人不能离开房间',
-        reason: viewer.canEndRoom
-            ? '房间的存续由主持人决定，所以没有「离开」：'
-                  '要退出请用上面的「结束房间」，房间里的所有人都会断开。'
-                  '只是想暂时离开这一页，用返回键即可，房间会收起在顶部。'
-            : '房间的存续由主持人决定，所以没有「离开」；'
-                  '「结束房间」当前也读不到，暂时无法结束这个房间。'
-                  '用返回键可以先把房间收起在顶部。',
+      // life cycle belongs to whoever opened it, so the host's place in the
+      // prototype's control bar is 结束房间. Two paragraphs used to stand
+      // here saying that the button the host was looking for did not exist.
+      if (!viewer.canEndRoom) {
+        return const LoopEmpty(
+          key: ValueKey<String>('voiceroom-host-no-leave'),
+          icon: 'warn',
+          message: '现在不能结束房间',
+          reason: '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。',
+        );
+      }
+      return LoopButtonPair(
+        children: <Widget>[
+          LoopButton(
+            key: const ValueKey<String>('voiceroom-end'),
+            label: '结束房间',
+            icon: 'warn',
+            onPressed: busy ? null : () => unawaited(onEnd()),
+          ),
+        ],
       );
     }
     final raised = viewer.handRaise?.isPending ?? false;
@@ -1983,42 +1984,125 @@ class _BannerAction extends StatelessWidget {
   }
 }
 
+/// The three figures a voice room page states, which add up.
+///
+/// The server publishes three counts under three different rules (decision
+/// 0051): `speakerCount` and `listenerCount` are LOOP's role intent and
+/// **neither of them counts the host**, and `joinedCount` is everybody in the
+/// room, host included. Printed side by side that reads as a contradiction —
+/// the review device showed 「1 人在房间里」 above 「发言 0 · 听众 0」, and then
+/// a 「正在发言」 grid with the host in it (walkthrough 2026-09-23 · a37/a43).
+///
+/// One rule instead, for every figure on both views: the host is in the room
+/// and the host is on the microphone, so 发言人 counts the host and
+/// 听众 is what is left. A live room is `1 + speaker + listener`, so the room
+/// figure the server withheld is counted rather than replaced by a word.
+@immutable
+final class VoiceRoomHeadcount {
+  const VoiceRoomHeadcount({
+    required this.inRoom,
+    required this.speaking,
+    required this.listening,
+  });
+
+  factory VoiceRoomHeadcount.of(VoiceRoomSnapshot snapshot) {
+    final participants = snapshot.participants;
+    final listening = participants.listenerCount;
+    // A live room always has the host in it: the server refuses the host's
+    // 离开 outright, and ending the room is what takes them out of it.
+    final host = snapshot.room.isLive ? 1 : 0;
+    final inRoom =
+        participants.joinedCount ??
+        participants.speakerCount + listening + host;
+    // Derived from the room total rather than added to the role figure, so
+    // the three numbers on the page always add up to each other. A total the
+    // server reported below its own parts cannot; the parts win then.
+    final speaking = inRoom - listening;
+    return VoiceRoomHeadcount(
+      inRoom: inRoom,
+      speaking: speaking < participants.speakerCount
+          ? participants.speakerCount + host
+          : speaking,
+      listening: listening,
+    );
+  }
+
+  /// Everybody LOOP has in the room, the host included.
+  final int inRoom;
+
+  /// The host plus every speaker: the people who may be heard.
+  final int speaking;
+
+  /// Everybody else.
+  final int listening;
+}
+
 /// The `.folio-heading` of a voice-room page: a figure, or a conclusion.
 ///
 /// `#scr-voiceroom` reads `PEPE 语音房 · 13 人` and `#scr-voiceroom-full`
 /// reads `13 人在麦上`. LOOP printed the word 语音房 in both, which turned the
-/// hero into a second title bar (audit 2026-09-20 · D-1). The figure here is
-/// LOOP's own join record — the one head count the page has without a live
-/// connection — and a room whose count the server did not state falls back to
-/// the condition rather than to a zero.
-String voiceRoomHeading(VoiceRoomSnapshot? snapshot) {
-  if (snapshot == null) return '语音房状态读不到';
+/// hero into a second title bar (audit 2026-09-20 · D-1).
+///
+/// With no room to describe the heading says what the read itself did. It
+/// used to say 「语音房状态读不到」 for all three answers, including the one
+/// the block below it stated as 「当前没有进行中的语音房」 — one screen both
+/// knowing and not knowing (walkthrough 2026-09-23 · a14).
+String voiceRoomHeading(
+  VoiceRoomSnapshot? snapshot, {
+  CommunityViewPhase phase = CommunityViewPhase.ready,
+  bool expanded = false,
+}) {
+  if (snapshot == null) {
+    return switch (phase) {
+      CommunityViewPhase.loading => '正在读取语音房',
+      CommunityViewPhase.empty => '当前没有语音房',
+      _ => '语音房状态读不到',
+    };
+  }
   if (!snapshot.room.isLive) return '已结束';
-  final joined = snapshot.participants.joinedCount;
-  return joined == null ? '进行中' : '$joined 人在房间里';
+  final headcount = VoiceRoomHeadcount.of(snapshot);
+  return expanded ? '${headcount.speaking} 人在麦上' : '${headcount.inRoom} 人在房间里';
 }
 
-/// The `.folio-stamp`: `13 LIVE` where there is a figure, `LIVE` where there
-/// is not.
-String? voiceRoomStamp(VoiceRoomSnapshot? snapshot) {
+/// The `.folio-caption`, which answers the same question as the heading.
+String voiceRoomCaption(
+  VoiceRoomSnapshot? snapshot, {
+  CommunityViewPhase phase = CommunityViewPhase.ready,
+}) {
+  if (snapshot == null) {
+    return switch (phase) {
+      CommunityViewPhase.loading => '正在读取这个社区的语音房。',
+      CommunityViewPhase.empty => '这个社区现在没有进行中的语音房。',
+      _ => '这次没有读到语音房的状态，下面可以重试。',
+    };
+  }
+  if (!snapshot.room.isLive) return '主持人已经结束这个语音房。';
+  // 「返回不等于离开」 was a whole notice at the foot of the page, and the
+  // host's copy of it a second one. It is one line, and it belongs where the
+  // reader looks first.
+  if (snapshot.viewer.hasJoined) return '返回会把房间收起在顶部，随时点开回来。';
+  return '进入前确认主持人、在线人数与录音说明。';
+}
+
+/// The `.folio-stamp`: `13 LIVE` on the lobby, `ON AIR` on the session page.
+String? voiceRoomStamp(VoiceRoomSnapshot? snapshot, {bool expanded = false}) {
   if (snapshot == null) return null;
-  if (!snapshot.room.isLive) return 'ENDED';
-  final joined = snapshot.participants.joinedCount;
-  return joined == null ? 'LIVE' : '$joined LIVE';
+  // 「ENDED」 was the one bare English word on the page that stood for a state
+  // rather than for a section's name (walkthrough 2026-09-23 · 已结束态).
+  if (!snapshot.room.isLive) return '已结束';
+  if (expanded) return 'ON AIR';
+  return '${VoiceRoomHeadcount.of(snapshot).inRoom} LIVE';
 }
 
 /// The 11px line under the room's name in the top bar.
 ///
-/// The prototype states the room's condition and its two figures. LOOP states
-/// only the ones the server actually gave: the condition always, then the
-/// speaker and listener split, which is a LOOP role record rather than a
-/// presence reading and is labelled as such on the page below.
+/// `#scr-voiceroom .topbar` states the room's condition and its two figures.
+/// Both figures count the host the same way the hero does.
 String? voiceRoomTopbarLine(VoiceRoomSnapshot? snapshot) {
   if (snapshot == null) return null;
   if (!snapshot.room.isLive) return '已结束';
-  final participants = snapshot.participants;
-  return '进行中 · 发言 ${participants.speakerCount} · '
-      '听众 ${participants.listenerCount}';
+  final headcount = VoiceRoomHeadcount.of(snapshot);
+  return '进行中 · 发言 ${headcount.speaking} · 听众 ${headcount.listening}';
 }
 
 /// The prototype's `正在发言` grid: one 52px tile per speaker, with the role

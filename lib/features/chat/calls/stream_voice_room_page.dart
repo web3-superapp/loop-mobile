@@ -498,7 +498,29 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     );
   }
 
+  /// How long each step of getting into a room took, for a debug build only.
+  ///
+  /// 「正在准备语音连接」 was on the review device for twenty to thirty seconds
+  /// and nothing on the device said which of the three steps behind it — the
+  /// LOOP identity, the video token, the provider's own connection — the time
+  /// went into. The stopwatch starts when this surface is mounted and reports
+  /// once per step; it prints no identifier, no token and no room.
+  final Stopwatch _openedAt = Stopwatch();
+  final Set<String> _timedStages = <String>{};
+
+  void _markStage(String stage) {
+    if (!kDebugMode || !_timedStages.add(stage)) return;
+    debugPrint(
+      'LOOP voice connect · $stage · ${_openedAt.elapsedMilliseconds}ms',
+    );
+  }
+
   Widget _buildLobby(BuildContext context) {
+    if (!_openedAt.isRunning && _timedStages.isEmpty) _openedAt.start();
+    final authorized = widget.authorization;
+    if (authorized != null && _isAuthorized(authorized)) {
+      _markStage('session');
+    }
     final content = _contentFor(
       principalKey: widget.principalKey,
       authorization: widget.authorization,
@@ -918,8 +940,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       _joinError = null;
     });
 
+    _markStage('call.created');
     try {
       await callHandle.joinMuted();
+      _markStage('call.joined');
     } catch (error) {
       final failure = error is AudioRoomCallFailure ? error : null;
       final refusal = failure?.refusal ?? AudioRoomJoinRefusal.unknown;
