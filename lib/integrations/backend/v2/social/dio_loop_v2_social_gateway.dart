@@ -39,6 +39,7 @@ final class DioLoopV2SocialGateway implements SocialGateway {
       final result = await executeCommunityRequest(
         _session,
         (accessToken) => request(accessToken, key),
+        write: true,
       );
       _keyring.release(signature);
       return result;
@@ -65,6 +66,7 @@ final class DioLoopV2SocialGateway implements SocialGateway {
       direction: direction,
       cursor: cursor,
     ),
+    write: false,
   );
 
   @override
@@ -100,6 +102,7 @@ final class DioLoopV2SocialGateway implements SocialGateway {
         kind: kind,
         cursor: cursor,
       ),
+      write: false,
     );
   }
 
@@ -136,6 +139,7 @@ final class DioLoopV2SocialGateway implements SocialGateway {
           clientVersion: _clientVersion,
           cursor: cursor,
         ),
+        write: false,
       );
 
   @override

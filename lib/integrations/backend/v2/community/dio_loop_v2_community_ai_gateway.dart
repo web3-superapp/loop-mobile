@@ -51,6 +51,7 @@ final class DioLoopV2CommunityAiGateway implements CommunityAiGateway {
       final result = await executeCommunityRequest(
         _session,
         (accessToken) => request(accessToken, key),
+        write: true,
       );
       _keyring.release(signature);
       return result;
@@ -75,6 +76,7 @@ final class DioLoopV2CommunityAiGateway implements CommunityAiGateway {
           clientVersion: _clientVersion,
           communityId: communityId,
         ),
+        write: false,
       );
 
   @override

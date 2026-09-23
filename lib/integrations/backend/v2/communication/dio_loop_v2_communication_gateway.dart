@@ -34,7 +34,7 @@ final class DioLoopV2CommunicationGateway
   String get _clientVersion => _clientMetadata.clientVersion;
 
   Future<T> _read<T>(Future<T> Function(String accessToken) request) =>
-      executeCommunityRequest(_session, request);
+      executeCommunityRequest(_session, request, write: false);
 
   /// [retainKey] keeps the reserved key after a write the server accepted.
   ///
@@ -55,6 +55,7 @@ final class DioLoopV2CommunicationGateway
       final result = await executeCommunityRequest(
         _session,
         (accessToken) => request(accessToken, key),
+        write: true,
       );
       if (!(retainKey?.call(result) ?? false)) _keyring.release(signature);
       return result;

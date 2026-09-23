@@ -146,6 +146,9 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
           : communityAiKnowledgeLine(overview.knowledge),
       onBack: widget.onBack,
       updating: state.refreshing,
+      // The summary is written behind the read that missed it, so the page
+      // has to be re-readable by hand as well as by its one timer.
+      onRefresh: overview == null ? null : controller.reload,
       folio: overview == null ? null : _briefFolio(overview.brief),
       block: overview == null
           ? _CommunityAiStateBlock(
@@ -249,28 +252,36 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
       ..selection = TextSelection.collapsed(offset: sample.length);
   }
 
-  LoopFolioPrimary _briefFolio(CommunityAiBrief brief) => switch (brief) {
-    CommunityAiBriefAvailable() => LoopFolioPrimary(
+  LoopFolioPrimary _briefFolio(CommunityAiBrief brief) {
+    if (brief case final CommunityAiBriefAvailable summary) {
+      return LoopFolioPrimary(
+        key: const ValueKey<String>('community-ai-hero'),
+        variant: LoopFolioVariant.quiet,
+        archetype: LoopFolioArchetype.listing,
+        ring: false,
+        headingTone: LoopFolioHeadingTone.neutral,
+        kicker: 'COMMUNITY BRIEF',
+        heading: communityAiBriefHeading(summary),
+        caption: summary.summary,
+      );
+    }
+    // A summary still being written, and a budget spent for today, are states
+    // rather than failures: the hero says so plainly and offers no 重试,
+    // because nothing here failed that retrying would mend.
+    final absence = communityAiBriefAbsence(
+      brief as CommunityAiBriefUnavailable,
+    );
+    return LoopFolioPrimary(
       key: const ValueKey<String>('community-ai-hero'),
       variant: LoopFolioVariant.quiet,
       archetype: LoopFolioArchetype.listing,
       ring: false,
       headingTone: LoopFolioHeadingTone.neutral,
       kicker: 'COMMUNITY BRIEF',
-      heading: communityAiBriefHeading(brief),
-      caption: brief.summary,
-    ),
-    CommunityAiBriefUnavailable(:final reasonCode) => LoopFolioPrimary(
-      key: const ValueKey<String>('community-ai-hero'),
-      variant: LoopFolioVariant.quiet,
-      archetype: LoopFolioArchetype.listing,
-      ring: false,
-      headingTone: LoopFolioHeadingTone.neutral,
-      kicker: 'COMMUNITY BRIEF',
-      heading: '今日讨论读不到',
-      caption: communityAiReason(reasonCode),
-    ),
-  };
+      heading: absence.heading,
+      caption: absence.caption,
+    );
+  }
 
   Future<void> _report(
     CommunityAiController controller, {

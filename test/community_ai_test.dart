@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/community/community_ai_controller.dart';
 import 'package:loop_mobile/features/community/community_ai_gateway.dart';
 import 'package:loop_mobile/features/community/community_ai_models.dart';
 import 'package:loop_mobile/features/community/community_ai_screen.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
@@ -17,6 +20,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 
 import 'support/community_test_harness.dart';
+import 'support/loop_ground_probe.dart';
 
 const _requestId = '11111111-1111-4111-8111-111111111111';
 const _communityId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
@@ -153,6 +157,10 @@ Map<String, Object?> _answerBody({
 };
 
 void main() {
+  // One test unmounts the page through its own `pumpWidget`, so this file
+  // arms the ground probe itself; the page harness arms it for the rest.
+  loopWatchGround();
+
   group('community-ai transport', () {
     test(
       'the overview read carries no idempotency key and decodes whole',
@@ -230,6 +238,99 @@ void main() {
         overview.brief,
         const CommunityAiBriefUnavailable('COMMUNITY_AI_MEMBERSHIP_REQUIRED'),
       );
+    });
+
+    test('a summary still being written decodes as the state it is', () async {
+      final api = DioLoopV2CommunityAiApi(
+        _dio((options, handler) {
+          handler.resolve(
+            _response(
+              options,
+              _overviewBody(
+                brief: <String, Object?>{
+                  'status': 'unavailable',
+                  'reasonCode': communityAiBriefPendingReasonCode,
+                },
+              ),
+            ),
+          );
+        }),
+      );
+
+      final overview = await api.getOverview(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        communityId: _communityId,
+      );
+
+      final brief = overview.brief as CommunityAiBriefUnavailable;
+      expect(brief.reasonCode, 'COMMUNITY_AI_BRIEF_PENDING');
+      expect(brief.isGenerating, isTrue);
+      expect(brief.isNeutral, isTrue);
+      expect(communityAiReason(brief.reasonCode), '今日摘要生成中，稍后下拉刷新。');
+
+      // The other seven of the closed set: one more state, five failures.
+      const quota = CommunityAiBriefUnavailable(
+        communityAiBriefQuotaExhaustedReasonCode,
+      );
+      expect(quota.isGenerating, isFalse);
+      expect(quota.isNeutral, isTrue);
+      expect(communityAiReason(quota.reasonCode), '今日摘要配额已用完，明天再来。');
+      const chat = CommunityAiBriefUnavailable('COMMUNITY_CHAT_NOT_CONNECTED');
+      expect(chat.isGenerating, isFalse);
+      expect(chat.isNeutral, isFalse);
+      for (final reasonCode in const <String>[
+        'COMMUNITY_AI_MEMBERSHIP_REQUIRED',
+        'COMMUNITY_CHAT_NOT_CONNECTED',
+        'COMMUNITY_CHAT_NOT_OBSERVED',
+        'COMMUNITY_AI_BRIEF_PENDING',
+        'COMMUNITY_AI_PROVIDER_UNAVAILABLE',
+        'COMMUNITY_AI_PROVIDER_REJECTED',
+        'COMMUNITY_AI_PROVIDER_MALFORMED',
+        'COMMUNITY_AI_QUOTA_EXHAUSTED',
+      ]) {
+        // Every code in the closed set has its own sentence: none falls
+        // through to the neutral one, and none of them is a code.
+        expect(communityAiReason(reasonCode), isNot('这一项暂时读不到。'));
+        expect(communityAiReason(reasonCode), isNot(contains('COMMUNITY_')));
+      }
+    });
+
+    // R3-2 for the S3 family: the overview read is a GET, and a GET that
+    // could not be parsed submitted nothing. The page used to greet a slow
+    // summary with a sentence about an unresolved submission.
+    test('an unparsable overview read is a page that did not load', () async {
+      final api = DioLoopV2CommunityAiApi(
+        _dio((options, handler) {
+          handler.resolve(
+            _response(options, _overviewBody()..['surprise'] = true),
+          );
+        }),
+      );
+
+      try {
+        await api.getOverview(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          communityId: _communityId,
+        );
+        fail('the overview read must be refused');
+      } on LoopBackendFailure catch (failure) {
+        expect(failure.kind, LoopBackendFailureKind.invalidPayload);
+
+        final read = communityFailureKindForV2(failure, write: false);
+        expect(read, CommunityFailureKind.invalidData);
+        expect(communityFailureReason(read), isNot(contains('结果未确认')));
+        expect(communityFailureReason(read), isNot(contains('不要重复提交')));
+        expect(communityOutcomeIsUnresolved(read), isFalse);
+        expect(communityPhaseForFailure(read), CommunityViewPhase.error);
+
+        // The same failure after a command is still unresolved.
+        expect(
+          communityFailureKindForV2(failure, write: true),
+          CommunityFailureKind.outcomeUnknown,
+        );
+      }
     });
 
     test('a knowledge count the rows do not support is refused', () async {
@@ -694,6 +795,131 @@ void main() {
       expect(find.textContaining('0 条'), findsNothing);
     });
 
+    testWidgets('a summary still being written is a state, and the page '
+        'reads again once by itself', (tester) async {
+      final gateway = _FakeAiGateway(
+        brief: const CommunityAiBriefUnavailable(
+          communityAiBriefPendingReasonCode,
+        ),
+      );
+      await _pumpOpenPage(tester, gateway);
+
+      expect(gateway.loads, 1);
+      // Neutral: the hero neither says the discussion could not be read nor
+      // offers the failure block's 重试.
+      expect(find.text(communityAiBriefPendingHeading), findsOneWidget);
+      expect(find.textContaining('稍后下拉刷新'), findsOneWidget);
+      expect(find.text('今日讨论读不到'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-ai-state-error')),
+        findsNothing,
+      );
+      expect(find.textContaining('不要重复提交'), findsNothing);
+      // The rest of the page is on screen: the brief is the only thing
+      // waiting.
+      expect(find.textContaining('知识源 2 项 · 更新于'), findsOneWidget);
+
+      // The server finishes writing it behind the first read.
+      gateway.brief = CommunityAiBriefAvailable(
+        messageCount: 42,
+        bounded: false,
+        windowHours: 24,
+        summary: '今天社区主要在讨论挖矿权重。',
+        model: 'claude-sonnet-5',
+        generatedAt: _TestTime.generatedAt,
+      );
+      await tester.pump(CommunityAiController.briefRecheckDelay);
+      await tester.pumpAndSettle();
+
+      expect(gateway.loads, 2);
+      expect(find.text('今日 42 条讨论'), findsOneWidget);
+      expect(find.text(communityAiBriefPendingHeading), findsNothing);
+    });
+
+    testWidgets('a spent summary budget is a state too, and earns no re-read', (
+      tester,
+    ) async {
+      final gateway = _FakeAiGateway(
+        brief: const CommunityAiBriefUnavailable(
+          communityAiBriefQuotaExhaustedReasonCode,
+        ),
+      );
+      await _pumpOpenPage(tester, gateway);
+
+      expect(find.text(communityAiBriefQuotaHeading), findsOneWidget);
+      expect(find.textContaining('明天再来'), findsOneWidget);
+      expect(find.text('今日讨论读不到'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-ai-state-error')),
+        findsNothing,
+      );
+
+      // Nothing the page can do brings it back before tomorrow.
+      await tester.pump(CommunityAiController.briefRecheckDelay * 4);
+      await tester.pumpAndSettle();
+      expect(gateway.loads, 1);
+    });
+
+    testWidgets('the summary is re-read once and only once', (tester) async {
+      final gateway = _FakeAiGateway(
+        brief: const CommunityAiBriefUnavailable(
+          communityAiBriefPendingReasonCode,
+        ),
+      );
+      await _pumpOpenPage(tester, gateway);
+
+      await tester.pump(CommunityAiController.briefRecheckDelay);
+      await tester.pumpAndSettle();
+      expect(gateway.loads, 2);
+
+      // Still pending: the page keeps the neutral line and stops reading. A
+      // page that polled would spend the account's quota to print the same
+      // sentence.
+      await tester.pump(const Duration(minutes: 2));
+      await tester.pumpAndSettle();
+      expect(gateway.loads, 2);
+      expect(find.text(communityAiBriefPendingHeading), findsOneWidget);
+    });
+
+    testWidgets('leaving the page takes the pending re-read with it', (
+      tester,
+    ) async {
+      final gateway = _FakeAiGateway(
+        brief: const CommunityAiBriefUnavailable(
+          communityAiBriefPendingReasonCode,
+        ),
+      );
+      await _pumpOpenPage(tester, gateway);
+      expect(gateway.loads, 1);
+
+      // The page goes away before the wait is over; the timer goes with it,
+      // and the test's own teardown would fail on one left pending.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(CommunityAiController.briefRecheckDelay * 4);
+      await tester.pumpAndSettle();
+      expect(gateway.loads, 1);
+    });
+
+    testWidgets('an unreadable overview says the page did not load, not that '
+        'a submission is unresolved', (tester) async {
+      await _pumpOpenPage(
+        tester,
+        _FakeAiGateway(
+          overviewFailure: const CommunityGatewayException(
+            CommunityFailureKind.invalidData,
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('community-ai-state-error')),
+        findsOneWidget,
+      );
+      expect(find.text('返回的数据不完整，这一页没有采用任何内容。'), findsOneWidget);
+      expect(find.textContaining('不要重复提交'), findsNothing);
+      expect(find.textContaining('结果未确认'), findsNothing);
+    });
+
     testWidgets('a sample question fills the composer instead of sending', (
       tester,
     ) async {
@@ -893,7 +1119,14 @@ final class _FakeAiGateway implements CommunityAiGateway {
   final CommunityGatewayException? askFailure;
   final Completer<void>? overviewDelay;
   final Completer<void>? askDelay;
-  final CommunityAiBrief brief;
+
+  /// The brief the *next* read answers with, so a test can let the server
+  /// finish writing today's summary between two reads.
+  CommunityAiBrief brief;
+
+  /// How many times the overview was read. It is what says whether the page
+  /// read again by itself, and how often.
+  var loads = 0;
   final List<String> asked = <String>[];
   final List<String> reported = <String>[];
 
@@ -915,6 +1148,7 @@ final class _FakeAiGateway implements CommunityAiGateway {
 
   @override
   Future<CommunityAiOverview> loadOverview(String communityId) async {
+    loads += 1;
     await overviewDelay?.future;
     final failure = overviewFailure;
     if (failure != null) throw failure;

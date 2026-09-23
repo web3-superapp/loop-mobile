@@ -517,9 +517,14 @@ class _CommunityActionPair extends ConsumerWidget {
     final aiCapability = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.communityAi),
     );
-    final aiReason = communicationUnavailableReason(
-      aiCapability.reasonCode ?? _aiDeferred,
-    );
+    // The AI button explains itself only while the capability is closed. An
+    // open one kept printing 「Community AI 还没有开放」 under a control that
+    // opens a working page, which is a sentence the page itself contradicts.
+    final aiReason = aiCapability.isAvailable
+        ? null
+        : communicationUnavailableReason(
+            aiCapability.reasonCode ?? _aiDeferred,
+          );
     final mayOpenRoom = detail.viewer.mayOpenVoiceRoom && !voiceLive;
     final chatReason = chatOpenable
         ? null
@@ -527,6 +532,7 @@ class _CommunityActionPair extends ConsumerWidget {
     final voiceReason = voiceLive || mayOpenRoom
         ? null
         : communicationUnavailableReason(voice.reasonCode);
+    final reasons = <String>[?chatReason, ?voiceReason, ?aiReason];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -586,16 +592,17 @@ class _CommunityActionPair extends ConsumerWidget {
           ],
         ),
         // Every control that cannot act says why, once, under the row it
-        // belongs to. Community AI has no runtime anywhere, so its reason is
-        // always part of this line.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Text(
-            <String>[?chatReason, ?voiceReason, aiReason].join(' '),
-            key: const ValueKey<String>('community-profile-action-reasons'),
-            style: LoopTypography.caption(11, color: LoopColors.text3),
+        // belongs to. A row on which all three can act says nothing at all,
+        // rather than keeping an empty line where a reason used to be.
+        if (reasons.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(
+              reasons.join(' '),
+              key: const ValueKey<String>('community-profile-action-reasons'),
+              style: LoopTypography.caption(11, color: LoopColors.text3),
+            ),
           ),
-        ),
       ],
     );
   }

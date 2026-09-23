@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/community/community_ai_gateway.dart';
@@ -141,18 +143,61 @@ final class CommunityAiState {
 final class CommunityAiController extends Notifier<CommunityAiState> {
   CommunityAiController(this.communityId);
 
+  /// How long the page waits before reading the overview again while today's
+  /// summary is being written.
+  ///
+  /// It is one wait, not the poll the contract forbids. The length is the
+  /// server's own: it writes the summary behind the read that missed it and
+  /// says that takes 10–15 s, so a shorter wait would spend the one re-read
+  /// on an answer that is not written yet. If this read still misses it the
+  /// line stays neutral, the page stops reading, and the pull is the
+  /// reader's.
+  static const briefRecheckDelay = Duration(seconds: 15);
+
   final String communityId;
 
   Future<void>? _operation;
   var _generation = 0;
 
+  /// The one re-read a pending summary earns, and the timer holding it.
+  ///
+  /// Both are per mount: leaving the page disposes the controller, which
+  /// cancels the timer, so nothing reads for a page that is gone.
+  Timer? _briefRecheck;
+  var _briefRecheckSpent = false;
+
   @override
   CommunityAiState build() {
     _generation += 1;
     _operation = null;
+    _briefRecheck?.cancel();
+    _briefRecheck = null;
+    _briefRecheckSpent = false;
     final mode = ref.watch(communityAiGatewayProvider).mode;
-    ref.onDispose(() => _generation += 1);
+    ref.onDispose(() {
+      _generation += 1;
+      _briefRecheck?.cancel();
+      _briefRecheck = null;
+    });
     return CommunityAiState.initial(mode);
+  }
+
+  /// Arms the single re-read, when the summary is the only thing missing.
+  ///
+  /// Every other reason — no membership, no official group, a model that
+  /// refused, a budget spent for today — is a fact that will not change while
+  /// the page is open, and reading again would print the same sentence.
+  void _scheduleBriefRecheck(CommunityAiBrief brief, int generation) {
+    _briefRecheck?.cancel();
+    _briefRecheck = null;
+    if (_briefRecheckSpent) return;
+    if (brief is! CommunityAiBriefUnavailable || !brief.isGenerating) return;
+    _briefRecheckSpent = true;
+    _briefRecheck = Timer(briefRecheckDelay, () {
+      _briefRecheck = null;
+      if (!_isCurrent(generation)) return;
+      unawaited(reload());
+    });
   }
 
   bool _isCurrent(int generation) => ref.mounted && generation == _generation;
@@ -187,6 +232,7 @@ final class CommunityAiController extends Notifier<CommunityAiState> {
     try {
       final overview = await gateway.loadOverview(communityId);
       if (!_isCurrent(generation)) return;
+      _scheduleBriefRecheck(overview.brief, generation);
       state = CommunityAiState(
         mode: state.mode,
         phase: CommunityViewPhase.ready,
