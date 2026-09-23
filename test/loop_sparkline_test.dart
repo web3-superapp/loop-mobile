@@ -91,33 +91,50 @@ void main() {
     });
   });
 
-  group('token · the card line has two states', () {
-    testWidgets('with candles it draws the line and names its source', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const TokenDetailScreen(assetId: s5WbnbAssetId),
-        market: FakeMarketReadGateway(),
-      );
+  group('token · the page opens on the quote, not on a card', () {
+    testWidgets(
+      'the quote, the four cells and the two actions, in that order',
+      (tester) async {
+        await pumpS5Page(
+          tester,
+          const TokenDetailScreen(assetId: s5WbnbAssetId),
+          market: FakeMarketReadGateway(),
+        );
 
-      expect(find.byKey(const ValueKey<String>('token-card')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('token-card-chart-line')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('token-card-chart-unavailable')),
-        findsNothing,
-      );
-      final sparkline = tester.widget<LoopSparkline>(
-        find.byKey(const ValueKey<String>('token-card-chart-line')),
-      );
-      expect(sparkline.closes, hasLength(2));
-      expect(sparkline.semanticLabel, contains('USDT per WBNB'));
-    });
+        // S78b: the approved design opens on the price itself. The signature
+        // card spent a third of the first screen on its own border and pushed
+        // the chart off it, and its small 1H line said the same thing the K
+        // line under it says at eight times the size.
+        expect(find.byKey(const ValueKey<String>('token-card')), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('token-quote')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('token-quote-cells')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('token-buy-action')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('token-sell-action')),
+          findsOneWidget,
+        );
+        // The chart on this page is the K line, and there is exactly one of it.
+        expect(
+          find.byKey(const ValueKey<String>('token-card-chart-line')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('token-candle-chart')),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('an unavailable series draws nothing and shows the reason', (
+    testWidgets('an unavailable series is stated once, by the K line', (
       tester,
     ) async {
       await pumpS5Page(
@@ -134,20 +151,17 @@ void main() {
         ),
       );
 
-      expect(find.byKey(const ValueKey<String>('token-card')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('token-card-chart-unavailable')),
-        findsOneWidget,
-      );
       // No line at all — never a flat or a placeholder shape.
       expect(find.byType(LoopSparkline), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('token-card-chart-line')),
-        findsNothing,
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('candles-unavailable')),
       );
-      // The card slot points at the K-line terminal rather than restating the
-      // whole sentence, so the reason still appears exactly once.
-      expect(find.text('1H 走势不可用，原因见下方 K 线。'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('candles-unavailable')),
+        findsOneWidget,
+      );
+      // The reason appears exactly once on the page.
       expect(
         find.textContaining(loopReasonCodeText('MARKET_POOL_NOT_INDEXED')),
         findsOneWidget,

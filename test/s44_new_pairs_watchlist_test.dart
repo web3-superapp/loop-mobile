@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/market_secondary_screens.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 
@@ -102,9 +103,11 @@ void main() {
     final row = find.byKey(ValueKey<String>('new-pair-address:$s5PoolAddress'));
     await scrollToS5Section(tester, row);
     expect(row, findsOneWidget);
-    // An address is not an asset id, so the row says what it cannot do rather
-    // than offering a star the server would refuse.
-    expect(find.textContaining('暂不支持加自选'), findsOneWidget);
+    // An address is not an asset id, so the row carries the one neutral pill
+    // instead of a star the server would refuse — and instead of the two
+    // refusals that took its third line (S78b).
+    expect(find.text(marketBrowseOnlyLabel), findsOneWidget);
+    expect(find.textContaining('暂不支持'), findsNothing);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -137,9 +140,12 @@ void main() {
 
     final row = find.byKey(const ValueKey<String>('new-pair-poolId:$s5PoolId'));
     await scrollToS5Section(tester, row);
-    expect(find.textContaining('Uniswap V4 池 · 暂不支持详情'), findsOneWidget);
+    // The venue reads as a venue, and the one pill says the row is read-only.
+    expect(find.textContaining('PancakeSwap V3'), findsOneWidget);
+    expect(find.textContaining('pancakeswap_v3'), findsNothing);
+    expect(find.text(marketBrowseOnlyLabel), findsOneWidget);
     // One row never carries two sentences about the same absence.
-    expect(find.textContaining('暂不支持加自选'), findsNothing);
+    expect(find.textContaining('暂不支持'), findsNothing);
   });
 
   testWidgets('a watchlist that is full refuses before it writes', (

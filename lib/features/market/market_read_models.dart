@@ -18,12 +18,22 @@ final class MarketAssetRow {
     required this.priceChange24h,
     this.volume24h,
     this.liquidityUsd,
+    this.logoUrl,
   });
 
   final String assetId;
   final LoopAssetSummary? asset;
   final LoopFact price;
   final LoopFact priceChange24h;
+
+  /// The registry's published artwork for this asset, when it published one.
+  ///
+  /// The wiring point for the `logo` field of the asset contract (S78c). It
+  /// stays `null` until the adapter reads it, and a `null` is not a failure:
+  /// the row falls back to the bundled artwork and then to the monogram, the
+  /// way every LOOP identity tile already does. The client validates the
+  /// address itself (`loopRemoteLogoUri`) rather than trusting the string.
+  final String? logoUrl;
 
   /// Only the trending rows carry these two.
   final LoopFact? volume24h;
@@ -357,6 +367,7 @@ final class MarketAssetDetail {
   const MarketAssetDetail({
     required this.asset,
     required this.capability,
+    this.logoUrl,
     required this.price,
     required this.priceChange24h,
     required this.liquidityUsd,
@@ -370,6 +381,10 @@ final class MarketAssetDetail {
   });
 
   final MarketAssetIdentity asset;
+
+  /// The registry's published artwork, or `null` when the server said it has
+  /// none. See `MarketAssetRow.logoUrl`.
+  final String? logoUrl;
   final LoopAssetCapability capability;
   final LoopFact price;
   final LoopFact priceChange24h;
@@ -732,6 +747,7 @@ final class MarketNewPair {
   const MarketNewPair({
     required this.poolRef,
     required this.dexId,
+    this.logoUrl,
     required this.name,
     required this.baseTokenAddress,
     required this.quoteTokenAddress,
@@ -742,6 +758,9 @@ final class MarketNewPair {
   });
 
   final MarketPoolRef poolRef;
+
+  /// The pool's base token's artwork, or `null`.
+  final String? logoUrl;
   final String dexId;
   final String name;
   final String? baseTokenAddress;

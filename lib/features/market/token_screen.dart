@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +10,6 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
-import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_mining_hooks.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
@@ -19,14 +17,11 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
-import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// `token` · one registry asset's facts.
 ///
@@ -162,8 +157,17 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           .read(marketAssetControllerProvider(assetId).notifier)
           .reload,
       archetype: LoopPageArchetype.record,
-      title: detail == null ? 'Token' : marketAssetIdentityLabel(detail.asset),
-      kicker: detail?.asset.settled?.name,
+      // `ETH / USD` over `Ethereum · BSC · 0x2170…33f8`: the approved design's
+      // top bar states the pair and, under it, what the pair is written
+      // against. The quote currency is part of the reading — the price on the
+      // line below is in it.
+      title: detail == null
+          ? loopTruncatedAssetId(assetId)
+          : '${marketAssetIdentityLabel(detail.asset)} / USD',
+      subtitle: <String>[
+        ?detail?.asset.settled?.name,
+        loopTruncatedAssetId(assetId),
+      ].join(' · '),
       onBack: widget.onBack,
       updating: state.refreshing,
       actions: <Widget>[
@@ -191,23 +195,9 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               : () => unawaited(_toggleWatchlist(assetId)),
         ),
       ],
-      // The prototype's token page has no `data-page-primary` hero: the
-      // signature card *is* the primary region. LOOP pushed a second Lime
-      // hero above it, which printed the price twice and cost the first
-      // screen the metrics, the mining strip and the action row (audit
-      // 2026-09-21 §G.2 and §D+ item 13).
-      primary: _TokenPrimaryCard(
-        assetId: assetId,
-        detail: detail,
-        miningWeight: miningWeight,
-        // The card's 买入 / 卖出 read the same one gate the entry button
-        // below does, and nothing else.
-        tradable: detail?.capability.swappable ?? false,
-        onOpenChart: () => _open(MarketAssetRoute.chart(assetId)),
-        onOpenCommunity: (communityId) =>
-            _open('/community/profile?id=$communityId'),
-        onTrade: () => _open('/wallet/swap'),
-      ),
+      // The approved design opens on the quote itself: no card, no hero. A
+      // signature card around the price spent a third of the first screen on
+      // its own border and pushed the chart off it.
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('token-capability-block'),
@@ -237,6 +227,43 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             reasonCode: detail.capability.reasonCode ?? 'ASSET_BLOCKED',
           )
         else ...<Widget>[
+          MarketQuoteHeader(
+            key: const ValueKey<String>('token-quote'),
+            price: detail.price,
+            change: detail.priceChange24h,
+          ),
+          MarketQuoteCells(
+            key: const ValueKey<String>('token-quote-cells'),
+            cells: <MarketStatCell>[
+              MarketStatCell.fact(
+                '24H 成交额',
+                detail.volume24h,
+                formatter: loopFormatCompactFigure,
+              ),
+              MarketStatCell.fact(
+                '流动性',
+                detail.liquidityUsd,
+                formatter: loopFormatCompactFigure,
+              ),
+              MarketStatCell.fact(
+                '市值',
+                detail.marketCap,
+                formatter: loopFormatCompactFigure,
+              ),
+              MarketStatCell.fact(
+                '持有人',
+                detail.holderCount,
+                formatter: (value) =>
+                    loopFormatCompactFigure(value, usd: false),
+              ),
+            ],
+          ),
+          // The two actions, on the first screen, shut by the one gate the
+          // card at the foot of the page states in a full sentence.
+          MarketTradeActions(
+            tradable: detail.capability.swappable,
+            onTrade: () => _open('/wallet/swap'),
+          ),
           // Nothing could describe this contract for this request. The page
           // still stands — every figure below states its own reason — but it
           // opens by naming the address it asked about instead of a heading
@@ -279,18 +306,34 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             onExpand: () => _open(MarketAssetRoute.chart(assetId)),
           ),
           const LoopLabel('行情事实'),
+          // The card above already states 市值 / 流动性 / 持有人 in its three
+          // cells, with the same figures from the same read. Printing all
+          // five again one screen below put 265,378,213 on the page twice
+          // and made the reader check whether the two agreed (walkthrough
+          // 2026-09-23, e02). What is left here is what the card has no cell
+          // for; the card's own cells carry their reasons, and this block's
+          // footer names the source and the time for the whole set.
           LoopSurfaceCard(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                LoopFactLine(label: '市值', fact: detail.marketCap),
                 LoopFactLine(label: '完全稀释估值', fact: detail.fdv),
-                LoopFactLine(label: '流动性', fact: detail.liquidityUsd),
-                LoopFactLine(label: '24H 成交额', fact: detail.volume24h),
-                LoopFactLine(label: '持有人数', fact: detail.holderCount),
               ],
             ),
+          ),
+          // The three figures the card states have no line of their own down
+          // here, so their source and time are stated once, for the three of
+          // them, and the line says which three it means.
+          MarketFactProvenance(
+            key: const ValueKey<String>('token-facts-provenance'),
+            prefix: '上方四格',
+            facts: <LoopFact>[
+              detail.volume24h,
+              detail.liquidityUsd,
+              detail.marketCap,
+              detail.holderCount,
+            ],
           ),
           _PrimaryPairCard(pair: detail.primaryPair),
           const LoopLabel('社区'),
@@ -300,20 +343,25 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                 _open('/community/profile?id=$communityId'),
           ),
           const LoopLabel('挖矿数据'),
+          // The one place this page states the weight. The Token Card's own
+          // Lime strip carried it too, so 「Mining Weight 1× · 开发基线」 was
+          // on the first screen twice (walkthrough 2026-09-23, e01); the card
+          // now states the community and this row states the weight, and the
+          // row is the one of the two that opens 挖矿. The development label
+          // is not printed beside the figure: which rules version published it
+          // is a property of the release, and 关于 is where the release is
+          // described.
           if (miningWeight == null)
             const LoopUnavailableCard(
               key: ValueKey<String>('token-mining-unavailable'),
-              label: 'Mining Weight 与预估收益不可用',
+              label: '挖矿权重与预估收益不可用',
               reasonCode: 'MINING_RUNTIME_DEFERRED',
             )
           else
             LoopPowerHint(
               key: const ValueKey<String>('token-mining-weight'),
-              text: 'Mining Weight',
-              figure: <String>[
-                miningWeight.label,
-                if (miningWeight.baseline) miningBaselineLabel,
-              ].join(' · '),
+              text: '挖矿权重',
+              figure: miningWeight.label,
               onTap: () => _open('/mining'),
             ),
           const LoopLabel('合约事实'),
@@ -382,142 +430,6 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
 /// surfaces that offer a retry hold it shut while this is the reason.
 bool _providerRateLimited(String? reasonCode) =>
     reasonCode == 'MARKET_PROVIDER_RATE_LIMITED';
-
-/// One Token Card metric cell from a fact. An unavailable fact renders why
-/// there is no figure, never `0` and never an em dash.
-///
-/// Both halves are summaries, because the cell is a third of a card wide: the
-/// figure is compact (`$5.4B`) and the missing-value copy is a phrase rather
-/// than the full sentence. The exact number, the source, the observation time
-/// and the server's own reason all render in full in the fact list further
-/// down the same page, which is unchanged.
-LoopTokenMetric _cardMetric(String label, LoopFact fact, {bool usd = true}) =>
-    LoopTokenMetric(
-      label,
-      fact.isAvailable
-          ? loopFormatCompactFigure(fact.value!, usd: usd)
-          : loopReasonCodeSummaryText(fact.reasonCode),
-    );
-
-/// The prototype's `.tcard.tcard-signature.tcard-token-hero`, in the page's
-/// `[data-page-primary]` slot.
-///
-/// Quote, 1H line, three metrics, the Mining Weight strip and the four-segment
-/// action row — 买入 / 卖出 / 图表 / 社区 — all in one card, exactly as the
-/// prototype opens this page. Every figure comes from the same
-/// `MarketAssetDetail` the fact list further down reads, and an unavailable
-/// one renders its `reasonCode` instead of a number.
-class _TokenPrimaryCard extends StatelessWidget {
-  const _TokenPrimaryCard({
-    required this.assetId,
-    required this.detail,
-    required this.miningWeight,
-    required this.tradable,
-    required this.onOpenChart,
-    required this.onOpenCommunity,
-    required this.onTrade,
-  });
-
-  final String assetId;
-  final MarketAssetDetail? detail;
-  final MarketMiningWeight? miningWeight;
-
-  /// Whether 买入 / 卖出 may be pressed at all. While it is false the two
-  /// segments stay on the card and stay disabled: the prototype's first
-  /// screen is a four-segment row, and dropping two of them moved the
-  /// question 「能不能买」 off the page entirely (audit 2026-09-21 §G.2).
-  final bool tradable;
-  final VoidCallback onOpenChart;
-  final void Function(String communityId) onOpenCommunity;
-  final VoidCallback onTrade;
-
-  @override
-  Widget build(BuildContext context) {
-    final resolved = detail;
-    if (resolved == null) {
-      // 识别中: the prototype's own loading card, not a second title bar.
-      return LoopTokenCard(
-        key: const ValueKey<String>('token-card-loading'),
-        state: LoopTokenCardState.loading,
-        model: LoopTokenCardModel(
-          symbol: loopTruncatedAssetId(assetId),
-          identifier: loopTruncatedAssetId(assetId),
-        ),
-      );
-    }
-    if (resolved.capability.blocksEntirePage) {
-      // A blocked asset shows no fact at all, not even a quote.
-      return LoopTokenCard(
-        key: const ValueKey<String>('token-card-blocked'),
-        state: LoopTokenCardState.partial,
-        model: LoopTokenCardModel(
-          symbol: marketAssetIdentityLabel(resolved.asset),
-          identifier: loopTruncatedAssetId(assetId),
-          priceReason: loopReasonCodeText(
-            resolved.capability.reasonCode ?? 'ASSET_BLOCKED',
-          ),
-        ),
-      );
-    }
-    final community = resolved.community;
-    final weight = miningWeight;
-    return LoopTokenCard(
-      key: const ValueKey<String>('token-card'),
-      state: LoopTokenCardState.normal,
-      model: LoopTokenCardModel(
-        symbol: marketAssetIdentityLabel(resolved.asset),
-        identifier: loopTruncatedAssetId(assetId),
-        price: resolved.price.isAvailable
-            ? loopFormatUsd(resolved.price.value!)
-            : null,
-        priceReason: resolved.price.isAvailable
-            ? null
-            : loopReasonCodeText(resolved.price.reasonCode),
-        change: resolved.priceChange24h.isAvailable
-            ? loopFormatPercent(resolved.priceChange24h.value!)
-            : null,
-        changeUp: resolved.priceChange24h.isAvailable
-            ? resolved.priceChange24h.value! >= Decimal.zero
-            : null,
-        metrics: <LoopTokenMetric>[
-          _cardMetric('市值', resolved.marketCap),
-          _cardMetric('流动性', resolved.liquidityUsd),
-          _cardMetric('持有人', resolved.holderCount, usd: false),
-        ],
-        // `.tcard-community`: the prototype's Lime strip is the mining line,
-        // not a provenance note. It falls back to the quote's provenance only
-        // when no weight was published for this asset.
-        communityIcon: weight == null ? 'info' : 'mine',
-        communityLine: weight != null
-            ? <String>[
-                'Mining Weight ${weight.label}',
-                if (weight.baseline) miningBaselineLabel,
-                if (community case MarketCommunityBound(
-                  memberCount: final memberCount,
-                ))
-                  '$memberCount 成员',
-              ].join(' · ')
-            : resolved.price.isAvailable
-            ? '报价 ${loopFactProvenance(resolved.price)}'
-            : '这张卡片的每个数字都取自下方同一份数据，读不到的一项会说明原因，不会显示 0。',
-        footnotes: <String>[if (!tradable) '买入与卖出当前不可用，原因见本页底部。'],
-        chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
-        chart: TokenCardSparkline(
-          assetId: assetId,
-          keyPrefix: 'token-card-chart',
-          unavailableText: '1H 走势不可用，原因见下方 K 线。',
-        ),
-      ),
-      actions: <LoopTokenCardAction>[
-        LoopTokenCardAction('买入', buy: true, onTap: tradable ? onTrade : null),
-        LoopTokenCardAction('卖出', onTap: tradable ? onTrade : null),
-        LoopTokenCardAction('图表', onTap: onOpenChart),
-        if (community case MarketCommunityBound(communityId: final communityId))
-          LoopTokenCardAction('社区', onTap: () => onOpenCommunity(communityId)),
-      ],
-    );
-  }
-}
 
 class _TokenCandleBlock extends ConsumerWidget {
   const _TokenCandleBlock({

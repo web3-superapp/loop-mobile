@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
@@ -113,18 +114,20 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
             'title',
             'subtitle',
             'avatarRef',
-            // Required on every domain since backend decision 0072 (token
-            // logos): the asset rows carry a logo projection and the user and
-            // community rows carry `null`. This adapter admits the key so a
-            // search page still reads; the projection itself, its host
-            // allow-list and its monogram fallback belong to the token-logo
-            // work, which owns every surface that draws one. Reading half of
-            // it here would be a second, weaker copy of that rule.
+            // Required on every domain from decision 0072 on: the asset rows
+            // carry a logo projection and the user and community rows carry
+            // `null`. 搜索 draws the identity atlas, not token artwork, so
+            // the block is validated against the contract's host allow-list
+            // here and then dropped; the surfaces that draw one read it from
+            // their own models.
             'logo',
             'memberCount',
             'verificationStatus',
           },
         );
+        if (snapshot['logo'] != null) {
+          LoopV2ChainCodec.logoUrl(snapshot['logo']);
+        }
         // `assetDetail` is the one destination that carries a parameter; the
         // other two must not carry one, so a row that tried to hand an
         // `assetId` to a profile destination is refused rather than opened.

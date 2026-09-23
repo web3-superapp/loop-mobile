@@ -63,6 +63,10 @@ WatchlistSnapshot previewWatchlistSnapshot() => WatchlistSnapshot(
       items: <WatchlistItem>[
         WatchlistItem(
           assetId: 'eip155:56:native',
+          // The Trust Wallet rule URL the server publishes for this
+          // address (contract §2a). Preview mirrors the contract; it does
+          // not invent a second source.
+          logoUrl: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/info/logo.png',
           asset: const LoopAssetSummary(
             symbol: 'BNB',
             name: 'BNB',
@@ -72,6 +76,10 @@ WatchlistSnapshot previewWatchlistSnapshot() => WatchlistSnapshot(
         ),
         WatchlistItem(
           assetId: 'eip155:56:0x55d398326f99059ff775485246999027b3197955',
+          // The Trust Wallet rule URL the server publishes for this
+          // address (contract §2a). Preview mirrors the contract; it does
+          // not invent a second source.
+          logoUrl: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png',
           asset: const LoopAssetSummary(
             symbol: 'USDT',
             name: 'Tether USD',
@@ -87,6 +95,10 @@ WatchlistSnapshot previewWatchlistSnapshot() => WatchlistSnapshot(
       items: <WatchlistItem>[
         WatchlistItem(
           assetId: 'eip155:56:0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82',
+          // The Trust Wallet rule URL the server publishes for this
+          // address (contract §2a). Preview mirrors the contract; it does
+          // not invent a second source.
+          logoUrl: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82/logo.png',
           asset: const LoopAssetSummary(
             symbol: 'CAKE',
             name: 'PancakeSwap Token',

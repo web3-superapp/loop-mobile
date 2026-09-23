@@ -48,54 +48,142 @@ class LoopIcon extends StatelessWidget {
   }
 }
 
+/// The registry artwork address this app is willing to fetch, or `null`.
+///
+/// A logo is the one field of an asset row that is a URL, and it arrives from
+/// a registry the client does not own. Only an absolute `https` address with a
+/// host is fetched: a relative path, a `http://` address, a `data:` payload
+/// and a malformed string all resolve to `null`, and the caller falls back to
+/// the bundled artwork or the monogram. Nothing about the fetch is
+/// authenticated and no LOOP header is attached, so this never travels through
+/// `LoopDioFactory`; it is an image, not a call on the API.
+Uri? loopRemoteLogoUri(String? raw) {
+  final value = raw?.trim();
+  if (value == null || value.isEmpty) return null;
+  final uri = Uri.tryParse(value);
+  if (uri == null) return null;
+  if (uri.scheme != 'https') return null;
+  if (uri.host.isEmpty) return null;
+  return uri;
+}
+
 /// Token logo with monogram fallback (chapter 4.5).
 ///
-/// Only the seven prototype tokens have artwork. Any other symbol, and any
-/// load failure, renders [fallbackMonogram] (defaults to the symbol's first
-/// two characters) so the ticker never disappears.
-class LoopTokenLogo extends StatelessWidget {
+/// Three sources, in order, each falling through to the next: the registry's
+/// published artwork at [logoUrl] (contract §2a, decision 0072), the bundled
+/// prototype artwork for the seven symbols that have it, and the monogram.
+///
+/// The monogram is always the *normalised* two characters of
+/// [fallbackMonogram] (or of the symbol), never the raw string it was given —
+/// 「OH / WBNB」 painted a slash and a space into a 32pt circle, and
+/// four-letter tickers overflowed it (walkthrough 2026-09-23, d06).
+///
+/// **One attempt per mounted row.** A failed fetch is remembered by this
+/// element, so a list that scrolls, a pull-to-refresh and a rebuild do not
+/// re-ask the CDN for a file it already answered 404 for. Successful artwork
+/// is held by Flutter's own [ImageCache], keyed by the address, so a symbol
+/// in 自选 and again in 热门 is decoded once. There is no on-disk cache: that
+/// needs a dependency, and the decision is not this widget's to take.
+class LoopTokenLogo extends StatefulWidget {
   const LoopTokenLogo({
     required this.assetSymbol,
     super.key,
+    this.logoUrl,
     this.fallbackMonogram,
     this.size = 36,
     this.semanticLabel,
   });
 
   final String assetSymbol;
+
+  /// The registry's published artwork. Anything [loopRemoteLogoUri] refuses
+  /// is treated as if the server had published nothing at all.
+  final String? logoUrl;
   final String? fallbackMonogram;
   final double size;
   final String? semanticLabel;
 
   @override
+  State<LoopTokenLogo> createState() => _LoopTokenLogoState();
+}
+
+class _LoopTokenLogoState extends State<LoopTokenLogo> {
+  bool _failed = false;
+
+  @override
+  void didUpdateWidget(LoopTokenLogo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A different address is a different question, so it gets its own one
+    // attempt. The same address that already failed is not asked again.
+    if (oldWidget.logoUrl != widget.logoUrl) _failed = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final label = semanticLabel ?? '$assetSymbol logo';
-    final monogram = fallbackMonogram ?? loopMonogram(assetSymbol);
-    final path = LoopTokenAssets.pathForSymbol(assetSymbol);
-    if (path == null) {
-      return _MonogramFallback(
-        text: monogram,
-        size: size,
-        shape: BoxShape.circle,
-        semanticLabel: label,
+    final size = widget.size;
+    final label = widget.semanticLabel ?? '${widget.assetSymbol} logo';
+    final monogram = loopMonogram(
+      widget.fallbackMonogram ?? widget.assetSymbol,
+    );
+    Widget bundled() {
+      final path = LoopTokenAssets.pathForSymbol(widget.assetSymbol);
+      if (path == null) {
+        return _MonogramFallback(
+          text: monogram,
+          size: size,
+          shape: BoxShape.circle,
+          semanticLabel: label,
+        );
+      }
+      return SizedBox(
+        width: size,
+        height: size,
+        child: ClipOval(
+          child: SvgPicture.asset(
+            path,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            semanticsLabel: label,
+            errorBuilder: (context, error, stackTrace) => _MonogramFallback(
+              text: monogram,
+              size: size,
+              shape: BoxShape.circle,
+              semanticLabel: label,
+            ),
+          ),
+        ),
       );
     }
+
+    final remote = _failed ? null : loopRemoteLogoUri(widget.logoUrl);
+    if (remote == null) return bundled();
     return SizedBox(
       width: size,
       height: size,
       child: ClipOval(
-        child: SvgPicture.asset(
-          path,
+        child: Image.network(
+          remote.toString(),
+          key: const ValueKey<String>('loop-token-logo-remote'),
           width: size,
           height: size,
           fit: BoxFit.cover,
-          semanticsLabel: label,
-          errorBuilder: (context, error, stackTrace) => _MonogramFallback(
-            text: monogram,
-            size: size,
-            shape: BoxShape.circle,
-            semanticLabel: label,
-          ),
+          semanticLabel: label,
+          // The row keeps its shape for the whole of the fetch: the slot is
+          // the monogram until a frame arrives, so nothing shifts and no
+          // spinner appears in a 32pt circle.
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) =>
+              wasSynchronouslyLoaded || frame != null ? child : bundled(),
+          errorBuilder: (context, error, stackTrace) {
+            // Remembered for this row: the CDN is asked once, not once per
+            // frame. `setState` cannot run during build, so it is scheduled.
+            if (!_failed) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && !_failed) setState(() => _failed = true);
+              });
+            }
+            return bundled();
+          },
         ),
       ),
     );

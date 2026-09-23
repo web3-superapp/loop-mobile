@@ -358,7 +358,14 @@ void main() {
       const allowed = <String>{
         'lib/features/chain/chain_widgets.dart',
         'lib/features/community/community_profile_screen.dart',
-        'lib/features/market/market_secondary_screens.dart',
+        // S78b: the new-pairs rows moved into `market_widgets.dart`, so the
+        // page that lists them no longer summarises anything itself.
+        // S78b: the 行情 row's price column, and only below a dollar. There
+        // the function does not summarise at all — it keeps three significant
+        // digits — and the alternative was `loopFormatUsd` rounding every
+        // sub-cent asset to 「$0」 on a page that refuses to print a zero for
+        // anything.
+        'lib/features/market/market_widgets.dart',
         'lib/features/market/token_screen.dart',
         // The same Token Card, under a chat bubble: the same three metric
         // cells, and nothing a member is committing to.

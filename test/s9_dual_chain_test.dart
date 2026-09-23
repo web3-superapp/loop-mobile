@@ -687,6 +687,11 @@ Map<String, Object?> _launchChainBalance() => <String, Object?>{
   'nativeBalance': <String, Object?>{
     'assetId': 'eip155:97:native',
     'symbol': 'tBNB',
+    // The Launch slot's own coin has no artwork on the contract's whitelist.
+    'logo': <String, Object?>{
+      'status': 'unavailable',
+      'reasonCode': 'TOKEN_LOGO_CHAIN_UNSUPPORTED',
+    },
     'decimals': 18,
     'rawValue': '2500000000000000000',
     'displayBalance': '2.5',

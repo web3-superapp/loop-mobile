@@ -131,6 +131,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       LoopV2Contract.validateSuccess(response, statusCode: 200);
       final root = LoopV2Contract.strictMap(response.data, const <String>{
         'asset',
+        'logo',
         'capability',
         'price',
         'priceChange24h',
@@ -147,6 +148,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       LoopV2ChainCodec.requireContractVersion(root);
       return MarketAssetDetail(
         asset: _assetIdentity(root['asset'], target),
+        logoUrl: LoopV2ChainCodec.logoUrl(root['logo']),
         capability: LoopV2ChainCodec.assetCapability(root['capability']),
         price: LoopV2ChainCodec.fact(root['price']),
         priceChange24h: LoopV2ChainCodec.fact(root['priceChange24h']),
@@ -343,6 +345,10 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     final map = LoopV2Contract.strictMap(raw, <String>{
       'assetId',
       'asset',
+      // Required from decision 0072 on: every row that names an asset names
+      // its artwork too, and a row without the key is an invalid payload
+      // rather than a row that silently loses its logo.
+      'logo',
       'price',
       'priceChange24h',
       if (trending) 'volume24h',
@@ -351,6 +357,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     return MarketAssetRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
       asset: LoopV2ChainCodec.assetSummary(map['asset']),
+      logoUrl: LoopV2ChainCodec.logoUrl(map['logo']),
       price: LoopV2ChainCodec.fact(map['price']),
       priceChange24h: LoopV2ChainCodec.fact(map['priceChange24h']),
       volume24h: trending ? LoopV2ChainCodec.fact(map['volume24h']) : null,
@@ -955,6 +962,10 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         'poolRef',
         'dexId',
         'name',
+        // The pool's base token's artwork. A provider that gave no base token
+        // address arrives as `unavailable` with
+        // `TOKEN_LOGO_ADDRESS_UNKNOWN`, and the row draws its monogram.
+        'logo',
         'baseTokenAddress',
         'quoteTokenAddress',
         'registryAssetId',
@@ -967,6 +978,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       items.add(
         MarketNewPair(
           poolRef: poolRef,
+          logoUrl: LoopV2ChainCodec.logoUrl(pairMap['logo']),
           // Both strings are the Provider's own: the schema bounds them by
           // length and says nothing about their characters, because they are
           // assembled from names minted on the chain. They are read as
