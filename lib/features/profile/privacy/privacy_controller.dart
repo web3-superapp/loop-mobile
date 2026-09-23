@@ -221,6 +221,18 @@ final class PrivacyController extends Notifier<PrivacyState> {
     );
   }
 
+  /// A gate is an admission rule, not a display preference, but it travels in
+  /// the same CAS write: nothing reaches the server until 保存.
+  void editSocialGate(PrivacySocialGate gate, {required bool open}) {
+    if (!state.canEdit) throw StateError('Privacy is not editable');
+    state = PrivacyState._(
+      mode: state.mode,
+      phase: PrivacyPhase.ready,
+      resource: state.resource,
+      draft: state.draft.withSocialGate(gate, open: open),
+    );
+  }
+
   void discard() {
     final resource = state.resource;
     if (resource == null || state.isBusy || state.requiresReload) return;

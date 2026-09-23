@@ -146,9 +146,15 @@ void main() {
         PrivacyVisibilityFacet.totalAssets,
         PrivacyAudience.everyone,
       );
+      controller.editSocialGate(PrivacySocialGate.directMessages, open: false);
       state = container.read(privacyControllerProvider);
       expect(state.draft.discoverable, isTrue);
       expect(state.draft.anonymousMode, isFalse);
+      // A gate is an admission rule, but it still waits for the same CAS
+      // write; the two untouched gates stay open in the draft.
+      expect(state.draft.social.directMessages, isFalse);
+      expect(state.draft.social.friendRequests, isTrue);
+      expect(state.draft.social.groupInvites, isTrue);
       expect(
         state.draft.visibility[PrivacyVisibilityFacet.totalAssets],
         PrivacyAudience.everyone,
@@ -204,6 +210,11 @@ void main() {
       expect(
         gateway.candidates.single.visibility,
         const PrivacyVisibility.defaults(),
+      );
+      // The submitted draft always carries all nine values.
+      expect(
+        gateway.candidates.single.social,
+        const PrivacySocialGates.defaults(),
       );
       expect(
         container.read(privacyControllerProvider).phase,
@@ -299,6 +310,13 @@ void main() {
       expect(conflicted.canSave, isFalse);
       expect(() => controller.editDiscoverable(false), throwsStateError);
       expect(() => controller.editAnonymousMode(false), throwsStateError);
+      expect(
+        () => controller.editSocialGate(
+          PrivacySocialGate.groupInvites,
+          open: false,
+        ),
+        throwsStateError,
+      );
       expect(
         () => controller.editVisibility(
           PrivacyVisibilityFacet.totalAssets,

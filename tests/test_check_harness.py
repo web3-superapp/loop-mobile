@@ -6216,6 +6216,52 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected exact Privacy wire-value guard: {result}",
         )
 
+    def test_privacy_social_gates_must_keep_their_open_defaults(self) -> None:
+        # Decision 0070: a missing server row means open, and each gate keeps
+        # its own open wire value. A client that closed them by default or
+        # collapsed them onto one enum would misstate the admission rule.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.PRIVACY_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(
+                "enum PrivacySocialGate {\n"
+                "  friendRequests('friendRequests', 'friends', 'a'),\n"
+                "  directMessages('directMessages', 'friends', 'b'),\n"
+                "  groupInvites('groupInvites', 'friends', 'c');\n"
+                "  static const String closedWireValue = 'off';\n"
+                "}\n"
+                "final class PrivacySocialGates {\n"
+                "  const PrivacySocialGates.defaults()\n"
+                "    : friendRequests = false,\n"
+                "      directMessages = true,\n"
+                "      groupInvites = true;\n"
+                "  final bool friendRequests;\n"
+                "  final bool directMessages;\n"
+                "  final String groupInvites;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_privacy_application_contract(root)
+
+        self.assertTrue(
+            any("PrivacySocialGate must be exactly" in error for error in result),
+            msg=f"expected exact social-gate wire guard: {result}",
+        )
+        self.assertTrue(
+            any("only closed wire value" in error for error in result),
+            msg=f"expected closed wire-value guard: {result}",
+        )
+        self.assertTrue(
+            any("one bool per reviewed gate" in error for error in result),
+            msg=f"expected social-gate field guard: {result}",
+        )
+        self.assertTrue(
+            any("defaults must be open" in error for error in result),
+            msg=f"expected open-by-default guard: {result}",
+        )
+
     def test_privacy_and_copy_surfaces_cannot_restore_fake_controls(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

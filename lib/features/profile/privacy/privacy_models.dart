@@ -112,23 +112,127 @@ final class PrivacyVisibility {
       Object.hash(totalAssets, miningPower, communities, tradeHistory);
 }
 
+/// The three social admission gates the server reads before it lets anyone
+/// reach this account (decision 0070, 2026-09-23). Unlike the visibility
+/// facets these are not display preferences: they are the admission rule
+/// itself, applied by `POST /v2/message-requests`,
+/// `POST /v2/chat/direct-channels` and `POST /v2/chat/groups`.
+///
+/// Each gate is binary but carries its own open value on the wire
+/// (`enabled` for friend requests, `friends` for the two friend-scoped ones);
+/// the closed value is `disabled` for all three.
+enum PrivacySocialGate {
+  friendRequests('friendRequests', 'enabled', '允许陌生人发消息请求'),
+  directMessages('directMessages', 'friends', '允许好友发起私聊'),
+  groupInvites('groupInvites', 'friends', '允许好友拉我进群');
+
+  const PrivacySocialGate(this.wireValue, this.openWireValue, this.label);
+
+  /// The field name inside the `privacy` object.
+  final String wireValue;
+
+  final String openWireValue;
+  final String label;
+
+  static const String closedWireValue = 'disabled';
+
+  String wireFor({required bool open}) =>
+      open ? openWireValue : closedWireValue;
+
+  /// Strict: a value outside this gate's two-value enum is a contract
+  /// violation, never a silent close.
+  bool openFromWire(String value) {
+    if (value == openWireValue) return true;
+    if (value == closedWireValue) return false;
+    throw const InvalidPrivacyContractException();
+  }
+}
+
+/// Default open, because a missing server row means open (decision 0070).
+/// A closed gate is only ever the owner's explicit choice.
+@immutable
+final class PrivacySocialGates {
+  factory PrivacySocialGates({
+    bool friendRequests = true,
+    bool directMessages = true,
+    bool groupInvites = true,
+  }) => PrivacySocialGates._(friendRequests, directMessages, groupInvites);
+
+  const PrivacySocialGates._(
+    this.friendRequests,
+    this.directMessages,
+    this.groupInvites,
+  );
+
+  const PrivacySocialGates.defaults()
+    : friendRequests = true,
+      directMessages = true,
+      groupInvites = true;
+
+  /// A stranger may send a message request. The target must also be
+  /// `discoverable` before anyone can find it.
+  final bool friendRequests;
+
+  /// An accepted friend may open a direct channel.
+  final bool directMessages;
+
+  /// An accepted friend may add this account to a small group.
+  final bool groupInvites;
+
+  bool operator [](PrivacySocialGate gate) => switch (gate) {
+    PrivacySocialGate.friendRequests => friendRequests,
+    PrivacySocialGate.directMessages => directMessages,
+    PrivacySocialGate.groupInvites => groupInvites,
+  };
+
+  PrivacySocialGates withGate(PrivacySocialGate gate, {required bool open}) =>
+      PrivacySocialGates(
+        friendRequests: gate == PrivacySocialGate.friendRequests
+            ? open
+            : friendRequests,
+        directMessages: gate == PrivacySocialGate.directMessages
+            ? open
+            : directMessages,
+        groupInvites: gate == PrivacySocialGate.groupInvites
+            ? open
+            : groupInvites,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PrivacySocialGates &&
+          other.friendRequests == friendRequests &&
+          other.directMessages == directMessages &&
+          other.groupInvites == groupInvites;
+
+  @override
+  int get hashCode => Object.hash(friendRequests, directMessages, groupInvites);
+}
+
 @immutable
 final class PrivacyValues {
   const PrivacyValues({
     required this.discoverable,
     required this.anonymousMode,
     this.visibility = const PrivacyVisibility.defaults(),
+    this.social = const PrivacySocialGates.defaults(),
   });
 
+  /// The server's version-0 projection: presentation fails closed, the three
+  /// social gates are open (decision 0070). The client never writes these
+  /// defaults on its own; it reports what the admission checks already apply.
   const PrivacyValues.defaults()
     : discoverable = false,
       anonymousMode = false,
-      visibility = const PrivacyVisibility.defaults();
+      visibility = const PrivacyVisibility.defaults(),
+      social = const PrivacySocialGates.defaults();
 
   factory PrivacyValues.copyOf(PrivacyValues source) => PrivacyValues(
     discoverable: source.discoverable,
     anonymousMode: source.anonymousMode,
     visibility: source.visibility,
+    social: source.social,
   );
 
   /// Shows the LOOP ID and allows the owner to be found by search.
@@ -139,22 +243,35 @@ final class PrivacyValues {
 
   final PrivacyVisibility visibility;
 
+  /// The admission gates. A display switch never grants access; these do.
+  final PrivacySocialGates social;
+
   PrivacyValues withDiscoverable(bool value) => PrivacyValues(
     discoverable: value,
     anonymousMode: anonymousMode,
     visibility: visibility,
+    social: social,
   );
 
   PrivacyValues withAnonymousMode(bool value) => PrivacyValues(
     discoverable: discoverable,
     anonymousMode: value,
     visibility: visibility,
+    social: social,
   );
 
   PrivacyValues withVisibility(PrivacyVisibility value) => PrivacyValues(
     discoverable: discoverable,
     anonymousMode: anonymousMode,
     visibility: value,
+    social: social,
+  );
+
+  PrivacyValues withSocial(PrivacySocialGates value) => PrivacyValues(
+    discoverable: discoverable,
+    anonymousMode: anonymousMode,
+    visibility: visibility,
+    social: value,
   );
 
   PrivacyValues withFacet(
@@ -162,16 +279,21 @@ final class PrivacyValues {
     PrivacyAudience audience,
   ) => withVisibility(visibility.withFacet(facet, audience));
 
+  PrivacyValues withSocialGate(PrivacySocialGate gate, {required bool open}) =>
+      withSocial(social.withGate(gate, open: open));
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is PrivacyValues &&
           other.discoverable == discoverable &&
           other.anonymousMode == anonymousMode &&
-          other.visibility == visibility;
+          other.visibility == visibility &&
+          other.social == social;
 
   @override
-  int get hashCode => Object.hash(discoverable, anonymousMode, visibility);
+  int get hashCode =>
+      Object.hash(discoverable, anonymousMode, visibility, social);
 }
 
 @immutable

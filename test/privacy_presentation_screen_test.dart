@@ -26,6 +26,9 @@ const _stateKeys = <String>[
 const _controlKeys = <String>[
   'privacy-anonymous-mode',
   'privacy-discoverable',
+  'privacy-social-friendRequests',
+  'privacy-social-directMessages',
+  'privacy-social-groupInvites',
   'privacy-visibility-totalAssets',
   'privacy-visibility-miningPower',
   'privacy-visibility-communities',
@@ -169,6 +172,123 @@ void main() {
     );
     // A saved draft is clean again, so the action cannot resubmit.
     expect(_saveButton(tester).onPressed, isNull);
+  });
+
+  testWidgets('the three social gates render open and save all nine values', (
+    tester,
+  ) async {
+    final gateway = _previewGateway();
+    await _pumpPrivacy(tester, gateway: gateway);
+
+    // Decision 0070: the gates default open, unlike every display value on
+    // this page. A closed gate is only ever the owner's own choice.
+    for (final gate in PrivacySocialGate.values) {
+      expect(
+        _toggle(tester, 'privacy-social-${gate.wireValue}').value,
+        isTrue,
+        reason: gate.wireValue,
+      );
+    }
+
+    await _tap(
+      tester,
+      find.byKey(const ValueKey<String>('privacy-social-directMessages')),
+    );
+
+    expect(_toggle(tester, 'privacy-social-directMessages').value, isFalse);
+    expect(_toggle(tester, 'privacy-social-groupInvites').value, isTrue);
+    expect(_toggle(tester, 'privacy-social-friendRequests').value, isTrue);
+    expect(_saveButton(tester).onPressed, isNotNull);
+
+    await _tap(tester, find.byKey(const ValueKey<String>('privacy-save')));
+    await tester.pumpAndSettle();
+
+    // The committed resource carries the whole nine-value replacement: one
+    // closed gate, the two open ones, and the untouched display values.
+    final committed = await gateway.load();
+    expect(committed.version, 2);
+    expect(
+      committed.values,
+      const PrivacyValues.defaults().withSocialGate(
+        PrivacySocialGate.directMessages,
+        open: false,
+      ),
+    );
+    expect(committed.values.social.friendRequests, isTrue);
+    expect(committed.values.social.groupInvites, isTrue);
+    expect(committed.values.discoverable, isFalse);
+    expect(committed.values.visibility, const PrivacyVisibility.defaults());
+    expect(_saveButton(tester).onPressed, isNull);
+  });
+
+  testWidgets('a gate row says what it does in the position it is in', (
+    tester,
+  ) async {
+    await _pumpPrivacy(tester, gateway: _previewGateway());
+
+    // Open but not discoverable: the gate alone does not make the account
+    // findable, so the row says so instead of promising requests.
+    expect(
+      _toggle(tester, 'privacy-social-friendRequests').subtitle,
+      '已打开，但还需要开启「显示 LOOP ID」，否则别人搜不到你',
+    );
+
+    await _tap(
+      tester,
+      find.byKey(const ValueKey<String>('privacy-discoverable')),
+    );
+
+    expect(
+      _toggle(tester, 'privacy-social-friendRequests').subtitle,
+      '陌生人搜到你之后可以发一条消息请求',
+    );
+
+    await _tap(
+      tester,
+      find.byKey(const ValueKey<String>('privacy-social-friendRequests')),
+    );
+
+    expect(
+      _toggle(tester, 'privacy-social-friendRequests').subtitle,
+      '陌生人无法给你发消息请求',
+    );
+
+    await _tap(
+      tester,
+      find.byKey(const ValueKey<String>('privacy-social-groupInvites')),
+    );
+
+    expect(
+      _toggle(tester, 'privacy-social-groupInvites').subtitle,
+      '关闭后，好友无法把你拉进小群',
+    );
+    expect(
+      _toggle(tester, 'privacy-social-directMessages').subtitle,
+      '已成为好友的人可以直接打开与你的私聊',
+    );
+  });
+
+  testWidgets('a stale resource without the gates never reaches the page', (
+    tester,
+  ) async {
+    // The decoder refuses a payload that predates decision 0070; the page
+    // shows the failure instead of inventing an admission rule.
+    await _pumpPrivacy(
+      tester,
+      gateway: _StubPrivacyGateway(
+        onLoad: () async => throw const PrivacyGatewayException(
+          PrivacyGatewayFailureKind.invalidData,
+        ),
+      ),
+    );
+
+    _expectOnlyState(tester, 'privacy-error');
+    for (final gate in PrivacySocialGate.values) {
+      expect(
+        find.byKey(ValueKey<String>('privacy-social-${gate.wireValue}')),
+        findsNothing,
+      );
+    }
   });
 
   testWidgets('the LOOP ID row describes the state it is actually in', (

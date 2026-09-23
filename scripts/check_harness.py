@@ -1004,6 +1004,14 @@ PRIVACY_VISIBILITY_FACETS = (
     "communities",
     "tradeHistory",
 )
+# Decision 0070: the V2 privacy resource also carries the three social
+# admission gates. Each is binary but keeps its own open value on the wire,
+# and `disabled` is the only closed value for all three.
+PRIVACY_SOCIAL_GATES = {
+    "friendRequests": "enabled",
+    "directMessages": "friends",
+    "groupInvites": "friends",
+}
 PRIVACY_POSITIVE_COMMIT_PATTERN = re.compile(
     r"\b(?:(?:settings?|privacy|preferences?|changes?)\s+(?:are\s+)?"
     r"(?:now\s+)?(?:saved|committed|applied|updated|live)|"
@@ -11356,11 +11364,65 @@ def check_privacy_application_contract(root: Path) -> list[str]:
                 "reviewed facet"
             )
 
+        gate_match = re.search(
+            r"enum\s+PrivacySocialGate\s*\{(?P<body>.*?)\s*;",
+            models_source,
+            re.DOTALL,
+        )
+        gate_wire_values = {
+            wire_value: open_value
+            for _, _, wire_value, _, open_value in re.findall(
+                r"\b(\w+)\((['\"])([^'\"]*)\2\s*,\s*(['\"])([^'\"]*)\4",
+                gate_match.group("body") if gate_match else "",
+            )
+        }
+        if gate_wire_values != PRIVACY_SOCIAL_GATES:
+            errors.append(
+                "PrivacySocialGate must be exactly friendRequests (enabled), "
+                "directMessages (friends) and groupInvites (friends)"
+            )
+        if not re.search(
+            r"static\s+const\s+String\s+closedWireValue\s*=\s*'disabled'",
+            models_source,
+        ):
+            errors.append(
+                "PrivacySocialGate must keep disabled as the only closed wire "
+                "value"
+            )
+        actual_gate_fields = dart_class_fields(
+            models_code, "PrivacySocialGates"
+        )
+        expected_gate_fields = {
+            ("final", "bool", gate) for gate in PRIVACY_SOCIAL_GATES
+        }
+        if actual_gate_fields != expected_gate_fields:
+            errors.append(
+                "PrivacySocialGates must hold exactly one bool per reviewed "
+                "gate"
+            )
+        # A missing server row means open, so the client's version-0
+        # projection reports the gates the admission checks already apply.
+        defaults_match = re.search(
+            r"const\s+PrivacySocialGates\.defaults\(\)\s*:(?P<body>.*?);",
+            models_source,
+            re.DOTALL,
+        )
+        defaults_body = defaults_match.group("body") if defaults_match else ""
+        if any(
+            not re.search(rf"\b{gate}\s*=\s*true\b", defaults_body)
+            for gate in PRIVACY_SOCIAL_GATES
+        ):
+            errors.append(
+                "PrivacySocialGates defaults must be open on every gate "
+                "(decision 0070)"
+            )
+
         actual_values_fields = dart_class_fields(models_code, "PrivacyValues")
         expected_values_fields = {
             ("final", "bool", "discoverable"),
             ("final", "bool", "anonymousMode"),
             ("final", "PrivacyVisibility", "visibility"),
+            ("final", "PrivacySocialGates", "social"),
         }
         if actual_values_fields != expected_values_fields:
             rendered_fields = ", ".join(
@@ -11371,8 +11433,8 @@ def check_privacy_application_contract(root: Path) -> list[str]:
             ) or "none"
             errors.append(
                 "PrivacyValues fields must be exactly final bool discoverable, "
-                "final bool anonymousMode and final PrivacyVisibility "
-                "visibility; found: "
+                "final bool anonymousMode, final PrivacyVisibility visibility "
+                "and final PrivacySocialGates social; found: "
                 + rendered_fields
             )
 

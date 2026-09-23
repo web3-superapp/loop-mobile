@@ -1440,6 +1440,34 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                 ? () => controller.editDiscoverable(!draft.discoverable)
                 : null,
           ),
+          // 社交 · the three admission gates (decision 0070). They sit apart
+          // from 可见性 because they are not display preferences: the server
+          // reads them before it lets a request, a direct channel or a group
+          // invite reach this account. The prototype's 持仓广播 card is not
+          // implemented, so this group takes the middle slot of the page.
+          const LoopLabel('社交'),
+          for (final gate in PrivacySocialGate.values)
+            LoopTogglePreferenceRow(
+              key: ValueKey<String>('privacy-social-${gate.wireValue}'),
+              title: gate.label,
+              subtitle: _socialGateSubtitle(
+                gate,
+                open: draft.social[gate],
+                discoverable: draft.discoverable,
+              ),
+              value: draft.social[gate],
+              position: gate == PrivacySocialGate.values.first
+                  ? LoopRowPosition.first
+                  : gate == PrivacySocialGate.values.last
+                  ? LoopRowPosition.last
+                  : LoopRowPosition.middle,
+              onChanged: state.canEdit
+                  ? () => controller.editSocialGate(
+                      gate,
+                      open: !draft.social[gate],
+                    )
+                  : null,
+            ),
           const LoopLabel('可见性'),
           for (final facet in PrivacyVisibilityFacet.values)
             LoopTogglePreferenceRow(
@@ -1471,7 +1499,9 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
           const LoopNotice(
             icon: 'info',
             title: '可见性不是授权',
-            body: '这些开关只影响展示。它们不会建立社交关系，也不会让别人复制你的交易或访问你的钱包。',
+            body:
+                '可见性开关只影响展示，不会建立社交关系，也不会让别人复制你的交易或访问你的钱包。'
+                '社交开关决定别人能否向你发起请求，关掉它不会解除已经存在的好友关系或已经打开的会话。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
           ),
         ],
@@ -1490,6 +1520,26 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
       ),
     );
   }
+
+  /// The second line states what the gate does *in its current position*, and
+  /// for 消息请求 it also names the condition the server applies on top of the
+  /// gate: an account that is not discoverable cannot be found at all, so an
+  /// open gate alone would promise something that does not happen.
+  String _socialGateSubtitle(
+    PrivacySocialGate gate, {
+    required bool open,
+    required bool discoverable,
+  }) => switch (gate) {
+    PrivacySocialGate.friendRequests =>
+      !open
+          ? '陌生人无法给你发消息请求'
+          : discoverable
+          ? '陌生人搜到你之后可以发一条消息请求'
+          : '已打开，但还需要开启「显示 LOOP ID」，否则别人搜不到你',
+    PrivacySocialGate.directMessages =>
+      open ? '已成为好友的人可以直接打开与你的私聊' : '关闭后，好友也无法打开与你的私聊',
+    PrivacySocialGate.groupInvites => open ? '好友可以把你拉进小群' : '关闭后，好友无法把你拉进小群',
+  };
 
   Future<void> _save(PrivacyController controller) async {
     final expectedVersion = ref.read(privacyControllerProvider).expectedVersion;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -39,15 +40,19 @@ final class PublicProfileIdentity {
     required this.displayName,
     this.loopId,
     this.avatarRef,
+    this.isSelf = false,
   });
 
-  factory PublicProfileIdentity.fromProfile(LoopPublicProfile profile) =>
-      PublicProfileIdentity(
-        publicProfileId: profile.publicProfileId,
-        displayName: profile.displayName,
-        loopId: profile.loopId,
-        avatarRef: profile.avatarRef,
-      );
+  factory PublicProfileIdentity.fromProfile(
+    LoopPublicProfile profile, {
+    bool isSelf = false,
+  }) => PublicProfileIdentity(
+    publicProfileId: profile.publicProfileId,
+    displayName: profile.displayName,
+    loopId: profile.loopId,
+    avatarRef: profile.avatarRef,
+    isSelf: isSelf,
+  );
 
   /// A `users` search result: `stableId` is the command target and the
   /// snapshot is display copy. Only a subtitle that is a canonical LOOP ID is
@@ -76,8 +81,63 @@ final class PublicProfileIdentity {
   final String? loopId;
   final String? avatarRef;
 
+  /// Whether the caller knows this card is the viewer's own account.
+  ///
+  /// Only a caller that holds the fact sets it — the member directory marks
+  /// its own row. A caller that does not know leaves it false and the sheet
+  /// falls back to comparing LOOP IDs.
+  final bool isSelf;
+
   bool get isCommandTarget => publicProfileId != null;
+
+  /// The four-field projection behind this card, when the card holds one.
+  ///
+  /// It is what a direct conversation is opened with, so the header and the
+  /// `@` candidates read the same person this sheet drew. A card with no
+  /// command target or no LOOP ID — a search snapshot whose subtitle was not
+  /// one — has no projection, and the conversation is opened without a name
+  /// rather than with an invented one.
+  LoopPublicProfile? get profile {
+    final id = publicProfileId;
+    final canonicalLoopId = loopId;
+    if (id == null || canonicalLoopId == null) return null;
+    return LoopPublicProfile(
+      publicProfileId: id,
+      loopId: canonicalLoopId,
+      alias: displayName == canonicalLoopId ? null : displayName,
+      avatarRef: avatarRef,
+    );
+  }
 }
+
+/// Whether this card may offer to open a direct conversation.
+///
+/// Three facts have to hold: the card names a command target, the caller can
+/// navigate to a conversation, and the target is somebody else. LOOP has no
+/// conversation with itself and the server refuses that target, so the
+/// viewer's own card never carries the control.
+///
+/// [viewerLoopId] is the LOOP ID of the account signed in now, when this
+/// device has read one. It is the fallback identification for a caller — the
+/// global search — that holds no `isSelf` fact of its own.
+@visibleForTesting
+bool publicProfileDirectMessageOffered({
+  required PublicProfileIdentity identity,
+  required bool hasHandler,
+  required String? viewerLoopId,
+}) {
+  if (!hasHandler || !identity.isCommandTarget || identity.isSelf) return false;
+  final loopId = identity.loopId;
+  return viewerLoopId == null || loopId == null || viewerLoopId != loopId;
+}
+
+/// Opens the direct conversation with the account this card names.
+///
+/// The sheet does not navigate: the caller owns the route, exactly as it owns
+/// the governance commands it passes in.
+typedef PublicProfileDirectMessageHandler = void Function(
+  PublicProfileIdentity identity,
+);
 
 /// The shared "public profile" panel.
 ///
@@ -95,6 +155,7 @@ Future<T?> showPublicProfileSheet<T extends Object>(
   bool? viewerFollows,
   List<PublicProfileSheetAction<T>> actions =
       const <PublicProfileSheetAction<Never>>[],
+  PublicProfileDirectMessageHandler? onOpenDirectMessage,
 }) {
   return showLoopSheet<T>(
     context,
@@ -103,6 +164,7 @@ Future<T?> showPublicProfileSheet<T extends Object>(
       identity: identity,
       viewerFollows: viewerFollows,
       actions: actions,
+      onOpenDirectMessage: onOpenDirectMessage,
     ),
   );
 }
@@ -112,11 +174,13 @@ class _PublicProfileSheet<T extends Object> extends ConsumerStatefulWidget {
     required this.identity,
     required this.viewerFollows,
     required this.actions,
+    required this.onOpenDirectMessage,
   });
 
   final PublicProfileIdentity identity;
   final bool? viewerFollows;
   final List<PublicProfileSheetAction<T>> actions;
+  final PublicProfileDirectMessageHandler? onOpenDirectMessage;
 
   @override
   ConsumerState<_PublicProfileSheet<T>> createState() =>
@@ -168,6 +232,18 @@ class _PublicProfileSheetState<T extends Object>
     final loopId = identity.loopId;
     final following = _following;
     final canFollow = identity.isCommandTarget;
+    // The account signed in now, as this device has already read it. Watching
+    // the controller starts no read of its own: an unread profile simply
+    // leaves the comparison unanswered.
+    final viewerLoopId = ref.watch(
+      profileControllerProvider.select((state) => state.resource?.loopId),
+    );
+    final openDirectMessage = widget.onOpenDirectMessage;
+    final offersDirectMessage = publicProfileDirectMessageOffered(
+      identity: identity,
+      hasHandler: openDirectMessage != null,
+      viewerLoopId: viewerLoopId,
+    );
     return Padding(
       key: const ValueKey<String>('public-profile-sheet'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -243,22 +319,31 @@ class _PublicProfileSheetState<T extends Object>
             ),
             const SizedBox(height: 8),
           ],
-          // `dm` has no V2 send path; the control states that instead of
-          // opening a conversation that cannot exist. The reason under it
-          // names the gap and promises no date: group chat is live, so
-          // "聊天开放后可用" read as false to anybody who had just used it.
-          LoopButton(
-            key: const ValueKey<String>('public-profile-open-dm'),
-            label: '打开私聊',
-            block: true,
-            onPressed: null,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '私聊还不能从这里发起：这个入口没有可用的私聊通道。',
-            key: const ValueKey<String>('public-profile-dm-reason'),
-            style: LoopTypography.caption(11, color: LoopColors.muted),
-          ),
+          // The prototype makes every member row a `dm` entry. LOOP puts this
+          // card in between, so the card carries the control: it closes and
+          // hands the account to the caller, which owns the route. Admission
+          // is decided on the conversation page, not here — an account this
+          // viewer is not connected to opens on the message request, which is
+          // the step that connects them.
+          if (offersDirectMessage) ...<Widget>[
+            LoopButton(
+              key: const ValueKey<String>('public-profile-open-dm'),
+              label: '打开私聊',
+              block: true,
+              onPressed: _busy
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      openDirectMessage!(identity);
+                    },
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '还没有建立联系时，会先请你发送一条消息请求。',
+              key: const ValueKey<String>('public-profile-dm-hint'),
+              style: LoopTypography.caption(11, color: LoopColors.muted),
+            ),
+          ],
           if (_failureKind != null) ...<Widget>[
             const SizedBox(height: 12),
             LoopNotice(
