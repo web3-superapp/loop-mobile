@@ -181,19 +181,21 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           )
         else ...<Widget>[
+          // One sentence, not two: the title used to restate the reason code
+          // printed directly under it (「兑换还在验证中，暂时不能执行」 over
+          // 「兑换还在验证中，可以查看报价，但不能执行。」).
           if (capability.evidencePending)
             LoopNotice(
               key: const ValueKey<String>('swap-evidence-pending'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '兑换还在验证中，暂时不能执行',
               body: loopReasonCodeText(capability.evidenceReasonCode),
             ),
           _AssetField(
             keyPrefix: 'swap-source',
             label: '支付',
             symbol: _symbolFor(balances, _sourceAssetId),
-            balance: _spendableFor(balances, _sourceAssetId),
+            balanceLine: _balanceLineFor(balances, _sourceAssetId),
             controller: _amount,
             onPick: () => unawaited(
               _pickAsset(balances!, (assetId) {
@@ -218,22 +220,29 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ),
           const LoopLabel('滑点上限'),
+          // `.segs`: one row of equal thirds, as the prototype lays it out.
+          // Stacked full-width buttons read as three separate actions, and
+          // the 「50 bps」 label was trade-desk vocabulary — the percentage is
+          // the same number in the unit the chooser already owns.
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            child: Row(
               children: <Widget>[
-                for (final bps in _slippageChoices)
-                  LoopSeg(
-                    key: ValueKey<String>('swap-slippage-$bps'),
-                    label: '$bps bps',
-                    selected: bps == _slippageBps,
-                    onSelected: () => setState(() {
-                      _slippageBps = bps;
-                      _quote = null;
-                    }),
+                for (final (index, bps)
+                    in _slippageChoices.indexed) ...<Widget>[
+                  if (index > 0) const SizedBox(width: 8),
+                  Expanded(
+                    child: LoopSeg(
+                      key: ValueKey<String>('swap-slippage-$bps'),
+                      label: moneySlippageLabel(bps),
+                      selected: bps == _slippageBps,
+                      onSelected: () => setState(() {
+                        _slippageBps = bps;
+                        _quote = null;
+                      }),
+                    ),
                   ),
+                ],
               ],
             ),
           ),
@@ -360,10 +369,24 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     return balances.rowFor(assetId)?.symbol;
   }
 
-  Decimal? _spendableFor(LoopWalletBalances? balances, String? assetId) {
-    if (balances == null || assetId == null) return null;
-    final balance = balances.rowFor(assetId)?.balance;
-    return balance is LoopBalanceAvailable ? balance.spendableBalance : null;
+  /// The sentence under the pay field.
+  ///
+  /// 「读不到可用余额」 is a read failure and must only be said when a read
+  /// failed. Before an asset is chosen there is nothing to read — the wallet
+  /// page one tap away was showing 2.99 USDT while this line claimed the
+  /// balance could not be read — and when the chain read for the chosen asset
+  /// did fail, the server's own reason is what belongs here.
+  String _balanceLineFor(LoopWalletBalances? balances, String? assetId) {
+    if (assetId == null) return '先选择要支付的资产，这里会显示它的可动用余额。';
+    if (balances == null) return '余额还没有读到。';
+    final row = balances.rowFor(assetId);
+    if (row == null) return '这个钱包没有这一行，读不到它的余额。';
+    return switch (row.balance) {
+      LoopBalanceAvailable(spendableBalance: final spendable) =>
+        '可动用 ${loopFormatDecimal(spendable)} ${row.symbol}',
+      LoopBalanceUnavailable(reasonCode: final reasonCode) =>
+        loopReasonCodeText(reasonCode),
+    };
   }
 
   Future<void> _pickAsset(
@@ -466,7 +489,7 @@ class _AssetField extends StatelessWidget {
     required this.keyPrefix,
     required this.label,
     required this.symbol,
-    required this.balance,
+    required this.balanceLine,
     required this.controller,
     required this.onPick,
     required this.onAmountChanged,
@@ -475,7 +498,10 @@ class _AssetField extends StatelessWidget {
   final String keyPrefix;
   final String label;
   final String? symbol;
-  final Decimal? balance;
+
+  /// What this field says about the balance behind it. Built by the page, so
+  /// "not chosen yet" is never rendered as "could not be read".
+  final String balanceLine;
   final TextEditingController controller;
   final VoidCallback onPick;
   final VoidCallback onAmountChanged;
@@ -521,9 +547,8 @@ class _AssetField extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              balance == null
-                  ? '读不到可用余额，这里不做估算。'
-                  : '可动用 ${loopFormatDecimal(balance!)}',
+              balanceLine,
+              key: ValueKey<String>('$keyPrefix-balance'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -636,7 +661,7 @@ class _QuoteFacts extends StatelessWidget {
                 ),
                 LoopKeyValue(
                   label: '滑点上限',
-                  value: '${value.slippageBps} bps',
+                  value: moneySlippageLabel(value.slippageBps),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
@@ -782,7 +807,7 @@ class SwapRouteScreen extends StatelessWidget {
                   value:
                       '${value.minimumOutputAmount.display} '
                       '${quote.destinationAsset.symbol}'
-                      '（滑点 ${value.slippageBps} bps）',
+                      '（滑点 ${moneySlippageLabel(value.slippageBps)}）',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
               ],
@@ -799,7 +824,7 @@ class SwapRouteScreen extends StatelessWidget {
               children: <Widget>[
                 LoopKeyValue(
                   label: '网络费估算',
-                  value: '${value.gasEstimateRaw} gas',
+                  value: '${loopGroupedFigure(value.gasEstimateRaw)} gas',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(

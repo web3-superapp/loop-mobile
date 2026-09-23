@@ -16,6 +16,8 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
+import 'package:loop_mobile/features/wallet/send_screens.dart';
+import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -305,11 +307,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 icon: 'arrow-down',
                 onPressed: () => _open(WalletRoute.receive(walletId)),
               ),
+              // 跨链 has no provider, and a grey tile whose only answer was
+              // a 2.6-second toast read as a control that does nothing at
+              // all. The entry opens the bridge page, which is where the
+              // reason stands still long enough to be read — and which is
+              // where the prototype's 跨链 goes.
               LoopAction(
                 actionKey: const ValueKey<String>('wallet-bridge-entry'),
                 label: '跨链',
                 icon: 'globe',
-                blockedReason: '跨链还没有开放。',
+                onPressed: () => _open('/wallet/bridge'),
               ),
             ],
           ),
@@ -627,7 +634,7 @@ class WalletAssetScreen extends ConsumerStatefulWidget {
 
   final String? assetId;
   final VoidCallback? onBack;
-  final void Function(String location)? onNavigate;
+  final void Function(String location, {Object? extra})? onNavigate;
 
   @override
   ConsumerState<WalletAssetScreen> createState() => _WalletAssetScreenState();
@@ -638,13 +645,41 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
     LoopToast.show(context, message: reason, kind: LoopToastKind.warn);
   }
 
-  void _open(String location) {
+  void _open(String location, {Object? extra}) {
     final navigate = widget.onNavigate;
     if (navigate != null) {
-      navigate(location);
+      navigate(location, extra: extra);
       return;
     }
-    context.push(location);
+    context.push(location, extra: extra);
+  }
+
+  /// Opens Send with this asset already chosen.
+  ///
+  /// Step 1 exists to pick an asset; pressed here the asset is already
+  /// picked, so the flow starts at step 2 with a draft carrying the wallet,
+  /// the opaque asset id and the symbol. A row whose chain read failed cannot
+  /// carry a draft — there is no spendable figure to check an amount against
+  /// — so it falls back to step 1 rather than pretending.
+  void _openSend({
+    required String? walletId,
+    required String assetId,
+    required LoopAssetBalanceRow? row,
+  }) {
+    if (walletId == null ||
+        row == null ||
+        row.balance is! LoopBalanceAvailable) {
+      _open('/wallet/send');
+      return;
+    }
+    _open(
+      '/wallet/send/to',
+      extra: SendDraft(
+        walletId: walletId,
+        assetId: assetId,
+        symbol: row.symbol,
+      ),
+    );
   }
 
   @override
@@ -858,7 +893,17 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
                 actionKey: const ValueKey<String>('wallet-asset-send'),
                 label: '发送',
                 icon: 'arrow-up',
-                onPressed: sendAvailable ? () => _open('/wallet/send') : null,
+                // 发送 pressed on one asset's own page already answers step
+                // 1. Landing on 「选择要发送的资产」 made the owner pick the
+                // asset they had just opened, out of eleven rows, ten of
+                // which have nothing to send.
+                onPressed: sendAvailable
+                    ? () => _openSend(
+                        walletId: walletId,
+                        assetId: assetId,
+                        row: row,
+                      )
+                    : null,
                 blockedReason: sendAvailable ? null : sendReason,
               ),
               LoopAction(
@@ -1626,17 +1671,53 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
       onBack: widget.onBack,
       actions: <Widget>[
         // The prototype's 添加. There is one creation path and it is the
-        // wallet-less block's own button, so this control keeps its shape and
-        // says what it would need.
+        // wallet-less block's own button. A greyed chip whose only answer was
+        // a toast at the foot of the page read as a control that does
+        // nothing, so the tap opens a sheet that stays until it is dismissed
+        // and says what the product does and does not do here.
         LoopSeg(
           key: const ValueKey<String>('wallets-add-action'),
           label: '添加',
           selected: false,
           onSelected: null,
-          onBlocked: () => LoopToast.show(
-            context,
-            message: '再绑定一个钱包还没有开放。LOOP 为每个账号创建一个嵌入式钱包。',
-            kind: LoopToastKind.warn,
+          onBlocked: () => unawaited(
+            showLoopSheet<void>(
+              context,
+              builder: (sheetContext) => LoopSheet(
+                key: const ValueKey<String>('wallets-add-sheet'),
+                title: '暂不支持绑定第二个钱包',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    const LoopNotice(
+                      key: ValueKey<String>('wallets-add-sheet-reason'),
+                      icon: 'id',
+                      title: '一个账号，一个嵌入式钱包',
+                      body:
+                          'LOOP 为每个账号创建一个 Privy 嵌入式钱包，它已经在下面的列表里。'
+                          '绑定外部钱包（MetaMask 等）和绑定第二个嵌入式钱包都还没有开放，'
+                          '所以这里没有可以添加的东西。',
+                      margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+                    ),
+                    const LoopNotice(
+                      key: ValueKey<String>('wallets-add-sheet-scope'),
+                      icon: 'info',
+                      title: '开放之后会发生什么',
+                      body: '已绑定钱包里的社区币都会计入算力，不需要把资产搬到某一个钱包。',
+                      margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+                    ),
+                    LoopButton(
+                      key: const ValueKey<String>('wallets-add-sheet-close'),
+                      label: '知道了',
+                      primary: true,
+                      block: true,
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -1868,6 +1949,66 @@ class TransactionHistoryScreen extends ConsumerStatefulWidget {
 class _TransactionHistoryScreenState
     extends ConsumerState<TransactionHistoryScreen> {
   int _segment = 0;
+  bool _exporting = false;
+
+  /// Encodes the rows the selected segment lists and hands them to the share
+  /// sheet. The two segments that carry an unavailable fact rather than a
+  /// list have nothing to encode, and say so instead of exporting a file with
+  /// only a header in it.
+  Future<void> _export(LoopWalletActivityPage page) async {
+    if (_exporting) return;
+    final rows = _segmentRows(page);
+    if (rows.isEmpty) {
+      LoopToast.show(
+        context,
+        message: walletExportMessage(WalletExportOutcome.empty),
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    setState(() => _exporting = true);
+    final directory = ref.read(walletDirectoryControllerProvider).value;
+    final address =
+        directory?.wallets
+            .where((wallet) => wallet.walletId == page.walletId)
+            .firstOrNull
+            ?.address ??
+        page.walletId;
+    final outcome = await ref
+        .read(walletActivityExportSinkProvider)
+        .shareCsv(
+          csv: walletActivityCsv(rows),
+          fileName: walletActivityCsvFileName(
+            walletAddress: address,
+            now: DateTime.now(),
+          ),
+        );
+    if (!mounted) return;
+    setState(() => _exporting = false);
+    LoopToast.show(
+      context,
+      message: walletExportMessage(outcome),
+      kind: outcome == WalletExportOutcome.shared
+          ? LoopToastKind.ok
+          : LoopToastKind.warn,
+    );
+  }
+
+  /// The rows the selected segment lists, in the order it lists them.
+  List<LoopWalletActivityEntry> _segmentRows(
+    LoopWalletActivityPage page,
+  ) => switch (_segment) {
+    1 =>
+      page.items
+          .where((entry) => entry.direction == LoopTransferDirection.incoming)
+          .toList(growable: false),
+    2 =>
+      page.items
+          .where((entry) => entry.direction == LoopTransferDirection.outgoing)
+          .toList(growable: false),
+    3 || 4 => const <LoopWalletActivityEntry>[],
+    _ => page.items,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -1906,18 +2047,24 @@ class _TransactionHistoryScreenState
       title: '交易历史',
       onBack: widget.onBack,
       actions: <Widget>[
-        // The prototype's 导出. There is no export path, and the control says
-        // so rather than disappearing.
+        // The prototype's 导出, doing what it says: the rows this page is
+        // currently listing are encoded as CSV on device and handed to the
+        // system share sheet. Nothing is uploaded, and nothing beyond what is
+        // on screen is fetched.
         LoopSeg(
           key: const ValueKey<String>('tx-history-export-action'),
-          label: '导出',
+          label: _exporting ? '导出中' : '导出',
           selected: false,
-          onSelected: null,
-          onBlocked: () => LoopToast.show(
-            context,
-            message: '导出还没有开放。记录可以在这一页翻阅。',
-            kind: LoopToastKind.warn,
-          ),
+          onSelected: page == null || _exporting
+              ? null
+              : () => unawaited(_export(page)),
+          onBlocked: page != null
+              ? null
+              : () => LoopToast.show(
+                  context,
+                  message: '记录还没有读到，没有可以导出的内容。',
+                  kind: LoopToastKind.warn,
+                ),
         ),
       ],
       primary: LoopFolioPrimary(
@@ -2082,8 +2229,163 @@ class _TransactionHistoryScreenState
     }
     return LoopRecordGroup(
       rows: <LoopRecordRow>[
-        for (final entry in entries) walletActivityRow(entry),
+        for (final entry in entries)
+          walletActivityRow(
+            entry,
+            // A tape row used to take the tap and do nothing: the hash it
+            // printed was truncated, could not be copied, and led nowhere.
+            onTap: () => unawaited(
+              showLoopSheet<void>(
+                context,
+                builder: (sheetContext) =>
+                    WalletActivityDetailSheet(entry: entry),
+              ),
+            ),
+          ),
       ],
+    );
+  }
+}
+
+/// One indexed transfer, opened from a `tx-history` row.
+///
+/// It is not `tx-result`: that page reports an intent this device prepared and
+/// polls its state. An indexed transfer has no intent — it may predate the
+/// account, or have been signed elsewhere — so what this sheet can offer is
+/// the record itself, in full, with the two identifiers a reader can take
+/// somewhere else: the transaction hash and the explorer address that
+/// resolves it.
+class WalletActivityDetailSheet extends StatelessWidget {
+  const WalletActivityDetailSheet({required this.entry, super.key});
+
+  final LoopWalletActivityEntry entry;
+
+  /// The block explorer that resolves this hash, chosen by the chain the
+  /// asset id names. An asset on a chain LOOP does not publish gets no link
+  /// rather than a guessed one.
+  static String? explorerUrl(LoopWalletActivityEntry entry) {
+    final chainId = entry.assetId.substring(0, entry.assetId.lastIndexOf(':'));
+    final host = switch (chainId) {
+      loopPrimaryChainId => 'bscscan.com',
+      loopLaunchTestnetChainId => 'testnet.bscscan.com',
+      _ => null,
+    };
+    return host == null ? null : 'https://$host/tx/${entry.transactionHash}';
+  }
+
+  void _copy(
+    BuildContext context, {
+    required String value,
+    required String what,
+  }) {
+    unawaited(Clipboard.setData(ClipboardData(text: value)));
+    LoopToast.show(context, message: '$what已复制');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = explorerUrl(entry);
+    return LoopSheet(
+      key: const ValueKey<String>('tx-entry-sheet'),
+      title: '交易详情',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LoopSurfaceCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                LoopKeyValue(
+                  label: '方向',
+                  value: switch (entry.direction) {
+                    LoopTransferDirection.incoming => '收到',
+                    LoopTransferDirection.outgoing => '发出',
+                    LoopTransferDirection.self => '自转',
+                  },
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                LoopKeyValue(
+                  label: '数量',
+                  value:
+                      '${loopFormatDecimal(entry.displayValue)} ${entry.symbol}',
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                LoopKeyValue(
+                  label: '对方地址',
+                  value: entry.counterpartyAddress,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                LoopKeyValue(
+                  label: '网络',
+                  value: _assetChainName(entry.assetId),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                LoopKeyValue(
+                  label: '区块',
+                  value: loopGroupedFigure(entry.blockNumber.toString()),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                LoopKeyValue(
+                  label: '状态',
+                  value: loopConfirmationLabel(entry.status),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                LoopKeyValue(
+                  label: '观察于',
+                  value: loopRelativeTime(entry.observedAt),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const LoopLabel('交易哈希'),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: SelectableText(
+              entry.transactionHash,
+              key: const ValueKey<String>('tx-entry-sheet-hash'),
+              style: LoopMono.body,
+            ),
+          ),
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('tx-entry-sheet-copy-hash'),
+                label: '复制哈希',
+                primary: true,
+                onPressed: () =>
+                    _copy(context, value: entry.transactionHash, what: '交易哈希'),
+              ),
+              if (url != null)
+                LoopButton(
+                  key: const ValueKey<String>('tx-entry-sheet-copy-link'),
+                  label: '复制 BscScan 链接',
+                  onPressed: () => _copy(context, value: url, what: '浏览器链接'),
+                ),
+            ],
+          ),
+          if (url != null) ...<Widget>[
+            const SizedBox(height: 10),
+            SelectableText(
+              url,
+              key: const ValueKey<String>('tx-entry-sheet-link'),
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ],
+          // Opening an external browser needs a launcher this build does not
+          // compose, so the sheet hands over the address instead of promising
+          // a jump it cannot make.
+          const LoopNotice(
+            key: ValueKey<String>('tx-entry-sheet-explorer-notice'),
+            icon: 'info',
+            title: '在浏览器里打开要自己粘贴',
+            body: 'LOOP 目前不能直接唤起外部浏览器。复制链接后在浏览器里打开，看到的是链上的同一笔。',
+            margin: EdgeInsets.fromLTRB(0, 12, 0, 0),
+          ),
+        ],
+      ),
     );
   }
 }

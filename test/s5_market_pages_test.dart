@@ -603,7 +603,7 @@ void main() {
       expect(find.text('1m'), findsNothing);
     });
 
-    testWidgets('the indicator tools are unavailable, not inert controls', (
+    testWidgets('no control is offered for an indicator nobody draws', (
       tester,
     ) async {
       await pumpS5Page(
@@ -612,11 +612,18 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
+      // The greyed EMA / MACD / RSI chips and the unavailable card under
+      // them are gone: nothing implies an indicator this build could draw,
+      // and the page's own notice says what it does compute (S77a).
+      expect(
+        find.byKey(const ValueKey<String>('chart-full-indicators-unavailable')),
+        findsNothing,
+      );
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('chart-full-indicators-unavailable')),
+        find.byKey(const ValueKey<String>('chart-full-interval-notice')),
       );
-      expect(find.textContaining('指标与画线工具'), findsWidgets);
+      expect(find.textContaining('没有其他指标'), findsOneWidget);
     });
 
     testWidgets('changing the interval requests that exact interval', (
@@ -629,6 +636,12 @@ void main() {
         market: market,
       );
 
+      // The plot now takes the height the page has, so the interval row can
+      // sit below the fold on a short test surface.
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('candle-interval-1d')),
+      );
       await tester.tap(
         find.byKey(const ValueKey<String>('candle-interval-1d')),
       );

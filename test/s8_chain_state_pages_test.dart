@@ -1110,6 +1110,10 @@ void main() {
           find.byKey(const ValueKey<String>('alert-editor-delete')),
         );
         await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('alert-delete-confirm-yes')),
+        );
+        await tester.pumpAndSettle();
 
         expect(alerts.deleted, <String>[s5AlertId]);
         expect(
@@ -1195,6 +1199,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('alert-editor-delete')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('alert-delete-confirm-yes')),
       );
       await tester.pumpAndSettle();
 

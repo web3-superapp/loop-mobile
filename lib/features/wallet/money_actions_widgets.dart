@@ -390,56 +390,80 @@ class MoneyIntentReviewCard extends StatelessWidget {
 /// The refusal rules the server names in `detailsSafe.reasonCode`.
 ///
 /// A refusal is only explainable when the rule is named: "blocked by policy"
-/// is not an explanation. These are the six the frozen contract defines; an
-/// unlisted or absent rule falls back to a sentence that states what did not
-/// happen and claims nothing about why.
+/// is not an explanation. These are the eight the frozen contract defines
+/// (`frontend-v2-wallet-intents-api.md` §7.1); an unlisted or absent rule
+/// falls back to a sentence that states what did not happen and claims
+/// nothing about why — in particular it never blames a limit the owner could
+/// have set, because the four canary rules are the server's own.
 abstract final class MoneyPolicyRule {
   static const assetNotInAllowlist = 'ASSET_NOT_IN_CANARY_ALLOWLIST';
   static const canaryCeilingExceeded = 'CANARY_CEILING_EXCEEDED';
+  static const canaryDailyCeilingExceeded = 'CANARY_DAILY_CEILING_EXCEEDED';
+  static const counterpartyNotInAllowlist =
+      'COUNTERPARTY_NOT_IN_CANARY_ALLOWLIST';
   static const unlimitedExposureExceedsCeiling =
       'UNLIMITED_EXPOSURE_EXCEEDS_CEILING';
   static const assetBlocked = 'ASSET_BLOCKED';
   static const priceImpactBlocked = 'PRICE_IMPACT_BLOCKED';
   static const nativeAssetNotApprovable = 'NATIVE_ASSET_NOT_APPROVABLE';
 
-  /// Only the two ceiling rules compare figures, so only they may render them.
+  /// Only the three ceiling rules compare figures, so only they may render
+  /// them.
   static bool comparesFigures(String? reasonCode) =>
       reasonCode == canaryCeilingExceeded ||
+      reasonCode == canaryDailyCeilingExceeded ||
       reasonCode == unlimitedExposureExceedsCeiling;
 }
 
 /// zh-CN copy for one server refusal.
 ///
-/// A blocked action is not an error: it names the rule that stopped it, and
-/// says the ceiling is the server's grey-release limit rather than a wallet
-/// setting the owner chose — the security centre's own limit is not delivered,
-/// so the copy never offers an adjustment that does not exist.
+/// A blocked action is not an error: it names the rule that stopped it, says
+/// what the rule is about, and — where the owner can do something — names the
+/// one thing that would change the answer. The limits are LOOP's own grey
+/// release ceilings, not a wallet setting anybody chose, so the copy never
+/// offers an adjustment that does not exist and never claims a limit the
+/// owner "has not opened yet".
+///
+/// A `reasonCode` this build has not seen yet gets the neutral sentence: it
+/// states exactly what did not happen and claims nothing about why. That is
+/// the only honest answer to a rule whose name the client cannot read.
 String moneyPolicyRefusalText(LoopChainException failure) {
   final rule = failure.reasonCode;
-  // The two figures are rendered only for the rules that compared them, and
-  // only when the server sent both.
+  // The figures are rendered only for the rules that compared them, and only
+  // when the server sent both.
   final figures =
       MoneyPolicyRule.comparesFigures(rule) && failure.hasCeilingFigures
-      ? '本次敞口 \$${failure.exposureUsd} · 上限 \$${failure.ceilingUsd}。'
+      ? '本次 \$${failure.exposureUsd} · 上限 \$${failure.ceilingUsd}。'
+      : '';
+  // Only the rolling-day rule reports a budget, and only when the server sent
+  // both halves of it. 「已用」 without 「还剩」 is not a budget.
+  final budget =
+      rule == MoneyPolicyRule.canaryDailyCeilingExceeded &&
+          failure.hasDailyBudgetFigures
+      ? '24 小时内已用 \$${failure.spentUsd} · 还剩 \$${failure.remainingUsd}。'
       : '';
   return switch (rule) {
     MoneyPolicyRule.assetNotInAllowlist =>
-      '这个资产还不在可操作的名单里，这笔操作没有通过。名单由 LOOP 维护，'
-          '不能在应用里自行调整；请换一个已登记的资产。',
+      '这个资产不在当前可操作的资产范围里，这笔操作没有通过。'
+          '范围由 LOOP 维护，不能在应用里调整；请换一个在范围内的资产。',
+    MoneyPolicyRule.counterpartyNotInAllowlist =>
+      '这个收款地址不在当前允许的收款名单里，这笔操作没有通过，也没有提交任何交易。'
+          '名单由 LOOP 在灰度期间维护，不能在应用里调整；请换一个名单内的地址。',
     MoneyPolicyRule.canaryCeilingExceeded =>
-      '$figures这笔操作超过了当前的单笔上限。'
-          '这不是你自己设的限额。自定义上限还没有开放，请降低本次金额。',
+      '$figures这笔操作超过了单笔金额上限，没有提交任何交易。'
+          '上限由 LOOP 在灰度期间设定，请降低本次金额后再试。',
+    MoneyPolicyRule.canaryDailyCeilingExceeded =>
+      '$figures$budget这笔操作会超过 24 小时内的累计金额上限，没有提交任何交易。'
+          '上限由 LOOP 在灰度期间设定，请降低金额，或等累计额度滚过这 24 小时。',
     MoneyPolicyRule.unlimitedExposureExceedsCeiling =>
-      '$figures无限授权按当前余额计算敞口，已超过当前上限。'
-          '自定义上限还没有开放。请改用限额授权，或先降低这个资产的余额。',
+      '$figures无限授权按当前余额计算敞口，已超过单笔上限。'
+          '请改用限额授权，或先降低这个资产的余额。',
     MoneyPolicyRule.assetBlocked => '这个资产已被屏蔽，不能进行任何资金操作。',
     MoneyPolicyRule.priceImpactBlocked => '这笔兑换的价格影响过大，已被阻止。请减小金额或稍后再试。',
     MoneyPolicyRule.nativeAssetNotApprovable =>
       '原生 BNB 没有授权面：它不是 ERC-20，没有 allowance 可以授权或回收。'
           '这一步不适用于原生资产。',
-    _ =>
-      '当前策略不允许这笔操作，没有提交任何交易。'
-          '自定义上限还没有开放。',
+    _ => '当前策略不允许这笔操作，没有提交任何交易。这里不猜是哪一条。',
   };
 }
 

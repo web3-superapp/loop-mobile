@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -653,6 +654,10 @@ Future<void> pumpS5Page(
   /// Where this device's push registration stopped. Only the
   /// notification-preferences page reads it.
   LoopPushRegistrationDiagnosticsRecorder? pushDiagnostics,
+
+  /// The share port `tx-history` hands its CSV to. Composed only by the
+  /// tests that press 导出; every other page leaves it fail-closed.
+  WalletActivityExportSink? exportSink,
   Size size = const Size(390, 2400),
   bool settle = true,
 }) async {
@@ -686,6 +691,8 @@ Future<void> pumpS5Page(
           loopPushRegistrationDiagnosticsProvider.overrideWithValue(
             pushDiagnostics,
           ),
+        if (exportSink != null)
+          walletActivityExportSinkProvider.overrideWithValue(exportSink),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

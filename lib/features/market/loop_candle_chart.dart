@@ -108,7 +108,7 @@ List<Decimal> loopCandleMovingAverage(List<LoopCandle> candles, int period) {
 String? loopCandleMovingAverageLabel(List<LoopCandle> candles, int period) {
   final series = loopCandleMovingAverage(candles, period);
   if (series.isEmpty) return null;
-  return 'MA$period ${loopFormatDecimal(series.last)}';
+  return 'MA$period ${loopFormatCandlePrice(series.last)}';
 }
 
 class _LoopCandlePainter extends CustomPainter {
@@ -436,3 +436,56 @@ class _LoopCandlePainter extends CustomPainter {
       oldDelegate.textScaler != textScaler ||
       !listEquals(oldDelegate.movingAveragePeriods, movingAveragePeriods);
 }
+
+// ---------------------------------------------------------------------------
+// candle figures
+// ---------------------------------------------------------------------------
+
+/// A price on a chart, at the precision its own magnitude deserves.
+///
+/// The OHLC readout used one rule for every asset — eight fraction digits —
+/// and printed `O 2,759.67162123` over an ETH chart: eleven digits of which
+/// the last six are noise, and a figure so long it wrapped. A 1e-6 launchpad
+/// price needs the opposite treatment, and two decimals would print it as
+/// `0.00`.
+///
+/// So the scale follows the figure:
+///
+/// * `≥ 1000` — two fraction digits. Cents are the last thing that matters at
+///   that size, and the integer part carries thousands separators.
+/// * `≥ 1` — four fraction digits. That is the resolution a dollar-scale pool
+///   actually quotes at.
+/// * `< 1` — four significant digits, counted from the first non-zero one, so
+///   `0.0000078123` prints as `0.000007812` and never as `0.00`.
+///
+/// Grouping comes from [loopFormatDecimal], and no `double` is involved
+/// anywhere: the rounding runs on [Decimal].
+String loopFormatCandlePrice(Decimal value) {
+  final absolute = value < Decimal.zero ? -value : value;
+  if (absolute >= _candleLargeFrom) {
+    return loopFormatDecimal(value, maxFractionDigits: 2);
+  }
+  if (absolute >= Decimal.one) {
+    return loopFormatDecimal(value, maxFractionDigits: 4);
+  }
+  if (absolute == Decimal.zero) return loopFormatDecimal(value);
+  // Find the first significant digit, then keep four of them.
+  var scale = 0;
+  var scaled = absolute;
+  while (scaled < Decimal.one && scale < _candleSubUnitMaxScale) {
+    scaled = scaled.shift(1);
+    scale += 1;
+  }
+  return loopFormatDecimal(
+    value,
+    maxFractionDigits: scale + _candleSignificantDigits - 1,
+  );
+}
+
+final Decimal _candleLargeFrom = Decimal.fromInt(1000);
+
+/// How far below a dollar the sub-unit rule will look for a first significant
+/// digit. A four.meme pool trades around 1e-6; this cap covers every price a
+/// BSC pool has quoted and still terminates.
+const int _candleSubUnitMaxScale = 18;
+const int _candleSignificantDigits = 4;

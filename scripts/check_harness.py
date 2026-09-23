@@ -6113,8 +6113,12 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "class FullChartScreen extends ConsumerStatefulWidget",
                 "MarketAssetRoute.isCanonical(assetId)",
                 "TokenCandleSection(",
-                "chart-full-indicators-unavailable",
-                "MARKET_CHART_TOOLS_DEFERRED",
+                # S77a: EMA / MACD / RSI are not rendered at all, so there is
+                # no disabled chip and no unavailable card to lock. What the
+                # page must still state is which two indicators it does
+                # compute and where they come from.
+                "chart-full-interval-notice",
+                "没有其他指标",
             ),
             "lib/features/market/token_screen.dart": (
                 "class TokenCandleSection extends ConsumerStatefulWidget",
@@ -6153,7 +6157,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
             ),
             "test/s5_market_pages_test.dart": (
                 "the intervals map one to one onto the contract",
-                "the indicator tools are unavailable, not inert controls",
+                "no control is offered for an indicator nobody draws",
                 "changing the interval requests that exact interval",
                 "an unavailable candle block states its reason",
                 "go_router hands the page back the exact CAIP identity",
@@ -6304,28 +6308,32 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                         f"fake-indicator fallback: `{forbidden}`"
                     )
             # Step 5 replaced C3's own Close handler with the application
-            # router's `_popOrHome`; the chart tools that have no backend must
-            # still be stated as unavailable rather than rendered inert.
+            # router's `_popOrHome`.
+            #
+            # S77a changed how the missing tools are stated. A greyed EMA /
+            # MACD / RSI chip with a reason behind it was still a control
+            # offered for something nobody is building, and on the device it
+            # read as three buttons that had broken. They are gone: the page
+            # renders only what it draws, and its own notice names the two
+            # indicators it computes and says there are no others. The lock
+            # therefore checks the absence of the three names and the presence
+            # of the sentence.
             for required in (
                 "onBack: widget.onBack",
-                "chart-full-indicators-unavailable",
+                "chart-full-interval-notice",
+                "没有其他指标",
             ):
                 if required not in chart_source:
                     errors.append(
                         "C3 must return through the application router and state "
-                        f"its missing chart tools; missing `{required}`"
+                        f"what it can and cannot draw; missing `{required}`"
                     )
-            # The reason names the same three tools twice: once as the answer
-            # a press on a disabled `.kline-tools` chip gets, once as the card
-            # that states the whole sentence. MA and VOL are not in it — both
-            # are drawn from the closes already on screen — so a page that
-            # dropped either use would be offering an inert control again.
-            if chart_source.count("MARKET_CHART_TOOLS_DEFERRED") != 2:
-                errors.append(
-                    "C3 must return through the application router and state "
-                    "its missing chart tools; `MARKET_CHART_TOOLS_DEFERRED` "
-                    "must answer the disabled chips and head the card"
-                )
+            for forbidden in ("'EMA'", "'MACD'", "'RSI'"):
+                if forbidden in chart_source:
+                    errors.append(
+                        "C3 must not render a control for an indicator nothing "
+                        f"draws; found `{forbidden}`"
+                    )
 
     for relative in ("lib/features/market/loop_candle_chart.dart",):
         path = root / relative

@@ -7,11 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/alerts/alert_models.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_controller.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_controller.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -46,6 +49,10 @@ class PriceAlertsScreen extends ConsumerStatefulWidget {
 }
 
 class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
+  /// Set once the owner asks to see every alert, after arriving from one
+  /// asset's own bell.
+  bool _showEveryAsset = false;
+
   void _open(String location) {
     final navigate = widget.onNavigate;
     if (navigate != null) {
@@ -71,7 +78,25 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       });
     }
     final controller = ref.read(alertsControllerProvider.notifier);
-    final armed = state.page?.armed ?? const <LoopPriceAlert>[];
+    // The bell on a token page asks about that token. It used to open the
+    // whole list — 25 alerts across every asset — with nothing saying why.
+    // The page narrows to the asset it was opened for and offers the full
+    // list as an explicit step.
+    final focusAssetId = _showEveryAsset ? null : widget.assetId;
+    final visible = focusAssetId == null
+        ? state.items
+        : state.items
+              .where((alert) => alert.assetId == focusAssetId)
+              .toList(growable: false);
+    final focusLabel = focusAssetId == null
+        ? null
+        : _assetChoiceFor(focusAssetId, null)?.label ??
+              loopTruncatedAssetId(focusAssetId);
+    final armed = focusAssetId == null
+        ? (state.page?.armed ?? const <LoopPriceAlert>[])
+        : visible
+              .where((alert) => alert.state == LoopAlertState.active)
+              .toList(growable: false);
     // `entityRef` is `priceAlert:<alertId>`, so a feed entry points at exactly
     // one row. Highlighting is driven by that reference, never by matching a
     // symbol or a threshold the two objects happen to share.
@@ -93,7 +118,12 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           selected: false,
           onSelected: blocked || state.busy
               ? null
-              : () => unawaited(_openEditor(controller)),
+              : () => unawaited(
+                  _openEditor(
+                    controller,
+                    presetAssetId: _showEveryAsset ? null : widget.assetId,
+                  ),
+                ),
         ),
       ],
       primary: LoopFolioPrimary(
@@ -108,10 +138,14 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         // before that the hero says how many rows it has loaded.
         heading: !state.isReady
             ? '价格提醒'
+            : focusLabel != null
+            ? '$focusLabel · ${armed.length} 个提醒正在监听'
             : state.page!.nextCursor != null
             ? '已载入 ${state.items.length} 条提醒'
             : '${armed.length} 个提醒正在监听',
-        caption: state.isReady && state.page!.nextCursor != null
+        caption: focusLabel != null
+            ? '只显示这个资产的提醒。触发一次后提醒会停下来，重新编辑才会再次生效。'
+            : state.isReady && state.page!.nextCursor != null
             ? '这一页之后还有提醒没有载入。触发一次后提醒会停下来，重新编辑才会再次生效。'
             : '触发一次后提醒会停下来，重新编辑才会再次生效。',
         // No stamp: the prototype's `.folio-stamp` carries a settled reading,
@@ -160,21 +194,23 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               onRetry: () => unawaited(controller.reload()),
             ),
           const LoopLabel('已设提醒'),
-          if (state.items.isEmpty)
+          if (visible.isEmpty)
             LoopEmpty(
               key: const ValueKey<String>('alerts-empty'),
-              message: '还没有价格提醒',
+              message: focusLabel == null ? '还没有价格提醒' : '$focusLabel 还没有提醒',
               reason: '新建一个提醒后，评估器会在价格新鲜时检查它。',
               action: LoopButton(
                 key: const ValueKey<String>('alerts-empty-create'),
                 label: '新建提醒',
-                onPressed: () => unawaited(_openEditor(controller)),
+                onPressed: () => unawaited(
+                  _openEditor(controller, presetAssetId: focusAssetId),
+                ),
               ),
             )
           else
             LoopRecordGroup(
               rows: <LoopRecordRow>[
-                for (final alert in state.items)
+                for (final alert in visible)
                   _alertRow(
                     alert,
                     controller,
@@ -182,8 +218,24 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                   ),
               ],
             ),
+          // The narrowed list says so, and says where the rest went. Without
+          // this the page looks like the whole list with rows missing.
+          if (focusAssetId != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: LoopButton(
+                key: const ValueKey<String>('alerts-show-every-asset'),
+                label: '查看全部资产的提醒',
+                block: true,
+                onPressed: () => setState(() => _showEveryAsset = true),
+              ),
+            ),
           const LoopLabel('触发历史'),
-          const _AlertNotificationFeed(),
+          _AlertNotificationFeed(
+            alertIds: focusAssetId == null
+                ? null
+                : <String>{for (final alert in visible) alert.alertId},
+          ),
           const LoopNotice(
             key: ValueKey<String>('alerts-push-notice'),
             title: '推送尚不可用',
@@ -266,17 +318,51 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     return detail?.price.value;
   }
 
+  /// The name, symbol and id of one asset, resolved from whatever this page
+  /// already read.
+  ///
+  /// The editor used to print the raw `eip155:56:0x0e09…` into an editable
+  /// field. A CAIP id is an opaque identifier: it is not a name, the person
+  /// setting a threshold cannot check it, and typing into it could only ever
+  /// produce a different asset or an invalid one.
+  _AlertAssetChoice? _assetChoiceFor(String assetId, LoopPriceAlert? existing) {
+    final summary = existing?.asset;
+    if (summary != null) {
+      return _AlertAssetChoice(
+        assetId: assetId,
+        symbol: summary.symbol,
+        name: summary.name,
+      );
+    }
+    final settled = ref
+        .watch(marketAssetControllerProvider(assetId))
+        .value
+        ?.asset
+        .settled;
+    if (settled == null) return null;
+    return _AlertAssetChoice(
+      assetId: assetId,
+      symbol: settled.symbol,
+      name: settled.name,
+    );
+  }
+
   Future<void> _openEditor(
     AlertsController controller, {
     LoopPriceAlert? existing,
+    String? presetAssetId,
   }) async {
+    final assetId = existing?.assetId ?? presetAssetId;
     final result = await showModalBottomSheet<_AlertEditorResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => _AlertEditorSheet(
         existing: existing,
-        initialAssetId: existing?.assetId ?? widget.assetId,
+        initialAssetId: assetId,
+        initialChoice: assetId == null
+            ? null
+            : _assetChoiceFor(assetId, existing),
       ),
     );
     if (result == null || !mounted) return;
@@ -325,31 +411,83 @@ class _AlertEditorResult {
   final bool delete;
 }
 
-class _AlertEditorSheet extends StatefulWidget {
+/// One asset the editor can point at, with the two things a reader checks.
+@immutable
+final class _AlertAssetChoice {
+  const _AlertAssetChoice({
+    required this.assetId,
+    required this.symbol,
+    required this.name,
+  });
+
+  final String assetId;
+  final String? symbol;
+  final String? name;
+
+  /// 「PEPE · Pepe」 — never the CAIP id, unless nothing named the asset, in
+  /// which case the truncated id speaks for itself rather than a made-up
+  /// ticker.
+  String get label =>
+      <String>[
+        ?symbol,
+        ?name,
+      ].where((part) => part.isNotEmpty).toSet().join(' · ').isEmpty
+      ? loopTruncatedAssetId(assetId)
+      : <String>[
+          ?symbol,
+          ?name,
+        ].where((part) => part.isNotEmpty).toSet().join(' · ');
+
+  String get monogram => symbol ?? name ?? assetId;
+}
+
+/// zh-CN explanation of one condition, in the two words that separate them.
+///
+/// 涨破 / 涨到 / 跌破 / 跌到 differ by one character, and the four of them in a
+/// column read as four buttons rather than one choice. They are one segmented
+/// control now, and the sentence under it says which comparison the chosen
+/// one makes — 到达 is `≥` / `≤`, 突破 is strict.
+String alertConditionExplanation(LoopAlertCondition condition) =>
+    switch (condition) {
+      LoopAlertCondition.above => '突破：价格必须高于阈值（> 阈值）才触发，正好等于阈值不算。',
+      LoopAlertCondition.atOrAbove => '到达：价格达到或高于阈值（≥ 阈值）就触发。',
+      LoopAlertCondition.below => '突破：价格必须低于阈值（< 阈值）才触发，正好等于阈值不算。',
+      LoopAlertCondition.atOrBelow => '到达：价格达到或低于阈值（≤ 阈值）就触发。',
+    };
+
+class _AlertEditorSheet extends ConsumerStatefulWidget {
   const _AlertEditorSheet({
     required this.existing,
     required this.initialAssetId,
+    required this.initialChoice,
   });
 
   final LoopPriceAlert? existing;
   final String? initialAssetId;
+  final _AlertAssetChoice? initialChoice;
 
   @override
-  State<_AlertEditorSheet> createState() => _AlertEditorSheetState();
+  ConsumerState<_AlertEditorSheet> createState() => _AlertEditorSheetState();
 }
 
-class _AlertEditorSheetState extends State<_AlertEditorSheet> {
-  late final TextEditingController _assetController;
+class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
   late final TextEditingController _thresholdController;
   late LoopAlertCondition _condition;
+  late _AlertAssetChoice? _choice;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _assetController = TextEditingController(
-      text: widget.existing?.assetId ?? widget.initialAssetId ?? '',
-    );
+    _choice =
+        widget.initialChoice ??
+        (widget.initialAssetId == null
+            ? null
+            : _AlertAssetChoice(
+                assetId: widget.initialAssetId!,
+                symbol: null,
+                name: null,
+              ));
     _thresholdController = TextEditingController(
       text: widget.existing?.thresholdText ?? '',
     );
@@ -358,14 +496,18 @@ class _AlertEditorSheetState extends State<_AlertEditorSheet> {
 
   @override
   void dispose() {
-    _assetController.dispose();
     _thresholdController.dispose();
     super.dispose();
   }
 
   void _submit() {
+    final choice = _choice;
+    if (choice == null) {
+      setState(() => _error = '先选择要监听的资产。');
+      return;
+    }
     final draft = LoopAlertDraft(
-      assetId: _assetController.text.trim(),
+      assetId: choice.assetId,
       condition: _condition,
       threshold: _thresholdController.text.trim(),
       expiresAt: widget.existing?.expiresAt,
@@ -374,7 +516,7 @@ class _AlertEditorSheetState extends State<_AlertEditorSheet> {
     if (invalid != null) {
       setState(() {
         _error = switch (invalid) {
-          'assetId' => '资产标识必须是规范的 CAIP id，例如 eip155:56:0x…',
+          'assetId' => '这个资产不能用于价格提醒，请换一个。',
           'threshold' => '阈值必须是正的十进制数字，最多 18 位小数。',
           _ => '过期时间必须在未来。',
         };
@@ -384,39 +526,133 @@ class _AlertEditorSheetState extends State<_AlertEditorSheet> {
     Navigator.of(context).pop(_AlertEditorResult(draft: draft));
   }
 
+  /// Picks the asset out of the owner's own watchlist.
+  ///
+  /// The watchlist is the only list of assets this account has already said
+  /// it cares about, and every row in it carries a name. There is no free
+  /// text: an id typed by hand is either an asset that is already reachable
+  /// from the token page's bell, or a mistake.
+  Future<void> _pickAsset() async {
+    final picked = await showLoopSheet<_AlertAssetChoice>(
+      context,
+      builder: (sheetContext) => const _AlertAssetPickerSheet(),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _choice = picked;
+      _error = null;
+    });
+  }
+
+  Future<void> _confirmDelete() async {
+    final confirmed = await showLoopSheet<bool>(
+      context,
+      builder: (sheetContext) => LoopSheet(
+        key: const ValueKey<String>('alert-delete-confirm'),
+        title: '删除这个提醒？',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const LoopNotice(
+              key: ValueKey<String>('alert-delete-confirm-body'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '删除之后不会再监听这个价格',
+              body: '已经触发过的记录留在触发历史里，不会被删掉。',
+              margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+            ),
+            LoopButtonPair(
+              children: <Widget>[
+                LoopButton(
+                  label: '不删除',
+                  onPressed: () => Navigator.of(sheetContext).pop(false),
+                ),
+                LoopButton(
+                  key: const ValueKey<String>('alert-delete-confirm-yes'),
+                  label: '删除',
+                  primary: true,
+                  onPressed: () => Navigator.of(sheetContext).pop(true),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    Navigator.of(context).pop(const _AlertEditorResult(delete: true));
+  }
+
   @override
   Widget build(BuildContext context) {
     final existing = widget.existing;
+    final choice = _choice;
     return LoopSheet(
       title: existing == null ? '新建价格提醒' : '编辑价格提醒',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          TextField(
-            key: const ValueKey<String>('alert-asset-field'),
-            controller: _assetController,
-            enabled: existing == null,
-            decoration: const InputDecoration(
-              labelText: '资产标识（CAIP assetId）',
-              hintText: 'eip155:56:0x…',
+          const LoopLabel('资产'),
+          if (choice == null)
+            LoopButton(
+              key: const ValueKey<String>('alert-asset-pick'),
+              label: '从自选里选择资产',
+              block: true,
+              onPressed: () => unawaited(_pickAsset()),
+            )
+          else
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('alert-asset-row'),
+                  leading: LoopTokenLogo(
+                    assetSymbol:
+                        choice.symbol ?? loopTruncatedAssetId(choice.assetId),
+                    fallbackMonogram: choice.monogram,
+                  ),
+                  title: choice.symbol ?? loopTruncatedAssetId(choice.assetId),
+                  subtitle: choice.name ?? '这个资产的名称暂时读不到',
+                  // An existing alert is bound to its asset: the contract has
+                  // no way to move one, so this row is a fact, not a control.
+                  onTap: existing == null
+                      ? () => unawaited(_pickAsset())
+                      : null,
+                  trailingBadge: existing == null
+                      ? const LoopBadge('可更换')
+                      : const LoopBadge('不可更换', kind: LoopBadgeKind.mute),
+                ),
+              ],
+            ),
+          const SizedBox(height: 12),
+          const LoopLabel('触发条件'),
+          // `.segs`: one row, four segments — the same control the prototype
+          // uses everywhere a choice is exclusive.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: <Widget>[
+                for (final (index, condition)
+                    in LoopAlertCondition.values.indexed) ...<Widget>[
+                  if (index > 0) const SizedBox(width: 8),
+                  LoopSeg(
+                    key: ValueKey<String>(
+                      'alert-condition-${condition.wireName}',
+                    ),
+                    label: condition.label,
+                    selected: condition == _condition,
+                    onSelected: () => setState(() => _condition = condition),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              for (final condition in LoopAlertCondition.values)
-                LoopSeg(
-                  key: ValueKey<String>(
-                    'alert-condition-${condition.wireName}',
-                  ),
-                  label: condition.label,
-                  selected: condition == _condition,
-                  onSelected: () => setState(() => _condition = condition),
-                ),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            alertConditionExplanation(_condition),
+            key: const ValueKey<String>('alert-condition-explanation'),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
           TextField(
@@ -456,15 +692,18 @@ class _AlertEditorSheetState extends State<_AlertEditorSheet> {
               ),
             ],
           ),
+          // 删除 is not a peer of 保存: it used to sit directly under it, full
+          // width, one thumb-width from the primary action of the sheet. It
+          // is a secondary text control now, and it asks first.
           if (existing != null) ...<Widget>[
-            const SizedBox(height: 10),
-            LoopButton(
-              key: const ValueKey<String>('alert-editor-delete'),
-              label: '删除这个提醒',
-              block: true,
-              onPressed: () =>
-                  Navigator.of(context)
-                      .pop(const _AlertEditorResult(delete: true)),
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                key: const ValueKey<String>('alert-editor-delete'),
+                onPressed: () => unawaited(_confirmDelete()),
+                child: const Text('删除这个提醒'),
+              ),
             ),
           ],
         ],
@@ -473,9 +712,99 @@ class _AlertEditorSheetState extends State<_AlertEditorSheet> {
   }
 }
 
+/// The watchlist, as a list of assets one alert can point at.
+class _AlertAssetPickerSheet extends ConsumerStatefulWidget {
+  const _AlertAssetPickerSheet();
+
+  @override
+  ConsumerState<_AlertAssetPickerSheet> createState() =>
+      _AlertAssetPickerSheetState();
+}
+
+class _AlertAssetPickerSheetState
+    extends ConsumerState<_AlertAssetPickerSheet> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(watchlistEditorControllerProvider);
+    if (state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(watchlistEditorControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    final items = <String, WatchlistItem>{};
+    for (final group in state.groups) {
+      for (final item in group.items) {
+        items.putIfAbsent(item.assetId, () => item);
+      }
+    }
+    return LoopSheet(
+      key: const ValueKey<String>('alert-asset-picker'),
+      title: '选择资产',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (!state.isReady)
+            LoopChainStateBlock(
+              keyPrefix: 'alert-asset-picker',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '自选列表还没有读到',
+              onRetry: () => unawaited(
+                ref.read(watchlistEditorControllerProvider.notifier).reload(),
+              ),
+            )
+          else if (items.isEmpty)
+            const LoopEmpty(
+              key: ValueKey<String>('alert-asset-picker-empty'),
+              message: '自选里还没有资产',
+              reason: '先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。',
+            )
+          else
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                for (final item in items.values)
+                  LoopRecordRow(
+                    key: ValueKey<String>('alert-asset-pick-${item.assetId}'),
+                    leading: LoopTokenLogo(
+                      assetSymbol:
+                          item.asset?.symbol ??
+                          loopTruncatedAssetId(item.assetId),
+                      fallbackMonogram:
+                          item.asset?.symbol ??
+                          loopTruncatedAssetId(item.assetId),
+                    ),
+                    title:
+                        item.asset?.symbol ??
+                        loopTruncatedAssetId(item.assetId),
+                    subtitle: item.asset?.name ?? '这个资产的名称暂时读不到',
+                    onTap: () => Navigator.of(context).pop(
+                      _AlertAssetChoice(
+                        assetId: item.assetId,
+                        symbol: item.asset?.symbol,
+                        name: item.asset?.name,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// The trigger history: the feed entries whose type is `trade.priceAlert`.
 class _AlertNotificationFeed extends ConsumerStatefulWidget {
-  const _AlertNotificationFeed();
+  const _AlertNotificationFeed({this.alertIds});
+
+  /// When the page is narrowed to one asset, only that asset's own alert ids.
+  /// `null` is the whole feed.
+  final Set<String>? alertIds;
 
   @override
   ConsumerState<_AlertNotificationFeed> createState() =>
@@ -509,7 +838,12 @@ class _AlertNotificationFeedState
         ),
       );
     }
-    final entries = feed.priceAlerts;
+    final ids = widget.alertIds;
+    final entries = ids == null
+        ? feed.priceAlerts
+        : feed.priceAlerts
+              .where((entry) => ids.contains(entry.priceAlertId))
+              .toList(growable: false);
     final more = feed.nextCursor != null;
     if (entries.isEmpty && !more) {
       return const LoopEmpty(

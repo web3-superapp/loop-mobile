@@ -415,12 +415,33 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
         Decimal.parse(amount.wire) > spendable;
     final ready =
         !blocked && preflight != null && amount != null && !overSpendable;
+    // What the disabled button is still waiting for. A grey 下一步 with no
+    // sentence beside it reads as a broken control: on the device the address
+    // was filled, the button stayed grey, and nothing on screen said the
+    // amount — two screens further down — had not been typed yet.
+    final missing = blocked
+        ? null
+        : preflight == null
+        ? (_addressPattern.hasMatch(_address.text.trim())
+              ? '还差一步：点「校验地址」核对这个收款地址。'
+              : '还差一步：填写完整的收款地址（0x 开头，42 位）。')
+        : amount == null
+        ? '还差一步：填写发送数量。'
+        : overSpendable
+        ? '发送数量超过了可动用余额，请改小。'
+        : null;
+    // With the keyboard up this page keeps about a third of its height. The
+    // primary is folded away while typing so the address controls and the
+    // amount card stay inside the viewport; dismissing the keyboard brings it
+    // back unchanged.
+    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return LoopFocusPage(
       key: const ValueKey<String>('send-recipient-screen'),
       archetype: LoopPageArchetype.action,
       title: '发送到',
       onBack: widget.onBack,
+      folioCollapsed: typing,
       // Chalk, with the recipient the preflight checked as the heading — the
       // prototype's `0x71bd…0b91` (audit §A.15). Before a preflight there is
       // no recipient, and the heading says what the step is for.
@@ -435,20 +456,34 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
         caption: '地址与网络先校验，金额会在下一步单独确认。',
         stamp: 'STEP 2',
       ),
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('send-recipient-next'),
-        label: '下一步',
-        primary: true,
-        block: true,
-        onPressed: ready
-            ? () => _open(
-                '/wallet/send/confirm',
-                extra: widget.draft.copyWith(
-                  recipientAddress: preflight.recipient.checksumAddress,
-                  amount: amount.wire,
-                ),
-              )
-            : null,
+      primaryAction: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (missing != null) ...<Widget>[
+            Text(
+              missing,
+              key: const ValueKey<String>('send-recipient-missing'),
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            const SizedBox(height: 8),
+          ],
+          LoopButton(
+            key: const ValueKey<String>('send-recipient-next'),
+            label: '下一步',
+            primary: true,
+            block: true,
+            onPressed: ready
+                ? () => _open(
+                    '/wallet/send/confirm',
+                    extra: widget.draft.copyWith(
+                      recipientAddress: preflight.recipient.checksumAddress,
+                      amount: amount.wire,
+                    ),
+                  )
+                : null,
+          ),
+        ],
       ),
       block: blocked
           ? sendCapabilityPageBlock(
@@ -538,7 +573,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
             reason: loopChainFailureReason(_preflightFailure!.kind),
             onRetry: () => unawaited(_check()),
           ),
-        if (preflight != null) ..._recipientNotices(preflight),
+        if (preflight != null) _RecipientChecks(preflight: preflight),
         const LoopLabel('金额'),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -583,38 +618,79 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
       ],
     );
   }
+}
 
-  List<Widget> _recipientNotices(LoopSendPreflight preflight) {
+/// What the preflight said about one recipient, folded into a single line.
+///
+/// Expanded, three warning cards and a provenance footer pushed the amount
+/// field onto a second screen while the pinned 下一步 stayed grey — the owner
+/// had no way to see that anything was still missing. Every warning is still
+/// here, still in full, and the summary states how many there are, so folding
+/// never hides that the address has something to say. A dangerous check
+/// (a contract recipient) opens the group by itself.
+class _RecipientChecks extends StatelessWidget {
+  const _RecipientChecks({required this.preflight});
+
+  final LoopSendPreflight preflight;
+
+  @override
+  Widget build(BuildContext context) {
     final recipient = preflight.recipient;
-    return <Widget>[
-      if (preflight.warnings.contains(LoopSendPreflight.firstTimeWarning))
-        const LoopNotice(
-          key: ValueKey<String>('send-recipient-first-time'),
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          title: '首次向该地址转账',
-          body: '这个地址不在你自己的已索引转账历史中。请逐字核对完整地址后再继续。',
-        ),
-      if (preflight.warnings.contains(LoopSendPreflight.contractWarning))
-        const LoopNotice(
-          key: ValueKey<String>('send-recipient-contract'),
-          icon: 'warn',
-          tone: LoopNoticeTone.danger,
-          title: '收款方是合约地址',
-          body: '向合约地址直接转账可能永久失去这笔资产。请确认这个合约确实接受直接转账。',
-        ),
-      LoopNotice(
-        key: const ValueKey<String>('send-recipient-screening'),
-        icon: 'shield',
-        tone: LoopNoticeTone.warn,
-        title: '恶意地址筛查不可用',
-        body: loopReasonCodeText(recipient.screening.reasonCode),
-      ),
-      LoopProvenanceFooter(
-        key: const ValueKey<String>('send-recipient-basis'),
-        text: '首次收款方的判断依据：你自己的 ERC-20 转账记录（${preflight.basis}）',
-      ),
+    final firstTime = preflight.warnings.contains(
+      LoopSendPreflight.firstTimeWarning,
+    );
+    final contract = preflight.warnings.contains(
+      LoopSendPreflight.contractWarning,
+    );
+    final headlines = <String>[
+      if (firstTime) '首次向该地址转账',
+      if (contract) '收款方是合约地址',
+      '恶意地址筛查不可用',
     ];
+    return LoopDisclosure(
+      key: const ValueKey<String>('send-recipient-checks'),
+      // The count is the point of the closed line: 「地址核对结果」 alone
+      // would not say that something needs reading.
+      summary: '地址核对 · ${headlines.length} 项待确认 · ${headlines.first}',
+      // A contract recipient can cost the whole transfer, so that one is
+      // never folded away by default.
+      initiallyOpen: contract,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (firstTime)
+            const LoopNotice(
+              key: ValueKey<String>('send-recipient-first-time'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '首次向该地址转账',
+              body: '这个地址不在你自己的已索引转账历史中。请逐字核对完整地址后再继续。',
+            ),
+          if (contract)
+            const LoopNotice(
+              key: ValueKey<String>('send-recipient-contract'),
+              icon: 'warn',
+              tone: LoopNoticeTone.danger,
+              title: '收款方是合约地址',
+              body: '向合约地址直接转账可能永久失去这笔资产。请确认这个合约确实接受直接转账。',
+            ),
+          LoopNotice(
+            key: const ValueKey<String>('send-recipient-screening'),
+            icon: 'shield',
+            tone: LoopNoticeTone.warn,
+            title: '恶意地址筛查不可用',
+            body: loopReasonCodeText(recipient.screening.reasonCode),
+          ),
+          // The basis names the records that were searched, not the table
+          // they live in: 「indexed_erc20_transfers」 was a schema name
+          // printed to the person sending money.
+          const LoopProvenanceFooter(
+            key: ValueKey<String>('send-recipient-basis'),
+            text: '首次收款方的判断依据：你自己在 LOOP 已索引的 ERC-20 转账记录',
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -718,6 +794,13 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
             )
           : null,
       body: <Widget>[
+        // The prototype's FINAL REVIEW lists 收款方 / 数量 / 网络费 / 预估到账
+        // before it asks for anything. Until the server answers, only the
+        // first two are facts this device holds — but a page whose primary
+        // promises 「全部确认后才请求签名」 and then lists nothing at all
+        // (which is what a 403 on prepare left behind) confirms nothing. The
+        // draft's own two lines stand until the intent replaces them.
+        if (intent == null) _SendDraftFacts(draft: widget.draft),
         if (other != null)
           _PendingIntentBlock(
             intent: other,
@@ -744,6 +827,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
           )
         else ...<Widget>[
           MoneyIntentReviewCard(intent: intent, clock: widget.clock),
+          const _SendArrivalEstimate(),
           if (!intent.simulation.passed)
             LoopNotice(
               key: const ValueKey<String>('send-confirm-simulation-failed'),
@@ -932,6 +1016,101 @@ class _PendingIntentBlock extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The two lines this device already holds, shown while the server's own
+/// review is still missing.
+///
+/// They are the draft — what the owner typed and what the preflight
+/// checksummed — never a server fact, and the card says so. Network fee and
+/// arrival are the server's to state, so they stand here as what they are:
+/// not yet read.
+class _SendDraftFacts extends StatelessWidget {
+  const _SendDraftFacts({required this.draft});
+
+  final SendDraft draft;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: LoopSurfaceCard(
+        key: const ValueKey<String>('send-confirm-draft-facts'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            LoopKeyValue(
+              key: const ValueKey<String>('send-confirm-draft-recipient'),
+              label: '收款方',
+              value: draft.recipientAddress ?? '还没有填写',
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            LoopKeyValue(
+              key: const ValueKey<String>('send-confirm-draft-amount'),
+              label: '数量',
+              value: draft.amount == null
+                  ? '还没有填写'
+                  : '${loopGroupedFigure(draft.amount!)} ${draft.symbol}',
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            LoopKeyValue(
+              key: const ValueKey<String>('send-confirm-draft-fee'),
+              label: '网络费',
+              value: '还没有读到',
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            LoopKeyValue(
+              key: const ValueKey<String>('send-confirm-draft-arrival'),
+              label: '预估到账',
+              value: '不预估',
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '这两行是你在上一步填的内容，还不是服务端的事实。'
+              '网络费、余额与试算会在准备好这一笔之后一起显示。',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The prototype's 预估到账 row.
+///
+/// The prototype prints 「约 30 秒」. No read on this contract reports an
+/// arrival time, and a client-side guess from a block interval would be a
+/// number LOOP invented about somebody's money — so the row stands and says
+/// what it does not have.
+class _SendArrivalEstimate extends StatelessWidget {
+  const _SendArrivalEstimate();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: LoopSurfaceCard(
+        key: const ValueKey<String>('send-confirm-arrival'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const LoopKeyValue(
+              label: '预估到账',
+              value: '不预估',
+              padding: EdgeInsets.symmetric(vertical: 8),
+            ),
+            Text(
+              '没有到账时间的来源，这里不给一个编出来的秒数。'
+              '提交之后在结果页按确认数跟踪，那是唯一的进度。',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

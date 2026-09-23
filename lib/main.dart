@@ -36,6 +36,7 @@ import 'package:loop_mobile/integrations/personalization/loop_personalization_pr
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_group_alias_providers.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
+import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
@@ -46,6 +47,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
+import 'package:loop_mobile/integrations/sharing/system_wallet_activity_export_sink.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
@@ -157,6 +159,12 @@ Future<void> main() async {
         // system; it never reaches a LOOP service, in either composition.
         chatMergeExportSinkProvider.overrideWithValue(
           const SystemChatMergeExportSink(),
+        ),
+        // The wallet-activity CSV is encoded on device from rows already on
+        // screen and handed to the same share sheet; it never reaches a LOOP
+        // service either.
+        walletActivityExportSinkProvider.overrideWithValue(
+          const SystemWalletActivityExportSink(),
         ),
         // S5 read modules. Each stays fail-closed until its Dio client,
         // client metadata and authenticated session all exist.

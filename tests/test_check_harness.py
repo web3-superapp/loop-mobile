@@ -2455,9 +2455,32 @@ class HarnessTests(unittest.TestCase):
         )
 
     def test_c3_missing_chart_tools_cannot_become_inert_controls(self) -> None:
-        # Step 5 moved C3's Close into the application router's `_popOrHome`;
-        # what the page still owes the reader is that the prototype's chart
-        # tools have no source at all.
+        # Step 5 moved C3's Close into the application router's `_popOrHome`.
+        # S77a dropped the greyed EMA / MACD / RSI chips entirely — a control
+        # offered for something nobody draws reads as a broken button — so
+        # what the page owes the reader is the sentence that names the two
+        # indicators it does compute and says there are no others.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_secondary_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("没有其他指标", "指标齐全", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("what it can and cannot draw" in error for error in result),
+            msg=f"expected C3 unavailable-tools guard: {result}",
+        )
+
+    def test_c3_cannot_reintroduce_a_control_for_an_unbuilt_indicator(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = "lib/features/market/market_secondary_screens.dart"
@@ -2466,8 +2489,8 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "MARKET_CHART_TOOLS_DEFERRED",
-                    "MARKET_CHART_TOOLS_READY",
+                    "labels: const <String>['MA', 'VOL'],",
+                    "labels: const <String>['MA', 'EMA', 'MACD', 'RSI', 'VOL'],",
                     1,
                 ),
                 encoding="utf-8",
@@ -2477,9 +2500,11 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "state its missing chart tools" in error for error in result
+                "must not render a control for an indicator nothing draws"
+                in error
+                for error in result
             ),
-            msg=f"expected C3 unavailable-tools guard: {result}",
+            msg=f"expected C3 absent-indicator guard: {result}",
         )
 
     def test_perpetual_policy_cannot_be_reenabled(self) -> None:

@@ -111,10 +111,12 @@ LoopRecordRow walletBalanceRow(
 LoopRecordRow walletActivityRow(
   LoopWalletActivityEntry entry, {
   DateTime? now,
+  VoidCallback? onTap,
 }) {
   final incoming = entry.direction == LoopTransferDirection.incoming;
   return LoopRecordRow(
     key: ValueKey<String>('tx-entry-${entry.entryId}'),
+    onTap: onTap,
     leading: LoopRowIcon(
       icon: switch (entry.direction) {
         LoopTransferDirection.incoming => 'arrow-down',

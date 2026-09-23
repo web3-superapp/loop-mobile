@@ -73,6 +73,8 @@ final class LoopChainException implements Exception {
     this.reasonCode,
     this.exposureUsd,
     this.ceilingUsd,
+    this.spentUsd,
+    this.remainingUsd,
   });
 
   final LoopChainFailureKind kind;
@@ -87,7 +89,15 @@ final class LoopChainException implements Exception {
   final String? exposureUsd;
   final String? ceilingUsd;
 
+  /// The rolling-24-hour ceiling's own two figures: what the day has already
+  /// committed and what is left. Only `CANARY_DAILY_CEILING_EXCEEDED` sends
+  /// them, and a page may render them only when both arrived.
+  final String? spentUsd;
+  final String? remainingUsd;
+
   bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;
+
+  bool get hasDailyBudgetFigures => spentUsd != null && remainingUsd != null;
 
   @override
   String toString() => 'LoopChainException(${kind.name})';

@@ -33,6 +33,8 @@ import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/integrations/communication/memory_chat_v2_gateways.dart';
 import 'package:loop_mobile/integrations/community/memory_community_gateways.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
+import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
+import 'package:loop_mobile/integrations/sharing/system_wallet_activity_export_sink.dart';
 
 /// Explicit offline UI catalog entry point.
 ///
@@ -78,6 +80,12 @@ Future<void> main() async {
         // system; it never reaches a LOOP service, in either composition.
         chatMergeExportSinkProvider.overrideWithValue(
           const SystemChatMergeExportSink(),
+        ),
+        // The wallet-activity CSV is encoded on device from rows already on
+        // screen and handed to the same share sheet; it never reaches a LOOP
+        // service either.
+        walletActivityExportSinkProvider.overrideWithValue(
+          const SystemWalletActivityExportSink(),
         ),
         // Rewritten against the V2 contracts (decision 0061): ten categories,
         // a locked `security.event`, a version compare-and-set, and delivery
