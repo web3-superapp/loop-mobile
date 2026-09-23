@@ -47,11 +47,15 @@ enum LoopNotificationDisposition {
   duplicateInteraction,
 }
 
-/// The three events the first push dictionary carries (decision 0067 §7.3).
+/// The events the push dictionary carries (decision 0067 §7.3, extended by
+/// backend decision 0073).
 ///
 /// Each one owns exactly one destination family. The pairing is checked rather
 /// than trusted: a payload whose `type` and `contextRoute` disagree is not a
-/// new combination to honour, it is a payload nobody wrote.
+/// new combination to honour, it is a payload nobody wrote. Two types may
+/// share a destination family — a verdict and a refusal both open the
+/// community they are about — because the destination is a place to read, not
+/// the answer itself.
 enum LoopPushNotificationType {
   priceAlertTriggered(
     'price_alert_triggered',
@@ -67,6 +71,16 @@ enum LoopPushNotificationType {
     'community_voice_room_started',
     'voiceRoom',
     LoopNotificationContextRoute.voiceRoom,
+  ),
+  communityApplicationVerified(
+    'community_application_verified',
+    'community',
+    LoopNotificationContextRoute.communityProfile,
+  ),
+  communityApplicationRejected(
+    'community_application_rejected',
+    'community',
+    LoopNotificationContextRoute.communityProfile,
   );
 
   const LoopPushNotificationType(
@@ -96,7 +110,8 @@ enum LoopPushNotificationType {
 enum LoopNotificationContextRoute {
   token('token'),
   devices('devices'),
-  voiceRoom('voice-room');
+  voiceRoom('voice-room'),
+  communityProfile('community-profile');
 
   const LoopNotificationContextRoute(this.wireName);
 
@@ -146,10 +161,20 @@ final class LoopNotificationPointer {
 /// notification*, not the push payload. They are what a page may be opened
 /// with; the payload only decided which record to look for.
 final class LoopNotificationContext {
-  const LoopNotificationContext({required this.contextRoute, this.assetId});
+  const LoopNotificationContext({
+    required this.contextRoute,
+    this.assetId,
+    this.communityId,
+  });
 
   final String contextRoute;
   final String? assetId;
+
+  /// `contextParams.communityId` of the account's own record, for the two
+  /// application-review events. As with [assetId], it is the server's record
+  /// and never the push payload: the payload only decided which record to
+  /// look for.
+  final String? communityId;
 }
 
 /// A fixed application destination produced only after strict validation.
@@ -186,6 +211,36 @@ final class LoopPriceAlertListNotificationIntent
 
   @override
   String get location => MarketAssetRoute.alertsPath;
+}
+
+/// A reviewed community application whose record the feed confirmed.
+///
+/// It opens that community, which re-reads its own record — including the
+/// owner's `application` block — so the verdict on the screen is the one the
+/// server holds now and not the one a notification carried.
+final class LoopCommunityApplicationNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopCommunityApplicationNotificationIntent._(this.communityId);
+
+  final String communityId;
+
+  @override
+  String get location =>
+      '/community/profile?id=${Uri.encodeQueryComponent(communityId)}';
+}
+
+/// A reviewed community application the feed did not confirm.
+///
+/// The community tab is where the reader's own communities are, and it names
+/// nothing chosen from an unverified payload: 我的 → 我的社区 → 我创建的 is one
+/// tap from it. Opening a record addressed by the payload alone would be a
+/// page about a community this account may not even own.
+final class LoopCommunityIndexNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopCommunityIndexNotificationIntent._();
+
+  @override
+  String get location => '/community';
 }
 
 /// A new sign-in or a revoked device session opens device management, which
@@ -374,7 +429,19 @@ final class LoopNotificationRouter {
         const LoopSecurityEventNotificationIntent._(),
       LoopPushNotificationType.communityVoiceRoomStarted =>
         const LoopVoiceRoomNotificationIntent._(),
+      LoopPushNotificationType.communityApplicationVerified ||
+      LoopPushNotificationType.communityApplicationRejected =>
+        _communityApplicationIntent(confirmed ? context.communityId : null),
     };
+  }
+
+  static LoopNotificationNavigationIntent _communityApplicationIntent(
+    String? communityId,
+  ) {
+    if (communityId == null || !_uuidPattern.hasMatch(communityId)) {
+      return const LoopCommunityIndexNotificationIntent._();
+    }
+    return LoopCommunityApplicationNotificationIntent._(communityId);
   }
 
   static LoopNotificationNavigationIntent _priceAlertIntent(String? assetId) {

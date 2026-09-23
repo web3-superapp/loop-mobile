@@ -115,6 +115,9 @@ final class MemoryCommunityGateway implements CommunityGateway {
     final joined = _joined.contains(community.communityId);
     return CommunityDetail(
       community: community,
+      // Owner-only, as on the wire: the Preview's sample viewer owns what it
+      // has joined, and a community it has not joined carries no review.
+      application: joined ? _previewReview(community) : null,
       viewer: CommunityViewer(
         membership: joined
             ? CommunityMembership(
@@ -187,18 +190,46 @@ final class MemoryCommunityGateway implements CommunityGateway {
         throw const CommunityGatewayException(CommunityFailureKind.notFound),
   );
 
+  /// The Preview's sample viewer owns every community it has joined, so —
+  /// exactly as the server now answers (backend decision 0073) — `joined` is
+  /// empty and every membership is in `owned`. Each one carries a review
+  /// block, so the Preview exercises all three states of the 我创建的 group.
+  CommunityApplicationReview _previewReview(CommunitySummary community) =>
+      switch (community.verificationStatus) {
+        CommunityVerification.verified => CommunityApplicationReview(
+          status: CommunityVerification.verified,
+          submittedAt: community.createdAt,
+          reviewedAt: DateTime.utc(2026, 6, 3, 9, 20),
+          rejectedReason: null,
+        ),
+        CommunityVerification.pending => CommunityApplicationReview(
+          status: CommunityVerification.pending,
+          submittedAt: community.createdAt,
+          reviewedAt: null,
+          rejectedReason: null,
+        ),
+        CommunityVerification.rejected => CommunityApplicationReview(
+          status: CommunityVerification.rejected,
+          submittedAt: community.createdAt,
+          reviewedAt: DateTime.utc(2026, 6, 4, 11),
+          rejectedReason: '演示数据：社区名称与已上线社区重复，请换一个再提交。',
+        ),
+      };
+
   @override
   Future<CommunityHome> loadHome() async => CommunityHome(
-    joined: <JoinedCommunity>[
+    joined: const <JoinedCommunity>[],
+    owned: <OwnedCommunity>[
       for (final community in _previewCommunities)
         if (_joined.contains(community.communityId))
-          JoinedCommunity(
+          OwnedCommunity(
             community: community,
             membership: CommunityMembership(
               role: CommunityRole.owner,
               status: CommunityMemberStatus.active,
               joinedAt: DateTime.utc(2026, 7, 1),
             ),
+            application: _previewReview(community),
           ),
     ],
     joinedTruncated: false,
@@ -315,6 +346,28 @@ final class MemoryCommunityGateway implements CommunityGateway {
     String communityId,
     CommunityProfileEdit edit,
   ) async => _detail(_byId(communityId));
+
+  @override
+  Future<CommunityDetail> resubmitApplication(String communityId) async {
+    final community = _byId(communityId);
+    if (community.verificationStatus != CommunityVerification.rejected) {
+      throw const CommunityGatewayException(CommunityFailureKind.stale);
+    }
+    final resubmitted = _community(
+      id: community.communityId,
+      name: community.name,
+      slug: community.slug,
+      memberCount: community.memberCount,
+      verification: CommunityVerification.pending,
+      description: community.description,
+      boundAssetKey: community.boundAssetKey,
+      logoRef: community.logoRef,
+    );
+    _previewCommunities
+      ..removeWhere((item) => item.communityId == community.communityId)
+      ..add(resubmitted);
+    return _detail(resubmitted);
+  }
 
   @override
   Future<CommunityMemberDirectory> listMembers(

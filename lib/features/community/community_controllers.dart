@@ -509,6 +509,36 @@ final class CommunityProfileController
     }
   }
 
+  /// Owner-only resubmission of a refused application.
+  ///
+  /// It is a second command, not part of the edit: the profile edit never
+  /// touches the review state, and an owner who edited and then failed to
+  /// resubmit still has a refused application they can submit again. The
+  /// caller reports the failure kind; the state is whatever came back.
+  Future<CommunityFailureKind?> resubmitApplication() async {
+    final id = _communityId;
+    if (id == null) return CommunityFailureKind.notFound;
+    final gateway = ref.read(communityGatewayProvider);
+    final generation = nextGeneration();
+    state = state.working(true);
+    try {
+      final detail = await gateway.resubmitApplication(id);
+      if (!isCurrent(generation)) return null;
+      state = state.ready(detail);
+      return null;
+    } on CommunityGatewayException catch (error) {
+      if (isCurrent(generation)) {
+        state = state.working(false).failed(error.kind);
+      }
+      return error.kind;
+    } catch (_) {
+      if (isCurrent(generation)) {
+        state = state.working(false).failed(CommunityFailureKind.unexpected);
+      }
+      return CommunityFailureKind.unexpected;
+    }
+  }
+
   /// Owner-only profile edit. Visibility is decided by `viewer`, the result by
   /// the server.
   Future<CommunityFailureKind?> editProfile(CommunityProfileEdit edit) async {

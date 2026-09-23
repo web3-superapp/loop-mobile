@@ -330,6 +330,15 @@ Map<String, String> _stringMap(Object? raw, {required int maximum}) {
   return result;
 }
 
+/// The bound on one payload value, in **code points**.
+///
+/// Backend decision 0073 raised the server's own bound from 256 to 512 so an
+/// operator's 280-code-point refusal reason travels whole. The unit matters:
+/// 280 code points of astral text is 560 UTF-16 units, so a bound counted in
+/// `String.length` would have refused the very row it was raised for and taken
+/// the whole feed page down with it.
+const int loopNotificationPayloadValueMaximumRunes = 512;
+
 Map<String, String?> _payloadMap(Object? raw) {
   if (raw is! Map || raw.length > 16) LoopV2ChainCodec.invalid();
   final result = <String, String?>{};
@@ -339,7 +348,10 @@ Map<String, String?> _payloadMap(Object? raw) {
     if (key is! String ||
         key.isEmpty ||
         key.length > 64 ||
-        (value != null && (value is! String || value.length > 256))) {
+        (value != null &&
+            (value is! String ||
+                value.runes.length >
+                    loopNotificationPayloadValueMaximumRunes))) {
       LoopV2ChainCodec.invalid();
     }
     result[key] = value;

@@ -91,9 +91,13 @@ Map<String, Object?> voiceSection({
 Map<String, Object?> detailBody({
   Map<String, Object?>? chat,
   Map<String, Object?>? voice,
+  // Always sent since backend decision 0073; `null` for a viewer who is not
+  // the current owner, which is what most of this file reads as.
+  Object? application,
 }) => <String, Object?>{
   'community': community(),
   'viewer': viewer(),
+  'application': application,
   'miningPower': unavailable('MINING_FORMULA_BASELINE_PENDING'),
   'onlineCount': unavailable('STREAM_PRESENCE_NOT_CONNECTED'),
   'announcements': unavailable('COMMUNITY_ANNOUNCEMENTS_DEFERRED'),
@@ -154,13 +158,17 @@ void main() {
                   <String, Object?>{
                     'community': community(),
                     'membership': <String, Object?>{
-                      'role': 'owner',
+                      'role': 'member',
                       'status': 'active',
                       'joinedAt': '2026-09-07T01:00:00.000Z',
                     },
                   },
                 ],
                 'truncated': true,
+              },
+              'owned': <String, Object?>{
+                'items': <Object?>[],
+                'truncated': false,
               },
               'discover': <Object?>[community()],
               'unread': unavailable('STREAM_UNREAD_NOT_CONNECTED'),
@@ -1311,6 +1319,9 @@ void main() {
                       'title': 'Frog Holders',
                       'subtitle': 'frog-holders',
                       'avatarRef': 'avatar:preset/community-03',
+                      // Required on every domain since backend decision 0072
+                      // (token logos); null for a community row.
+                      'logo': null,
                       'memberCount': 128,
                       'verificationStatus': 'verified',
                     },
@@ -1361,6 +1372,16 @@ void main() {
                     'title': 'USDT',
                     'subtitle': 'Tether USD',
                     'avatarRef': null,
+                    'logo': <String, Object?>{
+                      'status': 'available',
+                      'url':
+                          'https://raw.githubusercontent.com/trustwallet/'
+                          'assets/master/blockchains/smartchain/assets/'
+                          '0x55d398326f99059fF775485246999027B3197955/'
+                          'logo.png',
+                      'source': 'trustwallet',
+                      'observedAt': null,
+                    },
                     'memberCount': null,
                     'verificationStatus': 'pending',
                   },
@@ -1415,6 +1436,16 @@ void main() {
                     'title': 'USDT',
                     'subtitle': 'Tether USD',
                     'avatarRef': null,
+                    'logo': <String, Object?>{
+                      'status': 'available',
+                      'url':
+                          'https://raw.githubusercontent.com/trustwallet/'
+                          'assets/master/blockchains/smartchain/assets/'
+                          '0x55d398326f99059fF775485246999027B3197955/'
+                          'logo.png',
+                      'source': 'trustwallet',
+                      'observedAt': null,
+                    },
                     'memberCount': null,
                     'verificationStatus': 'pending',
                   },
@@ -1648,6 +1679,253 @@ void main() {
           'permissionDenied',
         );
       }
+    });
+  });
+
+  group('community application review (backend decision 0073)', () {
+    Map<String, Object?> homeBody({
+      Object? ownedRow,
+      String verificationStatus = 'pending',
+    }) => <String, Object?>{
+      'joined': <String, Object?>{'items': <Object?>[], 'truncated': false},
+      'owned': <String, Object?>{
+        'items': <Object?>[
+          ownedRow ??
+              <String, Object?>{
+                'community': community(verificationStatus: verificationStatus),
+                'membership': <String, Object?>{
+                  'role': 'owner',
+                  'status': 'active',
+                  'joinedAt': '2026-09-07T01:00:00.000Z',
+                },
+                'application': <String, Object?>{
+                  'status': verificationStatus,
+                  'submittedAt': '2026-09-07T01:00:00.000Z',
+                  'reviewedAt': verificationStatus == 'pending'
+                      ? null
+                      : '2026-09-08T02:00:00.000Z',
+                  'rejectedReason': null,
+                },
+              },
+        ],
+        'truncated': true,
+      },
+      'discover': <Object?>[],
+      'unread': unavailable('STREAM_UNREAD_NOT_CONNECTED'),
+      'liveVoice': unavailable('STREAM_VOICE_NOT_CONNECTED'),
+      'freshness': <String, Object?>{
+        'observedAt': '2026-09-08T01:00:00.000Z',
+        'source': 'database',
+      },
+      'recommendation': <String, Object?>{
+        'recommendationId': otherId,
+        'ruleVersion': 'rule:verified-members-v1',
+      },
+      'contractVersion': '2.0',
+    };
+
+    Future<CommunityHome> readHome(Map<String, Object?> body) {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) => handler.resolve(_response(options, body))),
+      );
+      return api.getHome(accessToken: 'token', clientVersion: clientVersion);
+    }
+
+    Future<CommunityDetail> readDetail(Map<String, Object?> body) {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) => handler.resolve(_response(options, body))),
+      );
+      return api.getCommunity(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        communityId: communityId,
+      );
+    }
+
+    test('the home aggregate reads the owned group and its review', () async {
+      final home = await readHome(homeBody());
+
+      expect(home.joined, isEmpty);
+      expect(home.owned, hasLength(1));
+      expect(home.ownedTruncated, isTrue);
+      final review = home.owned.single.application!;
+      expect(review.status, CommunityVerification.pending);
+      expect(review.submittedAt, DateTime.utc(2026, 9, 7, 1));
+      expect(review.reviewedAt, isNull);
+      expect(review.rejectedReason, isNull);
+    });
+
+    test('an aggregate with no owned group at all is refused', () async {
+      final body = homeBody()..remove('owned');
+      await expectLater(
+        readHome(body),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('an owned row with no review block is refused', () async {
+      final row = <String, Object?>{
+        'community': community(verificationStatus: 'pending'),
+        'membership': <String, Object?>{
+          'role': 'owner',
+          'status': 'active',
+          'joinedAt': '2026-09-07T01:00:00.000Z',
+        },
+      };
+      await expectLater(
+        readHome(homeBody(ownedRow: row)),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a row whose two statuses disagree is refused', () async {
+      final row = <String, Object?>{
+        'community': community(verificationStatus: 'verified'),
+        'membership': <String, Object?>{
+          'role': 'owner',
+          'status': 'active',
+          'joinedAt': '2026-09-07T01:00:00.000Z',
+        },
+        'application': <String, Object?>{
+          'status': 'pending',
+          'submittedAt': '2026-09-07T01:00:00.000Z',
+          'reviewedAt': null,
+          'rejectedReason': null,
+        },
+      };
+      await expectLater(
+        readHome(homeBody(ownedRow: row)),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a refusal carries the operator reason to the owner', () async {
+      final body = detailBody()
+        ..['community'] = community(verificationStatus: 'rejected')
+        ..['application'] = <String, Object?>{
+          'status': 'rejected',
+          'submittedAt': '2026-09-07T01:00:00.000Z',
+          'reviewedAt': '2026-09-08T02:00:00.000Z',
+          'rejectedReason': '名称与官方社区重复',
+        };
+      final detail = await readDetail(body);
+
+      final review = detail.application!;
+      expect(review.isRejected, isTrue);
+      expect(review.reviewedAt, DateTime.utc(2026, 9, 8, 2));
+      expect(review.rejectedReason, '名称与官方社区重复');
+    });
+
+    test('a null application block is a stranger record', () async {
+      final detail = await readDetail(detailBody());
+      expect(detail.application, isNull);
+    });
+
+    test('a record that omits the application key is refused', () async {
+      final body = detailBody()..remove('application');
+      await expectLater(
+        readDetail(body),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a pending review that carries a verdict is refused', () async {
+      final body = detailBody()
+        ..['application'] = <String, Object?>{
+          'status': 'pending',
+          'submittedAt': '2026-09-07T01:00:00.000Z',
+          'reviewedAt': '2026-09-08T02:00:00.000Z',
+          'rejectedReason': null,
+        };
+      await expectLater(
+        readDetail(body),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a verified review that carries a reason is refused', () async {
+      final body = detailBody()
+        ..['application'] = <String, Object?>{
+          'status': 'verified',
+          'submittedAt': '2026-09-07T01:00:00.000Z',
+          'reviewedAt': '2026-09-08T02:00:00.000Z',
+          'rejectedReason': '名称与官方社区重复',
+        };
+      await expectLater(
+        readDetail(body),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a refusal with no review time is refused', () async {
+      final body = detailBody()
+        ..['application'] = <String, Object?>{
+          'status': 'rejected',
+          'submittedAt': '2026-09-07T01:00:00.000Z',
+          'reviewedAt': null,
+          'rejectedReason': '名称与官方社区重复',
+        };
+      await expectLater(
+        readDetail(body),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a reason past the server bound is refused', () async {
+      final body = detailBody()
+        ..['application'] = <String, Object?>{
+          'status': 'rejected',
+          'submittedAt': '2026-09-07T01:00:00.000Z',
+          'reviewedAt': '2026-09-08T02:00:00.000Z',
+          'rejectedReason': '名' * 281,
+        };
+      await expectLater(
+        readDetail(body),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('resubmit is one body-less write with one key', () async {
+      RequestOptions? captured;
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          captured = options;
+          handler.resolve(_response(options, detailBody()));
+        }),
+      );
+
+      await api.resubmitApplication(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        idempotencyKey: idempotencyKey,
+        communityId: communityId,
+      );
+
+      expect(captured?.method, 'POST');
+      expect(captured?.uri.path, '/v2/communities/$communityId/resubmit');
+      expect(captured?.data, isNull);
+      expect(_header(captured!, 'idempotency-key'), idempotencyKey);
+      expect(_loopHeaders(captured!), <String, Object?>{
+        'x-loop-client-version': clientVersion,
+        'x-loop-contract-version': '2.0',
+      });
+    });
+
+    test('resubmit refuses an id that is not a community id', () {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) => handler.resolve(_response(options, null))),
+      );
+      // The shape check runs before the request, so it throws rather than
+      // returning a rejected future: nothing is ever dispatched.
+      expect(
+        () => api.resubmitApplication(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          idempotencyKey: idempotencyKey,
+          communityId: 'frog-holders',
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidRequest)),
+      );
     });
   });
 }

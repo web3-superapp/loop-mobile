@@ -113,6 +113,14 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
             'title',
             'subtitle',
             'avatarRef',
+            // Required on every domain since backend decision 0072 (token
+            // logos): the asset rows carry a logo projection and the user and
+            // community rows carry `null`. This adapter admits the key so a
+            // search page still reads; the projection itself, its host
+            // allow-list and its monogram fallback belong to the token-logo
+            // work, which owns every surface that draws one. Reading half of
+            // it here would be a second, weaker copy of that rule.
+            'logo',
             'memberCount',
             'verificationStatus',
           },

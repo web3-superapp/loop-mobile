@@ -99,7 +99,21 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
 
     final home = state.value;
     final loading = state.phase == CommunityViewPhase.loading;
-    final joined = home?.joined ?? const <JoinedCommunity>[];
+    // Since backend decision 0073 the aggregate answers in two groups, and a
+    // community the reader owns is no longer inside `joined`. This page is
+    // the reader's own index of the communities they belong to, and they
+    // belong to the ones they founded most of all: the two groups are read
+    // together here, or an owner's own community would vanish from the tab
+    // the moment the server started answering in two. Which group a row came
+    // from is a question for 我的 → 我的社区, not for this page.
+    final joined = <JoinedCommunity>[
+      ...?home?.joined,
+      for (final entry in home?.owned ?? const <OwnedCommunity>[])
+        JoinedCommunity(
+          community: entry.community,
+          membership: entry.membership,
+        ),
+    ];
     // The prototype's own heading: how many of the reader's communities are
     // bound to an asset, which is the whole of what 「在挖矿」 means here. The
     // aggregate carries the binding on every joined row, so this is a reading
@@ -275,7 +289,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                       ],
                     ),
                   ],
-                  if (home.joinedTruncated)
+                  if (home.joinedTruncated || home.ownedTruncated)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                       child: LoopButton(

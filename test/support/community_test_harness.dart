@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
@@ -180,9 +181,14 @@ CommunityDetail testDetail({
   CommunityOnlineCount? onlineCount,
   CommunityAnnouncementFeed? announcements,
   CommunityOfficialLinkList? officialLinks,
+
+  /// Owner-only. `null` is what every other viewer is sent, which is why it
+  /// is the default here.
+  CommunityApplicationReview? application,
 }) => CommunityDetail(
   community: community ?? testCommunity(),
   viewer: viewer ?? testViewer(),
+  application: application,
   miningPower: miningPower ?? testMiningPower,
   onlineCount: onlineCount ?? testOnlineCount,
   announcements:
@@ -416,6 +422,14 @@ final class FakeCommunityGateway implements CommunityGateway {
     String communityId,
     CommunityProfileEdit edit,
   ) => _write('edit:$communityId:${edit.name}', detail);
+
+  /// The record a successful resubmission answers with. A test that leaves it
+  /// null gets [detail] back, which is how every other write here behaves.
+  CommunityDetail? resubmittedDetail;
+
+  @override
+  Future<CommunityDetail> resubmitApplication(String communityId) =>
+      _write('resubmit:$communityId', resubmittedDetail ?? detail);
 
   @override
   Future<CommunityMemberDirectory> listMembers(
@@ -785,6 +799,10 @@ Future<void> pumpCommunityPage(
   /// cells from (`GET /v2/mining/communities/{id}` + `GET /v2/mining/assets`).
   MiningGateway? mining,
 
+  /// The notification feed the profile page reads for review results, once
+  /// the account owns a community to have them about.
+  NotificationsGateway? notifications,
+
   /// The room this account is in, as the shell's own banner knows it. It is
   /// the only live-voice reading the community home has, so a test that wants
   /// the panel's LIVE row seeds it here.
@@ -848,6 +866,8 @@ Future<void> pumpCommunityPage(
         if (chatSearch != null)
           chatSearchGatewayProvider.overrideWithValue(chatSearch),
         if (mining != null) miningGatewayProvider.overrideWithValue(mining),
+        if (notifications != null)
+          notificationsGatewayProvider.overrideWithValue(notifications),
         if (streamAuthorization != null)
           streamChatAuthorizationProvider.overrideWith(
             (ref) => streamAuthorization(),

@@ -1917,6 +1917,7 @@ Future<LoopNotificationContext?> _resolveNotificationContext(
     return LoopNotificationContext(
       contextRoute: entry.contextRoute,
       assetId: entry.contextParams[MarketAssetRoute.assetParameter],
+      communityId: entry.contextParams['communityId'],
     );
   }
   return null;
@@ -1977,11 +1978,21 @@ String _accountPath(String id) => switch (id) {
   _ => LoopRouteManifest.pathFor('auth'),
 };
 
+/// Prefix of the one profile destination that carries a parameter.
+const String _communityRecordDestination = 'community-profile:';
+
 // Profile screen destinations. Copy permissions live inside Privacy, seed
 // backup is replaced by the manifest `key-export` page and rewards by the
 // Mining tab; none of the retired ids reaches a dead route.
 String _profilePath(String id) => switch (id) {
   'profile' => LoopRouteManifest.pathFor('profile'),
+  // `community-profile:<communityId>`: one created community's own record.
+  // The 我创建的 group hands the id over rather than a page-less destination,
+  // because `community-profile` addresses exactly one community and this is
+  // the only place that knows which.
+  final String scoped when scoped.startsWith(_communityRecordDestination) =>
+    '${LoopRouteManifest.pathFor('community-profile')}?id='
+        '${Uri.encodeQueryComponent(scoped.substring(_communityRecordDestination.length))}',
   // `/profile/friends` and `/chat/friends/add` were folded into `search`
   // and `connections` in step 3; step 4 folded the V1 request inbox into the
   // `dm-requests` page, so the profile row now opens that manifest slug.

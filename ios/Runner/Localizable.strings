@@ -16,3 +16,7 @@
 "push.securityEvent.body" = "有新的登录或设备变动，请前往设备管理确认";
 "push.communityVoiceRoomStarted.title" = "社区语音房开播了";
 "push.communityVoiceRoomStarted.body" = "点开进入房间";
+"push.communityApplicationVerified.title" = "社区审核已通过";
+"push.communityApplicationVerified.body" = "点开查看这个社区";
+"push.communityApplicationRejected.title" = "社区审核未通过";
+"push.communityApplicationRejected.body" = "点开查看原因与重新提交";

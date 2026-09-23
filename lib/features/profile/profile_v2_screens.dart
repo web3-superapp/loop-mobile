@@ -8,14 +8,18 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/notifications/community_application_notifications.dart';
+import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
@@ -565,17 +569,24 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
   }
 }
 
-/// The 我的社区 entry on `profile`.
+/// The 我的社区 block on `profile`.
 ///
-/// Membership is not a profile fact. It is only ever the `joined` block of
-/// `community`'s own home aggregate, so this row reads that aggregate through
-/// the existing [CommunityHomeController] instead of adding a second source,
-/// and states the aggregate's phase rather than claiming the relationship is
-/// unconnected.
+/// Membership is not a profile fact. It is only ever the community module's
+/// own home aggregate, so this block reads that aggregate through the existing
+/// [CommunityHomeController] instead of adding a second source, and states the
+/// aggregate's phase rather than claiming the relationship is unconnected.
 ///
-/// The row stays a navigation entry in every phase: a failure is reported
-/// here in one line and carries the owner to the community directory, which
-/// is the page that owns the full five-state block and its retry.
+/// Since the 2026-09-23 ruling the block is two groups, because the aggregate
+/// answers in two (backend decision 0073): 我加入的 stays the one navigation
+/// row it has always been, and 我创建的 lists the reader's own communities with
+/// the state of each application on the row. **A reader who has never applied
+/// sees no second group at all** — an empty 我创建的 would teach every account
+/// about a review queue none of them is in.
+///
+/// The joined row stays a navigation entry in every phase: a failure is
+/// reported there in one line and carries the owner to the community
+/// directory, which is the page that owns the full five-state block and its
+/// retry.
 class ProfileCommunitiesRow extends ConsumerStatefulWidget {
   const ProfileCommunitiesRow({required this.onNavigate, super.key});
 
@@ -587,6 +598,12 @@ class ProfileCommunitiesRow extends ConsumerStatefulWidget {
 
   /// The public directory, used whenever there is nothing joined to open.
   static const discoverDestination = 'community-discover';
+
+  /// One community's own record. The id travels in the destination because
+  /// `community-profile` addresses exactly one community and the composition
+  /// root owns the query it is addressed with.
+  static String recordDestination(String communityId) =>
+      'community-profile:$communityId';
 
   /// How many joined communities the subtitle names before the trailing count
   /// takes over.
@@ -628,6 +645,7 @@ class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
     final isReady = state.phase == CommunityViewPhase.ready && home != null;
     final joined = home?.joined ?? const <JoinedCommunity>[];
     final truncated = home?.joinedTruncated ?? false;
+    final owned = isReady ? home.owned : const <OwnedCommunity>[];
 
     final String trailing;
     final String subtitle;
@@ -654,19 +672,156 @@ class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
       };
     }
 
-    return LoopRecordGroup(
-      rows: <LoopRecordRow>[
-        LoopRecordRow(
-          key: const ValueKey<String>('profile-open-communities'),
-          title: '我的社区',
-          subtitle: subtitle,
-          trailing: trailing,
-          semanticLabel: '我的社区，$trailing，$subtitle',
-          onTap: () => widget.onNavigate(
-            isReady && joined.isNotEmpty
-                ? ProfileCommunitiesRow.joinedDestination
-                : ProfileCommunitiesRow.discoverDestination,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-communities'),
+              title: '我加入的',
+              subtitle: subtitle,
+              trailing: trailing,
+              semanticLabel: '我加入的，$trailing，$subtitle',
+              onTap: () => widget.onNavigate(
+                isReady && joined.isNotEmpty
+                    ? ProfileCommunitiesRow.joinedDestination
+                    : ProfileCommunitiesRow.discoverDestination,
+              ),
+            ),
+          ],
+        ),
+        if (owned.isNotEmpty) ...<Widget>[
+          const LoopLabel('我创建的', followsLabel: true),
+          LoopRecordGroup(
+            key: const ValueKey<String>('profile-owned-communities'),
+            rows: <LoopRecordRow>[for (final entry in owned) _ownedRow(entry)],
           ),
+          if (home!.ownedTruncated)
+            const LoopProvenanceFooter(
+              key: ValueKey<String>('profile-owned-truncated'),
+              text: '这一页放不下全部，上面是最近提交的几个。',
+            ),
+          ProfileApplicationNotifications(onOpenCommunity: widget.onNavigate),
+        ],
+      ],
+    );
+  }
+
+  /// One community this account created, with the state of its review.
+  ///
+  /// The value column carries the state as a pill rather than a figure: it is
+  /// a decision somebody made, not a number. The second line is the fact the
+  /// owner can act on — when the version under review was submitted, or the
+  /// head of the operator's own reason for refusing it.
+  LoopRecordRow _ownedRow(OwnedCommunity entry) {
+    final community = entry.community;
+    final line = communityApplicationRowLine(entry);
+    final status = communityApplicationStatusLabel(entry.status);
+    return LoopRecordRow(
+      key: ValueKey<String>('profile-owned-${community.communityId}'),
+      leading: CommunityLogo(
+        identity: community.communityId,
+        name: community.name,
+        logoRef: community.logoRef,
+      ),
+      title: community.name,
+      subtitle: line,
+      subtitleMaxLines: 2,
+      trailingBadge: CommunityApplicationBadge(entry.status),
+      chevron: false,
+      semanticLabel: '${community.name}，$status，$line',
+      onTap: () => widget.onNavigate(
+        ProfileCommunitiesRow.recordDestination(community.communityId),
+      ),
+    );
+  }
+}
+
+/// The review results the feed holds for the reader's own communities.
+///
+/// LOOP has no notification centre and will not grow one (红线 1), so a
+/// notification lives on the page that owns what it is about. These two live
+/// directly under 我创建的, because that is where the 2026-09-23 ruling sends
+/// the applicant to watch for the answer and because the rows they belong to
+/// are the ones above them.
+///
+/// The feed is only read when this account owns something to be reviewed: an
+/// account that never applied pays nothing for a surface it will never see.
+/// A failed or unavailable read draws nothing at all — the group above it
+/// already carries the authoritative state of every application, and a second
+/// block saying the notification list could not be read would report a
+/// failure about a fact the reader can already see.
+class ProfileApplicationNotifications extends ConsumerStatefulWidget {
+  const ProfileApplicationNotifications({
+    required this.onOpenCommunity,
+    super.key,
+  });
+
+  /// Takes `community-profile:<communityId>`, the destination the composition
+  /// root resolves into the record's own route.
+  final ValueChanged<String> onOpenCommunity;
+
+  @override
+  ConsumerState<ProfileApplicationNotifications> createState() =>
+      _ProfileApplicationNotificationsState();
+}
+
+class _ProfileApplicationNotificationsState
+    extends ConsumerState<ProfileApplicationNotifications> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(notificationFeedControllerProvider);
+    if (state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(notificationFeedControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    final feed = state.value;
+    if (feed == null) return const SizedBox.shrink();
+    final results = communityApplicationNotifications(feed);
+    if (results.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopLabel('审核通知', followsLabel: true),
+        LoopRecordGroup(
+          key: const ValueKey<String>('profile-application-notifications'),
+          rows: <LoopRecordRow>[
+            for (final result in results)
+              LoopRecordRow(
+                key: ValueKey<String>(
+                  'profile-application-notification-'
+                  '${result.entry.notificationId}',
+                ),
+                title: result.title,
+                subtitle: result.body,
+                subtitleMaxLines: 3,
+                trailingBadge: result.entry.isUnread
+                    ? const LoopBadge('未读')
+                    : null,
+                chevron: false,
+                semanticLabel: '${result.title}，${result.body}',
+                onTap: () {
+                  // Reading it is the tap that opens it; the read is the
+                  // server's to confirm and is never waited on here.
+                  if (result.entry.isUnread) {
+                    unawaited(
+                      ref
+                          .read(notificationFeedControllerProvider.notifier)
+                          .markRead(result.entry.notificationId),
+                    );
+                  }
+                  widget.onOpenCommunity(
+                    ProfileCommunitiesRow.recordDestination(result.communityId),
+                  );
+                },
+              ),
+          ],
         ),
       ],
     );
