@@ -391,7 +391,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         heading: hits == null
             ? '${_scope.label} · 还没有检索'
             : '${_scope.label} · ${hits.length} 条',
-        caption: '只在你有权访问的会话里检索；全局资产与社区搜索仍从社区首页进入。',
+        caption: '只在你有权访问的会话里检索；全局资产与社区搜索从社区 Tab 顶部进入。',
       ),
       filters: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

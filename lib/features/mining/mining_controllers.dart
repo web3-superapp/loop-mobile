@@ -122,6 +122,24 @@ final miningRankControllerProvider =
       LaunchResourceState<MiningRank>
     >(MiningRankController.new);
 
+/// The account's own place on the user board.
+///
+/// It is a second, fixed-scope reader of `GET /v2/mining/rank?scope=users`,
+/// kept apart from [miningRankControllerProvider] because that one's scope is
+/// page state: a page that only wants 「我的名次」 must not move the board
+/// another page is showing.
+final class MiningUserRankController extends MiningReadController<MiningRank> {
+  @override
+  Future<MiningRank> fetch(MiningGateway gateway) =>
+      gateway.loadRank(MiningRankScope.users);
+}
+
+final miningUserRankControllerProvider =
+    NotifierProvider.autoDispose<
+      MiningUserRankController,
+      LaunchResourceState<MiningRank>
+    >(MiningUserRankController.new);
+
 final class MiningCommunityController
     extends MiningReadController<MiningCommunity> {
   @override

@@ -21,7 +21,7 @@ SearchPage _page(SearchDomain domain) => SearchPage(
       avatarRef: null,
       memberCount: 128,
       verificationStatus: 'verified',
-      destination: SearchDestinationKind.communityProfile,
+      destination: SearchCommunityProfileDestination(),
     ),
   ],
   nextCursor: null,
@@ -42,14 +42,23 @@ void main() {
         search: FakeSearchGateway(),
       );
 
-      // Five chips, and the label used to name two of them.
+      // The label names every domain that answers, and promises none that
+      // does not (device walkthrough 2026-09-23 · a55–a65).
       final field = tester.widget<TextField>(
         find.byKey(const ValueKey<String>('search-field')),
       );
-      for (final domain in loop_search.searchDomainOrder) {
+      for (final domain in loop_search.searchableDomains) {
         expect(
           field.decoration?.labelText,
           contains(domain.label),
+          reason: domain.wireName,
+        );
+      }
+      for (final domain in loop_search.searchDomainOrder) {
+        if (!loop_search.searchDomainIsDeferred(domain)) continue;
+        expect(
+          field.decoration?.labelText,
+          isNot(contains(domain.label)),
           reason: domain.wireName,
         );
       }

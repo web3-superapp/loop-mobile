@@ -1267,9 +1267,9 @@ void main() {
           _dio(
             (options, handler) => handler.resolve(
               _response(options, <String, Object?>{
-                'domain': 'assets',
+                'domain': 'dapps',
                 'status': 'unavailable',
-                'reasonCode': 'ASSET_REGISTRY_DEFERRED',
+                'reasonCode': 'DAPP_DIRECTORY_NOT_INTEGRATED',
                 'results': <Object?>[],
                 'nextCursor': null,
                 'contractVersion': '2.0',
@@ -1281,12 +1281,12 @@ void main() {
         final page = await api.search(
           accessToken: 'token',
           clientVersion: clientVersion,
-          domain: SearchDomain.assets,
+          domain: SearchDomain.dapps,
           query: 'pepe',
         );
 
         expect(page.available, isFalse);
-        expect(page.reasonCode, 'ASSET_REGISTRY_DEFERRED');
+        expect(page.reasonCode, 'DAPP_DIRECTORY_NOT_INTEGRATED');
         expect(page.results, isEmpty);
       },
     );
@@ -1336,11 +1336,111 @@ void main() {
         expect(captured?.queryParameters['q'], 'pepe');
         expect(
           page.results.single.destination,
-          SearchDestinationKind.communityProfile,
+          isA<SearchCommunityProfileDestination>(),
         );
         expect(page.results.single.memberCount, 128);
       },
     );
+
+    test('an asset row is named by its CAIP id and opens by it', () async {
+      // Backend decision 0071: `stableId` is the registry's own asset id, and
+      // `assetDetail` is the one destination that carries a parameter.
+      const assetId = 'eip155:56:0x55d398326f99059ff775485246999027b3197955';
+      final api = DioLoopV2SearchApi(
+        _dio(
+          (options, handler) => handler.resolve(
+            _response(options, <String, Object?>{
+              'domain': 'assets',
+              'status': 'available',
+              'reasonCode': null,
+              'results': <Object?>[
+                <String, Object?>{
+                  'resultType': 'asset',
+                  'stableId': assetId,
+                  'displaySnapshot': <String, Object?>{
+                    'title': 'USDT',
+                    'subtitle': 'Tether USD',
+                    'avatarRef': null,
+                    'memberCount': null,
+                    'verificationStatus': 'pending',
+                  },
+                  'destination': <String, Object?>{
+                    'kind': 'assetDetail',
+                    'assetId': assetId,
+                  },
+                },
+              ],
+              'nextCursor': null,
+              'contractVersion': '2.0',
+            }),
+          ),
+        ),
+      );
+
+      final page = await api.search(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        domain: SearchDomain.assets,
+        query: 'usd',
+      );
+
+      final row = page.results.single;
+      expect(row.resultType, SearchResultType.asset);
+      expect(row.stableId, assetId);
+      expect(row.title, 'USDT');
+      expect(row.subtitle, 'Tether USD');
+      expect(
+        row.destination,
+        isA<SearchAssetDestination>().having(
+          (destination) => destination.assetId,
+          'assetId',
+          assetId,
+        ),
+      );
+    });
+
+    test('an asset id that is not canonical is refused', () async {
+      final api = DioLoopV2SearchApi(
+        _dio(
+          (options, handler) => handler.resolve(
+            _response(options, <String, Object?>{
+              'domain': 'assets',
+              'status': 'available',
+              'reasonCode': null,
+              'results': <Object?>[
+                <String, Object?>{
+                  'resultType': 'asset',
+                  'stableId': 'USDT',
+                  'displaySnapshot': <String, Object?>{
+                    'title': 'USDT',
+                    'subtitle': 'Tether USD',
+                    'avatarRef': null,
+                    'memberCount': null,
+                    'verificationStatus': 'pending',
+                  },
+                  'destination': <String, Object?>{
+                    'kind': 'assetDetail',
+                    'assetId': 'USDT',
+                  },
+                },
+              ],
+              'nextCursor': null,
+              'contractVersion': '2.0',
+            }),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.search(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          domain: SearchDomain.assets,
+          query: 'usd',
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
 
     test('a prefix shorter than two code points spends no quota', () async {
       var dispatched = false;

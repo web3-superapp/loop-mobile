@@ -68,12 +68,18 @@ void main() {
       );
       final fill = (disc.decoration! as BoxDecoration).color!;
       expect(_isTranslucentChalk(fill), isFalse);
-      // The monogram is the part the owner reads, so it is opaque, and it is
-      // not the ground's own colour.
+      // `#scr-profile` draws this disc `background:var(--ink);
+      // color:var(--chalk)`: a solid face on the Chalk card, not a `card2`
+      // tint of it, which came out as the pale grey disc the device showed
+      // (walkthrough 2026-09-23 · h01/h04). Both parts are opaque and they
+      // are not the same colour.
+      expect(fill.a, 1);
+      expect(fill.toARGB32(), LoopColors.ink.toARGB32());
       final text = tester.widget<Text>(find.text('CY'));
       final ink = text.style!.color!;
       expect(ink.a, 1);
-      expect(ink, isNot(LoopColors.chalk));
+      expect(ink.toARGB32(), LoopColors.chalk.toARGB32());
+      expect(ink.toARGB32(), isNot(fill.toARGB32()));
     });
 
     testWidgets('the same fallback on the Ink page is unchanged', (

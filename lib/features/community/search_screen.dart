@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -27,6 +28,7 @@ class GlobalSearchScreen extends ConsumerStatefulWidget {
     this.onBack,
     this.onOpenCommunity,
     this.onOpenDirectMessage,
+    this.onOpenAsset,
   });
 
   final String? initialQuery;
@@ -39,6 +41,9 @@ class GlobalSearchScreen extends ConsumerStatefulWidget {
   /// opens the shared public-profile card, and the card carries the control;
   /// the route stays with the shell.
   final PublicProfileDirectMessageHandler? onOpenDirectMessage;
+
+  /// Opens the token page for an `assetDetail` result, by `assetId`.
+  final ValueChanged<String>? onOpenAsset;
 
   @override
   ConsumerState<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
@@ -61,9 +66,13 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   /// instead of routing somewhere that would have to be invented.
   void _openResult(SearchResult result) {
     switch (result.destination) {
-      case SearchDestinationKind.communityProfile:
+      case SearchCommunityProfileDestination():
         widget.onOpenCommunity?.call(result.stableId);
-      case SearchDestinationKind.publicProfile:
+      // The token page is opened with the server's own `assetId`, never with
+      // the row's symbol: two contracts may share a ticker.
+      case SearchAssetDestination(:final assetId):
+        widget.onOpenAsset?.call(assetId);
+      case SearchPublicProfileDestination():
         unawaited(
           showPublicProfileSheet<Object>(
             context,
@@ -225,10 +234,11 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   }
 
   LoopRecordRow _resultRow(SearchResult result, int index, int length) {
-    // A user's subtitle is the alias or LOOP ID the reader searched for. A
-    // community's is its slug, which reached the screen bare — 「mock-vol-01」
-    // under 「Alpha Signals 1」 — and names nothing a reader can use. The row
-    // keeps the community's name and member count instead.
+    // A user's subtitle is the alias or LOOP ID the reader searched for, and
+    // an asset's is the token's name under its symbol. A community's is its
+    // slug, which reached the screen bare — 「mock-vol-01」 under 「Alpha
+    // Signals 1」 — and names nothing a reader can use. The row keeps the
+    // community's name and member count instead.
     final subtitle = result.resultType == SearchResultType.community
         ? null
         : result.subtitle;
@@ -239,17 +249,26 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       // identity it stands for: a community its own logo — or, where the
       // preset has no local image, the face its id is always given — and a
       // person their avatar. `stableId` is the community's id on this wire.
-      leading: result.resultType == SearchResultType.community
-          ? CommunityLogo(
-              identity: result.stableId,
-              name: result.title,
-              logoRef: result.avatarRef,
-            )
-          : LoopProfileAvatar(
-              avatarRef: result.avatarRef,
-              alias: result.title,
-              size: 44,
-            ),
+      leading: switch (result.resultType) {
+        SearchResultType.community => CommunityLogo(
+          identity: result.stableId,
+          name: result.title,
+          logoRef: result.avatarRef,
+        ),
+        // The registry stores no logo for an asset (`avatarRef` is always
+        // null on this row), so the token face is the one every other LOOP
+        // list draws it with, from the symbol.
+        SearchResultType.asset => LoopTokenLogo(
+          assetSymbol: result.title,
+          fallbackMonogram: result.title,
+          size: 44,
+        ),
+        SearchResultType.user => LoopProfileAvatar(
+          avatarRef: result.avatarRef,
+          alias: result.title,
+          size: 44,
+        ),
+      },
       title: result.title,
       subtitle: subtitle,
       trailing: result.memberCount == null ? null : '${result.memberCount}',

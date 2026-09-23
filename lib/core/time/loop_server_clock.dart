@@ -98,9 +98,15 @@ class LoopServerClock {
   /// LOOP's own send — remains free to set any offset, including a smaller
   /// one, which is what corrects the clock if the member moves the device
   /// forward mid-session.
+  ///
+  /// The floor is the offset in force, including the zero this clock starts
+  /// at. The first unbracketed reading used to be taken whatever it said, so
+  /// one replayed message could set the offset to its own age: on 2026-09-23
+  /// a message from two days earlier put "now" two days in the past and the
+  /// day separator above it read 「今天」.
   void observeAtLeast({required DateTime serverTime, required DateTime at}) {
     final candidate = serverTime.toUtc().difference(at.toUtc());
-    if (_observed && candidate <= _offset) return;
+    if (candidate <= _offset) return;
     _offset = candidate;
     _observed = true;
   }

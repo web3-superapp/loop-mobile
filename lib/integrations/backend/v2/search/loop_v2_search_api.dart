@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
@@ -116,14 +117,38 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
             'verificationStatus',
           },
         );
-        final destination = LoopV2Contract.strictMap(
+        // `assetDetail` is the one destination that carries a parameter; the
+        // other two must not carry one, so a row that tried to hand an
+        // `assetId` to a profile destination is refused rather than opened.
+        final destination = LoopV2Contract.strictMapWithOptional(
           item['destination'],
           const <String>{'kind'},
+          const <String>{'assetId'},
         );
         final rawKind = destination['kind'];
         if (rawKind is! String) LoopV2ProjectionCodec.invalid();
-        final kind = SearchDestinationKind.tryParse(rawKind);
-        if (kind == null) LoopV2ProjectionCodec.invalid();
+        final rawAssetId = destination['assetId'];
+        final SearchDestination target;
+        switch (rawKind) {
+          case SearchDestination.publicProfileKind:
+            if (destination.containsKey('assetId')) {
+              LoopV2ProjectionCodec.invalid();
+            }
+            target = const SearchPublicProfileDestination();
+          case SearchDestination.communityProfileKind:
+            if (destination.containsKey('assetId')) {
+              LoopV2ProjectionCodec.invalid();
+            }
+            target = const SearchCommunityProfileDestination();
+          case SearchDestination.assetDetailKind:
+            if (rawAssetId is! String ||
+                !MarketAssetRoute.isCanonical(rawAssetId)) {
+              LoopV2ProjectionCodec.invalid();
+            }
+            target = SearchAssetDestination(rawAssetId);
+          default:
+            LoopV2ProjectionCodec.invalid();
+        }
         final memberCount = snapshot['memberCount'];
         if (memberCount != null && (memberCount is! int || memberCount < 0)) {
           LoopV2ProjectionCodec.invalid();
@@ -135,14 +160,20 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
             verification != 'rejected') {
           LoopV2ProjectionCodec.invalid();
         }
+        // An account and a community are named by an opaque UUID; a registry
+        // asset is named by its CAIP id, which is the registry's own stable
+        // key (decision 0033). Both are server identities, and neither is a
+        // display string.
+        final stableId = item['stableId'];
+        if (stableId is! String) LoopV2ProjectionCodec.invalid();
+        final stableIdIsCanonical = resultType == SearchResultType.asset
+            ? MarketAssetRoute.isCanonical(stableId)
+            : LoopV2Contract.uuidPattern.hasMatch(stableId);
+        if (!stableIdIsCanonical) LoopV2ProjectionCodec.invalid();
         results.add(
           SearchResult(
             resultType: resultType,
-            stableId: LoopV2Contract.requiredString(
-              item,
-              'stableId',
-              pattern: LoopV2Contract.uuidPattern,
-            ),
+            stableId: stableId,
             title: LoopV2ProjectionCodec.requireText(snapshot, 'title'),
             subtitle: LoopV2ProjectionCodec.optionalText(snapshot, 'subtitle'),
             avatarRef: LoopV2ProjectionCodec.optionalPattern(
@@ -152,7 +183,7 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
             ),
             memberCount: memberCount as int?,
             verificationStatus: verification as String?,
-            destination: kind,
+            destination: target,
           ),
         );
       }

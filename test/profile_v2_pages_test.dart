@@ -12,7 +12,15 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'package:loop_mobile/features/mining/mining_gateway.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/features/social/social_models.dart';
+
+import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
+import 'support/s7_fixtures.dart';
+import 'support/s7_page_harness.dart';
 
 void main() {
   // This file mounts pages through its own `pumpWidget`, so it arms the
@@ -85,6 +93,73 @@ void main() {
       expect(find.textContaining('24,820'), findsNothing);
     });
 
+    testWidgets('the mining row prints the power and the place it earned', (
+      tester,
+    ) async {
+      // Device walkthrough 2026-09-23 · h01: the row explained that it does
+      // not read power, while the mining tab held 4.48 and 第 47 名.
+      await _pump(
+        tester,
+        'profile',
+        gateway: _Gateway(resource: active()),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            value: s7MiningSummary(power: const MiningFigureValue('4.48')),
+          ),
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.users,
+              myPosition: const MiningRankPositionSettled(
+                position: 47,
+                power: '4.48',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final mining = tester.widget<LoopRecordRow>(
+        find.byKey(const ValueKey<String>('profile-open-mining')),
+      );
+      expect(mining.trailing, '4.48');
+      expect(mining.subtitle, '我的名次 第 47 名');
+      expect(find.textContaining('这一页不读算力'), findsNothing);
+    });
+
+    testWidgets('each 账户 row carries the state it is a way into', (
+      tester,
+    ) async {
+      // `#scr-profile`: 「2 个已绑定」, 「匿名模式已开启」, 「关注 24 · 粉丝 108」.
+      await _pump(
+        tester,
+        'profile',
+        gateway: _Gateway(resource: active()),
+        social: FakeSocialGateway(
+          connections: const ConnectionPage(
+            direction: ConnectionDirection.following,
+            items: <ConnectionEntry>[],
+            counts: ConnectionCounts(following: 24, followers: 108),
+            nextCursor: null,
+          ),
+        ),
+      );
+
+      Future<String?> subtitle(String key) async {
+        final row = find.byKey(ValueKey<String>(key));
+        await tester.scrollUntilVisible(row, 120);
+        return tester.widget<LoopRecordRow>(row).subtitle;
+      }
+
+      // The privacy gateway in this harness stores 匿名模式 on.
+      expect(await subtitle('profile-open-privacy'), '匿名模式已开启');
+      expect(await subtitle('profile-open-connections'), '关注 24 · 粉丝 108');
+      // The wallet directory and the security posture were not read, so
+      // those rows say nothing rather than 「读不到」.
+      expect(await subtitle('profile-open-wallets'), isNull);
+      expect(await subtitle('profile-open-security'), isNull);
+      expect(find.textContaining('读不到'), findsNothing);
+    });
+
     testWidgets('nothing on this page calls a working destination closed', (
       tester,
     ) async {
@@ -115,8 +190,8 @@ void main() {
       );
       await tester.scrollUntilVisible(connections, 120);
       // The prototype's account rows carry a state value or nothing at all;
-      // this page can read none of those states, so it says nothing rather
-      // than describing the destination (audit 2026-09-21 §D+ #11).
+      // a state this device has not read is no second line, never a
+      // description of the destination (audit 2026-09-21 §D+ #11).
       expect(tester.widget<LoopRecordRow>(connections).subtitle, isNull);
       expect(tester.widget<LoopRecordRow>(connections).onTap, isNotNull);
     });
@@ -276,6 +351,45 @@ void main() {
       expect(gateway.savedValues?.alias, 'Voyager_8');
       expect(gateway.savedValues?.bio, '长期持有，少动手');
       expect(gateway.savedExpectedVersion, 1);
+    });
+
+    testWidgets('the tags are a chip flow, and the hero scrolls with them', (
+      tester,
+    ) async {
+      // Device walkthrough 2026-09-23 · h04/h05: each tag was a full-width
+      // button on its own line, and the hero held a third of the screen
+      // while the fields scrolled underneath it.
+      await _pump(
+        tester,
+        'profile-edit',
+        gateway: _Gateway(resource: active()),
+      );
+
+      final page = tester.widget<LoopFocusPage>(find.byType(LoopFocusPage));
+      expect(page.folio, isNull);
+      // The hero is still on the page — as the body's first row, inside the
+      // scroll view the prototype puts it in.
+      final hero = find.byType(LoopFolioPrimary);
+      expect(hero, findsOneWidget);
+      expect(
+        find.ancestor(of: hero, matching: find.byType(SingleChildScrollView)),
+        findsWidgets,
+      );
+
+      // Every interest chip measures its own label; none of them fills the
+      // page width, and each still meets the 44px touch target.
+      final width = tester.getSize(find.byType(LoopFocusPage)).width;
+      for (final interest in ProfileInterest.values) {
+        final size = tester.getSize(
+          find.byKey(ValueKey<String>('interest-${interest.wireValue}')),
+        );
+        expect(size.width, lessThan(width / 2), reason: interest.wireValue);
+        expect(
+          size.height,
+          greaterThanOrEqualTo(44),
+          reason: interest.wireValue,
+        );
+      }
     });
 
     testWidgets('a rejected alias is shown as a failure, not a save', (
@@ -483,6 +597,8 @@ Future<void> _pump(
   _AvatarCatalog? avatars,
   ValueChanged<String>? onNavigate,
   PrivacyMode privacyMode = PrivacyMode.production,
+  MiningGateway? mining,
+  SocialGateway? social,
   bool settle = true,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
@@ -496,6 +612,8 @@ Future<void> _pump(
         avatarCatalogGatewayProvider.overrideWithValue(
           avatars ?? _AvatarCatalog(),
         ),
+        if (mining != null) miningGatewayProvider.overrideWithValue(mining),
+        if (social != null) socialGatewayProvider.overrideWithValue(social),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

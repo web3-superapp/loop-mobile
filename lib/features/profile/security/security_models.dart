@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 
@@ -117,13 +118,10 @@ final class LoopDeviceSession {
 
 /// The first login of one session, to the minute (decision 0049). It is the
 /// only field that separates two sessions of the same device in time, so it is
-/// printed absolutely rather than as 「N 天前」.
-String loopSessionCreatedAtLabel(DateTime createdAt) {
-  final utc = createdAt.toUtc();
-  String two(int part) => part.toString().padLeft(2, '0');
-  return '${utc.year}-${two(utc.month)}-${two(utc.day)} '
-      '${two(utc.hour)}:${two(utc.minute)} UTC';
-}
+/// printed absolutely rather than as 「N 天前」 — and on the reader's own wall
+/// clock, like every other instant LOOP shows.
+String loopSessionCreatedAtLabel(DateTime createdAt) =>
+    loopLocalTimestampLabel(createdAt);
 
 /// Server-published high-risk window. The threshold is never hard-coded.
 @immutable

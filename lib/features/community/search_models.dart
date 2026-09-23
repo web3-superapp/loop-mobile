@@ -15,25 +15,51 @@ enum SearchDomain {
 
 /// The only way to navigate a result. Routes are never assembled from copy,
 /// a ticker or a domain name.
-enum SearchDestinationKind {
-  publicProfile('publicProfile'),
-  communityProfile('communityProfile');
+///
+/// `assetDetail` is the one destination that carries a parameter, and it
+/// carries the server's own CAIP `assetId` — never the row's symbol, which
+/// two contracts may share.
+sealed class SearchDestination {
+  const SearchDestination();
 
-  const SearchDestinationKind(this.wireName);
+  static const String publicProfileKind = 'publicProfile';
+  static const String communityProfileKind = 'communityProfile';
+  static const String assetDetailKind = 'assetDetail';
 
-  final String wireName;
+  String get kind;
+}
 
-  static SearchDestinationKind? tryParse(String value) {
-    for (final item in values) {
-      if (item.wireName == value) return item;
-    }
-    return null;
-  }
+@immutable
+final class SearchPublicProfileDestination extends SearchDestination {
+  const SearchPublicProfileDestination();
+
+  @override
+  String get kind => SearchDestination.publicProfileKind;
+}
+
+@immutable
+final class SearchCommunityProfileDestination extends SearchDestination {
+  const SearchCommunityProfileDestination();
+
+  @override
+  String get kind => SearchDestination.communityProfileKind;
+}
+
+@immutable
+final class SearchAssetDestination extends SearchDestination {
+  const SearchAssetDestination(this.assetId);
+
+  /// The canonical CAIP id the token page is opened with.
+  final String assetId;
+
+  @override
+  String get kind => SearchDestination.assetDetailKind;
 }
 
 enum SearchResultType {
   user('user'),
-  community('community');
+  community('community'),
+  asset('asset');
 
   const SearchResultType(this.wireName);
 
@@ -69,7 +95,7 @@ final class SearchResult {
   /// Present only for a community result; `null` renders nothing, never `0`.
   final int? memberCount;
   final String? verificationStatus;
-  final SearchDestinationKind destination;
+  final SearchDestination destination;
 }
 
 @immutable

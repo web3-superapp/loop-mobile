@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -61,8 +62,9 @@ LoopCommunityMiningPower testSettledCommunityMiningPower({
   MiningParticipants? participants,
   MiningFormulaScope scope = MiningFormulaScope.developmentBaseline,
   bool stale = false,
+  String power = '0',
 }) => LoopCommunityMiningPower(
-  power: '0',
+  power: power,
   snapshotId: testSnapshotId,
   formulaVersion: testFormulaVersion,
   computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54),
@@ -779,6 +781,10 @@ Future<void> pumpCommunityPage(
   ChatForwardState? forwardState,
   ChatSearchGateway? chatSearch,
 
+  /// The mining module the community record reads its three per-account
+  /// cells from (`GET /v2/mining/communities/{id}` + `GET /v2/mining/assets`).
+  MiningGateway? mining,
+
   /// The room this account is in, as the shell's own banner knows it. It is
   /// the only live-voice reading the community home has, so a test that wants
   /// the panel's LIVE row seeds it here.
@@ -841,6 +847,7 @@ Future<void> pumpCommunityPage(
           ),
         if (chatSearch != null)
           chatSearchGatewayProvider.overrideWithValue(chatSearch),
+        if (mining != null) miningGatewayProvider.overrideWithValue(mining),
         if (streamAuthorization != null)
           streamChatAuthorizationProvider.overrideWith(
             (ref) => streamAuthorization(),

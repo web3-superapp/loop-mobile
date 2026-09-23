@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
@@ -356,6 +357,26 @@ void main() {
         );
       }
       expect(lists, greaterThan(0));
+    });
+
+    test('the day pill rides in the thread, not over it', () {
+      // Device walkthrough 2026-09-23 · a10/a11/a33 and h28: the floating
+      // pill named the day of whichever item the viewport anchored on and was
+      // drawn over the first bubble. The inline divider — built from one
+      // message's own local `createdAt` — is the only day marker left.
+      final configuration =
+          loopStreamChatConfiguration.messageListViewConfiguration;
+      expect(configuration.showFloatingDateDivider, isFalse);
+
+      final builders = loopStreamMessageListViewBuilders();
+      expect(builders.dateDivider, isNotNull);
+
+      final divider = builders.dateDivider!(DateTime(2026, 9, 21, 20, 6));
+      expect(divider, isA<StreamDateDivider>());
+      expect(
+        (divider as StreamDateDivider).dateTime,
+        DateTime(2026, 9, 21, 20, 6),
+      );
     });
 
     test('every inbox timestamp in lib carries a LOOP formatter', () {

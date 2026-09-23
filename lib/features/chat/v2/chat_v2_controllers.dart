@@ -115,6 +115,7 @@ final class DirectChannelState {
     this.block,
     this.busy = false,
     this.requestSent = false,
+    this.requestFailure,
   });
 
   factory DirectChannelState.initial(CommunityGatewayMode mode) {
@@ -139,6 +140,15 @@ final class DirectChannelState {
 
   /// A message request was confirmed by the server in this session.
   final bool requestSent;
+
+  /// Why the last message request did not go through.
+  ///
+  /// The send is a write this page owns on its own: it is not the channel
+  /// read, so it does not move [phase], and it is not forgotten when the page
+  /// rebuilds. A toast that has already faded is not feedback — the refusal
+  /// stays on screen next to the control that produced it until the reader
+  /// tries again (device walkthrough 2026-09-23 · i06/i07).
+  final CommunityFailureKind? requestFailure;
 
   bool get isPreview => mode == CommunityGatewayMode.preview;
 
@@ -275,6 +285,23 @@ final class DirectChannelController extends Notifier<DirectChannelState>
     );
   }
 
+  /// Records that the message request was refused, with the server's kind.
+  ///
+  /// The channel state is untouched: the conversation is still closed for the
+  /// same reason it was closed before, and the control stays on screen so the
+  /// reader can try the same send again.
+  void markRequestFailed(CommunityFailureKind kind) {
+    state = DirectChannelState(
+      mode: state.mode,
+      phase: state.phase,
+      streamCid: state.streamCid,
+      failureKind: state.failureKind,
+      block: state.block,
+      requestSent: state.requestSent,
+      requestFailure: kind,
+    );
+  }
+
   void setBusy(bool busy) {
     state = DirectChannelState(
       mode: state.mode,
@@ -284,6 +311,7 @@ final class DirectChannelController extends Notifier<DirectChannelState>
       block: state.block,
       busy: busy,
       requestSent: state.requestSent,
+      requestFailure: busy ? null : state.requestFailure,
     );
   }
 }

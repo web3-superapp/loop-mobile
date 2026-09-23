@@ -12,6 +12,10 @@ import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/mining/mining_controllers.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
@@ -19,6 +23,8 @@ import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
+import 'package:loop_mobile/features/social/social_controllers.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -90,19 +96,29 @@ class LoopProfileAvatar extends StatelessWidget {
     // so this fallback has to hold on both. Naming `card2` and `chalk` here
     // painted Chalk on Chalk on the card: a 200px disc that was simply not
     // there, with the monogram invisible inside it.
+    //
+    // On a light ground the disc is the ground's own ink and the monogram is
+    // the ground — `#scr-profile` draws exactly that, `background:var(--ink);
+    // color:var(--chalk)`. A `card2` tint of a light ground is the pale grey
+    // disc the device showed on 我的 while every other surface drew a solid
+    // face (walkthrough 2026-09-23 · h01/h04).
     final ink = LoopGround.inkOf(context);
+    final lightGround = ink.computeLuminance() < 0.5;
     return Container(
       key: const ValueKey<String>('loop-profile-avatar-monogram'),
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LoopGround.fillOf(context),
+        color: lightGround ? ink : LoopGround.fillOf(context),
         shape: BoxShape.circle,
       ),
       child: Text(
         monogram,
-        style: LoopTypography.figure(size / 4.5, color: ink),
+        style: LoopTypography.figure(
+          size / 4.5,
+          color: lightGround ? LoopColors.chalk : ink,
+        ),
       ),
     );
   }
@@ -307,6 +323,29 @@ class ProfileHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
+  var _startedSideReads = false;
+
+  /// Starts the reads the prototype's own rows are printed from, once.
+  ///
+  /// `#scr-profile` states a figure on the mining row and a state on each of
+  /// the four 账户 rows. LOOP has no projection that carries them together,
+  /// so the page asks the four modules that own them — each is the same read
+  /// the row's destination makes, so opening that destination costs nothing
+  /// extra. A read that fails leaves its row without a second line; the page
+  /// never writes 「读不到」 where a state belongs.
+  void _startSideReads() {
+    if (_startedSideReads) return;
+    _startedSideReads = true;
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      unawaited(ref.read(miningSummaryControllerProvider.notifier).load());
+      unawaited(ref.read(miningUserRankControllerProvider.notifier).load());
+      unawaited(ref.read(walletDirectoryControllerProvider.notifier).load());
+      unawaited(ref.read(privacyControllerProvider.notifier).load());
+      unawaited(ref.read(connectionsControllerProvider.notifier).load());
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
@@ -317,6 +356,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         }
       });
     }
+    _startSideReads();
     final resource = state.resource;
     final alias = resource?.values.alias;
     final phase = profileResourcePhase(state);
@@ -359,29 +399,12 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             onEdit: () => widget.onNavigate('profile-edit'),
           ),
         const LoopLabel('挖矿'),
-        // 「挖矿数据还没有开放」 was written before the mining tab shipped and
-        // kept being read as "mining is closed" long after the tab started
-        // settling power every five minutes. What this page lacks is a reader
-        // of its own, so it keeps the prototype's row — icon, figure column,
-        // chevron — and states the figure as unread rather than as zero
-        // (audit 2026-09-21 §J.2, §D #8).
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-mining'),
-              leading: const LoopRowIcon(
-                icon: 'mine',
-                tone: LoopRowIconTone.accent,
-              ),
-              title: '总算力',
-              subtitle: '这一页不读算力。算力与排名在挖矿页，那里是唯一的出处。',
-              subtitleMaxLines: 2,
-              trailing: communityMissingFigure,
-              semanticLabel: '总算力，这一页读不到，去挖矿页查看',
-              onTap: () => widget.onNavigate('mining'),
-            ),
-          ],
-        ),
+        // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
+        // under it. The row used to say 「这一页不读算力」 — an explanation of
+        // its own implementation standing where the figure belongs, while the
+        // mining tab held 4.48 and 第 47 名 (device walkthrough 2026-09-23 ·
+        // h01). It reads the same two projections the mining tab does.
+        LoopRecordGroup(rows: <LoopRecordRow>[_miningRow()]),
         const LoopLabel('我的社区'),
         ProfileCommunitiesRow(onNavigate: widget.onNavigate),
         const LoopLabel('Launch'),
@@ -406,32 +429,39 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           ],
         ),
         // The prototype's 账户 group is four rows and each second line is a
-        // state value, not a description of the destination. This page cannot
-        // read any of those four states without a request of its own, so the
-        // rows carry no second line rather than a functional catalogue
-        // (audit 2026-09-21 §D+ #11).
+        // state value, not a description of the destination: 「2 个已绑定」,
+        // 「匿名模式已开启」, 「关注 24 · 粉丝 108」. Each is read from the
+        // module that owns it; a row whose state this device has not read
+        // carries no second line at all, because 「读不到」 is not a state a
+        // reader can act on (device walkthrough 2026-09-23 · h02).
         const LoopLabel('账户'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-wallets'),
               title: '我的钱包',
+              subtitle: _walletSubtitle(),
               position: LoopRowPosition.first,
               onTap: () => widget.onNavigate('wallets'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-privacy'),
               title: '隐私中心',
+              subtitle: _privacySubtitle(),
               onTap: () => widget.onNavigate('privacy'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-security'),
               title: '安全中心',
+              // The security projection reports every method as unavailable
+              // while the device holds Privy MFA of its own (walkthrough ·
+              // h17). Until the two agree this row states no posture.
               onTap: () => widget.onNavigate('security'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-connections'),
               title: '关注与粉丝',
+              subtitle: _connectionsSubtitle(),
               position: LoopRowPosition.last,
               onTap: () => widget.onNavigate('connections'),
             ),
@@ -470,6 +500,68 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         const SizedBox(height: 20),
       ],
     );
+  }
+
+  /// `总算力` with the place it earned, both read from the mining module.
+  LoopRecordRow _miningRow() {
+    final summary = ref.watch(miningSummaryControllerProvider);
+    final rank = ref.watch(miningUserRankControllerProvider);
+    final (String figure, String? line) = switch (summary.value?.power) {
+      MiningFigureValue(:final value) => (
+        loopGroupedFigure(value),
+        _rankLine(rank.value),
+      ),
+      MiningFigureUnavailable(:final reasonCode) => (
+        communityMissingFigure,
+        launchReasonCodeText(reasonCode),
+      ),
+      null => (
+        communityMissingFigure,
+        summary.phase == LaunchViewPhase.loading
+            ? '正在读取算力与名次。'
+            : '这次没有读到算力，挖矿页是它的出处。',
+      ),
+    };
+    return LoopRecordRow(
+      key: const ValueKey<String>('profile-open-mining'),
+      leading: const LoopRowIcon(icon: 'mine', tone: LoopRowIconTone.accent),
+      title: '总算力',
+      subtitle: line,
+      subtitleMaxLines: 2,
+      trailing: figure,
+      semanticLabel: '总算力 $figure${line == null ? '' : '，$line'}',
+      onTap: () => widget.onNavigate('mining'),
+    );
+  }
+
+  /// `我的名次 第 47 名`, or the server's reason for having none.
+  static String? _rankLine(MiningRank? rank) => switch (rank?.myPosition) {
+    MiningRankPositionSettled(:final position) => '我的名次 第 $position 名',
+    MiningRankPositionUnavailable(:final reasonCode) => launchReasonCodeText(
+      reasonCode,
+    ),
+    null => null,
+  };
+
+  /// `1 个已绑定`. A directory this device has not read states nothing.
+  String? _walletSubtitle() {
+    final directory = ref.watch(walletDirectoryControllerProvider).value;
+    if (directory == null) return null;
+    return '${directory.wallets.length} 个已绑定';
+  }
+
+  /// `匿名模式已开启` / `匿名模式已关闭`, as the privacy centre stored it.
+  String? _privacySubtitle() {
+    final resource = ref.watch(privacyControllerProvider).resource;
+    if (resource == null) return null;
+    return resource.values.anonymousMode ? '匿名模式已开启' : '匿名模式已关闭';
+  }
+
+  /// `关注 24 · 粉丝 108`, from the counts the connections page reads.
+  String? _connectionsSubtitle() {
+    final counts = ref.watch(connectionsControllerProvider).counts;
+    if (counts == null) return null;
+    return '关注 ${counts.following} · 粉丝 ${counts.followers}';
   }
 }
 
@@ -808,21 +900,26 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       loopCapabilityProvider(LoopV2CapabilityId.avatarUpload),
     );
 
+    // The hero is the body's first row rather than the page's pinned folio:
+    // pinned, it held a third of the screen while the fields scrolled under
+    // it, and 关注赛道 could not be brought onto the same screen as the name
+    // it describes (walkthrough 2026-09-23 · h04/h05). `#scr-profile-edit`
+    // has it inside the scroll too.
+    final hero = LoopFolioPrimary(
+      variant: LoopFolioVariant.chalk,
+      archetype: LoopFolioArchetype.action,
+      kicker: 'PROFILE EDIT',
+      heading: state.draft.alias ?? '尚未设置别名',
+      caption: '昵称、简介与标签可修改；LOOP ID 和钱包地址保持不同边界。',
+      stamp: 'PUBLIC',
+      compact: true,
+      ring: false,
+    );
     return LoopFocusPage(
       archetype: LoopPageArchetype.action,
       title: '编辑资料',
       kicker: loopPreviewKicker(state.mode == ProfileMode.preview),
       onBack: widget.onBack,
-      folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.chalk,
-        archetype: LoopFolioArchetype.action,
-        kicker: 'PROFILE EDIT',
-        heading: state.draft.alias ?? '尚未设置别名',
-        caption: '昵称、简介与标签可修改；LOOP ID 和钱包地址保持不同边界。',
-        stamp: 'PUBLIC',
-        compact: true,
-        ring: false,
-      ),
       // 保存 flows under the last field instead of being pinned above the
       // bottom inset with a screen of nothing between (audit §D #9).
       actionsFollowBody: true,
@@ -836,6 +933,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             : null,
       ),
       body: <Widget>[
+        hero,
         LoopPreviewModeNotice(
           isPreview: state.mode == ProfileMode.preview,
           resource: '资料',
@@ -1263,11 +1361,18 @@ class _InterestChips extends StatelessWidget {
         runSpacing: 7,
         children: <Widget>[
           for (final interest in ProfileInterest.values)
-            LoopSeg(
-              key: ValueKey<String>('interest-${interest.wireValue}'),
-              label: interest.label,
-              selected: selected.contains(interest),
-              onSelected: enabled ? () => onToggle(interest) : null,
+            // `LoopSeg` centres its label in a `Container`, and a centred
+            // container under the loose bounded constraints a `Wrap` hands
+            // its children takes all the width offered: the five chips came
+            // out full-width, one per line (walkthrough 2026-09-23 · h05).
+            // Measuring each chip puts the row back into a flow.
+            IntrinsicWidth(
+              child: LoopSeg(
+                key: ValueKey<String>('interest-${interest.wireValue}'),
+                label: interest.label,
+                selected: selected.contains(interest),
+                onSelected: enabled ? () => onToggle(interest) : null,
+              ),
             ),
         ],
       ),
