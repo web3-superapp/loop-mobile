@@ -1634,11 +1634,20 @@ class LoopSeg extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.onBlocked,
+    this.block = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onSelected;
+
+  /// `.seg-block`: take the whole line the parent offers.
+  ///
+  /// A chip is as wide as its label. Full width is a layout decision the page
+  /// makes, so it is asked for here or handed down as a tight constraint
+  /// (`Expanded`, a stretched column); it is never inherited from whatever
+  /// room a loose parent happens to have (Decision 0082).
+  final bool block;
 
   /// What a tap does while [onSelected] is `null`.
   ///
@@ -1664,23 +1673,36 @@ class LoopSeg extends StatelessWidget {
         child: InkWell(
           onTap: onSelected ?? onBlocked,
           borderRadius: BorderRadius.circular(14),
-          child: Container(
+          child: ConstrainedBox(
             constraints: const BoxConstraints(
               minWidth: LoopTouch.minimum,
               minHeight: LoopTouch.minimum,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            alignment: Alignment.center,
-            child: ExcludeSemantics(
-              child: Text(
-                label,
-                maxLines: 1,
-                // `.seg{font-size:11px;font-weight:600}` / `.seg.on{700}` —
-                // the selected chip is the only one that goes bold.
-                style: LoopTypography.label(
-                  12,
-                  weight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? LoopColors.ink : LoopColors.text2,
+            child: Align(
+              // The chip measures its own label. `Container(alignment:)`
+              // centres by growing to the constraints it is handed, and the
+              // loose bounded constraints a `Wrap` or a `Column` gives its
+              // children are the whole line: the five interest chips came out
+              // one per line and the three slippage steps stacked into three
+              // full-width buttons (walkthrough 2026-09-23 · h05).
+              // `widthFactor` measures instead of filling; a tight parent
+              // still wins, because constraints outrank the factor, and a
+              // page that wants the line says [block].
+              widthFactor: block ? null : 1,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: ExcludeSemantics(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    // `.seg{font-size:11px;font-weight:600}` / `.seg.on{700}`
+                    // — the selected chip is the only one that goes bold.
+                    style: LoopTypography.label(
+                      12,
+                      weight: selected ? FontWeight.w700 : FontWeight.w600,
+                      color: selected ? LoopColors.ink : LoopColors.text2,
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -638,6 +638,151 @@ void main() {
       semantics.dispose();
     },
   );
+
+  group('LoopSeg takes its own width (Decision 0082)', () {
+    testWidgets('a loose parent does not stretch the chip', (tester) async {
+      await _pump(
+        tester,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            LoopSeg(
+              key: const ValueKey<String>('seg-loose'),
+              label: '技术分析',
+              selected: false,
+              onSelected: _noop,
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                LoopSeg(
+                  key: const ValueKey<String>('seg-row'),
+                  label: '技术分析',
+                  selected: false,
+                  onSelected: _noop,
+                ),
+              ],
+            ),
+          ],
+        ),
+        size: const Size(390, 844),
+      );
+
+      final loose = tester.getSize(
+        find.byKey(const ValueKey<String>('seg-loose')),
+      );
+      // The same chip in a row that hands out unbounded width has always
+      // measured its label. The loose column must agree with it.
+      final measured = tester.getSize(
+        find.byKey(const ValueKey<String>('seg-row')),
+      );
+      expect(loose.width, measured.width);
+      expect(loose.width, lessThan(390));
+      expect(loose.height, greaterThanOrEqualTo(LoopTouch.minimum));
+    });
+
+    testWidgets('a short label still keeps the 44px target', (tester) async {
+      await _pump(
+        tester,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            LoopSeg(
+              key: const ValueKey<String>('seg-short'),
+              label: '1%',
+              selected: false,
+              onSelected: _noop,
+            ),
+          ],
+        ),
+        size: const Size(390, 844),
+      );
+
+      final size = tester.getSize(
+        find.byKey(const ValueKey<String>('seg-short')),
+      );
+      expect(size.width, greaterThanOrEqualTo(LoopTouch.minimum));
+      expect(size.height, greaterThanOrEqualTo(LoopTouch.minimum));
+      expect(size.width, lessThan(120));
+    });
+
+    testWidgets('a tight parent is still obeyed', (tester) async {
+      await _pump(
+        tester,
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: LoopSeg(
+                key: const ValueKey<String>('seg-tight'),
+                label: '1%',
+                selected: false,
+                onSelected: _noop,
+              ),
+            ),
+            const SizedBox(width: 90),
+          ],
+        ),
+        size: const Size(390, 844),
+      );
+
+      expect(
+        tester.getSize(find.byKey(const ValueKey<String>('seg-tight'))).width,
+        300,
+      );
+    });
+
+    testWidgets('block asks for the whole line', (tester) async {
+      await _pump(
+        tester,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            LoopSeg(
+              key: const ValueKey<String>('seg-block'),
+              label: '1%',
+              selected: false,
+              block: true,
+              onSelected: _noop,
+            ),
+          ],
+        ),
+        size: const Size(390, 844),
+      );
+
+      expect(
+        tester.getSize(find.byKey(const ValueKey<String>('seg-block'))).width,
+        390,
+      );
+    });
+
+    testWidgets('three chips in a Wrap stay on one line', (tester) async {
+      await _pump(
+        tester,
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: <Widget>[
+            for (final label in <String>['0.5%', '1%', '3%'])
+              LoopSeg(
+                key: ValueKey<String>('seg-wrap-$label'),
+                label: label,
+                selected: label == '1%',
+                onSelected: _noop,
+              ),
+          ],
+        ),
+        size: const Size(390, 844),
+      );
+
+      final corners = <Offset>[
+        for (final label in <String>['0.5%', '1%', '3%'])
+          tester.getTopLeft(find.byKey(ValueKey<String>('seg-wrap-$label'))),
+      ];
+      expect(corners.map((corner) => corner.dy).toSet(), hasLength(1));
+      expect(corners.map((corner) => corner.dx).toSet(), hasLength(3));
+      expect(corners.last.dx, lessThan(390 - LoopTouch.minimum));
+    });
+  });
 }
 
 void _noop() {}
