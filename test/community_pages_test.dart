@@ -1574,7 +1574,9 @@ void main() {
       await scrollToVoice(tester, enter);
       expect(createButton, findsNothing);
       expect(tester.widget<LoopButton>(enter).onPressed, isNotNull);
-      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房');
+      // S77d: a room that is running is marked on the control itself.
+      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房 · 进行中');
+      expect(tester.widget<LoopButton>(enter).label, 'LIVE');
     });
 
     testWidgets('ending the room drops the row the community page had read', (
@@ -1722,7 +1724,9 @@ void main() {
 
       expect(voiceRoom.commands, contains('current:$testCommunityId'));
       expect(tester.widget<LoopButton>(enter).onPressed, isNotNull);
-      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房');
+      // S77d: a room that is running is marked on the control itself.
+      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房 · 进行中');
+      expect(tester.widget<LoopButton>(enter).label, 'LIVE');
     });
 
     testWidgets('a room that ends takes the entry with it', (tester) async {
@@ -1743,7 +1747,9 @@ void main() {
         const ValueKey<String>('community-profile-open-voice'),
       );
       await scrollToVoice(tester, enter);
-      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房');
+      // S77d: a room that is running is marked on the control itself.
+      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房 · 进行中');
+      expect(tester.widget<LoopButton>(enter).label, 'LIVE');
 
       // The room ends somewhere else.
       voiceRoom.snapshot = null;

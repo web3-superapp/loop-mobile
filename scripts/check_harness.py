@@ -8924,6 +8924,21 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "find.text('ETH Macro Room'), findsNothing",
                 "find.text('Connected'), findsNothing",
             ),
+            # S77d: the two views follow `#scr-voiceroom` and
+            # `#scr-voiceroom-full`. The table of five figures is gone from
+            # both, every figure counts the host, and the host's exit is a
+            # control rather than a paragraph about a control that is not
+            # there.
+            "test/s77d_voice_room_prototype_test.dart": (
+                "the host is counted as one of the people who may be heard",
+                "the table of figures and the repeated notes are gone",
+                "the host is given 结束房间, not a paragraph about 离开",
+                "an ended room says so in words, and asks nothing",
+                "a community with no live room says so in both places",
+                "the host gets the speakers, the queue and the controls",
+                "a listener sees the room and none of the host controls",
+                "a room whose only voice is the host is not an empty list",
+            ),
             "test/communication_pages_test.dart": (
                 "a pending role evidence closes the whole page",
                 "a listener sees no host control",
@@ -8931,7 +8946,7 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "a host sees exactly the commands the server sent per row",
                 "a plain member gets no row command at all",
                 "an empty roster is not the same state as an unreadable one",
-                "an unobserved participant count renders the em dash",
+                "an unobserved participant count is never printed as 0",
                 "joining the room is the same step as hearing it",
                 "a failed connection keeps the membership and offers it back",
                 "leaving drops the audio before it releases the membership",
@@ -8962,6 +8977,10 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                     "a pending role evidence closes the whole page",
                     "a listener sees no host control",
                     "a host sees the host controls and the queue",
+                ),
+                Path("test/s77d_voice_room_prototype_test.dart"): (
+                    "the table of figures and the repeated notes are gone",
+                    "the host gets the speakers, the queue and the controls",
                 ),
             },
         )

@@ -25,6 +25,7 @@ import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -116,6 +117,22 @@ class _CommunityProfileScreenState
     await ref.read(communityVoiceLiveControllerProvider.notifier).read(id);
   }
 
+  /// True once the reader asked for a voice room from this page.
+  ///
+  /// Opening a room is `POST …/voice-rooms` — a LOOP row, and then two writes
+  /// against the provider — and only after all of it did the room page start
+  /// asking for this device's own voice session. The two have nothing to say
+  /// to each other: the session needs the account, not the room. So the ask
+  /// starts at the tap and runs beside the creation, and the page holds it
+  /// until the room page takes it over. Nothing is joined and no microphone is
+  /// touched by it (S77d).
+  var _warmingVoiceSession = false;
+
+  void _warmVoiceSession() {
+    if (_warmingVoiceSession || !mounted) return;
+    setState(() => _warmingVoiceSession = true);
+  }
+
   /// Keeps the poll armed for exactly the page that can use it.
   void _bindVoicePoll({required bool watching}) {
     if (watching) {
@@ -154,6 +171,10 @@ class _CommunityProfileScreenState
           detail.community.communityId == id &&
           detail.viewer.hasJoined,
     );
+    // Held, not read: the value is the room page's business. Watching it here
+    // is what keeps the session alive across the push, so the work done at
+    // the tap is still there when the room page asks.
+    if (_warmingVoiceSession) ref.watch(streamVideoAuthorizationProvider);
     return LoopDashboardPage(
       key: const ValueKey<String>('community-profile-screen'),
       archetype: LoopPageArchetype.record,
@@ -235,9 +256,14 @@ class _CommunityProfileScreenState
             onOpenChat: () =>
                 widget.onOpenChat?.call(detail.community.communityId),
             onOpenAi: () => widget.onOpenAi?.call(detail.community.communityId),
-            onOpenVoiceRoom: () =>
-                widget.onOpenVoiceRoom?.call(detail.community.communityId),
-            onCreateVoiceRoom: () => unawaited(_createVoiceRoom(detail)),
+            onOpenVoiceRoom: () {
+              _warmVoiceSession();
+              widget.onOpenVoiceRoom?.call(detail.community.communityId);
+            },
+            onCreateVoiceRoom: () {
+              _warmVoiceSession();
+              unawaited(_createVoiceRoom(detail));
+            },
             onJoin: () => _changeMembership(controller, joined: true),
           ),
           if (state.failureKind != null)
@@ -564,11 +590,17 @@ class _CommunityActionPair extends ConsumerWidget {
               onPressed: onOpenAi,
             ),
             if (voiceLive)
+              // A room that is running says so on the control itself. The
+              // glyph alone changed nothing a reader could see: on the review
+              // device the only mark of a live room was the strip at the top
+              // of the app, and the community page it was standing on looked
+              // exactly as it had a moment before (walkthrough 2026-09-23 ·
+              // a34 / community-profile).
               LoopButton(
                 key: const ValueKey<String>('community-profile-open-voice'),
-                label: '',
+                label: 'LIVE',
                 icon: 'voice',
-                semanticLabel: '进入语音房',
+                semanticLabel: '进入语音房 · 进行中',
                 onPressed: onOpenVoiceRoom,
               )
             else if (mayOpenRoom)

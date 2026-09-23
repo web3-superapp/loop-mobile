@@ -931,7 +931,7 @@ void main() {
       final own = find.byKey(const ValueKey<String>('voiceroom-queue-self'));
       await scrollToCommunitySection(tester, own);
       expect(own, findsOneWidget);
-      expect(find.text('第 2 位'), findsOneWidget);
+      expect(find.textContaining('第 2 位'), findsOneWidget);
       expect(voice.commands, isNot(contains('hand-raises')));
       expect(
         find.byKey(const ValueKey<String>('voiceroom-invite-empty')),
@@ -949,7 +949,11 @@ void main() {
       );
     });
 
-    testWidgets('the observed count says the server observed it', (
+    // S77d: `#scr-voiceroom` has no table of figures on it at all. LOOP put
+    // five rows there — 当前在线 / 服务商已授权成员 / LOOP 已加入 / 发言人 ·
+    // 听众 / 我的角色 — each with a sentence about which count it was, and
+    // between them they stated three different numbers for one room.
+    testWidgets('the lobby states the room in figures, not in a table', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -958,27 +962,22 @@ void main() {
         voiceRoom: FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot()),
       );
 
-      final row = find.byKey(const ValueKey<String>('voiceroom-live'));
-      await scrollToCommunitySection(tester, row);
-      expect(find.text('LOOP 上次观察在线'), findsOneWidget);
-      // The call view under this list carries the device's own live count;
-      // one screen never states two different numbers under one word.
-      expect(find.text('当前在线'), findsNothing);
-      // A 0 here beside 「LOOP 已加入 46」 is not a contradiction, and the row
-      // says which one it is counting.
-      expect(find.textContaining('不含还没连上语音的人'), findsOneWidget);
-
-      // Each of these lines carries an observation time or a disclaimer at
-      // its end; one line cut them at 「观察于 202…」 and 「也不是…」.
       for (final key in const <String>[
         'voiceroom-live',
         'voiceroom-observed',
+        'voiceroom-joined',
         'voiceroom-role-intent',
+        'voiceroom-role',
       ]) {
-        final row = find.byKey(ValueKey<String>(key));
-        await scrollToCommunitySection(tester, row);
-        expect(tester.widget<LoopRecordRow>(row).subtitleMaxLines, 2);
+        expect(find.byKey(ValueKey<String>(key)), findsNothing);
       }
+      expect(find.text('LOOP 上次观察在线'), findsNothing);
+      expect(find.textContaining('服务商允许进入的账号'), findsNothing);
+      expect(find.textContaining('UTC'), findsNothing);
+      // What is left is the hero's own figure and the line under the title,
+      // and the host is inside both of them: 46 = 1 + 3 + 42.
+      expect(find.text('46 人在房间里'), findsOneWidget);
+      expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
     });
 
     testWidgets('a backstage room is never handed to the provider', (
@@ -1075,7 +1074,12 @@ void main() {
       expect(find.textContaining('GO_LIVE'), findsNothing);
     });
 
-    testWidgets('a connected device states the live count, and only it', (
+    // S77d: the live figure is the call panel's own line — 「此刻在通话里 N
+    // 人」, whose wording every phase of is pinned in
+    // `stream_foreground_call_presentation_test.dart`. What this page must
+    // not do is state a second figure beside it, which is what the row of
+    // room facts did.
+    testWidgets('a connected device states no second figure of its own', (
       tester,
     ) async {
       final voice = FakeVoiceRoomGateway(
@@ -1096,13 +1100,17 @@ void main() {
       await tester.tap(report);
       await tester.pumpAndSettle();
 
-      final row = find.byKey(const ValueKey<String>('voiceroom-live'));
-      await scrollToCommunitySection(tester, row);
-      expect(find.text('当前在线'), findsOneWidget);
-      expect(tester.widget<LoopRecordRow>(row).trailing, '3');
-      // The earlier observation is not printed beside it: 「上次观察在线 0」
-      // above 「此刻在通话里 3 人」 was one screen saying two things.
+      // The earlier observation is not printed beside the call's own count:
+      // 「上次观察在线 0」 above 「此刻在通话里 3 人」 was one screen saying two
+      // things about one room.
       expect(find.text('LOOP 上次观察在线'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-live')),
+        findsNothing,
+      );
+      expect(find.text('0'), findsNothing);
+      // LOOP's own record of the room is a different reading and stays.
+      expect(find.text('46 人在房间里'), findsOneWidget);
     });
 
     testWidgets(
@@ -1128,13 +1136,10 @@ void main() {
         await tester.tap(report);
         await tester.pumpAndSettle();
 
-        final row = find.byKey(const ValueKey<String>('voiceroom-live'));
-        await scrollToCommunitySection(tester, row);
-        // 「已连接」 beside 「0」 was read as an empty room. The row states the
-        // connection and says the number is still being taken.
-        expect(find.text('当前在线'), findsOneWidget);
-        expect(tester.widget<LoopRecordRow>(row).trailing, '正在统计');
-        expect(tester.widget<LoopRecordRow>(row).trailing, isNot('0'));
+        // 「已连接」 beside 「0」 was read as an empty room. The panel says the
+        // number is still being taken; nothing on the page prints a zero.
+        expect(find.text('0'), findsNothing);
+        expect(find.text('此刻在通话里 0 人'), findsNothing);
       },
     );
 
@@ -1164,17 +1169,16 @@ void main() {
       await tester.tap(report);
       await tester.pumpAndSettle();
 
-      final row = find.byKey(const ValueKey<String>('voiceroom-live'));
-      await scrollToCommunitySection(tester, row);
-      expect(find.text('语音连接'), findsOneWidget);
-      expect(tester.widget<LoopRecordRow>(row).trailing, '重连中');
-      // The one sentence the call panel prints for the same phase.
-      expect(tester.widget<LoopRecordRow>(row).subtitle, '语音正在重连，人数以重新连接后为准');
+      // No figure taken before the connection dropped, and no fallback to an
+      // older observation.
       expect(find.text('LOOP 上次观察在线'), findsNothing);
       expect(find.text('0'), findsNothing);
     });
 
-    testWidgets('an unobserved participant count renders the em dash', (
+    // S77d: an observation LOOP could not take is no longer a row on the
+    // page — the block that carried it is gone — and the room's own figures
+    // do not depend on it. What must never happen is a 0 standing in for it.
+    testWidgets('an unobserved participant count is never printed as 0', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -1185,11 +1189,12 @@ void main() {
         ),
       );
 
-      final row = find.byKey(const ValueKey<String>('voiceroom-observed'));
-      await scrollToCommunitySection(tester, row);
-      expect(row, findsOneWidget);
-      expect(find.text('—'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-observed')),
+        findsNothing,
+      );
       expect(find.text('0'), findsNothing);
+      expect(find.text('46 人在房间里'), findsOneWidget);
     });
 
     testWidgets('a join reads the room again so the count is not lost', (
@@ -1216,9 +1221,9 @@ void main() {
         voice.commands.where((command) => command == 'join'),
         hasLength(1),
       );
-      final role = find.byKey(const ValueKey<String>('voiceroom-role'));
-      await scrollToCommunitySection(tester, role);
-      expect(find.text('听众'), findsOneWidget);
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      expect(leave, findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-join')),
         findsNothing,
@@ -1227,10 +1232,9 @@ void main() {
         voice.commands.indexOf('load'),
         greaterThan(voice.commands.indexOf('join')),
       );
-      final live = find.byKey(const ValueKey<String>('voiceroom-live'));
-      await scrollToCommunitySection(tester, live);
-      expect(find.text('12'), findsOneWidget);
-      expect(find.text('45'), findsOneWidget);
+      // The answer to the join is what the page states: the room read that
+      // followed it carries the counts.
+      expect(find.text('46 人在房间里'), findsOneWidget);
     });
 
     testWidgets('an unprovisioned room says why it cannot be joined', (
@@ -1660,7 +1664,7 @@ void main() {
       // controls. No loop id and no avatar reference arrive here at all.
       expect(find.text('DeFiMaxi_349'), findsNWidgets(2));
       expect(find.text('匿名成员'), findsNWidgets(3));
-      expect(find.text('第 3 位'), findsOneWidget);
+      expect(find.textContaining('第 3 位'), findsOneWidget);
 
       final invite = find.byKey(
         ValueKey<String>('voiceroom-invite-$testAdminId'),
@@ -1763,21 +1767,19 @@ void main() {
         );
 
         final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
-        final hostExit = find.byKey(
-          const ValueKey<String>('voiceroom-host-no-leave'),
-        );
         final end = find.byKey(const ValueKey<String>('voiceroom-end'));
-        await scrollToCommunitySection(tester, row.leaves ? leave : hostExit);
+        await scrollToCommunitySection(tester, row.leaves ? leave : end);
         expect(leave, row.leaves ? findsOneWidget : findsNothing);
-        expect(hostExit, row.leaves ? findsNothing : findsOneWidget);
         expect(end, row.host ? findsOneWidget : findsNothing);
-        if (!row.leaves) {
-          // The page says why there is no 离开, and names the two things that
-          // do exist: 结束房间, and the back key that only minimises.
-          expect(find.text('主持人不能离开房间'), findsOneWidget);
-          expect(find.textContaining('结束房间'), findsWidgets);
-          expect(find.textContaining('返回键'), findsWidgets);
-        }
+        // S77d: the host used to be shown two paragraphs about the control
+        // that does not exist. 结束房间 is the host's place in the
+        // prototype's control bar, and it is on the lobby as well as on the
+        // session page.
+        expect(
+          find.byKey(const ValueKey<String>('voiceroom-host-no-leave')),
+          findsNothing,
+        );
+        expect(find.text('主持人不能离开房间'), findsNothing);
       });
     }
 
@@ -1981,10 +1983,9 @@ void main() {
       // The media failure is not a membership failure: LOOP is not told to
       // leave, and the page never reads as "not joined".
       expect(voice.commands, isNot(contains('leave')));
-      final role = find.byKey(const ValueKey<String>('voiceroom-role'));
-      await scrollToCommunitySection(tester, role);
-      expect(find.text('听众'), findsOneWidget);
-      expect(find.text('未加入'), findsNothing);
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      expect(leave, findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-join')),
         findsNothing,
@@ -2184,7 +2185,8 @@ void main() {
       final ended = find.byKey(const ValueKey<String>('voiceroom-ended'));
       await scrollToCommunitySection(tester, ended);
       expect(find.text('房间已结束'), findsOneWidget);
-      expect(find.text('主持人已经结束这个语音房。'), findsOneWidget);
+      // The hero says it too, in the same words.
+      expect(find.text('主持人已经结束这个语音房。'), findsNWidgets(2));
       expect(find.text('语音已断开'), findsNothing);
       expect(find.text('重新连接语音'), findsNothing);
       expect(
@@ -2692,8 +2694,15 @@ void main() {
       );
       await scrollToCommunitySection(tester, empty);
       expect(empty, findsOneWidget);
+      // LOOP's speaker roster does not carry the host (decision 0052), so a
+      // room whose only voice is the host is not an empty list — it is a
+      // list with the host on it, which is what the heading counts.
       expect(
         find.byKey(const ValueKey<String>('voiceroom-roster-speaker-empty')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-speaker-host')),
         findsOneWidget,
       );
       expect(
@@ -2719,10 +2728,7 @@ void main() {
       await scrollToCommunitySection(tester, error);
       expect(error, findsOneWidget);
       // The room above it was read and stays readable.
-      expect(
-        find.byKey(const ValueKey<String>('voiceroom-live')),
-        findsOneWidget,
-      );
+      expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
     });
 
     testWidgets('another page is read with the cursor and nothing else', (

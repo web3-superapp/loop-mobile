@@ -346,26 +346,59 @@ void main() {
       final snapshot = testVoiceRoomSnapshot();
       expect(voiceRoomHeading(snapshot), '46 人在房间里');
       expect(voiceRoomStamp(snapshot), '46 LIVE');
-      expect(voiceRoomTopbarLine(snapshot), '进行中 · 发言 3 · 听众 42');
+      // S77d: 发言 counts the host, so the two figures under the title add
+      // up to the one in the hero. They used to be the server's role figures
+      // alone, and the host was in neither of them: 「1 人在房间里」 stood
+      // over 「发言 0 · 听众 0」 on the review device.
+      expect(voiceRoomTopbarLine(snapshot), '进行中 · 发言 4 · 听众 42');
     });
 
-    test('a room whose count the server withheld states the condition', () {
-      final snapshot = testVoiceRoomSnapshot(joinedCount: null);
-      expect(voiceRoomHeading(snapshot), '进行中');
-      expect(voiceRoomStamp(snapshot), 'LIVE');
+    test('the session page counts the people who may be heard', () {
+      final snapshot = testVoiceRoomSnapshot();
+      expect(voiceRoomHeading(snapshot, expanded: true), '4 人在麦上');
+      expect(voiceRoomStamp(snapshot, expanded: true), 'ON AIR');
     });
 
-    test('an ended room is not a figure', () {
+    test(
+      'a room whose total the server withheld is counted from the roles',
+      () {
+        final snapshot = testVoiceRoomSnapshot(joinedCount: null);
+        // 1 host + 3 speakers + 42 listeners, which is what a live room is.
+        expect(voiceRoomHeading(snapshot), '46 人在房间里');
+        expect(voiceRoomStamp(snapshot), '46 LIVE');
+        expect(voiceRoomTopbarLine(snapshot), '进行中 · 发言 4 · 听众 42');
+      },
+    );
+
+    test('an ended room is not a figure, and says so in words', () {
       final snapshot = testVoiceRoomSnapshot(state: VoiceRoomState.ended);
       expect(voiceRoomHeading(snapshot), '已结束');
-      expect(voiceRoomStamp(snapshot), 'ENDED');
+      expect(voiceRoomStamp(snapshot), '已结束');
       expect(voiceRoomTopbarLine(snapshot), '已结束');
+      expect(voiceRoomCaption(snapshot), '主持人已经结束这个语音房。');
     });
 
-    test('a page with no snapshot never prints the word for all rooms', () {
+    test('a page with no room says which of the three answers it got', () {
       expect(voiceRoomHeading(null), isNot('语音房'));
       expect(voiceRoomStamp(null), isNull);
       expect(voiceRoomTopbarLine(null), isNull);
+      // The hero and the block under it are one answer, not two.
+      expect(
+        voiceRoomHeading(null, phase: CommunityViewPhase.empty),
+        '当前没有语音房',
+      );
+      expect(
+        voiceRoomCaption(null, phase: CommunityViewPhase.empty),
+        '这个社区现在没有进行中的语音房。',
+      );
+      expect(
+        voiceRoomHeading(null, phase: CommunityViewPhase.error),
+        '语音房状态读不到',
+      );
+      expect(
+        voiceRoomHeading(null, phase: CommunityViewPhase.loading),
+        '正在读取语音房',
+      );
     });
   });
 }
