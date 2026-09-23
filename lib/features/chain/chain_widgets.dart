@@ -111,11 +111,17 @@ String loopFormatCompactFigure(
   Decimal value, {
   bool usd = true,
   bool preciseBelowOne = false,
+  int significantDigits = _loopSubUnitSignificantDigits,
 }) {
   final negative = value < Decimal.zero;
   final absolute = negative ? -value : value;
   if (preciseBelowOne && absolute > Decimal.zero && absolute < Decimal.one) {
-    return _loopSubUnitFigure(absolute, negative: negative, usd: usd);
+    return _loopSubUnitFigure(
+      absolute,
+      negative: negative,
+      usd: usd,
+      significantDigits: significantDigits,
+    );
   }
   final whole = absolute.round();
   if (whole < _loopCompactFrom) {
@@ -165,10 +171,14 @@ const int _loopSubUnitSignificantDigits = 3;
 /// launchpad pool) nor a reason the price is missing, and the page promises
 /// one or the other. Three significant digits is the shortest form that still
 /// says the magnitude: `$0.0000012`, `$0.874`.
+/// [significantDigits] widens that to four for the 行情 price column, which is
+/// the one place a sub-dollar price is read against the row above it rather
+/// than as a summary (decision 0085).
 String _loopSubUnitFigure(
   Decimal absolute, {
   required bool negative,
   required bool usd,
+  int significantDigits = _loopSubUnitSignificantDigits,
 }) {
   var scale = 0;
   var scaled = absolute;
@@ -180,7 +190,7 @@ String _loopSubUnitFigure(
   }
   final body = loopFormatDecimal(
     negative ? -absolute : absolute,
-    maxFractionDigits: scale + _loopSubUnitSignificantDigits - 1,
+    maxFractionDigits: scale + significantDigits - 1,
   );
   if (body == '0') {
     // Smaller than this cap can print. It is still not a zero, and it is

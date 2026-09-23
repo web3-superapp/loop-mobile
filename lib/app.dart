@@ -765,8 +765,11 @@ GoRouter _buildRouter(
             ),
           ),
         ),
-        // Peer tabs fade; every other route pushes horizontally through the
-        // theme's LoopPushTransitionsBuilder.
+        // Peer tabs fade. Every other route is pushed on the root navigator
+        // and takes the platform's own push — Cupertino on iOS, predictive
+        // back on Android — so the edge-swipe-back works on all of them
+        // (decision 0085); nothing here may install a page transition of its
+        // own over a route a user can return from.
         routes: <RouteBase>[
           GoRoute(
             path: '/community',

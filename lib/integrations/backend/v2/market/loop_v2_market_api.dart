@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
@@ -342,18 +343,27 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       raw is Map && raw['status'] == 'unavailable';
 
   static MarketAssetRow _assetRow(Object? raw, {required bool trending}) {
-    final map = LoopV2Contract.strictMap(raw, <String>{
-      'assetId',
-      'asset',
-      // Required from decision 0072 on: every row that names an asset names
-      // its artwork too, and a row without the key is an invalid payload
-      // rather than a row that silently loses its logo.
-      'logo',
-      'price',
-      'priceChange24h',
-      if (trending) 'volume24h',
-      if (trending) 'liquidityUsd',
-    });
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      <String>{
+        'assetId',
+        'asset',
+        // Required from decision 0072 on: every row that names an asset names
+        // its artwork too, and a row without the key is an invalid payload
+        // rather than a row that silently loses its logo.
+        'logo',
+        'price',
+        'priceChange24h',
+        if (trending) 'volume24h',
+        if (trending) 'liquidityUsd',
+      },
+      // S81b delivers the row's 1H shape on the row itself. It is optional
+      // until that contract is frozen — a build that meets an older server
+      // must draw the list, not refuse it — and the key moves into the
+      // required set above the moment the frozen contract says it is always
+      // sent (decision 0085).
+      const <String>{'sparkline'},
+    );
     return MarketAssetRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
       asset: LoopV2ChainCodec.assetSummary(map['asset']),
@@ -364,8 +374,60 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       liquidityUsd: trending
           ? LoopV2ChainCodec.fact(map['liquidityUsd'])
           : null,
+      sparkline: map.containsKey('sparkline')
+          ? _rowSparkline(map['sparkline'])
+          : null,
     );
   }
+
+  /// `{status, interval, closes[], observedAt}` — the row-level shape.
+  ///
+  /// Anything but `available` is `null`: the row reserves its slot and draws
+  /// nothing. A malformed `available` block is still an invalid payload, the
+  /// same as every other fact LOOP reads — a shape that cannot be trusted is
+  /// not drawn as a shape that can.
+  static MarketRowSparklineSeries? _rowSparkline(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! Map) LoopV2ChainCodec.invalid();
+    if (raw['status'] != 'available') {
+      // Not read, and the reason is not a row-level statement. The payload is
+      // still checked for shape so a typo in `status` cannot pass as silence.
+      LoopV2Contract.strictMapWithOptional(
+        raw,
+        const <String>{'status'},
+        const <String>{'reasonCode', 'interval', 'closes', 'observedAt'},
+      );
+      return null;
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'interval',
+      'closes',
+      'observedAt',
+    });
+    final rawInterval = map['interval'];
+    if (rawInterval is! String) LoopV2ChainCodec.invalid();
+    final interval = LoopCandleInterval.tryParse(rawInterval);
+    if (interval == null) LoopV2ChainCodec.invalid();
+    final rawCloses = map['closes'];
+    if (rawCloses is! List) LoopV2ChainCodec.invalid();
+    if (rawCloses.length > _rowSparklineMaxCloses) LoopV2ChainCodec.invalid();
+    final closes = <Decimal>[
+      for (final close in rawCloses)
+        LoopV2ChainCodec.requireDecimal(<String, Object?>{
+          'close': close,
+        }, 'close'),
+    ];
+    return MarketRowSparklineSeries(
+      interval: interval,
+      observedAt: LoopV2ChainCodec.requireTimestamp(map, 'observedAt'),
+      closes: closes,
+    );
+  }
+
+  /// One day of `1h` buckets is what the line renders (`loopSparklineWindow`);
+  /// a payload longer than a week of them is not a row's shape.
+  static const int _rowSparklineMaxCloses = 200;
 
   static MarketWatchlistBlock _watchlistBlock(Object? raw) {
     if (_isUnavailable(raw)) {
