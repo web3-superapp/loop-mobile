@@ -411,7 +411,7 @@ class _ResultFacts extends StatelessWidget {
                   ? (fee == null
                         ? '不可用'
                         : '${loopFormatDecimal(fee.maximumFee, maxFractionDigits: 10)} BNB')
-                  : '${receipt.gasUsed} gas',
+                  : '${loopGroupedFigure(receipt.gasUsed)} gas',
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             LoopKeyValue(

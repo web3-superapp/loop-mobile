@@ -143,6 +143,7 @@ class LoopFocusPage extends StatelessWidget {
     this.block,
     this.subtitle,
     this.framedTools = false,
+    this.folioCollapsed = false,
   });
 
   final LoopPageArchetype archetype;
@@ -157,6 +158,18 @@ class LoopFocusPage extends StatelessWidget {
 
   /// Whether the bar's controls take the `.tool-btn` frame.
   final bool framedTools;
+
+  /// Folds the primary away without removing it from the tree.
+  ///
+  /// A focus page is a step page: with the soft keyboard up it has roughly a
+  /// third of its height left, and a pinned folio took most of that — on
+  /// `send-to` the 粘贴 / 校验地址 pair and the whole amount card were laid
+  /// out under the keyboard with nothing left to scroll them back into view.
+  /// Folding is a collapse, never a `folio: null`: dropping the widget
+  /// changes which child sits in each slot of this Column, the field below is
+  /// rebuilt at a new place in the element tree, and it loses focus on the
+  /// very frame the keyboard opens (the R3-3 failure on `community-members`).
+  final bool folioCollapsed;
   final VoidCallback? onBack;
   final List<Widget> actions;
   final LoopFolioPrimary? folio;
@@ -226,7 +239,11 @@ class LoopFocusPage extends StatelessWidget {
               if (block != null)
                 Expanded(child: block!)
               else ...<Widget>[
-                ?folio,
+                if (folio != null)
+                  KeyedSubtree(
+                    key: const ValueKey<String>('loop-page-primary'),
+                    child: folioCollapsed ? const SizedBox.shrink() : folio!,
+                  ),
                 // Focus bodies are short step pages: build them eagerly so
                 // every control exists for ensureVisible / assistive tech.
                 Expanded(

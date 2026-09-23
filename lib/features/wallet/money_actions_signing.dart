@@ -281,7 +281,9 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
         ),
         IntentField(
           label: '滑点上限',
-          value: swap == null ? '不可用' : '${swap.quote.slippageBps} bps',
+          value: swap == null
+              ? '不可用'
+              : moneySlippageLabel(swap.quote.slippageBps),
         ),
       ]);
   }

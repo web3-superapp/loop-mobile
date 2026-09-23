@@ -1039,3 +1039,28 @@ final class LoopExactAllowanceRequest extends LoopAllowanceRequest {
 final class LoopUnlimitedAllowanceRequest extends LoopAllowanceRequest {
   const LoopUnlimitedAllowanceRequest();
 }
+
+// ---------------------------------------------------------------------------
+// display helpers
+// ---------------------------------------------------------------------------
+
+/// A slippage ceiling, in the unit a reader already owns.
+///
+/// The contract carries `slippageBps` because basis points are exact integers
+/// on the wire. On screen 「50 bps」 is trade-desk vocabulary that says nothing
+/// to the person choosing it, so every surface that shows a slippage ceiling
+/// — the swap page, its route detail and the signing exit — prints the same
+/// percentage instead. The conversion is exact: `bps / 100`, on [Decimal],
+/// with no trailing zeros (`50 → 0.5%`, `100 → 1%`, `300 → 3%`).
+String moneySlippageLabel(int bps) {
+  final percent = (Decimal.fromInt(bps) / Decimal.fromInt(100)).toDecimal(
+    scaleOnInfinitePrecision: 2,
+  );
+  var text = percent.toString();
+  if (text.contains('.')) {
+    text = text
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
+  }
+  return '$text%';
+}

@@ -87,6 +87,8 @@ LoopChainException loopChainExceptionForV2(
     reasonCode: details?.reasonCode,
     exposureUsd: details?.exposureUsd,
     ceilingUsd: details?.ceilingUsd,
+    spentUsd: details?.spentUsd,
+    remainingUsd: details?.remainingUsd,
   );
 }
 

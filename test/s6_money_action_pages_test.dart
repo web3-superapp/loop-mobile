@@ -601,9 +601,11 @@ void main() {
         find.byKey(const ValueKey<String>('approval-guard-permission')),
         findsOneWidget,
       );
-      // A blocked action names the rule and says the limit is not adjustable
-      // yet; it never offers a setting that does not exist.
-      expect(find.textContaining('自定义上限还没有开放'), findsOneWidget);
+      // A refusal with no rule name is the one case the client cannot
+      // explain. It states exactly what did not happen and guesses at
+      // nothing — in particular it does not blame a limit nobody set (S77a).
+      expect(find.textContaining('这里不猜是哪一条'), findsOneWidget);
+      expect(find.textContaining('自定义上限'), findsNothing);
     });
 
     testWidgets('a closed write switch stops the guard', (tester) async {

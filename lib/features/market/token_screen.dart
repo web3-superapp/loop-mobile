@@ -703,11 +703,11 @@ class _CandleBody extends StatelessWidget {
           spacing: 12,
           runSpacing: 4,
           children: <Widget>[
-            Text('O ${loopFormatDecimal(last.open)}', style: LoopMono.body),
-            Text('H ${loopFormatDecimal(last.high)}', style: LoopMono.body),
-            Text('L ${loopFormatDecimal(last.low)}', style: LoopMono.body),
+            Text('O ${loopFormatCandlePrice(last.open)}', style: LoopMono.body),
+            Text('H ${loopFormatCandlePrice(last.high)}', style: LoopMono.body),
+            Text('L ${loopFormatCandlePrice(last.low)}', style: LoopMono.body),
             Text(
-              'C ${loopFormatDecimal(last.close)}',
+              'C ${loopFormatCandlePrice(last.close)}',
               style: LoopMono.body.copyWith(
                 color: last.isUp ? LoopColors.lime : LoopColors.chalk,
               ),

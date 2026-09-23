@@ -292,7 +292,11 @@ void main() {
       expect(MoneyPolicyNotice.covers(failure), isTrue);
       final text = moneyPolicyRefusalText(failure);
       expect(text, contains('750.51'));
-      expect(text, contains('自定义上限还没有开放'));
+      // The ceiling is LOOP's own grey-release limit. The copy says that and
+      // names the one thing the owner can do; it no longer blames a
+      // 「自定义上限」 that was never part of this refusal (S77a).
+      expect(text, contains('单笔金额上限'));
+      expect(text, isNot(contains('自定义上限')));
     });
 
     test('a rule that compares nothing renders no figures', () {
@@ -307,7 +311,7 @@ void main() {
       );
 
       final text = moneyPolicyRefusalText(failure);
-      expect(text, contains('不在可操作的名单里'));
+      expect(text, contains('不在当前可操作的资产范围里'));
       expect(text, isNot(contains('750.51')));
     });
 
@@ -315,7 +319,9 @@ void main() {
       final seen = <String>{};
       for (final rule in const <String>[
         MoneyPolicyRule.assetNotInAllowlist,
+        MoneyPolicyRule.counterpartyNotInAllowlist,
         MoneyPolicyRule.canaryCeilingExceeded,
+        MoneyPolicyRule.canaryDailyCeilingExceeded,
         MoneyPolicyRule.unlimitedExposureExceedsCeiling,
         MoneyPolicyRule.assetBlocked,
         MoneyPolicyRule.priceImpactBlocked,

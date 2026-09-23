@@ -443,6 +443,13 @@ void main() {
         find.byKey(const ValueKey<String>('alert-editor-delete')),
       );
       await tester.pumpAndSettle();
+      // 删除 asks before it deletes: the editor's own control opens a
+      // confirmation rather than sitting beside 保存 and removing the alert
+      // on one tap (S77a).
+      await tester.tap(
+        find.byKey(const ValueKey<String>('alert-delete-confirm-yes')),
+      );
+      await tester.pumpAndSettle();
 
       expect(alerts.deleted, <String>[s5AlertId]);
       expect(alerts.expectedVersions, <int>[2]);

@@ -307,7 +307,7 @@ void main() {
       expect(find.text('\$747.39 +0.27%'), findsOneWidget);
     });
 
-    testWidgets('MA 与 VOL 可切换，EMA / MACD / RSI 关着', (tester) async {
+    testWidgets('MA 与 VOL 可切换，EMA / MACD / RSI 不出现', (tester) async {
       await pumpS5Page(
         tester,
         const FullChartScreen(assetId: s5WbnbAssetId),
@@ -317,9 +317,15 @@ void main() {
       final bar = tester.widget<MarketSegmentBar>(
         find.byKey(const ValueKey<String>('chart-full-indicators')),
       );
-      expect(bar.labels, <String>['MA', 'EMA', 'MACD', 'RSI', 'VOL']);
-      expect(bar.enabled, <bool>[true, false, false, false, true]);
-      expect(bar.selectedIndices, <int>{0, 4});
+      // Nothing draws EMA, MACD or RSI and nothing is going to in this
+      // build, so they are not rendered at all: a greyed chip reads as a
+      // control that is temporarily broken (S77a).
+      expect(bar.labels, <String>['MA', 'VOL']);
+      expect(bar.enabled, <bool>[true, true]);
+      expect(bar.selectedIndices, <int>{0, 1});
+      expect(find.text('EMA'), findsNothing);
+      expect(find.text('MACD'), findsNothing);
+      expect(find.text('RSI'), findsNothing);
 
       final chart = tester.widget<LoopCandleChart>(
         find.byType(LoopCandleChart),
@@ -327,6 +333,12 @@ void main() {
       expect(chart.movingAveragePeriods, <int>[7, 25]);
       expect(chart.showVolume, isTrue);
 
+      // The plot takes the height the page has, so the tool row can sit
+      // below the fold on a short test surface.
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('market-seg-MA')),
+      );
       await tester.tap(find.byKey(const ValueKey<String>('market-seg-MA')));
       await tester.pumpAndSettle();
       expect(
