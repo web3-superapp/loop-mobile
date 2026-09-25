@@ -7,6 +7,10 @@ Accepted 2026-09-09. Extends decisions 0057 (chain / market / wallet read),
 0038 and the contracts in `docs/frontend-v2-chain-api.md`,
 `docs/frontend-v2-wallet-api.md` and `docs/frontend-v2-launch-api.md`.
 
+§8 is superseded by decision 0090 (2026-09-25): the chain of an
+`eth_sendTransaction` is the payload's own `chainId`, and the device signer
+admits the published Launch slot for a Launch intent.
+
 ## Context
 
 The Launch contract will live on the BSC testnet (`eip155:97`) for a while

@@ -79,8 +79,9 @@ Product priority and current delivery are separate:
   (`SigningIntent.backendCanonical`, `IntentKind.launchPurchase`, the server's
   transaction verbatim). A broadcast locks the attempt and is never reported
   as success; since decision 0089 its hash is reported to the server, whose
-  `submitted` state is shown as is. The Privy signer still refuses the Launch
-  testnet chain (decision 0062), so the device submits nothing there. Refusals name the server's `reasonCode`, and
+  `submitted` state is shown as is. Since decision 0090 the Privy signer admits
+  the Launch slot for a Launch approval or purchase only, and only while
+  `chain/status` publishes it. Refusals name the server's `reasonCode`, and
   an unexplained code is shown in a disclosure, never in the sentence. There
   is no sell side before graduation. `loop-stake` is non-executable as a
   whole page, and Launch eligibility does not depend on staking.
@@ -98,6 +99,19 @@ Product priority and current delivery are separate:
   sentence and guidance, the broadcast hash goes to
   `…/intents/{id}/broadcast-report`, `launch-holders` counts 参与者 (distinct
   buyers), and the shared sign sheet's closing badge reads 「已广播」.
+- Decision 0090 (S83e) lets the device sign on the Launch slot. privy_flutter
+  0.10.1 has no chain-selection call and needs none: the native SDKs broadcast
+  through the Privy wallet API on `eip155:<transaction.chainId>`, so the
+  payload's own `chainId` (already required to equal the intent's) is the
+  chain, and there is no wallet-level chain to switch back. The signer admits a
+  non-primary chain only for `launchApproval` / `launchPurchase` and only when
+  it equals `chain/status.launchChain.chainId`, read fresh for off-primary
+  intents only (absent or unreadable admits the primary chain alone); send,
+  approval, swap and perp stay `privy_chain_switch_unsupported` there. The
+  transaction now reaches the SDK as the JSON string the native channels
+  require, with `gas` spelled `gasLimit`, `type` as `2`/`0` and `null` keys
+  omitted — no value changes, `privy_payload_unencodable` before the wallet
+  otherwise. Device evidence is still pending.
 - `referral` reads `GET /v2/referral`: one invite code per account, per-level
   counts grouped by the server's `validationStatus`, and an unavailable boost.
   Only `valid` edges count as effective relationships. Every figure is a Mining

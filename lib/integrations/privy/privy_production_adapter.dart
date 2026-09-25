@@ -1,3 +1,4 @@
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
@@ -7,6 +8,13 @@ import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 abstract interface class PrivyDeviceSigningHost {
   PrivyDeviceSigner get deviceSigner;
 }
+
+/// Reads the Launch slot the session's `GET /v2/chain/status` publishes.
+///
+/// It answers `launchChain.chainId`, or `null` when the server omitted
+/// `launchChain` (the Launch slot is the primary chain). A read that fails
+/// may throw; the signing exit then treats the slot as unpublished.
+typedef PublishedLaunchChainReader = Future<String?> Function();
 
 /// The production signing exit.
 ///
@@ -18,10 +26,29 @@ final class PrivyWalletSigningGateway implements WalletSigningGateway {
   const PrivyWalletSigningGateway({
     required this.host,
     required this.credentialsConfigured,
+    this.readLaunchChain,
   });
 
   final PrivyDeviceSigningHost? host;
   final bool credentialsConfigured;
+
+  /// Consulted only for an intent off the primary chain, so a primary-chain
+  /// send, approval or swap never waits on it. Absent means no Launch slot
+  /// was ever published to this exit, which admits the primary chain only.
+  final PublishedLaunchChainReader? readLaunchChain;
+
+  Future<String?> _launchChainFor(SigningIntent intent) async {
+    if (intent.chainId == loopPrimaryChainId) return null;
+    final reader = readLaunchChain;
+    if (reader == null) return null;
+    try {
+      return await reader();
+    } catch (_) {
+      // An unreadable chain status publishes nothing: the device signer then
+      // refuses the testnet before any wallet is opened.
+      return null;
+    }
+  }
 
   @override
   WalletGatewayAvailability get availability {
@@ -58,7 +85,9 @@ final class PrivyWalletSigningGateway implements WalletSigningGateway {
           transaction: final transaction,
         ) =>
           await signer.sendTransaction(
+            kind: intent.kind,
             chainId: intent.chainId,
+            launchChainId: await _launchChainFor(intent),
             fromAddress: from,
             transaction: transaction,
           ),

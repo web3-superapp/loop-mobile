@@ -24,7 +24,9 @@ final class _RecordingSigner implements PrivyDeviceSigner {
 
   @override
   Future<String> sendTransaction({
+    required IntentKind kind,
     required String chainId,
+    required String? launchChainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   }) async {

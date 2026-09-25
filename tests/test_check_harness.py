@@ -5592,6 +5592,28 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected the fail-closed chain guard: {result}",
         )
 
+    def test_s9_device_signer_admits_only_the_published_launch_slot(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s9_root(temporary)
+            target = root / check_harness.S9_DEVICE_SIGNER_PATH
+            target.write_text(
+                target.read_text(encoding="utf-8").replace(
+                    "launchChainId != null && launchChainId == chainId",
+                    "true",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_s9_dual_chain_contract(root)
+
+        self.assertTrue(
+            any("launchChainId == chainId" in error for error in result),
+            msg=f"expected the published-slot guard: {result}",
+        )
+
     def test_s9_money_intents_stay_pinned_to_the_primary_chain(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = self._s9_root(temporary)

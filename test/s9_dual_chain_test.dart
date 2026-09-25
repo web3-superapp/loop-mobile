@@ -583,15 +583,17 @@ void main() {
       }
     });
 
-    test('the device signer refuses a chain it cannot select', () async {
-      // privy_flutter 0.10.1 has no chain-selection call at all, so a
-      // non-primary chain fails closed rather than being broadcast on
-      // whichever chain the wallet happens to be on.
+    test('the device signer refuses a Launch slot nobody published', () async {
+      // Decision 0090: the testnet is signable only for a Launch intent and
+      // only while chain/status publishes it as the Launch slot. With no
+      // published slot it fails closed before the session is looked at.
       const signer = SdkPrivyDeviceSigner(null);
 
       await expectLater(
         signer.sendTransaction(
+          kind: IntentKind.launchPurchase,
           chainId: loopLaunchTestnetChainId,
+          launchChainId: null,
           fromAddress: '0x1111111111111111111111111111111111111111',
           transaction: const <String, Object?>{'chainId': 97},
         ),
@@ -610,7 +612,9 @@ void main() {
 
       await expectLater(
         signer.sendTransaction(
+          kind: IntentKind.transfer,
           chainId: loopPrimaryChainId,
+          launchChainId: null,
           fromAddress: '0x1111111111111111111111111111111111111111',
           transaction: const <String, Object?>{'chainId': 97},
         ),
@@ -837,7 +841,9 @@ final class _RecordingSigner implements PrivyDeviceSigner {
 
   @override
   Future<String> sendTransaction({
+    required IntentKind kind,
     required String chainId,
+    required String? launchChainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   }) async {

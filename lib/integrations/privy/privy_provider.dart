@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/privy_production_adapter.dart';
@@ -25,8 +26,13 @@ final privyDeviceSigningHostProvider = Provider<PrivyDeviceSigningHost?>((ref) {
 /// The single signing exit. Every money action goes through this provider.
 final walletSigningGatewayProvider = Provider<WalletSigningGateway>((ref) {
   final config = ref.watch(appConfigProvider);
+  final chain = ref.watch(chainGatewayProvider);
   return PrivyWalletSigningGateway(
     host: ref.watch(privyDeviceSigningHostProvider),
     credentialsConfigured: config.canInitializePrivy,
+    // Decision 0090: the Launch slot is read fresh from `chain/status` at the
+    // moment a Launch intent reaches the exit, never cached or inferred.
+    readLaunchChain: () async =>
+        (await chain.loadStatus()).launchChain?.chainId,
   );
 });

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:privy_flutter/privy_flutter.dart';
 
 /// Narrow device-signing surface of the Privy embedded wallet.
@@ -14,12 +17,20 @@ abstract interface class PrivyDeviceSigner {
   /// Broadcasts one transaction through the embedded wallet whose address is
   /// [fromAddress] and returns the transaction hash.
   ///
-  /// [chainId] is the CAIP id of the intent's own chain. It is passed so the
-  /// device can refuse a payload whose chain it cannot select; it is never
-  /// used to rewrite the payload. [transaction] is forwarded verbatim; this
-  /// method never edits, reorders or supplements a field.
+  /// [kind] and [chainId] are the intent's own. [launchChainId] is the Launch
+  /// slot the session's `GET /v2/chain/status` published (`launchChain`), or
+  /// `null` when the server omitted it — which means the Launch slot is the
+  /// primary chain — or when it could not be read. Only a Launch intent on
+  /// exactly that published slot may leave the primary chain (decision 0090,
+  /// [privyChainRefusal]). [chainId] is never used to rewrite the payload.
+  ///
+  /// [transaction] is the server's object. It reaches the SDK through
+  /// [privyTransactionJson], which only spells the same fields the way the
+  /// native Privy SDKs read them; it never adds, drops or changes a value.
   Future<String> sendTransaction({
+    required IntentKind kind,
     required String chainId,
+    required String? launchChainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   });
@@ -55,7 +66,9 @@ final class UnavailablePrivyDeviceSigner implements PrivyDeviceSigner {
 
   @override
   Future<String> sendTransaction({
+    required IntentKind kind,
     required String chainId,
+    required String? launchChainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   }) => throw const PrivySigningException('privy_wallet_unavailable');
@@ -87,34 +100,24 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
 
   @override
   Future<String> sendTransaction({
+    required IntentKind kind,
     required String chainId,
+    required String? launchChainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   }) async {
-    // The chain has to be one this client knows, and the payload has to agree
-    // with the intent it came from. A transaction whose own `chainId` differs
-    // from the reviewed chain would be broadcast somewhere nobody reviewed.
-    // The membership check comes first as its own statement: `loopChainReference`
-    // throws on an unknown chain rather than answering with the primary one.
-    if (!loopKnownChainIds.contains(chainId)) {
-      throw const PrivySigningException('privy_chain_mismatch');
-    }
-    if (transaction['chainId'] != loopChainReference(chainId)) {
-      throw const PrivySigningException('privy_chain_mismatch');
-    }
-    // privy_flutter 0.10.1 exposes exactly six Ethereum RPC methods through
-    // `EmbeddedEthereumWalletProvider.request` — `eth_sign`, `personal_sign`,
-    // `secp256k1_sign`, `eth_signTypedData_v4`, `eth_signTransaction` and
-    // `eth_sendTransaction` — and nothing else; `wallet_switchEthereumChain`
-    // and `wallet_addEthereumChain` are rejected by the SDK before they reach
-    // the platform. There is therefore no way for this client to select a
-    // chain, and no device evidence that the native side honours the
-    // transaction's own `chainId`. Signing anyway would broadcast on whatever
-    // chain the wallet happens to be on, so a non-primary chain fails closed
-    // here until that evidence exists.
-    if (chainId != loopPrimaryChainId) {
-      throw const PrivySigningException('privy_chain_switch_unsupported');
-    }
+    // The chain rules come first, before the session is even looked at, so a
+    // refusal never depends on being signed in (decisions 0062, 0090).
+    final refusal = privyChainRefusal(
+      kind: kind,
+      chainId: chainId,
+      launchChainId: launchChainId,
+      transaction: transaction,
+    );
+    if (refusal != null) throw PrivySigningException(refusal);
+    // Encoded before the wallet is touched: a payload the SDK cannot read is
+    // refused here, where it provably reached nothing.
+    final transactionJson = privyTransactionJson(transaction);
     final user = _user;
     if (user == null) {
       throw const PrivySigningException('privy_session_required');
@@ -132,10 +135,19 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
     if (match == null) {
       throw const PrivySigningException('privy_wallet_mismatch');
     }
+    // privy_flutter 0.10.1 selects no chain: `EmbeddedEthereumWalletProvider`
+    // has `request` and nothing else. The native SDKs broadcast through the
+    // Privy wallet API with `caip2 = eip155:<transaction.chainId>`, so the
+    // payload's own `chainId` — already proven equal to the intent's — is
+    // the chain. There is no wallet-level chain to switch, and therefore none
+    // to switch back: nothing here changes state a later send could inherit.
+    // The single parameter is the transaction as a JSON string, exactly as
+    // the SDK's own `EthereumRpcRequest.ethSendTransaction(String)` builds
+    // it; the native channels read `params` as a list of strings.
     final result = await match.provider.request(
       EthereumRpcRequest(
         method: 'eth_sendTransaction',
-        params: <Object?>[transaction],
+        params: <String>[transactionJson],
       ),
     );
     switch (result) {
@@ -194,6 +206,87 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
               : code,
         );
     }
+  }
+}
+
+/// The chain admission of one device broadcast (decision 0090), or `null`.
+///
+/// | kind                               | primary | published Launch slot | other |
+/// | ---------------------------------- | ------- | --------------------- | ----- |
+/// | launchApproval, launchPurchase     | sign    | sign                  | refuse |
+/// | transfer, approval, swap, perpOrder | sign    | refuse                | refuse |
+///
+/// "Published Launch slot" is [launchChainId] when it is non-null and not the
+/// primary chain; a `null` slot (omitted by the server, or unreadable) admits
+/// the primary chain only. A chain the client does not know, or a payload
+/// whose own `chainId` disagrees with the intent, is `privy_chain_mismatch`
+/// whatever the kind.
+String? privyChainRefusal({
+  required IntentKind kind,
+  required String chainId,
+  required String? launchChainId,
+  required Map<String, Object?> transaction,
+}) {
+  // The membership check is its own statement: `loopChainReference` throws on
+  // an unknown chain rather than answering with the primary one.
+  if (!loopKnownChainIds.contains(chainId)) return 'privy_chain_mismatch';
+  // The payload has to agree with the intent it came from. A transaction
+  // whose own `chainId` differs from the reviewed chain would be broadcast
+  // somewhere nobody reviewed — and one without a `chainId` would be sent to
+  // the SDK's default (Ethereum mainnet).
+  if (transaction['chainId'] != loopChainReference(chainId)) {
+    return 'privy_chain_mismatch';
+  }
+  if (chainId == loopPrimaryChainId) return null;
+  final isLaunchKind =
+      kind == IntentKind.launchApproval || kind == IntentKind.launchPurchase;
+  if (isLaunchKind && launchChainId != null && launchChainId == chainId) {
+    return null;
+  }
+  return 'privy_chain_switch_unsupported';
+}
+
+/// The one `eth_sendTransaction` parameter, spelled the way the native Privy
+/// SDKs decode it.
+///
+/// The server's payload (loop-api `UnsignedTransaction`) uses the viem
+/// spelling; Privy's `UnsignedEthereumTransaction` (Android `privy-core`
+/// 0.12.1, iOS `PrivySDK` 2.12.0) reads `gasLimit` rather than `gas`, an
+/// integer EIP-2718 `type` rather than a name, and silently ignores unknown
+/// keys. Sent verbatim, `gas` would be dropped and `"eip1559"` would fail to
+/// decode. So exactly three spellings change, and no value does:
+///
+/// - `gas` is written as `gasLimit`, same quantity;
+/// - `type` `eip1559` is written as `2` and `legacy` as `0`;
+/// - a key whose value is `null` is omitted, which JSON-RPC reads the same.
+///
+/// Anything else — an unknown `type`, both `gas` and `gasLimit` — throws
+/// `privy_payload_unencodable` before any wallet is opened.
+String privyTransactionJson(Map<String, Object?> transaction) {
+  final encoded = <String, Object?>{};
+  for (final entry in transaction.entries) {
+    final value = entry.value;
+    if (value == null) continue;
+    switch (entry.key) {
+      case 'gas':
+        if (transaction['gasLimit'] != null) {
+          throw const PrivySigningException('privy_payload_unencodable');
+        }
+        encoded['gasLimit'] = value;
+      case 'type':
+        encoded['type'] = switch (value) {
+          'eip1559' => 2,
+          'legacy' => 0,
+          _ => throw const PrivySigningException('privy_payload_unencodable'),
+        };
+      default:
+        encoded[entry.key] = value;
+    }
+  }
+  try {
+    return jsonEncode(encoded);
+  } on JsonUnsupportedObjectError {
+    throw const PrivySigningException('privy_payload_unencodable');
   }
 }
 

@@ -11066,12 +11066,17 @@ S9_SIGNING_INTENT_MARKERS = (
     "chainIsPermitted",
     "launchPurchase",
 )
-# privy_flutter 0.10.1 exposes no chain-selection call, so the device signer
-# fails closed off the primary chain instead of broadcasting blind.
+# privy_flutter 0.10.1 exposes no chain-selection call; the payload's own
+# chainId selects the chain (decision 0090). The device signer therefore
+# admits the Launch slot for a Launch intent only, and only while chain/status
+# publishes it; every other kind stays failed closed off the primary chain.
 S9_DEVICE_SIGNER_PATH = Path("lib/integrations/privy/privy_device_signer.dart")
 S9_DEVICE_SIGNER_MARKERS = (
     "privy_chain_switch_unsupported",
     "privy_chain_mismatch",
+    "String? privyChainRefusal(",
+    "kind == IntentKind.launchApproval || kind == IntentKind.launchPurchase",
+    "launchChainId != null && launchChainId == chainId",
 )
 # Money intents are locked to the primary chain by the transport itself.
 S9_INTENT_CODEC_PATH = Path(
@@ -11176,9 +11181,10 @@ def check_s9_dual_chain_contract(root: Path) -> list[str]:
         for marker in S9_DEVICE_SIGNER_MARKERS:
             if marker not in source:
                 errors.append(
-                    f"{S9_DEVICE_SIGNER_PATH} must refuse with `{marker}`; "
-                    "privy_flutter 0.10.1 exposes no chain-selection call, so "
-                    "a non-primary chain fails closed"
+                    f"{S9_DEVICE_SIGNER_PATH} must keep `{marker}`; only a "
+                    "Launch intent on the published Launch slot may leave the "
+                    "primary chain, and every other chain fails closed "
+                    "(decisions 0062, 0090)"
                 )
 
     # 6. The money-intent transport pins the primary chain.
