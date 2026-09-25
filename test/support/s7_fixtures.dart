@@ -29,17 +29,8 @@ const s7RewardPending = 'REWARD_AUTHORITY_PENDING';
 /// page state a blanket outage beside settled figures.
 const s7ReferralBoostPending = 'MINING_REFERRAL_BOOST_PENDING';
 
-LaunchOnChainState s7OnChainState() => const LaunchOnChainState(
-  saleState: 'unavailable',
-  entitlementState: 'unavailable',
-  liquidityState: 'unavailable',
-  operationalState: 'unavailable',
-  stateTupleDigest: null,
-  snapshotBlockNumber: null,
-  snapshotBlockHash: null,
-  source: 'unavailable',
-  reasonCode: s7LaunchBaselinePending,
-);
+LaunchOnChainState s7OnChainState() =>
+    const LaunchOnChainUnavailable(s7LaunchBaselinePending);
 
 LaunchSummary s7LaunchSummary({
   String launchId = s7LaunchId,
@@ -168,9 +159,7 @@ LaunchEligibility s7Eligibility({
 }) => LaunchEligibility(
   launchId: s7LaunchId,
   mode: mode,
-  tier: null,
-  reasonCode: reasonCode,
-  snapshotBlock: null,
+  result: LaunchEligibilityPending(reasonCode),
   configVersion: configVersion,
   effectiveAt: null,
   dependsOnStaking: false,
@@ -183,14 +172,22 @@ LaunchStake s7Stake() => const LaunchStake(
 
 LaunchHolders s7Holders() => const LaunchHolders(
   launchId: s7LaunchId,
-  holders: LaunchUnavailable(s7LaunchBaselinePending),
-  myPosition: LaunchUnavailable(s7LaunchBaselinePending),
-  walletCap: LaunchUnavailable(s7LaunchBaselinePending),
+  holders: LaunchReadingUnavailable<LaunchHolderCount>(
+    LaunchUnavailable(s7LaunchBaselinePending),
+  ),
+  myPosition: LaunchReadingUnavailable<LaunchPosition>(
+    LaunchUnavailable(s7LaunchBaselinePending),
+  ),
+  walletCap: LaunchReadingUnavailable<LaunchWalletCap>(
+    LaunchUnavailable(s7LaunchBaselinePending),
+  ),
 );
 
 LaunchHistory s7History() => const LaunchHistory(
   launchId: s7LaunchId,
-  source: LaunchUnavailable(s7LaunchBaselinePending),
+  source: LaunchReadingUnavailable<LaunchIndexedSource>(
+    LaunchUnavailable(s7LaunchBaselinePending),
+  ),
 );
 
 LaunchEconomy s7Economy() => LaunchEconomy(

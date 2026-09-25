@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -55,6 +56,8 @@ final class FakeLaunchGateway implements LaunchGateway {
     this.updateFailure,
     this.submitFailure,
     this.intentFailure = LaunchFailureKind.unavailable,
+    this.intentReasonCode,
+    this.prepared,
     this.mode = LaunchGatewayMode.production,
   }) : overview = overview ?? S7Answer<LaunchOverview>(value: s7Overview()),
        detail = detail ?? S7Answer<LaunchDetail>(value: s7Detail()),
@@ -88,6 +91,12 @@ final class FakeLaunchGateway implements LaunchGateway {
   final LaunchFailureKind? updateFailure;
   final LaunchFailureKind? submitFailure;
   final LaunchFailureKind intentFailure;
+
+  /// The `detailsSafe.reasonCode` the refusal carries, when named.
+  final String? intentReasonCode;
+
+  /// A `201` answer; when set, the intent is prepared instead of refused.
+  final LaunchPurchasePrepared? prepared;
 
   final List<LaunchProjectDraft> created = <LaunchProjectDraft>[];
   final List<LaunchProjectDraft> updated = <LaunchProjectDraft>[];
@@ -188,14 +197,18 @@ final class FakeLaunchGateway implements LaunchGateway {
   }
 
   @override
-  Future<Never> submitPurchaseIntent({
+  Future<LaunchPurchasePrepared> preparePurchaseIntent({
     required String launchId,
     required String walletId,
     required String roundId,
     required String payAmount,
   }) {
     intents.add('$launchId:$roundId:$payAmount');
-    return Future<Never>.error(LaunchException(intentFailure));
+    final answer = prepared;
+    if (answer != null) return Future<LaunchPurchasePrepared>.value(answer);
+    return Future<LaunchPurchasePrepared>.error(
+      LaunchException(intentFailure, reasonCode: intentReasonCode),
+    );
   }
 }
 
@@ -293,9 +306,13 @@ final class FakeReferralGateway implements ReferralGateway {
 /// The wallet directory `launch-trade` reads to find the paying wallet. Only
 /// the active id matters here; every other wallet read stays unavailable.
 final class FakeWalletDirectory implements WalletReadGateway {
-  FakeWalletDirectory({this.activeWalletId});
+  FakeWalletDirectory({
+    this.activeWalletId,
+    this.wallets = const <LoopWalletAccount>[],
+  });
 
   final String? activeWalletId;
+  final List<LoopWalletAccount> wallets;
 
   @override
   LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
@@ -308,7 +325,7 @@ final class FakeWalletDirectory implements WalletReadGateway {
   Future<LoopWalletDirectory> loadWallets() =>
       Future<LoopWalletDirectory>.value(
         LoopWalletDirectory(
-          wallets: const <LoopWalletAccount>[],
+          wallets: wallets,
           activeWalletId: activeWalletId,
           observedAt: DateTime.utc(2026, 9, 9, 6),
         ),
@@ -438,6 +455,7 @@ Future<void> pumpS7Page(
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 2600),
   bool settle = true,
+  List<Override> overrides = const <Override>[],
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -458,6 +476,7 @@ Future<void> pumpS7Page(
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? s7MetaSnapshot(),
         ),
+        ...overrides,
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

@@ -1,13 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/features/launch/launch_chain_models.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 
-/// Presentation models for the `launch` module (loop-api decision 0036).
+export 'package:loop_mobile/features/launch/launch_chain_models.dart';
+
+/// Presentation models for the `launch` module (loop-api decisions 0036 and
+/// 0076).
 ///
-/// Every on-chain fact is absent by contract in this step: the four state
-/// axes, the contract address, the caps, the fees and the pool evidence all
-/// arrive as `unavailable` with the server's own `reasonCode`. The models keep
-/// that absence explicit so no page can invent a figure.
+/// Every on-chain slot is a union (decision 0088): the pre-S83a
+/// `unavailable` object with the server's own `reasonCode`, or the
+/// `available` branch read from the contract at one block. The models keep
+/// the two apart so no page can render a figure the server did not prove.
 
 // ---------------------------------------------------------------------------
 // catalogue
@@ -32,48 +36,6 @@ enum LaunchScheduleStatus {
     }
     return null;
   }
-}
-
-/// The four-axis on-chain projection.
-///
-/// Each axis is the server's own enum value. In this step every axis reads
-/// `unavailable`; the model keeps the raw value so a later contract baseline
-/// does not need a new shape.
-@immutable
-final class LaunchOnChainState {
-  const LaunchOnChainState({
-    required this.saleState,
-    required this.entitlementState,
-    required this.liquidityState,
-    required this.operationalState,
-    required this.stateTupleDigest,
-    required this.snapshotBlockNumber,
-    required this.snapshotBlockHash,
-    required this.source,
-    required this.reasonCode,
-  });
-
-  static const unavailableValue = 'unavailable';
-
-  final String saleState;
-  final String entitlementState;
-  final String liquidityState;
-  final String operationalState;
-  final String? stateTupleDigest;
-  final String? snapshotBlockNumber;
-  final String? snapshotBlockHash;
-  final String source;
-  final String reasonCode;
-
-  bool get isProvable => source != unavailableValue;
-
-  /// The four axes in the fixed order the detail page renders them.
-  List<(String, String)> get axes => <(String, String)>[
-    ('销售状态', saleState),
-    ('权益状态', entitlementState),
-    ('流动性状态', liquidityState),
-    ('运营状态', operationalState),
-  ];
 }
 
 @immutable
@@ -102,7 +64,8 @@ final class LaunchSummary {
   /// own value; the client never derives or defaults it.
   final String chainId;
 
-  /// `null` for the whole of step 7: there is no deployed contract.
+  /// `null` unless the contract is configured, its code was observed and this
+  /// launch's sale is registered on it (loop-api decision 0076).
   final String? contractAddress;
   final String? configDigest;
   final LaunchScheduleStatus scheduleStatus;
@@ -594,8 +557,48 @@ final class LaunchGraduationStep {
 
   final LaunchGraduationStepKind step;
 
-  /// `pending` for the whole of step 7.
+  /// The wire status, `pending` in every published schema. The progress a
+  /// page shows is derived from the axes by
+  /// [launchGraduationStepProgress], never from this value.
   final String status;
+}
+
+/// One migration step's progress, derived **only** from the liquidity and
+/// entitlement axes (decision 0088). The sale axis is not consulted: a step
+/// is a liquidity fact, and a refund branch rules the whole rail out.
+LaunchGraduationProgress launchGraduationStepProgress(
+  LaunchGraduationStepKind step,
+  LaunchOnChainAvailable state,
+) {
+  final liquidity = state.liquidityState;
+  final entitlement = state.entitlementState;
+  if (entitlement.isRefundBranch) return LaunchGraduationProgress.notApplicable;
+  switch (step) {
+    case LaunchGraduationStepKind.stopInternalTrading:
+      return liquidity != LaunchLiquidityState.notStarted ||
+              entitlement != LaunchEntitlementState.none
+          ? LaunchGraduationProgress.done
+          : LaunchGraduationProgress.pending;
+    case LaunchGraduationStepKind.preparePool:
+      return switch (liquidity) {
+        LaunchLiquidityState.notStarted => LaunchGraduationProgress.pending,
+        LaunchLiquidityState.preparing => LaunchGraduationProgress.active,
+        LaunchLiquidityState.retryScheduled =>
+          LaunchGraduationProgress.retrying,
+        _ => LaunchGraduationProgress.done,
+      };
+    case LaunchGraduationStepKind.addAndLockLiquidity:
+      if (liquidity.isLocked) return LaunchGraduationProgress.done;
+      return liquidity == LaunchLiquidityState.v3Live
+          ? LaunchGraduationProgress.active
+          : LaunchGraduationProgress.pending;
+    case LaunchGraduationStepKind.openExternalTrading:
+      if (!liquidity.isLocked) return LaunchGraduationProgress.pending;
+      return entitlement == LaunchEntitlementState.vesting ||
+              entitlement == LaunchEntitlementState.completed
+          ? LaunchGraduationProgress.done
+          : LaunchGraduationProgress.active;
+  }
 }
 
 @immutable
@@ -636,6 +639,8 @@ final class LaunchDetail {
     required this.graduation,
     required this.market,
     required this.holders,
+    this.saleConfig,
+    this.chainRounds = const <LaunchChainRound>[],
   });
 
   final LaunchSummary launch;
@@ -650,6 +655,19 @@ final class LaunchDetail {
   final LaunchGraduation graduation;
   final LaunchUnavailable market;
   final LaunchUnavailable holders;
+
+  /// The contract's `getSaleConfig`, present exactly when the axes were read
+  /// on chain. [config] is then `null`: the two are one wire slot.
+  final LaunchSaleConfig? saleConfig;
+
+  /// The contract's `getRounds` at the same block. [rounds] is then empty.
+  final List<LaunchChainRound> chainRounds;
+
+  /// The four axes, if they were read on chain.
+  LaunchOnChainAvailable? get onChain => switch (launch.onChainState) {
+    final LaunchOnChainAvailable state => state,
+    _ => null,
+  };
 
   /// The version to name in "待确认（configVersion）".
   String? get pendingConfigVersion => config?.configVersion;
@@ -700,9 +718,7 @@ final class LaunchEligibility {
   const LaunchEligibility({
     required this.launchId,
     required this.mode,
-    required this.tier,
-    required this.reasonCode,
-    required this.snapshotBlock,
+    required this.result,
     required this.configVersion,
     required this.effectiveAt,
     required this.dependsOnStaking,
@@ -711,17 +727,31 @@ final class LaunchEligibility {
   final String launchId;
   final LaunchEligibilityMode mode;
 
-  /// `null` for the whole of step 7: there is no tier result yet.
-  final String? tier;
-  final String reasonCode;
-  final String? snapshotBlock;
+  /// The unchanged pending object, or the evaluator's answer.
+  final LaunchEligibilityResult result;
   final String? configVersion;
   final DateTime? effectiveAt;
 
   /// Always `false`: eligibility does not depend on staking.
   final bool dependsOnStaking;
 
-  bool get hasResult => tier != null;
+  LaunchEligibilityEvaluated? get evaluated => switch (result) {
+    final LaunchEligibilityEvaluated value => value,
+    _ => null,
+  };
+
+  /// The tier, when an evaluator answered with one.
+  LaunchEligibilityTier? get tier {
+    final wire = evaluated?.tierWireName;
+    return wire == null ? null : LaunchEligibilityTier.tryParse(wire);
+  }
+
+  String? get reasonCode => switch (result) {
+    LaunchEligibilityPending(:final reasonCode) => reasonCode,
+    LaunchEligibilityEvaluated(:final reasonCode) => reasonCode,
+  };
+
+  String? get snapshotBlock => evaluated?.snapshotBlock;
 }
 
 @immutable
@@ -744,20 +774,32 @@ final class LaunchHolders {
   });
 
   final String launchId;
-  final LaunchUnavailable holders;
-  final LaunchUnavailable myPosition;
-  final LaunchUnavailable walletCap;
+  final LaunchReading<LaunchHolderCount> holders;
+  final LaunchReading<LaunchPosition> myPosition;
+  final LaunchReading<LaunchWalletCap> walletCap;
 }
 
 /// An empty history with an `unavailable` source means "cannot be proven",
-/// never "did not participate". The three collections are empty by contract in
-/// this step, so the page renders the source explanation instead of a list.
+/// never "did not participate". The three collections are empty whenever the
+/// source is unavailable; only an indexed source can prove an empty list.
 @immutable
 final class LaunchHistory {
-  const LaunchHistory({required this.launchId, required this.source});
+  const LaunchHistory({
+    required this.launchId,
+    required this.source,
+    this.purchaseRecords = const <LaunchPurchaseRecord>[],
+    this.entitlements = const <LaunchEntitlementRecord>[],
+    this.refunds = const <LaunchRefundRecord>[],
+  });
 
   final String launchId;
-  final LaunchUnavailable source;
+  final LaunchReading<LaunchIndexedSource> source;
+  final List<LaunchPurchaseRecord> purchaseRecords;
+  final List<LaunchEntitlementRecord> entitlements;
+  final List<LaunchRefundRecord> refunds;
+
+  bool get isEmpty =>
+      purchaseRecords.isEmpty && entitlements.isEmpty && refunds.isEmpty;
 }
 
 // ---------------------------------------------------------------------------

@@ -577,8 +577,9 @@ void main() {
       );
     });
 
-    test('a contract address would break the step-7 contract', () {
-      final summary = _summary()..['contractAddress'] = '0x${'a' * 40}';
+    test('a contract address that is not lower-case hex is refused', () {
+      // Decision 0076 made the address legal; its shape is still pinned.
+      final summary = _summary()..['contractAddress'] = '0x${'A' * 40}';
       final body = _launchDetailBody()..['launch'] = summary;
       final api = DioLoopV2LaunchApi(
         _dio(_RecordingAdapter(statusCode: 200, body: body)),

@@ -54,12 +54,39 @@ Product priority and current delivery are separate:
   submit, and the server's six review states, with a returned application
   editable and re-submittable. Attachments and KYB have no provider and expose
   no upload control.
-- `launch-trade` keeps its form visible and its main action disabled on the
-  server's permanent `503`; there is no sell side before graduation.
-  `loop-stake` is non-executable as a whole page, and Launch eligibility does
-  not depend on staking. `mining-rewards` disables its claim on the server's
-  `claimExecutable: false`. No Launch or Mining path constructs a transaction
-  or opens the signing sheet.
+- Decision 0088 (S83c) reads loop-api decision 0076's unions: every on-chain
+  Launch slot is either the byte-unchanged `unavailable` object or an
+  `available` branch read from the contract at one block. The decoder picks the
+  branch by the discriminator the old object already carried and decodes it
+  strictly; the twelve S83a baseline responses decode exactly as before, and
+  an `unavailable` `reasonCode` is any reason-code string. While no contract
+  is configured every page renders as it did in step 7.
+- On chain, `launch-detail` shows the four axes as four rows with the
+  snapshot block and `stateTupleDigest`, and one combined sentence derived
+  from them («销售成功，流动性准备中»; a pause is always stated on its own; no
+  fifth state). `launch-rounds` shows each contract round's index, window,
+  price, caps and raised amount plus the 13 `getSaleConfig` values;
+  `launch-graduation` derives its four steps from `liquidityState` and
+  `entitlementState` only, and says «已毕业» only at `LP_LOCKED`/`COMPLETED`;
+  `launch-tier`, `launch-holders` and `launch-history` render their
+  `available` branches, and only an indexed source can show an empty history
+  as "no records". `loop-economy` has no `available` branch in the contract
+  and is unchanged.
+- `launch-trade` opens its main action only while the capability evidence is
+  settled **and** the axes read `LIVE` + `ACTIVE`. It prepares one server
+  intent (`POST /v2/launch/{id}/intents` → `201`), shows the intent's own
+  review, and signs it through the one signing exit
+  (`SigningIntent.backendCanonical`, `IntentKind.launchPurchase`, the server's
+  transaction verbatim). A broadcast locks the attempt and is never reported
+  as success, because Launch intents have no report route yet; the Privy
+  signer still refuses the Launch testnet chain (decision 0062), so the
+  device submits nothing there. Refusals name the server's `reasonCode`, and
+  an unexplained code is shown in a disclosure, never in the sentence. There
+  is no sell side before graduation. `loop-stake` is non-executable as a
+  whole page, and Launch eligibility does not depend on staking.
+  `mining-rewards` disables its claim on the server's `claimExecutable:
+  false`. No Launch surface other than `launch-trade` and no Mining path
+  constructs a transaction or opens the signing sheet.
 - `referral` reads `GET /v2/referral`: one invite code per account, per-level
   counts grouped by the server's `validationStatus`, and an unavailable boost.
   Only `valid` edges count as effective relationships. Every figure is a Mining

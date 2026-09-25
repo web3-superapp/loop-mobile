@@ -32,7 +32,10 @@ Future<T> executeLaunchRequest<T>(
   try {
     return await session.execute(request);
   } on LoopBackendFailure catch (failure) {
-    throw LaunchException(launchFailureKindForV2(failure, write: write));
+    throw LaunchException(
+      launchFailureKindForV2(failure, write: write),
+      reasonCode: failure.detailsSafe?.reasonCode,
+    );
   } on LaunchException {
     rethrow;
   } catch (_) {
@@ -270,7 +273,7 @@ final class DioLoopV2LaunchGateway
   }
 
   @override
-  Future<Never> submitPurchaseIntent({
+  Future<LaunchPurchasePrepared> preparePurchaseIntent({
     required String launchId,
     required String walletId,
     required String roundId,

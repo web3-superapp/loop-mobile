@@ -491,14 +491,20 @@ LoopRecordRow launchCatalogRow({
           const LoopTestnetBadge(),
           const SizedBox(height: 4),
         ],
-        const LoopBadge('链上待确认', kind: LoopBadgeKind.mute),
+        LoopBadge(
+          launchAxesBadge(launch.onChainState),
+          kind: launch.onChainState.isProvable
+              ? LoopBadgeKind.launch
+              : LoopBadgeKind.mute,
+        ),
       ],
     ),
     onTap: onTap,
     position: position,
     semanticLabel:
         '${launch.name}，${launch.ticker}，$schedule，'
-        '${testnet ? '$loopTestnetBadgeLabel，' : ''}链上状态待确认',
+        '${testnet ? '$loopTestnetBadgeLabel，' : ''}'
+        '${launch.onChainState.isProvable ? launchAxesBadge(launch.onChainState) : '链上状态待确认'}',
   );
 }
 
@@ -535,9 +541,14 @@ class LaunchTickerTile extends StatelessWidget {
   }
 }
 
-/// The four on-chain axes, each rendered as an em dash with the server's own
-/// reason. They are never collapsed into a single "unknown" line: a page that
-/// merged them could later imply one axis from another.
+/// The four on-chain axes as four separate rows (decision 0088).
+///
+/// Read on chain, each row names its axis, carries the contract's own value
+/// and says what that value means; a line under them names the snapshot block
+/// and the state digest, and one sentence above them states the combined
+/// projection derived from the four. Unreadable, each row is an em dash with
+/// the server's own reason. They are never collapsed into one line: a page
+/// that merged them could later imply one axis from another.
 class LaunchAxisBlock extends StatelessWidget {
   const LaunchAxisBlock({required this.state, super.key});
 
@@ -545,20 +556,68 @@ class LaunchAxisBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final axes = state.axes;
+    return switch (state) {
+      final LaunchOnChainAvailable chain => _available(chain),
+      final LaunchOnChainUnavailable unavailable => _unavailable(unavailable),
+    };
+  }
+
+  Widget _available(LaunchOnChainAvailable chain) {
+    final axes = chain.axes;
+    return Column(
+      key: const ValueKey<String>('launch-axis-block-chain'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text(
+            launchStateProjection(chain),
+            key: const ValueKey<String>('launch-axis-projection'),
+            style: LoopTypography.title(14),
+          ),
+        ),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            for (var index = 0; index < axes.length; index += 1)
+              LoopRecordRow(
+                key: ValueKey<String>('launch-axis-${axes[index].label}'),
+                title: axes[index].label,
+                subtitle: axes[index].meaning,
+                trailing: axes[index].wireName,
+                position: launchRowPosition(index, axes.length),
+                semanticLabel:
+                    '${axes[index].label}，${axes[index].wireName}，'
+                    '${axes[index].meaning}',
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Text(
+            '快照区块 ${loopGroupedFigure(chain.snapshotBlockNumber)} · '
+            '状态摘要 ${launchShortHex(chain.stateTupleDigest)}',
+            key: const ValueKey<String>('launch-axis-snapshot'),
+            style: LoopTypography.caption(11, color: LoopColors.text3),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _unavailable(LaunchOnChainUnavailable unavailable) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         LoopRecordGroup(
           rows: <LoopRecordRow>[
-            for (var index = 0; index < axes.length; index += 1)
+            for (var index = 0; index < launchAxisLabels.length; index += 1)
               LoopRecordRow(
-                key: ValueKey<String>('launch-axis-${axes[index].$1}'),
-                title: axes[index].$1,
-                subtitle: launchReasonCodeText(state.reasonCode),
+                key: ValueKey<String>('launch-axis-${launchAxisLabels[index]}'),
+                title: launchAxisLabels[index],
+                subtitle: launchReasonCodeText(unavailable.reasonCode),
                 trailing: launchMissingFigure,
-                position: launchRowPosition(index, axes.length),
-                semanticLabel: '${axes[index].$1}，暂无可证明的链上状态',
+                position: launchRowPosition(index, launchAxisLabels.length),
+                semanticLabel: '${launchAxisLabels[index]}，暂无可证明的链上状态',
               ),
           ],
         ),
@@ -572,6 +631,50 @@ class LaunchAxisBlock extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The short badge a catalogue row or a folio stamp carries for the axes.
+String launchAxesBadge(LaunchOnChainState state) => switch (state) {
+  final LaunchOnChainAvailable chain =>
+    chain.operationalState == LaunchOperationalState.paused
+        ? '已暂停'
+        : launchGraduationProjection(chain) ?? chain.saleState.wireName,
+  LaunchOnChainUnavailable() => '链上待确认',
+};
+
+/// One row of a contract round (`getRounds`): the round, its window, its
+/// price, its two caps and what it has raised, all read at one block.
+LoopRecordRow launchChainRoundRow({
+  required LaunchChainRound round,
+  String keyPrefix = 'launch-round',
+  LoopRowPosition position = LoopRowPosition.single,
+  VoidCallback? onTap,
+  bool selected = false,
+}) {
+  final access = round.hasAllowlist ? '名单轮' : '公开轮';
+  final lines = <String>[
+    '${launchTimestampLabel(round.startAt)} – ${launchTimestampLabel(round.endAt)}',
+    '轮次上限 ${launchUsd1Label(round.roundCapUsd1)} · '
+        '钱包上限 ${launchUsd1Label(round.walletRoundCapUsd1)}',
+    '已募集 ${launchUsd1Label(round.raisedUsd1)}',
+    if (round.roundId == null) 'LOOP 没有这一轮的记录，不能在这里认购',
+  ];
+  final price = '${launchUnitsFigure(round.priceUsd1PerToken)} USD1';
+  return LoopRecordRow(
+    key: ValueKey<String>('$keyPrefix-${round.roundIndex}'),
+    leading: LoopMonoTile(label: 'R${round.roundIndex}'),
+    title: 'Round ${round.roundIndex} · $access',
+    subtitle: lines.join('\n'),
+    subtitleMaxLines: 4,
+    trailing: price,
+    trailingCaption: selected ? '已选择' : '单价',
+    onTap: onTap,
+    position: position,
+    selected: selected,
+    semanticLabel:
+        'Round ${round.roundIndex}，$access，单价 $price，${lines.join('，')}'
+        '${selected ? '，已选择' : ''}',
+  );
 }
 
 /// One exchange-listing track. `LISTED` and `FEATURED` are the only states
@@ -776,12 +879,48 @@ class LaunchIdentityStrip extends StatelessWidget {
 /// The four figures the prototype's `launch-detail` grid states, each with no
 /// source in this step. They are stated as a grid of em dashes rather than as
 /// a table of sentences: the shape is the claim that these four exist.
-List<LoopStat> launchRecordStats() => const <LoopStat>[
-  LoopStat(label: '总量', value: loopFigureDash),
-  LoopStat(label: '持有人', value: loopFigureDash),
-  LoopStat(label: '当前价', value: loopFigureDash),
-  LoopStat(label: '成交量', value: loopFigureDash),
+///
+/// The price is the one of the four a contract round can prove: it is the
+/// fixed price of the first round read on chain, and the em dash otherwise.
+List<LoopStat> launchRecordStats({String? price}) => <LoopStat>[
+  const LoopStat(label: '总量', value: loopFigureDash),
+  const LoopStat(label: '持有人', value: loopFigureDash),
+  LoopStat(label: '当前价', value: price ?? loopFigureDash),
+  const LoopStat(label: '成交量', value: loopFigureDash),
 ];
+
+/// The first contract round's fixed price, or `null` while none was read.
+String? launchCurrentPriceLabel(LaunchDetail detail) {
+  final rounds = detail.chainRounds;
+  if (rounds.isEmpty) return null;
+  return '${launchUnitsFigure(rounds.first.priceUsd1PerToken)} USD1';
+}
+
+/// The contract's `getSaleConfig`, one row per parameter (06 §5 names).
+class LaunchSaleConfigGroup extends StatelessWidget {
+  const LaunchSaleConfigGroup({required this.config, super.key});
+
+  final LaunchSaleConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = config.entries;
+    return LoopRecordGroup(
+      rows: <LoopRecordRow>[
+        for (var index = 0; index < entries.length; index += 1)
+          LoopRecordRow(
+            key: ValueKey<String>('launch-sale-config-${entries[index].$1}'),
+            title: entries[index].$1,
+            subtitle: '合约读数',
+            trailing: entries[index].$2,
+            position: launchRowPosition(index, entries.length),
+            chevron: false,
+            semanticLabel: '${entries[index].$1}，${entries[index].$2}',
+          ),
+      ],
+    );
+  }
+}
 
 /// `.row-ico.mono` for one round: the time the round opens, in UTC, or the
 /// placeholder when the configuration has not fixed it.
@@ -919,4 +1058,83 @@ class LaunchCapCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// `Contract Limits` read on chain: the project cap, each round's wallet cap
+/// and the minimum purchase, exactly as `getSaleConfig` / `getRounds` answered
+/// at the snapshot block.
+class LaunchChainCapCard extends StatelessWidget {
+  const LaunchChainCapCard({
+    required this.config,
+    required this.rounds,
+    super.key,
+  });
+
+  final LaunchSaleConfig config;
+  final List<LaunchChainRound> rounds;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <(String, String)>[
+      ('单钱包项目上限', launchUsd1Label(config.walletProjectCapUsd1)),
+      for (final round in rounds)
+        (
+          'Round ${round.roundIndex} 单钱包上限',
+          launchUsd1Label(round.walletRoundCapUsd1),
+        ),
+      ('最低单笔', launchUsd1Label(config.minPurchaseUsd1)),
+    ];
+    return LoopChalkCard(
+      key: const ValueKey<String>('launch-rounds-caps'),
+      child: Builder(
+        builder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (var index = 0; index < rows.length; index += 1) ...<Widget>[
+              if (index > 0) const SizedBox(height: 10),
+              Semantics(
+                container: true,
+                label: '${rows[index].$1}，${rows[index].$2}',
+                child: ExcludeSemantics(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          rows[index].$1,
+                          style: LoopTypography.caption(
+                            11,
+                            color: LoopGround.secondaryOf(context),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        rows[index].$2,
+                        style: LoopTypography.figure(
+                          13,
+                          weight: FontWeight.w700,
+                          color: LoopGround.inkOf(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const LoopHairline(),
+            Text(
+              '上限由合约在每次认购时执行；这里是合约在快照区块的读数，'
+              '不是 LOOP 写下的固定比例或数量。',
+              style: LoopTypography.caption(
+                11,
+                color: LoopGround.auxiliaryOf(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

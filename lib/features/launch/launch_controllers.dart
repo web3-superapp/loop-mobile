@@ -593,24 +593,50 @@ final launchMilestonesControllerProvider =
 // launch-trade
 // ---------------------------------------------------------------------------
 
-/// The purchase form. The main action is enabled only while a round, a wallet
-/// and an amount exist **and** the last attempt has not been refused; the
-/// refusal itself always comes from the server, never from a hidden control.
+/// The purchase form (decision 0088).
+///
+/// The page opens the main action only while the capability is settled and
+/// the four axes read `LIVE` + `ACTIVE`; every refusal after that comes from
+/// the server. A prepared intent is the server's canonical payload and is held
+/// here only until the signing exit consumes it.
 @immutable
 final class LaunchTradeState {
   const LaunchTradeState({
     required this.mode,
     this.busy = false,
     this.refusalKind,
+    this.refusalReasonCode,
     this.attempted = false,
+    this.prepared,
+    this.signOutcomeStatus,
+    this.signReasonCode,
+    this.txHash,
   });
 
   final LaunchGatewayMode mode;
   final bool busy;
   final LaunchFailureKind? refusalKind;
 
+  /// The server's `detailsSafe.reasonCode` for [refusalKind], when named.
+  final String? refusalReasonCode;
+
   /// True once the server has answered at least one intent attempt.
   final bool attempted;
+
+  /// The server's prepared intent, awaiting the signing exit.
+  final LaunchPurchasePrepared? prepared;
+
+  /// How the last trip through the signing exit ended, by name. It is a
+  /// statement of what the wallet did, never of what the chain did.
+  final String? signOutcomeStatus;
+  final String? signReasonCode;
+
+  /// What the wallet broadcast, when it did. Its presence locks the page.
+  final String? txHash;
+
+  /// Once the wallet has produced a hash, or its outcome is unknown, the
+  /// page may never offer a second signature for this attempt.
+  bool get locked => signOutcomeStatus == 'locked' || txHash != null;
 }
 
 final class LaunchTradeController extends Notifier<LaunchTradeState>
@@ -623,29 +649,38 @@ final class LaunchTradeController extends Notifier<LaunchTradeState>
     return LaunchTradeState(mode: mode);
   }
 
-  /// Submits the purchase intent. In this step the server answers `503`, and
-  /// the page renders that refusal verbatim.
-  Future<void> submit({
+  /// Asks the server to prepare one purchase intent. While the contract is
+  /// unconfigured the server answers `503`, and the page renders that refusal
+  /// with the server's own reason.
+  Future<void> prepare({
     required String launchId,
     required String walletId,
     required String roundId,
     required String payAmount,
   }) => single(() async {
+    if (state.locked) return;
     final gateway = ref.read(launchGatewayProvider);
     final generation = nextGeneration();
     state = LaunchTradeState(mode: state.mode, busy: true, attempted: true);
     try {
-      await gateway.submitPurchaseIntent(
+      final prepared = await gateway.preparePurchaseIntent(
         launchId: launchId,
         walletId: walletId,
         roundId: roundId,
         payAmount: payAmount,
+      );
+      if (!isCurrent(generation)) return;
+      state = LaunchTradeState(
+        mode: state.mode,
+        attempted: true,
+        prepared: prepared,
       );
     } on LaunchException catch (error) {
       if (!isCurrent(generation)) return;
       state = LaunchTradeState(
         mode: state.mode,
         refusalKind: error.kind,
+        refusalReasonCode: error.reasonCode,
         attempted: true,
       );
     } catch (_) {
@@ -657,6 +692,31 @@ final class LaunchTradeController extends Notifier<LaunchTradeState>
       );
     }
   });
+
+  /// Records what the signing exit reported. A hash or an unknown outcome
+  /// keeps the prepared intent on screen and locks the form.
+  void recordSignOutcome({
+    required String status,
+    required String reasonCode,
+    String? txHash,
+  }) {
+    state = LaunchTradeState(
+      mode: state.mode,
+      attempted: true,
+      prepared: state.prepared,
+      signOutcomeStatus: status,
+      signReasonCode: reasonCode,
+      txHash: txHash,
+    );
+  }
+
+  /// Drops a prepared intent that was never handed to a wallet, so a fresh
+  /// one can be prepared. A locked attempt is never discarded.
+  void discard() {
+    if (state.locked) return;
+    nextGeneration();
+    state = LaunchTradeState(mode: state.mode);
+  }
 }
 
 final launchTradeControllerProvider =

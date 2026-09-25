@@ -39,10 +39,13 @@ abstract interface class LaunchGateway {
 
   Future<LaunchMilestones> loadMilestones(String projectId);
 
-  /// The purchase intent. It exists so the page can prove the action is
-  /// refused by the server rather than hidden by the client; in this step it
-  /// always fails with [LaunchFailureKind.unavailable].
-  Future<Never> submitPurchaseIntent({
+  /// Prepares one purchase intent (`201 {launchIntent, contractVersion}`).
+  ///
+  /// While the contract is unconfigured the server answers `503` and this
+  /// fails with [LaunchFailureKind.unavailable]; the page renders that
+  /// refusal. A prepared intent is only the server's canonical payload: it is
+  /// signed through the signing exit, never assembled here.
+  Future<LaunchPurchasePrepared> preparePurchaseIntent({
     required String launchId,
     required String walletId,
     required String roundId,
@@ -107,7 +110,7 @@ final class UnavailableLaunchGateway implements LaunchGateway {
   Future<LaunchMilestones> loadMilestones(String projectId) => _unavailable();
 
   @override
-  Future<Never> submitPurchaseIntent({
+  Future<LaunchPurchasePrepared> preparePurchaseIntent({
     required String launchId,
     required String walletId,
     required String roundId,

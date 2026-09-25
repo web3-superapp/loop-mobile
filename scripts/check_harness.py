@@ -351,6 +351,15 @@ REQUIRED_FILES = (
     "lib/features/launch/launch_screen.dart",
     "lib/features/launch/launch_detail_screens.dart",
     "lib/features/launch/launch_action_screens.dart",
+    # S83c (decision 0088): the chain branches, the purchase screen and its
+    # signing exit, and the decoders for loop-api decision 0076.
+    "lib/features/launch/launch_chain_models.dart",
+    "lib/features/launch/launch_trade_screen.dart",
+    "lib/features/launch/launch_signing.dart",
+    "lib/integrations/backend/v2/launch/loop_v2_launch_chain_codec.dart",
+    "test/s83c_launch_decoder_test.dart",
+    "test/s83c_launch_pages_test.dart",
+    "docs/decisions/0088-launch-available-shapes.md",
     "lib/features/mining/mining_models.dart",
     "lib/features/mining/mining_gateway.dart",
     "lib/features/mining/mining_controllers.dart",
@@ -895,9 +904,30 @@ S7_SURFACE_ROOTS = (
     Path("lib/features/mining"),
 )
 # `loop-stake` is non-executable as a whole page, so it owns no amount field
-# and no signing entry; `launch-trade` keeps its form but never opens one.
+# and no signing entry. Decision 0088 moved `launch-trade` into its own file and
+# connected it to the one signing exit; it and that exit are the only Launch
+# files that may name a signing marker, and every other Launch file may not.
 S7_NON_EXECUTABLE_PATH = Path("lib/features/launch/launch_action_screens.dart")
 S7_SIGNING_MARKERS = ("showLoopSignSheet", "LoopSignSheet", "SigningIntent")
+S7_LAUNCH_ROOT = Path("lib/features/launch")
+S7_SIGNING_ALLOWED_PATHS = (
+    Path("lib/features/launch/launch_trade_screen.dart"),
+    Path("lib/features/launch/launch_signing.dart"),
+)
+# The purchase action is gated on the four axes (LIVE + ACTIVE), never on a
+# client rule, and the exit refuses what the server did not allow.
+S7_TRADE_GATE_FRAGMENTS = {
+    Path("lib/features/launch/launch_trade_screen.dart"): (
+        "onChainState.isPurchasable",
+        "capability.evidencePending",
+    ),
+    Path("lib/features/launch/launch_signing.dart"): (
+        "if (!intent.canSignAt(now))",
+        "if (!intent.payloadMatchesReview)",
+        "SigningIntent.backendCanonical(",
+        "kind: IntentKind.launchPurchase",
+    ),
+}
 S5_TOKEN_SURFACE_PATH = Path("lib/features/market/token_screen.dart")
 S5_SWAP_GATE = "if (detail.capability.swappable)"
 S5_SWAP_ENTRY_KEY = "'token-swap-entry'"
@@ -10722,20 +10752,37 @@ def check_s7_truth_contract(root: Path) -> list[str]:
                 "is undelivered"
             )
 
-    # 5. No Launch surface constructs a transaction or opens the signing sheet.
-    #    `loop-stake` is non-executable as a whole page and `launch-trade`
-    #    disables its main action on the server's own refusal.
+    # 5. Only `launch-trade` and its signing exit may name a signing marker
+    #    (decision 0088). `loop-stake` and every other Launch surface stay
+    #    non-executable.
     action_path = root / S7_NON_EXECUTABLE_PATH
     if not action_path.is_file():
         errors.append(f"missing S7 action surface: {S7_NON_EXECUTABLE_PATH}")
-    else:
-        action_source = strip_dart_comments(read_text(action_path))
-        for marker in S7_SIGNING_MARKERS:
-            if marker in action_source:
+    launch_root = root / S7_LAUNCH_ROOT
+    if launch_root.is_dir():
+        for path in sorted(launch_root.rglob("*.dart")):
+            relative = path.relative_to(root)
+            if relative in S7_SIGNING_ALLOWED_PATHS:
+                continue
+            source = strip_dart_comments(read_text(path))
+            for marker in S7_SIGNING_MARKERS:
+                if marker in source:
+                    errors.append(
+                        f"{relative} references `{marker}`; only launch-trade "
+                        "and its signing exit may reach the signing sheet "
+                        "(decision 0088)"
+                    )
+    for relative, fragments in S7_TRADE_GATE_FRAGMENTS.items():
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing S83c trade surface: {relative}")
+            continue
+        source = strip_dart_comments(read_text(path))
+        for fragment in fragments:
+            if fragment not in source:
                 errors.append(
-                    f"{S7_NON_EXECUTABLE_PATH} references `{marker}`; no Launch "
-                    "surface may open a signing sheet while the contract "
-                    "baseline is undelivered"
+                    f"{relative} must contain `{fragment}`; the purchase is "
+                    "gated on the four axes and the server's own intent"
                 )
 
     return errors

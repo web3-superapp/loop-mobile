@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch/launch_action_screens.dart';
+import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -9,6 +10,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s7_fixtures.dart';
+import 'support/s83c_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
 /// Every rendered percentage, currency amount or countdown on the page. In
@@ -410,11 +412,9 @@ void main() {
     });
 
     testWidgets(
-      'settled evidence opens the action and the server still refuses',
+      'settled evidence with unreadable axes still keeps the action closed',
       (tester) async {
-        final gateway = FakeLaunchGateway(
-          intentFailure: LaunchFailureKind.unavailable,
-        );
+        final gateway = FakeLaunchGateway();
         await pumpS7Page(
           tester,
           const LaunchTradeScreen(launchId: s7LaunchId),
@@ -423,8 +423,8 @@ void main() {
           meta: s7MetaSnapshot(launchEvidencePending: false),
         );
 
-        // A round and an amount are real inputs; without them the action
-        // stays closed even though the capability is open.
+        // Decision 0088: the four axes, not the evidence alone, open the
+        // action. Unreadable axes state their own reason.
         expect(
           tester
               .widget<LoopButton>(
@@ -433,30 +433,19 @@ void main() {
               .onPressed,
           isNull,
         );
-        expect(find.textContaining('请先选择要参与的轮次'), findsOneWidget);
-
+        expect(find.textContaining('Launch 合约还没有上线'), findsWidgets);
+        // LOOP's own round slots are listed but cannot be selected.
         await tester.tap(find.byKey(const ValueKey<String>('launch-round-1')));
         await tester.pumpAndSettle();
-        await tester.enterText(
-          find.byKey(const ValueKey<String>('launch-trade-amount')),
-          '500',
-        );
-        await tester.pumpAndSettle();
-
-        await tester.tap(
-          find.byKey(const ValueKey<String>('launch-trade-submit')),
-        );
-        await tester.pumpAndSettle();
-
-        // The intent reached the gateway and the refusal shown is the one the
-        // server answered with.
-        expect(gateway.intents, <String>['$s7LaunchId:$s7RoundId:500']);
-        expect(find.text('这次认购没有通过'), findsOneWidget);
+        expect(find.text('已选择'), findsNothing);
+        expect(gateway.intents, isEmpty);
       },
     );
 
     testWidgets('a malformed amount never becomes a request', (tester) async {
-      final gateway = FakeLaunchGateway();
+      final gateway = FakeLaunchGateway(
+        detail: S7Answer<LaunchDetail>(value: s83cDetail()),
+      );
       await pumpS7Page(
         tester,
         const LaunchTradeScreen(launchId: s7LaunchId),
@@ -488,7 +477,9 @@ void main() {
       await pumpS7Page(
         tester,
         const LaunchTradeScreen(launchId: s7LaunchId),
-        launch: FakeLaunchGateway(),
+        launch: FakeLaunchGateway(
+          detail: S7Answer<LaunchDetail>(value: s83cDetail()),
+        ),
         wallet: FakeWalletDirectory(),
         meta: s7MetaSnapshot(launchEvidencePending: false),
       );

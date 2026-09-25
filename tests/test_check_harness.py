@@ -5454,6 +5454,7 @@ class HarnessTests(unittest.TestCase):
         relatives = [relative for relative, _, _, _ in check_harness.S7_PORT_DEFAULTS]
         relatives.append(str(check_harness.S7_CONTRACT_PATH))
         relatives.append(str(check_harness.S7_NON_EXECUTABLE_PATH))
+        relatives.extend(str(path) for path in check_harness.S7_SIGNING_ALLOWED_PATHS)
         relatives.extend(str(path) for path in check_harness.S7_TOKEN_CARD_PATHS)
         for surface_root in check_harness.S7_SURFACE_ROOTS:
             for path in sorted((REPOSITORY_ROOT / surface_root).rglob("*.dart")):
@@ -5714,6 +5715,61 @@ class HarnessTests(unittest.TestCase):
                     any(f"references `{marker}`" in error for error in result),
                     msg=f"expected signing guard for {marker}: {result}",
                 )
+
+    def test_s7_other_launch_surfaces_must_not_open_the_signing_sheet(
+        self,
+    ) -> None:
+        for relative in (
+            "lib/features/launch/launch_detail_screens.dart",
+            "lib/features/launch/launch_widgets.dart",
+            "lib/features/launch/launch_screen.dart",
+        ):
+            with self.subTest(relative=relative):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = self._s7_root(temporary)
+                    target = root / relative
+                    target.write_text(
+                        target.read_text(encoding="utf-8")
+                        + "\nvoid _open() => showLoopSignSheet();\n",
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s7_truth_contract(root)
+
+                self.assertTrue(
+                    any(
+                        f"{relative} references `showLoopSignSheet`" in error
+                        for error in result
+                    ),
+                    msg=f"expected signing guard for {relative}: {result}",
+                )
+
+    def test_s7_trade_screen_may_reach_the_signing_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s7_root(temporary)
+            result = check_harness.check_s7_truth_contract(root)
+        self.assertEqual(result, [])
+
+    def test_s7_trade_gate_must_read_the_four_axes(self) -> None:
+        for relative, fragments in check_harness.S7_TRADE_GATE_FRAGMENTS.items():
+            for fragment in fragments:
+                with self.subTest(relative=str(relative), fragment=fragment):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        root = self._s7_root(temporary)
+                        target = root / relative
+                        target.write_text(
+                            target.read_text(encoding="utf-8").replace(
+                                fragment, "removed"
+                            ),
+                            encoding="utf-8",
+                        )
+
+                        result = check_harness.check_s7_truth_contract(root)
+
+                    self.assertTrue(
+                        any(f"must contain `{fragment}`" in error for error in result),
+                        msg=f"expected gate guard for {fragment}: {result}",
+                    )
 
     def test_current_s7_surfaces_pass_their_guard(self) -> None:
         self.assertEqual(check_harness.check_s7_truth_contract(REPOSITORY_ROOT), [])

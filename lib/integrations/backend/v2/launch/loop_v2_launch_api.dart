@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
@@ -98,10 +99,10 @@ abstract interface class LoopV2LaunchApi {
     required String projectId,
   });
 
-  /// Always throws in this step: the server answers `503` while the Launch
-  /// contract baseline is undelivered. It exists so the refusal is the
-  /// server's, observed by the client, and never a silently hidden control.
-  Future<Never> postPurchaseIntent({
+  /// `201 {launchIntent, contractVersion}` once the contract is configured;
+  /// `503 CAPABILITY_UNAVAILABLE` until then (decision 0076), which reaches
+  /// the caller as a [LoopBackendFailure].
+  Future<LaunchPurchasePrepared> postPurchaseIntent({
     required String accessToken,
     required String clientVersion,
     required String idempotencyKey,
@@ -162,49 +163,6 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     'createdAt',
   };
 
-  static LaunchOnChainState _onChainState(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'saleState',
-      'entitlementState',
-      'liquidityState',
-      'operationalState',
-      'stateTupleDigest',
-      'snapshotBlockNumber',
-      'snapshotBlockHash',
-      'source',
-      'reasonCode',
-    });
-    const axisValues = <String>{'unavailable'};
-    return LaunchOnChainState(
-      saleState: LoopV2S7Codec.requireEnum(map, 'saleState', axisValues),
-      entitlementState: LoopV2S7Codec.requireEnum(
-        map,
-        'entitlementState',
-        axisValues,
-      ),
-      liquidityState: LoopV2S7Codec.requireEnum(
-        map,
-        'liquidityState',
-        axisValues,
-      ),
-      operationalState: LoopV2S7Codec.requireEnum(
-        map,
-        'operationalState',
-        axisValues,
-      ),
-      stateTupleDigest: LoopV2S7Codec.requireNull(map, 'stateTupleDigest'),
-      snapshotBlockNumber: LoopV2S7Codec.requireNull(
-        map,
-        'snapshotBlockNumber',
-      ),
-      snapshotBlockHash: LoopV2S7Codec.requireNull(map, 'snapshotBlockHash'),
-      source: LoopV2S7Codec.requireEnum(map, 'source', axisValues),
-      reasonCode: LoopV2S7Codec.requireEnum(map, 'reasonCode', const <String>{
-        'LAUNCH_CONTRACT_BASELINE_PENDING',
-      }),
-    );
-  }
-
   static LaunchSummary _summary(Object? raw) {
     final map = LoopV2Contract.strictMap(raw, _summaryKeys);
     final schedule = LaunchScheduleStatus.tryParse(
@@ -230,7 +188,8 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       // The set is closed — an unknown chain is an invalid payload, never a
       // network the client silently adopts.
       chainId: LoopV2S7Codec.requireEnum(map, 'chainId', loopKnownChainIds),
-      contractAddress: LoopV2S7Codec.requireNull(map, 'contractAddress'),
+      // Decision 0076: `null`, or the registered contract (0x + 40 lower hex).
+      contractAddress: LoopV2LaunchChainCodec.contractAddress(map),
       configDigest: LoopV2S7Codec.optionalPattern(
         map,
         'configDigest',
@@ -238,7 +197,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         maxLength: 64,
       ),
       scheduleStatus: schedule,
-      onChainState: _onChainState(map['onChainState']),
+      onChainState: LoopV2LaunchChainCodec.onChainState(map['onChainState']),
       configVersion: LoopV2S7Codec.optionalPattern(
         map,
         'configVersion',
@@ -429,10 +388,10 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     );
   }
 
-  static List<LaunchRound> _rounds(Object? raw) {
+  static List<LaunchRound> _rounds(List<Object?> entries) {
     final rounds = <LaunchRound>[];
     final seen = <int>{};
-    for (final entry in LoopV2S7Codec.requireList(raw, maximum: 32)) {
+    for (final entry in entries) {
       final map = LoopV2Contract.strictMap(entry, const <String>{
         'roundId',
         'roundIndex',
@@ -495,6 +454,19 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     }
     rounds.sort((a, b) => a.roundIndex.compareTo(b.roundIndex));
     return List<LaunchRound>.unmodifiable(rounds);
+  }
+
+  /// The `available` round branch (`getRounds` at the snapshot block).
+  static List<LaunchChainRound> _chainRounds(List<Object?> entries) {
+    final rounds = <LaunchChainRound>[];
+    final seen = <int>{};
+    for (final entry in entries) {
+      final round = LoopV2LaunchChainCodec.chainRound(entry);
+      if (!seen.add(round.roundIndex)) LoopV2S7Codec.invalid();
+      rounds.add(round);
+    }
+    rounds.sort((a, b) => a.roundIndex.compareTo(b.roundIndex));
+    return List<LaunchChainRound>.unmodifiable(rounds);
   }
 
   static LaunchGraduation _graduation(Object? raw) {
@@ -628,8 +600,41 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         'officialLinks',
         'materialVersion',
       });
+      final launch = _summary(root['launch']);
+      final onChain = launch.onChainState is LaunchOnChainAvailable;
+      final rawConfig = root['config'];
+      final configIsChain = LoopV2LaunchChainCodec.isAvailable(rawConfig);
+      // The rounds are decoded in one branch only: a list mixing LOOP slots
+      // and contract rounds describes two different sources at once.
+      final roundEntries = LoopV2S7Codec.requireList(
+        root['rounds'],
+        maximum: 64,
+      );
+      final chainEntries = roundEntries
+          .where(LoopV2LaunchChainCodec.isAvailable)
+          .length;
+      if (chainEntries != 0 && chainEntries != roundEntries.length) {
+        LoopV2S7Codec.invalid();
+      }
+      final roundsAreChain = chainEntries != 0;
+      // Decision 0076 reads the axes, the rounds and the config at one block,
+      // and publishes the contract address under the same condition. Any
+      // other combination is two sources pretending to be one.
+      if (onChain != configIsChain ||
+          (roundsAreChain && !onChain) ||
+          (onChain && launch.contractAddress == null)) {
+        LoopV2S7Codec.invalid();
+      }
+      final saleConfig = configIsChain
+          ? LoopV2LaunchChainCodec.saleConfig(rawConfig)
+          : null;
+      if (saleConfig != null &&
+          saleConfig.configVersion !=
+              (launch.onChainState as LaunchOnChainAvailable).configVersion) {
+        LoopV2S7Codec.invalid();
+      }
       return LaunchDetail(
-        launch: _summary(root['launch']),
+        launch: launch,
         project: LaunchProjectBrief(
           projectId: LoopV2S7Codec.requireId(project, 'projectId'),
           name: LoopV2S7Codec.requireText(project, 'name'),
@@ -646,14 +651,18 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
             'materialVersion',
           ),
         ),
-        config: _config(root['config']),
+        config: configIsChain ? null : _config(rawConfig),
         configPending: root['configPending'] == null
             ? null
             : LoopV2S7Codec.unavailable(root['configPending']),
-        rounds: _rounds(root['rounds']),
+        rounds: roundsAreChain ? const <LaunchRound>[] : _rounds(roundEntries),
         graduation: _graduation(root['graduation']),
         market: LoopV2S7Codec.unavailable(root['market']),
         holders: LoopV2S7Codec.unavailable(root['holders']),
+        saleConfig: saleConfig,
+        chainRounds: roundsAreChain
+            ? _chainRounds(roundEntries)
+            : const <LaunchChainRound>[],
       );
     } on DioException catch (error) {
       _rethrowRead(error);
@@ -691,17 +700,10 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         }),
       );
       if (mode == null) LoopV2S7Codec.invalid();
-      final result = LoopV2Contract.strictMap(root['result'], const <String>{
-        'tier',
-        'reasonCode',
-        'snapshotBlock',
-      });
       return LaunchEligibility(
         launchId: LoopV2S7Codec.requireId(root, 'launchId'),
         mode: mode,
-        tier: LoopV2S7Codec.requireNull(result, 'tier'),
-        reasonCode: LoopV2S7Codec.requireReasonCode(result, 'reasonCode'),
-        snapshotBlock: LoopV2S7Codec.requireNull(result, 'snapshotBlock'),
+        result: LoopV2LaunchChainCodec.eligibilityResult(root['result']),
         configVersion: LoopV2S7Codec.optionalPattern(
           root,
           'configVersion',
@@ -768,9 +770,9 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       LoopV2S7Codec.requireContractVersion(root);
       return LaunchHolders(
         launchId: LoopV2S7Codec.requireId(root, 'launchId'),
-        holders: LoopV2S7Codec.unavailable(root['holders']),
-        myPosition: LoopV2S7Codec.unavailable(root['myPosition']),
-        walletCap: LoopV2S7Codec.unavailable(root['walletCap']),
+        holders: LoopV2LaunchChainCodec.holderCount(root['holders']),
+        myPosition: LoopV2LaunchChainCodec.position(root['myPosition']),
+        walletCap: LoopV2LaunchChainCodec.walletCap(root['walletCap']),
       );
     } on DioException catch (error) {
       _rethrowRead(error);
@@ -798,14 +800,11 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         'contractVersion',
       });
       LoopV2S7Codec.requireContractVersion(root);
-      // Empty by contract: the three collections have no item schema while the
-      // baseline is undelivered, so a row would be unrenderable.
-      LoopV2S7Codec.requireEmptyList(root['purchaseRecords']);
-      LoopV2S7Codec.requireEmptyList(root['entitlements']);
-      LoopV2S7Codec.requireEmptyList(root['refunds']);
-      return LaunchHistory(
-        launchId: LoopV2S7Codec.requireId(root, 'launchId'),
-        source: LoopV2S7Codec.unavailable(root['source']),
+      // An unavailable source keeps the three collections empty, exactly as
+      // in step 7; an indexed one decodes each row strictly.
+      return LoopV2LaunchChainCodec.history(
+        root,
+        LoopV2S7Codec.requireId(root, 'launchId'),
       );
     } on DioException catch (error) {
       _rethrowRead(error);
@@ -1181,7 +1180,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
   }
 
   @override
-  Future<Never> postPurchaseIntent({
+  Future<LaunchPurchasePrepared> postPurchaseIntent({
     required String accessToken,
     required String clientVersion,
     required String idempotencyKey,
@@ -1211,9 +1210,30 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
           origin: origin,
         ),
       );
-      // The contract has no success response for this operation in step 7.
-      LoopV2Contract.validateSuccess(response, statusCode: 599);
-      LoopV2S7Codec.invalid();
+      LoopV2Contract.validateSuccess(response, statusCode: 201);
+      final raw = response.data;
+      if (raw is! Map) LoopV2S7Codec.invalid();
+      // `balances` is the one S83b optional key this build knows about; any
+      // other unknown key is still an invalid payload.
+      final root = LoopV2Contract.strictMap(raw, <String>{
+        'launchIntent',
+        'contractVersion',
+        if (raw.containsKey('balances')) 'balances',
+      });
+      LoopV2S7Codec.requireContractVersion(root);
+      final intent = LoopV2LaunchChainCodec.purchaseIntent(
+        root['launchIntent'],
+      );
+      // The server answered for this request and no other.
+      if (intent.launchId != launchId ||
+          intent.walletId != walletId ||
+          intent.roundId != roundId) {
+        LoopV2S7Codec.invalid();
+      }
+      return LaunchPurchasePrepared(
+        intent: intent,
+        usd1: LoopV2LaunchChainCodec.usd1Balance(root['balances']),
+      );
     } on DioException catch (error) {
       _rethrowWrite(error);
     }

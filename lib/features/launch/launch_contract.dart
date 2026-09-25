@@ -48,9 +48,13 @@ enum LaunchFailureKind {
 }
 
 final class LaunchException implements Exception {
-  const LaunchException(this.kind);
+  const LaunchException(this.kind, {this.reasonCode});
 
   final LaunchFailureKind kind;
+
+  /// The server's `detailsSafe.reasonCode`, when the refusal named one. It is
+  /// a stable identifier the page maps to copy; never provider detail.
+  final String? reasonCode;
 
   @override
   String toString() => 'LaunchException(${kind.name})';
@@ -146,6 +150,22 @@ bool launchOutcomeIsUnresolved(LaunchFailureKind kind) =>
 String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // launch · contract baseline
   'LAUNCH_CONTRACT_BASELINE_PENDING' => 'Launch 合约还没有上线，链上状态、购买、退款与领取都暂时不可用。',
+  // launch · contract adapter (loop-api decision 0076)
+  'LAUNCH_CONTRACT_VERIFICATION_PENDING' => 'Launch 合约已配置，还在核对链上代码，请稍后刷新。',
+  'LAUNCH_CONTRACT_CODE_MISSING' => '配置的 Launch 合约地址上没有代码，链上状态暂时不可用。',
+  'LAUNCH_CONTRACT_VERSION_UNSUPPORTED' => '当前 Launch 合约版本不受支持，链上状态暂时不可用。',
+  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => 'Launch 链还没有可用的节点，链上状态暂时不可用。',
+  'LAUNCH_CHAIN_ID_MISMATCH' => 'Launch 节点返回的不是配置的链，链上状态暂时不可用。',
+  'LAUNCH_CHAIN_RPC_UNREACHABLE' => 'Launch 链节点暂时连不上，请稍后刷新。',
+  'LAUNCH_SALE_NOT_REGISTERED' => '这次发射还没有登记到链上，等待上链。',
+  'LAUNCH_SALE_CONTRACT_MISMATCH' => '这次发射登记的合约与当前配置不一致，链上状态暂时不可用。',
+  'LAUNCH_SALE_NOT_FOUND' => '合约上找不到这次发射，链上状态暂时不可用。',
+  'LAUNCH_CONFIG_VERSION_MISMATCH' => '链上配置版本与记录不一致，链上状态暂时不可用。',
+  'LAUNCH_USD1_ADDRESS_MISMATCH' => '这次发射的结算币不是配置的 USD1，链上状态暂时不可用。',
+  'LAUNCH_CONTRACT_READ_FAILED' => '读取 Launch 合约失败，请稍后刷新。',
+  'LAUNCH_CONTRACT_READ_INVALID' => 'Launch 合约返回了无法解读的值，链上状态暂时不可用。',
+  'LAUNCH_SNAPSHOT_REORGED' => '读取期间区块被重组，请稍后刷新。',
+  'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' => '列表不逐个读链，进入详情查看链上状态。',
   'LAUNCH_CONFIG_PENDING_CONFIRMATION' => '这一项还没有确认的配置，数值待定。',
   'LAUNCH_POOL_EVIDENCE_UNAVAILABLE' => '还读不到流动性池信息，毕业步骤保持待触发。',
   'LAUNCH_ECONOMY_CONTRACT_PENDING' => '总量、发行与生态税要等合约上线，这里只显示 LOOP 能核对的数量。',
@@ -190,6 +210,31 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   null => '这一项暂时读不到。',
   _ => '这一项暂时读不到。',
 };
+
+/// Copy for a refused purchase intent (decision 0088).
+///
+/// A named `reasonCode` wins. A code this build has no sentence for keeps a
+/// neutral sentence, and the page shows the code itself in a disclosure
+/// ([launchUnexplainedReasonCode]) so the refusal stays reportable without a
+/// backend identifier inside the sentence. Without a code the refusal falls
+/// back to its kind.
+String launchPurchaseRefusalText(LaunchFailureKind? kind, String? reasonCode) {
+  if (reasonCode != null) {
+    if (launchUnexplainedReasonCode(reasonCode) == null) {
+      return launchReasonCodeText(reasonCode);
+    }
+    return '这次认购没有通过，这个原因还没有对应的说明，没有提交任何交易。'
+        '服务端给出的代码在下方「错误代码」里。';
+  }
+  return launchFailureReason(kind);
+}
+
+/// The code itself when this build has no sentence for it, else `null`.
+String? launchUnexplainedReasonCode(String? reasonCode) =>
+    reasonCode == null ||
+        launchReasonCodeText(reasonCode) != launchReasonCodeText(null)
+    ? null
+    : reasonCode;
 
 /// The reviewed page states for an S7 surface.
 enum LaunchViewPhase {
