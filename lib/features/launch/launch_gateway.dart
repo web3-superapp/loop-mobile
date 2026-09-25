@@ -51,6 +51,15 @@ abstract interface class LaunchGateway {
     required String roundId,
     required String payAmount,
   });
+
+  /// Reports the hash the device broadcast for one purchase intent
+  /// (decision 0089). The answer is the server's intent, `submitted` with that
+  /// hash: pending evidence, never a purchase. It is idempotent for one hash.
+  Future<LaunchPurchaseIntent> reportPurchaseBroadcast({
+    required String launchId,
+    required String launchIntentId,
+    required String txHash,
+  });
 }
 
 /// Production default: every call fails closed with `unavailable`. No fixture
@@ -115,6 +124,13 @@ final class UnavailableLaunchGateway implements LaunchGateway {
     required String walletId,
     required String roundId,
     required String payAmount,
+  }) => _unavailable();
+
+  @override
+  Future<LaunchPurchaseIntent> reportPurchaseBroadcast({
+    required String launchId,
+    required String launchIntentId,
+    required String txHash,
   }) => _unavailable();
 }
 

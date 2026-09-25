@@ -673,6 +673,24 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
     );
   }
 
+  /// `launchChain.usd1`: absent unless both halves were read at one block.
+  ///
+  /// The key is either missing or a strict `{balance, allowance}` pair of
+  /// integer strings. `null`, a lone half, a number or an extra key is an
+  /// invalid payload, not a partial reading: the allowance gates a signature,
+  /// so it is never read leniently.
+  static LoopLaunchUsd1Reading? _launchUsd1(Map<String, Object?> launchChain) {
+    if (!launchChain.containsKey('usd1')) return null;
+    final map = LoopV2Contract.strictMap(launchChain['usd1'], const <String>{
+      'balance',
+      'allowance',
+    });
+    return LoopLaunchUsd1Reading(
+      balance: LoopV2ChainCodec.requireRawAmount(map, 'balance'),
+      allowance: LoopV2ChainCodec.requireRawAmount(map, 'allowance'),
+    );
+  }
+
   /// The optional `launchChain` block (decision 0038).
   ///
   /// One native balance read with one `eth_getBalance`; there is no registry,
@@ -680,13 +698,14 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
   /// slot, so the strict key set stays exactly this narrow.
   static LoopLaunchChainBalance? _launchChain(Map<String, Object?> root) {
     if (!root.containsKey('launchChain')) return null;
-    final map = LoopV2Contract.strictMap(root['launchChain'], const <String>{
-      'chainId',
-      'availability',
-      'reasonCode',
-      'nativeBalance',
-    });
+    final map = LoopV2Contract.strictMapWithOptional(
+      root['launchChain'],
+      const <String>{'chainId', 'availability', 'reasonCode', 'nativeBalance'},
+      // Optional (loop-api decision 0077, frozen by client decision 0088).
+      const <String>{'usd1'},
+    );
     final chainId = LoopV2ChainCodec.requireKnownChainId(map, 'chainId');
+    final usd1 = _launchUsd1(map);
     final availability = map['availability'];
     if (availability != 'available' && availability != 'unavailable') {
       LoopV2ChainCodec.invalid();
@@ -703,6 +722,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         available: false,
         reasonCode: reasonCode,
         nativeBalance: null,
+        usd1: usd1,
       );
     }
     if (raw == null || reasonCode != null) LoopV2ChainCodec.invalid();
@@ -734,6 +754,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       chainId: chainId,
       available: true,
       reasonCode: null,
+      usd1: usd1,
       nativeBalance: LoopLaunchChainNativeBalance(
         assetId: assetId,
         logoUrl: logoUrl,

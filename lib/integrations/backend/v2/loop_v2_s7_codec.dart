@@ -356,6 +356,7 @@ LaunchFailureKind launchFailureKindForV2(
     'PROFILE_ACTIVATION_REQUIRED' => LaunchFailureKind.activationRequired,
     'ACCOUNT_BOOTSTRAP_REQUIRED' => LaunchFailureKind.bootstrapRequired,
     'IDEMPOTENCY_CONFLICT' => LaunchFailureKind.idempotencyConflict,
+    'INSUFFICIENT_BALANCE' => LaunchFailureKind.insufficientBalance,
     'VALIDATION_FAILED' => LaunchFailureKind.validationFailed,
     'INVALID_REQUEST' => LaunchFailureKind.invalidData,
     _ => switch (failure.kind) {

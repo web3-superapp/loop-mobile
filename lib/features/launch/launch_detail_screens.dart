@@ -1195,10 +1195,13 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
           kicker: 'HOLDER DISTRIBUTION',
           heading: count == null
               ? launchMissingHeading
-              : '${loopGroupedFigure(count.holderCount.toString())} 位持有人',
+              // Decision 0077 ruling 7 / 0089: `holderCount` counts distinct
+              // buyers, not the wallets holding the token today.
+              : '${loopGroupedFigure(count.holderCount.toString())} 位参与者',
           caption: count == null
-              ? '持有人数量、集中度、我的仓位与单地址上限都需要合约读数，当前全部不可得。'
-              : '持有人数来自链上索引，索引到区块 '
+              ? '参与人数、集中度、我的仓位与单地址上限都需要合约读数，当前全部不可得。'
+              : '参与人数是在内盘买过的不同地址数，不是当前持币人数；'
+                    '来自链上索引，索引到区块 '
                     '${loopGroupedFigure(count.indexedBlockNumber)}。',
           stamp: count == null ? 'UNAVAILABLE' : 'INDEXED',
           margin: EdgeInsets.zero,
@@ -1318,7 +1321,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             title: '空白不是「没有持有人」',
             body: count == null
                 ? '暂时读不到合约信息，因此不显示地址、比例或上限。读不到不等于「分布为零」。'
-                : '持有人数来自链上索引；地址排名与集中度还没有来源，因此不显示。',
+                : '参与人数来自链上索引；地址排名与集中度还没有来源，因此不显示。',
             margin: const EdgeInsets.fromLTRB(16, 22, 16, 0),
           ),
           const SizedBox(height: 20),

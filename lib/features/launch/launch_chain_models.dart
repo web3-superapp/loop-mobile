@@ -643,19 +643,25 @@ final class LaunchRefundRecord {
 // ---------------------------------------------------------------------------
 
 enum LaunchIntentState {
-  prepared('prepared'),
-  awaitingSignature('awaiting_signature'),
-  submitted('submitted'),
-  confirmed('confirmed'),
-  reverted('reverted'),
-  failed('failed'),
-  unknown('unknown'),
-  cancelled('cancelled'),
-  expired('expired');
+  prepared('prepared', '待确认'),
+  awaitingSignature('awaiting_signature', '待签名'),
+  // The server moved it here on the device's broadcast report: pending
+  // evidence, never a purchase.
+  submitted('submitted', '已提交，等待链上索引'),
+  // The launch-event index saw the `Purchased` log of that transaction.
+  confirmed('confirmed', '已确认'),
+  reverted('reverted', '链上已回滚'),
+  failed('failed', '失败'),
+  unknown('unknown', '结果未知（已锁定）'),
+  cancelled('cancelled', '已取消'),
+  expired('expired', '已过期');
 
-  const LaunchIntentState(this.wireName);
+  const LaunchIntentState(this.wireName, this.label);
 
   final String wireName;
+
+  /// zh-CN, as the server states it. Only [confirmed] names a result.
+  final String label;
 
   bool get isSignable =>
       this == LaunchIntentState.prepared ||
@@ -670,27 +676,113 @@ enum LaunchIntentState {
 }
 
 /// The `eth_sendTransaction` parameter exactly as the server built it.
+///
+/// The four required keys are typed; the optional S83b keys (`from`, `gas`,
+/// `nonce`, `type`, `maxFeePerGas`, `maxPriorityFeePerGas`, `gasPrice`) are
+/// kept in [optional] exactly as they arrived — present or absent, `null` or
+/// a value — so the wallet receives the server's object verbatim.
 @immutable
 final class LaunchUnsignedTransaction {
-  const LaunchUnsignedTransaction({
+  LaunchUnsignedTransaction({
     required this.chainId,
     required this.to,
     required this.data,
     required this.value,
-  });
+    Map<String, Object?> optional = const <String, Object?>{},
+  }) : optional = Map<String, Object?>.unmodifiable(optional);
+
+  /// The optional keys in contract order (decision 0089).
+  static const optionalKeys = <String>[
+    'from',
+    'gas',
+    'nonce',
+    'type',
+    'maxFeePerGas',
+    'maxPriorityFeePerGas',
+    'gasPrice',
+  ];
 
   final int chainId;
   final String to;
   final String data;
   final String value;
+  final Map<String, Object?> optional;
 
-  /// The four contract keys in contract order; nothing added or dropped.
+  /// The signing wallet the server built the call for, when it said so.
+  String? get from => optional['from'] as String?;
+
+  /// The contract keys in contract order; nothing added or dropped.
   Map<String, Object?> toWire() => <String, Object?>{
     'chainId': chainId,
     'to': to,
     'data': data,
     'value': value,
+    for (final key in optionalKeys)
+      if (optional.containsKey(key)) key: optional[key],
   };
+}
+
+/// `launchIntent.simulation` (optional, loop-api 0077): `eth_call` plus
+/// `estimateGas` of the exact `buy()` payload at prepare.
+enum LaunchSimulationStatus {
+  passed('passed', '试算通过'),
+  reverted('reverted', '试算被拒绝'),
+  unavailable('unavailable', '试算不可用');
+
+  const LaunchSimulationStatus(this.wireName, this.label);
+
+  final String wireName;
+  final String label;
+
+  static LaunchSimulationStatus? tryParse(String value) {
+    for (final status in values) {
+      if (status.wireName == value) return status;
+    }
+    return null;
+  }
+}
+
+@immutable
+final class LaunchIntentSimulation {
+  const LaunchIntentSimulation({
+    required this.status,
+    required this.reasonCode,
+  });
+
+  final LaunchSimulationStatus status;
+  final String? reasonCode;
+}
+
+/// `launchIntent.policy` (optional): the canary facts the intent was admitted
+/// under. `*Usd` are dollar decimal strings (USD1 at par).
+@immutable
+final class LaunchIntentPolicy {
+  const LaunchIntentPolicy({
+    required this.configVersion,
+    required this.canaryMaxUsd,
+    required this.valueUsd,
+    required this.priceSource,
+  });
+
+  final String configVersion;
+  final String canaryMaxUsd;
+  final String valueUsd;
+  final String priceSource;
+}
+
+/// `launchIntent.signing` (optional): the server's own permission. `allowed`
+/// is true only in `awaiting_signature` before `expiresAt`.
+@immutable
+final class LaunchIntentSigning {
+  const LaunchIntentSigning({
+    required this.mode,
+    required this.allowed,
+    required this.reasonCode,
+  });
+
+  final String mode;
+  final bool allowed;
+  final String? reasonCode;
 }
 
 @immutable
@@ -720,6 +812,14 @@ final class LaunchPurchaseIntent {
     required this.unsignedTransaction,
     required this.expiresAt,
     required this.createdAt,
+    this.projectAssetId,
+    this.saleId,
+    this.walletRoundCapUsd1,
+    this.walletProjectCapUsd1,
+    this.transactionHash,
+    this.simulation,
+    this.policy,
+    this.signing,
   });
 
   final String launchIntentId;
@@ -749,9 +849,30 @@ final class LaunchPurchaseIntent {
   final DateTime expiresAt;
   final DateTime createdAt;
 
-  /// The only on-device evaluation: the server's state and the clock.
+  // The optional S83b keys (loop-api decision 0077). Absent means the server
+  // did not send them, never zero.
+  final String? projectAssetId;
+  final String? saleId;
+
+  /// `getRounds().walletRoundCapUsd1` at [snapshotBlockNumber].
+  final String? walletRoundCapUsd1;
+
+  /// `getSaleConfig().walletProjectCapUsd1` at [snapshotBlockNumber].
+  final String? walletProjectCapUsd1;
+
+  /// The device-reported broadcast hash: pending evidence only.
+  final String? transactionHash;
+  final LaunchIntentSimulation? simulation;
+  final LaunchIntentPolicy? policy;
+  final LaunchIntentSigning? signing;
+
+  /// The only on-device evaluation: the server's state, its own signing
+  /// permission when it sent one, and the clock.
   bool canSignAt(DateTime now) =>
-      state.isSignable && expiresAt.isAfter(now) && deadline.isAfter(now);
+      state.isSignable &&
+      (signing?.allowed ?? true) &&
+      expiresAt.isAfter(now) &&
+      deadline.isAfter(now);
 
   /// The transaction and the reviewed facts describe the same call.
   bool get payloadMatchesReview =>
@@ -762,22 +883,16 @@ final class LaunchPurchaseIntent {
       unsignedTransaction.data.length > 10;
 }
 
-/// `balances.launchChain.usd1`, an S83b optional field whose shape is not
-/// frozen. Either half may be absent; absent is "未读取", never zero.
-@immutable
-final class LaunchUsd1Balance {
-  const LaunchUsd1Balance({this.balance, this.allowance});
-
-  final String? balance;
-  final String? allowance;
-}
-
+/// A prepared purchase: the server's intent and nothing else.
+///
+/// Decision 0089: USD1 balance and allowance are not part of the intent
+/// response. They are read from `GET /v2/wallets/{id}/balances`
+/// (`launchChain.usd1`), strictly.
 @immutable
 final class LaunchPurchasePrepared {
-  const LaunchPurchasePrepared({required this.intent, this.usd1});
+  const LaunchPurchasePrepared({required this.intent});
 
   final LaunchPurchaseIntent intent;
-  final LaunchUsd1Balance? usd1;
 }
 
 // ---------------------------------------------------------------------------

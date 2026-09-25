@@ -128,13 +128,17 @@ Future<void> _pumpTrade(
   required FakeLaunchGateway gateway,
   _RecordingWallet? wallet,
   bool evidencePending = false,
+  String balancesChainId = loopPrimaryChainId,
 }) => pumpS7Page(
   tester,
   LaunchTradeScreen(launchId: s7LaunchId, clock: s83cNow),
   launch: gateway,
+  // Decision 0089: the allowance is read from the wallet balances. It covers
+  // the 500 USD1 these tests type, so the main action stays 「买入」.
   wallet: FakeWalletDirectory(
     activeWalletId: s7WalletId,
     wallets: [s83cWallet()],
+    balances: [s83cBalances(chainId: balancesChainId)],
   ),
   meta: s7MetaSnapshot(launchEvidencePending: evidencePending),
   overrides: [
@@ -416,7 +420,7 @@ void main() {
           holders: S7Answer<LaunchHolders>(value: s83cHolders()),
         ),
       );
-      expect(find.text('1,842 位持有人'), findsOneWidget);
+      expect(find.text('1,842 位参与者'), findsOneWidget);
       final me = tester.widget<LoopRecordRow>(_key('launch-holders-me'));
       expect(me.subtitle, contains('已认购 20,000 枚'));
       expect(me.subtitle, contains('累计支付 200 USD1'));
@@ -545,10 +549,7 @@ void main() {
             value: s83cTxHash,
           ),
         );
-        final prepared = LaunchPurchasePrepared(
-          intent: s83cIntent(),
-          usd1: const LaunchUsd1Balance(balance: '900000000000000000000'),
-        );
+        final prepared = LaunchPurchasePrepared(intent: s83cIntent());
         await _pumpTrade(
           tester,
           gateway: FakeLaunchGateway(
@@ -560,7 +561,7 @@ void main() {
         await _fillAndSubmit(tester);
 
         // The review is the intent's own fields; the balance line reads the
-        // optional S83b field and says 未读取 for the half it did not get.
+        // wallet balances' `launchChain.usd1` (decision 0089).
         expect(_key('launch-trade-review'), findsOneWidget);
         expect(
           tester.widget<LoopRecordRow>(_key('launch-review-支付')).trailing,
@@ -571,7 +572,7 @@ void main() {
           '50,000 MCAT',
         );
         expect(find.textContaining('USD1 余额 900 USD1'), findsOneWidget);
-        expect(find.textContaining('授权额度 未读取'), findsOneWidget);
+        expect(find.textContaining('授权额度 500 USD1'), findsOneWidget);
 
         await scrollToS7Section(tester, _key('launch-trade-sign'));
         await tester.tap(_key('launch-trade-sign'));
@@ -626,6 +627,7 @@ void main() {
           ),
         ),
         wallet: wallet,
+        balancesChainId: loopLaunchTestnetChainId,
       );
       await _fillAndSubmit(tester);
       await scrollToS7Section(tester, _key('launch-trade-sign'));

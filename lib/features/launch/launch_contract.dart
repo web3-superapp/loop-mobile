@@ -43,6 +43,11 @@ enum LaunchFailureKind {
   bootstrapRequired,
   validationFailed,
   idempotencyConflict,
+
+  /// `409 INSUFFICIENT_BALANCE` on a purchase intent (decision 0089): the
+  /// USD1 balance, the USD1 allowance or the network fee is short, named by
+  /// `detailsSafe.reasonCode`. A known refusal, never an unresolved outcome.
+  insufficientBalance,
   invalidData,
   unexpected,
 }
@@ -130,6 +135,7 @@ String launchFailureReason(LaunchFailureKind? kind) => switch (kind) {
   LaunchFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
   LaunchFailureKind.validationFailed => '输入内容不符合要求，请修改后重试。',
   LaunchFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
+  LaunchFailureKind.insufficientBalance => '支付钱包的余额、授权额度或网络费不足，没有提交任何交易。',
   LaunchFailureKind.invalidData => '返回的数据不完整，这一页没有采用任何内容。',
   LaunchFailureKind.unexpected => '操作没有完成，请稍后再试。',
   null => '操作没有完成。',
@@ -163,6 +169,14 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH_CONFIG_VERSION_MISMATCH' => '链上配置版本与记录不一致，链上状态暂时不可用。',
   'LAUNCH_USD1_ADDRESS_MISMATCH' => '这次发射的结算币不是配置的 USD1，链上状态暂时不可用。',
   'LAUNCH_CONTRACT_READ_FAILED' => '读取 Launch 合约失败，请稍后刷新。',
+  // launch · purchase preflight (loop-api decision 0077, client 0089). Each
+  // one leads back to its own guidance on the trade page.
+  'LAUNCH_USD1_ALLOWANCE_INSUFFICIENT' =>
+    'USD1 授权额度不足以支付这次认购，没有提交任何交易。请先授权本次金额，授权到账后再购买。',
+  'LAUNCH_USD1_BALANCE_INSUFFICIENT' =>
+    '支付钱包在 Launch 链上的 USD1 余额不足，没有提交任何交易。请先向这个钱包转入足够的 USD1，或降低本次金额。',
+  'LAUNCH_GAS_INSUFFICIENT' =>
+    '支付钱包在 Launch 链上的原生币不足以支付网络费，没有提交任何交易。请先向这个钱包转入少量网络费用币后再试。',
   'LAUNCH_CONTRACT_READ_INVALID' => 'Launch 合约返回了无法解读的值，链上状态暂时不可用。',
   'LAUNCH_SNAPSHOT_REORGED' => '读取期间区块被重组，请稍后刷新。',
   'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' => '列表不逐个读链，进入详情查看链上状态。',

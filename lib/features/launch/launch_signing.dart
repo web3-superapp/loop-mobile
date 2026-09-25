@@ -4,6 +4,8 @@ import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
@@ -13,24 +15,52 @@ import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
-/// The Launch purchase through the one signing exit (decision 0088).
+/// How one trip through the Launch signing exit ended.
+///
+/// It reuses [MoneySignStatus] so the vocabulary matches the wallet actions:
+/// `submitted` is a broadcast the server recorded (never a purchase),
+/// `reportRefused` a broadcast the server did not record, `locked` a wallet
+/// whose outcome is unknown. [reported] is the server's intent after the
+/// report, when one landed.
+@immutable
+final class LaunchSignOutcome {
+  const LaunchSignOutcome({
+    required this.status,
+    required this.reasonCode,
+    this.txHash,
+    this.reported,
+  });
+
+  final MoneySignStatus status;
+  final String reasonCode;
+  final String? txHash;
+  final LaunchPurchaseIntent? reported;
+
+  /// Once the wallet was opened and may have broadcast, the attempt is over:
+  /// the page never offers a second signature for it.
+  bool get isLocked =>
+      status == MoneySignStatus.locked ||
+      status == MoneySignStatus.reportRefused ||
+      status == MoneySignStatus.submitted;
+}
+
+/// The Launch purchase through the one signing exit (decisions 0088, 0089).
 ///
 /// It follows `MoneyActionSigner` step for step and reuses its outcome
-/// types: the server's own permission first, then the payload against the
-/// review, then the chain, and only then the wallet boundary. The wallet
+/// vocabulary: the server's own permission first, then the payload against
+/// the review, then the chain, and only then the wallet boundary. The wallet
 /// receives `SigningIntent.backendCanonical` carrying the server's
 /// `unsignedTransaction` verbatim and its `payloadDigest`.
 ///
-/// There is no report route for a Launch intent yet, so a broadcast hash is
-/// never an outcome here: it locks the attempt and the result is left to the
-/// launch-event index, which is what `launch-history` reads.
+/// A broadcast hash is handed straight back to the server through the
+/// Launch broadcast report. The server's answer is `submitted` — pending
+/// evidence; the purchase itself is whatever the launch-event index later
+/// records, which is what `launch-history` reads.
 final class LaunchPurchaseSigner {
-  const LaunchPurchaseSigner({required this.wallet});
+  const LaunchPurchaseSigner({required this.wallet, required this.gateway});
 
   final WalletSigningGateway wallet;
-
-  /// Status name a broadcast carries into the trade state.
-  static const broadcastReason = 'LAUNCH_BROADCAST_AWAITING_INDEX';
+  final LaunchGateway gateway;
 
   static SigningIntent? toSigningIntent(
     LaunchPurchaseIntent intent, {
@@ -54,7 +84,32 @@ final class LaunchPurchaseSigner {
     );
   }
 
-  Future<MoneySignOutcome> sign(
+  /// Refusals that need nothing but the intent, the wallet address and the
+  /// clock. The sheet states them before the wallet is ever opened.
+  static String? refusalBeforeWallet(
+    LaunchPurchaseIntent intent, {
+    required String? fromAddress,
+    required DateTime now,
+  }) {
+    if (!intent.canSignAt(now)) {
+      final serverReason = intent.signing?.allowed == false
+          ? intent.signing?.reasonCode
+          : null;
+      if (serverReason != null) return serverReason;
+      return intent.state.isSignable
+          ? 'INTENT_EXPIRED'
+          : 'INTENT_${intent.state.wireName.toUpperCase()}';
+    }
+    if (!intent.payloadMatchesReview) return 'REVIEW_PAYLOAD_MISMATCH';
+    if (fromAddress == null) return 'LAUNCH_WALLET_ADDRESS_UNKNOWN';
+    final from = intent.unsignedTransaction.from;
+    if (from != null && from != fromAddress.toLowerCase()) {
+      return 'LAUNCH_WALLET_ADDRESS_MISMATCH';
+    }
+    return null;
+  }
+
+  Future<LaunchSignOutcome> sign(
     LaunchPurchaseIntent intent, {
     required String? fromAddress,
     required String ticker,
@@ -62,18 +117,31 @@ final class LaunchPurchaseSigner {
   }) async {
     // 1. The server's own permission and the clock.
     if (!intent.canSignAt(now)) {
-      return MoneySignOutcome(
+      return LaunchSignOutcome(
         status: MoneySignStatus.refused,
-        reasonCode: intent.state.isSignable
-            ? 'INTENT_EXPIRED'
-            : 'INTENT_${intent.state.wireName.toUpperCase()}',
+        reasonCode: refusalBeforeWallet(
+          intent,
+          fromAddress: fromAddress,
+          now: now,
+        )!,
       );
     }
     // 2. The transaction must describe the reviewed call.
     if (!intent.payloadMatchesReview) {
-      return const MoneySignOutcome(
+      return const LaunchSignOutcome(
         status: MoneySignStatus.refused,
         reasonCode: 'REVIEW_PAYLOAD_MISMATCH',
+      );
+    }
+    final refusal = refusalBeforeWallet(
+      intent,
+      fromAddress: fromAddress,
+      now: now,
+    );
+    if (refusal != null) {
+      return LaunchSignOutcome(
+        status: MoneySignStatus.refused,
+        reasonCode: refusal,
       );
     }
     final signingIntent = toSigningIntent(
@@ -82,21 +150,21 @@ final class LaunchPurchaseSigner {
       ticker: ticker,
     );
     if (signingIntent == null) {
-      return const MoneySignOutcome(
+      return const LaunchSignOutcome(
         status: MoneySignStatus.refused,
         reasonCode: 'LAUNCH_WALLET_ADDRESS_UNKNOWN',
       );
     }
     // 3. The chain the owner reviewed must be one a Launch intent may use.
     if (!signingIntent.chainIsPermitted) {
-      return const MoneySignOutcome(
+      return const LaunchSignOutcome(
         status: MoneySignStatus.refused,
         reasonCode: 'INTENT_CHAIN_NOT_PERMITTED',
       );
     }
     final handoff = await wallet.handoff(signingIntent, now: now);
     if (!handoff.accepted || handoff.value == null) {
-      return MoneySignOutcome(
+      return LaunchSignOutcome(
         status: handoff.code == 'wallet_outcome_unknown'
             ? MoneySignStatus.locked
             : MoneySignStatus.walletRejected,
@@ -105,17 +173,50 @@ final class LaunchPurchaseSigner {
     }
     // Past this line something may be on chain. Nothing below may say that
     // nothing was submitted, and nothing may re-open the confirmation.
-    return MoneySignOutcome(
-      status: MoneySignStatus.locked,
-      reasonCode: broadcastReason,
-      txHash: handoff.value,
-    );
+    final hash = handoff.value!;
+    return report(intent, txHash: hash);
+  }
+
+  /// Hands one broadcast hash to the server. A refused or lost report is not
+  /// a refused transaction: the hash may already be on chain, so the outcome
+  /// stays locked and carries the hash for a later report.
+  Future<LaunchSignOutcome> report(
+    LaunchPurchaseIntent intent, {
+    required String txHash,
+  }) async {
+    try {
+      final reported = await gateway.reportPurchaseBroadcast(
+        launchId: intent.launchId,
+        launchIntentId: intent.launchIntentId,
+        txHash: txHash,
+      );
+      return LaunchSignOutcome(
+        status: MoneySignStatus.submitted,
+        reasonCode: reported.state.wireName,
+        txHash: txHash,
+        reported: reported,
+      );
+    } on LaunchException catch (failure) {
+      return LaunchSignOutcome(
+        status: MoneySignStatus.reportRefused,
+        reasonCode: failure.reasonCode ?? failure.kind.name,
+        txHash: txHash,
+      );
+    } catch (_) {
+      return LaunchSignOutcome(
+        status: MoneySignStatus.reportRefused,
+        reasonCode: 'REPORT_OUTCOME_UNKNOWN',
+        txHash: txHash,
+      );
+    }
   }
 }
 
 final launchPurchaseSignerProvider = Provider<LaunchPurchaseSigner>(
-  (ref) =>
-      LaunchPurchaseSigner(wallet: ref.watch(walletSigningGatewayProvider)),
+  (ref) => LaunchPurchaseSigner(
+    wallet: ref.watch(walletSigningGatewayProvider),
+    gateway: ref.watch(launchGatewayProvider),
+  ),
 );
 
 const String launchPurchaseTitle = '确认认购';
@@ -143,6 +244,21 @@ List<IntentField> launchPurchaseFields(
     label: '钱包已累计',
     value: launchUsd1Label(intent.walletCumulativeUsd1),
   ),
+  // Decision 0089: the round cap is the server's own reading at the
+  // snapshot block, shown beside what the wallet has already paid.
+  IntentField(
+    label: '本轮钱包上限',
+    value: intent.walletRoundCapUsd1 == null
+        ? '未提供'
+        : launchUsd1Label(intent.walletRoundCapUsd1!),
+  ),
+  if (intent.walletProjectCapUsd1 != null)
+    IntentField(
+      label: '项目钱包上限',
+      value: launchUsd1Label(intent.walletProjectCapUsd1!),
+    ),
+  if (intent.simulation != null)
+    IntentField(label: '模拟结果', value: intent.simulation!.status.label),
   IntentField(label: '有效期至', value: launchTimestampLabel(intent.expiresAt)),
   IntentField(label: '状态摘要', value: launchShortHex(intent.stateTupleDigest)),
   IntentField(
@@ -163,15 +279,63 @@ String launchSignReasonText(String reasonCode) => switch (reasonCode) {
   'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
   'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
   'privy_wallet_mismatch' => '当前登录的钱包不是这笔认购的支付钱包，没有提交任何交易。',
-  'LAUNCH_USD1_ALLOWANCE_INSUFFICIENT' => 'USD1 授权额度不足，没有提交任何交易。请先完成授权。',
+  'LAUNCH_WALLET_ADDRESS_MISMATCH' => '服务端构造交易用的钱包与当前支付钱包不一致，已拒绝签名，没有提交任何交易。',
+  'LAUNCH_SIMULATION_REVERTED' => '试算没有通过，这笔认购在链上会被拒绝。没有提交任何交易，请调整金额或稍后重新报价。',
+  'LAUNCH_SIMULATION_UNAVAILABLE' => '暂时无法试算这笔认购，服务端不允许签名，没有提交任何交易。请稍后重新报价。',
+  'INTENT_SUBMITTED' || 'INTENT_CONFIRMED' => '这笔认购已经提交过，不能再次签名。请在「我的参与记录」查看。',
   _ => '钱包没有完成签名，没有提交任何交易。',
 };
+
+/// zh-CN for a refused broadcast report (loop-api decision 0077). The wallet
+/// has already broadcast, so none of these says that nothing happened.
+String launchReportReasonText(String reasonCode) => switch (reasonCode) {
+  'LAUNCH_INTENT_ALREADY_REPORTED' =>
+    '这笔认购已经上报过另一笔交易，本次广播没有被记录。'
+        '交易可能已经上链，请在「我的参与记录」核对，不要重复签名。',
+  'LAUNCH_INTENT_NOT_SIGNABLE' =>
+    '服务端已不再接受这笔认购的上报，它的状态已经变化。'
+        '钱包已经广播，交易可能已经上链，请在「我的参与记录」核对，不要重复签名。',
+  'LAUNCH_INTENT_EXPIRED' =>
+    '这笔认购已过期，而链上暂时还看不到这笔交易，上报没有被接受。'
+        '交易可能仍在传播，请稍后在「我的参与记录」核对，不要重复签名。',
+  'LAUNCH_TX_PAYLOAD_MISMATCH' =>
+    '链上这笔交易与签名时复核的认购内容不一致，服务端没有记录它。'
+        '请在「我的参与记录」核对，不要重复签名，并联系支持。',
+  _ =>
+    '钱包已经广播，但这次上报没有被服务端接受或没有送达。'
+        '交易可能已经上链，可以稍后重新上报；不要重复签名。',
+};
+
+/// Whether a refused report is worth sending again with the same hash. The
+/// four named refusals are the server's final answer for this intent.
+bool launchReportRetryable(String reasonCode) => !const <String>{
+  'LAUNCH_INTENT_ALREADY_REPORTED',
+  'LAUNCH_INTENT_NOT_SIGNABLE',
+  'LAUNCH_INTENT_EXPIRED',
+  'LAUNCH_TX_PAYLOAD_MISMATCH',
+}.contains(reasonCode);
+
+/// The one sentence after a broadcast, for the sheet and the page alike.
+String launchBroadcastText(LaunchSignOutcome outcome) {
+  final hash = outcome.txHash;
+  if (hash == null) {
+    return '钱包的结果未知，这笔认购已锁定。请在「我的参与记录」查看，不要重复签名。';
+  }
+  final short = launchShortHex(hash);
+  final reported = outcome.reported;
+  if (reported != null) {
+    return '钱包已广播（$short），服务端已记录，当前状态：${reported.state.label}。'
+        '广播不代表已成交，结果以链上索引为准，会出现在「我的参与记录」。不要重复认购。';
+  }
+  return '钱包已广播（$short）。广播不代表已成交。'
+      '${launchReportReasonText(outcome.reasonCode)}';
+}
 
 /// Opens the signing exit for one prepared Launch intent.
 ///
 /// It returns `null` only when the sheet was closed before the wallet was
 /// opened; a sheet torn down afterwards still reports a locked outcome.
-Future<MoneySignOutcome?> showLaunchSignSheet(
+Future<LaunchSignOutcome?> showLaunchSignSheet(
   BuildContext context, {
   required LaunchPurchasePrepared prepared,
   required LaunchPurchaseSigner signer,
@@ -180,7 +344,7 @@ Future<MoneySignOutcome?> showLaunchSignSheet(
   DateTime Function()? clock,
 }) async {
   final latch = MoneySignLatch();
-  final outcome = await showLoopSheet<MoneySignOutcome>(
+  final outcome = await showLoopSheet<LaunchSignOutcome>(
     context,
     isDismissible: false,
     builder: (context) => LaunchSignSheet(
@@ -194,7 +358,7 @@ Future<MoneySignOutcome?> showLaunchSignSheet(
   );
   if (outcome != null) return outcome;
   if (!latch.enteredSigning) return null;
-  return MoneySignOutcome(
+  return LaunchSignOutcome(
     status: MoneySignStatus.locked,
     reasonCode: 'SIGNING_INTERRUPTED',
     txHash: latch.txHash,
@@ -226,7 +390,7 @@ class LaunchSignSheet extends StatefulWidget {
 class _LaunchSignSheetState extends State<LaunchSignSheet> {
   LoopSignSheetState _state = LoopSignSheetState.pending;
   String? _reason;
-  MoneySignOutcome? _outcome;
+  LaunchSignOutcome? _outcome;
   bool _submitted = false;
 
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
@@ -244,19 +408,11 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
   }
 
   /// Refusals the sheet can state before the wallet is ever opened.
-  String? _preflight() {
-    if (!_intent.canSignAt(_now)) return 'INTENT_EXPIRED';
-    if (!_intent.payloadMatchesReview) return 'REVIEW_PAYLOAD_MISMATCH';
-    if (widget.fromAddress == null) return 'LAUNCH_WALLET_ADDRESS_UNKNOWN';
-    // A known allowance below the amount would revert on chain. An unread
-    // allowance is not a refusal: the contract remains the judge.
-    final allowance = widget.prepared.usd1?.allowance;
-    if (allowance != null &&
-        BigInt.parse(allowance) < BigInt.parse(_intent.usd1Amount)) {
-      return 'LAUNCH_USD1_ALLOWANCE_INSUFFICIENT';
-    }
-    return null;
-  }
+  String? _preflight() => LaunchPurchaseSigner.refusalBeforeWallet(
+    _intent,
+    fromAddress: widget.fromAddress,
+    now: _now,
+  );
 
   Future<void> _confirm() async {
     if (_submitted) return;
@@ -281,11 +437,7 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
         case MoneySignStatus.reportRefused:
         case MoneySignStatus.submitted:
           _state = LoopSignSheetState.complete;
-          _reason = outcome.txHash == null
-              ? '钱包的结果未知，这笔认购已锁定。请在「我的参与记录」查看，不要重复签名。'
-              : '钱包已广播（${launchShortHex(outcome.txHash!)}）。'
-                    '广播不代表已成交，结果以链上索引为准，'
-                    '会出现在「我的参与记录」。不要重复认购。';
+          _reason = launchBroadcastText(outcome);
         case MoneySignStatus.refused:
         case MoneySignStatus.walletRejected:
           _state = LoopSignSheetState.simulationFailed;

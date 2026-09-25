@@ -393,6 +393,7 @@ final class LoopLaunchChainBalance {
     required this.available,
     required this.reasonCode,
     required this.nativeBalance,
+    this.usd1,
   });
 
   final String chainId;
@@ -400,9 +401,27 @@ final class LoopLaunchChainBalance {
   final String? reasonCode;
   final LoopLaunchChainNativeBalance? nativeBalance;
 
+  /// `launchChain.usd1` (loop-api decision 0077, shape frozen by client
+  /// decision 0088). The key is **absent** unless the backend read both the
+  /// balance and the allowance at one block, so `null` means "未读取" — never
+  /// a zero and never a guess.
+  final LoopLaunchUsd1Reading? usd1;
+
   bool get isTestnet => loopIsTestnetChainId(chainId);
 
   String get name => loopChainName(chainId);
+}
+
+/// USD1 on the Launch slot: the balance and the allowance towards the
+/// Launch contract, both exact 18-decimal integer strings read at one block.
+@immutable
+final class LoopLaunchUsd1Reading {
+  const LoopLaunchUsd1Reading({required this.balance, required this.allowance});
+
+  final String balance;
+
+  /// `allowance(wallet, LAUNCH_CONTRACT_ADDRESS)`: what `buy()` may pull.
+  final String allowance;
 }
 
 @immutable

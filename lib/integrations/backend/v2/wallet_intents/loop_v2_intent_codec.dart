@@ -509,7 +509,43 @@ abstract final class LoopV2IntentCodec {
     return reference;
   }
 
-  static LoopUnsignedTransaction? _unsignedTransaction(Object? raw) {
+  /// The intent's chain (client decision 0089, loop-api decision 0077).
+  ///
+  /// Send and swap stay pinned to the primary chain. An approve or a revoke
+  /// may also name the Launch testnet slot, because the one pair the server
+  /// admits there is USD1 towards the Launch contract; the server refuses any
+  /// other pair with `CHAIN_MISMATCH` before it builds anything.
+  static String _intentChainId(
+    Map<String, Object?> source,
+    String key,
+    LoopIntentKind kind,
+  ) {
+    final launchSlotAllowed =
+        kind == LoopIntentKind.approve || kind == LoopIntentKind.revoke;
+    if (launchSlotAllowed && source[key] == loopLaunchTestnetChainId) {
+      return loopLaunchTestnetChainId;
+    }
+    return _primaryChainId(source, key);
+  }
+
+  /// The payload's numeric chain, which must be the intent's own chain.
+  static int _transactionChainReference(
+    Map<String, Object?> source,
+    String key,
+    String intentChainId,
+  ) {
+    if (intentChainId == loopPrimaryChainId) {
+      return _primaryChainReference(source, key);
+    }
+    final reference = loopChainReference(intentChainId);
+    if (source[key] != reference) _invalid();
+    return reference;
+  }
+
+  static LoopUnsignedTransaction? _unsignedTransaction(
+    Object? raw,
+    String intentChainId,
+  ) {
     if (raw == null) return null;
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'chainId',
@@ -527,9 +563,9 @@ abstract final class LoopV2IntentCodec {
     final type = map['type'];
     if (type != 'eip1559' && type != 'legacy') _invalid();
     return LoopUnsignedTransaction(
-      // The signable payload's own chain must be the primary chain too: the
-      // owner reviewed a BNB Smart Chain transaction, not a testnet one.
-      chainId: _primaryChainReference(map, 'chainId'),
+      // The signable payload's own chain must be the intent's chain: the owner
+      // reviewed a transaction on that chain and no other.
+      chainId: _transactionChainReference(map, 'chainId', intentChainId),
       from: _address(map, 'from'),
       to: _address(map, 'to'),
       data: LoopV2ChainCodec.requireString(
@@ -760,6 +796,13 @@ abstract final class LoopV2IntentCodec {
     // The review's own kind is part of the canonical payload: a mismatch means
     // the two halves do not describe the same operation.
     if (review.kind != kind) _invalid();
+    final chainId = _intentChainId(map, 'chainId', kind);
+    // A Launch-slot approval names an asset on that slot; an asset keyed to
+    // another chain would be a different token than the one reviewed.
+    if (chainId != loopPrimaryChainId &&
+        !review.asset.assetId.startsWith('$chainId:')) {
+      _invalid();
+    }
     return LoopWalletIntent(
       intentId: LoopV2ChainCodec.requireString(
         map,
@@ -775,11 +818,12 @@ abstract final class LoopV2IntentCodec {
         pattern: LoopV2Contract.uuidV4Pattern,
         maxLength: 36,
       ),
-      // Decision 0038: send, approve, revoke and swap are locked to the
-      // primary chain. Only a Launch intent may ever carry another slot, and
-      // this module never produces one, so anything else is an invalid
-      // payload rather than a wallet action on an unreviewed chain.
-      chainId: _primaryChainId(map, 'chainId'),
+      // Decision 0038: send and swap are locked to the primary chain.
+      // Decision 0089: an approve or revoke may also carry the Launch testnet
+      // slot (USD1 towards the Launch contract, the one pair loop-api 0077
+      // admits there). Anything else is an invalid payload rather than a
+      // wallet action on an unreviewed chain.
+      chainId: chainId,
       review: review,
       reviewSha256: LoopV2ChainCodec.requireString(
         map,
@@ -795,7 +839,10 @@ abstract final class LoopV2IntentCodec {
       simulation: _simulation(map['simulation']),
       policy: _policy(map['policy']),
       signing: _signing(map['signing']),
-      unsignedTransaction: _unsignedTransaction(map['unsignedTransaction']),
+      unsignedTransaction: _unsignedTransaction(
+        map['unsignedTransaction'],
+        chainId,
+      ),
       authorizationPayload: _authorizationPayload(map['authorizationPayload']),
       result: _result(map['result']),
       version: LoopV2ChainCodec.requireString(

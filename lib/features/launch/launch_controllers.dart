@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
+import 'package:loop_mobile/features/launch/launch_signing.dart';
 
 /// Single-flight guard shared by the S7 controllers: one in-flight operation
 /// per controller, and a generation counter so a result that arrives after a
@@ -611,6 +612,8 @@ final class LaunchTradeState {
     this.signOutcomeStatus,
     this.signReasonCode,
     this.txHash,
+    this.reported,
+    this.reporting = false,
   });
 
   final LaunchGatewayMode mode;
@@ -634,9 +637,27 @@ final class LaunchTradeState {
   /// What the wallet broadcast, when it did. Its presence locks the page.
   final String? txHash;
 
+  /// The server's intent after the broadcast report (decision 0089): its
+  /// `state` is the server's, shown as it is and never upgraded here.
+  final LaunchPurchaseIntent? reported;
+
+  /// A report (or a repeated report of the same hash) is in flight.
+  final bool reporting;
+
   /// Once the wallet has produced a hash, or its outcome is unknown, the
   /// page may never offer a second signature for this attempt.
-  bool get locked => signOutcomeStatus == 'locked' || txHash != null;
+  bool get locked =>
+      signOutcomeStatus == 'locked' ||
+      signOutcomeStatus == 'reportRefused' ||
+      signOutcomeStatus == 'submitted' ||
+      txHash != null;
+
+  /// A broadcast the server has not recorded, whose report may be sent again
+  /// with the same hash.
+  bool get reportRetryable =>
+      signOutcomeStatus == 'reportRefused' &&
+      txHash != null &&
+      launchReportRetryable(signReasonCode ?? '');
 }
 
 final class LaunchTradeController extends Notifier<LaunchTradeState>
@@ -695,23 +716,43 @@ final class LaunchTradeController extends Notifier<LaunchTradeState>
 
   /// Records what the signing exit reported. A hash or an unknown outcome
   /// keeps the prepared intent on screen and locks the form.
-  void recordSignOutcome({
-    required String status,
-    required String reasonCode,
-    String? txHash,
-  }) {
+  void recordSignOutcome(LaunchSignOutcome outcome) {
     state = LaunchTradeState(
       mode: state.mode,
       attempted: true,
       prepared: state.prepared,
-      signOutcomeStatus: status,
-      signReasonCode: reasonCode,
-      txHash: txHash,
+      signOutcomeStatus: outcome.status.name,
+      signReasonCode: outcome.reasonCode,
+      txHash: outcome.txHash,
+      reported: outcome.reported,
     );
   }
 
-  /// Drops a prepared intent that was never handed to a wallet, so a fresh
-  /// one can be prepared. A locked attempt is never discarded.
+  /// Sends the same hash again after a report that did not land. The server
+  /// answers a repeated hash unchanged, so this can never create a second
+  /// purchase; it only lets the server learn about the first.
+  Future<void> retryReport() => single(() async {
+    final prepared = state.prepared;
+    final hash = state.txHash;
+    if (prepared == null || hash == null || !state.reportRetryable) return;
+    final before = state;
+    state = LaunchTradeState(
+      mode: before.mode,
+      attempted: true,
+      prepared: prepared,
+      signOutcomeStatus: before.signOutcomeStatus,
+      signReasonCode: before.signReasonCode,
+      txHash: hash,
+      reporting: true,
+    );
+    final outcome = await ref
+        .read(launchPurchaseSignerProvider)
+        .report(prepared.intent, txHash: hash);
+    recordSignOutcome(outcome);
+  });
+
+  /// Drops a prepared intent that was never handed to a wallet, or a refusal,
+  /// so a fresh one can be prepared. A locked attempt is never discarded.
   void discard() {
     if (state.locked) return;
     nextGeneration();

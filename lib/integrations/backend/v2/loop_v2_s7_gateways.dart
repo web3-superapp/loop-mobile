@@ -294,6 +294,29 @@ final class DioLoopV2LaunchGateway
       ),
     );
   }
+
+  @override
+  Future<LaunchPurchaseIntent> reportPurchaseBroadcast({
+    required String launchId,
+    required String launchIntentId,
+    required String txHash,
+  }) async {
+    final writeOrigin = await origin();
+    // One hash is one logical report: a replay after an unresolved outcome
+    // carries the same key, and the server answers a repeated hash unchanged.
+    return idempotent(
+      'launch:report:$launchIntentId:${txHash.toLowerCase()}',
+      (accessToken, key) => _api.postPurchaseBroadcastReport(
+        accessToken: accessToken,
+        clientVersion: clientVersion,
+        idempotencyKey: key,
+        launchId: launchId,
+        launchIntentId: launchIntentId,
+        txHash: txHash,
+        origin: writeOrigin,
+      ),
+    );
+  }
 }
 
 final class DioLoopV2MiningGateway

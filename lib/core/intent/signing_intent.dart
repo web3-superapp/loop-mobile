@@ -14,7 +14,18 @@ enum PerpOrderType { market, limit }
 /// decision 0038). It has no server route yet — `POST /v2/launch/{id}/intents`
 /// answers `503` — so it exists here as the one slot that may ever carry a
 /// non-primary chain, and every other kind is locked to the primary chain.
-enum IntentKind { perpOrder, transfer, swap, approval, launchPurchase }
+enum IntentKind {
+  perpOrder,
+  transfer,
+  swap,
+  approval,
+  launchPurchase,
+
+  /// The USD1 approval towards the Launch contract, on the Launch slot
+  /// (decision 0089). It is the approve half of a Launch purchase and the only
+  /// approval that may leave the primary chain.
+  launchApproval,
+}
 
 enum IntentOrigin { localPreview, backendCanonical }
 
@@ -285,14 +296,17 @@ final class SigningIntent {
 
   /// Whether [chainId] is one this kind of intent may ever be signed on.
   ///
-  /// Only [IntentKind.launchPurchase] may leave the primary chain, and only
-  /// for the single published Launch slot. Send, approve, revoke and swap are
-  /// locked to the primary chain: a wallet intent that arrived carrying the
-  /// testnet is refused here, before any wallet is opened.
+  /// Only [IntentKind.launchPurchase] and its USD1 approval
+  /// ([IntentKind.launchApproval], decision 0089) may leave the primary
+  /// chain, and only for the single published Launch slot. Send, a wallet
+  /// approval, revoke and swap are locked to the primary chain: a wallet
+  /// intent that arrived carrying the testnet is refused here, before any
+  /// wallet is opened.
   bool get chainIsPermitted {
     if (!loopKnownChainIds.contains(chainId)) return false;
     if (chainId == loopPrimaryChainId) return true;
-    return kind == IntentKind.launchPurchase;
+    return kind == IntentKind.launchPurchase ||
+        kind == IntentKind.launchApproval;
   }
 
   /// True when the owner must be told this signature happens on the Launch

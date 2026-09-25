@@ -620,7 +620,6 @@ void main() {
       expect(intent.chainId, loopLaunchTestnetChainId);
       expect(intent.unsignedTransaction.to, _contract);
       expect(intent.payloadMatchesReview, isTrue);
-      expect(prepared.usd1, isNull);
     });
 
     test('an intent for another round is refused', () {
@@ -646,14 +645,16 @@ void main() {
       expect(() => _prepare(_api(201, body)), _invalid());
     });
 
-    test(
-      'an unknown root key is refused; balances is read leniently',
-      () async {
-        expect(
-          () => _prepare(_api(201, _intentBody()..['quote'] = <Object?>[])),
-          _invalid(),
-        );
-        final prepared = await _prepare(
+    test('an unknown root key is refused, including balances', () async {
+      expect(
+        () => _prepare(_api(201, _intentBody()..['quote'] = <Object?>[])),
+        _invalid(),
+      );
+      // Decision 0089: USD1 balance and allowance come from the wallet
+      // balances, never from the intent response, so the key S83c tolerated
+      // here is now an unknown key like any other.
+      expect(
+        () => _prepare(
           _api(
             201,
             _intentBody()
@@ -666,16 +667,10 @@ void main() {
                 },
               },
           ),
-        );
-        expect(prepared.usd1!.balance, '900000000000000000000');
-        expect(prepared.usd1!.allowance, '0');
-        // A shape this build cannot read is 未读取, never a failed intent.
-        final odd = await _prepare(
-          _api(201, _intentBody()..['balances'] = <String, Object?>{'x': 1}),
-        );
-        expect(odd.usd1, isNull);
-      },
-    );
+        ),
+        _invalid(),
+      );
+    });
   });
 
   group('projections', () {

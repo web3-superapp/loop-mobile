@@ -94,6 +94,32 @@ abstract final class LoopV2ModuleRequest {
     },
   };
 
+  /// The Launch purchase intent and its broadcast report (loop-api decision
+  /// 0077, client decision 0089): the write catalogue as OpenAPI lists it for
+  /// these two routes, which adds `409 INSUFFICIENT_BALANCE` — the USD1
+  /// balance, allowance and network-fee refusals. Without it those refusals
+  /// would read as an unparseable answer and replay the idempotency key.
+  static const launchIntentWriteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'DATA_STALE',
+      'IDEMPOTENCY_CONFLICT',
+      'INSUFFICIENT_BALANCE',
+      'VERSION_CONFLICT',
+    },
+    422: <String>{'VALIDATION_FAILED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
   /// The two Community AI writes (decision 0066).
   ///
   /// They are the write catalogue plus `429 RATE_LIMITED`: a model call is

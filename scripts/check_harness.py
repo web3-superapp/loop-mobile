@@ -360,6 +360,11 @@ REQUIRED_FILES = (
     "test/s83c_launch_decoder_test.dart",
     "test/s83c_launch_pages_test.dart",
     "docs/decisions/0088-launch-available-shapes.md",
+    # S83c2 (decision 0089): the USD1 approval before a purchase, the
+    # optional S83b intent keys and the broadcast report.
+    "lib/features/launch/launch_approval.dart",
+    "test/s83c2_launch_approve_test.dart",
+    "docs/decisions/0089-launch-approve-preflow.md",
     "lib/features/mining/mining_models.dart",
     "lib/features/mining/mining_gateway.dart",
     "lib/features/mining/mining_controllers.dart",
@@ -920,6 +925,14 @@ S7_TRADE_GATE_FRAGMENTS = {
     Path("lib/features/launch/launch_trade_screen.dart"): (
         "onChainState.isPurchasable",
         "capability.evidencePending",
+        # Decision 0089: buying needs an allowance read as sufficient.
+        "allowance.status == LaunchAllowanceStatus.sufficient",
+    ),
+    # Decision 0089: the approval is exactly this purchase's amount, never
+    # unlimited, and it is read back from the wallet balances.
+    Path("lib/features/launch/launch_approval.dart"): (
+        "allowance: LoopExactAllowanceRequest(amount)",
+        "walletBalancesControllerProvider(walletId)",
     ),
     Path("lib/features/launch/launch_signing.dart"): (
         "if (!intent.canSignAt(now))",

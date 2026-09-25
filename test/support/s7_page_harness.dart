@@ -58,6 +58,9 @@ final class FakeLaunchGateway implements LaunchGateway {
     this.intentFailure = LaunchFailureKind.unavailable,
     this.intentReasonCode,
     this.prepared,
+    this.reported,
+    this.reportFailure,
+    this.reportReasonCode,
     this.mode = LaunchGatewayMode.production,
   }) : overview = overview ?? S7Answer<LaunchOverview>(value: s7Overview()),
        detail = detail ?? S7Answer<LaunchDetail>(value: s7Detail()),
@@ -97,6 +100,15 @@ final class FakeLaunchGateway implements LaunchGateway {
 
   /// A `201` answer; when set, the intent is prepared instead of refused.
   final LaunchPurchasePrepared? prepared;
+
+  /// The broadcast report's `200` answer (decision 0089). When neither this
+  /// nor [reportFailure] is set, the report is refused as `unavailable`.
+  final LaunchPurchaseIntent? reported;
+  final LaunchFailureKind? reportFailure;
+  final String? reportReasonCode;
+
+  /// Every broadcast report, as `launchIntentId:txHash`.
+  final List<String> reports = <String>[];
 
   final List<LaunchProjectDraft> created = <LaunchProjectDraft>[];
   final List<LaunchProjectDraft> updated = <LaunchProjectDraft>[];
@@ -210,6 +222,25 @@ final class FakeLaunchGateway implements LaunchGateway {
       LaunchException(intentFailure, reasonCode: intentReasonCode),
     );
   }
+
+  @override
+  Future<LaunchPurchaseIntent> reportPurchaseBroadcast({
+    required String launchId,
+    required String launchIntentId,
+    required String txHash,
+  }) {
+    reports.add('$launchIntentId:$txHash');
+    final answer = reported;
+    if (reportFailure == null && answer != null) {
+      return Future<LaunchPurchaseIntent>.value(answer);
+    }
+    return Future<LaunchPurchaseIntent>.error(
+      LaunchException(
+        reportFailure ?? LaunchFailureKind.unavailable,
+        reasonCode: reportReasonCode,
+      ),
+    );
+  }
 }
 
 final class FakeMiningGateway implements MiningGateway {
@@ -309,10 +340,20 @@ final class FakeWalletDirectory implements WalletReadGateway {
   FakeWalletDirectory({
     this.activeWalletId,
     this.wallets = const <LoopWalletAccount>[],
-  });
+    List<LoopWalletBalances>? balances,
+    this.balancesFailure,
+    this.balancesPending = false,
+  }) : balances = balances ?? <LoopWalletBalances>[];
 
   final String? activeWalletId;
   final List<LoopWalletAccount> wallets;
+
+  /// The balances reads, in order; the last one repeats. Empty means the
+  /// balances read is unavailable, as it was before decision 0089.
+  final List<LoopWalletBalances> balances;
+  final LoopChainFailureKind? balancesFailure;
+  final bool balancesPending;
+  int balanceReads = 0;
 
   @override
   LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
@@ -338,7 +379,19 @@ final class FakeWalletDirectory implements WalletReadGateway {
   }) => _unavailable();
 
   @override
-  Future<LoopWalletBalances> loadBalances(String walletId) => _unavailable();
+  Future<LoopWalletBalances> loadBalances(String walletId) {
+    final index = balanceReads;
+    balanceReads += 1;
+    if (balancesPending) return Completer<LoopWalletBalances>().future;
+    final failure = balancesFailure;
+    if (failure != null) {
+      return Future<LoopWalletBalances>.error(LoopChainException(failure));
+    }
+    if (balances.isEmpty) return _unavailable();
+    return Future<LoopWalletBalances>.value(
+      balances[index < balances.length ? index : balances.length - 1],
+    );
+  }
 
   @override
   Future<LoopWalletActivityPage> loadActivity(

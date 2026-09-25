@@ -108,7 +108,9 @@ class LoopSignSheet extends StatelessWidget {
       LoopSignSheetState.simulationFailed => '模拟失败',
       LoopSignSheetState.signing => '签名中',
       LoopSignSheetState.policyRejected => '被策略拒绝',
-      LoopSignSheetState.complete => '已完成',
+      // Decision 0089: the sheet closes on a broadcast, never on a result.
+      // What the chain did is the result page's to say.
+      LoopSignSheetState.complete => '已广播',
     };
     return Semantics(
       container: true,

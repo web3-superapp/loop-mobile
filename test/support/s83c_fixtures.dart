@@ -1,8 +1,10 @@
+import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 
+import 's5_fixtures.dart';
 import 's7_fixtures.dart';
 
 /// 测试专用 · S83c `available` projections, written by hand from
@@ -120,9 +122,14 @@ LaunchPurchaseIntent s83cIntent({
   String chainId = loopPrimaryChainId,
   DateTime? expiresAt,
   String to = s83cContract,
+  LaunchIntentState state = LaunchIntentState.prepared,
+  String? walletRoundCapUsd1,
+  String? transactionHash,
+  LaunchIntentSigning? signing,
+  Map<String, Object?> transactionOptional = const <String, Object?>{},
 }) => LaunchPurchaseIntent(
   launchIntentId: s83cIntentId,
-  state: LaunchIntentState.prepared,
+  state: state,
   launchId: s7LaunchId,
   projectId: s7ProjectId,
   walletId: s7WalletId,
@@ -147,9 +154,47 @@ LaunchPurchaseIntent s83cIntent({
     to: to,
     data: '0x${'00' * 36}',
     value: '0x0',
+    optional: transactionOptional,
   ),
   expiresAt: expiresAt ?? DateTime.utc(2026, 9, 22, 14, 5),
   createdAt: DateTime.utc(2026, 9, 22, 14),
+  walletRoundCapUsd1: walletRoundCapUsd1,
+  transactionHash: transactionHash,
+  signing: signing,
+);
+
+/// 测试专用 · the wallet balances with a Launch-slot block, as decision 0089
+/// reads them. `usd1: false` is the key absent (未读取), never a zero.
+LoopWalletBalances s83cBalances({
+  String chainId = loopPrimaryChainId,
+  String allowance = '500000000000000000000',
+  String balance = '900000000000000000000',
+  bool usd1 = true,
+}) => s5Balances(
+  launchChain: LoopLaunchChainBalance(
+    chainId: chainId,
+    available: true,
+    reasonCode: null,
+    nativeBalance: LoopLaunchChainNativeBalance(
+      assetId: '$chainId:native',
+      symbol: 'tBNB',
+      decimals: 18,
+      rawValue: '2500000000000000000',
+      displayBalance: Decimal.parse('2.5'),
+      availableBalance: Decimal.parse('2.5'),
+      spendableBalance: Decimal.parse('2.495'),
+      gasReserve: Decimal.parse('0.005'),
+      snapshot: LoopBalanceSnapshot(
+        blockNumber: BigInt.from(52000000),
+        blockHash: s83cBlockHash,
+        observedAt: DateTime.utc(2026, 9, 22, 14),
+        confirmations: 5,
+      ),
+    ),
+    usd1: usd1
+        ? LoopLaunchUsd1Reading(balance: balance, allowance: allowance)
+        : null,
+  ),
 );
 
 /// The clock every signing test runs at: inside the intent's validity.

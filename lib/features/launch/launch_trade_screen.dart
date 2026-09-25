@@ -6,11 +6,15 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch/launch_approval.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_signing.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
+import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
+import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
+import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -67,15 +71,38 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
 
   void _onAmountChanged() => setState(() {});
 
-  /// The exact string the server accepts. A malformed amount keeps the action
-  /// disabled here rather than spending a request.
+  /// The exact string the server accepts: a positive USD1 amount with at
+  /// most 18 decimals. A malformed amount keeps the action disabled here
+  /// rather than spending a request.
   String? get _payAmount {
     final raw = _amount.text.trim();
-    if (raw.isEmpty ||
-        !RegExp(r'^(0|[1-9][0-9]{0,77})(\.[0-9]{1,60})?$').hasMatch(raw)) {
-      return null;
-    }
-    return raw;
+    return launchUsd1Units(raw) == null ? null : raw;
+  }
+
+  /// 「先授权 USD1」: the exact-amount approval towards the Launch contract,
+  /// through the wallet approval intent and the one signing exit.
+  Future<void> _approve({
+    required String walletId,
+    required String assetId,
+    required String spenderAddress,
+    required String amount,
+  }) async {
+    final approval = ref.read(launchApprovalControllerProvider.notifier);
+    final intent = await approval.prepare(
+      walletId: walletId,
+      assetId: assetId,
+      spenderAddress: spenderAddress,
+      amount: amount,
+    );
+    if (intent == null || !mounted) return;
+    final outcome = await showMoneySignSheet(
+      context,
+      intent: intent,
+      signer: ref.read(moneyActionSignerProvider),
+      clock: widget.clock,
+    );
+    if (!mounted) return;
+    approval.recordOutcome(outcome);
   }
 
   Future<void> _sign(LaunchPurchasePrepared prepared, String ticker) async {
@@ -95,13 +122,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
       clock: widget.clock,
     );
     if (outcome == null || !mounted) return;
-    ref
-        .read(launchTradeControllerProvider.notifier)
-        .recordSignOutcome(
-          status: outcome.isLocked ? 'locked' : outcome.status.name,
-          reasonCode: outcome.reasonCode,
-          txHash: outcome.txHash,
-        );
+    ref.read(launchTradeControllerProvider.notifier).recordSignOutcome(outcome);
   }
 
   @override
@@ -133,6 +154,53 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
       });
     }
     final walletId = ref.watch(activeWalletIdProvider);
+    // Decision 0089: the USD1 allowance is read from the wallet balances
+    // (`launchChain.usd1`), never guessed and never taken from the intent.
+    final balancesState = walletId == null
+        ? null
+        : ref.watch(walletBalancesControllerProvider(walletId));
+    if (!blocked &&
+        walletId != null &&
+        balancesState?.phase == LoopChainViewPhase.loading &&
+        balancesState?.value == null) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(walletBalancesControllerProvider(walletId).notifier)
+                .load(),
+          );
+        }
+      });
+    }
+    final approval = ref.watch(launchApprovalControllerProvider);
+    final approvalController = ref.read(
+      launchApprovalControllerProvider.notifier,
+    );
+    // Each funding refusal leads back to its own guidance: the balances are
+    // re-read so the page shows what the server compared against.
+    ref.listen<String?>(
+      launchTradeControllerProvider.select((trade) => trade.refusalReasonCode),
+      (previous, next) {
+        if (walletId != null && launchFundingReasonCodes.contains(next)) {
+          unawaited(
+            ref
+                .read(walletBalancesControllerProvider(walletId).notifier)
+                .reload(),
+          );
+        }
+      },
+    );
+    // A finished approval clears the refusal that asked for it.
+    ref.listen<LaunchApprovalPhase>(
+      launchApprovalControllerProvider.select((approval) => approval.phase),
+      (previous, next) {
+        if (previous == LaunchApprovalPhase.polling &&
+            next == LaunchApprovalPhase.idle) {
+          ref.read(launchTradeControllerProvider.notifier).discard();
+        }
+      },
+    );
     final launchId = widget.launchId;
     final payAmount = _payAmount;
     final ticker = detail?.launch.ticker ?? launchMissingFigure;
@@ -149,15 +217,52 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         !refusedByEvidence &&
         (detail?.launch.onChainState.isPurchasable ?? false);
     final prepared = trade.prepared;
+    final launchChainId = detail?.launch.chainId;
+    var allowance = launchAllowanceView(
+      balances: balancesState,
+      launchChainId: launchChainId ?? '',
+      required: launchUsd1Units(payAmount),
+    );
+    // The server compared the allowance and said it is short. A reading that
+    // says otherwise is older than that answer, so approval comes first.
+    if (trade.refusalReasonCode == launchAllowanceInsufficientCode &&
+        allowance.status == LaunchAllowanceStatus.sufficient) {
+      allowance = LaunchAllowanceView(
+        status: LaunchAllowanceStatus.insufficient,
+        usd1: allowance.usd1,
+        native: allowance.native,
+      );
+    }
+    final usd1Address = detail?.saleConfig?.usd1;
+    final spender = detail?.launch.contractAddress;
+    final approveAssetId = launchChainId == null || usd1Address == null
+        ? null
+        : '$launchChainId:$usd1Address';
+    final needsApproval =
+        purchasable &&
+        payAmount != null &&
+        allowance.status == LaunchAllowanceStatus.insufficient;
+    final canApprove =
+        needsApproval &&
+        !approval.busy &&
+        !trade.busy &&
+        !trade.locked &&
+        prepared == null &&
+        walletId != null &&
+        approveAssetId != null &&
+        spender != null &&
+        approval.phase != LaunchApprovalPhase.pollTimedOut;
     final canSubmit =
         purchasable &&
         !trade.busy &&
         !trade.locked &&
+        !approval.busy &&
         prepared == null &&
         launchId != null &&
         walletId != null &&
         roundId != null &&
-        payAmount != null;
+        payAmount != null &&
+        allowance.status == LaunchAllowanceStatus.sufficient;
     final fee = detail?.saleConfig == null
         ? launchFeeLabel(detail?.config)
         : launchBpsLabel(detail!.saleConfig!.protocolFeeBps);
@@ -221,10 +326,11 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
           ),
           _TradeQuoteCard(
             amount: _amount,
-            enabled: prepared == null && !trade.locked,
+            enabled: prepared == null && !trade.locked && !approval.busy,
             ticker: ticker,
             feeLabel: fee,
             prepared: prepared,
+            usd1: allowance.usd1,
           ),
           const LoopLabel('本轮参数'),
           _TradeParameters(
@@ -237,35 +343,76 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             _TradeReview(
               prepared: prepared,
               ticker: ticker,
-              locked: trade.locked,
-              txHash: trade.txHash,
-              signReasonCode: trade.signReasonCode,
+              trade: trade,
               onSign: trade.locked
                   ? null
                   : () => unawaited(_sign(prepared, ticker)),
               onDiscard: trade.locked ? null : tradeController.discard,
+              onRetryReport: trade.reportRetryable && !trade.reporting
+                  ? () => unawaited(tradeController.retryReport())
+                  : null,
             )
-          else
+          else ...<Widget>[
+            if (purchasable && walletId != null && payAmount != null)
+              _AllowanceNotice(
+                allowance: allowance,
+                approval: approval,
+                amount: payAmount,
+                onReread: () {
+                  if (approval.phase == LaunchApprovalPhase.pollTimedOut) {
+                    approvalController.resumePolling();
+                  } else {
+                    unawaited(
+                      ref
+                          .read(
+                            walletBalancesControllerProvider(walletId).notifier,
+                          )
+                          .reload(),
+                    );
+                  }
+                },
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: LoopButton(
-                key: const ValueKey<String>('launch-trade-submit'),
-                label: '买入',
-                primary: true,
-                block: true,
-                onPressed: canSubmit
-                    ? () => unawaited(
-                        tradeController.prepare(
-                          launchId: launchId,
-                          walletId: walletId,
-                          roundId: roundId,
-                          payAmount: payAmount,
-                        ),
-                      )
-                    : null,
-                semanticLabel: canSubmit ? '买入' : '买入，当前不可执行',
-              ),
+              child: needsApproval
+                  ? LoopButton(
+                      key: const ValueKey<String>('launch-trade-approve'),
+                      label: '先授权 USD1',
+                      primary: true,
+                      block: true,
+                      onPressed: canApprove
+                          ? () => unawaited(
+                              _approve(
+                                walletId: walletId,
+                                assetId: approveAssetId,
+                                spenderAddress: spender,
+                                amount: payAmount,
+                              ),
+                            )
+                          : null,
+                      semanticLabel: canApprove
+                          ? '先授权 USD1'
+                          : '先授权 USD1，当前不可执行',
+                    )
+                  : LoopButton(
+                      key: const ValueKey<String>('launch-trade-submit'),
+                      label: '买入',
+                      primary: true,
+                      block: true,
+                      onPressed: canSubmit
+                          ? () => unawaited(
+                              tradeController.prepare(
+                                launchId: launchId,
+                                walletId: walletId,
+                                roundId: roundId,
+                                payAmount: payAmount,
+                              ),
+                            )
+                          : null,
+                      semanticLabel: canSubmit ? '买入' : '买入，当前不可执行',
+                    ),
             ),
+          ],
           if (prepared == null)
             LoopNotice(
               key: const ValueKey<String>('launch-trade-refusal'),
@@ -285,8 +432,22 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                       walletId: walletId,
                       roundId: roundId,
                       payAmount: payAmount,
+                      allowance: allowance.status,
                     ),
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
+          if (prepared == null &&
+              walletId != null &&
+              launchFundingReasonCodes.contains(trade.refusalReasonCode))
+            _FundingGuidance(
+              reasonCode: trade.refusalReasonCode!,
+              allowance: allowance,
+              refreshing: balancesState?.refreshing ?? false,
+              onReread: () => unawaited(
+                ref
+                    .read(walletBalancesControllerProvider(walletId).notifier)
+                    .reload(),
+              ),
             ),
           if (prepared == null &&
               launchUnexplainedReasonCode(trade.refusalReasonCode) != null)
@@ -330,6 +491,7 @@ String _closedReason({
   required String? walletId,
   required String? roundId,
   required String? payAmount,
+  required LaunchAllowanceStatus allowance,
 }) {
   switch (onChainState) {
     case LaunchOnChainUnavailable(:final reasonCode):
@@ -344,8 +506,17 @@ String _closedReason({
   }
   if (walletId == null) return '还没有可用的支付钱包，请先在钱包中选择一个。';
   if (roundId == null) return '请先选择要参与的轮次。';
-  if (payAmount == null) return '请输入一个有效的支付数量。';
-  return '可以提交，结果以提交后的状态为准。';
+  if (payAmount == null) return '请输入一个有效的支付数量（最多 18 位小数）。';
+  switch (allowance) {
+    case LaunchAllowanceStatus.reading:
+      return '正在读取 USD1 授权额度，读到之前不能购买。';
+    case LaunchAllowanceStatus.unread:
+      return '授权状态未读取，本页不猜测授权额度，因此暂不能购买。';
+    case LaunchAllowanceStatus.insufficient:
+      return 'USD1 授权额度不足，需要先授权本次金额，授权到账后才能购买。';
+    case LaunchAllowanceStatus.sufficient:
+      return '可以提交，结果以提交后的状态为准。';
+  }
 }
 
 /// The prototype's Chalk buy box: `支付 USD1` over the amount, a hairline,
@@ -358,6 +529,7 @@ class _TradeQuoteCard extends StatelessWidget {
     required this.ticker,
     required this.feeLabel,
     required this.prepared,
+    required this.usd1,
   });
 
   final TextEditingController amount;
@@ -366,19 +538,20 @@ class _TradeQuoteCard extends StatelessWidget {
   final String? feeLabel;
   final LaunchPurchasePrepared? prepared;
 
+  /// `launchChain.usd1` from the wallet balances, or `null` (未读取).
+  final LoopLaunchUsd1Reading? usd1;
+
   /// The settlement asset of the frozen Launchpad baseline (06 §1).
   static const String payAsset = 'USD1';
 
   @override
   Widget build(BuildContext context) {
     final intent = prepared?.intent;
-    final usd1 = prepared?.usd1;
-    final balance = usd1?.balance == null
+    final reading = usd1;
+    final balance = reading == null ? '未读取' : launchUsd1Label(reading.balance);
+    final allowance = reading == null
         ? '未读取'
-        : launchUsd1Label(usd1!.balance!);
-    final allowance = usd1?.allowance == null
-        ? '未读取'
-        : launchUsd1Label(usd1!.allowance!);
+        : launchUsd1Label(reading.allowance);
     return LoopChalkCard(
       key: const ValueKey<String>('launch-trade-quote'),
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -484,26 +657,24 @@ class _TradeReview extends StatelessWidget {
   const _TradeReview({
     required this.prepared,
     required this.ticker,
-    required this.locked,
-    required this.txHash,
-    required this.signReasonCode,
+    required this.trade,
     required this.onSign,
     required this.onDiscard,
+    required this.onRetryReport,
   });
 
   final LaunchPurchasePrepared prepared;
   final String ticker;
-  final bool locked;
-  final String? txHash;
-  final String? signReasonCode;
+  final LaunchTradeState trade;
   final VoidCallback? onSign;
   final VoidCallback? onDiscard;
+  final VoidCallback? onRetryReport;
 
   @override
   Widget build(BuildContext context) {
     final fields = launchPurchaseFields(prepared.intent, ticker: ticker);
-    final hash = txHash;
-    final reason = signReasonCode;
+    final reason = trade.signReasonCode;
+    final reported = trade.reported;
     return Column(
       key: const ValueKey<String>('launch-trade-review'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -521,20 +692,38 @@ class _TradeReview extends StatelessWidget {
               ),
           ],
         ),
-        if (locked)
+        if (trade.locked) ...<Widget>[
           LoopNotice(
             key: const ValueKey<String>('launch-trade-locked'),
             icon: 'clock',
             tone: LoopNoticeTone.warn,
-            title: '已提交给钱包，结果未确认',
-            body: hash == null
-                ? '钱包的结果未知，这笔认购已锁定。请在「我的参与记录」查看，不要重复签名。'
-                : '钱包已广播 ${launchShortHex(hash)}。广播不代表已成交，'
-                      '结果以链上索引为准，会出现在「我的参与记录」。',
+            title: reported == null
+                ? '已提交给钱包，结果未确认'
+                : '已广播 · ${reported.state.label}',
+            body: launchBroadcastText(
+              LaunchSignOutcome(
+                status: MoneySignStatus.values.byName(
+                  trade.signOutcomeStatus ?? 'locked',
+                ),
+                reasonCode: reason ?? '',
+                txHash: trade.txHash,
+                reported: reported,
+              ),
+            ),
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          )
-        else ...<Widget>[
-          if (reason != null && reason != LaunchPurchaseSigner.broadcastReason)
+          ),
+          if (trade.reportRetryable)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              child: LoopButton(
+                key: const ValueKey<String>('launch-trade-report-retry'),
+                label: trade.reporting ? '正在重新上报' : '重新上报',
+                block: true,
+                onPressed: onRetryReport,
+              ),
+            ),
+        ] else ...<Widget>[
+          if (reason != null)
             LoopNotice(
               key: const ValueKey<String>('launch-trade-sign-refused'),
               icon: 'shield',
@@ -559,6 +748,159 @@ class _TradeReview extends StatelessWidget {
             ],
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// Where the USD1 approval stands for the typed amount (decision 0089).
+///
+/// It states what was read and nothing else: a missing reading is
+/// 「授权状态未读取」, never a zero and never a guess.
+class _AllowanceNotice extends StatelessWidget {
+  const _AllowanceNotice({
+    required this.allowance,
+    required this.approval,
+    required this.amount,
+    required this.onReread,
+  });
+
+  final LaunchAllowanceView allowance;
+  final LaunchApprovalState approval;
+  final String amount;
+  final VoidCallback onReread;
+
+  @override
+  Widget build(BuildContext context) {
+    final approvalText = launchApprovalText(approval);
+    final failure = approval.failure;
+    final String title;
+    final String body;
+    var reread = false;
+    if (approval.phase == LaunchApprovalPhase.prepareFailed &&
+        failure != null) {
+      title = '授权没有准备成功';
+      body =
+          MoneyPolicyNotice.covers(failure) ||
+              failure.kind == LoopChainFailureKind.permissionDenied
+          ? moneyPolicyRefusalText(failure)
+          : loopChainFailureReason(failure.kind);
+    } else if (approvalText != null) {
+      title = switch (approval.phase) {
+        LaunchApprovalPhase.polling => '等待授权到账',
+        LaunchApprovalPhase.pollTimedOut => '授权额度还没有更新',
+        LaunchApprovalPhase.failedOnChain => '授权没有生效',
+        LaunchApprovalPhase.signRefused => '授权没有签名',
+        _ => '正在准备授权',
+      };
+      body = approvalText;
+      reread = approval.phase == LaunchApprovalPhase.pollTimedOut;
+    } else {
+      switch (allowance.status) {
+        case LaunchAllowanceStatus.reading:
+          title = '正在读取授权状态';
+          body = '正在读取这个钱包在 Launch 链上的 USD1 授权额度，读到之前不能购买。';
+        case LaunchAllowanceStatus.unread:
+          title = '授权状态未读取';
+          body = allowance.failureKind == null
+              ? '没有读到这个钱包在 Launch 链上的 USD1 授权额度。本页不猜测授权额度，'
+                    '因此暂不能购买。'
+              : '${loopChainFailureReason(allowance.failureKind)}'
+                    '授权额度读到之前不能购买。';
+          reread = true;
+        case LaunchAllowanceStatus.insufficient:
+          final usd1 = allowance.usd1;
+          title = '需要先授权 USD1';
+          body =
+              '${usd1 == null ? '' : '当前授权 ${launchUsd1Label(usd1.allowance)}，'}'
+              '本次需要 $amount USD1。授权额度只按本次金额，不是无限额度；'
+              '授权到账后才能购买。';
+        case LaunchAllowanceStatus.sufficient:
+          return const SizedBox.shrink();
+      }
+    }
+    return Column(
+      key: const ValueKey<String>('launch-trade-allowance'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        LoopNotice(
+          key: const ValueKey<String>('launch-trade-allowance-notice'),
+          icon: approval.phase == LaunchApprovalPhase.polling
+              ? 'clock'
+              : 'shield',
+          tone: LoopNoticeTone.warn,
+          title: title,
+          body: body,
+          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+        ),
+        if (reread)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: LoopButton(
+              key: const ValueKey<String>('launch-trade-allowance-reread'),
+              label: '重新读取',
+              block: true,
+              onPressed: onReread,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// The guidance after a funding refusal: what was read for the half the
+/// server named, and a re-read. The allowance refusal needs none of this —
+/// its guidance is the 「先授权 USD1」 action itself.
+class _FundingGuidance extends StatelessWidget {
+  const _FundingGuidance({
+    required this.reasonCode,
+    required this.allowance,
+    required this.refreshing,
+    required this.onReread,
+  });
+
+  final String reasonCode;
+  final LaunchAllowanceView allowance;
+  final bool refreshing;
+  final VoidCallback onReread;
+
+  @override
+  Widget build(BuildContext context) {
+    if (reasonCode == launchAllowanceInsufficientCode) {
+      return const SizedBox.shrink();
+    }
+    final usd1 = allowance.usd1;
+    final native = allowance.native;
+    final gas = reasonCode == launchGasInsufficientCode;
+    final fact = gas
+        ? (native == null
+              ? '网络费余额未读取'
+              : '网络费余额 ${loopFormatDecimal(native.displayBalance)} '
+                    '${native.symbol}')
+        : (usd1 == null
+              ? 'USD1 余额未读取'
+              : 'USD1 余额 ${launchUsd1Label(usd1.balance)}');
+    return Column(
+      key: ValueKey<String>('launch-trade-funding-$reasonCode'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        LoopNotice(
+          icon: 'wallet',
+          title: gas ? '先补充网络费' : '先补充 USD1',
+          body: '$fact。转入后重新读取余额，再重新买入。',
+          margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: LoopButton(
+            key: const ValueKey<String>('launch-trade-funding-reread'),
+            label: refreshing ? '正在读取余额' : '重新读取余额',
+            block: true,
+            onPressed: refreshing ? null : onReread,
+          ),
+        ),
       ],
     );
   }

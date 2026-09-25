@@ -78,15 +78,26 @@ Product priority and current delivery are separate:
   review, and signs it through the one signing exit
   (`SigningIntent.backendCanonical`, `IntentKind.launchPurchase`, the server's
   transaction verbatim). A broadcast locks the attempt and is never reported
-  as success, because Launch intents have no report route yet; the Privy
-  signer still refuses the Launch testnet chain (decision 0062), so the
-  device submits nothing there. Refusals name the server's `reasonCode`, and
+  as success; since decision 0089 its hash is reported to the server, whose
+  `submitted` state is shown as is. The Privy signer still refuses the Launch
+  testnet chain (decision 0062), so the device submits nothing there. Refusals name the server's `reasonCode`, and
   an unexplained code is shown in a disclosure, never in the sentence. There
   is no sell side before graduation. `loop-stake` is non-executable as a
   whole page, and Launch eligibility does not depend on staking.
   `mining-rewards` disables its claim on the server's `claimExecutable:
   false`. No Launch surface other than `launch-trade` and no Mining path
   constructs a transaction or opens the signing sheet.
+- Decision 0089 (S83c2) puts the USD1 approval in front of the purchase. The
+  allowance is read only from `GET /v2/wallets/{id}/balances`
+  (`launchChain.usd1`, strict); absent is 「授权状态未读取」 and closes buying.
+  Short of the amount, the main action becomes 「先授权 USD1」: the existing
+  wallet approval intent for exactly this amount (never unlimited — least
+  exposure), USD1 on the Launch slot towards the Launch contract, through the
+  one signing exit; the balances are then re-read until the allowance covers
+  the amount. The three `409 INSUFFICIENT_BALANCE` refusals each have their own
+  sentence and guidance, the broadcast hash goes to
+  `…/intents/{id}/broadcast-report`, `launch-holders` counts 参与者 (distinct
+  buyers), and the shared sign sheet's closing badge reads 「已广播」.
 - `referral` reads `GET /v2/referral`: one invite code per account, per-level
   counts grouped by the server's `validationStatus`, and an unavailable boost.
   Only `valid` edges count as effective relationships. Every figure is a Mining

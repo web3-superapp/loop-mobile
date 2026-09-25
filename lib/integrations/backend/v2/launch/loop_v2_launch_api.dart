@@ -112,6 +112,19 @@ abstract interface class LoopV2LaunchApi {
     required String payAmount,
     LoopV2WriteOrigin? origin,
   });
+
+  /// `POST /v2/launch/{launchId}/intents/{launchIntentId}/broadcast-report`
+  /// (loop-api decision 0077): `200 {launchIntent, contractVersion}`, the
+  /// same shape as the `201`, now `submitted` with the reported hash.
+  Future<LaunchPurchaseIntent> postPurchaseBroadcastReport({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String launchId,
+    required String launchIntentId,
+    required String txHash,
+    LoopV2WriteOrigin? origin,
+  });
 }
 
 final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
@@ -143,6 +156,12 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       throw LoopV2Contract.mapDioFailure(
         error,
         allowedCodes: LoopV2ModuleRequest.writeErrors,
+      );
+
+  static Never _rethrowIntentWrite(DioException error) =>
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.launchIntentWriteErrors,
       );
 
   // -------------------------------------------------------------------------
@@ -1211,31 +1230,72 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         ),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 201);
-      final raw = response.data;
-      if (raw is! Map) LoopV2S7Codec.invalid();
-      // `balances` is the one S83b optional key this build knows about; any
-      // other unknown key is still an invalid payload.
-      final root = LoopV2Contract.strictMap(raw, <String>{
-        'launchIntent',
-        'contractVersion',
-        if (raw.containsKey('balances')) 'balances',
-      });
-      LoopV2S7Codec.requireContractVersion(root);
-      final intent = LoopV2LaunchChainCodec.purchaseIntent(
-        root['launchIntent'],
-      );
+      final intent = _intentEnvelope(response.data);
       // The server answered for this request and no other.
       if (intent.launchId != launchId ||
           intent.walletId != walletId ||
           intent.roundId != roundId) {
         LoopV2S7Codec.invalid();
       }
-      return LaunchPurchasePrepared(
-        intent: intent,
-        usd1: LoopV2LaunchChainCodec.usd1Balance(root['balances']),
-      );
+      return LaunchPurchasePrepared(intent: intent);
     } on DioException catch (error) {
-      _rethrowWrite(error);
+      _rethrowIntentWrite(error);
+    }
+  }
+
+  /// `{launchIntent, contractVersion}` and nothing else (decision 0089: the
+  /// USD1 balance and allowance are read from the wallet balances, never
+  /// from this response).
+  static LaunchPurchaseIntent _intentEnvelope(Object? raw) {
+    final root = LoopV2Contract.strictMap(raw, const <String>{
+      'launchIntent',
+      'contractVersion',
+    });
+    LoopV2S7Codec.requireContractVersion(root);
+    return LoopV2LaunchChainCodec.purchaseIntent(root['launchIntent']);
+  }
+
+  static final RegExp _txHashPattern = RegExp(r'^0x[0-9a-fA-F]{64}$');
+
+  @override
+  Future<LaunchPurchaseIntent> postPurchaseBroadcastReport({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String launchId,
+    required String launchIntentId,
+    required String txHash,
+    LoopV2WriteOrigin? origin,
+  }) async {
+    if (!_txHashPattern.hasMatch(txHash)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    try {
+      final response = await _dio.post<Object?>(
+        '$launchPath/${_requireId(launchId)}/intents/'
+        '${_requireId(launchIntentId)}/broadcast-report',
+        data: <String, Object?>{'txHash': txHash},
+        options: LoopV2ModuleRequest.writeOptions(
+          accessToken,
+          clientVersion,
+          idempotencyKey,
+          hasBody: true,
+          origin: origin,
+        ),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final intent = _intentEnvelope(response.data);
+      // The answer is about this intent and this hash, or it is not an
+      // answer to this report.
+      final reported = intent.transactionHash;
+      if (intent.launchIntentId != launchIntentId ||
+          intent.launchId != launchId ||
+          (reported != null && reported != txHash.toLowerCase())) {
+        LoopV2S7Codec.invalid();
+      }
+      return intent;
+    } on DioException catch (error) {
+      _rethrowIntentWrite(error);
     }
   }
 }

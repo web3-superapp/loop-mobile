@@ -109,7 +109,14 @@ final class MoneyActionSigner {
       title: moneyActionTitle(intent.kind),
       kind: switch (intent.kind) {
         LoopIntentKind.send => IntentKind.transfer,
-        LoopIntentKind.approve || LoopIntentKind.revoke => IntentKind.approval,
+        // Decision 0089: the one approval the server builds off the primary
+        // chain is USD1 towards the Launch contract, on the Launch slot. It
+        // carries its own kind so the exit can admit that slot for it and for
+        // nothing else.
+        LoopIntentKind.approve || LoopIntentKind.revoke =>
+          intent.chainId == loopPrimaryChainId
+              ? IntentKind.approval
+              : IntentKind.launchApproval,
         LoopIntentKind.swap => IntentKind.swap,
       },
       // The chain is the server's own canonical value. Money actions are
@@ -149,8 +156,9 @@ final class MoneyActionSigner {
       );
     }
     // 3. The chain the owner reviewed must be one this kind of action may be
-    // signed on. Send, approve, revoke and swap are the primary chain only
-    // (decision 0038); the Launch slot is not a money action.
+    // signed on. Send and swap are the primary chain only (decision 0038);
+    // an approve or revoke may leave it only as the Launch USD1 approval
+    // (decision 0089).
     if (!signingIntent.chainIsPermitted) {
       return const MoneySignOutcome(
         status: MoneySignStatus.refused,

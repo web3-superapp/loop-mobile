@@ -183,7 +183,10 @@ void main() {
         onCancel: () => closed += 1,
       ),
     );
-    expect(find.text('已完成'), findsOneWidget);
+    // Decision 0089: the badge says what happened — a broadcast — and never
+    // that the operation is done.
+    expect(find.text('已广播'), findsOneWidget);
+    expect(find.text('已完成'), findsNothing);
     expect(find.bySemanticsLabel('确认签名'), findsNothing);
     await tester.tap(find.text('关闭'));
     expect(closed, 1);

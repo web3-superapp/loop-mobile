@@ -489,33 +489,157 @@ abstract final class LoopV2LaunchChainCodec {
   // purchase intent (201)
   // -------------------------------------------------------------------------
 
-  static LaunchPurchaseIntent purchaseIntent(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'launchIntentId',
-      'state',
-      'launchId',
-      'projectId',
-      'walletId',
-      'roundId',
-      'roundIndex',
-      'chainId',
-      'contractAddress',
-      'quoteAssetId',
-      'usd1Amount',
-      'expectedTokenAmount',
-      'minTokenAmount',
-      'walletCumulativeUsd1',
-      'deadline',
-      'eligibilityProof',
-      'configVersion',
-      'stateTupleDigest',
-      'snapshotBlockNumber',
-      'snapshotBlockHash',
-      'payloadDigest',
-      'unsignedTransaction',
-      'expiresAt',
-      'createdAt',
+  static const _intentRequiredKeys = <String>{
+    'launchIntentId',
+    'state',
+    'launchId',
+    'projectId',
+    'walletId',
+    'roundId',
+    'roundIndex',
+    'chainId',
+    'contractAddress',
+    'quoteAssetId',
+    'usd1Amount',
+    'expectedTokenAmount',
+    'minTokenAmount',
+    'walletCumulativeUsd1',
+    'deadline',
+    'eligibilityProof',
+    'configVersion',
+    'stateTupleDigest',
+    'snapshotBlockNumber',
+    'snapshotBlockHash',
+    'payloadDigest',
+    'unsignedTransaction',
+    'expiresAt',
+    'createdAt',
+  };
+
+  /// The S83b optional keys (loop-api decision 0077). Each is decoded to the
+  /// OpenAPI schema when present; any other key is still refused.
+  static const _intentOptionalKeys = <String>{
+    'projectAssetId',
+    'saleId',
+    'walletRoundCapUsd1',
+    'walletProjectCapUsd1',
+    'transactionHash',
+    'simulation',
+    'policy',
+    'signing',
+  };
+
+  static final RegExp _quantityPattern = RegExp(
+    r'^0x(0|[1-9a-f][0-9a-f]{0,63})$',
+  );
+  static final RegExp _usdPattern = RegExp(
+    r'^(0|[1-9][0-9]{0,77})(\.[0-9]{1,60})?$',
+  );
+
+  static String? _optionalReason(Map<String, Object?> map) =>
+      map['reasonCode'] == null
+      ? null
+      : LoopV2S7Codec.requireReasonCode(map, 'reasonCode');
+
+  static String? _optionalAmount(Map<String, Object?> map, String key) {
+    if (!map.containsKey(key)) return null;
+    return _amount(map, key);
+  }
+
+  static String _quantity(Map<String, Object?> map, String key) =>
+      LoopV2S7Codec.requirePattern(map, key, _quantityPattern, maxLength: 66);
+
+  /// The optional keys of `unsignedTransaction`, kept exactly as they
+  /// arrived. A present key is validated; an absent one stays absent.
+  static Map<String, Object?> _optionalTransaction(Map<String, Object?> map) {
+    final optional = <String, Object?>{};
+    if (map.containsKey('from')) optional['from'] = _address(map, 'from');
+    if (map.containsKey('gas')) optional['gas'] = _quantity(map, 'gas');
+    if (map.containsKey('nonce')) optional['nonce'] = _quantity(map, 'nonce');
+    if (map.containsKey('type')) {
+      final type = map['type'];
+      if (type != 'eip1559' && type != 'legacy') invalid();
+      optional['type'] = type;
+    }
+    for (final key in const <String>[
+      'maxFeePerGas',
+      'maxPriorityFeePerGas',
+      'gasPrice',
+    ]) {
+      if (!map.containsKey(key)) continue;
+      optional[key] = map[key] == null ? null : _quantity(map, key);
+    }
+    return optional;
+  }
+
+  static LaunchIntentSimulation? _simulation(Map<String, Object?> root) {
+    if (!root.containsKey('simulation')) return null;
+    final map = LoopV2Contract.strictMap(root['simulation'], const <String>{
+      'status',
+      'reasonCode',
     });
+    return LaunchIntentSimulation(
+      status: _enum(map, 'status', LaunchSimulationStatus.tryParse),
+      reasonCode: _optionalReason(map),
+    );
+  }
+
+  static LaunchIntentPolicy? _policy(Map<String, Object?> root) {
+    if (!root.containsKey('policy')) return null;
+    final map = LoopV2Contract.strictMap(root['policy'], const <String>{
+      'configVersion',
+      'canaryMaxUsd',
+      'valueUsd',
+      'priceSource',
+    });
+    return LaunchIntentPolicy(
+      configVersion: LoopV2S7Codec.requireEnum(
+        map,
+        'configVersion',
+        const <String>{'bscWriteCanaryV1'},
+      ),
+      canaryMaxUsd: LoopV2S7Codec.requirePattern(
+        map,
+        'canaryMaxUsd',
+        _usdPattern,
+        maxLength: 140,
+      ),
+      valueUsd: LoopV2S7Codec.requirePattern(
+        map,
+        'valueUsd',
+        _usdPattern,
+        maxLength: 140,
+      ),
+      priceSource: LoopV2S7Codec.requireEnum(map, 'priceSource', const <String>{
+        'usd1_par',
+      }),
+    );
+  }
+
+  static LaunchIntentSigning? _signing(Map<String, Object?> root) {
+    if (!root.containsKey('signing')) return null;
+    final map = LoopV2Contract.strictMap(root['signing'], const <String>{
+      'mode',
+      'allowed',
+      'reasonCode',
+    });
+    final allowed = map['allowed'];
+    if (allowed is! bool) invalid();
+    return LaunchIntentSigning(
+      mode: LoopV2S7Codec.requireEnum(map, 'mode', const <String>{
+        'device_eth_send_transaction',
+      }),
+      allowed: allowed,
+      reasonCode: _optionalReason(map),
+    );
+  }
+
+  static LaunchPurchaseIntent purchaseIntent(Object? raw) {
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      _intentRequiredKeys,
+      _intentOptionalKeys,
+    );
     final chainId = LoopV2S7Codec.requireEnum(
       map,
       'chainId',
@@ -527,9 +651,16 @@ abstract final class LoopV2LaunchChainCodec {
         quoteAssetId.length > 128) {
       invalid();
     }
-    final transaction = LoopV2Contract.strictMap(
+    String? projectAssetId;
+    if (map.containsKey('projectAssetId')) {
+      final value = map['projectAssetId'];
+      if (value is! String || value.isEmpty || value.length > 128) invalid();
+      projectAssetId = value;
+    }
+    final transaction = LoopV2Contract.strictMapWithOptional(
       map['unsignedTransaction'],
       const <String>{'chainId', 'to', 'data', 'value'},
+      LaunchUnsignedTransaction.optionalKeys.toSet(),
     );
     final txChain = transaction['chainId'];
     if (txChain is! int || txChain != loopChainReference(chainId)) invalid();
@@ -543,6 +674,10 @@ abstract final class LoopV2LaunchChainCodec {
       maxLength: 65536,
     );
     if (transaction['value'] != '0x0') invalid();
+    final hash = map['transactionHash'];
+    if (hash != null && (hash is! String || !bytes32Pattern.hasMatch(hash))) {
+      invalid();
+    }
     return LaunchPurchaseIntent(
       launchIntentId: LoopV2S7Codec.requireId(map, 'launchIntentId'),
       state: _enum(map, 'state', LaunchIntentState.tryParse),
@@ -575,37 +710,18 @@ abstract final class LoopV2LaunchChainCodec {
         to: to,
         data: data,
         value: '0x0',
+        optional: _optionalTransaction(transaction),
       ),
       expiresAt: LoopV2S7Codec.requireTimestamp(map, 'expiresAt'),
       createdAt: LoopV2S7Codec.requireTimestamp(map, 'createdAt'),
+      projectAssetId: projectAssetId,
+      saleId: _optionalAmount(map, 'saleId'),
+      walletRoundCapUsd1: _optionalAmount(map, 'walletRoundCapUsd1'),
+      walletProjectCapUsd1: _optionalAmount(map, 'walletProjectCapUsd1'),
+      transactionHash: hash as String?,
+      simulation: _simulation(map),
+      policy: _policy(map),
+      signing: _signing(map),
     );
-  }
-
-  /// `balances.launchChain.usd1` (S83b, optional, shape not frozen).
-  ///
-  /// Read leniently on purpose — it is the one tolerant read in this module,
-  /// because it only feeds a display line and never the signed payload. Any
-  /// shape this build does not understand is "未读取", never a failure and
-  /// never a zero.
-  static LaunchUsd1Balance? usd1Balance(Object? raw) {
-    if (raw is! Map) return null;
-    final launchChain = raw['launchChain'];
-    if (launchChain is! Map) return null;
-    final usd1 = launchChain['usd1'];
-    String? figure(Object? value) =>
-        value is String &&
-            value.length <= 78 &&
-            LoopV2S7Codec.integerAmountPattern.hasMatch(value)
-        ? value
-        : null;
-    if (usd1 is String) return LaunchUsd1Balance(balance: figure(usd1));
-    if (usd1 is! Map) return null;
-    final balance = LaunchUsd1Balance(
-      balance: figure(usd1['balance']),
-      allowance: figure(usd1['allowance']),
-    );
-    return balance.balance == null && balance.allowance == null
-        ? null
-        : balance;
   }
 }
