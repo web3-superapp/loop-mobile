@@ -255,3 +255,9 @@ Harness：`check_s9_dual_chain_contract` 的签名器守卫保留
 - **要求 loop-api 改用 Privy 拼写。** 可行，但会让同一份 `unsignedTransaction` 在 viem 与
   Privy 两种拼写之间摇摆，并影响已冻结的 S83b 契约；客户端在 SDK 边界做无损拼写转换，
   范围更小。若主代理倾向后端改，本决策第 4 条可整体撤回。
+
+## Main-agent rulings (2026-09-25)
+
+1. **No switch-chain step, no `privy_chain_switch_failed`.** Accepted: the Flutter plugin bridges only `request`, and both native SDKs select the chain from the transaction's own `chainId`. The "chainId must equal the Intent's chainId" check is therefore the chain selection guarantee.
+2. **§4 transaction encoding stays on the client** (`gas` → `gasLimit`, `type` `eip1559`/`legacy` → `2`/`0`, JSON string parameter). The backend keeps publishing the loop-api shape; this is a Provider adapter concern. First device evidence for a mainnet canary send is now owed (go/no-go #6).
+3. Privy Dashboard: nothing to change until a device run says otherwise.
