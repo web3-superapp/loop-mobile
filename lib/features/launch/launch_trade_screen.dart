@@ -267,12 +267,62 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         ? launchFeeLabel(detail?.config)
         : launchBpsLabel(detail!.saleConfig!.protocolFeeBps);
 
+    // The one next step is pinned above the bottom inset, so the keyboard
+    // lifts it instead of covering it (decision 0091). A prepared intent has
+    // its own review pair in the body, and a page that did not load has no
+    // step at all.
+    final Widget? primaryAction =
+        blocked || state.phase != LaunchViewPhase.ready || prepared != null
+        ? null
+        : needsApproval
+        ? LoopButton(
+            key: const ValueKey<String>('launch-trade-approve'),
+            label: '先授权 USD1',
+            primary: true,
+            block: true,
+            onPressed: canApprove
+                ? () => unawaited(
+                    _approve(
+                      walletId: walletId,
+                      assetId: approveAssetId,
+                      spenderAddress: spender,
+                      amount: payAmount,
+                    ),
+                  )
+                : null,
+            semanticLabel: canApprove ? '先授权 USD1' : '先授权 USD1，当前不可执行',
+          )
+        : LoopButton(
+            key: const ValueKey<String>('launch-trade-submit'),
+            label: '买入',
+            primary: true,
+            block: true,
+            onPressed: canSubmit
+                ? () => unawaited(
+                    tradeController.prepare(
+                      launchId: launchId,
+                      walletId: walletId,
+                      roundId: roundId,
+                      payAmount: payAmount,
+                    ),
+                  )
+                : null,
+            semanticLabel: canSubmit ? '买入' : '买入，当前不可执行',
+          );
+    // With the keyboard up the page keeps about a third of its height; the
+    // folio folds away so the amount, the balance line and the allowance
+    // card stay in view (the `send-to` precedent).
+    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return LoopFocusPage(
       key: const ValueKey<String>('launch-trade-screen'),
       archetype: LoopPageArchetype.action,
       title: detail?.launch.ticker ?? 'Launch 认购',
       subtitle: '内盘 · 只买不卖 · 手续费 ${fee ?? launchMissingFigure}',
       onBack: widget.onBack,
+      keyboardAccessory: true,
+      folioCollapsed: typing,
+      primaryAction: primaryAction,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('launch-trade-holders-action'),
@@ -332,6 +382,30 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             prepared: prepared,
             usd1: allowance.usd1,
           ),
+          // The allowance reading sits directly under the amount, so it stays
+          // in view with the keyboard up (decision 0091).
+          if (prepared == null &&
+              purchasable &&
+              walletId != null &&
+              payAmount != null)
+            _AllowanceNotice(
+              allowance: allowance,
+              approval: approval,
+              amount: payAmount,
+              onReread: () {
+                if (approval.phase == LaunchApprovalPhase.pollTimedOut) {
+                  approvalController.resumePolling();
+                } else {
+                  unawaited(
+                    ref
+                        .read(
+                          walletBalancesControllerProvider(walletId).notifier,
+                        )
+                        .reload(),
+                  );
+                }
+              },
+            ),
           const LoopLabel('本轮参数'),
           _TradeParameters(
             detail: detail,
@@ -351,68 +425,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               onRetryReport: trade.reportRetryable && !trade.reporting
                   ? () => unawaited(tradeController.retryReport())
                   : null,
-            )
-          else ...<Widget>[
-            if (purchasable && walletId != null && payAmount != null)
-              _AllowanceNotice(
-                allowance: allowance,
-                approval: approval,
-                amount: payAmount,
-                onReread: () {
-                  if (approval.phase == LaunchApprovalPhase.pollTimedOut) {
-                    approvalController.resumePolling();
-                  } else {
-                    unawaited(
-                      ref
-                          .read(
-                            walletBalancesControllerProvider(walletId).notifier,
-                          )
-                          .reload(),
-                    );
-                  }
-                },
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: needsApproval
-                  ? LoopButton(
-                      key: const ValueKey<String>('launch-trade-approve'),
-                      label: '先授权 USD1',
-                      primary: true,
-                      block: true,
-                      onPressed: canApprove
-                          ? () => unawaited(
-                              _approve(
-                                walletId: walletId,
-                                assetId: approveAssetId,
-                                spenderAddress: spender,
-                                amount: payAmount,
-                              ),
-                            )
-                          : null,
-                      semanticLabel: canApprove
-                          ? '先授权 USD1'
-                          : '先授权 USD1，当前不可执行',
-                    )
-                  : LoopButton(
-                      key: const ValueKey<String>('launch-trade-submit'),
-                      label: '买入',
-                      primary: true,
-                      block: true,
-                      onPressed: canSubmit
-                          ? () => unawaited(
-                              tradeController.prepare(
-                                launchId: launchId,
-                                walletId: walletId,
-                                roundId: roundId,
-                                payAmount: payAmount,
-                              ),
-                            )
-                          : null,
-                      semanticLabel: canSubmit ? '买入' : '买入，当前不可执行',
-                    ),
             ),
-          ],
           if (prepared == null)
             LoopNotice(
               key: const ValueKey<String>('launch-trade-refusal'),
@@ -579,6 +592,9 @@ class _TradeQuoteCard extends StatelessWidget {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      // Android's number pad closes on its done key; iOS
+                      // gets the page's 「完成」 bar (decision 0091).
+                      textInputAction: TextInputAction.done,
                       cursorColor: ink,
                       style: LoopTypography.figure(
                         24,

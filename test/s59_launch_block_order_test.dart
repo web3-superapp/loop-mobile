@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch/launch_action_screens.dart';
+import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
 import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
@@ -122,7 +123,13 @@ void main() {
     await pumpS7Page(
       tester,
       const LaunchTierScreen(launchId: s7LaunchId),
-      launch: FakeLaunchGateway(),
+      // Decision 0091: the staking entry exists only for a mode that
+      // depends on staking.
+      launch: FakeLaunchGateway(
+        eligibility: S7Answer<LaunchEligibility>(
+          value: s7Eligibility(dependsOnStaking: true),
+        ),
+      ),
     );
 
     expectOrder(tester, <String>[
@@ -154,11 +161,25 @@ void main() {
     expectOrder(tester, <String>[
       'launch-trade-quote',
       'launch-trade-rounds',
-      'launch-trade-submit',
       'launch-trade-refusal',
       'launch-trade-buy-only',
       'launch-trade-facts',
     ]);
+    // Decision 0091: 买入 is pinned under the body, not in its flow, so the
+    // keyboard lifts it instead of covering it.
+    expect(
+      find.descendant(
+        of: find.byType(SingleChildScrollView),
+        matching: find.byKey(const ValueKey<String>('launch-trade-submit')),
+      ),
+      findsNothing,
+    );
+    expect(
+      topOf(tester, 'launch-trade-submit'),
+      greaterThan(
+        tester.getBottomLeft(find.byType(SingleChildScrollView).first).dy - 1,
+      ),
+    );
     // The amount field lives inside the Chalk quote box, above the half that
     // states what the amount would buy.
     expect(

@@ -99,12 +99,17 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     }
     final balances = balancesState?.value;
     final quote = _quote;
+    // With the keyboard up the quote folio folds away so both amount boxes
+    // stay in view, and the amount pad can always be put away (decision 0091).
+    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return LoopFocusPage(
       key: const ValueKey<String>('swap-screen'),
       archetype: LoopPageArchetype.action,
       title: '兑换',
       onBack: widget.onBack,
+      folioCollapsed: typing,
+      keyboardAccessory: true,
       // 报价与费用明细 is a page about one quote. Without a quote it has
       // nothing to open, and the chevron that used to sit there took the tap,
       // changed nothing, and pushed no route at all.
@@ -521,6 +526,7 @@ class _AssetField extends StatelessWidget {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                    textInputAction: TextInputAction.done,
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                     ],

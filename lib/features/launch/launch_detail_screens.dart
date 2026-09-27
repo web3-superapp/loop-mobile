@@ -14,6 +14,30 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
+/// The 内盘持有人 row on `launch-detail`, following the holders resource
+/// branch by branch (decision 0091).
+///
+/// Only `LAUNCH_CONTRACT_BASELINE_PENDING` may say the contract is not live;
+/// an index that has not caught up says so, and any other reason is a plain
+/// "cannot read". A count is distinct buyers (decision 0089), never holders.
+String launchHoldersRowText(LaunchResourceState<LaunchHolders> state) {
+  final holders = state.value;
+  if (holders == null) {
+    return state.phase == LaunchViewPhase.loading ? '正在读取参与人数' : '参与人数暂时读不到';
+  }
+  return switch (holders.holders) {
+    LaunchReadingAvailable<LaunchHolderCount>(:final value) =>
+      '${loopGroupedFigure(value.holderCount.toString())} 位参与者',
+    LaunchReadingUnavailable<LaunchHolderCount>(:final reasonCode) =>
+      switch (reasonCode) {
+        'LAUNCH_CONTRACT_BASELINE_PENDING' => 'Launch 合约还没有上线，参与人数暂时不可用。',
+        'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' ||
+        'LAUNCH_ONCHAIN_STATE_NOT_PROJECTED' => '链上记录索引中，参与人数稍后可见。',
+        _ => '参与人数暂时读不到',
+      },
+  };
+}
+
 /// Shared scaffolding for the six read-only launch record pages.
 ///
 /// Each page owns its own capability gate, its own five states and its own
@@ -67,10 +91,38 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
     final detail = state.value;
     final config = detail?.config;
     final onChain = detail?.onChain;
+    // Decision 0091: the detail payload's own `holders` slot is a fixed
+    // placeholder, so the row reads the holders resource the 内盘持有人 page
+    // reads, and follows its branch.
+    final holdersState = ref.watch(launchHoldersControllerProvider);
+    if (!blocked &&
+        detail != null &&
+        holdersState.phase == LaunchViewPhase.loading &&
+        holdersState.value == null) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(launchHoldersControllerProvider.notifier)
+                .open(widget.launchId),
+          );
+        }
+      });
+    }
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-detail-screen'),
-      onRefresh: controller.reload,
+      onRefresh: () => Future.wait(<Future<void>>[
+        controller.reload(),
+        // `reload` needs the launch the resource was opened for; before
+        // that, opening it is the read.
+        if (!blocked)
+          holdersState.isReady
+              ? ref.read(launchHoldersControllerProvider.notifier).reload()
+              : ref
+                    .read(launchHoldersControllerProvider.notifier)
+                    .open(widget.launchId),
+      ]),
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: detail?.launch.ticker ?? '项目详情',
@@ -187,7 +239,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                 key: const ValueKey<String>('launch-detail-open-holders'),
                 leading: const LoopRowIcon(icon: 'users'),
                 title: '内盘持有人',
-                subtitle: launchReasonCodeText(detail.holders.reasonCode),
+                subtitle: launchHoldersRowText(holdersState),
                 subtitleMaxLines: 2,
                 onTap: widget.onOpenHolders,
                 position: LoopRowPosition.first,
@@ -1042,16 +1094,34 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('launch-tier-open-stake'),
-                label: '查看 LOOP 质押',
-                primary: true,
-                onPressed: widget.onOpenStake,
+          // Decision 0091: the staking entry is offered only when this
+          // launch's approved mode says eligibility depends on it. Otherwise
+          // a primary 「查看 LOOP 质押」 would suggest a link that is not there.
+          if (eligibility.dependsOnStaking)
+            LoopButtonPair(
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('launch-tier-open-stake'),
+                  label: '查看 LOOP 质押',
+                  primary: true,
+                  onPressed: widget.onOpenStake,
+                ),
+              ],
+            )
+          else
+            Padding(
+              key: const ValueKey<String>('launch-tier-staking-independent'),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                LoopSpacing.tight,
+                LoopSpacing.page,
+                0,
               ),
-            ],
-          ),
+              child: Text(
+                '本次发射的资格不依赖 LOOP 质押',
+                style: LoopTypography.caption(12, color: LoopColors.text2),
+              ),
+            ),
           if (evaluated != null) ...<Widget>[
             const LoopLabel('资格结果'),
             LoopRecordGroup(

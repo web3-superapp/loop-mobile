@@ -156,13 +156,14 @@ LaunchEligibility s7Eligibility({
   LaunchEligibilityMode mode = LaunchEligibilityMode.unavailable,
   String reasonCode = s7TierPending,
   String? configVersion,
+  bool dependsOnStaking = false,
 }) => LaunchEligibility(
   launchId: s7LaunchId,
   mode: mode,
   result: LaunchEligibilityPending(reasonCode),
   configVersion: configVersion,
   effectiveAt: null,
-  dependsOnStaking: false,
+  dependsOnStaking: dependsOnStaking,
 );
 
 LaunchStake s7Stake() => const LaunchStake(

@@ -443,6 +443,8 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
       title: '发送到',
       onBack: widget.onBack,
       folioCollapsed: typing,
+      // The amount pad has no return key on iOS (decision 0091).
+      keyboardAccessory: true,
       // Chalk, with the recipient the preflight checked as the heading — the
       // prototype's `0x71bd…0b91` (audit §A.15). Before a preflight there is
       // no recipient, and the heading says what the step is for.
@@ -588,6 +590,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  textInputAction: TextInputAction.done,
                   // The amount stays the exact text all the way to the wire.
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),

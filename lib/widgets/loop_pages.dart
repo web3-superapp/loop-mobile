@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -144,11 +145,22 @@ class LoopFocusPage extends StatelessWidget {
     this.subtitle,
     this.framedTools = false,
     this.folioCollapsed = false,
+    this.keyboardAccessory = false,
   });
 
   final LoopPageArchetype archetype;
   final String title;
   final String? kicker;
+
+  /// The page carries a typed amount, so the soft keyboard must always be
+  /// dismissable (decision 0091).
+  ///
+  /// iOS's decimal pad has no return key: on `launch-trade` the keyboard could
+  /// not be put away and the pinned action it covered read as missing. With
+  /// this set, a tap anywhere outside a field puts the keyboard away, and on
+  /// iOS a 「完成」 bar sits directly on top of the keyboard while it is up.
+  /// Android's number pad has its own done key (`TextInputAction.done`).
+  final bool keyboardAccessory;
 
   /// The 11px line under the title (`LoopTopbar.subtitle`).
   ///
@@ -215,83 +227,101 @@ class LoopFocusPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = loopChildPageBottomInset(context);
+    // Read outside the Scaffold: its body sees the insets already removed.
+    final doneBar =
+        keyboardAccessory &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        MediaQuery.viewInsetsOf(context).bottom > 0;
+    final Widget content = SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LoopTopbar(
+            title: title,
+            kicker: kicker,
+            subtitle: subtitle,
+            onBack: onBack,
+            actions: actions,
+            minHeight: LoopLayout.topbarContentHeight,
+            updating: updating,
+            framedTools: framedTools,
+          ),
+          if (block != null)
+            Expanded(child: block!)
+          else ...<Widget>[
+            if (folio != null)
+              KeyedSubtree(
+                key: const ValueKey<String>('loop-page-primary'),
+                child: folioCollapsed ? const SizedBox.shrink() : folio!,
+              ),
+            // Focus bodies are short step pages: build them eagerly so
+            // every control exists for ensureVisible / assistive tech.
+            Expanded(
+              child: SingleChildScrollView(
+                // A pinned action is a sibling of the body, so it cannot
+                // overlay it — but with 12 of room the last row ended
+                // flush against the bar and read as covered by it:
+                // 隐私's last visibility row and 编辑资料's fourth 关注赛道
+                // chip were both reported that way. A group's worth of
+                // room makes the boundary unambiguous.
+                padding: EdgeInsets.only(
+                  bottom: primaryAction == null || actionsFollowBody
+                      ? bottom
+                      : LoopSpacing.group,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    ...body,
+                    if (actionsFollowBody) ..._flowingActions(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (block == null && !actionsFollowBody) ...<Widget>[
+            if (!primaryActionBeforeDisclosure) ?disclosure,
+            if (primaryAction != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  LoopSpacing.tight,
+                  LoopSpacing.page,
+                  (primaryActionBeforeDisclosure && disclosure != null) ||
+                          doneBar
+                      ? LoopSpacing.tight
+                      : bottom,
+                ),
+                child: primaryAction,
+              ),
+            if (primaryActionBeforeDisclosure && disclosure != null)
+              Padding(
+                padding: EdgeInsets.only(bottom: doneBar ? 0 : bottom),
+                child: disclosure,
+              ),
+          ],
+          if (doneBar) const LoopKeyboardDoneBar(),
+        ],
+      ),
+    );
     return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, layoutMode),
       explicitChildNodes: true,
       child: Scaffold(
         key: ValueKey<String>('loop-page-${layoutMode.name}'),
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              LoopTopbar(
-                title: title,
-                kicker: kicker,
-                subtitle: subtitle,
-                onBack: onBack,
-                actions: actions,
-                minHeight: LoopLayout.topbarContentHeight,
-                updating: updating,
-                framedTools: framedTools,
-              ),
-              if (block != null)
-                Expanded(child: block!)
-              else ...<Widget>[
-                if (folio != null)
-                  KeyedSubtree(
-                    key: const ValueKey<String>('loop-page-primary'),
-                    child: folioCollapsed ? const SizedBox.shrink() : folio!,
-                  ),
-                // Focus bodies are short step pages: build them eagerly so
-                // every control exists for ensureVisible / assistive tech.
-                Expanded(
-                  child: SingleChildScrollView(
-                    // A pinned action is a sibling of the body, so it cannot
-                    // overlay it — but with 12 of room the last row ended
-                    // flush against the bar and read as covered by it:
-                    // 隐私's last visibility row and 编辑资料's fourth 关注赛道
-                    // chip were both reported that way. A group's worth of
-                    // room makes the boundary unambiguous.
-                    padding: EdgeInsets.only(
-                      bottom: primaryAction == null || actionsFollowBody
-                          ? bottom
-                          : LoopSpacing.group,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        ...body,
-                        if (actionsFollowBody) ..._flowingActions(),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              if (block == null && !actionsFollowBody) ...<Widget>[
-                if (!primaryActionBeforeDisclosure) ?disclosure,
-                if (primaryAction != null)
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      LoopSpacing.page,
-                      LoopSpacing.tight,
-                      LoopSpacing.page,
-                      primaryActionBeforeDisclosure && disclosure != null
-                          ? LoopSpacing.tight
-                          : bottom,
-                    ),
-                    child: primaryAction,
-                  ),
-                if (primaryActionBeforeDisclosure && disclosure != null)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: bottom),
-                    child: disclosure,
-                  ),
-              ],
-            ],
-          ),
-        ),
+        body: keyboardAccessory
+            ? GestureDetector(
+                key: const ValueKey<String>('loop-page-keyboard-dismiss'),
+                // Translucent, so the rows and buttons underneath keep their
+                // own taps: the arena gives a tap to the innermost claimant,
+                // and only a tap nothing else wanted reaches this one.
+                behavior: HitTestBehavior.translucent,
+                onTap: loopDismissKeyboard,
+                child: content,
+              )
+            : content,
       ),
     );
   }
@@ -312,6 +342,69 @@ class LoopFocusPage extends StatelessWidget {
       ),
     if (primaryActionBeforeDisclosure) ?disclosure,
   ];
+}
+
+/// Puts the soft keyboard away by clearing the focused field.
+void loopDismissKeyboard() => FocusManager.instance.primaryFocus?.unfocus();
+
+/// The iOS keyboard accessory: one 「完成」 control on a Graphite strip that
+/// sits directly on top of the keyboard (decision 0091).
+///
+/// The decimal pad `TextInputType.numberWithOptions(decimal: true)` opens on
+/// iOS has no return key at all, so without this the keyboard has no way to
+/// close from the keyboard itself.
+class LoopKeyboardDoneBar extends StatelessWidget {
+  const LoopKeyboardDoneBar({super.key});
+
+  static const double height = 44;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      key: const ValueKey<String>('loop-keyboard-done-bar'),
+      decoration: const BoxDecoration(
+        color: LoopColors.graphite,
+        border: Border(top: BorderSide(color: LoopColors.line)),
+      ),
+      child: SizedBox(
+        height: height,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Semantics(
+            button: true,
+            label: '完成，收起键盘',
+            excludeSemantics: true,
+            child: InkWell(
+              key: const ValueKey<String>('loop-keyboard-done'),
+              onTap: loopDismissKeyboard,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: 64,
+                  minHeight: height,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: LoopSpacing.page,
+                  ),
+                  child: Center(
+                    widthFactor: 1,
+                    child: Text(
+                      '完成',
+                      style: LoopTypography.label(
+                        15,
+                        weight: FontWeight.w600,
+                        color: LoopColors.lime,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// `dashboard`: sticky topbar (z 8 over Ink), the single primary region first,

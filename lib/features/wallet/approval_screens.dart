@@ -99,12 +99,18 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
     final blocked = sendCapabilityBlocks(ref);
     final intent = _intent;
     final amount = TransferAmount.tryParse(_amount.text.trim());
+    // The limit pad has no return key on iOS, and the 限额授权 button flows
+    // under the field: the folio folds while typing and the keyboard can
+    // always be put away (decision 0091).
+    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return LoopFocusPage(
       key: const ValueKey<String>('approval-guard-screen'),
       archetype: LoopPageArchetype.action,
       title: '授权拦截',
       onBack: widget.onBack,
+      folioCollapsed: typing,
+      keyboardAccessory: true,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('approval-guard-folio'),
         variant: LoopFolioVariant.chalk,
@@ -198,6 +204,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                    textInputAction: TextInputAction.done,
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                     ],
