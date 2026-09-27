@@ -49,6 +49,40 @@ abstract final class LoopMotion {
   /// back part of [trayExpand], as an [Interval] of the same controller.
   static const double trayFadeStart = 0.35;
 
+  // --- LoopAccordionStrip (decision 0096) --------------------------------
+
+  /// One strip widening while the others narrow, and the reverse.
+  static const Duration accordionExpand = Duration(milliseconds: 280);
+  static const Curve accordionCurve = Curves.easeOutCubic;
+
+  /// The open strip's detail fades in over the back part of
+  /// [accordionExpand], from 40 % of the same controller; a closing strip's
+  /// detail is gone by the same point.
+  static const double accordionFadeStart = 0.4;
+
+  /// The open strip's width weight against every other strip's 1.
+  static const double accordionOpenWeight = 3;
+
+  // --- LoopDockBar (decision 0096) ---------------------------------------
+
+  /// A glyph under the finger.
+  static const double dockPeakScale = 1.45;
+
+  /// A glyph one cell away from the finger. The decay is Gaussian in cells —
+  /// `1 + (peak − 1) · 3^(−d²)` — which lands exactly on this at `d = 1`.
+  static const double dockNeighbourScale = 1.15;
+
+  /// Beyond this many cells the glyph is at rest (the Gaussian tail there is
+  /// under 1 %, so the cut is invisible).
+  static const double dockReach = 2;
+
+  /// The magnification rising once a press becomes a slide.
+  static const Duration dockEngage = Duration(milliseconds: 120);
+
+  /// The magnification settling after the finger lifts.
+  static const Duration dockRelease = Duration(milliseconds: 180);
+  static const Curve dockCurve = Curves.easeOutCubic;
+
   /// Whether motion is switched off for [context]: either the platform's own
   /// accessibility setting or the app's 减弱动态效果, which `LoopApp` folds
   /// into the same [MediaQuery] flag.

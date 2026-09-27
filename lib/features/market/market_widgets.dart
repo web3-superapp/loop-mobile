@@ -1316,18 +1316,28 @@ class MarketRankAvatar extends StatelessWidget {
 /// A cell with no figure says so in the figure's place, so the strip keeps its
 /// shape and never prints a zero for a fact that was not read.
 class MarketQuoteCells extends StatelessWidget {
-  const MarketQuoteCells({required this.cells, super.key});
+  const MarketQuoteCells({
+    required this.cells,
+    super.key,
+    this.padding = defaultPadding,
+  });
+
+  static const EdgeInsets defaultPadding = EdgeInsets.fromLTRB(
+    LoopSpacing.page,
+    12,
+    LoopSpacing.page,
+    10,
+  );
 
   final List<MarketStatCell> cells;
 
+  /// Space around the cells; a caller that sets them on a panel of its own
+  /// passes the panel's inner padding.
+  final EdgeInsets padding;
+
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      12,
-      LoopSpacing.page,
-      10,
-    ),
+    padding: padding,
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
