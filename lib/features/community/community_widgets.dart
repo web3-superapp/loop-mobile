@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_progress_fill.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 /// `开发预览` eyebrow for a Preview-backed S3 page. Production and unavailable
@@ -1045,6 +1046,14 @@ class CommunityApplicationBadge extends StatelessWidget {
   }
 }
 
+/// The milestones an application passes: submitted, then decided.
+const int communityApplicationMilestones = 2;
+
+/// How much of the fill a pending application stands at: the first of the
+/// [communityApplicationMilestones] is behind it.
+const double communityApplicationPendingProgress =
+    1 / communityApplicationMilestones;
+
 /// The owner's own progress card, directly under the record's hero.
 ///
 /// It exists for exactly two states and for exactly one reader. `pending`
@@ -1080,12 +1089,28 @@ class CommunityApplicationStatusCard extends StatelessWidget {
     final state = review;
     if (state == null || !viewer.isOwner) return const SizedBox.shrink();
     if (state.isPending) {
-      return LoopNotice(
-        key: const ValueKey<String>('community-application-pending'),
-        icon: 'clock',
-        title: '审核中 · 提交于 ${loopLocalTimestampLabel(state.submittedAt)}',
-        body: '通过后开放挖矿权重与官方群。运维核验前，这个社区不带验证标记。',
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      // The card's own ground states how far the application has come
+      // (decision 0092). An application has two milestones the server
+      // records — submitted, then decided — and a pending one has passed the
+      // first, so the fill stands at half and advances into it as the card
+      // appears. It is a count of milestones, never an estimate of how long
+      // the review will take; the words on the card are unchanged.
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        child: LoopProgressFill(
+          key: const ValueKey<String>('community-application-progress'),
+          progress: communityApplicationPendingProgress,
+          from: 0,
+          fillColor: LoopColors.limeSoft,
+          borderRadius: BorderRadius.circular(15),
+          child: LoopNotice(
+            key: const ValueKey<String>('community-application-pending'),
+            icon: 'clock',
+            title: '审核中 · 提交于 ${loopLocalTimestampLabel(state.submittedAt)}',
+            body: '通过后开放挖矿权重与官方群。运维核验前，这个社区不带验证标记。',
+            margin: EdgeInsets.zero,
+          ),
+        ),
       );
     }
     if (!state.isRejected) return const SizedBox.shrink();

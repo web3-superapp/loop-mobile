@@ -1973,6 +1973,99 @@ void main() {
     });
   });
 
+  group('community-members · member preview (decision 0092)', () {
+    testWidgets('stacks the first faces, counts the rest, spreads to names', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          members: testDirectory(
+            items: <CommunityMemberEntry>[
+              testMember(role: CommunityRole.owner, alias: 'pepe_founder'),
+              testMember(
+                role: CommunityRole.member,
+                publicProfileId: 'pp_no_alias',
+                loopId: 'LOOP-7G8H9IJK',
+                alias: null,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final preview = find.byKey(
+        const ValueKey<String>('community-members-preview'),
+      );
+      expect(preview, findsOneWidget);
+      // 128 in the directory, two faces drawn.
+      expect(
+        find.descendant(of: preview, matching: find.text('+126')),
+        findsOneWidget,
+      );
+      // Stacked: no names are built inside the preview.
+      expect(
+        find.descendant(of: preview, matching: find.text('pepe_founder')),
+        findsNothing,
+      );
+
+      await tester.ensureVisible(preview);
+      await tester.tap(
+        find.descendant(
+          of: preview,
+          matching: find.byKey(
+            const ValueKey<String>('loop-avatar-stack-toggle'),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 120));
+      await tester.pumpAndSettle();
+      // Spread: each face is named with the directory's own display name,
+      // the LOOP ID for a member who has no alias.
+      expect(
+        find.descendant(of: preview, matching: find.text('pepe_founder')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: preview, matching: find.text('LOOP-7G8H9IJK')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: preview,
+          matching: find.byKey(
+            const ValueKey<String>('loop-avatar-stack-toggle'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: preview, matching: find.text('pepe_founder')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a narrowed directory carries no preview', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(members: testDirectory()),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-members-preview')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('members-seg-admin')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('community-members-preview')),
+        findsNothing,
+      );
+    });
+  });
+
   group('community-members · permission matrix', () {
     testWidgets('segment counts come from the server and 在线 is disabled', (
       tester,

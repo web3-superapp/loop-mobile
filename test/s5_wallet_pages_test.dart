@@ -46,6 +46,72 @@ void main() {
       expect(find.textContaining('可动用 6.995'), findsOneWidget);
     });
 
+    testWidgets(
+      'an asset row keeps its spendable, power and reserve in a tray',
+      (tester) async {
+        await pumpS5Page(
+          tester,
+          const WalletScreen(),
+          wallet: FakeWalletReadGateway(),
+        );
+
+        final tray = find.byKey(
+          const ValueKey<String>('wallet-balance-tray-$s5NativeAssetId'),
+        );
+        await scrollToS5Section(tester, tray);
+        // The row is the card; the tray is tucked under it.
+        expect(
+          find.descendant(
+            of: tray,
+            matching: find.byKey(
+              const ValueKey<String>('wallet-balance-$s5NativeAssetId'),
+            ),
+          ),
+          findsOneWidget,
+        );
+        final summary = find.byKey(
+          const ValueKey<String>(
+            'wallet-balance-tray-summary-$s5NativeAssetId',
+          ),
+        );
+        expect(
+          tester.widget<Text>(summary).data,
+          startsWith('可动用 6.995 · 算力 '),
+        );
+        final detail = find.byKey(
+          const ValueKey<String>('wallet-balance-tray-detail-$s5NativeAssetId'),
+        );
+        expect(detail, findsNothing);
+
+        await tester.tap(
+          find.descendant(
+            of: tray,
+            matching: find.byKey(const ValueKey<String>('loop-tray-toggle')),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 140));
+        await tester.pumpAndSettle();
+        expect(detail, findsOneWidget);
+        expect(
+          find.descendant(of: detail, matching: find.text('可动用 6.995')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: detail, matching: find.textContaining('手续费保留 ')),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.descendant(
+            of: tray,
+            matching: find.byKey(const ValueKey<String>('loop-tray-toggle')),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(detail, findsNothing);
+      },
+    );
+
     testWidgets('the gas reserve comes from the server, never a constant', (
       tester,
     ) async {

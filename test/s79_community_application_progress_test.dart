@@ -418,6 +418,25 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('通过后开放挖矿权重与官方群'), findsOneWidget);
+      // Decision 0092: the card's own ground stands at the first of the two
+      // milestones (submitted, decided), once the fill has settled.
+      await tester.pumpAndSettle();
+      final card = find.byKey(
+        const ValueKey<String>('community-application-progress'),
+      );
+      final fill = find.descendant(
+        of: card,
+        matching: find.byKey(const ValueKey<String>('loop-progress-fill-bar')),
+      );
+      expect(
+        tester.getSize(fill).width,
+        moreOrLessEquals(tester.getSize(card).width / 2, epsilon: 0.01),
+      );
+      // A half-way review never reaches the completion brightening.
+      expect(
+        find.byKey(const ValueKey<String>('loop-progress-fill-flash')),
+        findsNothing,
+      );
     });
 
     testWidgets('a refused application prints the reason in full', (

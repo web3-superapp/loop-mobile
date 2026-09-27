@@ -418,6 +418,70 @@ void main() {
       );
     });
 
+    testWidgets('the pool and contract facts ride in a tray under the cells', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(),
+      );
+
+      final tray = find.byKey(const ValueKey<String>('token-facts-tray'));
+      expect(
+        find.descendant(
+          of: tray,
+          matching: find.byKey(const ValueKey<String>('token-quote-cells')),
+        ),
+        findsOneWidget,
+      );
+      final summary = tester.widget<Text>(
+        find.byKey(const ValueKey<String>('token-facts-tray-summary')),
+      );
+      expect(summary.data, startsWith('主交易对 pancakeswap · 报价币 USDT · 合约事实 '));
+      // Closed: the facts are not built, so nothing on the quote repeats them.
+      expect(
+        find.byKey(const ValueKey<String>('token-facts-tray-detail')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: tray,
+          matching: find.byKey(const ValueKey<String>('loop-tray-toggle')),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 140));
+      await tester.pumpAndSettle();
+      final detail = find.byKey(
+        const ValueKey<String>('token-facts-tray-detail'),
+      );
+      expect(
+        find.descendant(
+          of: detail,
+          matching: find.textContaining('主交易对：pancakeswap · 报价币 USDT'),
+        ),
+        findsOneWidget,
+      );
+      // Every contract fact keeps its source and time; none is a verdict.
+      expect(
+        find.descendant(
+          of: detail,
+          matching: find.textContaining('合约已验证开源 —— 来源'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: tray,
+          matching: find.byKey(const ValueKey<String>('loop-tray-toggle')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(detail, findsNothing);
+    });
+
     testWidgets('the four cells summarise; the page prints no figure twice', (
       tester,
     ) async {

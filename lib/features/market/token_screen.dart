@@ -23,6 +23,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
+import 'package:loop_mobile/widgets/loop_tray_disclosure.dart';
 
 /// `token` · one registry asset's facts.
 ///
@@ -262,22 +263,46 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           // The design's own four: the window first, then the two size
           // figures. 持有人 and 流动性 move down to the 社区 tab's strip —
           // neither is read while the reader is looking at the price.
-          MarketQuoteCells(
-            key: const ValueKey<String>('token-quote-cells'),
-            cells: <MarketStatCell>[
-              marketRangeCell('24h 高', detail.range24h, high: true),
-              marketRangeCell('24h 低', detail.range24h, high: false),
-              MarketStatCell.fact(
-                '24h 成交额',
-                detail.volume24h,
-                formatter: loopFormatCompactFigure,
-              ),
-              MarketStatCell.fact(
-                '市值',
-                detail.marketCap,
-                formatter: loopFormatCompactFigure,
-              ),
-            ],
+          //
+          // The pool and contract facts ride in a tray under the four cells
+          // (decision 0092): one line closed, every fact with its source and
+          // time when opened. The same facts keep their own blocks under 成交
+          // and 简介; the tray is where they are read without leaving the
+          // quote.
+          LoopTrayDisclosure(
+            key: const ValueKey<String>('token-facts-tray'),
+            trayInset: LoopSpacing.page + 6,
+            overlap: 8,
+            semanticLabel: '池与合约事实',
+            card: MarketQuoteCells(
+              key: const ValueKey<String>('token-quote-cells'),
+              cells: <MarketStatCell>[
+                marketRangeCell('24h 高', detail.range24h, high: true),
+                marketRangeCell('24h 低', detail.range24h, high: false),
+                MarketStatCell.fact(
+                  '24h 成交额',
+                  detail.volume24h,
+                  formatter: loopFormatCompactFigure,
+                ),
+                MarketStatCell.fact(
+                  '市值',
+                  detail.marketCap,
+                  formatter: loopFormatCompactFigure,
+                ),
+              ],
+            ),
+            summary: Text(
+              tokenFactsTraySummary(detail.primaryPair, detail.security),
+              key: const ValueKey<String>('token-facts-tray-summary'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.caption(12, color: LoopColors.text2),
+            ),
+            detail: _TokenFactsTrayDetail(
+              pair: detail.primaryPair,
+              security: detail.security,
+            ),
+            margin: const EdgeInsets.only(bottom: 6),
           ),
           // Nothing could describe this contract for this request. The page
           // still stands — every figure below states its own reason — but it
@@ -934,6 +959,72 @@ class _IntervalBar extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// The one line the token page's fact tray shows closed.
+///
+/// It names what the tray holds and how much of it was read, never a verdict:
+/// a count of contract facts is not a statement that any of them is good.
+String tokenFactsTraySummary(
+  MarketPrimaryPair? pair,
+  MarketSecurityBlock security,
+) {
+  final pool = pair == null
+      ? '没有主交易对'
+      : '主交易对 ${pair.dexId} · 报价币 ${pair.quoteTokenSymbol}';
+  final facts = switch (security) {
+    MarketSecurityAvailable(facts: final facts) when facts.isEmpty =>
+      '合约事实暂时读不到',
+    MarketSecurityAvailable(facts: final facts) => '合约事实 ${facts.length} 项',
+    MarketSecurityUnavailable() => '合约事实不可用',
+  };
+  return '$pool · $facts';
+}
+
+/// The open fact tray: the pool, then each contract fact with its source and
+/// observation time — the same sentences 简介 prints.
+class _TokenFactsTrayDetail extends StatelessWidget {
+  const _TokenFactsTrayDetail({required this.pair, required this.security});
+
+  final MarketPrimaryPair? pair;
+  final MarketSecurityBlock security;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = LoopTypography.caption(12, color: LoopColors.text2);
+    final resolved = pair;
+    final lines = <String>[
+      if (resolved == null)
+        '主交易对：没有以该资产为 base 的交易对'
+      else
+        '主交易对：${resolved.dexId} · 报价币 ${resolved.quoteTokenSymbol} · '
+            '${loopTruncatedAddress(resolved.pairAddress)}',
+      ...switch (security) {
+        MarketSecurityUnavailable(reasonCode: final reasonCode) => <String>[
+          '合约事实不可用：${loopReasonCodeText(reasonCode)}',
+        ],
+        MarketSecurityAvailable(facts: final facts) when facts.isEmpty =>
+          const <String>['暂时读不到合约信息。少了某一项只表示读不到，不代表安全或不安全。'],
+        MarketSecurityAvailable(facts: final facts) => <String>[
+          for (final fact in facts)
+            '${marketSecurityFactText(fact)} —— '
+                '来源 ${loopFactSourceLabel(fact.source)}，'
+                '观察于 ${loopRelativeTime(fact.observedAt)}',
+        ],
+      },
+    ];
+    return Column(
+      key: const ValueKey<String>('token-facts-tray-detail'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (final line in lines)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Text(line, style: style),
+          ),
+      ],
     );
   }
 }
