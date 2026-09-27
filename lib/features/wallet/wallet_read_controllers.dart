@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
@@ -12,6 +13,9 @@ final class WalletDirectoryController
     extends LoopChainReadController<LoopWalletDirectory> {
   @override
   LoopChainGatewayMode watchMode() => _walletMode(ref);
+
+  @override
+  String? get snapshotResource => LoopSnapshotResource.walletDirectory;
 
   @override
   Future<LoopWalletDirectory> fetch() =>
@@ -91,6 +95,12 @@ final class WalletBalancesController
 
   @override
   LoopChainGatewayMode watchMode() => _walletMode(ref);
+
+  /// Decision 0095: the balances may open on a stored snapshot for display.
+  /// No amount on this page is ever the figure a signature is checked
+  /// against — the signing exit reads its own.
+  @override
+  String? get snapshotResource => LoopSnapshotResource.walletBalances(walletId);
 
   @override
   Future<LoopWalletBalances> fetch() =>

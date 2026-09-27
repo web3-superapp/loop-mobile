@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// The four lists 行情 offers, in the approved design's order.
@@ -55,6 +56,10 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
   MarketSort _sort = MarketSort.volume;
   bool _descending = true;
 
+  /// Whether this page drew the list as a skeleton. Only then does the list
+  /// fade in when it lands (decision 0095).
+  bool _sawSkeleton = false;
+
   void _open(String location) {
     final navigate = widget.onNavigate;
     if (navigate != null) {
@@ -92,6 +97,12 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     }
 
     final overview = state.value;
+    if (!blocked &&
+        overview == null &&
+        state.phase == LoopChainViewPhase.loading) {
+      _sawSkeleton = true;
+    }
+    final controller = ref.read(marketOverviewControllerProvider.notifier);
     // Mining, where 行情 touches it: the rules answer the Mining module
     // already reads. No request type of this page's own, and a weight it
     // cannot find is left off the row.
@@ -136,6 +147,14 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       // pushes the other seven below the fold, which is the opposite of what
       // this page is for.
       sections: <Widget>[
+        LoopFreshnessStrip(
+          key: const ValueKey<String>('market-freshness'),
+          restoredAt: controller.restoredObservedAt,
+          readAt: controller.valueObservedAt,
+          refreshing: state.refreshing,
+          refreshFailed: overview != null && state.failureKind != null,
+          onRetry: () => unawaited(controller.reload()),
+        ),
         MarketSearchField(onPressed: () => _open('/search')),
         MarketTabBar(
           key: const ValueKey<String>('market-tabs'),
@@ -143,7 +162,17 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           selectedIndex: _tab.index,
           onSelected: (index) => setState(() => _tab = MarketTab.values[index]),
         ),
-        if (!state.isReady || overview == null)
+        if (overview == null && state.phase == LoopChainViewPhase.loading)
+          // Rows of the list's own fixed height, so nothing moves when the
+          // prices land (decision 0095).
+          const LoopSkeleton(
+            key: ValueKey<String>('market-state-loading'),
+            type: LoopSkeletonType.priceRow,
+            rows: 6,
+            rowHeight: marketRowHeight,
+            leadingSize: marketRowLogoSize,
+          )
+        else if (!state.isReady || overview == null)
           LoopChainStateBlock(
             keyPrefix: 'market',
             phase: state.phase,
@@ -276,17 +305,20 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         descending: descending,
         onSelected: _tab == MarketTab.gainers ? (_) {} : _sortBy,
       ),
-      MarketAssetTileGroup(
-        tiles: <Widget>[
-          for (final row in ordered)
-            MarketAssetTile(
-              key: ValueKey<String>('market-asset-${row.assetId}'),
-              row: row,
-              miningWeight: marketMiningWeightFor(miningRules, row.assetId),
-              sparkline: MarketRowSparkline(series: row.sparkline),
-              onTap: () => _open(MarketAssetRoute.token(row.assetId)),
-            ),
-        ],
+      LoopContentArrival(
+        animate: _sawSkeleton,
+        child: MarketAssetTileGroup(
+          tiles: <Widget>[
+            for (final row in ordered)
+              MarketAssetTile(
+                key: ValueKey<String>('market-asset-${row.assetId}'),
+                row: row,
+                miningWeight: marketMiningWeightFor(miningRules, row.assetId),
+                sparkline: MarketRowSparkline(series: row.sparkline),
+                onTap: () => _open(MarketAssetRoute.token(row.assetId)),
+              ),
+          ],
+        ),
       ),
       if (_tab == MarketTab.watchlist)
         LoopRecordGroup(

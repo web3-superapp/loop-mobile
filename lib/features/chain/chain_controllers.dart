@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_read_retention.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -15,6 +17,9 @@ mixin LoopChainSingleFlight {
   int nextGeneration() => ++_generation;
 
   bool isCurrent(int generation) => generation == _generation;
+
+  /// Whether an operation is running right now.
+  bool get inFlight => _operation != null;
 
   Future<void> single(Future<void> Function() body) {
     final active = _operation;
@@ -32,6 +37,13 @@ mixin LoopChainSingleFlight {
 ///
 /// Every S5 page composes several of these, so one failing block leaves the
 /// blocks that did load untouched.
+///
+/// Since decision 0095 a block outlives its page for
+/// [LoopSnapshotPolicy.memoryRetention]: a page that comes back draws the
+/// answer it had, marked 更新中, while the block re-reads behind it. A block
+/// that names a [snapshotResource] may also open on the answer a previous run
+/// stored, when that answer is young enough; the page then says how old it is
+/// until the live answer replaces it.
 abstract base class LoopChainReadController<T>
     extends Notifier<LoopChainResourceState<T>>
     with LoopChainSingleFlight {
@@ -41,12 +53,73 @@ abstract base class LoopChainReadController<T>
 
   Future<T> fetch();
 
+  /// The cold-start snapshot this block may open on, or `null` for none.
+  ///
+  /// Only the four read-only first screens name one (decision 0095). A value
+  /// a signature or a write is checked against never does.
+  String? get snapshotResource => null;
+
+  /// Whether the answer outlives the page. A block whose page promises a read
+  /// taken on the spot turns it off.
+  bool get retainsAnswer => true;
+
+  DateTime? _readAt;
+  DateTime? _restoredObservedAt;
+
+  /// When this device received the answer on screen, live or restored.
+  DateTime? get valueObservedAt => _readAt;
+
+  /// Non-null while the answer on screen is a stored snapshot from an earlier
+  /// run rather than an answer this run received: when it was received.
+  DateTime? get restoredObservedAt => _restoredObservedAt;
+
+  DateTime _now() => ref.read(loopReadClockProvider)();
+
   @override
   LoopChainResourceState<T> build() {
     nextGeneration();
     final mode = watchMode();
+    // A different account is a different set of answers: the block starts
+    // over rather than showing the last account's.
+    ref.watch(loopAccountScopeProvider);
     ref.onDispose(nextGeneration);
-    return LoopChainResourceState<T>.initial(mode);
+    _readAt = null;
+    _restoredObservedAt = null;
+    if (retainsAnswer) loopRetainRead(ref, onRevisit: _revisit);
+    final initial = LoopChainResourceState<T>.initial(mode);
+    if (mode == LoopChainGatewayMode.unavailable) return initial;
+    final resource = snapshotResource;
+    if (resource == null) return initial;
+    final restored = ref.read(loopSnapshotRestorerProvider)?.restore(resource);
+    final value = restored?.value;
+    if (restored == null || value is! T) return initial;
+    _readAt = restored.observedAt;
+    _restoredObservedAt = restored.observedAt;
+    // The stored answer is drawn at once; the live read starts behind it.
+    scheduleMicrotask(() {
+      if (ref.mounted) unawaited(reload());
+    });
+    return LoopChainResourceState<T>(
+      mode: mode,
+      phase: LoopChainViewPhase.ready,
+      value: value,
+    );
+  }
+
+  void _revisit() {
+    // A block that has not been asked for yet is loaded by its page.
+    if (state.phase == LoopChainViewPhase.loading && state.value == null) {
+      return;
+    }
+    if (!loopRevisitIsDue(
+      hasValue: state.value != null,
+      inFlight: inFlight,
+      readAt: _readAt,
+      now: _now(),
+    )) {
+      return;
+    }
+    unawaited(reload());
   }
 
   Future<void> load() {
@@ -76,6 +149,8 @@ abstract base class LoopChainReadController<T>
       try {
         final value = await fetch();
         if (!isCurrent(generation)) return;
+        _readAt = _now();
+        _restoredObservedAt = null;
         state = state.ready(value);
         return;
       } on LoopChainException catch (error) {

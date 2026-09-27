@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_chain_codec.dart';
@@ -6,6 +7,7 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_codec.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot_tap.dart';
 
 /// Strict V2 transport for the `launch` module (loop-api decision 0036).
 ///
@@ -128,7 +130,11 @@ abstract interface class LoopV2LaunchApi {
 }
 
 final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
-  DioLoopV2LaunchApi(this._dio);
+  DioLoopV2LaunchApi(this._dio, {this._snapshotTap});
+
+  /// Hands the body of a cold-start read to the snapshot store (decision
+  /// 0095). `null` stores nothing.
+  final LoopV2SnapshotTap? _snapshotTap;
 
   static const overviewPath = '/v2/launch/overview';
   static const stakePath = '/v2/launch/stake';
@@ -531,6 +537,53 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
   // reads
   // -------------------------------------------------------------------------
 
+  /// The strict decoder of this read, shared by the live answer and by a
+  /// stored snapshot of it (decision 0095).
+  static LaunchOverview decodeOverview(Object? data) {
+    final root = LoopV2Contract.strictMap(data, const <String>{
+      'segments',
+      'graduated',
+      'myEligibility',
+      'staking',
+      'catalog',
+      'contractVersion',
+    });
+    LoopV2S7Codec.requireContractVersion(root);
+    final segments = LoopV2Contract.strictMap(root['segments'], const <String>{
+      'live',
+      'upcoming',
+      'awaitingSchedule',
+      'ended',
+    });
+    final catalog = LoopV2Contract.strictMap(root['catalog'], const <String>{
+      'configVersion',
+      'source',
+      'observedAt',
+    });
+    return LaunchOverview(
+      segments: LaunchSegments(
+        live: _segment(segments['live']),
+        upcoming: _segment(segments['upcoming']),
+        awaitingSchedule: _segment(segments['awaitingSchedule']),
+        ended: _segment(segments['ended']),
+      ),
+      graduated: LoopV2S7Codec.unavailable(root['graduated']),
+      myEligibility: LoopV2S7Codec.unavailable(root['myEligibility']),
+      staking: LoopV2S7Codec.unavailable(root['staking']),
+      catalog: LaunchCatalogStamp(
+        configVersion: LoopV2S7Codec.requireEnum(
+          catalog,
+          'configVersion',
+          const <String>{'launchCatalogV1'},
+        ),
+        source: LoopV2S7Codec.requireEnum(catalog, 'source', const <String>{
+          'loop',
+        }),
+        observedAt: LoopV2S7Codec.requireTimestamp(catalog, 'observedAt'),
+      ),
+    );
+  }
+
   @override
   Future<LaunchOverview> getOverview({
     required String accessToken,
@@ -542,46 +595,9 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'segments',
-        'graduated',
-        'myEligibility',
-        'staking',
-        'catalog',
-        'contractVersion',
-      });
-      LoopV2S7Codec.requireContractVersion(root);
-      final segments = LoopV2Contract.strictMap(
-        root['segments'],
-        const <String>{'live', 'upcoming', 'awaitingSchedule', 'ended'},
-      );
-      final catalog = LoopV2Contract.strictMap(root['catalog'], const <String>{
-        'configVersion',
-        'source',
-        'observedAt',
-      });
-      return LaunchOverview(
-        segments: LaunchSegments(
-          live: _segment(segments['live']),
-          upcoming: _segment(segments['upcoming']),
-          awaitingSchedule: _segment(segments['awaitingSchedule']),
-          ended: _segment(segments['ended']),
-        ),
-        graduated: LoopV2S7Codec.unavailable(root['graduated']),
-        myEligibility: LoopV2S7Codec.unavailable(root['myEligibility']),
-        staking: LoopV2S7Codec.unavailable(root['staking']),
-        catalog: LaunchCatalogStamp(
-          configVersion: LoopV2S7Codec.requireEnum(
-            catalog,
-            'configVersion',
-            const <String>{'launchCatalogV1'},
-          ),
-          source: LoopV2S7Codec.requireEnum(catalog, 'source', const <String>{
-            'loop',
-          }),
-          observedAt: LoopV2S7Codec.requireTimestamp(catalog, 'observedAt'),
-        ),
-      );
+      final decoded = decodeOverview(response.data);
+      _snapshotTap?.call(LoopSnapshotResource.launchOverview, response.data);
+      return decoded;
     } on DioException catch (error) {
       _rethrowRead(error);
     }

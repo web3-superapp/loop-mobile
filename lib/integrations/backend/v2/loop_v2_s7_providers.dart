@@ -8,6 +8,7 @@ import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_api.da
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_gateways.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining/loop_v2_mining_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/referral/loop_v2_referral_api.dart';
 
@@ -16,7 +17,11 @@ import 'package:loop_mobile/integrations/backend/v2/referral/loop_v2_referral_ap
 /// keeps the feature port at its fail-closed default.
 final loopV2LaunchApiProvider = Provider<LoopV2LaunchApi?>((ref) {
   final dio = ref.watch(loopBackendDioProvider);
-  return dio == null ? null : DioLoopV2LaunchApi(dio);
+  if (dio == null) return null;
+  return DioLoopV2LaunchApi(
+    dio,
+    snapshotTap: ref.watch(loopV2SnapshotSessionProvider)?.record,
+  );
 });
 
 final loopV2MiningApiProvider = Provider<LoopV2MiningApi?>((ref) {

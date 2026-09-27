@@ -402,7 +402,16 @@ void main() {
           if (testCase.showsMissingHeading) {
             // The folio still refuses to invent one: a page that has not read
             // a number says so in the heading, never a 0 and never a fixture.
-            expect(find.text(launchMissingHeading), findsWidgets);
+            // Since decision 0095 a page whose read is still running draws the
+            // heading as a skeleton of its own height instead.
+            final skeleton = find.byKey(
+              const ValueKey<String>('loop-folio-heading-skeleton'),
+            );
+            expect(
+              find.text(launchMissingHeading).evaluate().isNotEmpty ||
+                  skeleton.evaluate().isNotEmpty,
+              isTrue,
+            );
             expect(find.text('0'), findsNothing);
           }
         },

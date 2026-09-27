@@ -5,6 +5,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
@@ -44,6 +45,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s6_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
@@ -58,6 +61,10 @@ import 'package:loop_mobile/features/community/community_gateway.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
+  // Decision 0095: the four read-only first screens may open on the answer an
+  // earlier run stored, when it is at most ten minutes old. Opening is
+  // bounded; a store that cannot be read is an empty one.
+  final snapshotStore = await FileLoopSnapshotStore.open();
   // Firebase is brought up here and nowhere else, and only when this build was
   // given a configuration. `FIREBASE_CONFIGURED=false`, a build-profile
   // mismatch, and an initialization the device refused all end in the same
@@ -92,6 +99,13 @@ Future<void> main() async {
             FirebaseLoopPushTokenSource.forDefaultApp(),
           ),
         ],
+        loopSnapshotStoreProvider.overrideWithValue(snapshotStore),
+        loopAccountScopeProvider.overrideWith(
+          (ref) => ref.watch(loopBootstrapPrincipalKeyProvider),
+        ),
+        loopSnapshotRestorerProvider.overrideWith(
+          (ref) => ref.watch(loopV2SnapshotSessionProvider),
+        ),
         loopDisplayPreferencesStoreProvider.overrideWithValue(
           displayBootstrap.store,
         ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:loop_mobile/core/theme/loop_scroll_behavior.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/app_config.dart';
@@ -1935,6 +1936,9 @@ Future<void> _signOut(WidgetRef ref) async {
   // It is bounded; sign-out is the owner's decision and never waits on a
   // provider.
   await ref.read(loopPushRegistrationCoordinatorProvider).revokeForSignOut();
+  // Decision 0095: the stored first-screen answers belong to the account that
+  // is leaving; none of them survives the sign-out.
+  await ref.read(loopSnapshotStoreProvider)?.clear();
   final retirement = ref
       .read(loopCommunicationRetirementRegistryProvider)
       .capture();

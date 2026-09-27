@@ -49,6 +49,18 @@ abstract final class LoopMotion {
   /// back part of [trayExpand], as an [Interval] of the same controller.
   static const double trayFadeStart = 0.35;
 
+  // --- Loading (decision 0095) -------------------------------------------
+
+  /// Content replacing its skeleton: one fade, no travel. A block that was
+  /// already on screen when a refresh answered does not fade again.
+  static const Duration contentFadeIn = Duration(milliseconds: 180);
+  static const Curve contentFadeCurve = Curves.easeOutCubic;
+
+  /// The freshness line at the top of a page (「数据来自 N 秒前，正在更新」)
+  /// fading in over a restored snapshot and out once the new answer landed.
+  static const Duration freshnessFade = Duration(milliseconds: 220);
+  static const Curve freshnessCurve = Curves.easeOutCubic;
+
   /// Whether motion is switched off for [context]: either the platform's own
   /// accessibility setting or the app's 减弱动态效果, which `LoopApp` folds
   /// into the same [MediaQuery] flag.

@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 typedef CommunityNavigation = void Function(String location);
@@ -47,6 +48,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     debugLabel: 'community-messages',
   );
   CommunityPanel _panel = CommunityPanel.none;
+
+  /// Whether this page drew the index as a skeleton. Only then do the groups
+  /// fade in when they land (decision 0095).
+  bool _sawSkeleton = false;
 
   @override
   void dispose() {
@@ -99,6 +104,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
 
     final home = state.value;
     final loading = state.phase == CommunityViewPhase.loading;
+    if (home == null && loading) _sawSkeleton = true;
+    final controller = ref.read(communityHomeControllerProvider.notifier);
     // Since backend decision 0073 the aggregate answers in two groups, and a
     // community the reader owns is no longer inside `joined`. This page is
     // the reader's own index of the communities they belong to, and they
@@ -214,6 +221,9 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     heading: home == null
                         ? (loading ? '正在读取' : communityMissingHeading)
                         : '$miningCount 个社区在挖矿',
+                    // Decision 0095: the count is drawn as a skeleton of its
+                    // own height until it is read.
+                    headingLoading: home == null && loading,
                     caption: home == null
                         ? loading
                               ? '已加入的社区数量读到之后显示在这里。'
@@ -240,9 +250,20 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   ref.read(communityHomeControllerProvider.notifier).reload(),
               updating: state.refreshing,
               sections: <Widget>[
+                LoopFreshnessStrip(
+                  key: const ValueKey<String>('community-freshness'),
+                  restoredAt: controller.restoredObservedAt,
+                  readAt: controller.valueObservedAt,
+                  refreshing: state.refreshing,
+                  refreshFailed: home != null && state.failureKind != null,
+                  onRetry: () => unawaited(controller.reload()),
+                ),
                 CommunityPreviewNotice(mode: mode, resource: '社区数据'),
                 if (state.phase != CommunityViewPhase.ready || home == null)
                   CommunityStateBlock(
+                    // Rows of the index's own height (decision 0095).
+                    skeleton: LoopSkeletonType.record,
+                    rows: 4,
                     phase: state.phase,
                     failureKind: state.failureKind,
                     emptyMessage: '还没有加入任何社区',
@@ -269,11 +290,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     // `<p class="label" style="padding-top:0">` — the first
                     // label on this page sits against the folio.
                     const LoopLabel('带币社区 · 可挖矿', tight: true),
-                    LoopRecordGroup(
-                      key: const ValueKey<String>('community-mining-group'),
-                      rows: <LoopRecordRow>[
-                        for (final entry in mining) _joinedRow(entry),
-                      ],
+                    LoopContentArrival(
+                      animate: _sawSkeleton,
+                      child: LoopRecordGroup(
+                        key: const ValueKey<String>('community-mining-group'),
+                        rows: <LoopRecordRow>[
+                          for (final entry in mining) _joinedRow(entry),
+                        ],
+                      ),
                     ),
                   ],
                   if (others.isNotEmpty) ...<Widget>[
@@ -282,11 +306,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                       followsLabel: mining.isNotEmpty,
                       tight: mining.isEmpty,
                     ),
-                    LoopRecordGroup(
-                      key: const ValueKey<String>('community-other-group'),
-                      rows: <LoopRecordRow>[
-                        for (final entry in others) _joinedRow(entry),
-                      ],
+                    LoopContentArrival(
+                      animate: _sawSkeleton,
+                      child: LoopRecordGroup(
+                        key: const ValueKey<String>('community-other-group'),
+                        rows: <LoopRecordRow>[
+                          for (final entry in others) _joinedRow(entry),
+                        ],
+                      ),
                     ),
                   ],
                   if (home.joinedTruncated || home.ownedTruncated)

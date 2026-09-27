@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -660,6 +661,10 @@ Future<void> pumpS5Page(
   WalletActivityExportSink? exportSink,
   Size size = const Size(390, 2400),
   bool settle = true,
+
+  /// Extra seams a single test composes (the S88 snapshot restorer, a
+  /// fixed clock).
+  List<Override> overrides = const <Override>[],
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -693,6 +698,7 @@ Future<void> pumpS5Page(
           ),
         if (exportSink != null)
           walletActivityExportSinkProvider.overrideWithValue(exportSink),
+        ...overrides,
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

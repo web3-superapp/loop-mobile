@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_read_retention.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -25,6 +27,9 @@ mixin CommunitySingleFlight {
   int get currentGeneration => _generation;
 
   bool isCurrent(int generation) => generation == _generation;
+
+  /// Whether an operation is running right now.
+  bool get inFlight => _operation != null;
 
   Future<void> single(Future<void> Function() body) {
     final active = _operation;
@@ -75,15 +80,65 @@ bool _mayBeATransientFirstRead(CommunityFailureKind kind) =>
 // community · home aggregate
 // ---------------------------------------------------------------------------
 
+///
+/// Decision 0095: the aggregate outlives the tab for
+/// [LoopSnapshotPolicy.memoryRetention] and may open on the answer an earlier
+/// run stored; see `LoopChainReadController` for the same rules.
 final class CommunityHomeController
     extends Notifier<CommunityResourceState<CommunityHome>>
     with CommunitySingleFlight {
+  DateTime? _readAt;
+  DateTime? _restoredObservedAt;
+
+  /// When this device received the aggregate on screen, live or restored.
+  DateTime? get valueObservedAt => _readAt;
+
+  /// Non-null while the aggregate on screen is a stored snapshot.
+  DateTime? get restoredObservedAt => _restoredObservedAt;
+
+  DateTime _now() => ref.read(loopReadClockProvider)();
+
   @override
   CommunityResourceState<CommunityHome> build() {
     nextGeneration();
     final mode = ref.watch(communityGatewayProvider).mode;
+    ref.watch(loopAccountScopeProvider);
     ref.onDispose(nextGeneration);
-    return CommunityResourceState<CommunityHome>.initial(mode);
+    _readAt = null;
+    _restoredObservedAt = null;
+    loopRetainRead(ref, onRevisit: _revisit);
+    final initial = CommunityResourceState<CommunityHome>.initial(mode);
+    if (mode == CommunityGatewayMode.unavailable) return initial;
+    final restored = ref
+        .read(loopSnapshotRestorerProvider)
+        ?.restore(LoopSnapshotResource.communityHome);
+    final value = restored?.value;
+    if (restored == null || value is! CommunityHome) return initial;
+    _readAt = restored.observedAt;
+    _restoredObservedAt = restored.observedAt;
+    scheduleMicrotask(() {
+      if (ref.mounted) unawaited(reload());
+    });
+    return CommunityResourceState<CommunityHome>(
+      mode: mode,
+      phase: CommunityViewPhase.ready,
+      value: value,
+    );
+  }
+
+  void _revisit() {
+    if (state.phase == CommunityViewPhase.loading && state.value == null) {
+      return;
+    }
+    if (!loopRevisitIsDue(
+      hasValue: state.value != null,
+      inFlight: inFlight,
+      readAt: _readAt,
+      now: _now(),
+    )) {
+      return;
+    }
+    unawaited(reload());
   }
 
   Future<void> load() {
@@ -102,6 +157,8 @@ final class CommunityHomeController
         firstRead: firstRead,
       );
       if (!isCurrent(generation)) return;
+      _readAt = _now();
+      _restoredObservedAt = null;
       state = state.ready(home);
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;

@@ -97,7 +97,17 @@ void main() {
       // A read that is still running says so. 「暂无数值 / 社区数据暂时读不到」
       // is the answer to a read that finished with nothing, and it was the
       // first thing every cold start said for its first seconds.
-      expect(find.text('正在读取'), findsOneWidget);
+      // Decision 0095: the heading's figure is a skeleton of its own height,
+      // and 「正在读取」 is what it says to assistive technology.
+      expect(
+        find.byKey(const ValueKey<String>('loop-folio-heading-skeleton')),
+        findsOneWidget,
+      );
+      final folio = tester.widget<LoopFolioPrimary>(
+        find.byKey(const ValueKey<String>('community-folio')),
+      );
+      expect(folio.heading, '正在读取');
+      expect(folio.headingLoading, isTrue);
       expect(find.textContaining('读到之后显示在这里'), findsOneWidget);
       expect(find.text(communityMissingHeading), findsNothing);
       expect(find.textContaining('社区数据暂时读不到'), findsNothing);

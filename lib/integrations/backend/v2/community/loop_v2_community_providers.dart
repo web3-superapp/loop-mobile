@@ -10,6 +10,7 @@ import 'package:loop_mobile/integrations/backend/v2/community/dio_loop_v2_commun
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_ai_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/search/dio_loop_v2_search_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/search/loop_v2_search_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/social/dio_loop_v2_social_gateway.dart';
@@ -19,7 +20,11 @@ import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_social_api.da
 /// provider issues no request.
 final loopV2CommunityApiProvider = Provider<LoopV2CommunityApi?>((ref) {
   final dio = ref.watch(loopBackendDioProvider);
-  return dio == null ? null : DioLoopV2CommunityApi(dio);
+  if (dio == null) return null;
+  return DioLoopV2CommunityApi(
+    dio,
+    snapshotTap: ref.watch(loopV2SnapshotSessionProvider)?.record,
+  );
 });
 
 final loopV2CommunityAiApiProvider = Provider<LoopV2CommunityAiApi?>((ref) {
