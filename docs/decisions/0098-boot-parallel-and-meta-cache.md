@@ -128,3 +128,14 @@ Proposed 2026-09-27。S88c，客户端单侧。基线 `integration/v2` 5785f0c�
   旧值、进入重试阶梯。
 - c) `walletRead` 由 available 改为 unavailable：窗口内不变；61 s 后触发刷新，
   `walletCapabilityBlocks` 为真；挂载的钱包页出现 `wallet-capability-block`。
+
+## 主代理裁决（2026-09-27）
+
+状态：Accepted，随 `integration/v2` 合并。
+
+1. 预读保留目录 + 余额两步：钱包页慢是用户当前最直接的抱怨，每次冷启动多一次点读可接受；余额点读走免费端点，不占付费额度。
+2. 开户中账号多一次 `community/home` 读，失败即丢弃：接受。
+3. 不放宽 `LoopAuthenticatedSession` 的前置语义（profile/home 仍等 bootstrap）。
+4. 重读失败沿用旧值，不新增「N 分钟拿不到新文档就关门」规则。
+5. meta 不进冷启动快照：用旧文档开门不算 fail-closed。
+6. 待办 S88c2（S89a-fix 合并后开单）：强制刷新接进 send / swap / Launch 的 Sign sheet 打开前；`MiningReadController` 接 0095 保留机制。
