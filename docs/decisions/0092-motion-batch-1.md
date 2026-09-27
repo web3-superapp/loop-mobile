@@ -125,3 +125,10 @@ Accepted 2026-09-27。S87，客户端单侧。需求方 2026-09-27 提出四个�
      瞬时切换。
 - 待主代理裁决：申请卡「两个里程碑、审核中填到一半」是否可接受；若认为半格会被读成
   「审核进行到一半」，可改为只在出现时推进到一个更小的固定值，或撤掉该处落地。
+
+## Main-agent rulings (2026-09-27)
+
+1. Application card: the half fill stands (two milestones: submitted, decided); the card's own label says 审核中, so the fill is not read as review progress.
+2. group-info: wire the avatar stack once the group member directory has a source; not before.
+3. token tray: the overlap with the 成交 / 简介 tabs is accepted until the device round says otherwise.
+4. Wallet asset list split into one card per asset is a visual change to the frozen prototype made for the tray; it goes to the user for device acceptance, and reverts if they refuse it.
