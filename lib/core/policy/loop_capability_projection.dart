@@ -19,6 +19,7 @@ final class LoopCapabilityProjection {
     required this.decision,
     this.reasonCode,
     this.evidencePending = false,
+    this.evidenceConfirmed = false,
     this.evidenceReasonCode,
     this.launchChainId,
     this.unreachable = false,
@@ -28,6 +29,7 @@ final class LoopCapabilityProjection {
     : decision = LoopCapabilityDecision.unknown,
       reasonCode = null,
       evidencePending = false,
+      evidenceConfirmed = false,
       evidenceReasonCode = null,
       launchChainId = null;
 
@@ -53,6 +55,12 @@ final class LoopCapabilityProjection {
   /// the surface to its own five states. While it is pending the surface must
   /// stay closed even though the capability itself reads `available`.
   final bool evidencePending;
+
+  /// The operator recorded the provider precondition as met (`confirmed`,
+  /// decision 0068). For `launch` this is the contract being live (decision
+  /// 0093), which is what lets a Launch page stop saying "the contract is not
+  /// live yet" (decision 0097). `notApplicable` and `pending` leave it false.
+  final bool evidenceConfirmed;
   final String? evidenceReasonCode;
 
   /// Decision 0038: the chain slot the `launch` module points at, published
@@ -105,6 +113,8 @@ abstract final class LoopCapabilityProjector {
         LoopV2CapabilityEvidenceStatus.notApplicable ||
         LoopV2CapabilityEvidenceStatus.confirmed => false,
       },
+      evidenceConfirmed:
+          evidence.status == LoopV2CapabilityEvidenceStatus.confirmed,
       evidenceReasonCode: evidence.reasonCode,
       launchChainId: evidence.launchChainId,
     );

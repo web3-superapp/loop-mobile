@@ -98,18 +98,23 @@ class LaunchUnavailableCard extends StatelessWidget {
     required this.fact,
     super.key,
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.reason,
   });
 
   final String label;
   final LaunchUnavailable fact;
   final EdgeInsets margin;
 
+  /// The page's own sentence for [fact], when it knows more than the code
+  /// alone (decision 0097); `null` reads [launchReasonCodeText].
+  final String? reason;
+
   @override
   Widget build(BuildContext context) {
     return LoopEmpty(
       key: ValueKey<String>('launch-unavailable-$label'),
       message: label,
-      reason: launchReasonCodeText(fact.reasonCode),
+      reason: reason ?? launchReasonCodeText(fact.reasonCode),
       margin: margin,
     );
   }
@@ -463,13 +468,25 @@ LoopRecordRow launchCatalogRow({
   required LaunchSummary launch,
   required VoidCallback? onTap,
   LoopRowPosition position = LoopRowPosition.single,
+  String? saleSegmentLabel,
 }) {
-  final schedule = switch (launch.scheduleStatus) {
-    LaunchScheduleStatus.unscheduled => '已批准 · 待排期',
-    LaunchScheduleStatus.scheduled => '已排期',
-    LaunchScheduleStatus.live => '发射中',
-    LaunchScheduleStatus.ended => '已结束',
-  };
+  // Decision 0097: the 发射中 and 已结束 segments are derived from the chain's
+  // sale state, so a row there states that state; the off-chain schedule
+  // (which may still read `unscheduled`) would contradict the segment and the
+  // badge beside it. Without a chain reading the row falls back to the
+  // segment's own name, never to 待排期.
+  final onChain = launch.onChainState;
+  final schedule = saleSegmentLabel != null
+      ? switch (onChain) {
+          final LaunchOnChainAvailable chain => launchSaleStateLabel(chain),
+          LaunchOnChainUnavailable() => saleSegmentLabel,
+        }
+      : switch (launch.scheduleStatus) {
+          LaunchScheduleStatus.unscheduled => '已批准 · 待排期',
+          LaunchScheduleStatus.scheduled => '已排期',
+          LaunchScheduleStatus.live => '发射中',
+          LaunchScheduleStatus.ended => '已结束',
+        };
   final config = launch.configVersion == null
       ? launchPendingConfirmationLabel
       : '配置已确认';
@@ -631,6 +648,20 @@ class LaunchAxisBlock extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The sale axis in the few words a catalogue row's subtitle carries
+/// (decision 0097). A pause is stated on its own.
+String launchSaleStateLabel(LaunchOnChainAvailable state) {
+  if (state.operationalState == LaunchOperationalState.paused) return '已暂停';
+  return switch (state.saleState) {
+    LaunchSaleState.scheduled => '已排期 · 未开售',
+    LaunchSaleState.live => '销售进行中',
+    LaunchSaleState.ended => '销售已结束',
+    LaunchSaleState.succeeded => '销售成功',
+    LaunchSaleState.failed => '未达软顶',
+    LaunchSaleState.cancelled => '已取消',
+  };
 }
 
 /// The short badge a catalogue row or a folio stamp carries for the axes.

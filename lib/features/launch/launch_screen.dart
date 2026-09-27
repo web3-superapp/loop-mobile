@@ -114,8 +114,15 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         // Decision 0095: the count is a skeleton of its own height until the
         // catalogue is read, never a stand-in sentence.
         headingLoading: loading,
-        caption: '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
-        stamp: overview == null ? null : 'OFF-CHAIN',
+        // Decision 0097: the caption and the stamp follow the catalogue's own
+        // rows. Only a row whose axes were read on chain lets the hero say
+        // the chain is being read.
+        caption: launchOverviewCaption(overview, testnet: testnet),
+        stamp: overview == null
+            ? null
+            : launchOverviewReadsChain(overview)
+            ? 'ON-CHAIN'
+            : 'OFF-CHAIN',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -182,7 +189,15 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           const LoopLabel('已毕业'),
           // Graduation is a liquidity fact. It is never derived from a
           // schedule that says "ended".
-          LaunchUnavailableCard(label: '已毕业项目', fact: overview.graduated),
+          LaunchUnavailableCard(
+            label: '已毕业项目',
+            fact: overview.graduated,
+            reason: launchBaselineReasonText(
+              overview.graduated.reasonCode,
+              contractLive: capability.evidenceConfirmed,
+              whenLive: '已毕业名单还没有开放读取',
+            ),
+          ),
           const LoopNotice(
             key: ValueKey<String>('launch-curation-notice'),
             icon: 'target',
@@ -231,6 +246,31 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
       ],
     );
   }
+}
+
+/// Whether any row of the catalogue carries axes read on chain
+/// (`onChainState.source == "chain"`), decision 0097.
+bool launchOverviewReadsChain(LaunchOverview overview) {
+  final segments = overview.segments;
+  return <LaunchSummary>[
+    ...segments.live,
+    ...segments.upcoming,
+    ...segments.awaitingSchedule,
+    ...segments.ended,
+  ].any((launch) => launch.onChainState is LaunchOnChainAvailable);
+}
+
+/// The Launch hero's caption (decision 0097): the chain is named only when the
+/// catalogue itself carries a chain reading.
+String launchOverviewCaption(
+  LaunchOverview? overview, {
+  required bool testnet,
+}) {
+  if (overview != null && launchOverviewReadsChain(overview)) {
+    return '目录、申请与轮次配置由 LOOP 提供；链上状态读自 '
+        '${testnet ? 'BSC 测试网' : 'BSC 主网'}。';
+  }
+  return '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。';
 }
 
 /// The permanent Launch notice: the capability reads `available` because the
@@ -298,6 +338,10 @@ class _SegmentList extends StatelessWidget {
                 ? null
                 : () => onOpenLaunch!(items[index].launchId),
             position: launchRowPosition(index, items.length),
+            saleSegmentLabel:
+                segment == LaunchSegment.live || segment == LaunchSegment.ended
+                ? launchSegmentLabel(segment)
+                : null,
           ),
       ],
     );

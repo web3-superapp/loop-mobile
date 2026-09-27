@@ -429,6 +429,9 @@ LoopV2MetaSnapshot s7MetaSnapshot({
   // false is how a test proves the page is driven by the evidence rather than
   // by a hard-coded reason code of its own.
   bool launchEvidencePending = true,
+  // Decision 0093/0097: the contract is live and the operator recorded it.
+  // Wins over [launchEvidencePending].
+  bool launchEvidenceConfirmed = false,
   // Decision 0038: the backend publishes this only while the Launch slot
   // differs from the primary chain, so `null` is the ordinary document.
   String? launchChainId,
@@ -485,6 +488,14 @@ LoopV2MetaSnapshot s7MetaSnapshot({
               _ => 'CAPABILITY_NOT_DELIVERED',
             },
             evidence: switch (id) {
+              LoopV2CapabilityId.launch when launchEvidenceConfirmed =>
+                LoopV2CapabilityEvidence(
+                  status: LoopV2CapabilityEvidenceStatus.confirmed,
+                  reasonCode: null,
+                  reference: 'ops:launch-contract-bsc-testnet',
+                  launchChainId: launchChainId,
+                  launchContractVersion: 'launchContract.v1',
+                ),
               LoopV2CapabilityId.launch => LoopV2CapabilityEvidence(
                 status: launchEvidencePending
                     ? LoopV2CapabilityEvidenceStatus.pending
