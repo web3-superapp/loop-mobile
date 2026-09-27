@@ -50,3 +50,7 @@ When `tierModeV1` is not confirmed the server answers `TIER_MODE_PENDING`
 without evaluating the round, even when its on-chain root is zero, so an open
 round under an unconfigured mode still reads 「待确认」. Evaluating open roots
 regardless of mode is a loop-api decision.
+
+## Main-agent ruling on the open question (2026-09-27)
+
+The backend publishes the open branch for a zero on-chain `allowlistRoot` regardless of whether `tierModeV1` is confirmed (loop-api S83b5). The client keeps reading the eligibility response and never infers openness from the detail's root.
