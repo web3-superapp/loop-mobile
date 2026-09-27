@@ -151,3 +151,23 @@ decodeHome` 静态函数（仅移动代码，未改一行校验），冷启动�
 
 1. Storing snapshots as a JSON file under the app temp directory is accepted for now (no new direct dependency; the harness limits `shared_preferences` to display preferences). Follow-up: move to the application-support directory through `path_provider` once the lockfile can take it as a direct dependency.
 2. Balance snapshots are display-only; the signing path re-reads. Kept.
+
+## S88b — snapshot file moves to the application-support directory (2026-09-27)
+
+- 原因：主代理在 Android 模拟器实测，杀进程重开后钱包页仍是骨架；`run-as com.cywd.loop ls cache`
+  里没有 `loop_read_snapshots_v1.json`。Android 进程环境没有 `TMPDIR`，`Directory.systemTemp`
+  落到应用不可写的位置，store 每次写入静默失败，实际退化为仅内存，冷启动快照从未生效。
+  上文 Consequences 中「待真机确认」一项据此判定为不成立。
+- 位置：`getApplicationSupportDirectory()/loop_read_snapshots_v1.json`。iOS 为
+  `Library/Application Support`，Android 为 `files`（`Context.getFilesDir`）；两者都应用私有、
+  跨重启保留、不被系统当缓存清理。iOS 上 Application Support 默认参与备份；文件只含 ≤16 条
+  只读答复、登出即删，未另设 `isExcludedFromBackup`（需要原生通道，本单不引入）。
+- 依赖：`path_provider` 由传递依赖提升为直接依赖，版本钉在锁文件已解析的 `2.1.6`；
+  `pubspec.lock` 只有该条目 `dependency: transitive` → `"direct main"`，其他版本不变。
+- 初始化：`main.dart` 在 `runApp` 前 `await FileLoopSnapshotStore.openPersistent()`；定位、
+  创建目录、写探针文件各有 400 ms 上限。任一步失败则返回 `MemoryLoopSnapshotStore` 并打一条
+  `debugPrint`，不崩、不阻塞首帧；已有文件损坏同样按空 store 处理并记日志。
+  `FileLoopSnapshotStore.open` 改为必须显式传目录，不再有 `systemTemp` 回退。
+- 测试：`test/s88b_snapshot_directory_test.dart`（注入临时目录写入 → 新实例读回一致且探针不残留；
+  目录处是普通文件无法创建 → 内存 store；定位抛错 → 内存 store；定位超时 → 内存 store）。
+  S88 既有测试不删不改。
