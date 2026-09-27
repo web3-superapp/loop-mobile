@@ -152,3 +152,7 @@ Accepted 2026-09-27。S87，客户端单侧。需求方 2026-09-27 提出四个�
 测试：`loop_motion_components_test`（相接偏移、6 字截断、默认 40、名称不越格不被裁切）、
 `community_pages_test`（截断后的名称、40 尺寸、名称在滚动容器内）、
 `s5_wallet_pages_test`（原托盘用例改回：资产行在一张分组卡内、副标题含「可动用 · 算力」、无托盘）。
+
+## Main-agent ruling on the spread label (2026-09-27)
+
+Names stay inside the cell width with an ellipsis (about three CJK characters visible); the font is not shrunk and labels never overlap a neighbour. The full name is still read by the screen reader.
