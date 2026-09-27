@@ -249,7 +249,7 @@ void main() {
           find.byKey(ValueKey<String>('${testCase.slug}-state-error')),
           findsNothing,
         );
-        expect(find.text('离线 · 显示缓存'), findsOneWidget);
+        expect(find.text('连不上 LOOP'), findsOneWidget);
         expect(find.textContaining('已暂停：'), findsOneWidget);
       });
 

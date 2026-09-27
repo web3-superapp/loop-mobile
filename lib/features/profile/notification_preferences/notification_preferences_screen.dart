@@ -262,8 +262,9 @@ class _NotificationPreferencesScreenState
           // A save that never reached the server changed nothing on either
           // side. It is a pause, not a failure: the switches keep the values
           // that are still loaded and the page says which action stopped.
-          else if (state.failureKind == LoopChainFailureKind.offline)
+          else if (loopChainIsOffline(state.failureKind))
             LoopOfflineState(
+              cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>(
                 'notification-preferences-save-offline',
               ),

@@ -485,7 +485,7 @@ void main() {
             findsNothing,
             reason: '暂停的页面不能声称「这里没有内容」',
           );
-          expect(find.text('离线 · 显示缓存'), findsOneWidget);
+          expect(find.text('连不上 LOOP'), findsOneWidget);
           _expectNothingRead(testCase);
         });
       }

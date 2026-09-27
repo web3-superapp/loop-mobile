@@ -171,11 +171,14 @@ class ChatTokenCard extends ConsumerWidget {
         message: '未收录的代币 · ${loopChatTokenShortAddress(address)}',
         reason: '这个合约地址不在 LOOP 的资产目录里，没有可展示的行情。',
       ),
-      LoopChainFailureKind.offline => LoopEmpty(
+      LoopChainFailureKind.offline ||
+      LoopChainFailureKind.timedOut => LoopEmpty(
         key: ValueKey<String>('chat-token-card-offline-$address'),
         icon: 'offline',
-        message: '设备离线，没有读这个合约',
-        reason: loopChainFailureReason(LoopChainFailureKind.offline),
+        message: entry.asset.failureKind == LoopChainFailureKind.timedOut
+            ? 'LOOP 响应超时，没有读到这个合约'
+            : '设备离线，没有读这个合约',
+        reason: loopChainFailureReason(entry.asset.failureKind),
         action: LoopButton(
           label: '重试',
           onPressed: () => unawaited(cache.resolve(address, force: true)),

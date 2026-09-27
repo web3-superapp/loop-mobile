@@ -604,7 +604,11 @@ void main() {
       expect(retries, 1);
       expect(alternative, 1);
       expect(find.text('缓存 09:38'), findsOneWidget);
-      expect(find.text('缓存 —'), findsOneWidget);
+      // S88d: without a cache time there is no cache stamp and no claim to
+      // be showing one.
+      expect(find.text('缓存 —'), findsNothing);
+      expect(find.text('离线 · 显示缓存'), findsOneWidget);
+      expect(find.text('连不上 LOOP'), findsOneWidget);
       expect(find.textContaining('已暂停：发送、兑换、跨链、签名'), findsNWidgets(2));
       expect(
         find.byKey(const ValueKey<String>('loop-permission-state')),

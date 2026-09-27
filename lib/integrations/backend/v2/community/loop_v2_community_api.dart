@@ -728,8 +728,10 @@ CommunityFailureKind communityFailureKindForV2(
     'RATE_LIMITED' => CommunityFailureKind.rateLimited,
     'INVALID_REQUEST' || 'VERSION_CONFLICT' => CommunityFailureKind.invalidData,
     _ => switch (failure.kind) {
-      LoopBackendFailureKind.connection ||
-      LoopBackendFailureKind.timeout => CommunityFailureKind.offline,
+      LoopBackendFailureKind.connection => CommunityFailureKind.offline,
+      // S88d: a read that timed out is worded apart from a failed connection.
+      LoopBackendFailureKind.timeout =>
+        write ? CommunityFailureKind.offline : CommunityFailureKind.timedOut,
       LoopBackendFailureKind.cancelled => CommunityFailureKind.cancelled,
       // A payload the client could not parse leaves a write unresolved: the
       // server may already have applied it. A read adopted nothing and

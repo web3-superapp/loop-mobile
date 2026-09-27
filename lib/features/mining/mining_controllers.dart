@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_read_retention.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
@@ -11,15 +13,50 @@ import 'package:loop_mobile/features/mining/referral_models.dart';
 
 /// One read-only `mining` resource, wired to the same five reviewed states the
 /// launch controllers use.
+///
+/// S88d: the answer outlives its page the way decision 0095 set out for the
+/// wallet blocks. A page that comes back draws the answer it had and, when it
+/// is at least [LoopSnapshotPolicy.revisitFloor] old, re-reads it in the
+/// background marked 更新中. Pull-to-refresh still reads at once. Mining
+/// answers are never written to the cold-start snapshot store.
 abstract base class MiningReadController<T>
     extends Notifier<LaunchResourceState<T>>
     with LaunchSingleFlight {
+  DateTime? _readAt;
+
+  /// When this device received the answer on screen.
+  DateTime? get valueObservedAt => _readAt;
+
+  /// Whether the answer outlives the page. A read whose subject is named by
+  /// the route turns it off, as the per-launch reads do.
+  bool get retainsAnswer => true;
+
+  DateTime _now() => ref.read(loopReadClockProvider)();
+
   @override
   LaunchResourceState<T> build() {
     nextGeneration();
     final mode = ref.watch(miningGatewayProvider).mode;
+    // A different account is a different set of answers.
+    ref.watch(loopAccountScopeProvider);
     ref.onDispose(nextGeneration);
+    _readAt = null;
+    if (retainsAnswer) loopRetainRead(ref, onRevisit: _revisit);
     return LaunchResourceState<T>.initial(mode);
+  }
+
+  void _revisit() {
+    // A read that has not been asked for yet is loaded by its page.
+    if (state.phase == LaunchViewPhase.loading && state.value == null) return;
+    if (!loopRevisitIsDue(
+      hasValue: state.value != null,
+      inFlight: inFlight,
+      readAt: _readAt,
+      now: _now(),
+    )) {
+      return;
+    }
+    unawaited(reload());
   }
 
   Future<T> fetch(MiningGateway gateway);
@@ -36,6 +73,7 @@ abstract base class MiningReadController<T>
     try {
       final value = await fetch(gateway);
       if (!isCurrent(generation)) return;
+      _readAt = _now();
       state = state.ready(value);
     } on LaunchException catch (error) {
       if (!isCurrent(generation)) return;
@@ -149,6 +187,10 @@ final class MiningCommunityController
   }
 
   String? _communityId;
+
+  /// The community is the route's subject; each open reads it again.
+  @override
+  bool get retainsAnswer => false;
 
   Future<void> open(String? communityId) {
     if (communityId == null) {

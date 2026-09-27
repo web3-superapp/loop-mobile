@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/policy/loop_capability_refresh.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -558,6 +559,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
         if (MoneyOfflinePause.covers(_preflightFailure))
           MoneyOfflinePause(
             blockKey: 'send-recipient-preflight-offline',
+            failureKind: _preflightFailure?.kind,
             pausedActions: const <String>['校验地址', '下一步', '签名'],
             onRetry: () => unawaited(_check()),
           )
@@ -732,6 +734,9 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
   bool _busy = false;
   bool _started = false;
 
+  /// The capability document is being re-read before the sheet opens.
+  bool _checkingCapability = false;
+
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
 
   void _open(String location, {Object? extra}) {
@@ -776,7 +781,9 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
               clock: widget.clock,
               builder: (context, remaining) => LoopButton(
                 key: const ValueKey<String>('send-confirm-sign'),
-                label: remaining == Duration.zero
+                label: _checkingCapability
+                    ? moneyCapabilityCheckingLabel
+                    : remaining == Duration.zero
                     ? '事实已过期 · 重新准备'
                     : '确认发送（${moneyCountdownLabel(remaining)}）',
                 primary: true,
@@ -954,7 +961,23 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
 
   Future<void> _sign(LoopWalletIntent intent) async {
     if (_busy) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _checkingCapability = true;
+    });
+    // S88d: the server's current answer, not one up to a minute old, decides
+    // whether the sheet opens. A closed gate takes the page's own block.
+    await loopRefreshCapabilitiesBeforeSigning(ref);
+    if (!mounted) return;
+    final closed = moneyActionBlocks(
+      ref.read(walletIntentsGatewayProvider).mode,
+      ref.read(loopCapabilityProvider(LoopV2CapabilityId.sendApprovals)),
+    );
+    setState(() {
+      _checkingCapability = false;
+      if (closed) _busy = false;
+    });
+    if (closed) return;
     final outcome = await showMoneySignSheet(
       context,
       intent: intent,

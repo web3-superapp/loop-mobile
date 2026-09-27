@@ -160,7 +160,7 @@ void main() {
         find.byKey(const ValueKey<String>('mining-assets-state-error')),
         findsNothing,
       );
-      expect(find.text('离线 · 显示缓存'), findsNothing);
+      expect(find.text('连不上 LOOP'), findsNothing);
 
       // Every weighted holding the snapshot priced, each with the expression
       // that produced its power. What the numbers are belongs to the capture

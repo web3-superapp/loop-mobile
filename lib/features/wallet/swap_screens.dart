@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/policy/loop_capability_refresh.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -52,6 +53,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   LoopSwapQuoteView? _quote;
   LoopChainException? _failure;
   bool _busy = false;
+
+  /// The capability document is being re-read before the sheet opens.
+  bool _checkingCapability = false;
 
   static const List<int> _slippageChoices = <int>[50, 100, 300];
 
@@ -258,6 +262,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           else if (MoneyOfflinePause.covers(_failure))
             MoneyOfflinePause(
               blockKey: 'swap-quote-offline',
+              failureKind: _failure?.kind,
               pausedActions: const <String>['获取报价', '兑换', '签名'],
               onRetry: () => unawaited(_requestQuote(walletId)),
             )
@@ -348,7 +353,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             (!impact.requiresConfirmation || _confirmPriceImpact);
         return LoopButton(
           key: const ValueKey<String>('swap-confirm-action'),
-          label: expired
+          label: _checkingCapability
+              ? moneyCapabilityCheckingLabel
+              : expired
               ? '报价已过期 · 重新报价'
               : capability.evidencePending
               ? '兑换还在验证中'
@@ -445,7 +452,28 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   Future<void> _confirm(LoopSwapQuoteView quote) async {
     if (_busy) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _checkingCapability = true;
+    });
+    // S88d: the server's current answer decides whether an intent is prepared
+    // and the sheet opened. A closed gate falls back to the page's own block.
+    await loopRefreshCapabilitiesBeforeSigning(ref);
+    if (!mounted) return;
+    final capability = ref.read(
+      loopCapabilityProvider(LoopV2CapabilityId.privySwap),
+    );
+    final closed =
+        moneyActionBlocks(
+          ref.read(swapQuoteGatewayProvider).mode,
+          capability,
+        ) ||
+        !capability.isUsable;
+    setState(() {
+      _checkingCapability = false;
+      if (closed) _busy = false;
+    });
+    if (closed) return;
     try {
       final intent = await ref
           .read(walletIntentsGatewayProvider)

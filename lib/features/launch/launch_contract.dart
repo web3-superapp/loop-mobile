@@ -10,6 +10,10 @@ import 'package:flutter/foundation.dart';
 enum LaunchFailureKind {
   offline,
 
+  /// A **read** that went out and got no answer in time. The same page phase
+  /// as [offline]; only the wording differs (S88d). A write never carries it.
+  timedOut,
+
   /// The request was cancelled in flight. A write may or may not have been
   /// applied, so its idempotency key must survive an identical retry.
   cancelled,
@@ -123,6 +127,7 @@ const String launchPendingConfirmationLabel = '待确认';
 /// never claims a result the server did not confirm.
 String launchFailureReason(LaunchFailureKind? kind) => switch (kind) {
   LaunchFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
+  LaunchFailureKind.timedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。',
   LaunchFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
   LaunchFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
   LaunchFailureKind.unavailable => '该能力当前不可用，没有执行任何操作，也没有回退到演示数据。',
@@ -145,6 +150,7 @@ String launchFailureReason(LaunchFailureKind? kind) => switch (kind) {
 /// replayed rather than replaced.
 bool launchOutcomeIsUnresolved(LaunchFailureKind kind) =>
     kind == LaunchFailureKind.offline ||
+    kind == LaunchFailureKind.timedOut ||
     kind == LaunchFailureKind.cancelled ||
     kind == LaunchFailureKind.outcomeUnknown;
 
@@ -279,7 +285,8 @@ enum LaunchViewPhase {
 
 LaunchViewPhase launchPhaseForFailure(LaunchFailureKind? kind) =>
     switch (kind) {
-      LaunchFailureKind.offline => LaunchViewPhase.offline,
+      LaunchFailureKind.offline ||
+      LaunchFailureKind.timedOut => LaunchViewPhase.offline,
       LaunchFailureKind.unavailable => LaunchViewPhase.unavailable,
       LaunchFailureKind.permissionDenied ||
       LaunchFailureKind.policyBlocked ||

@@ -23,6 +23,10 @@ bool moneyActionBlocks(
   LoopCapabilityProjection capability,
 ) => mode != LoopChainGatewayMode.preview && !capability.isAvailable;
 
+/// The primary action's label while the capability document is re-read in
+/// front of a signing exit (S88d). The action is not pressable meanwhile.
+const String moneyCapabilityCheckingLabel = '正在核对可用性';
+
 /// Whether a money-action *read* must stop.
 ///
 /// The write switch and the canary only govern prepare, report and execute:
@@ -549,6 +553,7 @@ class MoneyOfflinePause extends StatelessWidget {
     required this.pausedActions,
     super.key,
     this.onRetry,
+    this.failureKind,
   });
 
   /// The page's own key, so the assertion names this page and not a shared
@@ -563,11 +568,15 @@ class MoneyOfflinePause extends StatelessWidget {
   /// True when the failure happened before any wallet handoff and is a
   /// connectivity observation rather than a server answer.
   static bool covers(LoopChainException? failure) =>
-      failure != null && failure.kind == LoopChainFailureKind.offline;
+      failure != null && loopChainIsOffline(failure.kind);
+
+  /// The failure this block stands for; it only decides the wording (S88d).
+  final LoopChainFailureKind? failureKind;
 
   @override
   Widget build(BuildContext context) => LoopOfflineState(
     key: ValueKey<String>(blockKey),
+    cause: loopOfflineCauseFor(failureKind),
     pausedActions: pausedActions,
     onRetry: onRetry,
   );

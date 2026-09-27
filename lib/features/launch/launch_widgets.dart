@@ -61,6 +61,9 @@ class LaunchStateBlock extends StatelessWidget {
       case LaunchViewPhase.offline:
         return LoopOfflineState(
           key: ValueKey<String>('$prefix-state-offline'),
+          cause: failureKind == LaunchFailureKind.timedOut
+              ? LoopOfflineCause.timeout
+              : LoopOfflineCause.connection,
           onRetry: onRetry,
           pausedActions: const <String>['申请', '提交', '认购', '领取', '绑定'],
         );

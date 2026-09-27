@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/policy/loop_capability_refresh.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -55,6 +56,9 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
   final TextEditingController _amount = TextEditingController();
   String? _roundId;
 
+  /// The capability document is being re-read before a signing sheet opens.
+  bool _checkingCapability = false;
+
   @override
   void initState() {
     super.initState();
@@ -81,12 +85,29 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
 
   /// 「先授权 USD1」: the exact-amount approval towards the Launch contract,
   /// through the wallet approval intent and the one signing exit.
+  /// S88d: re-reads the capability document before a signing sheet opens and
+  /// answers whether the page's own gate is still open. It applies the gate
+  /// the page already applies — the `launch` capability and its evidence — and
+  /// no other; a closed gate is then drawn by the page itself.
+  Future<bool> _capabilityStillOpen() async {
+    if (_checkingCapability) return false;
+    setState(() => _checkingCapability = true);
+    await loopRefreshCapabilitiesBeforeSigning(ref);
+    if (!mounted) return false;
+    setState(() => _checkingCapability = false);
+    final capability = ref.read(
+      loopCapabilityProvider(LoopV2CapabilityId.launch),
+    );
+    return !launchCapabilityBlocks(capability) && !capability.evidencePending;
+  }
+
   Future<void> _approve({
     required String walletId,
     required String assetId,
     required String spenderAddress,
     required String amount,
   }) async {
+    if (!await _capabilityStillOpen() || !mounted) return;
     final approval = ref.read(launchApprovalControllerProvider.notifier);
     final intent = await approval.prepare(
       walletId: walletId,
@@ -106,6 +127,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
   }
 
   Future<void> _sign(LaunchPurchasePrepared prepared, String ticker) async {
+    if (!await _capabilityStillOpen() || !mounted) return;
     final directory = ref.read(walletDirectoryControllerProvider).value;
     String? fromAddress;
     for (final wallet in directory?.wallets ?? const <LoopWalletAccount>[]) {
@@ -265,6 +287,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         allowance.status == LaunchAllowanceStatus.insufficient;
     final canApprove =
         needsApproval &&
+        !_checkingCapability &&
         !approval.busy &&
         !trade.busy &&
         !trade.locked &&
@@ -298,7 +321,9 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         : needsApproval
         ? LoopButton(
             key: const ValueKey<String>('launch-trade-approve'),
-            label: '先授权 USD1',
+            label: _checkingCapability
+                ? moneyCapabilityCheckingLabel
+                : '先授权 USD1',
             primary: true,
             block: true,
             onPressed: canApprove
@@ -311,7 +336,11 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                     ),
                   )
                 : null,
-            semanticLabel: canApprove ? '先授权 USD1' : '先授权 USD1，当前不可执行',
+            semanticLabel: _checkingCapability
+                ? '先授权 USD1，$moneyCapabilityCheckingLabel'
+                : canApprove
+                ? '先授权 USD1'
+                : '先授权 USD1，当前不可执行',
           )
         : LoopButton(
             key: const ValueKey<String>('launch-trade-submit'),
@@ -455,10 +484,13 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               prepared: prepared,
               ticker: ticker,
               trade: trade,
-              onSign: trade.locked
+              checkingCapability: _checkingCapability,
+              onSign: trade.locked || _checkingCapability
                   ? null
                   : () => unawaited(_sign(prepared, ticker)),
-              onDiscard: trade.locked ? null : tradeController.discard,
+              onDiscard: trade.locked || _checkingCapability
+                  ? null
+                  : tradeController.discard,
               onRetryReport: trade.reportRetryable && !trade.reporting
                   ? () => unawaited(tradeController.retryReport())
                   : null,
@@ -751,11 +783,15 @@ class _TradeReview extends StatelessWidget {
     required this.onSign,
     required this.onDiscard,
     required this.onRetryReport,
+    this.checkingCapability = false,
   });
 
   final LaunchPurchasePrepared prepared;
   final String ticker;
   final LaunchTradeState trade;
+
+  /// The capability document is being re-read before the sheet opens.
+  final bool checkingCapability;
   final VoidCallback? onSign;
   final VoidCallback? onDiscard;
   final VoidCallback? onRetryReport;
@@ -831,7 +867,9 @@ class _TradeReview extends StatelessWidget {
               ),
               LoopButton(
                 key: const ValueKey<String>('launch-trade-sign'),
-                label: '签名认购',
+                label: checkingCapability
+                    ? moneyCapabilityCheckingLabel
+                    : '签名认购',
                 primary: true,
                 onPressed: onSign,
               ),

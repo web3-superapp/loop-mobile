@@ -179,6 +179,7 @@ abstract base class LoopChainReadController<T>
   /// alone. Both kinds are reported with no server answer behind them.
   static bool _mayBeATransientFirstRead(LoopChainFailureKind kind) =>
       kind == LoopChainFailureKind.offline ||
+      kind == LoopChainFailureKind.timedOut ||
       kind == LoopChainFailureKind.unexpected ||
       kind == LoopChainFailureKind.readFailed;
 }

@@ -178,8 +178,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         else ...<Widget>[
           // A command that never reached the server created, changed and
           // deleted nothing. The list below is still the server's own answer.
-          if (state.failureKind == LoopChainFailureKind.offline)
+          if (loopChainIsOffline(state.failureKind))
             LoopOfflineState(
+              cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>('alerts-command-offline'),
               pausedActions: const <String>['新建提醒', '修改提醒', '删除提醒'],
               onRetry: () => unawaited(controller.reload()),

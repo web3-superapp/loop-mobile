@@ -3184,24 +3184,65 @@ class LoopErrorState extends StatelessWidget {
   }
 }
 
+/// Why a read did not reach LOOP, as [LoopOfflineState] words it.
+enum LoopOfflineCause {
+  /// No connection, or the connection was reset before an answer arrived.
+  connection,
+
+  /// The request went out and no answer arrived in time.
+  timeout,
+}
+
 /// Chapter 9 Offline: shows the cache time and which actions are paused.
+///
+/// S88d: the card only says 「显示缓存」 when the owner handed it a cache time.
+/// Without one there is nothing cached on screen, so it says the read did not
+/// complete — 「连不上 LOOP」 for a connection that failed, 「LOOP 响应超时」
+/// for one that timed out — and draws no cache stamp.
 class LoopOfflineState extends StatelessWidget {
   const LoopOfflineState({
     super.key,
     this.cachedAtLabel,
+    this.cause = LoopOfflineCause.connection,
     this.pausedActions = const <String>['发送', '兑换', '跨链', '签名'],
     this.onRetry,
     this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
   });
 
-  /// Formatted last-sync time supplied by the owner; null renders `—`.
+  static const String cachedHeadline = '离线 · 显示缓存';
+  static const String cachedTimeoutHeadline = 'LOOP 响应超时 · 显示缓存';
+  static const String connectionHeadline = '连不上 LOOP';
+  static const String timeoutHeadline = 'LOOP 响应超时';
+  static const String noCacheBody = '这次读取没有完成，还没有可显示的缓存。';
+
+  /// Formatted last-sync time of a cached value that is on screen. `null`
+  /// means there is no cached value, and the card says so.
   final String? cachedAtLabel;
+  final LoopOfflineCause cause;
   final List<String> pausedActions;
   final VoidCallback? onRetry;
   final EdgeInsets margin;
 
+  /// The card's title for this combination of cache and cause.
+  String get headline {
+    final timedOut = cause == LoopOfflineCause.timeout;
+    if (cachedAtLabel != null) {
+      return timedOut ? cachedTimeoutHeadline : cachedHeadline;
+    }
+    return timedOut ? timeoutHeadline : connectionHeadline;
+  }
+
+  /// The card's sentence under the title.
+  String get body {
+    final paused = pausedActions.isEmpty
+        ? ''
+        : '已暂停：${pausedActions.join('、')}。';
+    return cachedAtLabel != null ? '$paused缓存值可能已过期。' : '$noCacheBody$paused';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final cachedAt = cachedAtLabel;
     return Padding(
       padding: margin,
       child: Semantics(
@@ -3224,19 +3265,25 @@ class LoopOfflineState extends StatelessWidget {
                   const LoopIcon('offline', size: 17),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      '离线 · 显示缓存',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        headline,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                     ),
                   ),
-                  Text('缓存 ${cachedAtLabel ?? '—'}', style: LoopMono.stamp),
+                  if (cachedAt != null)
+                    Text(
+                      '缓存 $cachedAt',
+                      key: const ValueKey<String>('loop-offline-cached-at'),
+                      style: LoopMono.stamp,
+                      semanticsLabel: '缓存时间 $cachedAt',
+                    ),
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
-                '已暂停：${pausedActions.join('、')}。缓存值可能已过期。',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              Text(body, style: Theme.of(context).textTheme.bodyMedium),
               if (onRetry != null) ...<Widget>[
                 const SizedBox(height: 12),
                 LoopButton(label: '重试连接', onPressed: onRetry),

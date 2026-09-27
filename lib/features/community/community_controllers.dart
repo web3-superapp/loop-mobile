@@ -74,6 +74,7 @@ Future<T> communityFirstRead<T>(
 
 bool _mayBeATransientFirstRead(CommunityFailureKind kind) =>
     kind == CommunityFailureKind.offline ||
+    kind == CommunityFailureKind.timedOut ||
     kind == CommunityFailureKind.unexpected;
 
 // ---------------------------------------------------------------------------

@@ -73,6 +73,13 @@ void main() {
         find.byKey(const ValueKey<String>('launch-segment-empty-live')),
         findsOneWidget,
       );
+      // S88d: the segments follow the chain since loop-api S83b7; the card
+      // no longer says they only reflect the schedule.
+      expect(
+        find.text('这个分段目前没有项目。分段按链上销售状态划分；没有链上读数的项目按排期状态归类。'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('分段只反映排期状态'), findsNothing);
     });
 
     testWidgets('a catalogue row carries no on-chain figure', (tester) async {

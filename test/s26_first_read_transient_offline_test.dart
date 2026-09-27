@@ -58,7 +58,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(LoopOfflineState), findsNothing);
-      expect(find.text('离线 · 显示缓存'), findsNothing);
+      expect(find.text('连不上 LOOP'), findsNothing);
       expect(find.text('重试连接'), findsNothing);
     });
 
@@ -124,7 +124,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(LoopOfflineState), findsNothing);
-      expect(find.text('离线 · 显示缓存'), findsNothing);
+      expect(find.text('连不上 LOOP'), findsNothing);
       expect(find.text('重试连接'), findsNothing);
     });
 

@@ -10,6 +10,10 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 enum CommunityFailureKind {
   offline,
 
+  /// A **read** that went out and got no answer in time. The same page phase
+  /// as [offline]; only the wording differs (S88d). A write never carries it.
+  timedOut,
+
   /// The request was cancelled in flight. A write may or may not have been
   /// applied, so its idempotency key must survive for an identical retry.
   cancelled,
@@ -344,6 +348,7 @@ final class LoopPublicProfile {
 /// did not happen; it never claims a result the server did not confirm.
 String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
   CommunityFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
+  CommunityFailureKind.timedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。',
   CommunityFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
   CommunityFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
   CommunityFailureKind.unavailable => '社区服务当前不可用，没有执行任何操作。',
@@ -369,6 +374,7 @@ String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
 /// applied the command already.
 bool communityOutcomeIsUnresolved(CommunityFailureKind kind) =>
     kind == CommunityFailureKind.offline ||
+    kind == CommunityFailureKind.timedOut ||
     kind == CommunityFailureKind.cancelled ||
     kind == CommunityFailureKind.outcomeUnknown;
 
