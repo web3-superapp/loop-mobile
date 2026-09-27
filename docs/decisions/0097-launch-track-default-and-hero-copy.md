@@ -74,3 +74,7 @@ Launch 合约已在 BSC 测试网上线（`launch` capability evidence 为 confi
   失败不出「暂无名称」；首屏 OFF-CHAIN / ON-CHAIN 与测试网/主网文案；confirmed 与 pending
   下的已毕业卡与参与人数行；发射中 / 已结束分段副标题不出「待排期」，待排期分段保持原文。
 - 全量 3633 通过（3 skip 不变）。
+
+## 主代理裁决（2026-09-27）
+
+状态：Accepted，随 `integration/v2` 合并。两轮之间展开「下一个要开始的轮次」；hero 链名用「BSC 测试网 / BSC 主网」，与「Launch 当前运行在 BSC 测试网」横幅一致，不用 `loopChainName` 的「BNB Smart Chain」；无链上读数时副标题用分段名；两处「还没有开放读取」是按 evidence 的客户端覆盖，后端给专门 reasonCode 后改为直接映射。
