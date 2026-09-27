@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/app/loop_backend_identity.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/about/about_client_register.dart';
@@ -40,6 +41,10 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     final about = state.value;
     final config = ref.watch(appConfigProvider);
     final clientVersion = config.loopClientVersionForCurrentBuild;
+    final backendHost = loopBackendHost(config.backendBaseUrl);
+    final declaredMode = config.declaredBuildModeName.isEmpty
+        ? '未声明'
+        : config.declaredBuildModeName;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('about-screen'),
@@ -97,10 +102,26 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               position: LoopRowPosition.first,
             ),
             LoopRecordRow(
+              key: const ValueKey<String>('about-backend-host'),
+              title: '服务端',
+              // Decision 0100: which backend this build was pointed at, read
+              // from the build configuration; no request is made for it.
+              subtitle: backendHost == null
+                  ? '构建配置里没有服务端地址'
+                  : '${loopBackendTier(backendHost)} · 来自这次构建的配置',
+              trailing: backendHost,
+              trailingBadge: backendHost == null
+                  ? const LoopBadge('未配置')
+                  : null,
+              position: LoopRowPosition.middle,
+            ),
+            LoopRecordRow(
               key: const ValueKey<String>('about-build-mode'),
               title: '构建模式',
-              subtitle: '声明的构建模式与运行时是否一致',
-              trailing: config.declaredModeMatchesRuntime ? '一致' : '不一致',
+              subtitle:
+                  '声明 $declaredMode · 运行时 ${loopRuntimeBuildMode()} · '
+                  '${config.declaredModeMatchesRuntime ? '一致' : '不一致'}',
+              trailing: declaredMode,
               position: LoopRowPosition.last,
             ),
           ],
