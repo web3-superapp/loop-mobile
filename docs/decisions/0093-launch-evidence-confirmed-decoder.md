@@ -30,6 +30,12 @@ had returned 200.
 3. The projection is unchanged: `confirmed` is not pending, so the Launch
    surfaces open on the adapter's word.
 
+## Consequences
+
+- The capabilities document with a confirmed launch evidence decodes; the Launch surfaces open once the adapter confirms the contract, and `launchContractVersion` is available to the client for display.
+- `voiceRooms` keeps its 0068 semantics unchanged; the new rule is scoped to `launch`.
+- `test/s83c4_launch_evidence_confirmed_test.dart` pins the live document and the five invalid pairings.
+
 ## Lesson
 
 An "optional" field added on the backend is still a wire change for a strict
