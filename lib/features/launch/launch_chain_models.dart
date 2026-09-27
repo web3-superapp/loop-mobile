@@ -820,6 +820,7 @@ final class LaunchPurchaseIntent {
     this.simulation,
     this.policy,
     this.signing,
+    this.revertReason,
   });
 
   final String launchIntentId;
@@ -865,6 +866,10 @@ final class LaunchPurchaseIntent {
   final LaunchIntentSimulation? simulation;
   final LaunchIntentPolicy? policy;
   final LaunchIntentSigning? signing;
+
+  /// Decision 0080: the decoded revert reason of a `reverted` intent when a
+  /// read surface yields one. `null` both when absent and when sent as null.
+  final String? revertReason;
 
   /// The only on-device evaluation: the server's state, its own signing
   /// permission when it sent one, and the clock.

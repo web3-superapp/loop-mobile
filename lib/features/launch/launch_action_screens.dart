@@ -286,6 +286,13 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
           // ledger. The registry count is LOOP's own and is a number; the
           // other three need the contract and print the em dash.
           _EconomyLaunchCard(economy: economy),
+          // loop-api S83b.10: drawn only when the server sent `onChain`. An
+          // absent key means no Launch contract is configured, and the page
+          // stays exactly as it was before the contract.
+          if (economy.onChain case final onChain?) ...<Widget>[
+            const LoopLabel('链上账本'),
+            _EconomyOnChainCard(onChain: onChain),
+          ],
           const LoopLabel('LOOP'),
           LoopStatGrid(
             key: const ValueKey<String>('loop-economy-loop-stats'),
@@ -450,6 +457,136 @@ class _EconomyLaunchCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+/// zh-CN for an `economy.onChain` unavailable reason. The index codes get a
+/// ledger sentence of their own: the global one talks about a list row.
+String launchEconomyOnChainReasonText(String reasonCode) =>
+    switch (reasonCode) {
+      'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' => 'LOOP 的链上事件索引还没有开始，链上账本稍后可见。',
+      'LAUNCH_ONCHAIN_STATE_NOT_PROJECTED' => 'LOOP 的链上事件索引还在追赶，链上账本稍后可见。',
+      _ => launchReasonCodeText(reasonCode),
+    };
+
+/// `economy.onChain`: counts read from LOOP's Launch event index.
+///
+/// Available: 累计募集 (successful sales only) across the top, 已登记发售 and
+/// 已锁 LP below, and the index block as a footnote. Unavailable: one strip
+/// with the server's reason; never a zero.
+class _EconomyOnChainCard extends StatelessWidget {
+  const _EconomyOnChainCard({required this.onChain});
+
+  final LaunchEconomyOnChain onChain;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (onChain) {
+      LaunchEconomyOnChainUnavailable(:final reasonCode) => LoopEmpty(
+        key: const ValueKey<String>('loop-economy-onchain-unavailable'),
+        icon: 'info',
+        message: '链上账本暂时读不到',
+        reason: launchEconomyOnChainReasonText(reasonCode),
+      ),
+      final LaunchEconomyOnChainAvailable value => LoopChalkCard(
+        key: const ValueKey<String>('loop-economy-onchain'),
+        child: Builder(
+          builder: (context) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _cell(
+                context,
+                const ValueKey<String>('loop-economy-onchain-raised'),
+                launchUsd1Label(value.totalRaisedUsd1),
+                '累计募集（仅成功的发售）',
+                large: true,
+              ),
+              const LoopHairline(),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _cell(
+                      context,
+                      const ValueKey<String>('loop-economy-onchain-sales'),
+                      '${value.registeredSaleCount}',
+                      '已登记发售',
+                    ),
+                  ),
+                  Expanded(
+                    child: _cell(
+                      context,
+                      const ValueKey<String>('loop-economy-onchain-lp'),
+                      '${value.lockedLpCount}',
+                      '已锁 LP',
+                    ),
+                  ),
+                ],
+              ),
+              const LoopHairline(),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '读自区块 ${loopGroupedFigure(value.indexedBlockNumber)}'
+                  ' · LOOP 链上事件索引',
+                  key: const ValueKey<String>('loop-economy-onchain-block'),
+                  style: LoopTypography.figure(
+                    11,
+                    weight: FontWeight.w400,
+                    height: 1.35,
+                    color: LoopGround.auxiliaryOf(context),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    };
+  }
+
+  Widget _cell(
+    BuildContext context,
+    Key key,
+    String value,
+    String label, {
+    bool large = false,
+  }) => Semantics(
+    key: key,
+    container: true,
+    label: '$label，$value',
+    child: ExcludeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: LoopTypography.figure(
+                  large ? 20 : 16,
+                  weight: FontWeight.w700,
+                  color: LoopGround.inkOf(context),
+                ),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: LoopTypography.caption(
+                11,
+                color: LoopGround.auxiliaryOf(context),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

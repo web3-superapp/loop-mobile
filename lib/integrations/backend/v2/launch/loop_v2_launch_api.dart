@@ -857,17 +857,22 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'projects',
-        'launches',
-        'confirmedRoundCount',
-        'totalSupply',
-        'distributed',
-        'ecosystemTax',
-        'source',
-        'observedAt',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'projects',
+          'launches',
+          'confirmedRoundCount',
+          'totalSupply',
+          'distributed',
+          'ecosystemTax',
+          'source',
+          'observedAt',
+          'contractVersion',
+        },
+        // S83b.10: present only while a Launch contract is configured.
+        const <String>{'onChain'},
+      );
       LoopV2S7Codec.requireContractVersion(root);
       final projects = LoopV2Contract.strictMap(
         root['projects'],
@@ -910,10 +915,60 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
           'loop',
         }),
         observedAt: LoopV2S7Codec.requireTimestamp(root, 'observedAt'),
+        onChain: root.containsKey('onChain')
+            ? decodeEconomyOnChain(root['onChain'])
+            : null,
       );
     } on DioException catch (error) {
       _rethrowRead(error);
     }
+  }
+
+  /// `economy.onChain` (loop-api S83b.10): exactly one of the unavailable
+  /// projection or the indexed counts. A `null` value is not the absent key
+  /// and is an invalid payload.
+  static LaunchEconomyOnChain decodeEconomyOnChain(Object? raw) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['status'] == 'unavailable') {
+      return LaunchEconomyOnChainUnavailable(
+        LoopV2S7Codec.unavailable(raw).reasonCode,
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'registeredSaleCount',
+      'totalRaisedUsd1',
+      'lockedLpCount',
+      'source',
+      'indexedBlockNumber',
+      'indexedBlockHash',
+    });
+    if (map['status'] != 'available') LoopV2S7Codec.invalid();
+    return LaunchEconomyOnChainAvailable(
+      registeredSaleCount: LoopV2S7Codec.requireCount(
+        map,
+        'registeredSaleCount',
+      ),
+      totalRaisedUsd1: LoopV2S7Codec.requirePattern(
+        map,
+        'totalRaisedUsd1',
+        LoopV2S7Codec.integerAmountPattern,
+      ),
+      lockedLpCount: LoopV2S7Codec.requireCount(map, 'lockedLpCount'),
+      source: LoopV2S7Codec.requireEnum(map, 'source', const <String>{
+        'loop_indexer',
+      }),
+      indexedBlockNumber: LoopV2S7Codec.requirePattern(
+        map,
+        'indexedBlockNumber',
+        LoopV2S7Codec.blockNumberPattern,
+      ),
+      indexedBlockHash: LoopV2S7Codec.requirePattern(
+        map,
+        'indexedBlockHash',
+        LoopV2S7Codec.blockHashPattern,
+      ),
+    );
   }
 
   @override

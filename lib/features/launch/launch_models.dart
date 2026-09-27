@@ -1040,6 +1040,7 @@ final class LaunchEconomy {
     required this.ecosystemTax,
     required this.source,
     required this.observedAt,
+    this.onChain,
   });
 
   final LaunchProjectCounts projects;
@@ -1050,4 +1051,48 @@ final class LaunchEconomy {
   final LaunchUnavailable ecosystemTax;
   final String source;
   final DateTime observedAt;
+
+  /// The on-chain ledger (loop-api S83b.10). `null` means the server sent no
+  /// `onChain` key at all — no Launch contract is configured — and the page
+  /// draws nothing for it; that is a meaning of its own, not an unavailable.
+  final LaunchEconomyOnChain? onChain;
+}
+
+/// `economy.onChain`: counts read from LOOP's own Launch event index, or the
+/// server's unavailable projection with its `reasonCode`.
+sealed class LaunchEconomyOnChain {
+  const LaunchEconomyOnChain();
+}
+
+@immutable
+final class LaunchEconomyOnChainUnavailable extends LaunchEconomyOnChain {
+  const LaunchEconomyOnChainUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
+@immutable
+final class LaunchEconomyOnChainAvailable extends LaunchEconomyOnChain {
+  const LaunchEconomyOnChainAvailable({
+    required this.registeredSaleCount,
+    required this.totalRaisedUsd1,
+    required this.lockedLpCount,
+    required this.source,
+    required this.indexedBlockNumber,
+    required this.indexedBlockHash,
+  });
+
+  final int registeredSaleCount;
+
+  /// Sum of successful `SaleFinalized.totalRaisedUsd1`, 18-decimal base
+  /// units as the exact wire string.
+  final String totalRaisedUsd1;
+  final int lockedLpCount;
+
+  /// `loop_indexer`: a stable enum mapped to copy, never shown raw.
+  final String source;
+
+  /// Decimal string: a block number never passes through a double.
+  final String indexedBlockNumber;
+  final String indexedBlockHash;
 }

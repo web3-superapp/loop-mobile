@@ -527,6 +527,10 @@ abstract final class LoopV2LaunchChainCodec {
     'simulation',
     'policy',
     'signing',
+    // loop-api decision 0080: only on `reverted`, a string or `null` (null
+    // today: public RPC exposes no trace). Decoded wherever it appears so a
+    // later widening of the state rule is not a whole-document failure.
+    'revertReason',
   };
 
   static final RegExp _quantityPattern = RegExp(
@@ -722,6 +726,11 @@ abstract final class LoopV2LaunchChainCodec {
       simulation: _simulation(map),
       policy: _policy(map),
       signing: _signing(map),
+      revertReason: LoopV2S7Codec.optionalText(
+        map,
+        'revertReason',
+        maxLength: 256,
+      ),
     );
   }
 }

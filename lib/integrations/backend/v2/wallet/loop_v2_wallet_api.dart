@@ -162,10 +162,12 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         'netWorth',
         'contractVersion',
       },
-      // Present only while the Launch chain slot differs from the primary
-      // chain (decision 0038). Absent means the wallet page shows no Launch
-      // block at all, not that a read failed.
-      const <String>{'launchChain'},
+      // `launchChain`: present only while the Launch chain slot differs from
+      // the primary chain (decision 0038). Absent means the wallet page shows
+      // no Launch block at all, not that a read failed.
+      // `launchUsd1`: loop-api decision 0081, the same `{balance, allowance}`
+      // pair at the root while the Launch slot *is* the primary chain.
+      const <String>{'launchChain', 'launchUsd1'},
     );
     LoopV2ChainCodec.requireContractVersion(root);
     if (root['walletId'] != target) LoopV2ChainCodec.invalid();
@@ -193,6 +195,16 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       final row = _balanceRow(raw);
       if (!seen.add(row.assetId)) LoopV2ChainCodec.invalid();
       rows.add(row);
+    }
+
+    final launchChain = _launchChain(root);
+    final sharedSlotUsd1 = root.containsKey('launchUsd1')
+        ? _usd1Pair(root['launchUsd1'])
+        : null;
+    // 0081: the two never appear together; both would be two answers to one
+    // question, and the allowance gates a signature.
+    if (sharedSlotUsd1 != null && launchChain?.usd1 != null) {
+      LoopV2ChainCodec.invalid();
     }
 
     return LoopWalletBalances(
@@ -225,7 +237,8 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       ),
       balances: rows,
       netWorth: _netWorth(root['netWorth']),
-      launchChain: _launchChain(root),
+      launchChain: launchChain,
+      launchUsd1: sharedSlotUsd1,
     );
   }
 
@@ -704,7 +717,13 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
   /// so it is never read leniently.
   static LoopLaunchUsd1Reading? _launchUsd1(Map<String, Object?> launchChain) {
     if (!launchChain.containsKey('usd1')) return null;
-    final map = LoopV2Contract.strictMap(launchChain['usd1'], const <String>{
+    return _usd1Pair(launchChain['usd1']);
+  }
+
+  /// The strict `{balance, allowance}` pair shared by `launchChain.usd1` and
+  /// the root `launchUsd1` (decision 0088 froze one shape for both).
+  static LoopLaunchUsd1Reading _usd1Pair(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
       'balance',
       'allowance',
     });

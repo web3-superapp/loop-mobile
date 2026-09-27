@@ -433,6 +433,7 @@ final class LoopWalletBalances {
     required List<LoopAssetBalanceRow> balances,
     required this.netWorth,
     this.launchChain,
+    this.launchUsd1,
   }) : balances = List<LoopAssetBalanceRow>.unmodifiable(balances);
 
   final String walletId;
@@ -446,6 +447,13 @@ final class LoopWalletBalances {
   /// shows no Launch block at all. A testnet slot that failed to read is a
   /// non-null value carrying its own reason, never a missing key.
   final LoopLaunchChainBalance? launchChain;
+
+  /// loop-api decision 0081: USD1 balance and allowance to the Launch contract
+  /// while the Launch slot is the primary chain (so [launchChain] is absent).
+  /// Decoded so the document is not refused; not yet wired into the Launch
+  /// allowance gate, because approving on the shared (mainnet) slot is still
+  /// `422 CHAIN_MISMATCH` server-side and mainnet signing is closed.
+  final LoopLaunchUsd1Reading? launchUsd1;
 
   LoopAssetBalanceRow? rowFor(String assetId) {
     for (final row in balances) {
