@@ -21,6 +21,7 @@ import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -89,9 +90,14 @@ Future<void> _refreshWallet(WidgetRef ref, String? walletId) async {
   final balances = walletId == null
       ? null
       : ref.read(walletBalancesControllerProvider(walletId).notifier);
+  // S88d: the mining figures on this page are retained between visits, so a
+  // pull is the one place they are read again on the spot.
   await Future.wait<void>(<Future<void>>[
     directory.reload(),
     if (balances != null) balances.reload(),
+    ref.read(miningAssetsControllerProvider.notifier).reload(),
+    if (ref.exists(miningSummaryControllerProvider))
+      ref.read(miningSummaryControllerProvider.notifier).reload(),
   ]);
 }
 
@@ -1871,8 +1877,9 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
           // A switch that never reached the server changed nothing: the
           // active wallet below is still the server's own answer. Offline is
           // therefore a pause, not a failed switch.
-          if (state.failureKind == LoopChainFailureKind.offline)
+          if (loopChainIsOffline(state.failureKind))
             LoopOfflineState(
+              cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>('wallets-switch-offline'),
               pausedActions: const <String>['切换活跃钱包'],
               onRetry: () => unawaited(controller.reload()),
@@ -2238,8 +2245,9 @@ class _TransactionHistoryScreenState
           ),
           // The pages already read stay on screen. A next page that never
           // reached the server is a pause on "load more", not a broken tape.
-          if (state.failureKind == LoopChainFailureKind.offline)
+          if (loopChainIsOffline(state.failureKind))
             LoopOfflineState(
+              cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>('tx-history-page-offline'),
               pausedActions: const <String>['加载更多'],
               onRetry: () => unawaited(

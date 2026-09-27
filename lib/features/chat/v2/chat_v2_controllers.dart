@@ -68,7 +68,8 @@ final class CommunityChatController
         if (!isCurrent(generation)) return;
         if (firstRead &&
             !reattempted &&
-            error.kind == CommunityFailureKind.offline) {
+            (error.kind == CommunityFailureKind.offline ||
+                error.kind == CommunityFailureKind.timedOut)) {
           reattempted = true;
           continue;
         }

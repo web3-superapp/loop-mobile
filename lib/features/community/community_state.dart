@@ -16,7 +16,8 @@ enum CommunityViewPhase {
 
 CommunityViewPhase communityPhaseForFailure(CommunityFailureKind? kind) =>
     switch (kind) {
-      CommunityFailureKind.offline => CommunityViewPhase.offline,
+      CommunityFailureKind.offline ||
+      CommunityFailureKind.timedOut => CommunityViewPhase.offline,
       CommunityFailureKind.cancelled ||
       CommunityFailureKind.outcomeUnknown => CommunityViewPhase.error,
       CommunityFailureKind.unavailable => CommunityViewPhase.unavailable,

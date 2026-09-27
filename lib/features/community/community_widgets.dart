@@ -144,6 +144,9 @@ class CommunityStateBlock extends StatelessWidget {
       case CommunityViewPhase.offline:
         return LoopOfflineState(
           key: const ValueKey<String>('community-state-offline'),
+          cause: failureKind == CommunityFailureKind.timedOut
+              ? LoopOfflineCause.timeout
+              : LoopOfflineCause.connection,
           onRetry: onRetry,
           pausedActions: const <String>['加入', '关注', '屏蔽', '治理'],
         );

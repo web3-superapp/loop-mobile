@@ -226,6 +226,13 @@ String loopFactProvenance(LoopFact fact, {DateTime? now}) {
   return '$label · 观察于 ${loopRelativeTime(fetchedAt, now: now)}';
 }
 
+/// The offline card's wording for a chain failure (S88d): a timed-out read
+/// says so; every other failure that reaches the card is a connection.
+LoopOfflineCause loopOfflineCauseFor(LoopChainFailureKind? kind) =>
+    kind == LoopChainFailureKind.timedOut
+    ? LoopOfflineCause.timeout
+    : LoopOfflineCause.connection;
+
 /// The one place the reviewed states are rendered for an S5 block.
 class LoopChainStateBlock extends StatelessWidget {
   const LoopChainStateBlock({
@@ -283,6 +290,7 @@ class LoopChainStateBlock extends StatelessWidget {
       case LoopChainViewPhase.offline:
         return LoopOfflineState(
           key: ValueKey<String>('$keyPrefix-state-offline'),
+          cause: loopOfflineCauseFor(failureKind),
           onRetry: onRetry,
           pausedActions: const <String>['刷新', '切换钱包', '保存自选', '价格提醒'],
         );

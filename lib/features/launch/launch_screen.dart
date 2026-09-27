@@ -14,11 +14,19 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
+/// The empty card of a segment other than 待排期 (S88d). Since loop-api S83b7
+/// the segments follow the on-chain sale state; a launch with no chain reading
+/// is filed by its schedule.
+const String launchSegmentEmptyBody =
+    '这个分段目前没有项目。分段按链上销售状态划分；没有链上读数的项目按排期状态归类。';
+
 /// `launch` · the Launch destination.
 ///
-/// The catalogue is an off-chain directory. Its segments come only from
-/// `scheduleStatus`; "已毕业" is a liquidity-axis fact and stays unavailable,
-/// so it is a separate block rather than a fourth tab of the same list.
+/// The catalogue is an off-chain directory. Its segments are the server's:
+/// since loop-api S83b7 they follow the on-chain sale state, and a launch with
+/// no chain reading is filed by `scheduleStatus`. "已毕业" is a liquidity-axis
+/// fact and stays unavailable, so it is a separate block rather than a fourth
+/// tab of the same list.
 ///
 /// The order of the first screen is the prototype's: the folio states the
 /// count, the segment bar follows it, and the projects follow the bar. The
@@ -324,7 +332,7 @@ class _SegmentList extends StatelessWidget {
         title: '${launchSegmentLabel(segment)}：暂无项目',
         body: segment == LaunchSegment.awaitingSchedule
             ? '通过审核但还没有排期的项目会出现在这里。'
-            : '这个分段目前没有已登记的项目。分段只反映排期状态，不代表链上进度。',
+            : launchSegmentEmptyBody,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       );
     }

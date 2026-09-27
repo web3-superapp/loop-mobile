@@ -360,8 +360,10 @@ LaunchFailureKind launchFailureKindForV2(
     'VALIDATION_FAILED' => LaunchFailureKind.validationFailed,
     'INVALID_REQUEST' => LaunchFailureKind.invalidData,
     _ => switch (failure.kind) {
-      LoopBackendFailureKind.connection ||
-      LoopBackendFailureKind.timeout => LaunchFailureKind.offline,
+      LoopBackendFailureKind.connection => LaunchFailureKind.offline,
+      // S88d: a read that timed out is worded apart from a failed connection.
+      LoopBackendFailureKind.timeout =>
+        write ? LaunchFailureKind.offline : LaunchFailureKind.timedOut,
       LoopBackendFailureKind.cancelled => LaunchFailureKind.cancelled,
       // A payload the client could not parse leaves a write unresolved: the
       // server may already have applied it. A read has applied nothing.

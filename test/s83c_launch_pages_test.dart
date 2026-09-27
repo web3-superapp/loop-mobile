@@ -8,6 +8,8 @@ import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_signing.dart';
 import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
+import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -16,6 +18,7 @@ import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/s83c_fixtures.dart';
+import 'support/s88d_meta_server.dart';
 
 /// Decision 0088 · the Launch pages against the `available` branches.
 ///
@@ -129,6 +132,7 @@ Future<void> _pumpTrade(
   _RecordingWallet? wallet,
   bool evidencePending = false,
   String balancesChainId = loopPrimaryChainId,
+  S88dMetaServer? metaServer,
 }) => pumpS7Page(
   tester,
   LaunchTradeScreen(launchId: s7LaunchId, clock: s83cNow),
@@ -141,6 +145,7 @@ Future<void> _pumpTrade(
     balances: [s83cBalances(chainId: balancesChainId)],
   ),
   meta: s7MetaSnapshot(launchEvidencePending: evidencePending),
+  metaRepository: metaServer,
   overrides: [
     if (wallet != null) walletSigningGatewayProvider.overrideWithValue(wallet),
   ],
@@ -157,6 +162,68 @@ Future<void> _fillAndSubmit(WidgetTester tester) async {
 }
 
 void main() {
+  group('S88d · the purchase sheet opens on the server\'s current '
+      'capability', () {
+    testWidgets('a request pair goes out before the sheet, and the sign '
+        'action is pending meanwhile', (tester) async {
+      final server = S88dMetaServer(
+        s7MetaSnapshot(launchEvidencePending: false),
+      );
+      await _pumpTrade(
+        tester,
+        gateway: FakeLaunchGateway(
+          detail: S7Answer<LaunchDetail>(value: s83cDetail()),
+          prepared: LaunchPurchasePrepared(intent: s83cIntent()),
+        ),
+        metaServer: server,
+      );
+      await _fillAndSubmit(tester);
+      expect(server.log, <String>['policy', 'capabilities']);
+
+      server.hold = true;
+      await scrollToS7Section(tester, _key('launch-trade-sign'));
+      await tester.tap(_key('launch-trade-sign'));
+      await tester.pump();
+      await tester.pump();
+      expect(server.log, hasLength(4));
+      expect(server.log.sublist(2), <String>['policy', 'capabilities']);
+      final pending = tester.widget<LoopButton>(_key('launch-trade-sign'));
+      expect(pending.label, moneyCapabilityCheckingLabel);
+      expect(pending.onPressed, isNull);
+      expect(_key('launch-sign-sheet'), findsNothing);
+
+      server.release();
+      await tester.pumpAndSettle();
+      expect(_key('launch-sign-sheet'), findsOneWidget);
+    });
+
+    testWidgets('a capability closed since the page opened keeps the sheet '
+        'shut and takes the page block', (tester) async {
+      final server = S88dMetaServer(
+        s7MetaSnapshot(launchEvidencePending: false),
+      );
+      await _pumpTrade(
+        tester,
+        gateway: FakeLaunchGateway(
+          detail: S7Answer<LaunchDetail>(value: s83cDetail()),
+          prepared: LaunchPurchasePrepared(intent: s83cIntent()),
+        ),
+        metaServer: server,
+      );
+      await _fillAndSubmit(tester);
+
+      server.document = s7MetaSnapshot(
+        launch: LoopV2CapabilityAvailability.unavailable,
+      );
+      await scrollToS7Section(tester, _key('launch-trade-sign'));
+      await tester.tap(_key('launch-trade-sign'));
+      await tester.pumpAndSettle();
+      expect(server.log, hasLength(4));
+      expect(_key('launch-sign-sheet'), findsNothing);
+      expect(_key('launch-trade-capability-unavailable'), findsOneWidget);
+    });
+  });
+
   group('loading / unavailable / error on every changed page', () {
     for (final page in _pages) {
       testWidgets('${page.prefix} · loading', (tester) async {

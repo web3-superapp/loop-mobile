@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -77,6 +78,9 @@ Future<void> pumpS6Page(
   bool swapEvidencePending = true,
   Size size = const Size(390, 2400),
   bool settle = true,
+  // S88d: when given, the capability document is read through this port and
+  // the D0 cache, as in production, instead of being pinned.
+  LoopV2MetaRepository? metaRepository,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -98,13 +102,16 @@ Future<void> pumpS6Page(
         walletSigningGatewayProvider.overrideWithValue(
           signing ?? RecordingSigningGateway(),
         ),
-        loopV2MetaSnapshotProvider.overrideWith(
-          (ref) async => s5MetaSnapshot(
-            sendApprovals: sendApprovals,
-            privySwap: privySwap,
-            swapEvidencePending: swapEvidencePending,
+        if (metaRepository != null)
+          loopV2MetaRepositoryProvider.overrideWithValue(metaRepository)
+        else
+          loopV2MetaSnapshotProvider.overrideWith(
+            (ref) async => s5MetaSnapshot(
+              sendApprovals: sendApprovals,
+              privySwap: privySwap,
+              swapEvidencePending: swapEvidencePending,
+            ),
           ),
-        ),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

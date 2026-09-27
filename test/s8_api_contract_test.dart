@@ -1104,13 +1104,15 @@ void main() {
         ),
       );
 
+      // S88d: a read that timed out keeps the offline page phase but is
+      // worded as a timeout, so it has its own narrow kind.
       await expectLater(
         repository.load(),
         throwsA(
           isA<LoopChainException>().having(
             (error) => error.kind,
             'kind',
-            LoopChainFailureKind.offline,
+            LoopChainFailureKind.timedOut,
           ),
         ),
       );

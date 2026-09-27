@@ -16,9 +16,11 @@ import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
+import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet_intents/loop_v2_intent_codec.dart';
@@ -33,6 +35,7 @@ import 'support/s6_fixtures.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/s83c_fixtures.dart';
+import 'support/s88d_meta_server.dart';
 
 /// Decision 0089 · the USD1 approval in front of a Launch purchase, the
 /// optional S83b intent keys, the broadcast report and two copy changes.
@@ -234,6 +237,7 @@ Future<void> _pump(
   _ApprovalIntents? intents,
   _RecordingWallet? wallet,
   LaunchAllowancePolling? polling,
+  S88dMetaServer? metaServer,
 }) => pumpS7Page(
   tester,
   LaunchTradeScreen(launchId: s7LaunchId, clock: s83cNow),
@@ -250,6 +254,7 @@ Future<void> _pump(
         balances: [_balances()],
       ),
   meta: s7MetaSnapshot(launchEvidencePending: false),
+  metaRepository: metaServer,
   overrides: [
     if (intents != null)
       walletIntentsGatewayProvider.overrideWithValue(intents),
@@ -490,6 +495,57 @@ Future<LoopWalletBalances> _readBalances(Map<String, Object?> body) =>
     );
 
 void main() {
+  group('S88d · the approval sheet opens on the server\'s current '
+      'capability', () {
+    Future<S88dMetaServer> openApprove(WidgetTester tester) async {
+      final server = S88dMetaServer(
+        s7MetaSnapshot(launchEvidencePending: false),
+      );
+      await _pump(
+        tester,
+        balances: _directory(balances: [_balances(allowance: _oneHundred)]),
+        intents: _ApprovalIntents(),
+        metaServer: server,
+      );
+      await _choose(tester);
+      await scrollToS7Section(tester, _key('launch-trade-approve'));
+      return server;
+    }
+
+    testWidgets('a request pair goes out before the sheet, and the approve '
+        'action is pending meanwhile', (tester) async {
+      final server = await openApprove(tester);
+      expect(server.log, <String>['policy', 'capabilities']);
+
+      server.hold = true;
+      await tester.tap(_key('launch-trade-approve'));
+      await tester.pump();
+      await tester.pump();
+      expect(server.log, hasLength(4));
+      final pending = tester.widget<LoopButton>(_key('launch-trade-approve'));
+      expect(pending.label, moneyCapabilityCheckingLabel);
+      expect(pending.onPressed, isNull);
+      expect(_key('money-sign-sheet'), findsNothing);
+
+      server.release();
+      await tester.pumpAndSettle();
+      expect(_key('money-sign-sheet'), findsOneWidget);
+    });
+
+    testWidgets('a capability closed since the page opened keeps the sheet '
+        'shut and takes the page block', (tester) async {
+      final server = await openApprove(tester);
+      server.document = s7MetaSnapshot(
+        launch: LoopV2CapabilityAvailability.unavailable,
+      );
+      await tester.tap(_key('launch-trade-approve'));
+      await tester.pumpAndSettle();
+      expect(server.log, hasLength(4));
+      expect(_key('money-sign-sheet'), findsNothing);
+      expect(_key('launch-trade-capability-unavailable'), findsOneWidget);
+    });
+  });
+
   loopWatchGround();
 
   group('balances · launchChain.usd1 is read strictly', () {

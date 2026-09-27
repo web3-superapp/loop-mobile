@@ -136,8 +136,9 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           ]
           // A save that never reached the server changed nothing on either
           // side; the draft below is still exactly what was typed.
-          else if (state.failureKind == LoopChainFailureKind.offline)
+          else if (loopChainIsOffline(state.failureKind))
             LoopOfflineState(
+              cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>('watchlist-save-offline'),
               pausedActions: const <String>['保存自选'],
               onRetry: state.canSave

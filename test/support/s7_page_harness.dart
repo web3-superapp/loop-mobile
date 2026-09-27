@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_repository.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'loop_ground_probe.dart';
@@ -533,6 +534,9 @@ Future<void> pumpS7Page(
   Size size = const Size(390, 2600),
   bool settle = true,
   List<Override> overrides = const <Override>[],
+  // S88d: when given, the capability document is read through this port and
+  // the D0 cache, as in production, instead of being pinned to [meta].
+  LoopV2MetaRepository? metaRepository,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -550,9 +554,12 @@ Future<void> pumpS7Page(
         if (referral != null)
           referralGatewayProvider.overrideWithValue(referral),
         if (wallet != null) walletReadGatewayProvider.overrideWithValue(wallet),
-        loopV2MetaSnapshotProvider.overrideWith(
-          (ref) async => meta ?? s7MetaSnapshot(),
-        ),
+        if (metaRepository != null)
+          loopV2MetaRepositoryProvider.overrideWithValue(metaRepository)
+        else
+          loopV2MetaSnapshotProvider.overrideWith(
+            (ref) async => meta ?? s7MetaSnapshot(),
+          ),
         ...overrides,
       ],
       child: MaterialApp(

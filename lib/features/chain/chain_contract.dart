@@ -11,6 +11,12 @@ import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 enum LoopChainFailureKind {
   offline,
 
+  /// A **read** that went out and got no answer in time
+  /// (`LoopBackendFailureKind.timeout`). It is the same page phase as
+  /// [offline]; only the wording differs (S88d). A write never carries it: a
+  /// timed-out write stays [offline], whose outcome is unresolved.
+  timedOut,
+
   /// The request was cancelled in flight. A write may or may not have been
   /// applied, so its idempotency key must survive an identical retry.
   cancelled,
@@ -250,6 +256,7 @@ String? loopFactQualityMarker(LoopFactQuality quality) => switch (quality) {
 /// never claims a result the server did not confirm.
 String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
   LoopChainFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
+  LoopChainFailureKind.timedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。',
   LoopChainFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
   LoopChainFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
   LoopChainFailureKind.unavailable => '需要的链上数据暂时读不到，没有执行任何操作。',
@@ -280,10 +287,17 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
   null => '操作没有完成。',
 };
 
+/// Whether a failure puts a page on its offline card: no answer from LOOP,
+/// whether the connection failed or the read timed out (S88d).
+bool loopChainIsOffline(LoopChainFailureKind? kind) =>
+    kind == LoopChainFailureKind.offline ||
+    kind == LoopChainFailureKind.timedOut;
+
 /// Whether a write's outcome is unknown, so its idempotency key must be
 /// replayed rather than replaced.
 bool loopChainOutcomeIsUnresolved(LoopChainFailureKind kind) =>
     kind == LoopChainFailureKind.offline ||
+    kind == LoopChainFailureKind.timedOut ||
     kind == LoopChainFailureKind.cancelled ||
     kind == LoopChainFailureKind.outcomeUnknown ||
     kind == LoopChainFailureKind.submissionUnknown;
@@ -470,7 +484,8 @@ enum LoopChainViewPhase {
 
 LoopChainViewPhase loopChainPhaseForFailure(LoopChainFailureKind? kind) =>
     switch (kind) {
-      LoopChainFailureKind.offline => LoopChainViewPhase.offline,
+      LoopChainFailureKind.offline ||
+      LoopChainFailureKind.timedOut => LoopChainViewPhase.offline,
       LoopChainFailureKind.unavailable ||
       LoopChainFailureKind.indexingDelayed => LoopChainViewPhase.unavailable,
       LoopChainFailureKind.permissionDenied ||

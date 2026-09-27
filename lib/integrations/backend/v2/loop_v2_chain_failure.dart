@@ -46,8 +46,11 @@ LoopChainFailureKind loopChainFailureKindForV2(
     // The client must poll it; a second attempt is forbidden.
     'SUBMISSION_UNKNOWN' => LoopChainFailureKind.submissionUnknown,
     _ => switch (failure.kind) {
-      LoopBackendFailureKind.connection ||
-      LoopBackendFailureKind.timeout => LoopChainFailureKind.offline,
+      LoopBackendFailureKind.connection => LoopChainFailureKind.offline,
+      // S88d: a read that timed out is worded apart from a failed connection.
+      // A write keeps `offline`, whose outcome is unresolved.
+      LoopBackendFailureKind.timeout =>
+        write ? LoopChainFailureKind.offline : LoopChainFailureKind.timedOut,
       LoopBackendFailureKind.cancelled =>
         write
             ? LoopChainFailureKind.cancelled
