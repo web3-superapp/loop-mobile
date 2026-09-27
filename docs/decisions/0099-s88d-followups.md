@@ -72,3 +72,12 @@ Proposed 2026-09-27。S88d，客户端单侧。基线 `integration/v2` 474dad4�
   `s26_first_read_transient_offline_test`（否定断言换成新标题）、`s8_api_contract_test`（About 读
   `REQUEST_TIMEOUT` → `timedOut`）、`s7_launch_pages_test`（新增空分段文案断言）。
 - 回退 send / mining 修复后，对应 4 例确认失败。
+
+## 主代理裁决（2026-09-27）
+
+状态：Accepted，随 `integration/v2` 合并。
+
+1. 保留机制覆盖整个 Mining 页签（社区详情除外）：接受。
+2. 「离线 · 显示缓存」目前无人传 `cachedAtLabel`，实际只出现「连不上 LOOP」/「LOOP 响应超时」：接受，组件留着分支。
+3. Chat v2 / profile / LOOP ID / 群别名的超时与断连拆分，以及授权清单 revoke 与 approval-guard 的签前刷新：并入下一小单 S88e。
+4. 真机复核项：签名前多一次 D0 往返（0.5–2.3 s）的体感、「正在核对可用性」文案、刷新失败不阻断签名。
