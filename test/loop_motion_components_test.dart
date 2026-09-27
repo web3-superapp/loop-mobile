@@ -74,7 +74,7 @@ void main() {
       expect(faceLeft(tester, 3) - origin, closeTo(60, 0.01));
       expect(find.text('+9'), findsOneWidget);
       // Stacked, the names are not built: nothing reads them off screen.
-      expect(find.text('pepe_founder'), findsNothing);
+      expect(find.text('pepe_f…'), findsNothing);
     });
 
     testWidgets('spreads one after another, names under, and gathers back', (
@@ -95,19 +95,22 @@ void main() {
       await tester.pump();
       // Mid-flight: the first face has started, the last has not yet.
       await tester.pump(const Duration(milliseconds: 60));
-      final firstCellShift = (60 - 30) / 2;
       final one = faceLeft(tester, 1) - origin;
       final three = faceLeft(tester, 3) - origin;
       expect(one, greaterThan(stacked[1]));
-      expect(one, lessThan(68 + firstCellShift));
+      expect(one, lessThan(30));
       expect(three, lessThan(stacked[3] + 1));
 
       await tester.pumpAndSettle();
-      // Spread: 60-wide cells, 8 apart, face centred in its cell.
-      final spreadOrigin = faceLeft(tester, 0) - firstCellShift;
-      expect(faceLeft(tester, 1) - spreadOrigin, closeTo(68 + 15, 0.01));
-      expect(faceLeft(tester, 2) - spreadOrigin, closeTo(136 + 15, 0.01));
-      expect(find.text('pepe_founder'), findsOneWidget);
+      // Spread: each face touches the one before it — offset = size, no gap
+      // (user ruling 2026-09-27 on decision 0092).
+      expect(faceLeft(tester, 0) - origin, closeTo(0, 0.01));
+      expect(faceLeft(tester, 1) - origin, closeTo(30, 0.01));
+      expect(faceLeft(tester, 2) - origin, closeTo(60, 0.01));
+      expect(faceLeft(tester, 3) - origin, closeTo(90, 0.01));
+      // A long name is cut to six characters and 「…」; a short one is whole.
+      expect(find.text('pepe_founder'), findsNothing);
+      expect(find.text('pepe_f…'), findsOneWidget);
       expect(find.text('匿名成员'), findsOneWidget);
 
       await tester.tap(
@@ -138,15 +141,61 @@ void main() {
       );
       await tester.pump();
       // The very next frame is the end state; nothing is left to travel.
-      expect(faceLeft(tester, 1) - origin, closeTo(68 + 15, 0.01));
-      expect(find.text('NightOwl'), findsOneWidget);
+      expect(faceLeft(tester, 1) - origin, closeTo(30, 0.01));
+      expect(find.text('NightO…'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 16));
-      expect(faceLeft(tester, 1) - origin, closeTo(68 + 15, 0.01));
+      expect(faceLeft(tester, 1) - origin, closeTo(30, 0.01));
       await tester.tap(
         find.byKey(const ValueKey<String>('loop-avatar-stack-toggle')),
       );
       await tester.pump();
       expect(faceLeft(tester, 1) - origin, closeTo(20, 0.01));
+    });
+
+    testWidgets('defaults to 40, cells one face wide, names never clipped', (
+      tester,
+    ) async {
+      await mount(tester, const LoopAvatarStack(entries: entries, total: 12));
+      final face = find.byKey(
+        const ValueKey<String>('loop-avatar-stack-face-0'),
+      );
+      expect(tester.getSize(face), const Size(40, 40));
+      expect(
+        tester.getSize(
+          find.byKey(const ValueKey<String>('loop-avatar-stack-more')),
+        ),
+        const Size(36, 36),
+      );
+      final origin = faceLeft(tester, 0);
+      // Stacked: a third covered.
+      expect(faceLeft(tester, 1) - origin, closeTo(40 * 2 / 3, 0.01));
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-avatar-stack-toggle')),
+      );
+      await tester.pumpAndSettle();
+      expect(faceLeft(tester, 1) - origin, closeTo(40, 0.01));
+      final scroll = tester.getRect(
+        find.byKey(const ValueKey<String>('loop-avatar-stack-scroll')),
+      );
+      for (var i = 0; i < entries.length; i += 1) {
+        final name = tester.getRect(
+          find.byKey(ValueKey<String>('loop-avatar-stack-name-$i')),
+        );
+        // The name keeps to its own face's width …
+        expect(name.width, lessThanOrEqualTo(40));
+        expect(name.left, closeTo(faceLeft(tester, i), 0.01));
+        // … and the sideways row is tall enough to show it whole.
+        expect(name.bottom, lessThanOrEqualTo(scroll.bottom));
+      }
+      expect(scroll.height, greaterThanOrEqualTo(40 + 6 + 16));
+    });
+
+    test('cuts a spread name to six characters', () {
+      expect(LoopAvatarStack.spreadLabel('匿名成员'), '匿名成员');
+      expect(LoopAvatarStack.spreadLabel('NightO'), 'NightO');
+      expect(LoopAvatarStack.spreadLabel('LOOP-7G8H9IJK'), 'LOOP-7…');
+      expect(LoopAvatarStack.spreadLabel('非常非常长的社区昵称'), '非常非常长的…');
     });
 
     testWidgets('keeps a 44pt target and states the names to a reader', (

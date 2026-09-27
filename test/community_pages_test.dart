@@ -2023,14 +2023,36 @@ void main() {
       await tester.pumpAndSettle();
       // Spread: each face is named with the directory's own display name,
       // the LOOP ID for a member who has no alias.
+      // Names longer than six characters are cut with 「…」 (user ruling
+      // 2026-09-27 on decision 0092); the reader still hears them whole.
       expect(
-        find.descendant(of: preview, matching: find.text('pepe_founder')),
+        find.descendant(of: preview, matching: find.text('pepe_f…')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: preview, matching: find.text('LOOP-7G8H9IJK')),
+        find.descendant(of: preview, matching: find.text('LOOP-7…')),
         findsOneWidget,
       );
+      // Default 40 faces; the row scrolls sideways and shows each name whole.
+      final face = find.descendant(
+        of: preview,
+        matching: find.byKey(
+          const ValueKey<String>('loop-avatar-stack-face-0'),
+        ),
+      );
+      expect(tester.getSize(face).height, 40);
+      final scroll = tester.getRect(
+        find.descendant(
+          of: preview,
+          matching: find.byKey(
+            const ValueKey<String>('loop-avatar-stack-scroll'),
+          ),
+        ),
+      );
+      final name = tester.getRect(
+        find.descendant(of: preview, matching: find.text('pepe_f…')),
+      );
+      expect(name.bottom, lessThanOrEqualTo(scroll.bottom));
 
       await tester.tap(
         find.descendant(
@@ -2042,7 +2064,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        find.descendant(of: preview, matching: find.text('pepe_founder')),
+        find.descendant(of: preview, matching: find.text('pepe_f…')),
         findsNothing,
       );
     });

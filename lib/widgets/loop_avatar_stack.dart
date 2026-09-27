@@ -12,7 +12,9 @@ final class LoopAvatarStackEntry {
 
   /// The name the owner already resolved for this person — an alias, a LOOP
   /// ID, or 「匿名成员」 under the owner's own anonymity rule. The stack never
-  /// invents or shortens one; it is printed under the face when spread.
+  /// invents one; spread, it prints the first
+  /// [LoopAvatarStack.labelMaxCharacters] characters of it under the face
+  /// (with 「…」 when longer), and a screen reader hears it whole.
   final String label;
 
   /// Builds the face at the given diameter; `null` draws the initials of
@@ -30,6 +32,11 @@ final class LoopAvatarStackEntry {
 /// names each person under their face; a second tap gathers them back along
 /// the same curve. With motion reduced both happen at once.
 ///
+/// Spread, each face just touches the one before it (the offset is `size`,
+/// no gap), and a cell is exactly one face wide: a long name is cut to
+/// [labelMaxCharacters] characters and 「…」 and never widens its cell (user
+/// ruling 2026-09-27 on decision 0092).
+///
 /// Each face is drawn on a disc of [ringColor], so where one covers another
 /// it really covers it: two translucent monograms overlapping would mix into
 /// a third tint that belongs to nobody.
@@ -38,7 +45,7 @@ class LoopAvatarStack extends StatefulWidget {
     required this.entries,
     super.key,
     this.total,
-    this.size = 32,
+    this.size = 40,
     this.ringColor,
     this.semanticLabel,
     this.onExpansionChanged,
@@ -62,11 +69,16 @@ class LoopAvatarStack extends StatefulWidget {
 
   final ValueChanged<bool>? onExpansionChanged;
 
-  /// Width of one spread cell: room for a short name under a face.
-  static const double spreadCellWidth = 60;
+  /// How many characters of a name the spread row prints before 「…」.
+  static const int labelMaxCharacters = 6;
 
-  /// Gap between two spread cells.
-  static const double spreadGap = 8;
+  /// The spread caption for [label]: its first [labelMaxCharacters]
+  /// characters, with 「…」 when it had more.
+  static String spreadLabel(String label) {
+    final characters = label.characters;
+    if (characters.length <= labelMaxCharacters) return label;
+    return '${characters.take(labelMaxCharacters)}…';
+  }
 
   /// Space between a face and its name when spread.
   static const double labelGap = 6;
@@ -185,13 +197,18 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
     final count = _elementCount;
     final ring = _ring(context);
     final step = size * LoopMotion.avatarStackStep;
-    final cell = math.max(size, LoopAvatarStack.spreadCellWidth);
+    // Spread, a cell is one face wide and the faces touch: offset = size.
+    final cell = size;
     final stackedWidth = count == 0 ? 0.0 : size + step * (count - 1);
-    final spreadWidth = count == 0
-        ? 0.0
-        : cell * count + LoopAvatarStack.spreadGap * (count - 1);
-    final spreadHeight =
-        size + LoopAvatarStack.labelGap + LoopAvatarStack.labelHeight;
+    final spreadWidth = cell * count;
+    // The caption line grows with the reader's text size, so the row that
+    // scrolls sideways grows with it and never clips a name.
+    final labelHeight = math.max(
+      LoopAvatarStack.labelHeight,
+      (MediaQuery.textScalerOf(context).scale(_labelFontSize) * 1.35)
+          .ceilToDouble(),
+    );
+    final spreadHeight = size + LoopAvatarStack.labelGap + labelHeight;
     final remaining = _remaining;
     final names = <String>[for (final entry in widget.entries) entry.label];
     final semantics = <String>[
@@ -238,12 +255,7 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
             children: <Widget>[
               for (var index = 0; index < count; index += 1) ...<Widget>[
                 Positioned(
-                  left: _lerp(
-                    index * step,
-                    index * (cell + LoopAvatarStack.spreadGap) +
-                        (cell - size) / 2,
-                    _items[index].value,
-                  ),
+                  left: _lerp(index * step, index * cell, _items[index].value),
                   top: 0,
                   child: face(index),
                 ),
@@ -251,20 +263,22 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
                 // copies of the directory's own rows, clipped to nothing.
                 if (index < widget.entries.length && !_controller.isDismissed)
                   Positioned(
-                    left: index * (cell + LoopAvatarStack.spreadGap),
+                    left: index * cell,
                     top: size + LoopAvatarStack.labelGap,
                     width: cell,
-                    height: LoopAvatarStack.labelHeight,
+                    height: labelHeight,
                     child: FadeTransition(
                       opacity: _items[index],
                       child: Text(
-                        widget.entries[index].label,
+                        LoopAvatarStack.spreadLabel(
+                          widget.entries[index].label,
+                        ),
                         key: ValueKey<String>('loop-avatar-stack-name-$index'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         style: LoopTypography.caption(
-                          11,
+                          _labelFontSize,
                           color: LoopGround.secondaryOf(context),
                         ),
                       ),
@@ -308,6 +322,8 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
   }
 
   static double _lerp(double a, double b, double t) => a + (b - a) * t;
+
+  static const double _labelFontSize = 11;
 }
 
 /// The last disc of a stack: how many people it does not draw.
