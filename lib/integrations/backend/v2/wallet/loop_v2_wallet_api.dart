@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot_tap.dart';
 
 /// Strict V2 transport for the `wallet` read module (loop-api decision 0033).
 ///
@@ -46,7 +48,11 @@ abstract interface class LoopV2WalletApi {
 }
 
 final class DioLoopV2WalletApi implements LoopV2WalletApi {
-  DioLoopV2WalletApi(this._dio);
+  DioLoopV2WalletApi(this._dio, {this._snapshotTap});
+
+  /// Hands the body of a cold-start read to the snapshot store (decision
+  /// 0095). `null` stores nothing.
+  final LoopV2SnapshotTap? _snapshotTap;
 
   static const walletsPath = '/v2/wallets';
   static const activeWalletPath = '/v2/wallets/active';
@@ -90,7 +96,9 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      return _directory(response.data);
+      final directory = _directory(response.data);
+      _snapshotTap?.call(LoopSnapshotResource.walletDirectory, response.data);
+      return directory;
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
         error,
@@ -126,13 +134,99 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         ),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      return _directory(response.data);
+      final directory = _directory(response.data);
+      _snapshotTap?.call(LoopSnapshotResource.walletDirectory, response.data);
+      return directory;
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
         error,
         allowedCodes: LoopV2ModuleRequest.casWriteErrors,
       );
     }
+  }
+
+  /// The strict decoder of this read, shared by the live answer and by a
+  /// stored snapshot of it (decision 0095).
+  static LoopWalletBalances decodeBalances(
+    Object? data, {
+    required String walletId,
+  }) {
+    final target = walletId;
+    final root = LoopV2Contract.strictMapWithOptional(
+      data,
+      const <String>{
+        'walletId',
+        'snapshot',
+        'gasReservePolicy',
+        'balances',
+        'netWorth',
+        'contractVersion',
+      },
+      // Present only while the Launch chain slot differs from the primary
+      // chain (decision 0038). Absent means the wallet page shows no Launch
+      // block at all, not that a read failed.
+      const <String>{'launchChain'},
+    );
+    LoopV2ChainCodec.requireContractVersion(root);
+    if (root['walletId'] != target) LoopV2ChainCodec.invalid();
+
+    final snapshot = LoopV2Contract.strictMap(root['snapshot'], const <String>{
+      'blockNumber',
+      'blockHash',
+      'observedAt',
+      'confirmations',
+    });
+    final policy = LoopV2Contract.strictMap(
+      root['gasReservePolicy'],
+      const <String>{'configVersion', 'nativeReserveRaw', 'nativeReserve'},
+    );
+    if (policy['configVersion'] != 'walletGasReserveV1') {
+      LoopV2ChainCodec.invalid();
+    }
+
+    final rows = <LoopAssetBalanceRow>[];
+    final seen = <String>{};
+    for (final raw in LoopV2ChainCodec.requireList(
+      root['balances'],
+      maximum: 200,
+    )) {
+      final row = _balanceRow(raw);
+      if (!seen.add(row.assetId)) LoopV2ChainCodec.invalid();
+      rows.add(row);
+    }
+
+    return LoopWalletBalances(
+      walletId: target,
+      snapshot: LoopBalanceSnapshot(
+        blockNumber: LoopV2ChainCodec.requireBlockNumber(
+          snapshot,
+          'blockNumber',
+        ),
+        blockHash: LoopV2ChainCodec.requireString(
+          snapshot,
+          'blockHash',
+          pattern: LoopV2ChainCodec.hashPattern,
+          maxLength: 66,
+        ),
+        observedAt: LoopV2ChainCodec.requireTimestamp(snapshot, 'observedAt'),
+        confirmations: LoopV2ChainCodec.requireInt(
+          snapshot,
+          'confirmations',
+          minimum: 1,
+        ),
+      ),
+      gasReservePolicy: LoopGasReservePolicy(
+        configVersion: 'walletGasReserveV1',
+        nativeReserveRaw: LoopV2ChainCodec.requireRawAmount(
+          policy,
+          'nativeReserveRaw',
+        ),
+        nativeReserve: LoopV2ChainCodec.requireDecimal(policy, 'nativeReserve'),
+      ),
+      balances: rows,
+      netWorth: _netWorth(root['netWorth']),
+      launchChain: _launchChain(root),
+    );
   }
 
   @override
@@ -148,87 +242,12 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMapWithOptional(
+      final decoded = decodeBalances(response.data, walletId: target);
+      _snapshotTap?.call(
+        LoopSnapshotResource.walletBalances(target),
         response.data,
-        const <String>{
-          'walletId',
-          'snapshot',
-          'gasReservePolicy',
-          'balances',
-          'netWorth',
-          'contractVersion',
-        },
-        // Present only while the Launch chain slot differs from the primary
-        // chain (decision 0038). Absent means the wallet page shows no Launch
-        // block at all, not that a read failed.
-        const <String>{'launchChain'},
       );
-      LoopV2ChainCodec.requireContractVersion(root);
-      if (root['walletId'] != target) LoopV2ChainCodec.invalid();
-
-      final snapshot = LoopV2Contract.strictMap(
-        root['snapshot'],
-        const <String>{
-          'blockNumber',
-          'blockHash',
-          'observedAt',
-          'confirmations',
-        },
-      );
-      final policy = LoopV2Contract.strictMap(
-        root['gasReservePolicy'],
-        const <String>{'configVersion', 'nativeReserveRaw', 'nativeReserve'},
-      );
-      if (policy['configVersion'] != 'walletGasReserveV1') {
-        LoopV2ChainCodec.invalid();
-      }
-
-      final rows = <LoopAssetBalanceRow>[];
-      final seen = <String>{};
-      for (final raw in LoopV2ChainCodec.requireList(
-        root['balances'],
-        maximum: 200,
-      )) {
-        final row = _balanceRow(raw);
-        if (!seen.add(row.assetId)) LoopV2ChainCodec.invalid();
-        rows.add(row);
-      }
-
-      return LoopWalletBalances(
-        walletId: target,
-        snapshot: LoopBalanceSnapshot(
-          blockNumber: LoopV2ChainCodec.requireBlockNumber(
-            snapshot,
-            'blockNumber',
-          ),
-          blockHash: LoopV2ChainCodec.requireString(
-            snapshot,
-            'blockHash',
-            pattern: LoopV2ChainCodec.hashPattern,
-            maxLength: 66,
-          ),
-          observedAt: LoopV2ChainCodec.requireTimestamp(snapshot, 'observedAt'),
-          confirmations: LoopV2ChainCodec.requireInt(
-            snapshot,
-            'confirmations',
-            minimum: 1,
-          ),
-        ),
-        gasReservePolicy: LoopGasReservePolicy(
-          configVersion: 'walletGasReserveV1',
-          nativeReserveRaw: LoopV2ChainCodec.requireRawAmount(
-            policy,
-            'nativeReserveRaw',
-          ),
-          nativeReserve: LoopV2ChainCodec.requireDecimal(
-            policy,
-            'nativeReserve',
-          ),
-        ),
-        balances: rows,
-        netWorth: _netWorth(root['netWorth']),
-        launchChain: _launchChain(root),
-      );
+      return decoded;
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
         error,
@@ -419,6 +438,10 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       );
     }
   }
+
+  /// The strict decoder of the directory, shared by the live answer and by a
+  /// stored snapshot of it (decision 0095).
+  static LoopWalletDirectory decodeDirectory(Object? data) => _directory(data);
 
   static LoopWalletDirectory _directory(Object? data) {
     final root = LoopV2Contract.strictMap(data, _directoryKeys);

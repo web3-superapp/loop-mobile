@@ -1,11 +1,13 @@
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot_tap.dart';
 
 /// Strict V2 transport for the `market` module (loop-api decision 0034).
 ///
@@ -57,7 +59,11 @@ abstract interface class LoopV2MarketApi {
 }
 
 final class DioLoopV2MarketApi implements LoopV2MarketApi {
-  DioLoopV2MarketApi(this._dio);
+  DioLoopV2MarketApi(this._dio, {this._snapshotTap});
+
+  /// Hands the body of a cold-start read to the snapshot store (decision
+  /// 0095). `null` stores nothing.
+  final LoopV2SnapshotTap? _snapshotTap;
 
   static const overviewPath = '/v2/market/overview';
   static const assetsPath = '/v2/market/assets';
@@ -81,6 +87,28 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     }
   }
 
+  /// The strict decoder of this read, shared by the live answer and by a
+  /// stored snapshot of it (decision 0095).
+  static MarketOverview decodeOverview(Object? data) {
+    final root = LoopV2Contract.strictMap(data, const <String>{
+      'watchlist',
+      'trending',
+      'newPairs',
+      'smartMoney',
+      'observedAt',
+      'contractVersion',
+    });
+    LoopV2ChainCodec.requireContractVersion(root);
+
+    return MarketOverview(
+      watchlist: _watchlistBlock(root['watchlist']),
+      trending: _trendingBlock(root['trending']),
+      newPairs: _overviewNewPairs(root['newPairs']),
+      smartMoney: LoopV2ChainCodec.unavailable(root['smartMoney']),
+      observedAt: LoopV2ChainCodec.requireTimestamp(root, 'observedAt'),
+    );
+  }
+
   @override
   Future<MarketOverview> getOverview({
     required String accessToken,
@@ -92,23 +120,9 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'watchlist',
-        'trending',
-        'newPairs',
-        'smartMoney',
-        'observedAt',
-        'contractVersion',
-      });
-      LoopV2ChainCodec.requireContractVersion(root);
-
-      return MarketOverview(
-        watchlist: _watchlistBlock(root['watchlist']),
-        trending: _trendingBlock(root['trending']),
-        newPairs: _overviewNewPairs(root['newPairs']),
-        smartMoney: LoopV2ChainCodec.unavailable(root['smartMoney']),
-        observedAt: LoopV2ChainCodec.requireTimestamp(root, 'observedAt'),
-      );
+      final decoded = decodeOverview(response.data);
+      _snapshotTap?.call(LoopSnapshotResource.marketOverview, response.data);
+      return decoded;
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
         error,

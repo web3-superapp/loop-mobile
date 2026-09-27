@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
@@ -13,6 +14,9 @@ final class MarketOverviewController
     extends LoopChainReadController<MarketOverview> {
   @override
   LoopChainGatewayMode watchMode() => _marketMode(ref);
+
+  @override
+  String? get snapshotResource => LoopSnapshotResource.marketOverview;
 
   @override
   Future<MarketOverview> fetch() =>

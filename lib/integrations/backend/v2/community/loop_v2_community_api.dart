@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot_tap.dart';
 
 /// Strict V2 transport for the `community` module (loop-api decision 0031).
 ///
@@ -115,7 +117,11 @@ abstract interface class LoopV2CommunityApi {
 }
 
 final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
-  DioLoopV2CommunityApi(this._dio);
+  DioLoopV2CommunityApi(this._dio, {this._snapshotTap});
+
+  /// Hands the body of a cold-start read to the snapshot store (decision
+  /// 0095). `null` stores nothing.
+  final LoopV2SnapshotTap? _snapshotTap;
 
   static const homePath = '/v2/community/home';
   static const communitiesPath = '/v2/communities';
@@ -167,6 +173,86 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
     return <String, Object?>{'cursor': cursor};
   }
 
+  /// The strict decoder of this read, shared by the live answer and by a
+  /// stored snapshot of it (decision 0095).
+  static CommunityHome decodeHome(Object? data) {
+    final root = LoopV2Contract.strictMap(data, const <String>{
+      'joined',
+      // Always sent since backend decision 0073: the aggregate answers in
+      // two groups and a community is in exactly one of them.
+      'owned',
+      'discover',
+      'unread',
+      'liveVoice',
+      'freshness',
+      'recommendation',
+      'contractVersion',
+    });
+    LoopV2ProjectionCodec.requireContractVersion(root);
+    final joined = LoopV2Contract.strictMap(root['joined'], const <String>{
+      'items',
+      'truncated',
+    });
+    final joinedItems = <JoinedCommunity>[];
+    for (final raw in LoopV2ProjectionCodec.requireList(
+      joined['items'],
+      maximum: 50,
+    )) {
+      final item = LoopV2Contract.strictMap(raw, const <String>{
+        'community',
+        'membership',
+      });
+      joinedItems.add(
+        JoinedCommunity(
+          community: LoopV2ProjectionCodec.community(item['community']),
+          membership: LoopV2ProjectionCodec.membership(item['membership']),
+        ),
+      );
+    }
+    final owned = LoopV2Contract.strictMap(root['owned'], const <String>{
+      'items',
+      'truncated',
+    });
+    final ownedItems = <OwnedCommunity>[
+      for (final raw in LoopV2ProjectionCodec.requireList(
+        owned['items'],
+        maximum: 50,
+      ))
+        LoopV2ProjectionCodec.ownedCommunity(raw),
+    ];
+    final discover = <CommunitySummary>[
+      for (final raw in LoopV2ProjectionCodec.requireList(
+        root['discover'],
+        maximum: 5,
+      ))
+        LoopV2ProjectionCodec.community(raw),
+    ];
+    final freshness = LoopV2Contract.strictMap(
+      root['freshness'],
+      const <String>{'observedAt', 'source'},
+    );
+    if (freshness['source'] != 'database') {
+      LoopV2ProjectionCodec.invalid();
+    }
+    return CommunityHome(
+      joined: List<JoinedCommunity>.unmodifiable(joinedItems),
+      joinedTruncated: LoopV2ProjectionCodec.requireBool(joined, 'truncated'),
+      owned: List<OwnedCommunity>.unmodifiable(ownedItems),
+      ownedTruncated: LoopV2ProjectionCodec.requireBool(owned, 'truncated'),
+      discover: List<CommunitySummary>.unmodifiable(discover),
+      unread: LoopV2ProjectionCodec.unavailable(root['unread']),
+      liveVoice: LoopV2ProjectionCodec.unavailable(root['liveVoice']),
+      observedAt: LoopV2ProjectionCodec.requireTimestamp(
+        freshness,
+        'observedAt',
+      ),
+      source: freshness['source']! as String,
+      recommendation: LoopV2ProjectionCodec.recommendation(
+        root['recommendation'],
+      ),
+    );
+  }
+
   @override
   Future<CommunityHome> getHome({
     required String accessToken,
@@ -178,81 +264,9 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'joined',
-        // Always sent since backend decision 0073: the aggregate answers in
-        // two groups and a community is in exactly one of them.
-        'owned',
-        'discover',
-        'unread',
-        'liveVoice',
-        'freshness',
-        'recommendation',
-        'contractVersion',
-      });
-      LoopV2ProjectionCodec.requireContractVersion(root);
-      final joined = LoopV2Contract.strictMap(root['joined'], const <String>{
-        'items',
-        'truncated',
-      });
-      final joinedItems = <JoinedCommunity>[];
-      for (final raw in LoopV2ProjectionCodec.requireList(
-        joined['items'],
-        maximum: 50,
-      )) {
-        final item = LoopV2Contract.strictMap(raw, const <String>{
-          'community',
-          'membership',
-        });
-        joinedItems.add(
-          JoinedCommunity(
-            community: LoopV2ProjectionCodec.community(item['community']),
-            membership: LoopV2ProjectionCodec.membership(item['membership']),
-          ),
-        );
-      }
-      final owned = LoopV2Contract.strictMap(root['owned'], const <String>{
-        'items',
-        'truncated',
-      });
-      final ownedItems = <OwnedCommunity>[
-        for (final raw in LoopV2ProjectionCodec.requireList(
-          owned['items'],
-          maximum: 50,
-        ))
-          LoopV2ProjectionCodec.ownedCommunity(raw),
-      ];
-      final discover = <CommunitySummary>[
-        for (final raw in LoopV2ProjectionCodec.requireList(
-          root['discover'],
-          maximum: 5,
-        ))
-          LoopV2ProjectionCodec.community(raw),
-      ];
-      final freshness = LoopV2Contract.strictMap(
-        root['freshness'],
-        const <String>{'observedAt', 'source'},
-      );
-      if (freshness['source'] != 'database') {
-        LoopV2ProjectionCodec.invalid();
-      }
-      return CommunityHome(
-        joined: List<JoinedCommunity>.unmodifiable(joinedItems),
-        joinedTruncated: LoopV2ProjectionCodec.requireBool(joined, 'truncated'),
-        owned: List<OwnedCommunity>.unmodifiable(ownedItems),
-        ownedTruncated: LoopV2ProjectionCodec.requireBool(owned, 'truncated'),
-        discover: List<CommunitySummary>.unmodifiable(discover),
-        unread: LoopV2ProjectionCodec.unavailable(root['unread']),
-        liveVoice: LoopV2ProjectionCodec.unavailable(root['liveVoice']),
-        observedAt: LoopV2ProjectionCodec.requireTimestamp(
-          freshness,
-          'observedAt',
-        ),
-        source: freshness['source']! as String,
-        recommendation: LoopV2ProjectionCodec.recommendation(
-          root['recommendation'],
-        ),
-      );
+      final decoded = decodeHome(response.data);
+      _snapshotTap?.call(LoopSnapshotResource.communityHome, response.data);
+      return decoded;
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
         error,

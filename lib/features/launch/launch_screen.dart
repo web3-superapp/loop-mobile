@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `launch` · the Launch destination.
@@ -45,6 +46,10 @@ class LaunchScreen extends ConsumerStatefulWidget {
 }
 
 class _LaunchScreenState extends ConsumerState<LaunchScreen> {
+  /// Whether this page drew the catalogue as a skeleton. Only then does the
+  /// list fade in when it lands (decision 0095).
+  bool _sawSkeleton = false;
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -60,6 +65,9 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
     }
     final segment = ref.watch(launchSegmentControllerProvider);
     final overview = state.value;
+    final loading =
+        !blocked && overview == null && state.phase == LaunchViewPhase.loading;
+    if (loading) _sawSkeleton = true;
     final testnet = launchSurfaceIsTestnet(capability: capability);
 
     return LoopDashboardPage(
@@ -101,8 +109,11 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         // No countdown, no graduation percentage, no "my tier": all three are
         // contract facts and none of them can be proven in this step.
         heading: overview == null
-            ? launchMissingHeading
+            ? (loading ? '目录读取中' : launchMissingHeading)
             : '${overview.segments.total} 个已登记项目',
+        // Decision 0095: the count is a skeleton of its own height until the
+        // catalogue is read, never a stand-in sentence.
+        headingLoading: loading,
         caption: '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
         stamp: overview == null ? null : 'OFF-CHAIN',
       ),
@@ -114,8 +125,19 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             )
           : null,
       sections: <Widget>[
+        LoopFreshnessStrip(
+          key: const ValueKey<String>('launch-freshness'),
+          restoredAt: controller.restoredObservedAt,
+          readAt: controller.valueObservedAt,
+          refreshing: state.refreshing,
+          refreshFailed: overview != null && state.failureKind != null,
+          onRetry: () => unawaited(controller.reload()),
+        ),
         if (overview == null)
           LaunchStateBlock(
+            // Rows of the catalogue's own height (decision 0095).
+            skeleton: LoopSkeletonType.record,
+            rows: 4,
             prefix: 'launch',
             phase: state.phase,
             failureKind: state.failureKind,
@@ -149,10 +171,13 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
             compact: true,
           ),
-          _SegmentList(
-            segment: segment,
-            overview: overview,
-            onOpenLaunch: widget.onOpenLaunch,
+          LoopContentArrival(
+            animate: _sawSkeleton,
+            child: _SegmentList(
+              segment: segment,
+              overview: overview,
+              onOpenLaunch: widget.onOpenLaunch,
+            ),
           ),
           const LoopLabel('已毕业'),
           // Graduation is a liquidity fact. It is never derived from a

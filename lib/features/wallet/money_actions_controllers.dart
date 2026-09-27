@@ -20,6 +20,11 @@ final class ApprovalsController
   LoopChainGatewayMode watchMode() =>
       ref.watch(approvalsGatewayProvider.select((gateway) => gateway.mode));
 
+  /// The page promises an `allowance()` read on the spot, so the inventory
+  /// is never carried over from an earlier visit (decision 0095).
+  @override
+  bool get retainsAnswer => false;
+
   @override
   Future<LoopApprovalInventory> fetch() =>
       ref.read(approvalsGatewayProvider).loadApprovals(walletId);

@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/backend/v2/chain/loop_v2_chain_api.dart
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_gateways.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_notifications_api.dart';
@@ -30,12 +31,20 @@ final loopV2ChainApiProvider = Provider<LoopV2ChainApi?>((ref) {
 
 final loopV2WalletApiProvider = Provider<LoopV2WalletApi?>((ref) {
   final dio = ref.watch(loopBackendDioProvider);
-  return dio == null ? null : DioLoopV2WalletApi(dio);
+  if (dio == null) return null;
+  return DioLoopV2WalletApi(
+    dio,
+    snapshotTap: ref.watch(loopV2SnapshotSessionProvider)?.record,
+  );
 });
 
 final loopV2MarketApiProvider = Provider<LoopV2MarketApi?>((ref) {
   final dio = ref.watch(loopBackendDioProvider);
-  return dio == null ? null : DioLoopV2MarketApi(dio);
+  if (dio == null) return null;
+  return DioLoopV2MarketApi(
+    dio,
+    snapshotTap: ref.watch(loopV2SnapshotSessionProvider)?.record,
+  );
 });
 
 final loopV2WatchlistApiProvider = Provider<LoopV2WatchlistApi?>((ref) {

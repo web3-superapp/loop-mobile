@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_read_retention.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -17,6 +19,9 @@ mixin LaunchSingleFlight {
   int nextGeneration() => ++_generation;
 
   bool isCurrent(int generation) => generation == _generation;
+
+  /// Whether an operation is running right now.
+  bool get inFlight => _operation != null;
 
   Future<void> single(Future<void> Function() body) {
     final active = _operation;
@@ -84,10 +89,67 @@ String launchSegmentLabel(LaunchSegment segment) => switch (segment) {
   LaunchSegment.ended => '已结束',
 };
 
+/// The catalogue is the one Launch read that outlives its page and may open
+/// on a stored snapshot (decision 0095). The per-launch reads never do: each
+/// of them is a subject the route names, and the purchase path re-reads it.
 final class LaunchOverviewController
     extends LaunchReadController<LaunchOverview> {
+  DateTime? _readAt;
+  DateTime? _restoredObservedAt;
+
+  /// When this device received the catalogue on screen, live or restored.
+  DateTime? get valueObservedAt => _readAt;
+
+  /// Non-null while the catalogue on screen is a stored snapshot.
+  DateTime? get restoredObservedAt => _restoredObservedAt;
+
+  DateTime _now() => ref.read(loopReadClockProvider)();
+
   @override
-  Future<LaunchOverview> fetch(LaunchGateway gateway) => gateway.loadOverview();
+  LaunchResourceState<LaunchOverview> build() {
+    final initial = super.build();
+    ref.watch(loopAccountScopeProvider);
+    _readAt = null;
+    _restoredObservedAt = null;
+    loopRetainRead(ref, onRevisit: _revisit);
+    if (initial.mode == LaunchGatewayMode.unavailable) return initial;
+    final restored = ref
+        .read(loopSnapshotRestorerProvider)
+        ?.restore(LoopSnapshotResource.launchOverview);
+    final value = restored?.value;
+    if (restored == null || value is! LaunchOverview) return initial;
+    _readAt = restored.observedAt;
+    _restoredObservedAt = restored.observedAt;
+    scheduleMicrotask(() {
+      if (ref.mounted) unawaited(reload());
+    });
+    return LaunchResourceState<LaunchOverview>(
+      mode: initial.mode,
+      phase: LaunchViewPhase.ready,
+      value: value,
+    );
+  }
+
+  void _revisit() {
+    if (state.phase == LaunchViewPhase.loading && state.value == null) return;
+    if (!loopRevisitIsDue(
+      hasValue: state.value != null,
+      inFlight: inFlight,
+      readAt: _readAt,
+      now: _now(),
+    )) {
+      return;
+    }
+    unawaited(reload());
+  }
+
+  @override
+  Future<LaunchOverview> fetch(LaunchGateway gateway) async {
+    final overview = await gateway.loadOverview();
+    _readAt = _now();
+    _restoredObservedAt = null;
+    return overview;
+  }
 }
 
 final launchOverviewControllerProvider =

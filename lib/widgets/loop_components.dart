@@ -381,9 +381,18 @@ class LoopFolioPrimary extends StatelessWidget {
     this.ring = true,
     this.margin,
     this.squareBottom = false,
+    this.headingLoading = false,
   });
 
   final String heading;
+
+  /// The heading's figure has not been read yet (decision 0095).
+  ///
+  /// The heading's line is drawn as a skeleton of the same height instead of
+  /// a stand-in figure: a net worth that has not arrived is never shown as 0
+  /// or as a sentence that moves the card when the figure lands. [heading]
+  /// is still the accessible reading ("净值读取中").
+  final bool headingLoading;
   final String? kicker;
   final String? caption;
 
@@ -647,13 +656,26 @@ class LoopFolioPrimary extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Semantics(
                         header: true,
-                        child: Text(
-                          heading,
-                          style: LoopTypography.display(
-                            compact ? 24 : archetype.headingSize,
-                            color: headingColor,
-                          ),
-                        ),
+                        label: headingLoading ? heading : null,
+                        child: headingLoading
+                            ? ExcludeSemantics(
+                                child: LoopSkeletonLine(
+                                  key: const ValueKey<String>(
+                                    'loop-folio-heading-skeleton',
+                                  ),
+                                  style: LoopTypography.display(
+                                    compact ? 24 : archetype.headingSize,
+                                  ),
+                                  widthFactor: 0.56,
+                                ),
+                              )
+                            : Text(
+                                heading,
+                                style: LoopTypography.display(
+                                  compact ? 24 : archetype.headingSize,
+                                  color: headingColor,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -2221,6 +2243,13 @@ enum LoopSkeletonType {
 
   /// One figure block: the number, then its caption.
   figure,
+
+  /// Grouped record rows, each as tall as the [LoopRecordRow] it stands for
+  /// (decision 0095).
+  record,
+
+  /// Fixed-height price-list rows (decision 0095).
+  priceRow,
 }
 
 /// `.sk`: Card2 block, radius 8, 1.4s opacity pulse to 45% (static under
@@ -2301,6 +2330,50 @@ class _LoopSkeletonBlockState extends State<LoopSkeletonBlock>
   }
 }
 
+/// One text line's worth of skeleton: exactly as tall as a line set in
+/// [style] at the current text scale, with a block across [widthFactor] of it.
+class LoopSkeletonLine extends StatelessWidget {
+  const LoopSkeletonLine({
+    required this.style,
+    required this.widthFactor,
+    super.key,
+  });
+
+  final TextStyle? style;
+  final double widthFactor;
+
+  /// The height one line set in [style] takes under [context]'s text scale.
+  static double lineHeightOf(BuildContext context, TextStyle? style) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: ' ',
+        style: DefaultTextStyle.of(context).style.merge(style),
+      ),
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = lineHeightOf(context, style);
+    return SizedBox(
+      height: height,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: widthFactor,
+          child: LoopSkeletonBlock(height: height * 0.62),
+        ),
+      ),
+    );
+  }
+}
+
 /// The prototype skeleton layouts (`skeleton-states`) plus the three inline
 /// shapes a single block loads with.
 ///
@@ -2308,7 +2381,14 @@ class _LoopSkeletonBlockState extends State<LoopSkeletonBlock>
 /// list loads as rows, a card as a card, a figure as a figure. A block never
 /// borrows the whole page's shape, so nothing jumps when the data lands.
 class LoopSkeleton extends StatelessWidget {
-  const LoopSkeleton({required this.type, super.key, this.rows = 3});
+  const LoopSkeleton({
+    required this.type,
+    super.key,
+    this.rows = 3,
+    this.leadingSize = 44,
+    this.subtitleLines = 1,
+    this.rowHeight = 58,
+  });
 
   /// Inline list rows, for a block that already sits inside page padding.
   const LoopSkeleton.row({Key? key, int rows = 3})
@@ -2327,10 +2407,23 @@ class LoopSkeleton extends StatelessWidget {
   /// List rows; bounded to 1..8 like the existing presentation contract.
   final int rows;
 
+  /// [LoopSkeletonType.record] / [LoopSkeletonType.priceRow]: the leading
+  /// tile's side, matching the logo the real row carries.
+  final double leadingSize;
+
+  /// [LoopSkeletonType.record]: how many secondary lines each row carries.
+  final int subtitleLines;
+
+  /// [LoopSkeletonType.priceRow]: the list's fixed row height.
+  final double rowHeight;
+
   @override
   Widget build(BuildContext context) {
     final label = switch (type) {
-      LoopSkeletonType.list || LoopSkeletonType.row => '列表加载中',
+      LoopSkeletonType.list ||
+      LoopSkeletonType.row ||
+      LoopSkeletonType.record ||
+      LoopSkeletonType.priceRow => '列表加载中',
       LoopSkeletonType.detail => '详情加载中',
       LoopSkeletonType.chart => '图表加载中',
       LoopSkeletonType.card => '卡片加载中',
@@ -2471,6 +2564,16 @@ class LoopSkeleton extends StatelessWidget {
               ],
             ),
           ),
+          LoopSkeletonType.record => _LoopRecordSkeletonRows(
+            rows: rows,
+            leadingSize: leadingSize,
+            subtitleLines: subtitleLines,
+          ),
+          LoopSkeletonType.priceRow => _LoopFixedSkeletonRows(
+            rowHeight: rowHeight,
+            rows: rows,
+            leadingSize: leadingSize,
+          ),
           LoopSkeletonType.figure => const Column(
             key: ValueKey<String>('loop-skeleton-figure'),
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2482,6 +2585,187 @@ class LoopSkeleton extends StatelessWidget {
             ],
           ),
         },
+      ),
+    );
+  }
+}
+
+/// `LoopSkeletonType.record`: rows the height of the [LoopRecordRow]s about to
+/// replace them, drawn as one grouped card like [LoopRecordGroup] (decision
+/// 0095).
+///
+/// Each text line is measured from the theme style the real row uses, so the
+/// placeholder and the content have the same height at every text scale and
+/// nothing jumps when the answer lands.
+class _LoopRecordSkeletonRows extends StatelessWidget {
+  const _LoopRecordSkeletonRows({
+    required this.rows,
+    required this.leadingSize,
+    required this.subtitleLines,
+  });
+
+  final int rows;
+
+  /// The leading tile's side, or `null` for rows without one.
+  final double? leadingSize;
+  final int subtitleLines;
+
+  static const List<double> _titleWidths = <double>[0.34, 0.46, 0.28, 0.4];
+  static const List<double> _subtitleWidths = <double>[0.62, 0.5, 0.7, 0.56];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final count = rows.clamp(1, 8);
+    return Column(
+      key: const ValueKey<String>('loop-skeleton-record'),
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (var index = 0; index < count; index++)
+          _row(
+            context,
+            theme,
+            index: index,
+            first: index == 0,
+            last: index == count - 1,
+          ),
+      ],
+    );
+  }
+
+  Widget _row(
+    BuildContext context,
+    ThemeData theme, {
+    required int index,
+    required bool first,
+    required bool last,
+  }) {
+    final radius = BorderRadius.vertical(
+      top: first ? const Radius.circular(LoopRadius.cardValue) : Radius.zero,
+      bottom: last ? const Radius.circular(LoopRadius.cardValue) : Radius.zero,
+    );
+    final leading = leadingSize;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      child: Container(
+        decoration: BoxDecoration(
+          color: LoopColors.chalk.withValues(alpha: 0.045),
+          borderRadius: radius,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (first) Container(height: 1, color: LoopDepth.liftCardEdge),
+            Container(
+              constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+              padding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
+              child: Row(
+                children: <Widget>[
+                  if (leading != null) ...<Widget>[
+                    LoopSkeletonBlock(
+                      width: leading,
+                      height: leading,
+                      radius: leading / 2.6,
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        LoopSkeletonLine(
+                          style: theme.textTheme.titleMedium,
+                          widthFactor: _titleWidths[index % 4],
+                        ),
+                        for (var line = 0; line < subtitleLines; line++)
+                          LoopSkeletonLine(
+                            style: theme.textTheme.bodySmall,
+                            widthFactor: line == subtitleLines - 1
+                                ? _subtitleWidths[index % 4]
+                                : 0.86,
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const LoopSkeletonBlock(width: 52, height: 12),
+                ],
+              ),
+            ),
+            if (!last)
+              Container(
+                height: 1,
+                color: LoopColors.chalk.withValues(alpha: 0.1),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `LoopSkeletonType.priceRow`: rows of a fixed height — the dense price list, whose rows are a
+/// constant [rowHeight] tall whatever they hold.
+class _LoopFixedSkeletonRows extends StatelessWidget {
+  const _LoopFixedSkeletonRows({
+    required this.rowHeight,
+    required this.rows,
+    required this.leadingSize,
+  });
+
+  final double rowHeight;
+  final int rows;
+  final double leadingSize;
+
+  static const List<double> _nameWidths = <double>[0.3, 0.42, 0.36, 0.26];
+
+  @override
+  Widget build(BuildContext context) {
+    final count = rows.clamp(1, 8);
+    return ExcludeSemantics(
+      child: Column(
+        key: const ValueKey<String>('loop-skeleton-price-row'),
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (var index = 0; index < count; index++)
+            Container(
+              height: rowHeight,
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: LoopColors.line)),
+              ),
+              child: Row(
+                children: <Widget>[
+                  LoopSkeletonBlock(
+                    width: leadingSize,
+                    height: leadingSize,
+                    radius: leadingSize / 2,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        LoopSkeletonBlock(
+                          height: 12,
+                          widthFactor: _nameWidths[index % 4],
+                        ),
+                        const SizedBox(height: 6),
+                        const LoopSkeletonBlock(height: 10, widthFactor: 0.58),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const LoopSkeletonBlock(width: 60, height: 12),
+                  const SizedBox(width: 10),
+                  const LoopSkeletonBlock(width: 48, height: 22),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
