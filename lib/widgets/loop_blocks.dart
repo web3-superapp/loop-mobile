@@ -1245,10 +1245,15 @@ class LoopProgressBar extends StatelessWidget {
     required this.value,
     required this.semanticLabel,
     super.key,
+    this.fillColor = LoopColors.lime,
   });
 
   final double? value;
   final String semanticLabel;
+
+  /// The filled part; Lime unless the caller states a quieter token (a round
+  /// that is over is greyscale, decision 0100).
+  final Color fillColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1266,7 +1271,7 @@ class LoopProgressBar extends StatelessWidget {
                 ? const SizedBox.shrink()
                 : FractionallySizedBox(
                     widthFactor: fraction.clamp(0, 1),
-                    child: const ColoredBox(color: LoopColors.lime),
+                    child: ColoredBox(color: fillColor),
                   ),
           ),
         ),

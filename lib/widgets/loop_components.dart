@@ -382,9 +382,15 @@ class LoopFolioPrimary extends StatelessWidget {
     this.margin,
     this.squareBottom = false,
     this.headingLoading = false,
+    this.kickerTrailing,
   });
 
   final String heading;
+
+  /// A small widget at the right end of the kicker line (decision 0100: the
+  /// non-release environment tag on the wallet hero). Null keeps the kicker
+  /// line exactly as before.
+  final Widget? kickerTrailing;
 
   /// The heading's figure has not been read yet (decision 0095).
   ///
@@ -634,7 +640,25 @@ class LoopFolioPrimary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              if (kicker != null)
+              if (kicker != null && kickerTrailing != null)
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Opacity(
+                        opacity: kickerOpacity,
+                        child: Text(
+                          kicker!.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopTypography.eyebrow(11, color: foreground),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    kickerTrailing!,
+                  ],
+                )
+              else if (kicker != null)
                 FractionallySizedBox(
                   widthFactor: 0.72,
                   alignment: Alignment.centerLeft,

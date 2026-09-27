@@ -108,13 +108,14 @@ void main() {
     expect(key('launch-track-detail-1'), findsNothing);
     expect(key('launch-track-detail-end'), findsNothing);
     final detail = key('launch-track-detail-2');
+    // Decision 0100: two small cards (window; price and round cap, the unit
+    // in the label), raised over the bar, and the wallet cap as the footer.
     for (final text in <String>[
       'Round 2 · 公开轮',
       '09-22 00:00',
       '09-23 00:00',
-      '0.01 USD1',
-      '40,000 USD1',
-      '500 USD1',
+      '0.01',
+      '40,000',
       '10,000 USD1',
     ]) {
       expect(
@@ -123,6 +124,13 @@ void main() {
         reason: text,
       );
     }
+    expect(
+      find.descendant(
+        of: key('launch-track-strip-2'),
+        matching: find.text('钱包上限 500 USD1'),
+      ),
+      findsOneWidget,
+    );
     expect(
       find.descendant(of: detail, matching: find.byType(LoopProgressBar)),
       findsOneWidget,
@@ -216,14 +224,14 @@ void main() {
     for (final text in <String>[
       '09-22 00:00',
       '09-23 00:00',
-      '0.01 USD1',
-      '40,000 USD1',
-      '500 USD1',
+      '0.01',
+      '40,000',
       '10,000 USD1',
+      '钱包上限 500 USD1',
     ]) {
       final figure = tester.getRect(
         find.descendant(
-          of: key('launch-track-detail-2'),
+          of: key('launch-track-strip-2'),
           matching: find.text(text),
         ),
       );
@@ -289,8 +297,13 @@ void main() {
       find.descendant(of: detail, matching: find.text('毕业与迁移')),
       findsOneWidget,
     );
+    // Decision 0100: the projection is the open strip's badge, on its title
+    // line, rather than a line of the detail.
     expect(
-      find.descendant(of: detail, matching: find.byType(LoopBadge)),
+      find.descendant(
+        of: key('launch-track-strip-end'),
+        matching: find.byType(LoopBadge),
+      ),
       findsOneWidget,
     );
     await tester.tap(key('launch-track-open-graduation'));
@@ -384,7 +397,7 @@ void main() {
         theme: LoopTheme.dark,
         home: Scaffold(
           body: LoopAccordionStrip(
-            height: 120,
+            minHeight: 120,
             initialIndex: 0,
             keyPrefix: 'probe',
             margin: const EdgeInsets.symmetric(horizontal: 16),

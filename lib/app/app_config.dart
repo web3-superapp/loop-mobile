@@ -20,6 +20,7 @@ class AppConfig {
     this.loopClientVersion = '0.1.0+1',
     this.buildMode = LoopBuildMode.debug,
     this.declaredModeMatchesRuntime = true,
+    this.declaredBuildModeName = '',
   });
 
   factory AppConfig.fromEnvironment({
@@ -46,6 +47,7 @@ class AppConfig {
       loopClientVersion: const String.fromEnvironment('LOOP_CLIENT_VERSION'),
       buildMode: expectedBuildMode,
       declaredModeMatchesRuntime: configuredBuildMode == expectedBuildMode,
+      declaredBuildModeName: rawBuildMode.trim(),
     );
   }
 
@@ -78,6 +80,10 @@ class AppConfig {
   /// offline Preview composition overrides [AppConfig] explicitly and does not
   /// depend on build-time values.
   final bool declaredModeMatchesRuntime;
+
+  /// The raw `LOOP_BUILD_MODE` this binary was built with, for display on the
+  /// about page only. Empty when none was supplied.
+  final String declaredBuildModeName;
 
   static const String privyOAuthScheme = 'com.cywd.loop.privy';
   static const String reownWalletScheme = 'com.cywd.loop.wallet';

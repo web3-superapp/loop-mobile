@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/loop_backend_identity.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/qr/loop_qr_code.dart';
@@ -28,6 +29,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_environment_tag.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -275,6 +277,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         balances: balances,
         loading: balancesLoading,
         onOpenNetWorth: () => _open('/wallet/networth'),
+        environmentTag: ref.watch(loopEnvironmentTagProvider),
       ),
       sections: <Widget>[
         LoopFreshnessStrip(
@@ -518,9 +521,14 @@ class _WalletPrimary extends StatelessWidget {
     required this.balances,
     required this.onOpenNetWorth,
     this.loading = false,
+    this.environmentTag,
   });
 
   final LoopWalletDirectory? directory;
+
+  /// Decision 0100: the backend environment on a non-release build, `null`
+  /// on a release build (and then nothing is drawn).
+  final String? environmentTag;
 
   /// The figure is on its way (decision 0095): the heading is a skeleton of
   /// its own height, never 0 and never a sentence the figure then replaces.
@@ -549,6 +557,12 @@ class _WalletPrimary extends StatelessWidget {
       key: const ValueKey<String>('wallet-folio'),
       archetype: LoopFolioArchetype.record,
       kicker: 'WALLET LEDGER',
+      kickerTrailing: environmentTag == null
+          ? null
+          : LoopEnvironmentTag(
+              environmentTag!,
+              key: const ValueKey<String>('wallet-environment-tag'),
+            ),
       heading: loading && netWorth == null ? '净值读取中' : heading,
       headingLoading: loading && netWorth == null,
       // Three answers the caption must keep apart: the list was never read,

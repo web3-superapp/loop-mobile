@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -508,6 +509,9 @@ Future<void> pumpS8Page(
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 3200),
   bool settle = true,
+
+  /// Extra seams a single test composes (S91: the build configuration).
+  List<Override> overrides = const <Override>[],
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -529,6 +533,7 @@ Future<void> pumpS8Page(
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? s8MetaSnapshot(),
         ),
+        ...overrides,
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,
