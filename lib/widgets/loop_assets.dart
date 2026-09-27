@@ -48,6 +48,28 @@ class LoopIcon extends StatelessWidget {
   }
 }
 
+/// Compiles the sprite icons into `flutter_svg`'s byte cache ahead of use
+/// (decision 0100).
+///
+/// In profile and release builds `flutter_svg` compiles each SVG the first
+/// time it is drawn, in a freshly spawned isolate (`foundation.compute`), and
+/// only then caches the result. A page that is the first to draw a glyph —
+/// the 「我的资格」 row's `ticket` on `launch-detail` — shows its tile empty
+/// until that isolate returns, and a revisit is instant because the bytes are
+/// cached. Warming the cache one icon at a time after the first frame moves
+/// that cost off the first visit. The loader is the one [LoopIcon] builds
+/// (asset path, default bundle, default theme), so the cache keys match.
+/// Failures are ignored: the widget then compiles on demand, as before.
+Future<void> loopWarmIconCache({Iterable<String>? names}) async {
+  for (final name in names ?? LoopIconNames.all) {
+    try {
+      await SvgAssetLoader(LoopAssetPaths.icon(name)).loadBytes(null);
+    } catch (error) {
+      debugPrint('LoopIcon warm-up skipped $name: $error');
+    }
+  }
+}
+
 /// The registry artwork address this app is willing to fetch, or `null`.
 ///
 /// A logo is the one field of an asset row that is a URL, and it arrives from

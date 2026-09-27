@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app.dart';
@@ -57,6 +59,7 @@ import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_ai_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,6 +95,11 @@ Future<void> main() async {
   if (!config.canInitializeFirebase) {
     pushDiagnostics.record(LoopPushRegistrationGate.tokenSourceDisabled);
   }
+  // Decision 0100: compile the sprite icons in the background once the first
+  // frame is out, so no page is the first to pay for an icon.
+  WidgetsBinding.instance.addPostFrameCallback(
+    (_) => unawaited(loopWarmIconCache()),
+  );
   runApp(
     ProviderScope(
       overrides: [

@@ -612,9 +612,9 @@ class _TrackBlock extends StatelessWidget {
   final DateTime now;
   final VoidCallback? onOpenGraduation;
 
-  /// The strip row's height at text scale 1: the round detail's fixed line
-  /// budget (title, six figures, the bar and the one optional note).
-  static const double accordionHeight = 224;
+  /// The strip row's least height at text scale 1. The row is otherwise as
+  /// tall as the open strip's own content (decision 0100).
+  static const double accordionMinHeight = 160;
 
   @override
   Widget build(BuildContext context) {
@@ -633,39 +633,33 @@ class _TrackBlock extends StatelessWidget {
         ],
       );
       final badge = _graduationBadge;
+      final pending = badge == '待触发';
+      final block = onChain?.snapshotBlockNumber;
       return LoopAccordionStrip(
         keyPrefix: 'launch-track',
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
         rowKey: const ValueKey<String>('launch-track'),
-        height: accordionHeight,
+        minHeight: accordionMinHeight,
         initialIndex: launchTrackInitialIndex(chainRounds, now),
         // The list draws its own page margin; [margin] is the row's only.
         fallback: list,
         items: <LoopAccordionItem>[
-          for (final round in chainRounds)
-            LoopAccordionItem(
-              id: '${round.roundIndex}',
-              shortTitle: 'R${round.roundIndex}',
-              dot: round.isOpenAt(now)
-                  ? LoopAccordionDot.live
-                  : now.isBefore(round.startAt)
-                  ? LoopAccordionDot.upcoming
-                  : LoopAccordionDot.idle,
-              semanticLabel:
-                  'Round ${round.roundIndex}，'
-                  '${round.hasAllowlist ? '名单轮' : '公开轮'}，'
-                  '${launchChainRoundPhaseLabel(round, now)}',
-              detail: LaunchTrackRoundDetail(round: round),
-            ),
+          for (final round in chainRounds) _roundItem(round),
           LoopAccordionItem(
             id: 'end',
             shortTitle: 'END',
-            dot: badge == '待触发' ? LoopAccordionDot.idle : LoopAccordionDot.live,
+            dot: pending ? LoopAccordionDot.idle : LoopAccordionDot.live,
+            tone: pending ? LoopAccordionTone.upcoming : LoopAccordionTone.live,
+            stateLabel: '毕业',
             semanticLabel: '毕业与迁移，$badge',
-            detail: _TrackGraduationDetail(
-              badge: badge,
-              onOpenGraduation: onOpenGraduation,
+            badge: LoopBadge(
+              badge,
+              kind: pending ? LoopBadgeKind.mute : LoopBadgeKind.launch,
             ),
+            detail: _TrackGraduationDetail(onOpenGraduation: onOpenGraduation),
+            footer: block == null
+                ? null
+                : _TrackFooter('读自区块 ${loopGroupedFigure(block)}'),
           ),
         ],
       );
@@ -691,6 +685,48 @@ class _TrackBlock extends StatelessWidget {
           ),
         _graduationRow(length),
       ],
+    );
+  }
+
+  /// One contract round as a strip (decision 0100): its phase along the
+  /// narrow strip with the raised bar at the foot; open, the sale's own word
+  /// as the badge while the round runs.
+  LoopAccordionItem _roundItem(LaunchChainRound round) {
+    final phase = launchChainRoundPhaseLabel(round, now);
+    final live = round.isOpenAt(now);
+    final upcoming = !live && now.isBefore(round.startAt);
+    final state = onChain;
+    final paused =
+        state != null &&
+        state.operationalState == LaunchOperationalState.paused;
+    final badgeText = live
+        ? (state == null ? phase : launchSaleStateLabel(state))
+        : phase;
+    final tone = live
+        ? LoopAccordionTone.live
+        : upcoming
+        ? LoopAccordionTone.upcoming
+        : LoopAccordionTone.ended;
+    return LoopAccordionItem(
+      id: '${round.roundIndex}',
+      shortTitle: 'R${round.roundIndex}',
+      dot: live
+          ? LoopAccordionDot.live
+          : upcoming
+          ? LoopAccordionDot.upcoming
+          : LoopAccordionDot.idle,
+      tone: tone,
+      stateLabel: phase,
+      progress: launchRoundRaisedFraction(round),
+      semanticLabel:
+          'Round ${round.roundIndex}，'
+          '${round.hasAllowlist ? '名单轮' : '公开轮'}，$phase',
+      badge: LoopBadge(
+        badgeText,
+        kind: live && !paused ? LoopBadgeKind.launch : LoopBadgeKind.mute,
+      ),
+      detail: LaunchTrackRoundDetail(round: round, tone: tone),
+      footer: _TrackFooter('钱包上限 ${launchUsd1Label(round.walletRoundCapUsd1)}'),
     );
   }
 
@@ -754,14 +790,34 @@ String launchChainRoundPhaseLabel(LaunchChainRound round, DateTime now) {
   return '已结束';
 }
 
-/// The open strip of one contract round on `launch-detail`'s track: the
-/// window, the price, the two caps and what it has raised, with the bar of
-/// raised against the round cap. Every figure is the same string the vertical
-/// row prints; only the time drops its year, since the window is one round's.
+/// Raised against the round cap, in pixel space only: `null` when the cap
+/// is zero, never above 1. The figures stay exact strings.
+double? launchRoundRaisedFraction(LaunchChainRound round) {
+  final cap = BigInt.parse(round.roundCapUsd1);
+  if (cap <= BigInt.zero) return null;
+  final raised = BigInt.parse(round.raisedUsd1);
+  final value = (raised * BigInt.from(10000) ~/ cap).toInt() / 10000;
+  return value > 1 ? 1 : value;
+}
+
+/// The open strip of one contract round on `launch-detail`'s track
+/// (decision 0100): the round's access, two small cards — the window, then
+/// the price and the round cap — and what it has raised over the bar of
+/// raised against the round cap. The wallet cap is the strip's footer. Every
+/// figure is the same exact string the vertical row prints; only the time
+/// drops its year, since the window is one round's, and the cards name the
+/// unit once in their labels.
 class LaunchTrackRoundDetail extends StatelessWidget {
-  const LaunchTrackRoundDetail({required this.round, super.key});
+  const LaunchTrackRoundDetail({
+    required this.round,
+    super.key,
+    this.tone = LoopAccordionTone.neutral,
+  });
 
   final LaunchChainRound round;
+
+  /// The strip's tone: a round that is over draws its bar in greyscale.
+  final LoopAccordionTone tone;
 
   static String _time(DateTime value) {
     final utc = value.toUtc();
@@ -772,14 +828,7 @@ class LaunchTrackRoundDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cap = BigInt.parse(round.roundCapUsd1);
-    final raised = BigInt.parse(round.raisedUsd1);
-    double? progress;
-    if (cap > BigInt.zero) {
-      // Pixel space only; the figures stay exact strings.
-      progress = (raised * BigInt.from(10000) ~/ cap).toInt() / 10000;
-      if (progress > 1) progress = 1;
-    }
+    final progress = launchRoundRaisedFraction(round);
     final access = round.hasAllowlist ? '名单轮' : '公开轮';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -795,29 +844,79 @@ class LaunchTrackRoundDetail extends StatelessWidget {
             color: LoopGround.inkOf(context),
           ),
         ),
-        const SizedBox(height: 6),
-        _TrackFigure(label: '开始 UTC', value: _time(round.startAt)),
-        _TrackFigure(label: '结束 UTC', value: _time(round.endAt)),
-        _TrackFigure(
-          label: '单价',
-          value: '${launchUnitsFigure(round.priceUsd1PerToken)} USD1',
-        ),
-        _TrackFigure(label: '轮次上限', value: launchUsd1Label(round.roundCapUsd1)),
-        _TrackFigure(
-          label: '钱包上限',
-          value: launchUsd1Label(round.walletRoundCapUsd1),
-        ),
-        _TrackFigure(label: '已募集', value: launchUsd1Label(round.raisedUsd1)),
         const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                child: _TrackCard(
+                  key: const ValueKey<String>('launch-track-card-window'),
+                  entries: <(String, String)>[
+                    ('开始 UTC', _time(round.startAt)),
+                    ('结束 UTC', _time(round.endAt)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _TrackCard(
+                  key: const ValueKey<String>('launch-track-card-price'),
+                  entries: <(String, String)>[
+                    ('单价 USD1', launchUnitsFigure(round.priceUsd1PerToken)),
+                    ('轮次上限 USD1', launchUnitsFigure(round.roundCapUsd1)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: <Widget>[
+            Text(
+              '已募集',
+              maxLines: 1,
+              style: LoopTypography.caption(
+                11,
+                color: LoopGround.auxiliaryOf(context),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    launchUsd1Label(round.raisedUsd1),
+                    maxLines: 1,
+                    style: LoopMono.stamp.copyWith(
+                      color: LoopGround.inkOf(context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
         LoopProgressBar(
           value: progress,
+          fillColor: switch (tone) {
+            LoopAccordionTone.ended => LoopGround.auxiliaryOf(context),
+            LoopAccordionTone.upcoming => LoopGround.secondaryOf(context),
+            LoopAccordionTone.live ||
+            LoopAccordionTone.neutral => LoopColors.lime,
+          },
           semanticLabel: progress == null ? '本轮进度暂时读不到' : '本轮已募集占轮次上限的比例',
         ),
         if (round.roundId == null) ...<Widget>[
           const SizedBox(height: 6),
           Text(
             'LOOP 没有这一轮的记录，不能在这里认购',
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: LoopTypography.caption(
               11,
@@ -830,57 +929,95 @@ class LaunchTrackRoundDetail extends StatelessWidget {
   }
 }
 
-/// One label / figure line of an open track strip. A figure never truncates:
-/// it scales down to the strip.
-class _TrackFigure extends StatelessWidget {
-  const _TrackFigure({required this.label, required this.value});
+/// A small card of two label / figure pairs inside an open track strip. A
+/// figure never truncates: it scales down to the card.
+class _TrackCard extends StatelessWidget {
+  const _TrackCard({required this.entries, super.key});
 
-  final String label;
-  final String value;
+  final List<(String, String)> entries;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 18,
-      child: Row(
-        children: <Widget>[
-          Text(
-            label,
-            maxLines: 1,
-            style: LoopTypography.caption(
-              11,
-              color: LoopGround.auxiliaryOf(context),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: FittedBox(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LoopGround.tintOf(context),
+        borderRadius: LoopRadius.inner,
+        border: Border.all(color: LoopGround.hairlineOf(context)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 7, 8, 7),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (var index = 0; index < entries.length; index += 1) ...<Widget>[
+              if (index > 0) const SizedBox(height: 6),
+              Text(
+                entries[index].$1,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopTypography.caption(
+                  11,
+                  color: LoopGround.auxiliaryOf(context),
+                ),
+              ),
+              const SizedBox(height: 1),
+              FittedBox(
                 fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
+                alignment: Alignment.centerLeft,
                 child: Text(
-                  value,
+                  entries[index].$2,
                   maxLines: 1,
-                  style: LoopMono.stamp.copyWith(
+                  style: LoopTypography.figure(
+                    12,
+                    weight: FontWeight.w600,
                     color: LoopGround.inkOf(context),
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
 }
 
-/// The open END strip: the graduation step, its projection and the way into
-/// `launch-graduation`.
-class _TrackGraduationDetail extends StatelessWidget {
-  const _TrackGraduationDetail({required this.badge, this.onOpenGraduation});
+/// The thin line at the foot of an open track strip.
+class _TrackFooter extends StatelessWidget {
+  const _TrackFooter(this.text);
 
-  final String badge;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: LoopGround.hairlineOf(context))),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 7),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LoopTypography.figure(
+            11,
+            weight: FontWeight.w400,
+            height: 1.35,
+            color: LoopGround.auxiliaryOf(context),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The open END strip: the graduation step and the way into
+/// `launch-graduation`. Its projection is the strip's badge.
+class _TrackGraduationDetail extends StatelessWidget {
+  const _TrackGraduationDetail({this.onOpenGraduation});
+
   final VoidCallback? onOpenGraduation;
 
   @override
@@ -899,12 +1036,7 @@ class _TrackGraduationDetail extends StatelessWidget {
             color: LoopGround.inkOf(context),
           ),
         ),
-        const SizedBox(height: 8),
-        LoopBadge(
-          badge,
-          kind: badge == '待触发' ? LoopBadgeKind.mute : LoopBadgeKind.launch,
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           '达到毕业条件后由服务端权威状态推进',
           maxLines: 3,
