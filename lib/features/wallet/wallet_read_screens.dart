@@ -79,10 +79,20 @@ Widget _walletPageBlock(
 
 /// One pull re-reads the wallet directory and, when a wallet is selected, that
 /// wallet's balances. Neither read clears what it already put on screen.
+///
+/// Decision 0098: the two reads are sent together. The balances read is for
+/// the wallet already on screen and needs nothing from the new directory; if
+/// the directory names a different active wallet, the page rebuilds on it and
+/// that wallet's own block reads its balances.
 Future<void> _refreshWallet(WidgetRef ref, String? walletId) async {
-  await ref.read(walletDirectoryControllerProvider.notifier).reload();
-  if (walletId == null) return;
-  await ref.read(walletBalancesControllerProvider(walletId).notifier).reload();
+  final directory = ref.read(walletDirectoryControllerProvider.notifier);
+  final balances = walletId == null
+      ? null
+      : ref.read(walletBalancesControllerProvider(walletId).notifier);
+  await Future.wait<void>(<Future<void>>[
+    directory.reload(),
+    if (balances != null) balances.reload(),
+  ]);
 }
 
 /// Loads the wallet directory once and returns the active wallet id.

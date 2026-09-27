@@ -14,26 +14,117 @@ final loopV2MetaRepositoryProvider = Provider<LoopV2MetaRepository?>((ref) {
   return repository;
 });
 
+/// How long one D0 answer is served without asking again (decision 0098).
+///
+/// The two documents change on operator action, not per request, and every
+/// round trip from a phone costs 0.5–2.3 s through the tunnel. Inside this
+/// window a page change reads the answer this process already holds; after it
+/// the next trigger re-reads in the background while the old answer stays on
+/// screen.
+abstract final class LoopV2MetaCachePolicy {
+  static const freshFor = Duration(seconds: 60);
+}
+
+/// The clock the D0 cache measures [LoopV2MetaCachePolicy.freshFor] against.
+final loopV2MetaClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
+
+/// The last D0 answer this process received, and when (decision 0098).
+///
+/// It holds only successful observations: a failed read stores nothing, so a
+/// failure is never served from here and the retry ladder of decision 0064
+/// still owns it. It is in memory only; the cold-start snapshot store of
+/// decision 0095 does not carry D0 documents.
+///
+/// Reads are single-flight: a second reader while a read is running joins it.
+final class LoopV2MetaCache {
+  LoopV2MetaCache(this._repository, {required this._now});
+
+  final LoopV2MetaRepository _repository;
+  final DateTime Function() _now;
+
+  LoopV2MetaSnapshot? _value;
+  DateTime? _observedAt;
+  Future<LoopV2MetaSnapshot>? _inFlight;
+
+  /// The answer on hand, fresh or not.
+  LoopV2MetaSnapshot? get value => _value;
+
+  /// When this device received [value].
+  DateTime? get observedAt => _observedAt;
+
+  /// Whether a read would be answered without a request.
+  bool get isFresh {
+    final at = _observedAt;
+    return _value != null &&
+        at != null &&
+        _now().difference(at) < LoopV2MetaCachePolicy.freshFor;
+  }
+
+  /// There is an answer, and it is old enough to be asked again.
+  bool get isStale => _value != null && !isFresh;
+
+  /// Marks the answer on hand as old, so the next read asks the server.
+  ///
+  /// The answer itself stays: a page keeps drawing it until a new one lands.
+  void expire() => _observedAt = null;
+
+  /// The answer on hand when it is fresh, otherwise both documents re-read
+  /// concurrently.
+  Future<LoopV2MetaSnapshot> read() {
+    final value = _value;
+    if (value != null && isFresh) {
+      return Future<LoopV2MetaSnapshot>.value(value);
+    }
+    final active = _inFlight;
+    if (active != null) return active;
+    late final Future<LoopV2MetaSnapshot> operation;
+    operation = _fetch().whenComplete(() {
+      if (identical(_inFlight, operation)) _inFlight = null;
+    });
+    _inFlight = operation;
+    return operation;
+  }
+
+  Future<LoopV2MetaSnapshot> _fetch() async {
+    final values = await Future.wait<Object>(<Future<Object>>[
+      _repository.getClientPolicy(),
+      _repository.getCapabilities(),
+    ]);
+    final snapshot = LoopV2MetaSnapshot(
+      clientPolicy: values[0] as LoopV2ClientPolicy,
+      capabilities: values[1] as LoopV2Capabilities,
+    );
+    _value = snapshot;
+    _observedAt = _now();
+    return snapshot;
+  }
+}
+
+/// One cache per backend origin; `null` when no backend is configured.
+final loopV2MetaCacheProvider = Provider<LoopV2MetaCache?>((ref) {
+  final repository = ref.watch(loopV2MetaRepositoryProvider);
+  if (repository == null) return null;
+  return LoopV2MetaCache(repository, now: ref.watch(loopV2MetaClockProvider));
+});
+
 /// Reads both public D0 resources concurrently as one immutable observation.
 ///
 /// The provider itself still installs no automatic retry, and none of the
 /// returned states is mapped onto an application gate here. In particular,
 /// unavailable/deferred policy or pending provider evidence stays visible to
-/// the owning product boundary. Re-arming a *failed* observation is owned by
+/// the owning product boundary. Re-arming a *failed* observation, and
+/// re-reading one older than [LoopV2MetaCachePolicy.freshFor], is owned by
 /// [LoopV2MetaObserver], which drives this provider from the outside.
+///
+/// The request pair itself runs in [LoopV2MetaCache]; rebuilding this provider
+/// inside the freshness window costs no request (decision 0098).
 final loopV2MetaSnapshotProvider =
     FutureProvider.autoDispose<LoopV2MetaSnapshot?>((ref) async {
-      final repository = ref.watch(loopV2MetaRepositoryProvider);
-      if (repository == null) return null;
-
-      final values = await Future.wait<Object>(<Future<Object>>[
-        repository.getClientPolicy(),
-        repository.getCapabilities(),
-      ]);
-      return LoopV2MetaSnapshot(
-        clientPolicy: values[0] as LoopV2ClientPolicy,
-        capabilities: values[1] as LoopV2Capabilities,
-      );
+      final cache = ref.watch(loopV2MetaCacheProvider);
+      if (cache == null) return null;
+      return cache.read();
     }, retry: (retryCount, error) => null);
 
 /// Whether the last D0 observation failed, i.e. LOOP was not reached.
@@ -58,6 +149,10 @@ enum LoopV2MetaObservationTrigger {
 
   /// The owner pressed 重试 on a page that could not be read.
   ownerRetry,
+
+  /// A caller about to act on a capability asked for the server's current
+  /// answer rather than the one on hand (decision 0098).
+  forcedRefresh,
 }
 
 /// Keeps the D0 observation alive across a cold start that hit a dead network.
@@ -76,7 +171,11 @@ enum LoopV2MetaObservationTrigger {
 /// Every trigger is single-flight: it is ignored while a read is in flight and
 /// while a backoff retry is already scheduled, so no burst of triggers can
 /// multiply requests. A *completed* observation — including the "no backend
-/// endpoint is configured" answer — is never re-read; only a failed one is.
+/// endpoint is configured" answer — is not re-read while it is younger than
+/// [LoopV2MetaCachePolicy.freshFor]. Decision 0098: once it is older, the same
+/// triggers re-read it in the background (stale-while-revalidate). The old
+/// answer stays observable for the whole read, and a new answer replaces it
+/// the moment it lands — including one that closes a capability.
 final class LoopV2MetaObserver {
   LoopV2MetaObserver(this._ref);
 
@@ -137,13 +236,56 @@ final class LoopV2MetaObserver {
     });
   }
 
-  /// One external trigger. Ignored unless the last observation failed and no
-  /// read or scheduled retry is already covering it.
+  /// One external trigger. Ignored unless the last observation failed, or
+  /// succeeded longer than [LoopV2MetaCachePolicy.freshFor] ago, and no read
+  /// or scheduled retry is already covering it.
   void observe(LoopV2MetaObservationTrigger trigger) {
     if (_disposed || _inFlight || _retryTimer != null) return;
-    if (!_ref.read(loopV2MetaSnapshotProvider).hasError) return;
-    _consecutiveFailures = 0;
-    _start(trigger);
+    final observation = _ref.read(loopV2MetaSnapshotProvider);
+    if (observation.hasError) {
+      _consecutiveFailures = 0;
+      _start(trigger);
+      return;
+    }
+    if (observation.isLoading) return;
+    if (_ref.read(loopV2MetaCacheProvider)?.isStale != true) return;
+    // Decision 0098: the answer on hand is kept while the new one is read.
+    // Triggers may arrive from a router redirect, so the provider is touched
+    // after the current frame's synchronous work rather than inside it.
+    _inFlight = true;
+    _lastTrigger = trigger;
+    scheduleMicrotask(() {
+      if (_disposed) return;
+      _ref.invalidate(loopV2MetaSnapshotProvider);
+      _ref.read(loopV2MetaSnapshotProvider);
+    });
+  }
+
+  /// Reads both documents again now, whatever the age of the answer on hand.
+  ///
+  /// The entry for a caller about to act on a capability — a signature, a
+  /// write — that wants the server's current answer instead of one up to
+  /// [LoopV2MetaCachePolicy.freshFor] old. The answer on hand stays
+  /// observable until the new one lands. A read already in flight is joined,
+  /// not doubled. A failed forced read leaves the old answer in place and
+  /// hands the failure to the retry ladder, exactly like any other failure;
+  /// the old answer is not marked fresh again by it.
+  Future<void> refreshNow() async {
+    if (_disposed) return;
+    if (!_inFlight) {
+      final cache = _ref.read(loopV2MetaCacheProvider);
+      if (cache == null) return;
+      cache.expire();
+      _retryTimer?.cancel();
+      _retryTimer = null;
+      _consecutiveFailures = 0;
+      _start(LoopV2MetaObservationTrigger.forcedRefresh);
+    }
+    try {
+      await _ref.read(loopV2MetaSnapshotProvider.future);
+    } on Object {
+      // The observation publishes what it answered.
+    }
   }
 
   /// The owner asked for the read again, from a page that never reached LOOP.
