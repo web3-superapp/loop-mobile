@@ -39,6 +39,7 @@ LaunchSummary s7LaunchSummary({
   LaunchScheduleStatus scheduleStatus = LaunchScheduleStatus.unscheduled,
   String? configVersion,
   String chainId = loopPrimaryChainId,
+  LaunchOnChainState? onChainState,
 }) => LaunchSummary(
   launchId: launchId,
   projectId: s7ProjectId,
@@ -48,7 +49,7 @@ LaunchSummary s7LaunchSummary({
   contractAddress: null,
   configDigest: null,
   scheduleStatus: scheduleStatus,
-  onChainState: s7OnChainState(),
+  onChainState: onChainState ?? s7OnChainState(),
   configVersion: configVersion,
   createdAt: DateTime.utc(2026, 9, 8, 1),
 );

@@ -318,6 +318,14 @@ class _Strip extends StatelessWidget {
 
   static const double _padding = 10;
 
+  /// The strip's edge. [Ink] insets its child by the decoration's padding,
+  /// so the edge is part of what the detail loses on each side.
+  static const double _border = 1;
+
+  /// The width the open strip leaves its detail: the open width less the
+  /// edge and the padding on both sides.
+  double get _detailWidth => math.max(0, openWidth - (_padding + _border) * 2);
+
   final LoopAccordionItem item;
   final Key detailKey;
   final bool open;
@@ -357,7 +365,7 @@ class _Strip extends StatelessWidget {
             decoration: BoxDecoration(
               color: ground,
               borderRadius: LoopRadius.control,
-              border: Border.all(color: edge),
+              border: Border.all(color: edge, width: _border),
             ),
             child: ClipRRect(
               borderRadius: LoopRadius.control,
@@ -398,7 +406,7 @@ class _Strip extends StatelessWidget {
                           child: OverflowBox(
                             alignment: Alignment.topLeft,
                             minWidth: 0,
-                            maxWidth: math.max(0, openWidth - _padding * 2),
+                            maxWidth: _detailWidth,
                             minHeight: 0,
                             maxHeight: double.infinity,
                             child: FadeTransition(
@@ -407,7 +415,7 @@ class _Strip extends StatelessWidget {
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: SizedBox(
-                                  width: math.max(0, openWidth - _padding * 2),
+                                  width: _detailWidth,
                                   child: item.detail,
                                 ),
                               ),

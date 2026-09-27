@@ -21,7 +21,14 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// Only `LAUNCH_CONTRACT_BASELINE_PENDING` may say the contract is not live;
 /// an index that has not caught up says so, and any other reason is a plain
 /// "cannot read". A count is distinct buyers (decision 0089), never holders.
-String launchHoldersRowText(LaunchResourceState<LaunchHolders> state) {
+///
+/// Decision 0097: once the `launch` capability's evidence is confirmed
+/// ([contractLive]) the contract is live, and the baseline code only means
+/// the count is not open for reading yet.
+String launchHoldersRowText(
+  LaunchResourceState<LaunchHolders> state, {
+  bool contractLive = false,
+}) {
   final holders = state.value;
   if (holders == null) {
     return state.phase == LaunchViewPhase.loading ? '正在读取参与人数' : '参与人数暂时读不到';
@@ -31,12 +38,38 @@ String launchHoldersRowText(LaunchResourceState<LaunchHolders> state) {
       '${loopGroupedFigure(value.holderCount.toString())} 位参与者',
     LaunchReadingUnavailable<LaunchHolderCount>(:final reasonCode) =>
       switch (reasonCode) {
-        'LAUNCH_CONTRACT_BASELINE_PENDING' => 'Launch 合约还没有上线，参与人数暂时不可用。',
+        'LAUNCH_CONTRACT_BASELINE_PENDING' =>
+          contractLive ? '参与人数还没有开放读取' : 'Launch 合约还没有上线，参与人数暂时不可用。',
         'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' ||
         'LAUNCH_ONCHAIN_STATE_NOT_PROJECTED' => '链上记录索引中，参与人数稍后可见。',
         _ => '参与人数暂时读不到',
       },
   };
+}
+
+/// The `launch-detail` folio heading (decision 0097): the semantic label of
+/// the skeleton while the record is read, the project's name once it is,
+/// [launchMissingName] only for a read record without one, and a plain
+/// "not read" once the read has ended without a record.
+String launchDetailHeading(LaunchDetail? detail, {required bool loading}) {
+  if (detail == null) return loading ? '项目资料读取中' : '没有读到项目资料';
+  final name = detail.launch.name.trim();
+  return name.isEmpty ? launchMissingName : name;
+}
+
+/// The `launch-detail` folio caption (decision 0097). While the record is
+/// being read it says so; the "cannot read" sentence is kept for a finished
+/// read whose on-chain block really is empty.
+String launchDetailCaption(
+  LaunchOnChainAvailable? onChain, {
+  required bool loading,
+}) {
+  if (loading) return '正在读取项目资料与链上状态';
+  if (onChain == null) {
+    return '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。';
+  }
+  return '${launchStateProjection(onChain)}。四轴、轮次与参数读自区块 '
+      '${loopGroupedFigure(onChain.snapshotBlockNumber)}。';
 }
 
 /// The 我的资格 row on `launch-detail`, from the eligibility resource the
@@ -138,6 +171,8 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
       });
     }
     final detail = state.value;
+    final loading =
+        !blocked && detail == null && state.phase == LaunchViewPhase.loading;
     final config = detail?.config;
     final onChain = detail?.onChain;
     // Decision 0091: the detail payload's own `holders` slot is a fixed
@@ -241,13 +276,14 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'LAUNCH RECORD',
-          heading: detail?.launch.name ?? launchMissingName,
+          heading: launchDetailHeading(detail, loading: loading),
+          // Decision 0095/0097: while the record is being read the heading is
+          // a skeleton of its own height and the caption says it is reading;
+          // neither borrows the "cannot read" sentence of a finished read.
+          headingLoading: loading,
           // No countdown, no round label, no progress: all three are contract
           // facts. The caption states what the record can and cannot prove.
-          caption: onChain == null
-              ? '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。'
-              : '${launchStateProjection(onChain)}。四轴、轮次与参数读自区块 '
-                    '${loopGroupedFigure(onChain.snapshotBlockNumber)}。',
+          caption: launchDetailCaption(onChain, loading: loading),
           stamp: detail == null
               ? null
               : onChain == null
@@ -333,7 +369,10 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                 key: const ValueKey<String>('launch-detail-open-holders'),
                 leading: const LoopRowIcon(icon: 'users'),
                 title: '内盘持有人',
-                subtitle: launchHoldersRowText(holdersState),
+                subtitle: launchHoldersRowText(
+                  holdersState,
+                  contractLive: capability.evidenceConfirmed,
+                ),
                 subtitleMaxLines: 2,
                 onTap: widget.onOpenHolders,
                 position: LoopRowPosition.first,
@@ -552,7 +591,8 @@ class _LaunchRoundProgressCard extends StatelessWidget {
 /// `launch-graduation`, which is where the prototype's 毕业 line leads.
 ///
 /// Read on chain, the track is a horizontal accordion (decision 0096): one
-/// strip per round and one for END, the round in progress open on arrival.
+/// strip per round and one for END, the current step open on arrival
+/// ([launchTrackInitialIndex], decision 0097).
 /// Large type, a narrow screen or too many rounds for the row fall back to
 /// the vertical list, which states the same facts.
 class _TrackBlock extends StatelessWidget {
@@ -592,14 +632,13 @@ class _TrackBlock extends StatelessWidget {
           _graduationRow(length),
         ],
       );
-      final live = chainRounds.indexWhere((round) => round.isOpenAt(now));
       final badge = _graduationBadge;
       return LoopAccordionStrip(
         keyPrefix: 'launch-track',
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
         rowKey: const ValueKey<String>('launch-track'),
         height: accordionHeight,
-        initialIndex: live < 0 ? null : live,
+        initialIndex: launchTrackInitialIndex(chainRounds, now),
         // The list draws its own page margin; [margin] is the row's only.
         fallback: list,
         items: <LoopAccordionItem>[
@@ -676,6 +715,36 @@ class _TrackBlock extends StatelessWidget {
       semanticLabel: '毕业与迁移，$badge',
     );
   }
+}
+
+/// The strip `launch-detail`'s 发射轨道 opens on arrival (decision 0097):
+/// the "current" step of the track, so the row never starts as equal empty
+/// shells.
+///
+/// - a round is in progress at [now] → that round;
+/// - every round has ended (now is at or after the last `endAt`) → END,
+///   which is index `rounds.length`;
+/// - otherwise → the next round to open, which before the sale is the first
+///   round;
+/// - no rounds → `null`.
+int? launchTrackInitialIndex(List<LaunchChainRound> rounds, DateTime now) {
+  if (rounds.isEmpty) return null;
+  final live = rounds.indexWhere((round) => round.isOpenAt(now));
+  if (live >= 0) return live;
+  var lastEnd = rounds.first.endAt;
+  for (final round in rounds) {
+    if (round.endAt.isAfter(lastEnd)) lastEnd = round.endAt;
+  }
+  if (!now.isBefore(lastEnd)) return rounds.length;
+  int? next;
+  for (var index = 0; index < rounds.length; index += 1) {
+    final round = rounds[index];
+    if (!now.isBefore(round.startAt)) continue;
+    if (next == null || round.startAt.isBefore(rounds[next].startAt)) {
+      next = index;
+    }
+  }
+  return next ?? 0;
 }
 
 /// Where [round] stands at [now], in the words the track strip reads out.

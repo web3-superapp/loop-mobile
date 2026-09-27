@@ -225,6 +225,22 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   _ => '这一项暂时读不到。',
 };
 
+/// Decision 0097: `LAUNCH_CONTRACT_BASELINE_PENDING` on a resource the
+/// server has not opened for reading yet, said without contradicting the
+/// capability document.
+///
+/// Once the `launch` capability's evidence is `confirmed` the contract is
+/// live, so the sentence names the resource that is not readable yet
+/// ([whenLive]) instead of claiming the contract is missing. Any other code,
+/// or evidence that is not confirmed, keeps [launchReasonCodeText].
+String launchBaselineReasonText(
+  String? reasonCode, {
+  required bool contractLive,
+  required String whenLive,
+}) => contractLive && reasonCode == 'LAUNCH_CONTRACT_BASELINE_PENDING'
+    ? whenLive
+    : launchReasonCodeText(reasonCode);
+
 /// Copy for a refused purchase intent (decision 0088).
 ///
 /// A named `reasonCode` wins. A code this build has no sentence for keeps a
