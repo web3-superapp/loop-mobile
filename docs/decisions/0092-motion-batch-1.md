@@ -41,7 +41,7 @@ Accepted 2026-09-27。S87，客户端单侧。需求方 2026-09-27 提出四个�
 
 **`LoopAvatarStack`**（`loop_avatar_stack.dart`）
 
-- 默认尺寸 32，环宽 2；堆叠时第 i 枚左移 `i × size × 2/3`，后一枚压住前一枚；
+- 默认尺寸 32（2026-09-27 用户裁决改为 40，见文末），环宽 2；堆叠时第 i 枚左移 `i × size × 2/3`，后一枚压住前一枚；
 - `total` 大于已画枚数时末尾画一枚「+N」，N = `total − entries.length`，数字原样，
   过长时在圆内缩放，不截断、不改写成「99+」；`total` 为空时不画「+N」；
 - 每枚脸画在一枚不透明底盘（`ringColor`，默认取所在底的反色：Ink 页为 Ink，浅卡为
@@ -132,3 +132,23 @@ Accepted 2026-09-27。S87，客户端单侧。需求方 2026-09-27 提出四个�
 2. group-info: wire the avatar stack once the group member directory has a source; not before.
 3. token tray: the overlap with the 成交 / 简介 tabs is accepted until the device round says otherwise.
 4. Wallet asset list split into one card per asset is a visual change to the frozen prototype made for the tray; it goes to the user for device acceptance, and reverts if they refuse it.
+
+## 用户裁决 2026-09-27（S87b，真机看过批次一后）
+
+1. **钱包资产列表回退。** 用户不接受「每资产一张卡」。`wallet` 页恢复 S87 之前的一张分组卡
+   （`LoopRecordGroup`），行副标题恢复「名称 · 可动用 … · 算力 …」行内展示；钱包页不再使用
+   `walletBalanceRow(factsInTray: true)` 与 `walletBalanceTray`。两者作为组件保留，供以后需要
+   逐资产托盘的页面使用。token 页的托盘保留不变。上方 Main-agent ruling 4 据此收口。
+2. **`LoopAvatarStack` 散开间距。** 散开态每枚头像与前一枚相接：格宽 = 头像尺寸，间距 0，
+   偏移 = 尺寸（原为 60 宽格子、间距 8）。收起态不变（偏移 = 尺寸 × 2/3）。散开/收回动画、
+   错峰与曲线不变。名称仍在头像下方，最多显示 6 个字符，超出以「…」结尾
+   （`LoopAvatarStack.spreadLabel`），名称不撑宽格子；读屏仍读完整名称。
+   说明：格宽 40 时，11 号字下的 6 个中文字符（约 66）或较宽的拉丁字符仍会超出格宽，
+   此时文本在格内再以省略号收尾，绝不越过相邻格子，也不与相邻名称重叠。
+3. **头像尺寸。** 默认尺寸由 32 提到 40（环宽 2 不变，「+N」同尺寸）；`community-members`
+   的成员预览随默认值变化。散开后横向滚动容器高度 = 尺寸 + 6 + 名称行高；名称行高至少 16，
+   并随系统字号放大（`textScaler`）增高，名称行不被裁切。
+
+测试：`loop_motion_components_test`（相接偏移、6 字截断、默认 40、名称不越格不被裁切）、
+`community_pages_test`（截断后的名称、40 尺寸、名称在滚动容器内）、
+`s5_wallet_pages_test`（原托盘用例改回：资产行在一张分组卡内、副标题含「可动用 · 算力」、无托盘）。

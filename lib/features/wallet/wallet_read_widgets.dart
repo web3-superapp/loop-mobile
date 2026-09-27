@@ -136,6 +136,10 @@ List<String> walletBalanceTrayFacts(
 /// One wallet asset: the balance row, with its spendable figure, mining
 /// power and gas reserve in a tray tucked under it (decision 0092).
 ///
+/// Not used on the wallet page: the user's 2026-09-27 ruling put that page's
+/// assets back into one grouped card with 「可动用 · 算力」 inline. Kept for
+/// a page that later wants a per-asset tray.
+///
 /// Closed, the tray reads 「可动用 · 算力」 on one line — the two facts the
 /// row's second line used to carry. Opened, it lists all three. The row keeps
 /// its own tap, which opens the asset's page.
