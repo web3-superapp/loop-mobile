@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_progress_fill.dart';
 
 /// Capabilities confirmed by the Privy integration at runtime.
 ///
@@ -242,17 +243,18 @@ class IdentityProgress extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            ClipRRect(
+            // Each step is its own page, so the track would otherwise appear
+            // already standing at this step. It starts where the previous
+            // step left it and advances into this one; the last step fills
+            // the width and brightens once (decision 0092).
+            LoopProgressFill(
+              key: const ValueKey<String>('identity-progress-track'),
+              progress: fraction,
+              from: ((step - 1) / total).clamp(0.0, 1.0),
+              height: 4,
+              fillColor: LoopColors.lime,
+              trackColor: LoopColors.line2,
               borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                key: const ValueKey<String>('identity-progress-track'),
-                value: fraction,
-                minHeight: 4,
-                backgroundColor: LoopColors.line2,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  LoopColors.lime,
-                ),
-              ),
             ),
           ],
         ),

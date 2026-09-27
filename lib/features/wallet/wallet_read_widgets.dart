@@ -15,6 +15,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_tray_disclosure.dart';
 
 /// Whether the wallet pages must stop at the capability gate.
 bool walletCapabilityBlocks(
@@ -35,6 +36,7 @@ LoopRecordRow walletBalanceRow(
   VoidCallback? onTap,
   DateTime? now,
   String? miningText,
+  bool factsInTray = false,
 }) {
   final balance = row.balance;
   final valuation = row.valuation;
@@ -66,6 +68,8 @@ LoopRecordRow walletBalanceRow(
     switch (balance) {
       LoopBalanceUnavailable(reasonCode: final reasonCode) =>
         loopReasonCodeText(reasonCode),
+      // The tray under the row carries it (see [walletBalanceTray]).
+      LoopBalanceAvailable() when factsInTray => '',
       LoopBalanceAvailable(spendableBalance: final spendable) =>
         '可动用 ${loopFormatDecimal(spendable)}',
     },
@@ -79,8 +83,9 @@ LoopRecordRow walletBalanceRow(
     // The prototype's asset row carries the holding's mining power beside the
     // balance; the caller hands whatever the snapshot said, including its own
     // dash. This row never derives it.
-    ?miningText,
+    if (!factsInTray) ?miningText,
   ].where((part) => part.isNotEmpty).toList(growable: false);
+  final lines = factsInTray ? 2 : (miningText == null ? 1 : 3);
 
   return LoopRecordRow(
     key: ValueKey<String>('wallet-balance-${row.assetId}'),
@@ -92,7 +97,7 @@ LoopRecordRow walletBalanceRow(
     ),
     title: row.symbol,
     subtitle: subtitleParts.join(' · '),
-    subtitleMaxLines: miningText == null ? 1 : 3,
+    subtitleMaxLines: lines,
     trailing: trailing,
     trailingCaption: caption,
     trailingBadge: badge,
@@ -100,6 +105,76 @@ LoopRecordRow walletBalanceRow(
         '${row.symbol}，'
         '${trailing == null ? '余额读不到' : '余额 $trailing'}'
         '${caption == null ? '' : '，估值 $caption'}',
+  );
+}
+
+/// The three per-asset facts the wallet page's tray holds, in its order:
+/// what can be moved, the mining power the holding produces, and the gas
+/// reserve held back from it. Each is the server's own figure; none is
+/// derived from another, and an unread balance says so instead of a zero.
+List<String> walletBalanceTrayFacts(
+  LoopAssetBalanceRow row, {
+  String? miningText,
+}) => <String>[
+  switch (row.balance) {
+    LoopBalanceUnavailable(reasonCode: final reasonCode) =>
+      '可动用 ${loopReasonCodeText(reasonCode)}',
+    LoopBalanceAvailable(spendableBalance: final spendable) =>
+      '可动用 ${loopFormatDecimal(spendable)}',
+  },
+  // The caller's own sentence for the holding's power, dash included; the
+  // tray never derives one and leaves the line out when handed none.
+  ?miningText,
+  switch (row.balance) {
+    LoopBalanceUnavailable(reasonCode: final reasonCode) =>
+      '手续费保留 ${loopReasonCodeText(reasonCode)}',
+    LoopBalanceAvailable(gasReserve: final reserve) =>
+      '手续费保留 ${loopFormatDecimal(reserve)}',
+  },
+];
+
+/// One wallet asset: the balance row, with its spendable figure, mining
+/// power and gas reserve in a tray tucked under it (decision 0092).
+///
+/// Closed, the tray reads 「可动用 · 算力」 on one line — the two facts the
+/// row's second line used to carry. Opened, it lists all three. The row keeps
+/// its own tap, which opens the asset's page.
+Widget walletBalanceTray(
+  LoopAssetBalanceRow row, {
+  VoidCallback? onTap,
+  String? miningText,
+}) {
+  final facts = walletBalanceTrayFacts(row, miningText: miningText);
+  final style = LoopTypography.caption(12, color: LoopColors.text2);
+  return LoopTrayDisclosure(
+    key: ValueKey<String>('wallet-balance-tray-${row.assetId}'),
+    trayInset: LoopSpacing.page + LoopTrayDisclosure.defaultTrayInset,
+    semanticLabel: '${row.symbol} 的可动用、算力与手续费保留',
+    margin: const EdgeInsets.only(bottom: 8),
+    card: walletBalanceRow(
+      row,
+      onTap: onTap,
+      miningText: miningText,
+      factsInTray: true,
+    ),
+    summary: Text(
+      facts.take(facts.length - 1).join(' · '),
+      key: ValueKey<String>('wallet-balance-tray-summary-${row.assetId}'),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    ),
+    detail: Column(
+      key: ValueKey<String>('wallet-balance-tray-detail-${row.assetId}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (final fact in facts)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Text(fact, style: style),
+          ),
+      ],
+    ),
   );
 }
 

@@ -12,8 +12,10 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_avatar_stack.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -307,6 +309,17 @@ class _CommunityMembersScreenState
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '成员目录'),
           if (!typing) ...<Widget>[
+            // The faces of the directory's first rows, stacked; a tap spreads
+            // them into a named row (decision 0092). The names are the
+            // directory's own display names, and the 「+N」 is the server's
+            // count less the faces drawn. It follows the same narrowing rule
+            // as the power card below: a filtered or searched page is not the
+            // directory the count stands for.
+            if (state.phase == CommunityViewPhase.ready &&
+                state.items.isNotEmpty &&
+                !searching &&
+                state.filter == CommunityMemberFilter.all)
+              _MemberPreview(items: state.items, total: counts?.all),
             // `counts.online` is an unavailable fact by type: the directory
             // read never observes presence, on any community, on every read.
             // 「在线人数暂时读不到」 read as a read that had failed and could
@@ -577,6 +590,43 @@ class _CommunityMembersScreenState
       context,
       message: communityFailureReason(failure),
       kind: LoopToastKind.err,
+    );
+  }
+}
+
+/// How many faces the member preview draws before its 「+N」.
+const int communityMemberPreviewFaces = 5;
+
+/// `community-members` · the directory's first faces, stacked.
+class _MemberPreview extends StatelessWidget {
+  const _MemberPreview({required this.items, required this.total});
+
+  final List<CommunityMemberEntry> items;
+  final int? total;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = items.take(communityMemberPreviewFaces).toList();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: LoopAvatarStack(
+        key: const ValueKey<String>('community-members-preview'),
+        semanticLabel: '成员预览',
+        // The count the server published for the whole directory; without it
+        // the stack draws no 「+N」 rather than a figure of its own.
+        total: total,
+        entries: <LoopAvatarStackEntry>[
+          for (final entry in shown)
+            LoopAvatarStackEntry(
+              label: entry.profile.displayName,
+              avatarBuilder: (size) => LoopProfileAvatar(
+                avatarRef: entry.profile.avatarRef,
+                alias: entry.profile.displayName,
+                size: size,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

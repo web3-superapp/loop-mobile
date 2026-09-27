@@ -26,10 +26,15 @@ Future<void> _pump(WidgetTester tester, Widget page) async {
 
 /// The rows themselves, not the header the coordinator scrolls first: a drag
 /// on the collection is what the reader does.
-Finder _rows(String key) => find.descendant(
-  of: find.byKey(ValueKey<String>(key)),
-  matching: find.byType(Scrollable),
-);
+/// The collection's own vertical scrollable. It is the first one under the
+/// key: a row inside it may carry a sideways scroller of its own (the member
+/// preview spreads into one, decision 0092).
+Finder _rows(String key) => find
+    .descendant(
+      of: find.byKey(ValueKey<String>(key)),
+      matching: find.byType(Scrollable),
+    )
+    .first;
 
 bool _onScreen(WidgetTester tester, Finder finder) {
   if (finder.evaluate().isEmpty) return false;

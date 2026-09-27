@@ -329,10 +329,14 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               reason: '登记资产后，这里会为每一个资产恒定保留一行。',
             )
           else
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
+            // Each asset is its own card with a tray under it (decision
+            // 0092): a tray has to sit under one card, so the rows are no
+            // longer drawn as one grouped card.
+            Column(
+              key: const ValueKey<String>('wallet-balance-list'),
+              children: <Widget>[
                 for (final row in balances.balances)
-                  walletBalanceRow(
+                  walletBalanceTray(
                     row,
                     miningText: walletAssetPowerText(miningAssets, row.assetId),
                     onTap: () =>

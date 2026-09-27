@@ -411,6 +411,66 @@ void main() {
       }
     });
 
+    testWidgets('the track advances from the previous step into this one', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Scaffold(
+          body: IdentityProgress(step: 3, total: 5, label: '设置恢复方式'),
+        ),
+      );
+      final track = find.byKey(
+        const ValueKey<String>('identity-progress-track'),
+      );
+      final bar = find.descendant(
+        of: track,
+        matching: find.byKey(const ValueKey<String>('loop-progress-fill-bar')),
+      );
+      final width = tester.getSize(track).width;
+      await tester.pump(const Duration(milliseconds: 100));
+      final mid = tester.getSize(bar).width;
+      expect(mid, greaterThan(width * 0.4));
+      expect(mid, lessThan(width * 0.6));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(bar).width, moreOrLessEquals(width * 0.6));
+    });
+
+    testWidgets('the last step fills the track and brightens once', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Scaffold(
+          body: IdentityProgress(step: 5, total: 5, label: '创建 LOOP ID'),
+        ),
+      );
+      final flash = find.byKey(
+        const ValueKey<String>('loop-progress-fill-flash'),
+      );
+      await tester.pump(const Duration(milliseconds: 280));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(flash, findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(flash, findsNothing);
+      final track = find.byKey(
+        const ValueKey<String>('identity-progress-track'),
+      );
+      expect(
+        tester
+            .getSize(
+              find.descendant(
+                of: track,
+                matching: find.byKey(
+                  const ValueKey<String>('loop-progress-fill-bar'),
+                ),
+              ),
+            )
+            .width,
+        moreOrLessEquals(tester.getSize(track).width),
+      );
+    });
+
     testWidgets('an unknown account id fails closed', (tester) async {
       await _pump(tester, const AccountSurfaceScreen.fromId('seed-show'));
 
