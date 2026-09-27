@@ -70,7 +70,8 @@ class LoopAccordionItem {
   /// upcoming, idle → neutral).
   final LoopAccordionTone? tone;
 
-  /// The word a narrow strip reads along its long edge (「进行中」, 「毕业」).
+  /// The word a narrow strip reads upright, one character per line
+  /// (「进行中」, 「毕业」).
   /// Screen readers hear [semanticLabel] instead.
   final String? stateLabel;
 
@@ -152,6 +153,9 @@ class LoopAccordionStrip extends StatefulWidget {
 
   /// The title line: the short title and the dot, or the badge when open.
   static const double titleHeight = 24;
+
+  /// The gap between two lines of a narrow strip's upright state word.
+  static const double wordGap = 2;
 
   /// A narrow strip's vertical progress bar.
   static const double barWidth = 4;
@@ -651,23 +655,35 @@ class _CollapsedContent extends StatelessWidget {
         Expanded(
           child: label == null
               ? const SizedBox.shrink()
-              : Align(
-                  alignment: Alignment.topLeft,
-                  child: ClipRect(
-                    child: RotatedBox(
-                      quarterTurns: 1,
-                      child: Text(
-                        label,
-                        key: ValueKey<String>('loop-accordion-word-${item.id}'),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.clip,
-                        style: LoopTypography.label(
-                          12,
-                          weight: FontWeight.w600,
-                          color: wordColor,
-                        ),
-                      ),
+              : ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.topLeft,
+                    minWidth: 0,
+                    minHeight: 0,
+                    maxHeight: double.infinity,
+                    child: Column(
+                      key: ValueKey<String>('loop-accordion-word-${item.id}'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        for (final (index, run) in loopVerticalRuns(
+                          label,
+                        ).indexed) ...<Widget>[
+                          if (index > 0)
+                            const SizedBox(height: LoopAccordionStrip.wordGap),
+                          Text(
+                            run,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.clip,
+                            style: LoopTypography.label(
+                              12,
+                              weight: FontWeight.w600,
+                              color: wordColor,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -683,6 +699,35 @@ class _CollapsedContent extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The lines of an upright vertical word (S91 ruling): every Han character
+/// on a line of its own, while a run of Latin letters or digits stays one
+/// horizontal line (「R1」 is not split into 「R」 over 「1」). Spaces separate
+/// runs and are dropped.
+List<String> loopVerticalRuns(String text) {
+  final runs = <String>[];
+  final latin = StringBuffer();
+  void flush() {
+    if (latin.isNotEmpty) {
+      runs.add(latin.toString());
+      latin.clear();
+    }
+  }
+
+  for (final rune in text.runes) {
+    final char = String.fromCharCode(rune);
+    if (char.trim().isEmpty) {
+      flush();
+    } else if (rune < 0x80) {
+      latin.write(char);
+    } else {
+      flush();
+      runs.add(char);
+    }
+  }
+  flush();
+  return runs;
 }
 
 /// A thin vertical bar filled from the bottom: [value] of its height in

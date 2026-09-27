@@ -285,7 +285,10 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
           // `.chalk-card` with a 2x2 grid: the prototype's Launch half of the
           // ledger. The registry count is LOOP's own and is a number; the
           // other three need the contract and print the em dash.
-          _EconomyLaunchCard(economy: economy),
+          _EconomyLaunchCard(
+            economy: economy,
+            contractLive: capability.evidenceConfirmed,
+          ),
           // loop-api S83b.10: drawn only when the server sent `onChain`. An
           // absent key means no Launch contract is configured, and the page
           // stays exactly as it was before the contract.
@@ -303,7 +306,10 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
               LoopStat(label: '已通过申请', value: '${economy.projects.approved}'),
             ],
           ),
-          _EconomyReasons(economy: economy),
+          _EconomyReasons(
+            economy: economy,
+            contractLive: capability.evidenceConfirmed,
+          ),
           const LoopLabel('Value Flywheel'),
           LoopRecordGroup(
             key: const ValueKey<String>('loop-economy-flywheel'),
@@ -390,9 +396,10 @@ const List<(String, String)> _flywheel = <(String, String)>[
 
 /// `loop-economy` 的 `.chalk-card`: the Launch half of the public ledger.
 class _EconomyLaunchCard extends StatelessWidget {
-  const _EconomyLaunchCard({required this.economy});
+  const _EconomyLaunchCard({required this.economy, required this.contractLive});
 
   final LaunchEconomy economy;
+  final bool contractLive;
 
   /// Every launch LOOP has registered, whatever its schedule says. It is a
   /// count of LOOP's own records, which is the only kind of number this page
@@ -434,7 +441,7 @@ class _EconomyLaunchCard extends StatelessWidget {
     container: true,
     label:
         '$label，'
-        '${value == loopFigureDash ? launchReasonCodeText(economy.ecosystemTax.reasonCode) : value}',
+        '${value == loopFigureDash ? launchEconomyReasonText(economy.ecosystemTax.reasonCode, contractLive: contractLive) : value}',
     child: ExcludeSemantics(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,9 +604,10 @@ class _EconomyOnChainCard extends StatelessWidget {
 /// Three unavailable strips used to carry the same sentence three times; the
 /// figures now sit in the grids and the sentences are de-duplicated here.
 class _EconomyReasons extends StatelessWidget {
-  const _EconomyReasons({required this.economy});
+  const _EconomyReasons({required this.economy, required this.contractLive});
 
   final LaunchEconomy economy;
+  final bool contractLive;
 
   @override
   Widget build(BuildContext context) {
@@ -617,7 +625,7 @@ class _EconomyReasons extends StatelessWidget {
             key: ValueKey<String>('loop-economy-reason-$code'),
             icon: 'info',
             message: '总量、累计分发与累计生态税暂时没有数值',
-            reason: launchReasonCodeText(code),
+            reason: launchEconomyReasonText(code, contractLive: contractLive),
           ),
       ],
     );

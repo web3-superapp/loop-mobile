@@ -108,11 +108,24 @@ schema 的**所有层级**对象（含 anyOf 分支、数组元素），与 `lib
   单位在标签）、钱包上限在条的页脚、END 徽标在条的标题行；独立挂载用例 `height:` → `minHeight:`。
   `test/support/s8_harness.dart` 增加可选 `overrides`。
 
+### 主代理裁决（2026-09-27）与返工
+
+1. 收起条状态词改为汉字直立、一字一行竖排（`loopVerticalRuns`：每个汉字一行，连续的拉丁字母/数字保持
+   一行横排；行距 `LoopAccordionStrip.wordGap` = 2 dp；颜色不变；END「毕业」同样处理）。上文 §4 的
+   `RotatedBox` 描述由此作废。探针对 finder 与读屏不可见等其余行为不变。
+2. 环境标签 16 px、图标预热、`revertReason` 任意状态接受，均接受。
+3. `launchUsd1` 接入 Launch 授权门留到主网单。
+4. 生态账本底部文案：`LAUNCH_ECONOMY_CONTRACT_PENDING` 在 `launch` evidence 为 confirmed 时读
+   「总量、发行与生态税还没有开放读取，这里只显示 LOOP 能核对的数量。」（`launchEconomyReasonText`，用于
+   原因条与 Launch 卡的读屏标签），未 confirmed 保持原句，做法同 0097。
+   测试：`s91_economy_onchain_test` 两例（confirmed / 未 confirmed）；`s91_launch_track_visual_test`
+   竖排断言（同列、行距 2、无 RotatedBox）与 `loopVerticalRuns` 单测。
+
 ## Consequences
 
 待真机确认与后续：
 
 1. 钱包页 `launchUsd1` 只解码未接入 Launch 授权门：共享槽位（主网）上 approve 仍是 422 CHAIN_MISMATCH，
    主网签名关闭。主网开启时需要把 `launchAllowanceView` 改成 `launchChain?.usd1 ?? launchUsd1`。
-2. 竖排中文用 RotatedBox 是侧卧字形（任务单要求）；若需要竖直排列的汉字（每字一行）需另定。
+2. 竖排状态词已按裁决改为直立逐字（见上）。
 3. 图标预热在冷启动后台约 64 次串行 isolate 编译，真机上耗时/耗电未测。

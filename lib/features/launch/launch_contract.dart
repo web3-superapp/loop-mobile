@@ -247,6 +247,17 @@ String launchBaselineReasonText(
     ? whenLive
     : launchReasonCodeText(reasonCode);
 
+/// The ledger's reason for supply, distribution and ecosystem tax (S91
+/// ruling). Once the `launch` evidence is `confirmed` the contract is live,
+/// so `LAUNCH_ECONOMY_CONTRACT_PENDING` no longer says to wait for it; before
+/// that, and for any other code, [launchReasonCodeText] stands (as 0097).
+String launchEconomyReasonText(
+  String? reasonCode, {
+  required bool contractLive,
+}) => contractLive && reasonCode == 'LAUNCH_ECONOMY_CONTRACT_PENDING'
+    ? '总量、发行与生态税还没有开放读取，这里只显示 LOOP 能核对的数量。'
+    : launchReasonCodeText(reasonCode);
+
 /// Copy for a refused purchase intent (decision 0088).
 ///
 /// A named `reasonCode` wins. A code this build has no sentence for keeps a

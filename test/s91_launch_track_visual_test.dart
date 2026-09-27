@@ -177,47 +177,72 @@ void main() {
     expect(tester.getSize(key('launch-track')).height, first);
   });
 
-  testWidgets('narrow strips read their phase along the long edge', (
-    tester,
-  ) async {
-    await pumpDetail(tester);
-    final words = <String, String>{'1': '已结束', '3': '未开始', 'end': '毕业'};
-    words.forEach((id, word) {
-      final text = find.descendant(
-        of: key('launch-track-strip-$id'),
-        matching: find.text(word),
+  testWidgets(
+    'narrow strips read their phase upright, one character per line',
+    (tester) async {
+      await pumpDetail(tester);
+      final words = <String, String>{'1': '已结束', '3': '未开始', 'end': '毕业'};
+      words.forEach((id, word) {
+        final column = key('loop-accordion-word-$id');
+        expect(
+          find.descendant(of: key('launch-track-strip-$id'), matching: column),
+          findsOneWidget,
+          reason: id,
+        );
+        // Upright, one character per line, 2 dp apart, nothing rotated.
+        expect(
+          find.ancestor(of: column, matching: find.byType(RotatedBox)),
+          findsNothing,
+        );
+        final chars = word.split('');
+        final rects = <Rect>[
+          for (final char in chars)
+            tester.getRect(
+              find.descendant(of: column, matching: find.text(char)),
+            ),
+        ];
+        for (var index = 1; index < rects.length; index += 1) {
+          expect(
+            rects[index].left,
+            moreOrLessEquals(rects[0].left),
+            reason: id,
+          );
+          expect(
+            rects[index].top - rects[index - 1].bottom,
+            moreOrLessEquals(LoopAccordionStrip.wordGap),
+            reason: '$id $index',
+          );
+        }
+        expect(
+          find.descendant(of: column, matching: find.text(word)),
+          chars.length > 1 ? findsNothing : findsOneWidget,
+        );
+      });
+      // The open strip draws its detail, not its word.
+      expect(key('loop-accordion-word-2'), findsNothing);
+      // The raised bar fills from the bottom: R1 is full, R3 is empty, END
+      // has none.
+      final bar1 = find.descendant(
+        of: key('loop-accordion-bar-1'),
+        matching: find.byType(ColoredBox),
       );
-      expect(text, findsOneWidget, reason: id);
       expect(
-        find.ancestor(of: text, matching: find.byType(RotatedBox)),
-        findsOneWidget,
-        reason: id,
+        tester.getSize(bar1.last).height,
+        moreOrLessEquals(LoopAccordionStrip.barHeight),
       );
-    });
-    // The open strip draws its detail, not its word.
-    expect(key('loop-accordion-word-2'), findsNothing);
-    // The raised bar fills from the bottom: R1 is full, R3 is empty, END
-    // has none.
-    final bar1 = find.descendant(
-      of: key('loop-accordion-bar-1'),
-      matching: find.byType(ColoredBox),
-    );
-    expect(
-      tester.getSize(bar1.last).height,
-      moreOrLessEquals(LoopAccordionStrip.barHeight),
-    );
-    final bar3 = find.descendant(
-      of: key('loop-accordion-bar-3'),
-      matching: find.byType(ColoredBox),
-    );
-    expect(tester.getSize(bar3.last).height, 0);
-    expect(key('loop-accordion-bar-end'), findsNothing);
-    // The word is the screen reader's too, through the strip's own label.
-    expect(
-      tester.getSemantics(key('launch-track-strip-1')).label,
-      contains('已结束'),
-    );
-  });
+      final bar3 = find.descendant(
+        of: key('loop-accordion-bar-3'),
+        matching: find.byType(ColoredBox),
+      );
+      expect(tester.getSize(bar3.last).height, 0);
+      expect(key('loop-accordion-bar-end'), findsNothing);
+      // The word is the screen reader's too, through the strip's own label.
+      expect(
+        tester.getSemantics(key('launch-track-strip-1')).label,
+        contains('已结束'),
+      );
+    },
+  );
 
   testWidgets('the round in progress wears Lime; the others do not', (
     tester,
@@ -254,6 +279,14 @@ void main() {
       findsNothing,
     );
     expect(find.bySemanticsLabel('查看毕业流程'), findsNothing);
+  });
+
+  test('upright runs: Han one per line, Latin and digits kept together', () {
+    expect(loopVerticalRuns('已结束'), <String>['已', '结', '束']);
+    expect(loopVerticalRuns('毕业'), <String>['毕', '业']);
+    expect(loopVerticalRuns('R1 进行中'), <String>['R1', '进', '行', '中']);
+    expect(loopVerticalRuns('第2轮'), <String>['第', '2', '轮']);
+    expect(loopVerticalRuns('END'), <String>['END']);
   });
 
   testWidgets('a short detail keeps the 160 floor', (tester) async {

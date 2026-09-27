@@ -282,6 +282,46 @@ void main() {
     });
   });
 
+  group('economy reasons against the launch evidence (S91 ruling)', () {
+    Future<void> pump(WidgetTester tester, {required bool confirmed}) =>
+        pumpS7Page(
+          tester,
+          const LoopEconomyScreen(),
+          launch: FakeLaunchGateway(),
+          meta: s7MetaSnapshot(launchEvidenceConfirmed: confirmed),
+        );
+
+    const live = '总量、发行与生态税还没有开放读取，这里只显示 LOOP 能核对的数量。';
+    const pending = '总量、发行与生态税要等合约上线，这里只显示 LOOP 能核对的数量。';
+
+    testWidgets(
+      'confirmed: not open for reading, no waiting for the contract',
+      (tester) async {
+        await pump(tester, confirmed: true);
+        final strip = find.byKey(
+          const ValueKey<String>(
+            'loop-economy-reason-LAUNCH_ECONOMY_CONTRACT_PENDING',
+          ),
+        );
+        await scrollToS7Section(tester, strip);
+        expect(find.text(live), findsOneWidget);
+        expect(find.textContaining('要等合约上线'), findsNothing);
+      },
+    );
+
+    testWidgets('not confirmed: the original sentence', (tester) async {
+      await pump(tester, confirmed: false);
+      final strip = find.byKey(
+        const ValueKey<String>(
+          'loop-economy-reason-LAUNCH_ECONOMY_CONTRACT_PENDING',
+        ),
+      );
+      await scrollToS7Section(tester, strip);
+      expect(find.text(pending), findsOneWidget);
+      expect(find.text(live), findsNothing);
+    });
+  });
+
   group('wallet balances · root launchUsd1 (decision 0081)', () {
     const pair = <String, Object?>{
       'balance': '9000000000000000000',
