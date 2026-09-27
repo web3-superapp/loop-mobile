@@ -201,14 +201,36 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         }
       },
     );
+    // Decision 0094: a prepared intent names its round. The page's own
+    // selection follows it, so the highlight can never drift from what the
+    // review and the chain will say.
+    ref.listen<String?>(
+      launchTradeControllerProvider.select(
+        (trade) => trade.prepared?.intent.roundId,
+      ),
+      (previous, next) {
+        if (next != null && next != _roundId) setState(() => _roundId = next);
+      },
+    );
     final launchId = widget.launchId;
     final payAmount = _payAmount;
     final ticker = detail?.launch.ticker ?? launchMissingFigure;
+    final prepared = trade.prepared;
+    // While an intent is being prepared, reviewed, signed or broadcast — or
+    // an approval is on its way — the round is fixed. Only 「重新报价」
+    // (discard) releases it (decision 0094).
+    final roundLocked =
+        trade.busy || prepared != null || trade.locked || approval.busy;
+    final effectiveRoundId = prepared?.intent.roundId ?? _roundId;
     LaunchChainRound? selected;
     for (final round in detail?.chainRounds ?? const <LaunchChainRound>[]) {
-      if (round.roundId != null && round.roundId == _roundId) selected = round;
+      if (round.roundId != null && round.roundId == effectiveRoundId) {
+        selected = round;
+      }
     }
     final roundId = selected?.roundId;
+    final lockedRoundIndex =
+        prepared?.intent.roundIndex ?? selected?.roundIndex;
     // The action is closed by the server's capability evidence and by the
     // four axes, never by a rule of our own. Everything else is a real
     // missing input.
@@ -216,7 +238,6 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
     final purchasable =
         !refusedByEvidence &&
         (detail?.launch.onChainState.isPurchasable ?? false);
-    final prepared = trade.prepared;
     final launchChainId = detail?.launch.chainId;
     var allowance = launchAllowanceView(
       balances: balancesState,
@@ -368,6 +389,8 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          if (trade.locked)
+            _TradeInFlightBanner(trade: trade, roundIndex: lockedRoundIndex),
           LaunchChainBlock(
             testnet: launchSurfaceIsTestnet(
               capability: capability,
@@ -407,9 +430,23 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               },
             ),
           const LoopLabel('本轮参数'),
+          if (roundLocked && lockedRoundIndex != null)
+            Padding(
+              key: const ValueKey<String>('launch-trade-round-locked'),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                LoopSpacing.tight,
+              ),
+              child: Text(
+                '本次认购：Round $lockedRoundIndex',
+                style: LoopTypography.caption(12, color: LoopColors.text2),
+              ),
+            ),
           _TradeParameters(
             detail: detail,
-            selectable: purchasable && prepared == null && !trade.locked,
+            selectable: purchasable && !roundLocked,
             selectedRoundId: roundId,
             onSelect: (value) => setState(() => _roundId = value),
           ),
@@ -493,6 +530,43 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+}
+
+/// The page-top line once the wallet has broadcast (or its outcome is
+/// unknown): the attempt is in flight and stays so until the server's intent
+/// state moves. It states the server's state, never a result of its own.
+class _TradeInFlightBanner extends StatelessWidget {
+  const _TradeInFlightBanner({required this.trade, required this.roundIndex});
+
+  final LaunchTradeState trade;
+  final int? roundIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final hash = trade.txHash;
+    final state = trade.reported?.state;
+    final String title;
+    if (hash == null) {
+      title = '已提交给钱包，结果未确认';
+    } else if (state == null || state == LaunchIntentState.submitted) {
+      title = '已广播，等待链上索引';
+    } else {
+      title = '已广播 · ${state.label}';
+    }
+    final round = roundIndex == null ? '' : 'Round $roundIndex · ';
+    final body = hash == null
+        ? '$round这笔认购已锁定，不要重复签名。结果会出现在「我的参与记录」。'
+        : '$round交易 ${launchShortHex(hash)}。广播不代表已成交，'
+              '结果以链上索引为准，会出现在「我的参与记录」。';
+    return LoopNotice(
+      key: const ValueKey<String>('launch-trade-in-flight'),
+      icon: 'clock',
+      tone: LoopNoticeTone.warn,
+      title: title,
+      body: body,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
     );
   }
 }

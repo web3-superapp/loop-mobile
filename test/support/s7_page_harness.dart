@@ -58,6 +58,7 @@ final class FakeLaunchGateway implements LaunchGateway {
     this.intentFailure = LaunchFailureKind.unavailable,
     this.intentReasonCode,
     this.prepared,
+    this.prepareGate,
     this.reported,
     this.reportFailure,
     this.reportReasonCode,
@@ -100,6 +101,10 @@ final class FakeLaunchGateway implements LaunchGateway {
 
   /// A `201` answer; when set, the intent is prepared instead of refused.
   final LaunchPurchasePrepared? prepared;
+
+  /// When set, the intent answer waits for it, so a test can observe the
+  /// page while the prepare is in flight.
+  final Completer<void>? prepareGate;
 
   /// The broadcast report's `200` answer (decision 0089). When neither this
   /// nor [reportFailure] is set, the report is refused as `unavailable`.
@@ -216,6 +221,14 @@ final class FakeLaunchGateway implements LaunchGateway {
     required String payAmount,
   }) {
     intents.add('$launchId:$roundId:$payAmount');
+    final gate = prepareGate;
+    if (gate != null) {
+      return gate.future.then((_) => _answerPrepare());
+    }
+    return _answerPrepare();
+  }
+
+  Future<LaunchPurchasePrepared> _answerPrepare() {
     final answer = prepared;
     if (answer != null) return Future<LaunchPurchasePrepared>.value(answer);
     return Future<LaunchPurchasePrepared>.error(

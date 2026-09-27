@@ -38,6 +38,49 @@ String launchHoldersRowText(LaunchResourceState<LaunchHolders> state) {
   };
 }
 
+/// The 我的资格 row on `launch-detail`, from the eligibility resource the
+/// `launch-tier` page reads (decision 0094).
+///
+/// An open round is only what the server says it is: `status: available` with
+/// an all-zero `allowlistRoot` (OpenAPI · eligibility `result`). Every other
+/// answer keeps its own words; nothing is inferred from the mode.
+String launchEligibilityRowText(LaunchResourceState<LaunchEligibility> state) {
+  final evaluated = state.value?.evaluated;
+  if (evaluated == null) {
+    return '资格结果 $launchPendingConfirmationLabel · 由这次发射的资格模式决定';
+  }
+  if (evaluated.rootIsZero) return '公开轮 · 无需资格';
+  final tier = state.value!.tier;
+  return 'Round ${evaluated.roundIndex} · '
+      '${tier == null ? '不在名单' : launchTierLabel(tier)}';
+}
+
+/// The 我的参与记录 row on `launch-detail`, from the history resource the
+/// `launch-history` page reads (decision 0094). Only an indexed source may
+/// say "none"; anything else keeps the reminder that an empty list proves
+/// nothing.
+String launchHistoryRowText(LaunchResourceState<LaunchHistory> state) {
+  const unread = '空列表不代表你没有参与';
+  final history = state.value;
+  if (history == null) return unread;
+  final indexed = switch (history.source) {
+    LaunchReadingAvailable<LaunchIndexedSource>(:final value) => value,
+    _ => null,
+  };
+  if (indexed == null) return unread;
+  final purchases = history.purchaseRecords;
+  if (purchases.isNotEmpty) {
+    var latest = purchases.first.observedAt;
+    for (final record in purchases) {
+      if (record.observedAt.isAfter(latest)) latest = record.observedAt;
+    }
+    return '${purchases.length} 笔认购 · 最近 ${launchTimestampLabel(latest)}';
+  }
+  final block = loopGroupedFigure(indexed.indexedBlockNumber);
+  if (history.isEmpty) return '暂无记录（已索引到区块 $block）';
+  return '暂无认购 · 有权益或退款记录（已索引到区块 $block）';
+}
+
 /// Shared scaffolding for the six read-only launch record pages.
 ///
 /// Each page owns its own capability gate, its own five states and its own
@@ -109,6 +152,38 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         }
       });
     }
+    // Decision 0094: the 我的资格 and 我的参与记录 rows read the same
+    // resources their pages read, instead of fixed placeholder sentences.
+    final eligibilityState = ref.watch(launchEligibilityControllerProvider);
+    if (!blocked &&
+        detail != null &&
+        eligibilityState.phase == LaunchViewPhase.loading &&
+        eligibilityState.value == null) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(launchEligibilityControllerProvider.notifier)
+                .open(widget.launchId),
+          );
+        }
+      });
+    }
+    final historyState = ref.watch(launchHistoryControllerProvider);
+    if (!blocked &&
+        detail != null &&
+        historyState.phase == LaunchViewPhase.loading &&
+        historyState.value == null) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(launchHistoryControllerProvider.notifier)
+                .open(widget.launchId),
+          );
+        }
+      });
+    }
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-detail-screen'),
@@ -121,6 +196,18 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
               ? ref.read(launchHoldersControllerProvider.notifier).reload()
               : ref
                     .read(launchHoldersControllerProvider.notifier)
+                    .open(widget.launchId),
+        if (!blocked)
+          eligibilityState.isReady
+              ? ref.read(launchEligibilityControllerProvider.notifier).reload()
+              : ref
+                    .read(launchEligibilityControllerProvider.notifier)
+                    .open(widget.launchId),
+        if (!blocked)
+          historyState.isReady
+              ? ref.read(launchHistoryControllerProvider.notifier).reload()
+              : ref
+                    .read(launchHistoryControllerProvider.notifier)
                     .open(widget.launchId),
       ]),
       updating: state.refreshing,
@@ -214,10 +301,10 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                   tone: LoopRowIconTone.accent,
                 ),
                 title: '我的资格',
-                // Decision 0053: the mode is read, never assumed. The row
-                // states the value it has — the mode — and says so when the
-                // configuration has not chosen one.
-                subtitle: '资格结果 $launchPendingConfirmationLabel · 由这次发射的资格模式决定',
+                // Decision 0053: the mode is read, never assumed. Decision
+                // 0094: the row states the eligibility resource's answer,
+                // and an open round is the server's open branch only.
+                subtitle: launchEligibilityRowText(eligibilityState),
                 subtitleMaxLines: 2,
                 onTap: widget.onOpenTier,
               ),
@@ -248,7 +335,8 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                 key: const ValueKey<String>('launch-detail-open-history'),
                 leading: const LoopRowIcon(icon: 'book'),
                 title: '我的参与记录',
-                subtitle: '空列表不代表你没有参与',
+                subtitle: launchHistoryRowText(historyState),
+                subtitleMaxLines: 2,
                 onTap: widget.onOpenHistory,
                 position: LoopRowPosition.last,
               ),
@@ -1044,12 +1132,18 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
           kicker: 'ELIGIBILITY',
           // No evaluator: the heading says there is no value, never a guessed
           // "Public". An evaluator that answered `null` is "not listed".
+          // Decision 0094: the server's open branch (an all-zero root) is a
+          // public round, never 「待确认」 and never a tier.
           heading: evaluated == null
               ? launchMissingResult
+              : evaluated.rootIsZero
+              ? '公开轮'
               : tier == null
               ? '不在名单'
               : launchTierLabel(tier),
-          caption: '这是当前资格结果，不是等级；条件与快照时间同时展示。',
+          caption: evaluated != null && evaluated.rootIsZero
+              ? '本轮公开，任何钱包都可参与。'
+              : '这是当前资格结果，不是等级；条件与快照时间同时展示。',
           stamp: eligibility == null
               ? null
               : launchEligibilityModeLabel(eligibility.mode),
