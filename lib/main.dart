@@ -60,12 +60,6 @@ import 'package:loop_mobile/features/community/community_gateway.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
-  // Decision 0095: the four read-only first screens may open on the answer an
-  // earlier run stored, when it is at most ten minutes old. Opening is
-  // bounded; a store that cannot be read is an empty one, and a directory
-  // that cannot be written leaves the store in memory only (S88b).
-  final snapshotStore = await FileLoopSnapshotStore.openPersistent();
   // Firebase is brought up here and nowhere else, and only when this build was
   // given a configuration. `FIREBASE_CONFIGURED=false`, a build-profile
   // mismatch, and an initialization the device refused all end in the same
@@ -78,9 +72,21 @@ Future<void> main() async {
   // that never came up — happens before there is one, and a device with no
   // push provider must be able to say that rather than look registered.
   final pushDiagnostics = LoopPushRegistrationDiagnosticsRecorder();
-  final firebaseApp = config.canInitializeFirebase
-      ? await LoopFirebaseIngress.ensureApp(diagnostics: pushDiagnostics)
+  // Decision 0098: the three steps before the first frame share nothing, so
+  // all three start now and are awaited together instead of one after another.
+  // None of them can throw: each bounds itself and falls back on failure.
+  //
+  // Decision 0095: the four read-only first screens may open on the answer an
+  // earlier run stored, when it is at most ten minutes old. Opening is
+  // bounded; a store that cannot be read is an empty one, and a directory
+  // that cannot be written leaves the store in memory only (S88b).
+  final snapshotStoreOpening = FileLoopSnapshotStore.openPersistent();
+  final firebaseStarting = config.canInitializeFirebase
+      ? LoopFirebaseIngress.ensureApp(diagnostics: pushDiagnostics)
       : null;
+  final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
+  final snapshotStore = await snapshotStoreOpening;
+  final firebaseApp = await firebaseStarting;
   // `ensureApp` records the two failures it can tell apart. This is the
   // third: a build that was never given a configuration to try.
   if (!config.canInitializeFirebase) {

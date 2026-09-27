@@ -15,6 +15,7 @@ import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/app/session/loop_community_arrival.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/app/session/loop_boot_warmup.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
@@ -208,6 +209,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     // hit a dead network. The observer never gates login or routing; it only
     // re-arms a read that already failed.
     metaObserver = ref.read(loopV2MetaObserverProvider);
+    // Decision 0098: Community's first read starts alongside `GET /v2/profile`
+    // instead of after it, and the wallet tab's directory and balances start
+    // once the account has landed, alongside Community's, instead of after
+    // the owner opens the tab. Each only when its page's gates are open.
+    ref.listenManual(loopBootWarmupProvider, (previous, next) {});
     _lifecycleListener = AppLifecycleListener(
       onResume: () {
         metaObserver.observe(LoopV2MetaObservationTrigger.appResumed);
