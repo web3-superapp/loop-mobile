@@ -63,8 +63,9 @@ Future<void> main() async {
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
   // Decision 0095: the four read-only first screens may open on the answer an
   // earlier run stored, when it is at most ten minutes old. Opening is
-  // bounded; a store that cannot be read is an empty one.
-  final snapshotStore = await FileLoopSnapshotStore.open();
+  // bounded; a store that cannot be read is an empty one, and a directory
+  // that cannot be written leaves the store in memory only (S88b).
+  final snapshotStore = await FileLoopSnapshotStore.openPersistent();
   // Firebase is brought up here and nowhere else, and only when this build was
   // given a configuration. `FIREBASE_CONFIGURED=false`, a build-profile
   // mismatch, and an initialization the device refused all end in the same

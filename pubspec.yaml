@@ -19,6 +19,7 @@ dependencies:
   flutter_riverpod: 3.4.2
   go_router: 17.5.0
   local_auth: 3.0.2
+  path_provider: 2.1.6
   privy_flutter: 0.10.1
   reown_appkit: 1.8.4
   share_plus: 12.0.2

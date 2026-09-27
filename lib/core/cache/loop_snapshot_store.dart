@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// The read-only answers a cold start may draw before the network answers
 /// (decision 0095).
@@ -204,13 +205,12 @@ class MemoryLoopSnapshotStore implements LoopSnapshotStore {
   Future<void> changed() => Future<void>.value();
 }
 
-/// The snapshot store backed by one JSON file in the app's private temporary
-/// directory.
+/// The snapshot store backed by one JSON file in the app's private
+/// application-support directory (decision 0095, S88b).
 ///
-/// It is a cache, not a record: the operating system may purge the directory,
-/// a read that fails leaves the store empty, and a write that fails leaves the
-/// in-memory copy serving this run. Nothing here is ever a reason for a page
-/// to show less than it would without it.
+/// It is a cache, not a record: a read that fails leaves the store empty, and
+/// a write that fails leaves the in-memory copy serving this run. Nothing here
+/// is ever a reason for a page to show less than it would without it.
 final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
   FileLoopSnapshotStore._(this._file, {super.initial});
 
@@ -220,23 +220,54 @@ final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
   final File _file;
   Future<void> _writing = Future<void>.value();
 
-  /// Opens the store, reading what an earlier run left behind. Bounded: a
-  /// slow disk never holds the first frame.
-  static Future<FileLoopSnapshotStore> open({
-    Directory? directory,
+  /// Opens the store for production: the file lives in the application
+  /// support directory, which is private to the app, survives a restart on
+  /// both iOS and Android and is not purged like a cache directory.
+  ///
+  /// `Directory.systemTemp` is not used: on Android the process has no
+  /// `TMPDIR`, so it resolves to a location the app cannot write, and the
+  /// store silently never persisted (S88b).
+  ///
+  /// A directory that cannot be located, created or written yields the
+  /// in-memory store with one debug log line; nothing here ever fails the
+  /// launch. [locate] is replaced by tests.
+  static Future<LoopSnapshotStore> openPersistent({
+    Future<Directory> Function() locate = getApplicationSupportDirectory,
     Duration timeout = const Duration(milliseconds: 400),
   }) async {
-    final file = File(
-      '${(directory ?? Directory.systemTemp).path}${Platform.pathSeparator}'
-      '$fileName',
-    );
+    try {
+      final directory = await locate().timeout(timeout);
+      await directory.create(recursive: true).timeout(timeout);
+      final probe = File(
+        '${directory.path}${Platform.pathSeparator}$fileName.probe',
+      );
+      await probe.writeAsString('', flush: true).timeout(timeout);
+      await probe.delete().timeout(timeout);
+      return await open(directory: directory, timeout: timeout);
+    } on Object catch (error) {
+      debugPrint(
+        'LoopSnapshotStore: snapshot directory unavailable, '
+        'keeping snapshots in memory only ($error)',
+      );
+      return MemoryLoopSnapshotStore();
+    }
+  }
+
+  /// Opens the store in [directory], reading what an earlier run left behind.
+  /// Bounded: a slow disk never holds the first frame.
+  static Future<FileLoopSnapshotStore> open({
+    required Directory directory,
+    Duration timeout = const Duration(milliseconds: 400),
+  }) async {
+    final file = File('${directory.path}${Platform.pathSeparator}$fileName');
     var initial = const <LoopSnapshotRecord>[];
     try {
       if (await file.exists().timeout(timeout)) {
         final text = await file.readAsString().timeout(timeout);
         initial = _decode(text);
       }
-    } on Object {
+    } on Object catch (error) {
+      debugPrint('LoopSnapshotStore: stored snapshots unreadable ($error)');
       initial = const <LoopSnapshotRecord>[];
     }
     return FileLoopSnapshotStore._(file, initial: initial);

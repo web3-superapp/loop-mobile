@@ -24,6 +24,7 @@ PINNED_DEPENDENCIES = {
     "dio": "5.11.0",
     "firebase_core": "4.13.0",
     "firebase_messaging": "16.5.0",
+    "path_provider": "2.1.6",
     "flutter_lints": "6.0.0",
     "flutter_riverpod": "3.4.2",
     "flutter_secure_storage": "10.3.1",
