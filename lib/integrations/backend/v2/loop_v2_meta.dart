@@ -288,6 +288,7 @@ final class LoopV2CapabilityEvidence {
     required this.reasonCode,
     this.reference,
     this.launchChainId,
+    this.launchContractVersion,
   });
 
   final LoopV2CapabilityEvidenceStatus status;
@@ -306,6 +307,10 @@ final class LoopV2CapabilityEvidence {
   /// from the primary chain. `null` therefore means "Launch runs on the
   /// primary chain", exactly as every build before S9.
   final String? launchChainId;
+
+  /// The Launch contract version behind a `confirmed` launch evidence
+  /// (loop-api decision 0083); null everywhere else.
+  final String? launchContractVersion;
 }
 
 @immutable

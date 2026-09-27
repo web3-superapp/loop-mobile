@@ -345,7 +345,9 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       // presence on any other capability is an invalid payload. `reference`
       // belongs to `voiceRooms` alone (decision 0068) and only while its
       // evidence reads `confirmed`.
-      const <String>{'launchChainId', 'reference'},
+      // `launchContractVersion` belongs to `launch` alone and only while its
+      // evidence reads `confirmed` (loop-api decision 0083).
+      const <String>{'launchChainId', 'reference', 'launchContractVersion'},
     );
     final id = _enumValue(
       capability['capabilityId'],
@@ -357,8 +359,14 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       LoopV2CapabilityEvidenceStatus.tryParse,
     );
     final reasonCode = _nullableReasonCode(evidence['reasonCode']);
+    // A `confirmed` reads differently per capability: `voiceRooms` confirms
+    // through an operator reference and carries no reason code; `launch`
+    // confirms through the contract adapter (loop-api decision 0083) and
+    // names that fact in `reasonCode`. Any other pairing is invalid.
     if (status == LoopV2CapabilityEvidenceStatus.confirmed &&
-        reasonCode != null) {
+        (id == LoopV2CapabilityId.launch
+            ? reasonCode == null
+            : reasonCode != null)) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
     return LoopV2Capability(
@@ -373,6 +381,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
         reasonCode: reasonCode,
         reference: _evidenceReference(evidence, id, status),
         launchChainId: launchChainId,
+        launchContractVersion: _launchContractVersion(evidence, id, status),
       ),
     );
   }
@@ -393,7 +402,9 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     LoopV2CapabilityEvidenceStatus status,
   ) {
     final present = evidence.containsKey('reference');
-    if (status != LoopV2CapabilityEvidenceStatus.confirmed) {
+    if (status != LoopV2CapabilityEvidenceStatus.confirmed ||
+        id == LoopV2CapabilityId.launch) {
+      // `launch` confirms through its contract adapter, never a reference.
       if (present) {
         throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
       }
@@ -409,6 +420,32 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     }
     return value;
   }
+
+  /// The optional `evidence.launchContractVersion` (loop-api decision 0083).
+  ///
+  /// Present on `launch` alone and only while its evidence reads `confirmed`:
+  /// the semantic version of the Launch contract whose code the API observed
+  /// on the launch slot. Anywhere else the key is an invalid payload.
+  String? _launchContractVersion(
+    Map<String, Object?> evidence,
+    LoopV2CapabilityId id,
+    LoopV2CapabilityEvidenceStatus status,
+  ) {
+    if (!evidence.containsKey('launchContractVersion')) return null;
+    final value = evidence['launchContractVersion'];
+    if (id != LoopV2CapabilityId.launch ||
+        status != LoopV2CapabilityEvidenceStatus.confirmed ||
+        value is! String ||
+        !_launchContractVersionPattern.hasMatch(value) ||
+        value.length > 32) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    return value;
+  }
+
+  static final RegExp _launchContractVersionPattern = RegExp(
+    r'^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$',
+  );
 
   /// The optional `evidence.launchChainId` (decision 0038).
   ///
