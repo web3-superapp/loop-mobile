@@ -57,3 +57,8 @@ Accepted 2026-09-27。S83c3，客户端单侧，不改 loop-api。93 条路由�
 - 测试：`test/s83c3_launch_keyboard_copy_test.dart`（点空白收起、iOS 完成条紧贴键盘、
   底栏在 viewInsets 下可见且说明卡在可视区、Android 无附件条、四种持有人文案与读取中/
   失败、资格页按钮显隐）；`test/s59_launch_block_order_test.dart` 相应更新。
+
+## Main-agent rulings (2026-09-27)
+
+1. approval-guard keeps its prototype order; 「按限额授权」 is not pinned. The blank-tap dismiss and the iOS 「完成」 bar are enough there.
+2. The detail response's `holders` field stays as it is on the backend for now; the client reads the holders route. Folding the real branch into the detail response is a backend follow-up, not a blocker.
