@@ -463,13 +463,23 @@ void main() {
         ),
         findsOneWidget,
       );
-      // Every contract fact keeps its source and time; none is a verdict.
+      // Decision 0096: each fact is a short grid cell, and the source and
+      // time are stated once, at the foot of the tray; none is a verdict.
       expect(
-        find.descendant(
-          of: detail,
-          matching: find.textContaining('合约已验证开源 —— 来源'),
-        ),
+        find.descendant(of: detail, matching: find.text('已验证开源')),
         findsOneWidget,
+      );
+      expect(
+        find.descendant(of: detail, matching: find.textContaining('—— 来源')),
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('token-facts-tray-source')),
+            )
+            .data,
+        startsWith('来源 GoPlus · 观察于 '),
       );
 
       await tester.tap(

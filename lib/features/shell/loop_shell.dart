@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_dock_bar.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Five-destination shell (chapter 5.4).
@@ -161,35 +162,33 @@ class LoopTabBar extends StatelessWidget {
                   top: BorderSide(color: LoopDepth.tabBarEdge),
                 ),
               ),
-              child: Stack(
-                children: <Widget>[
-                  Positioned.fill(
-                    // Reduced motion is a jump, not a fast slide: the plain
-                    // `Align` reaches the new cell in the same frame.
-                    child: reduceMotion
-                        ? Align(alignment: alignment, child: indicator)
-                        : AnimatedAlign(
-                            alignment: alignment,
-                            duration: slideDuration,
-                            curve: slideCurve,
-                            child: indicator,
-                          ),
-                  ),
-                  Row(
-                    children: <Widget>[
-                      for (var index = 0; index < count; index++)
-                        Expanded(
-                          child: LoopTabItem(
-                            label: LoopShell._destinations[index].label,
-                            slug: LoopShell._destinations[index].slug,
-                            icon: LoopShell._destinations[index].icon,
-                            selected: index == selectedIndex,
-                            onTap: () => onSelect(index),
-                          ),
+              child: LoopDockBar(
+                count: count,
+                selectedIndex: selectedIndex,
+                onSelect: onSelect,
+                // The pill follows its cell's glyph sideways while the row
+                // makes room under a sliding finger; at rest the shift is 0.
+                backgroundBuilder: (context, cells) => Transform.translate(
+                  offset: Offset(cells[selectedIndex].shift, 0),
+                  // Reduced motion is a jump, not a fast slide: the plain
+                  // `Align` reaches the new cell in the same frame.
+                  child: reduceMotion
+                      ? Align(alignment: alignment, child: indicator)
+                      : AnimatedAlign(
+                          alignment: alignment,
+                          duration: slideDuration,
+                          curve: slideCurve,
+                          child: indicator,
                         ),
-                    ],
-                  ),
-                ],
+                ),
+                cellBuilder: (context, index, cell) => LoopTabItem(
+                  label: LoopShell._destinations[index].label,
+                  slug: LoopShell._destinations[index].slug,
+                  icon: LoopShell._destinations[index].icon,
+                  selected: index == selectedIndex,
+                  dock: cell,
+                  onTap: () => onSelect(index),
+                ),
               ),
             ),
           ),
@@ -212,6 +211,7 @@ class LoopTabItem extends StatelessWidget {
     required this.selected,
     required this.onTap,
     super.key,
+    this.dock = LoopDockCell.rest,
   });
 
   final String label;
@@ -221,6 +221,11 @@ class LoopTabItem extends StatelessWidget {
   final String icon;
   final bool selected;
   final VoidCallback onTap;
+
+  /// The magnification a sliding finger gives this cell's glyph and label
+  /// (decision 0096). It moves and scales what the cell paints, never the
+  /// cell: the tap target keeps its size.
+  final LoopDockCell dock;
 
   @override
   Widget build(BuildContext context) {
@@ -256,31 +261,46 @@ class LoopTabItem extends StatelessWidget {
                   minHeight: LoopTouch.tabCellMinHeight,
                   minWidth: LoopTouch.minimum,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    LoopIcon(icon, size: 21, color: color),
-                    const SizedBox(height: 3),
-                    ExcludeSemantics(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.label(
-                          12,
-                          weight: FontWeight.w700,
-                          color: color,
+                child: _dockTransform(
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      LoopIcon(icon, size: 21, color: color),
+                      const SizedBox(height: 3),
+                      ExcludeSemantics(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopTypography.label(
+                            12,
+                            weight: FontWeight.w700,
+                            color: color,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
           ),
         ),
       ),
+    );
+  }
+
+  /// The glyph and label grow from their bottom edge, so a magnified glyph
+  /// rises out of the bar the way a dock's does instead of spilling down.
+  Widget _dockTransform(Widget child) {
+    if (dock.atRest) return child;
+    return Transform(
+      key: ValueKey<String>('loop-tab-dock-$slug'),
+      alignment: Alignment.bottomCenter,
+      transform: Matrix4.translationValues(dock.shift, 0, 0)
+        ..scaleByDouble(dock.scale, dock.scale, 1, 1),
+      child: child,
     );
   }
 }

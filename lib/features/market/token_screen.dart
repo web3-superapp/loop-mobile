@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_membership_contr
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -271,25 +272,30 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           // quote.
           LoopTrayDisclosure(
             key: const ValueKey<String>('token-facts-tray'),
-            trayInset: LoopSpacing.page + 6,
-            overlap: 8,
+            // The four cells sit on a panel exactly as wide as the tray, so
+            // the pair reads as a card with its tray rather than a figure
+            // row with a pill floating under it (decision 0096).
+            trayInset: LoopSpacing.page,
             semanticLabel: '池与合约事实',
-            card: MarketQuoteCells(
-              key: const ValueKey<String>('token-quote-cells'),
-              cells: <MarketStatCell>[
-                marketRangeCell('24h 高', detail.range24h, high: true),
-                marketRangeCell('24h 低', detail.range24h, high: false),
-                MarketStatCell.fact(
-                  '24h 成交额',
-                  detail.volume24h,
-                  formatter: loopFormatCompactFigure,
-                ),
-                MarketStatCell.fact(
-                  '市值',
-                  detail.marketCap,
-                  formatter: loopFormatCompactFigure,
-                ),
-              ],
+            card: TokenQuotePanel(
+              child: MarketQuoteCells(
+                key: const ValueKey<String>('token-quote-cells'),
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                cells: <MarketStatCell>[
+                  marketRangeCell('24h 高', detail.range24h, high: true),
+                  marketRangeCell('24h 低', detail.range24h, high: false),
+                  MarketStatCell.fact(
+                    '24h 成交额',
+                    detail.volume24h,
+                    formatter: loopFormatCompactFigure,
+                  ),
+                  MarketStatCell.fact(
+                    '市值',
+                    detail.marketCap,
+                    formatter: loopFormatCompactFigure,
+                  ),
+                ],
+              ),
             ),
             summary: Text(
               tokenFactsTraySummary(detail.primaryPair, detail.security),
@@ -298,9 +304,10 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               overflow: TextOverflow.ellipsis,
               style: LoopTypography.caption(12, color: LoopColors.text2),
             ),
-            detail: _TokenFactsTrayDetail(
+            detail: TokenFactsTrayDetail(
               pair: detail.primaryPair,
               security: detail.security,
+              onOpenAbout: () => setState(() => _tab = TokenSectionTab.about),
             ),
             margin: const EdgeInsets.only(bottom: 6),
           ),
@@ -983,48 +990,282 @@ String tokenFactsTraySummary(
   return '$pool · $facts';
 }
 
-/// The open fact tray: the pool, then each contract fact with its source and
-/// observation time — the same sentences 简介 prints.
-class _TokenFactsTrayDetail extends StatelessWidget {
-  const _TokenFactsTrayDetail({required this.pair, required this.security});
+/// The quote cells' own ground: an opaque panel one step off the page, as
+/// wide as the fact tray tucked under it.
+///
+/// It is opaque on purpose: the tray is painted first and runs up under the
+/// panel's lower edge, and a translucent panel would show it through.
+class TokenQuotePanel extends StatelessWidget {
+  const TokenQuotePanel({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      child: DecoratedBox(
+        key: const ValueKey<String>('token-quote-panel'),
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(LoopGround.tintOf(context), LoopColors.ink),
+          borderRadius: LoopRadius.card,
+          border: Border.all(color: LoopGround.hairlineOf(context)),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Whether [fact] is one of the contract capabilities a holder should read
+/// first: a mint, a pause, a blacklist, a hidden or recoverable owner and the
+/// like, when GoPlus reports it present — or a contract it could not verify.
+///
+/// It sorts and marks; it is never a verdict. The opposite reading is not
+/// called safe, only neutral: 未检测到 is what one source did not see.
+bool tokenSecurityFactIsRisk(MarketSecurityFact fact) {
+  const flags = <String>{
+    'proxy',
+    'mintable',
+    'ownershipTakeBack',
+    'ownerChangeBalance',
+    'hiddenOwner',
+    'selfDestruct',
+    'externalCall',
+    'honeypot',
+    'transferPausable',
+    'blacklist',
+    'whitelist',
+    'antiWhale',
+    'tradingCooldown',
+    'cannotSellAll',
+  };
+  if (flags.contains(fact.fact)) return fact.value == 'true';
+  if (fact.fact == 'openSource') return fact.value == 'false';
+  return false;
+}
+
+/// The short label one fact takes in the tray's two-column grid. It keeps
+/// the full sentence's claim — 检测到 / 未检测到 stays exactly that — and
+/// only drops words; a key with no short form keeps its sentence.
+String tokenSecurityFactShortText(MarketSecurityFact fact) {
+  final isTrue = fact.value == 'true';
+  final isFalse = fact.value == 'false';
+  String? yesNo(String whenTrue, String whenFalse) =>
+      isTrue ? whenTrue : (isFalse ? whenFalse : null);
+  final short = switch (fact.fact) {
+    'openSource' => yesNo('已验证开源', '未验证开源'),
+    'proxy' => yesNo('代理合约', '非代理合约'),
+    'mintable' => yesNo('检测到 mint', '未检测到 mint'),
+    'ownershipTakeBack' => yesNo('所有权可收回', '未检测到收回所有权'),
+    'ownerChangeBalance' => yesNo('所有者可改余额', '所有者不可改余额'),
+    'hiddenOwner' => yesNo('检测到隐藏所有者', '未检测到隐藏所有者'),
+    'selfDestruct' => yesNo('检测到自毁', '未检测到自毁'),
+    'externalCall' => yesNo('检测到外部调用', '未检测到外部调用'),
+    'honeypot' => yesNo('检测到蜜罐特征', '未检测到蜜罐特征'),
+    'transferPausable' => yesNo('转账可暂停', '转账不可暂停'),
+    'blacklist' => yesNo('检测到黑名单', '未检测到黑名单'),
+    'whitelist' => yesNo('检测到白名单', '未检测到白名单'),
+    'antiWhale' => yesNo('检测到持仓上限', '未检测到持仓上限'),
+    'tradingCooldown' => yesNo('检测到交易冷却', '未检测到交易冷却'),
+    'cannotSellAll' => yesNo('不能全部卖出', '可以全部卖出'),
+    'listedOnDex' => yesNo('已在 DEX 上架', '未在 DEX 上架'),
+    _ => null,
+  };
+  return short ?? marketSecurityFactText(fact);
+}
+
+/// The facts in the order the tray lists them: the risk-class ones first,
+/// each group in the order the source gave.
+List<MarketSecurityFact> tokenSecurityFactsInTrayOrder(
+  List<MarketSecurityFact> facts,
+) => <MarketSecurityFact>[
+  ...facts.where(tokenSecurityFactIsRisk),
+  ...facts.where((fact) => !tokenSecurityFactIsRisk(fact)),
+];
+
+/// The one provenance line under the tray's grid: every source the facts
+/// name, and the oldest observation among them — the grid is only as fresh
+/// as its stalest cell.
+String tokenSecurityProvenanceLine(List<MarketSecurityFact> facts) {
+  final sources = <String>{
+    for (final fact in facts) loopFactSourceLabel(fact.source),
+  };
+  var oldest = facts.first.observedAt;
+  for (final fact in facts) {
+    if (fact.observedAt.isBefore(oldest)) oldest = fact.observedAt;
+  }
+  return '来源 ${sources.join('、')} · 观察于 ${loopRelativeTime(oldest)}';
+}
+
+/// The open fact tray (decision 0096): the pool on one line, then at most
+/// [maxCells] contract facts as a compact two-column grid — risk-class ones
+/// first, each behind a Warning dot, the rest behind a neutral one — then,
+/// when there are more, one control that opens 简介 where every fact is
+/// listed, and a single provenance line at the foot.
+class TokenFactsTrayDetail extends StatelessWidget {
+  const TokenFactsTrayDetail({
+    required this.pair,
+    required this.security,
+    required this.onOpenAbout,
+    super.key,
+  });
+
+  static const int maxCells = 8;
 
   final MarketPrimaryPair? pair;
   final MarketSecurityBlock security;
+  final VoidCallback onOpenAbout;
 
   @override
   Widget build(BuildContext context) {
     final style = LoopTypography.caption(12, color: LoopColors.text2);
     final resolved = pair;
-    final lines = <String>[
-      if (resolved == null)
-        '主交易对：没有以该资产为 base 的交易对'
-      else
-        '主交易对：${resolved.dexId} · 报价币 ${resolved.quoteTokenSymbol} · '
-            '${loopTruncatedAddress(resolved.pairAddress)}',
-      ...switch (security) {
-        MarketSecurityUnavailable(reasonCode: final reasonCode) => <String>[
-          '合约事实不可用：${loopReasonCodeText(reasonCode)}',
-        ],
-        MarketSecurityAvailable(facts: final facts) when facts.isEmpty =>
-          const <String>['暂时读不到合约信息。少了某一项只表示读不到，不代表安全或不安全。'],
-        MarketSecurityAvailable(facts: final facts) => <String>[
-          for (final fact in facts)
-            '${marketSecurityFactText(fact)} —— '
-                '来源 ${loopFactSourceLabel(fact.source)}，'
-                '观察于 ${loopRelativeTime(fact.observedAt)}',
-        ],
-      },
+    final pairLine = resolved == null
+        ? '主交易对：没有以该资产为 base 的交易对'
+        : '主交易对：${resolved.dexId} · 报价币 ${resolved.quoteTokenSymbol} · '
+              '${loopTruncatedAddress(resolved.pairAddress)}';
+    final children = <Widget>[
+      Text(
+        pairLine,
+        key: const ValueKey<String>('token-facts-tray-pair'),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      ),
+      const SizedBox(height: 8),
     ];
+    switch (security) {
+      case MarketSecurityUnavailable(reasonCode: final reasonCode):
+        children.add(
+          Text('合约事实不可用：${loopReasonCodeText(reasonCode)}', style: style),
+        );
+      case MarketSecurityAvailable(facts: final facts) when facts.isEmpty:
+        children.add(Text('暂时读不到合约信息。少了某一项只表示读不到，不代表安全或不安全。', style: style));
+      case MarketSecurityAvailable(facts: final facts):
+        final ordered = tokenSecurityFactsInTrayOrder(facts);
+        final shown = ordered.take(maxCells).toList(growable: false);
+        final hidden = ordered.length - shown.length;
+        children.add(
+          Column(
+            key: const ValueKey<String>('token-facts-tray-grid'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (var row = 0; row < shown.length; row += 2)
+                Row(
+                  children: <Widget>[
+                    Expanded(child: TokenFactCell(fact: shown[row])),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: row + 1 < shown.length
+                          ? TokenFactCell(fact: shown[row + 1])
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        );
+        if (hidden > 0) {
+          children.add(
+            Semantics(
+              button: true,
+              label: '更多 $hidden 项，在简介查看',
+              excludeSemantics: true,
+              child: InkWell(
+                key: const ValueKey<String>('token-facts-tray-more'),
+                onTap: onOpenAbout,
+                borderRadius: LoopRadius.control,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: LoopTouch.minimum,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Text(
+                        '更多 $hidden 项',
+                        style: LoopTypography.caption(
+                          12,
+                          color: LoopColors.chalk,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const LoopIcon(
+                        'chevron',
+                        size: 12,
+                        color: LoopColors.text2,
+                      ),
+                      const SizedBox(width: 6),
+                      Text('简介', style: style),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        } else {
+          children.add(const SizedBox(height: 6));
+        }
+        children.add(
+          Text(
+            tokenSecurityProvenanceLine(facts),
+            key: const ValueKey<String>('token-facts-tray-source'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LoopTypography.caption(11, color: LoopColors.text3),
+          ),
+        );
+    }
     return Column(
       key: const ValueKey<String>('token-facts-tray-detail'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        for (final line in lines)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
-            child: Text(line, style: style),
-          ),
-      ],
+      children: children,
+    );
+  }
+}
+
+/// One cell of the tray's fact grid: a dot and the fact's short label. The
+/// full sentence is what a screen reader hears.
+class TokenFactCell extends StatelessWidget {
+  TokenFactCell({required this.fact})
+    : risk = tokenSecurityFactIsRisk(fact),
+      super(key: ValueKey<String>('token-fact-${fact.fact}'));
+
+  final MarketSecurityFact fact;
+  final bool risk;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: marketSecurityFactText(fact),
+      excludeSemantics: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 24),
+        child: Row(
+          children: <Widget>[
+            DecoratedBox(
+              key: ValueKey<String>('token-fact-dot-${fact.fact}'),
+              decoration: BoxDecoration(
+                color: risk ? LoopColors.warning : LoopColors.text3,
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox.square(dimension: 6),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                tokenSecurityFactShortText(fact),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopTypography.caption(
+                  12,
+                  color: risk ? LoopColors.chalk : LoopColors.text2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
