@@ -114,6 +114,39 @@ final class LaunchSegments {
       live.length + upcoming.length + awaitingSchedule.length + ended.length;
 }
 
+/// `overview.graduated` (loop-api S83b7b): a union on `status`.
+///
+/// It is a liquidity-axis list — `onChainState.source == "chain"` with the LP
+/// locked or completed — and never a projection of the schedule.
+@immutable
+sealed class LaunchGraduated {
+  const LaunchGraduated();
+}
+
+/// The list could not be read; [fact] carries the server's reason.
+final class LaunchGraduatedUnavailable extends LaunchGraduated {
+  const LaunchGraduatedUnavailable(this.fact);
+
+  final LaunchUnavailable fact;
+}
+
+/// The list was read at [indexedBlockNumber]. An empty [launches] is a real
+/// "nothing graduated yet", not a failed read.
+final class LaunchGraduatedAvailable extends LaunchGraduated {
+  const LaunchGraduatedAvailable({
+    required this.launches,
+    required this.indexedBlockNumber,
+  });
+
+  /// The server's hard ceiling on the list.
+  static const int maximum = 50;
+
+  final List<LaunchSummary> launches;
+
+  /// The indexer checkpoint the list was read at, a decimal string.
+  final String indexedBlockNumber;
+}
+
 @immutable
 final class LaunchOverview {
   const LaunchOverview({
@@ -127,7 +160,7 @@ final class LaunchOverview {
   final LaunchSegments segments;
 
   /// "已毕业" is a liquidity-axis projection, never a schedule projection.
-  final LaunchUnavailable graduated;
+  final LaunchGraduated graduated;
   final LaunchUnavailable myEligibility;
   final LaunchUnavailable staking;
   final LaunchCatalogStamp catalog;

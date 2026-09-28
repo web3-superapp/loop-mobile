@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -109,6 +110,8 @@ class GroupChatScreen extends ConsumerWidget {
                   cid: value,
                   keyPrefix: 'group-channel',
                   composerHint: loopChatComposerHint,
+                  // S99c: only the group's creator pins (loop-api 0091).
+                  mayPinMessagesFor: loopFriendGroupCreatorMayPin,
                   header: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[

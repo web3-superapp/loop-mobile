@@ -283,19 +283,25 @@ String launchSettlementRefusalText(
 }
 
 /// The line for the intent's state once the wallet has broadcast (S92a.6).
-/// Only `confirmed` names a result, and it is the server's.
+/// Only `confirmed` names a result, and it is the server's. The purchase
+/// uses the same lines since S92b2.
 ({String title, String body}) launchSettlementProgressText(
   LaunchIntentKind kind,
   LaunchPurchaseIntent intent,
 ) {
   final noun = launchIntentNoun(kind);
-  final done = kind == LaunchIntentKind.claim ? '已领取' : '已退款';
+  final done = switch (kind) {
+    LaunchIntentKind.buy => '认购已确认',
+    LaunchIntentKind.claim => '已领取',
+    LaunchIntentKind.claimRefund => '已退款',
+  };
+  final landed = kind == LaunchIntentKind.buy ? '份额以「我的参与记录」为准' : '到账以钱包余额为准';
   final hash = intent.transactionHash;
   final tx = hash == null ? '' : '交易 ${launchShortHex(hash)}。';
   return switch (intent.state) {
     LaunchIntentState.confirmed => (
       title: done,
-      body: '$tx链上已确认这笔$noun，到账以钱包余额为准。',
+      body: '$tx链上已确认这笔$noun，$landed。',
     ),
     LaunchIntentState.reverted => (
       title: '交易失败（仅消耗 gas）',
@@ -316,13 +322,6 @@ String launchSettlementRefusalText(
 // ---------------------------------------------------------------------------
 // controller
 // ---------------------------------------------------------------------------
-
-/// How often the page reads the intent back after a broadcast (S83b3.1
-/// suggests 5 s), and how many reads before it stops and offers a re-read.
-final launchSettlementPollIntervalProvider = Provider<Duration>(
-  (ref) => const Duration(seconds: 5),
-);
-const int launchSettlementMaxPolls = 72;
 
 @immutable
 final class LaunchSettlementState {
@@ -371,13 +370,7 @@ final class LaunchSettlementState {
 
   /// The intent reached a state the server will not move on its own
   /// (S92a.6), so a new attempt may start.
-  bool get settled => switch (intent?.state) {
-    LaunchIntentState.confirmed ||
-    LaunchIntentState.reverted ||
-    LaunchIntentState.failed ||
-    LaunchIntentState.expired => true,
-    _ => false,
-  };
+  bool get settled => intent?.state.isSettled ?? false;
 
   /// Once the wallet has produced a hash, or its outcome is unknown, the page
   /// offers no second signature until the server settles the first.
@@ -396,8 +389,18 @@ final class LaunchSettlementState {
 
 final class LaunchSettlementController extends Notifier<LaunchSettlementState>
     with LaunchSingleFlight {
-  Timer? _timer;
-  int _polls = 0;
+  late final LaunchIntentPoller _poller = LaunchIntentPoller(
+    load: (current) => ref
+        .read(launchGatewayProvider)
+        .loadIntent(
+          launchId: current.launchId,
+          launchIntentId: current.launchIntentId,
+        ),
+    onRead: (intent, {required polling, required timedOut}) {
+      if (!ref.mounted) return;
+      state = _with(intent: intent, polling: polling, pollTimedOut: timedOut);
+    },
+  );
 
   @override
   LaunchSettlementState build() {
@@ -405,8 +408,7 @@ final class LaunchSettlementController extends Notifier<LaunchSettlementState>
     final mode = ref.watch(launchGatewayProvider).mode;
     ref.onDispose(() {
       nextGeneration();
-      _timer?.cancel();
-      _timer = null;
+      _poller.stop();
     });
     return LaunchSettlementState(mode: mode);
   }
@@ -422,7 +424,7 @@ final class LaunchSettlementController extends Notifier<LaunchSettlementState>
     if (state.locked || state.busy || !kind.isSettlement) return null;
     final gateway = ref.read(launchGatewayProvider);
     final generation = nextGeneration();
-    _timer?.cancel();
+    _poller.stop();
     state = LaunchSettlementState(mode: state.mode, kind: kind, busy: true);
     try {
       final prepared = await gateway.prepareSettlementIntent(
@@ -520,62 +522,15 @@ final class LaunchSettlementController extends Notifier<LaunchSettlementState>
   void reset() {
     if (state.locked) return;
     nextGeneration();
-    _timer?.cancel();
+    _poller.stop();
     state = LaunchSettlementState(mode: state.mode);
   }
 
   void _startPolling() {
-    _timer?.cancel();
-    _polls = 0;
-    state = _with(polling: true, pollTimedOut: false);
-    _schedule();
-  }
-
-  void _schedule() {
-    final interval = ref.read(launchSettlementPollIntervalProvider);
-    _timer = Timer(interval, () => unawaited(_pollOnce()));
-  }
-
-  Future<void> _pollOnce() async {
-    final current = state.intent;
-    if (!ref.mounted || current == null || state.settled) return;
-    final generation = nextGeneration();
-    _polls += 1;
-    LaunchPurchaseIntent? next;
-    try {
-      next = await ref
-          .read(launchGatewayProvider)
-          .loadIntent(
-            launchId: current.launchId,
-            launchIntentId: current.launchIntentId,
-          );
-    } catch (_) {
-      // A read that did not land changes nothing; the next one may.
-      next = null;
-    }
-    if (!ref.mounted || !isCurrent(generation)) return;
-    // The read-back must be about this intent; anything else is ignored.
-    if (next != null && next.launchIntentId != current.launchIntentId) {
-      next = null;
-    }
-    final intent = next ?? current;
-    final settledNow = switch (intent.state) {
-      LaunchIntentState.confirmed ||
-      LaunchIntentState.reverted ||
-      LaunchIntentState.failed ||
-      LaunchIntentState.expired => true,
-      _ => false,
-    };
-    if (settledNow) {
-      state = _with(intent: intent, polling: false);
-      return;
-    }
-    if (_polls >= launchSettlementMaxPolls) {
-      state = _with(intent: intent, polling: false, pollTimedOut: true);
-      return;
-    }
-    state = _with(intent: intent, polling: true);
-    _schedule();
+    final intent = state.intent;
+    if (intent == null) return;
+    state = _with(polling: !intent.state.isSettled, pollTimedOut: false);
+    _poller.start(intent, ref.read(launchIntentPollIntervalProvider));
   }
 
   LaunchSettlementState _with({

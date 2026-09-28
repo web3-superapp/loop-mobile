@@ -142,3 +142,59 @@ CANCELLED}` 与 `entitlementState == REFUNDING`（S92a.1；只看 saleState 会�
 3. 「我的份额」块放在「我的资格」与「发射轨道」之间：接受，待模拟器与真机验收。
 4. ENDED 的「等待最终化」对所有钱包显示：接受，它是发售状态说明。
 5. 真机领取 / 退款证据：随 06 §8 闭环 A/B 取证。
+
+## 补充（S100，2026-09-29）：已毕业列表（S83b7c）与认购轮询（S92b2）
+
+Proposed。基线 `integration/v2` 085fc1c，分支 `feat/S100-launch-grad-poll-pin`。对应 loop-api 分支
+`feat/S83b7b-graduated`（`docs/frontend-v2-launch-api.md`「S83b7b 补充」）。93 条路由不变，无新依赖，`pubspec.lock` 不变。
+
+### A · `overview.graduated` 改为按 `status` 区分的联合
+
+- 模型：`LaunchOverview.graduated` 由 `LaunchUnavailable` 改为 sealed `LaunchGraduated`：
+  `LaunchGraduatedUnavailable(fact)` 或 `LaunchGraduatedAvailable(launches, indexedBlockNumber)`。
+- 解码（`DioLoopV2LaunchApi._graduated`）：`status == "available"` 时严格三键
+  `{status, launches, indexedBlockNumber}`；`launches` 走分段同一个 `_segment`（`LaunchSummary` 解码器 +
+  ID 去重），上限 50（`LaunchGraduatedAvailable.maximum`，51 条整份作废）；`indexedBlockNumber` 为区块号十进制字符串。
+  其余一律走原 `unavailable` 解码（`reasonCode` 只校验格式，不枚举），因此 S83a 基线旧响应逐字节照旧可解；快照恢复
+  （0095）共用同一个解码器。
+- 客户端额外守一条 03 §8.3：available 的每一行必须 `onChainState.source == "chain"` 且
+  `liquidityState ∈ {LP_LOCKED, COMPLETED}`（`LaunchLiquidityState.isLocked`），否则整份作废——否则客户端会替服务端把
+  `V3_LIVE` 说成「已毕业」。
+- 首页「已毕业」块（`LaunchGraduatedBlock`）：
+  - available 非空 → 与分段同一个 `launchCatalogRow`（key 前缀 `launch-graduated-row-`，避免与「已结束」分段同一项
+    的 `launch-row-` 重复），副标题用链上 saleState 文案，点行进 `launch-detail`；
+  - available 空 → 「还没有已毕业的项目」+「流动性锁定后的项目会出现在这里。」；
+  - unavailable → `launchGraduatedReasonText`：`LAUNCH_ONCHAIN_STATE_READ_FAILED` →「已毕业名单暂时读不到」；
+    `LAUNCH_ONCHAIN_STATE_NOT_INDEXED` →「链上索引还没有进度，已毕业名单暂时读不到。」（全局文案「列表不逐个读链，进入详情
+    查看链上状态」对这张卡不成立）；`LAUNCH_CONTRACT_BASELINE_PENDING` 沿用 0097 的 evidence 覆盖；其余适配器原因码沿用
+    `launchReasonCodeText`。卡片 key 仍为 `launch-unavailable-已毕业项目`。
+
+### B · 认购意向的 `GET …/intents/{id}` 轮询
+
+- 轮询逻辑抽成一份：`LaunchIntentPoller`（`launch_controllers.dart`），每 `launchIntentPollIntervalProvider`
+  （5 s）读一次，最多 `launchIntentMaxPolls`（72）次；读失败或读回别的 intent 保持上一次；到
+  `LaunchIntentState.isSettled`（confirmed / reverted / failed / expired）停。`LaunchSettlementController` 改为用它
+  （行为不变；原 `launchSettlementPollIntervalProvider` / `launchSettlementMaxPolls` 改名为上面两个，测试同步）；
+  `LaunchTradeController` 在 `recordSignOutcome` 拿到服务端回报后同样启动它。
+- 认购页：`LaunchTradeState` 增 `polling` / `pollTimedOut` / `settled`；`reported` 随读回更新。未终态时仍是
+  「已广播 · {状态}」锁定条；超时在正文后加「还没有读到链上结果，可以稍后重新查询。」与「重新查询」按钮；终态后换成
+  `launchSettlementProgressText(buy, …)`（confirmed 标题「认购已确认」，正文「份额以「我的参与记录」为准」；其余三态与领取 /
+  退款同文案），并给「重新认购」按钮（`discard`，只在终态后对已广播的尝试开放；未终态仍不可丢弃）。
+- 终态（confirmed / expired / reverted，`launchIntentRereads`）后重读：详情、持仓（holders）、记录（history）——与
+  「我的份额」共用 `launchRereadAfterIntent`；认购页传 `openIfIdle: false`，只刷新下层 `launch-detail` 已持有的读数，
+  不替它新开；另重读付款钱包余额（USD1 已花出）。
+- 页首 `launch-trade-in-flight` 横幅文案不变（「已广播 · {状态}」）。
+
+### Tests
+
+`test/s100_launch_graduated_and_purchase_poll_test.dart`（14）：两个 S83a 基线旧响应、四种 unavailable 原因码、available
+有行 / 空、50 条通过 51 条作废、八种畸形（缺区块号、多键、数字区块号、重复行、V3_LIVE、无链上读数、第三种 status、null）；
+「已毕业」卡三态（列表 + 点行进详情、空态、READ_FAILED）与 BASELINE_PENDING 的 0097 覆盖、原因表；认购
+submitted → confirmed（两次读回、结果文案、重读持仓与记录、终态后不再读、「重新认购」）、submitted → expired（文案、重读、
+停止）、72 次无果停下并「重新查询」后再读。
+
+### 需要主代理决定
+
+1. `LAUNCH_ONCHAIN_STATE_NOT_INDEXED` 在「已毕业」卡上的文案（本单自拟）。
+2. 认购终态后的「重新认购」按钮与「认购已确认」标题是本单新增文案。
+3. available 行不满足 LP 锁定时整份 overview 作废（严格解码惯例）；若更希望只丢该行，需改。

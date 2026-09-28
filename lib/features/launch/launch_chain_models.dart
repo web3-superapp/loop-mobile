@@ -748,6 +748,14 @@ enum LaunchIntentState {
       this == LaunchIntentState.prepared ||
       this == LaunchIntentState.awaitingSignature;
 
+  /// A state the server will not move on its own (S92a.6): the read-back of
+  /// a broadcast stops here.
+  bool get isSettled =>
+      this == LaunchIntentState.confirmed ||
+      this == LaunchIntentState.reverted ||
+      this == LaunchIntentState.failed ||
+      this == LaunchIntentState.expired;
+
   static LaunchIntentState? tryParse(String value) {
     for (final state in values) {
       if (state.wireName == value) return state;

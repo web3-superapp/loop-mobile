@@ -25,8 +25,8 @@ const String launchSegmentEmptyBody =
 /// The catalogue is an off-chain directory. Its segments are the server's:
 /// since loop-api S83b7 they follow the on-chain sale state, and a launch with
 /// no chain reading is filed by `scheduleStatus`. "已毕业" is a liquidity-axis
-/// fact and stays unavailable, so it is a separate block rather than a fourth
-/// tab of the same list.
+/// list the server reads separately (S83b7b), so it is a separate block
+/// rather than a fourth tab of the same list.
 ///
 /// The order of the first screen is the prototype's: the folio states the
 /// count, the segment bar follows it, and the projects follow the bar. The
@@ -197,14 +197,10 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           const LoopLabel('已毕业'),
           // Graduation is a liquidity fact. It is never derived from a
           // schedule that says "ended".
-          LaunchUnavailableCard(
-            label: '已毕业项目',
-            fact: overview.graduated,
-            reason: launchBaselineReasonText(
-              overview.graduated.reasonCode,
-              contractLive: capability.evidenceConfirmed,
-              whenLive: '已毕业名单还没有开放读取',
-            ),
+          LaunchGraduatedBlock(
+            graduated: overview.graduated,
+            contractLive: capability.evidenceConfirmed,
+            onOpenLaunch: widget.onOpenLaunch,
           ),
           const LoopNotice(
             key: ValueKey<String>('launch-curation-notice'),
@@ -299,6 +295,60 @@ class _EvidenceNotice extends StatelessWidget {
       body: launchReasonCodeText(capability.evidenceReasonCode),
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
     );
+  }
+}
+
+/// The 已毕业 block (loop-api S83b7b): the server's liquidity-axis list when
+/// it was read, a true empty state when it was read and is empty, and the
+/// server's reason when it could not be read. Rows are the catalogue's own
+/// rows and open `launch-detail`.
+class LaunchGraduatedBlock extends StatelessWidget {
+  const LaunchGraduatedBlock({
+    required this.graduated,
+    required this.contractLive,
+    required this.onOpenLaunch,
+    super.key,
+  });
+
+  final LaunchGraduated graduated;
+  final bool contractLive;
+  final void Function(String launchId)? onOpenLaunch;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (graduated) {
+      case LaunchGraduatedUnavailable(:final fact):
+        return LaunchUnavailableCard(
+          label: '已毕业项目',
+          fact: fact,
+          reason: launchGraduatedReasonText(
+            fact.reasonCode,
+            contractLive: contractLive,
+          ),
+        );
+      case LaunchGraduatedAvailable(:final launches) when launches.isEmpty:
+        return const LoopEmpty(
+          key: ValueKey<String>('launch-graduated-empty'),
+          message: '还没有已毕业的项目',
+          reason: '流动性锁定后的项目会出现在这里。',
+        );
+      case LaunchGraduatedAvailable(:final launches):
+        return LoopRecordGroup(
+          key: const ValueKey<String>('launch-graduated-list'),
+          rows: <LoopRecordRow>[
+            for (var index = 0; index < launches.length; index += 1)
+              launchCatalogRow(
+                launch: launches[index],
+                onTap: onOpenLaunch == null
+                    ? null
+                    : () => onOpenLaunch!(launches[index].launchId),
+                position: launchRowPosition(index, launches.length),
+                saleSegmentLabel: '已毕业',
+                keyPrefix: 'launch-graduated-row',
+              ),
+          ],
+        );
+    }
   }
 }
 

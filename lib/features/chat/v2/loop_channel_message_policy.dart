@@ -41,10 +41,25 @@ List<StreamContextMenuAction<MessageAction>> loopWithoutPinActions(
     })
     .toList(growable: false);
 
+/// Whether the reader [userId] created the friend group [channel] (S99c).
+///
+/// Since loop-api 0091 a friend group's creator is its Stream
+/// `channel_moderator` and may pin; no other member may. The creator is read
+/// from the channel Stream loaded — the server creates the channel as the
+/// creator's Stream user, so `created_by` is that user. A channel with no
+/// loaded state or no `created_by` is unknown, and unknown pins nothing.
+bool loopFriendGroupCreatorMayPin(Channel channel, String userId) {
+  if (channel.state == null) return false;
+  final creator = channel.createdBy?.id;
+  return creator != null && creator.isNotEmpty && creator == userId;
+}
+
 /// Applies the nearest [LoopChannelMessagePolicy] to one message item.
 ///
-/// With no policy in scope — a direct conversation, a friend group — the props
-/// are returned untouched and Stream's own capabilities decide.
+/// With no policy in scope the props are returned untouched and Stream's own
+/// capabilities decide. Every LOOP conversation sets one: a community group
+/// (owner / admin), a friend group (its creator, S99c), a direct
+/// conversation (nobody).
 StreamMessageItemProps loopApplyChannelMessagePolicy(
   BuildContext context,
   StreamMessageItemProps props,

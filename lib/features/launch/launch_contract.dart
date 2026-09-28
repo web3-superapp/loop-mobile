@@ -247,6 +247,26 @@ String launchBaselineReasonText(
     ? whenLive
     : launchReasonCodeText(reasonCode);
 
+/// The 已毕业 card's reason for an `unavailable` list (S83b7b).
+///
+/// The list is one read of the indexer's projection, so a projection that
+/// could not be read or has no checkpoint yet says the list cannot be read
+/// right now; `LAUNCH_CONTRACT_BASELINE_PENDING` keeps decision 0097's
+/// evidence override; every other (adapter) code keeps
+/// [launchReasonCodeText].
+String launchGraduatedReasonText(
+  String reasonCode, {
+  required bool contractLive,
+}) => switch (reasonCode) {
+  'LAUNCH_ONCHAIN_STATE_READ_FAILED' => '已毕业名单暂时读不到',
+  'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' => '链上索引还没有进度，已毕业名单暂时读不到。',
+  _ => launchBaselineReasonText(
+    reasonCode,
+    contractLive: contractLive,
+    whenLive: '已毕业名单还没有开放读取',
+  ),
+};
+
 /// The ledger's reason for supply, distribution and ecosystem tax (S91
 /// ruling). Once the `launch` evidence is `confirmed` the contract is live,
 /// so `LAUNCH_ECONOMY_CONTRACT_PENDING` no longer says to wait for it; before

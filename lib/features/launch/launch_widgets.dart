@@ -472,6 +472,7 @@ LoopRecordRow launchCatalogRow({
   required VoidCallback? onTap,
   LoopRowPosition position = LoopRowPosition.single,
   String? saleSegmentLabel,
+  String keyPrefix = 'launch-row',
 }) {
   // Decision 0097: the 发射中 and 已结束 segments are derived from the chain's
   // sale state, so a row there states that state; the off-chain schedule
@@ -497,7 +498,7 @@ LoopRecordRow launchCatalogRow({
   // inferred from the segment or from the catalogue's own chain.
   final testnet = launch.isTestnetChain;
   return LoopRecordRow(
-    key: ValueKey<String>('launch-row-${launch.launchId}'),
+    key: ValueKey<String>('$keyPrefix-${launch.launchId}'),
     leading: LaunchTickerTile(ticker: launch.ticker),
     title: launch.name,
     subtitle: '${launch.ticker} · $schedule · $config',

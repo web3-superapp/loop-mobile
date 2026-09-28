@@ -163,3 +163,22 @@ Scaffold 只扣一次键盘），列表高度本身是对的，错的是锚点�
 4. 引用块无显示名时只显示预览：接受。
 5. 未读色 `LoopColors.danger`：接受；底部 Tab 不加。
 6. `loop_ground_probe.dart` 识别 `ShapeDecoration`：接受。
+
+## 补充（S99c / S100，2026-09-29）：好友群创建者可置顶
+
+Proposed。基线 `integration/v2` 085fc1c，分支 `feat/S100-launch-grad-poll-pin`。对应 loop-api 0091（S99b）：好友群创建者
+在 Stream 是 `channel_moderator`，其他群成员不能置顶，私聊双方都不能置顶。
+
+- `LoopStreamChannelSurface` / `LoopStreamMemberChannelBody` 增 `mayPinMessagesFor(Channel, userId)`：频道加载后再
+  决定；`mayPinMessages`（显式）优先于它，两者都为 `null` 时仍由 Stream 能力决定。仍然只删不加。
+- `loopFriendGroupCreatorMayPin`：群主身份取自已加载频道的 `created_by`（服务端以创建者的 Stream 用户建频道，
+  `chat-channel-service.ts` `createdByStreamUserId`）与当前连接用户比较；频道未加载、没有 `created_by` → 不可置顶。
+  服务端群资料接口没有群主字段（「群名称与简介」仍是 `GROUP_PROFILE_DEFERRED`），所以没有第二个来源。
+- `group`：`mayPinMessagesFor: loopFriendGroupCreatorMayPin`。`dm`：`mayPinMessages: false`（此前为 `null`，
+  由 Stream 能力决定）。`community-chat` 不变（owner / admin）。
+
+Tests：`test/s100_group_creator_pin_test.dart`（11）：规则三例（创建者 / 他人 / 未知）；长按菜单：群主有「置顶到会话」、
+普通成员无、创建者未知无、私聊（即使是创建者）无、显式 `false` 优先；三个页面各自传的规则（源码扫描）。
+
+需要主代理决定：后端文档写「客户端只看 ownCapabilities」，本单按任务单在客户端再加一道创建者判断（只删不加），两者一致时
+无差异；若服务端将来让非创建者也有 `pin-message`（例如多管理员），客户端这一道会挡住，需同步改规则。

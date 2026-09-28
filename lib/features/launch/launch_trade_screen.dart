@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/launch/launch_approval.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
+import 'package:loop_mobile/features/launch/launch_settlement.dart';
 import 'package:loop_mobile/features/launch/launch_signing.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
@@ -220,6 +221,27 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         if (previous == LaunchApprovalPhase.polling &&
             next == LaunchApprovalPhase.idle) {
           ref.read(launchTradeControllerProvider.notifier).discard();
+        }
+      },
+    );
+    // S92b2: once the server settles the broadcast, the position, the
+    // records, the detail and the paying wallet's balances are re-read.
+    ref.listen<LaunchIntentState?>(
+      launchTradeControllerProvider.select((trade) => trade.reported?.state),
+      (previous, next) {
+        if (previous == next || !launchIntentRereads(next)) return;
+        final id =
+            widget.launchId ??
+            ref.read(launchTradeControllerProvider).reported?.launchId;
+        if (id != null) {
+          launchRereadAfterIntent(ref, id, openIfIdle: false);
+        }
+        if (walletId != null) {
+          unawaited(
+            ref
+                .read(walletBalancesControllerProvider(walletId).notifier)
+                .reload(),
+          );
         }
       },
     );
@@ -488,12 +510,13 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               onSign: trade.locked || _checkingCapability
                   ? null
                   : () => unawaited(_sign(prepared, ticker)),
-              onDiscard: trade.locked || _checkingCapability
+              onDiscard: (trade.locked && !trade.settled) || _checkingCapability
                   ? null
                   : tradeController.discard,
               onRetryReport: trade.reportRetryable && !trade.reporting
                   ? () => unawaited(tradeController.retryReport())
                   : null,
+              onResumePolling: tradeController.resumePolling,
             ),
           if (prepared == null)
             LoopNotice(
@@ -783,6 +806,7 @@ class _TradeReview extends StatelessWidget {
     required this.onSign,
     required this.onDiscard,
     required this.onRetryReport,
+    required this.onResumePolling,
     this.checkingCapability = false,
   });
 
@@ -795,6 +819,7 @@ class _TradeReview extends StatelessWidget {
   final VoidCallback? onSign;
   final VoidCallback? onDiscard;
   final VoidCallback? onRetryReport;
+  final VoidCallback? onResumePolling;
 
   @override
   Widget build(BuildContext context) {
@@ -818,7 +843,36 @@ class _TradeReview extends StatelessWidget {
               ),
           ],
         ),
-        if (trade.locked) ...<Widget>[
+        if (trade.locked && reported != null && trade.settled) ...<Widget>[
+          // S92b2: the read-back settled. Only `confirmed` names a result.
+          Builder(
+            builder: (context) {
+              final text = launchSettlementProgressText(
+                LaunchIntentKind.buy,
+                reported,
+              );
+              final confirmed = reported.state == LaunchIntentState.confirmed;
+              return LoopNotice(
+                key: ValueKey<String>(
+                  'launch-trade-state-${reported.state.wireName}',
+                ),
+                icon: confirmed ? 'check' : 'clock',
+                title: text.title,
+                body: text.body,
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              );
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: LoopButton(
+              key: const ValueKey<String>('launch-trade-settled-done'),
+              label: '重新认购',
+              block: true,
+              onPressed: onDiscard,
+            ),
+          ),
+        ] else if (trade.locked) ...<Widget>[
           LoopNotice(
             key: const ValueKey<String>('launch-trade-locked'),
             icon: 'clock',
@@ -826,18 +880,30 @@ class _TradeReview extends StatelessWidget {
             title: reported == null
                 ? '已提交给钱包，结果未确认'
                 : '已广播 · ${reported.state.label}',
-            body: launchBroadcastText(
-              LaunchSignOutcome(
-                status: MoneySignStatus.values.byName(
-                  trade.signOutcomeStatus ?? 'locked',
-                ),
-                reasonCode: reason ?? '',
-                txHash: trade.txHash,
-                reported: reported,
-              ),
-            ),
+            body:
+                launchBroadcastText(
+                  LaunchSignOutcome(
+                    status: MoneySignStatus.values.byName(
+                      trade.signOutcomeStatus ?? 'locked',
+                    ),
+                    reasonCode: reason ?? '',
+                    txHash: trade.txHash,
+                    reported: reported,
+                  ),
+                ) +
+                (trade.pollTimedOut ? '还没有读到链上结果，可以稍后重新查询。' : ''),
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
+          if (trade.pollTimedOut)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              child: LoopButton(
+                key: const ValueKey<String>('launch-trade-poll-resume'),
+                label: '重新查询',
+                block: true,
+                onPressed: onResumePolling,
+              ),
+            ),
           if (trade.reportRetryable)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),

@@ -35,6 +35,133 @@ mixin LaunchSingleFlight {
   }
 }
 
+/// How often a broadcast Launch intent is read back (S83b3.1 suggests 5 s),
+/// and how many reads before the page stops and offers a re-read.
+final launchIntentPollIntervalProvider = Provider<Duration>(
+  (ref) => const Duration(seconds: 5),
+);
+const int launchIntentMaxPolls = 72;
+
+/// The one read-back loop of a broadcast Launch intent, shared by the
+/// purchase (S92b2) and the claim / refund (decision 0103) controllers.
+///
+/// Every [interval] it reads `GET …/intents/{id}` through [load] and hands
+/// the answer to [onRead], until the state is settled
+/// ([LaunchIntentState.isSettled]) or [launchIntentMaxPolls] reads ran out
+/// (`timedOut`). A read that did not land, or that names another intent,
+/// keeps the last known intent. [stop] drops any read in flight.
+final class LaunchIntentPoller {
+  LaunchIntentPoller({required this.load, required this.onRead});
+
+  final Future<LaunchPurchaseIntent> Function(LaunchPurchaseIntent current)
+  load;
+  final void Function(
+    LaunchPurchaseIntent intent, {
+    required bool polling,
+    required bool timedOut,
+  })
+  onRead;
+
+  Timer? _timer;
+  LaunchPurchaseIntent? _current;
+  Duration _interval = Duration.zero;
+  int _polls = 0;
+  int _generation = 0;
+
+  /// Starts (or restarts) reading [intent] back. A settled intent is not
+  /// read.
+  void start(LaunchPurchaseIntent intent, Duration interval) {
+    stop();
+    if (intent.state.isSettled) return;
+    _current = intent;
+    _interval = interval;
+    _polls = 0;
+    _schedule();
+  }
+
+  void stop() {
+    _generation += 1;
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  void _schedule() {
+    final generation = _generation;
+    _timer = Timer(_interval, () => unawaited(_pollOnce(generation)));
+  }
+
+  Future<void> _pollOnce(int generation) async {
+    final current = _current;
+    if (current == null || generation != _generation) return;
+    _polls += 1;
+    LaunchPurchaseIntent? next;
+    try {
+      next = await load(current);
+    } catch (_) {
+      // A read that did not land changes nothing; the next one may.
+      next = null;
+    }
+    if (generation != _generation) return;
+    // The read-back must be about this intent; anything else is ignored.
+    if (next != null && next.launchIntentId != current.launchIntentId) {
+      next = null;
+    }
+    final intent = next ?? current;
+    _current = intent;
+    if (intent.state.isSettled) {
+      onRead(intent, polling: false, timedOut: false);
+      return;
+    }
+    if (_polls >= launchIntentMaxPolls) {
+      onRead(intent, polling: false, timedOut: true);
+      return;
+    }
+    onRead(intent, polling: true, timedOut: false);
+    _schedule();
+  }
+}
+
+/// Whether an intent that reached [state] moved (or may have moved) the
+/// position and the records: a confirmed intent moves them, an expired one
+/// may have landed late (S92a.6), a reverted one is re-read to show it.
+bool launchIntentRereads(LaunchIntentState? state) =>
+    state == LaunchIntentState.confirmed ||
+    state == LaunchIntentState.expired ||
+    state == LaunchIntentState.reverted;
+
+/// Re-reads the launch's detail, holders (the position) and history (the
+/// records) after a settled intent. Purchase, claim and refund share it.
+///
+/// [openIfIdle] opens a resource that was never read; the purchase page
+/// passes `false`, since it does not draw them itself and only refreshes the
+/// ones `launch-detail` below it already holds.
+void launchRereadAfterIntent(
+  WidgetRef ref,
+  String launchId, {
+  bool detail = true,
+  bool openIfIdle = true,
+}) {
+  if (detail) {
+    unawaited(ref.read(launchDetailControllerProvider.notifier).reload());
+  }
+  final holders = ref.read(launchHoldersControllerProvider);
+  if (holders.isReady) {
+    unawaited(ref.read(launchHoldersControllerProvider.notifier).reload());
+  } else if (openIfIdle) {
+    unawaited(
+      ref.read(launchHoldersControllerProvider.notifier).open(launchId),
+    );
+  }
+  final history = ref.read(launchHistoryControllerProvider);
+  if (history.isReady) {
+    unawaited(ref.read(launchHistoryControllerProvider.notifier).reload());
+  } else if (openIfIdle) {
+    unawaited(
+      ref.read(launchHistoryControllerProvider.notifier).open(launchId),
+    );
+  }
+}
+
 /// One read-only S7 resource. The three modules share it so every page gets
 /// the same five reviewed states from one place.
 abstract base class LaunchReadController<T>
@@ -676,6 +803,8 @@ final class LaunchTradeState {
     this.txHash,
     this.reported,
     this.reporting = false,
+    this.polling = false,
+    this.pollTimedOut = false,
   });
 
   final LaunchGatewayMode mode;
@@ -706,6 +835,19 @@ final class LaunchTradeState {
   /// A report (or a repeated report of the same hash) is in flight.
   final bool reporting;
 
+  /// [reported] is being read back (S92b2): every 5 s after the broadcast
+  /// report, until it settles or [launchIntentMaxPolls] reads ran out.
+  final bool polling;
+
+  /// The read-back window ran out without a settled state; the page offers
+  /// a re-read.
+  final bool pollTimedOut;
+
+  /// The server settled the broadcast (S92a.6). The attempt stays on screen
+  /// — the page never offers a second signature of the same intent — but it
+  /// may now be dismissed so a new purchase can be prepared.
+  bool get settled => reported?.state.isSettled ?? false;
+
   /// Once the wallet has produced a hash, or its outcome is unknown, the
   /// page may never offer a second signature for this attempt.
   bool get locked =>
@@ -724,11 +866,27 @@ final class LaunchTradeState {
 
 final class LaunchTradeController extends Notifier<LaunchTradeState>
     with LaunchSingleFlight {
+  late final LaunchIntentPoller _poller = LaunchIntentPoller(
+    load: (current) => ref
+        .read(launchGatewayProvider)
+        .loadIntent(
+          launchId: current.launchId,
+          launchIntentId: current.launchIntentId,
+        ),
+    onRead: (intent, {required polling, required timedOut}) {
+      if (!ref.mounted) return;
+      state = _withRead(intent, polling: polling, timedOut: timedOut);
+    },
+  );
+
   @override
   LaunchTradeState build() {
     nextGeneration();
     final mode = ref.watch(launchGatewayProvider).mode;
-    ref.onDispose(nextGeneration);
+    ref.onDispose(() {
+      nextGeneration();
+      _poller.stop();
+    });
     return LaunchTradeState(mode: mode);
   }
 
@@ -778,7 +936,12 @@ final class LaunchTradeController extends Notifier<LaunchTradeState>
 
   /// Records what the signing exit reported. A hash or an unknown outcome
   /// keeps the prepared intent on screen and locks the form.
+  ///
+  /// A broadcast the server recorded is then read back with the same loop
+  /// the claim and refund use (S92b2), until it settles.
   void recordSignOutcome(LaunchSignOutcome outcome) {
+    _poller.stop();
+    final reported = outcome.reported;
     state = LaunchTradeState(
       mode: state.mode,
       attempted: true,
@@ -786,9 +949,37 @@ final class LaunchTradeController extends Notifier<LaunchTradeState>
       signOutcomeStatus: outcome.status.name,
       signReasonCode: outcome.reasonCode,
       txHash: outcome.txHash,
-      reported: outcome.reported,
+      reported: reported,
+      polling: reported != null && !reported.state.isSettled,
     );
+    if (reported != null) {
+      _poller.start(reported, ref.read(launchIntentPollIntervalProvider));
+    }
   }
+
+  /// Reads the intent again after the window ran out without an answer.
+  void resumePolling() {
+    final reported = state.reported;
+    if (reported == null || state.settled || state.polling) return;
+    state = _withRead(reported, polling: true, timedOut: false);
+    _poller.start(reported, ref.read(launchIntentPollIntervalProvider));
+  }
+
+  LaunchTradeState _withRead(
+    LaunchPurchaseIntent intent, {
+    required bool polling,
+    required bool timedOut,
+  }) => LaunchTradeState(
+    mode: state.mode,
+    attempted: true,
+    prepared: state.prepared,
+    signOutcomeStatus: state.signOutcomeStatus,
+    signReasonCode: state.signReasonCode,
+    txHash: state.txHash,
+    reported: intent,
+    polling: polling,
+    pollTimedOut: timedOut,
+  );
 
   /// Sends the same hash again after a report that did not land. The server
   /// answers a repeated hash unchanged, so this can never create a second
@@ -814,10 +1005,13 @@ final class LaunchTradeController extends Notifier<LaunchTradeState>
   });
 
   /// Drops a prepared intent that was never handed to a wallet, or a refusal,
-  /// so a fresh one can be prepared. A locked attempt is never discarded.
+  /// so a fresh one can be prepared. A locked attempt is never discarded
+  /// while the server has not settled it.
+  /// A settled broadcast (S92b2) may be dismissed too.
   void discard() {
-    if (state.locked) return;
+    if (state.locked && !state.settled) return;
     nextGeneration();
+    _poller.stop();
     state = LaunchTradeState(mode: state.mode);
   }
 }

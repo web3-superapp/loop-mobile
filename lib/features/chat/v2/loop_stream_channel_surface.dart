@@ -60,6 +60,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     this.unresolvedMessage,
     this.keyPrefix = 'loop-stream-channel',
     this.mayPinMessages,
+    this.mayPinMessagesFor,
   });
 
   /// `messaging:<id>`. It is always server-supplied; the page never assembles
@@ -94,9 +95,15 @@ class LoopStreamChannelSurface extends ConsumerWidget {
   final String keyPrefix;
 
   /// Whether this reader may pin and unpin messages here. `null` leaves the
-  /// decision to Stream's own channel capabilities; `false` removes both
-  /// actions whatever Stream grants (decision 0105 · 3).
+  /// decision to [mayPinMessagesFor], then to Stream's own channel
+  /// capabilities; `false` removes both actions whatever Stream grants
+  /// (decision 0105 · 3).
   final bool? mayPinMessages;
+
+  /// The same decision, made once the channel is loaded, for a rule that
+  /// reads the channel itself — the friend group's creator (S99c). It is
+  /// called with the loaded channel and the connected user's Stream ID.
+  final bool Function(Channel channel, String userId)? mayPinMessagesFor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -170,6 +177,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
               footer: footer,
               keyPrefix: keyPrefix,
               mayPinMessages: mayPinMessages,
+              mayPinMessagesFor: mayPinMessagesFor,
             );
           },
         );
@@ -207,6 +215,7 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
     this.connection,
     this.query,
     this.mayPinMessages,
+    this.mayPinMessagesFor,
   });
 
   final StreamChatClient client;
@@ -228,6 +237,9 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
 
   /// See [LoopStreamChannelSurface.mayPinMessages].
   final bool? mayPinMessages;
+
+  /// See [LoopStreamChannelSurface.mayPinMessagesFor].
+  final bool Function(Channel channel, String userId)? mayPinMessagesFor;
 
   @override
   State<LoopStreamMemberChannelBody> createState() =>
@@ -411,7 +423,8 @@ class _LoopStreamMemberChannelBodyState
         return loopStreamChannelScope(
           key: ValueKey<String>(widget.cid),
           channel: snapshot.data!,
-          child: switch (widget.mayPinMessages) {
+          child: switch (widget.mayPinMessages ??
+              widget.mayPinMessagesFor?.call(snapshot.data!, widget.userId)) {
             final bool mayPin => LoopChannelMessagePolicy(
               mayPin: mayPin,
               child: body,

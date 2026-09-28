@@ -50,21 +50,7 @@ class _LaunchSettlementSectionState
   void _reread({bool detail = true}) {
     final launchId = widget.launchId;
     if (launchId == null) return;
-    if (detail) {
-      unawaited(ref.read(launchDetailControllerProvider.notifier).reload());
-    }
-    final holders = ref.read(launchHoldersControllerProvider);
-    unawaited(
-      holders.isReady
-          ? ref.read(launchHoldersControllerProvider.notifier).reload()
-          : ref.read(launchHoldersControllerProvider.notifier).open(launchId),
-    );
-    final history = ref.read(launchHistoryControllerProvider);
-    unawaited(
-      history.isReady
-          ? ref.read(launchHistoryControllerProvider.notifier).reload()
-          : ref.read(launchHistoryControllerProvider.notifier).open(launchId),
-    );
+    launchRereadAfterIntent(ref, launchId, detail: detail);
   }
 
   Future<void> _act(LaunchSettlementView view) async {
@@ -147,11 +133,7 @@ class _LaunchSettlementSectionState
       launchSettlementControllerProvider.select((state) => state.intent?.state),
       (previous, next) {
         if (previous == next) return;
-        if (next == LaunchIntentState.confirmed ||
-            next == LaunchIntentState.expired ||
-            next == LaunchIntentState.reverted) {
-          _reread();
-        }
+        if (launchIntentRereads(next)) _reread();
       },
     );
     if (view == null && settlement.kind == null) return const SizedBox.shrink();
