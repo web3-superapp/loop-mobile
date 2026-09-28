@@ -5987,6 +5987,9 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
             Path(
                 "lib/integrations/hyperliquid/hyperliquid_market_providers.dart"
             ),
+            # Decision 0102: network diagnostics opens one short-lived client
+            # per probed origin through the same two reviewed profiles.
+            Path("lib/integrations/diagnostics/loop_network_probe.dart"),
         }
         for path in lib_root.rglob("*.dart"):
             relative = path.relative_to(root)

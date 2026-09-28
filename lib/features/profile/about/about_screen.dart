@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/about/about_client_register.dart';
 import 'package:loop_mobile/features/profile/about/about_controller.dart';
 import 'package:loop_mobile/features/profile/about/about_models.dart';
+import 'package:loop_mobile/features/profile/about/network_diagnostics_screen.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -122,6 +123,14 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                   '声明 $declaredMode · 运行时 ${loopRuntimeBuildMode()} · '
                   '${config.declaredModeMatchesRuntime ? '一致' : '不一致'}',
               trailing: declaredMode,
+              position: LoopRowPosition.middle,
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('about-network-diagnostics'),
+              title: '网络诊断',
+              // Decision 0102: a pushed child page, not one of the 93 routes.
+              subtitle: '测这台设备到各项服务的连通性和耗时',
+              onTap: () => unawaited(openNetworkDiagnostics(context)),
               position: LoopRowPosition.last,
             ),
           ],
