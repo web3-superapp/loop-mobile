@@ -59,6 +59,9 @@ LaunchOverview s7Overview({
   List<LaunchSummary>? upcoming,
   List<LaunchSummary>? awaitingSchedule,
   List<LaunchSummary>? ended,
+  LaunchGraduated graduated = const LaunchGraduatedUnavailable(
+    LaunchUnavailable(s7LaunchBaselinePending),
+  ),
 }) => LaunchOverview(
   segments: LaunchSegments(
     live: live ?? const <LaunchSummary>[],
@@ -66,7 +69,7 @@ LaunchOverview s7Overview({
     awaitingSchedule: awaitingSchedule ?? <LaunchSummary>[s7LaunchSummary()],
     ended: ended ?? const <LaunchSummary>[],
   ),
-  graduated: const LaunchUnavailable(s7LaunchBaselinePending),
+  graduated: graduated,
   myEligibility: const LaunchUnavailable(s7TierPending),
   staking: const LaunchUnavailable(s7StakingPending),
   catalog: LaunchCatalogStamp(

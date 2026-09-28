@@ -210,6 +210,8 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       key: ValueKey<String>('dm-$cid'),
       cid: cid,
       keyPrefix: 'dm-channel',
+      // S99c: nobody pins in a direct conversation (loop-api 0091).
+      mayPinMessages: false,
       // The placeholder stays the one every conversation shares (decision
       // 0075): a pasted contract address is read in a private thread too —
       // `_withTokenCards` draws the card under any bubble in any channel —

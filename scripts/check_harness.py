@@ -373,6 +373,10 @@ REQUIRED_FILES = (
     "test/s92b_launch_claim_refund_decoder_test.dart",
     "test/s92b_launch_claim_refund_pages_test.dart",
     "docs/decisions/0103-launch-claim-refund.md",
+    # S100 (0103 / 0105 addenda): the graduated union, the purchase read-back
+    # and the friend group creator's pin.
+    "test/s100_launch_graduated_and_purchase_poll_test.dart",
+    "test/s100_group_creator_pin_test.dart",
     "lib/features/mining/mining_models.dart",
     "lib/features/mining/mining_gateway.dart",
     "lib/features/mining/mining_controllers.dart",

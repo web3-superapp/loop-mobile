@@ -254,10 +254,10 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     );
   }
 
-  static List<LaunchSummary> _segment(Object? raw) {
+  static List<LaunchSummary> _segment(Object? raw, {int maximum = 100}) {
     final items = <LaunchSummary>[];
     final seen = <String>{};
-    for (final entry in LoopV2S7Codec.requireList(raw, maximum: 100)) {
+    for (final entry in LoopV2S7Codec.requireList(raw, maximum: maximum)) {
       final summary = _summary(entry);
       if (!seen.add(summary.launchId)) LoopV2S7Codec.invalid();
       items.add(summary);
@@ -555,6 +555,43 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     );
   }
 
+  /// `overview.graduated` (loop-api S83b7b): `unavailable` exactly as
+  /// before, or `available` with at most 50 [LaunchSummary] rows decoded by
+  /// the segments' own decoder, each read on chain with locked liquidity.
+  /// Anything else refuses the whole overview.
+  static LaunchGraduated _graduated(Object? raw) {
+    if (raw is Map && raw['status'] == 'available') {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'status',
+        'launches',
+        'indexedBlockNumber',
+      });
+      final launches = _segment(
+        map['launches'],
+        maximum: LaunchGraduatedAvailable.maximum,
+      );
+      // 03 §8.3: only a chain reading with locked liquidity is "已毕业".
+      // A row without that evidence would make the client say it anyway.
+      for (final launch in launches) {
+        final chain = launch.onChainState;
+        if (chain is! LaunchOnChainAvailable ||
+            !chain.liquidityState.isLocked) {
+          LoopV2S7Codec.invalid();
+        }
+      }
+      return LaunchGraduatedAvailable(
+        launches: launches,
+        indexedBlockNumber: LoopV2S7Codec.requirePattern(
+          map,
+          'indexedBlockNumber',
+          LoopV2S7Codec.blockNumberPattern,
+          maxLength: 20,
+        ),
+      );
+    }
+    return LaunchGraduatedUnavailable(LoopV2S7Codec.unavailable(raw));
+  }
+
   // -------------------------------------------------------------------------
   // reads
   // -------------------------------------------------------------------------
@@ -589,7 +626,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         awaitingSchedule: _segment(segments['awaitingSchedule']),
         ended: _segment(segments['ended']),
       ),
-      graduated: LoopV2S7Codec.unavailable(root['graduated']),
+      graduated: _graduated(root['graduated']),
       myEligibility: LoopV2S7Codec.unavailable(root['myEligibility']),
       staking: LoopV2S7Codec.unavailable(root['staking']),
       catalog: LaunchCatalogStamp(

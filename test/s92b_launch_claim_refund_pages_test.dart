@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_settlement.dart';
@@ -165,7 +166,7 @@ Future<void> _pumpDetail(
   meta: s7MetaSnapshot(launchEvidencePending: evidencePending),
   overrides: [
     if (wallet != null) walletSigningGatewayProvider.overrideWithValue(wallet),
-    launchSettlementPollIntervalProvider.overrideWithValue(
+    launchIntentPollIntervalProvider.overrideWithValue(
       const Duration(seconds: 1),
     ),
   ],
