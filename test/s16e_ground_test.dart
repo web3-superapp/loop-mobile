@@ -234,15 +234,16 @@ void main() {
       );
       await tester.pump();
 
-      // The quiet folio always drew its own copy in Chalk and faded it with an
-      // `Opacity` layer; declaring the ground did not move it.
+      // The quiet folio always drew its own copy in Chalk faded to 78%;
+      // declaring the ground did not move it. Since decision 0101 the fade is
+      // the ink's own alpha rather than an `Opacity` layer — same pixels.
       expect(
         tester
             .widget<Text>(find.text('WALLET LEDGER'))
             .style!
             .color!
             .toARGB32(),
-        LoopColors.chalk.toARGB32(),
+        LoopColors.chalk.withValues(alpha: 0.78).toARGB32(),
       );
       expect(
         tester.widget<Text>(find.text('钱包')).style!.color!.toARGB32(),

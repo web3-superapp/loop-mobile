@@ -108,12 +108,18 @@ class _CommunityDiscoverScreenState
     final mode = ref.watch(communityGatewayProvider).mode;
     final state = ref.watch(communityDiscoverControllerProvider);
     final controller = ref.read(communityDiscoverControllerProvider.notifier);
+    // Decision 0101: the directory is retained across visits, so a visit
+    // that asks the other filter than the one kept reads its own.
+    final wanted = widget.joinedOnly
+        ? CommunityMembershipFilter.joined
+        : CommunityMembershipFilter.all;
     if (!communityCapabilityBlocks(mode, capability) &&
-        state.phase == CommunityViewPhase.loading) {
+        (state.phase == CommunityViewPhase.loading ||
+            state.membership != wanted)) {
       scheduleMicrotask(() {
         if (!mounted) return;
         unawaited(
-          widget.joinedOnly ? controller.openJoined() : controller.load(),
+          widget.joinedOnly ? controller.openJoined() : controller.openAll(),
         );
       });
     }

@@ -5968,9 +5968,16 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
             strip_dart_comments(read_text(factory_path)),
             flags=re.MULTILINE,
         )
-        if factory_imports != ["package:dio/dio.dart"]:
+        # Decision 0101: the factory also owns the per-origin keep-alive pool,
+        # which needs the `dart:io` client behind Dio's IO adapter.
+        if factory_imports != [
+            "dart:io",
+            "dart:typed_data",
+            "package:dio/dio.dart",
+            "package:dio/io.dart",
+        ]:
             errors.append(
-                "LoopDioFactory imports only Dio; token, UUID, retry, and logging stay with their owners"
+                "LoopDioFactory imports only Dio and its IO adapter; token, UUID, retry, and logging stay with their owners"
             )
 
     lib_root = root / "lib"

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
+import 'package:loop_mobile/core/cache/loop_recent_answers.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -248,22 +249,60 @@ final class CommunityDiscoverState {
   bool get isPreview => mode == CommunityGatewayMode.preview;
 }
 
+///
+/// Decision 0101: page one of the directory outlives the page for
+/// `LoopSnapshotPolicy.memoryRetention`, like the home aggregate. A return
+/// visit draws the rows it had, marked 更新中, and re-reads page one behind
+/// them once the last answer is at least `LoopSnapshotPolicy.revisitFloor`
+/// old. The retained filter is the page's own question: a visit that asks for
+/// the other filter reads it afresh.
 final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
     with CommunitySingleFlight {
   CommunityMembershipFilter _membership = CommunityMembershipFilter.all;
+  DateTime? _readAt;
+
+  DateTime _now() => ref.read(loopReadClockProvider)();
 
   @override
   CommunityDiscoverState build() {
     nextGeneration();
     final mode = ref.watch(communityGatewayProvider).mode;
+    ref.watch(loopAccountScopeProvider);
     ref.onDispose(nextGeneration);
+    _readAt = null;
+    _membership = CommunityMembershipFilter.all;
+    loopRetainRead(ref, onRevisit: _revisit);
     return CommunityDiscoverState.initial(mode, membership: _membership);
+  }
+
+  void _revisit() {
+    if (state.items.isEmpty || state.loadingMore) return;
+    if (!loopRevisitIsDue(
+      hasValue: true,
+      inFlight: inFlight,
+      readAt: _readAt,
+      now: _now(),
+    )) {
+      return;
+    }
+    unawaited(refresh());
   }
 
   /// Narrows the directory to the caller's own communities. Used by the
   /// "view all joined" entry point on the home aggregate.
   Future<void> openJoined() {
     _membership = CommunityMembershipFilter.joined;
+    return reload();
+  }
+
+  /// The whole directory. A directory retained on the joined filter is read
+  /// again rather than shown under the wrong question.
+  Future<void> openAll() {
+    if (_membership == CommunityMembershipFilter.all &&
+        state.phase == CommunityViewPhase.ready) {
+      return Future<void>.value();
+    }
+    _membership = CommunityMembershipFilter.all;
     return reload();
   }
 
@@ -352,6 +391,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         firstRead: !append && previous.items.isEmpty,
       );
       if (!isCurrent(generation)) return;
+      if (!append) _readAt = _now();
       final merged = append
           ? <CommunitySummary>[...previous.items, ...page.items]
           : page.items;
@@ -489,15 +529,38 @@ final communityApplicationControllerProvider =
 // community-profile · one community record
 // ---------------------------------------------------------------------------
 
+/// The community records this account read in the last few minutes
+/// (decision 0101).
+///
+/// `community-profile` is one controller for whichever community is open, so
+/// the answer is kept per community rather than by holding the controller: a
+/// reader who goes back to a community sees its record at once, marked 更新中
+/// while it is read again, instead of a skeleton and a round trip.
+final communityDetailMemoryProvider =
+    Provider<LoopRecentAnswers<String, CommunityDetail>>((ref) {
+      // One account, one source: a different account or a replaced gateway
+      // starts with nothing kept.
+      ref.watch(loopAccountScopeProvider);
+      ref.watch(communityGatewayProvider);
+      return LoopRecentAnswers<String, CommunityDetail>();
+    });
+
 final class CommunityProfileController
     extends Notifier<CommunityResourceState<CommunityDetail>>
     with CommunitySingleFlight {
   String? _communityId;
 
+  DateTime _now() => ref.read(loopReadClockProvider)();
+
+  LoopRecentAnswers<String, CommunityDetail> get _memory =>
+      ref.read(communityDetailMemoryProvider);
+
   @override
   CommunityResourceState<CommunityDetail> build() {
     nextGeneration();
     final mode = ref.watch(communityGatewayProvider).mode;
+    // A different account is a different set of answers.
+    ref.watch(loopAccountScopeProvider);
     ref.onDispose(nextGeneration);
     return CommunityResourceState<CommunityDetail>.initial(mode);
   }
@@ -509,10 +572,39 @@ final class CommunityProfileController
       return Future<void>.value();
     }
     _communityId = communityId;
+    if (state.mode == CommunityGatewayMode.unavailable) return _load();
+    final shown = state.value;
+    // Never show one community's record under another one's route while the
+    // right one is read.
+    if (shown != null && shown.community.communityId != communityId) {
+      nextGeneration();
+      state = CommunityResourceState<CommunityDetail>.initial(state.mode);
+    }
+    final kept = _memory.lookup(communityId, _now());
+    if (kept != null && state.value == null) {
+      state = CommunityResourceState<CommunityDetail>(
+        mode: state.mode,
+        phase: CommunityViewPhase.ready,
+        value: kept.value,
+      );
+      // The same 10 s floor as every retained read: going back and forth
+      // between two communities does not re-read either one.
+      if (!loopRevisitIsDue(
+        hasValue: true,
+        inFlight: inFlight,
+        readAt: kept.readAt,
+        now: _now(),
+      )) {
+        return Future<void>.value();
+      }
+    }
     return _load();
   }
 
   Future<void> reload() => _load();
+
+  void _remember(CommunityDetail detail) =>
+      _memory.remember(detail.community.communityId, detail, _now());
 
   Future<void> _load() => single(() async {
     final id = _communityId;
@@ -530,9 +622,15 @@ final class CommunityProfileController
         firstRead: firstRead,
       );
       if (!isCurrent(generation)) return;
+      _remember(detail);
       state = state.ready(detail);
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;
+      // A record the server no longer shows this reader is not kept.
+      if (error.kind == CommunityFailureKind.notFound ||
+          error.kind == CommunityFailureKind.permissionDenied) {
+        _memory.forget(id);
+      }
       state = state.failed(error.kind);
     } catch (_) {
       if (!isCurrent(generation)) return;
@@ -552,6 +650,7 @@ final class CommunityProfileController
     try {
       final detail = joined ? await gateway.join(id) : await gateway.leave(id);
       if (!isCurrent(generation)) return null;
+      _remember(detail);
       state = state.ready(detail);
       return null;
     } on CommunityGatewayException catch (error) {
@@ -582,6 +681,7 @@ final class CommunityProfileController
     try {
       final detail = await gateway.resubmitApplication(id);
       if (!isCurrent(generation)) return null;
+      _remember(detail);
       state = state.ready(detail);
       return null;
     } on CommunityGatewayException catch (error) {
@@ -608,6 +708,7 @@ final class CommunityProfileController
     try {
       final detail = await gateway.editProfile(id, edit);
       if (!isCurrent(generation)) return null;
+      _remember(detail);
       state = state.ready(detail);
       return null;
     } on CommunityGatewayException catch (error) {

@@ -120,6 +120,21 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         }
       });
     }
+    // Decision 0101: the chart needs nothing from the asset read but the
+    // assetId the route already carries, so it is asked for in the same round
+    // trip instead of after the quote lands. Listening (not watching) holds
+    // the read for the page without rebuilding the page on every candle state.
+    if (!blocked) {
+      final candles = marketCandlesControllerProvider(
+        MarketCandleRequest(assetId: assetId, interval: _interval),
+      );
+      ref.listen(candles, (_, _) {});
+      if (ref.read(candles).phase == LoopChainViewPhase.loading) {
+        scheduleMicrotask(() {
+          if (mounted) unawaited(ref.read(candles.notifier).load());
+        });
+      }
+    }
     final detail = state.value;
 
     // The star is a write on a different resource, so it reads its own

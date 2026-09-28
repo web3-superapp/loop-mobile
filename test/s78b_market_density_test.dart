@@ -292,8 +292,10 @@ void main() {
           matching: find.byType(Image),
         ),
       );
+      // Decision 0101: decoded at the tile's own pixel size.
+      final resized = remote.image as ResizeImage;
       expect(
-        (remote.image as NetworkImage).url,
+        (resized.imageProvider as NetworkImage).url,
         'https://cdn.example.com/cake.png',
       );
       // A plaintext address and an empty string are both "no artwork", not a

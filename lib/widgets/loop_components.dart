@@ -607,6 +607,14 @@ class LoopFolioPrimary extends StatelessWidget {
     required double captionOpacity,
   }) {
     final captionMaxWidth = _captionMaxWidth(context, contentWidth);
+    // Decision 0101: the folio's muted inks are colours with alpha, not
+    // `Opacity` layers — each of those was an offscreen pass on every frame
+    // of every dashboard page. Text and a hairline border do not overlap
+    // themselves, so the result is the same pixels.
+    final stampInk = _faded(
+      variant == LoopFolioVariant.quiet ? LoopColors.lime : foreground,
+      variant == LoopFolioVariant.quiet ? 0.8 : 0.68,
+    );
     final stampMaxWidth = contentWidth.isFinite
         ? contentWidth * stampMaxWidthFactor
         : double.infinity;
@@ -644,13 +652,13 @@ class LoopFolioPrimary extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Expanded(
-                      child: Opacity(
-                        opacity: kickerOpacity,
-                        child: Text(
-                          kicker!.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.eyebrow(11, color: foreground),
+                      child: Text(
+                        kicker!.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopTypography.eyebrow(
+                          11,
+                          color: _faded(foreground, kickerOpacity),
                         ),
                       ),
                     ),
@@ -662,11 +670,11 @@ class LoopFolioPrimary extends StatelessWidget {
                 FractionallySizedBox(
                   widthFactor: 0.72,
                   alignment: Alignment.centerLeft,
-                  child: Opacity(
-                    opacity: kickerOpacity,
-                    child: Text(
-                      kicker!.toUpperCase(),
-                      style: LoopTypography.eyebrow(11, color: foreground),
+                  child: Text(
+                    kicker!.toUpperCase(),
+                    style: LoopTypography.eyebrow(
+                      11,
+                      color: _faded(foreground, kickerOpacity),
                     ),
                   ),
                 ),
@@ -710,11 +718,11 @@ class LoopFolioPrimary extends StatelessWidget {
                 SizedBox(height: compact ? 8 : 15),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: captionMaxWidth),
-                  child: Opacity(
-                    opacity: captionOpacity,
-                    child: Text(
-                      caption!,
-                      style: LoopTypography.caption(12, color: foreground),
+                  child: Text(
+                    caption!,
+                    style: LoopTypography.caption(
+                      12,
+                      color: _faded(foreground, captionOpacity),
                     ),
                   ),
                 ),
@@ -726,35 +734,25 @@ class LoopFolioPrimary extends StatelessWidget {
           Positioned(
             right: 14,
             bottom: 14,
-            child: Opacity(
-              opacity: variant == LoopFolioVariant.quiet ? 0.8 : 0.68,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: stampMaxWidth),
-                child: Container(
-                  padding: _stampPadding,
-                  decoration: BoxDecoration(
-                    borderRadius: LoopRadius.pill,
-                    border: Border.all(
-                      color: variant == LoopFolioVariant.quiet
-                          ? LoopColors.lime
-                          : foreground,
-                      width: _stampBorder,
-                    ),
-                  ),
-                  child: Text(
-                    stamp!.toUpperCase(),
-                    // `white-space:nowrap`: the pill is one line, and a
-                    // stamp too long for its 42% ceiling ends in an
-                    // ellipsis instead of running under the caption.
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.eyebrow(
-                      _stampTextSize,
-                      color: variant == LoopFolioVariant.quiet
-                          ? LoopColors.lime
-                          : foreground,
-                    ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: stampMaxWidth),
+              child: Container(
+                padding: _stampPadding,
+                decoration: BoxDecoration(
+                  borderRadius: LoopRadius.pill,
+                  border: Border.all(color: stampInk, width: _stampBorder),
+                ),
+                child: Text(
+                  stamp!.toUpperCase(),
+                  // `white-space:nowrap`: the pill is one line, and a
+                  // stamp too long for its 42% ceiling ends in an
+                  // ellipsis instead of running under the caption.
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.eyebrow(
+                    _stampTextSize,
+                    color: stampInk,
                   ),
                 ),
               ),
@@ -3472,3 +3470,8 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
     );
   }
 }
+
+/// [colour] at [opacity] of its own alpha: what an `Opacity` of [opacity]
+/// over a single-colour glyph run paints, without the layer.
+Color _faded(Color colour, double opacity) =>
+    colour.withValues(alpha: colour.a * opacity);
