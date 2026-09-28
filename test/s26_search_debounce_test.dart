@@ -66,8 +66,8 @@ void main() {
 
       // And it sends people to the switch by the name the privacy centre
       // gives it.
-      expect(find.textContaining('显示 LOOP ID'), findsOneWidget);
-      expect(find.textContaining('可被发现'), findsNothing);
+      expect(find.textContaining('可被发现'), findsOneWidget);
+      expect(find.textContaining('显示 LOOP ID'), findsNothing);
     });
 
     testWidgets('a keystroke shows the read it started', (tester) async {

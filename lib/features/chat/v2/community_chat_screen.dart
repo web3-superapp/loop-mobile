@@ -208,6 +208,8 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       key: ValueKey<String>('community-chat-${chat.channelCid}'),
       cid: chat.channelCid!,
       keyPrefix: 'community-chat-channel',
+      // Pinning is the owner's and the admins' (decision 0105 · 3).
+      mayPinMessages: detail.viewer.mayPinMessages,
       // One half of the prototype's hint is real now: an address pasted into
       // a message opens a Token Card. The other half — "@AI 提问" — stays
       // out, because there is no Community AI to ask.

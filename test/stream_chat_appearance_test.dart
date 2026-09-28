@@ -406,10 +406,16 @@ void main() {
           'lib/features/chat/group_alias/group_alias_stream_message_identity.dart';
       final source = File(inbox).readAsStringSync();
       final tiles = 'StreamChannelListTile('.allMatches(source).length;
+      // Decision 0105 · 6: the time and the unread badge share one trailing
+      // helper, which is the one place the timestamp is built.
       final timestamps = 'loopStreamChannelListTimestamp(channel)'
           .allMatches(source)
           .length;
       expect(timestamps, tiles);
+      expect(
+        'timestamp: loopStreamChannelListTrailing('.allMatches(source).length,
+        tiles,
+      );
       expect(
         source.contains('return defaultItem;'),
         isFalse,

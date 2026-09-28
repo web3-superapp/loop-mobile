@@ -224,12 +224,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             key: ValueKey<String>('search-scope-notice'),
             icon: 'info',
             title: '搜索范围',
-            // The switch is called 「显示 LOOP ID」 in the privacy centre, and
-            // this sentence used to send people looking for 「可被发现」,
-            // which is not a name anything on screen carries.
+            // The switch is called 「可被发现」 in the privacy centre
+            // (decision 0105), and it governs nickname search only: a LOOP ID
+            // is always found by an exact search.
             body:
-                '聊天内容不进入本搜索。用户结果只包含已开启"显示 LOOP ID"的账号；'
-                '如果别人搜不到你，请在隐私中心打开这一项。',
+                '聊天内容不进入本搜索。按昵称只能搜到开启了"可被发现"的账号，'
+                'LOOP ID 始终可以精确搜索。',
             margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
           ),
         ],

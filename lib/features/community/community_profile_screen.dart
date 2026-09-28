@@ -54,9 +54,15 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
     this.onOpenMiningPanel,
     this.onOpenToken,
     this.onOpenChart,
+    this.openLiveRoomOnArrival = false,
   });
 
   final String? communityId;
+
+  /// True when this page was opened by a room link (`/c/{id}/room`,
+  /// decision 0105 · 4): once the record is read, the live room is opened
+  /// over it, or the reader is told there is none.
+  final bool openLiveRoomOnArrival;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenMembers;
   final ValueChanged<String>? onOpenChat;
@@ -107,6 +113,24 @@ class _CommunityProfileScreenState
   void dispose() {
     _voicePoll.stop();
     super.dispose();
+  }
+
+  /// Whether a room link's arrival has been answered. It is answered once:
+  /// coming back from the room lands on the record, not in the room again.
+  var _arrivalAnswered = false;
+
+  void _answerRoomLinkArrival(CommunityDetail detail) {
+    if (!widget.openLiveRoomOnArrival || _arrivalAnswered) return;
+    _arrivalAnswered = true;
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      final message = voiceRoomArrivalOutcome(detail);
+      if (message == null) {
+        widget.onOpenVoiceRoom?.call(detail.community.communityId);
+        return;
+      }
+      LoopToast.show(context, message: message, kind: LoopToastKind.warn);
+    });
   }
 
   /// One read of `GET …/voice-rooms/current` for the community on screen.
@@ -258,6 +282,13 @@ class _CommunityProfileScreenState
       _bindMiningReads(listed);
     }
     _bindMiningReads(detail?.community);
+    // A restored snapshot can be minutes old: a room link is answered from
+    // the server's own read, not from what the page remembered.
+    if (detail != null &&
+        detail.community.communityId == id &&
+        !state.refreshing) {
+      _answerRoomLinkArrival(detail);
+    }
     return LoopDashboardPage(
       key: const ValueKey<String>('community-profile-screen'),
       archetype: LoopPageArchetype.record,
@@ -1076,4 +1107,13 @@ class _MembershipFooter extends StatelessWidget {
       ],
     );
   }
+}
+
+/// What a room link (decision 0105 · 4) does once the record is read: null
+/// opens the live room, anything else is the sentence the reader is shown
+/// instead, on the record page.
+String? voiceRoomArrivalOutcome(CommunityDetail detail) {
+  if (!detail.viewer.hasJoined) return '加入社区后才能进入语音房';
+  if (!detail.voice.isLive) return '语音房已结束';
+  return null;
 }

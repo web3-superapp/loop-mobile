@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
@@ -398,8 +399,29 @@ class _NotificationPreferencesScreenState
           '${category.label}，$state${detail.isEmpty ? '' : '，$detail'}',
       onTap: locked || busy
           ? null
-          : () => unawaited(_toggle(controller, category, !enabled)),
+          : () => unawaited(_request(controller, category, !enabled)),
     );
+  }
+
+  /// Decision 0105 · 5: one tap turned a category off, and a stray one while
+  /// scrolling did exactly that. Turning a category off asks first; turning
+  /// one on does not, because it takes nothing away.
+  Future<void> _request(
+    NotificationPreferencesController controller,
+    LoopNotificationCategory category,
+    bool enabled,
+  ) async {
+    if (!enabled) {
+      final confirmed = await confirmCommunityAction(
+        context,
+        title: notificationDisableTitle(category),
+        body: notificationDisableBody(category),
+        confirmLabel: '关闭',
+        sheetKey: 'notification-disable-sheet',
+      );
+      if (!confirmed || !mounted) return;
+    }
+    await _toggle(controller, category, enabled);
   }
 
   Future<void> _toggle(
@@ -414,3 +436,12 @@ class _NotificationPreferencesScreenState
     }
   }
 }
+
+/// The title of the sheet that confirms turning [category] off.
+String notificationDisableTitle(LoopNotificationCategory category) =>
+    '关闭『${category.label}』通知？';
+
+/// The sheet's explanation: the category's own second line, or a plain
+/// statement for a category that has none.
+String notificationDisableBody(LoopNotificationCategory category) =>
+    category.detail ?? '关闭后不会再收到这一类通知。';

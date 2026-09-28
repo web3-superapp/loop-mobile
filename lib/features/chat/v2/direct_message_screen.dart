@@ -337,7 +337,7 @@ class _FriendshipRequired extends StatelessWidget {
         // A refused send is the page's own outcome and outlives the toast
         // that announced it. It never replaces the control: the same request
         // may be sent again, under a new idempotency key, once the other
-        // account opens 「显示 LOOP ID」.
+        // account opens 「允许陌生人发好友申请」.
         if (failure != null)
           LoopNotice(
             key: const ValueKey<String>('dm-message-request-failed'),

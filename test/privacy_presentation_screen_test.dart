@@ -226,12 +226,13 @@ void main() {
   ) async {
     await _pumpPrivacy(tester, gateway: _previewGateway());
 
-    // Open but not discoverable: the gate alone does not make the account
-    // findable, so the row says so instead of promising requests.
+    // Decision 0105 (backend decision 0090): a friend request no longer
+    // depends on 可被发现 — whoever knows the LOOP ID may ask.
     expect(
       _toggle(tester, 'privacy-social-friendRequests').subtitle,
-      '已打开，但还需要开启「显示 LOOP ID」，否则别人搜不到你',
+      '知道你 LOOP ID 的人可以加你',
     );
+    expect(find.text('允许陌生人发好友申请'), findsOneWidget);
 
     await _tap(
       tester,
@@ -240,7 +241,7 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-social-friendRequests').subtitle,
-      '陌生人搜到你之后可以发一条消息请求',
+      '知道你 LOOP ID 的人可以加你',
     );
 
     await _tap(
@@ -250,7 +251,7 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-social-friendRequests').subtitle,
-      '陌生人无法给你发消息请求',
+      '陌生人无法向你发好友申请',
     );
 
     await _tap(
@@ -301,7 +302,7 @@ void main() {
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
     expect(
       _toggle(tester, 'privacy-discoverable').subtitle,
-      '别人无法通过 LOOP ID 搜到你，打开后才可以',
+      '别人无法按昵称搜到你或关注你；LOOP ID 始终可被精确搜索',
     );
 
     await _tap(
@@ -311,7 +312,7 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-discoverable').subtitle,
-      '别人可以通过 LOOP ID 搜到你',
+      '允许别人按昵称搜到你、关注你；LOOP ID 始终可被精确搜索',
     );
   });
 

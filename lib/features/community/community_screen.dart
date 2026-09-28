@@ -10,16 +10,19 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/community/community_home_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_unread.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 
 typedef CommunityNavigation = void Function(String location);
 
@@ -180,11 +183,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     label: _panel == CommunityPanel.messages
                         ? '关闭消息面板'
                         : '打开消息面板',
-                    // `.community-unread-badge` has no source in this version:
-                    // LOOP publishes no total unread count, so the badge slot
-                    // stays empty rather than carrying a number nobody
-                    // counted.
-                    unreadCount: null,
+                    // Decision 0105 · 6: Stream's own total over every
+                    // conversation, read from the Chat client that is already
+                    // connected. No client, no socket or a Preview build is
+                    // no source, and no badge.
+                    unreadCount: mode == CommunityGatewayMode.preview
+                        ? null
+                        : ref.watch(streamChatUnreadTotalProvider).value,
                     toggled: _panel == CommunityPanel.messages,
                     onPressed: () => _toggle(CommunityPanel.messages),
                   ),
@@ -384,6 +389,9 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                         )
                       : _CommunityMessagePanel(
                           home: home,
+                          chatUnread: mode == CommunityGatewayMode.preview
+                              ? null
+                              : ref.watch(streamChatUnreadTotalProvider).value,
                           onClose: _closePanel,
                           onOpenChat: () {
                             _closePanel();
@@ -538,6 +546,7 @@ class _CommunitySearchPanelState extends State<_CommunitySearchPanel> {
 class _CommunityMessagePanel extends ConsumerWidget {
   const _CommunityMessagePanel({
     required this.home,
+    required this.chatUnread,
     required this.onClose,
     required this.onOpenChat,
     required this.onOpenRequests,
@@ -546,6 +555,10 @@ class _CommunityMessagePanel extends ConsumerWidget {
   });
 
   final CommunityHome? home;
+
+  /// Stream's total unread count, or null without a connected Chat client
+  /// (decision 0105 · 6).
+  final int? chatUnread;
   final VoidCallback onClose;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenRequests;
@@ -608,7 +621,10 @@ class _CommunityMessagePanel extends ConsumerWidget {
             key: const ValueKey<String>('community-open-chat'),
             icon: 'chat',
             title: '聊天',
-            subtitle: '打开会话收件箱',
+            subtitle: switch (loopUnreadBadgeLabel(chatUnread)) {
+              final String count => '$count 条未读消息',
+              null => '打开会话收件箱',
+            },
             onTap: onOpenChat,
           ),
           if (requestCount == null || requestCount == 0)
@@ -624,7 +640,9 @@ class _CommunityMessagePanel extends ConsumerWidget {
           // this version, and a reader who is in no room is not a room that
           // could not be read. Each says what is actually the case; a code
           // that means something else still renders as the failure it is.
-          if (unread != null) ...<Widget>[
+          // A connected Chat client answers the count itself, so the
+          // server's "not open yet" card would contradict the row above.
+          if (unread != null && chatUnread == null) ...<Widget>[
             const SizedBox(height: 10),
             unread.reasonCode == 'STREAM_UNREAD_NOT_CONNECTED'
                 ? const LoopEmpty(

@@ -122,7 +122,7 @@ final class PrivacyVisibility {
 /// (`enabled` for friend requests, `friends` for the two friend-scoped ones);
 /// the closed value is `disabled` for all three.
 enum PrivacySocialGate {
-  friendRequests('friendRequests', 'enabled', '允许陌生人发消息请求'),
+  friendRequests('friendRequests', 'enabled', '允许陌生人发好友申请'),
   directMessages('directMessages', 'friends', '允许好友发起私聊'),
   groupInvites('groupInvites', 'friends', '允许好友拉我进群');
 

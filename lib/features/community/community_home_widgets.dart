@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -63,37 +64,26 @@ class CommunityToolButton extends StatelessWidget {
       ),
       child: LoopIconButton(
         icon: icon,
-        label: count == null || count <= 0 ? label : '$label，$count 条未读',
+        label: loopUnreadBadgeLabel(count) == null
+            ? label
+            : '$label，${loopUnreadBadgeLabel(count)} 条未读',
         color: open ? LoopColors.ink : null,
         toggled: toggled,
         onPressed: onPressed,
       ),
     );
-    if (count == null || count <= 0) return tool;
+    if (loopUnreadBadgeLabel(count) == null) return tool;
     return Stack(
       clipBehavior: Clip.none,
       children: <Widget>[
         tool,
+        // Decision 0105 · 6: the shared unread mark, 16 dp high, in the
+        // warning red so it reads on this tool whether it is Ink or Lime.
         Positioned(
+          key: const ValueKey<String>('community-unread-badge'),
           right: 0,
           top: 2,
-          child: ExcludeSemantics(
-            child: Container(
-              key: const ValueKey<String>('community-unread-badge'),
-              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              decoration: BoxDecoration(
-                color: LoopColors.lime,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: LoopColors.ink, width: 2),
-              ),
-              child: Text(
-                '$count',
-                style: LoopTypography.figure(11, color: LoopColors.ink),
-              ),
-            ),
-          ),
+          child: LoopUnreadBadge(count: count),
         ),
       ],
     );

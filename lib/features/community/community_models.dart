@@ -413,6 +413,13 @@ final class CommunityViewer {
       membership?.role == CommunityRole.owner ||
       membership?.role == CommunityRole.admin;
 
+  /// Owner and admin are the two roles that may pin and unpin messages in
+  /// the community's official channel (decision 0105 · 3). No membership, or
+  /// a role the client does not know, is no.
+  bool get mayPinMessages =>
+      membership?.role == CommunityRole.owner ||
+      membership?.role == CommunityRole.admin;
+
   bool get canGovern => canInviteAdmin || canMute || canBan;
 }
 

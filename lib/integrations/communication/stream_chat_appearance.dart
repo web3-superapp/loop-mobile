@@ -695,3 +695,109 @@ class _LoopStreamMessageLeading extends StatelessWidget {
     );
   }
 }
+
+/// The quoted-message card inside a bubble.
+///
+/// Registered on [StreamComponentBuilders] as `quotedMessage`. An incoming
+/// bubble keeps Stream's own card on the global quoted theme. The reader's
+/// own bubble is Lime, and the global card on it read as Lime on Lime — name,
+/// preview and indicator all washed out (device report 2026-09-28 · S99-2).
+/// Inside an outgoing bubble the card is therefore Ink at 12 % with Ink text
+/// and a 3 dp Ink bar on its leading edge (decision 0105).
+Widget loopStreamQuotedMessageBuilder(
+  BuildContext context,
+  StreamQuotedMessageProps props,
+) => _isOutgoing(StreamMessageLayout.of(context))
+    ? LoopOutgoingQuotedMessage(props: props)
+    : DefaultStreamQuotedMessage(props: props);
+
+/// The quoted card drawn inside the reader's own Lime bubble.
+class LoopOutgoingQuotedMessage extends StatelessWidget {
+  const LoopOutgoingQuotedMessage({required this.props, super.key});
+
+  final StreamQuotedMessageProps props;
+
+  /// Ink at 12 %.
+  static final Color background = LoopColors.ink.withValues(alpha: 0.12);
+
+  /// Ink, the bubble's own text colour.
+  static const Color foreground = LoopColors.ink;
+
+  /// The leading bar's width.
+  static const double barWidth = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    final quoted = props.quotedMessage;
+    final onTap = quoted.isDeleted ? null : props.onTap;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Material(
+        key: const ValueKey<String>('loop-quoted-outgoing'),
+        color: background,
+        clipBehavior: Clip.hardEdge,
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.inner),
+        child: ConstrainedBox(
+          constraints:
+              props.constraints ?? const BoxConstraints.tightFor(width: 272),
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 10, 8),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Container(
+                      key: const ValueKey<String>('loop-quoted-outgoing-bar'),
+                      width: barWidth,
+                      decoration: const BoxDecoration(
+                        color: foreground,
+                        borderRadius: LoopRadius.pill,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          // The label this surface resolved, or no name:
+                          // a Stream account name is the same string in
+                          // every room.
+                          if (loopStreamDisplayLabelOf(quoted.user)
+                              case final String name) ...<Widget>[
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: LoopTypography.label(
+                                12,
+                                color: foreground,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                          ],
+                          DefaultTextStyle.merge(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopTypography.caption(
+                              11,
+                              color: foreground,
+                            ),
+                            child: StreamMessagePreviewText(message: quoted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

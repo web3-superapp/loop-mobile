@@ -172,8 +172,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               key: ValueKey<String>('connections-discoverable-notice'),
               icon: 'info',
               title: '想被别人找到？',
-              // One switch, one name: the privacy centre calls it 显示 LOOP ID.
-              body: '默认关闭。需要在"隐私中心 · 显示 LOOP ID"里打开后，别人才能搜索到你并关注你。',
+              // One switch, one name: the privacy centre calls it 可被发现.
+              body: '默认关闭。在"隐私中心 · 可被发现"里打开后，别人才能按昵称搜到你并关注你；LOOP ID 始终可被精确搜索。',
               margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
             ),
           ],
@@ -269,7 +269,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       title: following ? '取消关注？' : '关注这个账号？',
       body: following
           ? '取消关注后，你不会再看到对方的公开动态。'
-          : '关注是单向的，不需要对方同意。对方需要开启"显示 LOOP ID"才能被关注。',
+          : '关注是单向的，不需要对方同意。对方需要开启"可被发现"才能被关注。',
       confirmLabel: following ? '取消关注' : '关注',
       sheetKey: 'connections-follow-sheet',
     );

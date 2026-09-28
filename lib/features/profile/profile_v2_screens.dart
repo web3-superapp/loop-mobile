@@ -290,6 +290,9 @@ class LoopTogglePreferenceRow extends StatelessWidget {
       child: LoopRecordRow(
         title: title,
         subtitle: subtitle,
+        // Decision 0105: 可被发现 states two rules in one line, and the half
+        // that says a LOOP ID is always searchable must not be the half cut.
+        subtitleMaxLines: 2,
         // `.row .badge`: the prototype states a preference as a pill, not as
         // a mono value in the figure column. A row that read 「已关闭 ›」 in
         // the same grey as a number could not be scanned for its state at all
@@ -1741,12 +1744,15 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
           ),
           LoopTogglePreferenceRow(
             key: const ValueKey<String>('privacy-discoverable'),
-            title: '显示 LOOP ID',
+            // Decision 0105 (backend decision 0090): the switch governs being
+            // found by nickname and being followed. A LOOP ID is always found
+            // by an exact search, whichever way this switch is set.
+            title: '可被发现',
             // The subtitle described the switch turned on while the row read
             // 已关闭 beside it, so the state and the sentence disagreed.
             subtitle: draft.discoverable
-                ? '别人可以通过 LOOP ID 搜到你'
-                : '别人无法通过 LOOP ID 搜到你，打开后才可以',
+                ? '允许别人按昵称搜到你、关注你；LOOP ID 始终可被精确搜索'
+                : '别人无法按昵称搜到你或关注你；LOOP ID 始终可被精确搜索',
             value: draft.discoverable,
             position: LoopRowPosition.last,
             onChanged: state.canEdit
@@ -1763,11 +1769,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             LoopTogglePreferenceRow(
               key: ValueKey<String>('privacy-social-${gate.wireValue}'),
               title: gate.label,
-              subtitle: _socialGateSubtitle(
-                gate,
-                open: draft.social[gate],
-                discoverable: draft.discoverable,
-              ),
+              subtitle: _socialGateSubtitle(gate, open: draft.social[gate]),
               value: draft.social[gate],
               position: gate == PrivacySocialGate.values.first
                   ? LoopRowPosition.first
@@ -1834,25 +1836,19 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
     );
   }
 
-  /// The second line states what the gate does *in its current position*, and
-  /// for 消息请求 it also names the condition the server applies on top of the
-  /// gate: an account that is not discoverable cannot be found at all, so an
-  /// open gate alone would promise something that does not happen.
-  String _socialGateSubtitle(
-    PrivacySocialGate gate, {
-    required bool open,
-    required bool discoverable,
-  }) => switch (gate) {
-    PrivacySocialGate.friendRequests =>
-      !open
-          ? '陌生人无法给你发消息请求'
-          : discoverable
-          ? '陌生人搜到你之后可以发一条消息请求'
-          : '已打开，但还需要开启「显示 LOOP ID」，否则别人搜不到你',
-    PrivacySocialGate.directMessages =>
-      open ? '已成为好友的人可以直接打开与你的私聊' : '关闭后，好友也无法打开与你的私聊',
-    PrivacySocialGate.groupInvites => open ? '好友可以把你拉进小群' : '关闭后，好友无法把你拉进小群',
-  };
+  /// The second line states what the gate does *in its current position*.
+  /// Since backend decision 0090 a friend request no longer requires the
+  /// target to be discoverable: whoever knows the LOOP ID finds the account
+  /// by exact search and may ask (decision 0105).
+  String _socialGateSubtitle(PrivacySocialGate gate, {required bool open}) =>
+      switch (gate) {
+        PrivacySocialGate.friendRequests =>
+          open ? '知道你 LOOP ID 的人可以加你' : '陌生人无法向你发好友申请',
+        PrivacySocialGate.directMessages =>
+          open ? '已成为好友的人可以直接打开与你的私聊' : '关闭后，好友也无法打开与你的私聊',
+        PrivacySocialGate.groupInvites =>
+          open ? '好友可以把你拉进小群' : '关闭后，好友无法把你拉进小群',
+      };
 
   Future<void> _save(PrivacyController controller) async {
     final expectedVersion = ref.read(privacyControllerProvider).expectedVersion;
