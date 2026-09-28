@@ -19,8 +19,8 @@ final class NetworkDiagnosticsState {
   final DateTime? startedAt;
   final Duration? total;
 
-  int get okCount =>
-      results.where((result) => result.status == NetworkProbeStatus.ok).length;
+  /// Rows that got through: 成功 and 可达 alike.
+  int get okCount => results.where((result) => result.status.isReached).length;
 
   /// Every probe that was sent failed or timed out: most likely this device
   /// has no network at all.

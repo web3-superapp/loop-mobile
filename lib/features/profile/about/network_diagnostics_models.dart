@@ -107,7 +107,20 @@ abstract interface class NetworkProbeTransport {
   NetworkProbeSession open({required Duration requestTimeout});
 }
 
-enum NetworkProbeStatus { idle, running, ok, timeout, failed, notConfigured }
+/// [ok]: the expected content came back (LOOP 2xx, an image). [reachable]:
+/// a third-party host answered with some HTTP response, which is all this
+/// page asks of it.
+enum NetworkProbeStatus {
+  idle,
+  running,
+  ok,
+  reachable,
+  timeout,
+  failed,
+  notConfigured;
+
+  bool get isReached => this == ok || this == reachable;
+}
 
 final class NetworkProbeResult {
   const NetworkProbeResult({
@@ -141,6 +154,7 @@ String networkProbeStatusLabel(NetworkProbeStatus status) => switch (status) {
   NetworkProbeStatus.idle => '未开始',
   NetworkProbeStatus.running => '探测中',
   NetworkProbeStatus.ok => '成功',
+  NetworkProbeStatus.reachable => '可达',
   NetworkProbeStatus.timeout => '超时',
   NetworkProbeStatus.failed => '失败',
   NetworkProbeStatus.notConfigured => '未配置',
@@ -182,9 +196,9 @@ NetworkProbeResult judgeNetworkProbe({
         case NetworkProbeJudge.anyResponse:
           return NetworkProbeResult(
             target: target,
-            status: NetworkProbeStatus.ok,
+            status: NetworkProbeStatus.reachable,
             elapsed: elapsed,
-            reason: '可达 · HTTP $statusCode$reused',
+            reason: 'HTTP $statusCode$reused',
           );
         case NetworkProbeJudge.success2xx:
           return NetworkProbeResult(
@@ -209,11 +223,11 @@ NetworkProbeResult judgeNetworkProbe({
           final block = _jsonRpcBlockNumber(body);
           return NetworkProbeResult(
             target: target,
-            status: NetworkProbeStatus.ok,
+            status: NetworkProbeStatus.reachable,
             elapsed: elapsed,
             reason: block == null
-                ? '可达 · HTTP $statusCode'
-                : '可达 · HTTP $statusCode · 区块 $block',
+                ? 'HTTP $statusCode'
+                : 'HTTP $statusCode · 区块 $block',
           );
       }
   }
@@ -282,9 +296,7 @@ String networkDiagnosticsReport({
   required DateTime startedAt,
   required Duration? total,
 }) {
-  final okCount = results
-      .where((result) => result.status == NetworkProbeStatus.ok)
-      .length;
+  final okCount = results.where((result) => result.status.isReached).length;
   final lines = <String>[
     'LOOP 网络诊断',
     '时间：${networkDiagnosticsTimestamp(startedAt)}',

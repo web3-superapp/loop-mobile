@@ -75,9 +75,11 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
         kicker: 'NETWORK CHECK',
         heading: heading,
         caption: '这个页面只测连通性和耗时，不发送账号信息。',
+        // Seconds, one decimal: the stamp upper-cases its text, and a
+        // unit in Latin letters would read as 「MS」.
         stamp: state.total == null
             ? null
-            : '总耗时 ${state.total!.inMilliseconds} ms',
+            : '总耗时 ${(state.total!.inMilliseconds / 1000).toStringAsFixed(1)} 秒',
       ),
       sections: <Widget>[
         LoopButtonPair(
@@ -138,7 +140,7 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
   LoopRecordRow _row(NetworkProbeResult result, int index, int count) {
     final target = result.target;
     final badgeKind = switch (result.status) {
-      NetworkProbeStatus.ok => LoopBadgeKind.up,
+      NetworkProbeStatus.ok || NetworkProbeStatus.reachable => LoopBadgeKind.up,
       NetworkProbeStatus.timeout ||
       NetworkProbeStatus.failed => LoopBadgeKind.down,
       _ => LoopBadgeKind.mute,

@@ -131,6 +131,20 @@ Future<void> _start(WidgetTester tester) async {
   await tester.pump();
 }
 
+/// 成功 only where the expected content came back; any HTTP answer from a
+/// third party is 可达.
+const _expected = <String, String>{
+  'loop-ready': '成功',
+  'loop-capabilities': '成功',
+  'privy': '可达',
+  'stream-chat': '可达',
+  'stream-video': '可达',
+  'token-icons': '成功',
+  'firebase': '可达',
+  'bsc-rpc': '可达',
+  'baseline': '可达',
+};
+
 const _ids = <String>[
   'loop-ready',
   'loop-capabilities',
@@ -208,8 +222,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
     for (final id in _ids) {
-      expect(_badge(tester, id), '成功', reason: id);
+      expect(_badge(tester, id), _expected[id], reason: id);
     }
+    expect(find.textContaining('MS'), findsNothing);
+    expect(find.textContaining(RegExp(r'总耗时 \d+\.\d 秒')), findsOneWidget);
     // The capabilities probe asked twice; nothing carried a credential.
     expect(
       log.where((request) => request.uri.path.endsWith('/capabilities')),
@@ -270,7 +286,7 @@ void main() {
     await _start(tester);
     await tester.pump(const Duration(milliseconds: 100));
     expect(_badge(tester, 'firebase'), '探测中');
-    expect(_badge(tester, 'baseline'), '成功');
+    expect(_badge(tester, 'baseline'), '可达');
     await tester.pump(NetworkDiagnosticsController.perProbeTimeout);
     await tester.pumpAndSettle();
     expect(_badge(tester, 'firebase'), '超时');
@@ -328,7 +344,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(_badge(tester, 'baseline'), '成功');
+    expect(_badge(tester, 'baseline'), '可达');
   });
 
   testWidgets('offline: every probe fails, a notice says so', (tester) async {
@@ -425,13 +441,13 @@ void main() {
       '总耗时：',
       '[成功] LOOP 服务 · 就绪 (api-dev.example.com)',
       '[成功] LOOP 服务 · 能力清单',
-      '[成功] 登录服务 Privy (auth.privy.io)',
+      '[可达] 登录服务 Privy (auth.privy.io)',
       '[失败] 聊天服务 Stream (chat.stream-io-api.com)',
-      '[成功] 语音服务 Stream (video.stream-io-api.com)',
+      '[可达] 语音服务 Stream (video.stream-io-api.com)',
       '[成功] 代币图标 (raw.githubusercontent.com)',
-      '[成功] 推送服务 Firebase (firebaseinstallations.googleapis.com)',
-      '[成功] BSC 主网节点 (bsc-dataseed.bnbchain.org)',
-      '[成功] 网络基线 Apple (www.apple.com)',
+      '[可达] 推送服务 Firebase (firebaseinstallations.googleapis.com)',
+      '[可达] BSC 主网节点 (bsc-dataseed.bnbchain.org)',
+      '[可达] 网络基线 Apple (www.apple.com)',
     ]) {
       expect(text, contains(fragment));
     }

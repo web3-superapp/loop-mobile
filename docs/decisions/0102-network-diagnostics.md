@@ -29,6 +29,9 @@ Proposed 2026-09-28。S95，客户端单侧。基线 `integration/v2` 3086bf4。
   | BSC 主网节点（仅参考） | `POST https://bsc-dataseed.bnbchain.org/` `eth_blockNumber` | 任何响应；能解析时附区块号 |
   | 网络基线 Apple | `GET https://www.apple.com/library/test/success.html` | 任何响应 |
 
+  徽标：拿到预期内容的行（LOOP 两行 2xx、代币图标拿到图片）写「成功」；第三方只要有 HTTP 响应的行
+  （Privy / Stream / Firebase / BSC / Apple）写「可达」，颜色与成功相同，复制文本同样用 `[可达]`。
+  页顶「N 项中 M 项可达」把两者都计入。
   未配置后端 / Privy app id 时对应行为「未配置」，不发请求。
 - **传输**：`lib/integrations/diagnostics/loop_network_probe.dart`。每轮每个 origin 一个
   `LoopDioFactory` 客户端（LOOP 用 `createLoopBackend` 只因开发构建可能是 loopback http；第三方用
@@ -47,7 +50,7 @@ Proposed 2026-09-28。S95，客户端单侧。基线 `integration/v2` 3086bf4。
 ## Consequences
 
 - 页面显示的耗时含 DNS、TLS 与首包；「能力清单」第二次耗时反映连接复用后的单次往返。
-- folio 的 stamp 组件会把文字转大写，「总耗时 1883 MS」中的单位呈大写，属既有组件行为。
+- folio 的 stamp 组件会把文字转大写，所以页顶总耗时用秒（一位小数，「总耗时 1.9 秒」），不写拉丁单位。
 
 ## Evidence
 
