@@ -3,6 +3,7 @@ import 'dart:io' show SocketException;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -198,17 +199,25 @@ Future<void> loopWarmIconCache({Iterable<String>? names}) async {
 /// a registry the client does not own. Only an absolute `https` address with a
 /// host is fetched: a relative path, a `http://` address, a `data:` payload
 /// and a malformed string all resolve to `null`, and the caller falls back to
-/// the bundled artwork or the monogram. Nothing about the fetch is
-/// authenticated and no LOOP header is attached, so this never travels through
-/// `LoopDioFactory`; it is an image, not a call on the API.
+/// the bundled artwork or the monogram. The one `http` exception is a loopback
+/// host in a non-release build: a Development backend on this machine serves
+/// its own image proxy over plain HTTP (decision 0089, S96b), and the codec
+/// only lets such a URL through when it is that build's own backend origin.
+/// Nothing about the fetch is authenticated and no LOOP header is attached, so
+/// this never travels through `LoopDioFactory`; it is an image, not a call on
+/// the API. The bytes decide the format — the proxy's `.png` may carry JPEG or
+/// WebP — because `NetworkImage` decodes whatever arrives.
 Uri? loopRemoteLogoUri(String? raw) {
   final value = raw?.trim();
   if (value == null || value.isEmpty) return null;
   final uri = Uri.tryParse(value);
   if (uri == null) return null;
-  if (uri.scheme != 'https') return null;
   if (uri.host.isEmpty) return null;
-  return uri;
+  if (uri.scheme == 'https') return uri;
+  final host = uri.host.toLowerCase();
+  final loopback = host == 'localhost' || host == '127.0.0.1' || host == '::1';
+  if (uri.scheme == 'http' && loopback && !kReleaseMode) return uri;
+  return null;
 }
 
 /// Token logo with monogram fallback (chapter 4.5).
@@ -282,7 +291,9 @@ final class _LoopLogoFailure {
 
 /// Addresses that failed definitely in this process (decisions 0101, S94b).
 ///
-/// The registry artwork is served from `raw.githubusercontent.com`. One row
+/// The artwork is served by the LOOP image proxy since S96 (decision 0089; a
+/// `404` there means no origin has a picture for the token), before that from
+/// `raw.githubusercontent.com` / DexScreener. One row
 /// learning that an address answers 404 or does not resolve is enough: every
 /// later row, page and rebuild with the same address goes straight to the
 /// monogram instead of asking again.
