@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -28,6 +27,7 @@ import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
+import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
@@ -841,83 +841,90 @@ class _ProfileIdentityCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final alias = resource.values.alias;
     final loopId = resource.loopId;
+    final idStyle = LoopTypography.figure(
+      11,
+      weight: FontWeight.w500,
+      color: LoopColors.ink.withValues(alpha: 0.64),
+    );
+    final body = Column(
+      children: <Widget>[
+        LoopProfileAvatar(avatarRef: resource.values.avatarRef, alias: alias),
+        const SizedBox(height: 10),
+        Text(
+          alias ?? '尚未设置别名',
+          style: LoopTypography.heading(
+            18,
+            weight: FontWeight.w700,
+            color: LoopColors.ink,
+          ),
+        ),
+        const SizedBox(height: 3),
+        // Decision 0104 (S97b layout): the copy glyph follows the ID it
+        // copies; an ID this device could not read offers nothing to copy.
+        if (loopId != null)
+          LoopIdCopyLine(
+            loopId: loopId,
+            style: idStyle,
+            textKey: const ValueKey<String>('profile-loop-id'),
+            copyKey: const ValueKey<String>('profile-copy-loop-id'),
+            mainAxisAlignment: MainAxisAlignment.center,
+          )
+        else
+          Text(
+            'LOOP ID 不可读',
+            key: const ValueKey<String>('profile-loop-id'),
+            style: idStyle,
+          ),
+        if (resource.values.bio != null) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            resource.values.bio!,
+            textAlign: TextAlign.center,
+            style: LoopTypography.caption(
+              12,
+              color: LoopColors.ink.withValues(alpha: 0.72),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        _ChalkCardButton(
+          key: const ValueKey<String>('profile-open-edit'),
+          label: '编辑资料',
+          onTap: onEdit,
+        ),
+      ],
+    );
     return LoopChalkCard(
       key: const ValueKey<String>('profile-identity-card'),
-      child: Column(
+      // The share glyph sits in the card's corner, so the card keeps a thin
+      // edge and the body carries the rest of the usual 16.
+      padding: const EdgeInsets.all(_identityCardEdge),
+      child: Stack(
         children: <Widget>[
-          LoopProfileAvatar(avatarRef: resource.values.avatarRef, alias: alias),
-          const SizedBox(height: 10),
-          Text(
-            alias ?? '尚未设置别名',
-            style: LoopTypography.heading(
-              18,
-              weight: FontWeight.w700,
-              color: LoopColors.ink,
-            ),
+          Padding(
+            padding: const EdgeInsets.all(16 - _identityCardEdge),
+            child: body,
           ),
-          const SizedBox(height: 3),
-          Text(
-            loopId ?? 'LOOP ID 不可读',
-            key: const ValueKey<String>('profile-loop-id'),
-            style: LoopTypography.figure(
-              11,
-              weight: FontWeight.w500,
-              color: LoopColors.ink.withValues(alpha: 0.64),
-            ),
-          ),
-          // Decision 0104: the ID is the one thing another person needs to
-          // find this account, so it is handed over right where it is printed.
-          // An account whose ID this device could not read offers neither.
-          if (loopId != null) ...<Widget>[
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                _ChalkCardButton(
-                  key: const ValueKey<String>('profile-copy-loop-id'),
-                  label: '复制',
-                  semanticLabel: '复制 LOOP ID $loopId',
-                  outlined: true,
-                  onTap: () => unawaited(_copy(context, loopId)),
-                ),
-                const SizedBox(width: 8),
-                _ChalkCardButton(
-                  key: const ValueKey<String>('profile-share-loop-id'),
-                  label: '分享',
-                  semanticLabel: '分享我的 LOOP ID',
-                  outlined: true,
-                  onTap: () => unawaited(_share(context, ref, loopId)),
-                ),
-              ],
-            ),
-          ],
-          if (resource.values.bio != null) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(
-              resource.values.bio!,
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(
-                12,
-                color: LoopColors.ink.withValues(alpha: 0.72),
+          // Decision 0104 (S97b layout): sharing is the card's top-bar glyph,
+          // the same unframed 44×44 control as 设置 above it, in Ink on Chalk.
+          if (loopId != null)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: LoopIconButton(
+                key: const ValueKey<String>('profile-share-loop-id'),
+                icon: 'share',
+                label: '分享 LOOP ID',
+                color: LoopColors.ink,
+                onPressed: () => unawaited(_share(context, ref, loopId)),
               ),
             ),
-          ],
-          const SizedBox(height: 12),
-          _ChalkCardButton(
-            key: const ValueKey<String>('profile-open-edit'),
-            label: '编辑资料',
-            onTap: onEdit,
-          ),
         ],
       ),
     );
   }
 
-  Future<void> _copy(BuildContext context, String loopId) async {
-    await Clipboard.setData(ClipboardData(text: loopId));
-    if (!context.mounted) return;
-    LoopToast.show(context, message: '已复制 LOOP ID', kind: LoopToastKind.ok);
-  }
+  static const double _identityCardEdge = 4;
 
   Future<void> _share(
     BuildContext context,
@@ -943,45 +950,23 @@ class _ProfileIdentityCard extends ConsumerWidget {
 /// its fill and its edge are derived from the ground it sits on, which on
 /// Chalk is Chalk. The prototype paints this control Ink and its word Chalk.
 class _ChalkCardButton extends StatelessWidget {
-  const _ChalkCardButton({
-    required this.label,
-    required this.onTap,
-    super.key,
-    this.semanticLabel,
-    this.outlined = false,
-  });
+  const _ChalkCardButton({required this.label, required this.onTap, super.key});
 
   final String label;
   final VoidCallback? onTap;
 
-  /// The spoken name when [label] alone is too short to say what is acted on.
-  final String? semanticLabel;
-
-  /// A lesser action beside the card's one Ink button: Chalk ground behind an
-  /// Ink hairline with Ink text, so 编辑资料 stays the card's main control.
-  final bool outlined;
-
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    final fill = outlined
-        ? Colors.transparent
-        : enabled
-        ? LoopColors.ink
-        : LoopColors.ink.withValues(alpha: 0.4);
     return Semantics(
       button: true,
       enabled: enabled,
-      label: semanticLabel ?? label,
+      label: label,
       child: Material(
-        color: fill,
+        color: enabled ? LoopColors.ink : LoopColors.ink.withValues(alpha: 0.4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: outlined
-                ? LoopColors.ink.withValues(alpha: 0.32)
-                : LoopColors.ink,
-          ),
+          side: const BorderSide(color: LoopColors.ink),
         ),
         child: InkWell(
           onTap: onTap,
@@ -999,7 +984,7 @@ class _ChalkCardButton extends StatelessWidget {
                 style: LoopTypography.label(
                   12,
                   weight: FontWeight.w700,
-                  color: outlined ? LoopColors.ink : LoopColors.chalk,
+                  color: LoopColors.chalk,
                 ),
               ),
             ),

@@ -36,7 +36,7 @@ abstract final class LoopAssetPaths {
 /// Linear SVG sprite names, without the `i-` prefix.
 ///
 /// Sixty-one of them are the prototype's own set from `shell-open.html`.
-/// Three are drawn here, to the same specification as the imported sheet — a
+/// Four are drawn here, to the same specification as the imported sheet — a
 /// 24 box, `fill="none"`, `currentColor` at 1.7 with round caps and joins — so
 /// they inherit colour and size from their caller exactly as the rest do:
 ///
@@ -46,6 +46,8 @@ abstract final class LoopAssetPaths {
 /// * `plus` and `share`: decision 0087 turned every top-bar word into a glyph,
 ///   and the prototype's 新建 / 添加 / 导出 were `.seg` text pills, so the
 ///   sheet it shipped has no glyph for either 「多一个」 or 「交给系统」.
+/// * `copy`: decision 0104 (S97b) puts a copy glyph right behind a printed
+///   LOOP ID in place of a 复制 button, and the prototype's sheet has none.
 abstract final class LoopIconNames {
   static const Set<String> all = <String>{
     'ai',
@@ -65,6 +67,7 @@ abstract final class LoopIconNames {
     'cloud',
     'community',
     'compass',
+    'copy',
     'crown',
     'drag',
     'droplet',
