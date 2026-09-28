@@ -586,7 +586,7 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // 6. Token logo · a 3 s budget, remembered for the process
+  // 6. Token logo · a 5 s first-paint budget; only definite failures kept
   // -------------------------------------------------------------------------
   group('token logo budget', () {
     setUp(debugResetLoopTokenLogoFailures);
@@ -595,18 +595,19 @@ void main() {
       PaintingBinding.instance.imageCache.clear();
     });
 
-    testWidgets('a logo with no frame after 3 s is given up for the process', (
-      tester,
-    ) async {
+    testWidgets('a logo with no frame after the budget keeps loading and is '
+        'not remembered as failed (S94b)', (tester) async {
       painting.debugNetworkImageHttpClientProvider = _HangingHttpClient.new;
       const url = 'https://raw.githubusercontent.com/hang/logo.png';
-      Widget logo(Key key) =>
-          LoopTokenLogo(key: key, assetSymbol: 'HANG', logoUrl: url);
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
-          home: Scaffold(
-            body: Column(children: <Widget>[logo(const Key('a'))]),
+          home: const Scaffold(
+            body: Column(
+              children: <Widget>[
+                LoopTokenLogo(key: Key('a'), assetSymbol: 'HANG', logoUrl: url),
+              ],
+            ),
           ),
         ),
       );
@@ -614,33 +615,17 @@ void main() {
       // While it hangs the tile is the monogram at its final size.
       expect(find.text('HA'), findsOneWidget);
       expect(tester.getSize(find.byKey(const Key('a'))), const Size(36, 36));
-      expect(debugLoopTokenLogoFailed(url), isFalse);
 
       await tester.pump(LoopTokenLogo.fetchBudget);
       await tester.pump();
-      expect(debugLoopTokenLogoFailed(url), isTrue);
+      // Slow is not failed: the fetch is still mounted and nothing is
+      // remembered against the address.
+      expect(debugLoopTokenLogoFailed(url), isFalse);
       expect(
         find.byKey(const ValueKey<String>('loop-token-logo-remote')),
-        findsNothing,
+        findsOneWidget,
       );
-
-      // Every later row with the same artwork skips the fetch entirely.
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: Scaffold(
-            body: Column(
-              children: <Widget>[logo(const Key('b')), logo(const Key('c'))],
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-      expect(
-        find.byKey(const ValueKey<String>('loop-token-logo-remote')),
-        findsNothing,
-      );
-      expect(find.text('HA'), findsNWidgets(2));
+      expect(find.text('HA'), findsOneWidget);
       // The binding checks the hook is unset before tear-down runs.
       painting.debugNetworkImageHttpClientProvider = null;
     });

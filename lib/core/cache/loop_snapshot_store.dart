@@ -230,14 +230,22 @@ final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
   ///
   /// A directory that cannot be located, created or written yields the
   /// in-memory store with one debug log line; nothing here ever fails the
-  /// launch. [locate] is replaced by tests.
+  /// launch. [locate] and [createDirectory] are replaced by tests.
+  ///
+  /// Every step is bounded by [timeout] except creating the directory, which
+  /// gets [createTimeout] (decision 0101, S94b): on a first launch it is the
+  /// one step that really touches the file system, and it is the step that
+  /// decides whether the store persists at all.
   static Future<LoopSnapshotStore> openPersistent({
     Future<Directory> Function() locate = getApplicationSupportDirectory,
+    Future<void> Function(Directory directory) createDirectory =
+        _createDirectory,
     Duration timeout = const Duration(milliseconds: 400),
+    Duration createTimeout = const Duration(milliseconds: 1000),
   }) async {
     try {
       final directory = await locate().timeout(timeout);
-      await directory.create(recursive: true).timeout(timeout);
+      await createDirectory(directory).timeout(createTimeout);
       final probe = File(
         '${directory.path}${Platform.pathSeparator}$fileName.probe',
       );
@@ -257,6 +265,9 @@ final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
       return MemoryLoopSnapshotStore();
     }
   }
+
+  static Future<void> _createDirectory(Directory directory) =>
+      directory.create(recursive: true);
 
   /// Opens the store in [directory], reading what an earlier run left behind.
   /// Bounded: a slow disk never holds the first frame.

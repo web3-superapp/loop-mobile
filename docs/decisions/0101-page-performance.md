@@ -207,3 +207,59 @@ UI 线程（build / layout / paint）三页都 <1 ms/帧 p50，没有 >16 ms 的
 4. 快照打开步骤预算 400 ms 保留，目录创建步骤单独放宽到 1000 ms（S94b 一并做）。
 5. `check_harness.py` 给 `loop_dio_factory.dart` 放开 `dart:io` / `dart:typed_data` / `package:dio/io.dart`：接受。
 6. 图标 URL 失败后本进程不再重试：接受；S92 服务端代取图标后此规则自然失效。
+
+## S94b（2026-09-28）
+
+基线 `integration/v2` c2df3ee，分支 `fix/S94b-followups`。客户端单侧；不新增依赖、`pubspec.lock` 不变、
+路由清单不变（93 条）、不改 API 形状与严格解码。
+
+### 1 代币图标：慢不等于失败（取代上文 §5 与裁决 6 的「超时即放弃」）
+
+主代理模拟器复现：冷启动行情页多张 logo 并行下载，3 s 内没出帧的被记为失败，本进程不再请求，
+好网络上 Cake / WBNB / BNB 也只剩首字母。改为（`lib/widgets/loop_assets.dart`）：
+
+- `LoopTokenLogo.fetchBudget` 3 s → **5 s**，且只管「首次绘制」：槽位从第一帧起就是同尺寸的内置图或首字母，
+  超过预算**不卸载** `Image`、不记失败，下载继续，第一帧到达即替换成真图（布局不动）。超预算只打一行
+  debug 日志（每个 URL 一次）。已发起的下载由 `ImageCache` 的 pending 项持有，行滚出屏幕也会下完，
+  同一 URL 的其他行共用这一次下载。
+- 只有**明确失败**记入进程级失败表（`loopLogoFailureIsDefinite`）：HTTP 4xx/5xx
+  （`NetworkImageLoadException`）、DNS 失败（`Failed host lookup` 等）、连接被拒（`Connection refused`，
+  errno 61 / 111）。超时、连接重置、TLS 与解码错误不记；这些情况下只有出错的那个 tile 在挂载期间不再重试。
+- 失败表带时间：`LoopTokenLogo.failureRetryAfter` = 10 分钟内不再请求；10 分钟后允许**再请求一次**，
+  这次仍明确失败则本进程不再请求。
+- 测试接缝：`debugLoopTokenLogoClock`、`debugLoopTokenLogoImageProvider`（均 `@visibleForTesting`，
+  `debugResetLoopTokenLogoFailures` 一并复位）。生产路径仍是 `ResizeImage(NetworkImage)`。
+
+### 2 社区详情绑定代币卡的 1H 走势（裁决 3）
+
+`_BoundAssetSection` 以前只 watch `marketCandlesControllerProvider`，而会发起读取的
+`TokenCardSparkline` 只在序列就绪后才挂载，于是永远停在「1H K 线读取中」。现在：
+
+- 卡片自己在 loading 时 `load()` 该币的 1H 序列（与代币页同一个 provider、同一份保留；单飞，
+  sparkline 挂载后不再发第二次）。
+- 从社区 tab 进入（有列表提示）时，`_prefetchBoundAsset` 在报价之外同时持有并发起 1H K 线，
+  与 `communities/{id}`、报价、挖矿读同一波。深链进入时随记录答复后发起（与报价相同）。
+- 读不到时显示既有的「暂无走势：<原因>」文案，不再无限「读取中」。
+
+### 3 快照打开预算（裁决 4）
+
+`FileLoopSnapshotStore.openPersistent` 新增 `createTimeout`（默认 1000 ms）只约束「创建目录」一步；
+定位目录、探针写 / 删、读旧文件仍是 400 ms。超时行为不变（回退仅内存 + 一行日志）。新增
+`createDirectory` 参数供测试注入。
+
+### Evidence
+
+- `test/s94b_followups_test.dart`（11 例）：预算 5 s / 重试间隔 10 min；超预算后完成 → 显示真图、尺寸不变、
+  只请求一次；404 → 首字母，9 分 59 秒内新行不请求，10 分钟时再请求一次，再次 404 后一小时仍不请求；
+  超时（SocketException timed out）不记、下一行重试；明确失败分类表；从 tab 进入时 1H K 线与记录同波；
+  深链进入读一次 1H 并画出走势线（`community-bound-asset-chart-line`）；K 线读失败时显示原因而非「读取中」；
+  目录创建 600 ms 仍落盘；创建超过 `createTimeout` 回退内存；定位 600 ms 仍按 400 ms 回退。
+  社区三例在去掉本次修复后失败（已核对）。
+- 改断言不删：`test/s94_page_performance_test.dart` 的「3 s 无帧后进程内放弃」改为「超预算仍挂载下载、
+  不记失败」；「400 被记住」保留。
+
+### 待主代理确认
+
+- 解码失败（服务端返回非图片 / 空文件）按任务单不记入失败表，因而每个新挂载的 tile 会各自重下一次。
+  若要把它也算明确失败，改 `loopLogoFailureIsDefinite` 一处即可。
+- 预算现在不改变任何可见行为（槽位本来就先画首字母），只用于日志；保留它是为了与任务单一致。
