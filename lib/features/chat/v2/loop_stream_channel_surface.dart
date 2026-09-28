@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_card_cache.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
+import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
@@ -19,6 +20,7 @@ import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:stream_chat_flutter/scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// The Lime Ledger surface for one official Stream channel.
@@ -57,6 +59,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     this.notConnectedMessage = '这个会话暂时打不开，稍后再试。',
     this.unresolvedMessage,
     this.keyPrefix = 'loop-stream-channel',
+    this.mayPinMessages,
   });
 
   /// `messaging:<id>`. It is always server-supplied; the page never assembles
@@ -89,6 +92,11 @@ class LoopStreamChannelSurface extends ConsumerWidget {
   /// slug so an acceptance assertion names that page rather than the shared
   /// surface that happened to render.
   final String keyPrefix;
+
+  /// Whether this reader may pin and unpin messages here. `null` leaves the
+  /// decision to Stream's own channel capabilities; `false` removes both
+  /// actions whatever Stream grants (decision 0105 · 3).
+  final bool? mayPinMessages;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -161,6 +169,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
               banner: banner,
               footer: footer,
               keyPrefix: keyPrefix,
+              mayPinMessages: mayPinMessages,
             );
           },
         );
@@ -197,6 +206,7 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
     super.key,
     this.connection,
     this.query,
+    this.mayPinMessages,
   });
 
   final StreamChatClient client;
@@ -215,6 +225,9 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
   /// The membership query. Defaults to Stream's channel-list query for
   /// [cid] and [userId].
   final LoopStreamMemberChannelQuery? query;
+
+  /// See [LoopStreamChannelSurface.mayPinMessages].
+  final bool? mayPinMessages;
 
   @override
   State<LoopStreamMemberChannelBody> createState() =>
@@ -389,15 +402,22 @@ class _LoopStreamMemberChannelBodyState
             onRetry: () => setState(_reload),
           );
         }
+        final body = _LoopChannelBody(
+          composerHint: widget.composerHint,
+          header: widget.header,
+          banner: widget.banner,
+          footer: widget.footer,
+        );
         return loopStreamChannelScope(
           key: ValueKey<String>(widget.cid),
           channel: snapshot.data!,
-          child: _LoopChannelBody(
-            composerHint: widget.composerHint,
-            header: widget.header,
-            banner: widget.banner,
-            footer: widget.footer,
-          ),
+          child: switch (widget.mayPinMessages) {
+            final bool mayPin => LoopChannelMessagePolicy(
+              mayPin: mayPin,
+              child: body,
+            ),
+            null => body,
+          },
         );
       },
     );
@@ -453,9 +473,15 @@ class _LoopChannelBody extends StatefulWidget {
 }
 
 class _LoopChannelBodyState extends State<_LoopChannelBody> {
-  late final FocusNode _focusNode = FocusNode();
+  late final FocusNode _focusNode = FocusNode()..addListener(_onFocusChange);
   late final StreamMessageComposerController _composerController =
       StreamMessageComposerController();
+
+  /// LOOP owns the list's scroll controller and position listener so it can
+  /// re-anchor the list before the keyboard and the reply strip take height
+  /// away from it (decision 0105 · 1).
+  final ItemScrollController _listScroll = ItemScrollController();
+  final ItemPositionsListener _listPositions = ItemPositionsListener.create();
 
   /// The device instant the send left at, so the server's own
   /// `created_at` on the answer can be paired with the right local window.
@@ -463,12 +489,58 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _composerController.dispose();
     super.dispose();
   }
 
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) _anchorListToBottom();
+  }
+
+  /// Pins what the reader sees to the list's bottom edge, the edge the
+  /// composer, the reply strip and the keyboard push against.
+  ///
+  /// Stream's list is a reversed `ScrollablePositionedList` that keeps its
+  /// anchor item at `alignment × viewport height`. A room entered at its
+  /// unread divider is anchored at 0.5, so every point of height the keyboard
+  /// and the reply strip take away moves the content down by half a point
+  /// with the scroll offset unchanged: on a phone the newest messages ended
+  /// up under the composer and the list read as an empty field (device
+  /// report 2026-09-28 · S99-1). Re-stating the same view as "this item,
+  /// this far above the bottom edge" with the offset at zero makes the next
+  /// height change shrink the list from the top instead.
+  void _anchorListToBottom({bool newest = false}) {
+    if (!_listScroll.isAttached) return;
+    if (newest) {
+      _listScroll.jumpTo(index: 0);
+      return;
+    }
+    final visible = _listPositions.itemPositions.value
+        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
+        .toList(growable: false);
+    if (visible.isEmpty) return;
+    final bottom = visible.reduce(
+      (a, b) => a.itemLeadingEdge <= b.itemLeadingEdge ? a : b,
+    );
+    // Indices 0 and 1 are the list's own footer and loader slots: a reader
+    // who can see them is reading the newest message.
+    if (bottom.index <= 2) {
+      _listScroll.jumpTo(index: 0);
+    } else {
+      _listScroll.jumpTo(
+        index: bottom.index,
+        alignment: bottom.itemLeadingEdge,
+      );
+    }
+  }
+
   void _reply(Message message) {
+    // A reply is written at the bottom of the room, so the room is read from
+    // there: the newest message sits directly above the reply strip.
+    _anchorListToBottom(newest: true);
     _composerController.quotedMessage = message;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
@@ -537,6 +609,8 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
             builders: loopStreamMessageListViewBuilders(),
             onEditMessageTap: _edit,
             onReplyTap: _reply,
+            scrollController: _listScroll,
+            itemPositionListener: _listPositions,
             enableSafeArea: false,
           ),
         ),

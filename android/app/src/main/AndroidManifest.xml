@@ -84,6 +84,9 @@
             <!-- Profile links `https://<backend host>/u/{loopId}` (decision
                  0104). Flutter's generic deep-link handler stays off (Reown
                  above); MainActivity hands only this path to the router.
+                 Voice-room links `/c/{communityId}/room` (decision 0105) share
+                 the filter: `/c/` is matched here, the exact shape in
+                 MainActivity.
                  Verification needs /.well-known/assetlinks.json on each host. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -93,6 +96,7 @@
                 <data android:host="api-dev.quant-dinger.cc" />
                 <data android:host="api-staging.quant-dinger.cc" />
                 <data android:pathPrefix="/u/" />
+                <data android:pathPrefix="/c/" />
             </intent-filter>
         </activity>
         <!-- Privy OAuth callbacks are isolated from Reown's MainActivity

@@ -22,6 +22,7 @@ import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
@@ -129,6 +130,9 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
     // C-15 (2): the prototype's `.msg-who` sits above the bubble, beside the
     // avatar — not in the metadata row under it.
     messageHeader: loopStreamMessageHeaderBuilder,
+    // Decision 0105 · 2: a quote inside the reader's own Lime bubble is Ink
+    // on Ink 12 %, not Stream's card that washed out on Lime.
+    quotedMessage: loopStreamQuotedMessageBuilder,
     // S45: a picture that will not load says so in Chinese instead of
     // printing the CDN address it failed to fetch, and is bounded by LOOP's
     // own ceiling rather than Stream's.
@@ -530,12 +534,16 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   /// once it is there, so 返回 leads back to Community.
   void _deliverHeldProfileLink() {
     final inbox = ref.read(loopProfileLinkInboxProvider);
-    if (inbox.pending == null) return;
+    if (inbox.pending == null && inbox.pendingRoom == null) return;
     final location = router.routerDelegate.currentConfiguration.uri.path;
     if (location != LoopRouteManifest.defaultPath) return;
-    final loopId = inbox.take()!;
+    final loopId = inbox.take();
+    final roomCommunityId = inbox.takeRoom();
+    final target = loopId != null
+        ? loopIdSearchLocation(loopId)
+        : voiceRoomLinkLocation(roomCommunityId!);
     scheduleMicrotask(() {
-      if (mounted) unawaited(router.push<void>(loopIdSearchLocation(loopId)));
+      if (mounted) unawaited(router.push<void>(target));
     });
   }
 
@@ -687,6 +695,11 @@ GoRouter _buildRouter(
       // (`_deliverHeldProfileLink`).
       final linkedLoopId = loopIdFromLinkPath(state.uri.path);
       if (linkedLoopId != null) profileLinks.hold(linkedLoopId);
+      // Decision 0105 · 4: `/c/{communityId}/room` is a room link, held and
+      // delivered the same way. It opens the community's record, which opens
+      // the live room over itself or says the room has ended.
+      final linkedRoom = communityIdFromRoomLinkPath(state.uri.path);
+      if (linkedRoom != null) profileLinks.holdRoom(linkedRoom);
       // Credential pages reachable before a verified session. Everything else
       // stays behind the gate.
       const signedOutRoutes = <String>{
@@ -722,6 +735,10 @@ GoRouter _buildRouter(
       if (linkedLoopId != null) {
         profileLinks.take();
         return loopIdSearchLocation(linkedLoopId);
+      }
+      if (linkedRoom != null) {
+        profileLinks.takeRoom();
+        return voiceRoomLinkLocation(linkedRoom);
       }
       return null;
     },
@@ -918,6 +935,9 @@ GoRouter _buildRouter(
         path: '/community/profile',
         builder: (context, state) => CommunityProfileScreen(
           communityId: state.uri.queryParameters['id'],
+          openLiveRoomOnArrival:
+              state.uri.queryParameters[voiceRoomArrivalParameter] ==
+              voiceRoomArrivalValue,
           onBack: () => _popOrHome(context),
           onOpenMembers: (communityId) =>
               context.push('/community/members?id=$communityId'),

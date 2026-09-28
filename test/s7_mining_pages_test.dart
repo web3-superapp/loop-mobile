@@ -1513,7 +1513,7 @@ void main() {
       // number; being discoverable decides neither.
       expect(find.textContaining('只由该账号的匿名模式决定'), findsOneWidget);
       expect(find.textContaining('挖矿算力'), findsOneWidget);
-      expect(find.textContaining('「显示 LOOP ID」不参与'), findsOneWidget);
+      expect(find.textContaining('「可被发现」不参与'), findsOneWidget);
     });
 
     testWidgets('the community board carries weight and head count', (

@@ -119,6 +119,15 @@ double loopContrastRatio(Color source, Color ground) {
 /// near-transparent glow over an opaque colour reads here as the opaque
 /// colour while on the device the page behind shows through.
 Color? _decorationFill(Decoration decoration) {
+  // Stream's own badges and pills paint through a `ShapeDecoration`; without
+  // this their label read as painted on the page behind them (S99).
+  if (decoration is ShapeDecoration) {
+    final gradient = decoration.gradient;
+    if (gradient != null && gradient.colors.isNotEmpty) {
+      return gradient.colors.first;
+    }
+    return decoration.color;
+  }
   if (decoration is! BoxDecoration) return null;
   final gradient = decoration.gradient;
   if (gradient != null) {

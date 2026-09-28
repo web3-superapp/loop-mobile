@@ -9,6 +9,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// latest link is kept, and it is handed over once.
 final class LoopProfileLinkInbox {
   String? _loopId;
+  String? _roomCommunityId;
+
+  /// The community whose room link (`/c/{id}/room`, decision 0105) is
+  /// waiting to be opened, if any.
+  String? get pendingRoom => _roomCommunityId;
+
+  void holdRoom(String communityId) => _roomCommunityId = communityId;
+
+  /// Returns the waiting room link's community and forgets it.
+  String? takeRoom() {
+    final id = _roomCommunityId;
+    _roomCommunityId = null;
+    return id;
+  }
 
   /// The LOOP ID waiting to be opened, if any.
   String? get pending => _loopId;

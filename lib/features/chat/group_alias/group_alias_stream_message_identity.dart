@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
@@ -13,6 +14,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_appearance.da
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Neutral sender label used when the current Stream member projection cannot
@@ -219,7 +221,9 @@ bool loopStreamChannelUsesGroupMessageAlias(String? cid) {
 Widget loopStreamGroupMessageItemBuilder(
   BuildContext context,
   StreamMessageItemProps props,
-) => _LoopStreamGroupMessageItem(props: props);
+) => _LoopStreamGroupMessageItem(
+  props: loopApplyChannelMessagePolicy(context, props),
+);
 
 /// Root Stream component builder for mention autocomplete rows.
 ///
@@ -413,6 +417,24 @@ String resolveLoopGroupConversationLabel(Map<String, Object?> extraData) {
 /// `ChannelLastMessageDate` falls back to Stream's `formatDate`, whose today
 /// bucket is Jiffy's 12-hour `jm` and whose weekday and numeric date bypass
 /// the localizations entirely. Every LOOP row passes this formatter instead.
+/// The right end of an inbox row: the last message's time and, when the
+/// conversation has unread messages, LOOP's unread badge after it
+/// (decision 0105 · 6).
+Widget loopStreamChannelListTrailing(Widget time, int unreadCount) {
+  if (loopUnreadBadgeLabel(unreadCount) == null) return time;
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      time,
+      const SizedBox(width: 6),
+      LoopUnreadBadge(
+        key: const ValueKey<String>('loop-channel-unread-badge'),
+        count: unreadCount,
+      ),
+    ],
+  );
+}
+
 Widget loopStreamChannelListTimestamp(Channel channel) =>
     ChannelLastMessageDate(
       channel: channel,
@@ -514,8 +536,13 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
                         message: lastMessage,
                         channel: loopDirectPreviewChannel(channelState.channel),
                       ),
-                timestamp: loopStreamChannelListTimestamp(channel),
-                unreadCount: unreadSnapshot.data ?? state.unreadCount,
+                timestamp: loopStreamChannelListTrailing(
+                  loopStreamChannelListTimestamp(channel),
+                  unreadSnapshot.data ?? state.unreadCount,
+                ),
+                // Decision 0105 · 6: the count is LOOP's badge beside the
+                // time, not Stream's own.
+                unreadCount: 0,
                 isMuted: mutedSnapshot.data ?? channel.isMuted,
                 isPinned: pinnedSnapshot.data ?? channel.isPinned,
                 onTap: props.onTap,
@@ -565,29 +592,36 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
           builder: (context, mutedSnapshot) => StreamBuilder<bool>(
             initialData: channel.isPinned,
             stream: channel.isPinnedStream,
-            builder: (context, pinnedSnapshot) => StreamChannelListTile(
-              avatar: LoopInitialsAvatar(
-                key: const ValueKey<String>(
-                  'loop-group-channel-neutral-avatar',
+            builder: (context, pinnedSnapshot) => StreamBuilder<int>(
+              initialData: state.unreadCount,
+              stream: state.unreadCountStream,
+              builder: (context, unreadSnapshot) => StreamChannelListTile(
+                avatar: LoopInitialsAvatar(
+                  key: const ValueKey<String>(
+                    'loop-group-channel-neutral-avatar',
+                  ),
+                  label: label,
+                  size: 40,
+                  shape: BoxShape.rectangle,
                 ),
-                label: label,
-                size: 40,
-                shape: BoxShape.rectangle,
+                title: Text(label),
+                subtitle: displayMessage == null
+                    ? Text(context.translations.emptyMessagesText)
+                    : StreamMessagePreviewText(
+                        message: displayMessage,
+                        channel: channelState.channel,
+                      ),
+                timestamp: loopStreamChannelListTrailing(
+                  loopStreamChannelListTimestamp(channel),
+                  unreadSnapshot.data ?? state.unreadCount,
+                ),
+                unreadCount: 0,
+                isMuted: mutedSnapshot.data ?? channel.isMuted,
+                isPinned: pinnedSnapshot.data ?? channel.isPinned,
+                onTap: props.onTap,
+                onLongPress: props.onLongPress,
+                selected: props.selected,
               ),
-              title: Text(label),
-              subtitle: displayMessage == null
-                  ? Text(context.translations.emptyMessagesText)
-                  : StreamMessagePreviewText(
-                      message: displayMessage,
-                      channel: channelState.channel,
-                    ),
-              timestamp: loopStreamChannelListTimestamp(channel),
-              unreadCount: state.unreadCount,
-              isMuted: mutedSnapshot.data ?? channel.isMuted,
-              isPinned: pinnedSnapshot.data ?? channel.isPinned,
-              onTap: props.onTap,
-              onLongPress: props.onLongPress,
-              selected: props.selected,
             ),
           ),
         );

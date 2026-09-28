@@ -15,12 +15,15 @@ import 'package:loop_mobile/features/chat/calls/voice_media_retry.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
+import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -268,6 +271,23 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     }
   }
 
+  Future<void> _share(BuildContext context, VoiceRoomRecord room) async {
+    final text = voiceRoomShareText(
+      communityName: room.communityName,
+      roomTitle: voiceRoomTitle(room.communityName),
+      link: voiceRoomShareLink(
+        ref.read(loopIdLinkBaseUrlProvider),
+        room.communityId,
+      ),
+    );
+    final shared = await ref.read(loopTextShareProvider)(
+      text,
+      subject: voiceRoomTitle(room.communityName),
+    );
+    if (shared || !context.mounted) return;
+    LoopToast.show(context, message: '无法打开分享', kind: LoopToastKind.warn);
+  }
+
   Widget _buildPage(
     BuildContext context,
     LoopCapabilityProjection capability,
@@ -289,7 +309,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       archetype: LoopPageArchetype.listing,
       // The room resource names its own community (decision 0052), so the
       // title says which room this is instead of the word for all of them.
-      title: snapshot == null ? '语音房' : '${snapshot.room.communityName} 语音房',
+      title: snapshot == null
+          ? '语音房'
+          : voiceRoomTitle(snapshot.room.communityName),
       kicker: communityPreviewKicker(mode),
       // `#scr-voiceroom .topbar` carries `● 进行中 · 3,241 在线 · 12 人发言`
       // under the room's name.
@@ -297,6 +319,16 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       framedTools: true,
       onBack: back,
       actions: <Widget>[
+        // Decision 0105 · 4: the same share control as 我的 (decision 0104),
+        // and only for a room that is live — a link to an ended room would
+        // open onto 「语音房已结束」.
+        if (snapshot != null && snapshot.room.isLive)
+          LoopIconButton(
+            key: const ValueKey<String>('voiceroom-share'),
+            icon: 'share',
+            label: '分享语音房',
+            onPressed: () => unawaited(_share(context, snapshot.room)),
+          ),
         if (!widget.expanded && snapshot != null && id != null)
           LoopIconButton(
             key: const ValueKey<String>('voiceroom-open-full'),
