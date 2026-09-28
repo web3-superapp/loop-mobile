@@ -16,6 +16,10 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>webcredentials:api-dev.quant-dinger.cc</string>
+		<!-- Profile links https://<host>/u/{loopId} (decision 0104). Each
+		     host must serve /.well-known/apple-app-site-association. -->
+		<string>applinks:api-dev.quant-dinger.cc</string>
+		<string>applinks:api-staging.quant-dinger.cc</string>
 	</array>
 </dict>
 </plist>

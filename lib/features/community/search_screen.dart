@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide SearchController;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -11,11 +12,13 @@ import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `search` · the five-domain global search.
 ///
@@ -105,8 +108,11 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         initial != null &&
         searchQueryIsSubmittable(initial)) {
       _submittedInitialQuery = true;
+      // A profile link (`/u/{loopId}`, decision 0104) arrives here as a LOOP
+      // ID, which names a person: it is asked of 用户 first.
+      final domain = isLoopIdQuery(initial) ? SearchDomain.users : null;
       scheduleMicrotask(() {
-        if (mounted) unawaited(controller.submit(initial));
+        if (mounted) unawaited(controller.submit(initial, domain: domain));
       });
     }
 
@@ -123,22 +129,20 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: TextField(
-              key: const ValueKey<String>('search-field'),
-              controller: _query,
-              textInputAction: TextInputAction.search,
-              onChanged: controller.type,
-              onSubmitted: (value) => unawaited(controller.submit(value)),
-              decoration: InputDecoration(
-                labelText: searchFieldLabel,
-                hintText: '至少 $searchMinimumRunes 个字符',
-                suffixIcon: IconButton(
-                  key: const ValueKey<String>('search-submit'),
-                  tooltip: '搜索',
-                  icon: const Icon(Icons.search_rounded),
-                  onPressed: () => unawaited(controller.submit(_query.text)),
+            child: Row(
+              children: <Widget>[
+                Expanded(child: _field(controller)),
+                const SizedBox(width: 8),
+                // Decision 0104: a LOOP ID usually arrives in a chat message
+                // or a shared note. Pasting lifts the ID out of whatever came
+                // with it and asks 用户 directly.
+                LoopButton(
+                  key: const ValueKey<String>('search-paste-loop-id'),
+                  label: '粘贴',
+                  semanticLabel: '粘贴 LOOP ID 并搜索',
+                  onPressed: () => unawaited(_pasteLoopId(controller)),
                 ),
-              ),
+              ],
             ),
           ),
           Padding(
@@ -231,6 +235,51 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         ],
       ),
     );
+  }
+
+  Widget _field(SearchController controller) => TextField(
+    key: const ValueKey<String>('search-field'),
+    controller: _query,
+    textInputAction: TextInputAction.search,
+    onChanged: controller.type,
+    onSubmitted: (value) => unawaited(controller.submit(value)),
+    decoration: InputDecoration(
+      labelText: searchFieldLabel,
+      hintText: '至少 $searchMinimumRunes 个字符',
+      suffixIcon: IconButton(
+        key: const ValueKey<String>('search-submit'),
+        tooltip: '搜索',
+        icon: const Icon(Icons.search_rounded),
+        onPressed: () => unawaited(controller.submit(_query.text)),
+      ),
+    ),
+  );
+
+  /// Reads the clipboard once, on the reader's tap, and keeps only a LOOP ID
+  /// from it: the rest of the pasted text never enters the field or a request.
+  Future<void> _pasteLoopId(SearchController controller) async {
+    ClipboardData? data;
+    try {
+      data = await Clipboard.getData(Clipboard.kTextPlain);
+    } catch (_) {
+      data = null;
+    }
+    if (!mounted) return;
+    final loopId = loopIdFromText(data?.text);
+    if (loopId == null) {
+      LoopToast.show(
+        context,
+        message: '剪贴板里没有 LOOP ID',
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    _query.value = TextEditingValue(
+      text: loopId,
+      selection: TextSelection.collapsed(offset: loopId.length),
+    );
+    FocusScope.of(context).unfocus();
+    await controller.submit(loopId, domain: SearchDomain.users);
   }
 
   LoopRecordRow _resultRow(SearchResult result, int index, int length) {

@@ -246,7 +246,20 @@ final class SearchController extends Notifier<SearchState>
   /// one. It is true for a query the reader submitted and false for a domain
   /// the reader picked by hand — that choice is an instruction, and an empty
   /// answer to it is the answer.
-  Future<void> submit(String query, {bool land = true}) {
+  ///
+  /// [domain], when given, selects that domain first — a LOOP ID pasted or
+  /// opened from a profile link (decision 0104) names a person, so it is asked
+  /// of 用户 before anything else.
+  Future<void> submit(String query, {bool land = true, SearchDomain? domain}) {
+    if (domain != null && domain != state.domain) {
+      state = SearchState(
+        mode: state.mode,
+        phase: state.phase,
+        domain: domain,
+        query: state.query,
+        failureKind: state.failureKind,
+      );
+    }
     final trimmed = query.trim();
     if (!searchQueryIsSubmittable(trimmed)) {
       state = SearchState(
