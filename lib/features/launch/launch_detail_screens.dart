@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
+import 'package:loop_mobile/features/launch/launch_settlement_section.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_accordion_strip.dart';
@@ -103,16 +104,65 @@ String launchHistoryRowText(LaunchResourceState<LaunchHistory> state) {
   };
   if (indexed == null) return unread;
   final purchases = history.purchaseRecords;
-  if (purchases.isNotEmpty) {
-    var latest = purchases.first.observedAt;
-    for (final record in purchases) {
-      if (record.observedAt.isAfter(latest)) latest = record.observedAt;
+  final settlements = (history.settlements ?? const <LaunchSettlementRecord>[])
+      .where((row) => row.confirmationState != LaunchConfirmationState.reorged)
+      .toList();
+  if (purchases.isNotEmpty || settlements.isNotEmpty) {
+    DateTime? latest;
+    for (final at in <DateTime>[
+      for (final record in purchases) record.observedAt,
+      for (final record in settlements) record.observedAt,
+    ]) {
+      if (latest == null || at.isAfter(latest)) latest = at;
     }
-    return '${purchases.length} 笔认购 · 最近 ${launchTimestampLabel(latest)}';
+    final claimed = settlements
+        .where((row) => row.kind == LaunchSettlementKind.claimed)
+        .length;
+    final refunded = settlements.length - claimed;
+    final parts = <String>[
+      if (purchases.isNotEmpty) '${purchases.length} 笔认购',
+      if (claimed > 0) '$claimed 笔领取',
+      if (refunded > 0) '$refunded 笔退款',
+    ];
+    return '${parts.join(' · ')} · 最近 ${launchTimestampLabel(latest!)}';
   }
   final block = loopGroupedFigure(indexed.indexedBlockNumber);
   if (history.isEmpty) return '暂无记录（已索引到区块 $block）';
   return '暂无认购 · 有权益或退款记录（已索引到区块 $block）';
+}
+
+/// One row of 我的参与记录: a purchase or a claim / refund (decision 0103).
+typedef LaunchHistoryEntry = ({
+  LaunchPurchaseRecord? purchase,
+  LaunchSettlementRecord? settlement,
+});
+
+/// Purchases and settlements on one timeline, newest first by chain
+/// position (block, then log index), then by when LOOP observed them. The
+/// settlements join only when the server sent them.
+List<LaunchHistoryEntry> launchHistoryTimeline(LaunchHistory history) {
+  final entries = <LaunchHistoryEntry>[
+    for (final record in history.purchaseRecords)
+      (purchase: record, settlement: null),
+    for (final record
+        in history.settlements ?? const <LaunchSettlementRecord>[])
+      (purchase: null, settlement: record),
+  ];
+  BigInt block(LaunchHistoryEntry entry) => BigInt.parse(
+    entry.purchase?.blockNumber ?? entry.settlement!.blockNumber,
+  );
+  int log(LaunchHistoryEntry entry) =>
+      entry.purchase?.logIndex ?? entry.settlement!.logIndex;
+  DateTime seen(LaunchHistoryEntry entry) =>
+      entry.purchase?.observedAt ?? entry.settlement!.observedAt;
+  entries.sort((a, b) {
+    final byBlock = block(b).compareTo(block(a));
+    if (byBlock != 0) return byBlock;
+    final byLog = log(b).compareTo(log(a));
+    if (byLog != 0) return byLog;
+    return seen(b).compareTo(seen(a));
+  });
+  return entries;
 }
 
 /// Shared scaffolding for the six read-only launch record pages.
@@ -352,6 +402,15 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
               ),
             ],
           ),
+          // Decision 0103: claim and refund. The block draws nothing while
+          // the sale is scheduled or live, or the wallet never took part.
+          if (!blocked)
+            LaunchSettlementSection(
+              key: const ValueKey<String>('launch-detail-settlement'),
+              launchId: widget.launchId,
+              detail: detail,
+              clock: widget.clock,
+            ),
           const LoopLabel('发射轨道'),
           _TrackBlock(
             rounds: detail.rounds,
@@ -656,7 +715,10 @@ class _TrackBlock extends StatelessWidget {
               badge,
               kind: pending ? LoopBadgeKind.mute : LoopBadgeKind.launch,
             ),
-            detail: _TrackGraduationDetail(onOpenGraduation: onOpenGraduation),
+            detail: _TrackGraduationDetail(
+              onOpenGraduation: onOpenGraduation,
+              line: launchTrackEndDetail(onChain),
+            ),
             footer: block == null
                 ? null
                 : _TrackFooter('读自区块 ${loopGroupedFigure(block)}'),
@@ -730,10 +792,7 @@ class _TrackBlock extends StatelessWidget {
     );
   }
 
-  String get _graduationBadge {
-    final state = onChain;
-    return state == null ? '待触发' : launchGraduationProjection(state) ?? '待触发';
-  }
+  String get _graduationBadge => launchTrackEndBadge(onChain);
 
   LoopRecordRow _graduationRow(int length) {
     final badge = _graduationBadge;
@@ -741,7 +800,7 @@ class _TrackBlock extends StatelessWidget {
       key: const ValueKey<String>('launch-track-graduation'),
       leading: const LoopMonoTile(label: 'END'),
       title: '毕业与迁移',
-      subtitle: '达到毕业条件后由服务端权威状态推进',
+      subtitle: launchTrackEndDetail(onChain),
       trailingBadge: LoopBadge(
         badge,
         kind: badge == '待触发' ? LoopBadgeKind.mute : LoopBadgeKind.launch,
@@ -752,6 +811,31 @@ class _TrackBlock extends StatelessWidget {
     );
   }
 }
+
+/// The END step's badge on `launch-detail`'s 发射轨道.
+///
+/// Decision 0103: once the entitlement axis opens a claim or a refund the
+/// badge says so — 领取中 (VESTING), 已完成 (COMPLETED), 退款中 (REFUNDING) —
+/// instead of 待触发. Otherwise the graduation projection of 03 §8.3, or
+/// 待触发 when there is none.
+String launchTrackEndBadge(LaunchOnChainAvailable? state) {
+  if (state == null) return '待触发';
+  return switch (state.entitlementState) {
+    LaunchEntitlementState.vesting => '领取中',
+    LaunchEntitlementState.completed => '已完成',
+    LaunchEntitlementState.refunding => '退款中',
+    _ => launchGraduationProjection(state) ?? '待触发',
+  };
+}
+
+/// The END step's one line, following [launchTrackEndBadge].
+String launchTrackEndDetail(LaunchOnChainAvailable? state) =>
+    switch (state?.entitlementState) {
+      LaunchEntitlementState.vesting => '已开放领取，按释放计划逐步成熟，可在「我的份额」领取。',
+      LaunchEntitlementState.completed => '释放计划已全部到期，未领完的部分仍可在「我的份额」领取。',
+      LaunchEntitlementState.refunding => '销售没有成功，可在「我的份额」申请退款。',
+      _ => '达到毕业条件后由服务端权威状态推进',
+    };
 
 /// The strip `launch-detail`'s 发射轨道 opens on arrival (decision 0097):
 /// the "current" step of the track, so the row never starts as equal empty
@@ -1016,9 +1100,10 @@ class _TrackFooter extends StatelessWidget {
 /// The open END strip: the graduation step and the way into
 /// `launch-graduation`. Its projection is the strip's badge.
 class _TrackGraduationDetail extends StatelessWidget {
-  const _TrackGraduationDetail({this.onOpenGraduation});
+  const _TrackGraduationDetail({required this.line, this.onOpenGraduation});
 
   final VoidCallback? onOpenGraduation;
+  final String line;
 
   @override
   Widget build(BuildContext context) {
@@ -1038,7 +1123,8 @@ class _TrackGraduationDetail extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          '达到毕业条件后由服务端权威状态推进',
+          line,
+          key: const ValueKey<String>('launch-track-end-line'),
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
           style: LoopTypography.caption(
@@ -2049,7 +2135,19 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
           ),
           const SizedBox(height: 20),
         ] else ...<Widget>[
-          if (purchases.isNotEmpty) ...<Widget>[
+          // Decision 0103: once the server lists claims and refunds they sit
+          // on one timeline with the purchases.
+          if (history.settlements?.isNotEmpty ?? false) ...<Widget>[
+            const LoopLabel('认购与结算'),
+            _HistoryTimeline(
+              entries: launchHistoryTimeline(history),
+              ticker: ref
+                  .watch(launchDetailControllerProvider)
+                  .value
+                  ?.launch
+                  .ticker,
+            ),
+          ] else if (purchases.isNotEmpty) ...<Widget>[
             const LoopLabel('认购'),
             LoopRecordGroup(
               key: const ValueKey<String>('launch-history-purchases'),
@@ -2143,6 +2241,84 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+}
+
+/// Purchases and settlements as one group (decision 0103). A purchase row is
+/// the one the 认购 group draws; a settlement row carries 已领取 / 已退款.
+class _HistoryTimeline extends StatelessWidget {
+  const _HistoryTimeline({required this.entries, this.ticker});
+
+  final List<LaunchHistoryEntry> entries;
+  final String? ticker;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopRecordGroup(
+      key: const ValueKey<String>('launch-history-records'),
+      rows: <LoopRecordRow>[
+        for (var index = 0; index < entries.length; index += 1)
+          _row(entries[index], launchRowPosition(index, entries.length)),
+      ],
+    );
+  }
+
+  LoopRecordRow _row(LaunchHistoryEntry entry, LoopRowPosition position) {
+    final purchase = entry.purchase;
+    if (purchase != null) {
+      return LoopRecordRow(
+        key: ValueKey<String>(
+          'launch-history-purchase-${purchase.purchaseRecordId}',
+        ),
+        leading: LoopMonoTile(label: 'R${purchase.roundIndex}'),
+        title: '支付 ${launchUsd1Label(purchase.usd1Amount)}',
+        subtitle:
+            '获得 ${launchUnitsFigure(purchase.tokenAmount)} 枚 · '
+            '区块 ${loopGroupedFigure(purchase.blockNumber)}\n'
+            '交易 ${launchShortHex(purchase.transactionHash)} · '
+            '观察于 ${launchTimestampLabel(purchase.observedAt)}',
+        subtitleMaxLines: 2,
+        trailingBadge: LoopBadge(
+          purchase.confirmationState.label,
+          kind: purchase.confirmationState == LaunchConfirmationState.confirmed
+              ? LoopBadgeKind.launch
+              : LoopBadgeKind.mute,
+        ),
+        position: position,
+        chevron: false,
+      );
+    }
+    final settlement = entry.settlement!;
+    final claimed = settlement.kind == LaunchSettlementKind.claimed;
+    final amount = claimed
+        ? '${launchUnitsFigure(settlement.amount)} ${ticker ?? '代币'}'
+        : launchUsd1Label(settlement.amount);
+    final total = claimed
+        ? '累计领取 ${launchUnitsFigure(settlement.cumulativeAmount)}'
+        : '累计退回 ${launchUsd1Label(settlement.cumulativeAmount)}';
+    final reorged =
+        settlement.confirmationState == LaunchConfirmationState.reorged;
+    return LoopRecordRow(
+      key: ValueKey<String>(
+        'launch-history-settlement-${settlement.settlementRecordId}',
+      ),
+      leading: LoopMonoTile(label: claimed ? 'CLM' : 'RFD'),
+      title: '${claimed ? '领取' : '退回'} $amount',
+      subtitle:
+          '$total · ${settlement.confirmationState.label} · '
+          '区块 ${loopGroupedFigure(settlement.blockNumber)}\n'
+          '交易 ${launchShortHex(settlement.transactionHash)} · '
+          '观察于 ${launchTimestampLabel(settlement.observedAt)}',
+      subtitleMaxLines: 2,
+      trailingBadge: LoopBadge(
+        reorged ? '已失效' : settlement.kind.label,
+        kind: settlement.confirmationState == LaunchConfirmationState.confirmed
+            ? LoopBadgeKind.launch
+            : LoopBadgeKind.mute,
+      ),
+      position: position,
+      chevron: false,
     );
   }
 }

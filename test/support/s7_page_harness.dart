@@ -63,8 +63,14 @@ final class FakeLaunchGateway implements LaunchGateway {
     this.reported,
     this.reportFailure,
     this.reportReasonCode,
+    this.settlementPrepared,
+    this.settlementFailure = LaunchFailureKind.unavailable,
+    this.settlementReasonCode,
+    List<LaunchPurchaseIntent>? intentReads,
+    this.holdersSequence,
     this.mode = LaunchGatewayMode.production,
-  }) : overview = overview ?? S7Answer<LaunchOverview>(value: s7Overview()),
+  }) : intentReads = intentReads ?? <LaunchPurchaseIntent>[],
+       overview = overview ?? S7Answer<LaunchOverview>(value: s7Overview()),
        detail = detail ?? S7Answer<LaunchDetail>(value: s7Detail()),
        eligibility =
            eligibility ?? S7Answer<LaunchEligibility>(value: s7Eligibility()),
@@ -116,6 +122,25 @@ final class FakeLaunchGateway implements LaunchGateway {
   /// Every broadcast report, as `launchIntentId:txHash`.
   final List<String> reports = <String>[];
 
+  /// Decision 0103: the claim / refund `201`, keyed by kind; a kind without
+  /// an answer is refused with [settlementFailure] / [settlementReasonCode].
+  final Map<LaunchIntentKind, LaunchPurchasePrepared>? settlementPrepared;
+  LaunchFailureKind settlementFailure;
+  String? settlementReasonCode;
+
+  /// Every claim / refund prepare, as `kind:launchId:walletId`.
+  final List<String> settlementIntents = <String>[];
+
+  /// When set, the holders reads answer these in order (the last repeats)
+  /// instead of [holders], so a re-read can see a newer block.
+  final List<LaunchHolders>? holdersSequence;
+  int holdersReadCount = 0;
+
+  /// The answers of `GET …/intents/{id}`, in order; the last one repeats.
+  /// Empty means the read is unavailable.
+  final List<LaunchPurchaseIntent> intentReads;
+  int intentReadCount = 0;
+
   final List<LaunchProjectDraft> created = <LaunchProjectDraft>[];
   final List<LaunchProjectDraft> updated = <LaunchProjectDraft>[];
   final List<int> expectedVersions = <int>[];
@@ -147,6 +172,14 @@ final class FakeLaunchGateway implements LaunchGateway {
   @override
   Future<LaunchHolders> loadHolders(String launchId) {
     requestedLaunchIds.add(launchId);
+    final index = holdersReadCount;
+    holdersReadCount += 1;
+    final sequence = holdersSequence;
+    if (sequence != null && sequence.isNotEmpty) {
+      return Future<LaunchHolders>.value(
+        sequence[index < sequence.length ? index : sequence.length - 1],
+      );
+    }
     return holders.resolve();
   }
 
@@ -234,6 +267,37 @@ final class FakeLaunchGateway implements LaunchGateway {
     if (answer != null) return Future<LaunchPurchasePrepared>.value(answer);
     return Future<LaunchPurchasePrepared>.error(
       LaunchException(intentFailure, reasonCode: intentReasonCode),
+    );
+  }
+
+  @override
+  Future<LaunchPurchasePrepared> prepareSettlementIntent({
+    required String launchId,
+    required String walletId,
+    required LaunchIntentKind kind,
+  }) {
+    settlementIntents.add('${kind.wireName}:$launchId:$walletId');
+    final answer = settlementPrepared?[kind];
+    if (answer != null) return Future<LaunchPurchasePrepared>.value(answer);
+    return Future<LaunchPurchasePrepared>.error(
+      LaunchException(settlementFailure, reasonCode: settlementReasonCode),
+    );
+  }
+
+  @override
+  Future<LaunchPurchaseIntent> loadIntent({
+    required String launchId,
+    required String launchIntentId,
+  }) {
+    final index = intentReadCount;
+    intentReadCount += 1;
+    if (intentReads.isEmpty) {
+      return Future<LaunchPurchaseIntent>.error(
+        const LaunchException(LaunchFailureKind.unavailable),
+      );
+    }
+    return Future<LaunchPurchaseIntent>.value(
+      intentReads[index < intentReads.length ? index : intentReads.length - 1],
     );
   }
 

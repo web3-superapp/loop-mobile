@@ -366,6 +366,13 @@ REQUIRED_FILES = (
     "lib/features/launch/launch_approval.dart",
     "test/s83c2_launch_approve_test.dart",
     "docs/decisions/0089-launch-approve-preflow.md",
+    # S92b (decision 0103): claim and refund on launch-detail, through the
+    # same Launch signing exit.
+    "lib/features/launch/launch_settlement.dart",
+    "lib/features/launch/launch_settlement_section.dart",
+    "test/s92b_launch_claim_refund_decoder_test.dart",
+    "test/s92b_launch_claim_refund_pages_test.dart",
+    "docs/decisions/0103-launch-claim-refund.md",
     "lib/features/mining/mining_models.dart",
     "lib/features/mining/mining_gateway.dart",
     "lib/features/mining/mining_controllers.dart",
@@ -940,6 +947,28 @@ S7_TRADE_GATE_FRAGMENTS = {
         "if (!intent.payloadMatchesReview)",
         "SigningIntent.backendCanonical(",
         "kind: IntentKind.launchPurchase",
+    ),
+    # Decision 0103: a claim is offered only on VESTING / COMPLETED with a
+    # claimable figure, a refund only on FAILED / CANCELLED + REFUNDING with
+    # a refundable one; a pause or unsettled evidence closes both, and the
+    # capability is re-read before anything is prepared.
+    Path("lib/features/launch/launch_settlement.dart"): (
+        "entitlement == LaunchEntitlementState.vesting ||",
+        "entitlement == LaunchEntitlementState.completed",
+        "if (_positive(held.claimableTokens))",
+        "case LaunchEntitlementState.refunding:",
+        "if (refundable) return view(LaunchSettlementStage.refund",
+    ),
+    Path("lib/features/launch/launch_settlement_section.dart"): (
+        "!view.paused",
+        "launchCapabilityBlocks(capability) || capability.evidencePending",
+        "await loopRefreshCapabilitiesBeforeSigning(ref);",
+        "showLaunchSignSheet(",
+    ),
+    # A claim / refund payload is exactly `selector ‖ saleId`.
+    Path("lib/features/launch/launch_chain_models.dart"): (
+        "_settlementCallMatches;",
+        "!data.startsWith(kind.selector)",
     ),
 }
 S5_TOKEN_SURFACE_PATH = Path("lib/features/market/token_screen.dart")

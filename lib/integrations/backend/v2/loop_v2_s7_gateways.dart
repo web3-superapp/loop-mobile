@@ -296,6 +296,44 @@ final class DioLoopV2LaunchGateway
   }
 
   @override
+  Future<LaunchPurchasePrepared> prepareSettlementIntent({
+    required String launchId,
+    required String walletId,
+    required LaunchIntentKind kind,
+  }) async {
+    final writeOrigin = await origin();
+    // One kind for one wallet is one logical operation. The key is released
+    // once the server answers, so the next attempt after a confirmed or
+    // refused one always carries a new key (decision 0087: a new action, a
+    // new key); only an unresolved answer replays it.
+    return idempotent(
+      'launch:intent:${kind.wireName}:$launchId:$walletId',
+      (accessToken, key) => _api.postSettlementIntent(
+        accessToken: accessToken,
+        clientVersion: clientVersion,
+        idempotencyKey: key,
+        launchId: launchId,
+        walletId: walletId,
+        kind: kind,
+        origin: writeOrigin,
+      ),
+    );
+  }
+
+  @override
+  Future<LaunchPurchaseIntent> loadIntent({
+    required String launchId,
+    required String launchIntentId,
+  }) => read(
+    (accessToken) => _api.getIntent(
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      launchId: launchId,
+      launchIntentId: launchIntentId,
+    ),
+  );
+
+  @override
   Future<LaunchPurchaseIntent> reportPurchaseBroadcast({
     required String launchId,
     required String launchIntentId,

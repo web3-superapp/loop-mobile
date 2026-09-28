@@ -115,6 +115,28 @@ abstract interface class LoopV2LaunchApi {
     LoopV2WriteOrigin? origin,
   });
 
+  /// `POST /v2/launch/{launchId}/intents` with `{kind, walletId}` (loop-api
+  /// decision 0087): a claim or a refund intent, the same `201` envelope as a
+  /// purchase with `kind` set.
+  Future<LaunchPurchasePrepared> postSettlementIntent({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String launchId,
+    required String walletId,
+    required LaunchIntentKind kind,
+    LoopV2WriteOrigin? origin,
+  });
+
+  /// `GET /v2/launch/{launchId}/intents/{launchIntentId}` (loop-api decision
+  /// 0081): the same envelope as the prepare and the report, read-only.
+  Future<LaunchPurchaseIntent> getIntent({
+    required String accessToken,
+    required String clientVersion,
+    required String launchId,
+    required String launchIntentId,
+  });
+
   /// `POST /v2/launch/{launchId}/intents/{launchIntentId}/broadcast-report`
   /// (loop-api decision 0077): `200 {launchIntent, contractVersion}`, the
   /// same shape as the `201`, now `submitted` with the reported hash.
@@ -826,14 +848,20 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'launchId',
-        'purchaseRecords',
-        'entitlements',
-        'refunds',
-        'source',
-        'contractVersion',
-      });
+      // Decision 0087: `settlements` is optional; the codec decides where it
+      // may appear.
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'launchId',
+          'purchaseRecords',
+          'entitlements',
+          'refunds',
+          'source',
+          'contractVersion',
+        },
+        const <String>{'settlements'},
+      );
       LoopV2S7Codec.requireContractVersion(root);
       // An unavailable source keeps the three collections empty, exactly as
       // in step 7; an indexed one decodes each row strictly.
@@ -1303,7 +1331,8 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       LoopV2Contract.validateSuccess(response, statusCode: 201);
       final intent = _intentEnvelope(response.data);
       // The server answered for this request and no other.
-      if (intent.launchId != launchId ||
+      if (intent.kind != LaunchIntentKind.buy ||
+          intent.launchId != launchId ||
           intent.walletId != walletId ||
           intent.roundId != roundId) {
         LoopV2S7Codec.invalid();
@@ -1311,6 +1340,74 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       return LaunchPurchasePrepared(intent: intent);
     } on DioException catch (error) {
       _rethrowIntentWrite(error);
+    }
+  }
+
+  @override
+  Future<LaunchPurchasePrepared> postSettlementIntent({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String launchId,
+    required String walletId,
+    required LaunchIntentKind kind,
+    LoopV2WriteOrigin? origin,
+  }) async {
+    if (!kind.isSettlement) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    try {
+      final response = await _dio.post<Object?>(
+        '$launchPath/${_requireId(launchId)}/intents',
+        // Exactly these two keys: a round or an amount on a claim / refund
+        // is `400 INVALID_REQUEST` (decision 0087).
+        data: <String, Object?>{
+          'kind': kind.wireName,
+          'walletId': _requireId(walletId),
+        },
+        options: LoopV2ModuleRequest.writeOptions(
+          accessToken,
+          clientVersion,
+          idempotencyKey,
+          hasBody: true,
+          origin: origin,
+        ),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 201);
+      final intent = _intentEnvelope(response.data);
+      if (intent.kind != kind ||
+          intent.launchId != launchId ||
+          intent.walletId != walletId) {
+        LoopV2S7Codec.invalid();
+      }
+      return LaunchPurchasePrepared(intent: intent);
+    } on DioException catch (error) {
+      _rethrowIntentWrite(error);
+    }
+  }
+
+  @override
+  Future<LaunchPurchaseIntent> getIntent({
+    required String accessToken,
+    required String clientVersion,
+    required String launchId,
+    required String launchIntentId,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        '$launchPath/${_requireId(launchId)}/intents/'
+        '${_requireId(launchIntentId)}',
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final intent = _intentEnvelope(response.data);
+      if (intent.launchIntentId != launchIntentId ||
+          intent.launchId != launchId) {
+        LoopV2S7Codec.invalid();
+      }
+      return intent;
+    } on DioException catch (error) {
+      _rethrowRead(error);
     }
   }
 
