@@ -196,3 +196,14 @@ UI 线程（build / layout / paint）三页都 <1 ms/帧 p50，没有 >16 ms 的
   `ResizeImage(NetworkImage)`）、`test/s16e_ground_test.dart`（quiet folio 的 kicker 由「Chalk +
   Opacity 0.78」改为「Chalk 的 alpha 0.78」）、`test/loop_assets_test.dart`（LoopIcon 先矢量、栅格就绪后
   `RawImage` + srcIn）。
+
+## 主代理裁决（2026-09-28）
+
+状态：Accepted，随 `integration/v2` 合并。
+
+1. HTTP/2 适配器需要新依赖，本单不加；等真机（中国网络）复核连接复用效果后再定。
+2. 服务端没有 ETag，`If-None-Match` 不做。
+3. 社区详情绑定代币卡的「1H K 线读取中」是既有缺陷，开 S94b 补那一次请求。
+4. 快照打开步骤预算 400 ms 保留，目录创建步骤单独放宽到 1000 ms（S94b 一并做）。
+5. `check_harness.py` 给 `loop_dio_factory.dart` 放开 `dart:io` / `dart:typed_data` / `package:dio/io.dart`：接受。
+6. 图标 URL 失败后本进程不再重试：接受；S92 服务端代取图标后此规则自然失效。
