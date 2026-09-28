@@ -182,14 +182,27 @@ class _CommunityProfileScreenState
     return null;
   }
 
-  /// Holds and starts the bound asset's quote from a hint, while the record
-  /// that will name the same asset is still being read.
+  /// Holds and starts the bound asset's quote and its 1H candles from a hint,
+  /// while the record that will name the same asset is still being read.
+  ///
+  /// S94b: the card's line is the token page's own `1h` series (same provider,
+  /// same retention), so the card and a later visit to the token page share
+  /// one read.
   void _prefetchBoundAsset(String assetKey) {
     final quote = marketAssetControllerProvider(assetKey);
     ref.listen(quote, (_, _) {});
     if (ref.read(quote).phase == LoopChainViewPhase.loading) {
       scheduleMicrotask(() {
         if (mounted) unawaited(ref.read(quote.notifier).load());
+      });
+    }
+    final candles = marketCandlesControllerProvider(
+      boundAssetCandleRequest(assetKey),
+    );
+    ref.listen(candles, (_, _) {});
+    if (ref.read(candles).phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(candles.notifier).load());
       });
     }
   }
@@ -830,6 +843,15 @@ class _CommunityActionPair extends ConsumerWidget {
   }
 }
 
+/// The series the bound-asset card draws: the token page's `1h` candles for
+/// the same asset (S94b).
+@visibleForTesting
+MarketCandleRequest boundAssetCandleRequest(String assetKey) =>
+    MarketCandleRequest(
+      assetId: assetKey,
+      interval: LoopCandleInterval.oneHour,
+    );
+
 /// `社区币 · <symbol>` and the signature Token Card under it.
 ///
 /// Every figure on the card comes from `GET /v2/market/assets/{assetKey}` —
@@ -869,14 +891,20 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
     final detail = state.value;
     final symbol =
         detail?.asset.settled?.symbol ?? loopTruncatedAssetId(widget.assetKey);
-    final candles = ref.watch(
-      marketCandlesControllerProvider(
-        MarketCandleRequest(
-          assetId: widget.assetKey,
-          interval: LoopCandleInterval.oneHour,
-        ),
-      ),
+    // S94b: the card starts its own line's read. It used to only watch the
+    // series and wait for the sparkline to ask — but the sparkline is mounted
+    // only once the series is ready, so the card said 「1H K 线读取中」 for
+    // good. Single flight: a read already started from the 社区 tab hint is
+    // not asked twice.
+    final candleRequest = marketCandlesControllerProvider(
+      boundAssetCandleRequest(widget.assetKey),
     );
+    final candles = ref.watch(candleRequest);
+    if (candles.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(candleRequest.notifier).load());
+      });
+    }
     final absence = tokenCardSparklineAbsence(candles);
     final price = detail?.price;
     final change = detail?.priceChange24h;

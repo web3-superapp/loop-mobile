@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show SocketException;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -221,13 +222,21 @@ Uri? loopRemoteLogoUri(String? raw) {
 /// 「OH / WBNB」 painted a slash and a space into a 32pt circle, and
 /// four-letter tickers overflowed it (walkthrough 2026-09-23, d06).
 ///
-/// **One attempt per process.** A failed fetch — or one that shows no frame
-/// within [fetchBudget] — is remembered for the address, so a list that
-/// scrolls, a pull-to-refresh, a rebuild and every other row with the same
-/// artwork go straight to the monogram (decision 0101). Successful artwork
-/// is held by Flutter's own [ImageCache], keyed by the address, so a symbol
-/// in 自选 and again in 热门 is decoded once. There is no on-disk cache: that
-/// needs a dependency, and the decision is not this widget's to take.
+/// **Failures are remembered, slowness is not** (decisions 0101, S94b). The
+/// slot is the bundled artwork or the monogram from the first frame and the
+/// real artwork replaces it whenever its first frame arrives — [fetchBudget]
+/// only bounds how long the first paint is *expected* to take, it never
+/// abandons the download. Only a definite answer — an HTTP 4xx/5xx, a host
+/// that does not resolve, a refused connection — is remembered for the
+/// address, so every later row, page and rebuild with that artwork goes
+/// straight to the monogram. The memory lasts [failureRetryAfter]; the
+/// address is then asked once more, and a second definite failure is kept for
+/// the rest of the process. A timeout or a dropped connection is never
+/// remembered: on a cold start the logos of a whole list download at once and
+/// a slow one is still a good one. Successful artwork is held by Flutter's own
+/// [ImageCache], keyed by the address, so a symbol in 自选 and again in 热门 is
+/// decoded once. There is no on-disk cache: that needs a dependency, and the
+/// decision is not this widget's to take.
 class LoopTokenLogo extends StatefulWidget {
   const LoopTokenLogo({
     required this.assetSymbol,
@@ -247,35 +256,116 @@ class LoopTokenLogo extends StatefulWidget {
   final double size;
   final String? semanticLabel;
 
-  /// How long the registry artwork may take to show its first frame. Past it
-  /// the address is given up on for the rest of the process (decision 0101).
-  static const Duration fetchBudget = Duration(seconds: 3);
+  /// How long the first paint waits for the registry artwork before it is
+  /// counted as slow (S94b). The slot already shows the fallback while it
+  /// waits and the download carries on past this; a slow address is logged
+  /// once and never remembered as failed.
+  static const Duration fetchBudget = Duration(seconds: 5);
+
+  /// How long a definite failure keeps an address from being asked again.
+  /// After it the address gets exactly one more attempt (S94b).
+  static const Duration failureRetryAfter = Duration(minutes: 10);
 
   @override
   State<LoopTokenLogo> createState() => _LoopTokenLogoState();
 }
 
-/// Addresses that failed or timed out in this process (decision 0101).
+/// One remembered definite failure for an address.
+final class _LoopLogoFailure {
+  _LoopLogoFailure(this.at);
+
+  DateTime at;
+
+  /// Set once the address has had its one retry after [at] and failed again.
+  bool exhausted = false;
+}
+
+/// Addresses that failed definitely in this process (decisions 0101, S94b).
 ///
-/// The registry artwork is served from `raw.githubusercontent.com`, which from
-/// a Chinese network can hang for a minute before failing. One row learning
-/// that is enough: every later row, page and rebuild with the same address
-/// goes straight to the monogram instead of opening the same stalled fetch.
-final Set<String> _loopFailedLogoUrls = <String>{};
+/// The registry artwork is served from `raw.githubusercontent.com`. One row
+/// learning that an address answers 404 or does not resolve is enough: every
+/// later row, page and rebuild with the same address goes straight to the
+/// monogram instead of asking again.
+final Map<String, _LoopLogoFailure> _loopFailedLogoUrls =
+    <String, _LoopLogoFailure>{};
 
-/// Forgets every remembered logo failure. Tests only.
-@visibleForTesting
-void debugResetLoopTokenLogoFailures() => _loopFailedLogoUrls.clear();
+/// Addresses already reported as slow, so the log line appears once.
+final Set<String> _loopSlowLogoUrls = <String>{};
 
-/// Whether this process has given up on [url].
+/// The clock the failure memory reads. Tests only.
 @visibleForTesting
-bool debugLoopTokenLogoFailed(String url) => _loopFailedLogoUrls.contains(url);
+DateTime Function() debugLoopTokenLogoClock = DateTime.now;
+
+/// Replaces the registry image provider (before resizing). Tests only.
+@visibleForTesting
+ImageProvider<Object> Function(String url)? debugLoopTokenLogoImageProvider;
+
+/// Forgets every remembered logo failure and restores the hooks. Tests only.
+@visibleForTesting
+void debugResetLoopTokenLogoFailures() {
+  _loopFailedLogoUrls.clear();
+  _loopSlowLogoUrls.clear();
+  debugLoopTokenLogoClock = DateTime.now;
+  debugLoopTokenLogoImageProvider = null;
+}
+
+/// Whether this process currently refuses to ask for [url].
+@visibleForTesting
+bool debugLoopTokenLogoFailed(String url) => _loopLogoBlocked(url);
+
+bool _loopLogoBlocked(String url) {
+  final failure = _loopFailedLogoUrls[url];
+  if (failure == null) return false;
+  if (failure.exhausted) return true;
+  return debugLoopTokenLogoClock().difference(failure.at) <
+      LoopTokenLogo.failureRetryAfter;
+}
+
+void _loopRememberLogoFailure(String url) {
+  final failure = _loopFailedLogoUrls[url];
+  final now = debugLoopTokenLogoClock();
+  if (failure == null) {
+    _loopFailedLogoUrls[url] = _LoopLogoFailure(now);
+    return;
+  }
+  // A failure after the memory lapsed is the one retry failing: keep it.
+  if (now.difference(failure.at) >= LoopTokenLogo.failureRetryAfter) {
+    failure
+      ..at = now
+      ..exhausted = true;
+  }
+}
+
+/// Whether [error] is a definite answer about the address rather than a slow
+/// or interrupted network (S94b): an HTTP 4xx/5xx, a failed host lookup, or a
+/// refused connection. Timeouts, resets, TLS and decode errors are not.
+@visibleForTesting
+bool loopLogoFailureIsDefinite(Object error) {
+  if (error is NetworkImageLoadException) {
+    return error.statusCode >= 400 && error.statusCode < 600;
+  }
+  if (error is SocketException) {
+    final message = '${error.message} ${error.osError?.message ?? ''}'
+        .toLowerCase();
+    if (message.contains('timed out')) return false;
+    if (message.contains('failed host lookup') ||
+        message.contains('nodename nor servname') ||
+        message.contains('no address associated') ||
+        message.contains('name or service not known') ||
+        message.contains('connection refused')) {
+      return true;
+    }
+    // ECONNREFUSED: 61 on Darwin, 111 on Linux / Android.
+    final code = error.osError?.errorCode;
+    return code == 61 || code == 111;
+  }
+  return false;
+}
 
 class _LoopTokenLogoState extends State<LoopTokenLogo> {
-  /// How long a logo may take to produce its first frame before the tile
-  /// settles on the monogram for good (decision 0101).
-  static const Duration fetchBudget = LoopTokenLogo.fetchBudget;
-
+  /// Set when this element's fetch failed in any way. A definite failure is
+  /// also remembered for the process; a transient one only keeps this tile
+  /// from asking again while it stays mounted.
   bool _failed = false;
   bool _gotFrame = false;
   Timer? _budget;
@@ -284,8 +374,7 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
   @override
   void didUpdateWidget(LoopTokenLogo oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // A different address is a different question, so it gets its own one
-    // attempt. The same address that already failed is not asked again.
+    // A different address is a different question.
     if (oldWidget.logoUrl != widget.logoUrl) {
       _failed = false;
       _gotFrame = false;
@@ -301,22 +390,24 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
     super.dispose();
   }
 
-  void _giveUp(String url) {
-    _loopFailedLogoUrls.add(url);
+  void _fail(String url, Object error) {
+    if (loopLogoFailureIsDefinite(error)) _loopRememberLogoFailure(url);
     _budget?.cancel();
     _budget = null;
     if (mounted && !_failed) setState(() => _failed = true);
   }
 
-  /// Starts the fetch budget once per address. A frame that arrives in time
-  /// cancels nothing — the timer simply finds `_gotFrame` set.
+  /// Starts the first-paint budget once per address. Past it the slot keeps
+  /// the fallback it already shows and the download carries on (S94b).
   void _armBudget(String url) {
     if (_budgetFor == url) return;
     _budget?.cancel();
     _budgetFor = url;
-    _budget = Timer(fetchBudget, () {
+    _budget = Timer(LoopTokenLogo.fetchBudget, () {
       _budget = null;
-      if (!_gotFrame) _giveUp(url);
+      if (!_gotFrame && _loopSlowLogoUrls.add(url)) {
+        debugPrint('LoopTokenLogo: no frame within budget, still loading $url');
+      }
     });
   }
 
@@ -361,26 +452,26 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
     final remote = _failed ? null : loopRemoteLogoUri(widget.logoUrl);
     if (remote == null) return bundled();
     final url = remote.toString();
-    if (_loopFailedLogoUrls.contains(url)) return bundled();
+    if (_loopLogoBlocked(url)) return bundled();
     if (!_gotFrame) _armBudget(url);
     // Decoded at the pixels the tile shows, not the registry's 256 px source.
     final pixels = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
+    final source =
+        debugLoopTokenLogoImageProvider?.call(url) ?? NetworkImage(url);
     return SizedBox(
       width: size,
       height: size,
       child: ClipOval(
-        child: Image.network(
-          url,
+        child: Image(
+          image: ResizeImage.resizeIfNeeded(pixels, pixels, source),
           key: const ValueKey<String>('loop-token-logo-remote'),
           width: size,
           height: size,
-          cacheWidth: pixels,
-          cacheHeight: pixels,
           fit: BoxFit.cover,
           semanticLabel: label,
           // The row keeps its shape for the whole of the fetch: the slot is
-          // the monogram until a frame arrives, so nothing shifts and no
-          // spinner appears in a 32pt circle.
+          // the fallback until a frame arrives — however long that takes —
+          // so nothing shifts and no spinner appears in a 32pt circle.
           frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
             if (wasSynchronouslyLoaded || frame != null) {
               _gotFrame = true;
@@ -389,12 +480,10 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
             return bundled();
           },
           errorBuilder: (context, error, stackTrace) {
-            // Remembered for the process: the CDN is asked once, not once per
-            // row or frame. `setState` cannot run during build, so it is
-            // scheduled.
+            // `setState` cannot run during build, so it is scheduled.
             if (!_failed) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                _giveUp(url);
+                _fail(url, error);
               });
             }
             return bundled();
