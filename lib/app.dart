@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
@@ -71,6 +72,7 @@ import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
+import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
@@ -262,9 +264,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       () => ref.read(loopProfileLandingProvider),
       () => ref.read(loopOnboardingSequenceProvider),
       ref.read(loopRoutingErrorLogProvider),
+      ref.read(loopProfileLinkInboxProvider),
       () => metaObserver.observe(LoopV2MetaObservationTrigger.navigation),
       _onProductFrameDrawn,
     );
+    router.routerDelegate.addListener(_deliverHeldProfileLink);
     // The device registration and the notification ingress are separate
     // owners of the same provider: one says where a message could arrive, the
     // other says what to do with one that did.
@@ -519,8 +523,25 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     );
   }
 
+  /// Decision 0104: a profile link opened before the account landed.
+  ///
+  /// The landing itself is unchanged — a signed-in account arrives on
+  /// Community — and the search page with the held LOOP ID is pushed over it
+  /// once it is there, so 返回 leads back to Community.
+  void _deliverHeldProfileLink() {
+    final inbox = ref.read(loopProfileLinkInboxProvider);
+    if (inbox.pending == null) return;
+    final location = router.routerDelegate.currentConfiguration.uri.path;
+    if (location != LoopRouteManifest.defaultPath) return;
+    final loopId = inbox.take()!;
+    scheduleMicrotask(() {
+      if (mounted) unawaited(router.push<void>(loopIdSearchLocation(loopId)));
+    });
+  }
+
   @override
   void dispose() {
+    router.routerDelegate.removeListener(_deliverHeldProfileLink);
     unawaited(_connectivitySubscription?.cancel());
     _connectivitySubscription = null;
     _lifecycleListener?.dispose();
@@ -644,7 +665,8 @@ GoRouter _buildRouter(
   LoopSessionState Function() readSession,
   LoopProfileLandingState Function() readProfileLanding,
   LoopOnboardingSequenceState Function() readOnboarding,
-  LoopRoutingErrorLog routingErrors, [
+  LoopRoutingErrorLog routingErrors,
+  LoopProfileLinkInbox profileLinks, [
   VoidCallback? onNavigation,
   VoidCallback? onProductFrameDrawn,
 ]) {
@@ -657,6 +679,14 @@ GoRouter _buildRouter(
       onNavigation?.call();
       final session = readSession();
       final location = state.matchedLocation;
+      // Decision 0104: `/u/{loopId}` is a profile link, not a page. It opens
+      // the search page (manifest `search`, where a friend is added) with the
+      // ID in its field; no route is added for it. A link that arrives before
+      // the account has landed is kept: the account still lands on Community,
+      // and the search page is pushed over it from there
+      // (`_deliverHeldProfileLink`).
+      final linkedLoopId = loopIdFromLinkPath(state.uri.path);
+      if (linkedLoopId != null) profileLinks.hold(linkedLoopId);
       // Credential pages reachable before a verified session. Everything else
       // stays behind the gate.
       const signedOutRoutes = <String>{
@@ -688,6 +718,10 @@ GoRouter _buildRouter(
         return step == null
             ? '/community'
             : LoopRouteManifest.pathFor(step.slug);
+      }
+      if (linkedLoopId != null) {
+        profileLinks.take();
+        return loopIdSearchLocation(linkedLoopId);
       }
       return null;
     },

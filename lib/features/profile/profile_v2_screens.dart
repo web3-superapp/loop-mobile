@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -27,9 +28,11 @@ import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
+import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -828,14 +831,14 @@ class _ProfileApplicationNotificationsState
   }
 }
 
-class _ProfileIdentityCard extends StatelessWidget {
+class _ProfileIdentityCard extends ConsumerWidget {
   const _ProfileIdentityCard({required this.resource, required this.onEdit});
 
   final ProfileResource resource;
   final VoidCallback onEdit;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final alias = resource.values.alias;
     final loopId = resource.loopId;
     return LoopChalkCard(
@@ -855,12 +858,39 @@ class _ProfileIdentityCard extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             loopId ?? 'LOOP ID 不可读',
+            key: const ValueKey<String>('profile-loop-id'),
             style: LoopTypography.figure(
               11,
               weight: FontWeight.w500,
               color: LoopColors.ink.withValues(alpha: 0.64),
             ),
           ),
+          // Decision 0104: the ID is the one thing another person needs to
+          // find this account, so it is handed over right where it is printed.
+          // An account whose ID this device could not read offers neither.
+          if (loopId != null) ...<Widget>[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                _ChalkCardButton(
+                  key: const ValueKey<String>('profile-copy-loop-id'),
+                  label: '复制',
+                  semanticLabel: '复制 LOOP ID $loopId',
+                  outlined: true,
+                  onTap: () => unawaited(_copy(context, loopId)),
+                ),
+                const SizedBox(width: 8),
+                _ChalkCardButton(
+                  key: const ValueKey<String>('profile-share-loop-id'),
+                  label: '分享',
+                  semanticLabel: '分享我的 LOOP ID',
+                  outlined: true,
+                  onTap: () => unawaited(_share(context, ref, loopId)),
+                ),
+              ],
+            ),
+          ],
           if (resource.values.bio != null) ...<Widget>[
             const SizedBox(height: 8),
             Text(
@@ -882,6 +912,29 @@ class _ProfileIdentityCard extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _copy(BuildContext context, String loopId) async {
+    await Clipboard.setData(ClipboardData(text: loopId));
+    if (!context.mounted) return;
+    LoopToast.show(context, message: '已复制 LOOP ID', kind: LoopToastKind.ok);
+  }
+
+  Future<void> _share(
+    BuildContext context,
+    WidgetRef ref,
+    String loopId,
+  ) async {
+    final text = loopIdShareTextFor(
+      loopId,
+      backendBaseUrl: ref.read(loopIdLinkBaseUrlProvider),
+    );
+    final shared = await ref.read(loopTextShareProvider)(
+      text,
+      subject: '我的 LOOP ID',
+    );
+    if (shared || !context.mounted) return;
+    LoopToast.show(context, message: '无法打开分享，可以改用复制', kind: LoopToastKind.warn);
+  }
 }
 
 /// `.chalk-card .seg`: Ink ground with Chalk text, not the Lime fill.
@@ -890,23 +943,45 @@ class _ProfileIdentityCard extends StatelessWidget {
 /// its fill and its edge are derived from the ground it sits on, which on
 /// Chalk is Chalk. The prototype paints this control Ink and its word Chalk.
 class _ChalkCardButton extends StatelessWidget {
-  const _ChalkCardButton({required this.label, required this.onTap, super.key});
+  const _ChalkCardButton({
+    required this.label,
+    required this.onTap,
+    super.key,
+    this.semanticLabel,
+    this.outlined = false,
+  });
 
   final String label;
   final VoidCallback? onTap;
 
+  /// The spoken name when [label] alone is too short to say what is acted on.
+  final String? semanticLabel;
+
+  /// A lesser action beside the card's one Ink button: Chalk ground behind an
+  /// Ink hairline with Ink text, so 编辑资料 stays the card's main control.
+  final bool outlined;
+
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
+    final fill = outlined
+        ? Colors.transparent
+        : enabled
+        ? LoopColors.ink
+        : LoopColors.ink.withValues(alpha: 0.4);
     return Semantics(
       button: true,
       enabled: enabled,
-      label: label,
+      label: semanticLabel ?? label,
       child: Material(
-        color: enabled ? LoopColors.ink : LoopColors.ink.withValues(alpha: 0.4),
+        color: fill,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: LoopColors.ink),
+          side: BorderSide(
+            color: outlined
+                ? LoopColors.ink.withValues(alpha: 0.32)
+                : LoopColors.ink,
+          ),
         ),
         child: InkWell(
           onTap: onTap,
@@ -924,7 +999,7 @@ class _ChalkCardButton extends StatelessWidget {
                 style: LoopTypography.label(
                   12,
                   weight: FontWeight.w700,
-                  color: LoopColors.chalk,
+                  color: outlined ? LoopColors.ink : LoopColors.chalk,
                 ),
               ),
             ),

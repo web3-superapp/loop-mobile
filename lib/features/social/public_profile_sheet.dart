@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -8,6 +9,7 @@ import 'package:loop_mobile/features/profile/presentation/profile_controller.dar
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 /// One extra command a caller offers on the public-profile sheet.
@@ -226,6 +228,12 @@ class _PublicProfileSheetState<T extends Object>
     }
   }
 
+  Future<void> _copyLoopId(String loopId) async {
+    await Clipboard.setData(ClipboardData(text: loopId));
+    if (!mounted) return;
+    LoopToast.show(context, message: '已复制 LOOP ID', kind: LoopToastKind.ok);
+  }
+
   @override
   Widget build(BuildContext context) {
     final identity = widget.identity;
@@ -342,6 +350,19 @@ class _PublicProfileSheetState<T extends Object>
               '还没有建立联系时，会先请你发送一条消息请求。',
               key: const ValueKey<String>('public-profile-dm-hint'),
               style: LoopTypography.caption(11, color: LoopColors.muted),
+            ),
+          ],
+          // Decision 0104: another person's ID can be copied — to hand on, or
+          // to paste into search later — but only the viewer's own is shared,
+          // from 我的.
+          if (loopId != null) ...<Widget>[
+            const SizedBox(height: 8),
+            LoopButton(
+              key: const ValueKey<String>('public-profile-copy-loop-id'),
+              label: '复制 LOOP ID',
+              semanticLabel: '复制 LOOP ID $loopId',
+              block: true,
+              onPressed: () => unawaited(_copyLoopId(loopId)),
             ),
           ],
           if (_failureKind != null) ...<Widget>[
