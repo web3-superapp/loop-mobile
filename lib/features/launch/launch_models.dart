@@ -790,6 +790,7 @@ final class LaunchHistory {
     this.purchaseRecords = const <LaunchPurchaseRecord>[],
     this.entitlements = const <LaunchEntitlementRecord>[],
     this.refunds = const <LaunchRefundRecord>[],
+    this.settlements,
   });
 
   final String launchId;
@@ -798,8 +799,15 @@ final class LaunchHistory {
   final List<LaunchEntitlementRecord> entitlements;
   final List<LaunchRefundRecord> refunds;
 
+  /// Decision 0087: the caller's `Claimed` / `Refunded` logs, newest first.
+  /// `null` when the server did not send the key — "unknown", never "none".
+  final List<LaunchSettlementRecord>? settlements;
+
   bool get isEmpty =>
-      purchaseRecords.isEmpty && entitlements.isEmpty && refunds.isEmpty;
+      purchaseRecords.isEmpty &&
+      entitlements.isEmpty &&
+      refunds.isEmpty &&
+      (settlements?.isEmpty ?? true);
 }
 
 // ---------------------------------------------------------------------------

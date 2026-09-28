@@ -71,7 +71,10 @@ final class LaunchPurchaseSigner {
     return SigningIntent.backendCanonical(
       revision: intent.launchIntentId,
       payloadDigest: intent.payloadDigest,
-      title: launchPurchaseTitle,
+      title: launchIntentTitle(intent.kind),
+      // Decision 0103: every call on the Launch contract — buy, claim,
+      // claimRefund — is admitted under the one Launch-contract kind, so the
+      // chain rule of decision 0090 stays one rule.
       kind: IntentKind.launchPurchase,
       chainId: intent.chainId,
       payload: DeviceTransactionPayload(
@@ -80,7 +83,7 @@ final class LaunchPurchaseSigner {
       ),
       observedAt: intent.createdAt,
       expiresAt: intent.expiresAt,
-      fields: launchPurchaseFields(intent, ticker: ticker),
+      fields: launchIntentFields(intent, ticker: ticker),
     );
   }
 
@@ -220,6 +223,82 @@ final launchPurchaseSignerProvider = Provider<LaunchPurchaseSigner>(
 );
 
 const String launchPurchaseTitle = '确认认购';
+const String launchClaimTitle = '确认领取';
+const String launchRefundTitle = '确认退款';
+
+/// The sheet's title for one intent kind (decision 0103).
+String launchIntentTitle(LaunchIntentKind kind) => switch (kind) {
+  LaunchIntentKind.buy => launchPurchaseTitle,
+  LaunchIntentKind.claim => launchClaimTitle,
+  LaunchIntentKind.claimRefund => launchRefundTitle,
+};
+
+/// The noun the copy uses for one intent kind.
+String launchIntentNoun(LaunchIntentKind kind) => switch (kind) {
+  LaunchIntentKind.buy => '认购',
+  LaunchIntentKind.claim => '领取',
+  LaunchIntentKind.claimRefund => '退款',
+};
+
+/// Said on every claim and refund review: the contract moves the funds.
+const String launchSettlementCustodyNote = '合约执行，LOOP 不经手资金';
+
+/// The one sentence a claim or a refund review leads with (decision 0103),
+/// read from the server's own position figure at the snapshot block.
+String launchSettlementStatement(
+  LaunchPurchaseIntent intent,
+) => switch (intent.kind) {
+  LaunchIntentKind.claim =>
+    '领取 ${launchUnitsFigure(intent.claimableTokens ?? intent.expectedTokenAmount)} 代币到当前钱包',
+  LaunchIntentKind.claimRefund =>
+    '退回 ${launchUnitsFigure(intent.refundableUsd1 ?? '0')} USD1 到当前钱包',
+  LaunchIntentKind.buy => launchPurchaseTitle,
+};
+
+/// The reviewed facts for any Launch intent: the page and the sheet call
+/// this, so what the owner reads is what travels with the payload.
+List<IntentField> launchIntentFields(
+  LaunchPurchaseIntent intent, {
+  required String ticker,
+}) => intent.kind.isSettlement
+    ? launchSettlementFields(intent, ticker: ticker)
+    : launchPurchaseFields(intent, ticker: ticker);
+
+/// A claim or a refund (decision 0087): what moves, to where, and that the
+/// contract moves it. Nothing is paid, so no amount, cap or proof is shown.
+List<IntentField> launchSettlementFields(
+  LaunchPurchaseIntent intent, {
+  required String ticker,
+}) => <IntentField>[
+  IntentField(label: '操作', value: launchSettlementStatement(intent)),
+  const IntentField(label: '资金', value: launchSettlementCustodyNote),
+  if (intent.kind == LaunchIntentKind.claim) ...<IntentField>[
+    IntentField(label: '代币', value: ticker),
+    IntentField(
+      label: '本次可领取',
+      value:
+          '${launchUnitsFigure(intent.claimableTokens ?? intent.expectedTokenAmount)} $ticker',
+    ),
+  ] else
+    IntentField(
+      label: '本次退回',
+      value: launchUsd1Label(intent.refundableUsd1 ?? '0'),
+    ),
+  IntentField(
+    label: '钱包已累计认购',
+    value: launchUsd1Label(intent.walletCumulativeUsd1),
+  ),
+  if (intent.simulation != null)
+    IntentField(label: '模拟结果', value: intent.simulation!.status.label),
+  IntentField(label: '签名有效至', value: launchTimestampLabel(intent.expiresAt)),
+  IntentField(label: '状态摘要', value: launchShortHex(intent.stateTupleDigest)),
+  IntentField(
+    label: '快照区块',
+    value: loopGroupedFigure(intent.snapshotBlockNumber),
+  ),
+  IntentField(label: '合约', value: launchShortHex(intent.contractAddress)),
+  IntentField(label: '网络', value: loopChainName(intent.chainId)),
+];
 
 /// The exact facts shown before signing, read from the server's intent.
 ///
@@ -239,7 +318,7 @@ List<IntentField> launchPurchaseFields(
     label: '最少获得',
     value: '${launchUnitsFigure(intent.minTokenAmount)} $ticker',
   ),
-  IntentField(label: '轮次', value: 'Round ${intent.roundIndex}'),
+  IntentField(label: '轮次', value: 'Round ${intent.roundIndex ?? '—'}'),
   IntentField(
     label: '钱包已累计',
     value: launchUsd1Label(intent.walletCumulativeUsd1),
@@ -286,6 +365,30 @@ String launchSignReasonText(String reasonCode) => switch (reasonCode) {
   _ => '钱包没有完成签名，没有提交任何交易。',
 };
 
+/// [launchSignReasonText] for a claim or a refund (decision 0103). The codes
+/// whose purchase sentence speaks of a quote or a subscription get their own
+/// sentence; the rest are the same words with the kind's noun.
+String launchSignReasonTextFor(LaunchIntentKind kind, String reasonCode) {
+  if (!kind.isSettlement) return launchSignReasonText(reasonCode);
+  final noun = launchIntentNoun(kind);
+  return switch (reasonCode) {
+    'INTENT_EXPIRED' => '这份$noun的签名窗口已过，没有提交任何交易。请重新发起。',
+    'LAUNCH_SIMULATION_REVERTED' => '试算没有通过，这笔$noun在链上会被拒绝。没有提交任何交易，请刷新后再试。',
+    'LAUNCH_SIMULATION_UNAVAILABLE' =>
+      '暂时无法试算这笔$noun，服务端不允许签名，没有提交任何交易。请稍后重新发起。',
+    'INTENT_SUBMITTED' ||
+    'INTENT_CONFIRMED' => '这笔$noun已经提交过，不能再次签名。请在「我的参与记录」查看。',
+    _ => launchSignReasonText(reasonCode).replaceAll('认购', noun),
+  };
+}
+
+/// [launchReportReasonText] with the kind's noun (decision 0103).
+String launchReportReasonTextFor(LaunchIntentKind kind, String reasonCode) =>
+    kind.isSettlement
+    ? launchReportReasonText(reasonCode)
+          .replaceAll('认购', launchIntentNoun(kind))
+    : launchReportReasonText(reasonCode);
+
 /// zh-CN for a refused broadcast report (loop-api decision 0077). The wallet
 /// has already broadcast, so none of these says that nothing happened.
 String launchReportReasonText(String reasonCode) => switch (reasonCode) {
@@ -316,19 +419,24 @@ bool launchReportRetryable(String reasonCode) => !const <String>{
 }.contains(reasonCode);
 
 /// The one sentence after a broadcast, for the sheet and the page alike.
-String launchBroadcastText(LaunchSignOutcome outcome) {
+String launchBroadcastText(
+  LaunchSignOutcome outcome, {
+  LaunchIntentKind kind = LaunchIntentKind.buy,
+}) {
+  final noun = launchIntentNoun(kind);
   final hash = outcome.txHash;
   if (hash == null) {
-    return '钱包的结果未知，这笔认购已锁定。请在「我的参与记录」查看，不要重复签名。';
+    return '钱包的结果未知，这笔$noun已锁定。请在「我的参与记录」查看，不要重复签名。';
   }
   final short = launchShortHex(hash);
   final reported = outcome.reported;
   if (reported != null) {
     return '钱包已广播（$short），服务端已记录，当前状态：${reported.state.label}。'
-        '广播不代表已成交，结果以链上索引为准，会出现在「我的参与记录」。不要重复认购。';
+        '广播不代表${kind.isSettlement ? '已到账' : '已成交'}，结果以链上索引为准，'
+        '会出现在「我的参与记录」。不要重复$noun。';
   }
-  return '钱包已广播（$short）。广播不代表已成交。'
-      '${launchReportReasonText(outcome.reasonCode)}';
+  return '钱包已广播（$short）。广播不代表${kind.isSettlement ? '已到账' : '已成交'}。'
+      '${launchReportReasonTextFor(kind, outcome.reasonCode)}';
 }
 
 /// Opens the signing exit for one prepared Launch intent.
@@ -403,7 +511,7 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
     final refusal = _preflight();
     if (refusal != null) {
       _state = LoopSignSheetState.simulationFailed;
-      _reason = launchSignReasonText(refusal);
+      _reason = launchSignReasonTextFor(_intent.kind, refusal);
     }
   }
 
@@ -437,11 +545,11 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
         case MoneySignStatus.reportRefused:
         case MoneySignStatus.submitted:
           _state = LoopSignSheetState.complete;
-          _reason = launchBroadcastText(outcome);
+          _reason = launchBroadcastText(outcome, kind: _intent.kind);
         case MoneySignStatus.refused:
         case MoneySignStatus.walletRejected:
           _state = LoopSignSheetState.simulationFailed;
-          _reason = launchSignReasonText(outcome.reasonCode);
+          _reason = launchSignReasonTextFor(_intent.kind, outcome.reasonCode);
           _submitted = false;
       }
     });
@@ -449,13 +557,13 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final fields = launchPurchaseFields(_intent, ticker: widget.ticker);
+    final fields = launchIntentFields(_intent, ticker: widget.ticker);
     return PopScope(
       canPop: _state != LoopSignSheetState.signing,
       child: LoopSignSheet(
         key: const ValueKey<String>('launch-sign-sheet'),
         state: _state,
-        title: launchPurchaseTitle,
+        title: launchIntentTitle(_intent.kind),
         networkBadge: loopIsTestnetChainId(_intent.chainId)
             ? loopTestnetBadgeLabel
             : null,

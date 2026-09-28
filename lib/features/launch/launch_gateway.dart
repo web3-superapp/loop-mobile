@@ -52,6 +52,22 @@ abstract interface class LaunchGateway {
     required String payAmount,
   });
 
+  /// Prepares one claim or refund intent (loop-api decision 0087). [kind] is
+  /// never [LaunchIntentKind.buy]. The answer is the same envelope as a
+  /// purchase; the page signs it through the same exit.
+  Future<LaunchPurchasePrepared> prepareSettlementIntent({
+    required String launchId,
+    required String walletId,
+    required LaunchIntentKind kind,
+  });
+
+  /// Reads one Launch intent as the server holds it now (loop-api decision
+  /// 0081). It never changes anything; only the server's lanes move `state`.
+  Future<LaunchPurchaseIntent> loadIntent({
+    required String launchId,
+    required String launchIntentId,
+  });
+
   /// Reports the hash the device broadcast for one purchase intent
   /// (decision 0089). The answer is the server's intent, `submitted` with that
   /// hash: pending evidence, never a purchase. It is idempotent for one hash.
@@ -124,6 +140,19 @@ final class UnavailableLaunchGateway implements LaunchGateway {
     required String walletId,
     required String roundId,
     required String payAmount,
+  }) => _unavailable();
+
+  @override
+  Future<LaunchPurchasePrepared> prepareSettlementIntent({
+    required String launchId,
+    required String walletId,
+    required LaunchIntentKind kind,
+  }) => _unavailable();
+
+  @override
+  Future<LaunchPurchaseIntent> loadIntent({
+    required String launchId,
+    required String launchIntentId,
   }) => _unavailable();
 
   @override

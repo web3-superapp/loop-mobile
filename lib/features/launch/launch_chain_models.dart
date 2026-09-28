@@ -638,9 +638,90 @@ final class LaunchRefundRecord {
   final String? frozenAtBlock;
 }
 
+/// `settlements[].kind` (loop-api decision 0087): one `Claimed` or one
+/// `Refunded` log of the caller's wallet.
+enum LaunchSettlementKind {
+  claimed('claimed', '已领取'),
+  refunded('refunded', '已退款');
+
+  const LaunchSettlementKind(this.wireName, this.label);
+
+  final String wireName;
+  final String label;
+
+  static LaunchSettlementKind? tryParse(String value) {
+    for (final kind in values) {
+      if (kind.wireName == value) return kind;
+    }
+    return null;
+  }
+}
+
+/// One `Claimed` / `Refunded` log (history `settlements[]`, decision 0087).
+///
+/// [amount] is in the base unit of [assetId]: the project token for a claim,
+/// USD1 for a refund. [cumulativeAmount] is the wallet's running total after
+/// this log.
+@immutable
+final class LaunchSettlementRecord {
+  const LaunchSettlementRecord({
+    required this.settlementRecordId,
+    required this.kind,
+    required this.walletId,
+    required this.assetId,
+    required this.amount,
+    required this.cumulativeAmount,
+    required this.transactionHash,
+    required this.logIndex,
+    required this.blockNumber,
+    required this.blockHash,
+    required this.confirmationState,
+    required this.observedAt,
+  });
+
+  final String settlementRecordId;
+  final LaunchSettlementKind kind;
+  final String walletId;
+  final String assetId;
+  final String amount;
+  final String cumulativeAmount;
+  final String transactionHash;
+  final int logIndex;
+  final String blockNumber;
+  final String blockHash;
+  final LaunchConfirmationState confirmationState;
+  final DateTime observedAt;
+}
+
 // ---------------------------------------------------------------------------
-// purchase intent (`POST …/intents` → 201)
+// launch intent (`POST …/intents` → 201): buy, claim, claimRefund
 // ---------------------------------------------------------------------------
+
+/// `launchIntent.kind` (loop-api decision 0087). The key is absent on a
+/// purchase, so a missing `kind` is [buy]; the two others call
+/// `claim(saleId)` / `claimRefund(saleId)` on the same contract.
+enum LaunchIntentKind {
+  buy('buy', '0x'),
+  claim('claim', '0x379607f5'),
+  claimRefund('claimRefund', '0x5b7baf64');
+
+  const LaunchIntentKind(this.wireName, this.selector);
+
+  final String wireName;
+
+  /// The 4-byte function selector the calldata must start with. A purchase
+  /// is not pinned here (its calldata carries six arguments).
+  final String selector;
+
+  bool get isSettlement => this != LaunchIntentKind.buy;
+
+  static LaunchIntentKind? tryParse(String value) {
+    for (final kind in values) {
+      if (kind.wireName == value) return kind;
+    }
+    return null;
+  }
+}
 
 enum LaunchIntentState {
   prepared('prepared', '待确认'),
@@ -812,6 +893,9 @@ final class LaunchPurchaseIntent {
     required this.unsignedTransaction,
     required this.expiresAt,
     required this.createdAt,
+    this.kind = LaunchIntentKind.buy,
+    this.claimableTokens,
+    this.refundableUsd1,
     this.projectAssetId,
     this.saleId,
     this.walletRoundCapUsd1,
@@ -828,8 +912,11 @@ final class LaunchPurchaseIntent {
   final String launchId;
   final String projectId;
   final String walletId;
-  final String roundId;
-  final int roundIndex;
+
+  /// LOOP's round ID and the contract round of a purchase; `null` on a claim
+  /// or a refund (decision 0087), which name no round.
+  final String? roundId;
+  final int? roundIndex;
   final String chainId;
   final String contractAddress;
   final String quoteAssetId;
@@ -849,6 +936,15 @@ final class LaunchPurchaseIntent {
   final LaunchUnsignedTransaction unsignedTransaction;
   final DateTime expiresAt;
   final DateTime createdAt;
+
+  /// Decision 0087: which contract call this intent seals.
+  final LaunchIntentKind kind;
+
+  /// `getPosition().claimableTokens` at [snapshotBlockNumber]; claim only.
+  final String? claimableTokens;
+
+  /// `getPosition().refundableUsd1` at [snapshotBlockNumber]; refund only.
+  final String? refundableUsd1;
 
   // The optional S83b keys (loop-api decision 0077). Absent means the server
   // did not send them, never zero.
@@ -885,7 +981,19 @@ final class LaunchPurchaseIntent {
       unsignedTransaction.chainId == loopChainReference(chainId) &&
       unsignedTransaction.to == contractAddress &&
       unsignedTransaction.value == '0x0' &&
-      unsignedTransaction.data.length > 10;
+      unsignedTransaction.data.length > 10 &&
+      _settlementCallMatches;
+
+  /// A claim or a refund is `selector ‖ uint256 saleId` and nothing else
+  /// (06 §4.1). When the server named the sale, the argument must be it.
+  bool get _settlementCallMatches {
+    if (!kind.isSettlement) return true;
+    final data = unsignedTransaction.data;
+    if (data.length != 74 || !data.startsWith(kind.selector)) return false;
+    final sale = saleId;
+    if (sale == null) return true;
+    return BigInt.parse(data.substring(10), radix: 16) == BigInt.parse(sale);
+  }
 }
 
 /// A prepared purchase: the server's intent and nothing else.

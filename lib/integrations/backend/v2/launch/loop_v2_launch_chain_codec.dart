@@ -375,10 +375,12 @@ abstract final class LoopV2LaunchChainCodec {
     );
     if (source is LaunchReadingUnavailable<LaunchIndexedSource>) {
       // Unchanged from step 7: an unavailable source has nothing to list, so
-      // a row would be a fact nobody indexed.
+      // a row would be a fact nobody indexed. Decision 0087 keeps those bytes:
+      // `settlements` is absent there, never an empty array.
       LoopV2S7Codec.requireEmptyList(root['purchaseRecords']);
       LoopV2S7Codec.requireEmptyList(root['entitlements']);
       LoopV2S7Codec.requireEmptyList(root['refunds']);
+      if (root.containsKey('settlements')) invalid();
       return LaunchHistory(launchId: launchId, source: source);
     }
     final seen = <String>{};
@@ -476,17 +478,72 @@ abstract final class LoopV2LaunchChainCodec {
         ),
       );
     }
+    List<LaunchSettlementRecord>? settlements;
+    if (root.containsKey('settlements')) {
+      settlements = <LaunchSettlementRecord>[];
+      for (final entry in LoopV2S7Codec.requireList(
+        root['settlements'],
+        maximum: 500,
+      )) {
+        settlements.add(_settlement(entry, seen));
+      }
+    }
     return LaunchHistory(
       launchId: launchId,
       source: source,
       purchaseRecords: List<LaunchPurchaseRecord>.unmodifiable(purchases),
       entitlements: List<LaunchEntitlementRecord>.unmodifiable(entitlements),
       refunds: List<LaunchRefundRecord>.unmodifiable(refunds),
+      settlements: settlements == null
+          ? null
+          : List<LaunchSettlementRecord>.unmodifiable(settlements),
+    );
+  }
+
+  /// One `settlements[]` row (decision 0087), strictly.
+  static LaunchSettlementRecord _settlement(Object? raw, Set<String> seen) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'settlementRecordId',
+      'kind',
+      'walletId',
+      'assetId',
+      'amount',
+      'cumulativeAmount',
+      'transactionHash',
+      'logIndex',
+      'blockNumber',
+      'blockHash',
+      'confirmationState',
+      'observedAt',
+    });
+    final id = LoopV2S7Codec.requireId(map, 'settlementRecordId');
+    if (!seen.add(id)) invalid();
+    final assetId = map['assetId'];
+    if (assetId is! String || assetId.isEmpty || assetId.length > 128) {
+      invalid();
+    }
+    return LaunchSettlementRecord(
+      settlementRecordId: id,
+      kind: _enum(map, 'kind', LaunchSettlementKind.tryParse),
+      walletId: LoopV2S7Codec.requireId(map, 'walletId'),
+      assetId: assetId,
+      amount: _amount(map, 'amount'),
+      cumulativeAmount: _amount(map, 'cumulativeAmount'),
+      transactionHash: _bytes32(map, 'transactionHash'),
+      logIndex: LoopV2S7Codec.requireCount(map, 'logIndex'),
+      blockNumber: _block(map, 'blockNumber'),
+      blockHash: _bytes32(map, 'blockHash'),
+      confirmationState: _enum(
+        map,
+        'confirmationState',
+        LaunchConfirmationState.tryParse,
+      ),
+      observedAt: LoopV2S7Codec.requireTimestamp(map, 'observedAt'),
     );
   }
 
   // -------------------------------------------------------------------------
-  // purchase intent (201)
+  // launch intent (201 / 200): buy, claim, claimRefund
   // -------------------------------------------------------------------------
 
   static const _intentRequiredKeys = <String>{
@@ -531,6 +588,11 @@ abstract final class LoopV2LaunchChainCodec {
     // today: public RPC exposes no trace). Decoded wherever it appears so a
     // later widening of the state rule is not a whole-document failure.
     'revertReason',
+    // loop-api decision 0087: present on a claim / refund only. A purchase
+    // keeps its pre-0087 bytes, so an absent `kind` is a purchase.
+    'kind',
+    'claimableTokens',
+    'refundableUsd1',
   };
 
   static final RegExp _quantityPattern = RegExp(
@@ -638,12 +700,60 @@ abstract final class LoopV2LaunchChainCodec {
     );
   }
 
+  static LaunchIntentKind _intentKind(Map<String, Object?> map) {
+    if (!map.containsKey('kind')) return LaunchIntentKind.buy;
+    return _enum(map, 'kind', LaunchIntentKind.tryParse);
+  }
+
+  /// Decision 0087: each kind carries exactly its own facts. A purchase names
+  /// a round and never a position figure; a claim or a refund names no round,
+  /// pays nothing, and carries the one position figure it settles. Anything
+  /// else describes a call nobody asked for, so the whole intent is refused.
+  static void _requireKindShape(
+    Map<String, Object?> map,
+    LaunchIntentKind kind,
+  ) {
+    switch (kind) {
+      case LaunchIntentKind.buy:
+        if (map.containsKey('claimableTokens') ||
+            map.containsKey('refundableUsd1')) {
+          invalid();
+        }
+      case LaunchIntentKind.claim:
+      case LaunchIntentKind.claimRefund:
+        LoopV2S7Codec.requireNull(map, 'roundId');
+        LoopV2S7Codec.requireNull(map, 'roundIndex');
+        if (map['usd1Amount'] != '0' || map['minTokenAmount'] != '0') {
+          invalid();
+        }
+        if (map['eligibilityProof'] is! List ||
+            (map['eligibilityProof']! as List).isNotEmpty) {
+          invalid();
+        }
+        if (map.containsKey('walletRoundCapUsd1') ||
+            map.containsKey('walletProjectCapUsd1')) {
+          invalid();
+        }
+        final own = kind == LaunchIntentKind.claim
+            ? 'claimableTokens'
+            : 'refundableUsd1';
+        final other = kind == LaunchIntentKind.claim
+            ? 'refundableUsd1'
+            : 'claimableTokens';
+        if (!map.containsKey(own) || map.containsKey(other)) invalid();
+        final expected = kind == LaunchIntentKind.claim ? map[own] : '0';
+        if (map['expectedTokenAmount'] != expected) invalid();
+    }
+  }
+
   static LaunchPurchaseIntent purchaseIntent(Object? raw) {
     final map = LoopV2Contract.strictMapWithOptional(
       raw,
       _intentRequiredKeys,
       _intentOptionalKeys,
     );
+    final kind = _intentKind(map);
+    _requireKindShape(map, kind);
     final chainId = LoopV2S7Codec.requireEnum(
       map,
       'chainId',
@@ -688,8 +798,10 @@ abstract final class LoopV2LaunchChainCodec {
       launchId: LoopV2S7Codec.requireId(map, 'launchId'),
       projectId: LoopV2S7Codec.requireId(map, 'projectId'),
       walletId: LoopV2S7Codec.requireId(map, 'walletId'),
-      roundId: LoopV2S7Codec.requireId(map, 'roundId'),
-      roundIndex: _roundIndex(map),
+      roundId: kind.isSettlement
+          ? null
+          : LoopV2S7Codec.requireId(map, 'roundId'),
+      roundIndex: kind.isSettlement ? null : _roundIndex(map),
       chainId: chainId,
       contractAddress: contract,
       quoteAssetId: quoteAssetId,
@@ -718,6 +830,9 @@ abstract final class LoopV2LaunchChainCodec {
       ),
       expiresAt: LoopV2S7Codec.requireTimestamp(map, 'expiresAt'),
       createdAt: LoopV2S7Codec.requireTimestamp(map, 'createdAt'),
+      kind: kind,
+      claimableTokens: _optionalAmount(map, 'claimableTokens'),
+      refundableUsd1: _optionalAmount(map, 'refundableUsd1'),
       projectAssetId: projectAssetId,
       saleId: _optionalAmount(map, 'saleId'),
       walletRoundCapUsd1: _optionalAmount(map, 'walletRoundCapUsd1'),
