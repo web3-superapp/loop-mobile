@@ -153,3 +153,13 @@ Scaffold 只扣一次键盘），列表高度本身是对的，错的是锚点�
 这是探针的盲区修正，不是豁免，全量测试未因此出现新的失败。
 
 模拟器（emulator-5554，连 api-dev）截图 `/private/tmp/s99/`。
+
+## 主代理裁决（2026-09-28）
+
+状态：Accepted，随 `integration/v2` 合并。
+1. 后端已在 S99b（loop-api 0091）补 AASA `/c/*`、`/c/{id}/room` 落地页与 Stream grants 收紧。
+2. 好友群置顶：群创建者可置顶（后端给 channel_moderator），客户端菜单同步放开给创建者——开 S99c 小单。
+3. 从历史点「回复」回到最新：接受。
+4. 引用块无显示名时只显示预览：接受。
+5. 未读色 `LoopColors.danger`：接受；底部 Tab 不加。
+6. `loop_ground_probe.dart` 识别 `ShapeDecoration`：接受。
