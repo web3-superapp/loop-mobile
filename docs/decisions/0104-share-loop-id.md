@@ -55,3 +55,12 @@ Proposed 2026-09-28。S97，客户端单侧。基线 `integration/v2` e10a529。
 `test/s97_share_loop_id_test.dart`（18 项）：文本规则（前后文字、小写、邀请码、无匹配、链接路径）、
 复制文本与 Toast、分享文本、分享失败、无 ID 不画、公开资料复制、粘贴四种剪贴板、initialQuery 走用户域、
 运行中链接、登录前链接落社区后 push、畸形链接。模拟器截图 `/private/tmp/s97/`。
+
+## 主代理裁决（2026-09-28）
+
+状态：Accepted，随 `integration/v2` 合并。
+1. 后端 `users` 搜索域加 LOOP ID 精确匹配：开 S98（后端），同时在 API 上托管 `/.well-known/apple-app-site-association` 与 `assetlinks.json`。
+2. 深链主机先用 api-dev / api-staging；正式短域名等生产环境再定。
+3. 未登录时先落社区再推搜索：接受。
+4. iOS Associated Domains：打 TF build 8 前核对描述文件。
+5. 二维码：后续。
