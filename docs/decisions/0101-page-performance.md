@@ -268,3 +268,61 @@ UI 线程（build / layout / paint）三页都 <1 ms/帧 p50，没有 >16 ms 的
 1. 解码失败不记失败表：接受（服务端代取图标后此路径消失）。
 2. 5 s 预算保留，只作日志。
 3. 0101 裁决 6 由「只记明确失败、10 分钟后再试一次」取代：确认。
+
+## S96b（2026-09-28）· 图标主机：接受本构建的后端图片代理
+
+基线 `integration/v2` 035fc75，分支 `fix/S96b-logo-host`。客户端单侧；不新增依赖、`pubspec.lock` 不变、
+路由清单不变（93 条）、不改 API 形状。未触碰 `lib/features/profile`、`lib/features/chat/friends`、LOOP/ops。
+
+### 背景
+
+后端 S96（loop-api 决策 0089）起，所有 `logo.url` 都是
+`<PUBLIC_BASE_URL>/v2/market/logos/eip155:56/<小写地址|native>.png`，服务端代取并缓存上游图片（中国网络连不上
+GitHub）。客户端 `LoopV2ChainCodec.logoUrl` 只认三个外部主机；而且不在白名单里的 URL 不是「无图」，是
+`invalidPayload`——**S96 部署后行情 / 代币页 / 钱包余额 / 自选 / 挖矿资产 / 资产搜索的整个响应都会解码失败**，
+不只是图标变首字母。本单与后端 S96 必须同批上线。
+
+### 规则（`lib/integrations/backend/v2/loop_v2_chain_codec.dart` `isAcceptedLogoUrl`）
+
+- 三个外部主机照旧：`cdn.dexscreener.com`、`dd.dexscreener.com`、`raw.githubusercontent.com`，https、无凭据、
+  无端口。保留原因：代理对 >256 KiB 的图回 `302` 指向它们，旧栈也仍下发它们。
+- **本构建的后端 origin**：取 `AppConfig.fromEnvironment().backendBaseUrlForCurrentBuild` 经
+  `LoopBackendEndpoint.tryParse`——与 `loopBackendEndpointProvider` / `LoopDioFactory.createLoopBackend`
+  同一个输入、同一个解析函数。dev / staging / hk 各自的域名自然覆盖；别的栈的 URL 在本构建里被拒。
+  要求 scheme、host、port 与 origin 完全一致；无凭据、无 query、无 fragment；路径必须完整匹配 OpenAPI
+  锚定的 `^/v2/market/logos/eip155:56/(0x[0-9a-f]{40}|native)\.png$`（同源的其它路径、其它链、大写地址、
+  `.svg` 一律拒）。https 恒可；http 只在 origin 本身是 loopback（`localhost` / `127.0.0.1` / `::1`）且
+  非 release 构建时允许——与网络层的信任边界相同。
+- 构建没有后端（`LOOP_BACKEND_BASE_URL` 为空，如 Preview）：只接受三个外部主机。
+- 其它一切仍是 `invalidPayload`（契约锚定了 pattern，客户端不放宽）。
+- `loopRemoteLogoUri`（图片组件自己的第二道门）同步放开 loopback http（仅非 release），否则本机 http
+  开发栈的代理图会被组件再挡一次。
+- 测试接缝：`LoopV2ChainCodec.debugSetLogoOrigin`（`@visibleForTesting`；`null` 复位为构建值）。
+
+### 按字节解码
+
+代理 URL 恒以 `.png` 结尾，内容可能是 JPEG / WebP / GIF。`LoopTokenLogo` 用
+`ResizeImage(NetworkImage)`，引擎按字节签名选解码器，扩展名与 `Content-Type` 都不参与；客户端没有任何按扩展名
+的判断。测试用真实 loopback 服务器回 `image/png` 头 + JPEG 字节、`image/png` 头 + WebP 字节，均解码成功。
+
+### 失败记忆
+
+S94b 的「明确失败记 10 分钟、再试一次」按 URL 记，对代理 URL 照常生效：代理 `404`（所有上游都没有图，服务端
+记 24 h）与 `502`（上游不可达）都是 `NetworkImageLoadException`，记入失败表。`302` 到上游后在中国网络失败时
+按原规则分类（DNS / 拒绝记，超时不记）。
+
+### Evidence
+
+`test/s96b_logo_host_test.dart`（11 例）：后端 https origin 的地址与 `native` 被接受（含显式 `:443`）；
+staging 构建拒 dev 的 URL；同源 11 种非代理路径被拒（`/v2/market/overview`、`/v1/…`、`eip155:97`、`.svg`、
+大写地址、`..`、query、fragment、前缀路径等）；scheme / 端口 / 凭据 / 子域不一致被拒；loopback http origin
+被接受且另一端口被拒、非 loopback http 被组件拒；无后端构建只认外部主机；三个外部主机仍接受；随机主机、
+仿冒后缀、http / 端口版 GitHub 被拒；真实 loopback 代理回 JPEG / WebP 字节的 `.png` 按字节解码；代理 404 为
+`NetworkImageLoadException(404)` 且被判为明确失败。原有 `s78b` 的外部主机与非法载荷用例不改、仍通过。
+
+### 待主代理确认
+
+1. 不认的 logo 主机仍让**整个响应** `invalidPayload`（沿用 0084 的严格解码）。若后端某环境 `PUBLIC_BASE_URL`
+   与客户端构建的 `LOOP_BACKEND_BASE_URL` 不一致（例如走另一个域名或 CDN），行情等整页会失败而不是只丢图标。
+   dev 已核对一致（`https://api-dev.quant-dinger.cc`）；staging / hk 需部署时核对，或裁决改为「不认 → 首字母」。
+2. 路径按 OpenAPI 完整 pattern 校验（比任务单的「前缀」更严）。服务端将来加链或改文件名规则时客户端需同步。

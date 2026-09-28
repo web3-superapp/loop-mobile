@@ -1,7 +1,10 @@
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_repository.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
 /// Strict decoders shared by the S5 modules (`chain`, `wallet`, `market`,
@@ -483,17 +486,88 @@ abstract final class LoopV2ChainCodec {
     );
   }
 
-  /// The hosts the `logo.url` may name (contract §2a, decision 0072).
+  /// The external hosts a `logo.url` may name (contract §2a, decisions 0072
+  /// and 0089).
   ///
-  /// The server filters twice and anchors the pattern in OpenAPI. The client
-  /// does not widen it: a URL whose host is not one of these three is treated
-  /// as no artwork at all, so a compromised or mis-projected row cannot make
-  /// the app fetch from an arbitrary origin.
+  /// Since S96 the server answers every logo with its own image proxy
+  /// ([isAcceptedLogoUrl]); these three remain accepted because the proxy's
+  /// oversize `302` points at them and an older stack still projects them.
+  /// The client does not widen the list: any other host is an invalid
+  /// payload, so a compromised or mis-projected row cannot make the app fetch
+  /// from an arbitrary origin.
   static const Set<String> logoHosts = <String>{
     'cdn.dexscreener.com',
     'dd.dexscreener.com',
     'raw.githubusercontent.com',
   };
+
+  /// The image proxy's path on the LOOP backend (decision 0089 §1): one
+  /// chain, a lowercase address or `native`, always `.png` whatever the bytes
+  /// are. The pattern is the one OpenAPI anchors.
+  static final RegExp logoProxyPathPattern = RegExp(
+    r'^/v2/market/logos/eip155:56/(0x[0-9a-f]{40}|native)\.png$',
+  );
+
+  /// The backend origin this build talks to, resolved exactly as
+  /// `loopBackendEndpointProvider` resolves it for the network layer:
+  /// `LOOP_BACKEND_BASE_URL` for the current build, through
+  /// [LoopBackendEndpoint.tryParse] (HTTPS, or HTTP loopback only). `null`
+  /// when the build has no backend — then only [logoHosts] are accepted.
+  static final LoopBackendEndpoint? _buildLogoOrigin =
+      LoopBackendEndpoint.tryParse(
+        AppConfig.fromEnvironment().backendBaseUrlForCurrentBuild,
+      );
+
+  static LoopBackendEndpoint? _logoOriginOverride;
+  static bool _logoOriginOverridden = false;
+
+  /// Replaces the build's backend origin for logo validation in tests.
+  /// Pass the same string a build would carry in `LOOP_BACKEND_BASE_URL`;
+  /// `null` resets to the build value.
+  @visibleForTesting
+  static void debugSetLogoOrigin(String? backendBaseUrl) {
+    _logoOriginOverridden = backendBaseUrl != null;
+    _logoOriginOverride = backendBaseUrl == null
+        ? null
+        : LoopBackendEndpoint.tryParse(backendBaseUrl);
+  }
+
+  static Uri? get _logoOrigin =>
+      (_logoOriginOverridden ? _logoOriginOverride : _buildLogoOrigin)?.uri;
+
+  /// Whether the client may load [uri] as token artwork.
+  ///
+  /// - One of the three external hosts: HTTPS, no credentials, no port.
+  /// - This build's own backend origin (decision 0089, S96b): same scheme,
+  ///   host and port as the origin the network layer trusts, no credentials,
+  ///   no query or fragment, and the image-proxy path. HTTPS always; plain
+  ///   HTTP only for a loopback Development origin in a non-release build —
+  ///   the same boundary `LoopDioFactory.createLoopBackend` draws.
+  ///
+  /// Everything else — another host, another path on our own host — is
+  /// refused.
+  static bool isAcceptedLogoUrl(Uri uri) {
+    if (uri.userInfo.isNotEmpty) return false;
+    final scheme = uri.scheme.toLowerCase();
+    final host = uri.host.toLowerCase();
+    if (scheme == 'https' && !uri.hasPort && logoHosts.contains(host)) {
+      return true;
+    }
+    final origin = _logoOrigin;
+    if (origin == null) return false;
+    if (scheme != origin.scheme ||
+        host != origin.host ||
+        uri.port != origin.port ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        !logoProxyPathPattern.hasMatch(uri.path)) {
+      return false;
+    }
+    if (scheme == 'https') return true;
+    final loopback =
+        host == 'localhost' || host == '127.0.0.1' || host == '::1';
+    return scheme == 'http' && loopback && !kReleaseMode;
+  }
 
   /// The required `logo` block every asset row now carries.
   ///
@@ -529,13 +603,7 @@ abstract final class LoopV2ChainCodec {
         if (source != 'dexscreener' && source != 'trustwallet') invalid();
         if (map['observedAt'] != null) requireTimestamp(map, 'observedAt');
         final uri = Uri.tryParse(url);
-        if (uri == null ||
-            uri.scheme != 'https' ||
-            uri.userInfo.isNotEmpty ||
-            uri.hasPort ||
-            !logoHosts.contains(uri.host)) {
-          invalid();
-        }
+        if (uri == null || !isAcceptedLogoUrl(uri)) invalid();
         return url;
       default:
         invalid();
