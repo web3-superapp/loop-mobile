@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 
 /// Creates Dio clients with one explicit network trust boundary.
 ///
@@ -9,6 +13,15 @@ abstract final class LoopDioFactory {
   static const connectTimeout = Duration(seconds: 10);
   static const sendTimeout = Duration(seconds: 10);
   static const receiveTimeout = Duration(seconds: 15);
+
+  /// How long an idle keep-alive connection stays in the pool (decision 0101).
+  ///
+  /// `dart:io` closes idle sockets after 15 s by default. A reader who stays
+  /// on one page longer than that paid a fresh TCP + TLS handshake — two more
+  /// round trips, 0.5–2.3 s each from China — on the next page's first read.
+  /// Sixty seconds stays below the LOOP API's own `keepAliveTimeout` (72 s),
+  /// so the client lets go of a socket before the server does.
+  static const idleConnectionTimeout = Duration(seconds: 60);
 
   /// Creates an identity-free client for one exact public HTTPS origin.
   ///
@@ -50,6 +63,7 @@ abstract final class LoopDioFactory {
         responseType: ResponseType.json,
       ),
     );
+    dio.httpClientAdapter = _LoopOriginConnectionPool.lease(origin);
     dio.interceptors.add(
       _LoopTrustBoundaryInterceptor(
         origin: origin,
@@ -89,6 +103,66 @@ abstract final class LoopDioFactory {
       fragment: null,
     );
   }
+}
+
+/// One keep-alive connection pool per exact origin (decision 0101).
+///
+/// The public D0 client and the authenticated backend client talk to the same
+/// origin. With a pool each, a warm socket on one was useless to the other,
+/// and every capability refresh opened its own TLS session. Connections carry
+/// no credential state — `dart:io` keeps no cookies and every Authorization
+/// header is request-local — so sharing the socket shares nothing else. The
+/// trust-boundary interceptor still runs per client, before dispatch.
+///
+/// Each client holds a lease; the pool closes when the last lease closes.
+final class _LoopOriginConnectionPool implements HttpClientAdapter {
+  _LoopOriginConnectionPool._(this._key, this._entry);
+
+  static final Map<String, _LoopPoolEntry> _entries =
+      <String, _LoopPoolEntry>{};
+
+  static _LoopOriginConnectionPool lease(Uri origin) {
+    final key = '${origin.scheme}://${origin.host}:${origin.port}';
+    final entry = _entries.putIfAbsent(
+      key,
+      () => _LoopPoolEntry(
+        IOHttpClientAdapter(
+          createHttpClient: () =>
+              HttpClient()..idleTimeout = LoopDioFactory.idleConnectionTimeout,
+        ),
+      ),
+    );
+    entry.leases += 1;
+    return _LoopOriginConnectionPool._(key, entry);
+  }
+
+  final String _key;
+  final _LoopPoolEntry _entry;
+  bool _closed = false;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) => _entry.adapter.fetch(options, requestStream, cancelFuture);
+
+  @override
+  void close({bool force = false}) {
+    if (_closed) return;
+    _closed = true;
+    _entry.leases -= 1;
+    if (_entry.leases > 0) return;
+    if (identical(_entries[_key], _entry)) _entries.remove(_key);
+    _entry.adapter.close(force: force);
+  }
+}
+
+final class _LoopPoolEntry {
+  _LoopPoolEntry(this.adapter);
+
+  final IOHttpClientAdapter adapter;
+  int leases = 0;
 }
 
 /// Sanitized marker for requests rejected before network dispatch.

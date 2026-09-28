@@ -137,6 +137,7 @@ void main() {
     'LoopIcon renders the sprite with a colour filter and semantics',
     (tester) async {
       final semantics = tester.ensureSemantics();
+      LoopIconRasters.debugReset();
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
@@ -152,8 +153,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
 
+      // The first sight of a glyph at a size is the vector sprite.
       final pictures = tester.widgetList<SvgPicture>(find.byType(SvgPicture));
       expect(pictures, hasLength(2));
       expect(
@@ -163,6 +164,24 @@ void main() {
       expect(pictures.first.width, 21);
       expect(find.bySemanticsLabel('Wallet'), findsOneWidget);
       expect(pictures.last.excludeFromSemantics, isTrue);
+
+      // Decision 0101: once its raster exists the same glyph is drawn from
+      // it, tinted by the same srcIn filter on the image draw — no layer.
+      await tester.runAsync(
+        () => Future.wait(<Future<Object?>>[
+          LoopIconRasters.rasterize('wallet', 63),
+          LoopIconRasters.rasterize('search', 63),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      final rasters = tester.widgetList<RawImage>(find.byType(RawImage));
+      expect(rasters, hasLength(2));
+      expect(find.byType(SvgPicture), findsNothing);
+      expect(rasters.first.color, LoopColors.lime);
+      expect(rasters.first.colorBlendMode, BlendMode.srcIn);
+      expect(rasters.first.width, 21);
+      expect(rasters.first.image!.width, 63);
+      expect(find.bySemanticsLabel('Wallet'), findsOneWidget);
       semantics.dispose();
     },
   );

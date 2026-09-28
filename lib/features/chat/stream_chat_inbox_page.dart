@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
@@ -530,22 +531,39 @@ class _StreamChannelListBody extends ConsumerStatefulWidget {
       _StreamChannelListBodyState();
 }
 
+/// The inbox's channel list, kept across visits (decision 0101).
+///
+/// The list used to be created with the page and disposed with it, so every
+/// visit to 会话 started from an empty controller. Held here, a return visit
+/// draws the rows it had — still subscribed to Stream's events, so they did
+/// not go stale while away — and the list view's own initial load re-queries
+/// behind them without clearing them. Released
+/// `LoopSnapshotPolicy.memoryRetention` after the last visit; a different
+/// client or user is a different key, so no account sees another's list.
+final loopStreamChannelListControllerProvider = Provider.autoDispose
+    .family<
+      StreamChannelListController,
+      ({StreamChatClient client, String userId})
+    >((ref, key) {
+      loopRetainRead(ref, onRevisit: () {});
+      final controller = createLoopStreamChannelListController(
+        client: key.client,
+        userId: key.userId,
+      );
+      ref.onDispose(controller.dispose);
+      return controller;
+    });
+
 class _StreamChannelListBodyState
     extends ConsumerState<_StreamChannelListBody> {
-  late final StreamChannelListController _controller =
-      createLoopStreamChannelListController(
-        client: widget.client,
-        userId: widget.userId,
-      );
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final controller = ref.watch(
+      loopStreamChannelListControllerProvider((
+        client: widget.client,
+        userId: widget.userId,
+      )),
+    );
     // Who each direct conversation is with, read once from LOOP's own index
     // (decision 0056). A failed or still-running read publishes the empty
     // index, and every direct row then keeps its neutral label: the inbox
@@ -561,7 +579,7 @@ class _StreamChannelListBodyState
       child: KeyedSubtree(
         key: const ValueKey<String>('stream-chat-channel-list'),
         child: StreamChannelListView(
-          controller: _controller,
+          controller: controller,
           padding: const EdgeInsets.symmetric(vertical: 8),
           itemBuilder: (context, channels, index, defaultItem) =>
               loopStreamChannelListIdentityItem(defaultItem),
@@ -586,7 +604,7 @@ class _StreamChannelListBodyState
                 icon: Icons.cloud_off_outlined,
                 tone: LoopTone.warning,
                 action: OutlinedButton.icon(
-                  onPressed: () => _controller.refresh(),
+                  onPressed: () => controller.refresh(),
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text('重试'),
                 ),

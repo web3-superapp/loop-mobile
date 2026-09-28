@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_read_retention.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -85,16 +87,46 @@ const int loopDirectChannelMaxPages = 10;
 /// A failure is an [AsyncError] here, and the inbox then renders its rows
 /// without names rather than with a guessed one. It never falls back to
 /// Stream.
+///
+/// Decision 0101: the index outlives the inbox for
+/// `LoopSnapshotPolicy.memoryRetention`. A return visit names every direct row
+/// at once from the index it had, and re-reads it behind them when the last
+/// answer is at least `LoopSnapshotPolicy.revisitFloor` old; while it does,
+/// the provider keeps its previous value, so no row falls back to the neutral
+/// label and back.
 final directChannelDirectoryProvider =
     FutureProvider.autoDispose<LoopDirectChannelDirectory>((ref) async {
       final gateway = ref.watch(chatV2GatewayProvider);
+      // A different account is a different index.
+      ref.watch(loopAccountScopeProvider);
+      final clock = ref.read(loopReadClockProvider);
+      DateTime? readAt;
+      var reading = true;
+      loopRetainRead(
+        ref,
+        onRevisit: () {
+          if (loopRevisitIsDue(
+            hasValue: readAt != null,
+            inFlight: reading,
+            readAt: readAt,
+            now: clock(),
+          )) {
+            ref.invalidateSelf();
+          }
+        },
+      );
       final entries = <DirectChannelEntry>[];
-      String? cursor;
-      for (var page = 0; page < loopDirectChannelMaxPages; page += 1) {
-        final result = await gateway.listDirectChannels(cursor: cursor);
-        entries.addAll(result.items);
-        cursor = result.nextCursor;
-        if (cursor == null) break;
+      try {
+        String? cursor;
+        for (var page = 0; page < loopDirectChannelMaxPages; page += 1) {
+          final result = await gateway.listDirectChannels(cursor: cursor);
+          entries.addAll(result.items);
+          cursor = result.nextCursor;
+          if (cursor == null) break;
+        }
+        readAt = clock();
+      } finally {
+        reading = false;
       }
       return LoopDirectChannelDirectory.fromEntries(entries);
     });

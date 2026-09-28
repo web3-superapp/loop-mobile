@@ -241,7 +241,12 @@ final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
       final probe = File(
         '${directory.path}${Platform.pathSeparator}$fileName.probe',
       );
-      await probe.writeAsString('', flush: true).timeout(timeout);
+      // No `flush`: the probe asks whether the directory takes a file, not
+      // whether the disk has synced one. An fsync before the first frame
+      // measured ~400 ms on the Android emulator — exactly the step bound —
+      // so the store silently fell back to memory and no cold start ever
+      // opened on a snapshot (decision 0101).
+      await probe.writeAsString('').timeout(timeout);
       await probe.delete().timeout(timeout);
       return await open(directory: directory, timeout: timeout);
     } on Object catch (error) {

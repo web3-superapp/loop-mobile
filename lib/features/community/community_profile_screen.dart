@@ -146,8 +146,7 @@ class _CommunityProfileScreenState
   /// long as the reader stood here. Both providers are the ones the mining
   /// panel itself uses, so opening the panel from this card costs no second
   /// request.
-  void _bindMiningReads(CommunityDetail? detail) {
-    final community = detail?.community;
+  void _bindMiningReads(CommunitySummary? community) {
     if (community == null || !community.hasBoundAsset) return;
     if (_miningReadFor == community.communityId) return;
     _miningReadFor = community.communityId;
@@ -160,6 +159,39 @@ class _CommunityProfileScreenState
       );
       unawaited(ref.read(miningAssetsControllerProvider.notifier).load());
     });
+  }
+
+  /// What the 社区 tab already knows about [communityId], if it listed it.
+  ///
+  /// Decision 0101: the record read is one round trip, and the bound asset's
+  /// quote and the mining reads used to wait for it — a second round trip for
+  /// facts the tab's own rows already carried. When the reader arrived from
+  /// that list the three reads start beside the record read. The hint only
+  /// ever starts reads this page makes anyway; the record's own answer still
+  /// decides what is drawn. An absent aggregate is not created here.
+  CommunitySummary? _listedCommunity(String communityId) {
+    if (!ref.exists(communityHomeControllerProvider)) return null;
+    final home = ref.read(communityHomeControllerProvider).value;
+    if (home == null) return null;
+    for (final entry in home.joined) {
+      if (entry.community.communityId == communityId) return entry.community;
+    }
+    for (final entry in home.owned) {
+      if (entry.community.communityId == communityId) return entry.community;
+    }
+    return null;
+  }
+
+  /// Holds and starts the bound asset's quote from a hint, while the record
+  /// that will name the same asset is still being read.
+  void _prefetchBoundAsset(String assetKey) {
+    final quote = marketAssetControllerProvider(assetKey);
+    ref.listen(quote, (_, _) {});
+    if (ref.read(quote).phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(quote.notifier).load());
+      });
+    }
   }
 
   /// Keeps the poll armed for exactly the page that can use it.
@@ -204,7 +236,15 @@ class _CommunityProfileScreenState
     // is what keeps the session alive across the push, so the work done at
     // the tap is still there when the room page asks.
     if (_warmingVoiceSession) ref.watch(streamVideoAuthorizationProvider);
-    _bindMiningReads(detail);
+    if (detail == null &&
+        id != null &&
+        !communityCapabilityBlocks(mode, capability)) {
+      final listed = _listedCommunity(id);
+      final assetKey = listed?.boundAssetKey;
+      if (assetKey != null) _prefetchBoundAsset(assetKey);
+      _bindMiningReads(listed);
+    }
+    _bindMiningReads(detail?.community);
     return LoopDashboardPage(
       key: const ValueKey<String>('community-profile-screen'),
       archetype: LoopPageArchetype.record,
