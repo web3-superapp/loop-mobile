@@ -14,7 +14,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart' as painting;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 
@@ -30,8 +29,6 @@ Map<String, Object?> _logo(String url, {String source = 'dexscreener'}) =>
     };
 
 String? _decode(String url) => LoopV2ChainCodec.logoUrl(_logo(url));
-
-Matcher get _invalidPayload => throwsA(isA<LoopBackendFailure>());
 
 /// A 6 x 6 JPEG (converted from the bundled app icon by `sips`).
 final List<int> _jpeg = base64Decode(
@@ -87,11 +84,11 @@ void main() {
       );
       // A dev URL inside a staging build is not this build's backend.
       expect(
-        () => _decode(
+        _decode(
           'https://api-dev.quant-dinger.cc/v2/market/logos/'
           'eip155:56/native.png',
         ),
-        _invalidPayload,
+        isNull,
       );
     });
 
@@ -111,7 +108,7 @@ void main() {
         '/v2/market/logos/eip155:56/native.png#x',
         '/prefix/v2/market/logos/eip155:56/native.png',
       ]) {
-        expect(() => _decode('$origin$path'), _invalidPayload, reason: path);
+        expect(_decode('$origin$path'), isNull, reason: path);
       }
     });
 
@@ -123,7 +120,7 @@ void main() {
         'https://u:p@api-dev.quant-dinger.cc/v2/market/logos/eip155:56/native.png',
         'https://evil.api-dev.quant-dinger.cc/v2/market/logos/eip155:56/native.png',
       ]) {
-        expect(() => _decode(url), _invalidPayload, reason: url);
+        expect(_decode(url), isNull, reason: url);
       }
     });
 
@@ -134,10 +131,8 @@ void main() {
       expect(loopRemoteLogoUri(url)?.toString(), url);
       // Another loopback port is another origin.
       expect(
-        () => _decode(
-          'http://127.0.0.1:3101/v2/market/logos/eip155:56/native.png',
-        ),
-        _invalidPayload,
+        _decode('http://127.0.0.1:3101/v2/market/logos/eip155:56/native.png'),
+        isNull,
       );
       // Plain HTTP stays refused for any host that is not loopback.
       expect(loopRemoteLogoUri('http://api-dev.quant-dinger.cc/a.png'), isNull);
@@ -146,11 +141,11 @@ void main() {
     test('a build without a backend accepts only the external hosts', () {
       LoopV2ChainCodec.debugSetLogoOrigin('');
       expect(
-        () => _decode(
+        _decode(
           'https://api-dev.quant-dinger.cc/v2/market/logos/'
           'eip155:56/native.png',
         ),
-        _invalidPayload,
+        isNull,
       );
       expect(
         _decode('https://dd.dexscreener.com/ds-data/tokens/bsc/a.png'),
@@ -186,7 +181,7 @@ void main() {
         'http://raw.githubusercontent.com/a.png',
         'https://raw.githubusercontent.com:8443/a.png',
       ]) {
-        expect(() => _decode(url), _invalidPayload, reason: url);
+        expect(_decode(url), isNull, reason: url);
       }
     });
   });

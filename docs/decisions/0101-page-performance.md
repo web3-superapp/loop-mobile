@@ -294,7 +294,8 @@ GitHub）。客户端 `LoopV2ChainCodec.logoUrl` 只认三个外部主机；而�
   `.svg` 一律拒）。https 恒可；http 只在 origin 本身是 loopback（`localhost` / `127.0.0.1` / `::1`）且
   非 release 构建时允许——与网络层的信任边界相同。
 - 构建没有后端（`LOOP_BACKEND_BASE_URL` 为空，如 Preview）：只接受三个外部主机。
-- 其它一切仍是 `invalidPayload`（契约锚定了 pattern，客户端不放宽）。
+- 其它一切不加载：`logoUrl` 返回 `null`，该行画首字母，debug 日志记一行被拒的 `scheme://host`（裁决 1，见下）。
+  `logo` 块自身的形状（`status` 两变体字段互斥、`source` 只在两者之内）仍严格，违反仍是 `invalidPayload`。
 - `loopRemoteLogoUri`（图片组件自己的第二道门）同步放开 loopback http（仅非 release），否则本机 http
   开发栈的代理图会被组件再挡一次。
 - 测试接缝：`LoopV2ChainCodec.debugSetLogoOrigin`（`@visibleForTesting`；`null` 复位为构建值）。
@@ -326,3 +327,12 @@ staging 构建拒 dev 的 URL；同源 11 种非代理路径被拒（`/v2/market
    与客户端构建的 `LOOP_BACKEND_BASE_URL` 不一致（例如走另一个域名或 CDN），行情等整页会失败而不是只丢图标。
    dev 已核对一致（`https://api-dev.quant-dinger.cc`）；staging / hk 需部署时核对，或裁决改为「不认 → 首字母」。
 2. 路径按 OpenAPI 完整 pattern 校验（比任务单的「前缀」更严）。服务端将来加链或改文件名规则时客户端需同步。
+
+### S96b 主代理裁决（2026-09-28）
+
+1. 不认的主机 = 无图（首字母），不再让整个响应 `invalidPayload`：0072 规定 logo 不是市场事实，域名或 CDN
+   变化不该让行情 / 钱包整页不可用。接受规则（三个外部主机 + 本构建后端 origin + 完整代理路径）不变，只是拒绝时
+   降级为 monogram，并在 debug 日志记一行被拒主机。`s78b` 原「非法主机 = 非法载荷」用例拆为「主机不认 → null」
+   与「块形状越界 → 非法载荷」两例；`s96b` 用例的拒绝断言改为 `isNull`。
+2. 路径按 OpenAPI 完整 pattern 校验：接受。
+3. 误停 S97 测试进程：S97 已重跑门禁并合并，无需处理。

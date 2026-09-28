@@ -492,9 +492,9 @@ abstract final class LoopV2ChainCodec {
   /// Since S96 the server answers every logo with its own image proxy
   /// ([isAcceptedLogoUrl]); these three remain accepted because the proxy's
   /// oversize `302` points at them and an older stack still projects them.
-  /// The client does not widen the list: any other host is an invalid
-  /// payload, so a compromised or mis-projected row cannot make the app fetch
-  /// from an arbitrary origin.
+  /// The client does not widen the list: any other host is drawn as the
+  /// monogram (S96b ruling 1), so a compromised or mis-projected row cannot
+  /// make the app fetch from an arbitrary origin.
   static const Set<String> logoHosts = <String>{
     'cdn.dexscreener.com',
     'dd.dexscreener.com',
@@ -545,7 +545,8 @@ abstract final class LoopV2ChainCodec {
   ///   the same boundary `LoopDioFactory.createLoopBackend` draws.
   ///
   /// Everything else — another host, another path on our own host — is
-  /// refused.
+  /// refused; [logoUrl] then answers `null` (the monogram), not an invalid
+  /// payload.
   static bool isAcceptedLogoUrl(Uri uri) {
     if (uri.userInfo.isNotEmpty) return false;
     final scheme = uri.scheme.toLowerCase();
@@ -572,7 +573,10 @@ abstract final class LoopV2ChainCodec {
   /// The required `logo` block every asset row now carries.
   ///
   /// Returns the address to load, or `null` when the server said it has none
-  /// (`unavailable`) — the surface then draws the monogram it already draws.
+  /// (`unavailable`) or named an address the client will not fetch
+  /// ([isAcceptedLogoUrl]) — the surface then draws the monogram it already
+  /// draws. The block's shape (`status`, `source`, field exclusivity) stays
+  /// strict.
   /// `source` and `observedAt` are read so the payload is validated in full,
   /// and deliberately not returned: they are for provenance and triage, and a
   /// logo is not a market fact (decision 0072).
@@ -602,8 +606,18 @@ abstract final class LoopV2ChainCodec {
         final source = requireText(map, 'source', maxLength: 32);
         if (source != 'dexscreener' && source != 'trustwallet') invalid();
         if (map['observedAt'] != null) requireTimestamp(map, 'observedAt');
+        // A URL the client will not fetch is no artwork, not a broken
+        // payload: a logo is not a market fact (decision 0072), so a changed
+        // domain or CDN must cost the row its picture, never the page its
+        // prices (S96b ruling 1).
         final uri = Uri.tryParse(url);
-        if (uri == null || !isAcceptedLogoUrl(uri)) invalid();
+        if (uri == null || !isAcceptedLogoUrl(uri)) {
+          debugPrint(
+            'LoopV2ChainCodec: logo host refused, drawing the monogram: '
+            '${uri == null ? '<unparseable>' : '${uri.scheme}://${uri.host}'}',
+          );
+          return null;
+        }
         return url;
       default:
         invalid();

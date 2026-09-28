@@ -581,36 +581,32 @@ void main() {
       );
     });
 
-    test('a host the contract does not name is an invalid payload', () {
-      for (final body in <Map<String, Object?>>[
+    test('a host the client will not fetch is the monogram (S96b)', () {
+      for (final url in <String>[
         // Not one of the three hosts.
-        <String, Object?>{
-          'status': 'available',
-          'url': 'https://evil.example.com/a.png',
-          'source': 'dexscreener',
-          'observedAt': null,
-        },
+        'https://evil.example.com/a.png',
         // Plaintext.
-        <String, Object?>{
-          'status': 'available',
-          'url': 'http://dd.dexscreener.com/a.png',
-          'source': 'dexscreener',
-          'observedAt': null,
-        },
+        'http://dd.dexscreener.com/a.png',
         // Credentials in the authority.
-        <String, Object?>{
-          'status': 'available',
-          'url': 'https://u:p@dd.dexscreener.com/a.png',
-          'source': 'dexscreener',
-          'observedAt': null,
-        },
+        'https://u:p@dd.dexscreener.com/a.png',
         // A port.
-        <String, Object?>{
-          'status': 'available',
-          'url': 'https://dd.dexscreener.com:8443/a.png',
-          'source': 'dexscreener',
-          'observedAt': null,
-        },
+        'https://dd.dexscreener.com:8443/a.png',
+      ]) {
+        expect(
+          LoopV2ChainCodec.logoUrl(<String, Object?>{
+            'status': 'available',
+            'url': url,
+            'source': 'dexscreener',
+            'observedAt': null,
+          }),
+          isNull,
+          reason: url,
+        );
+      }
+    });
+
+    test('a logo block outside the contract is an invalid payload', () {
+      for (final body in <Map<String, Object?>>[
         // A source outside the contract's two.
         <String, Object?>{
           'status': 'available',
