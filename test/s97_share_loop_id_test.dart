@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -82,18 +83,72 @@ void main() {
   });
 
   group('我的 · the LOOP ID block', () {
-    testWidgets('复制 puts only the ID on the clipboard and says so', (
+    testWidgets('the copy glyph behind the ID copies only the ID', (
       tester,
     ) async {
       final clipboard = _mockClipboard(tester);
       await _pumpProfile(tester, loopId: _ownId);
 
       expect(find.text(_ownId), findsOneWidget);
+      final id = find.byKey(const ValueKey<String>('profile-loop-id'));
       final copy = find.byKey(const ValueKey<String>('profile-copy-loop-id'));
       expect(
         tester.getSemantics(copy),
         matchesSemantics(
-          label: '复制 LOOP ID $_ownId',
+          label: '复制 LOOP ID',
+          isButton: true,
+          hasTapAction: true,
+          isFocusable: true,
+          hasFocusAction: true,
+        ),
+      );
+      // S97b: a 32×32 target right behind the ID, on its line, no button row.
+      expect(tester.getSize(copy), const Size(32, 32));
+      expect(
+        tester.getCenter(copy).dy,
+        moreOrLessEquals(tester.getCenter(id).dy, epsilon: 1),
+      );
+      expect(
+        tester.getTopLeft(copy).dx,
+        moreOrLessEquals(tester.getTopRight(id).dx, epsilon: 1),
+      );
+      final glyph = tester.widget<LoopIcon>(
+        find.descendant(of: copy, matching: find.byType(LoopIcon)),
+      );
+      expect(glyph.name, 'copy');
+      expect(glyph.size, inInclusiveRange(16, 18));
+
+      await _tap(tester, copy);
+
+      expect(clipboard.text, _ownId);
+      expect(find.text('已复制 LOOP ID'), findsOneWidget);
+    });
+
+    testWidgets('a long press on the ID copies it too', (tester) async {
+      final clipboard = _mockClipboard(tester);
+      await _pumpProfile(tester, loopId: _ownId);
+
+      await tester.longPress(
+        find.byKey(const ValueKey<String>('profile-loop-id')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(clipboard.text, _ownId);
+      expect(find.text('已复制 LOOP ID'), findsOneWidget);
+    });
+
+    testWidgets('分享 is a 44×44 glyph in the card\'s top-right corner', (
+      tester,
+    ) async {
+      await _pumpProfile(tester, loopId: _ownId);
+
+      final card = find.byKey(const ValueKey<String>('profile-identity-card'));
+      final share = find.byKey(const ValueKey<String>('profile-share-loop-id'));
+      expect(tester.getSize(share), const Size(44, 44));
+      expect(
+        tester.getSemantics(share),
+        matchesSemantics(
+          label: '分享 LOOP ID',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -102,12 +157,15 @@ void main() {
           hasFocusAction: true,
         ),
       );
-      expect(tester.getSize(copy).height, greaterThanOrEqualTo(44));
-
-      await _tap(tester, copy);
-
-      expect(clipboard.text, _ownId);
-      expect(find.text('已复制 LOOP ID'), findsOneWidget);
+      final glyph = tester.widget<LoopIconButton>(share);
+      expect(glyph.icon, 'share');
+      final cardBox = tester.getRect(card);
+      final shareBox = tester.getRect(share);
+      expect(cardBox.right - shareBox.right, lessThan(24));
+      expect(shareBox.top - cardBox.top, lessThan(24));
+      // The outlined 复制 / 分享 buttons under the ID are gone.
+      expect(find.text('复制'), findsNothing);
+      expect(find.text('分享'), findsNothing);
     });
 
     testWidgets('分享 hands the invitation text to the system sheet', (
@@ -179,6 +237,20 @@ void main() {
         const ValueKey<String>('public-profile-copy-loop-id'),
       );
       expect(copy, findsOneWidget);
+      // S97b: the same glyph behind the ID as on 我的, not a block button.
+      expect(tester.getSize(copy), const Size(32, 32));
+      expect(find.text('复制 LOOP ID'), findsNothing);
+      expect(
+        tester.getTopLeft(copy).dx,
+        moreOrLessEquals(
+          tester
+              .getTopRight(
+                find.byKey(const ValueKey<String>('public-profile-loop-id')),
+              )
+              .dx,
+          epsilon: 1,
+        ),
+      );
       expect(find.textContaining('分享'), findsNothing);
       await _tap(tester, copy);
 

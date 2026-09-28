@@ -64,3 +64,26 @@ Proposed 2026-09-28。S97，客户端单侧。基线 `integration/v2` e10a529。
 3. 未登录时先落社区再推搜索：接受。
 4. iOS Associated Domains：打 TF build 8 前核对描述文件。
 5. 二维码：后续。
+
+## S97b 布局调整（2026-09-28）
+
+用户反馈：「分享放在名字卡片右上角，用图标分享按钮，复制放在 ID 后边，现在两个按钮太丑了」。只改布局，
+行为、分享文本、深链、Toast 文案都不变。
+
+- **我的 · 身份卡**：去掉 ID 下方「复制」「分享」两个描边按钮（`_ChalkCardButton` 的 `outlined` /
+  `semanticLabel` 参数随之撤回）。
+  - 卡片右上角是分享图标按钮：`LoopIconButton`（`share` 图标，与顶栏「设置」同款：无框、44×44、19 dp
+    图标），Chalk 卡上用 Ink；语义标签「分享 LOOP ID」。卡片外边距改为 4，内容区再补 12，合计仍是 16。
+  - LOOP ID 后紧跟复制图标：16 dp、与 ID 同色（Ink 64%），点击区 32×32，语义标签「复制 LOOP ID」；
+    长按 ID 文本也复制。两者都只放纯 ID 并 Toast「已复制 LOOP ID」。
+  - LOOP ID 读不到时两个都不画（同前）。
+- **他人资料卡**：「复制 LOOP ID」块按钮去掉，改为 ID 后同一个复制图标（Muted 色），长按 ID 同样复制；
+  卡片不关闭，仍不提供分享。
+- 公共件 `lib/features/social/loop_id_copy.dart`（`LoopIdCopyLine` + `copyLoopId`），两处共用。
+- 冻结原型的图标表没有复制图形：按图标表同一规格（24 盒、无填充、currentColor、1.7 圆角描边）自绘
+  `assets/icons/i-copy.svg`，图标数 64 → 65（`test/loop_assets_test.dart` 同步）。
+- 32×32 复制点击区低于 44 规范，是用户指定的尺寸；它是 ID 的附属动作，同一功能在同一行还有长按。
+
+Evidence：`test/s97_share_loop_id_test.dart`（20 项）新增复制图标 32×32 且与 ID 同行紧随、图标 16–18 dp、
+长按复制、分享图标 44×44 位于卡片右上角、描边按钮已移除；他人资料卡复制图标 32×32 紧随 ID。
+模拟器（emulator-5554，连 api-dev）截图 `/private/tmp/s97b/`。
