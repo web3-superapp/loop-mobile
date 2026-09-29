@@ -7,6 +7,12 @@
     <string name="loop_notification_channel_name">LOOP 通知</string>
     <string name="loop_notification_channel_description">交易、社区、安全与 Launch 的提醒</string>
 
+    <!-- The voice room's ongoing notification (decision 0106) belongs to
+         Stream's call service; these override its English resources. Its one
+         button leaves the room, so it says 离开 rather than Cancel. -->
+    <string name="stream_call_notification_channel_name">语音房</string>
+    <string name="stream_call_notification_action_cancel">离开</string>
+
     <!-- The push copy (decision 0067). The server sends only `title_loc_key`
          and `body_loc_key`; every visible word is here, so a notification can
          never carry an amount, an address, a ticker, a balance, a code, a

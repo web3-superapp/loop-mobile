@@ -398,3 +398,205 @@ final audioRoomLivePresenceProvider =
     NotifierProvider<AudioRoomLivePresenceController, AudioRoomLivePresence?>(
       AudioRoomLivePresenceController.new,
     );
+
+/// Which built-in route the reader chose for the room's audio (decision 0106).
+///
+/// 「有时候听筒有时候扬声器」 was the SDK choosing for the reader: the dashboard
+/// default picked one device at join, and opening the microphone put iOS's
+/// voice-chat session back on the receiver. The reader now picks, and the
+/// pick is put back after every event that can move the route. A connected
+/// headset or Bluetooth device is not a third choice: while one is present the
+/// audio goes there, and the control says so.
+enum AudioRoomOutputPreference { speaker, earpiece }
+
+/// What kind of device the call's audio is actually routed to, as the
+/// provider reads it back.
+enum AudioRoomOutputKind { speaker, earpiece, external }
+
+/// One reading of the current audio route. It is never composed from the
+/// reader's own choice: [AudioRoomOutputPreference] says what was asked for,
+/// this says where the sound went.
+@immutable
+final class AudioRoomOutputRoute {
+  const AudioRoomOutputRoute(this.kind, {this.label});
+
+  final AudioRoomOutputKind kind;
+
+  /// The device's own name, for an external device. The built-in routes are
+  /// named by LOOP, not by the platform.
+  final String? label;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AudioRoomOutputRoute &&
+          other.kind == kind &&
+          other.label == label;
+
+  @override
+  int get hashCode => Object.hash(kind, label);
+}
+
+/// The word the room's output control prints for the route it read back.
+///
+/// A route the provider has not reported yet is not guessed from the
+/// preference: the control says it is still reading.
+String audioRoomOutputLabel(AudioRoomOutputRoute? route) {
+  if (route == null) return '声音输出';
+  return switch (route.kind) {
+    AudioRoomOutputKind.speaker => '扬声器',
+    AudioRoomOutputKind.earpiece => '听筒',
+    AudioRoomOutputKind.external => _externalOutputLabel(route.label),
+  };
+}
+
+String _externalOutputLabel(String? label) {
+  final name = label?.trim();
+  if (name == null || name.isEmpty) return '耳机';
+  return name.length > 12 ? '${name.substring(0, 12)}…' : name;
+}
+
+/// The reader's choice of output, for as long as this App process runs.
+///
+/// It is deliberately not persisted (decision 0106): the route is a property
+/// of the room the reader is in right now, and a choice made for one
+/// conversation is not a device setting.
+final class AudioRoomOutputPreferenceController
+    extends Notifier<AudioRoomOutputPreference> {
+  @override
+  AudioRoomOutputPreference build() => AudioRoomOutputPreference.speaker;
+
+  void choose(AudioRoomOutputPreference preference) {
+    if (state != preference) state = preference;
+  }
+}
+
+final audioRoomOutputPreferenceProvider =
+    NotifierProvider<
+      AudioRoomOutputPreferenceController,
+      AudioRoomOutputPreference
+    >(AudioRoomOutputPreferenceController.new);
+
+/// Where an automatic reconnection of one room stands (decision 0106).
+enum AudioRoomRecoveryPhase {
+  /// The provider gave up on the call and this device is putting a new one
+  /// back without anyone asking. Nothing about the membership changed.
+  reconnecting,
+
+  /// A new call is in, after a recovery. It is kept only to say one thing: a
+  /// microphone that was open before the drop is closed now.
+  restored,
+}
+
+/// This device's own account of putting a dropped room back.
+///
+/// The provider's own reconnection is the call's business and shows as the
+/// call's 「重连中」. This is the step after it: the provider stopped retrying,
+/// and the device joins the same room again with a call of its own, backing
+/// off between attempts until the reader leaves, the room ends or the account
+/// is no longer in it.
+@immutable
+final class AudioRoomRecovery {
+  const AudioRoomRecovery({
+    required this.roomId,
+    required this.phase,
+    required this.attempt,
+    required this.microphoneWasOpen,
+  });
+
+  final String roomId;
+  final AudioRoomRecoveryPhase phase;
+
+  /// How many new calls have been tried so far. 0 while the first one is
+  /// still being waited for.
+  final int attempt;
+
+  /// Whether this device's microphone was open when the call dropped. A new
+  /// call always enters muted; this is what the room tells the reader about.
+  final bool microphoneWasOpen;
+
+  bool get reconnecting => phase == AudioRoomRecoveryPhase.reconnecting;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AudioRoomRecovery &&
+          other.roomId == roomId &&
+          other.phase == phase &&
+          other.attempt == attempt &&
+          other.microphoneWasOpen == microphoneWasOpen;
+
+  @override
+  int get hashCode => Object.hash(roomId, phase, attempt, microphoneWasOpen);
+}
+
+/// How long the device waits before its [attempt]-th new call.
+///
+/// 1 s, 2 s, 4 s … and never more than 30 s. The first wait is not zero: the
+/// provider has just given up, and the network it gave up on is usually the
+/// same one a moment later.
+Duration audioRoomRecoveryDelay(int attempt) {
+  const ceiling = Duration(seconds: 30);
+  if (attempt <= 0) return const Duration(seconds: 1);
+  if (attempt >= 5) return ceiling;
+  final seconds = 1 << attempt;
+  return seconds >= ceiling.inSeconds ? ceiling : Duration(seconds: seconds);
+}
+
+/// The line the room prints after a recovery put a speaker back in muted.
+const audioRoomRestoredMicrophoneNote = '已重新连接，点麦克风继续发言';
+
+/// Publishes the recovery the active call holder is running.
+final class AudioRoomRecoveryController extends Notifier<AudioRoomRecovery?> {
+  @override
+  AudioRoomRecovery? build() => null;
+
+  void report(AudioRoomRecovery? recovery) {
+    if (state != recovery) state = recovery;
+  }
+}
+
+final audioRoomRecoveryProvider =
+    NotifierProvider<AudioRoomRecoveryController, AudioRoomRecovery?>(
+      AudioRoomRecoveryController.new,
+    );
+
+/// What the system's ongoing-call notification says and does (Android).
+///
+/// The notification belongs to the provider's own foreground service, which
+/// is started and stopped with the call; this is only the words on it and the
+/// two things it can ask of LOOP. The shell's voice strip fills the actions in,
+/// because it is the one place that knows how to open the room and how to
+/// leave it.
+final class AudioRoomNotificationBridge {
+  String title = '正在语音房';
+  String? text = '点按回到语音房';
+
+  /// Opens the room page for the room this device is in.
+  Future<void> Function()? onOpen;
+
+  /// The notification's 离开.
+  Future<void> Function()? onLeave;
+
+  Future<void> open() async {
+    final open = onOpen;
+    if (open != null) await open();
+  }
+
+  Future<void> leave() async {
+    final leave = onLeave;
+    if (leave != null) await leave();
+  }
+}
+
+final audioRoomNotificationBridgeProvider =
+    Provider<AudioRoomNotificationBridge>(
+      (ref) => AudioRoomNotificationBridge(),
+    );
+
+/// The notification's title for the room this device is in.
+String audioRoomNotificationTitle(String? communityName) {
+  final name = communityName?.trim();
+  if (name == null || name.isEmpty) return '正在语音房';
+  return '正在语音房 · $name';
+}

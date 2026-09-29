@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'package:stream_video_flutter/stream_video_flutter_background.dart';
 
 enum AudioRoomCallFailureKind { join, leave }
 
@@ -157,8 +158,21 @@ abstract interface class AudioRoomCallHandle {
     required bool enabled,
   });
 
-  /// Retires the foreground-only Call after the app leaves the foreground.
-  Future<void> retireForBackground();
+  /// Whether this device's microphone is open in the call, as the provider's
+  /// own state says right now.
+  ///
+  /// It is read when a call drops, so the new call that replaces it can say
+  /// that a microphone which was open is closed now (decision 0106).
+  bool get microphoneOpen;
+
+  /// Routes the room's audio the way the reader chose (decision 0106).
+  ///
+  /// The handle keeps the choice and puts it back after every event that can
+  /// move the route — the connection landing, the microphone opening, a
+  /// device appearing or going. A connected headset or Bluetooth device wins
+  /// over the choice while it is there. Best effort: a route the platform
+  /// refused is read back as whatever it is, never as the one asked for.
+  Future<void> applyOutputPreference(AudioRoomOutputPreference preference);
 
   Future<void> leave();
 
@@ -185,6 +199,10 @@ abstract interface class AudioRoomCallHandle {
   /// call wants the microphone back. One call starts one microphone, so that
   /// is a new call — a decision that belongs to whoever owns the call, never
   /// to this handle.
+  ///
+  /// [outputPreference] is the route the reader chose and [onOutputSelected]
+  /// records a new one; the control between the microphone and the hang-up
+  /// prints the route the provider reads back.
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline,
@@ -197,6 +215,8 @@ abstract interface class AudioRoomCallHandle {
     onPresence,
     VoidCallback? onDisconnected,
     Future<void> Function()? onSpeakAgainRequested,
+    AudioRoomOutputPreference outputPreference,
+    ValueChanged<AudioRoomOutputPreference>? onOutputSelected,
   });
 }
 
@@ -403,26 +423,133 @@ final audioRoomCallFactoryProvider =
       final client = authorized
           ? ref.watch(streamVideoSdkSessionProvider)?.officialClient
           : null;
-      return client == null ? null : StreamAudioRoomCallFactory(client);
+      return client == null
+          ? null
+          : StreamAudioRoomCallFactory(
+              client,
+              notification: ref.read(audioRoomNotificationBridgeProvider),
+            );
     });
 
+/// Hands out calls on one provider client.
+///
+/// Two factories are the same factory when they hand out calls on the same
+/// client. The provider above builds a new object every time the
+/// authorization it watches says 「authorized」 again, and the room surface
+/// retires the call it holds when its factory is replaced — the right answer
+/// for a new client, whose calls the old one cannot serve, and the wrong one
+/// for the same client read twice. Comparing by identity made coming back
+/// from `voiceroom-full` a leave (decision 0106 · 4).
 final class StreamAudioRoomCallFactory implements AudioRoomCallFactory {
-  const StreamAudioRoomCallFactory(this._client);
+  const StreamAudioRoomCallFactory(this._client, {this.notification});
 
   final StreamVideo _client;
 
+  /// The words and the actions of the Android ongoing-call notification.
+  final AudioRoomNotificationBridge? notification;
+
   @override
   AudioRoomCallHandle create(AudioRoomTarget target) {
+    final bridge = notification;
+    if (bridge != null) AudioRoomSystemSession.bind(_client, bridge);
     final call = _client.makeCall(
       callType: StreamCallType.audioRoom(),
       id: target.roomId,
     );
-    return _StreamAudioRoomCallHandle(_client, target.roomId, call);
+    return _StreamAudioRoomCallHandle(_client, target.roomId, call, bridge);
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StreamAudioRoomCallFactory && identical(other._client, _client);
+
+  @override
+  int get hashCode => identityHashCode(_client);
+}
+
+/// Keeps a voice room running while LOOP is not on screen (decision 0106).
+///
+/// On Android that is the provider's own call service: a foreground service
+/// with an ongoing notification, started when a call becomes active and
+/// stopped when the last one goes, whose type includes the microphone only
+/// once the system has granted it. iOS needs nothing here — the `audio`
+/// background mode keeps the voice-chat session running — so this is a no-op
+/// there.
+abstract final class AudioRoomSystemSession {
+  static final Expando<bool> _bound = Expando<bool>('audioRoomService');
+
+  static bool get _android =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  /// Hands the provider client's active calls to the call service, once per
+  /// client.
+  static void bind(StreamVideo client, AudioRoomNotificationBridge bridge) {
+    if (!_android || _bound[client] == true) return;
+    _bound[client] = true;
+    try {
+      StreamBackgroundService.init(
+        client,
+        callNotificationOptionsBuilder: (_) => _options(bridge),
+        onNotificationClick: (_) => bridge.open(),
+        onButtonClick: (call, type, serviceType) async {
+          if (serviceType != ServiceType.call) return;
+          // The notification's only button. Its label is 离开 in the app's
+          // resources; the provider's default would have rejected the call,
+          // which is a ringing answer, not an exit.
+          await bridge.leave();
+        },
+      );
+    } catch (error) {
+      if (kDebugMode) debugPrint('LOOP voice service unavailable: $error');
+    }
+  }
+
+  /// Starts the service again once the microphone opened.
+  ///
+  /// The service's type is read from the permissions the device holds when
+  /// it starts. A listener who is invited to speak grants the microphone
+  /// after that, and on Android 14 a service without the microphone type
+  /// captures silence in the background. Restarting it while LOOP is on
+  /// screen — the member has just pressed 发言 — gives it the type.
+  static Future<void> refreshForMicrophone(
+    Call call,
+    AudioRoomNotificationBridge bridge,
+  ) async {
+    if (!_android) return;
+    final callCid = call.callCid.value;
+    try {
+      final running = await StreamVideoFlutterBackground.isServiceRunning(
+        ServiceType.call,
+        callCid: callCid,
+      );
+      if (!running) return;
+      await StreamVideoFlutterBackground.stopService(
+        ServiceType.call,
+        callCid: callCid,
+      );
+      await StreamVideoFlutterBackground.startService(
+        NotificationPayload(callCid: callCid, options: _options(bridge)),
+        ServiceType.call,
+      );
+    } catch (error) {
+      if (kDebugMode) debugPrint('LOOP voice service refresh failed: $error');
+    }
+  }
+
+  static NotificationOptions _options(AudioRoomNotificationBridge bridge) =>
+      NotificationOptions(
+        content: NotificationContent(title: bridge.title, text: bridge.text),
+      );
 }
 
 final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
-  _StreamAudioRoomCallHandle(this._client, this.roomId, this._call) {
+  _StreamAudioRoomCallHandle(
+    this._client,
+    this.roomId,
+    this._call,
+    this._notification,
+  ) {
     _commands = AudioRoomCallCommandCoordinator(
       _setMicrophone,
       _leaveCall,
@@ -435,7 +562,18 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
 
   final StreamVideo _client;
   final Call _call;
+  final AudioRoomNotificationBridge? _notification;
   late final AudioRoomCallCommandCoordinator _commands;
+
+  /// The route the reader chose, put back after every event that can move
+  /// it. See [applyOutputPreference].
+  AudioRoomOutputPreference _outputPreference =
+      AudioRoomOutputPreference.speaker;
+  StreamSubscription<({bool connected, bool microphone})>? _routeTriggers;
+  StreamSubscription<List<RtcMediaDevice>>? _deviceChanges;
+  String? _knownOutputs;
+  Future<void> _routeTail = Future<void>.value();
+  var _serviceRefreshed = false;
 
   @override
   bool get retirementStarted => _commands.retirementStarted;
@@ -452,6 +590,10 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
       .map(audioRoomRoomSignalOf)
       .where((signal) => signal != null)
       .cast<AudioRoomRoomSignal>();
+
+  @override
+  bool get microphoneOpen =>
+      _call.state.value.localParticipant?.isAudioEnabled ?? false;
 
   /// The same figures the call panel prints, from the same official state.
   static AudioRoomCallReading _readingOf(CallState state) {
@@ -478,7 +620,10 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     final result = await _call.join(
       connectOptions: mutedAudioRoomConnectOptions(),
     );
-    if (!result.isFailure) return;
+    if (!result.isFailure) {
+      _watchRoute();
+      return;
+    }
     // The SDK answers with one `Result`; the refusal inside it is the only
     // account of why this device is not in the room, and dropping it left
     // the page with nothing to say and the device with nothing to read.
@@ -496,21 +641,139 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
   }
 
   @override
+  Future<void> applyOutputPreference(AudioRoomOutputPreference preference) {
+    _outputPreference = preference;
+    return _queueRoute();
+  }
+
+  /// Puts the reader's route back whenever something could have moved it.
+  ///
+  /// Three things move it on the review devices: the connection landing (the
+  /// provider applies the dashboard's default device then), the microphone
+  /// opening (iOS's voice-chat session falls back to the receiver), and a
+  /// device being plugged in or paired. The provider's own reconnection is
+  /// the first of these again.
+  void _watchRoute() {
+    _routeTriggers ??= _call
+        .partialState(
+          (state) => (
+            connected: state.status.isConnected,
+            microphone: state.localParticipant?.isAudioEnabled ?? false,
+          ),
+        )
+        .distinct()
+        .listen((trigger) {
+          if (trigger.connected) unawaited(_queueRoute());
+        }, onError: (Object _, StackTrace _) {});
+    _deviceChanges ??= RtcMediaDeviceNotifier.instance.onDeviceChange.listen((
+      devices,
+    ) {
+      final outputs =
+          devices
+              .where((device) => device.kind == RtcMediaDeviceKind.audioOutput)
+              .map((device) => device.id)
+              .toList()
+            ..sort();
+      final key = outputs.join('|');
+      // Selecting a route can itself be reported as a device change; only a
+      // different set of devices is a reason to choose again.
+      if (key == _knownOutputs) return;
+      _knownOutputs = key;
+      unawaited(_queueRoute());
+    }, onError: (Object _, StackTrace _) {});
+  }
+
+  void _stopWatchingRoute() {
+    unawaited(_routeTriggers?.cancel());
+    _routeTriggers = null;
+    unawaited(_deviceChanges?.cancel());
+    _deviceChanges = null;
+  }
+
+  Future<void> _queueRoute() {
+    final operation = _routeTail.then((_) => _applyRoute());
+    _routeTail = operation.catchError((Object _) {});
+    return _routeTail;
+  }
+
+  Future<void> _applyRoute() async {
+    if (retirementStarted || !_call.state.value.status.isConnected) return;
+    final result = await RtcMediaDeviceNotifier.instance.audioOutputs();
+    final outputs = result.getDataOrNull() ?? const <RtcMediaDevice>[];
+    if (retirementStarted) return;
+    RtcMediaDevice? external;
+    for (final device in outputs) {
+      if (audioRoomOutputRouteOf(device)?.kind ==
+          AudioRoomOutputKind.external) {
+        external = device;
+        break;
+      }
+    }
+    final RtcMediaDevice target;
+    if (external != null) {
+      // A headset or Bluetooth device the reader connected wins. iOS already
+      // routes to it and refuses to be told to (the provider says as much),
+      // so only Android is asked to select it.
+      if (defaultTargetPlatform == TargetPlatform.iOS) return;
+      target = external;
+    } else {
+      final wanted = _outputPreference == AudioRoomOutputPreference.speaker
+          ? AudioRoomOutputKind.speaker
+          : AudioRoomOutputKind.earpiece;
+      RtcMediaDevice? match;
+      for (final device in outputs) {
+        if (audioRoomOutputRouteOf(device)?.kind == wanted) {
+          match = device;
+          break;
+        }
+      }
+      // iOS's native side recognises the built-in speaker only by its exact
+      // port UID, `Speaker`; Android names it `speaker`.
+      final speakerId = defaultTargetPlatform == TargetPlatform.iOS
+          ? 'Speaker'
+          : 'speaker';
+      target =
+          match ??
+          RtcMediaDevice(
+            id: wanted == AudioRoomOutputKind.speaker ? speakerId : 'earpiece',
+            label: wanted == AudioRoomOutputKind.speaker
+                ? 'Speaker'
+                : 'Earpiece',
+            kind: RtcMediaDeviceKind.audioOutput,
+          );
+    }
+    final applied = await _call.setAudioOutputDevice(target);
+    if (applied.isFailure && kDebugMode) {
+      debugPrint('LOOP audio route refused: $roomId · ${target.id}');
+    }
+  }
+
+  @override
   Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
     required bool enabled,
   }) {
     return _commands.setMicrophoneEnabled(enabled: enabled);
   }
 
-  Future<AudioRoomMicrophoneOutcome> _setMicrophone(bool enabled) {
+  Future<AudioRoomMicrophoneOutcome> _setMicrophone(bool enabled) async {
     if (!enabled) return _runMicrophoneCommand(false);
     // The system's microphone question is answered outside this command, so
     // the first answer may be a failure the SDK could not attribute. One
     // re-attempt keeps the member in the room instead of sending them out and
     // back in.
-    return audioRoomEnableMicrophoneWithRetry(
+    final outcome = await audioRoomEnableMicrophoneWithRetry(
       () => _runMicrophoneCommand(true),
     );
+    if (outcome.opened) {
+      // The microphone opening is one of the moments iOS moves the route.
+      unawaited(_queueRoute());
+      final bridge = _notification;
+      if (bridge != null && !_serviceRefreshed) {
+        _serviceRefreshed = true;
+        unawaited(AudioRoomSystemSession.refreshForMicrophone(_call, bridge));
+      }
+    }
+    return outcome;
   }
 
   Future<AudioRoomMicrophoneOutcome> _runMicrophoneCommand(bool enabled) async {
@@ -543,12 +806,8 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     );
   }
 
-  @override
-  Future<void> retireForBackground() {
-    return _commands.retire();
-  }
-
   Future<void> _leaveCall() async {
+    _stopWatchingRoute();
     final result = await _call.leave();
     if (result.isFailure) {
       throw AudioRoomCallFailure(
@@ -584,6 +843,9 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     onPresence,
     VoidCallback? onDisconnected,
     Future<void> Function()? onSpeakAgainRequested,
+    AudioRoomOutputPreference outputPreference =
+        AudioRoomOutputPreference.speaker,
+    ValueChanged<AudioRoomOutputPreference>? onOutputSelected,
   }) {
     return StreamForegroundCallView(
       call: _call,
@@ -602,6 +864,8 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
             },
       onLeaveRequested: onLeaveRequested,
       inline: inline,
+      outputPreference: outputPreference,
+      onOutputSelected: onOutputSelected,
     );
   }
 }

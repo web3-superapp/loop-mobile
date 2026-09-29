@@ -329,7 +329,15 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             label: '分享语音房',
             onPressed: () => unawaited(_share(context, snapshot.room)),
           ),
-        if (!widget.expanded && snapshot != null && id != null)
+        // Decision 0106 · 4: the session view is the host's workspace — the
+        // queue it can act on and the controls it holds. A listener or a
+        // speaker already has 正在发言 and 举手 here, and the same page one tap
+        // away read as a duplicate. A deep link to `voiceroom-full` still
+        // opens for anyone; only the header entry is withheld.
+        if (!widget.expanded &&
+            snapshot != null &&
+            id != null &&
+            snapshot.viewer.showsHostControls)
           LoopIconButton(
             key: const ValueKey<String>('voiceroom-open-full'),
             icon: 'expand',
@@ -1731,6 +1739,57 @@ class _VoiceRoomMinimizedBannerState
   /// put a sheet on.
   var _confirmingExit = false;
   var _leaving = false;
+  AudioRoomNotificationBridge? _bridge;
+
+  @override
+  void initState() {
+    super.initState();
+    // The system's ongoing-call notification (Android, decision 0106) asks
+    // the two things this strip already knows how to do: open the room, and
+    // leave it. The strip is mounted above the router for the whole sign-in,
+    // which is exactly as long as the notification can be tapped.
+    final bridge = ref.read(audioRoomNotificationBridgeProvider);
+    _bridge = bridge;
+    bridge
+      ..onOpen = _openFromNotification
+      ..onLeave = _leaveFromNotification;
+  }
+
+  @override
+  void dispose() {
+    final bridge = _bridge;
+    if (bridge != null) {
+      if (bridge.onOpen == _openFromNotification) bridge.onOpen = null;
+      if (bridge.onLeave == _leaveFromNotification) bridge.onLeave = null;
+    }
+    super.dispose();
+  }
+
+  Future<void> _openFromNotification() async {
+    if (!mounted) return;
+    final session = ref.read(voiceRoomSessionProvider);
+    // Tapping the notification already brought LOOP to the front; a reader
+    // who was on the room page is back on it.
+    if (session == null || ref.read(voiceRoomPagePresenceProvider) > 0) return;
+    widget.onOpen(session.communityId);
+  }
+
+  /// The notification's 离开.
+  ///
+  /// A listener or a speaker leaves the room exactly as from the strip. The
+  /// host has no 离开 — the server refuses it, and ending the room for
+  /// everybody from a notification without a confirmation is not an answer
+  /// to one tap — so for the host it takes this device's audio down and the
+  /// room keeps running, with 「重新连接」 on the strip.
+  Future<void> _leaveFromNotification() async {
+    if (!mounted) return;
+    final session = ref.read(voiceRoomSessionProvider);
+    if (session == null || session.role == VoiceRoomRole.host) {
+      await ref.read(activeVoiceMediaProvider.notifier).retire();
+      return;
+    }
+    await _leave(session);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1970,6 +2029,12 @@ class _VoiceRoomMinimizedBannerState
       return;
     }
     ref.read(voiceRoomSessionProvider.notifier).leave(session.communityId);
+    // A room page can be open behind the notification that asked for this.
+    // It reads the membership again now rather than on its next poll, so it
+    // stops offering the audio back to an account that left.
+    if (ref.exists(voiceRoomControllerProvider)) {
+      unawaited(ref.read(voiceRoomControllerProvider.notifier).refreshRoom());
+    }
     LoopToast.show(
       context,
       message: disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',

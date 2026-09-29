@@ -22,18 +22,26 @@
          after the account exists, never on first launch. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Stream's optional call UI and background services are not enabled. -->
+    <!-- Decision 0106: a voice room keeps running while LOOP is in the
+         background, through Stream's own call service and its ongoing
+         notification. Only what that service needs for an audio room is
+         kept: the foreground-service permission and its microphone and
+         media-playback types. The service asks for the microphone type only
+         once RECORD_AUDIO is granted, as Android 14 requires. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- Stream's optional call UI, Telecom, camera and screen-share services
+         stay disabled. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" tools:node="remove" />
     <uses-permission android:name="android.permission.VIBRATE" tools:node="remove" />
     <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" tools:node="remove" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" tools:node="remove" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" tools:node="remove" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" tools:node="remove" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" tools:node="remove" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
     <uses-permission android:name="${applicationId}.PERMISSION_CALL" tools:node="remove" />
     <permission android:name="${applicationId}.PERMISSION_CALL" tools:node="remove" />
@@ -74,6 +82,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Tapping the voice room's ongoing notification (decision 0106)
+                 brings LOOP back; Stream's plugin reads the call from the
+                 intent and the shell opens the room. -->
+            <intent-filter>
+                <action android:name="${applicationId}.intent.action.STREAM_CALL" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -128,9 +143,8 @@
         <service
             android:name="io.getstream.video.flutter.stream_video_push_notification.IncomingCallConnectionService"
             tools:node="remove" />
-        <service
-            android:name="io.getstream.video.flutter.stream_video_flutter.service.StreamCallService"
-            tools:node="remove" />
+        <!-- StreamCallService is kept (decision 0106): it is the foreground
+             service behind a voice room running in the background. -->
         <service
             android:name="io.getstream.video.flutter.stream_video_flutter.service.StreamScreenShareService"
             tools:node="remove" />
