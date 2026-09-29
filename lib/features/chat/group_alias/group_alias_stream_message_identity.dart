@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_member_directory.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_card.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_detection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -201,6 +202,134 @@ String resolveLoopGroupMessageSenderLabel({
       loopGroupMemberNeutralLabel;
 }
 
+/// Every Stream user id one group message may draw a name or an avatar for.
+///
+/// The sender, whoever it `@`s, whoever pinned it, the thread's participants,
+/// and the same again for the message it quotes — the ids
+/// [sanitizeLoopGroupMessageForDisplay] resolves, so a row asks for exactly
+/// the member rows it is about to read. Reactions are left out: their detail
+/// sheet is suppressed in group channels and they draw no names.
+@visibleForTesting
+Set<String> loopGroupMessageUserIds(Message message) {
+  final ids = <String>{};
+  void collect(Message message, int depth) {
+    if (message.user case final User user) ids.add(user.id);
+    for (final user in message.mentionedUsers) {
+      ids.add(user.id);
+    }
+    if (message.pinnedBy case final User user) ids.add(user.id);
+    for (final user in message.threadParticipants ?? const <User>[]) {
+      ids.add(user.id);
+    }
+    final quoted = message.quotedMessage;
+    if (quoted != null && depth < 3) collect(quoted, depth + 1);
+  }
+
+  collect(message, 0);
+  return ids;
+}
+
+/// The roster one group surface names people from, asking for what it lacks.
+///
+/// The channel's loaded members come first and win; the reader's own
+/// membership row and whatever [directory] has already found fill the rest
+/// (see [LoopGroupMemberDirectory.roster]). Any id in [needs] the result does
+/// not carry is handed to [directory], which asks Stream once, batched and
+/// debounced, and notifies when the row lands. Until then that id reads as
+/// 「成员」 — the same word it read before anyone asked, so nothing flickers
+/// through an id or an account name on the way.
+List<Member> loopGroupRosterFor({
+  required LoopGroupMemberDirectory directory,
+  required ChannelState channelState,
+  Iterable<String> needs = const <String>{},
+}) {
+  final roster = directory.roster(
+    channelState.members ?? const <Member>[],
+    membership: channelState.membership,
+  );
+  final covered = <String>{
+    for (final member in roster) ?(member.userId ?? member.user?.id),
+  };
+  final missing = needs.where((id) => !covered.contains(id));
+  if (missing.isNotEmpty) directory.request(missing);
+  return roster;
+}
+
+/// Watches one group channel's roster: its loaded members, live, plus the
+/// rows its [LoopGroupMemberDirectory] looked up for [needs].
+class LoopGroupRosterBuilder extends StatelessWidget {
+  const LoopGroupRosterBuilder({
+    required this.channel,
+    required this.builder,
+    this.needs = const <String>{},
+    super.key,
+  });
+
+  final Channel channel;
+
+  /// The ids this subtree is about to name.
+  final Set<String> needs;
+
+  final Widget Function(BuildContext context, List<Member> members) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = channel.state;
+    if (state == null) return builder(context, const <Member>[]);
+    final directory = LoopGroupMemberDirectory.forChannel(channel);
+    // Only the member rows are watched, as before: a new message or a read
+    // receipt changes the channel state but not who anybody is, and every
+    // bubble in the room rebuilding on each of them would be wasted work.
+    final initial = _LoopRosterSource.of(state.channelState);
+    final sources = state.channelStateStream
+        .map(_LoopRosterSource.of)
+        .distinct();
+    return StreamBuilder<_LoopRosterSource>(
+      initialData: initial,
+      stream: sources,
+      builder: (context, snapshot) => ListenableBuilder(
+        listenable: directory,
+        builder: (context, _) => builder(
+          context,
+          snapshot.hasError
+              ? const <Member>[]
+              : loopGroupRosterFor(
+                  directory: directory,
+                  channelState: (snapshot.data ?? initial).asChannelState(),
+                  needs: needs,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The two parts of a channel state a roster is built from.
+@immutable
+final class _LoopRosterSource {
+  const _LoopRosterSource(this.members, this.membership);
+
+  factory _LoopRosterSource.of(ChannelState channelState) => _LoopRosterSource(
+    List<Member>.unmodifiable(channelState.members ?? const <Member>[]),
+    channelState.membership,
+  );
+
+  final List<Member> members;
+  final Member? membership;
+
+  ChannelState asChannelState() =>
+      ChannelState(members: members, membership: membership);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _LoopRosterSource &&
+      listEquals(other.members, members) &&
+      other.membership == membership;
+
+  @override
+  int get hashCode => Object.hash(Object.hashAll(members), membership);
+}
+
 /// Whether a validated messaging CID uses group-scoped message identities.
 ///
 /// Known LOOP direct channels keep Stream's ordinary identity presentation.
@@ -391,9 +520,17 @@ Message loopPrepareChannelMessageForSend({
       currentUserId: currentUserId,
     );
   }
+  final channelState = channel.state?.channelState;
   return prepareLoopGroupMentionsForSend(
     message: message,
-    members: channel.state?.channelState.members ?? const <Member>[],
+    // The same roster the `@` card offered from, so a member it found by
+    // lookup is named on the way out too.
+    members: channelState == null
+        ? const <Member>[]
+        : LoopGroupMemberDirectory.forChannel(channel).roster(
+            channelState.members ?? const <Member>[],
+            membership: channelState.membership,
+          ),
   );
 }
 
@@ -566,66 +703,85 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final channel = props.channel;
     final state = channel.state!;
+    final directory = LoopGroupMemberDirectory.forChannel(channel);
     return StreamBuilder<ChannelState>(
       initialData: state.channelState,
       stream: state.channelStateStream,
-      builder: (context, snapshot) {
-        final channelState = snapshot.data ?? state.channelState;
-        final members = List<Member>.unmodifiable(
-          channelState.members ?? const <Member>[],
-        );
-        final messages = channelState.messages ?? const <Message>[];
-        final lastMessage = messages.isEmpty ? null : messages.last;
-        final displayMessage = lastMessage == null
-            ? null
-            : sanitizeLoopGroupMessageForDisplay(
-                message: lastMessage,
-                members: members,
-              );
-        final label = resolveLoopGroupConversationLabel(
-          channelState.channel?.extraData ?? channel.extraData,
-        );
+      builder: (context, snapshot) => ListenableBuilder(
+        listenable: directory,
+        builder: (context, _) => _buildTile(
+          context,
+          channelState: snapshot.data ?? state.channelState,
+          directory: directory,
+        ),
+      ),
+    );
+  }
 
-        return StreamBuilder<bool>(
-          initialData: channel.isMuted,
-          stream: channel.isMutedStream,
-          builder: (context, mutedSnapshot) => StreamBuilder<bool>(
-            initialData: channel.isPinned,
-            stream: channel.isPinnedStream,
-            builder: (context, pinnedSnapshot) => StreamBuilder<int>(
-              initialData: state.unreadCount,
-              stream: state.unreadCountStream,
-              builder: (context, unreadSnapshot) => StreamChannelListTile(
-                avatar: LoopInitialsAvatar(
-                  key: const ValueKey<String>(
-                    'loop-group-channel-neutral-avatar',
-                  ),
-                  label: label,
-                  size: 40,
-                  shape: BoxShape.rectangle,
-                ),
-                title: Text(label),
-                subtitle: displayMessage == null
-                    ? Text(context.translations.emptyMessagesText)
-                    : StreamMessagePreviewText(
-                        message: displayMessage,
-                        channel: channelState.channel,
-                      ),
-                timestamp: loopStreamChannelListTrailing(
-                  loopStreamChannelListTimestamp(channel),
-                  unreadSnapshot.data ?? state.unreadCount,
-                ),
-                unreadCount: 0,
-                isMuted: mutedSnapshot.data ?? channel.isMuted,
-                isPinned: pinnedSnapshot.data ?? channel.isPinned,
-                onTap: props.onTap,
-                onLongPress: props.onLongPress,
-                selected: props.selected,
-              ),
+  Widget _buildTile(
+    BuildContext context, {
+    required ChannelState channelState,
+    required LoopGroupMemberDirectory directory,
+  }) {
+    final channel = props.channel;
+    final state = channel.state!;
+    final messages = channelState.messages ?? const <Message>[];
+    final lastMessage = messages.isEmpty ? null : messages.last;
+    // The row names the last sender the way the room does, so it asks
+    // for the same member row the room would.
+    final members = loopGroupRosterFor(
+      directory: directory,
+      channelState: channelState,
+      needs: lastMessage == null
+          ? const <String>{}
+          : loopGroupMessageUserIds(lastMessage),
+    );
+    final displayMessage = lastMessage == null
+        ? null
+        : sanitizeLoopGroupMessageForDisplay(
+            message: lastMessage,
+            members: members,
+          );
+    final label = resolveLoopGroupConversationLabel(
+      channelState.channel?.extraData ?? channel.extraData,
+    );
+
+    return StreamBuilder<bool>(
+      initialData: channel.isMuted,
+      stream: channel.isMutedStream,
+      builder: (context, mutedSnapshot) => StreamBuilder<bool>(
+        initialData: channel.isPinned,
+        stream: channel.isPinnedStream,
+        builder: (context, pinnedSnapshot) => StreamBuilder<int>(
+          initialData: state.unreadCount,
+          stream: state.unreadCountStream,
+          builder: (context, unreadSnapshot) => StreamChannelListTile(
+            avatar: LoopInitialsAvatar(
+              key: const ValueKey<String>('loop-group-channel-neutral-avatar'),
+              label: label,
+              size: 40,
+              shape: BoxShape.rectangle,
             ),
+            title: Text(label),
+            subtitle: displayMessage == null
+                ? Text(context.translations.emptyMessagesText)
+                : StreamMessagePreviewText(
+                    message: displayMessage,
+                    channel: channelState.channel,
+                  ),
+            timestamp: loopStreamChannelListTrailing(
+              loopStreamChannelListTimestamp(channel),
+              unreadSnapshot.data ?? state.unreadCount,
+            ),
+            unreadCount: 0,
+            isMuted: mutedSnapshot.data ?? channel.isMuted,
+            isPinned: pinnedSnapshot.data ?? channel.isPinned,
+            onTap: props.onTap,
+            onLongPress: props.onLongPress,
+            selected: props.selected,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -1097,30 +1253,14 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
     }
 
     final state = channel?.state;
-    if (state == null) {
+    if (channel == null || state == null) {
       return _buildDefault(context, const <Member>[]);
     }
 
-    final initialMembers = List<Member>.unmodifiable(
-      state.channelState.members ?? const <Member>[],
-    );
-    final membersStream = state.channelStateStream
-        .map(
-          (channelState) => List<Member>.unmodifiable(
-            channelState.members ?? const <Member>[],
-          ),
-        )
-        .distinct(listEquals);
-
-    return StreamBuilder<List<Member>>(
-      initialData: initialMembers,
-      stream: membersStream,
-      builder: (context, snapshot) {
-        final members = snapshot.hasError
-            ? const <Member>[]
-            : snapshot.data ?? const <Member>[];
-        return _buildDefault(context, members);
-      },
+    return LoopGroupRosterBuilder(
+      channel: channel,
+      needs: loopGroupMessageUserIds(props.message),
+      builder: _buildDefault,
     );
   }
 
@@ -1293,12 +1433,15 @@ List<LoopGroupMentionCandidate> resolveLoopDirectMentionCandidates({
 /// queries and names candidates by the account identity LOOP may not draw.
 /// Everything else about the composer stays Stream's.
 ///
-/// The roster offered is the channel's own loaded member list, watched live.
-/// It is not extended by a server query: Stream's `queryMembers` filters on
-/// `name`, which for a LOOP account is the id, so a request made on an Alias
-/// prefix would answer with the wrong people or with nobody. A member the
-/// channel has not loaded is therefore not offered — the same honest limit as
-/// a member whose projection has not landed.
+/// The roster offered is the channel's own loaded member list, watched live,
+/// plus the rows the channel's [LoopGroupMemberDirectory] already looked up
+/// *by id* for senders on screen. It is not extended by a query on what was
+/// typed: Stream's `queryMembers` can only match `name`, which for a LOOP
+/// account is the id, so a request made on an Alias prefix would answer with
+/// the wrong people or with nobody — and would send the typed Alias to a
+/// provider field it does not belong in. A member neither loaded nor looked up
+/// is therefore not offered — the same honest limit as a member whose
+/// projection has not landed (decision 0107).
 class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
   const LoopGroupMentionAutocompleteOptions({
     required this.query,
@@ -1319,8 +1462,8 @@ class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
     if (state == null) return const SizedBox.shrink();
 
     final currentUserId = StreamChat.of(context).currentUser?.id;
-    return _LoopMembersBuilder(
-      state: state,
+    return LoopGroupRosterBuilder(
+      channel: channel!,
       builder: (context, members) => _LoopMentionCandidateCard(
         candidates: resolveLoopGroupMentionCandidates(
           members: members,
