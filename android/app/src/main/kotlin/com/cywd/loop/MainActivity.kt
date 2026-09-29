@@ -4,16 +4,48 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
 // `local_auth_android` shows the platform BiometricPrompt, which is a
 // fragment and therefore needs a FragmentActivity host. FlutterFragmentActivity
 // is Flutter's own drop-in for FlutterActivity and changes nothing else about
 // how the engine is attached.
 class MainActivity : FlutterFragmentActivity() {
+    // Decision 0106: the system back gesture on LOOP's root page finishes this
+    // Activity, and a finished Activity takes the voice room with it. While
+    // the device holds a voice call, the gesture that has nothing left to pop
+    // puts LOOP behind the home screen instead, as the home button would.
+    //
+    // It is registered before FlutterFragment's own callback, so it has the
+    // lowest priority: every page Flutter can still pop is popped by Flutter.
+    // Only a back Flutter hands on (its callback disabled at the root, or
+    // `SystemNavigator.pop` routed back through the dispatcher) reaches it.
+    private val voiceRoomBack = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            moveTaskToBack(true)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        onBackPressedDispatcher.addCallback(voiceRoomBack)
         ensureDefaultNotificationChannel()
+    }
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, VOICE_ROOM_BACK_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "setHoldsVoiceCall") {
+                    voiceRoomBack.isEnabled = call.arguments == true
+                    result.success(null)
+                } else {
+                    result.notImplemented()
+                }
+            }
     }
 
     // Profile links (decision 0104) and voice-room links (decision 0105).
@@ -61,6 +93,9 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private companion object {
+        // Mirrored by `lib/integrations/device/voice_room_back_guard.dart`.
+        const val VOICE_ROOM_BACK_CHANNEL = "com.cywd.loop/voice_room_back"
+
         val PROFILE_LINK_PATH = Regex("^/u/[A-Za-z0-9-]{1,32}/?$")
 
         // Voice-room links `/c/{communityId}/room` (decision 0105).

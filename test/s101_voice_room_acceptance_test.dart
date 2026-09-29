@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
@@ -14,6 +16,7 @@ import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
+import 'package:loop_mobile/integrations/device/voice_room_back_guard.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import 'support/community_test_harness.dart';
@@ -250,6 +253,105 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-media-restored')),
         findsNothing,
       );
+    });
+  });
+
+  group('0106 · 1 Android root back', () {
+    testWidgets('the guard speaks to MainActivity on Android only', (
+      tester,
+    ) async {
+      final calls = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel(voiceRoomBackChannelName),
+        (call) async {
+          calls.add(call);
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel(voiceRoomBackChannelName),
+          null,
+        ),
+      );
+      const guard = MethodChannelVoiceRoomBackGuard();
+
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await guard.setHoldsVoiceCall(true);
+      await guard.setHoldsVoiceCall(false);
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      await guard.setHoldsVoiceCall(true);
+      debugDefaultTargetPlatformOverride = null;
+
+      expect(calls.map((call) => call.method), <String>[
+        'setHoldsVoiceCall',
+        'setHoldsVoiceCall',
+      ]);
+      expect(calls.map((call) => call.arguments), <Object?>[true, false]);
+    });
+
+    testWidgets('the root back keeps LOOP only while a call is held or being '
+        'put back', (tester) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _Factory(joinFailures: <int>{1});
+      final back = _BackGuard();
+      await _pumpRoom(
+        tester,
+        voice: voice,
+        media: media,
+        radio: _Radio(),
+        back: back,
+      );
+      // Held: the back that has nothing left to pop goes to the background.
+      expect(back.states, <bool>[true]);
+
+      // Dropped and being put back: still guarded, through a failed attempt
+      // and the new call that joins.
+      await _closePage(tester);
+      media.handles.first.drop();
+      await tester.pump(const Duration(milliseconds: 1100));
+      await tester.pump(const Duration(milliseconds: 2100));
+      expect(media.handles, hasLength(3));
+      expect(_held(tester), same(media.handles.last));
+      expect(back.states, <bool>[true]);
+
+      // 离开: nothing to keep any more, and the back finishes LOOP again.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-banner-leave')),
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-banner-leave-confirm')),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(back.states, <bool>[true, false]);
+    });
+
+    testWidgets('a room that ended hands the back back', (tester) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _Factory();
+      final back = _BackGuard();
+      await _pumpRoom(
+        tester,
+        voice: voice,
+        media: media,
+        radio: _Radio(),
+        back: back,
+      );
+      await _closePage(tester);
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.listener,
+        state: VoiceRoomState.ended,
+      );
+      media.handles.first.drop();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(back.states, <bool>[true, false]);
     });
   });
 
@@ -534,13 +636,17 @@ Future<void> _pumpRoom(
   required FakeVoiceRoomGateway voice,
   required _Factory media,
   required _Radio radio,
+  _BackGuard? back,
 }) async {
   await pumpCommunityPage(
     tester,
     const _BannerAndRoom(),
     voiceRoom: voice,
     audioRoomCallFactory: media,
-    overrides: [loopConnectivitySignalProvider.overrideWithValue(radio)],
+    overrides: [
+      loopConnectivitySignalProvider.overrideWithValue(radio),
+      if (back != null) voiceRoomBackGuardProvider.overrideWithValue(back),
+    ],
   );
   expect(media.handles, hasLength(1));
 }
@@ -637,6 +743,14 @@ class _CommunityThenRoom extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Records what `MainActivity` would be told about the root back.
+final class _BackGuard implements VoiceRoomBackGuard {
+  final List<bool> states = <bool>[];
+
+  @override
+  Future<void> setHoldsVoiceCall(bool holds) async => states.add(holds);
 }
 
 /// The platform radio, told by the test when the network comes back.

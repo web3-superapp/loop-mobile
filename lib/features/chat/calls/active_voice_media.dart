@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
+import 'package:loop_mobile/integrations/device/voice_room_back_guard.dart';
 
 /// The one provider call this device holds, and the app holds it.
 ///
@@ -101,8 +102,33 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
         _endRecovery(clearPresence: true);
       }
     }, fireImmediately: true);
+    _backGuard = ref.read(voiceRoomBackGuardProvider);
     ref.onDispose(_retireOnTeardown);
     return null;
+  }
+
+  /// Android's root back (decision 0106): kept from finishing LOOP while
+  /// this device holds a call or is putting one back.
+  VoiceRoomBackGuard? _backGuard;
+  bool? _guardedBack;
+
+  void _syncBackGuard() {
+    final holds = _held != null || _recovery != null;
+    if (_guardedBack == holds) return;
+    _guardedBack = holds;
+    final guard = _backGuard;
+    if (guard != null) unawaited(_setBackGuardIgnoringFailure(guard, holds));
+  }
+
+  static Future<void> _setBackGuardIgnoringFailure(
+    VoiceRoomBackGuard guard,
+    bool holds,
+  ) async {
+    try {
+      await guard.setHoldsVoiceCall(holds);
+    } catch (_) {
+      // The back keeps its default behaviour.
+    }
   }
 
   void _onAppLifecycle(AppLifecycleState state) {
@@ -170,6 +196,7 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     _held = handle;
     _reading = handle.reading;
     state = handle;
+    _syncBackGuard();
     _readings = handle.readings.listen(
       _onReading,
       onError: (Object _, StackTrace _) {
@@ -392,6 +419,7 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
 
   void _startRecovery(_Recovery recovery) {
     final roomId = recovery.roomId;
+    _syncBackGuard();
     _publish(roomId, _reconnectingReading);
     _reportRecovery(recovery.reading);
     try {
@@ -571,6 +599,7 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     _recoveryGeneration += 1;
     unawaited(_connectivity?.cancel());
     _connectivity = null;
+    _syncBackGuard();
     if (recovery == null) return;
     recovery.wake();
     _reportRecovery(null);
@@ -634,6 +663,7 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     _held = null;
     _reading = null;
     state = null;
+    _syncBackGuard();
     _releaseMediaLifetime();
     if (held != null && clearPresence) _clearPresence(held.roomId);
   }
@@ -649,6 +679,10 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     _readings = null;
     _held = null;
     _reading = null;
+    // A principal that rotated away holds no call; the next build re-reads
+    // the guard.
+    _syncBackGuard();
+    _guardedBack = null;
     // The subscriptions belong to the ref that is being torn down, and this
     // notifier is reused when the principal rotates; the next call opens its
     // own.

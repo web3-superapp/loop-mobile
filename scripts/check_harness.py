@@ -8077,6 +8077,22 @@ def check_product_contract(root: Path) -> list[str]:
                 "case AppLifecycleState.detached:",
                 "audioRoomRecoveryDelay(recovery.attempt)",
                 "loopConnectivitySignalProvider",
+                "_syncBackGuard()",
+            ),
+            # Decision 0106: Android's root back puts LOOP in the background
+            # while a voice call is held, instead of finishing the Activity
+            # and the room with it. The callback is registered before
+            # FlutterFragment's, so every page Flutter can pop stays Flutter's.
+            "android/app/src/main/kotlin/com/cywd/loop/MainActivity.kt": (
+                "object : OnBackPressedCallback(false)",
+                "moveTaskToBack(true)",
+                "onBackPressedDispatcher.addCallback(voiceRoomBack)",
+                '"com.cywd.loop/voice_room_back"',
+                "voiceRoomBack.isEnabled = call.arguments == true",
+            ),
+            "lib/integrations/device/voice_room_back_guard.dart": (
+                "const voiceRoomBackChannelName = 'com.cywd.loop/voice_room_back';",
+                "invokeMethod<void>('setHoldsVoiceCall', holds)",
             ),
         },
     )

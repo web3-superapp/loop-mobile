@@ -96,17 +96,37 @@ Proposed 2026-09-29。S101，客户端单侧。基线 `integration/v2` 6518eab�
 - b）**偏离原型**：`voiceroom` 顶栏右上角「展开」（`voiceroom-open-full`）只对有主持人控制的人
   （`viewer.showsHostControls`：主持人且服务端给了邀请 / 全体静音 / 结束权限之一）显示；普通听众与发言人不显示。
   深链直接进 `voiceroom-full` 的非主持人照常可看、不报错。大厅里「查看听众名单」按钮（决策 S77 系列的走查反馈
-  「听众列表在哪」）保留给所有人——它是另一处入口、另一条旧决策，本单不动，待主代理裁决是否一并收起。
+  「听众列表在哪」）保留给所有人（主代理 2026-09-29 裁决，见下）。
 
 ## Consequences
 
 - 真机行为全部未验证：iOS 锁屏/切 App 后收听与发言、控制中心音频条、打断（来电 / 闹钟）恢复；
   Android 12–15 前台服务启动、Android 14 麦克风类型、通知点按与「离开」、划掉任务后的收尾；
   听筒/扬声器/有线耳机/蓝牙四种路由读回；国内弱网下重连次数与耗时。
-- Android 目标 SDK 36：Play 上架需要在 Console 声明前台服务类型（microphone / mediaPlayback；SDK 的 service
-  还声明了 camera / phoneCall / shortService 类型但我们不申请其权限）。发布前由主代理确认。
-- Android 在根页面按系统返回键会结束 Activity（`detached`），当前实现视为收起 App 并退出通话。
 - `ActiveVoiceMediaController` 现在同时持有「重连循环」；它只在有成员横条（`voiceRoomSessionProvider`）时运行。
+
+## 主代理裁决（2026-09-29）
+
+1. 大厅「查看听众名单」对所有人保留（本决策 4b 只收起右上角「展开」）。
+2. **Android 根页面系统返回键**：本机持有语音通话（`ActiveVoiceMediaController` 有 held call，或正在自动重连）时，
+   返回键退到后台而不结束 Activity；没有通话时维持原状。实现（S101 追加 commit）：
+   - `MainActivity` 在 `super.onCreate` 之后向 AndroidX `OnBackPressedDispatcher` 注册一个默认禁用的
+     `OnBackPressedCallback`，处理为 `moveTaskToBack(true)`。它先于 `FlutterFragment` 自己的回调注册，
+     优先级最低：Flutter 还能 pop 的页面全部仍由 Flutter 处理（0085 的返回链路不变）；只有 Flutter 在根页面
+     把返回交还给系统时（其回调在根页面处于禁用，或 `SystemNavigator.pop` 经 `popSystemNavigator` 回到分发器）才落到它。
+   - 启用与否由 Dart 经 `com.cywd.loop/voice_room_back` 的 `setHoldsVoiceCall(bool)` 告知
+     （`lib/integrations/device/voice_room_back_guard.dart`，仅 Android 发送），持有者在 hold / release / 重连开始与结束 /
+     账号轮换时同步，只在值变化时发送。iOS 没有结束 App 的系统返回，不发送。
+   - 单测：适配器只在 Android 发送且参数正确；持有 → true，重连期间（含失败尝试与新 Call）保持 true，
+     离开 → false，房间结束 → false。harness 锁定 `MainActivity` 与适配器的关键片段。
+3. Play Console 前台服务类型声明作为发布待办（见下）。
+4. 不改 SDK 的联网检测地址。
+
+## 发布待办
+
+- Play Console（target SDK 36）声明前台服务类型：`microphone`、`mediaPlayback`，并附语音房后台收听 / 发言的用途说明
+  与演示视频。Stream 的 `StreamCallService` 在 manifest 里还声明了 `camera` / `phoneCall` / `shortService`
+  类型，LOOP 不申请对应权限、运行时也不会以这些类型启动；如审核要求，发布前再决定是否用 `tools:replace` 收窄。
 
 ## Evidence
 
