@@ -362,7 +362,11 @@ class _LoopStreamMemberChannelBodyState
         state: true,
         watch: true,
         presence: true,
-        memberLimit: 30,
+        // Stream's ceiling. The slice is only a head start: a community has
+        // hundreds of members, and a sender outside it is looked up by id
+        // (`LoopGroupMemberDirectory`, decision 0107). At 30 most of a busy
+        // room read as 「成员」 (device report 2026-09-29 · S102).
+        memberLimit: 100,
         messageLimit: 25,
         paginationParams: const PaginationParams(limit: 1),
       );

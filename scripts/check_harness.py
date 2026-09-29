@@ -195,6 +195,7 @@ REQUIRED_FILES = (
     "lib/features/chat/group_alias/group_alias_models.dart",
     "lib/features/chat/group_alias/group_alias_screen.dart",
     "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
+    "lib/features/chat/group_alias/group_member_directory.dart",
     "lib/features/profile/social_privacy/social_privacy_controller.dart",
     "lib/features/profile/social_privacy/social_privacy_gateway.dart",
     "lib/features/profile/social_privacy/social_privacy_models.dart",
@@ -278,6 +279,7 @@ REQUIRED_FILES = (
     "test/group_alias_controller_test.dart",
     "test/group_alias_resolver_test.dart",
     "test/group_alias_stream_message_identity_test.dart",
+    "test/s102_group_member_lookup_test.dart",
     "test/dio_loop_group_alias_gateway_test.dart",
     "test/dio_loop_group_alias_resolver_gateway_test.dart",
     "test/loop_group_alias_providers_test.dart",
@@ -12159,6 +12161,17 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "server immutable failure requires reload before another PUT",
         "retains an in-flight PUT after its last listener is removed",
     ),
+    # Decision 0107 (S102): a sender outside the loaded member slice is looked
+    # up by id, and the row goes through the same fail-closed projection.
+    Path("test/s102_group_member_lookup_test.dart"): (
+        "a moderator member row still parses its Alias (S99b)",
+        "ids are deduplicated, debounced and batched",
+        "offline, nothing is queued and no timer is armed",
+        "a member who leaves stops being named at once",
+        "the 150th member reads by their group name once the lookup lands",
+        "a failing lookup keeps 「成员」 and stops after its retries",
+        "a looked-up row with an invalid projection fails closed",
+    ),
     Path("test/group_alias_stream_message_identity_test.dart"): (
         "accepts only the canonical immutable v1 fields",
         "rejects malformed, future, or ambiguous LOOP fields",
@@ -12340,6 +12353,15 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "class GroupAliasChannelRoutePage",
                 "GroupAliasStreamChannelId.fromCid(routeCid)",
                 "class GroupAliasPage",
+            ),
+            # Decision 0107: looked up by Stream user id only, never by a
+            # typed Alias, in bounded batches with bounded retries.
+            "lib/features/chat/group_alias/group_member_directory.dart": (
+                "Filter.in_('id', userIds)",
+                "batchSize <= 100",
+                "if (failures > retryDelays.length) {",
+                "_unavailable.add(userId);",
+                "if (_disposed || !_canLookup()) return;",
             ),
             "lib/features/chat/group_alias/group_alias_stream_message_identity.dart": (
                 "loopGroupMemberNeutralLabel = '成员'",
@@ -12545,8 +12567,11 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
         root / "lib/features/chat/group_alias",
         root / "lib/features/profile/social_privacy",
     )
-    stream_presentation_path = Path(
-        "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+    # Decision 0107 adds the one other reviewed Stream reader: the directory
+    # that looks up the member rows a loaded slice lacks, by Stream id only.
+    stream_presentation_paths = (
+        Path("lib/features/chat/group_alias/group_alias_stream_message_identity.dart"),
+        Path("lib/features/chat/group_alias/group_member_directory.dart"),
     )
     for feature_root in feature_roots:
         if not feature_root.is_dir():
@@ -12560,7 +12585,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 )
             relative = path.relative_to(root)
             uses_stream_sdk = "package:stream_chat" in source
-            if (uses_stream_sdk and relative != stream_presentation_path) or re.search(
+            if (uses_stream_sdk and relative not in stream_presentation_paths) or re.search(
                 r"\bclient\s*\.\s*channel\s*\(", source
             ):
                 errors.append(
