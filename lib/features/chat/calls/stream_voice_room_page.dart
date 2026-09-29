@@ -13,7 +13,11 @@ import 'package:loop_mobile/integrations/communication/stream_video_providers.da
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
-/// Production-only, foreground Stream Audio Room boundary.
+/// Production-only Stream Audio Room boundary.
+///
+/// Since decision 0106 the call it shows keeps running behind the home screen
+/// and is put back on its own when the provider gives up on it; this surface
+/// is a view of that call and of that recovery.
 ///
 /// LOOP owns authorization, locator and command progress. Once joined, the
 /// mounted foreground view reads connection, participants, capabilities and
@@ -131,6 +135,11 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       // surface is one view of it.
       activeMedia: ref.read(activeVoiceMediaProvider.notifier),
       heldCall: ref.watch(activeVoiceMediaProvider),
+      recovery: ref.watch(audioRoomRecoveryProvider),
+      outputPreference: ref.watch(audioRoomOutputPreferenceProvider),
+      onOutputSelected: (preference) => ref
+          .read(audioRoomOutputPreferenceProvider.notifier)
+          .choose(preference),
       principalKey: principalKey,
       authorization: authorization,
       target: resolvedTarget,
@@ -182,6 +191,9 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     required this.presence,
     required this.activeMedia,
     required this.heldCall,
+    required this.recovery,
+    required this.outputPreference,
+    required this.onOutputSelected,
     required this.principalKey,
     required this.authorization,
     required this.target,
@@ -213,6 +225,13 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
 
   /// The call the app holds right now, as of this build.
   final AudioRoomCallHandle? heldCall;
+
+  /// The automatic reconnection the app is running, if any (decision 0106).
+  final AudioRoomRecovery? recovery;
+
+  /// The built-in output route the reader chose, and how to record another.
+  final AudioRoomOutputPreference outputPreference;
+  final ValueChanged<AudioRoomOutputPreference> onOutputSelected;
   final String? principalKey;
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
@@ -235,12 +254,9 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
       _StreamVoiceRoomSurfaceState();
 }
 
-class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
-    with WidgetsBindingObserver {
+class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
   AudioRoomCallHandle? _joiningCall;
   List<AudioRoomCallHandle> _cleanupHandles = const <AudioRoomCallHandle>[];
-  Future<List<bool>>? _backgroundRetirement;
-  var _appIsForeground = true;
   var _cleanupPending = false;
   var _cleanupFailed = false;
   var _joining = false;
@@ -263,7 +279,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   var _autoConnectScheduled = false;
   var _generation = 0;
   var _cleanupGeneration = 0;
-  var _lifecycleGeneration = 0;
 
   /// True while the page re-reads the room and the provider session for a
   /// second attempt. Nothing connects during it: the old call is exactly the
@@ -283,14 +298,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   var _autoRetriedSession = false;
   var _autoRetryScheduled = false;
 
-  /// True from the moment a call stopped on its own until the room record has
-  /// been read again.
-  ///
-  /// A dropped network and a room the host ended arrive here as the same
-  /// provider disconnection, and only one of them has 「重新连接语音」 as an
-  /// answer. Offering it before the room was read again put a connect button
-  /// under a room that no longer exists.
-  var _verifyingRoom = false;
   String? _joinError;
 
   /// The reading this surface last published. It is held as the reading
@@ -316,17 +323,53 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     return held;
   }
 
+  /// True while the app is putting a dropped call to this room back on its
+  /// own (decision 0106). Nothing here connects during it: the recovery owns
+  /// the next call, and a second one from this surface would be a race.
+  bool get _recovering {
+    final recovery = widget.recovery;
+    final roomId = _target?.roomId;
+    return recovery != null &&
+        recovery.reconnecting &&
+        roomId != null &&
+        recovery.roomId == roomId;
+  }
+
+  /// True after a recovery put a speaker back muted, until the microphone
+  /// is opened again.
+  bool get _restoredMuted {
+    final recovery = widget.recovery;
+    final roomId = _target?.roomId;
+    return recovery != null &&
+        recovery.phase == AudioRoomRecoveryPhase.restored &&
+        recovery.microphoneWasOpen &&
+        roomId != null &&
+        recovery.roomId == roomId;
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    widget.activeMedia?.attachView(this);
+    widget.activeMedia?.attachView(
+      this,
+      onRetiredElsewhere: _onRetiredElsewhere,
+    );
     widget.link?.attach(_disconnectForExit, exitSettled: _exitSettled);
-    final lifecycle = WidgetsBinding.instance.lifecycleState;
-    _appIsForeground =
-        lifecycle == null ||
-        lifecycle == AppLifecycleState.resumed ||
-        lifecycle == AppLifecycleState.inactive;
+  }
+
+  /// The call was taken down from outside this page — the strip's or the
+  /// notification's 离开. That was the reader's decision, so the lobby does
+  /// not connect again on its own; it offers the audio back instead, until
+  /// the room page reads the membership that is gone.
+  void _onRetiredElsewhere() {
+    if (!mounted) {
+      _autoConnectSuspended = true;
+      return;
+    }
+    setState(() {
+      _autoConnectSuspended = true;
+      _joinError = null;
+    });
   }
 
   @override
@@ -350,10 +393,15 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     // behind it is rebuilt more than once on the way. Only a factory that was
     // replaced by another one hands out calls the old client cannot serve —
     // and only then is the call this surface holds stale.
+    //
+    // Replaced means a different client, not a different object: the
+    // provider builds a new factory each time the authorization it watches
+    // answers again, and a lobby that came back from `voiceroom-full` read
+    // the same client twice and took the call down (decision 0106 · 4).
     final callFactoryChanged =
         oldWidget.callFactory != null &&
         widget.callFactory != null &&
-        !identical(oldWidget.callFactory, widget.callFactory);
+        oldWidget.callFactory != widget.callFactory;
     // A room this surface no longer points at, or a call the current client
     // cannot serve. A target that is not known yet is neither: the call the
     // app holds outlives the read that names the room, and coming back to the
@@ -367,7 +415,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     widget.link?.detach(_disconnectForExit);
     final media = widget.activeMedia;
     var held = media?.call;
@@ -390,7 +437,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     if (held == null) _withdrawPresence();
     _generation += 1;
     _cleanupGeneration += 1;
-    _lifecycleGeneration += 1;
     final joiningCall = _joiningCall;
     _joiningCall = null;
     final handles = _uniqueHandles(<AudioRoomCallHandle?>[
@@ -407,34 +453,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!mounted) return;
-    if (state == AppLifecycleState.resumed) {
-      final lifecycleGeneration = ++_lifecycleGeneration;
-      if (!_appIsForeground) {
-        unawaited(
-          _resumeAfterBackgroundRetirement(
-            lifecycleGeneration,
-            _backgroundRetirement,
-          ),
-        );
-      }
-      return;
-    }
-    final movedToBackground =
-        state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.detached;
-    if (movedToBackground) {
-      _lifecycleGeneration += 1;
-      if (_appIsForeground) _retireForBackground();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final foregroundCall = _foregroundCall;
-    if (foregroundCall == null) {
+    if (foregroundCall == null && !_recovering) {
       // A lobby is a room this device is not in. Saying so is what keeps the
       // strip outside this page from printing a head count for a call that
       // ended, or one that never connected.
@@ -451,13 +472,17 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       // own, and no second scroll view.
       return foregroundCall == null
           ? _buildLobby(context)
-          : foregroundCall.buildForeground(
-              onLeaveRequested: _requestExit,
-              inline: true,
-              onMicrophoneEnabled: widget.onMicrophoneEnabled,
-              onPresence: _reportPresence,
-              onDisconnected: _retireStoppedCall,
-              onSpeakAgainRequested: _reconnectForSpeak,
+          : _withRestoredNote(
+              foregroundCall.buildForeground(
+                onLeaveRequested: _requestExit,
+                inline: true,
+                onMicrophoneEnabled: _microphoneEnabled,
+                onPresence: _reportPresence,
+                onDisconnected: _retireStoppedCall,
+                onSpeakAgainRequested: _reconnectForSpeak,
+                outputPreference: widget.outputPreference,
+                onOutputSelected: widget.onOutputSelected,
+              ),
             );
     }
     return Scaffold(
@@ -486,16 +511,62 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         child: SafeArea(
           child: foregroundCall == null
               ? _buildLobby(context)
-              : foregroundCall.buildForeground(
-                  onLeaveRequested: _requestExit,
-                  onMicrophoneEnabled: widget.onMicrophoneEnabled,
-                  onPresence: _reportPresence,
-                  onDisconnected: _retireStoppedCall,
-                  onSpeakAgainRequested: _reconnectForSpeak,
+              : _withRestoredNote(
+                  foregroundCall.buildForeground(
+                    onLeaveRequested: _requestExit,
+                    onMicrophoneEnabled: _microphoneEnabled,
+                    onPresence: _reportPresence,
+                    onDisconnected: _retireStoppedCall,
+                    onSpeakAgainRequested: _reconnectForSpeak,
+                    outputPreference: widget.outputPreference,
+                    onOutputSelected: widget.onOutputSelected,
+                  ),
+                  expand: true,
                 ),
         ),
       ),
     );
+  }
+
+  /// The call view, with one line above it after a recovery closed an open
+  /// microphone (decision 0106).
+  ///
+  /// A new call always enters muted — the provider starts one microphone per
+  /// call, and opening it again on the reader's behalf is a decision the
+  /// reader did not make. A speaker who was talking when the network went is
+  /// told the room is back and the microphone is theirs to open.
+  Widget _withRestoredNote(Widget call, {bool expand = false}) {
+    if (!_restoredMuted) return call;
+    final note = Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: LoopStateCard(
+          key: const ValueKey<String>('voiceroom-media-restored'),
+          title: audioRoomRestoredMicrophoneNote,
+          message: '网络断开时你的麦克风是开着的。重新连接后保持静音，需要时再点「发言」。',
+          tone: LoopTone.positive,
+          icon: Icons.mic_off_rounded,
+        ),
+      ),
+    );
+    return Column(
+      mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        note,
+        if (expand) Expanded(child: call) else call,
+      ],
+    );
+  }
+
+  /// Clears the recovery's line once the microphone is open again, and then
+  /// tells the page, as before.
+  Future<void> _microphoneEnabled() async {
+    final roomId = _target?.roomId;
+    if (roomId != null) widget.activeMedia?.acknowledgeRestored(roomId);
+    final page = widget.onMicrophoneEnabled;
+    if (page != null) await page();
   }
 
   /// How long each step of getting into a room took, for a debug build only.
@@ -527,7 +598,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       target: widget.target,
       callFactory: widget.callFactory,
       joinError: _joinError,
-      appIsForeground: _appIsForeground,
       cleanupPending: _cleanupPending,
       cleanupFailed: _cleanupFailed,
       sessionRefusal: widget.sessionRefusal,
@@ -535,13 +605,13 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       autoConnectSuspended: _autoConnectSuspended,
       refreshingConnection: _refreshingConnection,
       exiting: _exiting,
-      verifyingRoom: _verifyingRoom,
+      recovering: _recovering,
     );
     final joinEnabled =
         content.ready &&
         !_joining &&
         !_refreshingConnection &&
-        !_verifyingRoom &&
+        !_recovering &&
         !_cleanupPending &&
         !_cleanupFailed;
     if (widget.autoConnect && joinEnabled && !content.reconnect) {
@@ -556,6 +626,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         authorization != null &&
         !authorization.isLoading &&
         !_isAuthorized(authorization) &&
+        !_recovering &&
         !_cleanupPending &&
         !_cleanupFailed) {
       _scheduleSessionRetry();
@@ -654,7 +725,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
             joinButton,
             const SizedBox(height: 10),
             Text(
-              '连接只在前台进行，且始终静音进入；系统麦克风权限只在你点「发言」时申请。',
+              '始终静音进入；系统麦克风权限只在你点「发言」时申请。切到后台或锁屏后语音继续，点「离开」才会断开。',
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ],
@@ -695,7 +766,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '仅前台连接',
+                      '静音进入 · 后台继续',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
@@ -726,15 +797,16 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   ///
   /// A write is not allowed from inside `build`, so the attempt runs on the
   /// microtask after the frame that found the room ready. Every refusal
-  /// [_joinMuted] already makes — not foreground, cleanup outstanding, a call
-  /// in flight — still applies, and a failure sets [_joinError], which stops
-  /// this from firing again until the reader asks for it.
+  /// [_joinMuted] already makes — a recovery running, cleanup outstanding, a
+  /// call in flight — still applies, and a failure sets [_joinError], which
+  /// stops this from firing again until the reader asks for it.
   void _scheduleAutoConnect() {
     if (_autoConnectScheduled ||
         _autoConnectSuspended ||
         _exiting ||
         _joining ||
         _refreshingConnection ||
+        _recovering ||
         _joinError != null ||
         _foregroundCall != null) {
       return;
@@ -747,6 +819,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
           _autoConnectSuspended ||
           _exiting ||
           _refreshingConnection ||
+          _recovering ||
           _joinError != null) {
         return;
       }
@@ -766,11 +839,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     if (_autoRetriedSession ||
         _autoRetryScheduled ||
         _refreshingConnection ||
-        _verifyingRoom ||
+        _recovering ||
         _exiting ||
         _leaving ||
-        _joining ||
-        !_appIsForeground) {
+        _joining) {
       return;
     }
     _autoRetriedSession = true;
@@ -869,8 +941,16 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     // window between this disconnect and the LOOP leave, and the lobby that
     // shows during it is a departure, not a dropped connection.
     _markExiting();
+    // A recovery putting the room back is stopped with the exit: 离开 is the
+    // reader's answer to the room, not to one call.
+    _cancelRecovery();
     if (_foregroundCall == null) return;
     await _leaveForegroundCall(pageOwnsExit: true);
+  }
+
+  void _cancelRecovery() {
+    final roomId = _target?.roomId ?? _foregroundCall?.roomId;
+    if (roomId != null) widget.activeMedia?.cancelRecovery(roomId);
   }
 
   void _markExiting() {
@@ -901,7 +981,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   }
 
   Future<void> _joinMuted() async {
-    if (!_appIsForeground ||
+    if (_recovering ||
         _cleanupPending ||
         _cleanupFailed ||
         _joining ||
@@ -998,6 +1078,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// there is no second half, and the exit ends here.
   Future<void> _leaveForegroundCall({bool pageOwnsExit = false}) async {
     if (_leaving) return;
+    _cancelRecovery();
     final handle = _foregroundCall;
     if (handle == null) return;
     _leaving = true;
@@ -1064,134 +1145,48 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     unawaited(_completeCleanup(handles, cleanupGeneration));
   }
 
-  /// Takes down a call the provider stopped, and puts the lobby back.
+  /// Hands a call the provider gave up on to the app, which puts the room back.
   ///
   /// The SDK reconnects on its own, and while it does the call view stays: a
   /// retry in progress is not a failure. What arrives here is a call nobody is
-  /// putting back — on the review device the badge went red and stood there
-  /// for more than ninety seconds while the whole screen was still the call
-  /// view, whose only controls are the microphone and the hang-up. The
-  /// membership is untouched, so this is the same lobby the reader sees after
-  /// a failed connection: 「语音已断开」 and 「重新连接语音」, which reads the
-  /// room and the provider session again before it connects.
+  /// putting back. Before decision 0106 that was a lobby with 「重新连接语音」,
+  /// and on a network that drops every few minutes the reader spent the room
+  /// pressing it. The app now owns that step: it reads the room, and joins the
+  /// same room again with a new call, backing off between attempts, until the
+  /// reader leaves or the room is gone. This surface shows 「正在自动重连」
+  /// meanwhile and the new call as soon as it is held.
   ///
-  /// The call itself is retired through the one cleanup path this surface
-  /// has. That leave is single-flight inside the handle, so a call the SDK
-  /// already took down is not left a second time.
-  ///
-  /// Which of the two lobbies the reader gets is not this surface's to decide:
-  /// a call also stops because the host ended the room, and 「重新连接语音」 is
-  /// then an answer to a room that is gone. The page is asked to read the room
-  /// again first ([_StreamVoiceRoomSurface.onCallStopped]); until it answers,
-  /// nothing here offers the audio back.
+  /// The page is still asked to read the room again, because a call also stops
+  /// when the host ended the room, and the page is what says so.
   void _retireStoppedCall() {
     if (!mounted ||
         _leaving ||
         _exiting ||
         _cleanupPending ||
-        _verifyingRoom ||
         _refreshingConnection) {
       return;
     }
     final stopped = _foregroundCall;
     if (stopped == null || stopped.retirementStarted) return;
     _generation += 1;
-    final handles = _uniqueHandles(<AudioRoomCallHandle?>[
-      _joiningCall,
-      stopped,
-      ..._cleanupHandles,
-    ]);
-    widget.activeMedia?.surrender(stopped);
-    final cleanupGeneration = ++_cleanupGeneration;
     setState(() {
       _joining = false;
       _joiningCall = null;
-      _cleanupHandles = handles;
-      _cleanupPending = true;
-      _cleanupFailed = false;
       _joinError = null;
-      // This device stopped hearing the room without being asked to. Putting
-      // the audio back is the reader's decision, so the ready lobby does not
-      // connect again on its own.
-      _autoConnectSuspended = true;
-      // Whether the audio can come back at all is the room's answer, not this
-      // surface's. Until the page has read the room again nothing here offers
-      // a connection.
-      _verifyingRoom = widget.onCallStopped != null;
     });
-    unawaited(_completeCleanup(handles, cleanupGeneration));
-    unawaited(_verifyRoom());
+    widget.activeMedia?.recover(stopped);
+    unawaited(_readRoomAfterStop());
   }
 
-  /// Waits for the page's own read of the room after a call stopped.
-  ///
-  /// The page owns the room record, so it is the one that can tell a dropped
-  /// network from a room the host ended: a room that came back `ended` is no
-  /// longer joinable and the page takes this surface off the screen, and a
-  /// room that is still live keeps the disconnection lobby with the audio on
-  /// offer. A read that could not finish says neither, and the surface falls
-  /// back to the disconnection it can see for itself.
-  Future<void> _verifyRoom() async {
-    final verify = widget.onCallStopped;
-    if (verify == null) return;
+  Future<void> _readRoomAfterStop() async {
+    final read = widget.onCallStopped;
+    if (read == null) return;
     try {
-      await verify();
+      await read();
     } catch (_) {
-      // The page states a read it could not finish in its own block; this
-      // surface only reports what the connection did.
+      // The page states a read it could not finish in its own block; the
+      // recovery reads the room for itself before every attempt.
     }
-    if (!mounted || !_verifyingRoom) return;
-    setState(() => _verifyingRoom = false);
-  }
-
-  void _retireForBackground() {
-    _generation += 1;
-    _cleanupGeneration += 1;
-    final joiningCall = _joiningCall;
-    final foregroundCall = _foregroundCall;
-    final handles = _uniqueHandles(<AudioRoomCallHandle?>[
-      joiningCall,
-      foregroundCall,
-      ..._cleanupHandles,
-    ]);
-    // LOOP itself left the foreground, which is the one place a voice call is
-    // allowed to run. The app stops holding it here too: there is no
-    // background session behind this, and the strip must not say a room is
-    // being heard while it is not.
-    if (foregroundCall != null) widget.activeMedia?.surrender(foregroundCall);
-    setState(() {
-      _appIsForeground = false;
-      _joining = false;
-      _leaving = false;
-      _joiningCall = null;
-      _cleanupHandles = handles;
-      _cleanupPending = handles.isNotEmpty;
-      _cleanupFailed = false;
-      _joinError = null;
-    });
-    _backgroundRetirement = Future.wait<bool>(
-      handles.map((handle) => _retireIgnoringFailure(handle, background: true)),
-    );
-  }
-
-  Future<void> _resumeAfterBackgroundRetirement(
-    int lifecycleGeneration,
-    Future<List<bool>>? retirement,
-  ) async {
-    final results = retirement == null ? const <bool>[] : await retirement;
-    if (!mounted ||
-        lifecycleGeneration != _lifecycleGeneration ||
-        _appIsForeground) {
-      return;
-    }
-    final failed = results.any((retired) => !retired);
-    setState(() {
-      _backgroundRetirement = null;
-      _appIsForeground = true;
-      _cleanupPending = false;
-      _cleanupFailed = failed;
-      if (!failed) _cleanupHandles = const <AudioRoomCallHandle>[];
-    });
   }
 
   Future<void> _retryCleanup() async {
@@ -1221,16 +1216,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     });
   }
 
-  static Future<bool> _retireIgnoringFailure(
-    AudioRoomCallHandle handle, {
-    bool background = false,
-  }) async {
+  static Future<bool> _retireIgnoringFailure(AudioRoomCallHandle handle) async {
     try {
-      if (background) {
-        await handle.retireForBackground();
-      } else {
-        await handle.leave();
-      }
+      await handle.leave();
       return true;
     } catch (_) {
       return false;
@@ -1331,14 +1319,13 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     required AudioRoomCallFactory? callFactory,
     required String? joinError,
     required StreamVideoSessionRefusal? sessionRefusal,
-    required bool appIsForeground,
     required bool cleanupPending,
     required bool cleanupFailed,
     required bool autoConnect,
     required bool autoConnectSuspended,
     required bool refreshingConnection,
     required bool exiting,
-    required bool verifyingRoom,
+    required bool recovering,
   }) {
     if (exiting) {
       // The reader asked to go and is waiting for it. Nothing here offers a
@@ -1351,13 +1338,14 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         loading: true,
       );
     }
-    if (verifyingRoom) {
-      // A dropped network and a room the host ended arrive here as the same
-      // disconnection. 「重新连接语音」 answers only one of them, so it is not
-      // offered until the room itself has answered.
+    if (recovering) {
+      // Decision 0106: the provider gave up and the app is putting the room
+      // back on its own. Nothing is offered here — there is nothing to press
+      // that the app is not already doing — and the membership is untouched.
       return const _StreamVoiceContent(
-        title: '语音已断开，正在确认房间',
-        message: '正在确认这个语音房是否还在进行，之后再决定能不能把语音接回来。',
+        title: '语音连接中断，正在自动重连',
+        message: '网络恢复后会自动接回这个房间，你仍然在房间里。要退出请用下面的「离开」。',
+        tone: LoopTone.warning,
         icon: Icons.sync_rounded,
         loading: true,
       );
@@ -1378,7 +1366,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       callFactory: callFactory,
       joinError: joinError,
       sessionRefusal: sessionRefusal,
-      appIsForeground: appIsForeground,
       cleanupPending: cleanupPending,
       cleanupFailed: cleanupFailed,
     );
@@ -1427,7 +1414,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     required AudioRoomCallFactory? callFactory,
     required String? joinError,
     required StreamVideoSessionRefusal? sessionRefusal,
-    required bool appIsForeground,
     required bool cleanupPending,
     required bool cleanupFailed,
   }) {
@@ -1436,14 +1422,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         title: '需要完成登录验证',
         message: '语音只在完成验证的登录会话里启动；离线或未验证的会话不会连接。',
         icon: Icons.lock_outline_rounded,
-      );
-    }
-    if (!appIsForeground) {
-      return const _StreamVoiceContent(
-        title: '语音已暂停',
-        message: 'LOOP 离开了前台。需要先确认麦克风已关闭、已退出通话，这里才能继续使用。',
-        tone: LoopTone.warning,
-        icon: Icons.pause_circle_outline_rounded,
       );
     }
     if (cleanupPending) {
@@ -1530,7 +1508,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     return const _StreamVoiceContent(
       title: '语音可以连接',
-      message: '已拿到后端授权的语音房。只在前台连接，且始终静音进入。',
+      message: '已拿到后端授权的语音房。始终静音进入，切到后台后语音继续。',
       tone: LoopTone.positive,
       icon: Icons.verified_user_outlined,
       ready: true,
@@ -1610,8 +1588,8 @@ class _AudioRoomLobbyFacts extends StatelessWidget {
           Divider(height: 25),
           _LobbyFact(
             icon: Icons.phone_android_rounded,
-            title: '仅前台',
-            message: '离开这个界面会结束当前的语音连接。',
+            title: '后台继续',
+            message: '切到其他 App 或锁屏后语音继续，只有「离开」才会断开。',
           ),
         ],
       ),

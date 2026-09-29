@@ -386,97 +386,6 @@ void main() {
     },
   );
 
-  testWidgets('R6-1: a stopped call comes back as a lobby with a way in', (
-    tester,
-  ) async {
-    // Four and a half minutes without a network: the badge went from 「重连中」
-    // to a red 「已断开」 and stayed there, with the whole screen still the
-    // call view — a surface whose only controls are the microphone and the
-    // hang-up. The one way back was to leave the page and come in again from
-    // the banner. A call nobody is putting back is now taken down, and the
-    // lobby that returns asks the backend for a room, a token and a call of
-    // its own.
-    final source = _RecordingVideoSource(
-      identity: const StreamVideoIdentity(userId: 'stream-user-a'),
-    );
-    final clients = _RecordingVideoClientFactory();
-    final factory = _SequencedAudioRoomCallFactory(<_RecordingAudioRoomCall>[
-      _RecordingAudioRoomCall(roomId: 'loop-daily'),
-      _RecordingAudioRoomCall(roomId: 'loop-daily'),
-    ]);
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appConfigProvider.overrideWithValue(_videoConfig()),
-          loopSessionProvider.overrideWith(_AuthenticatedSession.new),
-          streamVideoSessionSourceProvider.overrideWithValue(source),
-          streamVideoClientFactoryProvider.overrideWithValue(clients),
-          audioRoomCallFactoryProvider.overrideWith((ref) {
-            final authorized =
-                ref.watch(streamVideoAuthorizationProvider).value ==
-                StreamVideoSessionAuthorization.authorized;
-            if (!authorized) return null;
-            ref.watch(streamVideoSdkSessionProvider);
-            return factory;
-          }),
-        ],
-        child: MaterialApp(
-          theme: LoopTheme.dark,
-          home: Scaffold(
-            body: StreamVoiceRoomPage(
-              autoConnect: true,
-              inline: true,
-              target: _target('loop-daily'),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Official CallState view'), findsOneWidget);
-    expect(source.tokenCalls, 1);
-    expect(factory.createCalls, 1);
-
-    // The SDK is putting the connection back on its own. Nothing is collapsed
-    // while it does: a retry in progress is not a failure, and the reader kept
-    // the audio back without touching anything on the review device.
-    await tester.tap(find.byKey(const Key('fake-media-reconnecting')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Official CallState view'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
-      findsNothing,
-    );
-    expect(factory.handles.first.leaveCalls, 0);
-
-    await tester.tap(find.byKey(const Key('fake-media-disconnected')));
-    await tester.pumpAndSettle();
-
-    // The dead call is retired once — the handle's own leave is single-flight,
-    // so a call the SDK already took down is not left a second time — and the
-    // membership is untouched.
-    expect(find.text('Official CallState view'), findsNothing);
-    expect(find.text('语音已断开'), findsOneWidget);
-    expect(factory.handles.first.leaveCalls, 1);
-
-    await tester.tap(
-      find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
-    );
-    await tester.pumpAndSettle();
-
-    // A second identity, a second token, a second client, and a call this
-    // device has not been disconnected from.
-    expect(source.identityCalls, 2);
-    expect(source.tokenCalls, 2);
-    expect(clients.createCalls, 2);
-    expect(factory.createCalls, 2);
-    expect(factory.handles.last.joinCalls, 1);
-    expect(find.text('Official CallState view'), findsOneWidget);
-  });
-
   testWidgets(
     'R9-1: closing the page does not take the session the call is made of',
     (tester) async {
@@ -832,158 +741,6 @@ void main() {
   });
 
   testWidgets(
-    'fast resume waits for explicit background mute and Call retirement',
-    (tester) async {
-      final retirementGate = Completer<void>();
-      final handle = _RecordingAudioRoomCall(
-        roomId: 'loop-daily',
-        activeRemovalFuture: retirementGate.future,
-      );
-      final factory = _RecordingAudioRoomCallFactory(handle);
-      addTearDown(() {
-        tester.binding.handleAppLifecycleStateChanged(
-          AppLifecycleState.resumed,
-        );
-      });
-
-      await tester.pumpWidget(
-        _readyPage(factory: factory, target: _target('loop-daily')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('连接语音'));
-      await tester.pumpAndSettle();
-      expect(find.text('Official CallState view'), findsOneWidget);
-
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      await tester.pump();
-
-      expect(handle.backgroundRetirementCalls, 1);
-      expect(handle.backgroundMicrophoneDisableCalls, 1);
-      expect(handle.leaveCalls, 1);
-
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pump();
-
-      expect(find.text('Official CallState view'), findsNothing);
-      expect(find.text('语音已暂停'), findsOneWidget);
-      expect(find.text('语音可以连接'), findsNothing);
-      expect(factory.createCalls, 1);
-      expect(handle.joinCalls, 1);
-
-      retirementGate.complete();
-      await tester.pumpAndSettle();
-
-      expect(handle.backgroundMicrophoneDisableCalls, 2);
-      expect(find.text('语音可以连接'), findsOneWidget);
-      expect(factory.createCalls, 1);
-      expect(handle.joinCalls, 1);
-    },
-  );
-
-  testWidgets('failed background retirement keeps resumed join fail-closed', (
-    tester,
-  ) async {
-    final handle = _RecordingAudioRoomCall(
-      roomId: 'loop-daily',
-      retirementError: StateError('provider-retirement-detail'),
-      retirementFailures: 1,
-    );
-    final factory = _RecordingAudioRoomCallFactory(handle);
-    addTearDown(() {
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    });
-
-    await tester.pumpWidget(
-      _readyPage(factory: factory, target: _target('loop-daily')),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
-    await tester.pumpAndSettle();
-
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await tester.pump();
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
-
-    expect(handle.backgroundRetirementCalls, 1);
-    expect(find.text('上一次通话没有收尾'), findsOneWidget);
-    expect(find.text('连接语音'), findsOneWidget);
-    final joinButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '连接语音'),
-    );
-    expect(joinButton.onPressed, isNull);
-    expect(find.textContaining('provider-retirement-detail'), findsNothing);
-    expect(factory.createCalls, 1);
-    expect(handle.joinCalls, 1);
-
-    await tester.tap(find.text('重试收尾'));
-    await tester.pumpAndSettle();
-
-    expect(handle.leaveCalls, 2);
-    expect(find.text('语音可以连接'), findsOneWidget);
-    expect(find.text('上一次通话没有收尾'), findsNothing);
-  });
-
-  testWidgets('background cleanup preempts stuck Speak and native suspension', (
-    tester,
-  ) async {
-    final microphoneGate = Completer<void>();
-    final suspendGate = Completer<void>();
-    final activeRemovalGate = Completer<void>();
-    final handle = _RecordingAudioRoomCall(
-      roomId: 'loop-daily',
-      microphoneEnableFuture: microphoneGate.future,
-      suspendAudioFuture: suspendGate.future,
-      activeRemovalFuture: activeRemovalGate.future,
-    );
-    final factory = _RecordingAudioRoomCallFactory(handle);
-    addTearDown(() {
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    });
-
-    await tester.pumpWidget(
-      _readyPage(factory: factory, target: _target('loop-daily')),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('fake-speak')));
-    await tester.pump();
-
-    expect(handle.microphoneCommandLog, <String>['enable:start']);
-
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await tester.pump();
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pump();
-
-    expect(handle.suspendAudioCalls, 1);
-    expect(handle.backgroundMicrophoneDisableCalls, 1);
-    expect(handle.leaveCalls, 1);
-    expect(find.text('语音已暂停'), findsOneWidget);
-
-    activeRemovalGate.complete();
-    await tester.pumpAndSettle();
-
-    expect(find.text('语音已暂停'), findsOneWidget);
-    expect(find.text('语音可以连接'), findsNothing);
-    expect(handle.backgroundMicrophoneDisableCalls, 1);
-
-    microphoneGate.complete();
-    suspendGate.complete();
-    await tester.pumpAndSettle();
-
-    expect(handle.microphoneCommandLog, <String>[
-      'enable:start',
-      'disable',
-      'enable:end',
-      'disable',
-    ]);
-    expect(handle.leaveCalls, 1);
-    expect(find.text('语音可以连接'), findsOneWidget);
-  });
-
-  testWidgets(
     'manual leave waits for active Call removal and stays single-flight',
     (tester) async {
       final leaveGate = Completer<void>();
@@ -1171,55 +928,6 @@ void main() {
     expect(handle.leaveCalls, 1);
     expect(find.text('重新连接语音'), findsOneWidget);
     expect(find.text('Official CallState view'), findsNothing);
-  });
-
-  // A dropped network and a room the host ended arrive as the same provider
-  // disconnection, and only one of them has 「重新连接语音」 as an answer.
-  testWidgets('a stopped call offers nothing until the room was read again', (
-    tester,
-  ) async {
-    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
-    final factory = _RecordingAudioRoomCallFactory(handle);
-    final read = Completer<void>();
-    var reads = 0;
-
-    await tester.pumpWidget(
-      _readyPage(
-        factory: factory,
-        target: _target('loop-daily'),
-        autoConnect: true,
-        onCallStopped: () {
-          reads += 1;
-          return read.future;
-        },
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Official CallState view'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('fake-media-disconnected')));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-
-    // The call is down and the room is being read. Nothing here says which
-    // lobby this is yet, and nothing offers the audio back.
-    expect(reads, 1);
-    expect(handle.leaveCalls, 1);
-    expect(find.text('语音已断开，正在确认房间'), findsOneWidget);
-    expect(find.text('语音已断开'), findsNothing);
-    expect(find.text('重新连接语音'), findsNothing);
-    expect(
-      find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
-      findsNothing,
-    );
-
-    // The page answered with a room that is still live, so the audio is on
-    // offer again and the connection is not made behind the reader.
-    read.complete();
-    await tester.pumpAndSettle();
-    expect(find.text('语音已断开'), findsOneWidget);
-    expect(find.text('重新连接语音'), findsOneWidget);
-    expect(handle.joinCalls, 1);
   });
 
   testWidgets('the page exit takes the call down and keeps it down', (
@@ -1504,9 +1212,15 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
   }
 
   @override
-  Future<void> retireForBackground() {
-    backgroundRetirementCalls += 1;
-    return _commands.retire();
+  bool microphoneOpen = false;
+
+  final List<AudioRoomOutputPreference> outputs = <AudioRoomOutputPreference>[];
+
+  @override
+  Future<void> applyOutputPreference(
+    AudioRoomOutputPreference preference,
+  ) async {
+    outputs.add(preference);
   }
 
   Future<void> _providerLeave() async {
@@ -1555,6 +1269,9 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     onPresence,
     VoidCallback? onDisconnected,
     Future<void> Function()? onSpeakAgainRequested,
+    AudioRoomOutputPreference outputPreference =
+        AudioRoomOutputPreference.speaker,
+    ValueChanged<AudioRoomOutputPreference>? onOutputSelected,
   }) {
     return Column(
       children: <Widget>[

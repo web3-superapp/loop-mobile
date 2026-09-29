@@ -125,6 +125,13 @@ def write_audio_room_native_fixture(
                 *permission_lines,
                 *declared_permission_lines,
                 "    <application>",
+                # Decision 0106: the voice room's ongoing notification opens
+                # LOOP through this action.
+                '        <activity android:name=".MainActivity">',
+                "            <intent-filter>",
+                f'                <action android:name="{check_harness.ANDROID_AUDIO_ROOM_NOTIFICATION_ACTION}" />',
+                "            </intent-filter>",
+                "        </activity>",
                 *component_lines,
                 "    </application>",
                 "</manifest>",
@@ -7607,6 +7614,21 @@ class HarnessTests(unittest.TestCase):
             write_audio_room_native_fixture(root)
             result = check_harness.check_audio_room_native_contract(root)
         self.assertEqual([], result)
+
+    def test_voice_room_notification_needs_its_activity_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_audio_room_native_fixture(root)
+            manifest = root / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
+            manifest.write_text(
+                manifest.read_text(encoding="utf-8").replace(
+                    check_harness.ANDROID_AUDIO_ROOM_NOTIFICATION_ACTION,
+                    "android.intent.action.VIEW",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_audio_room_native_contract(root)
+        self.assertTrue(any("STREAM_CALL" in error for error in result))
 
     def test_foreground_audio_room_native_contract_detects_missing_microphone_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

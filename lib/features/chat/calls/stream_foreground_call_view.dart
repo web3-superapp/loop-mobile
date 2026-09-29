@@ -13,6 +13,7 @@ typedef _ForegroundCallViewData = ({
   bool microphoneEnabled,
   bool canSendAudio,
   bool audioSuspended,
+  AudioRoomOutputRoute? output,
 });
 
 /// What this device's media connection is doing, in the only four shapes the
@@ -137,6 +138,53 @@ abstract final class StreamCallDisconnectPolicy {
     if (retirementStarted) return false;
     return StreamCallStatusPresentation.phase(status) ==
         StreamCallPhase.disconnected;
+  }
+}
+
+/// Reads the provider's current audio output as one of the three routes the
+/// room's control names (decision 0106).
+///
+/// iOS reports the built-in speaker as `Speaker` and the receiver with the
+/// port type `Receiver`, and the provider adds an `earpiece` entry of its
+/// own. Android names its routes `speaker`, `earpiece`, `wired-headset` and
+/// `bluetooth`. Anything else is a device the reader plugged in or paired.
+AudioRoomOutputRoute? audioRoomOutputRouteOf(RtcMediaDevice? device) {
+  if (device == null) return null;
+  final id = device.id.toLowerCase();
+  final group = device.groupId?.toLowerCase();
+  if (id == 'speaker' || group == 'speaker') {
+    return const AudioRoomOutputRoute(AudioRoomOutputKind.speaker);
+  }
+  if (id == 'earpiece' || group == 'receiver' || group == 'earpiece') {
+    return const AudioRoomOutputRoute(AudioRoomOutputKind.earpiece);
+  }
+  return AudioRoomOutputRoute(
+    AudioRoomOutputKind.external,
+    label: device.label,
+  );
+}
+
+/// What one tap on the output control asks for.
+///
+/// The control toggles between the two built-in routes, starting from the
+/// route the provider reports rather than from the last choice: a reader who
+/// hears the receiver and taps the control expects the speaker. While an
+/// external device carries the sound there is nothing to toggle.
+AudioRoomOutputPreference? audioRoomOutputToggle({
+  required AudioRoomOutputRoute? current,
+  required AudioRoomOutputPreference preference,
+}) {
+  switch (current?.kind) {
+    case AudioRoomOutputKind.external:
+      return null;
+    case AudioRoomOutputKind.speaker:
+      return AudioRoomOutputPreference.earpiece;
+    case AudioRoomOutputKind.earpiece:
+      return AudioRoomOutputPreference.speaker;
+    case null:
+      return preference == AudioRoomOutputPreference.speaker
+          ? AudioRoomOutputPreference.earpiece
+          : AudioRoomOutputPreference.speaker;
   }
 }
 
@@ -373,6 +421,8 @@ class StreamForegroundCallView extends StatefulWidget {
     this.onPresence,
     this.onDisconnected,
     this.onSpeakAgainRequested,
+    this.outputPreference = AudioRoomOutputPreference.speaker,
+    this.onOutputSelected,
   });
 
   final Call call;
@@ -423,6 +473,13 @@ class StreamForegroundCallView extends StatefulWidget {
   /// nothing to offer and said so as 「重新进入后再发言」, which on the review
   /// device was what a host saw the moment they muted themselves.
   final Future<void> Function()? onSpeakAgainRequested;
+
+  /// The built-in route the reader chose (decision 0106).
+  final AudioRoomOutputPreference outputPreference;
+
+  /// Records a new choice. Null hides the control: a view with nobody to
+  /// keep the choice offers none.
+  final ValueChanged<AudioRoomOutputPreference>? onOutputSelected;
 
   @override
   State<StreamForegroundCallView> createState() =>
@@ -525,6 +582,9 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
             CallPermission.sendAudio,
           ),
           audioSuspended: state.isAudioSuspended,
+          // Where the sound actually goes, as the provider reads it back —
+          // never the choice the reader made.
+          output: audioRoomOutputRouteOf(state.audioOutputDevice),
         );
       },
       builder: (context, data) {
@@ -746,6 +806,14 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
                       ),
                     ),
             ),
+            if (widget.onOutputSelected != null) ...<Widget>[
+              const SizedBox(width: 8),
+              _OutputControl(
+                current: data.output,
+                preference: widget.outputPreference,
+                onSelected: widget.onOutputSelected!,
+              ),
+            ],
             const SizedBox(width: 12),
             IconButton.filled(
               onPressed: _leaveBusy ? null : _leave,
@@ -850,6 +918,63 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     // page first can come back with the question declined, and the control
     // has to be usable again.
     if (mounted) setState(() => _leaveBusy = false);
+  }
+}
+
+/// Speaker or receiver, and which one the sound is actually coming out of.
+///
+/// The label is the route the provider reads back. One tap asks for the other
+/// built-in route; with a headset or a Bluetooth device connected the control
+/// names that device and asks for nothing, because the sound goes there
+/// whatever is chosen.
+class _OutputControl extends StatelessWidget {
+  const _OutputControl({
+    required this.current,
+    required this.preference,
+    required this.onSelected,
+  });
+
+  final AudioRoomOutputRoute? current;
+  final AudioRoomOutputPreference preference;
+  final ValueChanged<AudioRoomOutputPreference> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final next = audioRoomOutputToggle(
+      current: current,
+      preference: preference,
+    );
+    final label = audioRoomOutputLabel(current);
+    final icon = switch (current?.kind) {
+      AudioRoomOutputKind.speaker => Icons.volume_up_rounded,
+      AudioRoomOutputKind.earpiece => Icons.phone_in_talk_rounded,
+      AudioRoomOutputKind.external => Icons.headphones_rounded,
+      null => Icons.volume_up_outlined,
+    };
+    final hint = next == null
+        ? '声音从已连接的设备输出'
+        : next == AudioRoomOutputPreference.speaker
+        ? '切换到扬声器'
+        : '切换到听筒';
+    return Semantics(
+      button: true,
+      label: '声音输出：$label',
+      hint: hint,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: hint,
+        child: OutlinedButton.icon(
+          key: const ValueKey<String>('voiceroom-media-output'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+          onPressed: next == null ? null : () => onSelected(next),
+          icon: Icon(icon, size: 18),
+          label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+      ),
+    );
   }
 }
 

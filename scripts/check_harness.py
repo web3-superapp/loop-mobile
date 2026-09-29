@@ -515,10 +515,17 @@ REOWN_FORBIDDEN_IMPORT_FILES = frozenset(
         Path("lib/integrations/privy/wallet_signing_gateway.dart"),
     }
 )
+# Decision 0106: a voice room keeps running in the background through
+# Stream's own call service, so its foreground-service permission and the two
+# types an audio room uses are active. Phone-call, camera and projection types
+# stay removed below.
 ANDROID_AUDIO_ROOM_PERMISSIONS = frozenset(
     {
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
     }
 )
 ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS = frozenset(
@@ -528,12 +535,9 @@ ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS = frozenset(
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK",
         "android.permission.ACCESS_NOTIFICATION_POLICY",
-        "android.permission.FOREGROUND_SERVICE",
         "android.permission.MANAGE_OWN_CALLS",
         "android.permission.FOREGROUND_SERVICE_PHONE_CALL",
-        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
         "android.permission.FOREGROUND_SERVICE_CAMERA",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
         "${applicationId}.PERMISSION_CALL",
     }
@@ -557,7 +561,6 @@ ANDROID_AUDIO_ROOM_REMOVED_COMPONENTS = {
         {
             "io.getstream.video.flutter.stream_video_push_notification.IncomingCallNotificationService",
             "io.getstream.video.flutter.stream_video_push_notification.IncomingCallConnectionService",
-            "io.getstream.video.flutter.stream_video_flutter.service.StreamCallService",
             "io.getstream.video.flutter.stream_video_flutter.service.StreamScreenShareService",
         }
     ),
@@ -616,7 +619,8 @@ CHAT_CAMERA_TEST_MARKERS = {
 # `aps-environment` left this set on 2026-09-22 (S70): ordinary push is the
 # whole point of the Firebase slice, and the entitlement is what makes APNs
 # hand the device a token at all. The VoIP and call entitlements stay out —
-# Audio Room is still foreground-only and LOOP still has no PushKit path.
+# Audio Room runs in the background through the `audio` mode alone (decision
+# 0106) and LOOP still has no PushKit or CallKit path.
 IOS_AUDIO_ROOM_FORBIDDEN_ENTITLEMENTS = frozenset(
     {
         "com.apple.developer.background-modes",
@@ -624,11 +628,15 @@ IOS_AUDIO_ROOM_FORBIDDEN_ENTITLEMENTS = frozenset(
         "com.apple.developer.voip",
     }
 )
-# The one background mode LOOP declares. `audio`, `voip`, `fetch` and
-# `processing` would each buy a capability the product does not have, and a
-# reviewer reads this array as a claim about what the app does in the
-# background.
-IOS_PUSH_BACKGROUND_MODES = ("remote-notification",)
+# The background modes LOOP declares. `audio` is the voice room running
+# behind the home screen (decision 0106); `remote-notification` is push (S70).
+# `voip`, `fetch` and `processing` would each buy a capability the product
+# does not have, and a reviewer reads this array as a claim about what the app
+# does in the background.
+IOS_PUSH_BACKGROUND_MODES = ("audio", "remote-notification")
+# The action Stream's call-service notification opens LOOP with. Without the
+# filter the notification's tap resolves to nothing.
+ANDROID_AUDIO_ROOM_NOTIFICATION_ACTION = "${applicationId}.intent.action.STREAM_CALL"
 IOS_AUDIO_ROOM_FORBIDDEN_RUNNER_MARKERS = (
     "import CallKit",
     "import PushKit",
@@ -7475,7 +7483,7 @@ def _require_android_removals(
 
 
 def check_audio_room_native_contract(root: Path) -> list[str]:
-    """Keep the first Audio Room slice microphone-only and foreground-only."""
+    """Keep Audio Room microphone-only, with only the background pieces of decision 0106."""
 
     errors: list[str] = []
     for relative in ("pubspec.yaml", "pubspec.lock"):
@@ -7538,6 +7546,17 @@ def check_audio_room_native_contract(root: Path) -> list[str]:
         if application is None:
             errors.append("Android main manifest must contain an application element")
         else:
+            actions = {
+                action.get(ANDROID_NAME)
+                for activity in application.findall("activity")
+                for intent_filter in activity.findall("intent-filter")
+                for action in intent_filter.findall("action")
+            }
+            if ANDROID_AUDIO_ROOM_NOTIFICATION_ACTION not in actions:
+                errors.append(
+                    "Android voice room notification needs an activity intent-filter for "
+                    f"`{ANDROID_AUDIO_ROOM_NOTIFICATION_ACTION}`"
+                )
             for tag, names in ANDROID_AUDIO_ROOM_REMOVED_COMPONENTS.items():
                 errors.extend(
                     _require_android_removals(
@@ -7554,9 +7573,10 @@ def check_audio_room_native_contract(root: Path) -> list[str]:
         microphone_description = info.get("NSMicrophoneUsageDescription")
         if not isinstance(microphone_description, str) or not microphone_description.strip():
             errors.append("iOS foreground Audio Room requires a non-empty NSMicrophoneUsageDescription")
-        # S70: push replaced the blanket refusal. The array is checked rather
-        # than merely allowed, because `audio` or `voip` in it would turn
-        # Audio Room into a background call without a single Dart change.
+        # S70: push replaced the blanket refusal, and decision 0106 added
+        # `audio`. The array is checked rather than merely allowed, because
+        # `voip` in it would turn Audio Room into a ringing call without a
+        # single Dart change.
         if info.get("UIBackgroundModes") != list(IOS_PUSH_BACKGROUND_MODES):
             errors.append(
                 "iOS must declare UIBackgroundModes as exactly "
@@ -8012,7 +8032,11 @@ def check_product_contract(root: Path) -> list[str]:
                 "creation.privyUserId != requestedPrincipal",
             ),
             "lib/features/chat/calls/audio_room_call.dart": (
-                "Future<void> retireForBackground()",
+                # Decision 0106: the reader's output route, put back after
+                # every event that can move it, and the Android call service.
+                "Future<void> applyOutputPreference(",
+                "bool get microphoneOpen",
+                "StreamBackgroundService.init(",
                 "AudioRoomCallCommandCoordinator",
                 "unawaited(_suspendAudioIgnoringFailure())",
                 "unawaited(_muteIgnoringFailure())",
@@ -8032,11 +8056,11 @@ def check_product_contract(root: Path) -> list[str]:
                 # the connection back.
                 "已加入，语音连接失败",
                 "重新连接语音",
-                "AppLifecycleState.paused",
-                "AppLifecycleState.hidden",
-                "AppLifecycleState.detached",
-                "_retireForBackground()",
-                "_resumeAfterBackgroundRetirement",
+                # Decision 0106: a call the provider gave up on is handed to
+                # the app's recovery, which the page shows and never races.
+                "widget.activeMedia?.recover(stopped)",
+                "语音连接中断，正在自动重连",
+                "oldWidget.callFactory != widget.callFactory",
                 # The retry the reader is offered after a failed retirement.
                 # It is written in the product's own language like every other
                 # sentence on the surface.
@@ -8045,6 +8069,14 @@ def check_product_contract(root: Path) -> list[str]:
             "lib/features/chat/calls/stream_foreground_call_view.dart": (
                 "required this.retirementStarted",
                 "需要先重试退出",
+                "audioRoomOutputRouteOf(state.audioOutputDevice)",
+            ),
+            "lib/features/chat/calls/active_voice_media.dart": (
+                # Decision 0106: the background keeps the call; only the App
+                # being taken down ends it.
+                "case AppLifecycleState.detached:",
+                "audioRoomRecoveryDelay(recovery.attempt)",
+                "loopConnectivitySignalProvider",
             ),
         },
     )

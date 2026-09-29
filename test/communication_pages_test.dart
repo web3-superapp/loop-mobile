@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -2360,9 +2361,11 @@ void main() {
       },
     );
 
-    testWidgets('a call that stopped on a live room offers the audio back', (
+    testWidgets('a call that stopped on a live room is put back on its own', (
       tester,
     ) async {
+      // Decision 0106 · 3: on a network that drops every few minutes the
+      // reader used to spend the room pressing 「重新连接语音」.
       final voice = FakeVoiceRoomGateway(
         snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
       );
@@ -2372,6 +2375,11 @@ void main() {
         const VoiceRoomScreen(communityId: testCommunityId),
         voiceRoom: voice,
         audioRoomCallFactory: media,
+        overrides: [
+          loopConnectivitySignalProvider.overrideWithValue(
+            const _SilentConnectivity(),
+          ),
+        ],
       );
       expect(find.text('语音已连接（测试）'), findsOneWidget);
 
@@ -2380,19 +2388,26 @@ void main() {
       );
       await scrollToCommunitySection(tester, stop);
       await tester.tap(stop);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
-      // The room is still running, so the membership stands and the audio is
-      // on offer again.
-      expect(voice.commands, contains('load'));
-      expect(voice.commands, isNot(contains('leave')));
-      final disconnected = find.text('语音已断开');
-      await scrollToCommunitySection(tester, disconnected);
-      expect(disconnected, findsOneWidget);
+      // The call is down, the lobby says the app is on it, and nothing is
+      // offered to press.
+      expect(find.text('语音连接中断，正在自动重连'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
-        findsOneWidget,
+        findsNothing,
       );
+
+      await tester.pumpAndSettle();
+
+      // The room was read, it is still running, and a new call is in it.
+      expect(voice.commands, contains('load'));
+      expect(voice.commands, isNot(contains('leave')));
+      expect(media.handles, hasLength(2));
+      expect(media.handles.first.leaveCalls, 1);
+      expect(media.handles.last.joinCalls, 1);
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
       expect(find.text('房间已结束'), findsNothing);
     });
 
@@ -3001,32 +3016,94 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
       await tester.pumpAndSettle();
 
-      // The provider drops the call while the reader is on another screen.
-      // Nothing is putting it back, and the strip stops saying the room is
-      // being heard.
+      // The provider drops the call while the reader is on another screen,
+      // and gives up on it. The strip says the room is being put back — not
+      // that it is heard, and not that it is gone.
       media.handles.first.emit(AudioRoomLivePhase.disconnected);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
       expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
-      expect(find.text('听众 · 语音已断开'), findsOneWidget);
-      expect(find.text('重新连接'), findsOneWidget);
-      expect(find.text('返回房间'), findsNothing);
-      // The dead call is taken down, and the room says the membership stands.
-      expect(media.leaveCalls, 1);
+      expect(find.text('听众 · 语音正在重连'), findsOneWidget);
+      expect(find.text('重新连接'), findsNothing);
+      expect(media.handles.first.leaveCalls, 1);
+
+      // Decision 0106 · 3: the app joins the same room again on its own,
+      // after reading that the room is still running and the membership
+      // stands.
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
       expect(voice.commands, contains('load'));
       expect(voice.commands, isNot(contains('leave')));
+      expect(media.handles, hasLength(2));
+      expect(media.handles.last.joinCalls, 1);
+      expect(find.text('听众 · 语音已断开'), findsNothing);
     });
 
-    // Voice is foreground-only, and that rule did not move with the call:
-    // LOOP leaving the foreground ends it whether or not a room page is on
-    // screen. There is no background session behind any of this.
-    testWidgets('LOOP leaving the foreground still ends the call', (
-      tester,
-    ) async {
+    // Decision 0106 · 1 reverses the foreground-only rule: a speaker who
+    // switched to another App was dropped from the room and had to come back
+    // and connect again.
+    testWidgets('LOOP going to the background keeps the call', (tester) async {
       final voice = FakeVoiceRoomGateway(
         snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
       );
       final media = _FakeVoiceMediaFactory(log: voice.commands);
+      addTearDown(() {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      });
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      final report = find.byKey(const ValueKey<String>('fake-presence'));
+      await scrollToCommunitySection(tester, report);
+      await tester.tap(report);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+      expect(media.leaveCalls, 0);
+
+      for (final state in <AppLifecycleState>[
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+        await tester.pump();
+      }
+      await tester.pump(const Duration(minutes: 2));
+
+      expect(media.leaveCalls, 0);
+      expect(media.handles.single.retirementStarted, isFalse);
+      expect(voice.commands, isNot(contains('leave')));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      // Coming back finds the same call, still heard, and puts the reader's
+      // output route on it again.
+      expect(media.handles, hasLength(1));
+      expect(media.leaveCalls, 0);
+      expect(find.text('听众 · 3 人在通话'), findsOneWidget);
+      expect(
+        media.handles.single.outputs.last,
+        AudioRoomOutputPreference.speaker,
+      );
+    });
+
+    testWidgets('LOOP being taken down still ends the call', (tester) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      addTearDown(() {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      });
       await pumpCommunityPage(
         tester,
         _VoiceRoomBannerHarness(opened: <String>[]),
@@ -3035,33 +3112,13 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
       await tester.pumpAndSettle();
-      expect(media.leaveCalls, 0);
 
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.detached);
       await tester.pump();
 
       expect(media.leaveCalls, 1);
-      // The membership is untouched: backgrounding is not leaving the room.
+      // The membership is the server's; a process going away is not 离开.
       expect(voice.commands, isNot(contains('leave')));
-
-      // R9-6: the media went and the membership stayed, so the strip stays
-      // too and says which of the two happened. On the review device it
-      // simply disappeared, leaving the account recorded in a room it could
-      // neither hear nor leave.
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
-        findsOneWidget,
-      );
-      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
-      expect(find.text('听众 · 语音已断开'), findsOneWidget);
-      // Both ways out of it are on the strip: the audio back, or the room.
-      expect(find.text('重新连接'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('voiceroom-banner-leave')),
-        findsOneWidget,
-      );
     });
 
     testWidgets(
@@ -3085,12 +3142,16 @@ void main() {
           state: VoiceRoomState.ended,
         );
         media.handles.first.emit(AudioRoomLivePhase.disconnected);
+        // The recovery reads the room before its first new call.
+        await tester.pump(const Duration(seconds: 2));
         await tester.pumpAndSettle();
 
         expect(
           find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
           findsNothing,
         );
+        // A room that ended is not joined again.
+        expect(media.handles, hasLength(1));
         expect(media.leaveCalls, 1);
         // A marker the reader saw a moment ago cannot simply vanish: the strip
         // going is the whole visible consequence, so one line accounts for it.
@@ -3168,9 +3229,11 @@ void main() {
           state: VoiceRoomState.ended,
         );
         media.handles.first.emit(AudioRoomLivePhase.disconnected);
+        await tester.pump(const Duration(seconds: 2));
         await tester.pumpAndSettle();
 
         expect(media.leaveCalls, 1);
+        expect(media.handles, hasLength(1));
         expect(
           find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
           findsNothing,
@@ -3381,14 +3444,18 @@ void main() {
       // A stopped call says so on the strip itself, under the same long name,
       // instead of only in the button beside it.
       media.handles.first.emit(AudioRoomLivePhase.disconnected);
-      await tester.pumpAndSettle();
-      expect(find.text('听众 · 语音已断开'), findsOneWidget);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('听众 · 语音正在重连'), findsOneWidget);
       expect(
         tester
-            .renderObject<RenderParagraph>(find.text('听众 · 语音已断开'))
+            .renderObject<RenderParagraph>(find.text('听众 · 语音正在重连'))
             .didExceedMaxLines,
         isFalse,
       );
+      // The recovery finishes before the test does.
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
     });
   });
 
@@ -3628,6 +3695,15 @@ class _UnmountHarnessState extends State<_UnmountHarness> {
   }
 }
 
+/// A radio that never reports coming back, so a recovery waits out its own
+/// back-off.
+final class _SilentConnectivity implements LoopConnectivitySignal {
+  const _SilentConnectivity();
+
+  @override
+  Stream<void> get onRestored => const Stream<void>.empty();
+}
+
 final class _FakeVoiceMediaFactory implements AudioRoomCallFactory {
   _FakeVoiceMediaFactory({required this.log, this.joinFailures = 0});
 
@@ -3732,11 +3808,22 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     required bool enabled,
   }) async {
     microphoneCalls += 1;
+    microphoneOpen = enabled;
     return const AudioRoomMicrophoneOutcome.opened();
   }
 
   @override
-  Future<void> retireForBackground() => leave();
+  bool microphoneOpen = false;
+
+  /// Every route this call was asked to use, in order.
+  final List<AudioRoomOutputPreference> outputs = <AudioRoomOutputPreference>[];
+
+  @override
+  Future<void> applyOutputPreference(
+    AudioRoomOutputPreference preference,
+  ) async {
+    outputs.add(preference);
+  }
 
   @override
   Future<void> leave() async {
@@ -3758,6 +3845,9 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     onPresence,
     VoidCallback? onDisconnected,
     Future<void> Function()? onSpeakAgainRequested,
+    AudioRoomOutputPreference outputPreference =
+        AudioRoomOutputPreference.speaker,
+    ValueChanged<AudioRoomOutputPreference>? onOutputSelected,
   }) {
     return Column(
       children: <Widget>[
@@ -3862,10 +3952,23 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
           key: const ValueKey<String>('fake-microphone-opened'),
           onPressed: () async {
             microphoneCalls += 1;
+            microphoneOpen = true;
             await onMicrophoneEnabled?.call();
           },
           child: const Text('开麦'),
         ),
+        // Stands in for the output control: it prints the reader's choice
+        // and records the other one.
+        if (onOutputSelected != null)
+          TextButton(
+            key: const ValueKey<String>('fake-output-toggle'),
+            onPressed: () => onOutputSelected(
+              outputPreference == AudioRoomOutputPreference.speaker
+                  ? AudioRoomOutputPreference.earpiece
+                  : AudioRoomOutputPreference.speaker,
+            ),
+            child: Text('输出 ${outputPreference.name}'),
+          ),
       ],
     );
   }

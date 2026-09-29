@@ -71,10 +71,15 @@
 	<string>用于把聊天里的图片保存到你的相册</string>
 	<!-- APNs delivers a LOOP notification to a backgrounded app; without this
 	     mode iOS drops the silent half of it and the app only learns about
-	     the notification if the owner taps it. This is the push mode only:
-	     LOOP declares no audio, VoIP, fetch or processing background mode. -->
+	     the notification if the owner taps it.
+	     `audio` (decision 0106): a voice room keeps playing, and a speaker
+	     keeps being heard, while LOOP is behind the home screen or another
+	     App. It is the voice-chat audio session WebRTC already runs; LOOP
+	     declares no VoIP, fetch or processing background mode, and no
+	     CallKit or PushKit. -->
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>audio</string>
 		<string>remote-notification</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
