@@ -449,11 +449,16 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
           ),
           LoopButtonPair(
             children: <Widget>[
+              // Off, with the reason as its label, whenever the chain says
+              // no round is live (launchTradeButtonSpec).
               LoopButton(
                 key: const ValueKey<String>('launch-detail-open-trade'),
-                label: '进入内盘交易',
+                label: launchTradeButtonSpec(detail.launch.onChainState).label,
                 primary: true,
-                onPressed: widget.onOpenTrade,
+                onPressed:
+                    launchTradeButtonSpec(detail.launch.onChainState).enabled
+                    ? widget.onOpenTrade
+                    : null,
               ),
             ],
           ),
