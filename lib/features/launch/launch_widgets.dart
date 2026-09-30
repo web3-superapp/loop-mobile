@@ -1173,3 +1173,42 @@ class LaunchChainCapCard extends StatelessWidget {
     );
   }
 }
+
+/// What the detail page's 「进入内盘交易」 button says and whether it opens
+/// (main-agent ruling 2026-09-30, closed loop A device pass): the internal
+/// market is a fixed-price, buy-only window that exists only while a round is
+/// live and the sale is not paused. Every other chain state turns the button
+/// off and names the reason on the button itself, instead of opening a page
+/// whose only content is a refusal. A chain read that is unavailable keeps the
+/// prototype's label and lets the page open, because the page explains the
+/// missing read.
+({String label, bool enabled}) launchTradeButtonSpec(
+  LaunchOnChainState onChain,
+) {
+  if (onChain is! LaunchOnChainAvailable) {
+    return (label: '进入内盘交易', enabled: true);
+  }
+  if (onChain.operationalState == LaunchOperationalState.paused) {
+    return (label: '内盘已暂停', enabled: false);
+  }
+  switch (onChain.saleState) {
+    case LaunchSaleState.live:
+      return (label: '进入内盘交易', enabled: true);
+    case LaunchSaleState.scheduled:
+      return (label: '内盘未开始', enabled: false);
+    case LaunchSaleState.ended:
+      return (label: '内盘已结束 · 等待最终化', enabled: false);
+    case LaunchSaleState.succeeded:
+      final graduated =
+          onChain.liquidityState == LaunchLiquidityState.lpLocked ||
+          onChain.liquidityState == LaunchLiquidityState.completed;
+      return (
+        label: graduated ? '已毕业 · 内盘已关闭' : '内盘已结束 · 募集成功',
+        enabled: false,
+      );
+    case LaunchSaleState.failed:
+      return (label: '内盘已结束 · 未达软顶', enabled: false);
+    case LaunchSaleState.cancelled:
+      return (label: '内盘已取消', enabled: false);
+  }
+}
