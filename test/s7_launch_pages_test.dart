@@ -453,9 +453,11 @@ void main() {
       final gateway = FakeLaunchGateway(
         detail: S7Answer<LaunchDetail>(value: s83cDetail()),
       );
+      // The fixture rounds are open at s83cNow; the device clock would read
+      // them as ended (decision 0109).
       await pumpS7Page(
         tester,
-        const LaunchTradeScreen(launchId: s7LaunchId),
+        LaunchTradeScreen(launchId: s7LaunchId, clock: s83cNow),
         launch: gateway,
         wallet: FakeWalletDirectory(activeWalletId: s7WalletId),
         meta: s7MetaSnapshot(launchEvidencePending: false),

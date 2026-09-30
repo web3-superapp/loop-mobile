@@ -55,7 +55,27 @@ class LaunchTradeScreen extends ConsumerStatefulWidget {
 
 class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
   final TextEditingController _amount = TextEditingController();
+
+  /// The one round the page stands on (decision 0109): the row that reads
+  /// 已选择 and the round 买入 submits are both this value, or the prepared
+  /// intent's round while one stands.
   String? _roundId;
+
+  /// The detail reading the selection was last reconciled against. A new
+  /// reading — a reload, a pull, a re-read after an intent — reconciles it
+  /// again, even when the rounds it carries are unchanged.
+  LaunchResourceState<LaunchDetail>? _reconciledRead;
+
+  /// Set when the selection must be reconciled at the next build: a new
+  /// detail, a round boundary passed, or the round lock released.
+  bool _reconcileDue = true;
+  bool _wasRoundLocked = false;
+
+  /// One-shot wake-up at the next round boundary (a `startAt` or `endAt`).
+  /// It only rebuilds the page; it never reads the network.
+  Timer? _boundary;
+
+  DateTime _now() => (widget.clock ?? DateTime.now)().toUtc();
 
   /// The capability document is being re-read before a signing sheet opens.
   bool _checkingCapability = false;
@@ -68,6 +88,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
 
   @override
   void dispose() {
+    _boundary?.cancel();
     _amount
       ..removeListener(_onAmountChanged)
       ..dispose();
@@ -75,6 +96,40 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
   }
 
   void _onAmountChanged() => setState(() {});
+
+  /// Decision 0109: keeps the selection on a round the contract accepts now.
+  /// An empty, unknown or ended selection moves to the round in its window,
+  /// or to the next one to open; a round that has not started yet — chosen
+  /// by hand, or the next one before the sale — is kept.
+  void _reconcileRound(List<LaunchChainRound> rounds, DateTime now) {
+    LaunchChainRound? current;
+    for (final round in rounds) {
+      if (round.roundId != null && round.roundId == _roundId) current = round;
+    }
+    if (current == null || !now.isBefore(current.endAt)) {
+      // With nothing left to open, an ended selection stays so the page can
+      // say which round ended.
+      _roundId =
+          launchTradeDefaultRound(rounds, now)?.roundId ?? current?.roundId;
+    }
+  }
+
+  /// Arms the one-shot wake-up for the next boundary after [now].
+  void _armBoundary(List<LaunchChainRound> rounds, DateTime now) {
+    _boundary?.cancel();
+    _boundary = null;
+    DateTime? next;
+    for (final round in rounds) {
+      for (final at in <DateTime>[round.startAt, round.endAt]) {
+        if (at.isAfter(now) && (next == null || at.isBefore(next))) next = at;
+      }
+    }
+    if (next == null) return;
+    _boundary = Timer(next.difference(now), () {
+      if (!mounted) return;
+      setState(() => _reconcileDue = true);
+    });
+  }
 
   /// The exact string the server accepts: a positive USD1 amount with at
   /// most 18 decimals. A malformed amount keeps the action disabled here
@@ -265,14 +320,30 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
     // (discard) releases it (decision 0094).
     final roundLocked =
         trade.busy || prepared != null || trade.locked || approval.busy;
+    final now = _now();
+    final chainRounds = detail?.chainRounds ?? const <LaunchChainRound>[];
+    if (!identical(state, _reconciledRead)) {
+      _reconciledRead = state;
+      _reconcileDue = true;
+    }
+    if (_wasRoundLocked && !roundLocked) _reconcileDue = true;
+    _wasRoundLocked = roundLocked;
+    if (_reconcileDue && !roundLocked && state.phase == LaunchViewPhase.ready) {
+      _reconcileDue = false;
+      _reconcileRound(chainRounds, now);
+      _armBoundary(chainRounds, now);
+    }
     final effectiveRoundId = prepared?.intent.roundId ?? _roundId;
     LaunchChainRound? selected;
-    for (final round in detail?.chainRounds ?? const <LaunchChainRound>[]) {
+    for (final round in chainRounds) {
       if (round.roundId != null && round.roundId == effectiveRoundId) {
         selected = round;
       }
     }
     final roundId = selected?.roundId;
+    // Only a round inside its window can be bought; any other is shown and
+    // explained, never submitted (decision 0109).
+    final roundOpen = selected != null && selected.isOpenAt(now);
     final lockedRoundIndex =
         prepared?.intent.roundIndex ?? selected?.roundIndex;
     // The action is closed by the server's capability evidence and by the
@@ -327,6 +398,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         launchId != null &&
         walletId != null &&
         roundId != null &&
+        roundOpen &&
         payAmount != null &&
         allowance.status == LaunchAllowanceStatus.sufficient;
     final fee = detail?.saleConfig == null
@@ -535,7 +607,8 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                   : _closedReason(
                       onChainState: detail?.launch.onChainState,
                       walletId: walletId,
-                      roundId: roundId,
+                      round: selected,
+                      now: now,
                       payAmount: payAmount,
                       allowance: allowance.status,
                     ),
@@ -631,7 +704,8 @@ class _TradeInFlightBanner extends StatelessWidget {
 String _closedReason({
   required LaunchOnChainState? onChainState,
   required String? walletId,
-  required String? roundId,
+  required LaunchChainRound? round,
+  required DateTime now,
   required String? payAmount,
   required LaunchAllowanceStatus allowance,
 }) {
@@ -647,7 +721,15 @@ String _closedReason({
       break;
   }
   if (walletId == null) return '还没有可用的支付钱包，请先在钱包中选择一个。';
-  if (roundId == null) return '请先选择要参与的轮次。';
+  if (round == null || round.roundId == null) return '请先选择要参与的轮次。';
+  if (now.isBefore(round.startAt)) {
+    return 'Round ${round.roundIndex} 尚未开始，'
+        '${launchTimestampLabel(round.startAt)} 开放后才能认购。';
+  }
+  if (!round.isOpenAt(now)) {
+    return 'Round ${round.roundIndex} 已于 '
+        '${launchTimestampLabel(round.endAt)} 结束，请选择进行中的轮次。';
+  }
   if (payAmount == null) return '请输入一个有效的支付数量（最多 18 位小数）。';
   switch (allowance) {
     case LaunchAllowanceStatus.reading:
@@ -1250,4 +1332,24 @@ class _TradeParameters extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The round `launch-trade` stands on when nothing valid is selected
+/// (decision 0109): the round inside its window at [now]; otherwise the next
+/// one to open, shown but not submittable; otherwise none. Only a round LOOP
+/// has a record of (`roundId`) can be chosen, since the intent names it.
+LaunchChainRound? launchTradeDefaultRound(
+  List<LaunchChainRound> rounds,
+  DateTime now,
+) {
+  LaunchChainRound? next;
+  for (final round in rounds) {
+    if (round.roundId == null) continue;
+    if (round.isOpenAt(now)) return round;
+    if (now.isBefore(round.startAt) &&
+        (next == null || round.startAt.isBefore(next.startAt))) {
+      next = round;
+    }
+  }
+  return next;
 }
