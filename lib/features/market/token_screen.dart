@@ -51,10 +51,10 @@ class TokenDetailScreen extends ConsumerStatefulWidget {
 
 /// The four tabs the approved design puts under the chart, in its order.
 enum TokenSectionTab {
-  community('社区'),
-  holders('持有人'),
+  community('动态'),
+  holders('持有者'),
   trades('成交'),
-  about('简介');
+  about('关于');
 
   const TokenSectionTab(this.label);
 
@@ -1347,7 +1347,7 @@ class _CommunityBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('token-community-entry'),
-              title: '进入 LOOP 社区',
+              title: '进入社区讨论',
               subtitle: '$name · $memberCount 名成员',
               onTap: () => onOpenCommunity(communityId),
             ),

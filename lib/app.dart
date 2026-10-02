@@ -563,6 +563,9 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   @override
   Widget build(BuildContext context) {
     final streamSession = ref.watch(streamChatSdkSessionProvider);
+    final preview = ref.watch(
+      loopSessionProvider.select((session) => session.isPreview),
+    );
     final reduceMotion = ref.watch(
       loopDisplayPreferencesProvider.select(
         (preferences) => preferences.reduceMotion,
@@ -630,6 +633,39 @@ class _LoopAppState extends ConsumerState<LoopApp> {
               onTabRoute: () =>
                   LoopRouteManifest.isTabPath(router.state.matchedLocation),
             ),
+            if (preview)
+              Material(
+                key: const ValueKey<String>('loop-preview-banner'),
+                color: LoopColors.ink,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.science_outlined,
+                          size: 14,
+                          color: LoopColors.lime,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '演示数据 · 仅供页面调试，不会产生真实交易',
+                            style: LoopTypography.caption(
+                              10,
+                              color: LoopColors.text2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             Expanded(child: content),
           ],
         );
@@ -838,6 +874,13 @@ GoRouter _buildRouter(
             ),
           ),
           GoRoute(
+            path: '/chat',
+            pageBuilder: (context, state) => LoopTabPage<void>(
+              key: state.pageKey,
+              child: const ChatInboxPage(),
+            ),
+          ),
+          GoRoute(
             path: '/mining',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
@@ -893,10 +936,6 @@ GoRouter _buildRouter(
       ),
       GoRoute(path: '/home', redirect: (context, state) => '/community'),
       GoRoute(path: '/launchpad', redirect: (context, state) => '/launch'),
-      GoRoute(
-        path: '/chat',
-        builder: (context, state) => const ChatInboxPage(),
-      ),
       GoRoute(
         path: '/profile',
         builder: (context, state) => Consumer(

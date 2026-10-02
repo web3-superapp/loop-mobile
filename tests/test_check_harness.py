@@ -174,6 +174,7 @@ REOWN_IDENTITY_FIXTURE_FILES = (
 )
 
 FRIEND_FRONTEND_FIXTURE_FILES = (
+    "lib/features/chat/group_alias/group_member_directory.dart",
     "README.md",
     "docs/product-decisions.md",
     "docs/product/implementation-constraints.md",
@@ -1245,7 +1246,7 @@ class HarnessTests(unittest.TestCase):
         result = check_harness.check_profile(REPOSITORY_ROOT, changed)
         self.assertTrue(
             any(
-                "preserve Community / Mining / Launch / Market / Wallet"
+                "preserve Community / Chat / Mining / Launch / Market / Wallet"
                 in error
                 for error in result
             )
@@ -1267,7 +1268,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_route_manifest_contract(root)
 
         self.assertTrue(
-            any("93 manifest slugs in manifest order" in error for error in result),
+            any("94 manifest slugs in manifest order" in error for error in result),
             msg=f"expected manifest slug drift guard: {result}",
         )
 
@@ -1530,7 +1531,7 @@ class HarnessTests(unittest.TestCase):
             result,
         )
 
-    def test_v2_navigation_contract_rejects_chat_fallback_drift(self) -> None:
+    def test_v2_navigation_contract_requires_chat_friends_action(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             write_v2_navigation_fixture(root)
@@ -1540,8 +1541,8 @@ class HarnessTests(unittest.TestCase):
             chat_end = source.index("class StreamChatChannelRoutePage", chat_start)
             chat_slice = source[chat_start:chat_end]
             mutated_slice = chat_slice.replace(
-                "context.go('/community');",
-                "context.go('/wallet');",
+                "context.push('/profile/connections')",
+                "context.push('/wallet')",
                 1,
             )
             self.assertNotEqual(chat_slice, mutated_slice)
@@ -1553,9 +1554,21 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_primary_navigation_contract(root)
 
         self.assertIn(
-            "Chat root must expose a direct-link fallback that returns to Community",
+            "Chat root must be a primary inbox with a friends action and no back control",
             result,
         )
+
+    def test_v2_navigation_contract_rejects_chat_back_control(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+            source = path.read_text(encoding="utf-8")
+            source = source.replace("automaticallyImplyLeading: false,", "automaticallyImplyLeading: true,", 1)
+            path.write_text(source, encoding="utf-8")
+            result = check_harness.check_v2_primary_navigation_contract(root)
+        self.assertIn("Chat root must be a primary inbox with a friends action and no back control", result)
+
 
     def test_routine_verification_is_android_debug_only(self) -> None:
         profile, errors = check_harness.load_profile(REPOSITORY_ROOT)
@@ -3384,9 +3397,9 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "      expect(find.text('2 preview requests'), findsOneWidget);",
+                    "      expect(find.text('2 条好友申请'), findsOneWidget);",
                     "      if (tester.view.physicalSize.width < 0) {\n"
-                    "        expect(find.text('2 preview requests'), findsOneWidget);\n"
+                    "        expect(find.text('2 条好友申请'), findsOneWidget);\n"
                     "      }",
                     1,
                 ),
@@ -7324,15 +7337,13 @@ class HarnessTests(unittest.TestCase):
             relative = Path("lib/features/chat/stream_chat_inbox_page.dart")
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             mutated = source.replace(
-                "actions: <Widget>[const ChatCreateMenuButton()],",
-                "actions: <Widget>[\n"
+                "const ChatCreateMenuButton(),",
                 "          TextButton(\n"
                 "            key: const ValueKey<String>('stream-audio-room-entry'),\n"
                 "            onPressed: () => unawaited(context.push<void>('/chat/voice')),\n"
                 "            child: const Text('Audio Room'),\n"
                 "          ),\n"
-                "          const ChatCreateMenuButton(),\n"
-                "        ],",
+                "          const ChatCreateMenuButton(),\n",
             )
             self.assertNotEqual(source, mutated)
             destination = root / relative

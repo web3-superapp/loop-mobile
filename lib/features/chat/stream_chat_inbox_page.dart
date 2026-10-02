@@ -128,22 +128,19 @@ class StreamChatInboxPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          key: const ValueKey<String>('stream-chat-back-to-community'),
-          tooltip: '返回社区',
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              context.pop();
-            } else {
-              context.go('/community');
-            }
-          },
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
+        title: const Text('聊天'),
         // Step 4 made every Audio Room a community resource: the lobby is
         // reached from a community record, never from the generic inbox,
         // because a room without a community has no locator.
-        actions: <Widget>[const ChatCreateMenuButton()],
+        actions: <Widget>[
+          IconButton(
+            key: const ValueKey<String>('chat-friends-action'),
+            tooltip: '好友',
+            icon: const Icon(Icons.people_outline_rounded),
+            onPressed: () => context.push('/profile/connections'),
+          ),
+          const ChatCreateMenuButton(),
+        ],
       ),
       body: Stack(
         children: <Widget>[
@@ -176,7 +173,7 @@ class StreamChatInboxPage extends ConsumerWidget {
                       // The provider's name is not a fact the owner can use;
                       // this page states what is in the list instead.
                       Text(
-                        '这个账号的官方会话，含送达状态与历史记录。',
+                        '与好友聊天，查看群消息。',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 16),

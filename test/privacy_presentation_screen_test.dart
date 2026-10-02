@@ -24,7 +24,6 @@ const _stateKeys = <String>[
 ];
 
 const _controlKeys = <String>[
-  'privacy-anonymous-mode',
   'privacy-discoverable',
   'privacy-social-friendRequests',
   'privacy-social-directMessages',
@@ -119,7 +118,7 @@ void main() {
     }
   });
 
-  testWidgets('Preview edits anonymous mode and one facet, then saves once', (
+  testWidgets('Preview edits one visibility facet without anonymous control', (
     tester,
   ) async {
     final gateway = _previewGateway();
@@ -131,7 +130,10 @@ void main() {
     for (final key in _controlKeys) {
       expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
     }
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isFalse);
+    expect(
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+      findsNothing,
+    );
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
     for (final facet in PrivacyVisibilityFacet.values) {
       expect(
@@ -144,14 +146,13 @@ void main() {
 
     await _tap(
       tester,
-      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
-    );
-    await _tap(
-      tester,
       find.byKey(const ValueKey<String>('privacy-visibility-totalAssets')),
     );
 
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isTrue);
+    expect(
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+      findsNothing,
+    );
     expect(_toggle(tester, 'privacy-visibility-totalAssets').value, isTrue);
     expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isFalse);
     expect(_saveButton(tester).onPressed, isNotNull);
@@ -166,7 +167,7 @@ void main() {
       committed.values,
       PrivacyValues(
         discoverable: false,
-        anonymousMode: true,
+        anonymousMode: false,
         visibility: PrivacyVisibility(totalAssets: PrivacyAudience.everyone),
       ),
     );
@@ -348,7 +349,10 @@ void main() {
     // The local draft is still on screen and still frozen.
     expect(_toggle(tester, 'privacy-discoverable').value, isTrue);
     expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isTrue);
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isFalse);
+    expect(
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+      findsNothing,
+    );
     expect(_saveButton(tester).onPressed, isNull);
     for (final key in _controlKeys) {
       expect(_toggle(tester, key).onChanged, isNull);
@@ -360,11 +364,14 @@ void main() {
       find.byKey(const ValueKey<String>('privacy-conflict')),
       findsNothing,
     );
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isTrue);
+    expect(
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+      findsNothing,
+    );
     expect(_toggle(tester, 'privacy-visibility-miningPower').value, isTrue);
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
     expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isFalse);
-    expect(_toggle(tester, 'privacy-anonymous-mode').onChanged, isNotNull);
+    expect(_saveButton(tester).onPressed, isNotNull);
   });
 
   testWidgets('mounted Privacy replaces the old owner after gateway rotation', (
@@ -396,12 +403,18 @@ void main() {
     await _pumpPrivacy(tester, gateway: first);
     expect(_toggle(tester, 'privacy-discoverable').value, isTrue);
     expect(_toggle(tester, 'privacy-visibility-totalAssets').value, isTrue);
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isFalse);
+    expect(
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+      findsNothing,
+    );
 
     await _pumpPrivacy(tester, gateway: second);
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
     expect(_toggle(tester, 'privacy-visibility-totalAssets').value, isFalse);
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isTrue);
+    expect(
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+      findsNothing,
+    );
     expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isTrue);
     for (final key in _stateKeys) {
       expect(find.byKey(ValueKey<String>(key)), findsNothing);

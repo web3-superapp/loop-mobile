@@ -149,7 +149,7 @@ void main() {
       expect(blocks, hasLength(2));
       for (final block in blocks) {
         expect(block.width, marketRowChangeWidth);
-        expect(block.height, marketRowChangeHeight);
+        expect(block.height, 20); // Compact change below the price.
       }
       final rects = <Rect>[
         for (final finder in <Finder>[
@@ -159,8 +159,8 @@ void main() {
           tester.getRect(finder),
       ];
       expect(rects.first.right, closeTo(rects.last.right, 0.01));
-      // Price column then change column: the two never overlap.
-      expect(long.right, lessThanOrEqualTo(rects.first.left));
+      // Price above change: their right edges align without overlap.
+      expect(long.bottom, lessThanOrEqualTo(rects.first.top));
     });
 
     testWidgets('a sub-dollar price keeps its digits instead of reading \$0', (

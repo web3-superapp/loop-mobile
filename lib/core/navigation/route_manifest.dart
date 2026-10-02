@@ -1,4 +1,4 @@
-/// The 93-route product manifest.
+/// The 94-route product manifest: 93 original routes plus the Chat tab.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`, frozen 2026-09-01 from the cliview.org
@@ -83,7 +83,7 @@ final class LoopRouteEntry {
 
   final LoopRouteStatus status;
 
-  /// Whether this route is one of the five primary destinations.
+  /// Whether this route is one of the six primary destinations.
   final bool tab;
 
   /// A previously mounted location for the same page. History only.
@@ -103,9 +103,10 @@ abstract final class LoopRouteManifest {
   static const String defaultSlug = 'community';
   static const String defaultPath = '/community';
 
-  /// The five primary destinations in their fixed order.
+  /// The six primary destinations in their fixed order.
   static const List<String> tabSlugs = <String>[
     'community',
+    'chat',
     'mining',
     'launch',
     'market',
@@ -208,7 +209,6 @@ abstract final class LoopRouteManifest {
   /// can hide here. `/chat/channel/:cid` is a redirect only: it resolves a
   /// server-issued CID onto `community-chat`, `dm` or `group`.
   static const List<String> supplementaryPaths = <String>[
-    '/chat',
     '/chat/channel/:cid',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
@@ -310,7 +310,18 @@ abstract final class LoopRouteManifest {
       step: 1,
       status: LoopRouteStatus.implemented,
     ),
-    // 2-community · Community (16)
+    // Native extension approved 2026-10-02; 0–92 retain the prototype order.
+    LoopRouteEntry(
+      slug: 'chat',
+      path: '/chat',
+      module: LoopRouteModule.community,
+      title: '聊天',
+      prototypeOrder: 93,
+      step: 4,
+      status: LoopRouteStatus.implemented,
+      tab: true,
+    ),
+    // 2-community · Community (16 original routes)
     LoopRouteEntry(
       slug: 'search',
       path: '/search',

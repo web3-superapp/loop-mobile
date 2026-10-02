@@ -151,7 +151,7 @@ void main() {
       }
 
       // The privacy gateway in this harness stores 匿名模式 on.
-      expect(await subtitle('profile-open-privacy'), '匿名模式已开启');
+      expect(await subtitle('profile-open-privacy'), '社交请求与资产可见性');
       expect(await subtitle('profile-open-connections'), '关注 24 · 粉丝 108');
       // The wallet directory and the security posture were not read, so
       // those rows say nothing rather than 「读不到」.

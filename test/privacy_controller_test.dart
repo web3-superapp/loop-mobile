@@ -108,6 +108,53 @@ void main() {
   });
 
   group('PrivacyController', () {
+    test(
+      'legacy anonymous reads stay honest until explicit CAS save',
+      () async {
+        final values = PrivacyValues(
+          discoverable: true,
+          anonymousMode: true,
+          visibility: PrivacyVisibility(miningPower: PrivacyAudience.everyone),
+          social: PrivacySocialGates(
+            friendRequests: false,
+            directMessages: false,
+            groupInvites: false,
+          ),
+        );
+        final initial = PrivacyResource(
+          version: 8,
+          values: values,
+          updatedAt: DateTime.utc(2026, 10, 2),
+        );
+        final gateway = _TestPrivacyGateway(
+          onLoad: () async => initial,
+          onReplace: (version, candidate) async => PrivacyResource(
+            version: version + 1,
+            values: candidate,
+            updatedAt: DateTime.utc(2026, 10, 2, 1),
+          ),
+        );
+        final container = _container(gateway);
+        addTearDown(container.dispose);
+        final controller = container.read(privacyControllerProvider.notifier);
+        await controller.load();
+        final loaded = container.read(privacyControllerProvider);
+        expect(loaded.resource, initial);
+        expect(loaded.draft.anonymousMode, isTrue);
+        expect(loaded.isDirty, isFalse);
+        expect(gateway.replaceCalls, 0);
+        expect(loaded.canSave, isTrue);
+        await controller.save();
+        expect(gateway.expectedVersions, [8]);
+        expect(gateway.candidates.single, values.withAnonymousMode(false));
+        expect(
+          container.read(privacyControllerProvider).resource!.values,
+          values.withAnonymousMode(false),
+        );
+        expect(container.read(privacyControllerProvider).canSave, isFalse);
+      },
+    );
+
     test('production defaults directly unavailable', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -197,7 +244,6 @@ void main() {
       loadGate.complete(loaded);
       await firstLoad;
 
-      await controller.save();
       expect(gateway.replaceCalls, 0);
       controller.editDiscoverable(true);
       final firstSave = controller.save();
@@ -206,7 +252,7 @@ void main() {
       expect(gateway.replaceCalls, 1);
       expect(gateway.expectedVersions, <int>[7]);
       expect(gateway.candidates.single.discoverable, isTrue);
-      expect(gateway.candidates.single.anonymousMode, isTrue);
+      expect(gateway.candidates.single.anonymousMode, isFalse);
       expect(
         gateway.candidates.single.visibility,
         const PrivacyVisibility.defaults(),
@@ -231,7 +277,7 @@ void main() {
         PrivacyPhase.saving,
       );
 
-      saveGate.complete(_resource(8, discoverable: true, anonymousMode: true));
+      saveGate.complete(_resource(8, discoverable: true));
       await firstSave;
       final saved = container.read(privacyControllerProvider);
       expect(saved.phase, PrivacyPhase.ready);
@@ -264,7 +310,7 @@ void main() {
       expect(failed.phase, PrivacyPhase.failure);
       expect(failed.failureCode, 'privacy_unavailable');
       expect(failed.resource, loaded);
-      expect(failed.draft, draft);
+      expect(failed.draft, draft.withAnonymousMode(false));
       expect(failed.canSave, isTrue);
     });
 
@@ -305,7 +351,7 @@ void main() {
       expect(conflicted.failureCode, 'privacy_version_conflict');
       expect(conflicted.requiresReload, isTrue);
       expect(conflicted.resource, local);
-      expect(conflicted.draft, draft);
+      expect(conflicted.draft, draft.withAnonymousMode(false));
       expect(conflicted.canEdit, isFalse);
       expect(conflicted.canSave, isFalse);
       expect(() => controller.editDiscoverable(false), throwsStateError);
@@ -331,10 +377,13 @@ void main() {
       expect(conflicted.failureCode, 'privacy_unavailable');
       expect(conflicted.requiresReload, isTrue);
       expect(conflicted.resource, local);
-      expect(conflicted.draft, draft);
+      expect(conflicted.draft, draft.withAnonymousMode(false));
 
       controller.discard();
-      expect(container.read(privacyControllerProvider).draft, draft);
+      expect(
+        container.read(privacyControllerProvider).draft,
+        draft.withAnonymousMode(false),
+      );
       await controller.save();
       expect(gateway.replaceCalls, 1);
 
@@ -372,7 +421,7 @@ void main() {
       expect(failed.phase, PrivacyPhase.failure);
       expect(failed.failureKind, PrivacyGatewayFailureKind.invalidData);
       expect(failed.resource, loaded);
-      expect(failed.draft, draft);
+      expect(failed.draft, draft.withAnonymousMode(false));
 
       mismatchValues = false;
       await controller.save();
@@ -380,7 +429,7 @@ void main() {
       expect(failed.phase, PrivacyPhase.failure);
       expect(failed.failureKind, PrivacyGatewayFailureKind.invalidData);
       expect(failed.resource, loaded);
-      expect(failed.draft, draft);
+      expect(failed.draft, draft.withAnonymousMode(false));
     });
 
     test('an ambiguous save retries the same version and converges', () async {
@@ -499,7 +548,7 @@ void main() {
         expect(identical(active, stillActive), isTrue);
         expect(newGateway.replaceCalls, 1);
 
-        final saved = _resource(10, discoverable: true, anonymousMode: true);
+        final saved = _resource(10, discoverable: true);
         newSave.complete(saved);
         await active;
         expect(container.read(privacyControllerProvider).resource, saved);

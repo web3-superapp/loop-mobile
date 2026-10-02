@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 enum _InboxFilter { all, groups, direct }
 
+/// Primary inbox. Preview conversations stay in memory; production uses Stream.
 class ChatInboxPage extends ConsumerStatefulWidget {
   const ChatInboxPage({super.key});
 
@@ -21,185 +22,150 @@ class ChatInboxPage extends ConsumerStatefulWidget {
 }
 
 class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
-  static const _aliases = <String>[
-    ChatContent.currentAlias,
-    'MintNomad',
-    'QuietOrbit',
-    'AbyssWalker',
-  ];
-
-  var _aliasIndex = 0;
   var _filter = _InboxFilter.all;
 
   @override
   Widget build(BuildContext context) {
     final gateway = ref.watch(communicationGatewayProvider);
-    final preview = gateway.mode == CommunicationMode.preview;
-    if (!preview) return const StreamChatInboxPage();
-
+    if (gateway.mode != CommunicationMode.preview) {
+      return const StreamChatInboxPage();
+    }
     final conversations = ref.watch(conversationListProvider);
     final requests = ref.watch(messageRequestsProvider);
     final requestCount = requests.hasValue ? requests.value!.length : null;
     final requestLabel = switch (requestCount) {
-      null => 'Preview requests',
-      0 => 'No preview requests',
-      1 => '1 preview request',
-      final count => '$count preview requests',
+      null => '好友申请',
+      0 => '暂无好友申请',
+      1 => '1 条好友申请',
+      final count => '$count 条好友申请',
     };
-    return LoopPage(
-      eyebrow: 'Discuss',
-      title: 'Chats',
-      subtitle:
-          'Move from market signal to conversation without losing context.',
+    return LoopDashboardPage(
+      key: const ValueKey<String>('chat-preview-inbox'),
+      archetype: LoopPageArchetype.listing,
+      title: '聊天',
+      subtitle: '好友私聊与群聊，都在这里',
+      tabPage: true,
       actions: <Widget>[
         IconButton(
-          onPressed: () => context.push('/chat/search'),
-          tooltip: 'Search messages',
-          icon: const Icon(Icons.search_rounded),
-        ),
-        IconButton(
-          onPressed: () => context.push('/chat/requests'),
-          tooltip: 'Message requests',
-          icon: requestCount != null && requestCount > 0
-              ? Badge(
-                  key: const ValueKey<String>(
-                    'chat-preview-message-request-badge',
-                  ),
-                  label: Text('$requestCount'),
-                  backgroundColor: LoopColors.chat,
-                  textColor: LoopColors.abyss,
-                  child: const Icon(Icons.person_add_alt_1_outlined),
-                )
-              : const Icon(Icons.person_add_alt_1_outlined),
+          key: const ValueKey<String>('chat-friends-action'),
+          tooltip: '好友',
+          onPressed: () => context.push('/profile/connections'),
+          icon: const Icon(Icons.people_outline_rounded),
         ),
         const ChatCreateMenuButton(),
       ],
-      bottom: const ChatMiniVoiceBar(),
-      children: <Widget>[
-        const LoopContextRail(stage: LoopStage.discuss),
-        const SizedBox(height: 16),
-        if (preview || !gateway.isConfigured) ...<Widget>[
-          LoopStateCard(
-            key: const ValueKey<String>('communication-mode-status'),
-            title: preview
-                ? 'Offline preview · not connected'
-                : 'Stream not connected',
-            message: preview
-                ? 'Conversations and voice states are simulated UI data. No Stream chat or voice session is active.'
-                : 'Configure the Stream SDK bridge and server-issued user-token authorization before using chat or voice.',
-            icon: Icons.cloud_off_outlined,
-            tone: LoopTone.neutral,
-          ),
-          const SizedBox(height: 12),
-        ],
-        ChatAliasBar(
-          alias: _aliases[_aliasIndex],
-          onShuffle: () {
-            setState(() => _aliasIndex = (_aliasIndex + 1) % _aliases.length);
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'You now appear as ${_aliases[(_aliasIndex)]}.',
+      sections:
+          <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: const ValueKey<String>('chat-requests-action'),
+                        onPressed: () => context.push('/chat/requests'),
+                        icon: requestCount != null && requestCount > 0
+                            ? Badge(
+                                key: const ValueKey<String>(
+                                  'chat-preview-message-request-badge',
+                                ),
+                                label: Text('$requestCount'),
+                                backgroundColor: LoopColors.chat,
+                                textColor: LoopColors.abyss,
+                                child: const Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  size: 18,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.person_add_alt_1_outlined,
+                                size: 18,
+                              ),
+                        label: Text(requestLabel),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.push('/chat/search'),
+                        icon: const Icon(Icons.search_rounded, size: 18),
+                        label: const Text('搜索消息'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SegmentedButton<_InboxFilter>(
+                  segments: const <ButtonSegment<_InboxFilter>>[
+                    ButtonSegment(value: _InboxFilter.all, label: Text('全部')),
+                    ButtonSegment(
+                      value: _InboxFilter.groups,
+                      label: Text('群聊'),
+                    ),
+                    ButtonSegment(
+                      value: _InboxFilter.direct,
+                      label: Text('私聊'),
+                    ),
+                  ],
+                  selected: <_InboxFilter>{_filter},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (values) =>
+                      setState(() => _filter = values.first),
+                ),
+                const SizedBox(height: 10),
+                conversations.when(
+                  data: (items) {
+                    final visible = items
+                        .where(_matchesFilter)
+                        .toList(growable: false);
+                    if (visible.isEmpty) {
+                      return const LoopStateCard(
+                        title: '还没有会话',
+                        message: '添加好友，或选择其他分类查看会话。',
+                        icon: Icons.chat_bubble_outline_rounded,
+                      );
+                    }
+                    return Column(
+                      children: <Widget>[
+                        for (final conversation in visible) ...<Widget>[
+                          ConversationRow(
+                            conversation: conversation,
+                            onTap: () =>
+                                _openConversation(context, conversation),
+                          ),
+                          const Divider(height: 1),
+                        ],
+                      ],
+                    );
+                  },
+                  loading: () => const _ConversationLoading(),
+                  error: (error, stackTrace) => LoopStateCard(
+                    title: '会话暂时无法加载',
+                    message: '请稍后重试。',
+                    icon: Icons.cloud_off_outlined,
+                    action: TextButton(
+                      onPressed: () => ref.invalidate(conversationListProvider),
+                      child: const Text('重试'),
+                    ),
                   ),
                 ),
-              );
-          },
-        ),
-        LoopSectionLabel(
-          'Conversations',
-          trailing: TextButton.icon(
-            onPressed: () => context.push('/chat/requests'),
-            icon: const Icon(Icons.mail_outline_rounded, size: 16),
-            label: Text(requestLabel),
-          ),
-        ),
-        SegmentedButton<_InboxFilter>(
-          segments: const <ButtonSegment<_InboxFilter>>[
-            ButtonSegment<_InboxFilter>(
-              value: _InboxFilter.all,
-              label: Text('All'),
-            ),
-            ButtonSegment<_InboxFilter>(
-              value: _InboxFilter.groups,
-              label: Text('Groups'),
-            ),
-            ButtonSegment<_InboxFilter>(
-              value: _InboxFilter.direct,
-              label: Text('Direct'),
-            ),
-          ],
-          selected: <_InboxFilter>{_filter},
-          showSelectedIcon: false,
-          style: ButtonStyle(
-            visualDensity: VisualDensity.compact,
-            side: const WidgetStatePropertyAll(
-              BorderSide(color: LoopColors.line),
-            ),
-            backgroundColor: WidgetStateProperty.resolveWith((states) {
-              return states.contains(WidgetState.selected)
-                  ? LoopColors.chat.withValues(alpha: 0.12)
-                  : LoopColors.basalt;
-            }),
-            foregroundColor: WidgetStateProperty.resolveWith((states) {
-              return states.contains(WidgetState.selected)
-                  ? LoopColors.chat
-                  : LoopColors.vapor;
-            }),
-          ),
-          onSelectionChanged: (selection) {
-            setState(() => _filter = selection.first);
-          },
-        ),
-        const SizedBox(height: 10),
-        conversations.when(
-          data: (items) {
-            final visible = items.where(_matchesFilter).toList(growable: false);
-            if (visible.isEmpty) {
-              return const LoopStateCard(
-                title: 'No conversations here',
-                message: 'Choose another filter or start a new conversation.',
-                icon: Icons.chat_bubble_outline_rounded,
-              );
-            }
-            return Column(
-              children: <Widget>[
-                for (
-                  var index = 0;
-                  index < visible.length;
-                  index++
-                ) ...<Widget>[
-                  ConversationRow(
-                    conversation: visible[index],
-                    onTap: () => _openConversation(context, visible[index]),
-                  ),
-                  if (index != visible.length - 1) const Divider(),
-                ],
-              ],
-            );
-          },
-          loading: () => const _ConversationLoading(),
-          error: (error, stackTrace) => LoopStateCard(
-            title: 'Chats are unavailable',
-            message: gateway.isConfigured
-                ? 'Stream authorization or connectivity failed. Try again after the session is restored.'
-                : 'Stream is not configured. Chat stays fail-closed.',
-            icon: Icons.cloud_off_outlined,
-            tone: LoopTone.warning,
-            action: OutlinedButton.icon(
-              onPressed: () => ref.invalidate(conversationListProvider),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Try again'),
-            ),
-          ),
-        ),
-      ],
+                const SizedBox(height: 16),
+                Text(
+                  '演示数据 · 会话和消息仅保存在本次预览中',
+                  key: const ValueKey<String>('communication-mode-status'),
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
+              ]
+              .map(
+                (section) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: section,
+                ),
+              )
+              .toList(growable: false),
     );
   }
 
   bool _matchesFilter(ConversationSummary conversation) => switch (_filter) {
-    _InboxFilter.all => true,
+    _InboxFilter.all => conversation.kind != ConversationKind.meeting,
     _InboxFilter.groups =>
       conversation.kind == ConversationKind.group ||
           conversation.kind == ConversationKind.voice,

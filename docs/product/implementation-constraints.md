@@ -4,9 +4,9 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Product shape and environments
 
-- Decision 0048 defines Community, Mining, Launch, Market and Wallet as the
-  five primary destinations. Community is the post-login home; Chat remains a
-  Community child flow and Profile remains a child domain outside the bottom
+- Decision 0109 supersedes decision 0048's navigation with Community, Chat, Mining, Launch, Market and Wallet as the
+  six primary destinations. Community is the post-login home; Chat is a peer inbox.
+  Conversations, friends and Profile remain child domains outside the bottom
   navigation. `/home` and `/launchpad` are compatibility redirects only. The
   product is spot-only; Perp is disabled and has no primary-feature entry.
 - Development and Hyperliquid Testnet are the only enabled environments. Mainnet, real deposits/withdrawals, and automated trading remain feature-flagged off.
@@ -118,7 +118,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Public spot prices are discovery facts only. They are not executable quotes, proof of liquidity, proof of tradability, balances, or authorization. `BuildPolicy.spotExecutionEnabled` remains false, and no Buy, Sell, order, signing, transfer, or withdrawal action may be derived from this adapter.
 - A Spot candle request takes its exact provider coin only from a market accepted by `spotMetaAndAssetCtxs`; an invalid or absent route index causes zero candle requests. The only mounted display/wire mappings are `1H/1h`, `4H/4h`, `1D/1d`, `1W/1w`, and `1M/1M`, with monthly `1M` kept distinct from minute `1m`.
 - C2 and C3 carry Spot identity only as one canonical non-negative `spotIndex`. C3 rejects missing, repeated, extra, signed, padded, malformed, negative, and overflowing query input before reading a market. It must not recover identity from a symbol, navigation extra, Preview fixture, another Spot row, or Perp data, and an unadmitted index causes zero candle requests.
-- C3 is a root full-screen route outside the five-destination Shell. A pushed C3 closes back to its caller; a direct root deep link with no route history closes explicitly to `/market` rather than exposing an enabled no-op control.
+- C3 is a root full-screen route outside the six-destination Shell. A pushed C3 closes back to its caller; a direct root deep link with no route history closes explicitly to `/market` rather than exposing an enabled no-op control.
 - The five mounted candle intervals have fixed row durations of one hour, four hours, one day, seven days, and 30 days respectively. For every admitted row, `T - t` must equal that fixed duration minus one millisecond. Reject both shorter and longer rows for every interval, while still accepting an exact-duration first row that starts before the request boundary and overlaps it.
 - Each period requests approximately 120 candles and retains at most the latest 120 distinct rows. Do not poll, automatically retry, recursively backfill, or claim continuous history. Empty responses and gaps are valid; a first candle may open before the requested start when its close overlaps the window. Sort by open time and deduplicate by open time before retaining the latest rows.
 - Preserve candle OHLCV as exact wire String plus `Decimal`. Reject numeric JSON values and inconsistent identity, time, sign, or OHLC bounds. Floating-point conversion is allowed only for a normalized canvas projection and must never replace exact model facts or enter quote/trading calculations.
@@ -162,7 +162,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 - Preserve the current 103-surface catalog as migration inventory until each
   V2 module replaces it with reviewed routes; do not present it as completion
-  of the V2 93-route contract. Preserve the Lime Ledger dark direction,
+  of the V2 94-route contract. Preserve the Lime Ledger dark direction,
   Dynamic Type, accessibility semantics, Reduce Motion, platform conventions,
   keyboard behavior, and smooth message scrolling.
 - Every flow accounts for loading, empty, error, offline, retry, disabled, and skeleton states as applicable.

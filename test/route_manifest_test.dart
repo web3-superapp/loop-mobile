@@ -35,12 +35,12 @@ void main() {
     test(
       'Dart table mirrors routes-manifest.json slug, module, tab and order',
       () {
-        expect(json['count'], 93);
+        expect(json['count'], 94);
         expect(json['defaultRoute'], LoopRouteManifest.defaultSlug);
         expect(json['tabs'], LoopRouteManifest.tabSlugs);
         expect(json['frozenAt'], LoopRouteManifest.frozenAt);
         expect(json['sha256'], LoopRouteManifest.sha256);
-        expect(LoopRouteManifest.entries, hasLength(93));
+        expect(LoopRouteManifest.entries, hasLength(94));
 
         final modules = json['modules']! as Map<String, Object?>;
         expect(
@@ -73,8 +73,8 @@ void main() {
     test('every slug maps to one unique path and non-empty page facts', () {
       final slugs = LoopRouteManifest.entries.map((entry) => entry.slug);
       final paths = LoopRouteManifest.entries.map((entry) => entry.path);
-      expect(slugs.toSet(), hasLength(93));
-      expect(paths.toSet(), hasLength(93));
+      expect(slugs.toSet(), hasLength(94));
+      expect(paths.toSet(), hasLength(94));
       for (final entry in LoopRouteManifest.entries) {
         expect(entry.path, startsWith('/'), reason: entry.slug);
         expect(entry.path, isNot(contains(':')), reason: entry.slug);
@@ -102,19 +102,21 @@ void main() {
       expect(LoopRouteManifest.byPath('/home'), isNull);
     });
 
-    test('five tabs keep the fixed order and no retired destination', () {
+    test('six tabs keep the fixed order and no retired destination', () {
       expect(LoopRouteManifest.tabPaths, <String>[
         '/community',
+        '/chat',
         '/mining',
         '/launch',
         '/market',
         '/wallet',
       ]);
-      expect(LoopRouteManifest.entries.where((entry) => entry.tab).length, 5);
+      expect(LoopRouteManifest.entries.where((entry) => entry.tab).length, 6);
       expect(LoopRouteManifest.defaultPath, '/community');
       expect(LoopShell.destinationPaths, LoopRouteManifest.tabPaths);
       expect(LoopShell.destinationLabels, <String>[
         '社区',
+        '聊天',
         '挖矿',
         'Launch',
         '行情',
@@ -140,7 +142,6 @@ void main() {
       // The doc comment on `supplementaryPaths` promises this test names every
       // entry, so nothing can be added without an assertion changing.
       expect(LoopRouteManifest.supplementaryPaths, <String>[
-        '/chat',
         '/chat/channel/:cid',
         '/chat/groups/create',
         '/chat/groups/:groupId/alias',
@@ -367,7 +368,7 @@ void main() {
       },
     );
 
-    testWidgets('the tab bar is shown only on the five tab routes', (
+    testWidgets('the tab bar is shown only on the six tab routes', (
       tester,
     ) async {
       final router = await _pumpApp(tester);

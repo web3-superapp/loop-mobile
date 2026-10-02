@@ -131,29 +131,11 @@ const double marketRowHeight = 58;
 /// the slot collapsed the value column moved sideways from row to row.
 const Size marketRowSparklineSize = Size(48, 24);
 
-/// The price column's floor.
-///
-/// The design's grid is `1fr 96px 88px` with 8pt gaps, which on a 390pt screen
-/// leaves the name cell 60pt once the 32pt mark and the 56pt line are inside
-/// it — and 「成交额 $1.28B」 ellipsised to 「成交额 $…」 (first render, S78b).
-/// The fixed columns are trimmed to what their own content actually needs at
-/// the ladder's steps, and the difference goes to the name.
-///
-/// It is a floor and not a width: decision 0085. A fixed 84pt cell ellipsised
-/// 「$85,866.13」 to 「$85,866…」 on a real iPhone — the column that the whole
-/// list is read down lost the one thing it carries. The price is the last
-/// thing in a 行情 row that may be abbreviated, so when the figure needs more
-/// than the floor it takes it, up to [marketRowPriceMaxWidth], out of the name
-/// cell beside it: a truncated 「PancakeSwap Tok…」 still names the row, a
-/// truncated price names nothing. The change block never moves.
+/// Width reserved for the price-sort control in the list header.
 const double marketRowPriceWidth = 84;
 
-/// How far the price column may grow into the name.
-///
-/// The widest figure the row can print is a four-significant-digit sub-dollar
-/// price (`$0.0000012345`, 13 characters). Past this the name would be down to
-/// a couple of glyphs, so the price ellipsises instead — with the magnitude
-/// rule below that case does not arise for any price BSC has quoted.
+/// Fixed right-hand quote column for the reference list layout.
+/// Price and change share its right edge; long prices scale down to fit.
 const double marketRowPriceMaxWidth = 124;
 
 /// The change block: `76×30`, radius 6.
@@ -357,8 +339,8 @@ class MarketChangeBlock extends StatelessWidget {
 
 /// One asset row for 行情, at the density a price list is read at.
 ///
-/// Logo · ticker over one grey line · the 1H shape · the price · the 24-hour
-/// block. Every column is in the same place on every row, and the row is
+/// Logo · ticker over one grey line · the 1H shape · price over 24-hour
+/// change. Every column is in the same place on every row, and the row is
 /// [marketRowHeight] tall whether or not it has a shape and whether or not its
 /// change was readable. A price that could not be read spends the identity
 /// line on the reason, and the value column stays empty rather than printing
@@ -438,49 +420,40 @@ class MarketAssetTile extends StatelessWidget {
             child: sparkline,
           ),
           const SizedBox(width: 6),
-          // The price cell sizes to its own figure between a floor and a cap.
-          // A `Row`'s non-flexible children are laid out first and against
-          // unbounded width, so what this takes above the floor comes off the
-          // `Expanded` name beside it — which is the order a price list is
-          // read in (decision 0085).
-          ConstrainedBox(
-            key: const ValueKey<String>('market-row-price-slot'),
-            constraints: const BoxConstraints(
-              minWidth: marketRowPriceWidth,
-              maxWidth: marketRowPriceMaxWidth,
-            ),
-            child: Text(
-              // No figure and no stand-in: the identity line beside this
-              // column already carries the whole reason, and a second,
-              // shorter copy of it here would be the same sentence twice on
-              // one row.
-              priceValue == null ? '' : marketRowPrice(priceValue),
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: marketRowPriceStyle,
+          SizedBox(
+            width: marketRowPriceMaxWidth,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                SizedBox(
+                  key: const ValueKey<String>('market-row-price-slot'),
+                  width: marketRowPriceMaxWidth,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      priceValue == null ? '' : marketRowPrice(priceValue),
+                      maxLines: 1,
+                      softWrap: false,
+                      textAlign: TextAlign.right,
+                      style: LoopTypography.figure(19),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                if (marker != null)
+                  LoopBadge(
+                    marker,
+                    kind: price.quality == LoopFactQuality.stale
+                        ? LoopBadgeKind.down
+                        : LoopBadgeKind.mute,
+                  )
+                else
+                  MarketChangeBlock(fact: row.priceChange24h, height: 20),
+              ],
             ),
           ),
-          const SizedBox(width: 6),
-          // A stale or estimated price says so where the change would be: the
-          // two never appear at once, and the marker is the more important of
-          // the two statements.
-          if (marker != null)
-            SizedBox(
-              width: marketRowChangeWidth,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: LoopBadge(
-                  marker,
-                  kind: price.quality == LoopFactQuality.stale
-                      ? LoopBadgeKind.down
-                      : LoopBadgeKind.mute,
-                ),
-              ),
-            )
-          else
-            MarketChangeBlock(fact: row.priceChange24h),
         ],
       ),
     );

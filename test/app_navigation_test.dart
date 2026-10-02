@@ -19,7 +19,7 @@ void main() {
   // ground probe itself; the page harnesses arm it for everybody else.
   loopWatchGround();
 
-  testWidgets('navigates the five primary destinations with one shell', (
+  testWidgets('navigates the six primary destinations with one shell', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -38,7 +38,14 @@ void main() {
       find.byKey(const ValueKey<String>('community-screen')),
       findsOneWidget,
     );
-    for (final destination in <String>['挖矿', 'Launch', '行情', '钱包', '社区']) {
+    for (final destination in <String>[
+      '聊天',
+      '挖矿',
+      'Launch',
+      '行情',
+      '钱包',
+      '社区',
+    ]) {
       await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
     }

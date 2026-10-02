@@ -55,6 +55,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
   MarketTab _tab = MarketTab.watchlist;
   MarketSort _sort = MarketSort.volume;
   bool _descending = true;
+  String _category = 'all';
 
   /// Whether this page drew the list as a skeleton. Only then does the list
   /// fade in when it lands (decision 0095).
@@ -162,6 +163,34 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           selectedIndex: _tab.index,
           onSelected: (index) => setState(() => _tab = MarketTab.values[index]),
         ),
+        if (_tab != MarketTab.newPairs)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: <Widget>[
+                  const LoopBadge('BSC'),
+                  const SizedBox(width: 10),
+                  for (final category in const <String, String>{
+                    'all': '全部',
+                    'native': '原生资产',
+                    'token': '代币',
+                  }.entries) ...<Widget>[
+                    ChoiceChip(
+                      key: ValueKey<String>('market-filter-${category.key}'),
+                      label: Text(category.value),
+                      selected: _category == category.key,
+                      onSelected: (_) =>
+                          setState(() => _category = category.key),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                ],
+              ),
+            ),
+          ),
         if (overview == null && state.phase == LoopChainViewPhase.loading)
           // Rows of the list's own fixed height, so nothing moves when the
           // prices land (decision 0095).
@@ -251,11 +280,20 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         ),
       ];
     }
-    final items = switch (block) {
+    final allItems = switch (block) {
       MarketWatchlistAvailable(items: final rows) => rows,
       MarketTrendingAvailable(items: final rows) => rows,
       _ => const <MarketAssetRow>[],
     };
+    final items = allItems
+        .where(
+          (row) => switch (_category) {
+            'native' => row.assetId.endsWith(':native'),
+            'token' => row.assetId.contains(':0x'),
+            _ => true,
+          },
+        )
+        .toList();
     final rules = block is MarketTrendingAvailable ? block.rules : null;
     final summary = MarketSignalSummary.of(items);
 
@@ -264,7 +302,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         if (_tab == MarketTab.watchlist) ...<Widget>[
           LoopEmpty(
             key: const ValueKey<String>('market-watchlist-empty'),
-            message: '还没有自选资产',
+            message: allItems.isEmpty ? '还没有自选资产' : '当前分类没有资产',
             reason: '在代币页点右上角星标加入自选，这里会显示它们的价格事实。',
             action: LoopButton(
               label: '管理自选',
@@ -275,10 +313,10 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             rows: <LoopRecordRow>[_addRow(() => _open('/market/new'))],
           ),
         ] else
-          const LoopEmpty(
-            key: ValueKey<String>('market-trending-empty'),
-            message: '暂时没有可排序的资产',
-            reason: '还没有可以显示成交量的资产。',
+          LoopEmpty(
+            key: const ValueKey<String>('market-trending-empty'),
+            message: allItems.isEmpty ? '暂时没有可排序的资产' : '当前分类没有资产',
+            reason: allItems.isEmpty ? '还没有可以显示成交量的资产。' : '切换「全部」查看其他资产。',
           ),
       ];
     }

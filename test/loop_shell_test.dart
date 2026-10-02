@@ -70,7 +70,7 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    var selected = 3;
+    var selected = 4;
     await tester.pumpWidget(
       MaterialApp(
         theme: LoopTheme.dark,
@@ -89,6 +89,7 @@ void main() {
     final items = tester.widgetList<LoopTabItem>(find.byType(LoopTabItem));
     expect(items.map((item) => item.label), <String>[
       '社区',
+      '聊天',
       '挖矿',
       'Launch',
       '行情',
@@ -96,12 +97,14 @@ void main() {
     ]);
     expect(items.map((item) => item.slug), <String>[
       'community',
+      'chat',
       'mining',
       'launch',
       'market',
       'wallet',
     ]);
     expect(items.map((item) => item.selected), <bool>[
+      false,
       false,
       false,
       false,
@@ -178,7 +181,7 @@ void main() {
     await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(selected, 4);
+    expect(selected, 5);
     expect(find.byKey(const ValueKey<String>('loop-tab-indicator')), findsOne);
     final travelling = tester.getCenter(indicator).dx;
     expect(travelling, greaterThan(from));
@@ -230,7 +233,7 @@ void main() {
     await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
     // One frame, no elapsed time: the indicator is already at the destination.
     await tester.pump();
-    expect(selected, 4);
+    expect(selected, 5);
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
@@ -390,11 +393,12 @@ void main() {
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.byType(LoopTabBar), findsNothing);
     final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
-    expect(rail.selectedIndex, 3);
+    expect(rail.selectedIndex, 4);
     expect(rail.backgroundColor, LoopColors.ink);
     expect(rail.indicatorColor, LoopColors.lime);
     expect(rail.destinations.map((d) => (d.label as Text).data), <String>[
       '社区',
+      '聊天',
       '挖矿',
       'Launch',
       '行情',

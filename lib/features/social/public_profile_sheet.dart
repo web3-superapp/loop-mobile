@@ -194,6 +194,39 @@ class _PublicProfileSheetState<T extends Object>
   var _busy = false;
   CommunityFailureKind? _failureKind;
 
+  var _friendRequestSent = false;
+
+  Future<void> _requestFriend() async {
+    final target = widget.identity.publicProfileId;
+    if (target == null || _busy || _friendRequestSent) return;
+    setState(() {
+      _busy = true;
+      _failureKind = null;
+    });
+    try {
+      // V2 message-request acceptance establishes the friendship used by DM.
+      // The gateway owns idempotency and server privacy/block admission.
+      await ref.read(socialGatewayProvider).sendMessageRequest(target);
+      if (!mounted) return;
+      setState(() {
+        _friendRequestSent = true;
+        _busy = false;
+      });
+    } on CommunityGatewayException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _failureKind = error.kind;
+        _busy = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _failureKind = CommunityFailureKind.unexpected;
+        _busy = false;
+      });
+    }
+  }
+
   Future<void> _toggleFollow() async {
     final target = widget.identity.publicProfileId;
     if (target == null || _busy) return;
@@ -240,6 +273,11 @@ class _PublicProfileSheetState<T extends Object>
       profileControllerProvider.select((state) => state.resource?.loopId),
     );
     final openDirectMessage = widget.onOpenDirectMessage;
+    final offersFriendRequest = publicProfileDirectMessageOffered(
+      identity: identity,
+      hasHandler: true,
+      viewerLoopId: viewerLoopId,
+    );
     final offersDirectMessage = publicProfileDirectMessageOffered(
       identity: identity,
       hasHandler: openDirectMessage != null,
@@ -303,6 +341,23 @@ class _PublicProfileSheetState<T extends Object>
             ],
           ),
           const SizedBox(height: 16),
+          if (offersFriendRequest) ...<Widget>[
+            LoopButton(
+              key: const ValueKey<String>('public-profile-add-friend'),
+              label: _friendRequestSent ? '好友申请已发送' : '加好友',
+              primary: true,
+              block: true,
+              onPressed: _busy || _friendRequestSent
+                  ? null
+                  : () => unawaited(_requestFriend()),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '对方接受后，即可在允许私聊时打开会话。',
+              style: LoopTypography.caption(11, color: LoopColors.muted),
+            ),
+            const SizedBox(height: 12),
+          ],
           if (!canFollow)
             const LoopEmpty(
               key: ValueKey<String>('public-profile-not-targetable'),
@@ -322,7 +377,7 @@ class _PublicProfileSheetState<T extends Object>
             LoopButton(
               key: const ValueKey<String>('public-profile-follow'),
               label: (following ?? false) ? '取消关注' : '关注',
-              primary: !(following ?? false),
+              primary: false,
               block: true,
               onPressed: _busy ? null : () => unawaited(_toggleFollow()),
             ),
@@ -348,7 +403,7 @@ class _PublicProfileSheetState<T extends Object>
             ),
             const SizedBox(height: 6),
             Text(
-              '还没有建立联系时，会先请你发送一条消息请求。',
+              '私聊需双方成为好友，并遵循对方的隐私设置。',
               key: const ValueKey<String>('public-profile-dm-hint'),
               style: LoopTypography.caption(11, color: LoopColors.muted),
             ),

@@ -440,7 +440,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         ),
         // The prototype's 账户 group is four rows and each second line is a
         // state value, not a description of the destination: 「2 个已绑定」,
-        // 「匿名模式已开启」, 「关注 24 · 粉丝 108」. Each is read from the
+        // 「关注 24 · 粉丝 108」. Each is read from the
         // module that owns it; a row whose state this device has not read
         // carries no second line at all, because 「读不到」 is not a state a
         // reader can act on (device walkthrough 2026-09-23 · h02).
@@ -457,7 +457,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-privacy'),
               title: '隐私中心',
-              subtitle: _privacySubtitle(),
+              subtitle: '社交请求与资产可见性',
               onTap: () => widget.onNavigate('privacy'),
             ),
             LoopRecordRow(
@@ -558,13 +558,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final directory = ref.watch(walletDirectoryControllerProvider).value;
     if (directory == null) return null;
     return '${directory.wallets.length} 个已绑定';
-  }
-
-  /// `匿名模式已开启` / `匿名模式已关闭`, as the privacy centre stored it.
-  String? _privacySubtitle() {
-    final resource = ref.watch(privacyControllerProvider).resource;
-    if (resource == null) return null;
-    return resource.values.anonymousMode ? '匿名模式已开启' : '匿名模式已关闭';
   }
 
   /// `关注 24 · 粉丝 108`, from the counts the connections page reads.
@@ -1649,9 +1642,9 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,
         kicker: 'PRIVACY STATUS',
-        heading: draft.anonymousMode ? '匿名模式已开启' : '匿名模式已关闭',
-        caption: '公开身份、社区可见性与地址显示分别控制。',
-        stamp: draft.anonymousMode ? 'ON' : 'OFF',
+        heading: '管理社交与可见性',
+        caption: '使用头像、昵称与 LOOP ID 交流，资产可见性单独管理。',
+        stamp: 'PRIVACY',
         compact: true,
         ring: false,
       ),
@@ -1732,16 +1725,6 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               ),
             },
           const LoopLabel('身份'),
-          LoopTogglePreferenceRow(
-            key: const ValueKey<String>('privacy-anonymous-mode'),
-            title: '匿名模式',
-            subtitle: '只显示别名，不显示钱包地址',
-            value: draft.anonymousMode,
-            position: LoopRowPosition.first,
-            onChanged: state.canEdit
-                ? () => controller.editAnonymousMode(!draft.anonymousMode)
-                : null,
-          ),
           LoopTogglePreferenceRow(
             key: const ValueKey<String>('privacy-discoverable'),
             // Decision 0105 (backend decision 0090): the switch governs being
@@ -1826,9 +1809,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           child: Text(
-            draft.anonymousMode
-                ? '公开别名，不公开钱包地址与资产明细。'
-                : '别名与钱包地址都可能出现在公开位置；关闭前请先确认。',
+            '头像、昵称与 LOOP ID 用于社交。钱包地址不会因保存这些设置而公开；资产信息仍按上方可见性设置展示。',
             style: LoopTypography.caption(11, color: LoopColors.text2),
           ),
         ),

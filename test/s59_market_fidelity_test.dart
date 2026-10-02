@@ -349,7 +349,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-持有人')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-持有者')));
       await tester.pumpAndSettle();
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('token-holders-entry')),
