@@ -1197,74 +1197,64 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 body: profileFailureReason(state.failureKind),
               ),
             },
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: LoopAvatarEditor(
-              enabled: state.canEdit,
-              avatar: LoopProfileAvatar(
-                avatarRef: state.draft.avatarRef,
-                alias: state.draft.alias,
-                useLocalAvatar: true,
-              ),
+          LoopAvatarEditor(
+            enabled: state.canEdit,
+            avatar: LoopProfileAvatar(
+              avatarRef: state.draft.avatarRef,
+              alias: state.draft.alias,
+              useLocalAvatar: true,
             ),
           ),
           const LoopLabel('用户名'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSurfaceCard(
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      key: const ValueKey<String>('profile-edit-alias-field'),
-                      controller: _aliasController,
-                      textInputAction: TextInputAction.next,
-                      enabled: state.canEdit,
-                      maxLength: 40,
-                      buildCounter: (
-                        context, {
-                        required currentLength,
-                        required isFocused,
-                        required maxLength,
-                      }) => null,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: '例如 Voyager_7',
-                      ),
-                      onChanged: (value) => _applyAlias(controller, value),
-                    ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    key: const ValueKey<String>('profile-edit-alias-field'),
+                    controller: _aliasController,
+                    style: LoopType.bodyLg,
+                    textInputAction: TextInputAction.next,
+                    enabled: state.canEdit,
+                    maxLength: 40,
+                    buildCounter: (
+                      context, {
+                      required currentLength,
+                      required isFocused,
+                      required maxLength,
+                    }) => null,
+                    decoration: const InputDecoration(hintText: '例如 Voyager_7'),
+                    onChanged: (value) => _applyAlias(controller, value),
                   ),
-                  LoopSeg(
-                    key: const ValueKey<String>('profile-edit-alias-suggest'),
-                    label: '换一个',
-                    selected: false,
-                    onSelected: state.canEdit
-                        ? () => _suggestAlias(controller)
-                        : null,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                LoopSeg(
+                  key: const ValueKey<String>('profile-edit-alias-suggest'),
+                  label: '换一个',
+                  selected: false,
+                  onSelected: state.canEdit
+                      ? () => _suggestAlias(controller)
+                      : null,
+                ),
+              ],
             ),
           ),
           const LoopLabel('简介'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSurfaceCard(
-              child: TextField(
-                key: const ValueKey<String>('profile-edit-bio-field'),
-                controller: _bioController,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                enabled: state.canEdit,
-                maxLength: 160,
-                maxLines: 3,
-                minLines: 1,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: '一句话介绍自己（可留空）',
-                ),
-                onChanged: (value) => _applyBio(controller, value),
-              ),
+            child: TextField(
+              key: const ValueKey<String>('profile-edit-bio-field'),
+              controller: _bioController,
+              style: LoopType.bodyLg,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              enabled: state.canEdit,
+              maxLength: 160,
+              maxLines: 3,
+              minLines: 1,
+              decoration: const InputDecoration(hintText: '一句话介绍自己（可留空）'),
+              onChanged: (value) => _applyBio(controller, value),
             ),
           ),
           const LoopLabel('关注赛道'),

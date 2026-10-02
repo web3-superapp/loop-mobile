@@ -288,19 +288,19 @@ class LoopLabel extends StatelessWidget {
 
   final String text;
 
-  /// `.label + .label` keeps 22px instead of 30px above.
+  /// Related groups keep 16px instead of the regular 24px above.
   final bool followsLabel;
 
-  /// `[data-page-archetype="state"] .folio-body > .label`: 14px above.
+  /// Compact state/form groups keep 12px above.
   final bool tight;
 
   @override
   Widget build(BuildContext context) {
     final top = tight
-        ? 14.0
+        ? 12.0
         : followsLabel
-        ? LoopSpacing.group
-        : LoopSpacing.section;
+        ? LoopSpacing.x4
+        : LoopSpacing.x6;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -310,7 +310,14 @@ class LoopLabel extends StatelessWidget {
       ),
       child: Semantics(
         header: true,
-        child: Text(text.toUpperCase(), style: LoopMono.label),
+        child: Text(
+          text.toUpperCase(),
+          style: LoopTypography.title(
+            13,
+            weight: FontWeight.w500,
+            color: LoopColors.text2,
+          ),
+        ),
       ),
     );
   }
@@ -1297,19 +1304,21 @@ class LoopRecordRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium,
                 ),
+                if (subtitleSpans != null || subtitle != null)
+                  const SizedBox(height: 4),
                 if (subtitleSpans != null)
                   Text.rich(
                     TextSpan(children: subtitleSpans),
                     maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
+                    style: LoopTypography.caption(12, color: LoopColors.text2),
                   )
                 else if (subtitle != null)
                   Text(
                     subtitle!,
                     maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
+                    style: LoopTypography.caption(12, color: LoopColors.text2),
                   ),
               ],
             ),
@@ -1339,14 +1348,16 @@ class LoopRecordRow extends StatelessWidget {
                     Text(
                       trailing!,
                       textAlign: TextAlign.end,
-                      style: LoopTypography.figure(13),
+                      style: LoopTypography.figure(14),
                     ),
+                  if (trailing != null && trailingCaption != null)
+                    const SizedBox(height: 2),
                   if (trailingCaption != null)
                     Text(
                       trailingCaption!,
                       textAlign: TextAlign.end,
                       style: LoopTypography.figure(
-                        11,
+                        12,
                         color: switch (trailingCaptionUp) {
                           true => LoopPriceMove.up.color,
                           false => LoopPriceMove.down.color,
@@ -1539,7 +1550,7 @@ class LoopNotice extends StatelessWidget {
             LoopNoticeTone.danger => (LoopColors.card2, LoopColors.line2),
           };
     final foreground = chalk ? LoopColors.ink : LoopColors.chalk;
-    final bodyStyle = LoopTypography.caption(11, color: foreground);
+    final bodyStyle = LoopTypography.caption(12, color: foreground);
     final structured = happened != null;
     final label = <String?>[
       title,
@@ -1577,7 +1588,7 @@ class LoopNotice extends StatelessWidget {
                     children: <Widget>[
                       if (title != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
+                          padding: const EdgeInsets.only(bottom: 4),
                           child: Text(
                             title!,
                             style: LoopTypography.withWeight(
