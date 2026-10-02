@@ -8,9 +8,9 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_dock_bar.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
-/// Six-destination shell (chapter 5.4).
+/// Five-destination shell (chapter 5.4).
 ///
-/// Mobile: a solid Chalk floating bar, only on the six tab routes; the page
+/// Mobile: a solid Chalk floating bar, only on the five tab routes and Chat; the page
 /// body extends behind it and receives a `90 + safe-area` bottom padding.
 /// Widths from [LoopLayout.railBreakpoint] use a navigation rail instead.
 class LoopShell extends StatelessWidget {
@@ -23,7 +23,6 @@ class LoopShell extends StatelessWidget {
     // Labels are zh-CN per the 01 handover (社区/挖矿/Launch/行情/钱包);
     // slugs stay the stable test and analytics identifiers.
     _LoopDestination('社区', '/community', 'community'),
-    _LoopDestination('聊天', '/chat', 'chat'),
     _LoopDestination('挖矿', '/mining', 'mine-tab'),
     _LoopDestination('Launch', '/launch', 'launch'),
     _LoopDestination('行情', '/market', 'chart'),
@@ -306,7 +305,7 @@ class LoopTabItem extends StatelessWidget {
   }
 }
 
-/// Page wrapper for the six tab routes: peers switch with a fade only.
+/// Page wrapper for the five tab routes and Chat: peers switch with a fade only.
 class LoopTabPage<T> extends CustomTransitionPage<T> {
   LoopTabPage({required super.child, super.key, super.name})
     : super(

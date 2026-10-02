@@ -102,21 +102,19 @@ void main() {
       expect(LoopRouteManifest.byPath('/home'), isNull);
     });
 
-    test('six tabs keep the fixed order and no retired destination', () {
+    test('five tabs keep the fixed order and no retired destination', () {
       expect(LoopRouteManifest.tabPaths, <String>[
         '/community',
-        '/chat',
         '/mining',
         '/launch',
         '/market',
         '/wallet',
       ]);
-      expect(LoopRouteManifest.entries.where((entry) => entry.tab).length, 6);
+      expect(LoopRouteManifest.entries.where((entry) => entry.tab).length, 5);
       expect(LoopRouteManifest.defaultPath, '/community');
       expect(LoopShell.destinationPaths, LoopRouteManifest.tabPaths);
       expect(LoopShell.destinationLabels, <String>[
         '社区',
-        '聊天',
         '挖矿',
         'Launch',
         '行情',
@@ -368,7 +366,7 @@ void main() {
       },
     );
 
-    testWidgets('the tab bar is shown only on the six tab routes', (
+    testWidgets('the tab bar is shown only on the five tab routes', (
       tester,
     ) async {
       final router = await _pumpApp(tester);

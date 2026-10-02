@@ -196,10 +196,12 @@ class ConversationRow extends StatelessWidget {
     required this.conversation,
     required this.onTap,
     super.key,
+    this.showMetadata = true,
   });
 
   final ConversationSummary conversation;
   final VoidCallback onTap;
+  final bool showMetadata;
 
   @override
   Widget build(BuildContext context) {
@@ -265,17 +267,18 @@ class ConversationRow extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
-                          Text(
-                            conversation.timeLabel,
-                            style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(
-                                  color:
-                                      conversation.kind ==
-                                          ConversationKind.voice
-                                      ? LoopColors.chat
-                                      : LoopColors.vapor,
-                                ),
-                          ),
+                          if (showMetadata)
+                            Text(
+                              conversation.timeLabel,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color:
+                                        conversation.kind ==
+                                            ConversationKind.voice
+                                        ? LoopColors.chat
+                                        : LoopColors.vapor,
+                                  ),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 5),
@@ -320,7 +323,8 @@ class ConversationRow extends StatelessWidget {
                             ),
                         ],
                       ),
-                      if (conversation.memberLabel != null) ...<Widget>[
+                      if (showMetadata &&
+                          conversation.memberLabel != null) ...<Widget>[
                         const SizedBox(height: 5),
                         Text(
                           conversation.memberLabel!,

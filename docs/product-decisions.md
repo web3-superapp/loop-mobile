@@ -7,10 +7,10 @@ This document applies to the Flutter source at the repository root. Material und
 ## Product shape
 
 - LOOP is a Flutter iOS and Android app. Web output is only a local UI-verification target.
-- Decision 0109 supersedes 0048's navigation: six primary destinations in order,
-  Community, Chat, Mining, Launch, Market and Wallet. Community is the
-  post-login home; Chat is a peer inbox, while conversations and Profile
-  remain child surfaces. Existing `/chat` is promoted without breaking links.
+- Decision 0111 supersedes 0109's navigation: five primary destinations in order,
+  Community, Mining, Launch, Market and Wallet. Community is the post-login home.
+  Community and Chat share one bottom tab and an in-page segment; `/chat`,
+  conversations, friends and Profile retain their existing links and identities.
 - `/home` and `/launchpad` are compatibility redirects to `/community` and
   `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (94
   routes: the 93 original routes and native Chat extension, mirrored by `lib/core/navigation/route_manifest.dart`) the only
@@ -142,7 +142,7 @@ Product priority and current delivery are separate:
 - Stream Chat + Stream Video/Audio Rooms is the selected communication integration.
 - The production Chat inbox uses Stream's official client, persistence, token provider, channel-list controller/view, channel scope and message page. Stream owns messages, pagination, ACK/read state, presence, typing and offline synchronization.
 - `communicationGatewayProvider` remains the fail-closed seam for preview-only secondary communication surfaces that have not yet moved to official SDK UI. Only `lib/main_preview.dart` injects memory data; `lib/main.dart` never injects it.
-- Communication mode is explicit: memory data is `preview`; the Stream seam is `production`. Preview UI continuously identifies itself as offline, simulated and not connected.
+- Communication mode is explicit: memory data is `preview`; the Stream seam is `production`. The explicit preview entry identifies the mode; repeated developer notices are removed per decision 0111.
 - The official client may be constructed from the public API key without connecting. A production session source must obtain a backend-derived Stream user ID and short-lived server-issued token; missing or failed authorization prevents controller/message UI from mounting.
 - Privy user ID is only an opaque logout/account-switch key in Flutter. It is never converted into the Stream user ID. Each principal gets an isolated Stream client/persistence pair; logout and account switches retire the old pair, invalidate in-flight authorization, and disconnect without deleting per-user offline history.
 - Text chat composition is wired through official UI. Attachments and voice recording remain disabled until platform permissions, upload policy and provider/device verification are complete.

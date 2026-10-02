@@ -410,22 +410,11 @@ class LoopChainPreviewNotice extends StatelessWidget {
   final String resource;
 
   @override
-  Widget build(BuildContext context) {
-    if (mode != LoopChainGatewayMode.preview) return const SizedBox.shrink();
-    return LoopNotice(
-      key: const ValueKey<String>('chain-preview-notice'),
-      icon: 'info',
-      tone: LoopNoticeTone.warn,
-      title: '演示数据',
-      body: '$resource只存在于这次开发预览里，不会写入账号，也不会上传。',
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-/// `开发预览` eyebrow for a Preview-backed chain page.
-String? loopChainPreviewKicker(LoopChainGatewayMode mode) =>
-    mode == LoopChainGatewayMode.preview ? '开发预览' : null;
+/// Retained call-site seam; repeated developer headings are hidden (0111).
+String? loopChainPreviewKicker(LoopChainGatewayMode mode) => null;
 
 /// The sentence a refused read or write renders.
 ///

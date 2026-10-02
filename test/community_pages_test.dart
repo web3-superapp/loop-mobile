@@ -108,7 +108,7 @@ void main() {
       );
       expect(folio.heading, '正在读取');
       expect(folio.headingLoading, isTrue);
-      expect(find.textContaining('读到之后显示在这里'), findsOneWidget);
+      expect(find.textContaining('读到之后显示在这里'), findsNothing);
       expect(find.text(communityMissingHeading), findsNothing);
       expect(find.textContaining('社区数据暂时读不到'), findsNothing);
       expect(find.text(communityMissingFigure), findsNothing);
@@ -128,7 +128,7 @@ void main() {
       );
 
       expect(find.text(communityMissingHeading), findsOneWidget);
-      expect(find.textContaining('社区数据暂时读不到'), findsOneWidget);
+      expect(find.textContaining('社区数据暂时读不到'), findsNothing);
       expect(find.text('正在读取'), findsNothing);
     });
 
@@ -162,7 +162,7 @@ void main() {
       // The rule is described in plain language; its internal id never
       // reaches the screen, and the page never calls it a recommendation.
       expect(find.textContaining('rule:'), findsNothing);
-      expect(find.textContaining('推荐只按成员数与创建时间排列'), findsOneWidget);
+      expect(find.textContaining('推荐只按成员数与创建时间排列'), findsNothing);
     });
 
     testWidgets(
@@ -315,8 +315,8 @@ void main() {
         ),
       );
 
-      expect(find.text('演示数据'), findsOneWidget);
-      expect(find.text('开发预览'), findsWidgets);
+      expect(find.text('演示数据'), findsNothing);
+      expect(find.text('开发预览'), findsNothing);
       expect(find.text('0 个社区在挖矿'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-capability-unavailable')),

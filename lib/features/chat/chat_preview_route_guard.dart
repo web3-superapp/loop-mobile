@@ -24,16 +24,7 @@ class ChatPreviewRouteGuard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gateway = ref.watch(communicationGatewayProvider);
     if (gateway.mode == CommunicationMode.preview) {
-      return Semantics(
-        container: true,
-        label: '开发预览',
-        child: Banner(
-          key: const ValueKey<String>('chat-preview-route-label'),
-          message: '开发预览',
-          location: BannerLocation.topEnd,
-          child: child,
-        ),
-      );
+      return Semantics(container: true, label: '开发预览', child: child);
     }
 
     return LoopPage(
@@ -42,15 +33,15 @@ class ChatPreviewRouteGuard extends ConsumerWidget {
       children: <Widget>[
         LoopStateCard(
           key: const ValueKey<String>('chat-preview-route-blocked'),
-          title: 'Offline preview only',
-          message: 'This surface still uses development fixtures and is disabled in the production app. Open a server-authorized Stream conversation from Chats instead.',
+          title: '此会话暂不可用',
+          message: '请返回聊天列表打开会话。',
           icon: Icons.visibility_off_outlined,
           tone: LoopTone.neutral,
           action: FilledButton.icon(
             key: const ValueKey<String>('chat-preview-open-chats'),
             onPressed: () => context.go('/chat'),
             icon: const Icon(Icons.forum_outlined),
-            label: const Text('Open Chats'),
+            label: const Text('返回聊天'),
           ),
         ),
       ],

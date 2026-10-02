@@ -520,7 +520,7 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
             title: '领取入口不可执行',
             // The reason is the folio's, once. This says what the control does,
             // which is the thing the folio does not say.
-            body: '可以领取时，这个按钮会变为可用；现在它不会提交任何操作。',
+            body: '奖励可领取后，按钮将开放。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const LoopLabel('Claim Records'),
@@ -728,7 +728,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
               key: ValueKey<String>('mining-rank-notice'),
               icon: 'info',
               title: '排名不是静态权益',
-              body: '其他账号或社区的算力变化会改变名次。榜单只来自最近一次算力快照，不会在这台设备上计算。',
+              body: '名次随最新算力更新。',
               margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           ],

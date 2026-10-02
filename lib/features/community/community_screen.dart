@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/widgets/community_chat_segment.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -144,7 +145,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     // aggregate publishes both as unavailable facts and carries no unread per
     // joined community. So every clause is absent, and the folio says why
     // instead of printing a sentence with the numbers cut out of it.
-    final activity = communityActivityCaption();
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.escape): _closePanel,
@@ -160,6 +160,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               key: const ValueKey<String>('community-screen'),
               archetype: LoopPageArchetype.listing,
               title: '社区',
+              titleWidget: const CommunityChatSegment(location: '/community'),
               kicker: communityPreviewKicker(mode),
               tabPage: true,
               actions: <Widget>[
@@ -218,7 +219,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     key: const ValueKey<String>('community-folio'),
                     variant: LoopFolioVariant.lime,
                     archetype: LoopFolioArchetype.listing,
-                    kicker: 'COMMUNITY INDEX',
+                    kicker: '我的社区',
                     // A read that is still running is not a read that failed.
                     // The skeleton below was already saying 「正在读取」 while
                     // this hero said 「暂无数值 / 社区数据暂时读不到」 for the
@@ -229,11 +230,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     // Decision 0095: the count is drawn as a skeleton of its
                     // own height until it is read.
                     headingLoading: home == null && loading,
-                    caption: home == null
-                        ? loading
-                              ? '已加入的社区数量读到之后显示在这里。'
-                              : '社区数据暂时读不到，这一页不显示任何数字。'
-                        : activity ?? '讨论热度与语音房活动还没有开放。',
+                    caption: null,
                     // `.folio-stamp` is 「N LIVE」 in the prototype. Nothing
                     // here counts live rooms, so the corner stays empty; it
                     // is not a slot for the word DATABASE.
@@ -334,17 +331,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                             _open('/community/discover?membership=joined'),
                       ),
                     ),
-                  LoopNotice(
-                    key: const ValueKey<String>(
-                      'community-recommendation-rule',
-                    ),
-                    icon: 'info',
-                    title: '推荐依据',
-                    body:
-                        '推荐只按成员数与创建时间排列，'
-                        '不是个性化算法推荐。',
-                    margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                  ),
                   CommunityObservedFootnote(
                     key: const ValueKey<String>('community-observed-at'),
                     observedAt: home.observedAt,

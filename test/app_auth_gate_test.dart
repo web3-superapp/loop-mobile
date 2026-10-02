@@ -48,7 +48,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
-    expect(find.text('登录配置不完整'), findsOneWidget);
+    expect(find.text('暂时无法登录'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('community-screen')),
       findsNothing,

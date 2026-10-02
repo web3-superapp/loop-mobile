@@ -297,13 +297,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ],
           const LoopNotice(
-            key: ValueKey<String>('swap-routing-notice'),
-            title: '路由由供应商选择',
-            body:
-                'LOOP 不自建路由，也不做逐跳拆解。这里只展示 Privy 返回的最终报价；'
-                '兑换所得资产直接进入本钱包。',
-          ),
-          const LoopNotice(
             key: ValueKey<String>('swap-power-notice'),
             icon: 'mine',
             title: '算力影响不可用',

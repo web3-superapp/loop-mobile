@@ -1246,7 +1246,7 @@ class HarnessTests(unittest.TestCase):
         result = check_harness.check_profile(REPOSITORY_ROOT, changed)
         self.assertTrue(
             any(
-                "preserve Community / Chat / Mining / Launch / Market / Wallet"
+                "preserve Community / Mining / Launch / Market / Wallet"
                 in error
                 for error in result
             )
@@ -5504,7 +5504,7 @@ class HarnessTests(unittest.TestCase):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(
-                (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                check_harness.read_text(REPOSITORY_ROOT / relative),
                 encoding="utf-8",
             )
         return root

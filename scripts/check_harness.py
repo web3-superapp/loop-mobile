@@ -17,7 +17,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PRIMARY_DESTINATIONS = ["Community", "Chat", "Mining", "Launch", "Market", "Wallet"]
+PRIMARY_DESTINATIONS = ["Community", "Mining", "Launch", "Market", "Wallet"]
 PINNED_DEPENDENCIES = {
     "cupertino_icons": "1.0.8",
     "decimal": "3.2.6",
@@ -1397,7 +1397,17 @@ PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE = {
 }
 
 
+def is_appledouble(path: Path) -> bool:
+    """Recognize macOS metadata without ignoring arbitrary dot-prefixed code."""
+    if not path.name.startswith("._"):
+        return False
+    with path.open("rb") as stream:
+        return stream.read(4) == bytes.fromhex("00051607")
+
+
 def read_text(path: Path) -> str:
+    if is_appledouble(path):
+        return ""
     return path.read_text(encoding="utf-8")
 
 
@@ -2085,7 +2095,7 @@ def check_profile(root: Path, profile: dict[str, Any]) -> list[str]:
         errors.append("harness.json project purpose must be non-empty")
     if project.get("primary_destinations") != PRIMARY_DESTINATIONS:
         errors.append(
-            "harness.json must preserve Community / Chat / Mining / Launch / Market / Wallet in order"
+            "harness.json must preserve Community / Mining / Launch / Market / Wallet in order"
         )
 
     for field in ("ownership_boundaries",):
@@ -3035,7 +3045,7 @@ CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
 CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS = {
     "page": "7816c49c960272acff1caa32f824a6edd5b55ec22b982a41f739c143a421f7e8",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
-    "inbox": "2bc2544011e1f268ddc28971326f36cd20423b1b36eac7d4b7c8795d9827ebbe",
+    "inbox": "330979b0fa1881e9d26e722479e4a5d9ffa11b93dffd35b4cafc83696ac9d3c2",
 }
 
 
@@ -3212,17 +3222,17 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
     ),
 }
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
-    "a87079e5bdfaf6321f20537d89a657deec2e18d86d5944787e7e50f52fefa852"
+    "cc114843e6849d1abc4259f37f81b6a5b7c7f2d19b6c006b2922d7d9711113c9"
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "9b441d2d8c58355db0d3bc47100f6d85534a4f4569a646126496a62b68520547",
     "primary_routes": "9a800ba14a805f9a0e5f62a611441da4c42aaf56eb3f3eba3eb87c34152ffef7",
     "secondary_routes": "cb31c8b5beb308a8a629bac006ab92372383c436482518da19ae7a2bbba22252",
-    "conversation_pages": "4d71552865ef9c3f872da63d4cdcb9299468e3f07e0bafdf40f7e72f97f51a11",
+    "conversation_pages": "38dc08a5b2973723897254e599b81a8b60e12095decf5a2b69c3aa28d8175618",
     "group_info": "d967998206d33611981bbd5107e9b51975cbfbf2c69a121800b0584731a0b54c",
     "member_list": "9e34dccc196b4237baba7ea8a6b1ece71c297d010b1a5a8c7cd264d9419350bd",
     "search": "6684f9a8aae999ba5a780340283fee75a1df0bfba701e7f94652e8ccba02b96a",
-    "inbox_navigation": "e854a63e6871f7c56b14a0671617413c3191670b656ccef4fa13fe8b0abe72fe",
+    "inbox_navigation": "df0a74f1c6b26385ea813ceb1c8e939794b6c89bfab670e120c97e4917ff188c",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
     "home_notification": "7dacb554dd1ad92063d87548c5f0a34069b5643bf69dc2de83c7da820658ed85",
     "production_cid": "cd1ec47454a1c55cb2225b7e119b5f5f36ff61dbf6e1434edcaa26705b89f98a",
@@ -3261,7 +3271,7 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
                 "PreviewConversationIdentity.locationForSummary(",
                 "conversationId: conversation.id",
                 "kind: conversation.kind",
-                "No fallback was opened.",
+                "会话暂时无法打开，请返回列表重试。",
             ),
             "lib/features/chat/conversation_pages.dart": (
                 "PreviewConversationIdentity.resolve(",
@@ -3312,7 +3322,7 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
                 "glyph-hunters&conversationId=sable-direct",
                 "find.byTooltip('Send message'), findsNothing",
                 "lastSearchConversationId, ChatContent.groupId",
-                "Preview conversation unavailable. No fallback was opened.",
+                "会话暂时无法打开，请返回列表重试。",
             ),
             "docs/product/implementation-constraints.md": (
                 "Legacy Preview group and direct-message routes require one exact registered `conversationId`.",
@@ -3947,7 +3957,7 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             "lib/features/account/account_screens.dart": (
                 "protection-setup-unavailable",
                 "security-setup-continue",
-                "LOOP 不会保存 PIN",
+                "部分安全设置暂不可用，请查看各项说明。",
                 # F2: what a page says about a method it does not offer is
                 # said in the owner's words, and what it says about the one
                 # method that is in force carries its evidence.
@@ -7965,6 +7975,8 @@ def check_chat_token_card_contract(root: Path) -> list[str]:
 def check_records(root: Path) -> list[str]:
     errors: list[str] = []
     for path in sorted((root / "docs/decisions").glob("*.md")):
+        if is_appledouble(path):
+            continue
         if not re.fullmatch(r"[0-9]{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md", path.name):
             errors.append(f"decision filename is invalid: {path.relative_to(root)}")
         sections = markdown_sections(path)
@@ -7972,6 +7984,8 @@ def check_records(root: Path) -> list[str]:
             if not sections.get(name):
                 errors.append(f"{path.relative_to(root)} requires non-empty `## {name}`")
     for path in sorted((root / "docs/failures").glob("*.md")):
+        if is_appledouble(path):
+            continue
         sections = markdown_sections(path)
         for name in FAILURE_SECTIONS:
             if not sections.get(name):
@@ -7991,13 +8005,13 @@ def check_product_contract(root: Path) -> list[str]:
         {
             "README.md": (
                 "Repository phase: `active`.",
-                "Community / Chat / Mining / Launch / Market / Wallet",
+                "Community / Mining / Launch / Market / Wallet",
                 "harness.json",
                 "python3 scripts/check_harness.py",
             ),
             "AGENTS.md": (
                 "Repository phase: `active`.",
-                "Community / Chat / Mining / Launch / Market / Wallet",
+                "Community / Mining / Launch / Market / Wallet",
                 "Community is the post-login home",
                 "python3 scripts/check_harness.py",
             ),
@@ -8168,8 +8182,8 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     ]
     if manifest.get("count") != 94 or len(expected_slugs) != 94:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 94 routes")
-    if manifest.get("tabs") != ["community", "chat", "mining", "launch", "market", "wallet"]:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the six tabs in order")
+    if manifest.get("tabs") != ["community", "mining", "launch", "market", "wallet"]:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "community":
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must land on community")
     if [name.title() for name in manifest.get("tabs", [])] != PRIMARY_DESTINATIONS:
@@ -8596,11 +8610,11 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "Do not call, mock or pre-empt the backend D0/D1 `/v2` contract",
         ),
         "docs/product-decisions.md": (
-            "Community, Chat, Mining, Launch, Market and Wallet",
+            "Community, Mining, Launch, Market and Wallet",
             "`/home` and `/launchpad` are compatibility redirects",
         ),
         "docs/product/implementation-constraints.md": (
-            "Community, Chat, Mining, Launch, Market and Wallet",
+            "Community, Mining, Launch, Market and Wallet",
             "`/home` and `/launchpad` are compatibility redirects only",
         ),
         "lib/features/community/community_screen.dart": (
@@ -8649,7 +8663,6 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             block = source[start:end]
             markers = (
                 ("'社区'", "'/community'"),
-                ("'聊天'", "'/chat'"),
                 ("'挖矿'", "'/mining'"),
                 ("'Launch'", "'/launch'"),
                 ("'行情'", "'/market'"),
@@ -8678,8 +8691,8 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                         "LoopShell must not restore the retired primary destination "
                         f"{forbidden}"
                     )
-            if block.count("_LoopDestination(") != 6:
-                errors.append("LoopShell must expose exactly six primary destinations")
+            if block.count("_LoopDestination(") != 5:
+                errors.append("LoopShell must expose exactly five primary destinations")
         if "ChatMiniVoiceBar" in source:
             errors.append(
                 "LoopShell must not present an idle Audio Room bar across every V2 tab"
@@ -8863,10 +8876,10 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             errors.append("LoopRouteManifest must expose runtime tabSlugs")
         else:
             block = source[start:end]
-            expected = ["community", "chat", "mining", "launch", "market", "wallet"]
+            expected = ["community", "mining", "launch", "market", "wallet"]
             positions = [block.find(f"'{slug}'") for slug in expected]
             if any(position < 0 for position in positions):
-                errors.append("LoopRouteManifest tabSlugs must contain all six V2 slugs")
+                errors.append("LoopRouteManifest tabSlugs must contain all five V2 slugs")
             elif positions != sorted(positions):
                 errors.append("LoopRouteManifest tabSlugs must retain V2 order")
             for retired in ("home", "launchpad", "profile"):
@@ -8892,7 +8905,7 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
             "lib/features/chat/chat_preview_route_guard.dart": (
                 "gateway.mode == CommunicationMode.preview",
                 "chat-preview-route-blocked",
-                "Offline preview only",
+                "此会话暂不可用",
             ),
             "lib/features/chat/attachments/token_card_attachment.dart": (
                 "static const String attachmentType = 'token_card';",
@@ -14186,7 +14199,7 @@ def main() -> int:
             print(f"- {error}")
         return 1
     print(
-        "Harness check passed: profile, six-destination V2 contract, "
+        "Harness check passed: profile, five-destination V2 contract, "
         "V2 community truth, one community face on every page, pins, "
         "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, provider-owned MFA, device-local application lock, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "

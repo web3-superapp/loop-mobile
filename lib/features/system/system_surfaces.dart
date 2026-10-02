@@ -982,7 +982,7 @@ class _OfflinePage extends StatelessWidget {
           const _SourceUnavailableNotice(
             keyName: 'partial-outage-source-unavailable',
             title: '没有分链的故障信息',
-            body: '暂时读不到单条链的状态，这一页不会替你判断某条链是否可用。',
+            body: '暂时无法获取链状态，请稍后重试。',
           )
         else
           LoopNotice(
@@ -1317,7 +1317,7 @@ class _RegionPage extends StatelessWidget {
           _SourceUnavailableNotice(
             keyName: 'region-policy-unavailable',
             title: '没有已批准的地区判定',
-            body: 'LOOP 不会从设备语言、SIM 或 IP 推断地区；没有已批准的判定时一律视为未知。',
+            body: '暂时无法确认地区可用性，请稍后重试。',
           ),
         ],
         primaryAction: _returnAction(onReturn),

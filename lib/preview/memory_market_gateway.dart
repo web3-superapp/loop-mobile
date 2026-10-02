@@ -198,7 +198,7 @@ final class MemoryPreviewMarketGateway implements MarketReadGateway {
       LoopCandleInterval.oneDay => 1440,
       LoopCandleInterval.oneWeek => 10080,
     };
-    final count = (limit ?? 60).clamp(1, 120);
+    final count = (limit ?? 360).clamp(1, 500);
     Decimal value(double v) => Decimal.parse(v.toStringAsPrecision(12));
     return MarketCandleSeries(
       assetId: assetId,
@@ -218,7 +218,8 @@ final class MemoryPreviewMarketGateway implements MarketReadGateway {
         ),
         priceUnit: 'USDT / ${a.$2}',
         items: List.generate(count, (i) {
-          final open = base * (.96 + .0007 * i + math.sin(i * .6) * .015);
+          final step = i - count + 60;
+          final open = base * (.96 + .0007 * step + math.sin(step * .6) * .015);
           final close = open * (1 + math.sin(i * 1.3) * .009);
           return LoopCandle(
             openTime: observedAt.subtract(

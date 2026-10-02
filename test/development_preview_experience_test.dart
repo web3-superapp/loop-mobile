@@ -47,7 +47,7 @@ void main() {
     router.go('/chat');
     await tester.pumpAndSettle();
 
-    expect(find.text('Offline preview · not connected'), findsWidgets);
+    expect(find.text('Offline preview · not connected'), findsNothing);
     expect(find.text('Glyph Hunters'), findsOneWidget);
     expect(find.text('ETH Macro Room'), findsOneWidget);
     expect(find.text('0xSable'), findsOneWidget);
@@ -58,10 +58,7 @@ void main() {
     await tester.tap(group);
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Offline preview · simulated conversation'),
-      findsOneWidget,
-    );
+    expect(find.text('Offline preview · simulated conversation'), findsNothing);
     expect(find.text('NightOwl'), findsWidgets);
     // The type ladder (decision 0069) made the transcript taller than one
     // viewport, so the token card sits below the lazily built window.
@@ -82,7 +79,7 @@ void main() {
     expect(messages.value?.last.text, 'Local preview hello');
     expect(
       find.text('Simulated message added to the offline preview.'),
-      findsOneWidget,
+      findsNothing,
     );
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
@@ -15,7 +16,7 @@ import 'support/loop_ground_probe.dart';
 void main() {
   loopWatchGround();
   for (final width in <double>[360, 390]) {
-    testWidgets('chat is a peer tab with usable targets at $width', (
+    testWidgets('chat shares Community with usable targets at $width', (
       tester,
     ) async {
       tester.view.physicalSize = Size(width, 844);
@@ -36,21 +37,30 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(LoopShell.destinationLabels, [
-        '社区',
-        '聊天',
-        '挖矿',
-        'Launch',
-        '行情',
-        '钱包',
-      ]);
-      final chat = find.widgetWithText(LoopTabItem, '聊天');
-      expect(tester.getSize(chat).width, greaterThanOrEqualTo(44));
+      expect(LoopShell.destinationLabels, ['社区', '挖矿', 'Launch', '行情', '钱包']);
+      final segment = find.byKey(const ValueKey('community-chat-segment'));
+      final chat = find.descendant(of: segment, matching: find.text('聊天'));
+      expect(find.widgetWithText(LoopTabItem, '聊天'), findsNothing);
+      expect(tester.getSize(segment).height, greaterThanOrEqualTo(44));
       await tester.tap(chat);
       await tester.pumpAndSettle();
       final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
       expect(router.state.matchedLocation, '/chat');
+      expect(
+        tester
+            .widget<VoiceRoomMinimizedBanner>(
+              find.byType(VoiceRoomMinimizedBanner),
+            )
+            .onTabRoute!(),
+        isTrue,
+      );
       expect(find.byType(LoopTabBar), findsOneWidget);
+      expect(
+        tester
+            .widget<LoopTabItem>(find.widgetWithText(LoopTabItem, '社区'))
+            .selected,
+        isTrue,
+      );
       expect(find.byTooltip('返回社区'), findsNothing);
       expect(find.byTooltip('Change display alias'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('chat-friends-action')));

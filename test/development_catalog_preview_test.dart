@@ -187,6 +187,11 @@ void main() {
     expect(rows.map((r) => r.assetId).toSet().length, 8);
     for (final row in rows) {
       final detail = await g.loadAsset(row.assetId);
+      final history = await g.loadCandles(
+        row.assetId,
+        interval: LoopCandleInterval.values.first,
+      );
+      expect((history.candles as MarketCandlesAvailable).items.length, 360);
       expect(detail.price.value, row.price.value);
       expect(detail.capability.swappable, isFalse);
       for (final interval in LoopCandleInterval.values) {

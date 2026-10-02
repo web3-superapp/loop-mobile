@@ -861,13 +861,6 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                 : const SizedBox.shrink(),
           ),
           const LoopNotice(
-            key: ValueKey<String>('send-confirm-signing-exit'),
-            body:
-                '签名由 Privy 嵌入式钱包在本机执行；所有资金操作都汇聚到同一个签名弹层，'
-                '这是全产品唯一的签名出口。',
-            title: '统一签名出口',
-          ),
-          const LoopNotice(
             key: ValueKey<String>('send-confirm-power'),
             icon: 'mine',
             tone: LoopNoticeTone.warn,

@@ -889,7 +889,7 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
             LoopRecordRow(
               key: ValueKey<String>('key-export-no-key'),
               title: '不会显示任何私钥',
-              subtitle: '这一页永远不会渲染遮罩后的密钥样例，那会让人误以为已经导出过。',
+              subtitle: '私钥导出暂不可用。',
               subtitleMaxLines: 2,
               position: LoopRowPosition.last,
             ),

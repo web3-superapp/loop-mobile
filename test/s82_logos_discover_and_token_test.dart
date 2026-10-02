@@ -466,7 +466,7 @@ void main() {
       expect(find.byKey(const ValueKey<String>('token-buy-action')), findsOne);
     });
 
-    testWidgets('周期 Tab 与 MA7 / MA25 在 K 线上方一行', (tester) async {
+    testWidgets('周期 Tab 与 MA7 / MA25 在无卡片 K 线上方', (tester) async {
       await pumpS5Page(
         tester,
         const TokenDetailScreen(assetId: s5WbnbAssetId),
@@ -481,11 +481,14 @@ void main() {
         );
       }
       final averages = find.byKey(
-        const ValueKey<String>('token-moving-averages'),
+        const ValueKey<String>('candles-moving-averages'),
       );
       expect(averages, findsOneWidget);
-      expect(tester.widget<Text>(averages).data, contains('MA7'));
-      // 紧贴上方：读数行在图之上，图在读数行之下的同一张卡里。
+      expect(
+        find.descendant(of: averages, matching: find.textContaining('MA7')),
+        findsOneWidget,
+      );
+      // 指标读数在无卡片图表上方。
       final chart = find.byKey(const ValueKey<String>('token-candle-chart'));
       expect(
         tester.getTopLeft(averages).dy,

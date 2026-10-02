@@ -435,7 +435,7 @@ void main() {
         find.byKey(const ValueKey<String>('market-watchlist-add')),
         findsOneWidget,
       );
-      expect(find.text('添加自选资产'), findsOneWidget);
+      expect(find.text('浏览代币'), findsOneWidget);
     });
 
     testWidgets('a trending block that could not be read states why', (

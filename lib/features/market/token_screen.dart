@@ -556,10 +556,9 @@ class _TokenCandleBlock extends ConsumerWidget {
       assetId: assetId,
       interval: interval,
       onIntervalChanged: onIntervalChanged,
-      // The design's own shape: the periods and the two averages on one line
-      // directly over the panel, the panel itself carrying the volume bars.
+      // Keep the plot dominant while retaining period and indicator readouts.
       compactControls: true,
-      height: 320,
+      height: 380,
       movingAveragePeriods: const <int>[7, 25],
       trailing: LoopIconButton(
         key: const ValueKey<String>('token-chart-expand'),
@@ -603,10 +602,7 @@ class TokenCandleSection extends ConsumerStatefulWidget {
   /// segments, inside the same terminal card.
   final Widget? footer;
 
-  /// The approved design's layout: the five periods and the moving-average
-  /// readout share **one** line directly above the panel, and the panel has no
-  /// card of its own. 代币 uses it. `chart-full` keeps the segmented bar under
-  /// the card, where it has a whole screen to spend.
+  /// Inline period controls above the unboxed plot.
   final bool compactControls;
 
   @override
@@ -635,15 +631,9 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
 
     final body = <Widget>[
       if (widget.compactControls)
-        // 周期 + MA 读数，一行，紧贴 K 线上方 (the approved design). The
-        // averages are computed from the closes already on screen, so they
-        // are read out beside the control that chose them rather than
-        // borrowing the series' own provenance line.
         _CompactChartControls(
           selected: widget.interval,
           onSelected: widget.onIntervalChanged,
-          periods: widget.movingAveragePeriods,
-          candles: block is MarketCandlesAvailable ? block.items : null,
           trailing: widget.trailing,
         )
       else
@@ -669,8 +659,8 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSurfaceCard(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -705,10 +695,6 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
                     height: widget.height,
                     movingAveragePeriods: widget.movingAveragePeriods,
                     showVolume: widget.showVolume,
-                    // The compact layout already reads the averages out on the
-                    // control line; repeating them under the OHLC row would
-                    // print MA7 twice on one screen.
-                    readOutAverages: !widget.compactControls,
                   ),
                 },
             ],
@@ -732,16 +718,12 @@ class _CandleBody extends StatefulWidget {
     required this.height,
     this.movingAveragePeriods = const <int>[],
     this.showVolume = true,
-    this.readOutAverages = true,
   });
 
   final MarketCandlesAvailable block;
   final double height;
   final List<int> movingAveragePeriods;
   final bool showVolume;
-
-  /// Whether the averages get their own line under the OHLC row.
-  final bool readOutAverages;
 
   @override
   State<_CandleBody> createState() => _CandleBodyState();
@@ -753,7 +735,6 @@ class _CandleBodyState extends State<_CandleBody> {
   double get height => widget.height;
   List<int> get movingAveragePeriods => widget.movingAveragePeriods;
   bool get showVolume => widget.showVolume;
-  bool get readOutAverages => widget.readOutAverages;
 
   @override
   void didUpdateWidget(covariant _CandleBody oldWidget) {
@@ -773,15 +754,26 @@ class _CandleBodyState extends State<_CandleBody> {
     }
     final last = _selected ?? block.items.last;
     final marker = loopFactQualityMarker(block.quality);
+    final indicatorCandles = _selected == null
+        ? block.items
+        : block.items.take(block.items.indexOf(last) + 1).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(
-          _selected == null
-              ? '最新 · VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}'
-              : '${last.openTime.toUtc().toIso8601String().substring(0, 16).replaceFirst('T', ' ')} UTC · VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}',
-          key: const ValueKey<String>('candle-selection-time'),
-          style: LoopTypography.caption(11),
+        Wrap(
+          key: const ValueKey<String>('candles-moving-averages'),
+          spacing: 10,
+          runSpacing: 2,
+          children: <Widget>[
+            for (final period in movingAveragePeriods)
+              if (loopCandleMovingAverageLabel(indicatorCandles, period)
+                  case final label?)
+                Text(label, style: LoopType.figureXs),
+            Text(
+              'VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}',
+              style: LoopType.figureXs,
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Wrap(
@@ -806,28 +798,7 @@ class _CandleBodyState extends State<_CandleBody> {
             ),
           ],
         ),
-        // `.kline-ma`: the averages the chart draws, read out above it. They
-        // are computed here from the closes already on screen, so the line
-        // says so rather than borrowing the series' source.
-        if (readOutAverages && movingAveragePeriods.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 6),
-          Wrap(
-            key: const ValueKey<String>('candles-moving-averages'),
-            spacing: 12,
-            runSpacing: 4,
-            children: <Widget>[
-              for (final period in movingAveragePeriods)
-                if (loopCandleMovingAverageLabel(block.items, period)
-                    case final label?)
-                  Text('最新 $label', style: LoopMono.body),
-              Text(
-                'VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}',
-                style: LoopMono.body,
-              ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         LoopCandleChart(
           key: const ValueKey<String>('token-candle-chart'),
           candles: block.items,
@@ -839,90 +810,97 @@ class _CandleBodyState extends State<_CandleBody> {
               '${block.items.length} 根 K 线，单位 ${block.priceUnit}'
               '${block.items.last.isOpen ? '，最后一根尚未收盘' : ''}',
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: <Widget>[
-            if (marker != null) ...<Widget>[
-              LoopBadge(
-                marker,
-                key: const ValueKey<String>('candles-quality-marker'),
-                // Only a stale series is a warning; `derived` and `proxied`
-                // are honest descriptions of what is being charted.
-                kind: block.quality == LoopFactQuality.stale
-                    ? LoopBadgeKind.down
-                    : LoopBadgeKind.mute,
-              ),
-              const SizedBox(width: 8),
-            ],
-            if (block.items.last.isOpen) ...<Widget>[
-              const LoopBadge(
-                '最后一根进行中',
-                key: ValueKey<String>('candles-open-marker'),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              child: Text(
-                <String>[
-                  // A proxied series may also be an on-chain aggregate, so
-                  // the label is shown whenever the server sends one.
-                  if (block.hasSourceLabel)
-                    marketCandleLabelText(block.labelKey),
-                  // The compact layout has no card heading to carry the
-                  // provider's unit string, and 「2,770.44」 is only a reading
-                  // once the reader knows what it is priced in. It prints
-                  // verbatim, as it does in the heading: LOOP does not
-                  // translate a fact.
-                  if (!readOutAverages) '单位 ${block.priceUnit}',
-                  // Source and pool are one clause: a provider top pool is
-                  // charted but not indexed by LOOP, and saying 「来源
-                  // GeckoTerminal」 apart from 「未登记池」 would let the chart
-                  // imply a trade feed that this asset does not have.
-                  marketCandleSourcePoolText(block.source, block.pool),
-                  '观察于 ${loopRelativeTime(block.fetchedAt)}',
-                ].where((part) => part.isNotEmpty).join(' · '),
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
+        Material(
+          type: MaterialType.transparency,
+          child: ExpansionTile(
+            key: const ValueKey<String>('candle-data-details'),
+            minTileHeight: 44,
+            dense: true,
+            visualDensity: VisualDensity.compact,
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(bottom: 8),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    block.priceUnit,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+                if (block.quality == LoopFactQuality.stale) ...[
+                  const SizedBox(width: 8),
+                  LoopBadge(marker!, kind: LoopBadgeKind.down),
+                ],
+              ],
             ),
-          ],
+            children: [
+              Row(
+                children: <Widget>[
+                  if (marker != null) ...<Widget>[
+                    LoopBadge(
+                      marker,
+                      key: const ValueKey<String>('candles-quality-marker'),
+                      // Only a stale series is a warning; `derived` and `proxied`
+                      // are honest descriptions of what is being charted.
+                      kind: block.quality == LoopFactQuality.stale
+                          ? LoopBadgeKind.down
+                          : LoopBadgeKind.mute,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (block.items.last.isOpen) ...<Widget>[
+                    const LoopBadge(
+                      '最后一根进行中',
+                      key: ValueKey<String>('candles-open-marker'),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      <String>[
+                        // A proxied series may also be an on-chain aggregate, so
+                        // the label is shown whenever the server sends one.
+                        if (block.hasSourceLabel)
+                          marketCandleLabelText(block.labelKey),
+                        // The compact layout has no card heading to carry the
+                        // provider's unit string, and 「2,770.44」 is only a reading
+                        // once the reader knows what it is priced in. It prints
+                        // verbatim, as it does in the heading: LOOP does not
+                        // translate a fact.
+                        // Source and pool are one clause: a provider top pool is
+                        // charted but not indexed by LOOP, and saying 「来源
+                        // GeckoTerminal」 apart from 「未登记池」 would let the chart
+                        // imply a trade feed that this asset does not have.
+                        marketCandleSourcePoolText(block.source, block.pool),
+                        '观察于 ${loopRelativeTime(block.fetchedAt)}',
+                      ].where((part) => part.isNotEmpty).join(' · '),
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-/// 周期 + MA 读数，一行 (approved design). Five periods on the left as compact
-/// chips, the two averages read out on the right.
-///
-/// It replaces a 44pt segmented bar **under** the chart card with a 28pt line
-/// **over** it, which is what puts the whole reading — price, window, periods,
-/// averages, candles and volume — on the first screen.
+/// Compact interval controls with full touch targets above the plot.
 class _CompactChartControls extends StatelessWidget {
   const _CompactChartControls({
     required this.selected,
     required this.onSelected,
-    required this.periods,
-    required this.candles,
     this.trailing,
   });
 
   final LoopCandleInterval selected;
   final ValueChanged<LoopCandleInterval> onSelected;
-  final List<int> periods;
-
-  /// `null` while the series is not readable: the periods stay operable and
-  /// the readout says nothing rather than printing a stale average.
-  final List<LoopCandle>? candles;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final series = candles;
-    final labels = <String>[
-      if (series != null)
-        for (final period in periods)
-          ?loopCandleMovingAverageLabel(series, period),
-    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -941,7 +919,7 @@ class _CompactChartControls extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                     onTap: () => onSelected(interval),
                     child: Container(
-                      height: 28,
+                      height: 44,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
@@ -969,20 +947,6 @@ class _CompactChartControls extends StatelessWidget {
             ?trailing,
           ],
         ),
-        // The averages get the line under the periods, not the room left
-        // beside them: five tabs and the expand glyph leave a 360dp phone
-        // about 60dp, and 「MA7 780.2386 · MA25 786.5496」 was reaching the
-        // reader as 「MA7 7…」.
-        if (labels.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 6),
-          Text(
-            '最新 ${labels.join(' · ')}',
-            key: const ValueKey<String>('token-moving-averages'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LoopType.figureXs,
-          ),
-        ],
       ],
     );
   }

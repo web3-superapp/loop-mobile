@@ -302,17 +302,19 @@ void main() {
         );
 
         expect(find.byType(LoopCandleChart), findsOneWidget);
+        final details = find.byKey(
+          const ValueKey<String>('candle-data-details'),
+        );
+        await scrollToS5Section(tester, details);
+        await tester.tap(details);
+        await tester.pumpAndSettle();
         expect(find.text('按成交价折算'), findsOneWidget);
         expect(
           find.byKey(const ValueKey<String>('candles-open-marker')),
           findsOneWidget,
         );
-        // The price unit is the pool's other token, never USD. It is the
-        // provider's own string and prints verbatim. S82a gave the card's
-        // heading row to the periods and the averages, so the unit moved onto
-        // the provenance line under the panel, where the source and the time
-        // already are.
-        expect(find.textContaining('单位 USDT per WBNB'), findsOneWidget);
+        // The exact provider unit stays visible in the collapsed disclosure.
+        expect(find.text('USDT per WBNB'), findsOneWidget);
       },
     );
 
@@ -335,12 +337,18 @@ void main() {
           ),
         );
 
+        final details = find.byKey(
+          const ValueKey<String>('candle-data-details'),
+        );
+        await scrollToS5Section(tester, details);
+        await tester.tap(details);
+        await tester.pumpAndSettle();
         // Same chip as the wallet page's proxied valuation.
         expect(find.text('以 WBNB 计价'), findsOneWidget);
         // The aggregate note is not swallowed by the proxy note; it sits in
         // the provenance line under the chart.
         expect(find.textContaining('按成交价折算'), findsOneWidget);
-        expect(find.textContaining('单位 USD per WBNB'), findsOneWidget);
+        expect(find.text('USD per WBNB'), findsOneWidget);
       },
     );
 
@@ -366,6 +374,10 @@ void main() {
         ),
       );
 
+      final details = find.byKey(const ValueKey<String>('candle-data-details'));
+      await scrollToS5Section(tester, details);
+      await tester.tap(details);
+      await tester.pumpAndSettle();
       expect(find.textContaining('主池来自 GeckoTerminal'), findsOneWidget);
       expect(find.textContaining('未登记池'), findsOneWidget);
       // 「来源 X · 池 Y」 is the registered wording; it must not read as if
@@ -382,6 +394,10 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
+      final details = find.byKey(const ValueKey<String>('candle-data-details'));
+      await scrollToS5Section(tester, details);
+      await tester.tap(details);
+      await tester.pumpAndSettle();
       expect(find.textContaining('来源 LOOP 链上索引 · 池 0x'), findsOneWidget);
       expect(find.textContaining('未登记池'), findsNothing);
     });

@@ -218,14 +218,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('wallet-create-unavailable')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('wallet-create-progress')),
         findsNothing,
       );
       expect(_enabled(tester, 'wallet-create-continue'), isFalse);
-      expect(find.textContaining('助记词'), findsWidgets);
+      expect(find.text('暂时无法创建钱包，请稍后重试。'), findsOneWidget);
     });
 
     testWidgets('continues to the recovery step when the wallet can be made', (

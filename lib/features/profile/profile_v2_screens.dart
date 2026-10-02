@@ -131,12 +131,10 @@ class LoopProfileAvatar extends StatelessWidget {
   }
 }
 
-/// `开发预览` eyebrow for a Preview-backed page. Production and unavailable
-/// modes carry no kicker, so the label can never appear outside Preview.
-String? loopPreviewKicker(bool isPreview) => isPreview ? '开发预览' : null;
+/// Retained call-site seam; repeated developer headings are hidden (0111).
+String? loopPreviewKicker(bool isPreview) => null;
 
-/// Visible Preview truth label (constraint 10). Edits made here persist only
-/// for the running Preview and never reach an account or a provider.
+/// Zero-size compatibility seam for removed developer notices (0111).
 class LoopPreviewModeNotice extends StatelessWidget {
   const LoopPreviewModeNotice({
     required this.isPreview,
@@ -150,17 +148,7 @@ class LoopPreviewModeNotice extends StatelessWidget {
   final String resource;
 
   @override
-  Widget build(BuildContext context) {
-    if (!isPreview) return const SizedBox.shrink();
-    return LoopNotice(
-      key: const ValueKey<String>('loop-preview-mode-notice'),
-      icon: 'info',
-      tone: LoopNoticeTone.warn,
-      title: '开发预览',
-      body: '$resource只保存在本次运行的内存里，不会写入账号，也不会调用任何 Provider。',
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 /// The five reviewed states for a Profile-backed page.

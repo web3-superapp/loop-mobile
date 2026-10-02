@@ -97,7 +97,7 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
   /// MA readouts above the plot, the card's own padding, the interval row,
   /// the indicator row and the provenance line under it. Measured against the
   /// rendered page rather than guessed — the chart takes whatever is left.
-  static const double _chromeHeight = 340;
+  static const double _chromeHeight = 270;
 
   /// Below this the plot stops being a chart and becomes a stripe, so the
   /// page scrolls instead of shrinking further.

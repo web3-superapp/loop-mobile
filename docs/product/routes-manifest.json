@@ -5,7 +5,6 @@
   "defaultRoute": "community",
   "tabs": [
     "community",
-    "chat",
     "mining",
     "launch",
     "market",
@@ -68,7 +67,7 @@
     "2-community": [
       {
         "slug": "chat",
-        "tab": true,
+        "tab": false,
         "prototypeOrder": 93
       },
       {

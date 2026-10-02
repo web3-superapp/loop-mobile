@@ -374,6 +374,15 @@ void main() {
       final callers = <String>{};
       for (final file in Directory('lib').listSync(recursive: true)) {
         if (file is! File || !file.path.endsWith('.dart')) continue;
+        final bytes = file.readAsBytesSync();
+        if (file.uri.pathSegments.last.startsWith('._') &&
+            bytes.length >= 4 &&
+            bytes[0] == 0 &&
+            bytes[1] == 5 &&
+            bytes[2] == 0x16 &&
+            bytes[3] == 7) {
+          continue;
+        }
         if (!file.readAsStringSync().contains('loopFormatCompactFigure')) {
           continue;
         }

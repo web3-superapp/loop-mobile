@@ -293,7 +293,9 @@ void main() {
 
   group('preview truth', () {
     for (final surfaceId in <String>['profile', 'profile-edit', 'privacy']) {
-      testWidgets('$surfaceId labels a Preview session', (tester) async {
+      testWidgets('$surfaceId omits repetitive Preview notices', (
+        tester,
+      ) async {
         await _pump(
           tester,
           surfaceId,
@@ -303,9 +305,9 @@ void main() {
 
         expect(
           find.byKey(const ValueKey<String>('loop-preview-mode-notice')),
-          findsOneWidget,
+          findsNothing,
         );
-        expect(find.text('开发预览'), findsWidgets);
+        expect(find.text('开发预览'), findsNothing);
       });
 
       testWidgets('$surfaceId carries no Preview label in production', (

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/widgets/community_chat_segment.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -43,7 +44,7 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
       key: const ValueKey<String>('chat-preview-inbox'),
       archetype: LoopPageArchetype.listing,
       title: '聊天',
-      subtitle: '好友私聊与群聊，都在这里',
+      titleWidget: const CommunityChatSegment(location: '/chat'),
       tabPage: true,
       actions: <Widget>[
         IconButton(
@@ -128,6 +129,7 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
                         for (final conversation in visible) ...<Widget>[
                           ConversationRow(
                             conversation: conversation,
+                            showMetadata: false,
                             onTap: () =>
                                 _openConversation(context, conversation),
                           ),
@@ -146,12 +148,6 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
                       child: const Text('重试'),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '演示数据 · 会话和消息仅保存在本次预览中',
-                  key: const ValueKey<String>('communication-mode-status'),
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
                 ),
               ]
               .map(
@@ -183,13 +179,7 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
     if (location == null) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Preview conversation unavailable. No fallback was opened.',
-            ),
-          ),
-        );
+        ..showSnackBar(const SnackBar(content: Text('会话暂时无法打开，请返回列表重试。')));
       return;
     }
     context.push(location);

@@ -83,7 +83,7 @@ final class LoopRouteEntry {
 
   final LoopRouteStatus status;
 
-  /// Whether this route is one of the six primary destinations.
+  /// Whether this route is one of the five primary destinations.
   final bool tab;
 
   /// A previously mounted location for the same page. History only.
@@ -103,10 +103,9 @@ abstract final class LoopRouteManifest {
   static const String defaultSlug = 'community';
   static const String defaultPath = '/community';
 
-  /// The six primary destinations in their fixed order.
+  /// The five primary destinations in their fixed order.
   static const List<String> tabSlugs = <String>[
     'community',
-    'chat',
     'mining',
     'launch',
     'market',
@@ -319,7 +318,6 @@ abstract final class LoopRouteManifest {
       prototypeOrder: 93,
       step: 4,
       status: LoopRouteStatus.implemented,
-      tab: true,
     ),
     // 2-community · Community (16 original routes)
     LoopRouteEntry(

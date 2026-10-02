@@ -417,6 +417,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.primary,
     super.key,
     this.kicker,
+    this.titleWidget,
     this.onBack,
     this.actions = const <Widget>[],
     this.tabPage = false,
@@ -430,6 +431,9 @@ class LoopDashboardPage extends StatelessWidget {
 
   final LoopPageArchetype archetype;
   final String title;
+
+  /// Optional title control, such as the community/chat switch.
+  final Widget? titleWidget;
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
@@ -535,6 +539,7 @@ class LoopDashboardPage extends StatelessWidget {
                   topPadding: topPadding,
                   child: LoopTopbar(
                     title: title,
+                    titleField: titleWidget,
                     kicker: kicker,
                     subtitle: subtitle,
                     onBack: onBack,

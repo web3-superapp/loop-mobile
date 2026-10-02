@@ -763,15 +763,7 @@ class _FriendPreviewBanner extends StatelessWidget {
   const _FriendPreviewBanner();
 
   @override
-  Widget build(BuildContext context) {
-    return const LoopStateCard(
-      key: ValueKey<String>('friend-preview-banner'),
-      title: '开发预览 · 仅本次运行',
-      message: '好友、请求与新群组只保存在内存中，不会写入 LOOP 后端或 Stream。',
-      icon: Icons.science_outlined,
-      tone: LoopTone.conversation,
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class _FriendIdentityRow extends StatelessWidget {

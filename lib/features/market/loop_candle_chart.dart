@@ -46,11 +46,13 @@ class LoopCandleChart extends StatefulWidget {
 }
 
 class _LoopCandleChartState extends State<LoopCandleChart> {
-  int _count = 45;
+  int _count = 60;
   double _start = 0;
   LoopCandle? _selected;
   int _gestureAnchor = 0;
-  int _gestureCount = 45;
+  int _gestureCount = 60;
+  double _previousScale = 1;
+  double _gestureScale = 1;
   @override
   void initState() {
     super.initState();
@@ -58,7 +60,7 @@ class _LoopCandleChartState extends State<LoopCandleChart> {
   }
 
   void _latest() {
-    _count = math.min(45, widget.candles.length);
+    _count = math.min(60, widget.candles.length);
     _start = math.max(0, widget.candles.length - _count).toDouble();
   }
 
@@ -68,7 +70,7 @@ class _LoopCandleChartState extends State<LoopCandleChart> {
     if (widget.candles == oldWidget.candles) return;
     final followedLatest = _start + _count >= oldWidget.candles.length - 1;
     _count = math.min(math.max(1, _count), widget.candles.length);
-    if (oldWidget.candles.isEmpty) _count = math.min(45, widget.candles.length);
+    if (oldWidget.candles.isEmpty) _count = math.min(60, widget.candles.length);
     _start = followedLatest
         ? math.max(0, widget.candles.length - _count).toDouble()
         : _bounded(_start);
@@ -145,6 +147,12 @@ class _LoopCandleChartState extends State<LoopCandleChart> {
     return best.toDouble();
   }
 
+  void _pan(double pixels, double plotWidth) {
+    if (widget.candles.isEmpty) return;
+    _clearSelection();
+    setState(() => _start = _bounded(_start - pixels / plotWidth * _count));
+  }
+
   void _zoom(double factor, double fraction) {
     if (widget.candles.isEmpty) return;
     _clearSelection();
@@ -205,14 +213,18 @@ class _LoopCandleChartState extends State<LoopCandleChart> {
                           if (event is PointerScrollEvent &&
                               widget.candles.isNotEmpty) {
                             GestureBinding.instance.pointerSignalResolver
-                                .register(
-                                  event,
-                                  (_) => _zoom(
-                                    math.exp(event.scrollDelta.dy * 0.002),
-                                    ((event.localPosition.dx - 6) / plotWidth)
-                                        .clamp(0.0, 1.0),
-                                  ),
-                                );
+                                .register(event, (_) {
+                                  if (event.scrollDelta.dx.abs() >
+                                      event.scrollDelta.dy.abs()) {
+                                    _pan(-event.scrollDelta.dx, plotWidth);
+                                  } else {
+                                    _zoom(
+                                      math.exp(event.scrollDelta.dy * 0.002),
+                                      ((event.localPosition.dx - 6) / plotWidth)
+                                          .clamp(0.0, 1.0),
+                                    );
+                                  }
+                                });
                           }
                         },
                         child: GestureDetector(
@@ -226,6 +238,8 @@ class _LoopCandleChartState extends State<LoopCandleChart> {
                           onScaleStart: (event) {
                             _clearSelection();
                             _gestureCount = _count;
+                            _previousScale = 1;
+                            _gestureScale = 1;
                             _gestureAnchor = _timeAt(
                               ((event.localFocalPoint.dx - 6) / plotWidth)
                                   .clamp(0.0, 1.0),
@@ -233,15 +247,29 @@ class _LoopCandleChartState extends State<LoopCandleChart> {
                           },
                           onScaleUpdate: (event) {
                             if (widget.candles.isEmpty) return;
+                            // Incremental movement discards overscroll at either
+                            // edge, so reversing direction responds immediately.
+                            if (event.scale == _previousScale) {
+                              _pan(event.focalPointDelta.dx, plotWidth);
+                              _gestureCount = _count;
+                              _gestureScale = event.scale;
+                              _gestureAnchor = _timeAt(
+                                ((event.localFocalPoint.dx - 6) / plotWidth)
+                                    .clamp(0.0, 1.0),
+                              );
+                              return;
+                            }
+                            _previousScale = event.scale;
                             setState(() {
                               final currentFraction =
                                   (event.localFocalPoint.dx - 6) / plotWidth;
-                              _count = (_gestureCount / event.scale)
-                                  .round()
-                                  .clamp(
-                                    math.min(8, widget.candles.length),
-                                    widget.candles.length,
-                                  );
+                              _count =
+                                  (_gestureCount * _gestureScale / event.scale)
+                                      .round()
+                                      .clamp(
+                                        math.min(8, widget.candles.length),
+                                        widget.candles.length,
+                                      );
                               _start = _startForTime(
                                 _gestureAnchor,
                                 currentFraction,

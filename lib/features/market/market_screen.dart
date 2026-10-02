@@ -235,23 +235,6 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
               ),
             ],
           },
-        if (overview != null && _tab != MarketTab.newPairs)
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('market-smart-money-entry'),
-                title: '聪明钱追踪',
-                subtitle: loopReasonCodeText(overview.smartMoney.reasonCode),
-                trailingBadge: const LoopBadge('不可用'),
-                onTap: () => _open('/market/smart-money'),
-              ),
-            ],
-          ),
-        const LoopNotice(
-          key: ValueKey<String>('market-truth-notice'),
-          title: '不只看价格',
-          body: 'LOOP 只显示标注了出处和时间的数据，不给评分、评级或结论。读不到时会说明原因，不会显示 0。',
-        ),
       ],
     );
   }
@@ -397,8 +380,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
   /// instead of pretending the tap adds anything.
   LoopRecordRow _addRow(VoidCallback onTap) => LoopRecordRow(
     key: const ValueKey<String>('market-watchlist-add'),
-    title: '添加自选资产',
-    subtitle: '打开代币页，点右上角星标 · 「热门」和「新币」都能打开代币页',
+    title: '浏览代币',
     onTap: onTap,
   );
 }

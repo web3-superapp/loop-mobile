@@ -53,11 +53,6 @@ class _ConversationPage extends ConsumerWidget {
     final direct = target.kind == ConversationKind.direct;
     final gateway = ref.watch(communicationGatewayProvider);
     final preview = gateway.mode == CommunicationMode.preview;
-    final connectionLabel = preview
-        ? 'Offline preview · simulated conversation'
-        : gateway.isConfigured
-        ? 'Stream presence not verified'
-        : 'Stream not connected';
     final messages = ref.watch(conversationMessagesProvider(conversationId));
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -87,12 +82,6 @@ class _ConversationPage extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    connectionLabel,
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(color: LoopColors.vapor),
                   ),
                 ],
               ),
@@ -130,7 +119,6 @@ class _ConversationPage extends ConsumerWidget {
             Column(
               children: <Widget>[
                 if (!direct) const _PinnedMessageBanner(),
-                if (direct) const _DirectProtectionNote(),
                 Expanded(
                   child: Align(
                     alignment: Alignment.topCenter,
@@ -218,11 +206,7 @@ class _ConversationPage extends ConsumerWidget {
                 ),
                 ChatComposer(
                   enabled: preview || gateway.isConfigured,
-                  hintText: preview
-                      ? 'Simulate a message in this preview'
-                      : direct
-                      ? 'Message 0xSable'
-                      : 'Message Glyph Hunters',
+                  hintText: '输入消息',
                   onSend: (text) async {
                     final result = await ref
                         .read(communicationGatewayProvider)
@@ -232,17 +216,6 @@ class _ConversationPage extends ConsumerWidget {
                       ref.invalidate(
                         conversationMessagesProvider(conversationId),
                       );
-                      if (preview) {
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Simulated message added to the offline preview.',
-                              ),
-                            ),
-                          );
-                      }
                     } else {
                       ScaffoldMessenger.of(context)
                         ..hideCurrentSnackBar()
@@ -314,39 +287,6 @@ class _PinnedMessageBanner extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _DirectProtectionNote extends StatelessWidget {
-  const _DirectProtectionNote();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-      decoration: BoxDecoration(
-        color: LoopColors.chat.withValues(alpha: 0.06),
-        border: const Border(
-          top: BorderSide(color: LoopColors.line),
-          bottom: BorderSide(color: LoopColors.line),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Icon(Icons.shield_outlined, size: 15, color: LoopColors.chat),
-          const SizedBox(width: 7),
-          Flexible(
-            child: Text(
-              'Message protection follows your current account and service settings.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ),
-        ],
       ),
     );
   }

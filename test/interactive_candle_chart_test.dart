@@ -8,7 +8,7 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 
 import 'support/loop_ground_probe.dart';
 
-List<LoopCandle> candles({int count = 60, String? flat}) =>
+List<LoopCandle> candles({int count = 90, String? flat}) =>
     List.generate(count, (i) {
       final price = Decimal.parse(flat ?? '${100 + i}');
       return LoopCandle(
@@ -90,7 +90,7 @@ void main() {
     testWidgets('pan zoom and latest reset at $width', (tester) async {
       await pumpChart(tester, candles(), width: width);
       final initial = range(tester);
-      expect(initial, contains('16–60'));
+      expect(initial, contains('31–90'));
       await tester.drag(
         find.byKey(const ValueKey('loop-candle-chart-canvas')),
         const Offset(130, 0),
@@ -99,13 +99,96 @@ void main() {
       expect(range(tester), isNot(initial));
       await tester.tap(find.byKey(const ValueKey('candle-zoom-in')));
       await tester.pumpAndSettle();
-      expect(range(tester), contains('/60'));
+      expect(range(tester), contains('/90'));
       await tester.tap(find.byKey(const ValueKey('candle-reset')));
       await tester.pumpAndSettle();
       expect(range(tester), initial);
       expect(tester.takeException(), isNull);
     });
   }
+  testWidgets('horizontal trackpad scroll pans without changing zoom', (
+    tester,
+  ) async {
+    await pumpChart(tester, candles(count: 360));
+    final canvas = find.byKey(const ValueKey('loop-candle-chart-canvas'));
+    final before = range(tester);
+    await tester.sendEventToBinding(
+      PointerScrollEvent(
+        position: tester.getCenter(canvas),
+        scrollDelta: const Offset(-100, 0),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(range(tester), isNot(before));
+    final bounds = range(tester)
+        .split('/')
+        .first
+        .split('–')
+        .map(int.parse)
+        .toList();
+    expect(bounds.last - bounds.first + 1, 60);
+    await tester.sendEventToBinding(
+      PointerScrollEvent(
+        position: tester.getCenter(canvas),
+        scrollDelta: const Offset(100, 0),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(range(tester), before);
+  });
+  testWidgets('drag reverses immediately after hitting a history boundary', (
+    tester,
+  ) async {
+    await pumpChart(tester, candles());
+    final canvas = find.byKey(const ValueKey('loop-candle-chart-canvas'));
+    final origin = tester.getTopLeft(canvas) + const Offset(50, 80);
+    final gesture = await tester.startGesture(origin);
+    await gesture.moveBy(const Offset(180, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(180, 0));
+    await tester.pump();
+    expect(range(tester), contains('1–60'));
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump();
+    expect(range(tester), isNot(contains('1–60')));
+    await gesture.up();
+  });
+  testWidgets('native trackpad reverses at bounds and keeps pinch baseline', (
+    tester,
+  ) async {
+    await pumpChart(tester, candles());
+    final origin = tester.getCenter(
+      find.byKey(const ValueKey('loop-candle-chart-canvas')),
+    );
+    final gesture = await tester.createGesture(
+      kind: PointerDeviceKind.trackpad,
+    );
+    await gesture.panZoomStart(origin);
+    await gesture.panZoomUpdate(origin, pan: const Offset(800, 0));
+    await tester.pump();
+    await gesture.panZoomUpdate(origin, pan: const Offset(1200, 0));
+    await tester.pump();
+    expect(range(tester), contains('1–60'));
+    await gesture.panZoomUpdate(origin, pan: const Offset(1160, 0));
+    await tester.pump();
+    expect(range(tester), isNot(contains('1–60')));
+    await gesture.panZoomEnd();
+    await gesture.panZoomStart(origin);
+    await gesture.panZoomUpdate(origin, scale: 2);
+    await tester.pump();
+    await gesture.panZoomUpdate(origin, scale: 2, pan: const Offset(10, 0));
+    await tester.pump();
+    await gesture.panZoomUpdate(origin, scale: 2.1, pan: const Offset(10, 0));
+    await tester.pump();
+    final bounds = range(tester)
+        .split('/')
+        .first
+        .split('–')
+        .map(int.parse)
+        .toList();
+    expect(bounds.last - bounds.first + 1, inInclusiveRange(28, 30));
+    await gesture.panZoomEnd();
+  });
   testWidgets(
     'selection uses an existing timestamp and clears when data empties',
     (tester) async {
@@ -128,7 +211,7 @@ void main() {
     tester,
   ) async {
     await pumpChart(tester, candles(flat: '0.00000000000001234'));
-    expect(range(tester), contains('16–60'));
+    expect(range(tester), contains('31–90'));
     await pumpChart(tester, candles(count: 1, flat: '0'));
     expect(range(tester), contains('1–1'));
     expect(tester.takeException(), isNull);
@@ -168,7 +251,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(range(tester), contains('1–60/60'));
+      expect(range(tester), contains('1–90/90'));
       await tester.sendEventToBinding(
         PointerScrollEvent(
           position: tester.getTopLeft(canvas) + const Offset(120, 90),
@@ -189,7 +272,7 @@ void main() {
   testWidgets(
     'pinch zoom and selection callback use real candles across gaps',
     (tester) async {
-      final data = candles();
+      final data = candles(count: 60);
       LoopCandle? selected;
       await tester.pumpWidget(
         MaterialApp(
@@ -213,9 +296,7 @@ void main() {
       // ignore: avoid_dynamic_calls
       final width = 360 - (initialPainter.axisWidth as double) - 12;
       // 34:00 is inside the missing 30..39 interval, nearest the real 29:00 bucket.
-      await tester.tapAt(
-        origin + Offset(6 + (34 - 15) / (69 - 15) * width, 80),
-      );
+      await tester.tapAt(origin + Offset(6 + 34 / 69 * width, 80));
       await tester.pumpAndSettle();
       expect(selected, same(data[29]));
       final before = range(tester);

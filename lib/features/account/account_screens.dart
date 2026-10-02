@@ -773,7 +773,7 @@ class ExternalWalletScreen extends StatelessWidget {
             icon: 'warn',
             tone: LoopNoticeTone.warn,
             title: '外部钱包连接暂不可用',
-            body: '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。',
+            body: '钱包连接暂时不可用，请稍后再试。',
           ),
         const LoopLabel('可连接的钱包'),
         const LoopEmpty(
@@ -818,10 +818,7 @@ class WalletCreateScreen extends StatelessWidget {
         '钱包还在创建中，可以先继续',
         '等了 60 秒仍然没有看到钱包，这不代表失败。LOOP 不使用助记词。',
       ),
-      LoopWalletCreationPhase.unavailable => (
-        '还没有开始创建',
-        'Privy 尚未确认内置钱包能力，这一页不会伪造进度。LOOP 不使用助记词。',
-      ),
+      LoopWalletCreationPhase.unavailable => ('还没有开始创建', '暂时无法创建钱包，请稍后重试。'),
     };
     return LoopFocusPage(
       archetype: LoopPageArchetype.intro,
@@ -840,14 +837,6 @@ class WalletCreateScreen extends StatelessWidget {
       body: <Widget>[
         const IdentityProgress(step: 2, total: 5, label: '创建钱包'),
         const IdentityStepCopy('安全钱包正在本地初始化。'),
-        if (phase == LoopWalletCreationPhase.unavailable)
-          const LoopNotice(
-            key: ValueKey<String>('wallet-create-unavailable'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '钱包创建暂不可用',
-            body: 'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。',
-          ),
         if (facts.providerMessage case final String message)
           LoopNotice(
             key: const ValueKey<String>('wallet-create-provider-message'),
@@ -1334,7 +1323,7 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
               key: ValueKey<String>('wallet-recovery-unavailable'),
               icon: 'info',
               title: '现在还不能再加一种',
-              body: '$walletRecoveryProviderPending。下面的选项不会在本地模拟，也不会预先勾选。',
+              body: walletRecoveryProviderPending,
             ),
           const LoopLabel('恢复方式'),
           LoopRecordGroup(
@@ -1498,7 +1487,7 @@ class SecuritySetupScreen extends StatelessWidget {
           icon: 'warn',
           tone: LoopNoticeTone.warn,
           title: '交易验证还开不了',
-          body: '下面写的是每一项开不了的原因。LOOP 不会保存 PIN，也不会把「能开」说成「已经开了」。',
+          body: '部分安全设置暂不可用，请查看各项说明。',
         ),
         const LoopLabel('应用锁'),
         LoopRecordGroup(rows: <LoopRecordRow>[_appLockRow()]),
