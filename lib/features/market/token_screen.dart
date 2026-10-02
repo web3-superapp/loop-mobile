@@ -559,7 +559,7 @@ class _TokenCandleBlock extends ConsumerWidget {
       // The design's own shape: the periods and the two averages on one line
       // directly over the panel, the panel itself carrying the volume bars.
       compactControls: true,
-      height: 236,
+      height: 320,
       movingAveragePeriods: const <int>[7, 25],
       trailing: LoopIconButton(
         key: const ValueKey<String>('token-chart-expand'),
@@ -698,6 +698,9 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
                       margin: EdgeInsets.zero,
                     ),
                   MarketCandlesAvailable() => _CandleBody(
+                    key: ValueKey<String>(
+                      'candle-body-${widget.assetId}-${widget.interval.wireName}',
+                    ),
                     block: block,
                     height: widget.height,
                     movingAveragePeriods: widget.movingAveragePeriods,
@@ -722,8 +725,9 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
   }
 }
 
-class _CandleBody extends StatelessWidget {
+class _CandleBody extends StatefulWidget {
   const _CandleBody({
+    super.key,
     required this.block,
     required this.height,
     this.movingAveragePeriods = const <int>[],
@@ -740,6 +744,24 @@ class _CandleBody extends StatelessWidget {
   final bool readOutAverages;
 
   @override
+  State<_CandleBody> createState() => _CandleBodyState();
+}
+
+class _CandleBodyState extends State<_CandleBody> {
+  LoopCandle? _selected;
+  MarketCandlesAvailable get block => widget.block;
+  double get height => widget.height;
+  List<int> get movingAveragePeriods => widget.movingAveragePeriods;
+  bool get showVolume => widget.showVolume;
+  bool get readOutAverages => widget.readOutAverages;
+
+  @override
+  void didUpdateWidget(covariant _CandleBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.block != widget.block) _selected = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (block.items.isEmpty) {
       return const LoopEmpty(
@@ -749,11 +771,19 @@ class _CandleBody extends StatelessWidget {
         margin: EdgeInsets.zero,
       );
     }
-    final last = block.items.last;
+    final last = _selected ?? block.items.last;
     final marker = loopFactQualityMarker(block.quality);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        Text(
+          _selected == null
+              ? '最新 · VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}'
+              : '${last.openTime.toUtc().toIso8601String().substring(0, 16).replaceFirst('T', ' ')} UTC · VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}',
+          key: const ValueKey<String>('candle-selection-time'),
+          style: LoopTypography.caption(11),
+        ),
+        const SizedBox(height: 4),
         Wrap(
           spacing: 12,
           runSpacing: 4,
@@ -789,7 +819,7 @@ class _CandleBody extends StatelessWidget {
               for (final period in movingAveragePeriods)
                 if (loopCandleMovingAverageLabel(block.items, period)
                     case final label?)
-                  Text(label, style: LoopMono.body),
+                  Text('最新 $label', style: LoopMono.body),
               Text(
                 'VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}',
                 style: LoopMono.body,
@@ -804,9 +834,10 @@ class _CandleBody extends StatelessWidget {
           height: height,
           movingAveragePeriods: movingAveragePeriods,
           showVolume: showVolume,
+          onCandleSelected: (candle) => setState(() => _selected = candle),
           semanticLabel:
               '${block.items.length} 根 K 线，单位 ${block.priceUnit}'
-              '${last.isOpen ? '，最后一根尚未收盘' : ''}',
+              '${block.items.last.isOpen ? '，最后一根尚未收盘' : ''}',
         ),
         const SizedBox(height: 8),
         Row(
@@ -823,7 +854,7 @@ class _CandleBody extends StatelessWidget {
               ),
               const SizedBox(width: 8),
             ],
-            if (last.isOpen) ...<Widget>[
+            if (block.items.last.isOpen) ...<Widget>[
               const LoopBadge(
                 '最后一根进行中',
                 key: ValueKey<String>('candles-open-marker'),
@@ -945,7 +976,7 @@ class _CompactChartControls extends StatelessWidget {
         if (labels.isNotEmpty) ...<Widget>[
           const SizedBox(height: 6),
           Text(
-            labels.join(' · '),
+            '最新 ${labels.join(' · ')}',
             key: const ValueKey<String>('token-moving-averages'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

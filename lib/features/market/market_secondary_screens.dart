@@ -189,6 +189,7 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
           key: ValueKey<String>('chart-full-interval-notice'),
           title: '这张图能做什么',
           body:
+              '左右拖动查看历史，双指或滚轮缩放，长按查看每根 K 线的数据。'
               '可选周期为 15m / 1H / 4H / 1D / 1W，1m 暂时不可用。'
               'MA 与 VOL 由本机按这张图上的收盘价与成交量计算，没有单独的数据来源；'
               '除此之外没有其他指标，也没有画线工具。',

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -24,7 +25,7 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 /// candles, which is a fourth and fifth hue the design system does not have
 /// (audit 2026-09-21 §D+ item 12). Direction is carried by fill versus
 /// outline here, exactly as the prototype carries it.
-class LoopCandleChart extends StatelessWidget {
+class LoopCandleChart extends StatefulWidget {
   const LoopCandleChart({
     required this.candles,
     required this.semanticLabel,
@@ -32,57 +33,402 @@ class LoopCandleChart extends StatelessWidget {
     this.height = 220,
     this.movingAveragePeriods = const <int>[],
     this.showVolume = true,
+    this.onCandleSelected,
   });
-
   final List<LoopCandle> candles;
   final String semanticLabel;
   final double height;
-
-  /// Close-price moving averages drawn over the bodies, shortest first.
-  ///
-  /// Each line is a mean of the closes already on screen and of nothing else:
-  /// no server publishes it, so it is never presented as a fact with a source.
-  /// The caller labels it and says where it came from.
   final List<int> movingAveragePeriods;
-
-  /// `.kline-volume`: the bar row under the price panel.
   final bool showVolume;
+  final ValueChanged<LoopCandle?>? onCandleSelected;
+  @override
+  State<LoopCandleChart> createState() => _LoopCandleChartState();
+}
+
+class _LoopCandleChartState extends State<LoopCandleChart> {
+  int _count = 45;
+  double _start = 0;
+  LoopCandle? _selected;
+  int _gestureAnchor = 0;
+  int _gestureCount = 45;
+  @override
+  void initState() {
+    super.initState();
+    _latest();
+  }
+
+  void _latest() {
+    _count = math.min(45, widget.candles.length);
+    _start = math.max(0, widget.candles.length - _count).toDouble();
+  }
+
+  @override
+  void didUpdateWidget(covariant LoopCandleChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.candles == oldWidget.candles) return;
+    final followedLatest = _start + _count >= oldWidget.candles.length - 1;
+    _count = math.min(math.max(1, _count), widget.candles.length);
+    if (oldWidget.candles.isEmpty) _count = math.min(45, widget.candles.length);
+    _start = followedLatest
+        ? math.max(0, widget.candles.length - _count).toDouble()
+        : _bounded(_start);
+    if (_selected != null) {
+      final matching = widget.candles.where(
+        (c) => c.openTime == _selected!.openTime,
+      );
+      _selected = matching.isEmpty ? null : matching.first;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onCandleSelected?.call(_selected);
+      });
+    }
+  }
+
+  double _bounded(double value) =>
+      value.clamp(0, math.max(0, widget.candles.length - _count)).toDouble();
+  void _clearSelection() {
+    if (_selected == null) return;
+    setState(() => _selected = null);
+    widget.onCandleSelected?.call(null);
+  }
+
+  void _select(Offset position, double plotWidth, List<LoopCandle> visible) {
+    if (visible.isEmpty) return;
+    final fraction = ((position.dx - 6) / plotWidth).clamp(0.0, 1.0);
+    final target =
+        visible.first.openTime.microsecondsSinceEpoch +
+        (visible.last.openTime
+                    .difference(visible.first.openTime)
+                    .inMicroseconds *
+                fraction)
+            .round();
+    final candle = visible.reduce(
+      (a, b) =>
+          (a.openTime.microsecondsSinceEpoch - target).abs() <=
+              (b.openTime.microsecondsSinceEpoch - target).abs()
+          ? a
+          : b,
+    );
+    if (_selected == candle) return;
+    setState(() => _selected = candle);
+    widget.onCandleSelected?.call(candle);
+  }
+
+  int _timeAt(double fraction) {
+    if (widget.candles.isEmpty) return 0;
+    final first =
+        widget.candles[_start.round()].openTime.microsecondsSinceEpoch;
+    final last = widget
+        .candles[math.min(
+          widget.candles.length - 1,
+          _start.round() + _count - 1,
+        )]
+        .openTime
+        .microsecondsSinceEpoch;
+    return first + ((last - first) * fraction).round();
+  }
+
+  // Choose the discrete window whose timestamp at the finger is closest to
+  // the original timestamp. Index fractions would shift the anchor at gaps.
+  double _startForTime(int anchor, double fraction) {
+    var best = 0;
+    var distance = double.infinity;
+    for (var start = 0; start <= widget.candles.length - _count; start++) {
+      final first = widget.candles[start].openTime.microsecondsSinceEpoch;
+      final last =
+          widget.candles[start + _count - 1].openTime.microsecondsSinceEpoch;
+      final delta = (first + (last - first) * fraction - anchor).abs();
+      if (delta < distance) {
+        best = start;
+        distance = delta;
+      }
+    }
+    return best.toDouble();
+  }
+
+  void _zoom(double factor, double fraction) {
+    if (widget.candles.isEmpty) return;
+    _clearSelection();
+    setState(() {
+      final anchor = _timeAt(fraction);
+      _count = (_count * factor).round().clamp(
+        math.min(8, widget.candles.length),
+        widget.candles.length,
+      );
+      _start = _startForTime(anchor, fraction);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final from = _start
+        .round()
+        .clamp(0, math.max(0, widget.candles.length - _count))
+        .toInt();
+    final visible = widget.candles
+        .skip(from)
+        .take(_count)
+        .toList(growable: false);
+    final averages = <List<Decimal>>[
+      for (final period in widget.movingAveragePeriods)
+        loopCandleMovingAverage(
+          widget.candles,
+          period,
+        ).skip(from).take(_count).toList(growable: false),
+    ];
+    final textScaler = MediaQuery.textScalerOf(context);
+    final axisWidth = _chartAxisWidth(visible, textScaler);
     return RepaintBoundary(
       key: const ValueKey<String>('loop-candle-chart-boundary'),
-      child: Semantics(
-        key: const ValueKey<String>('loop-candle-chart-semantics'),
-        container: true,
-        image: true,
-        label: semanticLabel,
-        child: ExcludeSemantics(
-          child: SizedBox(
-            width: double.infinity,
-            height: height,
-            child: CustomPaint(
-              key: const ValueKey<String>('loop-candle-chart-canvas'),
-              painter: _LoopCandlePainter(
-                candles: candles,
-                movingAveragePeriods: movingAveragePeriods,
-                showVolume: showVolume,
-                textScaler: MediaQuery.textScalerOf(context),
+      child: SizedBox(
+        height: widget.height,
+        width: double.infinity,
+        child: Column(
+          children: [
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final plotWidth = math.max(
+                    1.0,
+                    constraints.maxWidth - axisWidth - 12,
+                  );
+                  return Semantics(
+                    key: const ValueKey<String>('loop-candle-chart-semantics'),
+                    container: true,
+                    image: true,
+                    label: widget.semanticLabel,
+                    child: MouseRegion(
+                      onExit: (_) => _clearSelection(),
+                      onHover: (event) =>
+                          _select(event.localPosition, plotWidth, visible),
+                      child: Listener(
+                        onPointerSignal: (event) {
+                          if (event is PointerScrollEvent &&
+                              widget.candles.isNotEmpty) {
+                            GestureBinding.instance.pointerSignalResolver
+                                .register(
+                                  event,
+                                  (_) => _zoom(
+                                    math.exp(event.scrollDelta.dy * 0.002),
+                                    ((event.localPosition.dx - 6) / plotWidth)
+                                        .clamp(0.0, 1.0),
+                                  ),
+                                );
+                          }
+                        },
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapUp: (event) =>
+                              _select(event.localPosition, plotWidth, visible),
+                          onLongPressStart: (event) =>
+                              _select(event.localPosition, plotWidth, visible),
+                          onLongPressMoveUpdate: (event) =>
+                              _select(event.localPosition, plotWidth, visible),
+                          onScaleStart: (event) {
+                            _clearSelection();
+                            _gestureCount = _count;
+                            _gestureAnchor = _timeAt(
+                              ((event.localFocalPoint.dx - 6) / plotWidth)
+                                  .clamp(0.0, 1.0),
+                            );
+                          },
+                          onScaleUpdate: (event) {
+                            if (widget.candles.isEmpty) return;
+                            setState(() {
+                              final currentFraction =
+                                  (event.localFocalPoint.dx - 6) / plotWidth;
+                              _count = (_gestureCount / event.scale)
+                                  .round()
+                                  .clamp(
+                                    math.min(8, widget.candles.length),
+                                    widget.candles.length,
+                                  );
+                              _start = _startForTime(
+                                _gestureAnchor,
+                                currentFraction,
+                              );
+                            });
+                          },
+                          child: ExcludeSemantics(
+                            child: CustomPaint(
+                              key: const ValueKey<String>(
+                                'loop-candle-chart-canvas',
+                              ),
+                              size: Size.infinite,
+                              painter: _LoopCandlePainter(
+                                candles: visible,
+                                movingAveragePeriods:
+                                    widget.movingAveragePeriods,
+                                averages: averages,
+                                latest: widget.candles.lastOrNull,
+                                selected: _selected,
+                                axisWidth: axisWidth,
+                                showVolume: widget.showVolume,
+                                textScaler: textScaler,
+                              ),
+                              child: _selected == null
+                                  ? null
+                                  : Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Container(
+                                        color: LoopColors.ink,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        child: Text(
+                                          '${_chartTime(_selected!.openTime)} UTC · ${loopFormatCandlePrice(_selected!.close)}',
+                                          key: const ValueKey<String>(
+                                            'candle-selection',
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: LoopTypography.figure(11),
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-          ),
+            SizedBox(
+              height: 44,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      visible.isEmpty
+                          ? '暂无 K 线'
+                          : '${from + 1}–${from + visible.length}/${widget.candles.length} · UTC',
+                      key: const ValueKey<String>('candle-visible-range'),
+                      style: LoopTypography.caption(11),
+                    ),
+                  ),
+                  IconButton(
+                    key: const ValueKey<String>('candle-zoom-out'),
+                    tooltip: '缩小',
+                    onPressed: visible.isEmpty ? null : () => _zoom(1.3, .5),
+                    icon: const Icon(Icons.remove, size: 18),
+                  ),
+                  IconButton(
+                    key: const ValueKey<String>('candle-zoom-in'),
+                    tooltip: '放大',
+                    onPressed: visible.isEmpty ? null : () => _zoom(.75, .5),
+                    icon: const Icon(Icons.add, size: 18),
+                  ),
+                  TextButton(
+                    key: const ValueKey<String>('candle-reset'),
+                    onPressed: visible.isEmpty
+                        ? null
+                        : () {
+                            setState(() {
+                              _latest();
+                              _selected = null;
+                            });
+                            widget.onCandleSelected?.call(null);
+                          },
+                    child: const Text('最新'),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+String _chartTime(DateTime time) {
+  final utc = time.toUtc();
+  return '${utc.month.toString().padLeft(2, '0')}/${utc.day.toString().padLeft(2, '0')} ${utc.hour.toString().padLeft(2, '0')}:${utc.minute.toString().padLeft(2, '0')}';
+}
+
+String _chartAxisLabel(Decimal value) {
+  final normal = loopFormatCandlePrice(value);
+  if (normal.length <= 12) return normal;
+  if (value == Decimal.zero) return '0';
+  final negative = value < Decimal.zero;
+  var scaled = negative ? -value : value;
+  var exponent = 0;
+  while (scaled < Decimal.one && exponent > -100) {
+    scaled = scaled.shift(1);
+    exponent--;
+  }
+  while (scaled >= Decimal.fromInt(10) && exponent < 100) {
+    scaled = scaled.shift(-1);
+    exponent++;
+  }
+  return '${negative ? '-' : ''}${loopFormatDecimal(scaled, maxFractionDigits: 3)}e$exponent';
+}
+
+/// Projects an exact price into pixel space without clamping. A moving average
+/// outside the visible candle range must leave the plot, never flatten on its edge.
+double loopCandlePriceY(
+  Decimal value, {
+  required Decimal lowest,
+  required Decimal highest,
+  required double top,
+  required double bottom,
+}) {
+  final priceSpan = highest - lowest;
+  if (priceSpan == Decimal.zero) return (top + bottom) / 2;
+  // Decimal crosses to double only as a dimensionless visual ratio.
+  final normalized = ((value - lowest) / priceSpan).toDouble();
+  return bottom - normalized * (bottom - top);
+}
+
+Decimal _chartPricePadding(Decimal low, Decimal high) {
+  final span = high - low;
+  return span == Decimal.zero
+      ? (high.abs() == Decimal.zero
+            ? Decimal.parse('0.000000000000000000000001')
+            : high.abs().shift(-2))
+      : (span / Decimal.fromInt(12)).toDecimal(scaleOnInfinitePrecision: 30);
+}
+
+double _chartAxisWidth(List<LoopCandle> candles, TextScaler scaler) {
+  if (candles.isEmpty) return 58;
+  var low = candles.first.low;
+  var high = candles.first.high;
+  for (final candle in candles) {
+    if (candle.low < low) low = candle.low;
+    if (candle.high > high) high = candle.high;
+  }
+  final padding = _chartPricePadding(low, high);
+  low -= padding;
+  high += padding;
+  var width = 58.0;
+  for (var i = 0; i < 4; i++) {
+    final value =
+        high -
+        ((high - low) * Decimal.fromInt(i) / Decimal.fromInt(3)).toDecimal(
+          scaleOnInfinitePrecision: 24,
+        );
+    final painter = TextPainter(
+      text: TextSpan(
+        text: _chartAxisLabel(value),
+        style: LoopTypography.figure(11),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+    )..layout();
+    width = math.max(width, painter.width + 12);
+    painter.dispose();
+  }
+  return width.clamp(58.0, 140.0);
+}
+
 /// The closes a moving average of [period] buckets is drawn through.
 ///
 /// Position `i` is the mean of the closes in `[i - period + 1, i]`, clamped at
 /// the start of the series, so the line begins where the data begins instead
-/// of being padded. The division is the only place a `Decimal` becomes a
-/// `double`, and the result is used for drawing alone.
+/// of being padded. Averages remain Decimal over the full history; the chart
+/// slices this series only after computing it, so panning never changes a mean.
 List<Decimal> loopCandleMovingAverage(List<LoopCandle> candles, int period) {
   if (candles.isEmpty || period < 1) return const <Decimal>[];
   final out = <Decimal>[];
@@ -117,17 +463,24 @@ class _LoopCandlePainter extends CustomPainter {
     required this.movingAveragePeriods,
     required this.showVolume,
     required this.textScaler,
+    required this.averages,
+    required this.latest,
+    required this.selected,
+    required this.axisWidth,
   });
 
   final List<LoopCandle> candles;
   final List<int> movingAveragePeriods;
   final bool showVolume;
   final TextScaler textScaler;
+  final List<List<Decimal>> averages;
+  final LoopCandle? latest;
+  final LoopCandle? selected;
+  final double axisWidth;
 
   static const _plotPadding = EdgeInsets.fromLTRB(6, 8, 6, 8);
 
   /// `.kline-axis-label`: the right-edge price scale takes this much width.
-  static const double _axisWidth = 46;
 
   /// `.chart-panel` splits price and volume at 72% / 79% of its height.
   static const double _priceFraction = 0.72;
@@ -156,11 +509,11 @@ class _LoopCandlePainter extends CustomPainter {
       _plotPadding.left,
       _plotPadding.top,
       math.max(_plotPadding.left, size.width - _plotPadding.right),
-      math.max(_plotPadding.top, size.height - _plotPadding.bottom),
+      math.max(_plotPadding.top, size.height - _plotPadding.bottom - 20),
     );
     if (outer.isEmpty) return;
 
-    final right = math.max(outer.left + 1, outer.right - _axisWidth);
+    final right = math.max(outer.left + 1, outer.right - axisWidth);
     final plot = showVolume
         ? Rect.fromLTRB(
             outer.left,
@@ -186,7 +539,9 @@ class _LoopCandlePainter extends CustomPainter {
       if (candle.high > highest) highest = candle.high;
     }
 
-    final priceSpan = highest - lowest;
+    final padding = _chartPricePadding(lowest, highest);
+    lowest -= padding;
+    highest += padding;
     final slotWidth = plot.width / candles.length;
     final bodyWidth = (slotWidth * 0.56).clamp(1.25, 8.0).toDouble();
     final firstOpenTime = candles.first.openTime;
@@ -204,17 +559,13 @@ class _LoopCandlePainter extends CustomPainter {
       return centerLeft + (normalized * (centerRight - centerLeft));
     }
 
-    double yFor(Decimal value) {
-      if (priceSpan == Decimal.zero) return plot.center.dy;
-
-      // The sole Decimal -> double boundary. The result is a dimensionless
-      // visual ratio and never replaces the exact model value.
-      final normalized = ((value - lowest) / priceSpan).toDouble().clamp(
-        0.0,
-        1.0,
-      );
-      return plot.bottom - (normalized * plot.height);
-    }
+    double yFor(Decimal value) => loopCandlePriceY(
+      value,
+      lowest: lowest,
+      highest: highest,
+      top: plot.top,
+      bottom: plot.bottom,
+    );
 
     _paintGrid(canvas, plot, showVolume ? volume.bottom : plot.bottom);
     _paintPriceAxis(canvas, plot, outer.right, lowest, highest);
@@ -288,7 +639,58 @@ class _LoopCandlePainter extends CustomPainter {
       _paintVolume(canvas, volume, xFor, bodyWidth);
     }
     _paintMovingAverages(canvas, plot, xFor, yFor);
-    _paintLastPrice(canvas, plot, yFor(candles.last.close));
+    final last = latest ?? candles.last;
+    if (last.close >= lowest && last.close <= highest) {
+      _paintLastPrice(canvas, plot, yFor(last.close));
+    }
+    _paintTag(
+      canvas,
+      '${last.close > highest
+          ? '↑ '
+          : last.close < lowest
+          ? '↓ '
+          : ''}${_chartAxisLabel(last.close)}',
+      Offset(
+        plot.right + 3,
+        yFor(last.close).clamp(plot.top + 7, plot.bottom - 7) - 7,
+      ),
+      color: LoopColors.lime,
+      backgroundWidth: outer.right - plot.right,
+    );
+    for (final fraction
+        in (plot.width < 300 ? <double>[0, 1] : <double>[0, .5, 1])) {
+      final time = firstOpenTime.add(
+        Duration(microseconds: (timeSpan.inMicroseconds * fraction).round()),
+      );
+      _paintTag(
+        canvas,
+        _chartTime(time),
+        Offset(plot.left + fraction * (plot.width - 75), outer.bottom + 4),
+      );
+    }
+    final chosen = selected;
+    if (chosen != null &&
+        !chosen.openTime.isBefore(candles.first.openTime) &&
+        !chosen.openTime.isAfter(candles.last.openTime)) {
+      final x = xFor(chosen);
+      final y = yFor(chosen.close);
+      final cross = Paint()
+        ..color = LoopColors.chalk
+        ..strokeWidth = .8;
+      _drawDashedLine(
+        canvas,
+        Offset(x, plot.top),
+        Offset(x, showVolume ? volume.bottom : plot.bottom),
+        cross,
+      );
+      _drawDashedLine(
+        canvas,
+        Offset(plot.left, y),
+        Offset(plot.right, y),
+        cross,
+      );
+      canvas.drawCircle(Offset(x, y), 3, Paint()..color = LoopColors.lime);
+    }
   }
 
   void _paintVolume(
@@ -325,11 +727,10 @@ class _LoopCandlePainter extends CustomPainter {
     double Function(LoopCandle) xFor,
     double Function(Decimal) yFor,
   ) {
+    canvas.save();
+    canvas.clipRect(plot);
     for (var index = 0; index < movingAveragePeriods.length; index += 1) {
-      final series = loopCandleMovingAverage(
-        candles,
-        movingAveragePeriods[index],
-      );
+      final series = averages[index];
       if (series.length < 2) continue;
       final path = Path()..moveTo(xFor(candles.first), yFor(series.first));
       for (var step = 1; step < series.length; step += 1) {
@@ -345,6 +746,7 @@ class _LoopCandlePainter extends CustomPainter {
           ..strokeWidth = 1.15,
       );
     }
+    canvas.restore();
   }
 
   /// `.kline-last-line`: a dashed Lime rule at the latest close.
@@ -371,6 +773,19 @@ class _LoopCandlePainter extends CustomPainter {
     final span = highest - lowest;
     for (var index = 0; index < 4; index += 1) {
       final y = plot.top + (plot.height * index / 3);
+      final current = latest;
+      if (current != null) {
+        final markerY = loopCandlePriceY(
+          current.close,
+          lowest: lowest,
+          highest: highest,
+          top: plot.top,
+          bottom: plot.bottom,
+        ).clamp(plot.top + 7, plot.bottom - 7);
+        // A current-price badge replaces a nearby tick in full, rather than
+        // covering half its digits when the two labels almost coincide.
+        if ((y - markerY).abs() < textScaler.scale(18)) continue;
+      }
       final value = span == Decimal.zero
           ? highest
           : highest -
@@ -379,11 +794,8 @@ class _LoopCandlePainter extends CustomPainter {
                 );
       final painter = TextPainter(
         text: TextSpan(
-          text: loopFormatDecimal(value, maxFractionDigits: 8),
-          style: LoopTypography.figure(
-            7,
-            color: LoopColors.chalk.withValues(alpha: 0.46),
-          ),
+          text: _chartAxisLabel(value),
+          style: LoopTypography.figure(11, color: LoopColors.text2),
         ),
         textDirection: TextDirection.ltr,
         textScaler: textScaler,
@@ -392,6 +804,35 @@ class _LoopCandlePainter extends CustomPainter {
       painter.paint(canvas, Offset(right - painter.width, y - 4));
       painter.dispose();
     }
+  }
+
+  void _paintTag(
+    Canvas canvas,
+    String text,
+    Offset position, {
+    Color color = LoopColors.text2,
+    double? backgroundWidth,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: LoopTypography.figure(11, color: color),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+    canvas.drawRect(
+      Rect.fromLTWH(
+        position.dx - 2,
+        position.dy - 1,
+        math.max(painter.width + 4, backgroundWidth ?? 0),
+        painter.height + 2,
+      ),
+      Paint()..color = LoopColors.ink,
+    );
+    painter.paint(canvas, position);
+    painter.dispose();
   }
 
   void _drawDashedLine(Canvas canvas, Offset from, Offset to, Paint paint) {
@@ -436,6 +877,9 @@ class _LoopCandlePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LoopCandlePainter oldDelegate) =>
       oldDelegate.candles != candles ||
+      oldDelegate.selected != selected ||
+      oldDelegate.latest != latest ||
+      oldDelegate.axisWidth != axisWidth ||
       oldDelegate.showVolume != showVolume ||
       oldDelegate.textScaler != textScaler ||
       !listEquals(oldDelegate.movingAveragePeriods, movingAveragePeriods);
