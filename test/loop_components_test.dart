@@ -21,7 +21,7 @@ Future<void> _pump(WidgetTester tester, Widget child, {Size? size}) async {
 }
 
 void main() {
-  testWidgets('LoopTopbar renders a 44px back button and a 22/600 title', (
+  testWidgets('LoopTopbar renders a 44px back button and a 22/700 title', (
     tester,
   ) async {
     var backs = 0;
@@ -41,9 +41,9 @@ void main() {
     await tester.tap(back);
     expect(backs, 1);
     final title = tester.widget<Text>(find.text('无网络'));
-    // Band 2 `headingLg`: 22 semibold since decision 0080.
+    // Decision 0113 separates the page title with22px bold.
     expect(title.style?.fontSize, 22);
-    expect(title.style?.fontWeight, FontWeight.w600);
+    expect(title.style?.fontWeight, FontWeight.w700);
     expect(find.text('SYSTEM'), findsOneWidget);
     expect(find.bySemanticsLabel('搜索'), findsOneWidget);
   });
@@ -334,10 +334,10 @@ void main() {
 
     BoxDecoration decorationAt(int index) =>
         tester
-                .widgetList<Container>(find.byType(Container))
-                .where((container) => container.decoration is BoxDecoration)
+                .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+                .where((box) => box.decoration is BoxDecoration)
                 .elementAt(index)
-                .decoration!
+                .decoration
             as BoxDecoration;
 
     // Lime at 40% over Ink is a dull olive carrying Ink-coloured text: it

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 
 /// Community and the existing inbox share one primary destination.
 class CommunityChatSegment extends StatelessWidget {
@@ -8,14 +9,56 @@ class CommunityChatSegment extends StatelessWidget {
   final String location;
 
   @override
-  Widget build(BuildContext context) => SegmentedButton<String>(
+  Widget build(BuildContext context) => Row(
     key: const ValueKey<String>('community-chat-segment'),
-    segments: const <ButtonSegment<String>>[
-      ButtonSegment(value: '/community', label: Text('社区')),
-      ButtonSegment(value: '/chat', label: Text('聊天')),
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      for (final item in const <String, String>{
+        '/community': '社区',
+        '/chat': '聊天',
+      }.entries)
+        Flexible(
+          child: Semantics(
+            button: true,
+            selected: location == item.key,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: LoopRadius.inner,
+                onTap: () {
+                  if (location != item.key) context.go(item.key);
+                },
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 58,
+                    minHeight: 44,
+                  ),
+                  margin: const EdgeInsets.only(right: 6),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: location == item.key
+                            ? LoopColors.lime
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    item.value,
+                    style: LoopTypography.heading(
+                      17,
+                      color: location == item.key
+                          ? LoopColors.chalk
+                          : LoopColors.text3,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
     ],
-    selected: <String>{location},
-    showSelectedIcon: false,
-    onSelectionChanged: (values) => context.go(values.first),
   );
 }

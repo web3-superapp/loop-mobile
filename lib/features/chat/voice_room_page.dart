@@ -64,7 +64,7 @@ class _PreviewVoiceRoomPageState extends ConsumerState<_PreviewVoiceRoomPage> {
             center: Alignment(0.3, -0.72),
             radius: 1.25,
             colors: <Color>[
-              Color(0xFF352513),
+              LoopColors.limeSoft,
               LoopColors.abyss,
               LoopColors.abyss,
             ],

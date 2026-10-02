@@ -394,7 +394,7 @@ void main() {
           .whereType<LoopChatHeaderStrip>()
           .single;
       expect(strip.key, const ValueKey<String>('dm-protection-note'));
-      expect(strip.segments.single, contains('不声明端到端加密'));
+      expect(strip.segments.single, '聊天不提供端到端加密');
       // No card is pinned over the composer any more, and the quarter-screen
       // Chalk hero is gone: the top bar already names the peer.
       expect(surface.footer, isNull);

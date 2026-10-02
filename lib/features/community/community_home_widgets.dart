@@ -114,22 +114,59 @@ class CommunityDiscoverHero extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Material(
-        color: LoopColors.panel,
-        borderRadius: BorderRadius.circular(12),
+        color: LoopColors.lime,
+        borderRadius: LoopRadius.control,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: LoopRadius.control,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: <Widget>[
-                const LoopIcon('search', size: 20, color: LoopColors.lime),
-                const SizedBox(width: 12),
-                Expanded(child: Text(title, style: LoopTypography.title(15))),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: LoopTypography.heading(
+                          20,
+                          color: LoopColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '找到同频的人，一起探索',
+                        style: LoopTypography.caption(
+                          12,
+                          color: LoopColors.inkText2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 if (verifiedCount != null)
-                  Text('$verifiedCount', style: LoopTypography.caption(13)),
-                const SizedBox(width: 8),
-                const LoopIcon('chevron', size: 18, color: LoopColors.text2),
+                  Text(
+                    '$verifiedCount',
+                    style: LoopTypography.figure(17, color: LoopColors.ink),
+                  ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: LoopColors.ink,
+                    borderRadius: LoopRadius.pill,
+                  ),
+                  child: const Center(
+                    child: LoopIcon(
+                      'chevron',
+                      size: 20,
+                      color: LoopColors.lime,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

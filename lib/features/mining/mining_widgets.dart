@@ -296,6 +296,14 @@ class MiningSummaryHero extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: <Color>[
+            LoopColors.lime.withValues(alpha: 0.06),
+            LoopColors.ink,
+          ],
+        ),
         border: Border(bottom: BorderSide(color: rule)),
       ),
       child: Column(
@@ -307,7 +315,7 @@ class MiningSummaryHero extends StatelessWidget {
               Expanded(
                 child: Text(
                   'MINING POWER',
-                  style: LoopTypography.eyebrow(9, color: muted),
+                  style: LoopTypography.eyebrow(11, color: muted),
                 ),
               ),
               if (rank != null)
@@ -316,7 +324,7 @@ class MiningSummaryHero extends StatelessWidget {
                     children: <InlineSpan>[
                       TextSpan(
                         text: 'RANK ',
-                        style: LoopTypography.eyebrow(9, color: muted),
+                        style: LoopTypography.eyebrow(11, color: muted),
                       ),
                       TextSpan(
                         text: rank,
@@ -355,7 +363,7 @@ class MiningSummaryHero extends StatelessWidget {
               // `.mining-power-value` is 44px for a figure; words in that slot
               // would wrap to three lines and push the metrics off the card.
               unit == null ? 24 : 36,
-              color: ink,
+              color: unit == null ? ink : LoopColors.lime,
             ).copyWith(height: 0.98, letterSpacing: -0.8),
           ),
           const SizedBox(height: 9),
@@ -430,7 +438,7 @@ class MiningSummaryHero extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: LoopTypography.withWeight(
-                                  LoopTypography.caption(10, color: muted),
+                                  LoopTypography.caption(12, color: muted),
                                   FontWeight.w700,
                                 ),
                               ),

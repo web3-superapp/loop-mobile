@@ -276,8 +276,7 @@ class LoopIconButton extends StatelessWidget {
 // Section label (.label)
 // ---------------------------------------------------------------------------
 
-/// `.label`: mono 10/600, .15em tracking, uppercase, text3; 30px above (22px
-/// when it follows another label) and 8px below.
+/// Section heading: 14px semibold, distinct from the 12px supporting copy.
 class LoopLabel extends StatelessWidget {
   const LoopLabel(
     this.text, {
@@ -313,9 +312,9 @@ class LoopLabel extends StatelessWidget {
         child: Text(
           text.toUpperCase(),
           style: LoopTypography.title(
-            13,
-            weight: FontWeight.w500,
-            color: LoopColors.text2,
+            14,
+            weight: FontWeight.w600,
+            color: LoopColors.chalk,
           ),
         ),
       ),
@@ -527,20 +526,16 @@ class LoopFolioPrimary extends StatelessWidget {
         borderRadius: radius,
         boxShadow: squareBottom ? null : LoopDepth.liftPrimaryLight,
       ),
-      // The tint and the glow ride in the same gradient, because a
-      // [BoxDecoration] paints its gradient *instead of* the colour declared
-      // beside it: with both declared the flat 7.5% tint was never painted.
-      // The stops are the two composited: glow over tint at the centre, tint
-      // alone at the edge.
+      // A mineral-green plane separates the page's primary reading from the
+      // Ink canvas; Lime belongs to the figure and the action, not the border.
       LoopFolioVariant.quiet => BoxDecoration(
-        gradient: const RadialGradient(
-          center: Alignment(0.76, -1.24),
-          radius: 1.2,
-          colors: <Color>[Color(0x3BB8FF20), Color(0x13B8FF20)],
-          stops: <double>[0, 0.62],
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[LoopColors.limeSoft, LoopColors.card],
         ),
         borderRadius: radius,
-        border: Border.all(color: LoopColors.lime.withValues(alpha: 0.34)),
+        border: Border.all(color: LoopColors.line),
         boxShadow: squareBottom ? null : LoopDepth.liftPrimary,
       ),
     };
@@ -1088,9 +1083,20 @@ class LoopSurfaceCard extends StatelessWidget {
         onTap: onTap,
         semanticLabel: semanticLabel,
         decoration: BoxDecoration(
-          color: background ?? LoopColors.card,
+          color: background ?? LoopGround.tintOf(context),
+          gradient:
+              background == null &&
+                  LoopGround.inkOf(context) == LoopColors.chalk
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[LoopColors.limeSoft, LoopColors.card],
+                )
+              : null,
           borderRadius: LoopRadius.card,
-          border: Border.all(color: borderColor ?? LoopColors.line),
+          border: Border.all(
+            color: borderColor ?? LoopGround.hairlineOf(context),
+          ),
           boxShadow: LoopDepth.liftCard,
         ),
         borderRadius: LoopRadius.card,
@@ -1113,14 +1119,12 @@ class LoopRecordCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, LoopSpacing.card),
       child: _Pressable(
         onTap: onTap,
-        // Tint and glow in one gradient, for the reason `LoopFolioPrimary`
-        // states: a decoration paints its gradient instead of its colour.
+        // The same surface family as the primary, with a quieter edge.
         decoration: BoxDecoration(
-          gradient: const RadialGradient(
-            center: Alignment(0.84, -1.28),
-            radius: 1.3,
-            colors: <Color>[Color(0x18F3F5EF), Color(0x0BF3F5EF)],
-            stops: <double>[0, 0.6],
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[LoopColors.limeSoft, LoopColors.card],
           ),
           borderRadius: LoopRadius.card,
           border: Border.all(color: LoopColors.line),
@@ -1157,9 +1161,16 @@ class _Pressable extends StatelessWidget {
       button: true,
       label: semanticLabel,
       excludeSemantics: semanticLabel != null,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(onTap: onTap, borderRadius: borderRadius, child: box),
+      child: DecoratedBox(
+        decoration: decoration,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: borderRadius,
+            child: child,
+          ),
+        ),
       ),
     );
   }
@@ -1382,7 +1393,10 @@ class LoopRecordRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected
             ? LoopColors.lime.withValues(alpha: 0.09)
-            : LoopColors.chalk.withValues(alpha: 0.045),
+            : Color.alphaBlend(
+                LoopColors.lime.withValues(alpha: 0.035),
+                LoopColors.graphite,
+              ),
         borderRadius: radius,
         boxShadow: bottomRadius
             ? const <BoxShadow>[
@@ -1927,7 +1941,6 @@ class LoopButton extends StatelessWidget {
         minWidth: block ? double.infinity : LoopTouch.minimum,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: decoration,
       child: Row(
         mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1946,7 +1959,7 @@ class LoopButton extends StatelessWidget {
                 label,
                 textAlign: TextAlign.center,
                 style: LoopTypography.label(
-                  12,
+                  14,
                   weight: FontWeight.w700,
                   color: foreground,
                 ),
@@ -1962,15 +1975,18 @@ class LoopButton extends StatelessWidget {
         label: semanticLabel ?? label,
         child: Opacity(
           opacity: enabled ? 1 : 0.4,
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              key: ValueKey<String>(
-                'loop-button-${primary ? 'primary' : 'secondary'}',
+          child: DecoratedBox(
+            decoration: decoration,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                key: ValueKey<String>(
+                  'loop-button-${primary ? 'primary' : 'secondary'}',
+                ),
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(14),
+                child: ExcludeSemantics(child: child),
               ),
-              onTap: onPressed,
-              borderRadius: BorderRadius.circular(14),
-              child: ExcludeSemantics(child: child),
             ),
           ),
         ),
