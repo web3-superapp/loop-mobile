@@ -111,63 +111,26 @@ class CommunityDiscoverHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = verifiedCount;
-    final kicker = count == null ? 'DISCOVER' : 'DISCOVER · $count VERIFIED';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Semantics(
-        button: true,
-        label: '$title，$body',
-        excludeSemantics: true,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(19),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 72),
-              padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
-              decoration: BoxDecoration(
-                color: LoopColors.lime,
-                borderRadius: BorderRadius.circular(19),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          kicker,
-                          style: LoopTypography.eyebrow(
-                            11,
-                            color: LoopColors.inkMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          title,
-                          style: LoopTypography.heading(
-                            18,
-                            color: LoopColors.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          body,
-                          style: LoopTypography.caption(
-                            11,
-                            color: LoopColors.inkText2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const LoopIcon('chevron', size: 18, color: LoopColors.ink),
-                ],
-              ),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Material(
+        color: LoopColors.panel,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: <Widget>[
+                const LoopIcon('search', size: 20, color: LoopColors.lime),
+                const SizedBox(width: 12),
+                Expanded(child: Text(title, style: LoopTypography.title(15))),
+                if (verifiedCount != null)
+                  Text('$verifiedCount', style: LoopTypography.caption(13)),
+                const SizedBox(width: 8),
+                const LoopIcon('chevron', size: 18, color: LoopColors.text2),
+              ],
             ),
           ),
         ),

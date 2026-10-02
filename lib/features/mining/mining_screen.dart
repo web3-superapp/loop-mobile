@@ -319,6 +319,7 @@ String _rankSubtitle(MiningRank? rank) => switch (rank?.myPosition) {
 LoopFolioPrimary _hero(MiningSummary? summary, LaunchViewPhase phase) {
   final loading = phase == LaunchViewPhase.loading;
   return LoopFolioPrimary(
+    compact: true,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'MINING POWER',

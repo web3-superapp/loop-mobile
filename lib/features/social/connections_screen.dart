@@ -63,6 +63,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
+        compact: true,
+        ring: false,
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'SOCIAL CONNECTIONS',

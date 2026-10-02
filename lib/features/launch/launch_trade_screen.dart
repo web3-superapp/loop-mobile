@@ -477,7 +477,8 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         ),
       ],
       folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.lime,
+        compact: true,
+        variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
         kicker: 'FINAL BUY QUOTE',
         // The quote is the server's, after prepare; nothing before it.

@@ -136,6 +136,8 @@ class _CommunityDiscoverScreenState
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
+        compact: true,
+        ring: false,
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
         kicker: 'DISCOVERY DESK',

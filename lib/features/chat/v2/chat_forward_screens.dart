@@ -388,6 +388,8 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
       onBack: widget.onBack,
       framedTools: true,
       primary: LoopFolioPrimary(
+        compact: true,
+        ring: false,
         // `.chalk-card.folio-state.folio-primary` resolves to
         // `background:var(--lime);color:var(--ink)` — the one solid Lime hero
         // in the prototype, and the app had none (audit 2026-09-20 · B.6).
@@ -635,6 +637,8 @@ class _ChatMergePreviewScreenState
       // anonymous rendering inside it is the only thing that can be encoded.
       primary: rows.isEmpty
           ? const LoopFolioPrimary(
+              compact: true,
+              ring: false,
               variant: LoopFolioVariant.quiet,
               archetype: LoopFolioArchetype.state,
               kicker: 'ANONYMOUS BY DEFAULT',

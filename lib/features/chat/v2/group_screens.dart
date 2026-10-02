@@ -237,6 +237,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       primary: const LoopFolioPrimary(
+        compact: true,
+        ring: false,
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'GROUP RECORD',

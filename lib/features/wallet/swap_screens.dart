@@ -131,6 +131,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       // quote itself (audit §A.11, items 1 and 2).
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('swap-folio'),
+        compact: true,
         variant: LoopFolioVariant.chalk,
         ring: false,
         kicker: 'SWAP QUOTE',

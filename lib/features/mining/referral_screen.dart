@@ -74,6 +74,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       // the page (audit 2026-09-21 §J.11).
       primary: overview == null
           ? LoopFolioPrimary(
+              compact: true,
               variant: LoopFolioVariant.quiet,
               archetype: LoopFolioArchetype.record,
               kicker: 'FINAL BOOST',
@@ -84,6 +85,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           : MiningCompositePrimary(
               key: const ValueKey<String>('referral-hero'),
               primary: LoopFolioPrimary(
+                compact: true,
                 variant: LoopFolioVariant.quiet,
                 archetype: LoopFolioArchetype.record,
                 kicker: 'FINAL BOOST',

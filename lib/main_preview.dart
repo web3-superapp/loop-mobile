@@ -1,3 +1,5 @@
+import 'package:loop_mobile/features/profile/presentation/avatar_upload.dart';
+import 'package:loop_mobile/integrations/communication/loop_avatar_image_picker.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
@@ -57,6 +59,9 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [
+        avatarImagePickerProvider.overrideWithValue(
+          const LoopAvatarImagePicker(),
+        ),
         marketReadGatewayProvider.overrideWithValue(
           MemoryPreviewMarketGateway(watchlist: previewWatchlist),
         ),

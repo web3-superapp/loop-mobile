@@ -90,6 +90,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
         key: const ValueKey<String>('watchlist-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketWatchlistKicker,
         heading: state.isReady ? '${state.itemCount} 个自选资产' : '自选管理',

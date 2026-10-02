@@ -323,6 +323,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         detailPadding: const EdgeInsets.fromLTRB(18, 15, 18, 15),
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'LAUNCH RECORD',
@@ -1259,6 +1260,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'ROUND CONFIGURATION',
@@ -1498,6 +1500,7 @@ class _LaunchGraduationScreenState
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'GRADUATION PROGRESS',
@@ -1657,6 +1660,7 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'ELIGIBILITY',
@@ -1884,6 +1888,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'HOLDER DISTRIBUTION',
@@ -2065,6 +2070,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'PARTICIPATION LOG',

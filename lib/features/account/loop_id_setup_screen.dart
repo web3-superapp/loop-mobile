@@ -2,15 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_controller.dart';
-import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
+import 'package:loop_mobile/features/profile/avatar_editor.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
-import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -51,9 +49,6 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
     }
     final controller = ref.read(loopIdSetupControllerProvider.notifier);
     _syncAlias(state);
-    final avatarUpload = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.avatarUpload),
-    );
 
     return LoopFocusPage(
       archetype: LoopPageArchetype.intro,
@@ -183,38 +178,16 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
               title: 'LOOP ID 已激活',
               body: '别名与关注赛道已保存。之后可以在「编辑资料」里修改。',
             ),
-          _LoopIdAvatarCard(
-            selected: state.avatarRef,
-            alias: state.alias,
+          LoopAvatarEditor(
+            keyPrefix: 'loop-id-avatar',
             enabled: !state.isBusy && state.phase != LoopIdSetupPhase.activated,
-            uploadUsable: avatarUpload.isUsable,
-            onSelected: controller.editAvatarRef,
-          ),
-          const LoopLabel('你的 LOOP ID'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSurfaceCard(
-              child: Column(
-                children: <Widget>[
-                  Text(
-                    key: const ValueKey<String>('loop-id-value'),
-                    state.loopId ?? '—',
-                    style: LoopTypography.figure(
-                      20,
-                      height: 1.15,
-                      color: LoopColors.chalk,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '系统生成，不可更改',
-                    style: LoopTypography.caption(11, color: LoopColors.text3),
-                  ),
-                ],
-              ),
+            avatar: LoopProfileAvatar(
+              avatarRef: state.avatarRef,
+              alias: state.alias,
+              useLocalAvatar: true,
             ),
           ),
-          const LoopLabel('别名'),
+          const LoopLabel('用户名'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: LoopSurfaceCard(
@@ -258,11 +231,30 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    '随时可改 · 别人看到的是这个名字。「换一个」只是本地建议，不代表已被占用或可用。',
+                    '可重名 · 换一个只是本地建议',
                     style: LoopTypography.caption(11, color: LoopColors.text3),
                   ),
                 ],
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
+              children: <Widget>[
+                Text(
+                  state.loopId ?? '—',
+                  key: const ValueKey<String>('loop-id-value'),
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
+                Text(
+                  '系统生成，不可更改',
+                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                ),
+              ],
             ),
           ),
         ],
@@ -291,127 +283,5 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
     if (state.phase == LoopIdSetupPhase.activated) {
       widget.onActivated?.call();
     }
-  }
-}
-
-class _LoopIdAvatarCard extends ConsumerWidget {
-  const _LoopIdAvatarCard({
-    required this.selected,
-    required this.alias,
-    required this.enabled,
-    required this.uploadUsable,
-    required this.onSelected,
-  });
-
-  final String? selected;
-  final String? alias;
-  final bool enabled;
-
-  /// Whether the backend has opened custom avatar upload. While it is closed
-  /// the card says so once; the capability's own code stays off the screen.
-  final bool uploadUsable;
-  final ValueChanged<String?> onSelected;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final catalog = ref.watch(avatarCatalogProvider);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-      child: Column(
-        children: <Widget>[
-          LoopProfileAvatar(avatarRef: selected, alias: alias),
-          const SizedBox(height: 12),
-          catalog.when(
-            loading: () => const LoopSkeleton(
-              key: ValueKey<String>('loop-id-avatar-loading'),
-              type: LoopSkeletonType.list,
-              rows: 1,
-            ),
-            error: (error, stackTrace) => Text(
-              key: const ValueKey<String>('loop-id-avatar-unavailable'),
-              '预设头像清单暂不可读，先用首字母头像继续。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(11, color: LoopColors.text3),
-            ),
-            data: (presets) => Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: <Widget>[
-                for (final preset in presets)
-                  _LoopIdAvatarChoice(
-                    preset: preset,
-                    alias: alias,
-                    selected: preset.isMonogram
-                        ? selected == null
-                        : selected == preset.avatarRef,
-                    onTap: enabled
-                        ? () => onSelected(
-                            preset.isMonogram ? null : preset.avatarRef,
-                          )
-                        : null,
-                  ),
-              ],
-            ),
-          ),
-          if (!uploadUsable) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(
-              '自定义头像上传暂不可用，只能选择预设头像。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(11, color: LoopColors.text3),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _LoopIdAvatarChoice extends StatelessWidget {
-  const _LoopIdAvatarChoice({
-    required this.preset,
-    required this.alias,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final AvatarPreset preset;
-  final String? alias;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: preset.label,
-      enabled: onTap != null,
-      child: InkWell(
-        key: ValueKey<String>('loop-id-avatar-${preset.avatarRef}'),
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          width: LoopTouch.minimum,
-          height: LoopTouch.minimum,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selected ? LoopColors.lime : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: ExcludeSemantics(
-            child: LoopProfileAvatar(
-              avatarRef: preset.isMonogram ? null : preset.avatarRef,
-              alias: alias,
-              size: 34,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

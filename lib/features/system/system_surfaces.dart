@@ -652,7 +652,7 @@ class _CenteredStateBlock extends StatelessWidget {
             border: Border.all(color: LoopColors.line),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 22),
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -664,7 +664,7 @@ class _CenteredStateBlock extends StatelessWidget {
                   style: LoopTypography.caption(11, color: LoopColors.text3),
                 ),
                 if (action != null) ...<Widget>[
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   action!,
                 ],
               ],

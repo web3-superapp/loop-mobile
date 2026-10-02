@@ -30,7 +30,7 @@ void main() {
       ),
     );
     expect(find.text('地区策略还没有开放'), findsOneWidget);
-    expect(find.textContaining('不会从设备语言、SIM 或 IP 推断'), findsOneWidget);
+    expect(find.text('暂时无法确认地区可用性，请稍后重试。'), findsOneWidget);
     expect(find.text('部分功能在当前地区不可用'), findsNothing);
     // An unknown region grows no exit: the three only belong to a decision.
     expect(find.text('查看资产'), findsNothing);

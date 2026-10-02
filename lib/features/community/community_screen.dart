@@ -205,36 +205,30 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               primary: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  // The discover hero sits above the index card, as in the
-                  // frozen prototype.
+                  Padding(
+                    key: const ValueKey<String>('community-folio'),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text('我的社区', style: LoopType.headingSm),
+                        ),
+                        if (home != null)
+                          Text(
+                            '$miningCount 个社区在挖矿',
+                            style: LoopTypography.caption(
+                              13,
+                              color: LoopColors.text2,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                   if (home != null)
                     CommunityDiscoverHero(
                       key: const ValueKey<String>('community-discover-hero'),
-                      // `discover` is a preview the server cut to a handful,
-                      // so its length is not a count of verified communities
-                      // and the kicker never prints it as one.
                       onTap: () => _open('/community/discover'),
                     ),
-                  LoopFolioPrimary(
-                    key: const ValueKey<String>('community-folio'),
-                    variant: LoopFolioVariant.lime,
-                    archetype: LoopFolioArchetype.listing,
-                    kicker: '我的社区',
-                    // A read that is still running is not a read that failed.
-                    // The skeleton below was already saying 「正在读取」 while
-                    // this hero said 「暂无数值 / 社区数据暂时读不到」 for the
-                    // first seconds of every cold start.
-                    heading: home == null
-                        ? (loading ? '正在读取' : communityMissingHeading)
-                        : '$miningCount 个社区在挖矿',
-                    // Decision 0095: the count is drawn as a skeleton of its
-                    // own height until it is read.
-                    headingLoading: home == null && loading,
-                    caption: null,
-                    // `.folio-stamp` is 「N LIVE」 in the prototype. Nothing
-                    // here counts live rooms, so the corner stays empty; it
-                    // is not a slot for the word DATABASE.
-                  ),
                 ],
               ),
               block: communityCapabilityBlocks(mode, capability)

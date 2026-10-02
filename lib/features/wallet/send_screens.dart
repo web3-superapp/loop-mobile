@@ -451,6 +451,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
       // no recipient, and the heading says what the step is for.
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('send-recipient-folio'),
+        compact: true,
         variant: LoopFolioVariant.chalk,
         ring: false,
         kicker: 'WALLET SEND',

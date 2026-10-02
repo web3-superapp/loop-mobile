@@ -263,6 +263,7 @@ class _HolderDistributionScreenState
         key: const ValueKey<String>('token-holders-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketHoldersKicker,
         heading: count == null || count.value == null
@@ -324,27 +325,11 @@ class _HolderDistributionScreenState
               ),
             ],
           ),
-          const LoopLabel('持有人总数'),
-          LoopSurfaceCard(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-            child: LoopFactLine(
-              label: '持有人总数',
-              fact: holders.holderCount,
-              emphasize: true,
-              formatter: (value) =>
-                  loopFormatDecimal(value, maxFractionDigits: 0),
-            ),
-          ),
           const LoopLabel('分布'),
           LoopUnavailableCard.fact(
             key: const ValueKey<String>('token-holders-distribution'),
             label: 'Top 持有人、集中度与聚类标注不可用',
             fact: holders.distribution,
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('token-holders-notice'),
-            title: '没有分布就不画分布',
-            body: '前十 / 前百集中度暂时读不到，这里不显示任何比例或地址。',
           ),
         ],
       ],
@@ -412,12 +397,13 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         key: const ValueKey<String>('token-trades-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketTradesKicker,
         heading: block is MarketTradesAvailable
             ? '${block.items.length} 笔链上成交'
             : '最新链上成交记录',
-        caption: '方向、数量和时间按同一节奏扫描，来自已登记 PancakeSwap V3 池的 Swap 事件。',
+        caption: 'PancakeSwap V3 · 链上成交',
       ),
       block: blocked
           ? _marketPageBlock(
@@ -608,6 +594,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
         key: const ValueKey<String>('new-pairs-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketNewPairsKicker,
         // While the list is still being read the hero states that, rather
@@ -810,6 +797,7 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
         key: ValueKey<String>('smart-money-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketSmartMoneyKicker,
         heading: '还没有可观察的地址',

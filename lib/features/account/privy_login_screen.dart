@@ -79,7 +79,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
             children: <Widget>[
               // `.identity-head`: mark, title, one line of copy.
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 44, 16, 26),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
                 child: Semantics(
                   header: true,
                   container: true,
@@ -88,16 +88,16 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                       const LoopBrandMark(
                         key: ValueKey<String>('privy-auth-mark'),
                         kind: LoopBrandMarkKind.appIcon,
-                        height: 104,
+                        height: 72,
                         semanticLabel: 'LOOP',
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       Text(
                         '欢迎来到 LOOP',
                         textAlign: TextAlign.center,
                         style: LoopTypography.display(24),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 280),
                         child: Text(

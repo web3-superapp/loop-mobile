@@ -341,20 +341,44 @@ class _PublicProfileSheetState<T extends Object>
             ],
           ),
           const SizedBox(height: 16),
-          if (offersFriendRequest) ...<Widget>[
-            LoopButton(
-              key: const ValueKey<String>('public-profile-add-friend'),
-              label: _friendRequestSent ? '好友申请已发送' : '加好友',
-              primary: true,
-              block: true,
-              onPressed: _busy || _friendRequestSent
-                  ? null
-                  : () => unawaited(_requestFriend()),
+          if (offersFriendRequest || offersDirectMessage) ...<Widget>[
+            Row(
+              children: <Widget>[
+                if (offersFriendRequest)
+                  Expanded(
+                    child: LoopButton(
+                      key: const ValueKey<String>('public-profile-add-friend'),
+                      label: _friendRequestSent ? '好友申请已发送' : '加好友',
+                      primary: true,
+                      onPressed: _busy || _friendRequestSent
+                          ? null
+                          : () => unawaited(_requestFriend()),
+                    ),
+                  ),
+                if (offersFriendRequest && offersDirectMessage)
+                  const SizedBox(width: 8),
+                if (offersDirectMessage)
+                  Expanded(
+                    child: LoopButton(
+                      key: const ValueKey<String>('public-profile-open-dm'),
+                      label: '打开私聊',
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              Navigator.of(context).pop();
+                              openDirectMessage!(identity);
+                            },
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
-              '对方接受后，即可在允许私聊时打开会话。',
-              style: LoopTypography.caption(11, color: LoopColors.muted),
+              offersFriendRequest
+                  ? '对方接受后，即可在允许私聊时打开会话。'
+                  : '私聊需双方成为好友，并遵循对方的隐私设置。',
+              key: const ValueKey<String>('public-profile-dm-hint'),
+              style: LoopTypography.caption(12, color: LoopColors.muted),
             ),
             const SizedBox(height: 12),
           ],
@@ -382,31 +406,6 @@ class _PublicProfileSheetState<T extends Object>
               onPressed: _busy ? null : () => unawaited(_toggleFollow()),
             ),
             const SizedBox(height: 8),
-          ],
-          // The prototype makes every member row a `dm` entry. LOOP puts this
-          // card in between, so the card carries the control: it closes and
-          // hands the account to the caller, which owns the route. Admission
-          // is decided on the conversation page, not here — an account this
-          // viewer is not connected to opens on the message request, which is
-          // the step that connects them.
-          if (offersDirectMessage) ...<Widget>[
-            LoopButton(
-              key: const ValueKey<String>('public-profile-open-dm'),
-              label: '打开私聊',
-              block: true,
-              onPressed: _busy
-                  ? null
-                  : () {
-                      Navigator.of(context).pop();
-                      openDirectMessage!(identity);
-                    },
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '私聊需双方成为好友，并遵循对方的隐私设置。',
-              key: const ValueKey<String>('public-profile-dm-hint'),
-              style: LoopTypography.caption(11, color: LoopColors.muted),
-            ),
           ],
           if (_failureKind != null) ...<Widget>[
             const SizedBox(height: 12),

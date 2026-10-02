@@ -20,7 +20,8 @@ import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/notifications/community_application_notifications.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
-import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
+import 'package:loop_mobile/features/profile/avatar_editor.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_upload.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
@@ -37,7 +38,6 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 // ---------------------------------------------------------------------------
@@ -47,12 +47,13 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// Renders the preset avatar for [avatarRef], falling back to the alias
 /// monogram. A non-preset V1 value also renders as the monogram; it is never
 /// resubmitted.
-class LoopProfileAvatar extends StatelessWidget {
+class LoopProfileAvatar extends ConsumerWidget {
   const LoopProfileAvatar({
     required this.avatarRef,
     required this.alias,
     super.key,
     this.size = 72,
+    this.useLocalAvatar = false,
   });
 
   static const presetPrefix = 'avatar:preset/people-';
@@ -60,6 +61,7 @@ class LoopProfileAvatar extends StatelessWidget {
   final String? avatarRef;
   final String? alias;
   final double size;
+  final bool useLocalAvatar;
 
   /// Maps the one-based catalog slot onto the 4x3 people atlas cell key.
   static String? peopleSlotKey(int slot) {
@@ -82,7 +84,23 @@ class LoopProfileAvatar extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bytes = useLocalAvatar
+        ? ref.watch(avatarUploadControllerProvider).bytes
+        : null;
+    if (bytes != null) {
+      return ClipOval(
+        child: Image.memory(
+          bytes,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          semanticLabel: '头像',
+          cacheWidth: (size * 3).round(),
+          cacheHeight: (size * 3).round(),
+        ),
+      );
+    }
     final monogram = monogramFor(alias);
     final reference = avatarRef;
     if (reference != null && reference.startsWith(presetPrefix)) {
@@ -120,13 +138,19 @@ class LoopProfileAvatar extends StatelessWidget {
         color: lightGround ? ink : LoopGround.fillOf(context),
         shape: BoxShape.circle,
       ),
-      child: Text(
-        monogram,
-        style: LoopTypography.figure(
-          size / 4.5,
-          color: lightGround ? LoopColors.chalk : ink,
-        ),
-      ),
+      child: useLocalAvatar && avatarRef == null
+          ? Icon(
+              Icons.person_outline_rounded,
+              size: size * .48,
+              color: lightGround ? LoopColors.chalk : ink,
+            )
+          : Text(
+              monogram,
+              style: LoopTypography.figure(
+                size / 4.5,
+                color: lightGround ? LoopColors.chalk : ink,
+              ),
+            ),
     );
   }
 }
@@ -356,7 +380,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     }
     _startSideReads();
     final resource = state.resource;
-    final alias = resource?.values.alias;
     final phase = profileResourcePhase(state);
     final isPreview = state.mode == ProfileMode.preview;
 
@@ -373,14 +396,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           onPressed: () => widget.onNavigate('settings'),
         ),
       ],
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.lime,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'PUBLIC PROFILE',
-        heading: alias ?? '尚未设置别名',
-        caption: 'LOOP ID 是你的社交身份；钱包地址只是可更换的凭证。',
-        stamp: 'PUBLIC',
-      ),
       sections: <Widget>[
         LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
         if (phase != LoopResourcePhase.ready)
@@ -396,7 +411,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             resource: resource!,
             onEdit: () => widget.onNavigate('profile-edit'),
           ),
-        const LoopLabel('挖矿'),
+        const LoopLabel('参与与奖励'),
         // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
         // under it. The row used to say 「这一页不读算力」 — an explanation of
         // its own implementation standing where the figure belongs, while the
@@ -832,7 +847,11 @@ class _ProfileIdentityCard extends ConsumerWidget {
     );
     final body = Column(
       children: <Widget>[
-        LoopProfileAvatar(avatarRef: resource.values.avatarRef, alias: alias),
+        LoopProfileAvatar(
+          avatarRef: resource.values.avatarRef,
+          alias: alias,
+          useLocalAvatar: true,
+        ),
         const SizedBox(height: 10),
         Text(
           alias ?? '尚未设置别名',
@@ -1095,25 +1114,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _syncEditors(state);
     _convergeAvatarRef(controller, state);
     final phase = profileResourcePhase(state);
-    final avatarUpload = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.avatarUpload),
-    );
 
-    // The hero is the body's first row rather than the page's pinned folio:
-    // pinned, it held a third of the screen while the fields scrolled under
-    // it, and 关注赛道 could not be brought onto the same screen as the name
-    // it describes (walkthrough 2026-09-23 · h04/h05). `#scr-profile-edit`
-    // has it inside the scroll too.
-    final hero = LoopFolioPrimary(
-      variant: LoopFolioVariant.chalk,
-      archetype: LoopFolioArchetype.action,
-      kicker: 'PROFILE EDIT',
-      heading: state.draft.alias ?? '尚未设置别名',
-      caption: '昵称、简介与标签可修改；LOOP ID 和钱包地址保持不同边界。',
-      stamp: 'PUBLIC',
-      compact: true,
-      ring: false,
-    );
     return LoopFocusPage(
       archetype: LoopPageArchetype.action,
       title: '编辑资料',
@@ -1132,7 +1133,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             : null,
       ),
       body: <Widget>[
-        hero,
         LoopPreviewModeNotice(
           isPreview: state.mode == ProfileMode.preview,
           resource: '资料',
@@ -1197,14 +1197,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 body: profileFailureReason(state.failureKind),
               ),
             },
-          _AvatarPickerCard(
-            selected: state.draft.avatarRef,
-            alias: state.draft.alias,
-            enabled: state.canEdit,
-            uploadUsable: avatarUpload.isUsable,
-            onSelected: controller.editAvatarRef,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: LoopAvatarEditor(
+              enabled: state.canEdit,
+              avatar: LoopProfileAvatar(
+                avatarRef: state.draft.avatarRef,
+                alias: state.draft.alias,
+                useLocalAvatar: true,
+              ),
+            ),
           ),
-          const LoopLabel('别名'),
+          const LoopLabel('用户名'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: LoopSurfaceCard(
@@ -1214,6 +1218,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     child: TextField(
                       key: const ValueKey<String>('profile-edit-alias-field'),
                       controller: _aliasController,
+                      textInputAction: TextInputAction.next,
                       enabled: state.canEdit,
                       maxLength: 40,
                       buildCounter: (
@@ -1248,6 +1253,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               child: TextField(
                 key: const ValueKey<String>('profile-edit-bio-field'),
                 controller: _bioController,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
                 enabled: state.canEdit,
                 maxLength: 160,
                 maxLines: 3,
@@ -1367,176 +1374,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         version > expectedVersion) {
       LoopToast.show(context, message: '已提交到版本 $version');
     }
-  }
-}
-
-class _AvatarPickerCard extends ConsumerWidget {
-  const _AvatarPickerCard({
-    required this.selected,
-    required this.alias,
-    required this.enabled,
-    required this.uploadUsable,
-    required this.onSelected,
-  });
-
-  final String? selected;
-  final String? alias;
-  final bool enabled;
-
-  /// Whether the backend has opened custom avatar upload. While it is closed
-  /// the card says so once; the capability's own code stays off the screen.
-  final bool uploadUsable;
-  final ValueChanged<String?> onSelected;
-
-  /// The twelve presets, on the sheet the 更换头像 control opens.
-  ///
-  /// The prototype's card is one avatar and one Ink button; the grid that had
-  /// been inlined here put thirteen faces on the first screen and gave the
-  /// page a visual weight the prototype's does not have (audit 2026-09-21
-  /// §J.3).
-  Future<void> _choose(BuildContext context, List<AvatarPreset> presets) async {
-    final choice = await showLoopSheet<String>(
-      context,
-      barrierLabel: '关闭头像选择',
-      builder: (sheetContext) => Padding(
-        key: const ValueKey<String>('profile-avatar-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const LoopLabel('更换头像'),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: <Widget>[
-                for (final preset in presets)
-                  _AvatarChoice(
-                    preset: preset,
-                    alias: alias,
-                    selected: preset.isMonogram
-                        ? selected == null || selected == preset.avatarRef
-                        : selected == preset.avatarRef,
-                    onTap: () =>
-                        Navigator.of(sheetContext)
-                            .pop(preset.isMonogram ? '' : preset.avatarRef),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 14),
-          ],
-        ),
-      ),
-    );
-    if (choice == null) return;
-    onSelected(choice.isEmpty ? null : choice);
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final catalog = ref.watch(avatarCatalogProvider);
-    final presets = catalog.asData?.value;
-    return LoopChalkCard(
-      key: const ValueKey<String>('profile-avatar-picker'),
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Center(
-            child: LoopProfileAvatar(avatarRef: selected, alias: alias),
-          ),
-          const SizedBox(height: 12),
-          if (catalog.isLoading)
-            const LoopSkeleton(
-              key: ValueKey<String>('profile-avatar-loading'),
-              type: LoopSkeletonType.list,
-              rows: 1,
-            )
-          else
-            Center(
-              child: _ChalkCardButton(
-                key: const ValueKey<String>('profile-avatar-change'),
-                label: '更换头像',
-                onTap: enabled && presets != null && presets.isNotEmpty
-                    ? () => unawaited(_choose(context, presets))
-                    : null,
-              ),
-            ),
-          if (catalog.hasError) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              key: const ValueKey<String>('profile-avatar-unavailable'),
-              '预设头像清单暂不可读，保留当前头像。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(
-                12,
-                color: LoopColors.ink.withValues(alpha: 0.72),
-              ),
-            ),
-          ],
-          if (!uploadUsable) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              '自定义头像上传暂不可用，只能选择预设头像。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(
-                11,
-                color: LoopColors.ink.withValues(alpha: 0.64),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _AvatarChoice extends StatelessWidget {
-  const _AvatarChoice({
-    required this.preset,
-    required this.alias,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final AvatarPreset preset;
-  final String? alias;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: preset.label,
-      enabled: onTap != null,
-      child: InkWell(
-        key: ValueKey<String>('profile-avatar-${preset.avatarRef}'),
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          width: LoopTouch.minimum,
-          height: LoopTouch.minimum,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selected ? LoopColors.ink : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: ExcludeSemantics(
-            child: LoopProfileAvatar(
-              avatarRef: preset.isMonogram ? null : preset.avatarRef,
-              alias: alias,
-              size: 34,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

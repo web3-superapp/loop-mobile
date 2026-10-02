@@ -256,6 +256,7 @@ LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
     null => '这一页还没有读到算力明细。',
   };
   return LoopFolioPrimary(
+    compact: true,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'POWER FORMULA',
@@ -587,10 +588,9 @@ LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
     ),
   };
   return LoopFolioPrimary(
-    // `#scr-mining-rewards .ledger-card.folio-primary` carries no
-    // `.ledger-quiet`: this is one of the two saturated Lime heroes in the
-    // module, and the App had painted both of them the quiet green.
-    variant: LoopFolioVariant.lime,
+    compact: true,
+    // The unavailable or available reward stays a reading, not a bright CTA.
+    variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'CLAIMABLE REWARD',
     heading: heading,
@@ -767,6 +767,7 @@ LoopFolioPrimary _rankHero(MiningRank? rank) {
     null => (launchMissingHeading, '排行榜读到之后在这里显示名次。'),
   };
   return LoopFolioPrimary(
+    compact: true,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'NETWORK POSITION',
@@ -1213,6 +1214,7 @@ LoopFolioPrimary _communityHero(
   };
   final reference = community?.community;
   return LoopFolioPrimary(
+    compact: true,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'COMMUNITY POWER',
@@ -1488,6 +1490,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
       onBack: widget.onBack,
       primary: MiningCompositePrimary(
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'POWER RULES',

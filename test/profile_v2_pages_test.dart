@@ -355,7 +355,7 @@ void main() {
       expect(gateway.savedExpectedVersion, 1);
     });
 
-    testWidgets('the tags are a chip flow, and the hero scrolls with them', (
+    testWidgets('the tags are a chip flow without a duplicate identity hero', (
       tester,
     ) async {
       // Device walkthrough 2026-09-23 · h04/h05: each tag was a full-width
@@ -369,14 +369,7 @@ void main() {
 
       final page = tester.widget<LoopFocusPage>(find.byType(LoopFocusPage));
       expect(page.folio, isNull);
-      // The hero is still on the page — as the body's first row, inside the
-      // scroll view the prototype puts it in.
-      final hero = find.byType(LoopFolioPrimary);
-      expect(hero, findsOneWidget);
-      expect(
-        find.ancestor(of: hero, matching: find.byType(SingleChildScrollView)),
-        findsWidgets,
-      );
+      expect(find.byType(LoopFolioPrimary), findsNothing);
 
       // Every interest chip measures its own label; none of them fills the
       // page width, and each still meets the 44px touch target.
@@ -511,7 +504,9 @@ void main() {
       expect(gateway.savedValues?.avatarRef, isNull);
     });
 
-    testWidgets('avatar upload is never offered as available', (tester) async {
+    testWidgets('avatar upload action is offered without preset grid', (
+      tester,
+    ) async {
       await _pump(
         tester,
         'profile-edit',
@@ -519,11 +514,25 @@ void main() {
       );
 
       expect(
-        find.byKey(const ValueKey<String>('profile-avatar-picker')),
+        find.byKey(const ValueKey<String>('profile-avatar-upload')),
         findsOneWidget,
       );
-      expect(find.textContaining('自定义头像上传暂不可用'), findsOneWidget);
-      expect(find.textContaining('上传照片'), findsNothing);
+      expect(find.text('上传头像'), findsOneWidget);
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(find.text('用户名'), findsOneWidget);
+      expect(find.text('PROFILE EDIT'), findsNothing);
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey<String>('profile-edit-alias-field')),
+            )
+            .dy,
+        lessThan(400),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('profile-avatar-sheet')),
+        findsNothing,
+      );
     });
 
     testWidgets('an unreadable catalog keeps the current avatar', (
@@ -537,7 +546,7 @@ void main() {
       );
 
       expect(
-        find.byKey(const ValueKey<String>('profile-avatar-unavailable')),
+        find.byKey(const ValueKey<String>('profile-avatar-upload')),
         findsOneWidget,
       );
       expect(

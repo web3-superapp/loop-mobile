@@ -288,12 +288,16 @@ class MiningSummaryHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = LoopColors.ink;
+    const ink = LoopColors.chalk;
     final muted = ink.withValues(alpha: 0.58);
     final rule = ink.withValues(alpha: 0.16);
-    return LoopLedgerCard(
+    return Container(
       key: const ValueKey<String>('mining-summary-hero'),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: rule)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -350,9 +354,9 @@ class MiningSummaryHero extends StatelessWidget {
             style: LoopTypography.display(
               // `.mining-power-value` is 44px for a figure; words in that slot
               // would wrap to three lines and push the metrics off the card.
-              unit == null ? 29 : 44,
+              unit == null ? 24 : 36,
               color: ink,
-            ).copyWith(height: 0.98, letterSpacing: -2),
+            ).copyWith(height: 0.98, letterSpacing: -0.8),
           ),
           const SizedBox(height: 9),
           Text(
@@ -367,7 +371,7 @@ class MiningSummaryHero extends StatelessWidget {
             const SizedBox(height: 9),
             _HeroStamp(label: stamp!),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
               border: Border(
@@ -439,7 +443,7 @@ class MiningSummaryHero extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Row(
             children: <Widget>[
               Expanded(
@@ -523,10 +527,10 @@ class _HeroAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
-    final background = filled && enabled ? LoopColors.ink : Colors.transparent;
+    final background = filled && enabled ? LoopColors.lime : Colors.transparent;
     final foreground = filled && enabled
-        ? LoopColors.chalk
-        : LoopColors.ink.withValues(alpha: enabled ? 1 : 0.38);
+        ? LoopColors.ink
+        : LoopColors.chalk.withValues(alpha: enabled ? 1 : 0.38);
     return Semantics(
       button: true,
       enabled: enabled,
@@ -545,8 +549,8 @@ class _HeroAction extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: filled && enabled
-                    ? LoopColors.ink
-                    : LoopColors.ink.withValues(alpha: 0.22),
+                    ? LoopColors.lime
+                    : LoopColors.chalk.withValues(alpha: 0.22),
               ),
             ),
             child: Text(
@@ -579,13 +583,13 @@ class _HeroStamp extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(9, 7, 9, 7),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: LoopColors.ink.withValues(alpha: 0.68)),
+          border: Border.all(color: LoopColors.chalk.withValues(alpha: 0.68)),
         ),
         child: Text(
           label.toUpperCase(),
           style: LoopTypography.eyebrow(
             11,
-            color: LoopColors.ink.withValues(alpha: 0.68),
+            color: LoopColors.chalk.withValues(alpha: 0.68),
           ),
         ),
       ),
@@ -618,30 +622,24 @@ class MiningCompositePrimary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: ColoredBox(
-          color: LoopColors.graphite,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              primary,
-              Container(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 17),
-                decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0x1AF3F5EF))),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: detail,
-                ),
-              ),
-            ],
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          primary,
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0x1AF3F5EF))),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: detail,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

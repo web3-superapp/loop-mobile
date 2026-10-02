@@ -1286,6 +1286,7 @@ class LoopRecordRow extends StatelessWidget {
         children: <Widget>[
           if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
           Expanded(
+            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -1327,25 +1328,34 @@ class LoopRecordRow extends StatelessWidget {
           ],
           if (trailing != null || trailingCaption != null) ...<Widget>[
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (trailing != null)
-                  Text(trailing!, style: LoopTypography.figure(13)),
-                if (trailingCaption != null)
-                  Text(
-                    trailingCaption!,
-                    style: LoopTypography.figure(
-                      11,
-                      color: switch (trailingCaptionUp) {
-                        true => LoopPriceMove.up.color,
-                        false => LoopPriceMove.down.color,
-                        null => LoopColors.text3,
-                      },
+            Flexible(
+              flex: 2,
+              fit: FlexFit.tight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (trailing != null)
+                    Text(
+                      trailing!,
+                      textAlign: TextAlign.end,
+                      style: LoopTypography.figure(13),
                     ),
-                  ),
-              ],
+                  if (trailingCaption != null)
+                    Text(
+                      trailingCaption!,
+                      textAlign: TextAlign.end,
+                      style: LoopTypography.figure(
+                        11,
+                        color: switch (trailingCaptionUp) {
+                          true => LoopPriceMove.up.color,
+                          false => LoopPriceMove.down.color,
+                          null => LoopColors.text3,
+                        },
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
           if (onTap != null && chevron) ...<Widget>[

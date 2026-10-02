@@ -30,6 +30,36 @@ void main() {
     activatedAt: DateTime.utc(2026, 9, 7, 1),
   );
 
+  for (final width in <double>[360, 390]) {
+    testWidgets('username remains editable with keyboard at $width', (
+      tester,
+    ) async {
+      await _pump(tester);
+      tester.view.physicalSize = Size(width * 3, 844 * 3);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 900);
+      await tester.pumpAndSettle();
+      final field = find.byKey(const ValueKey<String>('loop-id-alias-field'));
+      await tester.ensureVisible(field);
+      await tester.enterText(field, 'Voyager_7');
+      await tester.pumpAndSettle();
+      final action = find.byKey(const ValueKey<String>('loop-id-submit'));
+      await tester.ensureVisible(action);
+      await tester.pumpAndSettle();
+      expect(_pressed(tester, 'loop-id-submit'), isNotNull);
+      expect(tester.getBottomLeft(action).dy, lessThanOrEqualTo(544));
+      expect(
+        find.byKey(const ValueKey<String>('loop-id-avatar-pick')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('loop-id-avatar-avatar:preset/people-01'),
+        ),
+        findsNothing,
+      );
+    });
+  }
+
   testWidgets('loading shows a skeleton before any identity claim', (
     tester,
   ) async {
@@ -129,22 +159,23 @@ void main() {
     expect(activation.avatarRef, isNull);
   });
 
-  testWidgets('the empty avatar catalog keeps the picker unavailable', (
-    tester,
-  ) async {
-    await _pump(tester, avatars: _AvatarCatalog(fails: true));
+  testWidgets(
+    'registration has one avatar and optional upload without preset dependency',
+    (tester) async {
+      await _pump(tester, avatars: _AvatarCatalog(fails: true));
 
-    expect(
-      find.byKey(const ValueKey<String>('loop-id-avatar-unavailable')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(
-        const ValueKey<String>('loop-id-avatar-avatar:preset/people-01'),
-      ),
-      findsNothing,
-    );
-  });
+      expect(
+        find.byKey(const ValueKey<String>('loop-id-avatar-upload')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('loop-id-avatar-avatar:preset/people-01'),
+        ),
+        findsNothing,
+      );
+    },
+  );
 
   testWidgets('the primary action activates with the exact submitted body', (
     tester,

@@ -38,11 +38,9 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
       });
     }
     return LoopPage(
-      eyebrow: state.mode == FriendGatewayMode.preview
-          ? '开发预览 · PEOPLE'
-          : 'PEOPLE',
+      eyebrow: 'PEOPLE',
       title: '我的好友',
-      subtitle: '好友关系属于 LOOP 账号，与钱包地址和每个群组内的独立化名分离。',
+      subtitle: null,
       actions: <Widget>[
         if (state.mode == FriendGatewayMode.production)
           IconButton(
@@ -254,11 +252,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     final state = ref.watch(friendSearchControllerProvider);
     final controller = ref.read(friendSearchControllerProvider.notifier);
     return LoopPage(
-      eyebrow: state.mode == FriendGatewayMode.preview
-          ? '开发预览 · DISCOVERY'
-          : 'DISCOVERY',
+      eyebrow: 'DISCOVERY',
       title: '添加好友',
-      subtitle: '仅搜索允许被发现的 LOOP 主昵称；群内昵称和钱包地址不会参与搜索。',
+      subtitle: '按用户名查找好友',
       actions: <Widget>[
         if (state.mode == FriendGatewayMode.production)
           IconButton(
@@ -279,7 +275,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           const LoopStateCard(
             key: ValueKey<String>('friend-search-unavailable'),
             title: '用户搜索还没有开放',
-            message: '后端发现与好友请求接口完成前，生产环境不会搜索用户或创建本地假关系。',
+            message: '暂时无法搜索用户，请稍后再试。',
             icon: Icons.person_search_outlined,
             tone: LoopTone.warning,
           )
@@ -550,11 +546,9 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
     }
 
     return LoopPage(
-      eyebrow: group.mode == FriendGatewayMode.preview
-          ? '开发预览 · NEW GROUP'
-          : 'NEW GROUP',
+      eyebrow: 'NEW GROUP',
       title: '创建群组',
-      subtitle: '从已接受的好友中选择成员。LOOP 不会把钱包地址或群内昵称当作成员身份。',
+      subtitle: '选择好友，创建群聊',
       children: <Widget>[
         if (group.mode == FriendGatewayMode.preview) ...<Widget>[
           const _FriendPreviewBanner(),
