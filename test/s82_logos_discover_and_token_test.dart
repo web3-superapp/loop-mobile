@@ -337,19 +337,19 @@ void main() {
   // -------------------------------------------------------------------------
   // 3a · 跌为红
   // -------------------------------------------------------------------------
-  group('涨跌 · 跌一律 danger，零与读不到一律 muted', () {
+  group('涨跌 · 跌一律 marketDown，零与读不到一律 muted', () {
     test('方向只有四种，颜色只有三种', () {
       expect(LoopPriceMove.of(Decimal.parse('1.2')), LoopPriceMove.up);
       expect(LoopPriceMove.of(Decimal.parse('-1.2')), LoopPriceMove.down);
       expect(LoopPriceMove.of(Decimal.zero), LoopPriceMove.flat);
       expect(LoopPriceMove.of(null), LoopPriceMove.unread);
-      expect(LoopPriceMove.up.color, LoopColors.lime);
-      expect(LoopPriceMove.down.color, LoopColors.danger);
+      expect(LoopPriceMove.up.color, LoopColors.marketUp);
+      expect(LoopPriceMove.down.color, LoopColors.marketDown);
       expect(LoopPriceMove.flat.color, LoopColors.muted);
       expect(LoopPriceMove.unread.color, LoopColors.muted);
     });
 
-    testWidgets('社区币卡的跌是 danger，不是 Chalk', (tester) async {
+    testWidgets('社区币卡的跌是 marketDown，不是 Chalk', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
@@ -374,17 +374,17 @@ void main() {
 
       expect(
         tester.widget<Text>(find.text('-3.20%')).style?.color,
-        LoopColors.danger,
+        LoopColors.marketDown,
       );
     });
 
-    testWidgets('行情行的色块：涨 lime、跌 danger、持平与读不到 muted', (tester) async {
+    testWidgets('行情行的色块：涨 marketUp、跌 marketDown、持平与读不到 muted', (tester) async {
       Color groundOf(LoopFact fact) {
         return MarketMove.of(fact).shared.ground;
       }
 
-      expect(groundOf(s5FreshFact('1.2')), LoopColors.lime);
-      expect(groundOf(s5FreshFact('-1.2')), LoopColors.danger);
+      expect(groundOf(s5FreshFact('1.2')), LoopColors.marketUp);
+      expect(groundOf(s5FreshFact('-1.2')), LoopColors.marketDown);
       expect(groundOf(s5FreshFact('0')), LoopColors.muted);
       expect(
         groundOf(const LoopFact.unavailable('MARKET_FACT_NOT_REPORTED')),
@@ -418,10 +418,13 @@ void main() {
       );
 
       final close = find.textContaining('C ');
-      expect(tester.widget<Text>(close.first).style?.color, LoopColors.danger);
+      expect(
+        tester.widget<Text>(close.first).style?.color,
+        LoopColors.marketDown,
+      );
     });
 
-    testWidgets('明细行的向下副标题也是 danger', (tester) async {
+    testWidgets('明细行的向下副标题也是 marketDown', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
@@ -439,7 +442,7 @@ void main() {
 
       expect(
         tester.widget<Text>(find.text('流入池')).style?.color,
-        LoopColors.danger,
+        LoopColors.marketDown,
       );
     });
   });
@@ -466,7 +469,7 @@ void main() {
       expect(find.byKey(const ValueKey<String>('token-buy-action')), findsOne);
     });
 
-    testWidgets('周期 Tab 与 MA7 / MA25 在 K 线上方一行', (tester) async {
+    testWidgets('周期 Tab 与 MA7 / MA25 在无卡片 K 线上方', (tester) async {
       await pumpS5Page(
         tester,
         const TokenDetailScreen(assetId: s5WbnbAssetId),
@@ -481,11 +484,14 @@ void main() {
         );
       }
       final averages = find.byKey(
-        const ValueKey<String>('token-moving-averages'),
+        const ValueKey<String>('candles-moving-averages'),
       );
       expect(averages, findsOneWidget);
-      expect(tester.widget<Text>(averages).data, contains('MA7'));
-      // 紧贴上方：读数行在图之上，图在读数行之下的同一张卡里。
+      expect(
+        find.descendant(of: averages, matching: find.textContaining('MA7')),
+        findsOneWidget,
+      );
+      // 指标读数在无卡片图表上方。
       final chart = find.byKey(const ValueKey<String>('token-candle-chart'));
       expect(
         tester.getTopLeft(averages).dy,

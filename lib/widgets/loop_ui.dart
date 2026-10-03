@@ -379,7 +379,7 @@ class LoopAssetMark extends StatelessWidget {
     'ETH' => LoopColors.market,
     'BTC' => LoopColors.chat,
     'SOL' => LoopColors.mint,
-    'USDC' => const Color(0xFF5796FF),
+    'USDC' => LoopColors.chalk,
     _ => LoopColors.vapor,
   };
 }

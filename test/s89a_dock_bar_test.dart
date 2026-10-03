@@ -105,7 +105,7 @@ void main() {
       return selections;
     }
 
-    const slugs = <String>['community', 'mining', 'launch', 'market', 'wallet'];
+    const slugs = <String>['chat', 'plaza', 'launch', 'market', 'wallet'];
 
     Finder cell(String slug) => find.byKey(ValueKey<String>('loop-tab-$slug'));
 
@@ -145,7 +145,7 @@ void main() {
         'cells keep their size, and lifting selects', (tester) async {
       final selections = await pumpBar(tester);
       final before = cellRects(tester);
-      final start = tester.getCenter(cell('mining'));
+      final start = tester.getCenter(cell('plaza'));
       final gesture = await tester.startGesture(start);
       await tester.pump();
       // Two steps past the touch slop, ending on the Launch cell's centre.
@@ -194,7 +194,7 @@ void main() {
       tester,
     ) async {
       final selections = await pumpBar(tester);
-      final start = tester.getCenter(cell('community'));
+      final start = tester.getCenter(cell('chat'));
       final gesture = await tester.startGesture(start);
       await gesture.moveBy(const Offset(40, 0));
       await tester.pump();
@@ -230,7 +230,7 @@ void main() {
       tester,
     ) async {
       final selections = await pumpBar(tester, reduceMotion: true);
-      final start = tester.getCenter(cell('community'));
+      final start = tester.getCenter(cell('chat'));
       final gesture = await tester.startGesture(start);
       await gesture.moveBy(const Offset(40, 0));
       await tester.pump();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +12,7 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/loop_ground_probe.dart';
@@ -19,7 +22,7 @@ void main() {
   // ground probe itself; the page harnesses arm it for everybody else.
   loopWatchGround();
 
-  testWidgets('navigates the five primary destinations with one shell', (
+  testWidgets('navigates the five primary destinations with Chat first', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -33,19 +36,22 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-
-    expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsOneWidget,
-    );
-    for (final destination in <String>['挖矿', 'Launch', '行情', '钱包', '社区']) {
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+    expect(router.state.matchedLocation, '/chat');
+    expect(LoopShell.destinationLabels, ['聊天', '广场', 'MEME', '情报', '钱包']);
+    for (final (destination, path) in <(String, String)>[
+      ('广场', '/plaza'),
+      ('MEME', '/launch'),
+      ('情报', '/market'),
+      ('钱包', '/wallet'),
+      ('聊天', '/chat'),
+    ]) {
       await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, path);
+      expect(find.byType(LoopTabBar), findsOneWidget);
     }
-    expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('community-chat-segment')), findsNothing);
   });
 
   testWidgets('primary navigation exposes no Perp entry', (tester) async {
@@ -61,7 +67,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '行情'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '情报'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('market-screen')), findsOneWidget);
     expect(find.textContaining('Perp trading'), findsNothing);
@@ -72,11 +78,16 @@ void main() {
     expect(find.text('Trading account'), findsNothing);
     expect(find.textContaining('Hyperliquid margin'), findsNothing);
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '社区'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
     await tester.pumpAndSettle();
     expect(find.textContaining('PERP EQUITY'), findsNothing);
     expect(find.textContaining('Spot to perp'), findsNothing);
 
+    unawaited(
+      GoRouter.of(tester.element(find.byType(LoopTabBar)))
+          .push<void>('/community'),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('community-search-toggle')),
     );
@@ -115,7 +126,7 @@ void main() {
         router.go(path);
         await tester.pumpAndSettle();
 
-        expect(router.routeInformationProvider.value.uri.path, '/community');
+        expect(router.routeInformationProvider.value.uri.path, '/chat');
         expect(routingErrors.last?.location, path, reason: path);
         expect(find.text('Perpetuals'), findsNothing, reason: path);
         expect(find.text('Positions'), findsNothing, reason: path);
@@ -265,35 +276,52 @@ void main() {
     expect(find.text('完成'), findsNothing);
   });
 
-  testWidgets('communication preview is persistently identified as offline', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          privyAuthGatewayProvider.overrideWithValue(
-            const AuthenticatedTestPrivyGateway(),
-          ),
-          communicationGatewayProvider.overrideWithValue(
-            MemoryCommunicationGateway(),
-          ),
-        ],
-        child: const LoopApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'communication preview stays isolated without provider presence claims',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(
+              const AuthenticatedTestPrivyGateway(),
+            ),
+            communicationGatewayProvider.overrideWithValue(
+              MemoryCommunicationGateway(),
+            ),
+          ],
+          child: const LoopApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-    );
-    router.go('/chat');
-    await tester.pumpAndSettle();
+      final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+      router.go('/chat');
+      await tester.pumpAndSettle();
 
-    expect(find.text('Offline preview · not connected'), findsWidgets);
-    expect(find.byKey(const ValueKey('communication-mode-status')), findsOne);
-    expect(find.textContaining('126 online'), findsNothing);
-    expect(find.textContaining('listening'), findsNothing);
-  });
+      final container = ProviderScope.containerOf(
+        tester.element(
+          find.byKey(const ValueKey<String>('chat-preview-inbox')),
+        ),
+      );
+      expect(
+        container.read(communicationGatewayProvider).mode,
+        CommunicationMode.preview,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('chat-preview-inbox')),
+        findsOneWidget,
+      );
+      expect(find.text('Glyph Hunters'), findsOneWidget);
+      // Decision 0111 removes repeated notices; the isolated gateway owns the
+      // fixture and no presence, typing or delivery state is fabricated.
+      expect(
+        find.byKey(const ValueKey('communication-mode-status')),
+        findsNothing,
+      );
+      expect(find.textContaining('126 online'), findsNothing);
+      expect(find.textContaining('listening'), findsNothing);
+    },
+  );
 
   testWidgets('default production communication mode stays unconfigured', (
     tester,
@@ -310,9 +338,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/chat');
     await tester.pumpAndSettle();
 
@@ -345,9 +371,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/chat');
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('ETH Macro Room'));

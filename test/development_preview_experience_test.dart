@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
@@ -40,14 +40,9 @@ void main() {
     await tester.pump();
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-    );
+    expect(find.byType(ChatInboxPage), findsOneWidget);
 
-    router.go('/chat');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Offline preview · not connected'), findsWidgets);
+    expect(find.text('Offline preview · not connected'), findsNothing);
     expect(find.text('Glyph Hunters'), findsOneWidget);
     expect(find.text('ETH Macro Room'), findsOneWidget);
     expect(find.text('0xSable'), findsOneWidget);
@@ -58,10 +53,7 @@ void main() {
     await tester.tap(group);
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Offline preview · simulated conversation'),
-      findsOneWidget,
-    );
+    expect(find.text('Offline preview · simulated conversation'), findsNothing);
     expect(find.text('NightOwl'), findsWidgets);
     // The type ladder (decision 0069) made the transcript taller than one
     // viewport, so the token card sits below the lazily built window.
@@ -82,7 +74,7 @@ void main() {
     expect(messages.value?.last.text, 'Local preview hello');
     expect(
       find.text('Simulated message added to the offline preview.'),
-      findsOneWidget,
+      findsNothing,
     );
   });
 }

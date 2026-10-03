@@ -36,7 +36,7 @@ void main() {
       // The control is still on the page, and it is still a control.
       expect(send, findsOneWidget);
       expect(find.text('发送'), findsOneWidget);
-      expect(find.text('Pay'), findsOneWidget);
+      expect(find.text('扫码支付'), findsOneWidget);
       expect(find.text('兑换'), findsOneWidget);
       expect(find.text('跨链'), findsOneWidget);
       // The promise the page cannot keep is gone, and so is the row that

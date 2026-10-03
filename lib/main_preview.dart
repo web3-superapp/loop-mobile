@@ -1,3 +1,14 @@
+import 'package:loop_mobile/features/profile/presentation/avatar_upload.dart';
+import 'package:loop_mobile/integrations/communication/loop_avatar_image_picker.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/features/market/market_read_gateway.dart';
+import 'package:loop_mobile/features/mining/mining_gateway.dart';
+import 'package:loop_mobile/features/mining/referral_gateway.dart';
+import 'package:loop_mobile/features/launch/launch_gateway.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
+import 'package:loop_mobile/preview/memory_market_gateway.dart';
+import 'package:loop_mobile/preview/memory_catalog_gateways.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app.dart';
@@ -40,14 +51,41 @@ import 'package:loop_mobile/integrations/sharing/system_wallet_activity_export_s
 ///
 /// Run with `bin/flutter run -t lib/main_preview.dart`, then choose
 /// Development Preview on the login screen. Chat, wallet, trading, and owner
-/// settings stay in labelled memory-only Preview adapters. The Market tab may
-/// still read public, identity-free Hyperliquid Testnet spot facts.
+/// settings stay in labelled memory-only Preview adapters. Market, mining and launch reads also use deterministic offline specimens.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
+  final previewWatchlist = MemoryWatchlistGateway();
   runApp(
     ProviderScope(
       overrides: [
+        avatarImagePickerProvider.overrideWithValue(
+          const LoopAvatarImagePicker(),
+        ),
+        marketReadGatewayProvider.overrideWithValue(
+          MemoryPreviewMarketGateway(watchlist: previewWatchlist),
+        ),
+        miningGatewayProvider.overrideWithValue(MemoryPreviewMiningGateway()),
+        launchGatewayProvider.overrideWithValue(MemoryPreviewLaunchGateway()),
+        referralGatewayProvider.overrideWithValue(
+          MemoryPreviewReferralGateway(),
+        ),
+        walletReadGatewayProvider.overrideWithValue(
+          MemoryPreviewWalletGateway(),
+        ),
+        // Only these catalogue reads open. Execution evidence remains pending.
+        loopCapabilityProvider(LoopV2CapabilityId.mining).overrideWithValue(
+          const LoopCapabilityProjection(
+            decision: LoopCapabilityDecision.available,
+          ),
+        ),
+        loopCapabilityProvider(LoopV2CapabilityId.launch).overrideWithValue(
+          const LoopCapabilityProjection(
+            decision: LoopCapabilityDecision.available,
+            evidencePending: true,
+            evidenceReasonCode: 'PREVIEW_EXECUTION_DISABLED',
+          ),
+        ),
         loopDisplayPreferencesStoreProvider.overrideWithValue(
           displayBootstrap.store,
         ),
@@ -91,7 +129,7 @@ Future<void> main() async {
         // a locked `security.event`, a version compare-and-set, and delivery
         // that stays unavailable whatever is saved. Both surfaces carry the
         // visible 演示数据 label.
-        watchlistGatewayProvider.overrideWithValue(MemoryWatchlistGateway()),
+        watchlistGatewayProvider.overrideWithValue(previewWatchlist),
         notificationsGatewayProvider.overrideWithValue(
           MemoryNotificationsGateway(),
         ),
@@ -118,6 +156,7 @@ Future<void> main() async {
             initialResource: ProfileResource(
               version: 1,
               values: ProfileValues(alias: 'QuietComet', avatarRef: null),
+              loopId: 'LOOP-7HJKMNPQ',
               updatedAt: DateTime.utc(2026, 8, 25),
             ),
           ),

@@ -55,6 +55,7 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
       // opened, and the sentence under the heading says what that costs.
       primary: const LoopLedgerComposite(
         primary: LoopFolioPrimary(
+          compact: true,
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
           kicker: 'STAKING POSITION',
@@ -250,6 +251,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
       title: 'LOOP 生态账本',
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
+        compact: true,
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'PUBLIC ECONOMY',
@@ -724,6 +726,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       title: '申请发射',
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
+        compact: true,
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
         kicker: 'CURATED LAUNCH',

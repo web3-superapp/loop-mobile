@@ -276,7 +276,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+        tester.element(find.byType(StreamChatInboxPage)),
       );
       router.go('/chat');
       await tester.pumpAndSettle();
@@ -340,7 +340,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byType(StreamChatInboxPage)),
     );
     router.go('/chat');
     await tester.pumpAndSettle();
@@ -380,7 +380,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+        tester.element(find.byType(StreamChatInboxPage)),
       );
       router.go('/chat');
       await tester.pumpAndSettle();
@@ -521,7 +521,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byType(StreamChatInboxPage)),
     );
     const hex = '0123456789abcdef0123456789abcdef';
     for (final (cid, path) in <(String, String)>[
@@ -538,7 +538,7 @@ void main() {
     // channel page.
     router.go('/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}');
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/community');
+    expect(router.routeInformationProvider.value.uri.path, '/chat');
   });
 
   testWidgets(
@@ -560,7 +560,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+        tester.element(find.byType(StreamChatInboxPage)),
       );
       router.go(
         '/chat/channel/${Uri.encodeComponent('messaging:loop_group_12345678')}'
@@ -572,7 +572,7 @@ void main() {
       // the LOOP group itself.
       expect(find.byType(StreamGroupAliasChannelRoutePage), findsNothing);
       expect(find.byType(GroupAliasChannelRoutePage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
       expect(resolver.calls, isEmpty);
     },
   );

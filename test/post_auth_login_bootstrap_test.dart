@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
@@ -61,10 +62,7 @@ void main() {
 
         expect(repository.calls, 1);
         expect(tokens.calls, 1);
-        expect(
-          find.byKey(const ValueKey<String>('community-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(ChatInboxPage), findsOneWidget);
       },
     );
   }

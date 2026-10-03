@@ -144,6 +144,7 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
       // dark hero (audit 2026-09-21 §J.5, §D #2). LOOP does not score a
       // posture, so the heading stays a figure the server sent.
       primary: LoopFolioPrimary(
+        compact: true,
         key: const ValueKey<String>('security-folio'),
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,
@@ -546,6 +547,7 @@ class _DeviceManagementScreenState
       // `.folio-primary.chalk-card`, as on the prototype's TRUSTED DEVICES
       // card. No stamp: LOOP has no trust signal to put in one.
       primary: LoopFolioPrimary(
+        compact: true,
         key: const ValueKey<String>('devices-folio'),
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,
@@ -829,6 +831,7 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
       title: '导出私钥',
       onBack: widget.onBack,
       folio: const LoopFolioPrimary(
+        compact: true,
         key: ValueKey<String>('key-export-folio'),
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,
@@ -889,7 +892,7 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
             LoopRecordRow(
               key: ValueKey<String>('key-export-no-key'),
               title: '不会显示任何私钥',
-              subtitle: '这一页永远不会渲染遮罩后的密钥样例，那会让人误以为已经导出过。',
+              subtitle: '私钥导出暂不可用。',
               subtitleMaxLines: 2,
               position: LoopRowPosition.last,
             ),
@@ -967,6 +970,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
       title: '社交恢复',
       onBack: widget.onBack,
       folio: const LoopFolioPrimary(
+        compact: true,
         key: ValueKey<String>('social-recovery-folio'),
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,

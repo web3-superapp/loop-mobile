@@ -50,26 +50,22 @@ void main() {
       .variant;
 
   group('group labels', () {
-    // `.label` in the frozen prototype is mono, uppercase and letter-spaced,
-    // and it carries whatever wording the prototype wrote there. On the wallet
-    // pages that wording is English — `Wallet Assets`, `Security &
-    // Connections`, `Wallet 收发记录` — and translating it dropped the mono
-    // eyebrow's register (audit A.1). Where the prototype wrote Chinese —
-    // 「链上分布」, 「已启用」, 「设置」 — the Chinese stays.
-    testWidgets('the wallet home keeps the prototype wording', (tester) async {
+    // Asset and account groups use concise labels for the mobile wallet.
+    testWidgets('wallet assets and account shortcuts have their group labels', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
         wallet: FakeWalletReadGateway(),
       );
 
-      await scrollToS5Section(tester, find.text('WALLET ASSETS'));
-      expect(find.text('WALLET ASSETS'), findsOneWidget);
+      await scrollToS5Section(tester, find.text('我的资产'));
+      expect(find.text('我的资产'), findsOneWidget);
       expect(find.text('资产'), findsNothing);
 
-      await scrollToS5Section(tester, find.text('SECURITY & CONNECTIONS'));
-      expect(find.text('SECURITY & CONNECTIONS'), findsOneWidget);
-      expect(find.text('安全与连接'), findsNothing);
+      await scrollToS5Section(tester, find.text('钱包与账户'));
+      expect(find.text('钱包与账户'), findsOneWidget);
     });
 
     testWidgets('the asset page keeps both wordings, each as written', (

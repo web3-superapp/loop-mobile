@@ -62,6 +62,8 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
+        compact: true,
+        ring: false,
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'BLOCKED ENTITIES',

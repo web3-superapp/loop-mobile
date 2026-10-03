@@ -1,3 +1,7 @@
+// 开发交接 S-01：API integration/v2 @ 83f5ac7 的 friendships_immutable
+// 禁止解除关系；本接口尚无删除好友命令，不能以本地删行或 unfollow 代替。
+// 详见 docs/handoff/2026-10-03-social-development-handoff.md。
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 

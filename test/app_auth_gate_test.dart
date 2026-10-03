@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
@@ -48,7 +49,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
-    expect(find.text('登录配置不完整'), findsOneWidget);
+    expect(find.text('暂时无法登录'), findsOneWidget);
+    expect(find.byType(ChatInboxPage), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('community-screen')),
       findsNothing,
@@ -76,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byType(ChatInboxPage)),
     );
     final backendGate = Completer<LoopBackendLogoutResult>();
     final exit = container
@@ -94,6 +96,7 @@ void main() {
       find.byKey(const ValueKey('privy-google-login-button')),
       findsNothing,
     );
+    expect(find.byType(ChatInboxPage), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('community-screen')),
       findsNothing,
@@ -144,18 +147,13 @@ void main() {
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
 
+    expect(find.byType(ChatInboxPage), findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('community-capability-unavailable')),
+      find.byKey(const ValueKey<String>('stream-chat-unavailable')),
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('community-profile-action')),
-    );
+    await tester.tap(find.byKey(const ValueKey<String>('chat-profile-action')));
     await tester.pumpAndSettle();
     final signOut = find.byKey(const ValueKey<String>('profile-sign-out'));
     await tester.scrollUntilVisible(signOut, 240);
@@ -167,6 +165,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+    expect(find.byType(ChatInboxPage), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('community-screen')),
       findsNothing,

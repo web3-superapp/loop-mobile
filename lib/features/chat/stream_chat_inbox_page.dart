@@ -99,11 +99,11 @@ class StreamChatInboxPage extends ConsumerWidget {
       loading: () => const _StreamStatusCard(
         key: ValueKey<String>('stream-chat-connecting'),
         title: '正在连接会话',
-        message: 'LOOP 正在恢复这个账号的会话授权。',
+        message: '正在连接，请稍候。',
         icon: Icons.sync_rounded,
       ),
       error: (error, stackTrace) => _StreamUnavailableCard(
-        message: '会话授权没有恢复成功，这一页没有执行任何消息操作。',
+        message: '连接失败，请重试。',
         onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
       ),
       data: (authorization) {
@@ -113,7 +113,7 @@ class StreamChatInboxPage extends ConsumerWidget {
             session == null ||
             currentUser == null) {
           return _StreamUnavailableCard(
-            message: '聊天要先拿到服务端签发的会话身份和短期令牌才能连接，现在还没有拿到。',
+            message: '暂时无法连接聊天，请重试。',
             onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
           );
         }
@@ -128,22 +128,25 @@ class StreamChatInboxPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          key: const ValueKey<String>('stream-chat-back-to-community'),
-          tooltip: '返回社区',
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              context.pop();
-            } else {
-              context.go('/community');
-            }
-          },
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
+        title: const Text('聊天'),
         // Step 4 made every Audio Room a community resource: the lobby is
         // reached from a community record, never from the generic inbox,
         // because a room without a community has no locator.
-        actions: <Widget>[const ChatCreateMenuButton()],
+        actions: <Widget>[
+          IconButton(
+            key: const ValueKey<String>('chat-profile-action'),
+            tooltip: '个人中心',
+            onPressed: () => context.push('/profile'),
+            icon: const Icon(Icons.person_outline_rounded),
+          ),
+          IconButton(
+            key: const ValueKey<String>('chat-friends-action'),
+            tooltip: '好友',
+            icon: const Icon(Icons.people_outline_rounded),
+            onPressed: () => context.push('/profile/connections'),
+          ),
+          const ChatCreateMenuButton(),
+        ],
       ),
       body: Stack(
         children: <Widget>[
@@ -159,33 +162,6 @@ class StreamChatInboxPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      Text(
-                        'DISCUSS',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: LoopColors.mint,
-                              letterSpacing: 1.4,
-                            ),
-                      ),
-                      const SizedBox(height: 9),
-                      Text(
-                        '会话',
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      // The provider's name is not a fact the owner can use;
-                      // this page states what is in the list instead.
-                      Text(
-                        '这个账号的官方会话，含送达状态与历史记录。',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      // `#scr-community` puts 「陌生人请求」 on the message
-                      // centre, above the conversations. It is the other half
-                      // of the direct-message path: a request that has not
-                      // been accepted yet is not a conversation and never
-                      // appears in this list, so without this row the only
-                      // way to reach one was the Community panel.
                       const _MessageRequestsEntry(),
                       const SizedBox(height: 16),
                       Expanded(child: content),

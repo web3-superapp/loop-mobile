@@ -417,6 +417,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.primary,
     super.key,
     this.kicker,
+    this.titleWidget,
     this.onBack,
     this.actions = const <Widget>[],
     this.tabPage = false,
@@ -430,6 +431,9 @@ class LoopDashboardPage extends StatelessWidget {
 
   final LoopPageArchetype archetype;
   final String title;
+
+  /// Optional title control, such as the community/chat switch.
+  final Widget? titleWidget;
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
@@ -533,8 +537,17 @@ class LoopDashboardPage extends StatelessWidget {
                 pinned: true,
                 delegate: _StickyTopbar(
                   topPadding: topPadding,
+                  contentHeight:
+                      LoopLayout.topbarHeight +
+                      math.max(
+                            0,
+                            MediaQuery.textScalerOf(context).scale(24) - 24,
+                          ) *
+                          2 *
+                          1.3,
                   child: LoopTopbar(
                     title: title,
+                    titleField: titleWidget,
                     kicker: kicker,
                     subtitle: subtitle,
                     onBack: onBack,
@@ -625,16 +638,23 @@ class _LoopPageBottomBarState extends State<_LoopPageBottomBar> {
 }
 
 class _StickyTopbar extends SliverPersistentHeaderDelegate {
-  const _StickyTopbar({required this.child, required this.topPadding});
+  const _StickyTopbar({
+    required this.child,
+    required this.topPadding,
+    required this.contentHeight,
+  });
 
   final Widget child;
   final double topPadding;
+  // Reserve the title's two lines when the reader enlarges system text.
+  // At ordinary scale the reviewed sticky height remains unchanged.
+  final double contentHeight;
 
   @override
-  double get minExtent => LoopLayout.topbarHeight + topPadding;
+  double get minExtent => contentHeight + topPadding;
 
   @override
-  double get maxExtent => LoopLayout.topbarHeight + topPadding;
+  double get maxExtent => contentHeight + topPadding;
 
   @override
   Widget build(
@@ -642,18 +662,23 @@ class _StickyTopbar extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Material(
-      color: LoopColors.ink,
-      child: Padding(
-        padding: EdgeInsets.only(top: topPadding),
-        child: child,
+    return SizedBox(
+      height: maxExtent,
+      child: Material(
+        color: LoopColors.ink,
+        child: Padding(
+          padding: EdgeInsets.only(top: topPadding),
+          child: child,
+        ),
       ),
     );
   }
 
   @override
   bool shouldRebuild(_StickyTopbar oldDelegate) =>
-      oldDelegate.child != child || oldDelegate.topPadding != topPadding;
+      oldDelegate.child != child ||
+      oldDelegate.topPadding != topPadding ||
+      oldDelegate.contentHeight != contentHeight;
 }
 
 /// `stream`: fixed topbar and chip row, a scrolling collection region that

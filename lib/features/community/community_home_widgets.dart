@@ -111,63 +111,63 @@ class CommunityDiscoverHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = verifiedCount;
-    final kicker = count == null ? 'DISCOVER' : 'DISCOVER · $count VERIFIED';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Semantics(
-        button: true,
-        label: '$title，$body',
-        excludeSemantics: true,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(19),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 72),
-              padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
-              decoration: BoxDecoration(
-                color: LoopColors.lime,
-                borderRadius: BorderRadius.circular(19),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          kicker,
-                          style: LoopTypography.eyebrow(
-                            11,
-                            color: LoopColors.inkMuted,
-                          ),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Material(
+        color: LoopColors.lime,
+        borderRadius: LoopRadius.control,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: LoopRadius.control,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: LoopTypography.heading(
+                          20,
+                          color: LoopColors.ink,
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          title,
-                          style: LoopTypography.heading(
-                            18,
-                            color: LoopColors.ink,
-                          ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '找到同频的人，一起探索',
+                        style: LoopTypography.caption(
+                          12,
+                          color: LoopColors.inkText2,
                         ),
-                        const SizedBox(height: 5),
-                        Text(
-                          body,
-                          style: LoopTypography.caption(
-                            11,
-                            color: LoopColors.inkText2,
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (verifiedCount != null)
+                  Text(
+                    '$verifiedCount',
+                    style: LoopTypography.figure(17, color: LoopColors.ink),
+                  ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: LoopColors.ink,
+                    borderRadius: LoopRadius.pill,
+                  ),
+                  child: const Center(
+                    child: LoopIcon(
+                      'chevron',
+                      size: 20,
+                      color: LoopColors.lime,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const LoopIcon('chevron', size: 18, color: LoopColors.ink),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

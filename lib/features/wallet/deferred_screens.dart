@@ -41,6 +41,7 @@ class PayScreen extends ConsumerWidget {
       // deferred capability is still a page with a shape (audit §A.14).
       primary: const LoopFolioPrimary(
         key: ValueKey<String>('pay-folio'),
+        compact: true,
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.listing,

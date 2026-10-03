@@ -97,7 +97,7 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
   /// MA readouts above the plot, the card's own padding, the interval row,
   /// the indicator row and the provenance line under it. Measured against the
   /// rendered page rather than guessed — the chart takes whatever is left.
-  static const double _chromeHeight = 340;
+  static const double _chromeHeight = 270;
 
   /// Below this the plot stops being a chart and becomes a stripe, so the
   /// page scrolls instead of shrinking further.
@@ -189,6 +189,7 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
           key: ValueKey<String>('chart-full-interval-notice'),
           title: '这张图能做什么',
           body:
+              '左右拖动查看历史，双指或滚轮缩放，长按查看每根 K 线的数据。'
               '可选周期为 15m / 1H / 4H / 1D / 1W，1m 暂时不可用。'
               'MA 与 VOL 由本机按这张图上的收盘价与成交量计算，没有单独的数据来源；'
               '除此之外没有其他指标，也没有画线工具。',
@@ -262,6 +263,7 @@ class _HolderDistributionScreenState
         key: const ValueKey<String>('token-holders-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketHoldersKicker,
         heading: count == null || count.value == null
@@ -323,27 +325,11 @@ class _HolderDistributionScreenState
               ),
             ],
           ),
-          const LoopLabel('持有人总数'),
-          LoopSurfaceCard(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-            child: LoopFactLine(
-              label: '持有人总数',
-              fact: holders.holderCount,
-              emphasize: true,
-              formatter: (value) =>
-                  loopFormatDecimal(value, maxFractionDigits: 0),
-            ),
-          ),
           const LoopLabel('分布'),
           LoopUnavailableCard.fact(
             key: const ValueKey<String>('token-holders-distribution'),
             label: 'Top 持有人、集中度与聚类标注不可用',
             fact: holders.distribution,
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('token-holders-notice'),
-            title: '没有分布就不画分布',
-            body: '前十 / 前百集中度暂时读不到，这里不显示任何比例或地址。',
           ),
         ],
       ],
@@ -411,12 +397,13 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         key: const ValueKey<String>('token-trades-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketTradesKicker,
         heading: block is MarketTradesAvailable
             ? '${block.items.length} 笔链上成交'
             : '最新链上成交记录',
-        caption: '方向、数量和时间按同一节奏扫描，来自已登记 PancakeSwap V3 池的 Swap 事件。',
+        caption: 'PancakeSwap V3 · 链上成交',
       ),
       block: blocked
           ? _marketPageBlock(
@@ -607,6 +594,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
         key: const ValueKey<String>('new-pairs-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketNewPairsKicker,
         // While the list is still being read the hero states that, rather
@@ -809,6 +797,7 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
         key: ValueKey<String>('smart-money-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketSmartMoneyKicker,
         heading: '还没有可观察的地址',

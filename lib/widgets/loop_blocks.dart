@@ -480,8 +480,8 @@ class _LoopActionTile extends StatelessWidget {
     final reason = action.blockedReason;
     final foreground = LoopGround.inkOf(context);
     final content = Container(
-      constraints: const BoxConstraints(minHeight: 58),
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+      constraints: const BoxConstraints(minHeight: 76),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
       decoration: BoxDecoration(
         color: LoopGround.fillOf(context),
         borderRadius: LoopRadius.control,
@@ -492,16 +492,17 @@ class _LoopActionTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (action.icon != null) ...<Widget>[
-            LoopIcon(action.icon!, size: 17, color: foreground),
-            const SizedBox(height: 5),
+            LoopIcon(action.icon!, size: 23, color: foreground),
+            const SizedBox(height: 8),
           ],
           Text(
             action.label,
-            maxLines: 1,
+            maxLines: 2,
+            textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
             style: LoopTypography.label(
-              12,
-              weight: FontWeight.w700,
+              13,
+              weight: FontWeight.w600,
               color: foreground,
             ),
           ),

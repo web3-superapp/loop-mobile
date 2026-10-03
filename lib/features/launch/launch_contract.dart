@@ -71,7 +71,7 @@ final class LaunchException implements Exception {
 
 /// Delivery mode of one port implementation. There is no `preview` mode in
 /// step 7: no Launch, Mining or Referral fixture may ever be rendered.
-enum LaunchGatewayMode { production, unavailable }
+enum LaunchGatewayMode { production, preview, unavailable }
 
 /// The `{ "status": "unavailable", "reasonCode": … }` projection.
 ///

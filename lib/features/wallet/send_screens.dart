@@ -451,6 +451,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
       // no recipient, and the heading says what the step is for.
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('send-recipient-folio'),
+        compact: true,
         variant: LoopFolioVariant.chalk,
         ring: false,
         kicker: 'WALLET SEND',
@@ -859,13 +860,6 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                     body: '余额、费用与试算结果都取自同一时刻。请重新准备一次再签名。',
                   )
                 : const SizedBox.shrink(),
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('send-confirm-signing-exit'),
-            body:
-                '签名由 Privy 嵌入式钱包在本机执行；所有资金操作都汇聚到同一个签名弹层，'
-                '这是全产品唯一的签名出口。',
-            title: '统一签名出口',
           ),
           const LoopNotice(
             key: ValueKey<String>('send-confirm-power'),

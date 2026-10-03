@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
@@ -218,9 +219,7 @@ Future<GoRouter> _pumpAuthenticatedLoopApp(WidgetTester tester) async {
   );
   await tester.pumpAndSettle();
 
-  return GoRouter.of(
-    tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-  );
+  return GoRouter.of(tester.element(find.byType(ChatInboxPage)));
 }
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {

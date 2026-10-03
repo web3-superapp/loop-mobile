@@ -91,6 +91,135 @@ class _PublicProfileSheetHost extends StatelessWidget {
 
 void main() {
   group('public profile sheet', () {
+    testWidgets('block sends exact public target only after confirmation', (
+      tester,
+    ) async {
+      final gateway = FakeSocialGateway();
+      await pumpCommunityPage(
+        tester,
+        _PublicProfileSheetHost(
+          identity: PublicProfileIdentity.fromProfile(testProfile()),
+          onOpenDirectMessage: (_) {},
+        ),
+        social: gateway,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('open-sheet')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('public-profile-block')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-block')),
+      );
+      await tester.pumpAndSettle();
+      expect(gateway.commands, isEmpty);
+      await tester.tap(find.text('拉黑').last);
+      await tester.pumpAndSettle();
+      expect(gateway.commands, [
+        'block:user:${testProfile().publicProfileId}:true',
+      ]);
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+      'refused block preserves the sheet and does not report success',
+      (tester) async {
+        final gateway = FakeSocialGateway(
+          writeFailure: CommunityFailureKind.permissionDenied,
+        );
+        await pumpCommunityPage(
+          tester,
+          _PublicProfileSheetHost(
+            identity: PublicProfileIdentity.fromProfile(testProfile()),
+            onOpenDirectMessage: (_) {},
+          ),
+          social: gateway,
+        );
+        await tester.tap(find.byKey(const ValueKey<String>('open-sheet')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(const ValueKey<String>('public-profile-block')),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('public-profile-block')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('拉黑').last);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey<String>('public-profile-sheet')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('public-profile-failure')),
+          findsOneWidget,
+        );
+        expect(find.text('已拉黑'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'add friend submits the exact public profile and waits for acceptance',
+      (tester) async {
+        final gateway = FakeSocialGateway();
+        await pumpCommunityPage(
+          tester,
+          _PublicProfileSheetHost(
+            identity: PublicProfileIdentity.fromProfile(testProfile()),
+            onOpenDirectMessage: (_) {},
+          ),
+          social: gateway,
+          size: const Size(360, 780),
+        );
+        await tester.tap(find.byKey(const ValueKey<String>('open-sheet')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('public-profile-add-friend')),
+        );
+        await tester.pumpAndSettle();
+        expect(gateway.commands, [
+          'message-request:${testProfile().publicProfileId}',
+        ]);
+        expect(find.text('好友申请已发送'), findsOneWidget);
+        expect(find.textContaining('对方接受后'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('public-profile-open-dm')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'refused friend request never claims friendship or acceptance',
+      (tester) async {
+        final social = FakeSocialGateway(
+          writeFailure: CommunityFailureKind.notFound,
+        );
+        await pumpCommunityPage(
+          tester,
+          _PublicProfileSheetHost(
+            identity: PublicProfileIdentity.fromProfile(testProfile()),
+            onOpenDirectMessage: (_) {},
+          ),
+          social: social,
+        );
+        await tester.tap(find.byKey(const ValueKey<String>('open-sheet')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('public-profile-add-friend')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('好友申请已发送'), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('public-profile-failure')),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('shows only the four-field identity projection', (
       tester,
     ) async {
@@ -202,6 +331,10 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('public-profile-open-dm')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-add-friend')),
         findsNothing,
       );
       expect(opened, isEmpty);
@@ -492,6 +625,10 @@ void main() {
       );
       expect(find.text('申请已提交 · 审核中'), findsOneWidget);
       expect(find.textContaining('我的 → 我的社区 → 我创建的'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-add-friend')),
+        findsNothing,
+      );
       expect(opened, isEmpty);
 
       await tester.tap(

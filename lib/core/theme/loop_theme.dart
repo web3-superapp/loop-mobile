@@ -13,6 +13,10 @@ abstract final class LoopColors {
   static const Color graphite = Color(0xFF171A16);
   static const Color muted = Color(0xFF7F897B);
 
+  /// Market direction is exempt from the brand palette (decision 0116).
+  static const Color marketUp = Color(0xFF2EBD85);
+  static const Color marketDown = Color(0xFFF6465D);
+
   /// `--bg2` rgba(243,245,239,.025)
   static const Color bg2 = Color(0x06F3F5EF);
 
@@ -63,13 +67,12 @@ abstract final class LoopColors {
   static const Color vapor = muted;
   static const Color mint = lime;
 
-  // Legacy categorical accents used by not-yet-migrated feature slices. The
-  // prototype maps red/amber/cyan to Chalk or Lime; new surfaces must not use
-  // these and no further colour may be added to this group.
-  static const Color market = Color(0xFF68B9FF);
-  static const Color chat = Color(0xFFF2B562);
-  static const Color danger = Color(0xFFFF6B82);
-  static const Color warning = Color(0xFFFFC75F);
+  // Compatibility names keep their semantics, but every UI state uses the
+  // user-approved Lime / Chalk / Ink palette (decision 0113).
+  static const Color market = lime;
+  static const Color chat = chalk;
+  static const Color danger = chalk;
+  static const Color warning = lime;
 }
 
 /// The ink of the ground a widget was actually placed on.
@@ -270,8 +273,8 @@ abstract final class LoopZ {
 
 /// Touch targets and fixed control sizes (chapter 4.3 / 5.4).
 abstract final class LoopTouch {
-  /// Minimum hit target for every tappable element.
-  static const double minimum = 44;
+  /// Shared hit target meets Android's 48dp and exceeds iOS's 44pt minimum.
+  static const double minimum = 48;
 
   /// Primary button height.
   static const double primaryButton = 53;
@@ -577,13 +580,16 @@ abstract final class LoopType {
   static final TextStyle displaySm = LoopTypography.display(24);
 
   // Band 2 · heading.
-  static final TextStyle headingLg = LoopTypography.heading(22);
+  static final TextStyle headingLg = LoopTypography.heading(
+    22,
+    weight: FontWeight.w700,
+  );
   static final TextStyle heading = LoopTypography.heading(20);
   static final TextStyle headingSm = LoopTypography.heading(17);
 
   // Band 3 · title.
   static final TextStyle titleLg = LoopTypography.title(16);
-  static final TextStyle title = LoopTypography.title(15);
+  static final TextStyle title = LoopTypography.title(16);
   static final TextStyle titleSm = LoopTypography.title(
     13,
     weight: FontWeight.w500,
@@ -718,7 +724,9 @@ abstract final class LoopTheme {
       canvasColor: LoopColors.ink,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
-      splashFactory: InkSparkle.splashFactory,
+      splashFactory: InkRipple.splashFactory,
+      highlightColor: LoopColors.limeSoft,
+      hoverColor: LoopColors.panel,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       pageTransitionsTheme: loopPageTransitionsTheme,
@@ -775,7 +783,7 @@ abstract final class LoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: LoopColors.card,
+        fillColor: LoopColors.lime.withValues(alpha: 0.055),
         hintStyle: textTheme.bodyMedium,
         labelStyle: textTheme.bodyMedium,
         contentPadding: const EdgeInsets.symmetric(
@@ -839,6 +847,30 @@ abstract final class LoopTheme {
         labelStyle: textTheme.labelMedium,
         shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
+          textStyle: WidgetStatePropertyAll(LoopType.action),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? LoopColors.limeSoft
+                : LoopColors.panel,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? LoopColors.text3
+                : states.contains(WidgetState.selected)
+                ? LoopColors.lime
+                : LoopColors.text2,
+          ),
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: LoopColors.line),
+          ),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: LoopRadius.control),
+          ),
+        ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: LoopColors.graphite,

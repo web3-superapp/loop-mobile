@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -21,32 +22,66 @@ Future<void> _pump(WidgetTester tester, Widget child, {Size? size}) async {
 }
 
 void main() {
-  testWidgets('LoopTopbar renders a 44px back button and a 22/600 title', (
+  testWidgets('narrow record keeps the entire balance and value on one line', (
     tester,
   ) async {
-    var backs = 0;
+    final semantics = tester.ensureSemantics();
     await _pump(
       tester,
-      LoopTopbar(
-        title: '无网络',
-        kicker: 'SYSTEM',
-        onBack: () => backs += 1,
-        actions: <Widget>[
-          LoopIconButton(icon: 'search', label: '搜索', onPressed: () {}),
-        ],
+      Padding(
+        padding: const EdgeInsets.all(18),
+        child: LoopRecordRow(
+          title: 'BNB',
+          subtitle: '可动用 6.999',
+          leading: const LoopTokenLogo(assetSymbol: 'BNB', size: 40),
+          trailing: '7',
+          trailingCaption: r'$5,231.73',
+          onTap: () {},
+        ),
       ),
+      size: const Size(320, 700),
     );
-    final back = find.byKey(const ValueKey<String>('loop-topbar-back'));
-    expect(tester.getSize(back), const Size(44, 44));
-    await tester.tap(back);
-    expect(backs, 1);
-    final title = tester.widget<Text>(find.text('无网络'));
-    // Band 2 `headingLg`: 22 semibold since decision 0080.
-    expect(title.style?.fontSize, 22);
-    expect(title.style?.fontWeight, FontWeight.w600);
-    expect(find.text('SYSTEM'), findsOneWidget);
-    expect(find.bySemanticsLabel('搜索'), findsOneWidget);
+    final value = find.text(r'$5,231.73');
+    final paragraph = tester.renderObject<RenderParagraph>(value);
+    expect(
+      paragraph.getBoxesForSelection(
+        const TextSelection(baseOffset: 0, extentOffset: 9),
+      ),
+      hasLength(1),
+    );
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(find.bySemanticsLabel(RegExp(r'5,231.73')), findsWidgets);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
   });
+
+  testWidgets(
+    'LoopTopbar renders a 48px back button and a 22/700 kicker title',
+    (tester) async {
+      var backs = 0;
+      await _pump(
+        tester,
+        LoopTopbar(
+          title: '无网络',
+          kicker: 'SYSTEM',
+          onBack: () => backs += 1,
+          actions: <Widget>[
+            LoopIconButton(icon: 'search', label: '搜索', onPressed: () {}),
+          ],
+        ),
+      );
+      final back = find.byKey(const ValueKey<String>('loop-topbar-back'));
+      expect(tester.getSize(back), const Size(48, 48));
+      await tester.tap(back);
+      expect(backs, 1);
+      final title = tester.widget<Text>(find.text('无网络'));
+      // Decision 0113 separates the page title with22px bold.
+      expect(title.style?.fontSize, 22);
+      expect(title.style?.fontWeight, FontWeight.w700);
+      expect(find.text('SYSTEM'), findsOneWidget);
+      expect(find.bySemanticsLabel('搜索'), findsOneWidget);
+    },
+  );
 
   testWidgets('LoopFolioPrimary variants use Lime / quiet / Chalk grounds', (
     tester,
@@ -92,7 +127,7 @@ void main() {
     expect(limeHeading.style?.color, LoopColors.ink);
   });
 
-  testWidgets('cards map to their CSS grounds and depth', (tester) async {
+  testWidgets('cards retain contrasting grounds and depth', (tester) async {
     var taps = 0;
     await _pump(
       tester,
@@ -127,7 +162,7 @@ void main() {
     expect(chalk.color, LoopColors.chalk);
     expect(chalk.borderRadius, LoopRadius.card);
     final card = boxOf('card').decoration as BoxDecoration;
-    expect(card.color, LoopColors.card);
+    expect(card.color, LoopColors.graphite);
     expect(card.boxShadow, LoopDepth.liftCard);
     expect(
       tester.widget<Text>(find.text('ledger')).style?.color ??
@@ -334,10 +369,10 @@ void main() {
 
     BoxDecoration decorationAt(int index) =>
         tester
-                .widgetList<Container>(find.byType(Container))
-                .where((container) => container.decoration is BoxDecoration)
+                .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+                .where((box) => box.decoration is BoxDecoration)
                 .elementAt(index)
-                .decoration!
+                .decoration
             as BoxDecoration;
 
     // Lime at 40% over Ink is a dull olive carrying Ink-coloured text: it
@@ -442,7 +477,7 @@ void main() {
       tester.getSize(
         find.byKey(const ValueKey<String>('loop-composer-send')).first,
       ),
-      const Size(44, 44),
+      const Size(48, 48),
     );
     await tester.tap(
       find.byKey(const ValueKey<String>('loop-composer-send')).first,

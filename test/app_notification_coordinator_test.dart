@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
@@ -62,10 +63,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('community-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(ChatInboxPage), findsOneWidget);
 
       final data = _securityEventPayload();
       source.add(
@@ -81,10 +79,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('community-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(ChatInboxPage), findsOneWidget);
 
       source.add(
         LoopNotificationSourceEvent(

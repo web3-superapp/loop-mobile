@@ -81,7 +81,9 @@ final class PrivacyState {
 
   bool get canEdit => resource != null && !isBusy && !requiresReload;
 
-  bool get canSave => canEdit && isDirty;
+  // Saving also retires a legacy anonymous preference. Reading it never
+  // mutates the resource or hides the server's actual stored value.
+  bool get canSave => canEdit && (isDirty || draft.anonymousMode);
 
   int? get expectedVersion => resource?.version;
 
@@ -263,7 +265,7 @@ final class PrivacyController extends Notifier<PrivacyState> {
 
     final generation = ++_generation;
     final expectedVersion = state.resource!.version;
-    final candidate = PrivacyValues.copyOf(state.draft);
+    final candidate = state.draft.withAnonymousMode(false);
     late final Future<void> operation;
     operation =
         _performSave(

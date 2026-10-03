@@ -263,7 +263,7 @@ void main() {
     });
   });
 
-  group('行情 row · the price column takes its width from the name', () {
+  group('行情 row · stacked quotes keep a stable right column', () {
     Future<void> pumpRow(WidgetTester tester, String price) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 900);
@@ -312,23 +312,24 @@ void main() {
       expect(priceWidth(tester), lessThanOrEqualTo(marketRowPriceMaxWidth));
     });
 
-    testWidgets('a wider figure takes the width off the name, never off the '
-        'change block', (tester) async {
+    testWidgets('different figures keep the name and change columns stable', (
+      tester,
+    ) async {
       await pumpRow(tester, '7.39');
       final narrowPrice = priceWidth(tester);
       final wideName = nameWidth(tester);
       final change = tester.getSize(find.byType(MarketChangeBlock)).width;
 
       await pumpRow(tester, '0.0000012345');
-      expect(priceWidth(tester), greaterThan(narrowPrice));
-      expect(nameWidth(tester), lessThan(wideName));
+      expect(priceWidth(tester), narrowPrice);
+      expect(nameWidth(tester), wideName);
       expect(tester.getSize(find.byType(MarketChangeBlock)).width, change);
       expect(change, marketRowChangeWidth);
     });
 
-    testWidgets('a short figure still holds the column floor', (tester) async {
+    testWidgets('a short figure keeps the fixed quote column', (tester) async {
       await pumpRow(tester, '7.39');
-      expect(priceWidth(tester), marketRowPriceWidth);
+      expect(priceWidth(tester), marketRowPriceMaxWidth);
     });
   });
 

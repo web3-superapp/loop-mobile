@@ -55,7 +55,7 @@ void main() {
         find.byKey(const ValueKey<String>('market-watchlist-empty')),
         findsOneWidget,
       );
-      expect(find.text('添加自选资产'), findsOneWidget);
+      expect(find.text('浏览代币'), findsOneWidget);
 
       await tester.tap(addRow);
       await tester.pumpAndSettle();

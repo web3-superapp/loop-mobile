@@ -135,6 +135,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         key: const ValueKey<String>('alerts-folio'),
         variant: LoopFolioVariant.chalk,
         ring: false,
+        compact: true,
         archetype: LoopFolioArchetype.listing,
         kicker: marketAlertsKicker,
         // The list answers one cursor page at a time and the response carries

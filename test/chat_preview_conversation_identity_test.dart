@@ -359,10 +359,7 @@ void main() {
     await tester.tap(find.text('Decoy group'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Preview conversation unavailable. No fallback was opened.'),
-      findsOneWidget,
-    );
+    expect(find.text('会话暂时无法打开，请返回列表重试。'), findsOneWidget);
     expect(find.text('NightOwl'), findsNothing);
     expect(find.byTooltip('Send message'), findsNothing);
   });

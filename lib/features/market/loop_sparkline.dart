@@ -4,7 +4,7 @@ import 'dart:ui' show PointMode;
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 
 /// The number of closed-price points a Token Card's small line renders.
@@ -40,12 +40,12 @@ class LoopSparkline extends StatelessWidget {
     required this.closes,
     required this.semanticLabel,
     super.key,
-    this.color = LoopColors.lime,
+    this.color,
   });
 
   final List<Decimal> closes;
   final String semanticLabel;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,17 @@ class LoopSparkline extends StatelessWidget {
           child: CustomPaint(
             key: const ValueKey<String>('loop-sparkline-canvas'),
             size: Size.infinite,
-            painter: LoopSparklinePainter(closes: closes, color: color),
+            painter: LoopSparklinePainter(
+              closes: closes,
+              color:
+                  color ??
+                  (closes.isEmpty
+                      ? LoopPriceMove.unread.color
+                      : LoopPriceMove.between(
+                          open: closes.first,
+                          close: closes.last,
+                        ).color),
+            ),
           ),
         ),
       ),

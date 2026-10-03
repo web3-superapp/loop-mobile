@@ -171,6 +171,8 @@ class _CommunityMembersScreenState
       ],
       folioCollapsed: typing,
       folio: LoopFolioPrimary(
+        compact: true,
+        ring: false,
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
         kicker: 'MEMBER DIRECTORY',

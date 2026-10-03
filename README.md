@@ -6,11 +6,15 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 正式前端仓库：<https://github.com/web3-superapp/loop-mobile>。原仓库中的 HTML 原型、调研、计划和验证脚本已迁入 [`reference/legacy-prototype/`](reference/legacy-prototype/README.md)，仅作为冻结参考，不再作为开发入口。后端契约与适配器位于 <https://github.com/web3-superapp/loop-api>。
 
+## 社交模块接手入口（2026-10-03）
+
+请先读 [社交开发接手说明](docs/handoff/2026-10-03-social-development-handoff.md)。后端复核基准为 `loop-api` 的 **`integration/v2` @ `83f5ac7`**；该文列出可复用能力、五项待补工作、代码入口和已验证/未验证边界。旧 `main` 不能代表本次复核的社交实现。
+
 ## 当前已完成
 
-- 五个固定主入口：Community / Mining / Launch / Market / Wallet；登录后进入 Community，Chat 是 Community 子流程，Profile 从 Community 顶部进入
-- V2 UI Foundation 已开始迁移：Ink / Lime / Chalk / Graphite 视觉 token、五栏浮动导航、Community UI-first 入口和 Mining 真实不可用态。旧 `/home` 与 `/launchpad` 仅保留兼容重定向；路由表已改为只从 93 route manifest 生成（决策 0050/0051），未接入的页面挂真实的“尚未接入”占位，原 103-surface 目录仅作只读历史
-- 93 route manifest 驱动的路由表：Sora / IBM Plex Mono 字体、原型 SVG sprite 与素材、完整设计 Token、Chalk 浮动底栏、非法路由回 `community` 并记录 `LoopRoutingErrorLog`；原 103-surface 目录仅作只读历史（产品优先级 A / B / C 的旧说明不再是交付依据）
+- 五个固定主入口：Chat / Plaza / MEME / Intelligence / Wallet；登录后进入 Chat，Community 为“我的社区”子页面，Mining 保留 `/mining` 二级入口，Profile 从 Chat 顶部进入
+- V2 UI Foundation 已开始迁移：Ink / Lime / Chalk / Graphite 视觉 token、五栏浮动导航、Chat 首屏入口和 Mining 真实不可用态。旧 `/home` 与 `/launchpad` 仅保留兼容重定向；路由表已改为只从 96 route manifest（原 93 路由加 Chat、广场和推荐社区） 生成（决策 0050/0051），未接入的页面挂真实的“尚未接入”占位，原 103-surface 目录仅作只读历史
+- 96 route manifest（原 93 路由加 Chat、广场和推荐社区） 驱动的路由表：Sora / IBM Plex Mono 字体、原型 SVG sprite 与素材、完整设计 Token、Chalk 浮动底栏、非法路由回 `chat` 并记录 `LoopRoutingErrorLog`；原 103-surface 目录仅作只读历史（产品优先级 A / B / C 的旧说明不再是交付依据）
 - Privy 身份入口现支持 Email OTP、Google OAuth、iOS-only Apple OAuth，以及外部 EVM 钱包的 SIWE 登录/绑定。它们复用同一个 Privy 0.10.1 实例和单飞身份操作边界；缺少 Mobile App Client ID 时全部保持不可登录，缺少有效 Reown Project ID 时只关闭外部钱包入口。供应商 Dashboard、回跳、签名钱包与真机行为仍未验证
 - Reown AppKit 1.8.4 只负责连接 canonical `eip155` 账号并转发 Privy 生成消息的 `personal_sign`。AppKit 自带的认证、Email、Social、Embedded Wallet、SIWE、analytics、Link Mode 与 Solana 均未启用；会话完成后释放。外部地址只显示为 Privy 登录凭据，不进入 Embedded wallet、余额、签名或 LOOP 交易权限
 - Privy Embedded Ethereum wallet readiness 已挂到正式 Wallet：完整认证且无钱包时可走现有 principal-bound SDK 创建链路，已有钱包时只展示并复制当前会话的完整地址。Manage wallets 不再显示假钱包；Receive 不生成二维码或声称支持入金。余额、资产、Send、Swap、签名与交易结果仍明确为演示或不可用
@@ -24,7 +28,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Chat 的 E9 资产快照已收敛为明确标注 `演示数据` 的 Spot market Preview：不再展示 Position、LONG、Entry、收益、跟单或假保存；唯一可用动作只打开公共 Spot 行情列表，Watch 在真实持久化接入前保持禁用
 - Chat 的 Message Requests 已收敛为进程内 `开发预览` 状态：Accept 只从模拟 pending 列表移除且不创建 Stream 会话，Ignore 不通知对方，Report 不提交 moderation 举报；未知或重复处理的 ID 会失败，处理中的卡片禁止重复动作，Chat 首页数量随当前模拟 pending 列表变化
 - Chat 的 Preview 群资料页不再暴露空操作：通知选项只改变持续标注的进程内布局状态，关闭主选项会同步清理 mentions-only 示例；成员操作与退群在没有官方 Stream 写入能力时保持禁用，不再用空按钮或只关闭弹窗伪装成功
-- Chat 顶部提供固定的 `创建群组` / `添加好友` 菜单，Profile 的 People & communication 提供 `我的好友`。正式入口现装配 principal-bound LOOP 社交适配器：支持关系感知的昵称前缀搜索、好友分页、收到/发出的待处理申请、接受/拒绝、从好友发起私聊，以及选择 2–29 位好友由后端创建群聊。`public_profile_id` 是唯一命令目标，`profile_code` 是不可变唯一的同名区分码，账户 Alias 可变、可为空且可重复；钱包地址、Privy/LOOP/Stream 身份和群 Alias 都不会变成公开搜索或客户端成员键。只有显式 Development Preview 注入进程内好友目录并持续标注 `开发预览`，预览建群仍不返回 Stream CID、不创建频道
+- Chat 顶部提供 `创建社区` / `创建群组` / `添加好友` / `扫一扫` / `我的二维码` 菜单（相机识别适配器尚未接入），Profile 的 People & communication 提供 `我的好友`。正式入口现装配 principal-bound LOOP 社交适配器：支持关系感知的昵称前缀搜索、好友分页、收到/发出的待处理申请、接受/拒绝、从好友发起私聊，以及选择 2–29 位好友由后端创建群聊。`public_profile_id` 是唯一命令目标，`profile_code` 是不可变唯一的同名区分码，账户 Alias 可变、可为空且可重复；钱包地址、Privy/LOOP/Stream 身份和群 Alias 都不会变成公开搜索或客户端成员键。只有显式 Development Preview 注入进程内好友目录并持续标注 `开发预览`，预览建群仍不返回 Stream CID、不创建频道
 - 好友申请/决定、建群和私聊每个新意图都使用一个 UUIDv4 作为 `Idempotency-Key` 与 `operation_id`；丢响应或成功包解析失败时先查询 operation，只有精确的路由级 operation-not-found 才可复用完全相同的 UUID/Body 重放，查询鉴权、限流、网络、响应证明或解析失败都不会触发重复写入。Chat `202` 按服务端较大的等待值轮询，并同时受单调墙钟与次数上限约束；`operator_required` 会停止且不创建第二个频道。群聊成功还必须返回 `group_id`、无序匹配的好友集合与 canonical `messaging:loop_group_*` CID，私聊则收敛到 backend 固定的 `messaging:loop_direct_*` CID；随后仍用精确 CID + 当前成员条件向 Stream 查询已存在频道，未确认 membership 时不会挂载频道 UI。消息、历史、已读、输入状态、在线状态和实时成员仍以 Stream 官方 SDK 为真相源
 - 群内 Alias 以 backend `group_id` 隔离，首次保留后不可修改；相同 PUT 可恢复不明确响应，pending projection 不会标成确认。新建群直接使用回执中的 `group_id`；App 重启后，已通过精确 CID + 当前成员校验的 Stream 群可把严格校验后的 channel ID（不是完整 CID、没有 `Idempotency-Key`）交给 backend resolver 恢复 `group_id`，已知 direct ID 在本地直接拒绝。群内搜索只返回 `group_alias_id + alias`，不暴露公开 Profile、账户 Alias、钱包、LOOP 或 Stream 身份；群消息、引用、@提及、reaction、thread、输入状态、会话预览和头像也只允许使用当前 Member 的精确 v1 投影，缺失/异常时统一显示“群成员”，不回退账户级 Stream 名称或稳定 ID。它是群内展示化名而非强匿名保证。Social Privacy 与公开 Profile Privacy 分离，独立控制新的好友申请、好友拉群和好友私聊，版本 0 默认全部关闭。删除好友、拉黑/解除、二维码加好友、钱包地址搜索和群成员管理仍不在本阶段
 - 当前社交写入的 UUID/Body 保留仅覆盖当前 App 进程。被杀进程、清除数据、重装或换设备后，现有只能按 UUID 查询的后端契约不能让客户端发现丢失 UUID 的未决意图。这一点保持明确未验证，后续仍需要独立审核的加密、分账号 social command journal，或后端 owner-scoped pending-intent discovery；D1 新增的 Secure Storage journal 只属于账户/设备会话与 bootstrap/logout 幂等命令，不能被社交写入复用
@@ -114,7 +118,7 @@ flutter build web --release
 
 ## 已锁定工程基线
 
-本仓库的目的为：Build Loop, a Flutter iOS/Android app with five primary destinations—Community, Mining, Launch, Market, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video inside Community, and reviewed backend-mediated V2 capabilities.
+本仓库的目的为：Build Loop, a Flutter iOS/Android app with five primary destinations—Chat, Plaza, MEME, Intelligence, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video with a primary Chat inbox and community-scoped conversations, and reviewed backend-mediated V2 capabilities.
 
 - Flutter 3.47.1 / Dart 3.13.1
 - Android API 28–36、AGP 8.13.2、Gradle 8.14、Kotlin 2.3.20、Java 17

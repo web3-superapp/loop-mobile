@@ -47,7 +47,7 @@ void main() {
         findsOneWidget,
         reason: route,
       );
-      expect(find.text('Offline preview only'), findsOneWidget, reason: route);
+      expect(find.text('此会话暂不可用'), findsOneWidget, reason: route);
       expect(
         find.byKey(const ValueKey<String>('chat-preview-open-chats')),
         findsOneWidget,
@@ -113,8 +113,7 @@ void main() {
     final bannerFinder = find.byKey(
       const ValueKey<String>('chat-preview-route-label'),
     );
-    expect(bannerFinder, findsOneWidget);
-    expect(tester.widget<Banner>(bannerFinder).message, '开发预览');
+    expect(bannerFinder, findsNothing);
     expect(
       find.byKey(const ValueKey<String>('chat-preview-route-blocked')),
       findsNothing,

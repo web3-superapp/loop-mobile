@@ -84,8 +84,8 @@ void main() {
         gateway: MemoryCommunicationGateway(),
       );
 
-      expect(find.text('2 preview requests'), findsOneWidget);
-      await tester.tap(find.text('2 preview requests'));
+      expect(find.text('2 条好友申请'), findsOneWidget);
+      await tester.tap(find.text('2 条好友申请'));
       await tester.pumpAndSettle();
 
       await _tapRequestAction(tester, 'chat-preview-request-accept-r1');
@@ -107,7 +107,7 @@ void main() {
 
       harness.router.go('/chat');
       await tester.pumpAndSettle();
-      expect(find.text('1 preview request'), findsOneWidget);
+      expect(find.text('1 条好友申请'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('chat-preview-message-request-badge'),
@@ -179,7 +179,7 @@ void main() {
 
       harness.router.go('/chat');
       await tester.pumpAndSettle();
-      expect(find.text('No preview requests'), findsOneWidget);
+      expect(find.text('暂无好友申请'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('chat-preview-message-request-badge'),

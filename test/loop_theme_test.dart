@@ -79,6 +79,12 @@ void main() {
     expect(scheme.tertiary, LoopColors.lime);
     expect(scheme.surface, LoopColors.graphite);
     expect(scheme.outline, LoopColors.line);
+    // Decision0113: status aliases cannot reintroduce coloured UI accents.
+    expect(LoopColors.danger, LoopColors.chalk);
+    expect(LoopColors.warning, LoopColors.lime);
+    expect(LoopColors.market, LoopColors.lime);
+    expect(LoopColors.chat, LoopColors.chalk);
+    expect(scheme.error, LoopColors.chalk);
   });
 
   test('spacing, radius, depth, z and touch tokens are complete', () {
@@ -112,7 +118,7 @@ void main() {
     expect(LoopZ.sheet, 80);
     expect(LoopZ.toast, 90);
 
-    expect(LoopTouch.minimum, 44);
+    expect(LoopTouch.minimum, 48);
     expect(LoopTouch.primaryButton, 53);
     expect(LoopTouch.tabBarHeight, 70);
     expect(LoopLayout.tabPageBottomReserve, 90);
@@ -123,10 +129,10 @@ void main() {
   test('the text theme is the platform sans; figures are tabular', () {
     final text = LoopTheme.dark.textTheme;
     final title = text.headlineLarge!;
-    // 22 semibold, the display optical cut, no tracking (decision 0080).
+    // 22 bold, the display optical cut, no tracking (decision 0113).
     expect(title.fontFamily, LoopFonts.systemDisplay);
     expect(title.fontSize, 22);
-    expect(title.fontWeight, FontWeight.w600);
+    expect(title.fontWeight, FontWeight.w700);
     expect(title.letterSpacing, 0);
     expect(title.fontVariations, isNull);
     expect(title.fontFamilyFallback, contains('Noto Sans SC'));

@@ -1,4 +1,12 @@
+// 开发交接 S-01/S-03：当前接通申请、关注和拉黑；删除好友、
+// 公开持仓/交易仍缺正式后端契约，不得用本人钱包读数填充他人资料。
+// 详见 docs/handoff/2026-10-03-social-development-handoff.md。
+
 import 'dart:async';
+
+import 'package:loop_mobile/features/social/social_models.dart';
+import 'package:loop_mobile/features/social/social_qr.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -194,6 +202,88 @@ class _PublicProfileSheetState<T extends Object>
   var _busy = false;
   CommunityFailureKind? _failureKind;
 
+  var _friendRequestSent = false;
+
+  Future<void> _requestFriend() async {
+    final target = widget.identity.publicProfileId;
+    if (target == null || _busy || _friendRequestSent) return;
+    setState(() {
+      _busy = true;
+      _failureKind = null;
+    });
+    try {
+      // V2 message-request acceptance establishes the friendship used by DM.
+      // The gateway owns idempotency and server privacy/block admission.
+      await ref.read(socialGatewayProvider).sendMessageRequest(target);
+      if (!mounted) return;
+      setState(() {
+        _friendRequestSent = true;
+        _busy = false;
+      });
+    } on CommunityGatewayException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _failureKind = error.kind;
+        _busy = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _failureKind = CommunityFailureKind.unexpected;
+        _busy = false;
+      });
+    }
+  }
+
+  Future<void> _block() async {
+    final target = widget.identity.publicProfileId;
+    if (target == null || _busy) return;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('拉黑这个用户？'),
+        content: const Text('对方将无法向你发送新的消息请求。可在屏蔽名单中解除。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('拉黑'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _failureKind = null;
+    });
+    try {
+      await ref
+          .read(socialGatewayProvider)
+          .setBlocked(kind: BlockKind.user, stableId: target, blocked: true);
+      if (!mounted) return;
+      LoopToast.show(context, message: '已拉黑');
+      Navigator.of(context).pop();
+    } on CommunityGatewayException catch (error) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _failureKind = error.kind;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _failureKind = CommunityFailureKind.unexpected;
+        });
+      }
+    }
+  }
+
   Future<void> _toggleFollow() async {
     final target = widget.identity.publicProfileId;
     if (target == null || _busy) return;
@@ -232,7 +322,6 @@ class _PublicProfileSheetState<T extends Object>
     final identity = widget.identity;
     final loopId = identity.loopId;
     final following = _following;
-    final canFollow = identity.isCommandTarget;
     // The account signed in now, as this device has already read it. Watching
     // the controller starts no read of its own: an unread profile simply
     // leaves the comparison unanswered.
@@ -240,6 +329,12 @@ class _PublicProfileSheetState<T extends Object>
       profileControllerProvider.select((state) => state.resource?.loopId),
     );
     final openDirectMessage = widget.onOpenDirectMessage;
+    final offersFriendRequest = publicProfileDirectMessageOffered(
+      identity: identity,
+      hasHandler: true,
+      viewerLoopId: viewerLoopId,
+    );
+    final canFollow = offersFriendRequest;
     final offersDirectMessage = publicProfileDirectMessageOffered(
       identity: identity,
       hasHandler: openDirectMessage != null,
@@ -302,8 +397,64 @@ class _PublicProfileSheetState<T extends Object>
                 ),
             ],
           ),
+          if (loopId != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const ValueKey<String>('public-profile-qr'),
+                onPressed: () => showSocialQr(
+                  context,
+                  title: identity.displayName,
+                  payload: userQrPayload(loopId),
+                  caption: '扫码查看公开资料',
+                ),
+                icon: const Icon(Icons.qr_code_2_rounded),
+                label: const Text('个人二维码'),
+              ),
+            ),
           const SizedBox(height: 16),
-          if (!canFollow)
+          if (offersFriendRequest || offersDirectMessage) ...<Widget>[
+            Row(
+              children: <Widget>[
+                if (offersFriendRequest)
+                  Expanded(
+                    child: LoopButton(
+                      key: const ValueKey<String>('public-profile-add-friend'),
+                      label: _friendRequestSent ? '好友申请已发送' : '加好友',
+                      primary: true,
+                      onPressed: _busy || _friendRequestSent
+                          ? null
+                          : () => unawaited(_requestFriend()),
+                    ),
+                  ),
+                if (offersFriendRequest && offersDirectMessage)
+                  const SizedBox(width: 8),
+                if (offersDirectMessage)
+                  Expanded(
+                    child: LoopButton(
+                      key: const ValueKey<String>('public-profile-open-dm'),
+                      label: '打开私聊',
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              Navigator.of(context).pop();
+                              openDirectMessage!(identity);
+                            },
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              offersFriendRequest
+                  ? '对方接受后，即可在允许私聊时打开会话。'
+                  : '私聊需双方成为好友，并遵循对方的隐私设置。',
+              key: const ValueKey<String>('public-profile-dm-hint'),
+              style: LoopTypography.caption(12, color: LoopColors.muted),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (!identity.isCommandTarget)
             const LoopEmpty(
               key: ValueKey<String>('public-profile-not-targetable'),
               icon: 'warn',
@@ -311,7 +462,7 @@ class _PublicProfileSheetState<T extends Object>
               reason: '这个账号没有公开资料，不能关注，也不能进行其他操作。',
               margin: EdgeInsets.zero,
             )
-          else ...<Widget>[
+          else if (canFollow) ...<Widget>[
             if (following == null)
               const LoopNotice(
                 key: ValueKey<String>('public-profile-follow-unknown'),
@@ -322,37 +473,19 @@ class _PublicProfileSheetState<T extends Object>
             LoopButton(
               key: const ValueKey<String>('public-profile-follow'),
               label: (following ?? false) ? '取消关注' : '关注',
-              primary: !(following ?? false),
+              primary: false,
               block: true,
               onPressed: _busy ? null : () => unawaited(_toggleFollow()),
             ),
             const SizedBox(height: 8),
           ],
-          // The prototype makes every member row a `dm` entry. LOOP puts this
-          // card in between, so the card carries the control: it closes and
-          // hands the account to the caller, which owns the route. Admission
-          // is decided on the conversation page, not here — an account this
-          // viewer is not connected to opens on the message request, which is
-          // the step that connects them.
-          if (offersDirectMessage) ...<Widget>[
-            LoopButton(
-              key: const ValueKey<String>('public-profile-open-dm'),
-              label: '打开私聊',
-              block: true,
-              onPressed: _busy
-                  ? null
-                  : () {
-                      Navigator.of(context).pop();
-                      openDirectMessage!(identity);
-                    },
+          if (offersFriendRequest)
+            TextButton.icon(
+              key: const ValueKey<String>('public-profile-block'),
+              onPressed: _busy ? null : () => unawaited(_block()),
+              icon: const Icon(Icons.block_rounded, size: 18),
+              label: const Text('拉黑用户'),
             ),
-            const SizedBox(height: 6),
-            Text(
-              '还没有建立联系时，会先请你发送一条消息请求。',
-              key: const ValueKey<String>('public-profile-dm-hint'),
-              style: LoopTypography.caption(11, color: LoopColors.muted),
-            ),
-          ],
           if (_failureKind != null) ...<Widget>[
             const SizedBox(height: 12),
             LoopNotice(

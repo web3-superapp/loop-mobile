@@ -144,7 +144,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     // aggregate publishes both as unavailable facts and carries no unread per
     // joined community. So every clause is absent, and the folio says why
     // instead of printing a sentence with the numbers cut out of it.
-    final activity = communityActivityCaption();
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.escape): _closePanel,
@@ -159,9 +158,16 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             LoopDashboardPage(
               key: const ValueKey<String>('community-screen'),
               archetype: LoopPageArchetype.listing,
-              title: '社区',
+              title: '我的社区',
+              onBack: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/plaza');
+                }
+              },
               kicker: communityPreviewKicker(mode),
-              tabPage: true,
+              tabPage: false,
               actions: <Widget>[
                 // The toggle keeps its own focus node so Escape can hand focus
                 // back to the control that opened the panel.
@@ -204,39 +210,27 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               primary: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  // The discover hero sits above the index card, as in the
-                  // frozen prototype.
-                  if (home != null)
-                    CommunityDiscoverHero(
-                      key: const ValueKey<String>('community-discover-hero'),
-                      // `discover` is a preview the server cut to a handful,
-                      // so its length is not a count of verified communities
-                      // and the kicker never prints it as one.
-                      onTap: () => _open('/community/discover'),
-                    ),
-                  LoopFolioPrimary(
+                  Padding(
                     key: const ValueKey<String>('community-folio'),
-                    variant: LoopFolioVariant.lime,
-                    archetype: LoopFolioArchetype.listing,
-                    kicker: 'COMMUNITY INDEX',
-                    // A read that is still running is not a read that failed.
-                    // The skeleton below was already saying 「正在读取」 while
-                    // this hero said 「暂无数值 / 社区数据暂时读不到」 for the
-                    // first seconds of every cold start.
-                    heading: home == null
-                        ? (loading ? '正在读取' : communityMissingHeading)
-                        : '$miningCount 个社区在挖矿',
-                    // Decision 0095: the count is drawn as a skeleton of its
-                    // own height until it is read.
-                    headingLoading: home == null && loading,
-                    caption: home == null
-                        ? loading
-                              ? '已加入的社区数量读到之后显示在这里。'
-                              : '社区数据暂时读不到，这一页不显示任何数字。'
-                        : activity ?? '讨论热度与语音房活动还没有开放。',
-                    // `.folio-stamp` is 「N LIVE」 in the prototype. Nothing
-                    // here counts live rooms, so the corner stays empty; it
-                    // is not a slot for the word DATABASE.
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            '已加入的社区',
+                            style: LoopTypography.heading(20),
+                          ),
+                        ),
+                        if (home != null)
+                          Text(
+                            '$miningCount 个社区在挖矿',
+                            style: LoopTypography.caption(
+                              13,
+                              color: LoopColors.text2,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -281,7 +275,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   )
                 else ...<Widget>[
                   if (joined.isEmpty) ...<Widget>[
-                    const LoopLabel('已加入的社区'),
                     const LoopEmpty(
                       key: ValueKey<String>('community-joined-empty'),
                       message: '还没有加入任何社区',
@@ -297,10 +290,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     const LoopLabel('带币社区 · 可挖矿', tight: true),
                     LoopContentArrival(
                       animate: _sawSkeleton,
-                      child: LoopRecordGroup(
+                      child: Column(
                         key: const ValueKey<String>('community-mining-group'),
-                        rows: <LoopRecordRow>[
-                          for (final entry in mining) _joinedRow(entry),
+                        children: [
+                          for (final entry in mining)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _joinedRow(entry),
+                            ),
                         ],
                       ),
                     ),
@@ -313,10 +310,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     ),
                     LoopContentArrival(
                       animate: _sawSkeleton,
-                      child: LoopRecordGroup(
+                      child: Column(
                         key: const ValueKey<String>('community-other-group'),
-                        rows: <LoopRecordRow>[
-                          for (final entry in others) _joinedRow(entry),
+                        children: [
+                          for (final entry in others)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _joinedRow(entry),
+                            ),
                         ],
                       ),
                     ),
@@ -334,16 +335,24 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                             _open('/community/discover?membership=joined'),
                       ),
                     ),
-                  LoopNotice(
-                    key: const ValueKey<String>(
-                      'community-recommendation-rule',
-                    ),
-                    icon: 'info',
-                    title: '推荐依据',
-                    body:
-                        '推荐只按成员数与创建时间排列，'
-                        '不是个性化算法推荐。',
-                    margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  const LoopLabel('发现社区'),
+                  LoopRecordGroup(
+                    rows: [
+                      LoopRecordRow(
+                        key: const ValueKey<String>(
+                          'community-recommendations-action',
+                        ),
+                        title: '推荐社区',
+                        subtitle: '选择感兴趣的社区加入',
+                        onTap: () => _open('/community/recommendations'),
+                      ),
+                      LoopRecordRow(
+                        key: const ValueKey<String>('community-discover-hero'),
+                        title: '发现新社区',
+                        subtitle: '浏览更多社区',
+                        onTap: () => _open('/community/discover'),
+                      ),
+                    ],
                   ),
                   CommunityObservedFootnote(
                     key: const ValueKey<String>('community-observed-at'),
@@ -453,7 +462,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       title: community.name,
       subtitle: accent == null ? members : '$members · $accent',
       subtitleSpans: <InlineSpan>[
-        TextSpan(text: members, style: LoopMono.stamp),
+        TextSpan(
+          text: members,
+          style: LoopTypography.caption(13, color: LoopColors.text2),
+        ),
         if (accent != null) ...<InlineSpan>[
           const TextSpan(text: ' · '),
           TextSpan(
@@ -461,7 +473,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             style: LoopTypography.figure(
               13,
               weight: FontWeight.w700,
-              color: LoopColors.lime,
+              color: LoopColors.text2,
             ),
           ),
         ],

@@ -4,17 +4,9 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 
 /// Which way a figure moved, and the one colour LOOP paints that direction in.
 ///
-/// The frozen prototype paints `.down` in Chalk (`style-v2.css:221`), so a
-/// fall and a rise differed only by a sign character; the walkthrough of
-/// 2026-09-23 found the reader could not tell them apart at a glance. The
-/// approved design draft answers with `#FF6B82` — [LoopColors.danger] — and
-/// the requester approved it, first for the 行情 list (decision 0084 §2) and
-/// then for the whole application (decision 0086).
-///
-/// Three states and no more: Lime rises, `danger` falls, `muted` stands still
-/// **and** stands for a figure that was not read. Zero has no direction, and a
-/// reading that never arrived has none either — neither may borrow a colour
-/// that would claim one.
+/// Decision 0116 gives market direction its familiar green / red palette.
+/// Signed labels and explicit unavailable states retain the meaning
+/// independently of colour; brand selection colours are separate.
 enum LoopPriceMove {
   up,
   down,
@@ -39,8 +31,8 @@ enum LoopPriceMove {
 
   /// Ink for a figure printed on the page's own dark ground.
   Color get color => switch (this) {
-    LoopPriceMove.up => LoopColors.lime,
-    LoopPriceMove.down => LoopColors.danger,
+    LoopPriceMove.up => LoopColors.marketUp,
+    LoopPriceMove.down => LoopColors.marketDown,
     // `muted` is opaque and reads as a third state rather than as dimmed
     // Chalk, which a reader takes for a rise that lost contrast.
     LoopPriceMove.flat || LoopPriceMove.unread => LoopColors.muted,

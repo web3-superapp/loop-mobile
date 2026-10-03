@@ -539,7 +539,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
       await tester.pumpAndSettle();
       final row = find.byKey(ValueKey<String>('token-feed-$s5NotificationId'));
       await scrollToS5Section(tester, row);

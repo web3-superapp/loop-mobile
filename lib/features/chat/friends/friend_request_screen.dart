@@ -41,7 +41,7 @@ class _FriendRequestsPageState extends ConsumerState<FriendRequestsPage> {
     return LoopPage(
       eyebrow: 'PEOPLE',
       title: '好友申请',
-      subtitle: '只有接受后的关系才会进入好友列表；申请状态不会被当作已建立关系。',
+      subtitle: '接受申请后成为好友',
       actions: <Widget>[
         if (state.mode == FriendGatewayMode.production)
           IconButton(
@@ -66,7 +66,7 @@ class _FriendRequestsPageState extends ConsumerState<FriendRequestsPage> {
         LoopStateCard(
           key: ValueKey<String>('friend-requests-unavailable'),
           title: '好友申请不可用',
-          message: '需要已验证的 LOOP 账号和可用的 Social 服务。这里不会显示本地假申请。',
+          message: '暂时无法读取好友申请，请稍后再试。',
           icon: Icons.mark_email_unread_outlined,
           tone: LoopTone.warning,
         ),

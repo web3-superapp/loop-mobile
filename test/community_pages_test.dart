@@ -94,21 +94,9 @@ void main() {
       );
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
-      // A read that is still running says so. 「暂无数值 / 社区数据暂时读不到」
-      // is the answer to a read that finished with nothing, and it was the
-      // first thing every cold start said for its first seconds.
-      // Decision 0095: the heading's figure is a skeleton of its own height,
-      // and 「正在读取」 is what it says to assistive technology.
-      expect(
-        find.byKey(const ValueKey<String>('loop-folio-heading-skeleton')),
-        findsOneWidget,
-      );
-      final folio = tester.widget<LoopFolioPrimary>(
-        find.byKey(const ValueKey<String>('community-folio')),
-      );
-      expect(folio.heading, '正在读取');
-      expect(folio.headingLoading, isTrue);
-      expect(find.textContaining('读到之后显示在这里'), findsOneWidget);
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(find.text('我的社区'), findsOneWidget);
+      expect(find.textContaining('读到之后显示在这里'), findsNothing);
       expect(find.text(communityMissingHeading), findsNothing);
       expect(find.textContaining('社区数据暂时读不到'), findsNothing);
       expect(find.text(communityMissingFigure), findsNothing);
@@ -127,8 +115,8 @@ void main() {
         community: gateway,
       );
 
-      expect(find.text(communityMissingHeading), findsOneWidget);
-      expect(find.textContaining('社区数据暂时读不到'), findsOneWidget);
+      expect(find.text(communityMissingHeading), findsNothing);
+      expect(find.textContaining('社区数据暂时读不到'), findsNothing);
       expect(find.text('正在读取'), findsNothing);
     });
 
@@ -162,7 +150,7 @@ void main() {
       // The rule is described in plain language; its internal id never
       // reaches the screen, and the page never calls it a recommendation.
       expect(find.textContaining('rule:'), findsNothing);
-      expect(find.textContaining('推荐只按成员数与创建时间排列'), findsOneWidget);
+      expect(find.textContaining('推荐只按成员数与创建时间排列'), findsNothing);
     });
 
     testWidgets(
@@ -315,8 +303,8 @@ void main() {
         ),
       );
 
-      expect(find.text('演示数据'), findsOneWidget);
-      expect(find.text('开发预览'), findsWidgets);
+      expect(find.text('演示数据'), findsNothing);
+      expect(find.text('开发预览'), findsNothing);
       expect(find.text('0 个社区在挖矿'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-capability-unavailable')),
@@ -388,9 +376,7 @@ void main() {
       expect(find.text('你现在不在任何语音房里'), findsNothing);
     });
 
-    testWidgets('the page is laid out in the prototype\'s own order', (
-      tester,
-    ) async {
+    testWidgets('the page prioritizes the community index', (tester) async {
       await pumpCommunityPage(
         tester,
         const CommunityScreen(),
@@ -399,14 +385,13 @@ void main() {
         ),
       );
 
-      // The order is the prototype's: the discover band, then the index
-      // folio, then the mining communities, then everything else, and the
-      // reading's timestamp last. It used to be folio, then one flat list.
+      // Joined communities are the page's primary content. Discovery follows
+      // the joined index, and the reading's timestamp remains last.
       final order = <Key>[
-        const ValueKey<String>('community-discover-hero'),
         const ValueKey<String>('community-folio'),
         const ValueKey<String>('community-mining-group'),
         const ValueKey<String>('community-other-group'),
+        const ValueKey<String>('community-discover-hero'),
         const ValueKey<String>('community-observed-at'),
       ];
       final tops = <double>[
@@ -435,11 +420,7 @@ void main() {
       // the timestamp survives at the foot of the page — and the stamp, which
       // the prototype spends on 「N LIVE」, is not spent on the word DATABASE.
       expect(find.text('DATABASE'), findsNothing);
-      final folio = tester.widget<LoopFolioPrimary>(
-        find.byKey(const ValueKey<String>('community-folio')),
-      );
-      expect(folio.stamp, isNull);
-      expect(folio.caption, isNot(contains('数据观察于')));
+      expect(find.byType(LoopFolioPrimary), findsNothing);
       // The instant is the server's; the clock it is read on is the
       // reader's, so the expectation is built the same way the page builds
       // it rather than pinned to one timezone.

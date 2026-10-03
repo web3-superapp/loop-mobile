@@ -96,7 +96,9 @@ class LoopTopbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final horizontal = dense ? 12.0 : LoopSpacing.page;
-    final gap = dense ? 5.0 : 6.0;
+    // Dense tools already have 48px targets; spare the title the additional
+    // gaps so a channel name can still use both of its permitted lines.
+    final gap = dense ? 0.0 : 6.0;
     return Padding(
       padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 0),
       child: ConstrainedBox(
@@ -143,7 +145,10 @@ class LoopTopbar extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: dense
                             ? theme.textTheme.headlineSmall
-                            : theme.textTheme.headlineLarge,
+                            : LoopTypography.heading(
+                                kicker == null ? 24 : 22,
+                                weight: FontWeight.w700,
+                              ),
                       ),
                     ),
                     if (subtitle != null)
@@ -177,7 +182,7 @@ class LoopTopbar extends StatelessWidget {
   }
 }
 
-/// 44×44 icon button with a sprite glyph (`.back` and topbar tools).
+/// 48×48 icon button with a sprite glyph (`.back` and topbar tools).
 class LoopIconButton extends StatelessWidget {
   const LoopIconButton({
     required this.icon,
@@ -276,8 +281,7 @@ class LoopIconButton extends StatelessWidget {
 // Section label (.label)
 // ---------------------------------------------------------------------------
 
-/// `.label`: mono 10/600, .15em tracking, uppercase, text3; 30px above (22px
-/// when it follows another label) and 8px below.
+/// Section heading: 14px semibold, distinct from the 12px supporting copy.
 class LoopLabel extends StatelessWidget {
   const LoopLabel(
     this.text, {
@@ -288,19 +292,19 @@ class LoopLabel extends StatelessWidget {
 
   final String text;
 
-  /// `.label + .label` keeps 22px instead of 30px above.
+  /// Related groups keep 16px instead of the regular 24px above.
   final bool followsLabel;
 
-  /// `[data-page-archetype="state"] .folio-body > .label`: 14px above.
+  /// Compact state/form groups keep 12px above.
   final bool tight;
 
   @override
   Widget build(BuildContext context) {
     final top = tight
-        ? 14.0
+        ? 12.0
         : followsLabel
-        ? LoopSpacing.group
-        : LoopSpacing.section;
+        ? LoopSpacing.x4
+        : LoopSpacing.x6;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -310,7 +314,14 @@ class LoopLabel extends StatelessWidget {
       ),
       child: Semantics(
         header: true,
-        child: Text(text.toUpperCase(), style: LoopMono.label),
+        child: Text(
+          text.toUpperCase(),
+          style: LoopTypography.title(
+            18,
+            weight: FontWeight.w600,
+            color: LoopColors.chalk,
+          ),
+        ),
       ),
     );
   }
@@ -383,9 +394,14 @@ class LoopFolioPrimary extends StatelessWidget {
     this.squareBottom = false,
     this.headingLoading = false,
     this.kickerTrailing,
+    this.headingStyle,
   });
 
   final String heading;
+
+  /// A page may emphasize its main balance without enlarging every quote.
+  /// The folio still owns foreground contrast on its actual ground.
+  final TextStyle? headingStyle;
 
   /// A small widget at the right end of the kicker line (decision 0100: the
   /// non-release environment tag on the wallet hero). Null keeps the kicker
@@ -520,20 +536,16 @@ class LoopFolioPrimary extends StatelessWidget {
         borderRadius: radius,
         boxShadow: squareBottom ? null : LoopDepth.liftPrimaryLight,
       ),
-      // The tint and the glow ride in the same gradient, because a
-      // [BoxDecoration] paints its gradient *instead of* the colour declared
-      // beside it: with both declared the flat 7.5% tint was never painted.
-      // The stops are the two composited: glow over tint at the centre, tint
-      // alone at the edge.
+      // A neutral raised surface separates the primary reading from the page.
+      // Lime is reserved for the action, selection or an explicit accent.
       LoopFolioVariant.quiet => BoxDecoration(
-        gradient: const RadialGradient(
-          center: Alignment(0.76, -1.24),
-          radius: 1.2,
-          colors: <Color>[Color(0x3BB8FF20), Color(0x13B8FF20)],
-          stops: <double>[0, 0.62],
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[LoopColors.elevated, LoopColors.graphite],
         ),
         borderRadius: radius,
-        border: Border.all(color: LoopColors.lime.withValues(alpha: 0.34)),
+        border: Border.all(color: LoopColors.line),
         boxShadow: squareBottom ? null : LoopDepth.liftPrimary,
       ),
     };
@@ -695,18 +707,24 @@ class LoopFolioPrimary extends StatelessWidget {
                                   key: const ValueKey<String>(
                                     'loop-folio-heading-skeleton',
                                   ),
-                                  style: LoopTypography.display(
-                                    compact ? 24 : archetype.headingSize,
-                                  ),
+                                  style:
+                                      headingStyle ??
+                                      LoopTypography.display(
+                                        compact ? 24 : archetype.headingSize,
+                                      ),
                                   widthFactor: 0.56,
                                 ),
                               )
                             : Text(
                                 heading,
-                                style: LoopTypography.display(
-                                  compact ? 24 : archetype.headingSize,
-                                  color: headingColor,
-                                ),
+                                style:
+                                    (headingStyle ??
+                                            LoopTypography.display(
+                                              compact
+                                                  ? 24
+                                                  : archetype.headingSize,
+                                            ))
+                                        .copyWith(color: headingColor),
                               ),
                       ),
                     ),
@@ -1081,9 +1099,15 @@ class LoopSurfaceCard extends StatelessWidget {
         onTap: onTap,
         semanticLabel: semanticLabel,
         decoration: BoxDecoration(
-          color: background ?? LoopColors.card,
+          color:
+              background ??
+              (LoopGround.inkOf(context) == LoopColors.chalk
+                  ? LoopColors.graphite
+                  : LoopGround.tintOf(context)),
           borderRadius: LoopRadius.card,
-          border: Border.all(color: borderColor ?? LoopColors.line),
+          border: Border.all(
+            color: borderColor ?? LoopGround.hairlineOf(context),
+          ),
           boxShadow: LoopDepth.liftCard,
         ),
         borderRadius: LoopRadius.card,
@@ -1106,15 +1130,9 @@ class LoopRecordCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, LoopSpacing.card),
       child: _Pressable(
         onTap: onTap,
-        // Tint and glow in one gradient, for the reason `LoopFolioPrimary`
-        // states: a decoration paints its gradient instead of its colour.
+        // The same surface family as the primary, with a quieter edge.
         decoration: BoxDecoration(
-          gradient: const RadialGradient(
-            center: Alignment(0.84, -1.28),
-            radius: 1.3,
-            colors: <Color>[Color(0x18F3F5EF), Color(0x0BF3F5EF)],
-            stops: <double>[0, 0.6],
-          ),
+          color: LoopColors.graphite,
           borderRadius: LoopRadius.card,
           border: Border.all(color: LoopColors.line),
           boxShadow: LoopDepth.liftCard,
@@ -1150,9 +1168,16 @@ class _Pressable extends StatelessWidget {
       button: true,
       label: semanticLabel,
       excludeSemantics: semanticLabel != null,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(onTap: onTap, borderRadius: borderRadius, child: box),
+      child: DecoratedBox(
+        decoration: decoration,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: borderRadius,
+            child: child,
+          ),
+        ),
       ),
     );
   }
@@ -1286,6 +1311,7 @@ class LoopRecordRow extends StatelessWidget {
         children: <Widget>[
           if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
           Expanded(
+            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -1296,19 +1322,21 @@ class LoopRecordRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium,
                 ),
+                if (subtitleSpans != null || subtitle != null)
+                  const SizedBox(height: 4),
                 if (subtitleSpans != null)
                   Text.rich(
                     TextSpan(children: subtitleSpans),
                     maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
+                    style: LoopTypography.caption(13, color: LoopColors.text2),
                   )
                 else if (subtitle != null)
                   Text(
                     subtitle!,
                     maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
+                    style: LoopTypography.caption(13, color: LoopColors.text2),
                   ),
               ],
             ),
@@ -1327,25 +1355,46 @@ class LoopRecordRow extends StatelessWidget {
           ],
           if (trailing != null || trailingCaption != null) ...<Widget>[
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (trailing != null)
-                  Text(trailing!, style: LoopTypography.figure(13)),
-                if (trailingCaption != null)
-                  Text(
-                    trailingCaption!,
-                    style: LoopTypography.figure(
-                      11,
-                      color: switch (trailingCaptionUp) {
-                        true => LoopPriceMove.up.color,
-                        false => LoopPriceMove.down.color,
-                        null => LoopColors.text3,
-                      },
+            Flexible(
+              flex: 2,
+              fit: FlexFit.tight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (trailing != null)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        trailing!,
+                        maxLines: 1,
+                        textAlign: TextAlign.end,
+                        style: LoopTypography.figure(16),
+                      ),
                     ),
-                  ),
-              ],
+                  if (trailing != null && trailingCaption != null)
+                    const SizedBox(height: 2),
+                  if (trailingCaption != null)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        trailingCaption!,
+                        maxLines: 1,
+                        textAlign: TextAlign.end,
+                        style: LoopTypography.figure(
+                          12,
+                          color: switch (trailingCaptionUp) {
+                            true => LoopPriceMove.up.color,
+                            false => LoopPriceMove.down.color,
+                            null => LoopColors.text3,
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
           if (onTap != null && chevron) ...<Widget>[
@@ -1361,7 +1410,7 @@ class LoopRecordRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected
             ? LoopColors.lime.withValues(alpha: 0.09)
-            : LoopColors.chalk.withValues(alpha: 0.045),
+            : LoopColors.graphite,
         borderRadius: radius,
         boxShadow: bottomRadius
             ? const <BoxShadow>[
@@ -1529,7 +1578,7 @@ class LoopNotice extends StatelessWidget {
             LoopNoticeTone.danger => (LoopColors.card2, LoopColors.line2),
           };
     final foreground = chalk ? LoopColors.ink : LoopColors.chalk;
-    final bodyStyle = LoopTypography.caption(11, color: foreground);
+    final bodyStyle = LoopTypography.caption(12, color: foreground);
     final structured = happened != null;
     final label = <String?>[
       title,
@@ -1567,7 +1616,7 @@ class LoopNotice extends StatelessWidget {
                     children: <Widget>[
                       if (title != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
+                          padding: const EdgeInsets.only(bottom: 4),
                           child: Text(
                             title!,
                             style: LoopTypography.withWeight(
@@ -1906,7 +1955,6 @@ class LoopButton extends StatelessWidget {
         minWidth: block ? double.infinity : LoopTouch.minimum,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: decoration,
       child: Row(
         mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1925,7 +1973,7 @@ class LoopButton extends StatelessWidget {
                 label,
                 textAlign: TextAlign.center,
                 style: LoopTypography.label(
-                  12,
+                  14,
                   weight: FontWeight.w700,
                   color: foreground,
                 ),
@@ -1941,15 +1989,18 @@ class LoopButton extends StatelessWidget {
         label: semanticLabel ?? label,
         child: Opacity(
           opacity: enabled ? 1 : 0.4,
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              key: ValueKey<String>(
-                'loop-button-${primary ? 'primary' : 'secondary'}',
+          child: DecoratedBox(
+            decoration: decoration,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                key: ValueKey<String>(
+                  'loop-button-${primary ? 'primary' : 'secondary'}',
+                ),
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(14),
+                child: ExcludeSemantics(child: child),
               ),
-              onTap: onPressed,
-              borderRadius: BorderRadius.circular(14),
-              child: ExcludeSemantics(child: child),
             ),
           ),
         ),

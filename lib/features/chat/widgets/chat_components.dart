@@ -13,14 +13,11 @@ import 'package:loop_mobile/integrations/communication/communication_gateway.dar
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 const _avatarColors = <Color>[
-  LoopColors.market,
-  LoopColors.chat,
-  LoopColors.mint,
-  Color(0xFF8D82FF),
-  Color(0xFFFF7E9B),
-  Color(0xFF57C8D5),
-  Color(0xFFB3D66E),
-  Color(0xFFB993FF),
+  LoopColors.lime,
+  LoopColors.chalk,
+  LoopColors.limeHighlight,
+  LoopColors.muted,
+  LoopColors.graphite,
 ];
 
 /// The floor the initials on a generated disc have to clear.
@@ -51,17 +48,8 @@ Color _avatarGround(BuildContext context) =>
 
 /// A seed carried toward Ink until Chalk can be read on the disc it builds.
 ///
-/// The palette is eight fixed hues, three of which — Lime, the pale green and
-/// the amber — are lighter than the Chalk monogram painted on them, so the
-/// initials came out at 1.6:1 to 2.3:1 and the name on the avatar was not
-/// there. The disc's lightest paint is its first gradient stop, the seed at
-/// 82% over whatever it landed on, so that is where the floor is measured.
-///
-/// A seed that already clears the floor is returned unchanged, byte for byte,
-/// which is why the five dark hues on the Ink page keep exactly the disc they
-/// have today. This is a property of the seed, not a list of three fixes, so a
-/// ninth hue added later is held to the same floor without anyone noticing it
-/// had to be.
+/// Decision 0113 uses only green, white and black seeds. Carry each seed
+/// toward Ink until the initials remain readable on either parent ground.
 Color _avatarSeed(Color seed, Color ground) {
   const steps = 32;
   for (var step = 0; step <= steps; step++) {
@@ -114,7 +102,7 @@ class ChatAvatar extends StatelessWidget {
                     Color.lerp(color, LoopColors.abyss, 0.58)!,
                   ],
                 ),
-                border: Border.all(color: color.withValues(alpha: 0.5)),
+                border: Border.all(color: LoopColors.line2),
               ),
               child: Center(
                 child: icon != null
@@ -196,10 +184,12 @@ class ConversationRow extends StatelessWidget {
     required this.conversation,
     required this.onTap,
     super.key,
+    this.showMetadata = true,
   });
 
   final ConversationSummary conversation;
   final VoidCallback onTap;
+  final bool showMetadata;
 
   @override
   Widget build(BuildContext context) {
@@ -265,17 +255,18 @@ class ConversationRow extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
-                          Text(
-                            conversation.timeLabel,
-                            style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(
-                                  color:
-                                      conversation.kind ==
-                                          ConversationKind.voice
-                                      ? LoopColors.chat
-                                      : LoopColors.vapor,
-                                ),
-                          ),
+                          if (showMetadata)
+                            Text(
+                              conversation.timeLabel,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color:
+                                        conversation.kind ==
+                                            ConversationKind.voice
+                                        ? LoopColors.chat
+                                        : LoopColors.vapor,
+                                  ),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 5),
@@ -320,7 +311,8 @@ class ConversationRow extends StatelessWidget {
                             ),
                         ],
                       ),
-                      if (conversation.memberLabel != null) ...<Widget>[
+                      if (showMetadata &&
+                          conversation.memberLabel != null) ...<Widget>[
                         const SizedBox(height: 5),
                         Text(
                           conversation.memberLabel!,

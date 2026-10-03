@@ -1,3 +1,5 @@
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
@@ -60,11 +62,14 @@ import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
+import 'package:loop_mobile/features/community/plaza_screen.dart';
+import 'package:loop_mobile/features/community/community_recommendations_screen.dart';
 import 'package:loop_mobile/features/launch/launch_action_screens.dart';
 import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
 import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
-import 'package:loop_mobile/features/launch/launch_screen.dart';
+import 'package:loop_mobile/features/launch/meme_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
+import 'package:loop_mobile/features/market/intelligence_screen.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
@@ -380,6 +385,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
           '/auth',
           '/auth/otp',
           '/community',
+          '/chat',
           '/splash',
         };
         final location = router.state.matchedLocation;
@@ -628,7 +634,8 @@ class _LoopAppState extends ConsumerState<LoopApp> {
               // bar's scope for itself; the route the router is on says
               // whether a toast it raises has a bar to clear.
               onTabRoute: () =>
-                  LoopRouteManifest.isTabPath(router.state.matchedLocation),
+                  LoopRouteManifest.isTabPath(router.state.matchedLocation) ||
+                  router.state.matchedLocation == '/chat',
             ),
             Expanded(child: content),
           ],
@@ -728,9 +735,7 @@ GoRouter _buildRouter(
       // still opening goes to the step it is on, never through Community.
       if (credentialRoutes.contains(location) || location == '/splash') {
         final step = readOnboarding().step;
-        return step == null
-            ? '/community'
-            : LoopRouteManifest.pathFor(step.slug);
+        return step == null ? '/chat' : LoopRouteManifest.pathFor(step.slug);
       }
       if (linkedLoopId != null) {
         profileLinks.take();
@@ -743,7 +748,7 @@ GoRouter _buildRouter(
       return null;
     },
     routes: <RouteBase>[
-      GoRoute(path: '/', redirect: (context, state) => '/community'),
+      GoRoute(path: '/', redirect: (context, state) => '/chat'),
       GoRoute(
         path: '/auth',
         builder: (context, state) => PrivyLoginScreen(
@@ -800,7 +805,7 @@ GoRouter _buildRouter(
                 unawaited(
                   ref.read(loopOnboardingSequenceProvider.notifier).complete(),
                 );
-                context.go(LoopRouteManifest.defaultPath);
+                context.go('/community/recommendations');
               },
             );
           },
@@ -831,37 +836,24 @@ GoRouter _buildRouter(
         // own over a route a user can return from.
         routes: <RouteBase>[
           GoRoute(
-            path: '/community',
+            path: '/chat',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const CommunityScreen(),
+              child: const ChatInboxPage(),
             ),
           ),
           GoRoute(
-            path: '/mining',
+            path: '/plaza',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: MiningScreen(
-                onOpenAssets: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-assets')),
-                onOpenRewards: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-rewards')),
-                onOpenRank: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-rank')),
-                onOpenRules: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-rules')),
-                onOpenReferral: () =>
-                    context.push(LoopRouteManifest.pathFor('referral')),
-                onOpenMarket: () =>
-                    context.go(LoopRouteManifest.pathFor('market')),
-              ),
+              child: const PlazaScreen(),
             ),
           ),
           GoRoute(
             path: '/launch',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: LaunchScreen(
+              child: MemeScreen(
                 onOpenLaunch: (launchId) =>
                     context.push(LaunchRoute.detail(launchId)),
                 onOpenStake: () =>
@@ -879,7 +871,7 @@ GoRouter _buildRouter(
             path: '/market',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const MarketScreen(),
+              child: const IntelligenceScreen(),
             ),
           ),
           GoRoute(
@@ -891,12 +883,38 @@ GoRouter _buildRouter(
           ),
         ],
       ),
-      GoRoute(path: '/home', redirect: (context, state) => '/community'),
-      GoRoute(path: '/launchpad', redirect: (context, state) => '/launch'),
       GoRoute(
-        path: '/chat',
-        builder: (context, state) => const ChatInboxPage(),
+        path: '/community',
+        builder: (context, state) => const CommunityScreen(),
       ),
+      GoRoute(
+        path: '/mining',
+        builder: (context, state) => MiningScreen(
+          onBack: () =>
+              context.canPop() ? context.pop() : context.go('/market'),
+          onOpenAssets: () =>
+              context.push(LoopRouteManifest.pathFor('mining-assets')),
+          onOpenRewards: () =>
+              context.push(LoopRouteManifest.pathFor('mining-rewards')),
+          onOpenRank: () =>
+              context.push(LoopRouteManifest.pathFor('mining-rank')),
+          onOpenRules: () =>
+              context.push(LoopRouteManifest.pathFor('mining-rules')),
+          onOpenReferral: () =>
+              context.push(LoopRouteManifest.pathFor('referral')),
+          onOpenMarket: () => context.go(LoopRouteManifest.pathFor('market')),
+        ),
+      ),
+      GoRoute(
+        path: '/community/recommendations',
+        builder: (context, state) => CommunityRecommendationsScreen(
+          onDone: () => _popOrHome(context),
+          onBack: () => _popOrHome(context),
+          onBindInvitation: () => context.push('/profile/referral'),
+        ),
+      ),
+      GoRoute(path: '/home', redirect: (context, state) => '/chat'),
+      GoRoute(path: '/launchpad', redirect: (context, state) => '/launch'),
       GoRoute(
         path: '/profile',
         builder: (context, state) => Consumer(
@@ -1153,7 +1171,7 @@ GoRouter _buildRouter(
           production: () => GroupInfoScreen(
             channelCid: state.uri.queryParameters['cid'],
             onBack: () => _popOrHome(context),
-            onLeft: () => context.go('/community'),
+            onLeft: () => context.go('/chat'),
           ),
         ),
       ),
@@ -1193,6 +1211,10 @@ GoRouter _buildRouter(
         path: '/chat/forward',
         builder: (context, state) => ChatForwardScreen(
           sourceCid: state.uri.queryParameters['cid'],
+          initialMessageId: state.uri.queryParameters['message'],
+          communityShare: state.extra is ConversationCommunityShare
+              ? state.extra! as ConversationCommunityShare
+              : null,
           onBack: () => _popOrHome(context),
           onOpenMergePreview: () => context.push('/chat/merge-preview'),
         ),
@@ -1411,7 +1433,7 @@ GoRouter _buildRouter(
         path: '/:unmatched(.*)',
         redirect: (context, state) {
           routingErrors.record(state.uri.toString());
-          return '/community';
+          return '/chat';
         },
       ),
     ],

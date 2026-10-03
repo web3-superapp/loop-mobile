@@ -131,29 +131,11 @@ const double marketRowHeight = 58;
 /// the slot collapsed the value column moved sideways from row to row.
 const Size marketRowSparklineSize = Size(48, 24);
 
-/// The price column's floor.
-///
-/// The design's grid is `1fr 96px 88px` with 8pt gaps, which on a 390pt screen
-/// leaves the name cell 60pt once the 32pt mark and the 56pt line are inside
-/// it — and 「成交额 $1.28B」 ellipsised to 「成交额 $…」 (first render, S78b).
-/// The fixed columns are trimmed to what their own content actually needs at
-/// the ladder's steps, and the difference goes to the name.
-///
-/// It is a floor and not a width: decision 0085. A fixed 84pt cell ellipsised
-/// 「$85,866.13」 to 「$85,866…」 on a real iPhone — the column that the whole
-/// list is read down lost the one thing it carries. The price is the last
-/// thing in a 行情 row that may be abbreviated, so when the figure needs more
-/// than the floor it takes it, up to [marketRowPriceMaxWidth], out of the name
-/// cell beside it: a truncated 「PancakeSwap Tok…」 still names the row, a
-/// truncated price names nothing. The change block never moves.
+/// Width reserved for the price-sort control in the list header.
 const double marketRowPriceWidth = 84;
 
-/// How far the price column may grow into the name.
-///
-/// The widest figure the row can print is a four-significant-digit sub-dollar
-/// price (`$0.0000012345`, 13 characters). Past this the name would be down to
-/// a couple of glyphs, so the price ellipsises instead — with the magnitude
-/// rule below that case does not arise for any price BSC has quoted.
+/// Fixed right-hand quote column for the reference list layout.
+/// Price and change share its right edge; long prices scale down to fit.
 const double marketRowPriceMaxWidth = 124;
 
 /// The change block: `76×30`, radius 6.
@@ -357,8 +339,8 @@ class MarketChangeBlock extends StatelessWidget {
 
 /// One asset row for 行情, at the density a price list is read at.
 ///
-/// Logo · ticker over one grey line · the 1H shape · the price · the 24-hour
-/// block. Every column is in the same place on every row, and the row is
+/// Logo · ticker over one grey line · the 1H shape · price over 24-hour
+/// change. Every column is in the same place on every row, and the row is
 /// [marketRowHeight] tall whether or not it has a shape and whether or not its
 /// change was readable. A price that could not be read spends the identity
 /// line on the reason, and the value column stays empty rather than printing
@@ -438,49 +420,40 @@ class MarketAssetTile extends StatelessWidget {
             child: sparkline,
           ),
           const SizedBox(width: 6),
-          // The price cell sizes to its own figure between a floor and a cap.
-          // A `Row`'s non-flexible children are laid out first and against
-          // unbounded width, so what this takes above the floor comes off the
-          // `Expanded` name beside it — which is the order a price list is
-          // read in (decision 0085).
-          ConstrainedBox(
-            key: const ValueKey<String>('market-row-price-slot'),
-            constraints: const BoxConstraints(
-              minWidth: marketRowPriceWidth,
-              maxWidth: marketRowPriceMaxWidth,
-            ),
-            child: Text(
-              // No figure and no stand-in: the identity line beside this
-              // column already carries the whole reason, and a second,
-              // shorter copy of it here would be the same sentence twice on
-              // one row.
-              priceValue == null ? '' : marketRowPrice(priceValue),
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: marketRowPriceStyle,
+          SizedBox(
+            width: marketRowPriceMaxWidth,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                SizedBox(
+                  key: const ValueKey<String>('market-row-price-slot'),
+                  width: marketRowPriceMaxWidth,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      priceValue == null ? '' : marketRowPrice(priceValue),
+                      maxLines: 1,
+                      softWrap: false,
+                      textAlign: TextAlign.right,
+                      style: LoopTypography.figure(19),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                if (marker != null)
+                  LoopBadge(
+                    marker,
+                    kind: price.quality == LoopFactQuality.stale
+                        ? LoopBadgeKind.down
+                        : LoopBadgeKind.mute,
+                  )
+                else
+                  MarketChangeBlock(fact: row.priceChange24h, height: 20),
+              ],
             ),
           ),
-          const SizedBox(width: 6),
-          // A stale or estimated price says so where the change would be: the
-          // two never appear at once, and the marker is the more important of
-          // the two statements.
-          if (marker != null)
-            SizedBox(
-              width: marketRowChangeWidth,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: LoopBadge(
-                  marker,
-                  kind: price.quality == LoopFactQuality.stale
-                      ? LoopBadgeKind.down
-                      : LoopBadgeKind.mute,
-                ),
-              ),
-            )
-          else
-            MarketChangeBlock(fact: row.priceChange24h),
         ],
       ),
     );
@@ -590,64 +563,92 @@ class MarketTabBar extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.keyPrefix = 'market-tab',
+    this.expanded = false,
+    this.filter = false,
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-
-  /// Two strips of tabs now exist — the 行情 list's and 代币's lower half —
-  /// and a key that named only the label would collide the moment the two
-  /// pages ever shared a word.
   final String keyPrefix;
 
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: LoopColors.line)),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-    child: Row(
-      children: <Widget>[
-        for (var index = 0; index < labels.length; index += 1) ...<Widget>[
-          if (index > 0) const SizedBox(width: 20),
-          Semantics(
-            button: true,
-            selected: index == selectedIndex,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                key: ValueKey<String>('$keyPrefix-${labels[index]}'),
-                onTap: () => onSelected(index),
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minHeight: LoopTouch.minimum,
-                  ),
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: index == selectedIndex
-                            ? LoopColors.lime
-                            : Colors.transparent,
-                        width: 2,
-                      ),
+  /// Page sections share the available width. Detail tabs can overflow and
+  /// remain horizontally scrollable when labels or text size grow.
+  final bool expanded;
+  final bool filter;
+
+  Widget _tab(int index) => filter
+      ? LoopSeg(
+          key: ValueKey<String>('$keyPrefix-${labels[index]}'),
+          label: labels[index],
+          selected: index == selectedIndex,
+          onSelected: () => onSelected(index),
+        )
+      : Semantics(
+          button: true,
+          selected: index == selectedIndex,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              key: ValueKey<String>('$keyPrefix-${labels[index]}'),
+              onTap: () => onSelected(index),
+              child: Container(
+                constraints: const BoxConstraints(
+                  minWidth: LoopTouch.minimum,
+                  minHeight: LoopTouch.minimum,
+                ),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: index == selectedIndex
+                          ? LoopColors.lime
+                          : Colors.transparent,
+                      width: 2,
                     ),
                   ),
-                  child: Text(
-                    labels[index],
-                    style: index == selectedIndex
-                        ? LoopType.title
-                        : LoopType.title.copyWith(color: LoopColors.text3),
-                  ),
+                ),
+                child: Text(
+                  labels[index],
+                  textAlign: TextAlign.center,
+                  style: index == selectedIndex
+                      ? LoopType.title
+                      : LoopType.title.copyWith(color: LoopColors.text3),
                 ),
               ),
             ),
           ),
-        ],
-      ],
-    ),
+        );
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: filter
+        ? null
+        : const BoxDecoration(
+            border: Border(bottom: BorderSide(color: LoopColors.line)),
+          ),
+    child: expanded
+        ? Row(
+            children: [
+              for (var i = 0; i < labels.length; i++) Expanded(child: _tab(i)),
+            ],
+          )
+        : SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+            child: Row(
+              children: [
+                for (var i = 0; i < labels.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 14),
+                  _tab(i),
+                ],
+              ],
+            ),
+          ),
   );
 }
 
@@ -697,12 +698,16 @@ class MarketStatsLine extends StatelessWidget {
                   TextSpan(text: '$label $total · '),
                   TextSpan(
                     text: '涨 $up',
-                    style: LoopType.caption.copyWith(color: LoopColors.lime),
+                    style: LoopType.caption.copyWith(
+                      color: LoopColors.marketUp,
+                    ),
                   ),
                   const TextSpan(text: ' · '),
                   TextSpan(
                     text: '跌 $down',
-                    style: LoopType.caption.copyWith(color: LoopColors.danger),
+                    style: LoopType.caption.copyWith(
+                      color: LoopColors.marketDown,
+                    ),
                   ),
                   if (flat > 0) TextSpan(text: ' · 持平 $flat'),
                 ],
@@ -1247,12 +1252,7 @@ void showWatchlistToggleToast(
   }
 }
 
-/// `.row-ico` with a direction glyph on a soft ground.
-///
-/// `style-v2.css` resolves `--red` to `--chalk` and `--red-soft` to Chalk at
-/// 10%: a sell is the neutral half of the same single-hue system, never a
-/// second colour. The audit found the 成交 and 聪明钱 rows with no leading
-/// mark at all (§G.5, §G.9, §D item 7).
+/// Buy/inflow uses market green; sell/outflow uses market red.
 class MarketDirectionAvatar extends StatelessWidget {
   const MarketDirectionAvatar({
     required this.inbound,
@@ -1260,7 +1260,7 @@ class MarketDirectionAvatar extends StatelessWidget {
     this.size = 36,
   });
 
-  /// True for the direction the prototype draws in Lime (买入 / 流入).
+  /// True for 买入 / 流入.
   final bool inbound;
   final double size;
 
@@ -1271,15 +1271,14 @@ class MarketDirectionAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: inbound
-            ? LoopColors.limeSoft
-            : LoopColors.chalk.withValues(alpha: 0.1),
+        color: (inbound ? LoopColors.marketUp : LoopColors.marketDown)
+            .withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(size / 3),
       ),
       child: LoopIcon(
         inbound ? 'arrow-up' : 'arrow-down',
         size: size * 0.5,
-        color: inbound ? LoopColors.lime : LoopColors.chalk,
+        color: inbound ? LoopColors.marketUp : LoopColors.marketDown,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
@@ -111,10 +112,7 @@ void main() {
 
       expect(repository.policyCalls, 1);
       expect(repository.capabilityCalls, 1);
-      expect(
-        find.byKey(const ValueKey<String>('community-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(ChatInboxPage), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // Decision 0064: the failure is now retried on a bounded ladder, and
@@ -124,10 +122,7 @@ void main() {
         await tester.pump();
       }
       expect(repository.policyCalls, 1 + LoopV2MetaObserver.maxRetries);
-      expect(
-        find.byKey(const ValueKey<String>('community-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(ChatInboxPage), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -154,6 +149,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+      expect(find.byType(ChatInboxPage), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('community-screen')),
         findsNothing,

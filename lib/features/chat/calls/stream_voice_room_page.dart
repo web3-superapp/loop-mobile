@@ -501,7 +501,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
             center: Alignment(0.25, -0.8),
             radius: 1.2,
             colors: <Color>[
-              Color(0xFF182C2B),
+              LoopColors.limeSoft,
               LoopColors.abyss,
               LoopColors.abyss,
             ],

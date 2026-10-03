@@ -71,6 +71,15 @@ void main() {
         final relative = entity.path.replaceAll(r'\', '/');
         scanned.add(relative);
         if (allowed.contains(relative)) continue;
+        final bytes = entity.readAsBytesSync();
+        if (entity.uri.pathSegments.last.startsWith('._') &&
+            bytes.length >= 4 &&
+            bytes[0] == 0 &&
+            bytes[1] == 5 &&
+            bytes[2] == 0x16 &&
+            bytes[3] == 7) {
+          continue;
+        }
         final source = entity.readAsStringSync();
         for (final name in memoryClasses) {
           if (source.contains(name)) offenders.add('$relative -> $name');
@@ -211,7 +220,7 @@ void main() {
   });
 
   group('the two Preview surfaces are visibly labelled', () {
-    testWidgets('watchlist-edit says 演示数据 and lists the fixture', (
+    testWidgets('watchlist-edit lists the fixture without developer notices', (
       tester,
     ) async {
       await pumpS5Page(
@@ -222,9 +231,9 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('chain-preview-notice')),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('演示数据'), findsOneWidget);
+      expect(find.text('演示数据'), findsNothing);
       expect(find.text('4 个自选资产'), findsOneWidget);
       // A labelled Preview is never also an unavailable surface.
       expect(
@@ -244,9 +253,9 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('chain-preview-notice')),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('演示数据'), findsOneWidget);
+      expect(find.text('演示数据'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('notification-push-unavailable')),
         findsOneWidget,

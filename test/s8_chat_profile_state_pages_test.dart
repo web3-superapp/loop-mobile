@@ -643,7 +643,7 @@ void main() {
       await _pumpProfile(tester, 'privacy');
 
       expect(
-        find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+        find.byKey(const ValueKey<String>('privacy-discoverable')),
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey<String>('privacy-empty')), findsNothing);

@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -142,7 +146,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
         blockKey: 'dm-capability-unavailable',
         message: '私聊当前不可用',
         reason: capabilityReason == null
-            ? '尚未读取到能力清单，本页不请求任何频道。'
+            ? '暂时无法连接，请稍后重试。'
             : communicationUnavailableReason(capabilityReason),
       );
     }
@@ -150,7 +154,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       return const _Block(
         blockKey: 'dm-missing-target',
         message: '缺少会话标识',
-        reason: '请从关注列表、陌生人请求或公开资料进入，本页不会猜测要打开谁的私聊。',
+        reason: '请从好友、消息请求或对方资料页打开私聊。',
       );
     }
     if (cid == null) {
@@ -177,16 +181,14 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
                 key: ValueKey<String>('dm-operator-required'),
                 icon: 'clock',
                 message: '需要人工处理',
-                reason:
-                    '这次请求已经收到，需要人工处理才能完成。'
-                    '这里不提供重试：重新提交会开出第二个操作。请联系支持后再回到这个会话。',
+                reason: '请求已收到，请联系支持完成处理。',
               ),
               LoopNotice(
                 key: ValueKey<String>('dm-operator-required-notice'),
                 icon: 'info',
                 tone: LoopNoticeTone.warn,
                 title: '不要重复提交',
-                body: '这次请求已经记录，重复发起不会更快，只会多出一条待处理记录。',
+                body: '请求处理中，请勿重复提交。',
                 margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
               ),
             ],
@@ -231,7 +233,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
           // hero stays on the state that has no thread to show.
           LoopChatHeaderStrip(
             key: const ValueKey<String>('dm-protection-note'),
-            segments: const <String>['不声明端到端加密 · 私聊由 Stream Chat 承载'],
+            segments: const <String>['聊天不提供端到端加密'],
             collapsed: loopChatKeyboardIsUp(context),
           ),
         ],
@@ -242,9 +244,15 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     // Stream widgets under it name the same person the header does instead of
     // the provider's account id. Without a trusted identity — a deep link
     // carries none — nothing is published and they fail closed.
-    final peer = widget.target?.identity?.displayName;
+    final peerIdentity =
+        widget.target?.identity ??
+        ref.watch(directChannelDirectoryProvider).asData?.value.peerOf(cid);
+    final peer = peerIdentity?.displayName;
     if (peer == null) return surface;
-    return LoopDirectPeerScope(displayName: peer, child: surface);
+    return ConversationSocialScope(
+      peer: peerIdentity,
+      child: LoopDirectPeerScope(displayName: peer, child: surface),
+    );
   }
 
   Future<void> _sendMessageRequest() async {
@@ -332,9 +340,7 @@ class _FriendshipRequired extends StatelessWidget {
               // closed 私聊 switch in the other account's privacy centre and
               // an account that does not exist all answer the same way
               // (decision 0070).
-              : '私聊需要双方成为好友，并且对方没有在隐私中心关掉私聊。'
-                    '先发送一条消息请求，对方接受后这个会话才会打开。'
-                    '这个结果不代表对方账号一定存在。',
+              : '对方暂时无法接收私聊。可先发送消息请求，接受后再聊天。',
         ),
         // A refused send is the page's own outcome and outlives the toast
         // that announced it. It never replaces the control: the same request
@@ -364,7 +370,7 @@ class _FriendshipRequired extends StatelessWidget {
           key: ValueKey<String>('dm-protection-note-blocked'),
           icon: 'info',
           title: '不声明端到端加密',
-          body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
+          body: '聊天不提供端到端加密。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
         ),
       ],

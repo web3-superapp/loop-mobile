@@ -79,7 +79,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
             children: <Widget>[
               // `.identity-head`: mark, title, one line of copy.
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 44, 16, 26),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
                 child: Semantics(
                   header: true,
                   container: true,
@@ -88,16 +88,16 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                       const LoopBrandMark(
                         key: ValueKey<String>('privy-auth-mark'),
                         kind: LoopBrandMarkKind.appIcon,
-                        height: 104,
+                        height: 72,
                         semanticLabel: 'LOOP',
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       Text(
                         '欢迎来到 LOOP',
                         textAlign: TextAlign.center,
                         style: LoopTypography.display(24),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 280),
                         child: Text(
@@ -118,8 +118,8 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                   key: ValueKey<String>('privy-auth-configuration-incomplete'),
                   icon: 'warn',
                   tone: LoopNoticeTone.warn,
-                  title: '登录配置不完整',
-                  body: '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。',
+                  title: '暂时无法登录',
+                  body: '请稍后再试。',
                 ),
               // `.auth-methods`: Apple, Google, email, 或, external wallet.
               if (showApple)
@@ -130,7 +130,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                   busy:
                       authState.activeOperation == IdentityAuthOperation.apple,
                   available: config.canInitializePrivy,
-                  unavailableReason: '缺少 Privy Mobile App Client ID',
+                  unavailableReason: '暂时无法登录',
                   onPressed: authState.isBusy
                       ? null
                       : controller.loginWithApple,
@@ -141,7 +141,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                 primary: !showApple,
                 busy: authState.activeOperation == IdentityAuthOperation.google,
                 available: config.canInitializePrivy,
-                unavailableReason: '缺少 Privy Mobile App Client ID',
+                unavailableReason: '暂时无法登录',
                 onPressed: authState.isBusy ? null : controller.loginWithGoogle,
               ),
               Padding(
@@ -203,9 +203,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                     authState.activeOperation ==
                     IdentityAuthOperation.externalWalletLogin,
                 available: config.canConnectExternalWallet,
-                unavailableReason: config.hasValidReownProjectId
-                    ? '缺少 Privy Mobile App Client ID'
-                    : '缺少有效的 Reown Project ID',
+                unavailableReason: '暂时无法连接钱包',
                 onPressed: authState.isBusy
                     ? null
                     : () =>
@@ -219,13 +217,12 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                   0,
                 ),
                 child: Text(
-                  '继续即表示同意用户协议与隐私政策 · 外部钱包只是登录凭证，不是 LOOP 交易钱包，不能授权任何交易',
+                  '继续即表示同意用户协议与隐私政策',
                   textAlign: TextAlign.center,
                   style: LoopTypography.caption(11, color: LoopColors.text3),
                 ),
               ),
               if (previewEnabled) ...<Widget>[
-                const LoopLabel('开发预览'),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: LoopSpacing.page,
@@ -248,7 +245,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                     0,
                   ),
                   child: Text(
-                    '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
+                    '离线体验，不产生真实交易。',
                     textAlign: TextAlign.center,
                     style: LoopTypography.caption(11, color: LoopColors.text3),
                   ),
@@ -513,7 +510,7 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                       icon: 'offline',
                       tone: LoopNoticeTone.danger,
                       title: '暂时无法确认登录状态',
-                      body: '$message\n未收到 Privy 的“未登录”答复，因此不会要求你重新登录。',
+                      body: message,
                     ),
                   ),
                   Padding(

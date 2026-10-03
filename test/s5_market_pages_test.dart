@@ -108,58 +108,36 @@ void main() {
       expect(find.text('0'), findsNothing);
     });
 
-    testWidgets('新币 is a tab of this page, and reads only when opened', (
-      tester,
-    ) async {
-      final market = FakeMarketReadGateway(
-        overview: S5Answer<MarketOverview>(
-          value: s5Overview(newPairsAvailable: true),
-        ),
-        newPairs: S5Answer<MarketNewPairsPage>(
-          value: MarketNewPairsPage(
-            newPairs: MarketNewPairsAvailable(
-              source: LoopFactSource.geckoterminal,
-              fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
-              ttlSeconds: 60,
-              quality: LoopFactQuality.fresh,
-              reasonCode: null,
-              omittedCount: 0,
-              items: <MarketNewPair>[
-                MarketNewPair(
-                  poolRef: const MarketPoolAddressRef(s5PoolAddress),
-                  dexId: 'four-meme',
-                  name: 'YAMATA / BNB',
-                  baseTokenAddress: s5Address,
-                  quoteTokenAddress: marketZeroAddress,
-                  registryAssetId: null,
-                  createdAt: DateTime.utc(2026, 9, 8, 7, 30),
-                  reserveUsd: s5Decimal('3696'),
-                  volumeH24Usd: s5Decimal('1950'),
-                ),
-              ],
-            ),
-            riskScreening: const LoopUnavailable(
-              'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
-            ),
+    testWidgets(
+      '新币 and smart money live in the secondary menu without eager provider reads',
+      (tester) async {
+        final market = FakeMarketReadGateway(
+          overview: S5Answer<MarketOverview>(
+            value: s5Overview(newPairsAvailable: true),
           ),
-        ),
-      );
-      await pumpS5Page(tester, const MarketScreen(), market: market);
-
-      // A reader on 自选 does not pay for a provider they did not ask for.
-      expect(market.newPairs.resolves, 0);
-
-      await tester.tap(find.byKey(const ValueKey<String>('market-tab-新币')));
-      await tester.pumpAndSettle();
-      expect(market.newPairs.resolves, 1);
-      expect(find.textContaining('four.meme'), findsOneWidget);
-      // The page of the same name is still one tap away, and still owns the
-      // risk screening and the whole warning.
-      expect(
-        find.byKey(const ValueKey<String>('market-new-pairs-page')),
-        findsOneWidget,
-      );
-    });
+        );
+        String? destination;
+        await pumpS5Page(
+          tester,
+          MarketScreen(onNavigate: (path) => destination = path),
+          market: market,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('market-tab-新币')),
+          findsNothing,
+        );
+        expect(market.newPairs.resolves, 0);
+        await tester.tap(
+          find.byKey(const ValueKey<String>('market-more-action')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('聪明钱'), findsOneWidget);
+        await tester.tap(find.text('新币'));
+        await tester.pumpAndSettle();
+        expect(destination, '/market/new');
+        expect(market.newPairs.resolves, 0);
+      },
+    );
 
     testWidgets('the trending block always states its ordering rule', (
       tester,
@@ -302,17 +280,19 @@ void main() {
         );
 
         expect(find.byType(LoopCandleChart), findsOneWidget);
+        final details = find.byKey(
+          const ValueKey<String>('candle-data-details'),
+        );
+        await scrollToS5Section(tester, details);
+        await tester.tap(details);
+        await tester.pumpAndSettle();
         expect(find.text('按成交价折算'), findsOneWidget);
         expect(
           find.byKey(const ValueKey<String>('candles-open-marker')),
           findsOneWidget,
         );
-        // The price unit is the pool's other token, never USD. It is the
-        // provider's own string and prints verbatim. S82a gave the card's
-        // heading row to the periods and the averages, so the unit moved onto
-        // the provenance line under the panel, where the source and the time
-        // already are.
-        expect(find.textContaining('单位 USDT per WBNB'), findsOneWidget);
+        // The exact provider unit stays visible in the collapsed disclosure.
+        expect(find.text('USDT per WBNB'), findsOneWidget);
       },
     );
 
@@ -335,12 +315,18 @@ void main() {
           ),
         );
 
+        final details = find.byKey(
+          const ValueKey<String>('candle-data-details'),
+        );
+        await scrollToS5Section(tester, details);
+        await tester.tap(details);
+        await tester.pumpAndSettle();
         // Same chip as the wallet page's proxied valuation.
         expect(find.text('以 WBNB 计价'), findsOneWidget);
         // The aggregate note is not swallowed by the proxy note; it sits in
         // the provenance line under the chart.
         expect(find.textContaining('按成交价折算'), findsOneWidget);
-        expect(find.textContaining('单位 USD per WBNB'), findsOneWidget);
+        expect(find.text('USD per WBNB'), findsOneWidget);
       },
     );
 
@@ -366,6 +352,10 @@ void main() {
         ),
       );
 
+      final details = find.byKey(const ValueKey<String>('candle-data-details'));
+      await scrollToS5Section(tester, details);
+      await tester.tap(details);
+      await tester.pumpAndSettle();
       expect(find.textContaining('主池来自 GeckoTerminal'), findsOneWidget);
       expect(find.textContaining('未登记池'), findsOneWidget);
       // 「来源 X · 池 Y」 is the registered wording; it must not read as if
@@ -382,6 +372,10 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
+      final details = find.byKey(const ValueKey<String>('candle-data-details'));
+      await scrollToS5Section(tester, details);
+      await tester.tap(details);
+      await tester.pumpAndSettle();
       expect(find.textContaining('来源 LOOP 链上索引 · 池 0x'), findsOneWidget);
       expect(find.textContaining('未登记池'), findsNothing);
     });
@@ -536,7 +530,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
@@ -568,7 +562,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,

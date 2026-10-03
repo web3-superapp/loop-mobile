@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:loop_mobile/features/social/social_qr.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
@@ -20,7 +22,8 @@ import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/notifications/community_application_notifications.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
-import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
+import 'package:loop_mobile/features/profile/avatar_editor.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_upload.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
@@ -37,7 +40,6 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 // ---------------------------------------------------------------------------
@@ -47,12 +49,13 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// Renders the preset avatar for [avatarRef], falling back to the alias
 /// monogram. A non-preset V1 value also renders as the monogram; it is never
 /// resubmitted.
-class LoopProfileAvatar extends StatelessWidget {
+class LoopProfileAvatar extends ConsumerWidget {
   const LoopProfileAvatar({
     required this.avatarRef,
     required this.alias,
     super.key,
     this.size = 72,
+    this.useLocalAvatar = false,
   });
 
   static const presetPrefix = 'avatar:preset/people-';
@@ -60,6 +63,7 @@ class LoopProfileAvatar extends StatelessWidget {
   final String? avatarRef;
   final String? alias;
   final double size;
+  final bool useLocalAvatar;
 
   /// Maps the one-based catalog slot onto the 4x3 people atlas cell key.
   static String? peopleSlotKey(int slot) {
@@ -82,7 +86,23 @@ class LoopProfileAvatar extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bytes = useLocalAvatar
+        ? ref.watch(avatarUploadControllerProvider).bytes
+        : null;
+    if (bytes != null) {
+      return ClipOval(
+        child: Image.memory(
+          bytes,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          semanticLabel: '头像',
+          cacheWidth: (size * 3).round(),
+          cacheHeight: (size * 3).round(),
+        ),
+      );
+    }
     final monogram = monogramFor(alias);
     final reference = avatarRef;
     if (reference != null && reference.startsWith(presetPrefix)) {
@@ -120,23 +140,27 @@ class LoopProfileAvatar extends StatelessWidget {
         color: lightGround ? ink : LoopGround.fillOf(context),
         shape: BoxShape.circle,
       ),
-      child: Text(
-        monogram,
-        style: LoopTypography.figure(
-          size / 4.5,
-          color: lightGround ? LoopColors.chalk : ink,
-        ),
-      ),
+      child: useLocalAvatar && avatarRef == null
+          ? Icon(
+              Icons.person_outline_rounded,
+              size: size * .48,
+              color: lightGround ? LoopColors.chalk : ink,
+            )
+          : Text(
+              monogram,
+              style: LoopTypography.figure(
+                size / 4.5,
+                color: lightGround ? LoopColors.chalk : ink,
+              ),
+            ),
     );
   }
 }
 
-/// `开发预览` eyebrow for a Preview-backed page. Production and unavailable
-/// modes carry no kicker, so the label can never appear outside Preview.
-String? loopPreviewKicker(bool isPreview) => isPreview ? '开发预览' : null;
+/// Retained call-site seam; repeated developer headings are hidden (0111).
+String? loopPreviewKicker(bool isPreview) => null;
 
-/// Visible Preview truth label (constraint 10). Edits made here persist only
-/// for the running Preview and never reach an account or a provider.
+/// Zero-size compatibility seam for removed developer notices (0111).
 class LoopPreviewModeNotice extends StatelessWidget {
   const LoopPreviewModeNotice({
     required this.isPreview,
@@ -150,17 +174,7 @@ class LoopPreviewModeNotice extends StatelessWidget {
   final String resource;
 
   @override
-  Widget build(BuildContext context) {
-    if (!isPreview) return const SizedBox.shrink();
-    return LoopNotice(
-      key: const ValueKey<String>('loop-preview-mode-notice'),
-      icon: 'info',
-      tone: LoopNoticeTone.warn,
-      title: '开发预览',
-      body: '$resource只保存在本次运行的内存里，不会写入账号，也不会调用任何 Provider。',
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 /// The five reviewed states for a Profile-backed page.
@@ -368,7 +382,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     }
     _startSideReads();
     final resource = state.resource;
-    final alias = resource?.values.alias;
     final phase = profileResourcePhase(state);
     final isPreview = state.mode == ProfileMode.preview;
 
@@ -385,14 +398,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           onPressed: () => widget.onNavigate('settings'),
         ),
       ],
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.lime,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'PUBLIC PROFILE',
-        heading: alias ?? '尚未设置别名',
-        caption: 'LOOP ID 是你的社交身份；钱包地址只是可更换的凭证。',
-        stamp: 'PUBLIC',
-      ),
       sections: <Widget>[
         LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
         if (phase != LoopResourcePhase.ready)
@@ -408,7 +413,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             resource: resource!,
             onEdit: () => widget.onNavigate('profile-edit'),
           ),
-        const LoopLabel('挖矿'),
+        const LoopLabel('参与与奖励'),
         // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
         // under it. The row used to say 「这一页不读算力」 — an explanation of
         // its own implementation standing where the figure belongs, while the
@@ -440,7 +445,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         ),
         // The prototype's 账户 group is four rows and each second line is a
         // state value, not a description of the destination: 「2 个已绑定」,
-        // 「匿名模式已开启」, 「关注 24 · 粉丝 108」. Each is read from the
+        // 「关注 24 · 粉丝 108」. Each is read from the
         // module that owns it; a row whose state this device has not read
         // carries no second line at all, because 「读不到」 is not a state a
         // reader can act on (device walkthrough 2026-09-23 · h02).
@@ -457,7 +462,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-privacy'),
               title: '隐私中心',
-              subtitle: _privacySubtitle(),
+              subtitle: '社交请求与资产可见性',
               onTap: () => widget.onNavigate('privacy'),
             ),
             LoopRecordRow(
@@ -558,13 +563,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final directory = ref.watch(walletDirectoryControllerProvider).value;
     if (directory == null) return null;
     return '${directory.wallets.length} 个已绑定';
-  }
-
-  /// `匿名模式已开启` / `匿名模式已关闭`, as the privacy centre stored it.
-  String? _privacySubtitle() {
-    final resource = ref.watch(privacyControllerProvider).resource;
-    if (resource == null) return null;
-    return resource.values.anonymousMode ? '匿名模式已开启' : '匿名模式已关闭';
   }
 
   /// `关注 24 · 粉丝 108`, from the counts the connections page reads.
@@ -851,7 +849,11 @@ class _ProfileIdentityCard extends ConsumerWidget {
     );
     final body = Column(
       children: <Widget>[
-        LoopProfileAvatar(avatarRef: resource.values.avatarRef, alias: alias),
+        LoopProfileAvatar(
+          avatarRef: resource.values.avatarRef,
+          alias: alias,
+          useLocalAvatar: true,
+        ),
         const SizedBox(height: 10),
         Text(
           alias ?? '尚未设置别名',
@@ -889,6 +891,17 @@ class _ProfileIdentityCard extends ConsumerWidget {
             ),
           ),
         ],
+        if (loopId != null)
+          TextButton.icon(
+            onPressed: () => showSocialQr(
+              context,
+              title: '我的二维码',
+              payload: userQrPayload(loopId),
+              caption: '$loopId · 扫码加好友',
+            ),
+            icon: const Icon(Icons.qr_code_2_rounded, color: LoopColors.ink),
+            label: const Text('我的二维码', style: TextStyle(color: LoopColors.ink)),
+          ),
         const SizedBox(height: 12),
         _ChalkCardButton(
           key: const ValueKey<String>('profile-open-edit'),
@@ -1114,25 +1127,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _syncEditors(state);
     _convergeAvatarRef(controller, state);
     final phase = profileResourcePhase(state);
-    final avatarUpload = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.avatarUpload),
-    );
 
-    // The hero is the body's first row rather than the page's pinned folio:
-    // pinned, it held a third of the screen while the fields scrolled under
-    // it, and 关注赛道 could not be brought onto the same screen as the name
-    // it describes (walkthrough 2026-09-23 · h04/h05). `#scr-profile-edit`
-    // has it inside the scroll too.
-    final hero = LoopFolioPrimary(
-      variant: LoopFolioVariant.chalk,
-      archetype: LoopFolioArchetype.action,
-      kicker: 'PROFILE EDIT',
-      heading: state.draft.alias ?? '尚未设置别名',
-      caption: '昵称、简介与标签可修改；LOOP ID 和钱包地址保持不同边界。',
-      stamp: 'PUBLIC',
-      compact: true,
-      ring: false,
-    );
     return LoopFocusPage(
       archetype: LoopPageArchetype.action,
       title: '编辑资料',
@@ -1151,7 +1146,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             : null,
       ),
       body: <Widget>[
-        hero,
         LoopPreviewModeNotice(
           isPreview: state.mode == ProfileMode.preview,
           resource: '资料',
@@ -1216,67 +1210,64 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 body: profileFailureReason(state.failureKind),
               ),
             },
-          _AvatarPickerCard(
-            selected: state.draft.avatarRef,
-            alias: state.draft.alias,
+          LoopAvatarEditor(
             enabled: state.canEdit,
-            uploadUsable: avatarUpload.isUsable,
-            onSelected: controller.editAvatarRef,
+            avatar: LoopProfileAvatar(
+              avatarRef: state.draft.avatarRef,
+              alias: state.draft.alias,
+              useLocalAvatar: true,
+            ),
           ),
-          const LoopLabel('别名'),
+          const LoopLabel('用户名'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSurfaceCard(
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      key: const ValueKey<String>('profile-edit-alias-field'),
-                      controller: _aliasController,
-                      enabled: state.canEdit,
-                      maxLength: 40,
-                      buildCounter: (
-                        context, {
-                        required currentLength,
-                        required isFocused,
-                        required maxLength,
-                      }) => null,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: '例如 Voyager_7',
-                      ),
-                      onChanged: (value) => _applyAlias(controller, value),
-                    ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    key: const ValueKey<String>('profile-edit-alias-field'),
+                    controller: _aliasController,
+                    style: LoopType.bodyLg,
+                    textInputAction: TextInputAction.next,
+                    enabled: state.canEdit,
+                    maxLength: 40,
+                    buildCounter: (
+                      context, {
+                      required currentLength,
+                      required isFocused,
+                      required maxLength,
+                    }) => null,
+                    decoration: const InputDecoration(hintText: '例如 Voyager_7'),
+                    onChanged: (value) => _applyAlias(controller, value),
                   ),
-                  LoopSeg(
-                    key: const ValueKey<String>('profile-edit-alias-suggest'),
-                    label: '换一个',
-                    selected: false,
-                    onSelected: state.canEdit
-                        ? () => _suggestAlias(controller)
-                        : null,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                LoopSeg(
+                  key: const ValueKey<String>('profile-edit-alias-suggest'),
+                  label: '换一个',
+                  selected: false,
+                  onSelected: state.canEdit
+                      ? () => _suggestAlias(controller)
+                      : null,
+                ),
+              ],
             ),
           ),
           const LoopLabel('简介'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSurfaceCard(
-              child: TextField(
-                key: const ValueKey<String>('profile-edit-bio-field'),
-                controller: _bioController,
-                enabled: state.canEdit,
-                maxLength: 160,
-                maxLines: 3,
-                minLines: 1,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: '一句话介绍自己（可留空）',
-                ),
-                onChanged: (value) => _applyBio(controller, value),
-              ),
+            child: TextField(
+              key: const ValueKey<String>('profile-edit-bio-field'),
+              controller: _bioController,
+              style: LoopType.bodyLg,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              enabled: state.canEdit,
+              maxLength: 160,
+              maxLines: 3,
+              minLines: 1,
+              decoration: const InputDecoration(hintText: '一句话介绍自己（可留空）'),
+              onChanged: (value) => _applyBio(controller, value),
             ),
           ),
           const LoopLabel('关注赛道'),
@@ -1389,176 +1380,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 }
 
-class _AvatarPickerCard extends ConsumerWidget {
-  const _AvatarPickerCard({
-    required this.selected,
-    required this.alias,
-    required this.enabled,
-    required this.uploadUsable,
-    required this.onSelected,
-  });
-
-  final String? selected;
-  final String? alias;
-  final bool enabled;
-
-  /// Whether the backend has opened custom avatar upload. While it is closed
-  /// the card says so once; the capability's own code stays off the screen.
-  final bool uploadUsable;
-  final ValueChanged<String?> onSelected;
-
-  /// The twelve presets, on the sheet the 更换头像 control opens.
-  ///
-  /// The prototype's card is one avatar and one Ink button; the grid that had
-  /// been inlined here put thirteen faces on the first screen and gave the
-  /// page a visual weight the prototype's does not have (audit 2026-09-21
-  /// §J.3).
-  Future<void> _choose(BuildContext context, List<AvatarPreset> presets) async {
-    final choice = await showLoopSheet<String>(
-      context,
-      barrierLabel: '关闭头像选择',
-      builder: (sheetContext) => Padding(
-        key: const ValueKey<String>('profile-avatar-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const LoopLabel('更换头像'),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: <Widget>[
-                for (final preset in presets)
-                  _AvatarChoice(
-                    preset: preset,
-                    alias: alias,
-                    selected: preset.isMonogram
-                        ? selected == null || selected == preset.avatarRef
-                        : selected == preset.avatarRef,
-                    onTap: () =>
-                        Navigator.of(sheetContext)
-                            .pop(preset.isMonogram ? '' : preset.avatarRef),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 14),
-          ],
-        ),
-      ),
-    );
-    if (choice == null) return;
-    onSelected(choice.isEmpty ? null : choice);
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final catalog = ref.watch(avatarCatalogProvider);
-    final presets = catalog.asData?.value;
-    return LoopChalkCard(
-      key: const ValueKey<String>('profile-avatar-picker'),
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Center(
-            child: LoopProfileAvatar(avatarRef: selected, alias: alias),
-          ),
-          const SizedBox(height: 12),
-          if (catalog.isLoading)
-            const LoopSkeleton(
-              key: ValueKey<String>('profile-avatar-loading'),
-              type: LoopSkeletonType.list,
-              rows: 1,
-            )
-          else
-            Center(
-              child: _ChalkCardButton(
-                key: const ValueKey<String>('profile-avatar-change'),
-                label: '更换头像',
-                onTap: enabled && presets != null && presets.isNotEmpty
-                    ? () => unawaited(_choose(context, presets))
-                    : null,
-              ),
-            ),
-          if (catalog.hasError) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              key: const ValueKey<String>('profile-avatar-unavailable'),
-              '预设头像清单暂不可读，保留当前头像。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(
-                12,
-                color: LoopColors.ink.withValues(alpha: 0.72),
-              ),
-            ),
-          ],
-          if (!uploadUsable) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              '自定义头像上传暂不可用，只能选择预设头像。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(
-                11,
-                color: LoopColors.ink.withValues(alpha: 0.64),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _AvatarChoice extends StatelessWidget {
-  const _AvatarChoice({
-    required this.preset,
-    required this.alias,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final AvatarPreset preset;
-  final String? alias;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: preset.label,
-      enabled: onTap != null,
-      child: InkWell(
-        key: ValueKey<String>('profile-avatar-${preset.avatarRef}'),
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          width: LoopTouch.minimum,
-          height: LoopTouch.minimum,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selected ? LoopColors.ink : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: ExcludeSemantics(
-            child: LoopProfileAvatar(
-              avatarRef: preset.isMonogram ? null : preset.avatarRef,
-              alias: alias,
-              size: 34,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _InterestChips extends StatelessWidget {
   const _InterestChips({
     required this.selected,
@@ -1649,9 +1470,9 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,
         kicker: 'PRIVACY STATUS',
-        heading: draft.anonymousMode ? '匿名模式已开启' : '匿名模式已关闭',
-        caption: '公开身份、社区可见性与地址显示分别控制。',
-        stamp: draft.anonymousMode ? 'ON' : 'OFF',
+        heading: '管理社交与可见性',
+        caption: '使用头像、昵称与 LOOP ID 交流，资产可见性单独管理。',
+        stamp: 'PRIVACY',
         compact: true,
         ring: false,
       ),
@@ -1732,16 +1553,6 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               ),
             },
           const LoopLabel('身份'),
-          LoopTogglePreferenceRow(
-            key: const ValueKey<String>('privacy-anonymous-mode'),
-            title: '匿名模式',
-            subtitle: '只显示别名，不显示钱包地址',
-            value: draft.anonymousMode,
-            position: LoopRowPosition.first,
-            onChanged: state.canEdit
-                ? () => controller.editAnonymousMode(!draft.anonymousMode)
-                : null,
-          ),
           LoopTogglePreferenceRow(
             key: const ValueKey<String>('privacy-discoverable'),
             // Decision 0105 (backend decision 0090): the switch governs being
@@ -1826,9 +1637,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           child: Text(
-            draft.anonymousMode
-                ? '公开别名，不公开钱包地址与资产明细。'
-                : '别名与钱包地址都可能出现在公开位置；关闭前请先确认。',
+            '头像、昵称与 LOOP ID 用于社交。钱包地址不会因保存这些设置而公开；资产信息仍按上方可见性设置展示。',
             style: LoopTypography.caption(11, color: LoopColors.text2),
           ),
         ),

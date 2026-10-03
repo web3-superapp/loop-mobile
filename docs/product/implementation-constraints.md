@@ -4,15 +4,17 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Product shape and environments
 
-- Decision 0048 defines Community, Mining, Launch, Market and Wallet as the
-  five primary destinations. Community is the post-login home; Chat remains a
-  Community child flow and Profile remains a child domain outside the bottom
+- Decision 0114 supersedes decision 0111's destination order with Chat, Plaza, MEME, Intelligence and Wallet as the
+  five primary destinations. Chat is the post-login home; Community is a child at `/community`.
+  Conversations, friends and Profile remain child domains outside the bottom
   navigation. `/home` and `/launchpad` are compatibility redirects only. The
   product is spot-only; Perp is disabled and has no primary-feature entry.
+  `/plaza` is primary; `/mining`, New Pairs and Smart Money remain child destinations.
+  MEME and Intelligence retain the technical `/launch` and `/market` paths.
 - Development and Hyperliquid Testnet are the only enabled environments. Mainnet, real deposits/withdrawals, and automated trading remain feature-flagged off.
 - Debug/Profile versus Release is only a client build-profile axis and never changes that Development/Testnet policy. `LOOP_BUILD_MODE` must match the Flutter runtime mode; a missing or mismatched profile disables configured Privy, Reown, LOOP backend, Stream, wallet-adapter, and Firebase capabilities instead of reusing another profile's values. Public credential-free Hyperliquid Testnet reads remain the separately locked exception.
 - Prefer runnable vertical slices and the locked Privy, Reown, and Stream Flutter SDKs. Do not add a second identity, messaging, calling, state-management, routing, or HTTP stack. Reown is an external-wallet proof transport under Privy's identity boundary, not a second identity provider.
-- Preview content is always labelled `演示数据` or `开发预览`; it never claims provider delivery, read state, presence, ringing, signing, or execution.
+- Preview remains an explicit isolated entry. Decision 0111 removes repeated developer labels and notices from product pages; no provider delivery, read state, presence, ringing, signing or execution may be invented.
 - Home Global Search may filter only its bounded, process-local examples in explicit Preview mode. Production shows no Preview asset, group, or person results until a reviewed source exists; local asset examples open the public Spot ledger and never invent a provider `spotIndex`.
 - Security Activity is unknown when its wallet and account event sources are absent. Production must not infer an all-clear, MFA, device, approval count, severity, risk score, or action from missing data; any retained layout examples stay visibly labelled Preview and expose no provider action.
 - Home Portfolio, Net Worth, allocation, and cross-product activity are unknown while no reviewed owner-scoped source exists. Production must not infer totals, gains, charts, zero balance, an empty portfolio, Watchlist movement, unread counts, alerts, approvals, activity times, freshness, failure, or all-clear from missing data. A verified Privy wallet proves current-session wallet identity only; wallet identity is not balance evidence. Static examples require the exact Preview session and visible labels. No refresh, retry, loading, empty, or error behavior exists without an actual request owner.
@@ -162,7 +164,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 - Preserve the current 103-surface catalog as migration inventory until each
   V2 module replaces it with reviewed routes; do not present it as completion
-  of the V2 93-route contract. Preserve the Lime Ledger dark direction,
+  of the V2 94-route contract. Preserve the Lime Ledger dark direction,
   Dynamic Type, accessibility semantics, Reduce Motion, platform conventions,
   keyboard behavior, and smooth message scrolling.
 - Every flow accounts for loading, empty, error, offline, retry, disabled, and skeleton states as applicable.

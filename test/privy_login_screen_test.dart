@@ -40,7 +40,17 @@ void main() {
       find.byKey(const ValueKey('privy-apple-login-button')),
       findsNothing,
     );
-    expect(find.textContaining('不是 LOOP 交易钱包'), findsOneWidget);
+    expect(find.text('使用 Google 继续'), findsOneWidget);
+    expect(find.text('连接已有钱包'), findsOneWidget);
+    expect(_pressed(tester, 'privy-google-login-button'), isNotNull);
+    expect(_pressed(tester, 'privy-wallet-login-button'), isNotNull);
+    expect(_pressed(tester, 'privy-auth-primary-button'), isNotNull);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('privy-email-field')))
+          .enabled,
+      isTrue,
+    );
   });
 
   testWidgets('shows Apple only for the iOS composition', (tester) async {
@@ -58,7 +68,10 @@ void main() {
     await _pump(tester, showApple: false, reownProjectId: '');
 
     expect(_pressed(tester, 'privy-wallet-login-button'), isNull);
-    expect(find.textContaining('缺少有效的 Reown Project ID'), findsOneWidget);
+    expect(find.text('连接已有钱包'), findsOneWidget);
+    expect(find.text('暂不可用 · 暂时无法连接钱包'), findsOneWidget);
+    expect(_pressed(tester, 'privy-google-login-button'), isNotNull);
+    expect(_pressed(tester, 'privy-auth-primary-button'), isNotNull);
   });
 
   testWidgets('sending a code pushes the dedicated OTP step', (tester) async {

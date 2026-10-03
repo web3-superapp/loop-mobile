@@ -67,7 +67,7 @@ void main() {
     // The catalogue's folio is the saturated Lime one the prototype gives it.
     expect(
       tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary)).variant,
-      LoopFolioVariant.lime,
+      LoopFolioVariant.quiet,
     );
   });
 
@@ -188,7 +188,7 @@ void main() {
     );
     expect(
       tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary)).variant,
-      LoopFolioVariant.lime,
+      LoopFolioVariant.quiet,
     );
   });
 

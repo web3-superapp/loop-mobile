@@ -66,6 +66,7 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
+        compact: true,
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
         kicker: 'MESSAGE REQUESTS',

@@ -1,4 +1,4 @@
-/// The 93-route product manifest.
+/// The 96-route product manifest: original catalogue plus Chat, Plaza and recommendations.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`, frozen 2026-09-01 from the cliview.org
@@ -100,13 +100,13 @@ abstract final class LoopRouteManifest {
       'bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a';
 
   /// Post-login and illegal-route landing slug.
-  static const String defaultSlug = 'community';
-  static const String defaultPath = '/community';
+  static const String defaultSlug = 'chat';
+  static const String defaultPath = '/chat';
 
   /// The five primary destinations in their fixed order.
   static const List<String> tabSlugs = <String>[
-    'community',
-    'mining',
+    'chat',
+    'plaza',
     'launch',
     'market',
     'wallet',
@@ -115,7 +115,7 @@ abstract final class LoopRouteManifest {
   /// Compatibility redirects for installed clients. These are the only
   /// retired locations that stay mounted, and only as redirects.
   static const Map<String, String> compatibilityRedirects = <String, String>{
-    '/home': '/community',
+    '/home': '/chat',
     '/launchpad': '/launch',
   };
 
@@ -208,7 +208,6 @@ abstract final class LoopRouteManifest {
   /// can hide here. `/chat/channel/:cid` is a redirect only: it resolves a
   /// server-issued CID onto `community-chat`, `dm` or `group`.
   static const List<String> supplementaryPaths = <String>[
-    '/chat',
     '/chat/channel/:cid',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
@@ -310,7 +309,18 @@ abstract final class LoopRouteManifest {
       step: 1,
       status: LoopRouteStatus.implemented,
     ),
-    // 2-community · Community (16)
+    // Native extension approved 2026-10-02; 0–92 retain the prototype order.
+    LoopRouteEntry(
+      slug: 'chat',
+      path: '/chat',
+      module: LoopRouteModule.community,
+      title: '聊天',
+      prototypeOrder: 93,
+      step: 4,
+      status: LoopRouteStatus.implemented,
+      tab: true,
+    ),
+    // 2-community · Community (16 original routes)
     LoopRouteEntry(
       slug: 'search',
       path: '/search',
@@ -324,11 +334,29 @@ abstract final class LoopRouteManifest {
       slug: 'community',
       path: '/community',
       module: LoopRouteModule.community,
-      title: '社区 Tab',
+      title: '我的社区',
       prototypeOrder: 13,
       step: 3,
       status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'plaza',
+      path: '/plaza',
+      module: LoopRouteModule.community,
+      title: '广场',
+      prototypeOrder: 94,
+      step: 3,
+      status: LoopRouteStatus.implemented,
       tab: true,
+    ),
+    LoopRouteEntry(
+      slug: 'community-recommendations',
+      path: '/community/recommendations',
+      module: LoopRouteModule.community,
+      title: '推荐社区',
+      prototypeOrder: 95,
+      step: 3,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'community-discover',
@@ -650,7 +678,6 @@ abstract final class LoopRouteManifest {
       prototypeOrder: 46,
       step: 7,
       status: LoopRouteStatus.implemented,
-      tab: true,
     ),
     LoopRouteEntry(
       slug: 'mining-assets',

@@ -131,6 +131,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       // quote itself (audit §A.11, items 1 and 2).
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('swap-folio'),
+        compact: true,
         variant: LoopFolioVariant.chalk,
         ring: false,
         kicker: 'SWAP QUOTE',
@@ -296,13 +297,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               onPressed: () => _open('/wallet/swap/route', extra: quote),
             ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('swap-routing-notice'),
-            title: '路由由供应商选择',
-            body:
-                'LOOP 不自建路由，也不做逐跳拆解。这里只展示 Privy 返回的最终报价；'
-                '兑换所得资产直接进入本钱包。',
-          ),
           const LoopNotice(
             key: ValueKey<String>('swap-power-notice'),
             icon: 'mine',

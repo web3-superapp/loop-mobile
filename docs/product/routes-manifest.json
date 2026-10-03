@@ -2,9 +2,15 @@
   "frozenAt": "2026-09-01",
   "source": "https://cliview.org/loop-v2.html",
   "sha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
-  "defaultRoute": "community",
-  "tabs": ["community", "mining", "launch", "market", "wallet"],
-  "count": 93,
+  "defaultRoute": "chat",
+  "tabs": [
+    "chat",
+    "plaza",
+    "launch",
+    "market",
+    "wallet"
+  ],
+  "count": 96,
   "modules": {
     "0-global-account": [
       {
@@ -60,14 +66,29 @@
     ],
     "2-community": [
       {
+        "slug": "chat",
+        "tab": true,
+        "prototypeOrder": 93
+      },
+      {
         "slug": "search",
         "tab": false,
         "prototypeOrder": 11
       },
       {
         "slug": "community",
-        "tab": true,
+        "tab": false,
         "prototypeOrder": 13
+      },
+      {
+        "slug": "plaza",
+        "tab": true,
+        "prototypeOrder": 94
+      },
+      {
+        "slug": "community-recommendations",
+        "tab": false,
+        "prototypeOrder": 95
       },
       {
         "slug": "community-discover",
@@ -247,7 +268,7 @@
     "5-mining": [
       {
         "slug": "mining",
-        "tab": true,
+        "tab": false,
         "prototypeOrder": 46
       },
       {
@@ -487,5 +508,12 @@
         "prototypeOrder": 89
       }
     ]
-  }
+  },
+  "extensions": [
+    {
+      "slug": "chat",
+      "approvedAt": "2026-10-02",
+      "reason": "Promote existing native chat inbox to a primary destination; original prototype provenance remains unchanged."
+    }
+  ]
 }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -137,14 +138,14 @@ void main() {
       expect(find.text('已复制 LOOP ID'), findsOneWidget);
     });
 
-    testWidgets('分享 is a 44×44 glyph in the card\'s top-right corner', (
+    testWidgets('分享 is a 48×48 glyph in the card\'s top-right corner', (
       tester,
     ) async {
       await _pumpProfile(tester, loopId: _ownId);
 
       final card = find.byKey(const ValueKey<String>('profile-identity-card'));
       final share = find.byKey(const ValueKey<String>('profile-share-loop-id'));
-      expect(tester.getSize(share), const Size(44, 44));
+      expect(tester.getSize(share), const Size(48, 48));
       expect(
         tester.getSemantics(share),
         matchesSemantics(
@@ -393,10 +394,7 @@ void main() {
     ) async {
       await _pumpPreviewApp(tester);
       await _enterPreview(tester);
-      expect(
-        find.byKey(const ValueKey<String>('community-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(ChatInboxPage), findsOneWidget);
 
       await _pushPlatformRoute(tester, '/u/loop-fe3emcpe');
 
@@ -420,14 +418,11 @@ void main() {
 
         _expectSearchWith(tester, _ownId);
         expect(container.read(loopProfileLinkInboxProvider).pending, isNull);
-        // The account still landed on Community; search sits over it, so
+        // The account still landed on Chat; search sits over it, so
         // going back returns there.
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey<String>('community-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(ChatInboxPage), findsOneWidget);
       },
     );
 
@@ -437,10 +432,7 @@ void main() {
       await _pumpPreviewApp(tester);
       await _enterPreview(tester);
       await _pushPlatformRoute(tester, '/u/not-an-id');
-      expect(
-        find.byKey(const ValueKey<String>('community-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(ChatInboxPage), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('global-search-screen')),
         findsNothing,
