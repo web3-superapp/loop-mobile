@@ -298,6 +298,16 @@ class _CommunityProfileScreenState
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
+        if (_canManage(state) && !communityCapabilityBlocks(mode, capability))
+          LoopIconButton(
+            key: const ValueKey<String>('community-profile-manage'),
+            icon: 'settings',
+            label: '管理',
+            framed: true,
+            onPressed: state.busy || state.refreshing
+                ? null
+                : () => unawaited(_openManagement()),
+          ),
         if (community != null)
           IconButton(
             tooltip: '社区二维码',
@@ -459,6 +469,171 @@ class _CommunityProfileScreenState
         ],
       ],
     );
+  }
+
+  bool _managementOpen = false;
+
+  bool _canManage(CommunityResourceState<CommunityDetail> state) {
+    final detail = state.value;
+    return state.isReady &&
+        state.failureKind == null &&
+        detail?.community.communityId == widget.communityId &&
+        detail?.viewer.membership != null &&
+        detail!.viewer.membership!.status != CommunityMemberStatus.banned &&
+        detail.viewer.canGovern;
+  }
+
+  bool _managementAvailable(CommunityResourceState<CommunityDetail> state) =>
+      _canManage(state) &&
+      !state.busy &&
+      !state.refreshing &&
+      !communityCapabilityBlocks(
+        ref.read(communityGatewayProvider).mode,
+        ref.read(loopCapabilityProvider(LoopV2CapabilityId.community)),
+      );
+
+  Future<void> _openManagement() async {
+    if (_managementOpen ||
+        !_managementAvailable(ref.read(communityProfileControllerProvider))) {
+      return;
+    }
+    _managementOpen = true;
+    try {
+      final controller = ref.read(communityProfileControllerProvider.notifier);
+      // A retained community record is useful for reading, but cannot admit
+      // a management action without asking for the current viewer first.
+      await controller.reload();
+      if (!mounted ||
+          !_managementAvailable(ref.read(communityProfileControllerProvider))) {
+        return;
+      }
+      final action = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (sheetContext) => Consumer(
+          builder: (context, sheetRef, _) {
+            final current = sheetRef.watch(communityProfileControllerProvider);
+            final capability = sheetRef.watch(
+              loopCapabilityProvider(LoopV2CapabilityId.community),
+            );
+            final voiceCapability = sheetRef.watch(
+              loopCapabilityProvider(LoopV2CapabilityId.voiceRooms),
+            );
+            final mode = sheetRef.watch(communityGatewayProvider).mode;
+            final opening = sheetRef.watch(voiceRoomOpenControllerProvider);
+            final watchedVoice = sheetRef.watch(
+              communityVoiceLiveControllerProvider,
+            );
+            final allowed =
+                _canManage(current) &&
+                !communityCapabilityBlocks(mode, capability);
+            final enabled = !current.busy && !current.refreshing;
+            final detail = current.value;
+            final voiceLive = watchedVoice?.communityId == widget.communityId
+                ? watchedVoice!.isLive
+                : detail?.voice.isLive == true;
+            return SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  key: const ValueKey<String>('community-management-sheet'),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text('社区管理', style: LoopTypography.body(22)),
+                      const SizedBox(height: 12),
+                      if (!allowed)
+                        const Text('管理权限已更新，请返回社区查看。')
+                      else ...<Widget>[
+                        ListTile(
+                          key: const ValueKey<String>(
+                            'community-management-members',
+                          ),
+                          leading: const Icon(Icons.group_outlined),
+                          title: const Text('成员与权限'),
+                          subtitle: const Text('管理员、禁言与封禁'),
+                          trailing: const Icon(Icons.chevron_right),
+                          enabled: enabled && widget.onOpenMembers != null,
+                          onTap: () =>
+                              Navigator.of(sheetContext).pop('members'),
+                        ),
+                        if (detail!.viewer.isOwner)
+                          ListTile(
+                            key: const ValueKey<String>(
+                              'community-management-profile',
+                            ),
+                            leading: const Icon(Icons.edit_outlined),
+                            title: const Text('社区资料'),
+                            subtitle: const Text('名称、简介与社区头像'),
+                            trailing: const Icon(Icons.chevron_right),
+                            enabled: enabled,
+                            onTap: () =>
+                                Navigator.of(sheetContext).pop('profile'),
+                          ),
+                        if (detail.viewer.mayOpenVoiceRoom &&
+                            widget.onOpenVoiceRoom != null)
+                          ListTile(
+                            key: const ValueKey<String>(
+                              'community-management-voice',
+                            ),
+                            leading: const Icon(Icons.mic_none),
+                            title: Text(voiceLive ? '进入语音房' : '开启语音房'),
+                            subtitle: voiceCapability.isUsable
+                                ? null
+                                : const Text('语音房当前不可用'),
+                            trailing: const Icon(Icons.chevron_right),
+                            enabled:
+                                enabled && voiceCapability.isUsable && !opening,
+                            onTap: () =>
+                                Navigator.of(sheetContext).pop('voice'),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      if (!mounted || action == null) return;
+      // Permission can change while this sheet is open. Re-read on selection
+      // as well as watching local resource updates, then use the same existing
+      // member, profile and confirmed voice flows as the community page.
+      await controller.reload();
+      if (!mounted) return;
+      final latest = ref.read(communityProfileControllerProvider);
+      if (!_managementAvailable(latest)) return;
+      final detail = latest.value!;
+      switch (action) {
+        case 'members':
+          widget.onOpenMembers?.call(detail.community.communityId);
+        case 'profile':
+          if (detail.viewer.isOwner) await _editProfile(controller, detail);
+        case 'voice':
+          if (!detail.viewer.mayOpenVoiceRoom ||
+              !ref
+                  .read(loopCapabilityProvider(LoopV2CapabilityId.voiceRooms))
+                  .isUsable ||
+              ref.read(voiceRoomOpenControllerProvider)) {
+            return;
+          }
+          final watched = ref.read(communityVoiceLiveControllerProvider);
+          final voiceLive = watched?.communityId == detail.community.communityId
+              ? watched!.isLive
+              : detail.voice.isLive;
+          _warmVoiceSession();
+          if (voiceLive) {
+            widget.onOpenVoiceRoom?.call(detail.community.communityId);
+          } else {
+            await _createVoiceRoom(detail);
+          }
+      }
+    } finally {
+      _managementOpen = false;
+    }
   }
 
   /// The reader's own three cells on this community's bound asset.
