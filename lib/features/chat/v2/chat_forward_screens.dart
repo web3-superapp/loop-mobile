@@ -1,4 +1,12 @@
+// 开发交接：合并海报沿用匿名导出投影；社区二维码只来自
+// 已读取且与源 CID 匹配的社区上下文，私聊不能附加社区邀请身份。
+// 详见 docs/handoff/2026-10-03-social-development-handoff.md。
+
 import 'dart:async';
+
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+import 'package:loop_mobile/features/social/social_qr.dart';
+
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -76,6 +84,7 @@ final class ChatForwardState {
   const ChatForwardState({
     this.sourceCid,
     this.sourceLabel,
+    this.communityShare,
     this.messages = const <ChatForwardMessage>[],
     this.targets = const <ChatForwardTarget>[],
     this.selected = const <String>{},
@@ -86,6 +95,7 @@ final class ChatForwardState {
   });
 
   final String? sourceCid;
+  final ConversationCommunityShare? communityShare;
 
   /// The name of the conversation these messages came from, or `null` when
   /// LOOP has none. `#scr-chat-forward` prints it as the hero's heading —
@@ -126,6 +136,7 @@ final class ChatForwardState {
   ChatForwardState copyWith({
     String? sourceCid,
     String? sourceLabel,
+    ConversationCommunityShare? communityShare,
     List<ChatForwardMessage>? messages,
     List<ChatForwardTarget>? targets,
     Set<String>? selected,
@@ -136,6 +147,7 @@ final class ChatForwardState {
   }) => ChatForwardState(
     sourceCid: sourceCid ?? this.sourceCid,
     sourceLabel: sourceLabel ?? this.sourceLabel,
+    communityShare: communityShare ?? this.communityShare,
     messages: messages ?? this.messages,
     targets: targets ?? this.targets,
     selected: selected ?? this.selected,
@@ -171,8 +183,16 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
   @override
   ChatForwardState build() => const ChatForwardState();
 
-  Future<void> load(String sourceCid) async {
-    if (state.sourceCid == sourceCid && state.messages.isNotEmpty) return;
+  Future<void> load(
+    String sourceCid, {
+    String? initialMessageId,
+    ConversationCommunityShare? communityShare,
+  }) async {
+    if (initialMessageId == null &&
+        state.sourceCid == sourceCid &&
+        state.messages.isNotEmpty) {
+      return;
+    }
     final session = ref.read(streamChatSdkSessionProvider);
     final userId = session?.client.state.currentUser?.id;
     if (session == null || userId == null) {
@@ -201,8 +221,19 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         sourceLabel = loopStoredConversationName(
           sourceChannels.single.extraData,
         );
-        for (final message
-            in sourceChannels.single.state?.messages ?? const <Message>[]) {
+        var sourceMessages =
+            sourceChannels.single.state?.messages ?? const <Message>[];
+        if (initialMessageId != null &&
+            !sourceMessages.any((message) => message.id == initialMessageId)) {
+          final around = await sourceChannels.single.query(
+            messagesPagination: PaginationParams(
+              idAround: initialMessageId,
+              limit: chatMergeSelectionLimit,
+            ),
+          );
+          sourceMessages = around.messages ?? const <Message>[];
+        }
+        for (final message in sourceMessages) {
           messages.add(
             ChatForwardMessage(
               messageId: message.id,
@@ -262,6 +293,16 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
       state = ChatForwardState(
         sourceCid: sourceCid,
         sourceLabel: sourceLabel,
+        communityShare: communityShare?.cid == sourceCid
+            ? communityShare
+            : null,
+        selected: {
+          if (initialMessageId != null &&
+              messages.any(
+                (m) => m.messageId == initialMessageId && m.forwardable,
+              ))
+            initialMessageId,
+        },
         messages: List<ChatForwardMessage>.unmodifiable(messages),
         targets: List<ChatForwardTarget>.unmodifiable(targets),
       );
@@ -279,6 +320,9 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
 
   /// Returns false when the 20-message cap refused the selection.
   bool toggle(String messageId) {
+    if (!state.messages.any((m) => m.messageId == messageId && m.forwardable)) {
+      return false;
+    }
     final next = Set<String>.of(state.selected);
     if (!next.remove(messageId)) {
       if (next.length >= chatForwardSelectionLimit) return false;
@@ -345,12 +389,16 @@ final chatForwardControllerProvider =
 class ChatForwardScreen extends ConsumerStatefulWidget {
   const ChatForwardScreen({
     required this.sourceCid,
+    this.initialMessageId,
+    this.communityShare,
     super.key,
     this.onBack,
     this.onOpenMergePreview,
   });
 
   final String? sourceCid;
+  final String? initialMessageId;
+  final ConversationCommunityShare? communityShare;
   final VoidCallback? onBack;
   final VoidCallback? onOpenMergePreview;
 
@@ -366,7 +414,13 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
     if (cid != null) {
       scheduleMicrotask(
         () => unawaited(
-          ref.read(chatForwardControllerProvider.notifier).load(cid),
+          ref
+              .read(chatForwardControllerProvider.notifier)
+              .load(
+                cid,
+                initialMessageId: widget.initialMessageId,
+                communityShare: widget.communityShare,
+              ),
         ),
       );
     }
@@ -387,6 +441,21 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
       subtitle: '$selectedCount 条已选择 · 选择目标会话',
       onBack: widget.onBack,
       framedTools: true,
+      bottomBar: LoopButtonPair(
+        children: <Widget>[
+          LoopButton(
+            key: const ValueKey<String>('chat-forward-cancel'),
+            label: '取消',
+            onPressed: widget.onBack,
+          ),
+          LoopButton(
+            key: const ValueKey<String>('chat-forward-open-merge'),
+            label: '合并海报',
+            primary: true,
+            onPressed: selectedCount == 0 ? null : widget.onOpenMergePreview,
+          ),
+        ],
+      ),
       primary: LoopFolioPrimary(
         compact: true,
         ring: false,
@@ -471,23 +540,6 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
                   _targetRow(state, index),
               ],
             ),
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('chat-forward-cancel'),
-                label: '取消',
-                onPressed: widget.onBack,
-              ),
-              LoopButton(
-                key: const ValueKey<String>('chat-forward-open-merge'),
-                label: '预览合并长图',
-                primary: true,
-                onPressed: selectedCount == 0
-                    ? null
-                    : widget.onOpenMergePreview,
-              ),
-            ],
-          ),
           const SizedBox(height: 20),
         ],
       ],
@@ -614,6 +666,7 @@ class _ChatMergePreviewScreenState
     extends ConsumerState<ChatMergePreviewScreen> {
   final GlobalKey _cardKey = GlobalKey(debugLabel: 'chat-merge-card-boundary');
   bool _exporting = false;
+  bool _includeCommunityQr = true;
 
   @override
   Widget build(BuildContext context) {
@@ -655,6 +708,9 @@ class _ChatMergePreviewScreenState
                 rows: rows,
                 sourceLabel: state.sourceLabel,
                 selectedCount: state.selectedMessages.length,
+                communityShare: _includeCommunityQr
+                    ? state.communityShare
+                    : null,
               ),
             ),
       sections: <Widget>[
@@ -665,6 +721,15 @@ class _ChatMergePreviewScreenState
             reason: '回到转发页选择要合并的消息，最多 $chatMergeSelectionLimit 条。',
           )
         else ...<Widget>[
+          if (state.communityShare != null)
+            SwitchListTile.adaptive(
+              title: const Text('附上社区二维码'),
+              subtitle: const Text('扫码查看社区，不会自动加入'),
+              value: _includeCommunityQr,
+              onChanged: _exporting
+                  ? null
+                  : (value) => setState(() => _includeCommunityQr = value),
+            ),
           if (state.mergeTruncated)
             LoopNotice(
               key: const ValueKey<String>('chat-merge-truncated'),
@@ -752,6 +817,7 @@ class _MergeCard extends StatelessWidget {
     required this.rows,
     required this.sourceLabel,
     required this.selectedCount,
+    this.communityShare,
     super.key,
   });
 
@@ -762,6 +828,7 @@ class _MergeCard extends StatelessWidget {
 
   /// How many messages were picked, including the ones that cannot be shown.
   final int selectedCount;
+  final ConversationCommunityShare? communityShare;
 
   @override
   Widget build(BuildContext context) => LoopChalkCard(
@@ -788,7 +855,7 @@ class _MergeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '社区信号摘要',
+                    '聊天精选',
                     style: LoopTypography.display(26, color: LoopColors.ink),
                   ),
                 ],
@@ -846,6 +913,44 @@ class _MergeCard extends StatelessWidget {
           margin: const EdgeInsets.only(top: 13),
           color: LoopColors.ink.withValues(alpha: 0.18),
         ),
+        if (communityShare case final community?)
+          Padding(
+            padding: const EdgeInsets.only(top: 18, bottom: 10),
+            child: Row(
+              children: [
+                SocialQrSymbol(
+                  key: const ValueKey<String>('chat-merge-community-qr'),
+                  payload: communityQrPayload(community.id),
+                  size: 88,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'LOOP',
+                        style: LoopTypography.title(20, color: LoopColors.ink),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        community.name,
+                        style: LoopTypography.title(14, color: LoopColors.ink),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '扫码查看社区',
+                        style: LoopTypography.caption(
+                          12,
+                          color: LoopColors.inkText3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,

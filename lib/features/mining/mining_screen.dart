@@ -32,6 +32,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 class MiningScreen extends ConsumerStatefulWidget {
   const MiningScreen({
     super.key,
+    this.onBack,
     this.onOpenAssets,
     this.onOpenRewards,
     this.onOpenRank,
@@ -40,6 +41,7 @@ class MiningScreen extends ConsumerStatefulWidget {
     this.onOpenMarket,
   });
 
+  final VoidCallback? onBack;
   final VoidCallback? onOpenAssets;
   final VoidCallback? onOpenRewards;
   final VoidCallback? onOpenRank;
@@ -96,7 +98,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的挖矿',
-      tabPage: true,
+      tabPage: false,
+      onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('mining-rules-action'),

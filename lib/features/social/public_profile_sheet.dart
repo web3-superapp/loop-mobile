@@ -1,4 +1,12 @@
+// 开发交接 S-01/S-03：当前接通申请、关注和拉黑；删除好友、
+// 公开持仓/交易仍缺正式后端契约，不得用本人钱包读数填充他人资料。
+// 详见 docs/handoff/2026-10-03-social-development-handoff.md。
+
 import 'dart:async';
+
+import 'package:loop_mobile/features/social/social_models.dart';
+import 'package:loop_mobile/features/social/social_qr.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -227,6 +235,55 @@ class _PublicProfileSheetState<T extends Object>
     }
   }
 
+  Future<void> _block() async {
+    final target = widget.identity.publicProfileId;
+    if (target == null || _busy) return;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('拉黑这个用户？'),
+        content: const Text('对方将无法向你发送新的消息请求。可在屏蔽名单中解除。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('拉黑'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _failureKind = null;
+    });
+    try {
+      await ref
+          .read(socialGatewayProvider)
+          .setBlocked(kind: BlockKind.user, stableId: target, blocked: true);
+      if (!mounted) return;
+      LoopToast.show(context, message: '已拉黑');
+      Navigator.of(context).pop();
+    } on CommunityGatewayException catch (error) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _failureKind = error.kind;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _failureKind = CommunityFailureKind.unexpected;
+        });
+      }
+    }
+  }
+
   Future<void> _toggleFollow() async {
     final target = widget.identity.publicProfileId;
     if (target == null || _busy) return;
@@ -265,7 +322,6 @@ class _PublicProfileSheetState<T extends Object>
     final identity = widget.identity;
     final loopId = identity.loopId;
     final following = _following;
-    final canFollow = identity.isCommandTarget;
     // The account signed in now, as this device has already read it. Watching
     // the controller starts no read of its own: an unread profile simply
     // leaves the comparison unanswered.
@@ -278,6 +334,7 @@ class _PublicProfileSheetState<T extends Object>
       hasHandler: true,
       viewerLoopId: viewerLoopId,
     );
+    final canFollow = offersFriendRequest;
     final offersDirectMessage = publicProfileDirectMessageOffered(
       identity: identity,
       hasHandler: openDirectMessage != null,
@@ -340,6 +397,21 @@ class _PublicProfileSheetState<T extends Object>
                 ),
             ],
           ),
+          if (loopId != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const ValueKey<String>('public-profile-qr'),
+                onPressed: () => showSocialQr(
+                  context,
+                  title: identity.displayName,
+                  payload: userQrPayload(loopId),
+                  caption: '扫码查看公开资料',
+                ),
+                icon: const Icon(Icons.qr_code_2_rounded),
+                label: const Text('个人二维码'),
+              ),
+            ),
           const SizedBox(height: 16),
           if (offersFriendRequest || offersDirectMessage) ...<Widget>[
             Row(
@@ -382,7 +454,7 @@ class _PublicProfileSheetState<T extends Object>
             ),
             const SizedBox(height: 12),
           ],
-          if (!canFollow)
+          if (!identity.isCommandTarget)
             const LoopEmpty(
               key: ValueKey<String>('public-profile-not-targetable'),
               icon: 'warn',
@@ -390,7 +462,7 @@ class _PublicProfileSheetState<T extends Object>
               reason: '这个账号没有公开资料，不能关注，也不能进行其他操作。',
               margin: EdgeInsets.zero,
             )
-          else ...<Widget>[
+          else if (canFollow) ...<Widget>[
             if (following == null)
               const LoopNotice(
                 key: ValueKey<String>('public-profile-follow-unknown'),
@@ -407,6 +479,13 @@ class _PublicProfileSheetState<T extends Object>
             ),
             const SizedBox(height: 8),
           ],
+          if (offersFriendRequest)
+            TextButton.icon(
+              key: const ValueKey<String>('public-profile-block'),
+              onPressed: _busy ? null : () => unawaited(_block()),
+              icon: const Icon(Icons.block_rounded, size: 18),
+              label: const Text('拉黑用户'),
+            ),
           if (_failureKind != null) ...<Widget>[
             const SizedBox(height: 12),
             LoopNotice(

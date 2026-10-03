@@ -4,11 +4,13 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Product shape and environments
 
-- Decision 0111 supersedes decision 0109's navigation with Community, Mining, Launch, Market and Wallet as the
-  five primary destinations. Community is the post-login home; Chat shares its tab and in-page segment.
+- Decision 0114 supersedes decision 0111's destination order with Chat, Plaza, MEME, Intelligence and Wallet as the
+  five primary destinations. Chat is the post-login home; Community is a child at `/community`.
   Conversations, friends and Profile remain child domains outside the bottom
   navigation. `/home` and `/launchpad` are compatibility redirects only. The
   product is spot-only; Perp is disabled and has no primary-feature entry.
+  `/plaza` is primary; `/mining`, New Pairs and Smart Money remain child destinations.
+  MEME and Intelligence retain the technical `/launch` and `/market` paths.
 - Development and Hyperliquid Testnet are the only enabled environments. Mainnet, real deposits/withdrawals, and automated trading remain feature-flagged off.
 - Debug/Profile versus Release is only a client build-profile axis and never changes that Development/Testnet policy. `LOOP_BUILD_MODE` must match the Flutter runtime mode; a missing or mismatched profile disables configured Privy, Reown, LOOP backend, Stream, wallet-adapter, and Firebase capabilities instead of reusing another profile's values. Public credential-free Hyperliquid Testnet reads remain the separately locked exception.
 - Prefer runnable vertical slices and the locked Privy, Reown, and Stream Flutter SDKs. Do not add a second identity, messaging, calling, state-management, routing, or HTTP stack. Reown is an external-wallet proof transport under Privy's identity boundary, not a second identity provider.

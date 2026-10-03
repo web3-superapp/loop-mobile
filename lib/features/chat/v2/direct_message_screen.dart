@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -240,9 +244,15 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     // Stream widgets under it name the same person the header does instead of
     // the provider's account id. Without a trusted identity — a deep link
     // carries none — nothing is published and they fail closed.
-    final peer = widget.target?.identity?.displayName;
+    final peerIdentity =
+        widget.target?.identity ??
+        ref.watch(directChannelDirectoryProvider).asData?.value.peerOf(cid);
+    final peer = peerIdentity?.displayName;
     if (peer == null) return surface;
-    return LoopDirectPeerScope(displayName: peer, child: surface);
+    return ConversationSocialScope(
+      peer: peerIdentity,
+      child: LoopDirectPeerScope(displayName: peer, child: surface),
+    );
   }
 
   Future<void> _sendMessageRequest() async {

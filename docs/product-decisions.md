@@ -1,23 +1,26 @@
 # LOOP current product decisions
 
-> Canonical current scope. Updated 2026-10-02.
+> Canonical current scope. Updated 2026-10-03.
 
 This document applies to the Flutter source at the repository root. Material under `reference/legacy-prototype/` is frozen history and does not override these decisions.
 
 ## Product shape
 
 - LOOP is a Flutter iOS and Android app. Web output is only a local UI-verification target.
-- Decision 0111 supersedes 0109's navigation: five primary destinations in order,
-  Community, Mining, Launch, Market and Wallet. Community is the post-login home.
-  Community and Chat share one bottom tab and an in-page segment; `/chat`,
-  conversations, friends and Profile retain their existing links and identities.
-- `/home` and `/launchpad` are compatibility redirects to `/community` and
-  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (94
-  routes: the 93 original routes and native Chat extension, mirrored by `lib/core/navigation/route_manifest.dart`) the only
+- Decision 0114 supersedes 0111's destination order: five primary destinations in order,
+  Chat, Plaza, MEME, Intelligence and Wallet. Chat is the post-login home.
+  `/community` is the child My Communities page; conversations, friends and
+  Profile retain their existing links and identities. Plaza owns the Community/Voice sections.
+- `/home` and `/launchpad` are compatibility redirects to `/chat` and
+  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (96
+  routes: the 93 original routes plus native Chat, Plaza and recommended communities, mirrored by `lib/core/navigation/route_manifest.dart`) the only
   route inventory; every unimplemented slug mounts a truthful pending surface
-  and every retired location is logged and returned to Community. The former
+  and every retired location is logged and returned to Chat. The former
   103-surface catalog is read-only history, not a routing source or evidence
   that the 93 pages are complete.
+- Plaza is `/plaza`; MEME retains `/launch`; Intelligence retains `/market`. Mining remains a child at `/mining`. New Pairs and Smart Money stay second-level entries under Intelligence.
+- Decision 0114 uses commit `6639279` as the accepted Community card baseline. Recommended communities default to five selected choices; selection can be cancelled and the step skipped. Joining remains a verified backend command, never a local success claim.
+- Decision 0114 accepts the project-party feedback for non-contract implementation. Requested inner-market 10% / outer-market 2% two-way taxes, three launch rounds (NFT whitelist / LOOP staking priority / public participation) remain documents pending a separate contract review; this approval introduces no contract execution. Manual controls are preferred wherever the reviewed flow supports them.
 - LOOP is spot-only. Perpetuals are disabled, have no primary-feature entry, and receive no further product work.
 - Privy is the selected login, wallet and final authorization boundary.
 - Reown AppKit 1.8.4 is accepted only as the connection and `personal_sign` transport for external EVM credentials under Privy. It is not a second identity system or a transaction wallet.
@@ -36,7 +39,7 @@ Product priority and current delivery are separate:
 
 ## Launchpad delivery
 
-- Launch remains the third first-class destination at `/launch`. All eleven
+- MEME is the third first-class destination and retains `/launch`. All eleven
   Launch pages and all six Mining pages are mounted against the V2 launch,
   mining and referral modules (decision 0058); the non-actionable placeholder
   they replaced is retired with decision 0027.

@@ -243,12 +243,12 @@ void main() {
     // 0058: `mining` now reads the V2 module and renders the server's own
     // unavailable reasons. Its five states, its em-dash metrics and its
     // disabled claim live in `test/s7_mining_pages_test.dart`.
-    test('Mining is a mounted V2 destination, not a placeholder', () {
+    test('Mining remains an implemented child destination', () {
       final mining = LoopRouteManifest.forModule(LoopRouteModule.mining);
 
       expect(mining, hasLength(6));
       expect(mining.first.slug, 'mining');
-      expect(mining.first.tab, isTrue);
+      expect(mining.first.tab, isFalse);
       expect(
         mining.every((entry) => entry.status == LoopRouteStatus.implemented),
         isTrue,

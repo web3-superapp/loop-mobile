@@ -385,14 +385,13 @@ void main() {
         ),
       );
 
-      // The order is the prototype's: the discover band, then the index
-      // folio, then the mining communities, then everything else, and the
-      // reading's timestamp last. It used to be folio, then one flat list.
+      // Joined communities are the page's primary content. Discovery follows
+      // the joined index, and the reading's timestamp remains last.
       final order = <Key>[
         const ValueKey<String>('community-folio'),
-        const ValueKey<String>('community-discover-hero'),
         const ValueKey<String>('community-mining-group'),
         const ValueKey<String>('community-other-group'),
+        const ValueKey<String>('community-discover-hero'),
         const ValueKey<String>('community-observed-at'),
       ];
       final tops = <double>[

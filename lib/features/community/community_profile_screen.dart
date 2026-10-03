@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:loop_mobile/features/social/social_qr.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -296,6 +298,17 @@ class _CommunityProfileScreenState
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
+        if (community != null)
+          IconButton(
+            tooltip: '社区二维码',
+            icon: const Icon(Icons.qr_code_2_rounded),
+            onPressed: () => showSocialQr(
+              context,
+              title: community.name,
+              payload: communityQrPayload(community.communityId),
+              caption: '扫码查看社区，加入需遵循社区规则',
+            ),
+          ),
         // A top-bar action is an icon on the 44 grid like every other one
         // (audit 2026-09-20 · B.2). 成员 wore a `LoopSeg`, which is the
         // segmented control this page uses to switch sections — a control

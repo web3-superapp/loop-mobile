@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/widgets/community_chat_segment.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -159,10 +158,16 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             LoopDashboardPage(
               key: const ValueKey<String>('community-screen'),
               archetype: LoopPageArchetype.listing,
-              title: '社区',
-              titleWidget: const CommunityChatSegment(location: '/community'),
+              title: '我的社区',
+              onBack: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/plaza');
+                }
+              },
               kicker: communityPreviewKicker(mode),
-              tabPage: true,
+              tabPage: false,
               actions: <Widget>[
                 // The toggle keeps its own focus node so Escape can hand focus
                 // back to the control that opened the panel.
@@ -211,7 +216,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     child: Row(
                       children: <Widget>[
                         Expanded(
-                          child: Text('我的社区', style: LoopType.headingSm),
+                          child: Text(
+                            '已加入的社区',
+                            style: LoopTypography.heading(20),
+                          ),
                         ),
                         if (home != null)
                           Text(
@@ -224,11 +232,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                       ],
                     ),
                   ),
-                  if (home != null)
-                    CommunityDiscoverHero(
-                      key: const ValueKey<String>('community-discover-hero'),
-                      onTap: () => _open('/community/discover'),
-                    ),
                 ],
               ),
               block: communityCapabilityBlocks(mode, capability)
@@ -272,7 +275,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   )
                 else ...<Widget>[
                   if (joined.isEmpty) ...<Widget>[
-                    const LoopLabel('已加入的社区'),
                     const LoopEmpty(
                       key: ValueKey<String>('community-joined-empty'),
                       message: '还没有加入任何社区',
@@ -288,10 +290,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     const LoopLabel('带币社区 · 可挖矿', tight: true),
                     LoopContentArrival(
                       animate: _sawSkeleton,
-                      child: LoopRecordGroup(
+                      child: Column(
                         key: const ValueKey<String>('community-mining-group'),
-                        rows: <LoopRecordRow>[
-                          for (final entry in mining) _joinedRow(entry),
+                        children: [
+                          for (final entry in mining)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _joinedRow(entry),
+                            ),
                         ],
                       ),
                     ),
@@ -304,10 +310,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     ),
                     LoopContentArrival(
                       animate: _sawSkeleton,
-                      child: LoopRecordGroup(
+                      child: Column(
                         key: const ValueKey<String>('community-other-group'),
-                        rows: <LoopRecordRow>[
-                          for (final entry in others) _joinedRow(entry),
+                        children: [
+                          for (final entry in others)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _joinedRow(entry),
+                            ),
                         ],
                       ),
                     ),
@@ -325,6 +335,25 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                             _open('/community/discover?membership=joined'),
                       ),
                     ),
+                  const LoopLabel('发现社区'),
+                  LoopRecordGroup(
+                    rows: [
+                      LoopRecordRow(
+                        key: const ValueKey<String>(
+                          'community-recommendations-action',
+                        ),
+                        title: '推荐社区',
+                        subtitle: '选择感兴趣的社区加入',
+                        onTap: () => _open('/community/recommendations'),
+                      ),
+                      LoopRecordRow(
+                        key: const ValueKey<String>('community-discover-hero'),
+                        title: '发现新社区',
+                        subtitle: '浏览更多社区',
+                        onTap: () => _open('/community/discover'),
+                      ),
+                    ],
+                  ),
                   CommunityObservedFootnote(
                     key: const ValueKey<String>('community-observed-at'),
                     observedAt: home.observedAt,
@@ -433,7 +462,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       title: community.name,
       subtitle: accent == null ? members : '$members · $accent',
       subtitleSpans: <InlineSpan>[
-        TextSpan(text: members, style: LoopMono.stamp),
+        TextSpan(
+          text: members,
+          style: LoopTypography.caption(13, color: LoopColors.text2),
+        ),
         if (accent != null) ...<InlineSpan>[
           const TextSpan(text: ' · '),
           TextSpan(
@@ -441,7 +473,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             style: LoopTypography.figure(
               13,
               weight: FontWeight.w700,
-              color: LoopColors.lime,
+              color: LoopColors.text2,
             ),
           ),
         ],

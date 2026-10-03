@@ -17,7 +17,8 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PRIMARY_DESTINATIONS = ["Community", "Mining", "Launch", "Market", "Wallet"]
+PRIMARY_DESTINATIONS = ["Chat", "Plaza", "MEME", "Intelligence", "Wallet"]
+PRIMARY_TAB_SLUGS = ["chat", "plaza", "launch", "market", "wallet"]
 PINNED_DEPENDENCIES = {
     "cupertino_icons": "1.0.8",
     "decimal": "3.2.6",
@@ -2095,7 +2096,7 @@ def check_profile(root: Path, profile: dict[str, Any]) -> list[str]:
         errors.append("harness.json project purpose must be non-empty")
     if project.get("primary_destinations") != PRIMARY_DESTINATIONS:
         errors.append(
-            "harness.json must preserve Community / Mining / Launch / Market / Wallet in order"
+            "harness.json must preserve Chat / Plaza / MEME / Intelligence / Wallet in order"
         )
 
     for field in ("ownership_boundaries",):
@@ -3045,7 +3046,7 @@ CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
 CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS = {
     "page": "7816c49c960272acff1caa32f824a6edd5b55ec22b982a41f739c143a421f7e8",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
-    "inbox": "330979b0fa1881e9d26e722479e4a5d9ffa11b93dffd35b4cafc83696ac9d3c2",
+    "inbox": "c86126bf9427d9185b3f3442c653304b92ccae20aeee24e29f82edead3b07c29",
 }
 
 
@@ -3227,7 +3228,7 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "9b441d2d8c58355db0d3bc47100f6d85534a4f4569a646126496a62b68520547",
     "primary_routes": "9a800ba14a805f9a0e5f62a611441da4c42aaf56eb3f3eba3eb87c34152ffef7",
-    "secondary_routes": "cb31c8b5beb308a8a629bac006ab92372383c436482518da19ae7a2bbba22252",
+    "secondary_routes": "f1eef7282a5bae68d5e6c9143f9962c942244b925f5eb8aa30656e4290a06d08",
     "conversation_pages": "38dc08a5b2973723897254e599b81a8b60e12095decf5a2b69c3aa28d8175618",
     "group_info": "d967998206d33611981bbd5107e9b51975cbfbf2c69a121800b0584731a0b54c",
     "member_list": "9e34dccc196b4237baba7ea8a6b1ece71c297d010b1a5a8c7cd264d9419350bd",
@@ -4726,9 +4727,9 @@ def check_onboarding_sequence_contract(root: Path) -> list[str]:
             ),
             "test/s53_onboarding_sequence_test.dart": (
                 "a pending account lands on 02, not straight on 05",
-                "a pending account never passes through Community",
+                "a pending account never passes through product pages",
                 "a resumed account continues on its step, not through 02",
-                "an active account goes straight to Community",
+                "an active account goes straight to Chat",
                 "a profile that never answers stops waiting and says so",
                 "a killed process reopens on the step it stopped on",
                 "an active account never enters the sequence",
@@ -6480,16 +6481,8 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 errors.append(
                     f"{relative} must remain read-only without execution navigation `{forbidden}`"
                 )
-        # `style-v2.css` publishes ink / lime / chalk and its `.kline-body`
-        # rules were one hue: rising solid Lime, falling a hollow Chalk
-        # outline (audit 2026-09-21 §D+ item 12). Decision 0086 gives a fall
-        # the application's second hue — `LoopColors.danger`, the `#FF6B82`
-        # of the approved Token design draft — because a chart of falling
-        # bars in the page's own text colour said nothing about direction
-        # (requester, 2026-09-23 "跌为红"). The invariant is unchanged in
-        # kind: **two** tokens and no others, both from `LoopColors`, one
-        # per direction. A third hue is still a colour the design system
-        # does not have.
+        # Decision 0116: financial direction has dedicated green/red tokens,
+        # independent of the brand accent and general error colour.
         for forbidden in (
             "LoopColors.mint",
             "LoopColors.vapor",
@@ -6498,18 +6491,18 @@ def check_spot_candle_contract(root: Path) -> list[str]:
         ):
             if forbidden in source:
                 errors.append(
-                    f"{relative} must paint two hues: rising Lime, falling "
-                    f"danger; found `{forbidden}`"
+                    f"{relative} must paint two hues: rising marketUp, falling "
+                    f"marketDown; found `{forbidden}`"
                 )
         for required in (
-            "static const Color _upBody = LoopColors.lime;",
-            "static final Color _downFill = LoopColors.danger.withValues",
-            "static final Color _downStroke = LoopColors.danger.withValues",
+            "static const Color _upBody = LoopColors.marketUp;",
+            "static const Color _downFill = LoopColors.marketDown;",
+            "static const Color _downStroke = LoopColors.marketDown;",
         ):
             if required not in source:
                 errors.append(
-                    f"{relative} must paint two hues: rising Lime, falling "
-                    f"danger; missing `{required}`"
+                    f"{relative} must paint two hues: rising marketUp, falling "
+                    f"marketDown; missing `{required}`"
                 )
 
     return errors
@@ -8005,14 +7998,14 @@ def check_product_contract(root: Path) -> list[str]:
         {
             "README.md": (
                 "Repository phase: `active`.",
-                "Community / Mining / Launch / Market / Wallet",
+                "Chat / Plaza / MEME / Intelligence / Wallet",
                 "harness.json",
                 "python3 scripts/check_harness.py",
             ),
             "AGENTS.md": (
                 "Repository phase: `active`.",
-                "Community / Mining / Launch / Market / Wallet",
-                "Community is the post-login home",
+                "Chat / Plaza / MEME / Intelligence / Wallet",
+                "Chat is the post-login home",
                 "python3 scripts/check_harness.py",
             ),
             "docs/product/implementation-constraints.md": (
@@ -8164,7 +8157,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the approved 94-route manifest."""
+    """Keep the Dart route table equal to the approved 96-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8180,13 +8173,22 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for module in manifest.get("modules", {}).values()
         for item in module
     ]
-    if manifest.get("count") != 94 or len(expected_slugs) != 94:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 94 routes")
-    if manifest.get("tabs") != ["community", "mining", "launch", "market", "wallet"]:
+    if manifest.get("count") != 96 or len(expected_slugs) != 96:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 96 routes")
+    if manifest.get("tabs") != PRIMARY_TAB_SLUGS:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
-    if manifest.get("defaultRoute") != "community":
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must land on community")
-    if [name.title() for name in manifest.get("tabs", [])] != PRIMARY_DESTINATIONS:
+    if manifest.get("defaultRoute") != "chat":
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must land on chat")
+    if [
+        {
+            "chat": "Chat",
+            "plaza": "Plaza",
+            "launch": "MEME",
+            "market": "Intelligence",
+            "wallet": "Wallet",
+        }.get(slug)
+        for slug in manifest.get("tabs", [])
+    ] != PRIMARY_DESTINATIONS:
         errors.append("harness primary destinations must mirror the manifest tabs")
 
     dart_source = strip_dart_comments(read_text(dart_path))
@@ -8196,7 +8198,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 94 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 96 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -8610,11 +8612,11 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "Do not call, mock or pre-empt the backend D0/D1 `/v2` contract",
         ),
         "docs/product-decisions.md": (
-            "Community, Mining, Launch, Market and Wallet",
+            "Chat, Plaza, MEME, Intelligence and Wallet",
             "`/home` and `/launchpad` are compatibility redirects",
         ),
         "docs/product/implementation-constraints.md": (
-            "Community, Mining, Launch, Market and Wallet",
+            "Chat, Plaza, MEME, Intelligence and Wallet",
             "`/home` and `/launchpad` are compatibility redirects only",
         ),
         "lib/features/community/community_screen.dart": (
@@ -8662,10 +8664,10 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
         else:
             block = source[start:end]
             markers = (
-                ("'社区'", "'/community'"),
-                ("'挖矿'", "'/mining'"),
-                ("'Launch'", "'/launch'"),
-                ("'行情'", "'/market'"),
+                ("'聊天'", "'/chat'"),
+                ("'广场'", "'/plaza'"),
+                ("'MEME'", "'/launch'"),
+                ("'情报'", "'/market'"),
                 ("'钱包'", "'/wallet'"),
             )
             positions: list[int] = []
@@ -8685,6 +8687,7 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                 "'Profile'",
                 "'首页'",
                 "'/launchpad'",
+                "'/mining'",
             ):
                 if forbidden in block:
                     errors.append(
@@ -8703,23 +8706,18 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
         source = strip_dart_comments(read_text(app_path))
         compact_source = re.sub(r"\s+", " ", source).strip()
         shell_start = compact_source.find("ShellRoute(")
-        first_root_after_shell = re.search(
-            r"GoRoute\s*\(\s*path\s*:\s*'/home'",
-            compact_source[shell_start + 1 :] if shell_start >= 0 else "",
+        shell = (
+            _dart_call_arguments(compact_source, shell_start + len("ShellRoute"))
+            if shell_start >= 0
+            else None
         )
-        shell_end = (
-            shell_start + 1 + first_root_after_shell.start()
-            if shell_start >= 0 and first_root_after_shell is not None
-            else -1
-        )
-        if shell_start < 0 or shell_end < 0:
+        if shell is None:
             errors.append("lib/app.dart must retain an inspectable V2 ShellRoute")
         else:
-            shell = compact_source[shell_start:shell_end]
-            for path in ("/community", "/chat", "/mining", "/launch", "/market", "/wallet"):
+            for path in ("/chat", "/plaza", "/launch", "/market", "/wallet"):
                 if re.search(rf"path\s*:\s*'{re.escape(path)}'", shell) is None:
                     errors.append(f"V2 ShellRoute must own `{path}`")
-            for path in ("/home", "/launchpad", "/profile"):
+            for path in ("/home", "/launchpad", "/profile", "/mining", "/community"):
                 if re.search(rf"path\s*:\s*'{re.escape(path)}'", shell) is not None:
                     errors.append(f"V2 ShellRoute must not own legacy child `{path}`")
 
@@ -8774,7 +8772,7 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             r"if\s*\(\s*credentialRoutes\.contains\(location\)\s*\|\|\s*"
             r"location\s*==\s*'/splash'\s*\)\s*\{\s*"
             r"final\s+step\s*=\s*readOnboarding\(\)\.step\s*;\s*"
-            r"return\s+step\s*==\s*null\s*\?\s*'/community'\s*:\s*"
+            r"return\s+step\s*==\s*null\s*\?\s*'/chat'\s*:\s*"
             r"LoopRouteManifest\.pathFor\(step\.slug\)\s*;",
             compact_source,
         ) is None:
@@ -8807,16 +8805,16 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                 "locations"
             )
         for path, destination in (
-            ("/", "/community"),
-            ("/home", "/community"),
+            ("/", "/chat"),
+            ("/home", "/chat"),
             ("/launchpad", "/launch"),
-            ("/:unmatched(.*)", "/community"),
+            ("/:unmatched(.*)", "/chat"),
         ):
             if not has_direct_redirect(path, destination):
                 errors.append(
                     f"V2 app routes must redirect `{path}` to `{destination}`"
                 )
-        for path in ("/profile",):
+        for path in ("/profile", "/mining"):
             if re.search(rf"path\s*:\s*'{re.escape(path)}'", compact_source) is None:
                 errors.append(f"V2 app routes must retain child route `{path}`")
 
@@ -8876,13 +8874,13 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             errors.append("LoopRouteManifest must expose runtime tabSlugs")
         else:
             block = source[start:end]
-            expected = ["community", "mining", "launch", "market", "wallet"]
+            expected = PRIMARY_TAB_SLUGS
             positions = [block.find(f"'{slug}'") for slug in expected]
             if any(position < 0 for position in positions):
                 errors.append("LoopRouteManifest tabSlugs must contain all five V2 slugs")
             elif positions != sorted(positions):
                 errors.append("LoopRouteManifest tabSlugs must retain V2 order")
-            for retired in ("home", "launchpad", "profile"):
+            for retired in ("home", "launchpad", "profile", "mining"):
                 if f"'{retired}'" in block:
                     errors.append(
                         f"LoopRouteManifest tabSlugs must not retain `{retired}`"

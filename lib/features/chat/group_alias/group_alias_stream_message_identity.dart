@@ -1,3 +1,5 @@
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
@@ -1236,11 +1238,21 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final channel = StreamChannel.maybeOf(context)?.channel;
     if (!loopStreamChannelUsesGroupMessageAlias(channel?.cid)) {
-      final directProps = _directDisplayProps(
+      var directProps = _directDisplayProps(
         props,
         peerLabel: LoopDirectPeerScope.maybeOf(context),
         currentUserId: StreamChat.of(context).currentUser?.id,
       );
+      final peer = ConversationSocialScope.maybeOf(context)?.peer;
+      if (peer != null &&
+          props.message.user?.id != StreamChat.of(context).currentUser?.id) {
+        directProps = directProps.copyWith(
+          onUserAvatarTap: (_) => showPublicProfileSheet<Object>(
+            context,
+            identity: PublicProfileIdentity.fromProfile(peer),
+          ),
+        );
+      }
       return _withTokenCards(
         context,
         directProps.message,

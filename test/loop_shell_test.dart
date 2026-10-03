@@ -25,7 +25,7 @@ void main() {
             padding: EdgeInsets.only(bottom: 34, top: 47),
           ),
           child: LoopShell(
-            location: '/community',
+            location: '/chat',
             child: Builder(
               builder: (context) {
                 bodyContext = context;
@@ -88,15 +88,15 @@ void main() {
 
     final items = tester.widgetList<LoopTabItem>(find.byType(LoopTabItem));
     expect(items.map((item) => item.label), <String>[
-      '社区',
-      '挖矿',
-      'Launch',
-      '行情',
+      '聊天',
+      '广场',
+      'MEME',
+      '情报',
       '钱包',
     ]);
     expect(items.map((item) => item.slug), <String>[
-      'community',
-      'mining',
+      'chat',
+      'plaza',
       'launch',
       'market',
       'wallet',
@@ -127,7 +127,7 @@ void main() {
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '行情')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, '情报')).dx,
       ),
     );
 
@@ -152,7 +152,7 @@ void main() {
         )
         .style!
         .color!;
-    expect(labelColor('行情'), LoopColors.ink);
+    expect(labelColor('情报'), LoopColors.ink);
     expect(labelColor('钱包'), LoopColors.inkMuted);
 
     expect(
@@ -160,9 +160,9 @@ void main() {
       greaterThanOrEqualTo(LoopTouch.tabCellMinHeight),
     );
     expect(
-      tester.getSemantics(find.widgetWithText(LoopTabItem, '行情')),
+      tester.getSemantics(find.widgetWithText(LoopTabItem, '情报')),
       matchesSemantics(
-        label: '行情',
+        label: '情报',
         isButton: true,
         isSelected: true,
         hasSelectedState: true,
@@ -191,7 +191,7 @@ void main() {
     );
     expect(travelling, lessThan(tester.getCenter(indicator).dx));
     expect(labelColor('钱包'), LoopColors.ink);
-    expect(labelColor('行情'), LoopColors.inkMuted);
+    expect(labelColor('情报'), LoopColors.inkMuted);
     semantics.dispose();
   });
 
@@ -223,7 +223,7 @@ void main() {
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '社区')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, '聊天')).dx,
       ),
     );
 
@@ -255,14 +255,14 @@ void main() {
     tester,
   ) async {
     final router = GoRouter(
-      initialLocation: '/community',
+      initialLocation: '/chat',
       routes: <RouteBase>[
         ShellRoute(
           builder: (context, state, child) =>
               LoopShell(location: state.uri.path, child: child),
           routes: <RouteBase>[
             GoRoute(
-              path: '/community',
+              path: '/chat',
               pageBuilder: (context, state) => LoopTabPage<void>(
                 key: state.pageKey,
                 child: const Center(child: Text('community')),
@@ -394,10 +394,10 @@ void main() {
     expect(rail.backgroundColor, LoopColors.ink);
     expect(rail.indicatorColor, LoopColors.lime);
     expect(rail.destinations.map((d) => (d.label as Text).data), <String>[
-      '社区',
-      '挖矿',
-      'Launch',
-      '行情',
+      '聊天',
+      '广场',
+      'MEME',
+      '情报',
       '钱包',
     ]);
   });

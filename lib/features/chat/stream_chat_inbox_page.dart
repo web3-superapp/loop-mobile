@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/widgets/community_chat_segment.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
@@ -129,11 +128,17 @@ class StreamChatInboxPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const CommunityChatSegment(location: '/chat'),
+        title: const Text('聊天'),
         // Step 4 made every Audio Room a community resource: the lobby is
         // reached from a community record, never from the generic inbox,
         // because a room without a community has no locator.
         actions: <Widget>[
+          IconButton(
+            key: const ValueKey<String>('chat-profile-action'),
+            tooltip: '个人中心',
+            onPressed: () => context.push('/profile'),
+            icon: const Icon(Icons.person_outline_rounded),
+          ),
           IconButton(
             key: const ValueKey<String>('chat-friends-action'),
             tooltip: '好友',

@@ -36,6 +36,9 @@ const String launchSegmentEmptyBody =
 class LaunchScreen extends ConsumerStatefulWidget {
   const LaunchScreen({
     super.key,
+    this.title = 'Launch',
+    this.titleWidget,
+    this.sectionsPrefix = const [],
     this.onOpenLaunch,
     this.onOpenStake,
     this.onOpenRules,
@@ -43,6 +46,9 @@ class LaunchScreen extends ConsumerStatefulWidget {
     this.onOpenApply,
   });
 
+  final String title;
+  final Widget? titleWidget;
+  final List<Widget> sectionsPrefix;
   final void Function(String launchId)? onOpenLaunch;
   final VoidCallback? onOpenStake;
   final VoidCallback? onOpenRules;
@@ -78,13 +84,49 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
     if (loading) _sawSkeleton = true;
     final testnet = launchSurfaceIsTestnet(capability: capability);
 
+    final summary = LoopFolioPrimary(
+      compact: true,
+      headingTone: LoopFolioHeadingTone.neutral,
+      ring: false,
+      // A compact directory summary leaves projects in the first viewport.
+      variant: LoopFolioVariant.quiet,
+      archetype: LoopFolioArchetype.listing,
+      kicker: '发射台',
+      // No countdown, no graduation percentage, no "my tier": all three are
+      // contract facts and none of them can be proven in this step.
+      heading: overview == null
+          ? (loading ? '目录读取中' : launchMissingHeading)
+          : '${overview.segments.total} 个已登记项目',
+      // Decision 0095: the count is a skeleton of its own height until the
+      // catalogue is read, never a stand-in sentence.
+      headingLoading: loading,
+      // Decision 0097: the caption and the stamp follow the catalogue's own
+      // rows. Only a row whose axes were read on chain lets the hero say
+      // the chain is being read.
+      caption: launchOverviewCaption(overview, testnet: testnet),
+      stamp: overview == null
+          ? null
+          : launchOverviewReadsChain(overview)
+          ? 'ON-CHAIN'
+          : 'OFF-CHAIN',
+    );
+
+    final pageBlock = blocked
+        ? LoopCapabilityPageBlock.of(
+            key: const ValueKey<String>('launch-capability-unavailable'),
+            title: 'Launch 当前不可用',
+            capability: capability,
+          )
+        : null;
+
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-screen'),
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
       // The prototype's bar is one line: `Launch` plus two framed round tools.
-      title: 'Launch',
+      title: widget.title,
+      titleWidget: widget.titleWidget,
       framedTools: true,
       tabPage: true,
       actions: <Widget>[
@@ -108,38 +150,26 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             onPressed: widget.onOpenRules,
           ),
       ],
-      primary: LoopFolioPrimary(
-        compact: true,
-        // A compact directory summary leaves projects in the first viewport.
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.listing,
-        kicker: 'LAUNCH DESK',
-        // No countdown, no graduation percentage, no "my tier": all three are
-        // contract facts and none of them can be proven in this step.
-        heading: overview == null
-            ? (loading ? '目录读取中' : launchMissingHeading)
-            : '${overview.segments.total} 个已登记项目',
-        // Decision 0095: the count is a skeleton of its own height until the
-        // catalogue is read, never a stand-in sentence.
-        headingLoading: loading,
-        // Decision 0097: the caption and the stamp follow the catalogue's own
-        // rows. Only a row whose axes were read on chain lets the hero say
-        // the chain is being read.
-        caption: launchOverviewCaption(overview, testnet: testnet),
-        stamp: overview == null
-            ? null
-            : launchOverviewReadsChain(overview)
-            ? 'ON-CHAIN'
-            : 'OFF-CHAIN',
-      ),
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('launch-capability-unavailable'),
-              title: 'Launch 当前不可用',
-              capability: capability,
-            )
-          : null,
+      primary: widget.sectionsPrefix.isEmpty ? summary : null,
+      block: pageBlock == null
+          ? null
+          : widget.sectionsPrefix.isEmpty
+          ? pageBlock
+          : Column(
+              children: [
+                ...widget.sectionsPrefix,
+                Expanded(child: pageBlock),
+              ],
+            ),
       sections: <Widget>[
+        ...widget.sectionsPrefix,
+        if (widget.sectionsPrefix.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          KeyedSubtree(
+            key: const ValueKey('loop-page-primary'),
+            child: summary,
+          ),
+        ],
         LoopFreshnessStrip(
           key: const ValueKey<String>('launch-freshness'),
           restoredAt: controller.restoredObservedAt,
@@ -386,20 +416,26 @@ class _SegmentList extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       );
     }
-    return LoopRecordGroup(
+    return Column(
       key: ValueKey<String>('launch-segment-${segment.name}'),
-      rows: <LoopRecordRow>[
+      children: <Widget>[
         for (var index = 0; index < items.length; index += 1)
-          launchCatalogRow(
-            launch: items[index],
-            onTap: onOpenLaunch == null
-                ? null
-                : () => onOpenLaunch!(items[index].launchId),
-            position: launchRowPosition(index, items.length),
-            saleSegmentLabel:
-                segment == LaunchSegment.live || segment == LaunchSegment.ended
-                ? launchSegmentLabel(segment)
-                : null,
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: index == items.length - 1 ? 0 : 10,
+            ),
+            child: launchCatalogRow(
+              launch: items[index],
+              onTap: onOpenLaunch == null
+                  ? null
+                  : () => onOpenLaunch!(items[index].launchId),
+              position: LoopRowPosition.single,
+              saleSegmentLabel:
+                  segment == LaunchSegment.live ||
+                      segment == LaunchSegment.ended
+                  ? launchSegmentLabel(segment)
+                  : null,
+            ),
           ),
       ],
     );

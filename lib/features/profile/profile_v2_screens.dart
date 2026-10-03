@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:loop_mobile/features/social/social_qr.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
@@ -889,6 +891,17 @@ class _ProfileIdentityCard extends ConsumerWidget {
             ),
           ),
         ],
+        if (loopId != null)
+          TextButton.icon(
+            onPressed: () => showSocialQr(
+              context,
+              title: '我的二维码',
+              payload: userQrPayload(loopId),
+              caption: '$loopId · 扫码加好友',
+            ),
+            icon: const Icon(Icons.qr_code_2_rounded, color: LoopColors.ink),
+            label: const Text('我的二维码', style: TextStyle(color: LoopColors.ink)),
+          ),
         const SizedBox(height: 12),
         _ChalkCardButton(
           key: const ValueKey<String>('profile-open-edit'),

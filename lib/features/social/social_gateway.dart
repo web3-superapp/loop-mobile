@@ -1,3 +1,7 @@
+// 开发交接 S-01：follow、block 与 friendship 是不同关系。
+// 取消关注/拉黑不得充当删除好友；删除需新增后端契约及迁移。
+// 详见 docs/handoff/2026-10-03-social-development-handoff.md。
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/social/social_models.dart';

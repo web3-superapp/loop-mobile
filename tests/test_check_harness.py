@@ -575,7 +575,7 @@ class HarnessTests(unittest.TestCase):
             source = path.read_text(encoding="utf-8")
             # A second page read outside the bounded builder is rejected.
             mutated = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
                 "GoRoute(path: '/home', redirect: (context, state) => "
                 "ref.watch(loopV2MetaSnapshotProvider).value == null ? '/auth' : '/community')",
                 1,
@@ -1237,16 +1237,16 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected visible-input identity guard: {result}",
         )
 
-    def test_navigation_contract_requires_community(self) -> None:
+    def test_navigation_contract_requires_chat(self) -> None:
         profile, errors = check_harness.load_profile(REPOSITORY_ROOT)
         self.assertEqual([], errors)
         assert profile is not None
         changed = copy.deepcopy(profile)
-        changed["project"]["primary_destinations"].remove("Community")
+        changed["project"]["primary_destinations"].remove("Chat")
         result = check_harness.check_profile(REPOSITORY_ROOT, changed)
         self.assertTrue(
             any(
-                "preserve Community / Mining / Launch / Market / Wallet"
+                "preserve Chat / Plaza / MEME / Intelligence / Wallet"
                 in error
                 for error in result
             )
@@ -1268,7 +1268,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_route_manifest_contract(root)
 
         self.assertTrue(
-            any("94 manifest slugs in manifest order" in error for error in result),
+            any("96 manifest slugs in manifest order" in error for error in result),
             msg=f"expected manifest slug drift guard: {result}",
         )
 
@@ -1279,8 +1279,8 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/app.dart"
             source = path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
-                "GoRoute(path: '/home', redirect: (context, state) => '/community'),\n"
+                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/chat'),\n"
                 "      GoRoute(path: '/onboarding', redirect: (context, state) => '/auth')",
                 1,
             )
@@ -1301,10 +1301,10 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/features/shell/loop_shell.dart"
             source = path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "_LoopDestination('挖矿', '/mining', 'mine-tab'),\n"
-                "    _LoopDestination('Launch', '/launch', 'launch'),",
-                "_LoopDestination('Launch', '/launch', 'launch'),\n"
-                "    _LoopDestination('挖矿', '/mining', 'mine-tab'),",
+                "_LoopDestination('广场', '/plaza', 'users'),\n"
+                "    _LoopDestination('MEME', '/launch', 'launch'),",
+                "_LoopDestination('MEME', '/launch', 'launch'),\n"
+                "    _LoopDestination('广场', '/plaza', 'users'),",
                 1,
             )
             self.assertNotEqual(source, mutated)
@@ -1316,6 +1316,20 @@ class HarnessTests(unittest.TestCase):
             "LoopShell destinations must follow the manifest tab order",
             result,
         )
+
+    def test_v2_navigation_contract_rejects_mining_in_primary_shell(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace("path: '/plaza',", "path: '/mining',", 1)
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertIn("V2 ShellRoute must not own legacy child `/mining`", result)
 
     def test_v2_navigation_contract_requires_logged_unmatched_fallback(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -1345,7 +1359,7 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/features/shell/loop_shell.dart"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "'社区', '/community'",
+                    "'聊天', '/chat'",
                     "'Home', '/home'",
                     1,
                 ),
@@ -1366,7 +1380,7 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/app.dart"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                    "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
                     "GoRoute(path: '/home', redirect: (context, state) => '/market')",
                     1,
                 ),
@@ -1377,7 +1391,7 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "V2 app routes must redirect `/home` to `/community`" in error
+                "V2 app routes must redirect `/home` to `/chat`" in error
                 for error in result
             ),
             msg=f"expected compatibility-redirect guard: {result}",
@@ -1400,7 +1414,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_primary_navigation_contract(root)
 
         self.assertIn(
-            "V2 app routes must redirect `/:unmatched(.*)` to `/community`",
+            "V2 app routes must redirect `/:unmatched(.*)` to `/chat`",
             result,
         )
 
@@ -1411,11 +1425,11 @@ class HarnessTests(unittest.TestCase):
             app_path = root / "lib/app.dart"
             source = app_path.read_text(encoding="utf-8")
             formatted = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
                 "GoRoute(\n"
                 "        path: '/home',\n"
                 "        redirect: (context, state) {\n"
-                "          return '/community';\n"
+                "          return '/chat';\n"
                 "        },\n"
                 "      )",
                 1,
@@ -1426,7 +1440,7 @@ class HarnessTests(unittest.TestCase):
             test_path = root / "test/v2_primary_navigation_test.dart"
             test_source = test_path.read_text(encoding="utf-8")
             renamed = test_source.replace(
-                "unknown routes fall back directly to Community",
+                "unknown routes fall back directly to Chat",
                 "unmatched locations use the reviewed V2 fallback",
                 1,
             )
@@ -1444,9 +1458,9 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/app.dart"
             source = path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
                 "GoRoute(path: '/home', redirect: (context, state) => '/market')\n"
-                "      // GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "      // GoRoute(path: '/home', redirect: (context, state) => '/chat')",
                 1,
             )
             self.assertNotEqual(source, mutated)
@@ -1455,7 +1469,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_primary_navigation_contract(root)
 
         self.assertIn(
-            "V2 app routes must redirect `/home` to `/community`",
+            "V2 app routes must redirect `/home` to `/chat`",
             result,
         )
 
@@ -5706,8 +5720,8 @@ class HarnessTests(unittest.TestCase):
                     target = root / "lib/features/launch/launch_screen.dart"
                     target.write_text(
                         target.read_text(encoding="utf-8").replace(
-                            "kicker: 'LAUNCH DESK',",
-                            f"kicker: '{retired}',",
+                            "title: 'Launch 当前不可用',",
+                            f"title: '{retired}',",
                             1,
                         ),
                         encoding="utf-8",

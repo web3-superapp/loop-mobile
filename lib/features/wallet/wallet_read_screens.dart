@@ -321,7 +321,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             swapReason: swapReason,
             sendReason: sendReason,
           ),
-          const LoopLabel('Wallet Assets'),
+          const LoopLabel('我的资产'),
           const LoopSkeleton(
             key: ValueKey<String>('wallet-balances-state-loading'),
             type: LoopSkeletonType.record,
@@ -349,7 +349,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             swapReason: swapReason,
             sendReason: sendReason,
           ),
-          const LoopLabel('Wallet Assets'),
+          const LoopLabel('我的资产'),
           if (balances!.balances.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('wallet-balances-empty'),
@@ -398,50 +398,79 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const LoopLabel('Launch 链'),
             WalletLaunchChainCard(launchChain: balances.launchChain!),
           ],
-          const LoopLabel('Security & Connections'),
-          // The prototype's four rows, in its order. The counts it shows —
-          // 「8 个有效授权」, 「4 条链已启用」 — are not read here, so each row
-          // says what its page is for instead of stating a figure this page
-          // never asked for.
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-security-entry'),
-                leading: const LoopRowIcon(icon: 'lock'),
-                title: '安全中心',
-                subtitle: '设备、会话与账户保护',
-                onTap: () => _open('/profile/security'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-dapp-entry'),
-                leading: const LoopRowIcon(icon: 'globe'),
-                title: 'DApp 核对',
-                subtitle: '本地核对网址；连接与签名尚未开放',
-                onTap: () => _open('/wallet/dapp'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-approvals-entry'),
-                leading: const LoopRowIcon(icon: 'shield'),
-                title: '授权盘点',
-                subtitle: '当场重读的 allowance()，回收会发送 approve(spender, 0)',
-                // 「回收会发送 approve(spe…」 cut the sentence exactly where it
-                // said what the action does.
-                subtitleMaxLines: 2,
-                onTap: () => _open('/wallet/approvals'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-networks-entry'),
-                leading: const LoopRowIcon(icon: 'settings'),
-                title: '网络与 RPC',
-                // The page lists whatever the server published: the primary
-                // chain always, and the Launch slot when it differs from it.
-                subtitle: '已启用的网络与 RPC 端点健康',
-                onTap: () => _open('/wallet/networks'),
-              ),
-            ],
-          ),
           const SizedBox(height: 20),
         ],
+        const LoopLabel('钱包与账户'),
+        // Account and security routes do not depend on a balance response.
+        // These shortcuts describe their destination without inventing counts.
+        LoopActionGrid(
+          key: const ValueKey<String>('wallet-account-tools'),
+          onBlocked: _blocked,
+          actions: <LoopAction>[
+            LoopAction(
+              actionKey: const ValueKey<String>('wallet-management-entry'),
+              label: '钱包管理',
+              icon: 'wallet',
+              onPressed: () => _open('/wallet/manage'),
+            ),
+            LoopAction(
+              actionKey: const ValueKey<String>('wallet-settings-entry'),
+              label: '账户设置',
+              icon: 'settings',
+              onPressed: () => _open('/profile/settings'),
+            ),
+            LoopAction(
+              actionKey: const ValueKey<String>('wallet-mining-entry'),
+              label: '我的挖矿',
+              icon: 'mine-tab',
+              onPressed: () => _open('/mining'),
+            ),
+            LoopAction(
+              actionKey: const ValueKey<String>('wallet-referral-entry'),
+              label: '邀请好友',
+              icon: 'users',
+              onPressed: () => _open('/profile/referral'),
+            ),
+          ],
+        ),
+        LoopRecordGroup(
+          key: const ValueKey<String>('wallet-security-tools'),
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('wallet-security-entry'),
+              leading: const LoopRowIcon(icon: 'lock'),
+              title: '安全中心',
+              subtitle: '设备、会话与账户保护',
+              onTap: () => _open('/profile/security'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('wallet-dapp-entry'),
+              leading: const LoopRowIcon(icon: 'globe'),
+              title: 'DApp 核对',
+              subtitle: '本地核对网址；连接与签名尚未开放',
+              onTap: () => _open('/wallet/dapp'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('wallet-approvals-entry'),
+              leading: const LoopRowIcon(icon: 'shield'),
+              title: '授权盘点',
+              subtitle: '当场重读的 allowance()，回收会发送 approve(spender, 0)',
+              // 「回收会发送 approve(spe…」 cut the sentence exactly where it
+              // said what the action does.
+              subtitleMaxLines: 2,
+              onTap: () => _open('/wallet/approvals'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('wallet-networks-entry'),
+              leading: const LoopRowIcon(icon: 'settings'),
+              title: '网络与 RPC',
+              // The page lists whatever the server published: the primary
+              // chain always, and the Launch slot when it differs from it.
+              subtitle: '已启用的网络与 RPC 端点健康',
+              onTap: () => _open('/wallet/networks'),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -461,7 +490,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       actions: <LoopAction>[
         LoopAction(
           actionKey: const ValueKey<String>('wallet-pay-entry'),
-          label: 'Pay',
+          label: '扫码支付',
           icon: 'camera',
           blockedReason: '扫码支付还没有开放。',
         ),
@@ -544,7 +573,11 @@ class _WalletPrimary extends StatelessWidget {
       key: const ValueKey<String>('wallet-folio'),
       ring: false,
       archetype: LoopFolioArchetype.record,
-      kicker: 'WALLET LEDGER',
+      kicker: '资产净值（USD）',
+      headingTone: LoopFolioHeadingTone.neutral,
+      headingStyle: netWorth is LoopNetWorthValued
+          ? LoopTypography.figure(36)
+          : null,
       kickerTrailing: environmentTag == null
           ? null
           : LoopEnvironmentTag(

@@ -156,6 +156,7 @@ Future<void> main() async {
             initialResource: ProfileResource(
               version: 1,
               values: ProfileValues(alias: 'QuietComet', avatarRef: null),
+              loopId: 'LOOP-7HJKMNPQ',
               updatedAt: DateTime.utc(2026, 8, 25),
             ),
           ),

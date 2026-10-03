@@ -1,3 +1,6 @@
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+import 'package:loop_mobile/features/social/social_qr.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -61,7 +64,7 @@ void main() {
       expect(gateway.commands, isEmpty);
     });
 
-    testWidgets('the channel name keeps one line beside its four tools', (
+    testWidgets('the channel name keeps one line beside its three tools', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -74,7 +77,6 @@ void main() {
 
       for (final tool in <String>[
         'community-chat-open-search',
-        'community-chat-open-forward',
         'community-chat-open-voice',
         'community-chat-open-profile',
       ]) {
@@ -733,6 +735,46 @@ void main() {
   });
 
   group('chat-merge-preview', () {
+    testWidgets(
+      'community poster includes cancellable QR inside the captured card',
+      (tester) async {
+        final message = ChatForwardMessage(
+          messageId: 'one',
+          text: 'A community message',
+          createdAt: DateTime.utc(2026),
+          forwardable: true,
+        );
+        await pumpCommunityPage(
+          tester,
+          const ChatMergePreviewScreen(),
+          forwardState: ChatForwardState(
+            sourceCid: testGroupCid,
+            messages: [message],
+            selected: {'one'},
+            communityShare: const ConversationCommunityShare(
+              id: 'community-1',
+              name: 'LOOP 社区',
+              cid: testGroupCid,
+            ),
+          ),
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('chat-merge-card')),
+            matching: find.byType(SocialQrSymbol),
+          ),
+          findsOneWidget,
+        );
+        final qr = tester.widget<SocialQrSymbol>(find.byType(SocialQrSymbol));
+        expect(qr.payload, communityQrPayload('community-1'));
+        final toggle = find.byType(SwitchListTile);
+        await scrollToCommunitySection(tester, toggle);
+        await tester.tap(toggle);
+        await tester.pumpAndSettle();
+        expect(find.byType(SocialQrSymbol), findsNothing);
+      },
+    );
+
     testWidgets('the merged rows are anonymous and carry no identity', (
       tester,
     ) async {

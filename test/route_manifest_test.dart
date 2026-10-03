@@ -35,12 +35,12 @@ void main() {
     test(
       'Dart table mirrors routes-manifest.json slug, module, tab and order',
       () {
-        expect(json['count'], 94);
+        expect(json['count'], 96);
         expect(json['defaultRoute'], LoopRouteManifest.defaultSlug);
         expect(json['tabs'], LoopRouteManifest.tabSlugs);
         expect(json['frozenAt'], LoopRouteManifest.frozenAt);
         expect(json['sha256'], LoopRouteManifest.sha256);
-        expect(LoopRouteManifest.entries, hasLength(94));
+        expect(LoopRouteManifest.entries, hasLength(96));
 
         final modules = json['modules']! as Map<String, Object?>;
         expect(
@@ -73,8 +73,8 @@ void main() {
     test('every slug maps to one unique path and non-empty page facts', () {
       final slugs = LoopRouteManifest.entries.map((entry) => entry.slug);
       final paths = LoopRouteManifest.entries.map((entry) => entry.path);
-      expect(slugs.toSet(), hasLength(94));
-      expect(paths.toSet(), hasLength(94));
+      expect(slugs.toSet(), hasLength(96));
+      expect(paths.toSet(), hasLength(96));
       for (final entry in LoopRouteManifest.entries) {
         expect(entry.path, startsWith('/'), reason: entry.slug);
         expect(entry.path, isNot(contains(':')), reason: entry.slug);
@@ -98,26 +98,32 @@ void main() {
       expect(LoopRouteManifest.pathFor('tx-result'), '/wallet/tx/result');
       expect(LoopRouteManifest.pathFor('loop-id-setup'), '/auth/loop-id');
       expect(LoopRouteManifest.pathFor('chart-full'), '/market/chart');
+      expect(LoopRouteManifest.pathFor('plaza'), '/plaza');
+      expect(
+        LoopRouteManifest.pathFor('community-recommendations'),
+        '/community/recommendations',
+      );
+      expect(LoopRouteManifest.bySlug('mining').tab, isFalse);
       expect(() => LoopRouteManifest.bySlug('home'), throwsArgumentError);
       expect(LoopRouteManifest.byPath('/home'), isNull);
     });
 
     test('five tabs keep the fixed order and no retired destination', () {
       expect(LoopRouteManifest.tabPaths, <String>[
-        '/community',
-        '/mining',
+        '/chat',
+        '/plaza',
         '/launch',
         '/market',
         '/wallet',
       ]);
       expect(LoopRouteManifest.entries.where((entry) => entry.tab).length, 5);
-      expect(LoopRouteManifest.defaultPath, '/community');
+      expect(LoopRouteManifest.defaultPath, '/chat');
       expect(LoopShell.destinationPaths, LoopRouteManifest.tabPaths);
       expect(LoopShell.destinationLabels, <String>[
-        '社区',
-        '挖矿',
-        'Launch',
-        '行情',
+        '聊天',
+        '广场',
+        'MEME',
+        '情报',
         '钱包',
       ]);
       for (final retired in <String>[
@@ -343,18 +349,18 @@ void main() {
 
           expect(
             router.routeInformationProvider.value.uri.path,
-            '/community',
+            '/chat',
             reason: location,
           );
           expect(routingErrors.last?.location, location, reason: location);
-          expect(routingErrors.last?.fallback, '/community');
+          expect(routingErrors.last?.fallback, '/chat');
           expect(find.byType(LoopTabBar), findsOneWidget, reason: location);
         }
         expect(routingErrors.entries, hasLength(9));
 
         router.go('/home');
         await tester.pumpAndSettle();
-        expect(router.routeInformationProvider.value.uri.path, '/community');
+        expect(router.routeInformationProvider.value.uri.path, '/chat');
         router.go('/launchpad');
         await tester.pumpAndSettle();
         expect(router.routeInformationProvider.value.uri.path, '/launch');
@@ -377,6 +383,8 @@ void main() {
       }
       for (final path in <String>[
         '/profile',
+        '/mining',
+        '/community/recommendations',
         '/search',
         '/wallet/networth',
         '/system/offline',
@@ -444,9 +452,7 @@ Future<GoRouter> _pumpApp(
     ),
   );
   await tester.pumpAndSettle();
-  return GoRouter.of(
-    tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-  );
+  return GoRouter.of(tester.element(find.byType(LoopTabBar)));
 }
 
 final class _EmptySpotMarketRepository

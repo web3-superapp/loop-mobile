@@ -13,6 +13,10 @@ abstract final class LoopColors {
   static const Color graphite = Color(0xFF171A16);
   static const Color muted = Color(0xFF7F897B);
 
+  /// Market direction is exempt from the brand palette (decision 0116).
+  static const Color marketUp = Color(0xFF2EBD85);
+  static const Color marketDown = Color(0xFFF6465D);
+
   /// `--bg2` rgba(243,245,239,.025)
   static const Color bg2 = Color(0x06F3F5EF);
 
@@ -269,8 +273,8 @@ abstract final class LoopZ {
 
 /// Touch targets and fixed control sizes (chapter 4.3 / 5.4).
 abstract final class LoopTouch {
-  /// Minimum hit target for every tappable element.
-  static const double minimum = 44;
+  /// Shared hit target meets Android's 48dp and exceeds iOS's 44pt minimum.
+  static const double minimum = 48;
 
   /// Primary button height.
   static const double primaryButton = 53;
@@ -846,7 +850,7 @@ abstract final class LoopTheme {
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
-          minimumSize: const WidgetStatePropertyAll(Size(44, 44)),
+          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
           textStyle: WidgetStatePropertyAll(LoopType.action),
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)

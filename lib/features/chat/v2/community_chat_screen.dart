@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -65,81 +67,86 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     }
 
     final detail = state.value;
-    return Scaffold(
-      key: const ValueKey<String>('community-chat-screen'),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            LoopTopbar(
-              title: detail?.community.name ?? communityMissingName,
-              // `#scr-community-chat .topbar` puts the room's one presence
-              // fact on an 11px line *under* the name. A mono eyebrow above
-              // it reads as a section marker, which a conversation header is
-              // not; the preview marker still earns that slot, because a
-              // reader has to know the room is a preview before they read a
-              // word of it.
-              kicker: communityPreviewKicker(mode),
-              subtitle: communityChatPresenceLine(detail),
-              onBack: widget.onBack,
-              minHeight: 72,
-              // Four tools plus the back control leave the channel name a
-              // column about 120pt wide. At the bar's own 24pt heading step
-              // that was four characters and an ellipsis — a header that could
-              // not say which channel it was. `dense` prints the title at
-              // 18pt, where the same column holds a whole short name, and two
-              // of those lines still fit the 72pt bar, so every tool stays
-              // where it was.
-              titleMaxLines: 2,
-              dense: true,
-              // `.back.tool-btn` and `.seg`: the prototype frames every
-              // control in this bar. Over a message list a row of bare glyphs
-              // has no edge to be aimed at (audit 2026-09-20 · B.2).
-              framedTools: true,
-              actions: <Widget>[
-                if (detail?.chat.channelCid case final String cid) ...<Widget>[
-                  LoopIconButton(
-                    key: const ValueKey<String>('community-chat-open-search'),
-                    icon: 'search',
-                    label: '搜索这个会话',
-                    framed: true,
-                    onPressed: () => widget.onOpenSearch?.call(cid),
-                  ),
-                  LoopIconButton(
-                    key: const ValueKey<String>('community-chat-open-forward'),
-                    icon: 'shuffle',
-                    label: '转发消息',
-                    framed: true,
-                    onPressed: () => widget.onOpenForward?.call(cid),
-                  ),
-                ],
-                if (detail != null) ...<Widget>[
-                  LoopIconButton(
-                    key: const ValueKey<String>('community-chat-open-voice'),
-                    icon: 'voice',
-                    label: '进入语音房',
-                    framed: true,
-                    onPressed: () => widget.onOpenVoiceRoom?.call(
-                      detail.community.communityId,
-                    ),
-                  ),
-                  LoopIconButton(
-                    key: const ValueKey<String>('community-chat-open-profile'),
-                    icon: 'info',
-                    label: '社区信息',
-                    framed: true,
-                    onPressed: () => widget.onOpenProfile?.call(
-                      detail.community.communityId,
-                    ),
-                  ),
-                ],
-              ],
+    return ConversationSocialScope(
+      community: detail?.chat.channelCid == null
+          ? null
+          : ConversationCommunityShare(
+              id: detail!.community.communityId,
+              name: detail.community.name,
+              cid: detail.chat.channelCid!,
             ),
-            Expanded(
-              child: _body(id: id, blocked: blocked, state: state),
-            ),
-          ],
+      child: Scaffold(
+        key: const ValueKey<String>('community-chat-screen'),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopTopbar(
+                title: detail?.community.name ?? communityMissingName,
+                // `#scr-community-chat .topbar` puts the room's one presence
+                // fact on an 11px line *under* the name. A mono eyebrow above
+                // it reads as a section marker, which a conversation header is
+                // not; the preview marker still earns that slot, because a
+                // reader has to know the room is a preview before they read a
+                // word of it.
+                kicker: communityPreviewKicker(mode),
+                subtitle: communityChatPresenceLine(detail),
+                onBack: widget.onBack,
+                minHeight: 72,
+                // Four tools plus the back control leave the channel name a
+                // column about 120pt wide. At the bar's own 24pt heading step
+                // that was four characters and an ellipsis — a header that could
+                // not say which channel it was. `dense` prints the title at
+                // 18pt, where the same column holds a whole short name, and two
+                // of those lines still fit the 72pt bar, so every tool stays
+                // where it was.
+                titleMaxLines: 2,
+                dense: true,
+                // `.back.tool-btn` and `.seg`: the prototype frames every
+                // control in this bar. Over a message list a row of bare glyphs
+                // has no edge to be aimed at (audit 2026-09-20 · B.2).
+                framedTools: true,
+                actions: <Widget>[
+                  if (detail?.chat.channelCid
+                      case final String cid) ...<Widget>[
+                    LoopIconButton(
+                      key: const ValueKey<String>('community-chat-open-search'),
+                      icon: 'search',
+                      label: '搜索这个会话',
+                      framed: true,
+                      onPressed: () => widget.onOpenSearch?.call(cid),
+                    ),
+                  ],
+                  if (detail != null) ...<Widget>[
+                    LoopIconButton(
+                      key: const ValueKey<String>('community-chat-open-voice'),
+                      icon: 'voice',
+                      label: '进入语音房',
+                      framed: true,
+                      onPressed: () => widget.onOpenVoiceRoom?.call(
+                        detail.community.communityId,
+                      ),
+                    ),
+                    LoopIconButton(
+                      key: const ValueKey<String>(
+                        'community-chat-open-profile',
+                      ),
+                      icon: 'info',
+                      label: '社区信息',
+                      framed: true,
+                      onPressed: () => widget.onOpenProfile?.call(
+                        detail.community.communityId,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              Expanded(
+                child: _body(id: id, blocked: blocked, state: state),
+              ),
+            ],
+          ),
         ),
       ),
     );

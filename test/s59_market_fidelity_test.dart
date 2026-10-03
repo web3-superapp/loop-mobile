@@ -183,7 +183,7 @@ void main() {
       final tabs = tester.widget<MarketTabBar>(
         find.byKey(const ValueKey<String>('market-tabs')),
       );
-      expect(tabs.labels, <String>['自选', '热门', '涨幅榜', '新币']);
+      expect(tabs.labels, <String>['自选', '热门', '涨幅榜']);
       expect(tabs.selectedIndex, 0);
 
       await tester.tap(find.byKey(const ValueKey<String>('market-tab-热门')));

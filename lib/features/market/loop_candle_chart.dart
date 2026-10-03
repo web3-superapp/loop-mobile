@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 /// A read-only projection of exact [LoopCandle] values.
 ///
@@ -19,12 +20,8 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 /// outline and announced in the semantic label, so a moving figure is never
 /// mistaken for a settled one.
 ///
-/// Colour: `style-v2.css` publishes ink / lime / chalk and nothing else, and
-/// its `.kline-body` rules are a single-hue system — `.kline-up` is solid
-/// Lime, `.kline-down` is a hollow Chalk outline. LOOP drew green-and-red
-/// candles, which is a fourth and fifth hue the design system does not have
-/// (audit 2026-09-21 §D+ item 12). Direction is carried by fill versus
-/// outline here, exactly as the prototype carries it.
+/// Green indicates a rising candle, red a falling candle. Open buckets remain
+/// outlined/dashed so direction never implies a settled close (decision 0116).
 class LoopCandleChart extends StatefulWidget {
   const LoopCandleChart({
     required this.candles,
@@ -514,20 +511,13 @@ class _LoopCandlePainter extends CustomPainter {
   static const double _priceFraction = 0.72;
   static const double _volumeTopFraction = 0.79;
 
-  /// `.kline-body.kline-up{fill:var(--lime)}`.
-  static const Color _upBody = LoopColors.lime;
-
-  /// The prototype draws a falling body in translucent Chalk
-  /// (`.kline-body.kline-down{fill:rgba(243,245,239,.14);stroke:…,.78)}`), so
-  /// a chart of falling bars was the same white as the page's text and the
-  /// direction had to be read off the axis. Since decision 0086 a fall is the
-  /// application's one colour for a fall, at the prototype's own two weights.
-  static final Color _downFill = LoopColors.danger.withValues(alpha: 0.24);
-  static final Color _downStroke = LoopColors.danger.withValues(alpha: 0.86);
-
-  /// `.kline-volume.kline-up` / `.kline-down`.
-  static const Color _upVolume = Color(0x3DB8FF20);
-  static final Color _downVolume = LoopColors.danger.withValues(alpha: 0.28);
+  static const Color _upBody = LoopColors.marketUp;
+  static const Color _downFill = LoopColors.marketDown;
+  static const Color _downStroke = LoopColors.marketDown;
+  static final Color _upVolume = LoopColors.marketUp.withValues(alpha: 0.55);
+  static final Color _downVolume = LoopColors.marketDown.withValues(
+    alpha: 0.55,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -599,7 +589,7 @@ class _LoopCandlePainter extends CustomPainter {
     _paintPriceAxis(canvas, plot, outer.right, lowest, highest);
 
     for (final candle in candles) {
-      // One hue. A falling bucket is the hollow body, not a second colour.
+      // Direction colours are independent of the brand accent.
       final rising = !candle.isDown;
       final stroke = rising ? _upBody : _downStroke;
       final centerX = xFor(candle);
@@ -668,8 +658,12 @@ class _LoopCandlePainter extends CustomPainter {
     }
     _paintMovingAverages(canvas, plot, xFor, yFor);
     final last = latest ?? candles.last;
+    final lastColor = LoopPriceMove.between(
+      open: last.open,
+      close: last.close,
+    ).color;
     if (last.close >= lowest && last.close <= highest) {
-      _paintLastPrice(canvas, plot, yFor(last.close));
+      _paintLastPrice(canvas, plot, yFor(last.close), lastColor);
     }
     _paintTag(
       canvas,
@@ -682,7 +676,7 @@ class _LoopCandlePainter extends CustomPainter {
         plot.right + 3,
         yFor(last.close).clamp(plot.top + 7, plot.bottom - 7) - 7,
       ),
-      color: LoopColors.lime,
+      color: lastColor,
       backgroundWidth: outer.right - plot.right,
     );
     for (final fraction
@@ -717,7 +711,7 @@ class _LoopCandlePainter extends CustomPainter {
         Offset(plot.right, y),
         cross,
       );
-      canvas.drawCircle(Offset(x, y), 3, Paint()..color = LoopColors.lime);
+      canvas.drawCircle(Offset(x, y), 3, Paint()..color = LoopColors.chalk);
     }
   }
 
@@ -777,14 +771,14 @@ class _LoopCandlePainter extends CustomPainter {
     canvas.restore();
   }
 
-  /// `.kline-last-line`: a dashed Lime rule at the latest close.
-  void _paintLastPrice(Canvas canvas, Rect plot, double y) {
+  /// The latest candle's direction colours its price marker and dashed line.
+  void _paintLastPrice(Canvas canvas, Rect plot, double y, Color color) {
     _drawDashedLine(
       canvas,
       Offset(plot.left, y),
       Offset(plot.right, y),
       Paint()
-        ..color = LoopColors.lime.withValues(alpha: 0.68)
+        ..color = color.withValues(alpha: 0.68)
         ..strokeWidth = 0.8,
     );
   }

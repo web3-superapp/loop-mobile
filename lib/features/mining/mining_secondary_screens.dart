@@ -606,7 +606,21 @@ LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
 
 /// `mining-rank` · the power leaderboard.
 class MiningRankScreen extends ConsumerStatefulWidget {
-  const MiningRankScreen({super.key, this.onBack});
+  const MiningRankScreen({
+    super.key,
+    this.onBack,
+    this.title = '算力排行榜',
+    this.titleWidget,
+    this.tabPage = false,
+    this.shortcuts = const [],
+    this.sectionsPrefix = const [],
+  });
+
+  final String title;
+  final Widget? titleWidget;
+  final bool tabPage;
+  final List<Widget> shortcuts;
+  final List<Widget> sectionsPrefix;
 
   final VoidCallback? onBack;
 
@@ -631,52 +645,74 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
     final rank = state.value;
     final scope = rank?.scope ?? controller.scope;
 
+    final summary = MiningCompositePrimary(
+      primary: _rankHero(rank),
+      detail: <Widget>[
+        MiningDetailRow(
+          key: const ValueKey<String>('mining-rank-reading'),
+          label: '我的名次',
+          value: switch (rank?.myPosition) {
+            MiningRankPositionSettled(:final position) => '第 $position 名',
+            _ => launchMissingFigure,
+          },
+          spoken: switch (rank?.myPosition) {
+            MiningRankPositionSettled(:final position) => '第 $position 名',
+            MiningRankPositionUnavailable(:final reasonCode) =>
+              launchReasonCodeText(reasonCode),
+            null => '还没有读到',
+          },
+          trailingLabel: '已确认算力',
+          trailingValue: switch (rank?.myPosition) {
+            MiningRankPositionSettled(:final power) => loopGroupedFigure(power),
+            _ => launchMissingFigure,
+          },
+        ),
+        const MiningDetailRule(),
+        Text(
+          '榜单按服务端已确认算力快照排序',
+          style: LoopTypography.caption(11, color: LoopColors.text2),
+        ),
+      ],
+    );
+
+    final pageBlock = blocked
+        ? _miningCapabilityBlock(
+            'mining-rank-capability-unavailable',
+            '排行榜',
+            capability,
+          )
+        : null;
+
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rank-screen'),
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '算力排行榜',
+      title: widget.title,
+      titleWidget: widget.titleWidget,
+      tabPage: widget.tabPage,
       onBack: widget.onBack,
-      primary: MiningCompositePrimary(
-        primary: _rankHero(rank),
-        detail: <Widget>[
-          MiningDetailRow(
-            key: const ValueKey<String>('mining-rank-reading'),
-            label: '我的名次',
-            value: switch (rank?.myPosition) {
-              MiningRankPositionSettled(:final position) => '第 $position 名',
-              _ => launchMissingFigure,
-            },
-            spoken: switch (rank?.myPosition) {
-              MiningRankPositionSettled(:final position) => '第 $position 名',
-              MiningRankPositionUnavailable(:final reasonCode) =>
-                launchReasonCodeText(reasonCode),
-              null => '还没有读到',
-            },
-            trailingLabel: '已确认算力',
-            trailingValue: switch (rank?.myPosition) {
-              MiningRankPositionSettled(:final power) => loopGroupedFigure(
-                power,
-              ),
-              _ => launchMissingFigure,
-            },
-          ),
-          const MiningDetailRule(),
-          Text(
-            '榜单按服务端已确认算力快照排序',
-            style: LoopTypography.caption(11, color: LoopColors.text2),
+      primary: widget.sectionsPrefix.isEmpty ? summary : null,
+      block: pageBlock == null
+          ? null
+          : widget.sectionsPrefix.isEmpty
+          ? pageBlock
+          : Column(
+              children: [
+                ...widget.sectionsPrefix,
+                Expanded(child: pageBlock),
+              ],
+            ),
+      sections: <Widget>[
+        ...widget.sectionsPrefix,
+        if (widget.sectionsPrefix.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          KeyedSubtree(
+            key: const ValueKey('loop-page-primary'),
+            child: summary,
           ),
         ],
-      ),
-      block: blocked
-          ? _miningCapabilityBlock(
-              'mining-rank-capability-unavailable',
-              '排行榜',
-              capability,
-            )
-          : null,
-      sections: <Widget>[
+        ...widget.shortcuts,
         ...<Widget>[
           LoopSegBar(
             key: const ValueKey<String>('mining-rank-scope'),

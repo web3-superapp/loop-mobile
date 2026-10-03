@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
-import 'package:loop_mobile/features/community/community_home_widgets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
@@ -47,11 +46,17 @@ void main() {
       final row = find.text('Design community');
       expect(row.hitTestable(), findsOneWidget);
       expect(tester.getBottomLeft(row).dy, lessThan(500));
-      final discover = find.byType(CommunityDiscoverHero);
+      final discover = find.byKey(
+        const ValueKey<String>('community-discover-hero'),
+      );
+      await tester.ensureVisible(discover);
+      await tester.pumpAndSettle();
       expect(tester.getSize(discover).height, greaterThanOrEqualTo(44));
       expect(tester.getSize(discover).height, lessThan(80));
       await tester.tap(discover);
       expect(opened, ['/community/discover']);
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
       await tester.tap(row);
       expect(opened.last, contains(testCommunityId));
     });

@@ -4,9 +4,9 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 
 /// Which way a figure moved, and the one colour LOOP paints that direction in.
 ///
-/// Decision 0113 restores the user's green / white / black UI palette:
-/// Lime rises, Chalk falls, muted stands still. Signed labels, candle bodies
-/// and explicit unavailable states retain the meaning independently of colour.
+/// Decision 0116 gives market direction its familiar green / red palette.
+/// Signed labels and explicit unavailable states retain the meaning
+/// independently of colour; brand selection colours are separate.
 enum LoopPriceMove {
   up,
   down,
@@ -31,8 +31,8 @@ enum LoopPriceMove {
 
   /// Ink for a figure printed on the page's own dark ground.
   Color get color => switch (this) {
-    LoopPriceMove.up => LoopColors.lime,
-    LoopPriceMove.down => LoopColors.danger,
+    LoopPriceMove.up => LoopColors.marketUp,
+    LoopPriceMove.down => LoopColors.marketDown,
     // `muted` is opaque and reads as a third state rather than as dimmed
     // Chalk, which a reader takes for a rise that lost contrast.
     LoopPriceMove.flat || LoopPriceMove.unread => LoopColors.muted,

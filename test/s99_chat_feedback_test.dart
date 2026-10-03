@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
@@ -502,10 +503,7 @@ void main() {
         expectRecordFor(tester, 'community-alpha');
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey<String>('community-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(ChatInboxPage), findsOneWidget);
       });
 
       testWidgets('a malformed one is an unknown route', (tester) async {
@@ -513,10 +511,7 @@ void main() {
         await enterPreview(tester);
         await pushRoute(tester, '/c/community-alpha/room/extra');
         expect(find.byType(CommunityProfileScreen), findsNothing);
-        expect(
-          find.byKey(const ValueKey<String>('community-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(ChatInboxPage), findsOneWidget);
       });
     });
 

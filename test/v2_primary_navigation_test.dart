@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
+import 'package:loop_mobile/features/community/plaza_screen.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
@@ -26,28 +29,18 @@ void main() {
       tester
           .widgetList<LoopTabItem>(find.byType(LoopTabItem))
           .map((destination) => destination.label),
-      <String>['社区', '挖矿', 'Launch', '行情', '钱包'],
+      <String>['聊天', '广场', 'MEME', '情报', '钱包'],
     );
     expect(find.text('Home'), findsNothing);
     expect(find.text('Chat'), findsNothing);
     expect(find.text('Profile'), findsNothing);
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     final destinations = <(String, String, Finder)>[
-      (
-        '社区',
-        '/community',
-        find.byKey(const ValueKey<String>('community-screen')),
-      ),
-      ('挖矿', '/mining', find.byKey(const ValueKey<String>('mining-screen'))),
-      (
-        'Launch',
-        '/launch',
-        find.byKey(const ValueKey<String>('launch-screen')),
-      ),
-      ('行情', '/market', find.byKey(const ValueKey<String>('market-screen'))),
+      ('聊天', '/chat', find.byType(LoopTabBar)),
+      ('广场', '/plaza', find.byType(PlazaScreen)),
+      ('MEME', '/launch', find.byKey(const ValueKey<String>('launch-screen'))),
+      ('情报', '/market', find.byKey(const ValueKey<String>('market-screen'))),
       ('钱包', '/wallet', find.byKey(const ValueKey<String>('wallet-screen'))),
     ];
 
@@ -67,11 +60,8 @@ void main() {
 
     router.go('/home');
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/community');
-    expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsOneWidget,
-    );
+    expect(router.routeInformationProvider.value.uri.path, '/chat');
+    expect(find.byType(LoopTabBar), findsOneWidget);
 
     router.go('/launchpad');
     await tester.pumpAndSettle();
@@ -79,23 +69,20 @@ void main() {
     expect(find.byKey(const ValueKey<String>('launch-screen')), findsOneWidget);
   });
 
-  testWidgets('unknown routes fall back directly to Community', (tester) async {
+  testWidgets('unknown routes fall back directly to Chat', (tester) async {
     await _pumpApp(tester);
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
 
     router.go('/not-a-loop-route');
     await tester.pumpAndSettle();
 
-    expect(router.routeInformationProvider.value.uri.path, '/community');
-    expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsOneWidget,
-    );
+    expect(router.routeInformationProvider.value.uri.path, '/chat');
+    expect(find.byType(LoopTabBar), findsOneWidget);
     expect(find.byType(LoopTabBar), findsOneWidget);
   });
 
   testWidgets(
-    'Chat and Profile stay outside the primary shell and return to Community',
+    'Chat is first tab while Community and Profile stay child routes',
     (tester) async {
       await _pumpApp(tester);
       final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
@@ -103,18 +90,34 @@ void main() {
       router.go('/chat');
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, '/chat');
-      expect(find.byType(LoopTabBar), findsNothing);
+      expect(find.byType(LoopTabBar), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('stream-chat-back-to-community')),
+        tester
+            .widget<LoopTabItem>(find.widgetWithText(LoopTabItem, '聊天'))
+            .selected,
+        isTrue,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('chat-friends-action')),
         findsOneWidget,
       );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('stream-chat-back-to-community')),
+      expect(
+        find.byKey(const ValueKey<String>('community-chat-segment')),
+        findsNothing,
       );
+      unawaited(router.push<void>('/community'));
       await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/community');
-      expect(find.byType(LoopTabBar), findsOneWidget);
+      expect(router.state.matchedLocation, '/community');
+      expect(find.byType(LoopTabBar), findsNothing);
+      unawaited(router.push<void>('/community/recommendations'));
+      await tester.pumpAndSettle();
+      expect(router.state.matchedLocation, '/community/recommendations');
+      await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
+      await tester.pumpAndSettle();
+      expect(router.state.matchedLocation, '/community');
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
 
       router.go('/profile');
       await tester.pumpAndSettle();
@@ -127,7 +130,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
       await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
       expect(find.byType(LoopTabBar), findsOneWidget);
     },
   );

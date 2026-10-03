@@ -46,7 +46,7 @@ Future<void> pumpSystemSurface(
 }
 
 /// Pumps the production LoopApp with an authenticated session and returns
-/// its router, positioned on Community.
+/// its router, positioned on Chat.
 Future<GoRouter> pumpProductionApp(
   WidgetTester tester, {
   // Riverpod 3 does not export its `Override` type; callers pass the
@@ -77,7 +77,7 @@ Future<GoRouter> pumpProductionApp(
 /// Opens [location] in the production app and asserts the unavailable-state
 /// contract shared by every system page: the notice with [unavailableKey]
 /// is shown, none of [absentClaims] is rendered, and `返回 LOOP` lands on
-/// Community with the tab bar back.
+/// Chat with the tab bar back.
 Future<void> expectProductionUnavailable(
   WidgetTester tester, {
   required String location,
@@ -99,14 +99,14 @@ Future<void> expectProductionUnavailable(
   await tester.ensureVisible(back);
   await tester.tap(back);
   await tester.pumpAndSettle();
-  expect(router.routeInformationProvider.value.uri.path, '/community');
+  expect(router.routeInformationProvider.value.uri.path, '/chat');
   expect(find.byType(LoopTabBar), findsOneWidget);
 }
 
 /// Opens [location] in the production app and asserts the
 /// component-specification contract every page in §K owns: the mono bar line
 /// [kicker] frames the page, each key in [specimenKeys] is rendered, and the
-/// topbar back lands on Community.
+/// topbar back lands on Chat.
 ///
 /// A specification page has no observation to wait for, so it is the opposite
 /// contract to [expectProductionUnavailable]: what must be present is the
@@ -151,7 +151,7 @@ Future<void> expectProductionSpecimen(
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
   }
-  expect(router.routeInformationProvider.value.uri.path, '/community');
+  expect(router.routeInformationProvider.value.uri.path, '/chat');
   expect(find.byType(LoopTabBar), findsOneWidget);
 }
 

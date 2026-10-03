@@ -541,23 +541,23 @@ void main() {
         status: ProfileStatus.active,
       );
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(await store.read(partition), isNull);
     });
 
-    testWidgets('an unreadable profile lands in Community, never in a step', (
+    testWidgets('an unreadable profile lands in Chat, never in a step', (
       tester,
     ) async {
       final store = InMemoryLoopOnboardingProgressStore();
       final router = await _pumpLoopApp(tester, store: store, profile: null);
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(await store.read(partition), isNull);
     });
   });
 
   group('the launch gate before any product frame', () {
-    testWidgets('a pending account never passes through Community', (
+    testWidgets('a pending account never passes through product pages', (
       tester,
     ) async {
       final store = InMemoryLoopOnboardingProgressStore();
@@ -586,6 +586,7 @@ void main() {
 
       expect(router.state.matchedLocation, '/auth/wallet/create');
       expect(history, isNot(contains('/community')));
+      expect(history, isNot(contains('/chat')));
       expect(history.last, '/auth/wallet/create');
     });
 
@@ -605,10 +606,11 @@ void main() {
 
       expect(router.state.matchedLocation, '/auth/security');
       expect(history, isNot(contains('/community')));
+      expect(history, isNot(contains('/chat')));
       expect(history, isNot(contains('/auth/wallet/create')));
     });
 
-    testWidgets('an active account goes straight to Community', (tester) async {
+    testWidgets('an active account goes straight to Chat', (tester) async {
       final store = InMemoryLoopOnboardingProgressStore();
       final history = <String>[];
 
@@ -620,7 +622,7 @@ void main() {
         history: history,
       );
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(history, contains('/splash'));
       for (final step in LoopOnboardingStep.values) {
         expect(history, isNot(contains(LoopRouteManifest.pathFor(step.slug))));
@@ -628,10 +630,10 @@ void main() {
     });
 
     // Decision 0076: the notification permission is asked for on the first
-    // arrival at Community and nowhere earlier. These two tests are about
+    // arrival at the product home and nowhere earlier. These two tests are about
     // the arrival itself; what is asked on it belongs to the push
     // registration's own tests.
-    testWidgets('开号途中没有进过社区，所以不会问通知权限', (tester) async {
+    testWidgets('开号途中没有进入产品页，所以不会问通知权限', (tester) async {
       final store = InMemoryLoopOnboardingProgressStore();
       final router = await _pumpLoopApp(tester, store: store);
 
@@ -643,7 +645,7 @@ void main() {
       );
     });
 
-    testWidgets('已开号的账号一落到社区，就算进过社区', (tester) async {
+    testWidgets('已开号的账号落到聊天后记录产品首页到达', (tester) async {
       final store = InMemoryLoopOnboardingProgressStore();
       final router = await _pumpLoopApp(
         tester,
@@ -651,7 +653,7 @@ void main() {
         status: ProfileStatus.active,
       );
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(_mountedScope(tester).read(loopCommunityArrivalProvider), isTrue);
     });
 
@@ -676,7 +678,7 @@ void main() {
       await tester.pump(loopPostAuthProfileReadCeiling);
       await tester.pumpAndSettle();
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(
         find.byKey(const ValueKey<String>('profile-availability-banner')),
         findsOneWidget,

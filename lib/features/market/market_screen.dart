@@ -17,8 +17,10 @@ import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 /// The four lists 行情 offers, in the approved design's order.
 ///
@@ -43,7 +45,19 @@ enum MarketTab {
 /// trending ordering, new pairs and smart money each fail independently, so
 /// one missing provider never blanks the page.
 class MarketScreen extends ConsumerStatefulWidget {
-  const MarketScreen({super.key, this.onNavigate});
+  const MarketScreen({
+    super.key,
+    this.onNavigate,
+    this.title = '行情',
+    this.titleWidget,
+    this.shortcuts = const [],
+    this.filters = const [],
+  });
+
+  final String title;
+  final Widget? titleWidget;
+  final List<Widget> shortcuts;
+  final List<Widget> filters;
 
   final void Function(String location)? onNavigate;
 
@@ -109,10 +123,20 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     // cannot find is left off the row.
     final miningRules = watchMarketMiningRules(ref);
 
+    final pageBlock = blocked
+        ? LoopCapabilityPageBlock.of(
+            key: const ValueKey<String>('market-capability-block'),
+            title: '行情模块当前不可用',
+            capability: capability,
+            fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
+          )
+        : null;
+
     return LoopDashboardPage(
       key: const ValueKey<String>('market-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '行情',
+      title: widget.title,
+      titleWidget: widget.titleWidget,
       tabPage: true,
       // A re-read over an overview the page already shows is marked, not
       // replaced by a skeleton.
@@ -125,16 +149,24 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       // A closed capability is not an empty section: the page has nothing at
       // all, so it renders the whole-page block instead of a strip under the
       // list.
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('market-capability-block'),
-              title: '行情模块当前不可用',
-              capability: capability,
-              fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
-            )
-          : null,
+      block: pageBlock == null
+          ? null
+          : widget.shortcuts.isEmpty
+          ? pageBlock
+          : Column(
+              children: [
+                ...widget.shortcuts,
+                Expanded(child: pageBlock),
+              ],
+            ),
       framedTools: true,
       actions: <Widget>[
+        LoopIconButton(
+          key: const ValueKey<String>('market-more-action'),
+          icon: 'compass',
+          label: '更多行情',
+          onPressed: _more,
+        ),
         LoopIconButton(
           key: const ValueKey<String>('market-alerts-action'),
           icon: 'bell',
@@ -148,6 +180,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       // pushes the other seven below the fold, which is the opposite of what
       // this page is for.
       sections: <Widget>[
+        ...widget.shortcuts,
         LoopFreshnessStrip(
           key: const ValueKey<String>('market-freshness'),
           restoredAt: controller.restoredObservedAt,
@@ -157,9 +190,16 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           onRetry: () => unawaited(controller.reload()),
         ),
         MarketSearchField(onPressed: () => _open('/search')),
+        ...widget.filters,
         MarketTabBar(
           key: const ValueKey<String>('market-tabs'),
-          labels: <String>[for (final tab in MarketTab.values) tab.label],
+          filter: true,
+          labels: <String>[
+            for (final tab in MarketTab.values.where(
+              (tab) => tab != MarketTab.newPairs,
+            ))
+              tab.label,
+          ],
           selectedIndex: _tab.index,
           onSelected: (index) => setState(() => _tab = MarketTab.values[index]),
         ),
@@ -183,7 +223,8 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                       selected: _category == category.key,
                       onSelected: (_) =>
                           setState(() => _category = category.key),
-                      visualDensity: VisualDensity.compact,
+                      visualDensity: VisualDensity.standard,
+                      materialTapTargetSize: MaterialTapTargetSize.padded,
                     ),
                     const SizedBox(width: 6),
                   ],
@@ -239,6 +280,54 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     );
   }
 
+  void _more() => unawaited(
+    showLoopSheet<void>(
+      context,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const LoopLabel('更多行情'),
+          LoopRecordGroup(
+            rows: [
+              LoopRecordRow(
+                title: '我的挖矿',
+                leading: const LoopRowIcon(icon: 'mine-tab'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _open('/mining');
+                },
+              ),
+              LoopRecordRow(
+                title: '邀请好友',
+                leading: const LoopRowIcon(icon: 'users'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _open('/profile/referral');
+                },
+              ),
+              LoopRecordRow(
+                title: '新币',
+                leading: const LoopRowIcon(icon: 'chart'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _open('/market/new');
+                },
+              ),
+              LoopRecordRow(
+                title: '聪明钱',
+                leading: const LoopRowIcon(icon: 'users'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _open('/market/smart-money');
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
   /// One of the three asset tabs: the statistics line, the column header and
   /// the rows, in the order the reader's eye goes down them.
   List<Widget> _assetTab({
@@ -289,7 +378,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             reason: '在代币页点右上角星标加入自选，这里会显示它们的价格事实。',
             action: LoopButton(
               label: '管理自选',
-              onPressed: () => _open(MarketAssetRoute.alertsPath),
+              onPressed: () => _open('/market/watchlist'),
             ),
           ),
           LoopRecordGroup(

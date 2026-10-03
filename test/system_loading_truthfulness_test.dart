@@ -41,7 +41,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
-    expect(router.routeInformationProvider.value.uri.path, '/community');
+    expect(router.routeInformationProvider.value.uri.path, '/chat');
   });
 
   testWidgets('invalid list density fails closed in page and renderer', (

@@ -1064,23 +1064,23 @@ void main() {
       final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
 
       // Both locations were folded into `search` + `connections`: they are no
-      // longer mounted and land back on Community as informational retirements.
+      // longer mounted and land back on Chat as informational retirements.
       router.go('/profile/friends');
       await tester.pumpAndSettle();
       expect(find.byType(FriendListPage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
 
       router.go('/chat/friends/add');
       await tester.pumpAndSettle();
       expect(find.byType(AddFriendPage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
 
       // Step 4 folded the V1 request inbox into `dm-requests`: the legacy
-      // location is no longer mounted and lands back on Community.
+      // location is no longer mounted and lands back on Chat.
       router.go('/chat/friends/requests');
       await tester.pumpAndSettle();
       expect(find.byType(FriendRequestsPage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
     },
   );
 }

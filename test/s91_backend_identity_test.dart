@@ -92,7 +92,7 @@ void main() {
       );
       expect(tester.getSize(tag).height, LoopEnvironmentTag.height);
       // Same line as the kicker, at its right end.
-      final kicker = find.text('WALLET LEDGER');
+      final kicker = find.text('资产净值（USD）');
       expect(
         (tester.getCenter(tag).dy - tester.getCenter(kicker).dy).abs(),
         lessThan(2),
@@ -115,7 +115,7 @@ void main() {
         findsNothing,
       );
       expect(find.byType(LoopEnvironmentTag), findsNothing);
-      expect(find.text('WALLET LEDGER'), findsOneWidget);
+      expect(find.text('资产净值（USD）'), findsOneWidget);
     });
   });
 

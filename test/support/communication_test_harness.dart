@@ -1,3 +1,5 @@
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -525,5 +527,9 @@ final class StubChatForwardController extends ChatForwardController {
 
   /// The page calls this from `initState`; the seeded state must survive it.
   @override
-  Future<void> load(String sourceCid) async {}
+  Future<void> load(
+    String sourceCid, {
+    String? initialMessageId,
+    ConversationCommunityShare? communityShare,
+  }) async {}
 }

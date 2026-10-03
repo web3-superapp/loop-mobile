@@ -563,64 +563,92 @@ class MarketTabBar extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.keyPrefix = 'market-tab',
+    this.expanded = false,
+    this.filter = false,
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-
-  /// Two strips of tabs now exist — the 行情 list's and 代币's lower half —
-  /// and a key that named only the label would collide the moment the two
-  /// pages ever shared a word.
   final String keyPrefix;
 
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: LoopColors.line)),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-    child: Row(
-      children: <Widget>[
-        for (var index = 0; index < labels.length; index += 1) ...<Widget>[
-          if (index > 0) const SizedBox(width: 20),
-          Semantics(
-            button: true,
-            selected: index == selectedIndex,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                key: ValueKey<String>('$keyPrefix-${labels[index]}'),
-                onTap: () => onSelected(index),
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minHeight: LoopTouch.minimum,
-                  ),
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: index == selectedIndex
-                            ? LoopColors.lime
-                            : Colors.transparent,
-                        width: 2,
-                      ),
+  /// Page sections share the available width. Detail tabs can overflow and
+  /// remain horizontally scrollable when labels or text size grow.
+  final bool expanded;
+  final bool filter;
+
+  Widget _tab(int index) => filter
+      ? LoopSeg(
+          key: ValueKey<String>('$keyPrefix-${labels[index]}'),
+          label: labels[index],
+          selected: index == selectedIndex,
+          onSelected: () => onSelected(index),
+        )
+      : Semantics(
+          button: true,
+          selected: index == selectedIndex,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              key: ValueKey<String>('$keyPrefix-${labels[index]}'),
+              onTap: () => onSelected(index),
+              child: Container(
+                constraints: const BoxConstraints(
+                  minWidth: LoopTouch.minimum,
+                  minHeight: LoopTouch.minimum,
+                ),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: index == selectedIndex
+                          ? LoopColors.lime
+                          : Colors.transparent,
+                      width: 2,
                     ),
                   ),
-                  child: Text(
-                    labels[index],
-                    style: index == selectedIndex
-                        ? LoopType.title
-                        : LoopType.title.copyWith(color: LoopColors.text3),
-                  ),
+                ),
+                child: Text(
+                  labels[index],
+                  textAlign: TextAlign.center,
+                  style: index == selectedIndex
+                      ? LoopType.title
+                      : LoopType.title.copyWith(color: LoopColors.text3),
                 ),
               ),
             ),
           ),
-        ],
-      ],
-    ),
+        );
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: filter
+        ? null
+        : const BoxDecoration(
+            border: Border(bottom: BorderSide(color: LoopColors.line)),
+          ),
+    child: expanded
+        ? Row(
+            children: [
+              for (var i = 0; i < labels.length; i++) Expanded(child: _tab(i)),
+            ],
+          )
+        : SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+            child: Row(
+              children: [
+                for (var i = 0; i < labels.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 14),
+                  _tab(i),
+                ],
+              ],
+            ),
+          ),
   );
 }
 
@@ -670,12 +698,16 @@ class MarketStatsLine extends StatelessWidget {
                   TextSpan(text: '$label $total · '),
                   TextSpan(
                     text: '涨 $up',
-                    style: LoopType.caption.copyWith(color: LoopColors.lime),
+                    style: LoopType.caption.copyWith(
+                      color: LoopColors.marketUp,
+                    ),
                   ),
                   const TextSpan(text: ' · '),
                   TextSpan(
                     text: '跌 $down',
-                    style: LoopType.caption.copyWith(color: LoopColors.danger),
+                    style: LoopType.caption.copyWith(
+                      color: LoopColors.marketDown,
+                    ),
                   ),
                   if (flat > 0) TextSpan(text: ' · 持平 $flat'),
                 ],
@@ -1220,12 +1252,7 @@ void showWatchlistToggleToast(
   }
 }
 
-/// `.row-ico` with a direction glyph on a soft ground.
-///
-/// `style-v2.css` resolves `--red` to `--chalk` and `--red-soft` to Chalk at
-/// 10%: a sell is the neutral half of the same single-hue system, never a
-/// second colour. The audit found the 成交 and 聪明钱 rows with no leading
-/// mark at all (§G.5, §G.9, §D item 7).
+/// Buy/inflow uses market green; sell/outflow uses market red.
 class MarketDirectionAvatar extends StatelessWidget {
   const MarketDirectionAvatar({
     required this.inbound,
@@ -1233,7 +1260,7 @@ class MarketDirectionAvatar extends StatelessWidget {
     this.size = 36,
   });
 
-  /// True for the direction the prototype draws in Lime (买入 / 流入).
+  /// True for 买入 / 流入.
   final bool inbound;
   final double size;
 
@@ -1244,15 +1271,14 @@ class MarketDirectionAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: inbound
-            ? LoopColors.limeSoft
-            : LoopColors.chalk.withValues(alpha: 0.1),
+        color: (inbound ? LoopColors.marketUp : LoopColors.marketDown)
+            .withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(size / 3),
       ),
       child: LoopIcon(
         inbound ? 'arrow-up' : 'arrow-down',
         size: size * 0.5,
-        color: inbound ? LoopColors.lime : LoopColors.chalk,
+        color: inbound ? LoopColors.marketUp : LoopColors.marketDown,
       ),
     );
   }

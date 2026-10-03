@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
@@ -40,12 +40,7 @@ void main() {
     await tester.pump();
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-    );
-
-    router.go('/chat');
-    await tester.pumpAndSettle();
+    expect(find.byType(ChatInboxPage), findsOneWidget);
 
     expect(find.text('Offline preview · not connected'), findsNothing);
     expect(find.text('Glyph Hunters'), findsOneWidget);

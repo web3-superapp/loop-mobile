@@ -1,4 +1,7 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/chat/v2/conversation_social_scope.dart';
+import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// What LOOP lets the reader do to a message in one channel, on top of what
@@ -65,13 +68,45 @@ StreamMessageItemProps loopApplyChannelMessagePolicy(
   StreamMessageItemProps props,
 ) {
   final policy = LoopChannelMessagePolicy.maybeOf(context);
-  if (policy == null || policy.mayPin) return props;
+
   final inner = props.actionsBuilder;
   return props.copyWith(
     actionsBuilder: (context, defaults) {
-      final allowed = loopWithoutPinActions(defaults);
-      if (inner != null) return inner(context, allowed);
-      return StreamContextMenuAction.partitioned(items: allowed);
+      final allowed = policy != null && !policy.mayPin
+          ? loopWithoutPinActions(defaults)
+          : defaults;
+      final items = inner != null
+          ? inner(context, allowed)
+          : StreamContextMenuAction.partitioned(items: allowed);
+      final cid = StreamChannel.maybeOf(context)?.channel.cid;
+      final router = GoRouter.maybeOf(context);
+      final share = ConversationSocialScope.maybeOf(context)?.community;
+      final message = props.message;
+      if (router == null ||
+          cid == null ||
+          parseLoopStreamChannelCid(cid) == null ||
+          message.isDeleted ||
+          (message.text?.trim().isEmpty ?? true)) {
+        return items;
+      }
+      return [
+        ...items,
+        ListTile(
+          key: const ValueKey<String>('message-select-forward'),
+          leading: const Icon(Icons.forward_to_inbox_outlined),
+          title: const Text('转发 / 多选'),
+          onTap: () {
+            Navigator.of(context).pop();
+            router.push(
+              Uri(
+                path: '/chat/forward',
+                queryParameters: {'cid': cid, 'message': message.id},
+              ).toString(),
+              extra: share,
+            );
+          },
+        ),
+      ];
     },
   );
 }

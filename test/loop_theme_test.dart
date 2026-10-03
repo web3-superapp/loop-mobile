@@ -118,7 +118,7 @@ void main() {
     expect(LoopZ.sheet, 80);
     expect(LoopZ.toast, 90);
 
-    expect(LoopTouch.minimum, 44);
+    expect(LoopTouch.minimum, 48);
     expect(LoopTouch.primaryButton, 53);
     expect(LoopTouch.tabBarHeight, 70);
     expect(LoopLayout.tabPageBottomReserve, 90);

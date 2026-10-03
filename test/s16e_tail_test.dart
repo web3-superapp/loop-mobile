@@ -85,7 +85,7 @@ void main() {
             .text
             .style!
             .fontSize,
-        22,
+        24,
       );
     });
   });

@@ -108,58 +108,36 @@ void main() {
       expect(find.text('0'), findsNothing);
     });
 
-    testWidgets('新币 is a tab of this page, and reads only when opened', (
-      tester,
-    ) async {
-      final market = FakeMarketReadGateway(
-        overview: S5Answer<MarketOverview>(
-          value: s5Overview(newPairsAvailable: true),
-        ),
-        newPairs: S5Answer<MarketNewPairsPage>(
-          value: MarketNewPairsPage(
-            newPairs: MarketNewPairsAvailable(
-              source: LoopFactSource.geckoterminal,
-              fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
-              ttlSeconds: 60,
-              quality: LoopFactQuality.fresh,
-              reasonCode: null,
-              omittedCount: 0,
-              items: <MarketNewPair>[
-                MarketNewPair(
-                  poolRef: const MarketPoolAddressRef(s5PoolAddress),
-                  dexId: 'four-meme',
-                  name: 'YAMATA / BNB',
-                  baseTokenAddress: s5Address,
-                  quoteTokenAddress: marketZeroAddress,
-                  registryAssetId: null,
-                  createdAt: DateTime.utc(2026, 9, 8, 7, 30),
-                  reserveUsd: s5Decimal('3696'),
-                  volumeH24Usd: s5Decimal('1950'),
-                ),
-              ],
-            ),
-            riskScreening: const LoopUnavailable(
-              'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
-            ),
+    testWidgets(
+      '新币 and smart money live in the secondary menu without eager provider reads',
+      (tester) async {
+        final market = FakeMarketReadGateway(
+          overview: S5Answer<MarketOverview>(
+            value: s5Overview(newPairsAvailable: true),
           ),
-        ),
-      );
-      await pumpS5Page(tester, const MarketScreen(), market: market);
-
-      // A reader on 自选 does not pay for a provider they did not ask for.
-      expect(market.newPairs.resolves, 0);
-
-      await tester.tap(find.byKey(const ValueKey<String>('market-tab-新币')));
-      await tester.pumpAndSettle();
-      expect(market.newPairs.resolves, 1);
-      expect(find.textContaining('four.meme'), findsOneWidget);
-      // The page of the same name is still one tap away, and still owns the
-      // risk screening and the whole warning.
-      expect(
-        find.byKey(const ValueKey<String>('market-new-pairs-page')),
-        findsOneWidget,
-      );
-    });
+        );
+        String? destination;
+        await pumpS5Page(
+          tester,
+          MarketScreen(onNavigate: (path) => destination = path),
+          market: market,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('market-tab-新币')),
+          findsNothing,
+        );
+        expect(market.newPairs.resolves, 0);
+        await tester.tap(
+          find.byKey(const ValueKey<String>('market-more-action')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('聪明钱'), findsOneWidget);
+        await tester.tap(find.text('新币'));
+        await tester.pumpAndSettle();
+        expect(destination, '/market/new');
+        expect(market.newPairs.resolves, 0);
+      },
+    );
 
     testWidgets('the trending block always states its ordering rule', (
       tester,

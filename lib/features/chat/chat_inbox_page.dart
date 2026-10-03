@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/widgets/community_chat_segment.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -44,9 +43,14 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
       key: const ValueKey<String>('chat-preview-inbox'),
       archetype: LoopPageArchetype.listing,
       title: '聊天',
-      titleWidget: const CommunityChatSegment(location: '/chat'),
       tabPage: true,
       actions: <Widget>[
+        IconButton(
+          key: const ValueKey<String>('chat-profile-action'),
+          tooltip: '个人中心',
+          onPressed: () => context.push('/profile'),
+          icon: const Icon(Icons.person_outline_rounded),
+        ),
         IconButton(
           key: const ValueKey<String>('chat-friends-action'),
           tooltip: '好友',
