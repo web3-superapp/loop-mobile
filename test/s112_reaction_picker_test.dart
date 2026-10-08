@@ -18,6 +18,8 @@ import 'package:loop_mobile/integrations/communication/stream_connection.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 const String _cid = 'messaging:loop_group_5e1f0f2e5a7b4c3d8e9f0a1b2c3d4e5f';
+const String _directCid =
+    'messaging:loop_direct_5e1f0f2e5a7b4c3d8e9f0a1b2c3d4e5f';
 const String _me = 'me';
 
 class _Connected implements LoopStreamConnection {
@@ -38,16 +40,18 @@ class _LocalClient extends StreamChatClient {
   }) async => EmptyResponse();
 }
 
-/// One group of three messages in which the member may react.
+/// One conversation of three messages in which the member may react; a
+/// group unless [cid] names a direct channel. With [reacted], 「消息 2」
+/// carries one 「赞」 from the other member.
 final class _Group {
-  _Group() {
+  _Group({this.cid = _cid, this.reacted = false}) {
     // ignore: invalid_use_of_internal_member
     client.state.currentUser = OwnUser(id: _me, name: '我');
     channel = Channel.fromState(
       client,
       ChannelState(
         channel: ChannelModel(
-          id: _cid.split(':').last,
+          id: cid.split(':').last,
           type: 'messaging',
           ownCapabilities: const <String>[
             'quote-message',
@@ -77,18 +81,35 @@ final class _Group {
                 12,
               ).subtract(Duration(minutes: i)),
               state: MessageState.sent,
+              reactionGroups: reacted && i == 2
+                  ? <String, ReactionGroup>{
+                      'like': ReactionGroup(count: 1, sumScores: 1),
+                    }
+                  : null,
+              latestReactions: reacted && i == 2
+                  ? <Reaction>[
+                      Reaction(
+                        messageId: 'm2',
+                        type: 'like',
+                        user: User(id: 'other', name: '成员'),
+                      ),
+                    ]
+                  : null,
             ),
         ],
       ),
     );
   }
 
+  final String cid;
+  final bool reacted;
   final _LocalClient client = _LocalClient();
   late final Channel channel;
 
   Future<void> pump(
     WidgetTester tester, {
     required StreamChatConfigurationData config,
+    bool loopMessageItems = true,
   }) async {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('com.llfbandit.record/messages'),
@@ -120,7 +141,9 @@ final class _Group {
             messageText: loopStreamMessageTextBuilder,
             reactionPicker: loopStreamReactionPickerBuilder,
             extensions: streamChatComponentBuilders(
-              messageItem: loopStreamGroupMessageItemBuilder,
+              messageItem: loopMessageItems
+                  ? loopStreamGroupMessageItemBuilder
+                  : null,
             ),
           ),
           child: child!,
@@ -128,7 +151,7 @@ final class _Group {
         home: Scaffold(
           body: LoopStreamMemberChannelBody(
             client: client,
-            cid: _cid,
+            cid: cid,
             userId: _me,
             composerHint: loopChatComposerHint,
             unresolvedMessage: null,
@@ -200,6 +223,41 @@ void main() {
         find.byKey(const ValueKey<String>('loop-reaction-bar')),
         findsNothing,
       );
+      await room.dispose(tester);
+    });
+  });
+
+  group('a tap on a reaction chip in a direct message', () {
+    // Decision 0117: the reaction detail sheet carries a 「+」 onto Stream's
+    // Emoji catalogue, which LOOP leaves empty; as in a group, it stays shut.
+    testWidgets('opens no detail sheet and no 「+」', (tester) async {
+      final room = _Group(cid: _directCid, reacted: true);
+      await room.pump(tester, config: loopStreamChatConfiguration);
+
+      await tester.tap(find.text('赞').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReactionDetailSheet), findsNothing);
+      expect(find.byKey(const Key('add_reaction')), findsNothing);
+      await room.dispose(tester);
+    });
+
+    testWidgets('opens Stream\'s sheet without LOOP\'s message item', (
+      tester,
+    ) async {
+      // The control: the same chip under Stream's own message item opens the
+      // sheet, so the assertion above is tapping the real chip.
+      final room = _Group(cid: _directCid, reacted: true);
+      await room.pump(
+        tester,
+        config: loopStreamChatConfiguration,
+        loopMessageItems: false,
+      );
+
+      await tester.tap(find.text('赞').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReactionDetailSheet), findsOneWidget);
       await room.dispose(tester);
     });
   });

@@ -89,7 +89,7 @@ S113 / S114 在数据密集页逐页替换。
 | # | 项 | S112 §1 | 本批实现 | 原因 / 后续 |
 | --- | --- | --- | --- | --- |
 | 1 | 反应图标 | `LoopIcon` 的 like / laugh / heart / wow / sad，没有的用字 | 五个全部用字「赞 / 哈 / 心 / 哇 / 叹」 | 现有 65 个 sprite 里没有拇指、笑脸、心形、惊讶、难过任何一个；混用图标与字会让一排五个大小、基线都不一致。补图标后只改 `resolve` 一处 |
-| 2 | 「+」更多表情 | 未写 | 长按弹层的表情条不画「+」：`app.dart` 的 `StreamComponentBuilders.reactionPicker = loopStreamReactionPickerBuilder`，解析器 `supportedReactions` 为空时画 `LoopStreamReactionBar`（Stream 同款外形，五个字，按钮 48px 满足 44 触控），否则回到 Stream 默认 picker | 主代理 2026-10-08 裁定（原「+」打开空表）。表态详情弹层（`reaction_detail_sheet.dart` 的 `StreamEmojiChip.addEmoji`）不是组件工厂可替换的部件，仍会出一个打开空表的「+」；群聊已把详情弹层置空（`onReactionTap: (_, _) {}`），私聊仍可点开，待后续裁定 |
+| 2 | 「+」更多表情 | 未写 | 长按弹层的表情条不画「+」：`app.dart` 的 `StreamComponentBuilders.reactionPicker = loopStreamReactionPickerBuilder`，解析器 `supportedReactions` 为空时画 `LoopStreamReactionBar`（Stream 同款外形，五个字，按钮 48px 满足 44 触控），否则回到 Stream 默认 picker | 主代理 2026-10-08 裁定（原「+」打开空表）。表态详情弹层（`reaction_detail_sheet.dart` 的 `StreamEmojiChip.addEmoji`）不是组件工厂可替换的部件，里有一个打开空表的「+」；主代理 2026-10-08 裁定私聊与群聊一致，`_directDisplayProps` 也置 `onReactionTap: (_, _) {}`，详情弹层两处都不弹，「+」不可达 |
 | 3 | sparkline 文件位置 | 任务单写 `lib/widgets/loop_sparkline.dart:43` | 实际文件是 `lib/features/market/loop_sparkline.dart`；只改默认色（`color` 可空 + `resolvedColor`）与一行 import | 文件不在 widgets；改动面与 §1 意图一致，不触碰行情页面 |
 | 4 | K 线「四个」常量 | `_upBody`、`_down*` | 改五个：多 `_upVolume`（原写死 Lime 24% 的 `0x3DB8FF20`） | 不改则上涨成交量仍是 Lime，与绿色实体不一致 |
 | 5 | perp 切片 | 未提 | 四处 `mint / danger` 涨跌改 `rise / fall` | perp 不在导航内，但新规则会扫到；改色比开白名单干净 |
@@ -110,5 +110,5 @@ S113 / S114 在数据密集页逐页替换。
   （行情页的亮地面从 Lime 色块变为 rise 色块，测试名改为 `the Market page renders a light change ground`）。
 - `docs/00` §4.7 的补句由主代理负责。
 - 未验证（需模拟器 / 真机）：长按消息反应条五个字的字号与基线（`StreamUnicodeEmoji` 把 `fontFamily` 钉为
-  Apple Color Emoji / Noto Color Emoji，中文走系统回退字体）、私聊表态详情弹层里残留的「+」、绿 / 红在
+  Apple Color Emoji / Noto Color Emoji，中文走系统回退字体）、绿 / 红在
   OLED 上的观感。
