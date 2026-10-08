@@ -57,7 +57,7 @@ abstract final class ChatContent {
       kind: MessageKind.text,
       text:
           'Small-cap find. Checking the unlock schedule before making a call.',
-      reactions: <String, int>{'👀': 18, '🧭': 6},
+      reactions: <String, int>{'like': 18, 'wow': 6},
     ),
     ConversationMessage(
       id: 'g2',
@@ -68,7 +68,7 @@ abstract final class ChatContent {
       kind: MessageKind.token,
       text: 'GLYPH',
       replyLabel: 'Replying to NightOwl',
-      reactions: <String, int>{'⚠️': 9},
+      reactions: <String, int>{'sad': 9},
     ),
     ConversationMessage(
       id: 'g3',
@@ -88,7 +88,7 @@ abstract final class ChatContent {
       timeLabel: '14:12',
       kind: MessageKind.assetSnapshot,
       text: 'ETH',
-      reactions: <String, int>{'🔥': 11, '🧠': 4},
+      reactions: <String, int>{'love': 11, 'haha': 4},
     ),
   ];
 

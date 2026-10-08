@@ -4,8 +4,16 @@ import 'package:flutter/material.dart';
 /// Lime Ledger colour tokens (01 handover document, chapter 4.1).
 ///
 /// The translucent tokens are expressed as ARGB with the alpha rounded from
-/// the prototype `rgba(...)` values. Lime is the only accent; no blue or
+/// the prototype `rgba(...)` values. Lime is the only brand accent; no blue or
 /// rainbow status palette may be added here.
+///
+/// Lime 是唯一品牌强调色；行情涨跌用 rise/fall，不计入品牌三色。
+///
+/// Price movement is not a brand colour. A market rise and fall are painted
+/// in [rise] / [fall] (decision 0117, v3 requirement §6.2.1), and only through
+/// `LoopPriceMove` or these two tokens — never through [lime] or [danger],
+/// which keep their brand and error meanings. They do not count towards the
+/// three brand colours.
 abstract final class LoopColors {
   static const Color ink = Color(0xFF050604);
   static const Color lime = Color(0xFFB8FF20);
@@ -52,6 +60,18 @@ abstract final class LoopColors {
 
   /// Sheet veil · rgba(5,6,4,.76)
   static const Color veil = Color(0xC2050604);
+
+  /// Market rise · #22C55E. Price movement only (decision 0117).
+  static const Color rise = Color(0xFF22C55E);
+
+  /// Market fall · #EF4444. Price movement only (decision 0117).
+  static const Color fall = Color(0xFFEF4444);
+
+  /// Rise at 13% — the soft ground behind a rising badge.
+  static const Color riseSoft = Color(0x2122C55E);
+
+  /// Fall at 13% — the soft ground behind a falling badge.
+  static const Color fallSoft = Color(0x21EF4444);
 
   // Semantic aliases retained for existing widgets.
   static const Color textSecondary = text2;

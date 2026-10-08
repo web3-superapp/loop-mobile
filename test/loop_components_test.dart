@@ -187,7 +187,7 @@ void main() {
       greaterThanOrEqualTo(LoopTouch.minimum),
     );
     final up = tester.widget<Text>(find.text('+4.8%'));
-    expect(up.style?.color, LoopColors.lime);
+    expect(up.style?.color, LoopColors.rise);
     // Band 7: the page's own sans with tabular figures (decision 0080).
     expect(up.style?.fontFamily, LoopFonts.system);
     expect(
@@ -195,9 +195,10 @@ void main() {
       contains(const FontFeature.tabularFigures()),
     );
     final down = tester.widget<Text>(find.text('-1.2%'));
-    // 跌为红 (decision 0086): the prototype's `.down{color:var(--chalk)}` made
-    // a fall the same ink as the row's own words.
-    expect(down.style?.color, LoopColors.danger);
+    // 跌为红 (decisions 0086 and 0117): the prototype's
+    // `.down{color:var(--chalk)}` made a fall the same ink as the row's own
+    // words; since 0117 a rise and a fall are the market's own green and red.
+    expect(down.style?.color, LoopColors.fall);
     await tester.tap(find.text('PEPE'));
     expect(opened, 'PEPE');
     expect(find.byType(LoopIcon), findsWidgets);

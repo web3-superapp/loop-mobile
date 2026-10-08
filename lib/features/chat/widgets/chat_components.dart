@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
 import 'package:loop_mobile/features/chat/widgets/token_card_view.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 const _avatarColors = <Color>[
@@ -700,7 +701,8 @@ class ChatMessageTile extends StatelessWidget {
                                 borderRadius: LoopRadius.pill,
                               ),
                               child: Text(
-                                '${entry.key} ${entry.value}',
+                                '${loopReactionLabel(entry.key)} '
+                                '${entry.value}',
                                 style: Theme.of(context).textTheme.labelMedium,
                               ),
                             );

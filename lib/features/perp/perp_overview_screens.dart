@@ -220,8 +220,8 @@ class _PerpTradeScreenState extends ConsumerState<PerpTradeScreen> {
                     market.change,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: market.isPositive
-                          ? LoopColors.mint
-                          : LoopColors.danger,
+                          ? LoopColors.rise
+                          : LoopColors.fall,
                     ),
                   ),
                 ],
@@ -424,7 +424,7 @@ class _BookRow extends StatelessWidget {
             child: Text(
               price,
               style: LoopType.monoBody.copyWith(
-                color: ask ? LoopColors.danger : LoopColors.mint,
+                color: ask ? LoopColors.fall : LoopColors.rise,
               ),
             ),
           ),

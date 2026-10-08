@@ -332,8 +332,8 @@ class PerpMarketRow extends StatelessWidget {
                     market.change,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: market.isPositive
-                          ? LoopColors.mint
-                          : LoopColors.danger,
+                          ? LoopColors.rise
+                          : LoopColors.fall,
                     ),
                   ),
                 ],
@@ -449,7 +449,7 @@ class _CandlePainter extends CustomPainter {
     final bodyWidth = math.max(3.0, slot * 0.48);
     for (var index = 0; index < candles.length; index++) {
       final candle = candles[index];
-      final color = candle.isUp ? LoopColors.mint : LoopColors.danger;
+      final color = candle.isUp ? LoopColors.rise : LoopColors.fall;
       final x = slot * index + slot / 2;
       canvas.drawLine(
         Offset(x, yFor(candle.high)),

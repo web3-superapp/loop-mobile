@@ -1,5 +1,4 @@
 import 'package:decimal/decimal.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
@@ -60,7 +59,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           chart: LoopSparkline(
             closes: _specimenCloses,
             semanticLabel: 'PEPE 1 小时走势 · 组件样例',
-            color: LoopColors.lime,
+            color: LoopPriceMove.up.color,
           ),
         ),
         actions: const <LoopTokenCardAction>[

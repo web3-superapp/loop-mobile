@@ -87,7 +87,8 @@ void main() {
     expect(find.text(r'$0.000013'), findsOneWidget);
     expect(
       tester.widget<Text>(find.text('+4.8%')).style?.color,
-      LoopColors.lime,
+      // Decision 0117: a rise is the market's green, not the brand Lime.
+      LoopColors.rise,
     );
     expect(
       tester.widget<Text>(find.text(r'$0.000013')).style?.fontFamily,
@@ -136,7 +137,7 @@ void main() {
       const LoopTokenCard(state: LoopTokenCardState.normal, model: _pepe),
     );
     final dark = tester.widget<Text>(find.text('+4.8%')).style;
-    expect(dark?.color, LoopColors.lime);
+    expect(dark?.color, LoopColors.rise);
     expect(dark?.decoration, isNot(TextDecoration.underline));
   });
 

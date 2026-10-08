@@ -2495,7 +2495,9 @@ CHAT_SPOT_SNAPSHOT_TEST_MARKERS = {
 CHAT_SPOT_SNAPSHOT_SOURCE_FINGERPRINTS = {
     "card": "e2adf5c9590d6c07bcc023439952cbbe9317ec642eeddef8a4ca9f3b6de7634c",
     "page": "3ef6f193083f4c829553570849783cf9fa515a8d721fc3f1ebf93dd3d8c69e7d",
-    "content": "3137b2ee53f05f1399452dc235a3ead721603cd7f86e46300fecad9aa33044cd",
+    # Decision 0117 re-keyed the fixture's reactions from Emoji to LOOP's
+    # reaction types (`like` / `wow` / `sad` / `love` / `haha`).
+    "content": "3c160077f0e4770abe8650c6485536eaba26887231ff91892941dd94534eddb6",
     "test": "1b0ceb55baafa0f6ff2ea5a8784dc656f7f34229b8bc9c37d01aa1ce69894fc0",
 }
 
@@ -6473,34 +6475,40 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 )
         # `style-v2.css` publishes ink / lime / chalk and its `.kline-body`
         # rules were one hue: rising solid Lime, falling a hollow Chalk
-        # outline (audit 2026-09-21 §D+ item 12). Decision 0086 gives a fall
-        # the application's second hue — `LoopColors.danger`, the `#FF6B82`
-        # of the approved Token design draft — because a chart of falling
-        # bars in the page's own text colour said nothing about direction
-        # (requester, 2026-09-23 "跌为红"). The invariant is unchanged in
-        # kind: **two** tokens and no others, both from `LoopColors`, one
-        # per direction. A third hue is still a colour the design system
-        # does not have.
+        # outline (audit 2026-09-21 §D+ item 12). Decision 0086 gave a fall
+        # the application's second hue (`LoopColors.danger`); decision 0117
+        # takes price movement out of the brand palette altogether: a rise is
+        # `LoopColors.rise` (#22C55E) and a fall `LoopColors.fall` (#EF4444)
+        # (v3 requirement §6.2.1, D3 "绿涨红跌"). The invariant is unchanged in
+        # kind: **two** tokens and no others, both from `LoopColors`, one per
+        # direction. `danger` keeps its error meaning and may not paint a
+        # candle; Lime stays only where it is the brand accent and says nothing
+        # about direction (the MA7 line and the latest-close rule), and the
+        # direction constants above it are pinned below.
         for forbidden in (
             "LoopColors.mint",
             "LoopColors.vapor",
+            "LoopColors.danger",
+            "Color(0x3DB8FF20)",
             "Colors.red",
             "Colors.green",
         ):
-            if forbidden in source:
+            if forbidden in strip_dart_comments(source):
                 errors.append(
-                    f"{relative} must paint two hues: rising Lime, falling "
-                    f"danger; found `{forbidden}`"
+                    f"{relative} must paint two hues: rising `rise`, falling "
+                    f"`fall`; found `{forbidden}`"
                 )
         for required in (
-            "static const Color _upBody = LoopColors.lime;",
-            "static final Color _downFill = LoopColors.danger.withValues",
-            "static final Color _downStroke = LoopColors.danger.withValues",
+            "static const Color _upBody = LoopColors.rise;",
+            "static final Color _downFill = LoopColors.fall.withValues",
+            "static final Color _downStroke = LoopColors.fall.withValues",
+            "static final Color _upVolume = LoopColors.rise.withValues",
+            "static final Color _downVolume = LoopColors.fall.withValues",
         ):
             if required not in source:
                 errors.append(
-                    f"{relative} must paint two hues: rising Lime, falling "
-                    f"danger; missing `{required}`"
+                    f"{relative} must paint two hues: rising `rise`, falling "
+                    f"`fall`; missing `{required}`"
                 )
 
     return errors
@@ -9315,6 +9323,202 @@ def check_typography_band_contract(root: Path) -> list[str]:
                 "lib/core/theme/loop_theme.dart names Sora; the proportional "
                 "bands take the platform sans (decision 0080)"
             )
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# Price movement colours (decision 0117) — rise / fall are not brand colours
+# ---------------------------------------------------------------------------
+
+# A market rise and fall are painted only through `LoopPriceMove` or
+# `LoopColors.rise` / `LoopColors.fall`. Lime keeps meaning "LOOP" and `danger`
+# keeps meaning "something went wrong"; neither may state a direction again.
+#
+# The rule cannot read intent, so it reads proximity: a brand token
+# (`lime` / `mint` / `danger`) within three lines of a direction cue — the
+# words 涨 / 跌, an `isUp` / `isDown` / `isPositive` / `isNegative` flag, a
+# `bid` / `ask` side, a `change24h` / `priceChange` figure or a
+# `LoopPriceMove` — is a price painted in a brand colour.
+PRICE_MOVE_BRAND_TOKEN = re.compile(
+    r"LoopColors\.(?:lime|mint|danger)\b(?!Soft|Highlight)"
+)
+PRICE_MOVE_DIRECTION_CUE = re.compile(
+    r"\b(?:isUp|isDown|isPositive|isNegative|rising|falling|bid|ask|"
+    r"change24h|priceChange|LoopPriceMove)\b|涨|跌"
+)
+PRICE_MOVE_CUE_WINDOW = 3
+PRICE_MOVE_COLOUR_ALLOWLIST: dict[str, str] = {
+    # The palette itself defines and documents every token.
+    "lib/core/theme/loop_theme.dart": "the palette",
+    # Transitional (decision 0117): `MarketStatsLine` paints 「涨 N」 Lime and
+    # 「跌 N」 danger. The market list is S113's (decision 0118), which removes
+    # the line; this entry goes with it.
+    "lib/features/market/market_widgets.dart": "S113 removes MarketStatsLine",
+}
+
+
+def check_price_move_colour_contract(root: Path) -> list[str]:
+    """Keep price movement on rise / fall (decision 0117)."""
+
+    errors: list[str] = []
+    theme_path = root / "lib/core/theme/loop_theme.dart"
+    if theme_path.is_file():
+        theme = read_text(theme_path)
+        for required in (
+            "static const Color rise = Color(0xFF22C55E);",
+            "static const Color fall = Color(0xFFEF4444);",
+            "static const Color riseSoft = Color(0x2122C55E);",
+            "static const Color fallSoft = Color(0x21EF4444);",
+            "Lime 是唯一品牌强调色；行情涨跌用 rise/fall，不计入品牌三色。",
+        ):
+            if required not in theme:
+                errors.append(
+                    "lib/core/theme/loop_theme.dart must publish the price "
+                    f"movement tokens of decision 0117; missing `{required}`"
+                )
+        if "Lime is the only accent;" in theme:
+            errors.append(
+                "lib/core/theme/loop_theme.dart still says Lime is the only "
+                "accent; rise / fall are market colours outside the brand "
+                "three (decision 0117)"
+            )
+    move_path = root / "lib/widgets/loop_price_move.dart"
+    if move_path.is_file():
+        move = read_text(move_path)
+        for required in (
+            "LoopPriceMove.up => LoopColors.rise,",
+            "LoopPriceMove.down => LoopColors.fall,",
+            "LoopPriceMove.flat || LoopPriceMove.unread => LoopColors.muted,",
+        ):
+            if required not in move:
+                errors.append(
+                    "lib/widgets/loop_price_move.dart must map up / down / "
+                    f"flat to rise / fall / muted; missing `{required}`"
+                )
+    sparkline_path = root / "lib/features/market/loop_sparkline.dart"
+    if sparkline_path.is_file():
+        sparkline = read_text(sparkline_path)
+        if "color ?? LoopPriceMove.ofSeries(closes).color" not in sparkline:
+            errors.append(
+                "lib/features/market/loop_sparkline.dart must default its "
+                "line to the series' own direction through LoopPriceMove"
+            )
+
+    lib_root = root / "lib"
+    if not lib_root.is_dir():
+        return errors
+    for path in sorted(lib_root.rglob("*.dart")):
+        relative = path.relative_to(root).as_posix()
+        if relative in PRICE_MOVE_COLOUR_ALLOWLIST:
+            continue
+        lines = strip_dart_comments(read_text(path)).splitlines()
+        for index, line in enumerate(lines):
+            token = PRICE_MOVE_BRAND_TOKEN.search(line)
+            if token is None:
+                continue
+            window = lines[
+                max(0, index - PRICE_MOVE_CUE_WINDOW) : index
+                + PRICE_MOVE_CUE_WINDOW
+                + 1
+            ]
+            cue = next(
+                (
+                    match.group(0)
+                    for nearby in window
+                    for match in [PRICE_MOVE_DIRECTION_CUE.search(nearby)]
+                    if match is not None
+                ),
+                None,
+            )
+            if cue is not None:
+                errors.append(
+                    f"{relative}:{index + 1} paints a price direction (`{cue}`) "
+                    f"in the brand token `{token.group(0)}`; use LoopPriceMove "
+                    "or LoopColors.rise / LoopColors.fall (decision 0117)"
+                )
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# No Emoji (decision 0117) — LOOP draws no system Emoji anywhere
+# ---------------------------------------------------------------------------
+
+# Code points that a platform renders as a colour Emoji: every pictograph,
+# emoticon and transport block, the regional indicators, the keycap and the
+# emoji variation selector, and the BMP symbols that default to Emoji
+# presentation or that the UI would only ever mean as an Emoji. Plain text
+# symbols — arrows, ✓, ✦, ●, ▲ / ▼ — are not Emoji and stay legal.
+NO_EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001F000-\U0001FAFF"
+    "\U0001F1E6-\U0001F1FF"
+    "\u20E3\uFE0F"
+    "\u231A\u231B\u23E9-\u23F3\u23F8-\u23FA"
+    "\u25FD\u25FE"
+    "\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u261D\u2620"
+    "\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642"
+    "\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B"
+    "\u267E\u267F\u2692-\u2697\u2699\u269B\u269C\u26A0\u26A1"
+    "\u26A7\u26AA\u26AB\u26B0\u26B1\u26BD\u26BE\u26C4\u26C5"
+    "\u26C8\u26CE\u26CF\u26D1\u26D3\u26D4\u26E9\u26EA\u26F0-\u26F5"
+    "\u26F7-\u26FA\u26FD"
+    "\u2702\u2705\u2708-\u270D\u270F\u2712\u2714\u2716\u271D"
+    "\u2721\u2728\u2733\u2734\u2744\u2747\u274C\u274E"
+    "\u2753-\u2755\u2757\u2763\u2764\u2795-\u2797\u27A1\u27B0\u27BF"
+    "\u2B50\u2B55"
+    "]"
+)
+# Empty on purpose: no file may print an Emoji.
+NO_EMOJI_ALLOWLIST: frozenset[str] = frozenset()
+
+
+def check_no_emoji(root: Path) -> list[str]:
+    """No string literal under `lib/` carries an Emoji (decision 0117)."""
+
+    errors: list[str] = []
+    lib_root = root / "lib"
+    if not lib_root.is_dir():
+        return errors
+    for path in sorted(lib_root.rglob("*.dart")):
+        relative = path.relative_to(root).as_posix()
+        if relative in NO_EMOJI_ALLOWLIST:
+            continue
+        executable = strip_dart_comments(read_text(path))
+        for number, line in enumerate(executable.splitlines(), start=1):
+            match = NO_EMOJI_PATTERN.search(line)
+            if match is not None:
+                errors.append(
+                    f"{relative}:{number} prints the Emoji code point "
+                    f"U+{ord(match.group(0)):04X}; LOOP draws no system Emoji "
+                    "(decision 0117)"
+                )
+    resolver = root / "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart"
+    app = root / "lib/app.dart"
+    if not resolver.is_file():
+        errors.append(
+            "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart "
+            "is missing; Stream's default resolver renders reactions as Emoji"
+        )
+    else:
+        source = read_text(resolver)
+        for required in (
+            "Set<String> get supportedReactions => const <String>{};",
+            "String? emojiCode(String type) => null;",
+            "StreamUnicodeEmoji(loopReactionLabel(type))",
+        ):
+            if required not in source:
+                errors.append(
+                    "The Stream reaction resolver must draw LOOP's words and "
+                    f"offer no Emoji catalogue; missing `{required}`"
+                )
+    if app.is_file() and (
+        "reactionIconResolver: const LoopStreamReactionIconResolver()"
+        not in read_text(app)
+    ):
+        errors.append(
+            "lib/app.dart must hand Stream LoopStreamReactionIconResolver; the "
+            "default resolver renders reactions as system Emoji"
+        )
     return errors
 
 
@@ -14206,6 +14410,8 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_user_visible_copy(root))
     errors.extend(check_stream_user_identity_rendering(root))
     errors.extend(check_typography_band_contract(root))
+    errors.extend(check_price_move_colour_contract(root))
+    errors.extend(check_no_emoji(root))
     errors.extend(check_light_ground_contract(root))
     errors.extend(check_page_mount_theme_contract(root))
     errors.extend(check_ground_probe_armed(root))
@@ -14237,6 +14443,7 @@ def main() -> int:
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography on the platform sans with bundled Noto Sans SC, "
+        "rise / fall price colours, no Emoji, "
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
         "plate-free launch icon, glyph-only top-bar actions, "
