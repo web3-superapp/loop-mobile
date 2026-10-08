@@ -367,6 +367,33 @@ final class MemeGraduation {
 }
 
 /// One token as `GET /v2/meme/tokens/{id}` describes it (contract §4).
+/// Operator listing decision (loop-api decision 0102): `hidden` removes the
+/// token from the launchpad lists and `category=meme`; the detail stays
+/// readable and carries the operator's user-facing sentence.
+enum MemeListing {
+  listed('listed'),
+  hidden('hidden');
+
+  const MemeListing(this.wireName);
+
+  final String wireName;
+
+  static MemeListing? tryParse(String value) {
+    for (final listing in values) {
+      if (listing.wireName == value) return listing;
+    }
+    return null;
+  }
+}
+
+@immutable
+final class MemeListingReason {
+  const MemeListingReason({this.reasonCode, this.reasonText});
+
+  final String? reasonCode;
+  final String? reasonText;
+}
+
 @immutable
 final class MemeTokenDetail {
   const MemeTokenDetail({
@@ -383,6 +410,8 @@ final class MemeTokenDetail {
     this.viewer,
     this.viewerUnavailableReason,
     this.graduation,
+    this.listing = MemeListing.listed,
+    this.listingReason,
   });
 
   final MemeTokenRow row;
@@ -400,11 +429,16 @@ final class MemeTokenDetail {
   final String? viewerUnavailableReason;
   final MemeGraduation? graduation;
 
+  /// Decision 0102. `hidden` exactly when [listingReason] is present.
+  final MemeListing listing;
+  final MemeListingReason? listingReason;
+
   /// `source.observedAt` (`loop_indexer`).
   final DateTime observedAt;
 
   String get memeTokenId => row.memeTokenId;
   MemeTokenStatus get status => row.status;
+  bool get isHidden => listing == MemeListing.hidden;
 }
 
 @immutable

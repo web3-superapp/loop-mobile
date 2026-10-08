@@ -232,6 +232,54 @@ void main() {
       expect(detail.row.priceSource?.source, MemePriceSource.dexscreener);
     });
 
+    test(
+      'listing + listingReason (decision 0102) decode in both states',
+      () async {
+        Map<String, Object?> withListing(String listing, Object? reason) {
+          final doc = memeDetailJson();
+          (doc['memeToken']! as Map<String, Object?>)
+            ..['listing'] = listing
+            ..['listingReason'] = reason;
+          return doc;
+        }
+
+        final hidden = withListing('hidden', <String, Object?>{
+          'reasonCode': 'user_reports',
+          'reasonText': '多位用户举报，已下架',
+        });
+        final listed = withListing('listed', null);
+        final mismatch = withListing('hidden', null);
+        final (api, _) = _api(<(int, Object?)>[
+          (200, hidden),
+          (200, listed),
+          (200, mismatch),
+        ]);
+        final a = await api.getToken(
+          accessToken: _token,
+          clientVersion: _version,
+          memeTokenId: memeTokenIdA,
+        );
+        expect(a.isHidden, isTrue);
+        expect(a.listingReason?.reasonCode, 'user_reports');
+        expect(a.listingReason?.reasonText, '多位用户举报，已下架');
+        final b = await api.getToken(
+          accessToken: _token,
+          clientVersion: _version,
+          memeTokenId: memeTokenIdA,
+        );
+        expect(b.isHidden, isFalse);
+        expect(b.listingReason, isNull);
+        await expectLater(
+          api.getToken(
+            accessToken: _token,
+            clientVersion: _version,
+            memeTokenId: memeTokenIdA,
+          ),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+      },
+    );
+
     test('the fill target comes from the snapshot, ≈17,582 USD1', () {
       final detail = memeDetail();
       final target = detail.curve.fillTargetUsd1!;

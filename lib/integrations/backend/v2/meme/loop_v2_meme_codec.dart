@@ -69,6 +69,10 @@ abstract final class LoopV2MemeCodec {
     'source',
   };
 
+  /// Decision 0102 (operator console): sent together by a server that carries
+  /// it; optional so a document from before it still reads.
+  static const detailListingKeys = <String>{'listing', 'listingReason'};
+
   static const intentKeys = <String>{
     'memeIntentId',
     'kind',
@@ -441,7 +445,11 @@ abstract final class LoopV2MemeCodec {
     final map = LoopV2Contract.strictMapWithOptional(
       root['memeToken'],
       detailKeys,
-      const <String>{'quoteUnavailable', 'viewerUnavailable'},
+      const <String>{
+        'quoteUnavailable',
+        'viewerUnavailable',
+        ...detailListingKeys,
+      },
     );
     final links = LoopV2Contract.strictMap(map['links'], const <String>{
       'twitter',
@@ -533,8 +541,47 @@ abstract final class LoopV2MemeCodec {
     if (vanity is! bool) invalid();
     final description = map['description'];
     if (description is! String || description.length > 2000) invalid();
+    // Decision 0102: both keys are sent together; `hidden` carries a reason,
+    // `listed` carries null. A document from before 0102 carries neither.
+    var listing = MemeListing.listed;
+    MemeListingReason? listingReason;
+    if (map.containsKey('listing') || map.containsKey('listingReason')) {
+      final rawListing = map['listing'];
+      final parsed = rawListing is String
+          ? MemeListing.tryParse(rawListing)
+          : null;
+      if (parsed == null) invalid();
+      listing = parsed;
+      final rawReason = map['listingReason'];
+      if ((listing == MemeListing.hidden) != (rawReason != null)) invalid();
+      if (rawReason != null) {
+        final r = LoopV2Contract.strictMap(rawReason, const <String>{
+          'reasonCode',
+          'reasonText',
+        });
+        final code = r['reasonCode'];
+        final text = r['reasonText'];
+        if (code != null &&
+            (code is! String ||
+                !RegExp(r'^[a-z][a-z0-9_]{0,63}$').hasMatch(code))) {
+          invalid();
+        }
+        if (text != null &&
+            (text is! String || text.isEmpty || text.length > 280)) {
+          invalid();
+        }
+        listingReason = MemeListingReason(
+          reasonCode: code as String?,
+          reasonText: text == null
+              ? null
+              : LoopV2ChainCodec.sanitizeProviderText(text as String),
+        );
+      }
+    }
     return MemeTokenDetail(
       row: _row(map, mediaUrl: mediaUrl),
+      listing: listing,
+      listingReason: listingReason,
       description: LoopV2ChainCodec.sanitizeProviderText(description),
       links: MemeLinks(
         twitter: optionalLink(links, 'twitter'),

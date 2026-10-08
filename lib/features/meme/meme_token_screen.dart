@@ -434,6 +434,15 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
         ),
       if (_celebrate)
         _GraduationBanner(onClose: () => setState(() => _celebrate = false)),
+      if (detail.isHidden)
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('meme-token-hidden'),
+          icon: 'warn',
+          message: switch (detail.listingReason?.reasonText) {
+            final String text => '运营已将此代币从发射台隐藏 · $text',
+            _ => '运营已将此代币从发射台隐藏',
+          },
+        ),
       _ProgressBlock(detail: detail),
       if (capability.evidencePending)
         const LoopInlineUnavailable(
