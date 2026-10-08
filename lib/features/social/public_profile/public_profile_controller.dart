@@ -138,8 +138,15 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
 
   bool _current(int generation) => ref.mounted && generation == _generation;
 
+  /// The page schedules [load] on every build it spends in the loading
+  /// phase; a read already in flight must not be restarted by that (each
+  /// restart re-published the loading state, which rebuilt the page, which
+  /// scheduled another load — one request per frame, none ever adopted).
+  var _loadInFlight = false;
+
   Future<void> load() {
-    if (state.record != null ||
+    if (_loadInFlight ||
+        state.record != null ||
         state.phase != CommunityViewPhase.loading ||
         state.mode == CommunityGatewayMode.unavailable) {
       return Future<void>.value();
@@ -150,7 +157,10 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
   Future<void> reload() async {
     if (state.mode == CommunityGatewayMode.unavailable) return;
     final generation = ++_generation;
-    if (state.record == null) {
+    _loadInFlight = true;
+    if (state.record == null &&
+        (state.phase != CommunityViewPhase.loading ||
+            state.failureKind != null)) {
       state = state.copyWith(
         phase: CommunityViewPhase.loading,
         clearFailure: true,
@@ -170,6 +180,8 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
     } catch (_) {
       if (!_current(generation)) return;
       _fail(CommunityFailureKind.unexpected);
+    } finally {
+      if (generation == _generation) _loadInFlight = false;
     }
   }
 

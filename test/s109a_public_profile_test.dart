@@ -484,12 +484,19 @@ void main() {
 
   group('user-profile page · five states', () {
     testWidgets('loading', (tester) async {
-      await _pump(tester, profiles: _Profiles(pending: true), settle: false);
+      final profiles = _Profiles(pending: true);
+      await _pump(tester, profiles: profiles, settle: false);
       await tester.pump();
       expect(
         find.byKey(const ValueKey<String>('community-state-loading')),
         findsOneWidget,
       );
+      // A read in flight is never restarted by the frames spent waiting on
+      // it (the dev build once sent one request per frame).
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(profiles.calls, <String>['load:id:$_id']);
     });
 
     testWidgets('not found (404 PROFILE_NOT_FOUND) is its own empty state', (
