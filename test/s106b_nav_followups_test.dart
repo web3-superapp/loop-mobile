@@ -596,6 +596,13 @@ void main() {
           ),
         ],
       );
+      // Decision 0120: the IDO catalogue is the third segment.
+      expect(
+        find.byKey(const ValueKey<String>('launch-stake-action')),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-2')));
+      await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('launch-screen')), findsOne);
       expect(
         find.byKey(const ValueKey<String>('launch-stake-action')),

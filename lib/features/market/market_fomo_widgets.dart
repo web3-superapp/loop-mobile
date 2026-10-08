@@ -102,7 +102,12 @@ class MarketFomoRow extends StatelessWidget {
       unavailableReason: quote == null
           ? (row.quoteUnavailableReason ?? 'MARKET_FACT_NOT_REPORTED')
           : null,
-      marker: quote == null ? null : marketQuoteQualityMarker(quote.quality),
+      // A pool-derived MEME price says where it came from (decision 0120).
+      marker: quote == null
+          ? null
+          : quote.source == LoopFactSource.poolSlot0
+          ? '池子推算'
+          : marketQuoteQualityMarker(quote.quality),
       onTap: onTap,
     );
   }

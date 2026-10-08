@@ -24,6 +24,7 @@ import 'package:loop_mobile/app/notifications/loop_push_registration_providers.d
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
+import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
@@ -62,6 +63,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s6_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
+import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_api.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
@@ -281,6 +283,11 @@ Future<void> main() async {
         // session all exist.
         launchGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2LaunchGatewayProvider),
+        ),
+        // S117 (decision 0120): the MEME curve launchpad. Fail-closed until
+        // its Dio client, client metadata and authenticated session all exist.
+        memeGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2MemeGatewayProvider),
         ),
         miningGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MiningGatewayProvider),

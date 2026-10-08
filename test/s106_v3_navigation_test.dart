@@ -428,17 +428,26 @@ void main() {
   });
 
   group('meme', () {
-    testWidgets('IDO hidden by default: 发射台 is coming, 行情 has no source', (
+    testWidgets('IDO hidden by default: 发射台 is the MEME curve launchpad', (
       tester,
     ) async {
       final launch = FakeLaunchGateway();
       await pumpS7Page(tester, const MemeScreen(), launch: launch);
-      expect(find.text('发射台即将开放'), findsWidgets);
+      // Decision 0120: 发射台 is the curve launchpad; without its transport
+      // it says so inline instead of drawing an empty list.
+      expect(
+        find.byKey(const ValueKey<String>('meme-launchpad-unavailable')),
+        findsOneWidget,
+      );
       expect(find.byKey(const ValueKey<String>('launch-screen')), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('meme-segment-2')),
+        findsNothing,
+      );
 
       await tester.tap(find.byKey(const ValueKey<String>('meme-segment-1')));
       await tester.pumpAndSettle();
-      expect(find.text('平台 MEME 资产上线后在这里显示'), findsWidgets);
+      expect(find.byKey(const ValueKey<String>('meme-market')), findsOneWidget);
     });
 
     testWidgets('the switch brings the Launch catalogue back', (tester) async {
@@ -452,8 +461,10 @@ void main() {
           ),
         ],
       );
+      // Decision 0120: the IDO catalogue comes back as a third segment.
+      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-2')));
+      await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('launch-screen')), findsOne);
-      expect(find.text('发射台即将开放'), findsNothing);
       // The embedded catalogue draws no bar, so its two tools stand on the
       // segment row (S106b).
       expect(

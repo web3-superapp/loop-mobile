@@ -147,7 +147,15 @@ enum LoopFactSource {
   dexscreener('dexscreener'),
   goplus('goplus'),
   geckoterminal('geckoterminal'),
-  loopIndexer('loop_indexer');
+  loopIndexer('loop_indexer'),
+
+  /// A MEME curve token's own snapshot before it graduates (loop-api
+  /// decision 0101): price and market cap read from the LOOP curve.
+  loopCurve('loop_curve'),
+
+  /// A graduated MEME token priced from its PancakeSwap pool's `slot0` when
+  /// no market provider prices it (loop-api decision 0103). Always `derived`.
+  poolSlot0('pool_slot0');
 
   const LoopFactSource(this.wireName);
 
@@ -167,6 +175,8 @@ String loopFactSourceLabel(LoopFactSource source) => switch (source) {
   LoopFactSource.goplus => 'GoPlus',
   LoopFactSource.geckoterminal => 'GeckoTerminal',
   LoopFactSource.loopIndexer => 'LOOP 链上索引',
+  LoopFactSource.loopCurve => 'LOOP 曲线',
+  LoopFactSource.poolSlot0 => '池子推算',
 };
 
 /// How much a rendered number can be trusted right now.

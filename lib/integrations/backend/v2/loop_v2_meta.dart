@@ -201,7 +201,7 @@ final class LoopV2TermsGate {
 /// `notificationsFeed` by loop-api decision 0034 and the step-5 market and
 /// alerts modules; `referral` by the step-7 launch/mining/referral module; and
 /// `security`, `settings` and `support` by the step-8 decision 0037 module
-/// that steps 6 and 7 already read, for 31 ids in the exact order of
+/// that steps 6 and 7 already read, and `meme` by loop-api decision 0101, for 32 ids in the exact order of
 /// `openapi/loop-api.v2.json`.
 /// The parser requires the exact set, so this list must track the frozen
 /// contract even for modules a given step does not consume.
@@ -236,7 +236,9 @@ enum LoopV2CapabilityId {
   pay('pay'),
   bridge('bridge'),
   dappExecution('dappExecution'),
-  communityAi('communityAi');
+  communityAi('communityAi'),
+  // The MEME curve launchpad (loop-api decision 0101, client decision 0120).
+  meme('meme');
 
   const LoopV2CapabilityId(this.wireName);
 

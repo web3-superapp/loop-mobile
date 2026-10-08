@@ -3,10 +3,10 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "f6269762299ff2e7c6370511fe9808dcdac194ca77706cd84e393c82c9fc8abe",
+  "sha256": "a856fab14b49e5b0ee7fb2c1ae42c646f1bbe4a813692ba848b2d2e3ccb34d5e",
   "defaultRoute": "chat",
   "tabs": ["chat", "square", "meme", "intel", "wallet"],
-  "count": 101,
+  "count": 105,
   "modules": {
     "0-global-account": [
       {
@@ -279,6 +279,26 @@
         "slug": "meme",
         "tab": true,
         "prototypeOrder": 102
+      },
+      {
+        "slug": "meme-create",
+        "tab": false,
+        "prototypeOrder": 108
+      },
+      {
+        "slug": "meme-token",
+        "tab": false,
+        "prototypeOrder": 109
+      },
+      {
+        "slug": "meme-token-holders",
+        "tab": false,
+        "prototypeOrder": 110
+      },
+      {
+        "slug": "meme-token-trades",
+        "tab": false,
+        "prototypeOrder": 111
       }
     ],
     "5-mining": [

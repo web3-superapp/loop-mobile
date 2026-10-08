@@ -32,9 +32,22 @@ import 'package:loop_mobile/widgets/loop_sheet.dart';
 /// is pending the page still quotes and still shows every figure — it simply
 /// cannot execute, and says so.
 class SwapScreen extends ConsumerStatefulWidget {
-  const SwapScreen({super.key, this.onBack, this.onNavigate, this.clock});
+  const SwapScreen({
+    super.key,
+    this.onBack,
+    this.onNavigate,
+    this.clock,
+    this.initialSourceAssetId,
+    this.initialDestinationAssetId,
+  });
 
   final VoidCallback? onBack;
+
+  /// A pair another page asked for (decision 0120: a graduated MEME token's
+  /// 「去兑换」). Only a selection: an asset the wallet does not list simply
+  /// stays unnamed, and nothing is quoted until the owner asks.
+  final String? initialSourceAssetId;
+  final String? initialDestinationAssetId;
   final void Function(String location, {Object? extra})? onNavigate;
   final DateTime Function()? clock;
 
@@ -58,6 +71,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   bool _checkingCapability = false;
 
   static const List<int> _slippageChoices = <int>[50, 100, 300];
+
+  @override
+  void initState() {
+    super.initState();
+    _sourceAssetId = widget.initialSourceAssetId;
+    _destinationAssetId = widget.initialDestinationAssetId;
+  }
 
   @override
   void dispose() {
