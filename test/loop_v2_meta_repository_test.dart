@@ -243,6 +243,33 @@ void main() {
     }
   });
 
+  test(
+    'meme confirms through its contract adapter without a reference',
+    () async {
+      final doc = _capabilities();
+      final items = doc['capabilities']! as List<Object?>;
+      for (final raw in items) {
+        final item = raw! as Map<String, Object?>;
+        if (item['capabilityId'] == 'meme') {
+          item['evidence'] = <String, Object?>{
+            'status': 'confirmed',
+            'reasonCode': 'MEME_CONTRACT_OBSERVED',
+          };
+        }
+      }
+      final repository = DioLoopV2MetaRepository.withClient(
+        _dio((options, handler) {
+          handler.resolve(_response(options, doc));
+        }),
+      );
+      final capabilities = await repository.getCapabilities();
+      final meme = capabilities[LoopV2CapabilityId.meme];
+      expect(meme.evidence.status, LoopV2CapabilityEvidenceStatus.confirmed);
+      expect(meme.evidence.reasonCode, 'MEME_CONTRACT_OBSERVED');
+      expect(meme.evidence.reference, isNull);
+    },
+  );
+
   test('client capability enum equals the frozen contract enum', () {
     const relativePaths = <String>[
       '../loop-api/openapi/loop-api.v2.json',

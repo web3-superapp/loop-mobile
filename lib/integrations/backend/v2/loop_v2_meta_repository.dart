@@ -425,8 +425,10 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   ) {
     final present = evidence.containsKey('reference');
     if (status != LoopV2CapabilityEvidenceStatus.confirmed ||
-        id == LoopV2CapabilityId.launch) {
-      // `launch` confirms through its contract adapter, never a reference.
+        id == LoopV2CapabilityId.launch ||
+        id == LoopV2CapabilityId.meme) {
+      // `launch` and `meme` confirm through their contract adapters (loop-api
+      // decisions 0083 and 0101), never a reference.
       if (present) {
         throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
       }
