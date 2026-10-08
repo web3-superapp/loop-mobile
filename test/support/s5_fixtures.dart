@@ -214,6 +214,7 @@ Map<String, Object?> s5ValuationAvailable({
   String quality = 'fresh',
   Object? proxyAsset,
   String valueUsd = '5231.73',
+  String? change24hPct = '5',
 }) => <String, Object?>{
   'status': 'available',
   'priceSource': 'dexscreener',
@@ -223,6 +224,7 @@ Map<String, Object?> s5ValuationAvailable({
   'proxyAsset': proxyAsset,
   'priceUsd': '747.39',
   'valueUsd': valueUsd,
+  'change24hPct': change24hPct,
 };
 
 /// The required `logo` block (contract §2a, decision 0072).
@@ -316,9 +318,20 @@ Map<String, Object?> s5BalanceRow({
       },
 };
 
+/// `netWorth.change24h` (loop-api decision 0100) as the wire carries it.
+const Map<String, Object?> s5NetWorthChange24h = <String, Object?>{
+  'usd': '302.515',
+  'pct': '5',
+};
+
+/// [change24h] `null` sends `change24h: null` together with
+/// [change24hUnavailable] (state b); [omitChange24hUnavailable] drops the
+/// reason so a test can pin that the pair is refused.
 Map<String, Object?> s5NetWorth({
   String status = 'available',
   int unavailableCount = 0,
+  Map<String, Object?>? change24h = s5NetWorthChange24h,
+  Map<String, Object?>? change24hUnavailable,
 }) => <String, Object?>{
   'status': status,
   'valuationCurrency': 'USD',
@@ -328,6 +341,8 @@ Map<String, Object?> s5NetWorth({
   'priceSource': 'dexscreener',
   'asOf': '2026-09-08T07:52:56.738Z',
   'isSpendable': false,
+  'change24h': change24h,
+  'change24hUnavailable': ?change24hUnavailable,
 };
 
 Map<String, Object?> s5BalancesBody({
@@ -1153,6 +1168,7 @@ LoopAssetBalanceRow s5Row({
         proxyAsset: s5WbnbAssetId,
         priceUsd: s5Decimal('747.39'),
         valueUsd: s5Decimal('5231.73'),
+        change24hPct: s5Decimal('5'),
       ),
   crossCheck:
       crossCheck ??
@@ -1193,6 +1209,10 @@ LoopWalletBalances s5Balances({
         priceSource: LoopFactSource.dexscreener,
         asOf: DateTime.utc(2026, 9, 8, 7, 52),
         isSpendable: false,
+        change24h: LoopNetWorthChangeAvailable(
+          usd: s5Decimal('302.515'),
+          pct: s5Decimal('5'),
+        ),
       ),
 );
 

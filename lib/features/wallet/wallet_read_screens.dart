@@ -25,11 +25,13 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_environment_tag.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -97,7 +99,6 @@ Future<void> _refreshWallet(WidgetRef ref, String? walletId) async {
   await Future.wait<void>(<Future<void>>[
     directory.reload(),
     if (balances != null) balances.reload(),
-    ref.read(miningAssetsControllerProvider.notifier).reload(),
     if (ref.exists(miningSummaryControllerProvider))
       ref.read(miningSummaryControllerProvider.notifier).reload(),
   ]);
@@ -135,6 +136,11 @@ bool _noWalletYet(WidgetRef ref) =>
 // ---------------------------------------------------------------------------
 
 /// `wallet` · the钱包 tab.
+///
+/// Decision 0119 (v3 需求 §1 位置 5, §6.2): the first screen follows OKX —
+/// 总资产 with an eye and a 24h line, four equal keys, an unboxed asset list —
+/// and the wallet's management pages sit in one entry group at the bottom,
+/// 设置 included (B6).
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key, this.onNavigate});
 
@@ -150,14 +156,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   /// screen — retained, restored or refreshed — never blinks.
   bool _sawBalancesSkeleton = false;
 
-  /// What a blocked action answers with.
-  ///
-  /// The prototype's four money actions are a Lime `Pay` pill, a compact
-  /// 兑换 and a three-up 发送 / 接收 / 跨链 grid. They used to be demoted to
-  /// list rows wearing a grey 不可用 badge, which emptied the page's first
-  /// screen of every action it has (audit item 3). They keep their shape now;
-  /// a closed gate takes the disabled paint and says, on the tap, the one
-  /// sentence the server gave.
+  /// What a closed key answers with: the server's own sentence, on the tap.
   void _blocked(String reason) {
     LoopToast.show(context, message: reason, kind: LoopToastKind.warn);
   }
@@ -173,10 +172,24 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final blocked = _walletBlocked(ref);
+    final mode = ref.watch(walletReadGatewayProvider).mode;
+    final walletReadGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.walletRead),
+    );
+    final bscGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.bscRead),
+    );
+    final preview = mode == LoopChainGatewayMode.preview;
+    // The wallet module itself is shut: nothing on this page can be read, and
+    // the page says so as a whole.
+    final blocked = !preview && !walletReadGate.isAvailable;
+    // Only the chain node is shut (the dev RPC is down): the wallet list, the
+    // four keys and the entry group still stand, and the asset list says in
+    // one line that balances cannot be read now (decision 0119).
+    final chainClosed = !preview && !blocked && !bscGate.isAvailable;
     final walletId = _watchActiveWalletId(ref, blocked: blocked);
     final directory = ref.watch(walletDirectoryControllerProvider);
-    final balancesState = walletId == null
+    final balancesState = walletId == null || chainClosed
         ? null
         : ref.watch(walletBalancesControllerProvider(walletId));
     if (walletId != null &&
@@ -195,6 +208,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final balances = balancesState?.value;
     final balancesLoading =
         !blocked &&
+        !chainClosed &&
         balances == null &&
         (walletId == null
             ? directory.phase == LoopChainViewPhase.loading
@@ -203,7 +217,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     // Decision 0095: how old the figures on screen are, whenever that is not
     // "just read". A stored snapshot is always labelled; a refresh that failed
     // keeps the figures and says so.
-    final balancesController = walletId == null
+    final balancesController = walletId == null || chainClosed
         ? null
         : ref.read(walletBalancesControllerProvider(walletId).notifier);
     final directoryController = ref.read(
@@ -218,26 +232,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             directory.failureKind != null &&
             directory.failureKind != LoopChainFailureKind.versionConflict);
 
-    // A money-action row promises what the destination can do. Both gates are
-    // read here so the promise matches the page one tap away.
+    // A key promises what the destination can do. Both write gates are read
+    // here so the promise matches the page one tap away.
     final swapGate = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.privySwap),
     );
     final sendGate = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.sendApprovals),
     );
-    final swapAvailable = swapGate.isAvailable;
-    final sendAvailable = sendGate.isAvailable;
-    final swapReason = loopReasonCodeText(
-      swapGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-    );
-    final sendReason = loopReasonCodeText(
-      sendGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-    );
-    // The prototype's asset rows carry each holding's mining power. It is the
-    // Mining module's own snapshot, read through the same controller Mining
-    // uses; a snapshot that has no row for a holding renders a dash.
-    final miningAssets = watchWalletMiningAssets(ref);
+    final hidden = ref.watch(walletAmountsHiddenProvider);
+    final hideZero = ref.watch(walletHideZeroBalancesProvider);
+    final directoryEmpty = _directoryIsEmpty(directory);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallet-screen'),
@@ -247,9 +252,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       // Balances the page already read stay on screen while the next read
       // runs; only the 更新中 mark changes.
       updating: balancesState?.refreshing ?? false,
-      // Pull to re-read the directory and the balances of the active wallet.
-      // The rows that were read stay on screen; only the 更新中 mark changes.
-      onRefresh: () => _refreshWallet(ref, walletId),
+      onRefresh: () => _refreshWallet(ref, chainClosed ? null : walletId),
       block: blocked
           ? _walletPageBlock(
               ref,
@@ -259,25 +262,31 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           : null,
       actions: <Widget>[
         LoopIconButton(
-          key: const ValueKey<String>('wallet-manage-action'),
-          icon: 'wallet',
-          label: '切换钱包',
-          onPressed: () => _open('/wallet/manage'),
-        ),
-        LoopIconButton(
           key: const ValueKey<String>('wallet-history-action'),
           icon: 'clock',
           label: '交易记录',
           onPressed: () => _open('/wallet/history'),
         ),
+        LoopIconButton(
+          key: const ValueKey<String>('wallet-manage-action'),
+          icon: 'wallet',
+          label: '钱包管理',
+          onPressed: () => _open('/wallet/manage'),
+        ),
       ],
-      primary: _WalletPrimary(
-        directory: directory.value,
-        directoryIsEmpty: _directoryIsEmpty(directory),
+      primary: WalletTotalHeader(
+        key: const ValueKey<String>('wallet-folio'),
+        keyPrefix: 'wallet',
         balances: balances,
         loading: balancesLoading,
-        onOpenNetWorth: () => _open('/wallet/networth'),
+        unreadText: directoryEmpty
+            ? '还没有钱包'
+            : walletId == null && directory.isReady
+            ? '未选定钱包'
+            : '暂不可用',
+        address: directory.value?.active?.truncatedAddress,
         environmentTag: ref.watch(loopEnvironmentTagProvider),
+        onOpenNetWorth: () => _open('/wallet/networth'),
       ),
       sections: <Widget>[
         LoopFreshnessStrip(
@@ -287,20 +296,21 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           refreshing:
               (balancesState?.refreshing ?? false) || directory.refreshing,
           refreshFailed: refreshFailed,
-          onRetry: () => unawaited(_refreshWallet(ref, walletId)),
+          onRetry: () =>
+              unawaited(_refreshWallet(ref, chainClosed ? null : walletId)),
         ),
         // Three different answers, three different blocks: the list was not
         // read, the list was read and is empty, or a wallet is active.
-        if (_directoryIsEmpty(directory))
+        if (directoryEmpty)
           const WalletCreationBlock(keyPrefix: 'wallet-directory')
         else if (walletId == null && directory.isReady)
           LoopEmpty(
             key: const ValueKey<String>('wallet-directory-no-active'),
             message: '还没有选定当前钱包',
-            reason: '这个账号已经有钱包，但还没有选定当前钱包。到“我的钱包”里选一个后才会显示余额。',
+            reason: '这个账号已经有钱包，但还没有选定当前钱包。到“钱包管理”里选一个后才会显示余额。',
             action: LoopButton(
               key: const ValueKey<String>('wallet-directory-pick'),
-              label: '我的钱包',
+              label: '钱包管理',
               primary: true,
               onPressed: () => _open('/wallet/manage'),
             ),
@@ -316,283 +326,274 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               ref.read(walletDirectoryControllerProvider.notifier).reload(),
             ),
           )
-        // Decision 0095: the page does not wait for every block. Once the
-        // directory has named a wallet the actions are drawn, and the asset
-        // list stands in as rows of its own height until the balances land.
-        else if (balancesState == null ||
-            balancesState.phase == LoopChainViewPhase.loading) ...<Widget>[
-          ..._moneyActions(
-            walletId,
-            swapAvailable: swapAvailable,
-            sendAvailable: sendAvailable,
-            swapReason: swapReason,
-            sendReason: sendReason,
-          ),
-          WalletHoldingsPowerHint(onOpenMining: () => _open('/mining')),
-          const LoopLabel('Wallet Assets'),
-          const LoopSkeleton(
-            key: ValueKey<String>('wallet-balances-state-loading'),
-            type: LoopSkeletonType.record,
-            rows: 4,
-            leadingSize: 36,
-            subtitleLines: 2,
-          ),
-        ] else if (!balancesState.isReady)
-          LoopChainStateBlock(
-            keyPrefix: 'wallet-balances',
-            phase: balancesState.phase,
-            failureKind: balancesState.failureKind,
-            emptyMessage: '这个钱包还没有可读资产',
-            onRetry: () => unawaited(
-              ref
-                  .read(walletBalancesControllerProvider(walletId).notifier)
-                  .reload(),
-            ),
-          )
         else ...<Widget>[
-          ..._moneyActions(
-            walletId,
-            swapAvailable: swapAvailable,
-            sendAvailable: sendAvailable,
-            swapReason: swapReason,
-            sendReason: sendReason,
-          ),
-          WalletHoldingsPowerHint(onOpenMining: () => _open('/mining')),
-          const LoopLabel('Wallet Assets'),
-          if (balances!.balances.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('wallet-balances-empty'),
-              message: '还没有可读取的资产',
-              reason: '登记资产后，这里会为每一个资产恒定保留一行。',
-            )
-          else
-            // One grouped card, the spendable figure and power on each row's
-            // own second line (user ruling 2026-09-27 on decision 0092: the
-            // per-asset tray cards are withdrawn from this page).
-            LoopContentArrival(
-              animate: _sawBalancesSkeleton,
-              child: LoopRecordGroup(
-                rows: <LoopRecordRow>[
-                  for (final row in balances.balances)
-                    walletBalanceRow(
-                      row,
-                      miningText: walletAssetPowerText(
-                        miningAssets,
-                        row.assetId,
+          // Decision 0095: the keys never wait for a balance.
+          WalletQuickActions(
+            onBlocked: _blocked,
+            actions: <WalletQuickAction>[
+              WalletQuickAction(
+                actionKey: const ValueKey<String>('wallet-receive-entry'),
+                label: '接收',
+                glyph: (color) =>
+                    LoopIcon('arrow-down', size: 22, color: color),
+                onPressed: () => _open(WalletRoute.receive(walletId)),
+              ),
+              WalletQuickAction(
+                actionKey: const ValueKey<String>('wallet-send-entry'),
+                label: '发送',
+                glyph: (color) => LoopIcon('arrow-up', size: 22, color: color),
+                onPressed: sendGate.isAvailable
+                    ? () => _open('/wallet/send')
+                    : null,
+                blockedReason: sendGate.isAvailable
+                    ? null
+                    : loopReasonCodeText(
+                        sendGate.reasonCode ??
+                            'WALLET_INTENT_RUNTIME_UNAVAILABLE',
                       ),
-                      onTap: () =>
-                          _open(MarketAssetRoute.walletAsset(row.assetId)),
-                    ),
-                ],
+              ),
+              WalletQuickAction(
+                actionKey: const ValueKey<String>('wallet-swap-entry'),
+                label: '兑换',
+                glyph: (color) => LoopIcon('swap-vert', size: 22, color: color),
+                onPressed: swapGate.isAvailable
+                    ? () => _open('/wallet/swap')
+                    : null,
+                blockedReason: swapGate.isAvailable
+                    ? null
+                    : loopReasonCodeText(
+                        swapGate.reasonCode ??
+                            'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+                      ),
+              ),
+              // Decision 0113 (需求方 2026-10-08: 扫码支付先做扫码转账): the
+              // key opens the scanner. A scanned address continues into 发送
+              // with the recipient filled in and the same server preflight
+              // and signing sheet; the `pay` page itself stays unavailable.
+              WalletQuickAction(
+                actionKey: const ValueKey<String>('wallet-pay-entry'),
+                label: '扫码',
+                glyph: (color) =>
+                    Icon(Icons.qr_code_scanner_rounded, size: 22, color: color),
+                onPressed: () => _open('/scan'),
+              ),
+            ],
+          ),
+          WalletSectionHeading(
+            title: '资产',
+            trailing: WalletPowerTag(
+              onTap: () => unawaited(
+                showWalletPowerSheet(
+                  context,
+                  onOpenMining: () => _open('/mining'),
+                ),
               ),
             ),
-          // One provenance line, not two: the block a figure was read at and
-          // the reserve taken out of it are the same sentence about the same
-          // snapshot.
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('wallet-snapshot-footer'),
-            text:
-                '区块 '
-                '${loopGroupedFigure(balances.snapshot.blockNumber.toString())} · '
-                '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认 · '
-                '观察于 ${loopRelativeTime(balances.snapshot.observedAt)} · '
-                '手续费保留 '
-                '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB',
+          ),
+          ..._assetBody(
+            walletId: walletId,
+            chainClosed: chainClosed,
+            chainReason: bscGate.reasonCode,
+            state: balancesState,
+            hidden: hidden,
+            hideZero: hideZero,
           ),
           // Decision 0038: the Launch chain block exists only when the
           // backend published one. Its balance is a testnet figure and is
           // never added to the assets above or to the net worth.
-          if (balances.launchChain != null) ...<Widget>[
-            const LoopLabel('Launch 链'),
-            WalletLaunchChainCard(launchChain: balances.launchChain!),
+          if (balances?.launchChain
+              case final LoopLaunchChainBalance launch) ...<Widget>[
+            const WalletSectionHeading(title: 'Launch 链'),
+            WalletLaunchChainCard(launchChain: launch),
           ],
-          const LoopLabel('Security & Connections'),
-          // The prototype's four rows, in its order. The counts it shows —
-          // 「8 个有效授权」, 「4 条链已启用」 — are not read here, so each row
-          // says what its page is for instead of stating a figure this page
-          // never asked for.
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-security-entry'),
-                leading: const LoopRowIcon(icon: 'lock'),
-                title: '安全中心',
-                subtitle: '设备、会话与账户保护',
-                onTap: () => _open('/profile/security'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-dapp-entry'),
-                leading: const LoopRowIcon(icon: 'globe'),
-                title: 'DApp 核对',
-                subtitle: '本地核对网址；连接与签名尚未开放',
-                onTap: () => _open('/wallet/dapp'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-approvals-entry'),
-                leading: const LoopRowIcon(icon: 'shield'),
-                title: '授权盘点',
-                subtitle: '当场重读的 allowance()，回收会发送 approve(spender, 0)',
-                // 「回收会发送 approve(spe…」 cut the sentence exactly where it
-                // said what the action does.
-                subtitleMaxLines: 2,
-                onTap: () => _open('/wallet/approvals'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-networks-entry'),
-                leading: const LoopRowIcon(icon: 'settings'),
-                title: '网络与 RPC',
-                // The page lists whatever the server published: the primary
-                // chain always, and the Launch slot when it differs from it.
-                subtitle: '已启用的网络与 RPC 端点健康',
-                onTap: () => _open('/wallet/networks'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
         ],
+        const SizedBox(height: LoopSpacing.group),
+        _entryGroup(),
+        const SizedBox(height: 20),
       ],
     );
   }
 
-  /// The prototype's first screen: the Lime `Pay` pill beside 兑换, then
-  /// 发送 / 接收 / 跨链 as a three-up grid. Every entry keeps its shape
-  /// whether or not its gate is open, and none of them waits for a balance.
-  List<Widget> _moneyActions(
-    String walletId, {
-    required bool swapAvailable,
-    required bool sendAvailable,
-    required String swapReason,
-    required String sendReason,
-  }) => <Widget>[
-    LoopPrimaryActionRow(
-      onBlocked: _blocked,
-      primary: LoopAction(
-        actionKey: const ValueKey<String>('wallet-pay-entry'),
-        label: '扫码',
-        caption: '扫码转账',
-        icon: 'camera',
-        // Decision 0113 (需求方 2026-10-08: 扫码支付先做扫码转账): the pill
-        // opens the scanner. A scanned address continues into 发送 with the
-        // recipient filled in and the same server preflight and signing
-        // sheet; the `pay` page itself is untouched and stays unavailable.
-        onPressed: () => _open('/scan'),
+  /// The asset list in each of its states. A failed or closed read is one
+  /// weak line under the heading, never a block-sized card: the four keys
+  /// and the entry group around it still work.
+  List<Widget> _assetBody({
+    required String walletId,
+    required bool chainClosed,
+    required String? chainReason,
+    required LoopChainResourceState<LoopWalletBalances>? state,
+    required bool hidden,
+    required bool hideZero,
+  }) {
+    void retry() => unawaited(
+      ref.read(walletBalancesControllerProvider(walletId).notifier).reload(),
+    );
+    if (chainClosed) {
+      return <Widget>[
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('wallet-balances-state-unavailable'),
+          message: loopReasonCodeText(
+            chainReason ?? 'BSC_CHAIN_RUNTIME_UNAVAILABLE',
+          ),
+        ),
+      ];
+    }
+    if (state == null || state.phase == LoopChainViewPhase.loading) {
+      return const <Widget>[
+        LoopSkeleton(
+          key: ValueKey<String>('wallet-balances-state-loading'),
+          type: LoopSkeletonType.record,
+          rows: 4,
+          leadingSize: 40,
+          subtitleLines: 1,
+        ),
+      ];
+    }
+    if (!state.isReady) {
+      if (state.phase == LoopChainViewPhase.empty) {
+        return const <Widget>[
+          LoopEmpty(
+            key: ValueKey<String>('wallet-balances-state-empty'),
+            message: '这个钱包还没有可读资产',
+          ),
+        ];
+      }
+      final permission = state.phase == LoopChainViewPhase.permission;
+      return <Widget>[
+        // Keyed by phase, as the state block was: an offline read, a
+        // refused one and a failed one stay three different answers.
+        LoopInlineUnavailable(
+          key: ValueKey<String>('wallet-balances-state-${state.phase.name}'),
+          icon: loopChainIsOffline(state.failureKind) ? 'offline' : 'warn',
+          message: _balancesFailureLine(state.phase, state.failureKind),
+          onRetry: permission ? null : retry,
+        ),
+      ];
+    }
+    final balances = state.value!;
+    if (balances.balances.isEmpty) {
+      return const <Widget>[
+        LoopEmpty(
+          key: ValueKey<String>('wallet-balances-empty'),
+          message: '还没有可读取的资产',
+          reason: '登记资产后，这里会为每一个资产恒定保留一行。',
+        ),
+      ];
+    }
+    final zeroCount = balances.balances.where(walletRowIsZero).length;
+    final visible = hideZero
+        ? balances.balances
+              .where((row) => !walletRowIsZero(row))
+              .toList(growable: false)
+        : balances.balances;
+    final netWorth = balances.netWorth;
+    return <Widget>[
+      LoopContentArrival(
+        animate: _sawBalancesSkeleton,
+        child: Column(
+          key: const ValueKey<String>('wallet-asset-list'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final row in visible)
+              WalletAssetLine(
+                row: row,
+                hidden: hidden,
+                onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
+                onRetry: retry,
+              ),
+            if (visible.isEmpty)
+              LoopInlineUnavailable(
+                key: const ValueKey<String>('wallet-balances-all-zero'),
+                icon: 'info',
+                message: '余额都为 0，已收起',
+              ),
+          ],
+        ),
       ),
-      secondary: LoopAction(
-        actionKey: const ValueKey<String>('wallet-swap-entry'),
-        label: '兑换',
-        icon: 'swap-vert',
-        onPressed: swapAvailable ? () => _open('/wallet/swap') : null,
-        blockedReason: swapAvailable ? null : swapReason,
+      if (zeroCount > 0)
+        WalletZeroBalanceToggle(
+          hideZero: hideZero,
+          zeroCount: zeroCount,
+          onToggle: () =>
+              ref.read(walletHideZeroBalancesProvider.notifier).toggle(),
+        ),
+      // One provenance line for the whole list: the block every balance was
+      // read at, the price source and when it was observed. The full
+      // statement — confirmations and the gas reserve included — is one tap
+      // away.
+      LoopProvenanceLine(
+        key: const ValueKey<String>('wallet-snapshot-footer'),
+        prefix:
+            '区块 ${loopGroupedFigure(balances.snapshot.blockNumber.toString())}',
+        sources: <String>[
+          if (netWorth is LoopNetWorthValued)
+            loopFactSourceLabel(netWorth.priceSource),
+        ],
+        observedAt: balances.snapshot.observedAt,
+        detail:
+            '每一行余额都读自同一个区块（'
+            '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认）。'
+            '原生 BNB 会保留 '
+            '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB '
+            '作为手续费，不计入可动用。',
       ),
-    ),
-    LoopActionGrid(
-      onBlocked: _blocked,
-      actions: <LoopAction>[
-        LoopAction(
-          actionKey: const ValueKey<String>('wallet-send-entry'),
-          label: '发送',
-          icon: 'arrow-up',
-          onPressed: sendAvailable ? () => _open('/wallet/send') : null,
-          blockedReason: sendAvailable ? null : sendReason,
-        ),
-        LoopAction(
-          actionKey: const ValueKey<String>('wallet-receive-entry'),
-          label: '接收',
-          icon: 'arrow-down',
-          onPressed: () => _open(WalletRoute.receive(walletId)),
-        ),
-        // 跨链 has no provider, and a grey tile whose only answer was
-        // a 2.6-second toast read as a control that does nothing at
-        // all. The entry opens the bridge page, which is where the
-        // reason stands still long enough to be read — and which is
-        // where the prototype's 跨链 goes.
-        LoopAction(
-          actionKey: const ValueKey<String>('wallet-bridge-entry'),
-          label: '跨链',
-          icon: 'globe',
-          onPressed: () => _open('/wallet/bridge'),
-        ),
-      ],
-    ),
-  ];
-}
+    ];
+  }
 
-class _WalletPrimary extends StatelessWidget {
-  const _WalletPrimary({
-    required this.directory,
-    required this.directoryIsEmpty,
-    required this.balances,
-    required this.onOpenNetWorth,
-    this.loading = false,
-    this.environmentTag,
-  });
-
-  final LoopWalletDirectory? directory;
-
-  /// Decision 0100: the backend environment on a non-release build, `null`
-  /// on a release build (and then nothing is drawn).
-  final String? environmentTag;
-
-  /// The figure is on its way (decision 0095): the heading is a skeleton of
-  /// its own height, never 0 and never a sentence the figure then replaces.
-  final bool loading;
-
-  /// The directory was read and holds no wallet. Without it the caption could
-  /// not tell "you have no wallet" from "the list was not read".
-  final bool directoryIsEmpty;
-  final LoopWalletBalances? balances;
-  final VoidCallback onOpenNetWorth;
-
-  @override
-  Widget build(BuildContext context) {
-    final active = directory?.active;
-    final netWorth = balances?.netWorth;
-    // A folio heading is a figure or a conclusion, never the page's own title:
-    // 「钱包」 over the wallet page made the primary a second title bar (audit
-    // item 1). Before the first read there is no figure, and the heading says
-    // that instead.
-    final heading = switch (netWorth) {
-      LoopNetWorthValued(valueUsd: final value) => loopFormatUsd(value),
-      LoopNetWorthUnavailable() => '净值不可用',
-      null => '余额还没有读到',
+  /// One short line per failure, so the asset list keeps its place.
+  String _balancesFailureLine(
+    LoopChainViewPhase phase,
+    LoopChainFailureKind? kind,
+  ) {
+    if (phase == LoopChainViewPhase.permission) return '当前账号没有权限读取余额';
+    return switch (kind) {
+      LoopChainFailureKind.offline => '网络已断开，余额没有读到',
+      LoopChainFailureKind.timedOut => '读取超时，余额没有读到',
+      LoopChainFailureKind.rateLimited => '请求过于频繁，稍后再试',
+      LoopChainFailureKind.unavailable => '链上余额暂时读不到',
+      _ => '余额暂时读不到',
     };
-    return LoopFolioPrimary(
-      key: const ValueKey<String>('wallet-folio'),
-      archetype: LoopFolioArchetype.record,
-      kicker: 'WALLET LEDGER',
-      kickerTrailing: environmentTag == null
-          ? null
-          : LoopEnvironmentTag(
-              environmentTag!,
-              key: const ValueKey<String>('wallet-environment-tag'),
-            ),
-      heading: loading && netWorth == null ? '净值读取中' : heading,
-      headingLoading: loading && netWorth == null,
-      // Three answers the caption must keep apart: the list was never read,
-      // the list was read and holds no wallet, and the list holds wallets but
-      // names no active one. Only the first is a failed read.
-      caption: switch ((active, directoryIsEmpty, directory)) {
-        (final LoopWalletAccount active, _, _)
-            when loading && netWorth == null =>
-          '${active.truncatedAddress} · 净值读取中',
-        (null, false, null) when loading => '钱包与余额读取中。',
-        (final LoopWalletAccount active, _, _) =>
-          '${active.truncatedAddress} · '
-              '${netWorth is LoopNetWorthValued && netWorth.partial ? '部分资产未估值' : '净值不是可用余额'}',
-        (_, true, _) => '这个账号还没有钱包，创建后余额会出现在这里。',
-        (_, _, null) => '钱包列表暂时读不到，这里不显示余额。',
-        _ => '还没有选定当前钱包，这里不显示余额。',
-      },
-      // The prototype's wallet ledger card carries no stamp: the address line
-      // and the 净值明细 chevron are the whole footer.
-      trailing: LoopIconButton(
-        key: const ValueKey<String>('wallet-networth-entry'),
-        icon: 'chevron',
-        label: '查看净值明细',
-        onPressed: onOpenNetWorth,
-      ),
-    );
   }
+
+  /// The wallet's management pages, in one group at the bottom: 跨链, the
+  /// second-level 授权与网络 list, 安全中心 and 设置 (B6).
+  Widget _entryGroup() => LoopRecordGroup(
+    key: const ValueKey<String>('wallet-entry-group'),
+    rows: <LoopRecordRow>[
+      // 跨链 has no provider; the bridge page is where its reason stands
+      // still long enough to be read.
+      LoopRecordRow(
+        key: const ValueKey<String>('wallet-bridge-entry'),
+        leading: const LoopRowIcon(icon: 'shuffle'),
+        title: '跨链',
+        subtitle: '在不同网络之间转移资产',
+        onTap: () => _open('/wallet/bridge'),
+      ),
+      LoopRecordRow(
+        key: const ValueKey<String>('wallet-connections-entry'),
+        leading: const LoopRowIcon(icon: 'shield'),
+        title: '授权与网络',
+        subtitle: '代币授权、网络与 DApp 网址核对',
+        onTap: () =>
+            unawaited(showWalletConnectionsSheet(context, onOpen: _open)),
+      ),
+      LoopRecordRow(
+        key: const ValueKey<String>('wallet-security-entry'),
+        leading: const LoopRowIcon(icon: 'lock'),
+        title: '安全中心',
+        subtitle: '设备、登录与账户保护',
+        onTap: () => _open('/profile/security'),
+      ),
+      LoopRecordRow(
+        key: const ValueKey<String>('wallet-settings-entry'),
+        leading: const LoopRowIcon(icon: 'settings'),
+        title: '设置',
+        subtitle: '通用、通知与显示',
+        onTap: () => _open('/profile/settings'),
+      ),
+    ],
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -656,24 +657,20 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
       archetype: LoopPageArchetype.listing,
       title: '净值明细',
       onBack: widget.onBack,
-      // The prototype's net-worth primary is a Chalk card, and it is the page's
-      // only figure. The app painted the same dark Lime folio every other page
-      // wears and then repeated the total in a card below it (audit §A.2).
-      primary: LoopFolioPrimary(
+      // Decision 0119: the page heads with the same 总资产 block the wallet tab
+      // does — figure, eye, 24h line — the way a token page heads with its
+      // price. 「不是可用余额」 and the sources sit behind its (i).
+      primary: WalletTotalHeader(
         key: const ValueKey<String>('networth-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        archetype: LoopFolioArchetype.listing,
-        kicker: 'WALLET OVERVIEW',
-        heading: switch (netWorth) {
-          LoopNetWorthValued(valueUsd: final value) => loopFormatUsd(value),
-          LoopNetWorthUnavailable() => '净值不可用',
-          null => '净值还没有读到',
-        },
-        caption: '全部钱包资产的当前估值与资产构成。',
-        stamp: netWorth is LoopNetWorthValued && netWorth.partial
-            ? 'PARTIAL'
-            : null,
+        keyPrefix: 'networth',
+        balances: balances,
+        loading:
+            !blocked &&
+            !noWalletYet &&
+            (state?.phase ??
+                    ref.watch(walletDirectoryControllerProvider).phase) ==
+                LoopChainViewPhase.loading,
+        unreadText: noWalletYet ? '还没有钱包' : '暂不可用',
       ),
       block: blocked
           ? _walletPageBlock(
@@ -702,11 +699,7 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
                   ),
           )
         else ...<Widget>[
-          // The total is the heading now; what stays here is everything the
-          // heading cannot carry — 不是可用余额, the partial count, the quality
-          // mark and the source.
-          WalletNetWorthCard(netWorth: balances!.netWorth, compact: true),
-          const LoopLabel('按资产'),
+          const WalletSectionHeading(title: '按资产', top: LoopSpacing.tight),
           // The prototype's 按资产 / 按链 / 按社区 segment bar is not here: one
           // chain is published and community binding has no read, so two of
           // the three chips would be dead and the third would group the list
@@ -714,24 +707,33 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
           // A registry with no readable row must say so. An unlabelled empty
           // group would read as "this wallet holds nothing", which the read
           // does not prove.
-          if (balances.balances.isEmpty)
+          if (balances!.balances.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('networth-empty'),
               message: '这个钱包还没有可计入净值的资产',
               reason: '净值只累计已登记且可读的资产；读不到的资产不会被当作 0。',
             )
           else
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                for (final row in balances.balances)
-                  walletBalanceRow(
-                    row,
-                    onTap: () =>
-                        _open(MarketAssetRoute.walletAsset(row.assetId)),
-                  ),
-              ],
-            ),
-          WalletSnapshotFooter(snapshot: balances.snapshot),
+            for (final row in balances.balances)
+              WalletAssetLine(
+                row: row,
+                hidden: ref.watch(walletAmountsHiddenProvider),
+                onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
+              ),
+          LoopProvenanceLine(
+            key: const ValueKey<String>('wallet-snapshot-footer'),
+            prefix:
+                '区块 ${loopGroupedFigure(balances.snapshot.blockNumber.toString())}',
+            sources: <String>[
+              if (netWorth is LoopNetWorthValued)
+                loopFactSourceLabel(netWorth.priceSource),
+            ],
+            observedAt: balances.snapshot.observedAt,
+            detail:
+                '净值只累计已登记且有价格的资产，是展示用的估值，不是可用余额。'
+                '每一行余额都读自同一个区块（'
+                '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认）。',
+          ),
           // The prototype's 30D area chart keeps its panel. Nothing is drawn
           // in it: net worth over time needs the holdings this account held on
           // each of those days, and no read reports them. Multiplying today's
@@ -740,7 +742,7 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
           const LoopChartPanel(
             key: ValueKey<String>('networth-trend-unavailable'),
             range: '30D',
-            absence: '净值走势与 24h 涨跌还没有数据来源，读到之前这里不画任何走势。',
+            absence: '净值走势还没有数据来源，读到之前这里不画任何走势。',
           ),
         ],
       ],
@@ -909,7 +911,7 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('wallet-asset-folio'),
         archetype: LoopFolioArchetype.record,
-        kicker: 'WALLET ASSET',
+        kicker: '钱包资产',
         // 「PEPE · $12,420」 — the ticker with what the holding is worth. A
         // balance with no price heads with the balance instead; neither is
         // ever the page's title.
@@ -1075,7 +1077,7 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
               ),
             ],
           ),
-          const LoopLabel('Wallet 收发记录'),
+          const LoopLabel('收发记录'),
           _WalletAssetTransfers(
             walletId: walletId,
             assetId: assetId,
@@ -1574,7 +1576,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         variant: LoopFolioVariant.chalk,
         ring: false,
         archetype: LoopFolioArchetype.action,
-        kicker: 'RECEIVE ADDRESS',
+        kicker: '收款地址',
         heading: network == null
             ? '收款地址还没有读到'
             : '${network.name} · ${loopTruncatedAddress(network.address)}',
@@ -1860,7 +1862,7 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('wallets-folio'),
         archetype: LoopFolioArchetype.record,
-        kicker: 'WALLET IDENTITY',
+        kicker: '我的钱包',
         heading: switch (directory?.active) {
           final LoopWalletAccount active => active.truncatedAddress,
           null when directory != null => '还没有选定当前钱包',
@@ -2085,6 +2087,22 @@ class _TransactionHistoryScreenState
   int _segment = 0;
   bool _exporting = false;
 
+  /// A next page is on its way; one skeleton row stands at the end of the
+  /// tape until it lands.
+  bool _loadingMore = false;
+
+  Future<void> _loadMore(String walletId) async {
+    if (_loadingMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      await ref
+          .read(walletActivityControllerProvider(walletId).notifier)
+          .loadMore();
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
   /// Encodes the rows the selected segment lists and hands them to the share
   /// sheet. The two segments that carry an unavailable fact rather than a
   /// list have nothing to encode, and say so instead of exporting a file with
@@ -2208,13 +2226,12 @@ class _TransactionHistoryScreenState
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('tx-history-folio'),
         archetype: LoopFolioArchetype.record,
-        kicker: 'WALLET ACTIVITY',
+        kicker: '钱包记录',
         // The figure counts what the segment below actually lists. A tape
         // filtered to 发出 and showing nothing used to keep 「1 笔」 in the
         // hero, which reads as a row the list lost.
         heading: page == null ? '记录还没有读到' : '${_segmentCount(page)} 笔',
         caption: '发送、接收、兑换与跨链结果按时间形成统一钱包记录。',
-        stamp: page == null ? null : '${_segmentCount(page)} TXNS',
       ),
       block: blocked
           ? _walletPageBlock(
@@ -2266,7 +2283,7 @@ class _TransactionHistoryScreenState
             LoopOfflineState(
               cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>('tx-history-page-offline'),
-              pausedActions: const <String>['加载更多'],
+              pausedActions: const <String>['继续加载'],
               onRetry: () => unawaited(
                 ref
                     .read(walletActivityControllerProvider(walletId).notifier)
@@ -2284,16 +2301,25 @@ class _TransactionHistoryScreenState
                     .loadMore(),
               ),
             )
-          else if (page.nextCursor != null)
-            LoopButton(
+          // v3 需求 6.2 · 4 (decision 0119): the tape scrolls on. The
+          // sentinel asks for the next cursor once it is built — that is,
+          // once the reader has scrolled near the end — and each cursor once.
+          else if (page.nextCursor case final String cursor) ...<Widget>[
+            LoopLoadMoreSentinel(
               key: const ValueKey<String>('tx-history-load-more'),
-              label: '加载更多',
-              block: true,
-              onPressed: () => unawaited(
-                ref
-                    .read(walletActivityControllerProvider(walletId).notifier)
-                    .loadMore(),
+              cursor: cursor,
+              onLoadMore: () => unawaited(_loadMore(walletId)),
+            ),
+            if (_loadingMore)
+              const LoopSkeleton(
+                key: ValueKey<String>('tx-history-loading-more'),
+                type: LoopSkeletonType.record,
+                rows: 1,
               ),
+          ] else if (page.items.isNotEmpty)
+            const LoopProvenanceFooter(
+              key: ValueKey<String>('tx-history-end'),
+              text: '没有更早的记录',
             ),
         ],
       ],
@@ -2605,7 +2631,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('networks-folio'),
         archetype: LoopFolioArchetype.record,
-        kicker: 'NETWORK HEALTH',
+        kicker: '网络状态',
         // Lime is the success colour, and 「1 / 4 正常」 in Lime read as good
         // news over four endpoints of which two were unreachable. The figure
         // stays; the colour follows the majority of what was measured.

@@ -72,9 +72,7 @@ void main() {
   });
 
   group('wallet hero tag', () {
-    testWidgets('a non-release build shows STAGING beside the kicker', (
-      tester,
-    ) async {
+    testWidgets('a non-release build shows STAGING beside 总资产', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -91,8 +89,8 @@ void main() {
         findsOneWidget,
       );
       expect(tester.getSize(tag).height, LoopEnvironmentTag.height);
-      // Same line as the kicker, at its right end.
-      final kicker = find.text('WALLET LEDGER');
+      // Same line as 「总资产」 (decision 0119), at its right end.
+      final kicker = find.text('总资产');
       expect(
         (tester.getCenter(tag).dy - tester.getCenter(kicker).dy).abs(),
         lessThan(2),
@@ -115,7 +113,7 @@ void main() {
         findsNothing,
       );
       expect(find.byType(LoopEnvironmentTag), findsNothing);
-      expect(find.text('WALLET LEDGER'), findsOneWidget);
+      expect(find.text('总资产'), findsOneWidget);
     });
   });
 

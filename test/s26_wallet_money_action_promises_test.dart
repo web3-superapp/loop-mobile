@@ -37,7 +37,7 @@ void main() {
       expect(send, findsOneWidget);
       expect(find.text('发送'), findsOneWidget);
       expect(find.text('扫码'), findsOneWidget);
-      expect(find.text('扫码转账'), findsOneWidget);
+      expect(find.text('接收'), findsOneWidget);
       expect(find.text('兑换'), findsOneWidget);
       expect(find.text('跨链'), findsOneWidget);
       // The promise the page cannot keep is gone, and so is the row that

@@ -76,7 +76,18 @@ void main() {
         ),
       );
 
-      await expectOffline(tester, 'wallet-balances');
+      // Decision 0119: the asset list states the offline read in one line
+      // with a retry; the keys and the entries around it stay.
+      expect(
+        find.byKey(const ValueKey<String>('wallet-balances-state-offline')),
+        findsOneWidget,
+      );
+      expect(find.text('网络已断开，余额没有读到'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('loop-inline-unavailable-retry')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('\$'), findsNothing);
     });
 
     testWidgets('networth pauses without inventing a total', (tester) async {

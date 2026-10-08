@@ -658,6 +658,9 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       'proxyAsset',
       'priceUsd',
       'valueUsd',
+      // Decision 0100: required on every valued row, `null` when the
+      // Provider did not report a 24h move.
+      'change24hPct',
     });
     if (map['status'] != 'available') LoopV2ChainCodec.invalid();
     final rawQuality = map['quality'];
@@ -687,6 +690,11 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       proxyAsset: proxyAsset,
       priceUsd: LoopV2ChainCodec.requireDecimal(map, 'priceUsd'),
       valueUsd: LoopV2ChainCodec.requireDecimal(map, 'valueUsd'),
+      change24hPct: LoopV2ChainCodec.optionalDecimal(
+        map,
+        'change24hPct',
+        signed: true,
+      ),
     );
   }
 
@@ -849,16 +857,24 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         LoopV2ChainCodec.requireReasonCode(map, 'reasonCode'),
       );
     }
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'status',
-      'valuationCurrency',
-      'valueUsd',
-      'unavailableCount',
-      'quality',
-      'priceSource',
-      'asOf',
-      'isSpendable',
-    });
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{
+        'status',
+        'valuationCurrency',
+        'valueUsd',
+        'unavailableCount',
+        'quality',
+        'priceSource',
+        'asOf',
+        'isSpendable',
+        // Decision 0100: always present on a valued net worth, `null` when
+        // the server would not give a 24h figure.
+        'change24h',
+      },
+      // Present exactly when `change24h` is null.
+      const <String>{'change24hUnavailable'},
+    );
     final status = map['status'];
     if (status != 'available' && status != 'partial') {
       LoopV2ChainCodec.invalid();
@@ -889,6 +905,32 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       // Net worth is display information, never a balance. The wire pins this
       // to false and any other value is an invalid payload.
       isSpendable: LoopV2ChainCodec.requireFalse(map, 'isSpendable'),
+      change24h: _netWorthChange(map),
+    );
+  }
+
+  /// `change24h` and `change24hUnavailable` are one fact in two shapes: a
+  /// figure, or the reason there is none. Both, or neither, is invalid — a
+  /// partial sum the backend promises never to send must not be accepted
+  /// either.
+  static LoopNetWorthChange _netWorthChange(Map<String, Object?> map) {
+    final raw = map['change24h'];
+    final hasReason = map.containsKey('change24hUnavailable');
+    if (raw == null) {
+      if (!hasReason) LoopV2ChainCodec.invalid();
+      final reason = LoopV2Contract.strictMap(
+        map['change24hUnavailable'],
+        const <String>{'reasonCode'},
+      );
+      return LoopNetWorthChangeUnavailable(
+        LoopV2ChainCodec.requireReasonCode(reason, 'reasonCode'),
+      );
+    }
+    if (hasReason) LoopV2ChainCodec.invalid();
+    final change = LoopV2Contract.strictMap(raw, const <String>{'usd', 'pct'});
+    return LoopNetWorthChangeAvailable(
+      usd: LoopV2ChainCodec.requireDecimal(change, 'usd', signed: true),
+      pct: LoopV2ChainCodec.requireDecimal(change, 'pct', signed: true),
     );
   }
 }
