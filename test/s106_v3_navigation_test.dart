@@ -13,7 +13,8 @@ import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
-import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
+import 'package:loop_mobile/features/intel/intel_rank_board.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/features/square/square_screen.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -467,19 +468,21 @@ void main() {
   });
 
   group('intel', () {
-    testWidgets('算力榜 adds a 推广 board that says it is not open', (tester) async {
+    testWidgets('算力榜 reads the 推广 board from the server', (tester) async {
+      final mining = FakeMiningGateway();
       await pumpS7Page(
         tester,
-        const MiningRankScreen(embedded: true, includeReferralScope: true),
-        mining: FakeMiningGateway(),
+        IntelRankBoard(onNavigate: (_) {}),
+        mining: mining,
       );
       // Embedded: the tab page owns the bar.
       expect(find.text('算力排行榜'), findsNothing);
-      await tester.tap(find.text('推广榜'));
+      await tester.tap(find.text('推广'));
       await tester.pumpAndSettle();
+      expect(mining.scopes, contains(MiningRankScope.referrals));
       expect(
         find.byKey(const ValueKey<String>('mining-rank-referral-unavailable')),
-        findsOneWidget,
+        findsNothing,
       );
     });
 

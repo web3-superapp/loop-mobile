@@ -15,6 +15,8 @@ final class AlertsState {
     this.failureKind,
     this.busy = false,
     this.refreshing = false,
+    this.loadingMore = false,
+    this.appendFailed = false,
   });
 
   factory AlertsState.initial(LoopChainGatewayMode mode) {
@@ -39,6 +41,12 @@ final class AlertsState {
   /// loads as a skeleton.
   final bool refreshing;
 
+  /// The page after the alerts on screen is being read (decision 0118).
+  final bool loadingMore;
+
+  /// The last page request failed; the alerts read so far stay.
+  final bool appendFailed;
+
   bool get isReady => phase == LoopChainViewPhase.ready && page != null;
 
   List<LoopPriceAlert> get items => page?.items ?? const <LoopPriceAlert>[];
@@ -50,6 +58,8 @@ final class AlertsState {
     bool clearFailure = false,
     bool? busy,
     bool? refreshing,
+    bool? loadingMore,
+    bool? appendFailed,
   }) => AlertsState(
     mode: mode,
     phase: phase ?? this.phase,
@@ -57,6 +67,8 @@ final class AlertsState {
     failureKind: clearFailure ? null : (failureKind ?? this.failureKind),
     busy: busy ?? this.busy,
     refreshing: refreshing ?? this.refreshing,
+    loadingMore: loadingMore ?? this.loadingMore,
+    appendFailed: appendFailed ?? this.appendFailed,
   );
 }
 
@@ -104,6 +116,37 @@ final class AlertsController extends Notifier<AlertsState>
       _fail(LoopChainFailureKind.unexpected);
     }
   });
+
+  /// Reads the page after the alerts on screen, as the reader scrolls
+  /// (decision 0118). An alert already held is not listed twice.
+  Future<void> loadMore() async {
+    final current = state.page;
+    final cursor = current?.nextCursor;
+    if (current == null || cursor == null || state.loadingMore) return;
+    final generation = nextGeneration();
+    state = state.copyWith(loadingMore: true, appendFailed: false);
+    try {
+      final next = await ref
+          .read(alertsGatewayProvider)
+          .listAlerts(cursor: cursor);
+      if (!isCurrent(generation)) return;
+      final held = <String>{for (final alert in current.items) alert.alertId};
+      state = state.copyWith(
+        loadingMore: false,
+        page: LoopAlertPage(
+          items: <LoopPriceAlert>[
+            ...current.items,
+            for (final alert in next.items)
+              if (held.add(alert.alertId)) alert,
+          ],
+          nextCursor: next.nextCursor,
+        ),
+      );
+    } catch (_) {
+      if (!isCurrent(generation)) return;
+      state = state.copyWith(loadingMore: false, appendFailed: true);
+    }
+  }
 
   /// Creates one alert. The threshold travels as a string all the way to the
   /// wire; the client never parses it into a `double`.

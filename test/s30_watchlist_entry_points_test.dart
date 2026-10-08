@@ -29,16 +29,15 @@ void main() {
   final Finder addRow = find.byKey(
     const ValueKey<String>('market-watchlist-add'),
   );
+  final Finder browse = find.byKey(
+    const ValueKey<String>('market-watchlist-browse-major'),
+  );
 
   group('market · 自选 names the way in', () {
-    testWidgets('an empty Watchlist offers the route to a token page', (
-      tester,
-    ) async {
-      final routes = <String>[];
-      await pumpS5Page(
-        tester,
-        MarketScreen(onNavigate: routes.add),
-        market: FakeMarketReadGateway(
+    testWidgets(
+      'an empty Watchlist leads to 主流, where every row opens a token page',
+      (tester) async {
+        final market = FakeMarketReadGateway(
           overview: S5Answer<MarketOverview>(
             value: s5Overview(
               watchlist: MarketWatchlistAvailable(
@@ -47,22 +46,21 @@ void main() {
               ),
             ),
           ),
-        ),
-      );
+        );
+        await pumpS5Page(tester, const MarketScreen(), market: market);
 
-      await scrollToS5Section(tester, addRow);
-      expect(
-        find.byKey(const ValueKey<String>('market-watchlist-empty')),
-        findsOneWidget,
-      );
-      expect(find.text('添加自选资产'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('market-watchlist-empty')),
+          findsOneWidget,
+        );
+        await tester.tap(browse);
+        await tester.pumpAndSettle();
+        // Decision 0118: no 新币 detour; the chip switches to 主流 in place.
+        expect(market.categoryRequests.single.$1, MarketCategory.major);
+      },
+    );
 
-      await tester.tap(addRow);
-      await tester.pumpAndSettle();
-      expect(routes, <String>['/market/new']);
-    });
-
-    testWidgets('a Watchlist that already has rows keeps the same way in', (
+    testWidgets('a Watchlist that already has rows is managed in the editor', (
       tester,
     ) async {
       final routes = <String>[];
@@ -72,12 +70,14 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      await scrollToS5Section(tester, addRow);
-      expect(addRow, findsOneWidget);
-
-      await tester.tap(addRow);
+      final manage = find.byKey(
+        const ValueKey<String>('market-watchlist-manage'),
+      );
+      await scrollToS5Section(tester, manage);
+      await tester.tap(manage);
       await tester.pumpAndSettle();
-      expect(routes, <String>['/market/new']);
+      // The bug of 2026-10-08: 管理自选 opened the alerts page.
+      expect(routes, <String>['/market/watchlist']);
     });
 
     testWidgets('a Watchlist that could not be read offers no way in', (
@@ -146,7 +146,8 @@ void main() {
 
       await tester.tap(add);
       await tester.pumpAndSettle();
-      expect(routes, <String>['/market/new']);
+      // Decision 0118: with 新币 hidden, 添加资产 opens 情报 · 行情.
+      expect(routes, <String>['/intel']);
     });
 
     testWidgets('an empty group offers the same control, not only a sentence', (
@@ -174,7 +175,8 @@ void main() {
 
       await tester.tap(add);
       await tester.pumpAndSettle();
-      expect(routes, <String>['/market/new']);
+      // Decision 0118: with 新币 hidden, 添加资产 opens 情报 · 行情.
+      expect(routes, <String>['/intel']);
     });
   });
 

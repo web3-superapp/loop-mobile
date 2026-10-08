@@ -13,7 +13,8 @@ abstract interface class MiningGateway {
 
   Future<MiningRewards> loadRewards();
 
-  Future<MiningRank> loadRank(MiningRankScope scope);
+  /// One page of one board; [cursor] continues the board it came from.
+  Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor});
 
   Future<MiningCommunity> loadCommunity(String communityId);
 
@@ -41,7 +42,8 @@ final class UnavailableMiningGateway implements MiningGateway {
   Future<MiningRewards> loadRewards() => _unavailable();
 
   @override
-  Future<MiningRank> loadRank(MiningRankScope scope) => _unavailable();
+  Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor}) =>
+      _unavailable();
 
   @override
   Future<MiningCommunity> loadCommunity(String communityId) => _unavailable();

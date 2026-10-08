@@ -8,7 +8,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
-import 'package:loop_mobile/features/market/loop_candle_chart.dart';
+import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
@@ -417,8 +417,10 @@ void main() {
         ),
       );
 
-      final close = find.textContaining('C ');
-      expect(tester.widget<Text>(close.first).style?.color, LoopColors.fall);
+      // Decision 0118: the OHLC readout left with the old chart; the move
+      // under the price carries the direction, in rise / fall.
+      final change = find.byKey(const ValueKey<String>('token-change'));
+      expect(tester.widget<Text>(change).style?.color, LoopColors.rise);
     });
 
     testWidgets('明细行的向下副标题也是 fall', (tester) async {
@@ -484,6 +486,10 @@ void main() {
         const ValueKey<String>('token-moving-averages'),
       );
       expect(averages, findsOneWidget);
+      // MA is off by default (decision 0118); switching it on reads it out.
+      expect(tester.widget<Text>(averages).data, isNot(contains('MA7')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-chart-ma')));
+      await tester.pumpAndSettle();
       expect(tester.widget<Text>(averages).data, contains('MA7'));
       // 紧贴上方：读数行在图之上，图在读数行之下的同一张卡里。
       final chart = find.byKey(const ValueKey<String>('token-candle-chart'));
@@ -492,10 +498,10 @@ void main() {
         lessThan(tester.getTopLeft(chart).dy),
       );
       // 成交量与 K 线同屏。
-      expect(tester.widget<LoopCandleChart>(chart).showVolume, isTrue);
+      expect(tester.widget<LoopMarketChart>(chart).showVolume, isTrue);
     });
 
-    testWidgets('下半页是社区 / 持有人 / 成交 / 简介 四个 Tab', (tester) async {
+    testWidgets('下半页是持有者 / 动态 / 关于 三个 Tab', (tester) async {
       await pumpS5Page(
         tester,
         const TokenDetailScreen(assetId: s5WbnbAssetId),
@@ -523,24 +529,28 @@ void main() {
           findsOneWidget,
         );
       }
-      // 社区 is the tab the page opens on, and it lists the bound community
-      // as a row rather than as a link to a link.
+      // Decision 0118: 持有者 opens first; the bound community is a row
+      // under 关于, and 动态 lists the trades in place.
+      expect(
+        find.byKey(const ValueKey<String>('token-holders-count')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.pumpAndSettle();
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-community-entry')),
+      );
       expect(
         find.byKey(const ValueKey<String>('token-community-entry')),
         findsOneWidget,
       );
-      // 「更多」 is gone: the two rows it held are the other two tabs.
-      expect(
-        find.byKey(const ValueKey<String>('token-holders-entry')),
-        findsNothing,
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-成交')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-动态')));
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('token-trades-entry')),
-        findsOneWidget,
-      );
       expect(
         find.byKey(const ValueKey<String>('token-community-entry')),
         findsNothing,
@@ -554,7 +564,13 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      final cells = find.byKey(const ValueKey<String>('token-quote-cells'));
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-section-tabs')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.pumpAndSettle();
+      final cells = find.byKey(const ValueKey<String>('token-about-cells'));
       expect(
         find.descendant(of: cells, matching: find.text('24h 高')),
         findsOneWidget,
@@ -584,7 +600,13 @@ void main() {
         ),
       );
 
-      final cells = find.byKey(const ValueKey<String>('token-quote-cells'));
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-section-tabs')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.pumpAndSettle();
+      final cells = find.byKey(const ValueKey<String>('token-about-cells'));
       expect(
         find.descendant(of: cells, matching: find.text(marketMissingFigure)),
         findsNWidgets(2),

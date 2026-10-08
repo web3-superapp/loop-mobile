@@ -56,6 +56,24 @@ abstract interface class LoopV2MarketApi {
     required String accessToken,
     required String clientVersion,
   });
+
+  /// One page of one 情报 category (decision 0100). The first page names
+  /// [category], [sort] and optionally [limit]; a continuation names the same
+  /// two plus [cursor] and never [limit] — the page size rides in the cursor.
+  Future<MarketCategoryPage> getCategory({
+    required String accessToken,
+    required String clientVersion,
+    required MarketCategory category,
+    required MarketCategorySort sort,
+    String? cursor,
+    int? limit,
+  });
+
+  /// The 情报 promotion strip (decision 0100). Takes no query.
+  Future<IntelPromotions> getPromotions({
+    required String accessToken,
+    required String clientVersion,
+  });
 }
 
 final class DioLoopV2MarketApi implements LoopV2MarketApi {
@@ -69,6 +87,18 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
   static const assetsPath = '/v2/market/assets';
   static const newPairsPath = '/v2/market/new-pairs';
   static const smartMoneyPath = '/v2/market/smart-money';
+  static const promotionsPath = '/v2/intel/promotions';
+
+  /// The four in-app locations a promotion may open (decision 0100). The
+  /// server refuses any other at start-up; the client refuses it again.
+  static final RegExp _promotionDeeplinkPattern = RegExp(
+    r'^(/intel|/square|/meme|/community/profile\?id=[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$',
+  );
+  static final RegExp _httpsPattern = RegExp(r'^https://\S+$');
+  static final RegExp _logoUrlPattern = RegExp(r'^https?://\S+$');
+  static final RegExp _communityLogoRefPattern = RegExp(
+    r'^(avatar:preset/community-(0[1-9]|1[0-2])|logo:media/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$',
+  );
 
   final Dio _dio;
 
@@ -359,6 +389,320 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     }
   }
 
+  @override
+  Future<MarketCategoryPage> getCategory({
+    required String accessToken,
+    required String clientVersion,
+    required MarketCategory category,
+    required MarketCategorySort sort,
+    String? cursor,
+    int? limit,
+  }) async {
+    if (cursor != null) {
+      _requireCursorShape(cursor);
+      // The page size travels inside the cursor; naming it again is a 400.
+      if (limit != null) {
+        throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+      }
+    }
+    if (limit != null && (limit < 1 || limit > 50)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    try {
+      final response = await _dio.get<Object?>(
+        assetsPath,
+        queryParameters: <String, Object?>{
+          'category': category.wireName,
+          'sort': sort.wireName,
+          'cursor': ?cursor,
+          'limit': ?limit,
+        },
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      return decodeCategory(response.data, category: category, sort: sort);
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.chainReadErrors,
+      );
+    }
+  }
+
+  /// The strict decoder of one category page. The answer must name the
+  /// category and the order that were asked for, and no asset twice.
+  static MarketCategoryPage decodeCategory(
+    Object? data, {
+    required MarketCategory category,
+    required MarketCategorySort sort,
+  }) {
+    final root = LoopV2Contract.strictMap(data, const <String>{
+      'category',
+      'sort',
+      'items',
+      'nextCursor',
+      'rules',
+      'observedAt',
+      'contractVersion',
+    });
+    LoopV2ChainCodec.requireContractVersion(root);
+    final rawCategory = root['category'];
+    final rawSort = root['sort'];
+    if (rawCategory is! String ||
+        MarketCategory.tryParse(rawCategory) != category ||
+        rawSort is! String ||
+        MarketCategorySort.tryParse(rawSort) != sort) {
+      LoopV2ChainCodec.invalid();
+    }
+    final entries = LoopV2ChainCodec.requireList(root['items'], maximum: 50);
+    final seen = <String>{};
+    final items = <MarketCategoryRow>[];
+    for (final entry in entries) {
+      final row = _categoryRow(entry, category: category);
+      if (!seen.add(row.assetId)) LoopV2ChainCodec.invalid();
+      items.add(row);
+    }
+    final rules = LoopV2Contract.strictMap(root['rules'], const <String>{
+      'configVersion',
+      'effectiveAt',
+      'ordering',
+    });
+    final configVersion = rules['configVersion'];
+    if (configVersion is! String) LoopV2ChainCodec.invalid();
+    final ordering = rules['ordering'];
+    if (ordering is! String ||
+        !const <String>{
+          'dexscreener_market_cap_desc',
+          'dexscreener_price_change_h24_desc',
+          'dexscreener_volume_h24_desc',
+        }.contains(ordering)) {
+      LoopV2ChainCodec.invalid();
+    }
+    return MarketCategoryPage(
+      category: category,
+      sort: sort,
+      items: items,
+      nextCursor: LoopV2ChainCodec.cursor(root, 'nextCursor'),
+      rules: MarketCategoryRules(
+        configVersion: LoopV2ChainCodec.requireText(
+          rules,
+          'configVersion',
+          maxLength: 64,
+        ),
+        effectiveAt: LoopV2ChainCodec.requireTimestamp(rules, 'effectiveAt'),
+        ordering: ordering,
+      ),
+      observedAt: LoopV2ChainCodec.requireTimestamp(root, 'observedAt'),
+    );
+  }
+
+  static MarketCategoryRow _categoryRow(
+    Object? raw, {
+    required MarketCategory category,
+  }) {
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{
+        'assetId',
+        'symbol',
+        'name',
+        'logoUrl',
+        'quote',
+        'sparkline',
+      },
+      const <String>{'quoteUnavailable', 'community'},
+    );
+    final quote = map['quote'] == null ? null : _categoryQuote(map['quote']);
+    String? reason;
+    if (quote == null) {
+      // `quoteUnavailable` is present exactly when `quote` is null.
+      final refusal = LoopV2Contract.strictMap(
+        map['quoteUnavailable'],
+        const <String>{'reasonCode'},
+      );
+      reason = LoopV2ChainCodec.requireReasonCode(refusal, 'reasonCode');
+    } else if (map.containsKey('quoteUnavailable')) {
+      LoopV2ChainCodec.invalid();
+    }
+    final hasCommunity = map.containsKey('community');
+    // Only the community list names a community, and every row of it must.
+    if (hasCommunity != (category == MarketCategory.community)) {
+      LoopV2ChainCodec.invalid();
+    }
+    MarketCategoryCommunity? community;
+    if (hasCommunity) {
+      final block = LoopV2Contract.strictMap(map['community'], const <String>{
+        'communityId',
+        'name',
+        'logoRef',
+      });
+      community = MarketCategoryCommunity(
+        communityId: LoopV2ChainCodec.requireString(
+          block,
+          'communityId',
+          pattern: LoopV2Contract.uuidPattern,
+        ),
+        name: LoopV2ChainCodec.requireText(block, 'name', maxLength: 40),
+        logoRef: LoopV2ChainCodec.optionalString(
+          block,
+          'logoRef',
+          pattern: _communityLogoRefPattern,
+          maxLength: 64,
+        ),
+      );
+    }
+    return MarketCategoryRow(
+      assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
+      symbol: LoopV2ChainCodec.requireText(map, 'symbol', maxLength: 32),
+      name: LoopV2ChainCodec.requireText(map, 'name', maxLength: 128),
+      logoUrl: LoopV2ChainCodec.optionalString(
+        map,
+        'logoUrl',
+        pattern: _logoUrlPattern,
+        maxLength: 512,
+      ),
+      quote: quote,
+      quoteUnavailableReason: reason,
+      sparkline: _rowSparkline(map['sparkline'], anyRefusal: true),
+      community: community,
+    );
+  }
+
+  static MarketCategoryQuote _categoryQuote(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'priceUsd',
+      'change24hPct',
+      'marketCapUsd',
+      'volume24hUsd',
+      'observedAt',
+      'source',
+      'quality',
+    });
+    final rawQuality = map['quality'];
+    final quality = rawQuality is String
+        ? LoopFactQuality.tryParse(rawQuality)
+        : null;
+    if (quality != LoopFactQuality.fresh &&
+        quality != LoopFactQuality.stale &&
+        quality != LoopFactQuality.proxied) {
+      LoopV2ChainCodec.invalid();
+    }
+    return MarketCategoryQuote(
+      priceUsd: LoopV2ChainCodec.requireDecimal(map, 'priceUsd', signed: true),
+      change24hPct: LoopV2ChainCodec.optionalDecimal(
+        map,
+        'change24hPct',
+        signed: true,
+      ),
+      marketCapUsd: LoopV2ChainCodec.optionalDecimal(
+        map,
+        'marketCapUsd',
+        signed: true,
+      ),
+      volume24hUsd: LoopV2ChainCodec.optionalDecimal(
+        map,
+        'volume24hUsd',
+        signed: true,
+      ),
+      observedAt: LoopV2ChainCodec.requireTimestamp(map, 'observedAt'),
+      source: LoopV2ChainCodec.requireFactSource(map, 'source'),
+      quality: quality!,
+    );
+  }
+
+  @override
+  Future<IntelPromotions> getPromotions({
+    required String accessToken,
+    required String clientVersion,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        promotionsPath,
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      return decodePromotions(response.data);
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.chainReadErrors,
+      );
+    }
+  }
+
+  /// The strict decoder of the promotion strip. Every link is an in-app
+  /// location from the allow-list, every image is https, and the cards come
+  /// back in `order`.
+  static IntelPromotions decodePromotions(Object? data) {
+    final root = LoopV2Contract.strictMap(data, const <String>{
+      'items',
+      'configVersion',
+      'effectiveAt',
+      'contractVersion',
+    });
+    LoopV2ChainCodec.requireContractVersion(root);
+    final entries = LoopV2ChainCodec.requireList(root['items'], maximum: 20);
+    final ids = <String>{};
+    final items = <IntelPromotion>[];
+    for (final entry in entries) {
+      final map = LoopV2Contract.strictMap(entry, const <String>{
+        'id',
+        'title',
+        'subtitle',
+        'imageUrl',
+        'deeplink',
+        'startsAt',
+        'endsAt',
+        'order',
+      });
+      final id = LoopV2ChainCodec.requireString(
+        map,
+        'id',
+        pattern: LoopV2Contract.uuidPattern,
+      );
+      if (!ids.add(id)) LoopV2ChainCodec.invalid();
+      final subtitle = map['subtitle'];
+      if (subtitle is! String || subtitle.length > 80) {
+        LoopV2ChainCodec.invalid();
+      }
+      items.add(
+        IntelPromotion(
+          id: id,
+          title: LoopV2ChainCodec.requireText(map, 'title', maxLength: 40),
+          subtitle: subtitle.isEmpty
+              ? ''
+              : LoopV2ChainCodec.requireText(map, 'subtitle', maxLength: 80),
+          imageUrl: LoopV2ChainCodec.optionalString(
+            map,
+            'imageUrl',
+            pattern: _httpsPattern,
+            maxLength: 512,
+          ),
+          deeplink: LoopV2ChainCodec.requireString(
+            map,
+            'deeplink',
+            pattern: _promotionDeeplinkPattern,
+            maxLength: 64,
+          ),
+          startsAt: LoopV2ChainCodec.requireTimestamp(map, 'startsAt'),
+          endsAt: LoopV2ChainCodec.requireTimestamp(map, 'endsAt'),
+          order: LoopV2ChainCodec.requireInt(map, 'order'),
+        ),
+      );
+    }
+    items.sort((a, b) => a.order.compareTo(b.order));
+    final configVersion = LoopV2ChainCodec.requireText(
+      root,
+      'configVersion',
+      maxLength: 64,
+    );
+    return IntelPromotions(
+      items: items,
+      configVersion: configVersion,
+      effectiveAt: LoopV2ChainCodec.requireTimestamp(root, 'effectiveAt'),
+    );
+  }
+
   static bool _isUnavailable(Object? raw) =>
       raw is Map && raw['status'] == 'unavailable';
 
@@ -406,7 +750,10 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
   /// carries one to twenty-four figures, oldest first. Each of those is
   /// checked: a series that claims another interval, another provider or a
   /// twenty-fifth bucket is not the series this contract describes.
-  static MarketRowSparklineSeries? _rowSparkline(Object? raw) {
+  static MarketRowSparklineSeries? _rowSparkline(
+    Object? raw, {
+    bool anyRefusal = false,
+  }) {
     if (raw is! Map) LoopV2ChainCodec.invalid();
     if (raw['status'] != 'available') {
       // Not read. The reason is not a row-level statement — a 58pt row has
@@ -422,7 +769,10 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         refusal,
         'reasonCode',
       );
-      if (!_sparklineRefusals.contains(reasonCode)) {
+      // The category rows (decision 0100) carry the row's own price refusal
+      // too — a testnet token is `MARKET_CHAIN_NOT_PRICED` on both — so any
+      // well-formed reason is accepted there.
+      if (!anyRefusal && !_sparklineRefusals.contains(reasonCode)) {
         LoopV2ChainCodec.invalid();
       }
       return null;

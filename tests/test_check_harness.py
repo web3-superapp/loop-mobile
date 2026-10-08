@@ -2593,10 +2593,16 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            # Decision 0118 moved MA / VOL into the shared chart toolbar, so
+            # the reintroduced chips are injected beside the chart section.
+            marker = "        TokenCandleSection(\n          key: const ValueKey<String>('chart-full-candles'),"
+            self.assertIn(marker, source)
             path.write_text(
                 source.replace(
-                    "labels: const <String>['MA', 'VOL'],",
-                    "labels: const <String>['MA', 'EMA', 'MACD', 'RSI', 'VOL'],",
+                    marker,
+                    "        MarketSegmentBar(\n"
+                    "          labels: const <String>['MA', 'EMA', 'MACD', 'RSI', 'VOL'],\n"
+                    "        ),\n" + marker,
                     1,
                 ),
                 encoding="utf-8",

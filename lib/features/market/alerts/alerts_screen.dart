@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/market/alerts/alert_models.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_controller.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
@@ -23,6 +24,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -172,7 +175,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             emptyMessage: '还没有价格提醒',
-            emptyReason: '新建一个提醒后，评估器会在价格新鲜时检查它。',
+            emptyReason: '设一个目标价，价格到了会在通知里告诉你。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -204,7 +207,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             LoopEmpty(
               key: const ValueKey<String>('alerts-empty'),
               message: focusLabel == null ? '还没有价格提醒' : '$focusLabel 还没有提醒',
-              reason: '新建一个提醒后，评估器会在价格新鲜时检查它。',
+              reason: '设一个目标价，价格到了会在通知里告诉你。',
               action: LoopButton(
                 key: const ValueKey<String>('alerts-empty-create'),
                 label: '新建提醒',
@@ -223,6 +226,30 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                     highlighted: triggered.contains(alert.alertId),
                   ),
               ],
+            ),
+          // The list scrolls on to its last page (decision 0118).
+          if (state.appendFailed && !state.loadingMore)
+            LoopInlineUnavailable(
+              key: const ValueKey<String>('alerts-more-failed'),
+              message: '下一页提醒没有读到',
+              onRetry: () => unawaited(controller.loadMore()),
+            )
+          else if (state.page?.nextCursor case final String cursor) ...<Widget>[
+            LoopLoadMoreSentinel(
+              key: const ValueKey<String>('alerts-load-more'),
+              cursor: cursor,
+              onLoadMore: () => unawaited(controller.loadMore()),
+            ),
+            if (state.loadingMore)
+              const LoopSkeleton(
+                key: ValueKey<String>('alerts-loading-more'),
+                type: LoopSkeletonType.record,
+                rows: 2,
+              ),
+          ] else if (visible.isNotEmpty)
+            const LoopProvenanceFooter(
+              key: ValueKey<String>('alerts-end'),
+              text: '没有更多提醒',
             ),
           // The narrowed list says so, and says where the rest went. Without
           // this the page looks like the whole list with rows missing.
@@ -879,7 +906,7 @@ class _AlertNotificationFeedState
           const LoopEmpty(
             key: ValueKey<String>('alerts-feed-empty-page'),
             message: '这一页没有价格提醒的记录',
-            reason: '后面还有记录，载入下一页再看。',
+            reason: '后面还有记录，继续往下滑。',
           )
         else
           LoopRecordGroup(
@@ -907,23 +934,31 @@ class _AlertNotificationFeedState
         // The feed is a cursor page, not the whole history: without this the
         // page after the first one was unreachable and the list ended in
         // silence, which reads as "that is everything".
-        if (more)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: LoopButton(
-              key: const ValueKey<String>('alerts-feed-load-more'),
-              label: state.busy ? '正在载入…' : '载入更多',
-              block: true,
-              onPressed: state.busy
-                  ? null
-                  : () => unawaited(
-                      ref
-                          .read(notificationFeedControllerProvider.notifier)
-                          .loadMore(),
-                    ),
+        if (more) ...<Widget>[
+          MarketVisibleSentinel(
+            key: const ValueKey<String>('alerts-feed-load-more'),
+            cursor: feed.nextCursor!,
+            onLoadMore: () => unawaited(
+              ref.read(notificationFeedControllerProvider.notifier).loadMore(),
             ),
-          )
-        else
+          ),
+          if (state.busy)
+            const LoopSkeleton(
+              key: ValueKey<String>('alerts-feed-loading-more'),
+              type: LoopSkeletonType.record,
+              rows: 1,
+            )
+          else if (state.failureKind != null)
+            LoopInlineUnavailable(
+              key: const ValueKey<String>('alerts-feed-more-failed'),
+              message: '下一页触发记录没有读到',
+              onRetry: () => unawaited(
+                ref
+                    .read(notificationFeedControllerProvider.notifier)
+                    .loadMore(),
+              ),
+            ),
+        ] else
           const LoopProvenanceFooter(
             key: ValueKey<String>('alerts-feed-end'),
             text: '没有更多触发记录',

@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_screen.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
+import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_secondary_screens.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
@@ -837,7 +838,7 @@ void main() {
         size: const Size(390, 844),
       );
 
-      final chart = tester.getSize(find.byType(LoopCandleChart));
+      final chart = tester.getSize(find.byType(LoopMarketChart));
       // Two-thirds of a 844pt screen at the very least: the plot used to be a
       // fixed 320 with a third of a screen of black under it.
       expect(chart.height, greaterThan(400));

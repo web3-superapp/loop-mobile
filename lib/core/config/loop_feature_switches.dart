@@ -20,6 +20,10 @@ abstract final class LoopFeatureSwitches {
 
   /// S107 §2：隐私页「匿名模式」开关 UI 下线（后端字段保留）；改 true 即恢复。
   static const bool anonymousModeVisible = false;
+
+  /// S113 · 决策 0118：行情里的「新币」「聪明钱」入口隐藏（它们把读者带出
+  /// LOOP，且数据源未开放）；页面与路由保留，改 true 即恢复入口。
+  static const bool outboundMarketListsVisible = false;
 }
 
 /// The switch values one build runs with.
@@ -34,12 +38,15 @@ final class LoopFeatureSwitchValues {
     this.communityChatRealIdentity =
         LoopFeatureSwitches.communityChatRealIdentity,
     this.anonymousModeVisible = LoopFeatureSwitches.anonymousModeVisible,
+    this.outboundMarketListsVisible =
+        LoopFeatureSwitches.outboundMarketListsVisible,
   });
 
   final bool idoLaunchVisible;
   final bool groupAliasVisible;
   final bool communityChatRealIdentity;
   final bool anonymousModeVisible;
+  final bool outboundMarketListsVisible;
 
   /// Whether a channel draws its members as their real Stream user (name,
   /// image, tap to the public profile) rather than as a channel-scoped name.

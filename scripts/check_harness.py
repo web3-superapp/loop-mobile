@@ -9350,10 +9350,6 @@ PRICE_MOVE_CUE_WINDOW = 3
 PRICE_MOVE_COLOUR_ALLOWLIST: dict[str, str] = {
     # The palette itself defines and documents every token.
     "lib/core/theme/loop_theme.dart": "the palette",
-    # Transitional (decision 0117): `MarketStatsLine` paints 「涨 N」 Lime and
-    # 「跌 N」 danger. The market list is S113's (decision 0118), which removes
-    # the line; this entry goes with it.
-    "lib/features/market/market_widgets.dart": "S113 removes MarketStatsLine",
 }
 
 

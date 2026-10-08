@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -12,6 +13,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
@@ -21,6 +23,8 @@ import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 
 /// Shared capability gate for the four secondary market pages.
 bool _marketBlocked(WidgetRef ref) {
@@ -83,37 +87,47 @@ class FullChartScreen extends ConsumerStatefulWidget {
 class _FullChartScreenState extends ConsumerState<FullChartScreen> {
   LoopCandleInterval _interval = LoopCandleInterval.oneHour;
 
-  /// `.kline-tools`: MA and VOL are drawn from the closes already on screen,
-  /// so they can be switched here. EMA, MACD and RSI are not drawn by
-  /// anything — there is no implementation and no source — so they are not
-  /// rendered at all. A greyed chip for a feature nobody is building reads as
-  /// a control that is temporarily broken; an absent one says nothing, which
-  /// is the truth.
-  static const List<int> _maPeriods = <int>[7, 25];
-  bool _movingAverages = true;
-  bool _volume = true;
-
-  /// Everything on this page that is not the chart: the top bar, the OHLC and
-  /// MA readouts above the plot, the card's own padding, the interval row,
-  /// the indicator row and the provenance line under it. Measured against the
-  /// rendered page rather than guessed — the chart takes whatever is left.
-  static const double _chromeHeight = 340;
+  /// Everything on this page that is not the plot: the top bar, the chart
+  /// toolbar, the interval row and the source line under it. The plot takes
+  /// whatever is left.
+  static const double _chromeHeight = 210;
 
   /// Below this the plot stops being a chart and becomes a stripe, so the
   /// page scrolls instead of shrinking further.
-  static const double _minimumChartHeight = 200;
+  static const double _minimumChartHeight = 160;
+
+  @override
+  void initState() {
+    super.initState();
+    // `chart-full` is the token chart turned sideways (decision 0118).
+    unawaited(
+      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]),
+    );
+  }
+
+  @override
+  void dispose() {
+    // Back to whatever the application declares.
+    unawaited(
+      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]),
+    );
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final assetId = widget.assetId;
     if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
-      return _invalidAssetPage('无法打开这张 K 线', widget.onBack);
+      return _invalidAssetPage('无法打开这张图表', widget.onBack);
     }
     if (_marketBlocked(ref)) {
       return LoopFocusPage(
         key: const ValueKey<String>('chart-full-blocked'),
         archetype: LoopPageArchetype.record,
-        title: '全屏 K 线',
+        title: '全屏图表',
         onBack: widget.onBack,
         block: _marketPageBlock(
           ref,
@@ -123,10 +137,8 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
         body: const <Widget>[],
       );
     }
-    // The prototype's top bar is `PEPE` over `$0.0000082 +12.4%`; LOOP put
-    // the page's own name in the title slot and the contract address above it
-    // (audit 2026-09-21 §G.3). Both lines come from the asset read this page
-    // already shares with the token page behind it.
+    // The bar names the asset and its quote, from the asset read this page
+    // shares with the token page behind it.
     final identity = ref.watch(marketAssetControllerProvider(assetId));
     if (identity.phase == LoopChainViewPhase.loading) {
       scheduleMicrotask(() {
@@ -141,16 +153,10 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
     final price = detail?.price;
     final change = detail?.priceChange24h;
     final quote = <String>[
-      if (price != null && price.isAvailable) loopFormatUsd(price.value!),
-      if (change != null && change.isAvailable)
-        loopFormatPercent(change.value!),
+      if (price != null && price.isAvailable) marketRowPrice(price.value!),
+      if (change != null && change.isAvailable) marketMoveLabel(change.value!),
     ].join(' ');
 
-    // 「全屏 K 线」 drew a 320pt plot with a third of a screen of black under
-    // it, in portrait, on a page whose whole purpose is the chart. The plot
-    // takes the height the page actually has — in either orientation, so
-    // turning the device sideways gives a landscape chart rather than a
-    // letterboxed one.
     final media = MediaQuery.of(context);
     final chartHeight = math.max(
       _minimumChartHeight,
@@ -171,26 +177,14 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
           assetId: assetId,
           interval: _interval,
           height: chartHeight,
-          movingAveragePeriods: _movingAverages ? _maPeriods : const <int>[],
-          showVolume: _volume,
           onIntervalChanged: (value) => setState(() => _interval = value),
-          footer: MarketSegmentBar(
-            key: const ValueKey<String>('chart-full-indicators'),
-            labels: const <String>['MA', 'VOL'],
-            selectedIndices: <int>{if (_movingAverages) 0, if (_volume) 1},
-            enabled: const <bool>[true, true],
-            onSelected: (index) => setState(() {
-              if (index == 0) _movingAverages = !_movingAverages;
-              if (index == 1) _volume = !_volume;
-            }),
-          ),
         ),
         const LoopNotice(
           key: ValueKey<String>('chart-full-interval-notice'),
           title: '这张图能做什么',
           body:
-              '可选周期为 15m / 1H / 4H / 1D / 1W，1m 暂时不可用。'
-              'MA 与 VOL 由本机按这张图上的收盘价与成交量计算，没有单独的数据来源；'
+              '周期可选 15分 / 1时 / 4时 / 1日 / 1周；左右拖动看更早的数据，双指缩放，长按看某一根的价格和时间。'
+              'MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源；'
               '除此之外没有其他指标，也没有画线工具。',
         ),
       ],
@@ -446,13 +440,58 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
                 reasonCode: reasonCode,
               ),
             ],
-            MarketTradesAvailable() => _tradeSections(block),
+            MarketTradesAvailable() => _tradeSections(
+              block,
+              more: _morePages(assetId, block, state),
+            ),
           },
       ],
     );
   }
 
-  List<Widget> _tradeSections(MarketTradesAvailable block) {
+  /// The trades scroll on to the last page (decision 0118).
+  List<Widget> _morePages(
+    String assetId,
+    MarketTradesAvailable block,
+    LoopChainResourceState<MarketTradesPage> state,
+  ) {
+    final controller = ref.read(
+      marketTradesControllerProvider(assetId).notifier,
+    );
+    final cursor = block.nextCursor;
+    if (controller.appendFailed && !state.busy) {
+      return <Widget>[
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('token-trades-more-failed'),
+          message: '下一页成交没有读到',
+          onRetry: () => unawaited(controller.loadMore()),
+        ),
+      ];
+    }
+    if (cursor == null) {
+      return const <Widget>[
+        MarketListEnd(key: ValueKey<String>('token-trades-end')),
+      ];
+    }
+    return <Widget>[
+      LoopLoadMoreSentinel(
+        key: const ValueKey<String>('token-trades-load-more'),
+        cursor: cursor,
+        onLoadMore: () => unawaited(controller.loadMore()),
+      ),
+      if (state.busy)
+        const LoopSkeleton(
+          key: ValueKey<String>('token-trades-loading-more'),
+          type: LoopSkeletonType.record,
+          rows: 2,
+        ),
+    ];
+  }
+
+  List<Widget> _tradeSections(
+    MarketTradesAvailable block, {
+    List<Widget> more = const <Widget>[],
+  }) {
     final visible = _segment == 1
         ? block.items
               .where(
@@ -492,6 +531,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         LoopRecordGroup(
           rows: <LoopRecordRow>[for (final trade in visible) _tradeRow(trade)],
         ),
+      ...more,
       _FreshnessFooter(freshness: block.freshness),
       const LoopNotice(
         key: ValueKey<String>('token-trades-notice'),

@@ -606,31 +606,19 @@ LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
 
 /// `mining-rank` · the power leaderboard.
 class MiningRankScreen extends ConsumerStatefulWidget {
-  const MiningRankScreen({
-    super.key,
-    this.onBack,
-    this.embedded = false,
-    this.includeReferralScope = false,
-  });
+  const MiningRankScreen({super.key, this.onBack, this.embedded = false});
 
   final VoidCallback? onBack;
 
-  /// The 算力榜 segment of 情报 (decision 0110): no bar of its own.
+  /// Drawn inside another page's segment: no bar of its own. 情报's own
+  /// 算力榜 is [IntelRankBoard] (decision 0118).
   final bool embedded;
-
-  /// Adds the 推广 board next to 社区 and 个人. LOOP publishes no referral
-  /// ranking yet, so that board states it is not open and reads nothing.
-  final bool includeReferralScope;
 
   @override
   ConsumerState<MiningRankScreen> createState() => _MiningRankScreenState();
 }
 
 class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
-  /// The 推广 board is selected. It has no scope on the server, so it is a
-  /// page state and never reaches the controller.
-  bool _referral = false;
-
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -650,8 +638,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
     // board only. On the community board it was a card saying there is no
     // personal place, and under 推广榜 it said so about the community board.
     // The standalone `mining-rank` route keeps the prototype's folio.
-    final showPosition =
-        !widget.embedded || (!_referral && scope == MiningRankScope.users);
+    final showPosition = !widget.embedded || scope == MiningRankScope.users;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rank-screen'),
@@ -710,36 +697,17 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             labels: <String>[
               miningRankScopeLabel(MiningRankScope.communities),
               miningRankScopeLabel(MiningRankScope.users),
-              if (widget.includeReferralScope) miningReferralRankLabel,
             ],
-            selectedIndex: _referral
-                ? 2
-                : scope == MiningRankScope.communities
-                ? 0
-                : 1,
-            onSelected: (index) {
-              if (index == 2) {
-                setState(() => _referral = true);
-                return;
-              }
-              setState(() => _referral = false);
-              unawaited(
-                controller.select(
-                  index == 0
-                      ? MiningRankScope.communities
-                      : MiningRankScope.users,
-                ),
-              );
-            },
+            selectedIndex: scope == MiningRankScope.communities ? 0 : 1,
+            onSelected: (index) => unawaited(
+              controller.select(
+                index == 0
+                    ? MiningRankScope.communities
+                    : MiningRankScope.users,
+              ),
+            ),
           ),
-          if (_referral)
-            const LoopEmpty(
-              key: ValueKey<String>('mining-rank-referral-unavailable'),
-              icon: 'warn',
-              message: '推广榜还没有开放',
-              reason: '开放后这里按邀请带来的已确认算力排名。',
-            )
-          else if (rank == null)
+          if (rank == null)
             LaunchStateBlock(
               prefix: 'mining-rank',
               phase: state.phase,
@@ -863,6 +831,9 @@ class _RankingBlock extends StatelessWidget {
         unranked: items.where((item) => !item.isRanked).toList(growable: false),
         row: _communityRow,
       ),
+      // This page reads the user and community boards only; the 推广 board
+      // is drawn by 情报 (decision 0118).
+      MiningRankingReferrals() => const SizedBox.shrink(),
     };
   }
 

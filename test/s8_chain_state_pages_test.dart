@@ -485,19 +485,20 @@ void main() {
         find.byKey(const ValueKey<String>('token-state-error')),
         findsNothing,
       );
-      // S82a: 简介 carries the contract facts and this asset's notifications.
+      // Decision 0118: 关于 carries the contract facts, their one source
+      // line and this asset's notifications.
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('token-facts-notice')),
+        find.byKey(const ValueKey<String>('token-security-provenance')),
       );
       expect(
-        find.byKey(const ValueKey<String>('token-facts-notice')),
+        find.byKey(const ValueKey<String>('token-security-provenance')),
         findsOneWidget,
       );
     });

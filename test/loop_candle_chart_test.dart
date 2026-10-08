@@ -370,6 +370,9 @@ void main() {
         // The same Token Card, under a chat bubble: the same three metric
         // cells, and nothing a member is committing to.
         'lib/features/chat/token_card/chat_token_card.dart',
+        // Decision 0118: the 情报 · 行情 row's 「市值 \$1.6B」 second line,
+        // the same kind of summary slot as the Token Card's cells.
+        'lib/features/market/market_fomo_widgets.dart',
       };
       final callers = <String>{};
       for (final file in Directory('lib').listSync(recursive: true)) {

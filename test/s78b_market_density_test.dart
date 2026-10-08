@@ -6,10 +6,8 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
-import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/features/market/market_secondary_screens.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
-import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
@@ -18,16 +16,6 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
-import 'support/s7_fixtures.dart';
-import 'support/s7_page_harness.dart';
-
-/// A rules answer that publishes a development-baseline weight for the market
-/// fixture's asset — which is what `dev` actually serves.
-FakeMiningGateway _baselineRules() => FakeMiningGateway(
-  rules: S7Answer<MiningRules>(
-    value: s7MiningRules(approved: s7BaselineFormulaVersion()),
-  ),
-);
 
 /// Mounts [tiles] the way 行情 mounts them, on the Ink page.
 Future<void> _pumpTiles(WidgetTester tester, List<Widget> tiles) async {
@@ -349,123 +337,6 @@ void main() {
     });
   });
 
-  group('market · the hero is one statistics line', () {
-    testWidgets('it counts what it read and announces nothing it did not', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(
-          overview: S5Answer<MarketOverview>(
-            value: s5Overview(
-              watchlist: MarketWatchlistAvailable(
-                version: 1,
-                items: <MarketAssetRow>[
-                  s5MarketRow(change: s5FreshFact('8.38')),
-                  s5MarketRow(
-                    assetId: s5NativeAssetId,
-                    change: s5FreshFact('-1.17'),
-                  ),
-                  // The stablecoin the walkthrough found the hero complaining
-                  // about: it is counted in neither direction and named in
-                  // neither clause.
-                  s5MarketRow(
-                    assetId: s5UsdtAssetId,
-                    change: const LoopFact.unavailable(
-                      'MARKET_FACT_NOT_REPORTED',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final stats = tester.widget<MarketStatsLine>(
-        find.byKey(const ValueKey<String>('market-stats')),
-      );
-      expect(stats.total, 3);
-      expect(stats.up, 1);
-      expect(stats.down, 1);
-      expect(stats.flat, 0);
-      // The page carries no hero at all, and no untranslated eyebrow.
-      expect(find.byType(LoopFolioPrimary), findsNothing);
-      expect(find.textContaining('自选 3 · '), findsOneWidget);
-      expect(find.textContaining('读不到'), findsWidgets);
-    });
-
-    testWidgets('the page never prints an internal label on a row', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(),
-        mining: _baselineRules(),
-      );
-
-      expect(find.textContaining(miningBaselineLabel), findsNothing);
-      expect(find.textContaining('权重'), findsNothing);
-      // And no untranslated eyebrow anywhere on the tab.
-      expect(find.text('MARKET SIGNALS'), findsNothing);
-      expect(find.textContaining('WATCHED'), findsNothing);
-    });
-
-    testWidgets('an empty watchlist still leads somewhere it can be filled', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(
-          overview: S5Answer<MarketOverview>(
-            value: s5Overview(
-              watchlist: MarketWatchlistAvailable(
-                version: 1,
-                items: const <MarketAssetRow>[],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(
-        find.byKey(const ValueKey<String>('market-watchlist-add')),
-        findsOneWidget,
-      );
-      expect(find.text('添加自选资产'), findsOneWidget);
-    });
-
-    testWidgets('a trending block that could not be read states why', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(
-          overview: S5Answer<MarketOverview>(
-            value: s5Overview(
-              trending: const MarketTrendingUnavailable(
-                'MARKET_PROVIDER_DEXSCREENER_UNAVAILABLE',
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.byKey(const ValueKey<String>('market-tab-热门')));
-      await tester.pumpAndSettle();
-      final block = find.byKey(
-        const ValueKey<String>('market-trending-unavailable'),
-      );
-      await scrollToS5Section(tester, block);
-      expect(block, findsOneWidget);
-      expect(find.text('热门列表不可用'), findsOneWidget);
-    });
-  });
-
   group('new-pairs · a venue has a name', () {
     test('a known slug reads as its venue, an unknown one is title-cased', () {
       expect(marketDexLabel('four-meme'), 'four.meme');
@@ -634,94 +505,6 @@ void main() {
           reason: '$body',
         );
       }
-    });
-  });
-
-  group('the list is ordered by the column the reader pressed', () {
-    final rows = <MarketAssetRow>[
-      _row(
-        assetId: s5WbnbAssetId,
-        symbol: 'WBNB',
-        price: s5FreshFact('747.39'),
-        change: s5FreshFact('0.27'),
-      ),
-      _row(
-        assetId: s5NativeAssetId,
-        symbol: 'BNB',
-        price: s5FreshFact('1006.30'),
-        change: s5FreshFact('-3.28'),
-      ),
-      _row(
-        assetId: s5UsdtAssetId,
-        symbol: 'USDT',
-        price: s5FreshFact('1'),
-        change: const LoopFact.unavailable('MARKET_FACT_NOT_REPORTED'),
-      ),
-    ];
-
-    test('largest first, then reversed, and an unread figure sinks', () {
-      expect(
-        marketSortRows(
-          rows,
-          sort: MarketSort.price,
-          descending: true,
-        ).map((row) => row.displayName).toList(),
-        <String>['BNB', 'WBNB', 'USDT'],
-      );
-      expect(
-        marketSortRows(
-          rows,
-          sort: MarketSort.price,
-          descending: false,
-        ).map((row) => row.displayName).toList(),
-        <String>['USDT', 'WBNB', 'BNB'],
-      );
-      // A row whose change was not read keeps the server's own place and
-      // sinks; it is never promoted to the head of a descending column,
-      // where it would read as the largest value there is.
-      expect(
-        marketSortRows(
-          rows,
-          sort: MarketSort.change,
-          descending: true,
-        ).map((row) => row.displayName).toList(),
-        <String>['WBNB', 'BNB', 'USDT'],
-      );
-      expect(
-        marketSortRows(
-          rows,
-          sort: MarketSort.change,
-          descending: false,
-        ).map((row) => row.displayName).last,
-        'USDT',
-      );
-    });
-
-    testWidgets('pressing the live column reverses it', (tester) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(
-          overview: S5Answer<MarketOverview>(
-            value: s5Overview(
-              watchlist: MarketWatchlistAvailable(version: 1, items: rows),
-            ),
-          ),
-        ),
-      );
-
-      final header = find.byKey(const ValueKey<String>('market-column-header'));
-      expect(tester.widget<MarketColumnHeader>(header).sort, MarketSort.volume);
-      expect(tester.widget<MarketColumnHeader>(header).descending, isTrue);
-
-      await tester.tap(find.byKey(const ValueKey<String>('market-sort-price')));
-      await tester.pumpAndSettle();
-      expect(tester.widget<MarketColumnHeader>(header).sort, MarketSort.price);
-      expect(tester.widget<MarketColumnHeader>(header).descending, isTrue);
-
-      await tester.tap(find.byKey(const ValueKey<String>('market-sort-price')));
-      await tester.pumpAndSettle();
-      expect(tester.widget<MarketColumnHeader>(header).descending, isFalse);
     });
   });
 }

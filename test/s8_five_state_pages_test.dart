@@ -389,7 +389,7 @@ void main() {
       );
       // The interval bar is local state and stays usable while offline.
       expect(
-        find.byKey(const ValueKey<String>('candle-interval-1h')),
+        find.byKey(const ValueKey<String>('token-interval-1h')),
         findsOneWidget,
       );
     });
