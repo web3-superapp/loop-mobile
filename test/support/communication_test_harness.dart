@@ -314,6 +314,16 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   /// The title each `createRoom` was sent with, null for none.
   final List<String?> createTitles = <String?>[];
 
+  /// What `pendingOpen` answers: an opening whose key is still held.
+  VoiceRoomPendingOpen? pendingOpenAnswer;
+
+  @override
+  VoiceRoomPendingOpen? pendingOpen(String communityId) => pendingOpenAnswer;
+
+  @override
+  Future<VoiceRoomSnapshot> stepDown(String voiceRoomId) =>
+      _answer('step-down');
+
   Future<VoiceRoomSnapshot> _answer(String command) {
     commands.add(command);
     if (pending) return Completer<VoiceRoomSnapshot>().future;

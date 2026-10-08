@@ -53,7 +53,7 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S108-S110-social-batc
 
 `showVoiceRoomStartSheet(context, communityId) → Future<VoiceRoomOpenOutcome?>`
 （`voice_room_stage.dart`，经 `voice_room_screens.dart` 导出）：说明文案 + 标题输入（可空，按码点限 40）+
-开播 / 取消。提交时 trim，空串不传 `title`（请求无 body，与旧请求完全一致）；返回 `openRoom` 的结果，取消返回
+开播 / 取消。提交时 trim，空串不传 `title`（请求无 body，与旧请求完全一致）。请求进行中弹层不可关闭（`isDismissible: false` 关掉拖拽与点外部，`PopScope(canPop: !opening)` 挡系统返回），结果不会被吞；若该社区有未完成的开播（键被保留，`VoiceRoomGateway.pendingOpen`），标题预填首次的内容并锁定。输入法组合中不截断，提交后按码点截到 40。返回 `openRoom` 的结果，取消返回
 null，结果的提示与跳转留给调用方。社区页 `_createVoiceRoom` 用它替换原确认弹层；S109b-mobile 的社区管理中心可
 直接复用。弹层 key 沿用 `community-open-voice-room-sheet`。
 
@@ -81,10 +81,10 @@ null，结果的提示与跳转留给调用方。社区页 `_createVoiceRoom` �
 | --- | --- | --- | --- | --- |
 | 1 | 「{听众数} 在听」 | 顶栏与卡片写听众数 | 写房间总人数：房间页 `VoiceRoomHeadcount.inRoom`（主持人 + 发言 + 听众），卡片 `listenerCount + speakerCount + 1` | 主持人与发言者也在听；与决策 0051 起「所有数字互相加得起来」一致。听众段标题仍是纯听众数 |
 | 2 | 主持人控制条 | 邀请发言 · 全体静音 · 结束房间（三项） | 前面加「麦克风」，共四项 | 主持人也要开麦；媒体层不再画麦克风按钮，否则主持人没有开麦入口 |
-| 3 | 发言者「下麦」 | 控制条一项 | 按钮在，点击 toast「自助下麦当前不可用：后端只允许主持人调整发言人…」，不发请求 | `DELETE …/speakers/{本人}` 被后端拒绝，没有自助下麦命令。**需要后端**加 `DELETE /v2/voice-rooms/{id}/speakers/me`（或让本人行带 `remove_speaker`）；客户端届时只改 `_stepDown` |
-| 4 | 主持人名字 / 头像 | 主持人大头像 + 名字 | 本人是主持人显示「我 · 名字」；否则取广场 live 列表同一房间条目的 `host`（页面进入时读一次 `GET /v2/voice-rooms/live`）；读不到或不在首页时显示「主持人」+ 首字母 | 房间资源与 members 都不含主持人（决策 0052）。**建议后端**在房间资源上加 `host { publicProfileId, displayName, avatarRef }`，客户端即可去掉这次列表读取 |
-| 5 | 发言者 / 听众头像图 | 头像 | 首字母头像 | members 行没有 `avatarRef`。**建议后端**在 members 行补 `avatarRef`（匿名者 null） |
-| 6 | 说话态匹配 | live speakers 喂说话态 | 本人行按 `isLocal` 匹配，其他人按 Stream 名字 = 名单显示名匹配；非主持人视角下，名单外且非本机的发声者视为主持人 | Stream 参与者不带 LOOP `publicProfileId`；名字不一致时只是不亮环，不会错标他人 |
+| 3 | 发言者「下麦」 | 控制条一项 | 真实调用 `DELETE /v2/voice-rooms/{id}/speakers/me`（bearer + Idempotency-Key + 契约版本 2.0），答复为房间资源，角色回听众后控制条随之变成听众形态并重读两路名单；404（含未挂载路由、非 V2 信封）/ 503 → toast「下麦暂不可用」，按钮保留、不假成功；主持人不显示下麦 | 按 S109b-api 契约（后端并行实现中）；未上线时 404 不算「结果未确认」 |
+| 4 | 主持人名字 / 头像 | 主持人大头像 + 名字 | 优先房间资源根上的可选 `host {publicProfileId, displayName, avatarRef} \| null`（S109b-api）；没有时退回广场 live 列表同一房间条目的 `host`（页面进入读一次 `GET /v2/voice-rooms/live`，列表已读但不含本房间时最多再 `refresh()` 一次）；都没有显示「主持人」+ 首字母。本人是主持人显示「我 · 名字」 | 旧后端的房间资源与 members 都不含主持人（决策 0052） |
+| 5 | 发言者 / 听众头像图 | 头像 | members 行可选 `avatarRef` 有则画图（匿名行一律不画），否则首字母 | 按 S109b-api 契约；旧后端缺省按 null |
+| 6 | 说话态匹配 | live speakers 喂说话态 | 本人行按 `isLocal`（确定）。他人只在「通话里恰好一个同名发声者、且名单里该名字唯一」时认定开麦 / 说话；匿名行、重名、对不上一律不断言（只回退 LOOP 的 `muted` 斜杠标记，否则无角标）。主持人（非本人视角）只按房间 / 广场给出的名字匹配，`hostName` 为空、发言者名单未读、名字与发言者重名或匹配不是恰好一个时不断言；不再把名单外的发声者推断为主持人 | Stream 参与者不带 LOOP `publicProfileId`；宁可不亮环也不错标 |
 | 7 | 社区 logo | 顶栏社区 logo | 取 live 列表条目的 `communityLogoRef`，没有则用社区首字母 tile | 房间资源不带 logo |
 | 8 | 顶栏组件 | 顶栏 = 返回 + logo + 标题 | 直播态页面自绘一条 `LoopTopbar(leading: 返回 + logo)`，内容区用 `LoopDashboardPage(embedded: true)` | `LoopDashboardPage` 不透传 `leading`；本单不改共享 `lib/widgets/` |
 

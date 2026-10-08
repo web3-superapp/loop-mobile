@@ -154,6 +154,19 @@ final class DioLoopV2CommunicationGateway
     }
   }
 
+  @override
+  VoiceRoomPendingOpen? pendingOpen(String communityId) {
+    if (_keyring.peek('voice-room-open:$communityId') == null ||
+        !_openTitles.containsKey(communityId)) {
+      return null;
+    }
+    return VoiceRoomPendingOpen(title: _openTitles[communityId]);
+  }
+
+  @override
+  Future<VoiceRoomSnapshot> stepDown(String voiceRoomId) =>
+      _command(VoiceRoomCommand.stepDown, voiceRoomId);
+
   Future<VoiceRoomSnapshot> _openRoom(
     String signature,
     String communityId,

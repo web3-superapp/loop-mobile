@@ -90,6 +90,48 @@ abstract final class LoopV2CommunicationCodec {
     'contractVersion',
   };
 
+  /// Decision 0115 (S109b-api): the room resource's `host`, which a server
+  /// without it does not send.
+  static const snapshotOptionalKeys = <String>{'host'};
+
+  /// The room resource's root under its key rule.
+  static Map<String, Object?> snapshotRoot(Object? raw) =>
+      LoopV2Contract.strictMapWithOptional(
+        raw,
+        snapshotKeys,
+        snapshotOptionalKeys,
+      );
+
+  /// One person by the live-list display rule: a person without a name
+  /// carries no address and no face either.
+  static VoiceRoomPerson? person(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'publicProfileId',
+      'displayName',
+      'avatarRef',
+    });
+    final displayName = LoopV2ProjectionCodec.optionalText(map, 'displayName');
+    final publicProfileId = LoopV2ProjectionCodec.optionalPattern(
+      map,
+      'publicProfileId',
+      LoopV2Contract.uuidPattern,
+    );
+    final avatarRef = LoopV2ProjectionCodec.optionalPattern(
+      map,
+      'avatarRef',
+      LoopV2ProjectionCodec.avatarRefPattern,
+    );
+    if (displayName == null && (publicProfileId != null || avatarRef != null)) {
+      _invalid();
+    }
+    return VoiceRoomPerson(
+      publicProfileId: publicProfileId,
+      displayName: displayName,
+      avatarRef: avatarRef,
+    );
+  }
+
   static Never _invalid() => LoopV2ProjectionCodec.invalid();
 
   static ChatOperation operation(Map<String, Object?> root) {
@@ -410,6 +452,7 @@ abstract final class LoopV2CommunicationCodec {
       viewer: viewer(root['viewer']),
       participants: participants(root['participants']),
       providerSync: providerSync(root['providerSync']),
+      host: person(root['host']),
     );
   }
 
@@ -423,7 +466,7 @@ abstract final class LoopV2CommunicationCodec {
     }
     if (reason != null) _invalid();
     return VoiceRoomCurrent(
-      snapshot: snapshot(LoopV2Contract.strictMap(rawCurrent, snapshotKeys)),
+      snapshot: snapshot(snapshotRoot(rawCurrent)),
       reasonCode: null,
     );
   }
@@ -522,16 +565,21 @@ abstract final class LoopV2CommunicationCodec {
       root['items'],
       maximum: 100,
     )) {
-      final item = LoopV2Contract.strictMap(raw, const <String>{
-        'publicProfileId',
-        'display',
-        'role',
-        'joinedAt',
-        'handRaised',
-        'muted',
-        'isSelf',
-        'commands',
-      });
+      // Decision 0115 (S109b-api): `avatarRef` is optional on a row.
+      final item = LoopV2Contract.strictMapWithOptional(
+        raw,
+        const <String>{
+          'publicProfileId',
+          'display',
+          'role',
+          'joinedAt',
+          'handRaised',
+          'muted',
+          'isSelf',
+          'commands',
+        },
+        const <String>{'avatarRef'},
+      );
       final rawRowRole = item['role'];
       if (rawRowRole is! String) _invalid();
       // The cursor is bound to one view, so a row of the other role in this
@@ -546,10 +594,18 @@ abstract final class LoopV2CommunicationCodec {
       // A command with no target could only be run against a guess.
       if (publicProfileId == null && commands.isNotEmpty) _invalid();
       if (publicProfileId != null && !seen.add(publicProfileId)) _invalid();
+      final name = memberName(item['display']);
+      final avatarRef = LoopV2ProjectionCodec.optionalPattern(
+        item,
+        'avatarRef',
+        LoopV2ProjectionCodec.avatarRefPattern,
+      );
       items.add(
         VoiceRoomMember(
           publicProfileId: publicProfileId,
-          name: memberName(item['display']),
+          name: name,
+          // An anonymous row never shows a face, whatever it carries.
+          avatarRef: name is VoiceRoomMemberAnonymousName ? null : avatarRef,
           view: view,
           joinedAt: LoopV2ProjectionCodec.requireTimestamp(item, 'joinedAt'),
           handRaised: LoopV2ProjectionCodec.requireBool(item, 'handRaised'),

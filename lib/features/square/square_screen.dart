@@ -367,9 +367,10 @@ class LiveVoiceRoomCard extends StatelessWidget {
   }
 }
 
-/// Up to four faces, each covering a third of the one before it, on a disc
-/// of the card's own ground so overlaps stay clean. An anonymous face is the
-/// initials of the anonymous label and never a picture.
+/// Up to four faces, each covering a third of the one before it. Each sits
+/// on its own Graphite disc a ring wider than the face, so where one covers
+/// another the edge stays clean. An anonymous face is the initials of the
+/// anonymous label and never a picture.
 class _FaceStack extends StatelessWidget {
   const _FaceStack({required this.faces, required this.size});
 

@@ -169,6 +169,43 @@ void main() {
     expect(keyring.peek('voice-room-open:$testCommunityId'), isNull);
   });
 
+  // Decision 0115: a held key finishes the command it was reserved for, and
+  // that command had a body. A retry with another title still sends the
+  // first one, and the sheet is told so.
+  test('a held opening key resends its first title', () async {
+    final api = _RecordingCommunicationApi();
+    final keyring = LoopV2CommandKeyring();
+    final gateway = DioLoopV2CommunicationGateway(
+      api: api,
+      clientMetadata: _metadata,
+      session: _immediateSession(),
+      keyring: keyring,
+    );
+
+    expect(gateway.pendingOpen(testCommunityId), isNull);
+    api.room = testVoiceRoomSnapshot(
+      role: VoiceRoomRole.host,
+      host: true,
+      backstage: true,
+      providerConfirmed: false,
+      providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+    );
+    await gateway.createRoom(testCommunityId, title: 'A');
+    expect(gateway.pendingOpen(testCommunityId)?.title, 'A');
+
+    await gateway.createRoom(testCommunityId, title: 'B');
+    expect(api.titles, <String?>['A', 'A']);
+    expect(api.keys.toSet(), hasLength(1));
+
+    // Finished: the key and its title both go, and the next room is new.
+    api.room = testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true);
+    await gateway.createRoom(testCommunityId, title: 'C');
+    expect(api.titles.last, 'A');
+    expect(gateway.pendingOpen(testCommunityId), isNull);
+    await gateway.createRoom(testCommunityId, title: 'D');
+    expect(api.titles.last, 'D');
+  });
+
   test('a key is never held against a room that is over', () async {
     // The server answers a replayed key with the room that key opened,
     // whatever became of it since. Held past the end of that room, the key

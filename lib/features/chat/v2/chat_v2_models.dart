@@ -477,7 +477,13 @@ final class VoiceRoomMember {
     required this.muted,
     required this.isSelf,
     required this.commands,
+    this.avatarRef,
   });
+
+  /// The member's avatar reference (S109b-api, decision 0115), or null when
+  /// the row is anonymous to this viewer, the member has none, or the server
+  /// does not publish the field yet — the row then draws initials.
+  final String? avatarRef;
 
   /// The command target. Null when the row is anonymous to a viewer that is
   /// not the host: there is nothing to address and nothing to open.
@@ -610,6 +616,23 @@ final class VoiceRoomProviderSync {
   final String? reason;
 }
 
+/// One person by the live-list display rule (S109b-api): an anonymous person
+/// is three nulls — no name, no address, no face.
+@immutable
+final class VoiceRoomPerson {
+  const VoiceRoomPerson({
+    required this.publicProfileId,
+    required this.displayName,
+    required this.avatarRef,
+  });
+
+  final String? publicProfileId;
+  final String? displayName;
+  final String? avatarRef;
+
+  bool get isAnonymous => displayName == null;
+}
+
 @immutable
 final class VoiceRoomSnapshot {
   const VoiceRoomSnapshot({
@@ -617,9 +640,14 @@ final class VoiceRoomSnapshot {
     required this.viewer,
     required this.participants,
     required this.providerSync,
+    this.host,
   });
 
   final VoiceRoomRecord room;
+
+  /// The host (decision 0115), or null when the server does not publish it
+  /// yet — the page then falls back to the plaza's projection of the room.
+  final VoiceRoomPerson? host;
   final VoiceRoomViewer viewer;
   final VoiceRoomParticipants participants;
   final VoiceRoomProviderSync providerSync;

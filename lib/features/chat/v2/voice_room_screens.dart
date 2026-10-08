@@ -76,6 +76,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   /// 0115). Only the main room view hands it over; the full list keeps the
   /// control in the call view itself.
   final VoiceMicrophoneBridge _microphone = VoiceMicrophoneBridge();
+
+  /// Whether the plaza list was already read again for this page's room.
+  var _plazaRefreshed = false;
   VoiceRoomPagePresence? _presence;
   var _entered = false;
 
@@ -697,7 +700,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 unawaited(_run(controller.cancelHandRaise, '已取消举手')),
             onEnd: () => unawaited(_endRoom(controller)),
             onMuteAll: () => unawaited(_run(controller.muteAll, '已请求全体静音')),
-            onStepDown: _stepDown,
+            onStepDown: () => unawaited(_stepDown(controller)),
             onInvite: openExpanded == null
                 ? null
                 : () => openExpanded(communityId),
@@ -821,37 +824,70 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     for (final item in plaza.items) {
       if (item.voiceRoomId == snapshot.room.voiceRoomId) return item;
     }
+    // A list read before this room went live does not hold it. It is read
+    // again once, never in a loop.
+    if (plaza.phase == CommunityViewPhase.ready &&
+        !plaza.refreshing &&
+        !_plazaRefreshed) {
+      _plazaRefreshed = true;
+      scheduleMicrotask(() {
+        if (!mounted) return;
+        unawaited(
+          ref.read(liveVoiceRoomsControllerProvider.notifier).refresh(),
+        );
+      });
+    }
     return null;
   }
 
+  /// Who the host is: the room resource's own `host` when the server sends
+  /// it (decision 0115), the plaza's projection of the same room when it does
+  /// not, and the word 主持人 when neither has answered.
   ({String name, String? avatarRef, String? knownName}) _hostIdentity(
     VoiceRoomSnapshot snapshot,
     LiveVoiceRoom? listing,
   ) {
-    final named = listing?.host.displayName;
+    final String? named;
+    final String? avatarRef;
+    final bool known;
+    final own = snapshot.host;
+    if (own != null) {
+      named = own.displayName;
+      avatarRef = own.avatarRef;
+      known = true;
+    } else if (listing != null) {
+      named = listing.host.displayName;
+      avatarRef = listing.host.avatarRef;
+      known = true;
+    } else {
+      named = null;
+      avatarRef = null;
+      known = false;
+    }
     if (snapshot.viewer.isHost) {
       return (
         name: named == null ? '我' : '我 · $named',
-        avatarRef: listing?.host.avatarRef,
+        avatarRef: avatarRef,
         knownName: named,
       );
     }
-    if (listing == null) {
-      return (name: '主持人', avatarRef: null, knownName: null);
-    }
+    if (!known) return (name: '主持人', avatarRef: null, knownName: null);
     return (
       name:
           named ?? voiceRoomDisplayKeyText('voiceRoom.member.anonymousMember'),
-      avatarRef: listing.host.avatarRef,
+      avatarRef: named == null ? null : avatarRef,
       knownName: named,
     );
   }
 
   /// What the call this device holds says about the host.
   ///
-  /// The host is this device's own participant when the reader is the host.
-  /// Otherwise the host is the one voice in the call that is not on LOOP's
-  /// speaker roster — matched by name when the plaza named the host.
+  /// When the reader is the host, the host is this device's own participant
+  /// and the answer is certain. Otherwise the host is matched only by the
+  /// name the room (or the plaza) gives it: exactly one voice in the call
+  /// with that name, and no speaker on LOOP's roster sharing it. A host this
+  /// page cannot name, a roster not read yet, or a name that does not match
+  /// exactly once claims nothing.
   VoiceRoomMicState _hostMic(
     VoiceRoomSnapshot snapshot,
     List<AudioRoomSpeaker>? live,
@@ -867,28 +903,24 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       }
       return const VoiceRoomMicState(open: false, speaking: false);
     }
-    final rostered = <String>{
-      for (final member in speakers.items) voiceRoomRosterName(member),
-    };
-    final others = <AudioRoomSpeaker>[
-      for (final speaker in live)
-        if (!speaker.isLocal && !rostered.contains(speaker.name)) speaker,
-    ];
-    if (hostName != null) {
-      for (final speaker in others) {
-        if (speaker.name == hostName) {
-          return VoiceRoomMicState(open: true, speaking: speaker.isSpeaking);
-        }
+    // An empty roster was read too: it is a fact that nobody shares the name.
+    final rosterRead =
+        speakers.phase == CommunityViewPhase.ready ||
+        speakers.phase == CommunityViewPhase.empty;
+    if (hostName == null || !rosterRead) {
+      return VoiceRoomMicState.unknown;
+    }
+    for (final member in speakers.items) {
+      if (voiceRoomRosterName(member) == hostName) {
+        return VoiceRoomMicState.unknown;
       }
-      return const VoiceRoomMicState(open: false, speaking: false);
     }
-    if (others.isEmpty) {
-      return const VoiceRoomMicState(open: false, speaking: false);
-    }
-    return VoiceRoomMicState(
-      open: true,
-      speaking: others.any((speaker) => speaker.isSpeaking),
-    );
+    final matches = <AudioRoomSpeaker>[
+      for (final speaker in live)
+        if (!speaker.isLocal && speaker.name == hostName) speaker,
+    ];
+    if (matches.length != 1) return VoiceRoomMicState.unknown;
+    return VoiceRoomMicState(open: true, speaking: matches.single.isSpeaking);
   }
 
   /// Opens the server's commands for one face on a grid.
@@ -902,16 +934,32 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     await _runMemberCommand(controller, member, chosen);
   }
 
-  /// 下麦 for a speaker.
+  /// 下麦: this account's own step-down to listener (decision 0115,
+  /// `DELETE /v2/voice-rooms/{id}/speakers/me`).
   ///
-  /// `DELETE /v2/voice-rooms/{id}/speakers/{profile}` refuses the caller's own
-  /// account, so LOOP has no self-demotion command yet (decision 0115 lists it
-  /// for the server). The slot is where the reader looks for it, and it says
-  /// what is true instead of sending a write that is refused.
-  void _stepDown() {
+  /// The answer is the room resource, so the role on the page — and the bar
+  /// with it — follows the server. A server that does not serve the command
+  /// yet says so; nothing is shown as done that was not.
+  Future<void> _stepDown(VoiceRoomController controller) async {
+    final failure = await controller.stepDown();
+    if (!mounted) return;
+    if (failure == null) {
+      LoopToast.show(context, message: '已下麦，回到听众');
+      for (final view in VoiceRoomRosterView.values) {
+        unawaited(controller.loadRoster(view));
+      }
+      return;
+    }
     LoopToast.show(
       context,
-      message: '自助下麦当前不可用：后端只允许主持人调整发言人。要退出发言，请联系主持人，或离开房间。',
+      message:
+          failure == CommunityFailureKind.notFound ||
+              failure == CommunityFailureKind.unavailable
+          ? '下麦暂不可用'
+          : voiceRoomFailureText(
+              failure,
+              ref.read(voiceRoomControllerProvider).failureReasonCode,
+            ),
       kind: LoopToastKind.warn,
     );
   }

@@ -189,6 +189,12 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
   }
 
   @override
+  VoiceRoomPendingOpen? pendingOpen(String communityId) => null;
+
+  @override
+  Future<VoiceRoomSnapshot> stepDown(String voiceRoomId) async => _snapshot;
+
+  @override
   Future<VoiceRoomSnapshot> load(String voiceRoomId) async => _snapshot;
 
   @override

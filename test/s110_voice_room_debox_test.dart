@@ -9,6 +9,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
@@ -16,6 +17,8 @@ import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_presentation.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_stage.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -47,6 +50,7 @@ FakeVoiceRoomGateway _room({
   List<VoiceRoomMember> listeners = const <VoiceRoomMember>[],
   String? listenerCursor,
   CommunityFailureKind? rosterFailure,
+  VoiceRoomPerson? hostPerson,
 }) {
   final snapshot = testVoiceRoomSnapshot(role: role, host: host);
   final titled = VoiceRoomSnapshot(
@@ -65,6 +69,7 @@ FakeVoiceRoomGateway _room({
     viewer: snapshot.viewer,
     participants: snapshot.participants,
     providerSync: snapshot.providerSync,
+    host: hostPerson,
   );
   return FakeVoiceRoomGateway(snapshot: titled)
     ..rosterFailure = rosterFailure
@@ -129,13 +134,12 @@ void main() {
       expect(voice.commands, contains('cancel-hand-raise'));
     });
 
-    testWidgets('a speaker: 麦克风, 下麦 and 离开; 下麦 says why it waits', (
-      tester,
-    ) async {
+    testWidgets('a speaker: 麦克风, 下麦 and 离开; 下麦 steps down', (tester) async {
+      final voice = _room(role: VoiceRoomRole.speaker);
       await pumpCommunityPage(
         tester,
         const VoiceRoomScreen(communityId: testCommunityId),
-        voiceRoom: _room(role: VoiceRoomRole.speaker),
+        voiceRoom: voice,
       );
 
       expect(_inBar('voiceroom-bar-mic'), findsOneWidget);
@@ -151,9 +155,34 @@ void main() {
         findsOneWidget,
       );
 
+      // The server answers with the room, this account a listener now.
+      voice.snapshot = testVoiceRoomSnapshot();
       await tester.tap(_inBar('voiceroom-step-down'));
-      await tester.pump();
-      expect(find.textContaining('自助下麦当前不可用'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('step-down'));
+      expect(find.text('已下麦，回到听众'), findsOneWidget);
+      expect(_inBar('voiceroom-raise-hand'), findsOneWidget);
+      expect(_inBar('voiceroom-step-down'), findsNothing);
+      await tester.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('a server without 下麦 says so and claims nothing', (
+      tester,
+    ) async {
+      final voice = _room(role: VoiceRoomRole.speaker);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+      voice.failure = CommunityFailureKind.unavailable;
+      await tester.tap(_inBar('voiceroom-step-down'));
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('step-down'));
+      expect(find.text('下麦暂不可用'), findsOneWidget);
+      // Still a speaker, and the control stays where it was.
+      expect(_inBar('voiceroom-step-down'), findsOneWidget);
+      expect(find.text('已下麦，回到听众'), findsNothing);
       await tester.pump(const Duration(seconds: 4));
     });
 
@@ -456,6 +485,24 @@ void main() {
       );
     });
 
+    testWidgets('a plaza read without this room is read again once', (
+      tester,
+    ) async {
+      final plaza = _LiveGateway(<LiveVoiceRoom>[
+        _liveRoom(voiceRoomId: testRequestId),
+      ]);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: _room(),
+        overrides: <Override>[
+          liveVoiceRoomGatewayProvider.overrideWithValue(plaza),
+        ],
+      );
+      await tester.pumpAndSettle();
+      expect(plaza.reads, 2);
+    });
+
     testWidgets('without the plaza the host is 主持人, never a guess', (
       tester,
     ) async {
@@ -471,6 +518,173 @@ void main() {
         ),
         findsWidgets,
       );
+    });
+  });
+
+  group('S110 · who is heard is never guessed', () {
+    VoiceRoomMember speaker(
+      String alias, {
+      bool muted = false,
+      bool self = false,
+    }) => testVoiceRoomMember(
+      view: VoiceRoomRosterView.speaker,
+      alias: alias,
+      muted: muted,
+      isSelf: self,
+    );
+    const voice = AudioRoomSpeaker(
+      key: 's1',
+      name: 'pepe',
+      isLocal: false,
+      isSpeaking: true,
+    );
+
+    test('one voice with one name is that speaker', () {
+      final state = voiceRoomMemberMicState(speaker('pepe'), <AudioRoomSpeaker>[
+        voice,
+      ]);
+      expect(state.open, isTrue);
+      expect(state.speaking, isTrue);
+    });
+
+    test('no match, a shared name or an anonymous row claim nothing', () {
+      // Not in the call: the name may simply differ, so no slash is drawn.
+      expect(
+        voiceRoomMemberMicState(speaker('fox'), <AudioRoomSpeaker>[voice]).open,
+        isNull,
+      );
+      // LOOP's own mute mark is still a fact.
+      expect(
+        voiceRoomMemberMicState(speaker('fox', muted: true), <AudioRoomSpeaker>[
+          voice,
+        ]).open,
+        isFalse,
+      );
+      expect(
+        voiceRoomMemberMicState(speaker('pepe'), <AudioRoomSpeaker>[
+          voice,
+        ], nameUnique: false).open,
+        isNull,
+      );
+      expect(
+        voiceRoomMemberMicState(speaker('pepe'), <AudioRoomSpeaker>[
+          voice,
+          const AudioRoomSpeaker(
+            key: 's2',
+            name: 'pepe',
+            isLocal: false,
+            isSpeaking: false,
+          ),
+        ]).open,
+        isNull,
+      );
+      final anonymous = testVoiceRoomMember(
+        view: VoiceRoomRosterView.speaker,
+        publicProfileId: null,
+        alias: null,
+      );
+      expect(
+        voiceRoomMemberMicState(anonymous, <AudioRoomSpeaker>[
+          const AudioRoomSpeaker(
+            key: 's3',
+            name: '匿名成员',
+            isLocal: false,
+            isSpeaking: true,
+          ),
+        ]).speaking,
+        isFalse,
+      );
+    });
+
+    test('the reader\'s own row is the local voice, either way', () {
+      expect(
+        voiceRoomMemberMicState(speaker('me', self: true), <AudioRoomSpeaker>[
+          voice,
+        ]).open,
+        isFalse,
+      );
+      expect(
+        voiceRoomMemberMicState(speaker('me', self: true), <AudioRoomSpeaker>[
+          const AudioRoomSpeaker(
+            key: 'local',
+            name: '我',
+            isLocal: true,
+            isSpeaking: true,
+          ),
+        ]).speaking,
+        isTrue,
+      );
+    });
+
+    Future<void> hear(
+      WidgetTester tester,
+      List<AudioRoomSpeaker> speakers,
+    ) async {
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceRoomScreen)),
+      );
+      container
+          .read(audioRoomLivePresenceProvider.notifier)
+          .report(
+            AudioRoomLivePresence(
+              roomId: testVoiceRoomSnapshot().room.roomId!,
+              phase: AudioRoomLivePhase.connected,
+              participantCount: 3,
+              speakers: speakers,
+            ),
+          );
+      await tester.pumpAndSettle();
+    }
+
+    Finder hostSays(String text) => find.descendant(
+      of: find.byKey(const ValueKey<String>('voiceroom-host')),
+      matching: find.text(text),
+    );
+
+    testWidgets('an unnamed host is not whoever else is talking', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: _room(),
+      );
+      await hear(tester, <AudioRoomSpeaker>[
+        const AudioRoomSpeaker(
+          key: 'x',
+          name: 'stranger',
+          isLocal: false,
+          isSpeaking: true,
+        ),
+      ]);
+      expect(hostSays('正在发言'), findsNothing);
+      expect(hostSays('已静音'), findsNothing);
+    });
+
+    testWidgets('the room\'s own host is named, and heard by that name', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: _room(
+          hostPerson: const VoiceRoomPerson(
+            publicProfileId: testOwnerId,
+            displayName: 'frog_maxi',
+            avatarRef: null,
+          ),
+        ),
+      );
+      expect(hostSays('frog_maxi'), findsOneWidget);
+      await hear(tester, <AudioRoomSpeaker>[
+        const AudioRoomSpeaker(
+          key: 'h',
+          name: 'frog_maxi',
+          isLocal: false,
+          isSpeaking: true,
+        ),
+      ]);
+      expect(hostSays('正在发言'), findsOneWidget);
     });
   });
 
@@ -600,6 +814,82 @@ void main() {
     testWidgets('the field holds forty code points', (tester) async {
       final voice = await open(tester, '语' * 45);
       expect(voice.createTitles.single?.runes.length, 40);
+    });
+
+    testWidgets('an unfinished opening shows its first title, locked', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      )..pendingOpenAnswer = const VoiceRoomPendingOpen(title: '周五 AMA');
+      await pumpCommunityPage(
+        tester,
+        Builder(
+          builder: (context) => Center(
+            child: TextButton(
+              key: const ValueKey<String>('probe-open'),
+              onPressed: () =>
+                  unawaited(showVoiceRoomStartSheet(context, testCommunityId)),
+              child: const Text('开播'),
+            ),
+          ),
+        ),
+        voiceRoom: voice,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('probe-open')));
+      await tester.pumpAndSettle();
+      final field = tester.widget<TextField>(
+        find.byKey(const ValueKey<String>('voiceroom-start-title')),
+      );
+      expect(field.controller?.text, '周五 AMA');
+      expect(field.enabled, isFalse);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-start-pending')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-start-submit')),
+      );
+      await tester.pumpAndSettle();
+      expect(voice.createTitles, <String?>['周五 AMA']);
+    });
+
+    testWidgets('the sheet does not close while the room is being opened', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      )..pending = true;
+      await pumpCommunityPage(
+        tester,
+        Builder(
+          builder: (context) => Center(
+            child: TextButton(
+              key: const ValueKey<String>('probe-open'),
+              onPressed: () =>
+                  unawaited(showVoiceRoomStartSheet(context, testCommunityId)),
+              child: const Text('开播'),
+            ),
+          ),
+        ),
+        voiceRoom: voice,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('probe-open')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-start-submit')),
+      );
+      await tester.pump();
+      expect(find.text('正在开播…'), findsOneWidget);
+      // The system back, a tap outside and a drag all leave it standing.
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey<String>('community-open-voice-room-sheet')),
+        findsOneWidget,
+      );
     });
 
     test('the title rule', () {
@@ -827,17 +1117,20 @@ final class _LiveGateway implements LiveVoiceRoomGateway {
   _LiveGateway(this.items);
 
   final List<LiveVoiceRoom> items;
+  var reads = 0;
 
   @override
   CommunityGatewayMode get mode => CommunityGatewayMode.production;
 
   @override
-  Future<LiveVoiceRoomPage> listLive({String? cursor}) async =>
-      LiveVoiceRoomPage(
-        items: items,
-        nextCursor: null,
-        observedAt: DateTime.utc(2026, 10, 8, 4),
-      );
+  Future<LiveVoiceRoomPage> listLive({String? cursor}) async {
+    reads += 1;
+    return LiveVoiceRoomPage(
+      items: items,
+      nextCursor: null,
+      observedAt: DateTime.utc(2026, 10, 8, 4),
+    );
+  }
 }
 
 /// A call whose foreground is a probe of the room page's presentation: it

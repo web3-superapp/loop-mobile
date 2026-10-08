@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_presentation.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -53,28 +54,41 @@ final class VoiceRoomMicState {
   static const unknown = VoiceRoomMicState(open: null, speaking: false);
 }
 
-/// Who a roster speaker is in the call this device holds, matched the only
-/// two ways there are: the local participant is this account's own row, and
-/// everybody else is matched by the name both sides print.
+/// Who a roster speaker is in the call this device holds.
 ///
-/// Without a call there is LOOP's mute mark and nothing else: a muted row is
-/// drawn with the slash, an unmuted one claims nothing.
+/// The reader's own row is the local participant, and that answer is certain
+/// either way. Anybody else can only be matched by the name both sides print,
+/// so a match is claimed only when exactly one voice in the call carries a
+/// name exactly one roster row carries ([nameUnique]). An anonymous row, a
+/// name shared by two rows, and a name the call does not carry claim nothing
+/// about the microphone: the row then shows LOOP's own mute mark, or no mark.
 VoiceRoomMicState voiceRoomMemberMicState(
   VoiceRoomMember member,
-  List<AudioRoomSpeaker>? live,
-) {
-  if (live == null) {
-    return member.muted
-        ? const VoiceRoomMicState(open: false, speaking: false)
-        : VoiceRoomMicState.unknown;
+  List<AudioRoomSpeaker>? live, {
+  bool nameUnique = true,
+}) {
+  final fallback = member.muted
+      ? const VoiceRoomMicState(open: false, speaking: false)
+      : VoiceRoomMicState.unknown;
+  if (live == null) return fallback;
+  if (member.isSelf) {
+    for (final speaker in live) {
+      if (speaker.isLocal) {
+        return VoiceRoomMicState(open: true, speaking: speaker.isSpeaking);
+      }
+    }
+    return const VoiceRoomMicState(open: false, speaking: false);
+  }
+  if (member.name is VoiceRoomMemberAnonymousName || !nameUnique) {
+    return fallback;
   }
   final name = voiceRoomRosterName(member);
-  for (final speaker in live) {
-    final same = member.isSelf ? speaker.isLocal : speaker.name == name;
-    if (!same) continue;
-    return VoiceRoomMicState(open: true, speaking: speaker.isSpeaking);
-  }
-  return const VoiceRoomMicState(open: false, speaking: false);
+  final matches = <AudioRoomSpeaker>[
+    for (final speaker in live)
+      if (!speaker.isLocal && speaker.name == name) speaker,
+  ];
+  if (matches.length != 1) return fallback;
+  return VoiceRoomMicState(open: true, speaking: matches.single.isSpeaking);
 }
 
 /// The roster's display rule, restated here so the stage does not import the
@@ -197,7 +211,7 @@ class VoiceRoomSpeakingRing extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: speaking ? LoopColors.lime : const Color(0x00000000),
+          color: speaking ? LoopColors.lime : Colors.transparent,
           width: width,
         ),
       ),
@@ -215,12 +229,14 @@ class _MemberTile extends StatelessWidget {
     required this.avatarSize,
     required this.width,
     super.key,
+    this.avatarRef,
     this.mic,
     this.handRaised = false,
     this.onTap,
   });
 
   final String name;
+  final String? avatarRef;
   final double avatarSize;
   final double width;
   final VoiceRoomMicState? mic;
@@ -258,7 +274,7 @@ class _MemberTile extends StatelessWidget {
                 size: avatarSize,
                 speaking: speaking,
                 child: LoopProfileAvatar(
-                  avatarRef: null,
+                  avatarRef: avatarRef,
                   alias: name,
                   size: avatarSize,
                 ),
@@ -415,29 +431,43 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
               key: ValueKey<String>('voiceroom-speakers-empty'),
               text: '还没有人上麦',
             )
-          : _GridRows(
-              key: const ValueKey<String>('voiceroom-speakers'),
-              columns: voiceRoomSpeakerColumns,
-              count: roster.items.length,
-              cell: (index, width) {
-                final member = roster.items[index];
-                final open = onOpenMember;
-                return _MemberTile(
-                  key: ValueKey<String>(
-                    'voiceroom-speaker-tile-'
-                    '${member.publicProfileId ?? index}',
-                  ),
-                  name: voiceRoomRosterName(member),
-                  avatarSize: 48,
-                  width: width,
-                  mic: voiceRoomMemberMicState(member, live),
-                  onTap: member.commands.isEmpty || open == null
-                      ? null
-                      : () => open(member),
-                );
-              },
-            ),
+          : _speakerRows(),
   };
+
+  Widget _speakerRows() {
+    final names = <String, int>{};
+    for (final member in roster.items) {
+      final name = voiceRoomRosterName(member);
+      names[name] = (names[name] ?? 0) + 1;
+    }
+    return _GridRows(
+      key: const ValueKey<String>('voiceroom-speakers'),
+      columns: voiceRoomSpeakerColumns,
+      count: roster.items.length,
+      cell: (index, width) {
+        final member = roster.items[index];
+        final open = onOpenMember;
+        return _MemberTile(
+          key: ValueKey<String>(
+            'voiceroom-speaker-tile-'
+            '${member.publicProfileId ?? index}',
+          ),
+          name: voiceRoomRosterName(member),
+          avatarRef: member.avatarRef,
+          avatarSize: 48,
+          width: width,
+          mic: voiceRoomMemberMicState(
+            member,
+            live,
+            nameUnique: names[voiceRoomRosterName(member)] == 1,
+          ),
+          onTap: member.commands.isEmpty || open == null
+              ? null
+              : () => open(member),
+        );
+      },
+    );
+  }
 }
 
 /// The listeners: six to a row, a 40 face and the name, a hand on whoever
@@ -565,6 +595,7 @@ class VoiceRoomListenerGrid extends StatelessWidget {
             'voiceroom-listener-tile-${member.publicProfileId ?? index}',
           ),
           name: voiceRoomRosterName(member),
+          avatarRef: member.avatarRef,
           avatarSize: 40,
           width: width,
           handRaised: member.handRaised,
@@ -1024,6 +1055,10 @@ Future<VoiceRoomOpenOutcome?> showVoiceRoomStartSheet(
 ) => showLoopSheet<VoiceRoomOpenOutcome>(
   context,
   barrierLabel: '关闭开播弹层',
+  // The sheet carries the answer of a write that may be in flight, so it is
+  // closed by its own buttons (and the system back while idle) only: a drag
+  // or a tap outside would drop that answer on the floor.
+  isDismissible: false,
   builder: (sheetContext) => _VoiceRoomStartSheet(communityId: communityId),
 );
 
@@ -1046,9 +1081,17 @@ class _VoiceRoomStartSheet extends ConsumerStatefulWidget {
 class _VoiceRoomStartSheetState extends ConsumerState<_VoiceRoomStartSheet> {
   final TextEditingController _title = TextEditingController();
 
+  /// An opening of this community's room that is not finished: its retry
+  /// carries the first title, so the field shows it and cannot change it.
+  VoiceRoomPendingOpen? _pending;
+
   @override
   void initState() {
     super.initState();
+    _pending = ref
+        .read(voiceRoomGatewayProvider)
+        .pendingOpen(widget.communityId);
+    _title.text = _pending?.title ?? '';
     _title.addListener(_changed);
   }
 
@@ -1074,70 +1117,84 @@ class _VoiceRoomStartSheetState extends ConsumerState<_VoiceRoomStartSheet> {
   Widget build(BuildContext context) {
     final opening = ref.watch(voiceRoomOpenControllerProvider);
     final used = _title.text.runes.length;
-    return Padding(
-      key: const ValueKey<String>('community-open-voice-room-sheet'),
-      padding: EdgeInsets.fromLTRB(
-        16,
-        4,
-        16,
-        8 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            '开播',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
-            '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            key: const ValueKey<String>('voiceroom-start-title'),
-            controller: _title,
-            enabled: !opening,
-            textInputAction: TextInputAction.done,
-            inputFormatters: <TextInputFormatter>[
-              _CodePointLimit(voiceRoomTitleMaxCodePoints),
-            ],
-            decoration: const InputDecoration(
-              labelText: '房间标题（可留空）',
-              hintText: '留空时显示「社区名 语音房」',
+    final pending = _pending;
+    return PopScope<VoiceRoomOpenOutcome>(
+      // While the room is being opened the sheet stays: its answer is what
+      // the caller reports, and a pop here would swallow it.
+      canPop: !opening,
+      child: Padding(
+        key: const ValueKey<String>('community-open-voice-room-sheet'),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          4,
+          16,
+          8 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              '开播',
+              style: LoopTypography.heading(18, weight: FontWeight.w700),
             ),
-            onSubmitted: opening ? null : (_) => unawaited(_submit()),
-          ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '$used / $voiceRoomTitleMaxCodePoints',
-              style: LoopTypography.figure(11, color: LoopColors.text3),
+            const SizedBox(height: 8),
+            Text(
+              '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
+              '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
+              style: LoopTypography.body(13, color: LoopColors.muted),
             ),
-          ),
-          const SizedBox(height: 12),
-          LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('voiceroom-start-submit'),
-                label: opening ? '正在开播…' : '开播',
-                primary: true,
-                icon: 'voice',
-                onPressed: opening ? null : () => unawaited(_submit()),
+            const SizedBox(height: 14),
+            TextField(
+              key: const ValueKey<String>('voiceroom-start-title'),
+              controller: _title,
+              enabled: !opening && pending == null,
+              textInputAction: TextInputAction.done,
+              inputFormatters: <TextInputFormatter>[
+                _CodePointLimit(voiceRoomTitleMaxCodePoints),
+              ],
+              decoration: const InputDecoration(
+                labelText: '房间标题（可留空）',
+                hintText: '留空时显示「社区名 语音房」',
               ),
-              LoopButton(
-                key: const ValueKey<String>('voiceroom-start-cancel'),
-                label: '取消',
-                onPressed: opening ? null : () => Navigator.of(context).pop(),
+              onSubmitted: opening ? null : (_) => unawaited(_submit()),
+            ),
+            if (pending != null) ...<Widget>[
+              const SizedBox(height: 6),
+              Text(
+                '上一次开播还没有完成，再开播会接着完成它，标题沿用当时填写的内容。',
+                key: const ValueKey<String>('voiceroom-start-pending'),
+                style: LoopTypography.caption(12, color: LoopColors.text2),
               ),
             ],
-          ),
-        ],
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '$used / $voiceRoomTitleMaxCodePoints',
+                style: LoopTypography.figure(11, color: LoopColors.text3),
+              ),
+            ),
+            const SizedBox(height: 12),
+            LoopButtonPair(
+              padded: false,
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('voiceroom-start-submit'),
+                  label: opening ? '正在开播…' : '开播',
+                  primary: true,
+                  icon: 'voice',
+                  onPressed: opening ? null : () => unawaited(_submit()),
+                ),
+                LoopButton(
+                  key: const ValueKey<String>('voiceroom-start-cancel'),
+                  label: '取消',
+                  onPressed: opening ? null : () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1155,6 +1212,10 @@ final class _CodePointLimit extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
+    // An IME still composing (pinyin, kana) is left alone: cutting its
+    // provisional text would break the composition. The cut happens once the
+    // text is committed.
+    if (newValue.composing.isValid) return newValue;
     if (newValue.text.runes.length <= limit) return newValue;
     final text = String.fromCharCodes(newValue.text.runes.take(limit));
     return TextEditingValue(

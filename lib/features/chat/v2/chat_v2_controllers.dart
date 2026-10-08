@@ -1074,6 +1074,10 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
         ),
       );
 
+  /// This account's own step-down from speaker to listener (decision 0115).
+  Future<CommunityFailureKind?> stepDown() =>
+      _command((gateway, roomId) => gateway.stepDown(roomId));
+
   Future<CommunityFailureKind?> muteAll() =>
       _command((gateway, roomId) => gateway.muteAll(roomId));
 
