@@ -59,6 +59,8 @@ S113 / S114 在数据密集页逐页替换。
   普通文本由平台中文字体排版）；`supportedReactions` 为空集（「+」按它过滤 Stream 的 Emoji 目录，空集即不给出
   任何 Emoji）；`emojiCode` 恒为 `null`（LOOP 发出的反应不带 Emoji 码）。
 - `loopStreamChatConfiguration.reactionIconResolver = const LoopStreamReactionIconResolver()`。
+- `_loopStreamComponentBuilders.reactionPicker = loopStreamReactionPickerBuilder`：长按弹层表情条只画五个字，
+  不画「+」（`supportedReactions` 非空时回到 Stream 默认 picker）。
 - Preview 夹具 `ChatContent.groupMessages` 的反应键改为类型名（`like / wow / sad / love / haha`），
   `ChatMessageTile` 经 `loopReactionLabel` 画字（「赞 18」）。
 
@@ -87,7 +89,7 @@ S113 / S114 在数据密集页逐页替换。
 | # | 项 | S112 §1 | 本批实现 | 原因 / 后续 |
 | --- | --- | --- | --- | --- |
 | 1 | 反应图标 | `LoopIcon` 的 like / laugh / heart / wow / sad，没有的用字 | 五个全部用字「赞 / 哈 / 心 / 哇 / 叹」 | 现有 65 个 sprite 里没有拇指、笑脸、心形、惊讶、难过任何一个；混用图标与字会让一排五个大小、基线都不一致。补图标后只改 `resolve` 一处 |
-| 2 | 「+」更多表情 | 未写 | 按钮仍在，打开的是空表（`supportedReactions` 为空） | 隐藏按钮要改 `app.dart` 的 `StreamComponentBuilders.reactionPicker`，超出本单允许的 app.dart 改动面；需主代理决定是否在后续单里换 picker builder |
+| 2 | 「+」更多表情 | 未写 | 长按弹层的表情条不画「+」：`app.dart` 的 `StreamComponentBuilders.reactionPicker = loopStreamReactionPickerBuilder`，解析器 `supportedReactions` 为空时画 `LoopStreamReactionBar`（Stream 同款外形，五个字，按钮 48px 满足 44 触控），否则回到 Stream 默认 picker | 主代理 2026-10-08 裁定（原「+」打开空表）。表态详情弹层（`reaction_detail_sheet.dart` 的 `StreamEmojiChip.addEmoji`）不是组件工厂可替换的部件，仍会出一个打开空表的「+」；群聊已把详情弹层置空（`onReactionTap: (_, _) {}`），私聊仍可点开，待后续裁定 |
 | 3 | sparkline 文件位置 | 任务单写 `lib/widgets/loop_sparkline.dart:43` | 实际文件是 `lib/features/market/loop_sparkline.dart`；只改默认色（`color` 可空 + `resolvedColor`）与一行 import | 文件不在 widgets；改动面与 §1 意图一致，不触碰行情页面 |
 | 4 | K 线「四个」常量 | `_upBody`、`_down*` | 改五个：多 `_upVolume`（原写死 Lime 24% 的 `0x3DB8FF20`） | 不改则上涨成交量仍是 Lime，与绿色实体不一致 |
 | 5 | perp 切片 | 未提 | 四处 `mint / danger` 涨跌改 `rise / fall` | perp 不在导航内，但新规则会扫到；改色比开白名单干净 |
@@ -102,9 +104,11 @@ S113 / S114 在数据密集页逐页替换。
 - 测试：新增 `test/s112_price_tokens_global_components_test.dart`（token 值与 rise/fall 映射、`ofSeries`、
   sparkline 默认色涨 / 跌 / 平与显式色优先、inline unavailable 三态 + 单行省略、provenance line 文案 / 跨日 /
   空 / 弹出与关闭、resolver 五字无 Emoji / 未知类型 /`emojiCode` 空 / `supportedReactions` 空 / app 注入 /
-  Preview 夹具键与渲染）。改写的既有测试：`loop_components_test.dart`、`loop_token_card_test.dart`、
+  Preview 夹具键与渲染）；`test/s112_reaction_picker_test.dart`（长按弹层：五个字、无 `add_reaction`、
+  按钮 ≥ 44；对照组用 Stream 默认解析器时「+」存在；`app.dart` 安装了 builder）。改写的既有测试：`loop_components_test.dart`、`loop_token_card_test.dart`、
   `s82_logos_discover_and_token_test.dart`（期望值 lime/danger → rise/fall，组名同步）、`s16f_probe_test.dart`
   （行情页的亮地面从 Lime 色块变为 rise 色块，测试名改为 `the Market page renders a light change ground`）。
 - `docs/00` §4.7 的补句由主代理负责。
 - 未验证（需模拟器 / 真机）：长按消息反应条五个字的字号与基线（`StreamUnicodeEmoji` 把 `fontFamily` 钉为
-  Apple Color Emoji / Noto Color Emoji，中文走系统回退字体）、「+」空表的观感、绿 / 红在 OLED 上的观感。
+  Apple Color Emoji / Noto Color Emoji，中文走系统回退字体）、私聊表态详情弹层里残留的「+」、绿 / 红在
+  OLED 上的观感。

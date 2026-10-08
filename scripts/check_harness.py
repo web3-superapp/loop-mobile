@@ -9511,13 +9511,44 @@ def check_no_emoji(root: Path) -> list[str]:
                     "The Stream reaction resolver must draw LOOP's words and "
                     f"offer no Emoji catalogue; missing `{required}`"
                 )
-    if app.is_file() and (
-        "reactionIconResolver: const LoopStreamReactionIconResolver()"
-        not in read_text(app)
-    ):
+    if app.is_file():
+        app_source = read_text(app)
+        if (
+            "reactionIconResolver: const LoopStreamReactionIconResolver()"
+            not in app_source
+        ):
+            errors.append(
+                "lib/app.dart must hand Stream LoopStreamReactionIconResolver; "
+                "the default resolver renders reactions as system Emoji"
+            )
+        # Stream's default bar pins a 「+」 that opens the Emoji catalogue
+        # filtered by `supportedReactions`; LOOP supports none, so the bar is
+        # LOOP's own and draws no 「+」.
+        if "reactionPicker: loopStreamReactionPickerBuilder," not in app_source:
+            errors.append(
+                "lib/app.dart must install loopStreamReactionPickerBuilder; "
+                "Stream's default reaction bar offers a 「+」 onto an empty "
+                "Emoji catalogue"
+            )
+    if resolver.is_file():
+        source = read_text(resolver)
+        for required in (
+            "if (resolver.supportedReactions.isNotEmpty) {",
+            "return LoopStreamReactionBar(props: props);",
+        ):
+            if required not in source:
+                errors.append(
+                    "The LOOP reaction bar must drop the 「+」 when no reaction "
+                    f"beyond the quick five is supported; missing `{required}`"
+                )
+        if "add_reaction" in strip_dart_comments(source) or "icons.plus" in source:
+            errors.append(
+                "LoopStreamReactionBar must not draw Stream's 「+」 button"
+            )
+    if not (root / "test/s112_reaction_picker_test.dart").is_file():
         errors.append(
-            "lib/app.dart must hand Stream LoopStreamReactionIconResolver; the "
-            "default resolver renders reactions as system Emoji"
+            "test/s112_reaction_picker_test.dart is missing; the long-press bar's "
+            "missing 「+」 is unproven"
         )
     return errors
 
