@@ -1096,7 +1096,10 @@ final class VoiceRoomOpenController extends Notifier<bool> {
   @override
   bool build() => false;
 
-  Future<VoiceRoomOpenOutcome> openRoom(String communityId) async {
+  Future<VoiceRoomOpenOutcome> openRoom(
+    String communityId, {
+    String? title,
+  }) async {
     if (state) {
       return const VoiceRoomOpenOutcome.refused(CommunityFailureKind.stale);
     }
@@ -1104,7 +1107,7 @@ final class VoiceRoomOpenController extends Notifier<bool> {
     try {
       final room = await ref
           .read(voiceRoomGatewayProvider)
-          .createRoom(communityId);
+          .createRoom(communityId, title: title);
       state = false;
       return VoiceRoomOpenOutcome.opened(room);
     } on CommunityGatewayException catch (error) {

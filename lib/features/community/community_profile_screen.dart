@@ -598,20 +598,11 @@ class _CommunityProfileScreenState
   /// server's: this states what came back and never claims a room that was
   /// not confirmed.
   Future<void> _createVoiceRoom(CommunityDetail detail) async {
-    final confirmed = await confirmCommunityAction(
+    final outcome = await showVoiceRoomStartSheet(
       context,
-      title: '开启语音房？',
-      body:
-          '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
-          '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
-      confirmLabel: '开启',
-      sheetKey: 'community-open-voice-room-sheet',
+      detail.community.communityId,
     );
-    if (!confirmed || !mounted) return;
-    final outcome = await ref
-        .read(voiceRoomOpenControllerProvider.notifier)
-        .openRoom(detail.community.communityId);
-    if (!mounted) return;
+    if (outcome == null || !mounted) return;
     final failure = outcome.failure;
     if (failure == null) {
       if (outcome.isOpen) {

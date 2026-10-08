@@ -28,6 +28,14 @@ final class DioLoopV2CommunicationGateway
   final LoopAuthenticatedSession _session;
   final LoopV2CommandKeyring _keyring;
 
+  /// The title each unfinished opening was sent with (decision 0115).
+  ///
+  /// A retained key finishes the command it was reserved for, and that
+  /// command had a body: sending the same key with another title would be a
+  /// different request under the same key. The retry therefore carries the
+  /// first title, and a new title waits for a new room.
+  final Map<String, String?> _openTitles = <String, String?>{};
+
   @override
   CommunityGatewayMode get mode => CommunityGatewayMode.production;
 
@@ -129,13 +137,35 @@ final class DioLoopV2CommunicationGateway
   }
 
   @override
-  Future<VoiceRoomSnapshot> createRoom(String communityId) => _write(
-    'voice-room-open:$communityId',
+  Future<VoiceRoomSnapshot> createRoom(
+    String communityId, {
+    String? title,
+  }) async {
+    final signature = 'voice-room-open:$communityId';
+    final resumed =
+        _keyring.peek(signature) != null &&
+        _openTitles.containsKey(communityId);
+    final sent = resumed ? _openTitles[communityId] : title;
+    _openTitles[communityId] = sent;
+    try {
+      return await _openRoom(signature, communityId, sent);
+    } finally {
+      if (_keyring.peek(signature) == null) _openTitles.remove(communityId);
+    }
+  }
+
+  Future<VoiceRoomSnapshot> _openRoom(
+    String signature,
+    String communityId,
+    String? title,
+  ) => _write(
+    signature,
     (accessToken, key) => _api.createVoiceRoom(
       accessToken: accessToken,
       clientVersion: _clientVersion,
       idempotencyKey: key,
       communityId: communityId,
+      title: title,
     ),
     // A live room nobody can be let into yet is a command that is not
     // finished, and the same key is what finishes it. A room that is no longer
@@ -266,6 +296,8 @@ final class DioLoopV2CommunicationGateway
   }
 
   /// Lets go of the key that opened one community's room.
-  void _releaseOpenKey(String communityId) =>
-      _keyring.release('voice-room-open:$communityId');
+  void _releaseOpenKey(String communityId) {
+    _keyring.release('voice-room-open:$communityId');
+    _openTitles.remove(communityId);
+  }
 }

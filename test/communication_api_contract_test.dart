@@ -1073,6 +1073,53 @@ void main() {
       expect(captured.single.data, isNull);
     });
 
+    // Decision 0115 (S109b-api): the optional `{ title }` body, and the
+    // optional `title` on the room resource.
+    test('a title travels as the one body field and comes back', () async {
+      final body = _roomBody(role: 'host', host: true);
+      (body['room']! as Map<String, Object?>)['title'] = '周五 AMA';
+      final (api, captured) = _api(body, statusCode: 201);
+
+      final snapshot = await api.createVoiceRoom(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        idempotencyKey: _key,
+        communityId: _communityId,
+        title: '周五 AMA',
+      );
+
+      expect(captured.single.data, <String, Object?>{'title': '周五 AMA'});
+      expect(snapshot.room.title, '周五 AMA');
+    });
+
+    test('a room without a title, or with a blank one, has none', () async {
+      for (final title in <Object?>[null, '   ']) {
+        final body = _roomBody(role: 'host', host: true);
+        (body['room']! as Map<String, Object?>)['title'] = title;
+        final (api, _) = _api(body, statusCode: 201);
+        final snapshot = await api.createVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          communityId: _communityId,
+        );
+        expect(snapshot.room.title, isNull);
+      }
+      // A title that is not text is not this contract.
+      final body = _roomBody(role: 'host', host: true);
+      (body['room']! as Map<String, Object?>)['title'] = 7;
+      final (api, _) = _api(body, statusCode: 201);
+      await expectLater(
+        api.createVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          communityId: _communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('a created room answered with 200 is an invalid payload', () async {
       final (api, _) = _api(_roomBody(role: 'host', host: true));
 

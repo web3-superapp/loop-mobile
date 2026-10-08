@@ -4,10 +4,12 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 
-/// The host line of one live room, under the leaderboard display rule.
+/// One person on a live room's card — the host, or one of the faces in
+/// `speakersPreview` — under the leaderboard display rule.
 ///
-/// [displayName] is null when the host shows anonymously or has no alias;
-/// the row then says 匿名成员 and never borrows another name.
+/// [displayName] is null when the person shows anonymously or has no alias;
+/// the row then says 匿名成员 and never borrows another name, and an
+/// anonymous person carries no address and no face either.
 @immutable
 final class LiveVoiceRoomHost {
   const LiveVoiceRoomHost({
@@ -36,6 +38,7 @@ final class LiveVoiceRoom {
     required this.countsObservedAt,
     required this.startedAt,
     required this.joinable,
+    this.speakersPreview = const <LiveVoiceRoomHost>[],
   });
 
   final String voiceRoomId;
@@ -43,9 +46,15 @@ final class LiveVoiceRoom {
   final String communityName;
   final String? communityLogoRef;
 
-  /// Rooms carry no title today; the row shows the community name instead.
+  /// The host's own title for the room (decision 0115), or null — then the
+  /// card says 「{社区名} 语音房」.
   final String? title;
   final LiveVoiceRoomHost host;
+
+  /// The host and up to three speakers, host first, at most four
+  /// (S109b-api). Empty when the server does not publish the field yet; the
+  /// card then stacks the [host] alone.
+  final List<LiveVoiceRoomHost> speakersPreview;
 
   /// LOOP role-intent counts, host excluded. Not provider presence.
   final int listenerCount;

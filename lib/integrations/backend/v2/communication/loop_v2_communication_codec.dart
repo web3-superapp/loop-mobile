@@ -213,17 +213,24 @@ abstract final class LoopV2CommunicationCodec {
     // Decision 0052 adds `communityName` to the frozen key set: the banner and
     // the room title name the community from the room resource itself, so a
     // response without it is not the room this client reads.
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'voiceRoomId',
-      'communityId',
-      'communityName',
-      'callCid',
-      'state',
-      'provisionState',
-      'backstage',
-      'createdAt',
-      'endedAt',
-    });
+    //
+    // Decision 0115 adds the optional `title` (S109b-api): a server that does
+    // not publish it yet and a room opened without one both read as null.
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{
+        'voiceRoomId',
+        'communityId',
+        'communityName',
+        'callCid',
+        'state',
+        'provisionState',
+        'backstage',
+        'createdAt',
+        'endedAt',
+      },
+      const <String>{'title'},
+    );
     final rawState = map['state'];
     final rawProvision = map['provisionState'];
     if (rawState is! String || rawProvision is! String) _invalid();
@@ -255,7 +262,17 @@ abstract final class LoopV2CommunicationCodec {
       endedAt: rawEndedAt == null
           ? null
           : LoopV2ProjectionCodec.requireTimestamp(map, 'endedAt'),
+      title: voiceRoomTitleValue(map['title']),
     );
+  }
+
+  /// A room title as the wire carries it: absent, null and blank are all
+  /// "no title"; anything that is not a string is not this contract.
+  static String? voiceRoomTitleValue(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! String) _invalid();
+    final trimmed = raw.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   static VoiceRoomHandRaise handRaise(Map<String, Object?> map) {

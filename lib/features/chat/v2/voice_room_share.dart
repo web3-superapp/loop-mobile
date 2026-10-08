@@ -45,9 +45,13 @@ String? voiceRoomShareLink(String backendBaseUrl, String communityId) {
   ).toString();
 }
 
-/// The room's title as the room page prints it. The room resource carries
-/// no title of its own (decision 0052), so it is the community's room.
-String voiceRoomTitle(String communityName) => '$communityName 语音房';
+/// The room's title as the room page, the plaza card and the share text
+/// print it: the host's own title when the room has one (decision 0115),
+/// and otherwise the community's room.
+String voiceRoomTitle(String communityName, {String? title}) {
+  final own = title?.trim();
+  return own == null || own.isEmpty ? '$communityName 语音房' : own;
+}
 
 /// The text handed to the system share sheet.
 String voiceRoomShareText({

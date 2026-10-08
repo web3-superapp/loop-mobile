@@ -1692,7 +1692,7 @@ void main() {
       // The sheet states the consequence before anything is created.
       expect(find.textContaining('任何成员都能进来收听'), findsOneWidget);
       await tester.tap(
-        find.byKey(const ValueKey<String>('community-confirm-cancel')),
+        find.byKey(const ValueKey<String>('voiceroom-start-cancel')),
       );
       await tester.pumpAndSettle();
       expect(voiceRoom.commands, isEmpty);
@@ -1700,11 +1700,13 @@ void main() {
       await tester.tap(createButton);
       await tester.pumpAndSettle();
       await tester.tap(
-        find.byKey(const ValueKey<String>('community-confirm-accept')),
+        find.byKey(const ValueKey<String>('voiceroom-start-submit')),
       );
       await tester.pumpAndSettle();
 
       expect(voiceRoom.commands, contains('create:$testCommunityId'));
+      // Decision 0115: a title left empty is not sent at all.
+      expect(voiceRoom.createTitles, <String?>[null]);
       expect(find.text('语音房已开启'), findsOneWidget);
       expect(entered, <String>[testCommunityId]);
     });
@@ -1826,7 +1828,7 @@ void main() {
       await tester.tap(createButton);
       await tester.pumpAndSettle();
       await tester.tap(
-        find.byKey(const ValueKey<String>('community-confirm-accept')),
+        find.byKey(const ValueKey<String>('voiceroom-start-submit')),
       );
       await tester.pumpAndSettle();
 
@@ -1860,7 +1862,7 @@ void main() {
       await tester.tap(createButton);
       await tester.pumpAndSettle();
       await tester.tap(
-        find.byKey(const ValueKey<String>('community-confirm-accept')),
+        find.byKey(const ValueKey<String>('voiceroom-start-submit')),
       );
       await tester.pumpAndSettle();
 

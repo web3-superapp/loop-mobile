@@ -1078,9 +1078,12 @@ void main() {
       expect(find.text('LOOP 上次观察在线'), findsNothing);
       expect(find.textContaining('服务商允许进入的账号'), findsNothing);
       expect(find.textContaining('UTC'), findsNothing);
-      // What is left is the hero's own figure and the line under the title,
-      // and the host is inside both of them: 46 = 1 + 3 + 42.
-      expect(find.text('46 人在房间里'), findsOneWidget);
+      // Decision 0115: the top bar states the room's own total, host inside
+      // it (46 = 1 + 3 + 42), and the split is in (i).
+      expect(find.text('46 在听'), findsOneWidget);
+      expect(find.text('听众 42'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
+      await tester.pumpAndSettle();
       expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
     });
 
@@ -1167,10 +1170,17 @@ void main() {
         ),
       );
 
-      final notice = find.byKey(
-        const ValueKey<String>('voiceroom-provider-unconfirmed'),
+      // Decision 0115: the note is in (i), whose control wears the warning.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-provider-unconfirmed')),
+        findsNothing,
       );
-      await scrollToCommunitySection(tester, notice);
+      await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-provider-unconfirmed')),
+        findsOneWidget,
+      );
       expect(
         find.text('这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。'),
         findsOneWidget,
@@ -1214,7 +1224,7 @@ void main() {
       );
       expect(find.text('0'), findsNothing);
       // LOOP's own record of the room is a different reading and stays.
-      expect(find.text('46 人在房间里'), findsOneWidget);
+      expect(find.text('46 在听'), findsOneWidget);
     });
 
     testWidgets(
@@ -1298,7 +1308,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('0'), findsNothing);
-      expect(find.text('46 人在房间里'), findsOneWidget);
+      expect(find.text('46 在听'), findsOneWidget);
     });
 
     testWidgets('a join reads the room again so the count is not lost', (
@@ -1338,7 +1348,7 @@ void main() {
       );
       // The answer to the join is what the page states: the room read that
       // followed it carries the counts.
-      expect(find.text('46 人在房间里'), findsOneWidget);
+      expect(find.text('46 在听'), findsOneWidget);
     });
 
     testWidgets('an unprovisioned room says why it cannot be joined', (
@@ -1457,7 +1467,8 @@ void main() {
       tester,
     ) async {
       // 「听众列表在展开视图查看」 was a sentence with no way out of it, and
-      // the reader on the review device asked where that view was.
+      // the reader on the review device asked where that view was. Decision
+      // 0115: the door is the 「+N」 at the end of the listener grid.
       final opened = <String>[];
       await pumpCommunityPage(
         tester,
@@ -1469,31 +1480,23 @@ void main() {
       );
 
       final door = find.byKey(
-        const ValueKey<String>('voiceroom-listeners-open'),
+        const ValueKey<String>('voiceroom-listeners-more'),
       );
       await scrollToCommunitySection(tester, door);
+      expect(find.text('+42'), findsOneWidget);
       await tester.tap(door);
       await tester.pumpAndSettle();
       expect(opened, <String>[testCommunityId]);
-
-      // A page with nowhere to send the reader says nothing about a list
-      // they cannot reach.
-      await pumpCommunityPage(
-        tester,
-        const VoiceRoomScreen(communityId: testCommunityId),
-        voiceRoom: FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot()),
-      );
       expect(find.textContaining('展开视图'), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('voiceroom-listeners-open')),
-        findsNothing,
-      );
     });
 
-    testWidgets('the host who is speaking is in 正在发言', (tester) async {
+    testWidgets('the host who is speaking wears the ring on the stage', (
+      tester,
+    ) async {
       // The review device: the host was talking and the grid was empty,
       // because it was drawn from LOOP's speaker roster — which records the
-      // parts LOOP granted and carries no host at all.
+      // parts LOOP granted and carries no host at all. Decision 0115: the
+      // host is on a stage of their own, and the call says when they speak.
       final voice = FakeVoiceRoomGateway(
         snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
       );
@@ -1505,12 +1508,12 @@ void main() {
         audioRoomCallFactory: media,
       );
 
-      // No call of this device's own yet: the record is what there is, and it
-      // says what it is a record of.
+      // No call of this device's own yet: the record is what there is.
       expect(
         find.byKey(const ValueKey<String>('voiceroom-speakers-empty')),
         findsOneWidget,
       );
+      expect(find.text('正在发言'), findsNothing);
 
       final speaking = find.byKey(
         const ValueKey<String>('fake-presence-speaking'),
@@ -1520,14 +1523,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const ValueKey<String>('voiceroom-speakers-live')),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('voiceroom-host')),
+          matching: find.text('正在发言'),
+        ),
         findsOneWidget,
       );
-      expect(find.text('NightOwl'), findsWidgets);
-      expect(find.text('正在发言'), findsWidgets);
+      // The call's own tiles are gone from the page (decision 0115).
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-speakers-live')),
+        findsNothing,
+      );
     });
 
-    testWidgets('a call nobody is speaking in says so, and not 没有发言人', (
+    testWidgets('a call nobody is speaking in puts no ring on anyone', (
       tester,
     ) async {
       final voice = FakeVoiceRoomGateway(
@@ -1548,16 +1557,16 @@ void main() {
       await tester.tap(counting);
       await tester.pumpAndSettle();
 
-      // Connected with nobody publishing: that is a quiet room, not a room
-      // with no speakers in LOOP's record.
+      // Connected with nobody publishing: the host's microphone is closed,
+      // and the stage says so rather than 正在发言.
       expect(
-        find.byKey(const ValueKey<String>('voiceroom-speakers-silent')),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('voiceroom-host')),
+          matching: find.text('已静音'),
+        ),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey<String>('voiceroom-speakers-empty')),
-        findsNothing,
-      );
+      expect(find.text('正在发言'), findsNothing);
     });
 
     testWidgets('a hand raised in the room reaches the host who is watching', (
@@ -1645,7 +1654,7 @@ void main() {
         audioRoomCallFactory: media,
       );
 
-      expect(find.text('1 人在房间里'), findsOneWidget);
+      expect(find.text('1 在听'), findsOneWidget);
 
       voice.loadSnapshot = testVoiceRoomSnapshot(
         role: VoiceRoomRole.host,
@@ -1655,7 +1664,7 @@ void main() {
       media.handles.single.emitSignal(AudioRoomRoomSignal.participants);
       await tester.pumpAndSettle();
 
-      expect(find.text('2 人在房间里'), findsOneWidget);
+      expect(find.text('2 在听'), findsOneWidget);
     });
 
     testWidgets('a page that is gone, or behind, reads nothing', (
@@ -1715,7 +1724,7 @@ void main() {
         voiceRoom: voice,
       );
 
-      expect(find.text('1 人在房间里'), findsOneWidget);
+      expect(find.text('1 在听'), findsOneWidget);
 
       voice.loadSnapshot = testVoiceRoomSnapshot(
         role: VoiceRoomRole.host,
@@ -1725,7 +1734,7 @@ void main() {
       await tester.pump(const Duration(seconds: 15));
       await tester.pumpAndSettle();
 
-      expect(find.text('2 人在房间里'), findsOneWidget);
+      expect(find.text('2 在听'), findsOneWidget);
     });
 
     testWidgets('the queue names its rows the way the roster does', (
@@ -2894,13 +2903,9 @@ void main() {
       expect(more, findsNothing);
     });
 
-    // `#scr-voiceroom` opens on the `正在发言` grid, so the lobby reads the
-    // speaker view — the same request the session page takes. The listener
-    // list stays the session page's: the prototype's lobby says in so many
-    // words that it is in the expanded view.
-    testWidgets('the lobby asks for the speakers and nothing else', (
-      tester,
-    ) async {
+    // Decision 0115: the room view lays out the speakers and the listeners,
+    // so it reads both views once — the same requests the full list takes.
+    testWidgets('the room view asks for each roster once', (tester) async {
       final voice = hostGateway();
       await pumpCommunityPage(
         tester,
@@ -2911,8 +2916,9 @@ void main() {
       final reads = voice.commands
           .where((command) => command.startsWith('members:'))
           .toList(growable: false);
-      expect(reads, hasLength(1));
-      expect(reads.single, contains('speaker'));
+      expect(reads, hasLength(2));
+      expect(reads.where((read) => read.contains('speaker')), hasLength(1));
+      expect(reads.where((read) => read.contains('listener')), hasLength(1));
     });
   });
 

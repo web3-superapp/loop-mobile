@@ -118,6 +118,7 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
   bool _joined = false;
   bool _handRaised = false;
   bool _ended = false;
+  String? _title;
 
   @override
   CommunityGatewayMode get mode => CommunityGatewayMode.preview;
@@ -135,6 +136,7 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
       backstage: false,
       createdAt: DateTime.utc(2026, 9, 8, 12),
       endedAt: _ended ? DateTime.utc(2026, 9, 8, 13) : null,
+      title: _title,
     ),
     viewer: VoiceRoomViewer(
       role: !_joined
@@ -175,10 +177,14 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
       VoiceRoomCurrent(snapshot: _snapshot, reasonCode: null);
 
   @override
-  Future<VoiceRoomSnapshot> createRoom(String communityId) async {
+  Future<VoiceRoomSnapshot> createRoom(
+    String communityId, {
+    String? title,
+  }) async {
     // The Preview keeps one labelled room. Opening it only clears the ended
-    // marker; no provider call is created.
+    // marker and keeps the title it was given; no provider call is created.
     _ended = false;
+    _title = title;
     return _snapshot;
   }
 

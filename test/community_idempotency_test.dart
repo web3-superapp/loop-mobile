@@ -279,6 +279,7 @@ void main() {
 /// Records the key of every voice-room create without issuing a request.
 final class _RecordingCommunicationApi implements LoopV2CommunicationApi {
   final List<String> keys = <String>[];
+  final List<String?> titles = <String?>[];
   VoiceRoomSnapshot? room;
 
   /// What `GET …/voice-rooms/current` answers with, when a test asks.
@@ -293,8 +294,10 @@ final class _RecordingCommunicationApi implements LoopV2CommunicationApi {
     required String clientVersion,
     required String idempotencyKey,
     required String communityId,
+    String? title,
   }) {
     keys.add(idempotencyKey);
+    titles.add(title);
     return Future<VoiceRoomSnapshot>.value(room!);
   }
 

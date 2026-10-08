@@ -73,7 +73,10 @@ abstract interface class VoiceRoomGateway {
 
   /// Opens a room for one community. The server admits only an owner or an
   /// admin and creates the provider call itself; the client never does.
-  Future<VoiceRoomSnapshot> createRoom(String communityId);
+  ///
+  /// [title] is the host's own name for the room (decision 0115); null sends
+  /// no body at all, which is the request the server always accepted.
+  Future<VoiceRoomSnapshot> createRoom(String communityId, {String? title});
 
   Future<VoiceRoomSnapshot> load(String voiceRoomId);
 
@@ -142,7 +145,8 @@ final class UnavailableVoiceRoomGateway implements VoiceRoomGateway {
   Future<VoiceRoomCurrent> loadCurrent(String communityId) => _unavailable();
 
   @override
-  Future<VoiceRoomSnapshot> createRoom(String communityId) => _unavailable();
+  Future<VoiceRoomSnapshot> createRoom(String communityId, {String? title}) =>
+      _unavailable();
 
   @override
   Future<VoiceRoomSnapshot> load(String voiceRoomId) => _unavailable();

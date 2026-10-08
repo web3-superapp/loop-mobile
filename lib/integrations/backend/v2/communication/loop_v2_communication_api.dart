@@ -56,6 +56,7 @@ abstract interface class LoopV2CommunicationApi {
     required String clientVersion,
     required String idempotencyKey,
     required String communityId,
+    String? title,
   });
 
   Future<VoiceRoomSnapshot> getVoiceRoom({
@@ -344,11 +345,15 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
     required String clientVersion,
     required String idempotencyKey,
     required String communityId,
+    String? title,
   }) async {
     final id = _requireId(communityId);
     try {
       final response = await _dio.post<Object?>(
         '$communitiesPath/$id/voice-rooms',
+        // Decision 0115: the optional `{ title }` body. A room opened without
+        // a title sends no body, exactly as before the field existed.
+        data: title == null ? null : <String, Object?>{'title': title},
         options: LoopV2ModuleRequest.writeOptions(
           accessToken,
           clientVersion,

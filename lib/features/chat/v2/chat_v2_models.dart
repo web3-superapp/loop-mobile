@@ -237,10 +237,16 @@ final class VoiceRoomRecord {
     required this.backstage,
     required this.createdAt,
     required this.endedAt,
+    this.title,
   });
 
   final String voiceRoomId;
   final String communityId;
+
+  /// The host's own title for this room (S109b-api, decision 0115), or null
+  /// when the room was opened without one — or by a server that does not
+  /// publish the field yet. The page then says 「{社区名} 语音房」.
+  final String? title;
 
   /// The community's own name, read from the community row on every response
   /// (decision 0052). It is a display value: the banner and the room title say

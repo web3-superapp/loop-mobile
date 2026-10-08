@@ -282,7 +282,7 @@ void main() {
       );
     });
 
-    testWidgets('rows state the host, the joined count and the time live', (
+    testWidgets('rows state the host, the room total and the time live', (
       tester,
     ) async {
       final opened = <String>[];
@@ -292,8 +292,13 @@ void main() {
         onOpenVoiceRoom: opened.add,
       );
       expect(find.text('Builders Guild'), findsOneWidget);
-      expect(find.text('主持 frog_maxi · 5 人已加入 · 开播 1 小时'), findsOneWidget);
-      expect(find.text('主持 匿名成员 · 0 人已加入 · 开播 3 小时'), findsOneWidget);
+      // Decision 0115: the card is the room's title, its community, the host
+      // and the room's own total (host + speakers + listeners).
+      expect(find.text('Builders Guild 语音房'), findsOneWidget);
+      expect(find.text('主持 frog_maxi'), findsOneWidget);
+      expect(find.text('6 在听 · 开播 1 小时'), findsOneWidget);
+      expect(find.text('主持 匿名成员'), findsOneWidget);
+      expect(find.text('1 在听 · 开播 3 小时'), findsOneWidget);
       expect(find.textContaining('在线'), findsNothing);
       expect(find.textContaining('演示数据'), findsNothing);
 

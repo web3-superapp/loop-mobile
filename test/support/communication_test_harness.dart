@@ -311,6 +311,9 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
 
   final List<String> commands = <String>[];
 
+  /// The title each `createRoom` was sent with, null for none.
+  final List<String?> createTitles = <String?>[];
+
   Future<VoiceRoomSnapshot> _answer(String command) {
     commands.add(command);
     if (pending) return Completer<VoiceRoomSnapshot>().future;
@@ -346,8 +349,9 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   }
 
   @override
-  Future<VoiceRoomSnapshot> createRoom(String communityId) {
+  Future<VoiceRoomSnapshot> createRoom(String communityId, {String? title}) {
     commands.add('create:$communityId');
+    createTitles.add(title);
     if (pending) return Completer<VoiceRoomSnapshot>().future;
     final kind = createFailure ?? failure;
     if (kind != null) {

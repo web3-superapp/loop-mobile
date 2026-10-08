@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_presentation.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
@@ -376,6 +377,8 @@ String streamMicrophoneNote({
   required bool canSendAudio,
   required bool everCouldSendAudio,
   required bool speakSpent,
+  String speakLabel = '发言',
+  String speakAgainLabel = '重新连接后发言',
 }) {
   if (retiring && !microphoneEnabled) {
     return '正在退出这次通话。麦克风不会再启动；如有需要先静音，再重试退出。';
@@ -386,8 +389,28 @@ String streamMicrophoneNote({
         ? '你已被移出发言席，现在只能收听。要再发言，请等主持人重新邀请。'
         : '你在这个房间是只收听的角色。';
   }
-  if (speakSpent) return '你已静音。要再次发言，点「重新连接后发言」把这次语音重新接一遍。';
-  return '你以静音状态进入。准备好后点「发言」，系统麦克风权限只在开始采集时申请。';
+  if (speakSpent) return '你已静音。要再次发言，点「$speakAgainLabel」把这次语音重新接一遍。';
+  return '你以静音状态进入。准备好后点「$speakLabel」，系统麦克风权限只在开始采集时申请。';
+}
+
+/// The microphone control's short words for the room page's bottom bar
+/// (decision 0115): the same states as the call view's own button, said in
+/// the four characters a bar slot holds.
+String streamBarMicrophoneLabel({
+  required bool speakAgain,
+  required bool speakAgainBusy,
+  required bool microphoneBusy,
+  required bool microphoneEnabled,
+  required bool canSendAudio,
+  required bool speakSpent,
+  required bool retiring,
+}) {
+  if (speakAgain) return speakAgainBusy ? '正在重连' : '重新发言';
+  if (microphoneBusy) return '切换中';
+  if (microphoneEnabled) return '静音';
+  if (canSendAudio && !speakSpent && !retiring) return '取消静音';
+  if (retiring) return '正在退出';
+  return canSendAudio ? '不能开麦' : '仅收听';
 }
 
 /// Foreground Audio Room UI driven directly by Stream's official [CallState].
@@ -509,6 +532,36 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   /// arrives, and a second frame on the same dead call must not ask twice.
   var _disconnectReported = false;
 
+  /// The bar this view hands its microphone to, when the page asked for one.
+  VoiceMicrophoneBridge? _bridge;
+
+  @override
+  void dispose() {
+    _bridge?.withdraw(this);
+    _bridge = null;
+    super.dispose();
+  }
+
+  /// Hands the microphone control to the page's bar, after the frame that
+  /// read it. The press is always the newest closure; a change of words is
+  /// what makes the bar repaint.
+  void _publishMicrophone(
+    VoiceMicrophoneBridge? bridge,
+    VoiceMicrophoneControl control,
+    VoidCallback? onPressed,
+  ) {
+    final previous = _bridge;
+    if (!identical(previous, bridge)) {
+      previous?.withdraw(this);
+      _bridge = bridge;
+    }
+    if (bridge == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !identical(_bridge, bridge)) return;
+      bridge.publish(this, control, onPressed);
+    });
+  }
+
   /// Hands one reading out, after the frame that read it and only when it
   /// changed. A call that is still joining is not a connection, so it is
   /// published as one this device does not hold yet.
@@ -602,16 +655,21 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           microphoneEnableRequested: _microphoneEnableRequested,
           retirementStarted: retirementStarted,
         );
+        final presentation = VoiceMediaPresentation.maybeOf(context);
+        final bridge = presentation?.microphone;
         final facts = _facts(
           context,
           data: data,
           retirementStarted: retirementStarted,
+          showsParticipants: presentation?.showsParticipants ?? true,
+          barMicrophone: bridge != null,
         );
         final controls = _controls(
           context,
           data: data,
           retirementStarted: retirementStarted,
           canRequestMicrophone: canRequestMicrophone,
+          bridge: bridge,
         );
         if (widget.inline) {
           // 内联面板不带自己的滚动层：语音房整页只有一层滚动，这里只按内容
@@ -649,6 +707,8 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     BuildContext context, {
     required _ForegroundCallViewData data,
     required bool retirementStarted,
+    bool showsParticipants = true,
+    bool barMicrophone = false,
   }) {
     final phase = StreamCallStatusPresentation.phase(data.status);
     return Column(
@@ -673,19 +733,21 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
             style: Theme.of(context).textTheme.headlineLarge,
           ),
         ],
-        const SizedBox(height: 8),
-        Text(
-          StreamCallParticipantPresentation.countLine(
-            phase: phase,
-            count: StreamCallParticipantPresentation.liveCount(
-              connected: phase == StreamCallPhase.connected,
-              participantCount: data.participantCount,
-              knownParticipants: data.knownParticipants,
+        if (showsParticipants) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            StreamCallParticipantPresentation.countLine(
+              phase: phase,
+              count: StreamCallParticipantPresentation.liveCount(
+                connected: phase == StreamCallPhase.connected,
+                participantCount: data.participantCount,
+                knownParticipants: data.knownParticipants,
+              ),
             ),
+            textAlign: widget.inline ? TextAlign.start : TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
-          textAlign: widget.inline ? TextAlign.start : TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        ],
         if (data.audioSuspended) ...<Widget>[
           const SizedBox(height: 14),
           Align(
@@ -697,9 +759,12 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
             ),
           ),
         ],
-        SizedBox(height: widget.inline ? 16 : 30),
-        _ParticipantGrid(participants: data.participants, phase: phase),
-        SizedBox(height: widget.inline ? 14 : 22),
+        if (showsParticipants) ...<Widget>[
+          SizedBox(height: widget.inline ? 16 : 30),
+          _ParticipantGrid(participants: data.participants, phase: phase),
+          SizedBox(height: widget.inline ? 14 : 22),
+        ] else
+          const SizedBox(height: 10),
         Text(
           streamMicrophoneNote(
             retiring: retirementStarted,
@@ -707,6 +772,8 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
             canSendAudio: data.canSendAudio,
             everCouldSendAudio: _hadSendAudio,
             speakSpent: _microphoneEnableRequested,
+            speakLabel: barMicrophone ? '取消静音' : '发言',
+            speakAgainLabel: barMicrophone ? '重新发言' : '重新连接后发言',
           ),
           textAlign: widget.inline ? TextAlign.start : TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
@@ -720,7 +787,75 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     required _ForegroundCallViewData data,
     required bool retirementStarted,
     required bool canRequestMicrophone,
+    VoiceMicrophoneBridge? bridge,
   }) {
+    final speakAgain = StreamSpeakAgainPolicy.offers(
+      pageCanReconnect: widget.onSpeakAgainRequested != null,
+      speakSpent: _microphoneEnableRequested,
+      microphoneEnabled: data.microphoneEnabled,
+      canSendAudio: data.canSendAudio,
+      retirementStarted: retirementStarted,
+    );
+    // Decision 0115: on the room page the microphone is a slot of the fixed
+    // bottom bar. The command behind it is this view's, unchanged.
+    final VoidCallback? microphonePress = speakAgain
+        ? (_speakAgainBusy || _leaveBusy || _microphoneBusy
+              ? null
+              : _requestSpeakAgain)
+        : (!_microphoneBusy &&
+                  !_leaveBusy &&
+                  !_speakAgainBusy &&
+                  canRequestMicrophone
+              ? () => _setMicrophone(enabled: !data.microphoneEnabled)
+              : null);
+    _publishMicrophone(
+      bridge,
+      VoiceMicrophoneControl(
+        label: streamBarMicrophoneLabel(
+          speakAgain: speakAgain,
+          speakAgainBusy: _speakAgainBusy,
+          microphoneBusy: _microphoneBusy,
+          microphoneEnabled: data.microphoneEnabled,
+          canSendAudio: data.canSendAudio,
+          speakSpent: _microphoneEnableRequested,
+          retiring: retirementStarted,
+        ),
+        open: data.microphoneEnabled,
+        busy: _microphoneBusy || _speakAgainBusy,
+        enabled: microphonePress != null,
+      ),
+      microphonePress,
+    );
+    if (bridge != null) {
+      // The bar carries the microphone and the way out (离开 / 结束房间);
+      // what is left here is where the sound goes.
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (_commandError != null) ...<Widget>[
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _commandError!,
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: LoopColors.danger),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (widget.onOutputSelected != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _OutputControl(
+                current: data.output,
+                preference: widget.outputPreference,
+                onSelected: widget.onOutputSelected!,
+              ),
+            ),
+        ],
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
