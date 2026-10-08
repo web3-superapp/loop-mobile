@@ -9,12 +9,12 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
-import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
+import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
@@ -22,7 +22,8 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
-/// `square` · 广场 (decision 0110, S106 §3).
+/// `square` · 广场 (decision 0110, S106 §3; the 社区 segment is the club
+/// list of decision 0116).
 ///
 /// Two page segments: every community in the directory, and every voice
 /// room live on the platform right now. The segment survives leaving the
@@ -32,7 +33,11 @@ class SquareScreen extends StatelessWidget {
     required this.onOpenCommunity,
     required this.onOpenVoiceRoom,
     super.key,
+    this.onOpenSearch,
   });
+
+  /// Opens `/search` from the 社区 segment's entry. Null pushes the route.
+  final VoidCallback? onOpenSearch;
 
   /// Opens one community's record.
   final ValueChanged<String> onOpenCommunity;
@@ -63,9 +68,9 @@ class SquareScreen extends StatelessWidget {
               ),
             ),
       builder: (context, index) => index == 0
-          ? CommunityDiscoverScreen(
-              embedded: true,
+          ? SquareCommunityList(
               onOpenCommunity: onOpenCommunity,
+              onOpenSearch: onOpenSearch,
             )
           : LiveVoiceRoomList(
               onOpenCommunity: onOpenCommunity,

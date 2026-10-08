@@ -285,13 +285,31 @@ final class MemoryCommunityGateway implements CommunityGateway {
           : (a, b) => b.createdAt.compareTo(a.createdAt),
     );
     return CommunityDirectoryPage(
-      items: List<CommunitySummary>.unmodifiable(items),
+      // Each row states the preview account's relation the way the server's
+      // `viewerMembership` does (decision 0116).
+      items: List<CommunitySummary>.unmodifiable(<CommunitySummary>[
+        for (final item in items) _withViewer(item),
+      ]),
       nextCursor: null,
       recommendation: _recommendation,
       ordering: CommunityOrderingApplied(
         sort: sort,
         basis: const CommunityStoredBasis(),
       ),
+    );
+  }
+
+  CommunitySummary _withViewer(CommunitySummary community) {
+    final membership = _detail(community).viewer.membership;
+    return community.withJoin(
+      viewer: membership == null
+          ? CommunityDirectoryViewer.none
+          : CommunityDirectoryViewer(
+              role: membership.role,
+              status: membership.status,
+              pending: false,
+            ),
+      memberCount: community.memberCount,
     );
   }
 
