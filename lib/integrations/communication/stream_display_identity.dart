@@ -45,6 +45,19 @@ String? loopStreamDisplayLabelOf(User? user) {
   return label.isEmpty ? null : label;
 }
 
+/// Where a surface keeps the label its avatar column draws when no name is
+/// to be drawn over the bubbles — a direct conversation names the peer once,
+/// in its header, but still draws their initial beside each message.
+const String loopStreamDisplayAvatarLabelField = 'loop_display_avatar_label';
+
+/// The label the avatar column draws for [user]: the avatar-only label when a
+/// surface set one, else the display label, else `null` (the unnamed tile).
+String? loopStreamAvatarLabelOf(User? user) {
+  final raw = user?.extraData[loopStreamDisplayAvatarLabelField];
+  if (raw is String && raw.trim().isNotEmpty) return raw.trim();
+  return loopStreamDisplayLabelOf(user);
+}
+
 /// Where the real-identity projection keeps the account's image URL.
 const String loopStreamDisplayImageField = 'loop_display_image';
 

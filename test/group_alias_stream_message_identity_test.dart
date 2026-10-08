@@ -428,6 +428,24 @@ void main() {
     expect(display.quotedMessage?.user?.name, 'Voyager_09');
   });
 
+  test('the peer draws an initial beside each message but no name over it', () {
+    final display = sanitizeLoopDirectMessageForDisplay(
+      message: Message(
+        id: 'm1',
+        text: 'hi',
+        user: User(id: 'loop_peer', name: 'loop_peer'),
+      ),
+      peerLabel: 'Voyager_09',
+      currentUserId: 'loop_self',
+    );
+
+    // The avatar column reads the avatar label; the name line over the
+    // bubbles reads the display label, which a direct conversation leaves
+    // unset (the header names the peer once).
+    expect(loopStreamAvatarLabelOf(display.user), 'Voyager_09');
+    expect(loopStreamDisplayLabelOf(display.user), isNull);
+  });
+
   testWidgets(
     'group user mention candidates are hidden and cannot be selected',
     (tester) async {
