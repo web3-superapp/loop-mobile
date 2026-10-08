@@ -157,6 +157,7 @@ Future<T?> showPublicProfileSheet<T extends Object>(
   List<PublicProfileSheetAction<T>> actions =
       const <PublicProfileSheetAction<Never>>[],
   PublicProfileDirectMessageHandler? onOpenDirectMessage,
+  ValueChanged<String>? onOpenProfile,
 }) {
   return showLoopSheet<T>(
     context,
@@ -166,6 +167,7 @@ Future<T?> showPublicProfileSheet<T extends Object>(
       viewerFollows: viewerFollows,
       actions: actions,
       onOpenDirectMessage: onOpenDirectMessage,
+      onOpenProfile: onOpenProfile,
     ),
   );
 }
@@ -176,12 +178,17 @@ class _PublicProfileSheet<T extends Object> extends ConsumerStatefulWidget {
     required this.viewerFollows,
     required this.actions,
     required this.onOpenDirectMessage,
+    this.onOpenProfile,
   });
 
   final PublicProfileIdentity identity;
   final bool? viewerFollows;
   final List<PublicProfileSheetAction<T>> actions;
   final PublicProfileDirectMessageHandler? onOpenDirectMessage;
+
+  /// Opens the account's profile page (decision 0112). The sheet then stays
+  /// for what only it carries: a community's governance commands.
+  final ValueChanged<String>? onOpenProfile;
 
   @override
   ConsumerState<_PublicProfileSheet<T>> createState() =>
@@ -351,6 +358,22 @@ class _PublicProfileSheetState<T extends Object>
               '还没有建立联系时，会先请你发送一条消息请求。',
               key: const ValueKey<String>('public-profile-dm-hint'),
               style: LoopTypography.caption(11, color: LoopColors.muted),
+            ),
+          ],
+          if (widget.onOpenProfile != null &&
+              identity.publicProfileId != null &&
+              !identity.isSelf) ...<Widget>[
+            const SizedBox(height: 8),
+            LoopButton(
+              key: const ValueKey<String>('public-profile-open-page'),
+              label: '查看资料',
+              block: true,
+              onPressed: _busy
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      widget.onOpenProfile!(identity.publicProfileId!);
+                    },
             ),
           ],
           if (_failureKind != null) ...<Widget>[

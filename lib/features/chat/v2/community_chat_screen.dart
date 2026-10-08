@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
@@ -241,11 +242,15 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
             key: const ValueKey<String>('community-chat-header-strip'),
             // The one identity fact LOOP may state about the reader in this
             // room: the persona this community issued them (decision 0055).
-            // Everybody else's name is read from that member's own channel
-            // projection, never from a LOOP record.
-            segments: <String>[
-              ?communityChatPersonaSegment(chat.viewerPersona),
-            ],
+            // Since S107 the room shows every member as their own account
+            // (decision 0112), so there is no persona to announce and the
+            // line is not drawn; it returns with the switch.
+            segments: communityChatHeaderSegments(
+              chat.viewerPersona,
+              realIdentity: ref
+                  .watch(loopFeatureSwitchesProvider)
+                  .communityChatRealIdentity,
+            ),
             collapsed: loopChatKeyboardIsUp(context),
           ),
           // `.notice` with the pin glyph, directly under the bar — the
@@ -314,6 +319,13 @@ CommunityAnnouncement? communityChatPinnedAnnouncement(
 /// account is not a member. A persona LOOP has issued but the provider has not
 /// confirmed is named as what it is — the room still shows this account under
 /// the neutral label until the projection lands.
+/// The header strip's lines. In real-identity mode (decision 0112) the room
+/// names nobody by persona, so the persona line is not drawn.
+List<String> communityChatHeaderSegments(
+  CommunityChatPersona? persona, {
+  required bool realIdentity,
+}) => <String>[if (!realIdentity) ?communityChatPersonaSegment(persona)];
+
 String? communityChatPersonaSegment(CommunityChatPersona? persona) {
   if (persona == null) return null;
   return persona.isPending ? '正在同步你的显示名' : '你在这个社区显示为 ${persona.alias}';

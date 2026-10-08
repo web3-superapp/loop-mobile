@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
@@ -18,6 +19,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// The forward and merge caps fixed by the step-4 ruling.
@@ -33,8 +35,10 @@ const String chatMergeAnonymousLabel = '匿名成员';
 
 /// One selectable message, reduced to what the two pages may render.
 ///
-/// The sender is deliberately absent: the merged image is anonymous by
-/// default, so no alias, LOOP ID, Stream user ID or address can leak into it.
+/// [senderName] is the sender's own user name, and only in a conversation
+/// that shows members as their real accounts (decision 0112). Everywhere
+/// else it is null and the merged row reads 「匿名成员」: no channel-scoped
+/// alias, LOOP ID, Stream user ID or address ever leaks into the image.
 @immutable
 final class ChatForwardMessage {
   const ChatForwardMessage({
@@ -42,11 +46,13 @@ final class ChatForwardMessage {
     required this.text,
     required this.createdAt,
     required this.forwardable,
+    this.senderName,
   });
 
   final String messageId;
   final String text;
   final DateTime createdAt;
+  final String? senderName;
 
   /// False for a deleted or non-text message: it is listed as skipped rather
   /// than silently dropped.
@@ -201,6 +207,16 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         sourceLabel = loopStoredConversationName(
           sourceChannels.single.extraData,
         );
+        // Decision 0112: a room that shows its members as their accounts
+        // shows them in the merged image too, by the same Stream name.
+        final surface = loopChatSurfaceForCid(sourceCid);
+        final realIdentity =
+            surface == LoopChatSurface.direct ||
+            ref
+                .read(loopFeatureSwitchesProvider)
+                .realIdentityFor(
+                  communityChannel: surface == LoopChatSurface.communityChat,
+                );
         for (final message
             in sourceChannels.single.state?.messages ?? const <Message>[]) {
           messages.add(
@@ -210,6 +226,9 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
               createdAt: message.createdAt,
               forwardable:
                   !message.isDeleted && (message.text ?? '').trim().isNotEmpty,
+              senderName: realIdentity
+                  ? loopStreamRealIdentityOf(message.user)?.name
+                  : null,
             ),
           );
         }
@@ -623,7 +642,7 @@ class _ChatMergePreviewScreenState
       title: '合并长图预览',
       // `#scr-chat-merge-preview .topbar`: `Merge Preview` over
       // `ANONYMOUS BY DEFAULT`.
-      subtitle: '默认匿名',
+      subtitle: rows.any((row) => row.senderName != null) ? '显示发送者用户名' : '默认匿名',
       onBack: widget.onBack,
       framedTools: true,
       // `#scr-chat-merge-preview` has no folio of its own: the Chalk card
@@ -912,7 +931,9 @@ class _MergeRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                chatMergeAnonymousLabel,
+                row.senderName ?? chatMergeAnonymousLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: LoopTypography.label(14, color: LoopColors.ink),
               ),
               const SizedBox(height: 2),

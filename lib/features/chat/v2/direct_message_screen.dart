@@ -244,7 +244,11 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     // carries none — nothing is published and they fail closed.
     final peer = widget.target?.identity?.displayName;
     if (peer == null) return surface;
-    return LoopDirectPeerScope(displayName: peer, child: surface);
+    return LoopDirectPeerScope(
+      displayName: peer,
+      publicProfileId: widget.target?.publicProfileId,
+      child: surface,
+    );
   }
 
   Future<void> _sendMessageRequest() async {

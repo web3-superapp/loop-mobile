@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Product switches that hide a finished surface without removing it
@@ -13,6 +13,13 @@ abstract final class LoopFeatureSwitches {
 
   /// S102 群内昵称：UI 隐藏、不移除（第二批接入）。
   static const bool groupAliasVisible = false;
+
+  /// S107 §2：社区群聊以真实 Stream 用户（头像 + 用户名）展示，社区化名退场。
+  /// 与后端 `COMMUNITY_CHAT_REAL_IDENTITY` 同名同义；改 false 即回到化名提示。
+  static const bool communityChatRealIdentity = true;
+
+  /// S107 §2：隐私页「匿名模式」开关 UI 下线（后端字段保留）；改 true 即恢复。
+  static const bool anonymousModeVisible = false;
 }
 
 /// The switch values one build runs with.
@@ -24,10 +31,41 @@ final class LoopFeatureSwitchValues {
   const LoopFeatureSwitchValues({
     this.idoLaunchVisible = LoopFeatureSwitches.idoLaunchVisible,
     this.groupAliasVisible = LoopFeatureSwitches.groupAliasVisible,
+    this.communityChatRealIdentity =
+        LoopFeatureSwitches.communityChatRealIdentity,
+    this.anonymousModeVisible = LoopFeatureSwitches.anonymousModeVisible,
   });
 
   final bool idoLaunchVisible;
   final bool groupAliasVisible;
+  final bool communityChatRealIdentity;
+  final bool anonymousModeVisible;
+
+  /// Whether a channel draws its members as their real Stream user (name,
+  /// image, tap to the public profile) rather than as a channel-scoped name.
+  ///
+  /// A community's official group follows [communityChatRealIdentity]; a
+  /// small group follows the inverse of [groupAliasVisible] — with the group
+  /// Alias hidden, the only name left to draw is the account's own.
+  bool realIdentityFor({required bool communityChannel}) =>
+      communityChannel ? communityChatRealIdentity : !groupAliasVisible;
+}
+
+/// The switches for a widget that has no `ref` of its own — the Stream
+/// component builders are plain functions.
+///
+/// It reads the enclosing [ProviderScope] when there is one and falls back to
+/// the build's constants when there is not (a bare widget test), so a builder
+/// never throws for want of a scope.
+LoopFeatureSwitchValues loopFeatureSwitchesOf(BuildContext context) {
+  try {
+    return ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(loopFeatureSwitchesProvider);
+  } catch (_) {
+    return const LoopFeatureSwitchValues();
+  }
 }
 
 /// The build's switches. Production never overrides it; tests override it to

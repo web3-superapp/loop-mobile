@@ -68,6 +68,7 @@ class CommunityMembersScreen extends ConsumerStatefulWidget {
     super.key,
     this.onBack,
     this.onOpenDirectMessage,
+    this.onOpenProfile,
   });
 
   final String? communityId;
@@ -79,6 +80,10 @@ class CommunityMembersScreen extends ConsumerStatefulWidget {
   /// opens the shared public-profile card instead, and the card carries the
   /// control; the route stays with the shell, which owns every destination.
   final PublicProfileDirectMessageHandler? onOpenDirectMessage;
+
+  /// Opens `user-profile` (decision 0112). A row the viewer may govern still
+  /// opens the sheet, which carries the commands and a way to the page.
+  final ValueChanged<String>? onOpenProfile;
 
   @override
   ConsumerState<CommunityMembersScreen> createState() =>
@@ -511,6 +516,10 @@ class _CommunityMembersScreenState
       // the server has allowed for this viewer.
       onTap: entry.isSelf || state.busy
           ? null
+          : entry.actions.isEmpty &&
+                widget.onOpenProfile != null &&
+                entry.profile.publicProfileId != null
+          ? () => widget.onOpenProfile!(entry.profile.publicProfileId!)
           : () => unawaited(_openMemberSheet(entry, controller)),
       semanticLabel: '${entry.profile.displayName}，${entry.role.label}，$status',
     );
@@ -527,6 +536,7 @@ class _CommunityMembersScreenState
         isSelf: entry.isSelf,
       ),
       onOpenDirectMessage: widget.onOpenDirectMessage,
+      onOpenProfile: widget.onOpenProfile,
       // Exactly the server's list for this row, in the server's order.
       actions: <PublicProfileSheetAction<CommunityGovernanceAction>>[
         for (final action in entry.actions)

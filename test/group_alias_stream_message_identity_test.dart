@@ -9,6 +9,8 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
+import 'support/legacy_chat_identity.dart';
+
 const String _aliasId = 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e';
 
 void main() {
@@ -924,7 +926,8 @@ Future<void> _pumpInChannel(
   if (directory != null) {
     body = LoopDirectChannelDirectoryScope(directory: directory, child: body);
   }
-  await tester.pumpWidget(
+  await pumpWithLegacyChatIdentity(
+    tester,
     MaterialApp(
       // The product's own zh-CN Stream copy, so an assertion here reads the
       // words the member reads instead of the SDK's English defaults.

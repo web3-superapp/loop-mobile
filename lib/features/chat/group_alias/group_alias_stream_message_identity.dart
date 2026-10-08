@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
@@ -14,7 +15,9 @@ import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.da
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -181,9 +184,19 @@ String? parseLoopGroupAliasMemberProjection(Map<String, Object?> extraData) {
 String resolveLoopGroupMessageSenderLabel({
   required String senderUserId,
   required Iterable<Member> members,
+  bool realIdentity = false,
+  User? senderUser,
 }) {
   if (senderUserId.isEmpty || senderUserId != senderUserId.trim()) {
     return loopGroupMemberNeutralLabel;
+  }
+  if (realIdentity) {
+    final real = resolveLoopGroupRealIdentity(
+      senderUserId: senderUserId,
+      members: members,
+      senderUser: senderUser,
+    );
+    if (real != null) return real.name;
   }
 
   Member? matchingMember;
@@ -200,6 +213,43 @@ String resolveLoopGroupMessageSenderLabel({
   if (matchingMember == null) return loopGroupMemberNeutralLabel;
   return parseLoopGroupAliasMemberProjection(matchingMember.extraData) ??
       loopGroupMemberNeutralLabel;
+}
+
+/// The account's own name and face in a real-identity channel (S107 §2).
+///
+/// The member row's user wins over the message's copy of the user — it is
+/// the one Stream refreshes when the account renames — and either is read
+/// only through [loopStreamRealIdentityOf], so a user Stream knows only by
+/// id has no real identity and the caller falls back to the channel-scoped
+/// projection.
+LoopStreamRealIdentity? resolveLoopGroupRealIdentity({
+  required String senderUserId,
+  required Iterable<Member> members,
+  User? senderUser,
+}) {
+  for (final member in members) {
+    final user = member.user;
+    if (user == null || user.id != senderUserId) continue;
+    final real = loopStreamRealIdentityOf(user);
+    if (real != null) return real;
+  }
+  if (senderUser != null && senderUser.id == senderUserId) {
+    return loopStreamRealIdentityOf(senderUser);
+  }
+  return null;
+}
+
+/// Whether the channel at [cid] draws its members as their real accounts.
+///
+/// A community channel follows `communityChatRealIdentity`; every other group
+/// follows the inverse of `groupAliasVisible` (decision 0112).
+bool loopChannelUsesRealIdentity(BuildContext context, String? cid) {
+  final switches = loopFeatureSwitchesOf(context);
+  return switches.realIdentityFor(
+    communityChannel:
+        cid != null &&
+        loopChatSurfaceForCid(cid) == LoopChatSurface.communityChat,
+  );
 }
 
 /// Every Stream user id one group message may draw a name or an avatar for.
@@ -437,6 +487,7 @@ Widget loopStreamGroupMentionItemBuilder(
 Message prepareLoopGroupMentionsForSend({
   required Message message,
   required Iterable<Member> members,
+  bool realIdentity = false,
 }) {
   final mentioned = message.mentionedUsers;
   if (mentioned.isEmpty) return message;
@@ -448,6 +499,8 @@ Message prepareLoopGroupMentionsForSend({
     final alias = resolveLoopGroupMessageSenderLabel(
       senderUserId: user.id,
       members: roster,
+      realIdentity: realIdentity,
+      senderUser: user,
     );
     // A member this channel cannot name is left exactly as Stream had them:
     // the mention then stands or falls on Stream's own tokens, and LOOP has
@@ -511,6 +564,7 @@ Message loopPrepareChannelMessageForSend({
   required Channel channel,
   String? directPeerLabel,
   String? currentUserId,
+  bool realIdentity = false,
 }) {
   if (!loopStreamChannelUsesGroupMessageAlias(channel.cid)) {
     if (directPeerLabel == null) return message;
@@ -523,6 +577,7 @@ Message loopPrepareChannelMessageForSend({
   final channelState = channel.state?.channelState;
   return prepareLoopGroupMentionsForSend(
     message: message,
+    realIdentity: realIdentity,
     // The same roster the `@` card offered from, so a member it found by
     // lookup is named on the way out too.
     members: channelState == null
@@ -661,11 +716,7 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
                 // A `CircleAvatar` here took the Material scheme's primary —
                 // Lime — and printed a solid Lime disc per row (audit
                 // 2026-09-20 · D-10).
-                avatar: LoopInitialsAvatar(
-                  key: const ValueKey<String>('loop-direct-channel-avatar'),
-                  label: identity.initial,
-                  size: 40,
-                ),
+                avatar: _directRowAvatar(context, identity),
                 title: Text(identity.title),
                 subtitle: lastMessage == null
                     ? Text(context.translations.emptyMessagesText)
@@ -692,6 +743,23 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
       },
     );
   }
+}
+
+/// The peer's uploaded picture (S107 §1), over the initials it replaces.
+Widget _directRowAvatar(BuildContext context, LoopDirectRowIdentity identity) {
+  final initials = LoopInitialsAvatar(
+    key: const ValueKey<String>('loop-direct-channel-avatar'),
+    label: identity.initial,
+    size: 40,
+  );
+  final url = loopMediaUrlFor(context, identity.peer?.avatarRef);
+  if (url == null) return initials;
+  return LoopRemoteAvatar(
+    key: const ValueKey<String>('loop-direct-channel-avatar-image'),
+    url: url,
+    size: 40,
+    fallback: initials,
+  );
 }
 
 class _LoopStreamGroupChannelListItem extends StatelessWidget {
@@ -741,6 +809,7 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
         : sanitizeLoopGroupMessageForDisplay(
             message: lastMessage,
             members: members,
+            realIdentity: loopChannelUsesRealIdentity(context, channel.cid),
           );
     final label = resolveLoopGroupConversationLabel(
       channelState.channel?.extraData ?? channel.extraData,
@@ -1026,14 +1095,22 @@ class _LoopStreamGroupThreadPageState
 Message sanitizeLoopGroupMessageForDisplay({
   required Message message,
   required Iterable<Member> members,
-}) => _sanitizeMessage(message, List<Member>.unmodifiable(members), depth: 0);
+  bool realIdentity = false,
+}) => _sanitizeMessage(
+  message,
+  List<Member>.unmodifiable(members),
+  depth: 0,
+  realIdentity: realIdentity,
+);
 
 Message _sanitizeMessage(
   Message message,
   List<Member> members, {
   required int depth,
+  required bool realIdentity,
 }) {
-  User displayUser(User user) => _groupDisplayUser(user, members);
+  User displayUser(User user) =>
+      _groupDisplayUser(user, members, realIdentity: realIdentity);
 
   final originalMentionedUsers = message.mentionedUsers;
   var displayText = message.text;
@@ -1041,6 +1118,8 @@ Message _sanitizeMessage(
     final label = resolveLoopGroupMessageSenderLabel(
       senderUserId: user.id,
       members: members,
+      realIdentity: realIdentity,
+      senderUser: user,
     );
     // Read, never rendered: both spellings Stream may have written into the
     // text are replaced by the channel-scoped label before the text is drawn.
@@ -1056,7 +1135,12 @@ Message _sanitizeMessage(
   final quotedMessage = message.quotedMessage;
   final displayQuotedMessage = quotedMessage == null || depth >= 3
       ? null
-      : _sanitizeMessage(quotedMessage, members, depth: depth + 1);
+      : _sanitizeMessage(
+          quotedMessage,
+          members,
+          depth: depth + 1,
+          realIdentity: realIdentity,
+        );
 
   return message.copyWith(
     text: displayText,
@@ -1088,7 +1172,23 @@ Reaction _sanitizeReaction(Reaction reaction, User Function(User) displayUser) {
   return user == null ? reaction : reaction.copyWith(user: displayUser(user));
 }
 
-User _groupDisplayUser(User user, List<Member> members) {
+User _groupDisplayUser(
+  User user,
+  List<Member> members, {
+  required bool realIdentity,
+}) {
+  if (realIdentity) {
+    final real = resolveLoopGroupRealIdentity(
+      senderUserId: user.id,
+      members: members,
+      senderUser: user,
+    );
+    // The account's own name, face and profile: the bubble names it, the
+    // gutter draws its picture and a tap opens the profile it carries.
+    if (real != null) {
+      return loopStreamRealDisplayUser(id: user.id, identity: real);
+    }
+  }
   final label = resolveLoopGroupMessageSenderLabel(
     senderUserId: user.id,
     members: members,
@@ -1102,11 +1202,13 @@ User _groupDisplayUser(User user, List<Member> members) {
 
 StreamMessageItemProps _groupDisplayProps(
   StreamMessageItemProps props,
-  List<Member> members,
-) {
+  List<Member> members, {
+  required bool realIdentity,
+}) {
   final displayMessage = sanitizeLoopGroupMessageForDisplay(
     message: props.message,
     members: members,
+    realIdentity: realIdentity,
   );
   return StreamMessageItemProps(
     message: displayMessage,
@@ -1158,21 +1260,37 @@ Message sanitizeLoopDirectMessageForDisplay({
   required Message message,
   required String? peerLabel,
   required String? currentUserId,
+  String? peerProfileId,
 }) => _sanitizeDirectMessage(
   message,
   peerLabel ?? loopDirectConversationNeutralInitial,
   currentUserId,
+  peerProfileId,
   depth: 0,
 );
 
 Message _sanitizeDirectMessage(
   Message message,
   String label,
-  String? currentUserId, {
+  String? currentUserId,
+  String? peerProfileId, {
   required int depth,
 }) {
-  User displayUser(User user) =>
-      user.id == currentUserId ? user : User(id: user.id, name: label);
+  User displayUser(User user) {
+    if (user.id == currentUserId) return user;
+    // S107 §2: the peer's own picture, and the profile their avatar opens —
+    // the one the page was opened for, or the one Stream carries.
+    final real = loopStreamRealIdentityOf(user);
+    final profile = real?.publicProfileId ?? peerProfileId;
+    return User(
+      id: user.id,
+      name: label,
+      extraData: <String, Object?>{
+        loopStreamDisplayImageField: ?real?.imageUrl,
+        loopStreamDisplayProfileField: ?profile,
+      },
+    );
+  }
 
   final quotedMessage = message.quotedMessage;
   return message.copyWith(
@@ -1183,6 +1301,7 @@ Message _sanitizeDirectMessage(
             quotedMessage,
             label,
             currentUserId,
+            peerProfileId,
             depth: depth + 1,
           ),
   );
@@ -1192,11 +1311,13 @@ StreamMessageItemProps _directDisplayProps(
   StreamMessageItemProps props, {
   required String? peerLabel,
   required String? currentUserId,
+  String? peerProfileId,
 }) {
   final displayMessage = sanitizeLoopDirectMessageForDisplay(
     message: props.message,
     peerLabel: peerLabel,
     currentUserId: currentUserId,
+    peerProfileId: peerProfileId,
   );
   if (identical(displayMessage, props.message)) return props;
   return StreamMessageItemProps(
@@ -1240,6 +1361,7 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
         props,
         peerLabel: LoopDirectPeerScope.maybeOf(context),
         currentUserId: StreamChat.of(context).currentUser?.id,
+        peerProfileId: LoopDirectPeerScope.profileOf(context),
       );
       return _withTokenCards(
         context,
@@ -1268,7 +1390,12 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
     // The Alias-projected copy is the one the avatar reads too, so the
     // initials over the gutter and the name above the bubble stay the same
     // member.
-    final displayProps = _groupDisplayProps(props, members);
+    final channel = StreamChannel.maybeOf(context)?.channel;
+    final displayProps = _groupDisplayProps(
+      props,
+      members,
+      realIdentity: loopChannelUsesRealIdentity(context, channel?.cid),
+    );
     return _withTokenCards(
       context,
       displayProps.message,
@@ -1361,6 +1488,7 @@ List<LoopGroupMentionCandidate> resolveLoopGroupMentionCandidates({
   required Iterable<Member> members,
   required String query,
   String? currentUserId,
+  bool realIdentity = false,
 }) {
   final roster = List<Member>.unmodifiable(members);
   final prefix = query.trim().toLowerCase();
@@ -1376,6 +1504,7 @@ List<LoopGroupMentionCandidate> resolveLoopGroupMentionCandidates({
     final alias = resolveLoopGroupMessageSenderLabel(
       senderUserId: userId,
       members: roster,
+      realIdentity: realIdentity,
     );
     if (alias == loopGroupMemberNeutralLabel) continue;
     if (!alias.toLowerCase().startsWith(prefix)) continue;
@@ -1469,6 +1598,7 @@ class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
           members: members,
           query: query,
           currentUserId: currentUserId,
+          realIdentity: loopChannelUsesRealIdentity(context, channel.cid),
         ),
         messageComposerController: messageComposerController,
       ),

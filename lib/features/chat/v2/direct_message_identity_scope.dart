@@ -18,16 +18,26 @@ class LoopDirectPeerScope extends InheritedWidget {
     required this.displayName,
     required super.child,
     super.key,
+    this.publicProfileId,
   });
 
   /// `alias ?? loopId`. Never an invented value, and never a Stream one.
   final String displayName;
 
+  /// The peer's public profile, which the avatar beside their bubble opens
+  /// (S107 §2). Null when the page was opened without one.
+  final String? publicProfileId;
+
   static String? maybeOf(BuildContext context) => context
       .dependOnInheritedWidgetOfExactType<LoopDirectPeerScope>()
       ?.displayName;
 
+  static String? profileOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<LoopDirectPeerScope>()
+      ?.publicProfileId;
+
   @override
   bool updateShouldNotify(LoopDirectPeerScope oldWidget) =>
-      oldWidget.displayName != displayName;
+      oldWidget.displayName != displayName ||
+      oldWidget.publicProfileId != publicProfileId;
 }

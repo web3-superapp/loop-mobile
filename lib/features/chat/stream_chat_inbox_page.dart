@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -432,6 +433,11 @@ class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Decision 0112: with the group Alias hidden there is nothing for the
+    // membership gate to unlock, so it is not run.
+    if (!ref.watch(loopFeatureSwitchesProvider).groupAliasVisible) {
+      return const GroupAliasPausedPage();
+    }
     try {
       GroupAliasStreamChannelId.fromCid(cid);
     } on InvalidGroupAliasContractException {
@@ -622,7 +628,9 @@ class _ExistingMemberStreamChannelPageState
           channel: snapshot.data!,
           child: usesGroupIdentity
               ? LoopStreamGroupChannelPage(
-                  onChannelAvatarPressed: groupAliasChannelId == null
+                  onChannelAvatarPressed:
+                      groupAliasChannelId == null ||
+                          !loopFeatureSwitchesOf(context).groupAliasVisible
                       ? null
                       : (context, channel) => unawaited(
                           context.push<void>(

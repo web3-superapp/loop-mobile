@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_controller.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
@@ -16,6 +17,9 @@ class GroupAliasRoutePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!loopFeatureSwitchesOf(context).groupAliasVisible) {
+      return const GroupAliasPausedPage();
+    }
     try {
       return GroupAliasPage(groupId: GroupId.fromWire(routeGroupId));
     } on InvalidGroupAliasContractException {
@@ -33,6 +37,29 @@ class GroupAliasRoutePage extends StatelessWidget {
       );
     }
   }
+}
+
+/// What a group-Alias location shows while the feature is hidden
+/// (`LoopFeatureSwitches.groupAliasVisible = false`, decision 0112): the
+/// page stays mounted, asks nothing, and says members appear under their own
+/// names.
+class GroupAliasPausedPage extends StatelessWidget {
+  const GroupAliasPausedPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const LoopPage(
+    eyebrow: 'GROUP IDENTITY',
+    title: '群内昵称',
+    children: <Widget>[
+      LoopStateCard(
+        key: ValueKey<String>('group-alias-paused'),
+        title: '群内昵称暂未开放',
+        message: '群成员以自己的头像和用户名显示。这里没有发起任何请求。',
+        icon: Icons.person_outline_rounded,
+        tone: LoopTone.neutral,
+      ),
+    ],
+  );
 }
 
 /// Resolves a Stream group to its LOOP `group_id` after the Chat-owned route

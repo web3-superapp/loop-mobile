@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/account/loop_id_setup_controller.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
@@ -52,9 +51,11 @@ void main() {
 
     expect(find.byKey(const ValueKey<String>('loop-id-value')), findsOneWidget);
     expect(find.text(loopId), findsOneWidget);
-    expect(find.text('系统生成，不可更改'), findsOneWidget);
-    // The LOOP ID is never editable.
-    expect(find.byType(TextField), findsOneWidget);
+    expect(find.textContaining('不可更改'), findsOneWidget);
+    // S107 §4: the LOOP ID can be copied, never edited — the two fields are
+    // the user name and the bio.
+    expect(find.byKey(const ValueKey<String>('loop-id-copy')), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(2));
     // Nothing can be submitted before an alias exists.
     expect(_pressed(tester, 'loop-id-submit'), isNull);
   });
@@ -129,21 +130,31 @@ void main() {
     expect(activation.avatarRef, isNull);
   });
 
-  testWidgets('the empty avatar catalog keeps the picker unavailable', (
+  testWidgets('no preset grid: the default avatar and a closed upload', (
     tester,
   ) async {
-    await _pump(tester, avatars: _AvatarCatalog(fails: true));
+    await _pump(tester);
 
-    expect(
-      find.byKey(const ValueKey<String>('loop-id-avatar-unavailable')),
-      findsOneWidget,
-    );
+    // S107 §4: the preset grid is gone even when the catalog answers.
     expect(
       find.byKey(
         const ValueKey<String>('loop-id-avatar-avatar:preset/people-01'),
       ),
       findsNothing,
     );
+    expect(
+      find.byKey(const ValueKey<String>('loop-profile-avatar-monogram')),
+      findsOneWidget,
+    );
+    // No upload transport in this harness: the button stays, disabled, and
+    // says why.
+    expect(_pressed(tester, 'loop-avatar-upload'), isNull);
+    expect(
+      find.byKey(const ValueKey<String>('loop-avatar-upload-unavailable')),
+      findsOneWidget,
+    );
+    // The interest tracks are gone too.
+    expect(find.text('关注赛道'), findsNothing);
   });
 
   testWidgets('the primary action activates with the exact submitted body', (
@@ -157,8 +168,6 @@ void main() {
       'Voyager_7',
     );
     await tester.pumpAndSettle();
-    await _openDisclosure(tester);
-    await _tapKey(tester, 'loop-id-interest-MEME');
 
     expect(_pressed(tester, 'loop-id-submit'), isNotNull);
     await _tapKey(tester, 'loop-id-submit');
@@ -166,7 +175,8 @@ void main() {
 
     expect(activation.calls, 1);
     expect(activation.alias, 'Voyager_7');
-    expect(activation.interests, <ProfileInterest>[ProfileInterest.meme]);
+    // The field is kept on the server and submitted empty (S107 §4).
+    expect(activation.interests, isEmpty);
     expect(
       find.byKey(const ValueKey<String>('loop-id-activated')),
       findsOneWidget,
@@ -245,28 +255,63 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('只是本地建议'), findsOneWidget);
+    expect(find.textContaining('可以和别人重复'), findsOneWidget);
     expect(_pressed(tester, 'loop-id-submit'), isNotNull);
   });
 
-  testWidgets('the notification switch stays a local preference', (
+  testWidgets('a bio is written after activation, against its version', (
     tester,
   ) async {
-    final container = await _pump(tester);
-    await _openDisclosure(tester);
+    final activation = _ActivationGateway(activated('Voyager_7'));
+    final profile = _ProfileGateway();
+    await _pump(tester, profile: profile, activation: activation);
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('loop-id-alias-field')),
+      'Voyager_7',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('loop-id-bio-field')),
+      '链上漫游者',
+    );
+    await tester.pumpAndSettle();
+    await _tapKey(tester, 'loop-id-submit');
+    await tester.pumpAndSettle();
+
+    expect(activation.calls, 1);
+    expect(profile.replaced?.bio, '链上漫游者');
+    expect(profile.replacedVersion, 1);
+    expect(
+      find.byKey(const ValueKey<String>('loop-id-activated')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('简介没有保存成功'), findsNothing);
+  });
+
+  testWidgets('a bio that fails to save leaves the activation standing', (
+    tester,
+  ) async {
+    final activation = _ActivationGateway(activated('Voyager_7'));
+    final profile = _ProfileGateway(replaceFails: true);
+    await _pump(tester, profile: profile, activation: activation);
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('loop-id-alias-field')),
+      'Voyager_7',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('loop-id-bio-field')),
+      '链上漫游者',
+    );
+    await tester.pumpAndSettle();
+    await _tapKey(tester, 'loop-id-submit');
+    await tester.pumpAndSettle();
 
     expect(
-      container.read(loopIdSetupControllerProvider).pushNotificationsRequested,
-      isTrue,
+      find.byKey(const ValueKey<String>('loop-id-activated')),
+      findsOneWidget,
     );
-    expect(find.textContaining('仅本地偏好，投递仍不可用'), findsOneWidget);
-    expect(find.byType(Switch), findsNothing);
-
-    await _tapKey(tester, 'loop-id-push-toggle');
-    expect(
-      container.read(loopIdSetupControllerProvider).pushNotificationsRequested,
-      isFalse,
-    );
+    expect(find.textContaining('简介没有保存成功'), findsOneWidget);
   });
 }
 
@@ -281,12 +326,6 @@ Future<void> _tapKey(WidgetTester tester, String key) async {
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _openDisclosure(WidgetTester tester) async {
-  await tester.ensureVisible(find.text('身份说明、关注赛道与通知'));
-  await tester.tap(find.text('身份说明、关注赛道与通知'));
   await tester.pumpAndSettle();
 }
 
@@ -327,11 +366,19 @@ Future<ProviderContainer> _pump(
 }
 
 final class _ProfileGateway implements ProfileGateway {
-  _ProfileGateway({this.failure, this.loadDelay, this.avatarRef});
+  _ProfileGateway({
+    this.failure,
+    this.loadDelay,
+    this.avatarRef,
+    this.replaceFails = false,
+  });
 
   ProfileGatewayException? failure;
   final Duration? loadDelay;
   final String? avatarRef;
+  final bool replaceFails;
+  ProfileValues? replaced;
+  int? replacedVersion;
 
   @override
   ProfileMode get mode => ProfileMode.production;
@@ -354,7 +401,21 @@ final class _ProfileGateway implements ProfileGateway {
   Future<ProfileResource> replace({
     required int expectedVersion,
     required ProfileValues values,
-  }) => throw UnimplementedError();
+  }) async {
+    if (replaceFails) {
+      throw const ProfileGatewayException(ProfileGatewayFailureKind.offline);
+    }
+    replaced = values;
+    replacedVersion = expectedVersion;
+    return ProfileResource(
+      version: expectedVersion + 1,
+      values: values,
+      updatedAt: DateTime.utc(2026, 9, 7, 2),
+      loopId: 'LOOP-7HJKMNPQ',
+      profileStatus: ProfileStatus.active,
+      activatedAt: DateTime.utc(2026, 9, 7, 1),
+    );
+  }
 }
 
 final class _ActivationGateway implements ProfileActivationGateway {
@@ -387,15 +448,10 @@ final class _ActivationGateway implements ProfileActivationGateway {
 }
 
 final class _AvatarCatalog implements AvatarCatalogGateway {
-  _AvatarCatalog({this.fails = false});
-
-  final bool fails;
+  _AvatarCatalog();
 
   @override
   Future<List<AvatarPreset>> load() async {
-    if (fails) {
-      throw const AvatarCatalogException(AvatarCatalogFailureKind.unavailable);
-    }
     return const <AvatarPreset>[
       AvatarPreset(
         avatarRef: 'avatar:preset/people-01',

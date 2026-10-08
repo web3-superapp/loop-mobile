@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
@@ -23,16 +24,16 @@ const _stateKeys = <String>[
   'privacy-error',
 ];
 
+// S107 §4: one 公开持仓与交易 switch stands for `totalAssets` and
+// `tradeHistory`, and the 匿名模式 switch is hidden (decision 0112).
 const _controlKeys = <String>[
-  'privacy-anonymous-mode',
   'privacy-discoverable',
   'privacy-social-friendRequests',
   'privacy-social-directMessages',
   'privacy-social-groupInvites',
-  'privacy-visibility-totalAssets',
+  'privacy-public-holdings',
   'privacy-visibility-miningPower',
   'privacy-visibility-communities',
-  'privacy-visibility-tradeHistory',
 ];
 
 void main() {
@@ -119,7 +120,7 @@ void main() {
     }
   });
 
-  testWidgets('Preview edits anonymous mode and one facet, then saves once', (
+  testWidgets('Preview flips 公开持仓与交易, then saves both facets once', (
     tester,
   ) async {
     final gateway = _previewGateway();
@@ -131,9 +132,17 @@ void main() {
     for (final key in _controlKeys) {
       expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
     }
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isFalse);
+    // Hidden, not removed: the field is resubmitted unchanged.
+    expect(
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+      findsNothing,
+    );
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
-    for (final facet in PrivacyVisibilityFacet.values) {
+    expect(_toggle(tester, 'privacy-public-holdings').value, isFalse);
+    for (final facet in <PrivacyVisibilityFacet>[
+      PrivacyVisibilityFacet.miningPower,
+      PrivacyVisibilityFacet.communities,
+    ]) {
       expect(
         _toggle(tester, 'privacy-visibility-${facet.wireValue}').value,
         isFalse,
@@ -144,16 +153,10 @@ void main() {
 
     await _tap(
       tester,
-      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
-    );
-    await _tap(
-      tester,
-      find.byKey(const ValueKey<String>('privacy-visibility-totalAssets')),
+      find.byKey(const ValueKey<String>('privacy-public-holdings')),
     );
 
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isTrue);
-    expect(_toggle(tester, 'privacy-visibility-totalAssets').value, isTrue);
-    expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isFalse);
+    expect(_toggle(tester, 'privacy-public-holdings').value, isTrue);
     expect(_saveButton(tester).onPressed, isNotNull);
 
     await _tap(tester, find.byKey(const ValueKey<String>('privacy-save')));
@@ -166,8 +169,11 @@ void main() {
       committed.values,
       PrivacyValues(
         discoverable: false,
-        anonymousMode: true,
-        visibility: PrivacyVisibility(totalAssets: PrivacyAudience.everyone),
+        anonymousMode: false,
+        visibility: PrivacyVisibility(
+          totalAssets: PrivacyAudience.everyone,
+          tradeHistory: PrivacyAudience.everyone,
+        ),
       ),
     );
     // A saved draft is clean again, so the action cannot resubmit.
@@ -328,7 +334,7 @@ void main() {
     );
     await _tap(
       tester,
-      find.byKey(const ValueKey<String>('privacy-visibility-tradeHistory')),
+      find.byKey(const ValueKey<String>('privacy-public-holdings')),
     );
     await gateway.replace(
       expectedVersion: 1,
@@ -347,8 +353,7 @@ void main() {
     );
     // The local draft is still on screen and still frozen.
     expect(_toggle(tester, 'privacy-discoverable').value, isTrue);
-    expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isTrue);
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isFalse);
+    expect(_toggle(tester, 'privacy-public-holdings').value, isTrue);
     expect(_saveButton(tester).onPressed, isNull);
     for (final key in _controlKeys) {
       expect(_toggle(tester, key).onChanged, isNull);
@@ -360,11 +365,10 @@ void main() {
       find.byKey(const ValueKey<String>('privacy-conflict')),
       findsNothing,
     );
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isTrue);
     expect(_toggle(tester, 'privacy-visibility-miningPower').value, isTrue);
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
-    expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isFalse);
-    expect(_toggle(tester, 'privacy-anonymous-mode').onChanged, isNotNull);
+    expect(_toggle(tester, 'privacy-public-holdings').value, isFalse);
+    expect(_toggle(tester, 'privacy-public-holdings').onChanged, isNotNull);
   });
 
   testWidgets('mounted Privacy replaces the old owner after gateway rotation', (
@@ -376,7 +380,10 @@ void main() {
         values: PrivacyValues(
           discoverable: true,
           anonymousMode: false,
-          visibility: PrivacyVisibility(totalAssets: PrivacyAudience.everyone),
+          visibility: PrivacyVisibility(
+            totalAssets: PrivacyAudience.everyone,
+            tradeHistory: PrivacyAudience.everyone,
+          ),
         ),
         updatedAt: DateTime.utc(2026, 8, 25, 9),
       ),
@@ -395,17 +402,30 @@ void main() {
 
     await _pumpPrivacy(tester, gateway: first);
     expect(_toggle(tester, 'privacy-discoverable').value, isTrue);
-    expect(_toggle(tester, 'privacy-visibility-totalAssets').value, isTrue);
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isFalse);
+    expect(_toggle(tester, 'privacy-public-holdings').value, isTrue);
 
     await _pumpPrivacy(tester, gateway: second);
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
-    expect(_toggle(tester, 'privacy-visibility-totalAssets').value, isFalse);
-    expect(_toggle(tester, 'privacy-anonymous-mode').value, isTrue);
-    expect(_toggle(tester, 'privacy-visibility-tradeHistory').value, isTrue);
+    // One of the two facets alone does not make the pair public.
+    expect(_toggle(tester, 'privacy-public-holdings').value, isFalse);
     for (final key in _stateKeys) {
       expect(find.byKey(ValueKey<String>(key)), findsNothing);
     }
+  });
+
+  testWidgets('the hidden 匿名模式 switch returns with its switch', (tester) async {
+    await _pumpPrivacy(
+      tester,
+      gateway: _previewGateway(),
+      switches: const LoopFeatureSwitchValues(anonymousModeVisible: true),
+    );
+
+    expect(_toggle(tester, 'privacy-anonymous-mode').value, isFalse);
+    await _tap(
+      tester,
+      find.byKey(const ValueKey<String>('privacy-anonymous-mode')),
+    );
+    expect(_toggle(tester, 'privacy-anonymous-mode').value, isTrue);
   });
 
   testWidgets('Privacy supports a 390pt screen at 2x Dynamic Type', (
@@ -481,6 +501,7 @@ Future<void> _pumpPrivacy(
   TextScaler textScaler = TextScaler.noScaling,
   String? scopeId,
   bool settle = true,
+  LoopFeatureSwitchValues switches = const LoopFeatureSwitchValues(),
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -494,6 +515,7 @@ Future<void> _pumpPrivacy(
         privacyGatewayProvider.overrideWithValue(
           gateway ?? const UnavailablePrivacyGateway(),
         ),
+        loopFeatureSwitchesProvider.overrideWithValue(switches),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

@@ -1161,7 +1161,7 @@ PRIVACY_BEHAVIOR_TEST_MARKERS = {
     ),
     Path("test/privacy_presentation_screen_test.dart"): (
         "every load failure maps to one honest state, never empty",
-        "Preview edits anonymous mode and one facet, then saves once",
+        "Preview flips 公开持仓与交易, then saves both facets once",
         "version conflict preserves every draft field until reload",
         "mounted Privacy replaces the old owner after gateway rotation",
         "Privacy supports a 390pt screen at 2x Dynamic Type",
@@ -8150,7 +8150,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 97-route manifest."""
+    """Keep the Dart route table equal to the frozen 99-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8166,8 +8166,8 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for module in manifest.get("modules", {}).values()
         for item in module
     ]
-    if manifest.get("count") != 97 or len(expected_slugs) != 97:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 97 routes")
+    if manifest.get("count") != 99 or len(expected_slugs) != 99:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 99 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "chat":
@@ -8201,7 +8201,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 97 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 99 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -13213,11 +13213,15 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
     direct_screen_path = root / "lib/features/chat/v2/direct_message_screen.dart"
     if direct_screen_path.is_file():
         direct_screen = strip_dart_comments(read_text(direct_screen_path))
-        if any(
-            marker not in direct_screen
+        # S109a (decision 0112) adds the peer's public profile to the scope so
+        # the avatar beside their bubble can open it; the name still comes
+        # from the passed profile alone.
+        compact_direct = re.sub(r"\s+", "", direct_screen)
+        if "identity?.displayName ?? '私聊'" not in direct_screen or any(
+            marker not in compact_direct
             for marker in (
-                "identity?.displayName ?? '私聊'",
-                "LoopDirectPeerScope(displayName: peer, child: surface)",
+                "LoopDirectPeerScope(displayName:peer,",
+                "publicProfileId:widget.target?.publicProfileId,child:surface,",
             )
         ):
             errors.append(
