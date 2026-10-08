@@ -1346,7 +1346,8 @@ StreamMessageItemProps _directDisplayProps(
     currentUserId: currentUserId,
     peerProfileId: peerProfileId,
   );
-  if (identical(displayMessage, props.message)) return props;
+  // Always a fresh props: the reaction detail sheet below is suppressed even
+  // when the display copy is the message itself.
   return StreamMessageItemProps(
     message: displayMessage,
     padding: props.padding,
@@ -1364,7 +1365,10 @@ StreamMessageItemProps _directDisplayProps(
     onThreadTap: props.onThreadTap,
     onViewInChannelTap: props.onViewInChannelTap,
     onReplyTap: props.onReplyTap,
-    onReactionTap: props.onReactionTap,
+    // Decision 0117: as in a group, the reaction detail sheet stays shut. Its
+    // 「+」 (`StreamEmojiChip.addEmoji`) opens Stream's Emoji catalogue, which
+    // LOOP leaves empty, and no component builder replaces it.
+    onReactionTap: (_, _) {},
     onQuotedMessageTap: props.onQuotedMessageTap,
     reactionSorting: props.reactionSorting,
     actionsBuilder: props.actionsBuilder,

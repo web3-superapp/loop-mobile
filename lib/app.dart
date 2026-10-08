@@ -101,6 +101,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.da
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_attachments.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_composer.dart';
+import 'package:loop_mobile/integrations/communication/loop_stream_reaction_icon_resolver.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_presence.dart';
@@ -122,6 +123,9 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
   // own renderer doubles every newline into a paragraph break and eats `|`,
   // `*` and `_`; this one prints what the member typed, on band 4.
   messageText: loopStreamMessageTextBuilder,
+  // Decision 0117: the long-press reaction bar keeps LOOP's five words and
+  // drops Stream's 「+」, which opened an empty Emoji catalogue.
+  reactionPicker: loopStreamReactionPickerBuilder,
   extensions: streamChatComponentBuilders(
     // S45: a member may send pictures. The composer is the official one,
     // behind LOOP's own gate — images only, four formats, 10 MB each, nine per
@@ -158,6 +162,9 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
 
 /// The configuration every official Stream widget in LOOP reads.
 final loopStreamChatConfiguration = StreamChatConfigurationData(
+  // Decision 0117: reactions are drawn as LOOP's own words, never as system
+  // Emoji, and the picker's 「+」 offers no Emoji catalogue.
+  reactionIconResolver: const LoopStreamReactionIconResolver(),
   messagePreviewFormatter: const LoopStreamTokenCardMessagePreviewFormatter(),
   attachmentBuilders: const <LoopStreamTokenCardAttachmentBuilder>[
     LoopStreamTokenCardAttachmentBuilder(),

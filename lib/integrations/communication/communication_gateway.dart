@@ -59,6 +59,9 @@ class ConversationMessage {
   final bool isMine;
   final bool isPinned;
   final String? replyLabel;
+
+  /// Reaction type → count. Keys are reaction types (`like`, `haha`, …),
+  /// drawn through `loopReactionLabel`; never an Emoji (decision 0117).
   final Map<String, int> reactions;
 }
 

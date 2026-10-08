@@ -335,21 +335,21 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // 3a · 跌为红
+  // 3a · 跌为红（决策 0117：绿涨红跌）
   // -------------------------------------------------------------------------
-  group('涨跌 · 跌一律 danger，零与读不到一律 muted', () {
+  group('涨跌 · 涨一律 rise、跌一律 fall，零与读不到一律 muted', () {
     test('方向只有四种，颜色只有三种', () {
       expect(LoopPriceMove.of(Decimal.parse('1.2')), LoopPriceMove.up);
       expect(LoopPriceMove.of(Decimal.parse('-1.2')), LoopPriceMove.down);
       expect(LoopPriceMove.of(Decimal.zero), LoopPriceMove.flat);
       expect(LoopPriceMove.of(null), LoopPriceMove.unread);
-      expect(LoopPriceMove.up.color, LoopColors.lime);
-      expect(LoopPriceMove.down.color, LoopColors.danger);
+      expect(LoopPriceMove.up.color, LoopColors.rise);
+      expect(LoopPriceMove.down.color, LoopColors.fall);
       expect(LoopPriceMove.flat.color, LoopColors.muted);
       expect(LoopPriceMove.unread.color, LoopColors.muted);
     });
 
-    testWidgets('社区币卡的跌是 danger，不是 Chalk', (tester) async {
+    testWidgets('社区币卡的跌是 fall，不是 Chalk', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
@@ -374,17 +374,17 @@ void main() {
 
       expect(
         tester.widget<Text>(find.text('-3.20%')).style?.color,
-        LoopColors.danger,
+        LoopColors.fall,
       );
     });
 
-    testWidgets('行情行的色块：涨 lime、跌 danger、持平与读不到 muted', (tester) async {
+    testWidgets('行情行的色块：涨 rise、跌 fall、持平与读不到 muted', (tester) async {
       Color groundOf(LoopFact fact) {
         return MarketMove.of(fact).shared.ground;
       }
 
-      expect(groundOf(s5FreshFact('1.2')), LoopColors.lime);
-      expect(groundOf(s5FreshFact('-1.2')), LoopColors.danger);
+      expect(groundOf(s5FreshFact('1.2')), LoopColors.rise);
+      expect(groundOf(s5FreshFact('-1.2')), LoopColors.fall);
       expect(groundOf(s5FreshFact('0')), LoopColors.muted);
       expect(
         groundOf(const LoopFact.unavailable('MARKET_FACT_NOT_REPORTED')),
@@ -418,10 +418,10 @@ void main() {
       );
 
       final close = find.textContaining('C ');
-      expect(tester.widget<Text>(close.first).style?.color, LoopColors.danger);
+      expect(tester.widget<Text>(close.first).style?.color, LoopColors.fall);
     });
 
-    testWidgets('明细行的向下副标题也是 danger', (tester) async {
+    testWidgets('明细行的向下副标题也是 fall', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
@@ -439,7 +439,7 @@ void main() {
 
       expect(
         tester.widget<Text>(find.text('流入池')).style?.color,
-        LoopColors.danger,
+        LoopColors.fall,
       );
     });
   });

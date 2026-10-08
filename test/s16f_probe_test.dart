@@ -502,7 +502,12 @@ void main() {
       LoopColors.ink,
     ).map((probe) => probe.ground.toARGB32()).toSet();
 
-    testWidgets('the Market page opens on a Lime folio', (tester) async {
+    // The light ground the Market page renders is its rows' solid change
+    // block. It was Lime until decision 0117 moved a rise to the market's own
+    // green; the premise is the same — a light ground carrying Ink text.
+    testWidgets('the Market page renders a light change ground', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const MarketScreen(),
@@ -511,7 +516,7 @@ void main() {
 
       expect(
         groundsOf(tester, find.byType(MarketScreen)),
-        contains(LoopColors.lime.toARGB32()),
+        contains(LoopColors.rise.toARGB32()),
       );
     });
 
