@@ -173,7 +173,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               icon: 'info',
               title: '想被别人找到？',
               // One switch, one name: the privacy centre calls it 可被发现.
-              body: '默认关闭。在"隐私中心 · 可被发现"里打开后，别人才能按昵称搜到你并关注你；LOOP ID 始终可被精确搜索。',
+              body: '默认关闭。在"隐私中心 · 可被发现"里打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。',
               margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
             ),
           ],
