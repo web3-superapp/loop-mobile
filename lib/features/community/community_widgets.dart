@@ -1391,18 +1391,25 @@ Future<void> showCommunityApplicationSubmittedSheet(
   );
 }
 
-/// Owner-only community profile edit sheet.
+/// The community profile edit sheet (owner and admin).
 ///
 /// `slug` and `verificationStatus` are not editable and are shown read-only,
-/// so the sheet can never submit a field the server would reject.
+/// so the sheet can never submit a field the server would reject. The bound
+/// asset is the owner's field alone (decision 0113): the field exists only
+/// when [includeBoundAsset] is set, which the manage center does for the
+/// owner and never for an admin.
 Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
   BuildContext context, {
   required CommunitySummary community,
+  bool includeBoundAsset = false,
 }) {
   return showLoopSheet<CommunityProfileEdit>(
     context,
     barrierLabel: '关闭社区资料编辑',
-    builder: (sheetContext) => _CommunityProfileEditForm(community: community),
+    builder: (sheetContext) => _CommunityProfileEditForm(
+      community: community,
+      includeBoundAsset: includeBoundAsset,
+    ),
   );
 }
 
@@ -1416,9 +1423,13 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
 /// frame. The controllers belong to a [State] whose `dispose` runs when the
 /// widget is actually gone, which is the same shape the application form has.
 class _CommunityProfileEditForm extends StatefulWidget {
-  const _CommunityProfileEditForm({required this.community});
+  const _CommunityProfileEditForm({
+    required this.community,
+    required this.includeBoundAsset,
+  });
 
   final CommunitySummary community;
+  final bool includeBoundAsset;
 
   @override
   State<_CommunityProfileEditForm> createState() =>
@@ -1432,12 +1443,47 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
   late final TextEditingController _description = TextEditingController(
     text: widget.community.description ?? '',
   );
+  late final TextEditingController _assetKey = TextEditingController(
+    text: widget.community.boundAssetKey ?? '',
+  );
+  bool _assetKeyInvalid = false;
 
   @override
   void dispose() {
     _name.dispose();
     _description.dispose();
+    _assetKey.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    final community = widget.community;
+    final name = _name.text.trim();
+    final description = _description.text.trim();
+    String? assetKey;
+    var clearAssetKey = false;
+    if (widget.includeBoundAsset) {
+      final typed = _assetKey.text.trim().toLowerCase();
+      if (typed.isEmpty) {
+        clearAssetKey = community.boundAssetKey != null;
+      } else if (!CommunityApplication.boundAssetKeyPattern.hasMatch(typed)) {
+        setState(() => _assetKeyInvalid = true);
+        return;
+      } else if (typed != community.boundAssetKey?.toLowerCase()) {
+        assetKey = typed;
+      }
+    }
+    Navigator.of(context).pop(
+      CommunityProfileEdit(
+        name: name == community.name || name.isEmpty ? null : name,
+        description: description.isEmpty || description == community.description
+            ? null
+            : description,
+        clearDescription: description.isEmpty && community.description != null,
+        boundAssetKey: assetKey,
+        clearBoundAssetKey: clearAssetKey,
+      ),
+    );
   }
 
   @override
@@ -1468,6 +1514,27 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
             decoration: const InputDecoration(labelText: '简介（可留空）'),
           ),
           const SizedBox(height: 12),
+          if (widget.includeBoundAsset) ...<Widget>[
+            TextField(
+              key: const ValueKey<String>('community-edit-bound-asset'),
+              controller: _assetKey,
+              autocorrect: false,
+              enableSuggestions: false,
+              onChanged: (_) {
+                if (_assetKeyInvalid) setState(() => _assetKeyInvalid = false);
+              },
+              decoration: InputDecoration(
+                labelText: '绑定代币（仅所有者，可留空）',
+                hintText: 'eip155:56:0x…',
+                errorText: _assetKeyInvalid
+                    ? communityApplicationFieldReason(
+                        CommunityApplicationField.boundAssetKey,
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           LoopKeyValue(
             label: '短链接（不可修改）',
             value: community.slug,
@@ -1481,24 +1548,7 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
                 key: const ValueKey<String>('community-edit-submit'),
                 label: '下一步',
                 primary: true,
-                onPressed: () {
-                  final name = _name.text.trim();
-                  final description = _description.text.trim();
-                  Navigator.of(context).pop(
-                    CommunityProfileEdit(
-                      name: name == community.name || name.isEmpty
-                          ? null
-                          : name,
-                      description:
-                          description.isEmpty ||
-                              description == community.description
-                          ? null
-                          : description,
-                      clearDescription:
-                          description.isEmpty && community.description != null,
-                    ),
-                  );
-                },
+                onPressed: _submit,
               ),
               LoopButton(
                 key: const ValueKey<String>('community-edit-cancel'),

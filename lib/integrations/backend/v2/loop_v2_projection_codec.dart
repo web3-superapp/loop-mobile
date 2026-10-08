@@ -260,8 +260,43 @@ abstract final class LoopV2ProjectionCodec {
     'configVersion',
   };
 
-  static CommunitySummary community(Object? raw) =>
-      _community(LoopV2Contract.strictMap(raw, _communityKeys));
+  /// `boundAsset` (S108 §1.3) is an optional tail: an API that predates it
+  /// answers without the key, and that is not an invalid community.
+  static const _communityOptionalKeys = <String>{'boundAsset'};
+
+  static CommunitySummary community(Object? raw) => _community(
+    LoopV2Contract.strictMapWithOptional(
+      raw,
+      _communityKeys,
+      _communityOptionalKeys,
+    ),
+  );
+
+  /// The registry row the server resolved a community's `boundAssetKey` to.
+  /// `null` is the community binding nothing.
+  static CommunityBoundAsset? communityBoundAsset(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'assetId',
+      'symbol',
+      'name',
+      'logoUrl',
+      'hasRegisteredPool',
+    });
+    final logoUrl = map['logoUrl'];
+    if (logoUrl != null && (logoUrl is! String || logoUrl.isEmpty)) invalid();
+    return CommunityBoundAsset(
+      assetId: LoopV2Contract.requiredString(
+        map,
+        'assetId',
+        pattern: boundAssetKeyPattern,
+      ),
+      symbol: requireText(map, 'symbol'),
+      name: optionalText(map, 'name'),
+      logoUrl: logoUrl as String?,
+      hasRegisteredPool: requireBool(map, 'hasRegisteredPool'),
+    );
+  }
 
   /// One row of `GET /v2/communities`, which carries the fact the page was
   /// ordered by and nothing else (decision 0061).
@@ -277,7 +312,7 @@ abstract final class LoopV2ProjectionCodec {
     final map = LoopV2Contract.strictMapWithOptional(
       raw,
       _communityKeys,
-      const <String>{'miningPower', 'activity'},
+      const <String>{'miningPower', 'activity', ..._communityOptionalKeys},
     );
     final power = map.containsKey('miningPower')
         ? miningPowerFact(map['miningPower'])
@@ -463,6 +498,7 @@ abstract final class LoopV2ProjectionCodec {
       configVersion: configVersion as String,
       miningPower: miningPower,
       activity: activity,
+      boundAsset: communityBoundAsset(map['boundAsset']),
     );
   }
 

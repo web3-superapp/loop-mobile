@@ -31,11 +31,10 @@ import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
-import 'package:loop_mobile/features/social/loop_id_share.dart';
+import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -1007,6 +1006,7 @@ class _ProfileIdentityCard extends ConsumerWidget {
           ),
           // Decision 0104 (S97b layout): sharing is the card's top-bar glyph,
           // the same unframed 44×44 control as 设置 above it, in Ink on Chalk.
+          // Decision 0113: it opens the QR card, which keeps 复制邀请文字.
           if (loopId != null)
             Positioned(
               top: 0,
@@ -1014,9 +1014,18 @@ class _ProfileIdentityCard extends ConsumerWidget {
               child: LoopIconButton(
                 key: const ValueKey<String>('profile-share-loop-id'),
                 icon: 'share',
-                label: '分享 LOOP ID',
+                label: '分享名片',
                 color: LoopColors.ink,
-                onPressed: () => unawaited(_share(context, ref, loopId)),
+                onPressed: () => unawaited(
+                  showLoopQrCardSheet(
+                    context,
+                    LoopUserQrCard(
+                      loopId: loopId,
+                      displayName: alias ?? loopId,
+                      avatarRef: resource.values.avatarRef,
+                    ),
+                  ),
+                ),
               ),
             ),
         ],
@@ -1025,23 +1034,6 @@ class _ProfileIdentityCard extends ConsumerWidget {
   }
 
   static const double _identityCardEdge = 4;
-
-  Future<void> _share(
-    BuildContext context,
-    WidgetRef ref,
-    String loopId,
-  ) async {
-    final text = loopIdShareTextFor(
-      loopId,
-      backendBaseUrl: ref.read(loopIdLinkBaseUrlProvider),
-    );
-    final shared = await ref.read(loopTextShareProvider)(
-      text,
-      subject: '我的 LOOP ID',
-    );
-    if (shared || !context.mounted) return;
-    LoopToast.show(context, message: '无法打开分享，可以改用复制', kind: LoopToastKind.warn);
-  }
 }
 
 /// `.chalk-card .seg`: Ink ground with Chalk text, not the Lime fill.

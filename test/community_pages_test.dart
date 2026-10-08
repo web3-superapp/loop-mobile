@@ -1343,9 +1343,9 @@ void main() {
       expect(find.textContaining('没有执行这个操作的权限'), findsWidgets);
     });
 
-    testWidgets('only the owner is offered the profile edit action', (
-      tester,
-    ) async {
+    // Decision 0113: editing moved into the manage center; the record's
+    // top bar offers 管理 to the owner and admins, and nobody else.
+    testWidgets('only the owner and admins are offered 管理', (tester) async {
       await pumpCommunityPage(
         tester,
         const CommunityProfileScreen(communityId: testCommunityId),
@@ -1354,8 +1354,24 @@ void main() {
         ),
       );
       expect(
-        find.byKey(const ValueKey<String>('community-edit-profile-action')),
+        find.byKey(const ValueKey<String>('community-profile-manage')),
         findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-profile-share')),
+        findsOneWidget,
+      );
+
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(viewer: testViewer(role: CommunityRole.admin)),
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-profile-manage')),
+        findsOneWidget,
       );
 
       await pumpCommunityPage(
@@ -1366,8 +1382,12 @@ void main() {
         ),
       );
       expect(
-        find.byKey(const ValueKey<String>('community-edit-profile-action')),
+        find.byKey(const ValueKey<String>('community-profile-manage')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-edit-profile-action')),
+        findsNothing,
       );
       // The owner is never offered a leave control the server would refuse.
       expect(

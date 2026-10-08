@@ -412,6 +412,7 @@ class LoopAction {
     this.icon,
     this.onPressed,
     this.blockedReason,
+    this.caption,
   }) : assert(
          onPressed == null || blockedReason == null,
          'An action either runs or says why it cannot.',
@@ -420,6 +421,9 @@ class LoopAction {
   final String label;
   final Key actionKey;
   final String? icon;
+
+  /// One short line under the label. Only the wide primary tile draws it.
+  final String? caption;
   final VoidCallback? onPressed;
 
   /// The server's own sentence, shown on tap while the action cannot run.
@@ -605,15 +609,31 @@ class _LoopPayTile extends StatelessWidget {
             const SizedBox(width: 9),
           ],
           Flexible(
-            child: Text(
-              action.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopTypography.label(
-                16,
-                weight: FontWeight.w800,
-                color: LoopColors.ink,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  action.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.label(
+                    16,
+                    weight: FontWeight.w800,
+                    color: LoopColors.ink,
+                  ),
+                ),
+                if (action.caption != null)
+                  Text(
+                    action.caption!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.caption(
+                      11,
+                      color: LoopColors.inkText2,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

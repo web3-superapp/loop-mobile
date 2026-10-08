@@ -30,6 +30,7 @@ PINNED_DEPENDENCIES = {
     "flutter_secure_storage": "10.3.1",
     "flutter_svg": "2.3.0",
     "go_router": "17.5.0",
+    "mobile_scanner": "7.4.2",
     "privy_flutter": "0.10.1",
     "reown_appkit": "1.8.4",
     "share_plus": "12.0.2",
@@ -8150,7 +8151,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 99-route manifest."""
+    """Keep the Dart route table equal to the frozen 101-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8166,8 +8167,8 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for module in manifest.get("modules", {}).values()
         for item in module
     ]
-    if manifest.get("count") != 99 or len(expected_slugs) != 99:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 99 routes")
+    if manifest.get("count") != 101 or len(expected_slugs) != 101:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 101 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "chat":
@@ -8201,7 +8202,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 99 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 101 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)

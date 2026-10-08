@@ -7,7 +7,6 @@ import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
-import 'package:loop_mobile/widgets/loop_toast.dart';
 
 enum _ChatCreateAction { addFriend, createCommunity, createGroup, scan }
 
@@ -16,8 +15,7 @@ enum _ChatCreateAction { addFriend, createCommunity, createGroup, scan }
 ///
 /// 搜索/添加用户 opens the global search, where a person is found and asked;
 /// 创建社区 is the same application 发现社区 submits; 创建群聊 opens the group
-/// form; 扫一扫 has no camera path in this build and says so instead of
-/// opening one.
+/// form; 扫一扫 opens the scanner (decision 0113).
 class ChatCreateMenuButton extends ConsumerWidget {
   const ChatCreateMenuButton({super.key});
 
@@ -70,7 +68,7 @@ class ChatCreateMenuButton extends ConsumerWidget {
             key: 'chat-scan-menu-item',
             icon: 'camera',
             title: '扫一扫',
-            subtitle: '暂未开放',
+            subtitle: '扫名片、社区码或钱包地址',
             action: _ChatCreateAction.scan,
             position: LoopRowPosition.last,
           ),
@@ -94,7 +92,7 @@ class ChatCreateMenuButton extends ConsumerWidget {
           ),
         );
       case _ChatCreateAction.scan:
-        LoopToast.show(context, message: '扫一扫暂未开放', kind: LoopToastKind.warn);
+        unawaited(context.push<void>('/scan'));
     }
   }
 

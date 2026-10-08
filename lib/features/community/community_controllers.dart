@@ -722,9 +722,18 @@ final class CommunityProfileController
 
   /// Owner-only profile edit. Visibility is decided by `viewer`, the result by
   /// the server.
-  Future<CommunityFailureKind?> editProfile(CommunityProfileEdit edit) async {
+  Future<CommunityFailureKind?> editProfile(CommunityProfileEdit edit) async =>
+      (await submitProfileEdit(edit))?.kind;
+
+  /// [editProfile] with the server's refusal intact: the manage center words
+  /// a bound-token refusal by its `reasonCode` (decision 0113).
+  Future<CommunityGatewayException?> submitProfileEdit(
+    CommunityProfileEdit edit,
+  ) async {
     final id = _communityId;
-    if (id == null) return CommunityFailureKind.notFound;
+    if (id == null) {
+      return const CommunityGatewayException(CommunityFailureKind.notFound);
+    }
     final gateway = ref.read(communityGatewayProvider);
     final generation = nextGeneration();
     state = state.working(true);
@@ -738,12 +747,12 @@ final class CommunityProfileController
       if (isCurrent(generation)) {
         state = state.working(false).failed(error.kind);
       }
-      return error.kind;
+      return error;
     } catch (_) {
       if (isCurrent(generation)) {
         state = state.working(false).failed(CommunityFailureKind.unexpected);
       }
-      return CommunityFailureKind.unexpected;
+      return const CommunityGatewayException(CommunityFailureKind.unexpected);
     }
   }
 }

@@ -1,11 +1,12 @@
-/// The 99-route product manifest.
+/// The 101-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
 /// 2026-09-01 from the cliview.org `loop-v2.html` build (SHA-256
 /// `bdbe1832…`); decision 0110 (2026-10-08) added the four v3 tabs `chat`,
 /// `square`, `meme` and `intel` and re-froze the manifest; decision 0112
-/// (S109a, same day) added `user-profile` and `onboarding-communities`.
+/// (S109a, same day) added `user-profile` and `onboarding-communities`;
+/// decision 0113 (S109b, same day) added `scan` and `community-manage`.
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -108,7 +109,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      '6b6a3017f473697082b5d3b3efaf0f2a259959636511468f147cc7e1daee5f97';
+      'f6269762299ff2e7c6370511fe9808dcdac194ca77706cd84e393c82c9fc8abe';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -333,7 +334,7 @@ abstract final class LoopRouteManifest {
       step: 2,
       status: LoopRouteStatus.implemented,
     ),
-    // 2-community · Community (18)
+    // 2-community · Community (20)
     LoopRouteEntry(
       slug: 'search',
       path: '/search',
@@ -497,6 +498,26 @@ abstract final class LoopRouteManifest {
       step: 3,
       status: LoopRouteStatus.implemented,
       tab: true,
+    ),
+    // S109b (decision 0113): the QR scanner opened from 聊天 ＋, and the
+    // community manage center opened from the record's 管理 action.
+    LoopRouteEntry(
+      slug: 'scan',
+      path: '/scan',
+      module: LoopRouteModule.community,
+      title: '扫一扫',
+      prototypeOrder: 106,
+      step: 3,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'community-manage',
+      path: '/community/manage',
+      module: LoopRouteModule.community,
+      title: '社区管理',
+      prototypeOrder: 107,
+      step: 3,
+      status: LoopRouteStatus.implemented,
     ),
     // 3-market · Market (10)
     LoopRouteEntry(

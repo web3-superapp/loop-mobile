@@ -369,10 +369,14 @@ void main() {
     }
 
     await tester.tap(find.byKey(const ValueKey<String>('chat-scan-menu-item')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('扫一扫暂未开放'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    // Decision 0113: the row opens `scan`. This composition has no camera
+    // adapter, so the page says scanning is unavailable and opens nothing.
+    expect(find.byKey(const ValueKey<String>('scan-screen')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('scan-unavailable')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

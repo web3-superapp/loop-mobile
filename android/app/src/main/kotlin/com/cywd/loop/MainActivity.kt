@@ -54,7 +54,8 @@ class MainActivity : FlutterFragmentActivity() {
     // routing any other link. Only an https `/u/{id}` link is handed to the
     // router here — as the first route on a cold start, as a pushed route when
     // LOOP is already running. The router decides what the path means.
-    // A `/c/{communityId}/room` link is handed over the same way.
+    // A `/c/{communityId}/room` link is handed over the same way, and so is a
+    // community card link `/c/{communityId}` (decision 0113).
     override fun getInitialRoute(): String? =
         profileLinkPath(intent) ?: super.getInitialRoute()
 
@@ -69,7 +70,12 @@ class MainActivity : FlutterFragmentActivity() {
         val data = intent.data ?: return null
         if (data.scheme != "https") return null
         val path = data.path ?: return null
-        return if (PROFILE_LINK_PATH.matches(path) || ROOM_LINK_PATH.matches(path)) path else null
+        return if (PROFILE_LINK_PATH.matches(path) ||
+                ROOM_LINK_PATH.matches(path) ||
+                COMMUNITY_LINK_PATH.matches(path)
+        ) {
+            path
+        } else null
     }
 
     // `default_notification_channel_id` in the manifest only tells Firebase
@@ -100,5 +106,11 @@ class MainActivity : FlutterFragmentActivity() {
 
         // Voice-room links `/c/{communityId}/room` (decision 0105).
         val ROOM_LINK_PATH = Regex("^/c/[A-Za-z0-9_-]{1,64}/room/?$")
+
+        // Community card links `/c/{communityId}` (decision 0113): the bare
+        // path, a UUID only. Mirrored by `communityIdFromLinkPath`.
+        val COMMUNITY_LINK_PATH = Regex(
+            "^/c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/?$",
+        )
     }
 }

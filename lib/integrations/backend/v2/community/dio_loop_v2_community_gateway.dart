@@ -163,6 +163,10 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
         'logoRef': null
       else if (edit.logoRef != null)
         'logoRef': edit.logoRef,
+      if (edit.clearBoundAssetKey)
+        'boundAssetKey': null
+      else if (edit.boundAssetKey != null)
+        'boundAssetKey': edit.boundAssetKey,
     };
     // A changed body is a new logical edit and receives a fresh key.
     final signature =

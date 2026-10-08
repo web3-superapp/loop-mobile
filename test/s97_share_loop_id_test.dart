@@ -17,7 +17,6 @@ import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
-import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -155,7 +154,7 @@ void main() {
       expect(
         tester.getSemantics(share),
         matchesSemantics(
-          label: '分享 LOOP ID',
+          label: '分享名片',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -175,43 +174,41 @@ void main() {
       expect(find.text('分享'), findsNothing);
     });
 
-    testWidgets('分享 hands the invitation text to the system sheet', (
+    // Decision 0113: 分享 opens the QR card; the invitation text moved into
+    // it as 复制邀请文字.
+    testWidgets('分享 opens the QR card, whose 复制邀请文字 copies the text', (
       tester,
     ) async {
-      final shared = <String>[];
-      await _pumpProfile(
-        tester,
-        loopId: _ownId,
-        share: (text, {subject}) async {
-          shared.add(text);
-          return true;
-        },
-      );
+      final clipboard = _mockClipboard(tester);
+      await _pumpProfile(tester, loopId: _ownId);
 
       await _tap(
         tester,
         find.byKey(const ValueKey<String>('profile-share-loop-id')),
       );
+      expect(
+        find.byKey(const ValueKey<String>('qr-card-sheet')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('qr-card-code')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('https://api-staging.quant-dinger.cc/u/LOOP-FE3EMCPE'),
+        findsOneWidget,
+      );
 
-      expect(shared, <String>[
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('qr-card-copy-invite')),
+      );
+      expect(
+        clipboard.text,
         '在 LOOP 上加我为好友：LOOP-FE3EMCPE\n'
-            'https://api-staging.quant-dinger.cc/u/LOOP-FE3EMCPE',
-      ]);
-    });
-
-    testWidgets('a sheet that cannot open points to 复制 instead', (
-      tester,
-    ) async {
-      await _pumpProfile(
-        tester,
-        loopId: _ownId,
-        share: (text, {subject}) async => false,
+        'https://api-staging.quant-dinger.cc/u/LOOP-FE3EMCPE',
       );
-      await _tap(
-        tester,
-        find.byKey(const ValueKey<String>('profile-share-loop-id')),
-      );
-      expect(find.text('无法打开分享，可以改用复制'), findsOneWidget);
+      expect(find.text('已复制邀请文字'), findsOneWidget);
     });
 
     testWidgets('an unread ID offers neither action', (tester) async {
@@ -495,7 +492,6 @@ _Clipboard _mockClipboard(WidgetTester tester) {
 Future<void> _pumpProfile(
   WidgetTester tester, {
   required String? loopId,
-  LoopTextShare? share,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(900, 1800);
@@ -514,7 +510,6 @@ Future<void> _pumpProfile(
       overrides: [
         profileGatewayProvider.overrideWithValue(gateway),
         loopIdLinkBaseUrlProvider.overrideWithValue(_stagingBase),
-        if (share != null) loopTextShareProvider.overrideWithValue(share),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

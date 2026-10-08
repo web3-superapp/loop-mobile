@@ -35,7 +35,7 @@ void main() {
     test(
       'Dart table mirrors routes-manifest.json slug, module, tab and order',
       () {
-        expect(json['count'], 99);
+        expect(json['count'], 101);
         expect(json['prototypeSha256'], LoopRouteManifest.prototypeSha256);
         expect(
           LoopRouteManifest.prototypeSha256,
@@ -46,7 +46,7 @@ void main() {
         expect(json['tabs'], LoopRouteManifest.tabSlugs);
         expect(json['frozenAt'], LoopRouteManifest.frozenAt);
         expect(json['sha256'], LoopRouteManifest.sha256);
-        expect(LoopRouteManifest.entries, hasLength(99));
+        expect(LoopRouteManifest.entries, hasLength(101));
 
         final modules = json['modules']! as Map<String, Object?>;
         expect(
@@ -79,8 +79,8 @@ void main() {
     test('every slug maps to one unique path and non-empty page facts', () {
       final slugs = LoopRouteManifest.entries.map((entry) => entry.slug);
       final paths = LoopRouteManifest.entries.map((entry) => entry.path);
-      expect(slugs.toSet(), hasLength(99));
-      expect(paths.toSet(), hasLength(99));
+      expect(slugs.toSet(), hasLength(101));
+      expect(paths.toSet(), hasLength(101));
       for (final entry in LoopRouteManifest.entries) {
         expect(entry.path, startsWith('/'), reason: entry.slug);
         expect(entry.path, isNot(contains(':')), reason: entry.slug);

@@ -577,13 +577,11 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
       }
-      await tester.tap(
-        find.byKey(const ValueKey<String>('chat-scan-menu-item')),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text('扫一扫暂未开放'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 3));
+      // Decision 0113: 扫一扫 is open and says what it reads; the route it
+      // pushes is covered by the full-app test in
+      // `stream_chat_inbox_page_test.dart`.
+      expect(find.text('扫名片、社区码或钱包地址'), findsOneWidget);
+      expect(find.text('暂未开放'), findsNothing);
     });
 
     testWidgets('a stream error closes the list and offers a retry', (
