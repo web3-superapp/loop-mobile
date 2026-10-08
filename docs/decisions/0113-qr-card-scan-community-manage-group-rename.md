@@ -52,7 +52,12 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S108-S110-social-batc
 
 - 端口 `lib/features/scan/loop_qr_scanner.dart`（`LoopQrScanner` / `LoopQrCameraSession`，相机五态
   starting / running / permissionDenied / unsupported / failed，手电筒 unavailable / off / on）；默认
-  `UnavailableLoopQrScanner`。设备适配器 `lib/integrations/device/mobile_scanner_qr_scanner.dart`，只在 `main.dart`
+  `UnavailableLoopQrScanner`。相机生命周期由页面负责：`MobileScannerController(autoStart: false)`、
+  `MobileScanner(useAppLifecycleState: false)`，预览在会话存续期间常驻、状态层盖在上面；页面首帧后调用一次
+  `start()`；`ScanScreen` 实现 `WidgetsBindingObserver`，inactive / hidden / paused → `pause()`（有相机权限时
+  `stop()`），resumed → `resume()`（有权限时 `start()`，处于 permissionDenied 时也再试一次 `start()`，从系统设置
+  回来即恢复）。所有 start（首启、恢复、「重试」）都经 `LoopQrStartGate` 单飞：进行中的再次调用并入同一次，正在
+  运行则不动，`controllerInitializing` / `controllerDisposed` 不外抛。设备适配器 `lib/integrations/device/mobile_scanner_qr_scanner.dart`，只在 `main.dart`
   与 `main_preview.dart` 组合（预览也真扫：解码在本机，不碰任何服务，打开的页面仍是预览数据）。`lib/features/` 不
   import 相机插件。
 - 页面：取景框（1:1 圆角，Lime 四角）+「从相册选图」（`image_picker` 选图 → `analyzeImage`，只认 QR）+ 手电筒。
@@ -61,15 +66,20 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S108-S110-social-batc
   复制、继续扫描）；offline 不适用（解码在本机，打开的页面各自有离线态）。无相机适配器的构建整页「扫码当前不可用」。
 - 结果分发 `loopScanResultFor`（纯函数）：http(s) 链接的 `/u/{loopId}` → `user-profile?loopId=`；`/c/{id}/room` →
   既有语音房落地（`voiceRoomLinkLocation`）；`/c/{uuid}` → `community-profile`；整段文本恰为 `LOOP-XXXXXXXX` →
-  `user-profile`；`0x` + 40 位十六进制，或 EIP-681 朴素形式 `ethereum:0x…`（可带 `@56` / `@97`）→ `/wallet/send`
-  并以类型化状态 `SendRecipientPrefill` 预填收款地址；其它（含别的链、带函数 / 参数的 EIP-681 请求、别的网址）→
-  「不是 LOOP 二维码」。链接不限主机（只取路径，打开的都是应用内页面，不打开浏览器）。识别成功后用
+  `user-profile`；`0x` + 40 位十六进制，或 EIP-681 朴素形式 `ethereum:0x…@{chainId}` 且 chainId 等于本构建发送链
+  （`loopChainReference(loopPrimaryChainId)`，即 56）→ `/wallet/send` 并以类型化状态 `SendRecipientPrefill` 预填收款
+  地址；大小写混合的地址必须通过 EIP-55 校验（全小写 / 全大写视为未声明校验和）。其它（不带链号、别的链、带函数 /
+  参数的 EIP-681 请求、校验和错误、别的网址）→「不是 LOOP 二维码」。EIP-55 用的 Keccak-256 是一方实现
+  （`lib/core/crypto/loop_keccak.dart`，同 `loop_qr_code.dart` 的理由：锁文件里唯一的 Keccak 是别的 SDK 的传递依赖），
+  测试钉住空串 / `abc` 向量与 EIP-55 规范的四个示例地址。链接不限主机（只取路径，打开的都是应用内页面，不打开浏览器）。识别成功后用
   `pushReplacement` 替换扫码页，返回回到扫码之前的页面；同一码的后续帧不重复打开。
 - 发送预填：`SendDraft` 新增可选 `recipientPrefill`（`copyWith` 保留它，其它调用不变）；`SendAssetScreen` 新增
   `recipientPrefill` 参数并在顶部提示「收款地址来自扫码 … 选好资产后仍要点「校验地址」核对」；`SendRecipientScreen`
   地址框初值 = `recipientAddress ?? recipientPrefill`。预填只是输入框里的文字，服务端 preflight 与签名出口一步不少。
-- 入口：聊天「＋」第四项「扫一扫」（副标题「扫名片、社区码或钱包地址」）→ `/scan`；钱包页 Pay 胶囊 → `/scan`（见
-  偏离 5）。`send-to` 页原「扫码与最近联系人还没有开放」改为「最近联系人还没有开放…；扫码请用钱包页的 Pay」。
+- 入口：聊天「＋」第四项「扫一扫」（副标题「扫名片、社区码或钱包地址」）→ `/scan`；钱包页主胶囊（原「Pay」，
+  key 仍为 `wallet-pay-entry`）改名「扫码」、副标题「扫码转账」→ `/scan`（见偏离 5）；`LoopAction` 新增可选
+  `caption`，只有宽胶囊画它。`send-to` 页原「扫码与最近联系人还没有开放」改为「最近联系人还没有开放…；扫码请用钱包页
+  的「扫码」」。
 - 原生：iOS `NSCameraUsageDescription` =「用于在聊天中拍照发送图片，以及扫描二维码」，
   `NSPhotoLibraryUsageDescription` 补「识别二维码」；Android 不新增权限（`CAMERA` 已声明）。`ios/Podfile.lock` 只多
   `mobile_scanner (7.0.0)` 一个本地 pod（依赖 Flutter，Apple Vision，无 MLKit）。
@@ -80,7 +90,8 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S108-S110-social-batc
   统一小写），`/c/{id}/room` 仍归语音房链接。redirect 解析 → `LoopProfileLinkInbox.holdCommunity` → 已登录直接
   `community-profile?id=`；未落地时持有，落到聊天后由 `_deliverHeldProfileLink` 推入（返回回到聊天），与 `/u/`、
   `/c/…/room` 同一机制。非法 `/c/…` 仍是未知路由回聊天并记录。
-- Android `MainActivity.kt` 新增 `COMMUNITY_LINK_PATH = ^/c/[0-9a-f-]{36}/?$`；manifest 的 intent-filter 已有
+- Android `MainActivity.kt` 新增 `COMMUNITY_LINK_PATH`，严格 8-4-4-4-12、接受 A–F：
+  `^/c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/?$`；manifest 的 intent-filter 已有
   `pathPrefix="/c/"`，不改。iOS 不改（Universal Link 路径由服务端 AASA 决定）。
 
 ### 5. 社区管理中心 `community-manage`（§3.4）
@@ -103,8 +114,10 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S108-S110-social-batc
     管理员可以管理」；缺 id 不发请求。
 - 编辑弹层：`showCommunityProfileEditSheet` 新增 `includeBoundAsset`（默认 false），管理中心对 owner 的「绑定代币」行
   传 true，admin 永远看不到该字段。`CommunityProfileEdit` 新增 `boundAssetKey` / `clearBoundAssetKey`（小写化、
-  `eip155:{chain}:0x…` 校验，留空 = 解绑），Dio 写入体按同样的「null 表示清空」规则带上 `boundAssetKey`。失败文案：
-  带绑定代币的 422 →「这个代币还没有在 LOOP 登记，不能绑定」，403 →「只有社区所有者可以修改绑定代币」。
+  `eip155:{chain}:0x…` 校验，留空 = 解绑），Dio 写入体按同样的「null 表示清空」规则带上 `boundAssetKey`。失败文案按
+  `detailsSafe.reasonCode` 分流（`CommunityProfileController.submitProfileEdit` 把网关的 `CommunityGatewayException`
+  原样交回，`editProfile` 仍只返回 kind）：`ASSET_NOT_REGISTERED` →「这个代币还没有在 LOOP 登记，不能绑定」；
+  `OWNER_ONLY_FIELD` →「只有所有者能改绑定代币」；其他（含无 reasonCode 的 VALIDATION_FAILED）→ 该 kind 的通用文案。
 - 解码：社区资源（单条与目录行）把 `boundAsset` 作为**可选尾键**接受，块内严格五键
   `{assetId, symbol, name, logoUrl, hasRegisteredPool}`；之前的严格键集会把带新键的每个社区响应判为无效。
 
@@ -113,9 +126,11 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S108-S110-social-batc
 - 端口 `lib/features/chat/v2/group_rename.dart`（`GroupProfileGateway`，默认 unavailable）；适配器
   `lib/integrations/backend/v2/communication/loop_v2_group_profile.dart`（独立文件，不改既有通信 API / 网关，避免与
   S110 冲突）：`PATCH /v2/chat/groups/{groupId}` body `{ name }`，bearer + `Idempotency-Key` + contract version；
-  200 严格解码 `{groupId, name, nameVersion, updatedAt, contractVersion}`，且回显的 id / name 必须与请求一致。
-- fail-closed：`groupRenameFailureKind` 把 404（有无 LOOP 信封都算）/ 405 / 501 一律映射为 unavailable，从不当成
-  「结果未知」或成功；其余按社区写错误表（403 → permissionDenied）。只在 `main.dart` 组合；预览不组合 → 改名显示
+  200 严格解码 `{groupId, name, nameVersion, updatedAt, contractVersion}`，回显的 groupId 必须一致；成功后的名称
+  **以服务端返回的 name 为准**（服务端可能规范化），不与本地输入逐字比对。
+- fail-closed：`groupRenameFailureKind`——带 LOOP 错误封装的 `NOT_FOUND` → notFound（「群不存在或你已不在群里。」）；
+  无封装的 404 / 405 / 501（路由未挂载）→ unavailable，从不当成「结果未知」或成功；其余按社区写错误表（403 →
+  permissionDenied）。只在 `main.dart` 组合；预览不组合 → 改名显示
   不可用。
 - UI：「群名称与简介」占位卡改为真实行「群名称」：名称与是否创建者从 Stream 读（已加载的频道或一次按成员身份限定
   的查询，创建者 = `created_by`，与置顶同一事实）；创建者行尾「修改」→ 弹层（1–40 码点、拒控制 / 格式字符，与创建
@@ -142,18 +157,20 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S108-S110-social-batc
 | 2 | 名片弹层与海报 | 弹层（码 + 链接 + 分享海报）与海报两套布局 | 弹层里显示的就是海报本身（缩放），导出所见即所得 | 不维护一份看不见、可能漂移的第二布局；离屏截图在 Flutter 里不可靠 |
 | 3 | 权限被拒「去设置」 | 现有文案 + 去设置按钮 | 只有现有文案「可在 系统设置 → LOOP → 相机 中重新开启」，无跳转按钮 | 锁文件里没有打开系统设置的插件（`loop_chat_camera.dart` 同样的约束）；原生通道两端都要写且无法在本机验证 iOS，待主代理决定是否加 |
 | 4 | 社区 logo 编辑 | 资料分组含 logo | 管理中心只改名称 / 简介 /（owner）绑定代币；logo 显示但不可改，页内注明 | 社区 logo 上传端点不在契约里（0112 只有 `POST /v2/media/avatars`）；编辑弹层历来不含 logo |
-| 5 | 钱包「扫码支付」入口 | 跳 `/scan` | 钱包页 Pay 胶囊（`wallet-pay-entry`，原 blocked「扫码支付还没有开放」）改为打开 `/scan`；`pay` 页本身仍 unavailable | 依据 09 §2「扫码支付先做扫码转账」；`00` 规则「Pay 只做 unavailable」指 `pay` 页，入口改道不让它可执行。主代理若认为冲突，回退这一行即可 |
+| 5 | 钱包「扫码支付」入口 | 跳 `/scan` | 钱包页主胶囊（`wallet-pay-entry`，原「Pay」blocked「扫码支付还没有开放」）改名「扫码」、副标题「扫码转账」，打开 `/scan`；`pay` 页本身不动、仍 unavailable | 依据 09 §2「扫码支付先做扫码转账」；主代理 2026-10-08 审查裁定不再叫 Pay |
 | 6 | `app.dart` 改动范围 | 只改 redirect 与新路由 | 另改 `/wallet/send` 构建器一行（`recipientPrefill: SendRecipientPrefill.addressFrom(state.extra)`）与 `_deliverHeldProfileLink` | 预填地址以类型化导航状态进入发送第一步（资产仍须用户选，`/wallet/send/to` 需要完整 `SendDraft`，无法直达）；持有链接的落地在 `_deliverHeldProfileLink` |
 | 7 | 扫地址直达 `/wallet/send/to` | 地址 → `/wallet/send/to` 预填 | 地址 → `/wallet/send`（选资产）→ `/wallet/send/to`（地址已填） | `send-to` 的路由守卫要求带 walletId / assetId 的 `SendDraft`，扫到的码没有资产 |
-| 8 | EIP-681 | 只说「0x 40 位地址」 | 另认朴素 `ethereum:0x…(@56|@97)`；其它链或带函数 / 参数的请求一律「不是 LOOP 二维码」 | LOOP 自己的收款页画的就是 EIP-681；token transfer 请求里 `ethereum:` 后是合约地址，误读会把钱打给合约 |
+| 8 | EIP-681 与校验和 | 只说「0x 40 位地址」 | 另认朴素 `ethereum:0x…@{本构建发送链}`（56）；不带链号、其它链、带函数 / 参数的请求、EIP-55 校验失败的混合大小写地址一律「不是 LOOP 二维码」 | LOOP 自己的收款页画的就是 EIP-681；token transfer 请求里 `ethereum:` 后是合约地址，误读会把钱打给合约；错一个字母的收款地址是资金风险（主代理审查要求） |
 | 9 | 小群改名后频道名 | 「本地 Stream 频道名随之更新（客户端乐观更新标题）」 | 只在 `group-info` 本页立即显示新名；会话列表 / 群聊顶栏等 Stream 的 `channel.updated` 事件（服务端同步后）自然刷新 | 客户端没有改 Stream 频道的权限，直接改本地 `ChannelState` 属于 SDK 内部状态，会与服务端同步互相覆盖；群聊页顶栏历来固定「群聊」 |
 | 10 | 成员 Owner / Admin 计数 | 管理中心显示计数 | 额外一次 `GET …/members`（首页）取 counts | 社区记录本身不带角色计数 |
-| 11 | admin 看绑定代币 | 「绑定代币仅 owner 可改」 | admin 的管理中心整行不显示（不只是弹层字段） | 测试要求「admin 看不到绑定代币字段」；只读显示留待需要时加 |
+| 11 | admin 看绑定代币 | 「绑定代币仅 owner 可改」 | admin 的管理中心整行不显示（不只是弹层字段） | 测试要求「admin 看不到绑定代币字段」；主代理 2026-10-08 审查确认保留；只读显示留待需要时加 |
 | 12 | 链接主机 | `{PUBLIC_BASE_URL}` | 用构建的 `LOOP_BACKEND_BASE_URL`（与 0104 `/u/` 链接同源）；扫码时不校验主机 | 仓库没有独立 `PUBLIC_BASE_URL` 配置；扫码只取路径打开应用内页，不访问该主机 |
 
 ## Consequences
 
-- 新测试 `test/s109b_qr_scan_manage_test.dart`（名片两种 subject、无后端社区不画码、海报导出一次且为 PNG、扫码结果
+- 新测试 `test/s109b_qr_scan_manage_test.dart`（相机首帧后只 start 一次、后台 pause / 回前台 resume、「重试」只调一次、
+  `LoopQrStartGate` 并发并入、Keccak / EIP-55 向量与混合大小写校验、EIP-681 只认本构建链、改资料失败按
+  reasonCode 分流且网关 reasonCode 透传到页面、改名 NOT_FOUND 与采用服务端名称；名片两种 subject、无后端社区不画码、海报导出一次且为 PNG、扫码结果
   分发 user / community / room / address / EIP-681 / unknown、扫码页四种分发 + 相册 + 手电筒 + 三种相机态 + 无适配器、
   发送页预填、`/c/` 解析、深链已登录 / 未登录 hold / 非法、管理中心 owner / admin / member 可见性与 loading / offline /
   缺 id、`boundAsset` 解码、改名成功 / 403 / 不可用 / 非创建者、名称规则、404 映射）。改写的既有测试：

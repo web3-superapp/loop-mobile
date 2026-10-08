@@ -72,11 +72,10 @@ final class DioLoopV2GroupProfileApi {
         nameVersion: LoopV2ProjectionCodec.requireCount(root, 'nameVersion'),
         updatedAt: LoopV2ProjectionCodec.requireTimestamp(root, 'updatedAt'),
       );
-      // The server answers for the group it was asked about, with the name
-      // it was given; anything else is not a confirmation of this rename.
-      if (renamed.groupId != groupId ||
-          renamed.name != name ||
-          renamed.nameVersion < 1) {
+      // The server answers for the group it was asked about. The name it
+      // returns is the name now in force — it may have normalised what it
+      // was sent — so it is adopted as given rather than compared.
+      if (renamed.groupId != groupId || renamed.nameVersion < 1) {
         LoopV2ProjectionCodec.invalid();
       }
       return renamed;
@@ -88,10 +87,7 @@ final class DioLoopV2GroupProfileApi {
 
 /// Authenticated adapter for [GroupProfileGateway].
 ///
-/// A server that has not mounted the route answers `404` without LOOP's
-/// error envelope (or with `NOT_FOUND`), and `405` / `501` mean the same:
-/// all of them are the rename being unavailable, never an unknown outcome
-/// that a retry might finish, and never a success.
+/// Failures are classified by [groupRenameFailureKind].
 final class DioLoopV2GroupProfileGateway implements GroupProfileGateway {
   DioLoopV2GroupProfileGateway({
     required this._api,
@@ -139,10 +135,14 @@ final class DioLoopV2GroupProfileGateway implements GroupProfileGateway {
   }
 }
 
-/// What one failed rename means. A route the server does not serve —
-/// `404` with or without LOOP's envelope, `405`, `501` — is unavailable:
+/// What one failed rename means.
+///
+/// A `404` in LOOP's own envelope (`NOT_FOUND`) is the server saying the
+/// group is gone or the reader is no longer in it. A route the server does
+/// not serve — `404` / `405` / `501` without the envelope — is unavailable:
 /// never an unknown outcome a retry might finish, and never a success.
 CommunityFailureKind groupRenameFailureKind(LoopBackendFailure failure) {
+  if (failure.code == 'NOT_FOUND') return CommunityFailureKind.notFound;
   final status = failure.statusCode;
   if (status == 404 || status == 405 || status == 501) {
     return CommunityFailureKind.unavailable;

@@ -109,6 +109,8 @@ class MainActivity : FlutterFragmentActivity() {
 
         // Community card links `/c/{communityId}` (decision 0113): the bare
         // path, a UUID only. Mirrored by `communityIdFromLinkPath`.
-        val COMMUNITY_LINK_PATH = Regex("^/c/[0-9a-f-]{36}/?$")
+        val COMMUNITY_LINK_PATH = Regex(
+            "^/c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/?$",
+        )
     }
 }

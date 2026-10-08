@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
+import 'package:loop_mobile/core/crypto/loop_keccak.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/group_rename.dart';
@@ -204,18 +205,68 @@ void main() {
       final destination = plain as LoopScanDestination;
       expect(destination.location, '/wallet/send');
       expect(SendRecipientPrefill.addressFrom(destination.extra), _address);
-      // The receive page's own EIP-681 form, on BNB Smart Chain.
+      // The receive page's own EIP-681 form, on this build's send chain.
       expect(
         (loopScanResultFor('ethereum:$_address@56') as LoopScanAddress).address,
         _address,
       );
-      // Another chain, or a token transfer whose first address is the token
-      // contract, is never read as the person being paid.
+      // No chain, another chain, or a token transfer whose first address is
+      // the token contract is never read as the person being paid.
+      expect(loopScanResultFor('ethereum:$_address'), isA<LoopScanUnknown>());
       expect(loopScanResultFor('ethereum:$_address@1'), isA<LoopScanUnknown>());
+      expect(
+        loopScanResultFor('ethereum:$_address@97'),
+        isA<LoopScanUnknown>(),
+      );
       expect(
         loopScanResultFor('ethereum:$_address@56/transfer?address=0x1'),
         isA<LoopScanUnknown>(),
       );
+      // The chain comes from configuration, not from the payload.
+      expect(
+        loopScanResultFor('ethereum:$_address@97', sendChainReference: 97),
+        isA<LoopScanAddress>(),
+      );
+    });
+
+    test('a mixed-case address must carry a correct EIP-55 checksum', () {
+      const checksummed = '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed';
+      expect(loopScanResultFor(checksummed), isA<LoopScanAddress>());
+      expect(
+        loopScanResultFor(checksummed.toLowerCase()),
+        isA<LoopScanAddress>(),
+      );
+      expect(
+        loopScanResultFor('0x${checksummed.substring(2).toUpperCase()}'),
+        isA<LoopScanAddress>(),
+      );
+      // One letter in the wrong case.
+      const broken = '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeD';
+      expect(loopScanResultFor(broken), isA<LoopScanUnknown>());
+      expect(loopScanResultFor('ethereum:$broken@56'), isA<LoopScanUnknown>());
+    });
+
+    test('Keccak-256 and EIP-55 match the published vectors', () {
+      String hex(List<int> bytes) =>
+          bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+      expect(
+        hex(loopKeccak256(const <int>[])),
+        'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+      );
+      expect(
+        hex(loopKeccak256('abc'.codeUnits)),
+        '4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45',
+      );
+      // 200 bytes: more than one 136-byte block.
+      expect(hex(loopKeccak256(List<int>.filled(200, 0x61))).length, 64);
+      for (final address in const <String>[
+        '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed',
+        '0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359',
+        '0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB',
+        '0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb',
+      ]) {
+        expect(loopEip55Checksum(address.toLowerCase()), address);
+      }
     });
 
     test('anything else is shown back as text', () {
@@ -336,9 +387,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(scanCameraDeniedBody), findsOneWidget);
+      // The preview stays mounted under the state, so a later start never
+      // waits on a widget that is not there.
       expect(
         find.byKey(const ValueKey<String>('scan-viewfinder')),
-        findsNothing,
+        findsOneWidget,
       );
       session.set(LoopQrCameraStatus.failed);
       await tester.pump();
@@ -346,6 +399,62 @@ void main() {
         find.byKey(const ValueKey<String>('scan-state-error')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the camera starts once, after the preview is on screen', (
+      tester,
+    ) async {
+      final opened = await _pumpScan(tester);
+      expect(opened.scanner.session.starts, 1);
+      await tester.pumpAndSettle();
+      expect(opened.scanner.session.starts, 1);
+    });
+
+    testWidgets('the page releases the camera in the background', (
+      tester,
+    ) async {
+      final opened = await _pumpScan(tester);
+      final session = opened.scanner.session;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      expect(session.pauses, greaterThanOrEqualTo(1));
+      expect(session.resumes, 0);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(session.resumes, 1);
+    });
+
+    testWidgets('重试 asks the session once', (tester) async {
+      final opened = await _pumpScan(tester);
+      opened.scanner.session.set(LoopQrCameraStatus.failed);
+      await tester.pump();
+      await _tap(tester, find.text('重试'));
+      expect(opened.scanner.session.retries, 1);
+      expect(opened.scanner.session.starts, 1);
+    });
+
+    test('a second start while one runs joins it', () async {
+      final gate = LoopQrStartGate();
+      var calls = 0;
+      final release = Completer<void>();
+      Future<void> start() async {
+        calls += 1;
+        await release.future;
+      }
+
+      final first = gate.run(start);
+      final second = gate.run(start);
+      expect(gate.busy, isTrue);
+      expect(calls, 1);
+      release.complete();
+      await Future.wait(<Future<void>>[first, second]);
+      expect(gate.busy, isFalse);
+      await gate.run(() async => calls += 1);
+      expect(calls, 2);
     });
 
     testWidgets('a build with no camera adapter opens nothing', (tester) async {
@@ -659,6 +768,71 @@ void main() {
       expect(gateway.reads, 0);
     });
 
+    test('a bound-token refusal is worded by its reasonCode', () {
+      expect(
+        communityProfileEditFailureText(
+          const CommunityGatewayException(
+            CommunityFailureKind.validationFailed,
+            reasonCode: 'ASSET_NOT_REGISTERED',
+          ),
+        ),
+        '这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。',
+      );
+      expect(
+        communityProfileEditFailureText(
+          const CommunityGatewayException(
+            CommunityFailureKind.permissionDenied,
+            reasonCode: 'OWNER_ONLY_FIELD',
+          ),
+        ),
+        '只有所有者能改绑定代币；资料没有修改。',
+      );
+      expect(
+        communityProfileEditFailureText(
+          const CommunityGatewayException(
+            CommunityFailureKind.validationFailed,
+          ),
+        ),
+        communityFailureReason(CommunityFailureKind.validationFailed),
+      );
+    });
+
+    testWidgets('the server\'s reasonCode reaches the manage center', (
+      tester,
+    ) async {
+      final gateway = FakeCommunityGateway(
+        detail: testDetail(
+          community: _boundCommunity(hasPool: true),
+          viewer: testViewer(role: CommunityRole.owner),
+        ),
+        members: testDirectory(),
+        writeFailure: CommunityFailureKind.validationFailed,
+      )..writeReasonCode = 'ASSET_NOT_REGISTERED';
+      await pumpCommunityPage(
+        tester,
+        const CommunityManageScreen(communityId: testCommunityId),
+        community: gateway,
+      );
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('community-manage-bound-asset')),
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('community-edit-bound-asset')),
+        'eip155:56:0x00000000000000000000000000000000000000bb',
+      );
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('community-edit-submit')),
+      );
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      expect(gateway.commands.last, startsWith('edit:$testCommunityId'));
+      expect(find.text('这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。'), findsOneWidget);
+    });
+
     test('the community resource reads the optional boundAsset block', () {
       Map<String, Object?> json({Object? boundAsset, bool include = true}) =>
           <String, Object?>{
@@ -749,6 +923,26 @@ void main() {
       expect(find.text('老友记'), findsOneWidget);
     });
 
+    testWidgets('a group that is gone says so', (tester) async {
+      final gateway = _FakeGroupProfileGateway(
+        failure: CommunityFailureKind.notFound,
+      );
+      await _pumpGroupInfo(tester, gateway: gateway, creator: true);
+      await _rename(tester, '新名字');
+      expect(find.text('群不存在或你已不在群里。'), findsOneWidget);
+      expect(find.text('老友记'), findsOneWidget);
+    });
+
+    testWidgets('the name shown is the one the server confirmed', (
+      tester,
+    ) async {
+      final gateway = _FakeGroupProfileGateway(confirmed: '周末徒步群');
+      await _pumpGroupInfo(tester, gateway: gateway, creator: true);
+      await _rename(tester, '周末徒步');
+      expect(find.text('群名称已改为「周末徒步群」'), findsOneWidget);
+      expect(find.text('周末徒步群'), findsOneWidget);
+    });
+
     testWidgets('a member who did not create the group reads it only', (
       tester,
     ) async {
@@ -774,7 +968,7 @@ void main() {
       expect(normalizedGroupName('a\u0000b'), isNull);
     });
 
-    test('a route the server does not serve is unavailable', () {
+    test('an unenveloped 404 is unavailable; NOT_FOUND is notFound', () {
       expect(
         groupRenameFailureKind(
           const LoopBackendFailure(
@@ -788,11 +982,21 @@ void main() {
         groupRenameFailureKind(
           const LoopBackendFailure(
             LoopBackendFailureKind.invalidPayload,
+            statusCode: 405,
+          ),
+        ),
+        CommunityFailureKind.unavailable,
+      );
+      // LOOP's own envelope: the group is gone or the reader left it.
+      expect(
+        groupRenameFailureKind(
+          const LoopBackendFailure(
+            LoopBackendFailureKind.unexpected,
             statusCode: 404,
             code: 'NOT_FOUND',
           ),
         ),
-        CommunityFailureKind.unavailable,
+        CommunityFailureKind.notFound,
       );
       expect(
         groupRenameFailureKind(
@@ -905,7 +1109,20 @@ final class _FakeSession implements LoopQrCameraSession {
     sync: true,
   );
   int torchToggles = 0;
+  int starts = 0;
+  int pauses = 0;
+  int resumes = 0;
+  int retries = 0;
   bool disposed = false;
+
+  @override
+  Future<void> start() async => starts += 1;
+
+  @override
+  Future<void> pause() async => pauses += 1;
+
+  @override
+  Future<void> resume() async => resumes += 1;
 
   void emit(String code) => _codes.add(code);
 
@@ -936,7 +1153,10 @@ final class _FakeSession implements LoopQrCameraSession {
   }
 
   @override
-  Future<void> retry() async => set(LoopQrCameraStatus.running);
+  Future<void> retry() async {
+    retries += 1;
+    set(LoopQrCameraStatus.running);
+  }
 
   @override
   Future<void> dispose() async => disposed = true;
@@ -988,9 +1208,12 @@ Future<_Opened> _pumpScan(
 }
 
 final class _FakeGroupProfileGateway implements GroupProfileGateway {
-  _FakeGroupProfileGateway({this.failure});
+  _FakeGroupProfileGateway({this.failure, this.confirmed});
 
   final CommunityFailureKind? failure;
+
+  /// The name the server answers with; defaults to the one it was sent.
+  final String? confirmed;
   final List<String> calls = <String>[];
 
   @override
@@ -1003,7 +1226,7 @@ final class _FakeGroupProfileGateway implements GroupProfileGateway {
     if (kind != null) throw CommunityGatewayException(kind);
     return GroupRenamed(
       groupId: groupId,
-      name: name,
+      name: confirmed ?? name,
       nameVersion: 2,
       updatedAt: DateTime.utc(2026, 10, 8),
     );

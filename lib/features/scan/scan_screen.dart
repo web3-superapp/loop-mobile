@@ -38,7 +38,8 @@ class ScanScreen extends ConsumerStatefulWidget {
   ConsumerState<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends ConsumerState<ScanScreen> {
+class _ScanScreenState extends ConsumerState<ScanScreen>
+    with WidgetsBindingObserver {
   LoopQrCameraSession? _session;
   StreamSubscription<String>? _codes;
 
@@ -58,11 +59,36 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       final session = scanner.openCamera();
       _session = session;
       _codes = session.codes.listen(_onCode);
+      WidgetsBinding.instance.addObserver(this);
+      // The preview is mounted in this first frame; the camera starts once,
+      // after it, and never by itself.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_session?.start());
+      });
+    }
+  }
+
+  /// The page owns the camera's lifecycle: it is released whenever the app
+  /// stops being in front, and asked for again when it returns.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final session = _session;
+    if (session == null) return;
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        unawaited(session.pause());
+      case AppLifecycleState.resumed:
+        unawaited(session.resume());
+      case AppLifecycleState.detached:
+        return;
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_codes?.cancel());
     final session = _session;
     _session = null;
@@ -165,12 +191,12 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                     fit: StackFit.expand,
                     children: <Widget>[
                       const ColoredBox(color: LoopColors.ink),
-                      if (camera.status == LoopQrCameraStatus.starting ||
-                          camera.status == LoopQrCameraStatus.running)
-                        KeyedSubtree(
-                          key: const ValueKey<String>('scan-viewfinder'),
-                          child: session.buildPreview(context),
-                        ),
+                      // Mounted for the session's whole life: a start must
+                      // never wait on a preview that is not there.
+                      KeyedSubtree(
+                        key: const ValueKey<String>('scan-viewfinder'),
+                        child: session.buildPreview(context),
+                      ),
                       _ViewfinderState(
                         status: camera.status,
                         onRetry: () => unawaited(session.retry()),
@@ -233,6 +259,11 @@ class _ViewfinderState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => switch (status) {
+    LoopQrCameraStatus.running => const SizedBox.shrink(),
+    _ => ColoredBox(color: LoopColors.ink, child: _body()),
+  };
+
+  Widget _body() => switch (status) {
     LoopQrCameraStatus.running => const SizedBox.shrink(),
     LoopQrCameraStatus.starting => Center(
       child: Text(

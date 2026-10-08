@@ -590,7 +590,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
         const LoopNotice(
           key: ValueKey<String>('send-recipient-scan-unavailable'),
           icon: 'camera',
-          body: '最近联系人还没有开放，请粘贴或输入完整地址；扫码请用钱包页的 Pay。',
+          body: '最近联系人还没有开放，请粘贴或输入完整地址；扫码请用钱包页的「扫码」。',
         ),
         // An address check that never reached the server has not prepared an
         // intent, opened a wallet or submitted anything. It pauses; only a

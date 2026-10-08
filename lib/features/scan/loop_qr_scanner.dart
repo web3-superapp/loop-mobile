@@ -44,6 +44,11 @@ final class LoopQrCameraState {
 }
 
 /// One open camera. The page owns it and disposes it when it leaves.
+///
+/// The session never starts by itself: the page calls [start] once the
+/// preview is on screen, and forwards the app lifecycle through [pause] and
+/// [resume]. The preview stays mounted for the session's whole life, so a
+/// start never waits on a widget that is not there.
 abstract interface class LoopQrCameraSession {
   ValueListenable<LoopQrCameraState> get state;
 
@@ -53,12 +58,40 @@ abstract interface class LoopQrCameraSession {
   /// The live preview, sized by its parent.
   Widget buildPreview(BuildContext context);
 
+  /// Starts the camera. Single-flight: a call while a start is already in
+  /// progress joins it, and a running camera is left alone.
+  Future<void> start();
+
+  /// The app went inactive or to the background: release the camera.
+  Future<void> pause();
+
+  /// The app came back: start again. A camera the system refused is asked
+  /// once more, so a reader returning from the system settings recovers.
+  Future<void> resume();
+
   Future<void> toggleTorch();
 
-  /// Asks the camera to start again after a failure.
+  /// Asks the camera to start again after a failure. Same as [start].
   Future<void> retry();
 
   Future<void> dispose();
+}
+
+/// Single-flight wrapper for a camera start (decision 0113): a second call
+/// while one is running joins the first instead of starting the camera again,
+/// which the plugin would refuse with `controllerInitializing`.
+final class LoopQrStartGate {
+  Future<void>? _inFlight;
+
+  bool get busy => _inFlight != null;
+
+  Future<void> run(Future<void> Function() start) {
+    final running = _inFlight;
+    if (running != null) return running;
+    final next = Future<void>.sync(start).whenComplete(() => _inFlight = null);
+    _inFlight = next;
+    return next;
+  }
 }
 
 /// The outcome of decoding one picture from the photo library.

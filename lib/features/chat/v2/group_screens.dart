@@ -234,6 +234,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       message: switch (failure!) {
         CommunityFailureKind.permissionDenied => '只有群主可以修改群名称；这次没有改动。',
         CommunityFailureKind.unavailable => '改名暂时不可用，群名称没有改动。',
+        CommunityFailureKind.notFound => '群不存在或你已不在群里。',
         CommunityFailureKind.validationFailed => '群名称需要 1–40 个字符，且不能含控制字符。',
         final kind => communityFailureReason(kind),
       },

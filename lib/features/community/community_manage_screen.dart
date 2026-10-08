@@ -377,7 +377,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
       sheetKey: 'community-edit-confirm-sheet',
     );
     if (!confirmed) return;
-    final failure = await controller.editProfile(edit);
+    final failure = await controller.submitProfileEdit(edit);
     if (!mounted) return;
     if (failure == null) {
       LoopToast.show(context, message: '社区资料已更新');
@@ -385,14 +385,18 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
     }
     LoopToast.show(
       context,
-      message: switch (failure) {
-        CommunityFailureKind.validationFailed when edit.touchesBoundAsset =>
-          '这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。',
-        CommunityFailureKind.permissionDenied when edit.touchesBoundAsset =>
-          '只有社区所有者可以修改绑定代币；资料没有修改。',
-        _ => communityFailureReason(failure),
-      },
+      message: communityProfileEditFailureText(failure),
       kind: LoopToastKind.err,
     );
   }
 }
+
+/// The sentence for a refused profile edit (decision 0113). A bound-token
+/// refusal is worded by the server's `reasonCode`; everything else keeps the
+/// shared copy for its kind.
+String communityProfileEditFailureText(CommunityGatewayException failure) =>
+    switch (failure.reasonCode) {
+      'ASSET_NOT_REGISTERED' => '这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。',
+      'OWNER_ONLY_FIELD' => '只有所有者能改绑定代币；资料没有修改。',
+      _ => communityFailureReason(failure.kind),
+    };

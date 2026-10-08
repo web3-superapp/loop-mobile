@@ -71,6 +71,10 @@ final class MobileScannerQrScanner implements LoopQrScanner {
 final class _MobileScannerSession implements LoopQrCameraSession {
   _MobileScannerSession()
     : _controller = MobileScannerController(
+        // The page starts the camera itself, once, after the preview is on
+        // screen; the plugin's own auto-start would race the page's retry
+        // and fail it with `controllerInitializing`.
+        autoStart: false,
         formats: const <BarcodeFormat>[BarcodeFormat.qrCode],
         detectionSpeed: DetectionSpeed.noDuplicates,
       ) {
@@ -78,13 +82,22 @@ final class _MobileScannerSession implements LoopQrCameraSession {
   }
 
   final MobileScannerController _controller;
+  final LoopQrStartGate _starts = LoopQrStartGate();
   final ValueNotifier<LoopQrCameraState> _state =
       ValueNotifier<LoopQrCameraState>(const LoopQrCameraState());
+  bool _disposed = false;
+
+  /// A start that failed before the controller could record why (it was not
+  /// attached yet, or was disposed meanwhile).
+  LoopQrCameraStatus? _startFailure;
 
   void _sync() {
+    if (_disposed) return;
     final value = _controller.value;
     final error = value.error;
-    final status = error != null
+    final status = value.isRunning
+        ? LoopQrCameraStatus.running
+        : error != null
         ? switch (error.errorCode) {
             MobileScannerErrorCode.permissionDenied =>
               LoopQrCameraStatus.permissionDenied,
@@ -92,9 +105,7 @@ final class _MobileScannerSession implements LoopQrCameraSession {
               LoopQrCameraStatus.unsupported,
             _ => LoopQrCameraStatus.failed,
           }
-        : value.isRunning
-        ? LoopQrCameraStatus.running
-        : LoopQrCameraStatus.starting;
+        : _startFailure ?? LoopQrCameraStatus.starting;
     final torch = switch (value.torchState) {
       TorchState.on => LoopQrTorch.on,
       TorchState.off || TorchState.auto => LoopQrTorch.off,
@@ -116,21 +127,73 @@ final class _MobileScannerSession implements LoopQrCameraSession {
   @override
   Widget buildPreview(BuildContext context) => MobileScanner(
     controller: _controller,
-    // The page draws every state in its own words; the plugin's own error
-    // icon and placeholder would be a second, English-free but unexplained
-    // version of the same fact.
+    // The page owns the lifecycle (an external controller gets no observer
+    // from the plugin) and draws every state in its own words.
+    useAppLifecycleState: false,
     errorBuilder: (context, error) => const ColoredBox(color: LoopColors.ink),
     placeholderBuilder: (context) => const ColoredBox(color: LoopColors.ink),
   );
 
   @override
-  Future<void> toggleTorch() => _controller.toggleTorch();
+  Future<void> start() => _starts.run(() async {
+    if (_disposed) return;
+    final value = _controller.value;
+    if (value.isRunning || value.isStarting) return;
+    _startFailure = null;
+    try {
+      // A refusal the platform reports (permission, no camera) is recorded
+      // on the controller's value and read by `_sync`; only a failure
+      // before that point lands here.
+      await _controller.start();
+    } on MobileScannerException catch (error) {
+      if (error.errorCode == MobileScannerErrorCode.controllerInitializing ||
+          error.errorCode == MobileScannerErrorCode.controllerDisposed) {
+        return;
+      }
+      _startFailure = LoopQrCameraStatus.failed;
+    } catch (_) {
+      _startFailure = LoopQrCameraStatus.failed;
+    }
+    _sync();
+  });
 
   @override
-  Future<void> retry() => _controller.start();
+  Future<void> pause() async {
+    if (_disposed || !_controller.value.hasCameraPermission) return;
+    try {
+      await _controller.stop();
+    } catch (_) {
+      // Already stopped: nothing to release.
+    }
+  }
+
+  @override
+  Future<void> resume() async {
+    if (_disposed) return;
+    final value = _controller.value;
+    // A camera the system refused is asked once more: the reader may be
+    // back from the settings page with the permission granted.
+    if (value.hasCameraPermission ||
+        _state.value.status == LoopQrCameraStatus.permissionDenied) {
+      await start();
+    }
+  }
+
+  @override
+  Future<void> toggleTorch() async {
+    try {
+      await _controller.toggleTorch();
+    } catch (_) {
+      // A torch that cannot switch keeps the state the camera reports.
+    }
+  }
+
+  @override
+  Future<void> retry() => start();
 
   @override
   Future<void> dispose() async {
+    _disposed = true;
     _controller.removeListener(_sync);
     _state.dispose();
     await _controller.dispose();

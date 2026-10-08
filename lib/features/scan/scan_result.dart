@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/crypto/loop_keccak.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/community/community_link.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
@@ -78,18 +80,23 @@ final class LoopScanUnknown extends LoopScanResult {
 
 final RegExp _address = RegExp(r'^0x[0-9a-fA-F]{40}$');
 
-/// `ethereum:0x…` or `ethereum:0x…@56` — the plain EIP-681 form LOOP's own
-/// receive page draws. A request that names a function (`/transfer?…`) or
-/// any parameter is not read as an address: in a token transfer the address
-/// after `ethereum:` is the token contract, not the person being paid.
+/// `ethereum:0x…@{chainId}` — the plain EIP-681 form LOOP's own receive page
+/// draws. A request that names a function (`/transfer?…`) or any parameter is
+/// not read as an address: in a token transfer the address after `ethereum:`
+/// is the token contract, not the person being paid.
 final RegExp _eip681 = RegExp(
   r'^ethereum:(?:pay-)?(0x[0-9a-fA-F]{40})(?:@(\d+))?$',
 );
 
-/// The chains LOOP sends on: BNB Smart Chain and its testnet.
-const Set<String> _sendChains = <String>{'56', '97'};
+/// The EIP-155 reference Send runs on in this build: the primary chain slot
+/// (decision 0038), read from the one place the client names it.
+int get loopScanSendChainReference => loopChainReference(loopPrimaryChainId);
 
-LoopScanResult loopScanResultFor(String raw) {
+/// Reads one payload. An address is accepted only when its letter case is
+/// uniform or a correct EIP-55 checksum; an EIP-681 request only when it
+/// names [sendChainReference] — no chain, or another chain, is not LOOP's.
+LoopScanResult loopScanResultFor(String raw, {int? sendChainReference}) {
+  final chain = sendChainReference ?? loopScanSendChainReference;
   final text = raw.trim();
   if (text.isEmpty) return LoopScanUnknown(raw);
   final uri = Uri.tryParse(text);
@@ -109,13 +116,15 @@ LoopScanResult loopScanResultFor(String raw) {
   if (loopId != null && loopId.length == text.length) {
     return LoopScanUser(loopId);
   }
-  if (_address.hasMatch(text)) return LoopScanAddress(text);
+  if (_address.hasMatch(text)) {
+    return loopIsAcceptableHexAddress(text)
+        ? LoopScanAddress(text)
+        : LoopScanUnknown(text);
+  }
   final request = _eip681.firstMatch(text);
-  if (request != null) {
-    final chain = request.group(2);
-    if (chain == null || _sendChains.contains(chain)) {
-      return LoopScanAddress(request.group(1)!);
-    }
+  if (request != null && request.group(2) == '$chain') {
+    final address = request.group(1)!;
+    if (loopIsAcceptableHexAddress(address)) return LoopScanAddress(address);
   }
   return LoopScanUnknown(text);
 }

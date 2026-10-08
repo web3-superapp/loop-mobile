@@ -374,11 +374,16 @@ final class FakeCommunityGateway implements CommunityGateway {
         : Future<void>.delayed(delay).then((_) => answer());
   }
 
+  /// The `detailsSafe.reasonCode` a refused write carries, if any.
+  String? writeReasonCode;
+
   Future<T> _write<T>(String command, T? value) {
     commands.add(command);
     final kind = writeFailure ?? failure;
     if (kind != null) {
-      return Future<T>.error(CommunityGatewayException(kind));
+      return Future<T>.error(
+        CommunityGatewayException(kind, reasonCode: writeReasonCode),
+      );
     }
     if (value == null) {
       return Future<T>.error(

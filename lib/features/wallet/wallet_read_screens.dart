@@ -468,12 +468,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       onBlocked: _blocked,
       primary: LoopAction(
         actionKey: const ValueKey<String>('wallet-pay-entry'),
-        label: 'Pay',
+        label: '扫码',
+        caption: '扫码转账',
         icon: 'camera',
         // Decision 0113 (需求方 2026-10-08: 扫码支付先做扫码转账): the pill
         // opens the scanner. A scanned address continues into 发送 with the
         // recipient filled in and the same server preflight and signing
-        // sheet; the `pay` page itself stays unavailable.
+        // sheet; the `pay` page itself is untouched and stays unavailable.
         onPressed: () => _open('/scan'),
       ),
       secondary: LoopAction(
