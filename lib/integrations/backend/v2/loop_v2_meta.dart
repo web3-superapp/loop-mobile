@@ -1,11 +1,19 @@
 import 'package:flutter/foundation.dart';
 
+/// The five primary tabs a client policy may name. The v2 list
+/// (community / mining / launch / market / wallet) and the v3 list
+/// (chat / square / meme / intel / wallet, product policy 2026-10-08) are both
+/// accepted as a whole; see `DioLoopV2MetaRepository`.
 enum LoopV2PrimaryTab {
   community('community'),
   mining('mining'),
   launch('launch'),
   market('market'),
-  wallet('wallet');
+  wallet('wallet'),
+  chat('chat'),
+  square('square'),
+  meme('meme'),
+  intel('intel');
 
   const LoopV2PrimaryTab(this.wireName);
 

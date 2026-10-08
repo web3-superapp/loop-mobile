@@ -62,13 +62,32 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     500: <String>{'INTERNAL_ERROR'},
     503: <String>{'REQUEST_TIMEOUT'},
   };
-  static const _primaryTabs = <LoopV2PrimaryTab>[
+
+  /// The two tab lists a policy may carry, each exactly and in order: the v2
+  /// list (product policy up to 2026-09-07) and the v3 list (2026-10-08,
+  /// loop-api decision 0100). Any other list, including a reordering, is
+  /// drift.
+  static const _primaryTabsV2 = <LoopV2PrimaryTab>[
     LoopV2PrimaryTab.community,
     LoopV2PrimaryTab.mining,
     LoopV2PrimaryTab.launch,
     LoopV2PrimaryTab.market,
     LoopV2PrimaryTab.wallet,
   ];
+  static const _primaryTabsV3 = <LoopV2PrimaryTab>[
+    LoopV2PrimaryTab.chat,
+    LoopV2PrimaryTab.square,
+    LoopV2PrimaryTab.meme,
+    LoopV2PrimaryTab.intel,
+    LoopV2PrimaryTab.wallet,
+  ];
+
+  /// `defaultRoute` is a constant on the server: `community` today, `chat`
+  /// once the policy version that names it ships. Either reads; nothing else.
+  static const _defaultRoutes = <LoopV2PrimaryTab>{
+    LoopV2PrimaryTab.community,
+    LoopV2PrimaryTab.chat,
+  };
   static final RegExp _semverPattern = RegExp(
     r'^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$',
   );
@@ -132,7 +151,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       root['defaultRoute'],
       LoopV2PrimaryTab.tryParse,
     );
-    if (defaultRoute != LoopV2PrimaryTab.community) {
+    if (!_defaultRoutes.contains(defaultRoute)) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
 
@@ -148,7 +167,8 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       for (final value in primaryTabsValue)
         _enumValue(value, LoopV2PrimaryTab.tryParse),
     ];
-    if (!listEquals(primaryTabs, _primaryTabs)) {
+    if (!listEquals(primaryTabs, _primaryTabsV2) &&
+        !listEquals(primaryTabs, _primaryTabsV3)) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
 

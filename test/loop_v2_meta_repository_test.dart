@@ -293,6 +293,68 @@ void main() {
   });
 
   test(
+    'client policy reads the v3 tab list and a chat default route',
+    () async {
+      final v3 = _clientPolicy();
+      v3['configVersion'] = 'productPolicyV2.2026-10-08';
+      (v3['navigation']! as Map<String, Object?>)['primaryTabs'] = <String>[
+        'chat',
+        'square',
+        'meme',
+        'intel',
+        'wallet',
+      ];
+      final repository = DioLoopV2MetaRepository.withClient(
+        _dio((options, handler) {
+          handler.resolve(_response(options, v3));
+        }),
+      );
+      final policy = await repository.getClientPolicy();
+      expect(policy.navigation.primaryTabs, <LoopV2PrimaryTab>[
+        LoopV2PrimaryTab.chat,
+        LoopV2PrimaryTab.square,
+        LoopV2PrimaryTab.meme,
+        LoopV2PrimaryTab.intel,
+        LoopV2PrimaryTab.wallet,
+      ]);
+      expect(policy.defaultRoute, LoopV2PrimaryTab.community);
+
+      final chatDefault = Map<String, Object?>.of(v3)
+        ..['defaultRoute'] = 'chat';
+      final chatRepository = DioLoopV2MetaRepository.withClient(
+        _dio((options, handler) {
+          handler.resolve(_response(options, chatDefault));
+        }),
+      );
+      expect(
+        (await chatRepository.getClientPolicy()).defaultRoute,
+        LoopV2PrimaryTab.chat,
+      );
+
+      // A mixed list is drift, not a third version.
+      final mixed = Map<String, Object?>.of(v3)
+        ..['navigation'] = <String, Object?>{
+          'primaryTabs': <String>['chat', 'mining', 'meme', 'intel', 'wallet'],
+        };
+      final mixedRepository = DioLoopV2MetaRepository.withClient(
+        _dio((options, handler) {
+          handler.resolve(_response(options, mixed));
+        }),
+      );
+      await expectLater(
+        mixedRepository.getClientPolicy(),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (f) => f.kind,
+            'kind',
+            LoopBackendFailureKind.invalidPayload,
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
     'strict policy rejects drift, reordered tabs, and invalid proof',
     () async {
       final extraField = _clientPolicy()..['futureField'] = true;
