@@ -308,7 +308,7 @@ void main() {
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
     expect(
       _toggle(tester, 'privacy-discoverable').subtitle,
-      '别人无法按昵称搜到你或关注你；LOOP ID 始终可被精确搜索',
+      '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
     );
 
     await _tap(
@@ -318,7 +318,7 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-discoverable').subtitle,
-      '允许别人按昵称搜到你、关注你；LOOP ID 始终可被精确搜索',
+      '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索',
     );
   });
 

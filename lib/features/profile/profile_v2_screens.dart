@@ -1635,9 +1635,12 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             title: '可被发现',
             // The subtitle described the switch turned on while the row read
             // 已关闭 beside it, so the state and the sentence disagreed.
+            // Decision 0096 (S107b): the switch governs search listings only;
+            // follows and friend requests from a reached profile are not
+            // gated by it.
             subtitle: draft.discoverable
-                ? '允许别人按昵称搜到你、关注你；LOOP ID 始终可被精确搜索'
-                : '别人无法按昵称搜到你或关注你；LOOP ID 始终可被精确搜索',
+                ? '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索'
+                : '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
             value: draft.discoverable,
             position:
                 ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible
