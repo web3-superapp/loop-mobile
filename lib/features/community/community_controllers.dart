@@ -196,6 +196,7 @@ final class CommunityDiscoverState {
     this.failureKind,
     this.loadingMore = false,
     this.refreshing = false,
+    this.refreshFailed = false,
   });
 
   factory CommunityDiscoverState.initial(
@@ -233,7 +234,15 @@ final class CommunityDiscoverState {
   /// screen marked 更新中; only a page with no rows at all loads as a skeleton.
   final bool refreshing;
 
-  bool get canLoadMore => nextCursor != null && !loadingMore;
+  /// The last failure was a re-read of page one over rows already shown,
+  /// not a next page: its retry is [CommunityDiscoverController.refresh].
+  final bool refreshFailed;
+
+  /// A failed next page, waiting for the reader's own retry.
+  bool get appendFailed =>
+      failureKind != null && !refreshFailed && nextCursor != null;
+
+  bool get canLoadMore => nextCursor != null && !loadingMore && !refreshing;
 
   /// The reason the chosen order could not be applied, if it could not.
   ///
@@ -347,12 +356,16 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
   /// that has read nothing yet has nothing to keep and loads normally.
   Future<void> refresh() {
     if (state.items.isEmpty) return reload();
+    if (inFlight) return single(() async {});
     state = CommunityDiscoverState(
       mode: state.mode,
       phase: CommunityViewPhase.ready,
       sort: state.sort,
       membership: _membership,
       items: state.items,
+      // The cursor of the rows kept: a failed refresh leaves the list as it
+      // was, still able to read on.
+      nextCursor: state.nextCursor,
       recommendation: state.recommendation,
       ordering: state.ordering,
       refreshing: true,
@@ -445,6 +458,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         recommendation: previous.recommendation,
         ordering: previous.ordering,
         failureKind: error.kind,
+        refreshFailed: previous.refreshing && previous.items.isNotEmpty,
       );
     } catch (_) {
       if (!isCurrent(generation)) return;

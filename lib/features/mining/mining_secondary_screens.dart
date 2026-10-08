@@ -646,6 +646,12 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
     }
     final rank = state.value;
     final scope = rank?.scope ?? controller.scope;
+    // 情报 · 算力榜 (decision 0111): a personal place is a fact of the user
+    // board only. On the community board it was a card saying there is no
+    // personal place, and under 推广榜 it said so about the community board.
+    // The standalone `mining-rank` route keeps the prototype's folio.
+    final showPosition =
+        !widget.embedded || (!_referral && scope == MiningRankScope.users);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rank-screen'),
@@ -656,37 +662,40 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
       onBack: widget.onBack,
       embedded: widget.embedded,
       tabPage: widget.embedded,
-      primary: MiningCompositePrimary(
-        primary: _rankHero(rank),
-        detail: <Widget>[
-          MiningDetailRow(
-            key: const ValueKey<String>('mining-rank-reading'),
-            label: '我的名次',
-            value: switch (rank?.myPosition) {
-              MiningRankPositionSettled(:final position) => '第 $position 名',
-              _ => launchMissingFigure,
-            },
-            spoken: switch (rank?.myPosition) {
-              MiningRankPositionSettled(:final position) => '第 $position 名',
-              MiningRankPositionUnavailable(:final reasonCode) =>
-                launchReasonCodeText(reasonCode),
-              null => '还没有读到',
-            },
-            trailingLabel: '已确认算力',
-            trailingValue: switch (rank?.myPosition) {
-              MiningRankPositionSettled(:final power) => loopGroupedFigure(
-                power,
-              ),
-              _ => launchMissingFigure,
-            },
-          ),
-          const MiningDetailRule(),
-          Text(
-            '榜单按服务端已确认算力快照排序',
-            style: LoopTypography.caption(11, color: LoopColors.text2),
-          ),
-        ],
-      ),
+      primary: !showPosition
+          ? null
+          : MiningCompositePrimary(
+              primary: _rankHero(rank),
+              detail: <Widget>[
+                MiningDetailRow(
+                  key: const ValueKey<String>('mining-rank-reading'),
+                  label: '我的名次',
+                  value: switch (rank?.myPosition) {
+                    MiningRankPositionSettled(:final position) =>
+                      '第 $position 名',
+                    _ => launchMissingFigure,
+                  },
+                  spoken: switch (rank?.myPosition) {
+                    MiningRankPositionSettled(:final position) =>
+                      '第 $position 名',
+                    MiningRankPositionUnavailable(:final reasonCode) =>
+                      launchReasonCodeText(reasonCode),
+                    null => '还没有读到',
+                  },
+                  trailingLabel: '已确认算力',
+                  trailingValue: switch (rank?.myPosition) {
+                    MiningRankPositionSettled(:final power) =>
+                      loopGroupedFigure(power),
+                    _ => launchMissingFigure,
+                  },
+                ),
+                const MiningDetailRule(),
+                Text(
+                  '榜单按服务端已确认算力快照排序',
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
+              ],
+            ),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-rank-capability-unavailable',

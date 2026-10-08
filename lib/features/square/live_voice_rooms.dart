@@ -109,6 +109,7 @@ final class LiveVoiceRoomsState {
     this.failureKind,
     this.loadingMore = false,
     this.refreshing = false,
+    this.refreshFailed = false,
   });
 
   factory LiveVoiceRoomsState.initial(CommunityGatewayMode mode) {
@@ -131,7 +132,15 @@ final class LiveVoiceRoomsState {
   final bool loadingMore;
   final bool refreshing;
 
-  bool get canLoadMore => nextCursor != null && !loadingMore;
+  /// The last failure was a re-read of page one over rows already shown,
+  /// not a next page: its retry is [LiveVoiceRoomsController.refresh].
+  final bool refreshFailed;
+
+  /// A failed next page, waiting for the reader's own retry.
+  bool get appendFailed =>
+      failureKind != null && !refreshFailed && nextCursor != null;
+
+  bool get canLoadMore => nextCursor != null && !loadingMore && !refreshing;
 }
 
 /// Reads the live list one cursor page at a time; the reader never sees a
@@ -172,7 +181,9 @@ final class LiveVoiceRoomsController extends Notifier<LiveVoiceRoomsState>
         mode: previous.mode,
         phase: append || keepRows ? previous.phase : CommunityViewPhase.loading,
         items: append || keepRows ? previous.items : const <LiveVoiceRoom>[],
-        nextCursor: append ? previous.nextCursor : null,
+        // A refresh keeps the cursor of the rows it keeps, so a failed
+        // refresh leaves the list exactly as it was.
+        nextCursor: append || keepRows ? previous.nextCursor : null,
         observedAt: previous.observedAt,
         loadingMore: append,
         refreshing: keepRows,
@@ -198,28 +209,39 @@ final class LiveVoiceRoomsController extends Notifier<LiveVoiceRoomsState>
               ? CommunityViewPhase.empty
               : CommunityViewPhase.ready,
           items: List<LiveVoiceRoom>.unmodifiable(merged),
-          nextCursor: page.nextCursor,
+          // A next page that answers with the cursor it was asked with would
+          // be asked again forever: the list ends there instead.
+          nextCursor: append && page.nextCursor == previous.nextCursor
+              ? null
+              : page.nextCursor,
           observedAt: page.observedAt,
         );
       } on CommunityGatewayException catch (error) {
         if (!isCurrent(generation)) return;
-        state = _failed(previous, append || keepRows, error.kind);
+        state = _failed(
+          previous,
+          keepRows: append || keepRows,
+          refreshFailed: keepRows,
+          kind: error.kind,
+        );
       } catch (_) {
         if (!isCurrent(generation)) return;
         state = _failed(
           previous,
-          append || keepRows,
-          CommunityFailureKind.unexpected,
+          keepRows: append || keepRows,
+          refreshFailed: keepRows,
+          kind: CommunityFailureKind.unexpected,
         );
       }
     },
   );
 
   static LiveVoiceRoomsState _failed(
-    LiveVoiceRoomsState previous,
-    bool keepRows,
-    CommunityFailureKind kind,
-  ) => LiveVoiceRoomsState(
+    LiveVoiceRoomsState previous, {
+    required bool keepRows,
+    required bool refreshFailed,
+    required CommunityFailureKind kind,
+  }) => LiveVoiceRoomsState(
     mode: previous.mode,
     phase: keepRows && previous.items.isNotEmpty
         ? CommunityViewPhase.ready
@@ -228,6 +250,7 @@ final class LiveVoiceRoomsController extends Notifier<LiveVoiceRoomsState>
     nextCursor: keepRows ? previous.nextCursor : null,
     observedAt: previous.observedAt,
     failureKind: kind,
+    refreshFailed: refreshFailed && keepRows && previous.items.isNotEmpty,
   );
 }
 

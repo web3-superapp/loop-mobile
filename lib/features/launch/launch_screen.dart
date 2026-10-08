@@ -33,6 +33,35 @@ const String launchSegmentEmptyBody =
 /// chain statement and the capability's own evidence moved to the foot of the
 /// page, where they explain an empty list rather than hide it (audit
 /// 2026-09-21 §H.2).
+/// The Launch bar's two framed tools: 管理质押, and Launch 规则 once the
+/// directory holds a launch. Shared with MEME's 发射台 segment, whose
+/// embedded page draws no bar of its own (S106b).
+List<Widget> launchTopbarActions({
+  required LaunchOverview? overview,
+  VoidCallback? onOpenStake,
+  VoidCallback? onOpenRules,
+}) => <Widget>[
+  LoopIconButton(
+    key: const ValueKey<String>('launch-stake-action'),
+    icon: 'lock',
+    label: '管理质押',
+    framed: true,
+    onPressed: onOpenStake,
+  ),
+  // Round rules belong to one launch, so the control only appears once the
+  // directory holds a launch to open. An empty directory used to send this
+  // button to a subject-less page that reported the launch as missing, which
+  // read as a 404 for a project the user never picked.
+  if (overview != null && overview.segments.total > 0)
+    LoopIconButton(
+      key: const ValueKey<String>('launch-rules-action'),
+      icon: 'info',
+      label: 'Launch 规则',
+      framed: true,
+      onPressed: onOpenRules,
+    ),
+];
+
 class LaunchScreen extends ConsumerStatefulWidget {
   const LaunchScreen({
     super.key,
@@ -97,27 +126,11 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
       onBack: widget.onBack,
       tabPage: widget.onBack == null,
       embedded: widget.embedded,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('launch-stake-action'),
-          icon: 'lock',
-          label: '管理质押',
-          framed: true,
-          onPressed: widget.onOpenStake,
-        ),
-        // Round rules belong to one launch, so the control only appears once
-        // the directory holds a launch to open. An empty directory used to
-        // send this button to a subject-less page that reported the launch as
-        // missing, which read as a 404 for a project the user never picked.
-        if (overview != null && overview.segments.total > 0)
-          LoopIconButton(
-            key: const ValueKey<String>('launch-rules-action'),
-            icon: 'info',
-            label: 'Launch 规则',
-            framed: true,
-            onPressed: widget.onOpenRules,
-          ),
-      ],
+      actions: launchTopbarActions(
+        overview: overview,
+        onOpenStake: widget.onOpenStake,
+        onOpenRules: widget.onOpenRules,
+      ),
       primary: LoopFolioPrimary(
         // `.lime-page .folio-primary` — the catalogue and the trade page are
         // the two saturated Lime heroes in the module.

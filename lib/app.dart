@@ -833,6 +833,9 @@ GoRouter _buildRouter(
               child: StreamChatInboxPage(
                 onOpenProfile: () =>
                     context.push(LoopRouteManifest.pathFor('profile')),
+                onOpenVoiceRoom: (communityId) => context.push(
+                  '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
+                ),
               ),
             ),
           ),
@@ -841,8 +844,9 @@ GoRouter _buildRouter(
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
               child: SquareScreen(
-                onOpenCommunity: (communityId) =>
-                    context.push('/community/profile?id=$communityId'),
+                onOpenCommunity: (communityId) => context.push(
+                  '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+                ),
                 onOpenVoiceRoom: (communityId) => context.push(
                   '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
                 ),
@@ -948,8 +952,9 @@ GoRouter _buildRouter(
           onBack: () => _popOrHome(context),
           // A `publicProfile` result opens the shared public-profile sheet
           // inside the page; LOOP has no route for another account.
-          onOpenCommunity: (communityId) =>
-              context.push('/community/profile?id=$communityId'),
+          onOpenCommunity: (communityId) => context.push(
+            '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+          ),
           onOpenDirectMessage: (identity) =>
               _openDirectMessageFromProfile(context, identity),
           // An `assetDetail` result carries the registry's own CAIP id, and
@@ -963,8 +968,9 @@ GoRouter _buildRouter(
         builder: (context, state) => CommunityDiscoverScreen(
           joinedOnly: state.uri.queryParameters['membership'] == 'joined',
           onBack: () => _popOrHome(context),
-          onOpenCommunity: (communityId) =>
-              context.push('/community/profile?id=$communityId'),
+          onOpenCommunity: (communityId) => context.push(
+            '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+          ),
         ),
       ),
       GoRoute(
@@ -1005,8 +1011,9 @@ GoRouter _buildRouter(
         builder: (context, state) => CommunityChatScreen(
           communityId: state.uri.queryParameters['id'],
           onBack: () => _popOrHome(context),
-          onOpenProfile: (communityId) =>
-              context.push('/community/profile?id=$communityId'),
+          onOpenProfile: (communityId) => context.push(
+            '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+          ),
           onOpenVoiceRoom: (communityId) =>
               context.push('/chat/voice?id=$communityId'),
           onOpenSearch: (cid) =>
@@ -1587,7 +1594,8 @@ final List<RouteBase> _miningRoutes = <RouteBase>[
 ];
 
 /// Every manifest slug without a dedicated screen mounts the pending surface,
-/// so all 93 routes are reachable and none silently falls through.
+/// so all 97 routes (the first 93 from the frozen prototype, four v3 tabs
+/// added by decision 0110) are reachable and none silently falls through.
 final List<RouteBase> _pendingManifestRoutes =
     LoopRouteManifest.withStatus(LoopRouteStatus.pending)
         .map((entry) {

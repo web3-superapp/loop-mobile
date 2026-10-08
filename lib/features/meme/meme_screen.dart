@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -38,6 +39,42 @@ class MemeScreen extends ConsumerWidget {
       tabKey: 'meme',
       title: 'MEME',
       segments: segments,
+      // The 发射台 segment is the Launch page without its bar, so the bar's
+      // two tools and its 更新中 move up to the segment row (S106b).
+      updating: (ref, index) =>
+          index == 0 &&
+          switches.idoLaunchVisible &&
+          ref.watch(
+            launchOverviewControllerProvider.select(
+              (state) => state.refreshing,
+            ),
+          ),
+      actionsBuilder: (context, index) =>
+          index == 0 && switches.idoLaunchVisible
+          ? <Widget>[
+              Consumer(
+                builder: (context, ref, _) {
+                  final overview = ref
+                      .watch(launchOverviewControllerProvider)
+                      .value;
+                  final actions = launchTopbarActions(
+                    overview: overview,
+                    onOpenStake: onOpenStake,
+                    onOpenRules: onOpenRules,
+                  );
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      for (var i = 0; i < actions.length; i += 1) ...<Widget>[
+                        if (i > 0) const SizedBox(width: 6),
+                        actions[i],
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ]
+          : const <Widget>[],
       builder: (context, index) {
         if (index == 0 && switches.idoLaunchVisible) {
           return LaunchScreen(

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart' show HitTestResult;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +18,7 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
@@ -321,6 +323,58 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('every 「＋」 row clears the floating tab bar', (tester) async {
+    // S106b: on the shell's navigator the sheet sat under the tab bar, and
+    // the bar took the tap meant for 扫一扫.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_config()),
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(LoopTabBar), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey<String>('chat-create-menu')));
+    await tester.pumpAndSettle();
+    for (final key in <String>[
+      'chat-add-friend-menu-item',
+      'chat-create-community-menu-item',
+      'chat-create-group-menu-item',
+      'chat-scan-menu-item',
+    ]) {
+      final row = find.byKey(ValueKey<String>(key));
+      expect(row, findsOneWidget, reason: key);
+      final rect = tester.getRect(row);
+      expect(rect.bottom, lessThanOrEqualTo(844), reason: key);
+      // What a finger on the row's centre lands on is the row itself.
+      final result = HitTestResult();
+      tester.binding.hitTestInView(result, rect.center, tester.view.viewId);
+      final target = tester.renderObject(row);
+      expect(
+        result.path.any((entry) => identical(entry.target, target)),
+        isTrue,
+        reason: '$key is covered',
+      );
+    }
+
+    await tester.tap(find.byKey(const ValueKey<String>('chat-scan-menu-item')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('扫一扫暂未开放'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('the inbox opens the stranger requests it never lists', (
     tester,

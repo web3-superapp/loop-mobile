@@ -163,7 +163,8 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 - Preserve the current 103-surface catalog as migration inventory until each
   V2 module replaces it with reviewed routes; do not present it as completion
-  of the V2 93-route contract. Preserve the Lime Ledger dark direction,
+  of the V2 97-route contract (the first 93 from the frozen prototype, four
+  v3 tabs added by decision 0110). Preserve the Lime Ledger dark direction,
   Dynamic Type, accessibility semantics, Reduce Motion, platform conventions,
   keyboard behavior, and smooth message scrolling.
 - Every flow accounts for loading, empty, error, offline, retry, disabled, and skeleton states as applicable.
