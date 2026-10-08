@@ -1254,7 +1254,10 @@ StreamMessageItemProps _groupDisplayProps(
 /// The label is deliberately *not* written onto
 /// [loopStreamDisplayLabelField]: in a direct conversation the person is
 /// named once, in the header above it, so no name is drawn over each bubble.
-/// The reader's own projection is left exactly as Stream had it.
+/// It is written onto [loopStreamDisplayAvatarLabelField] instead, so the
+/// avatar beside each of their messages draws their initial rather than the
+/// unnamed tile (emulator 2026-10-08). The reader's own projection is left
+/// exactly as Stream had it.
 @visibleForTesting
 Message sanitizeLoopDirectMessageForDisplay({
   required Message message,
@@ -1286,6 +1289,9 @@ Message _sanitizeDirectMessage(
       id: user.id,
       name: label,
       extraData: <String, Object?>{
+        // The avatar column reads this (never User.name); the name line over
+        // the bubbles reads only the display label, which stays unset here.
+        loopStreamDisplayAvatarLabelField: label,
         loopStreamDisplayImageField: ?real?.imageUrl,
         loopStreamDisplayProfileField: ?profile,
       },

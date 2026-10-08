@@ -667,7 +667,7 @@ class _LoopStreamMessageLeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = props.message.user;
-    final initials = loopStreamDisplayLabelOf(user);
+    final initials = loopStreamAvatarLabelOf(user);
     final tile = initials == null
         ? Container(
             key: const ValueKey<String>('loop-message-avatar-unnamed'),
