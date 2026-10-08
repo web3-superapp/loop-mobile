@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
+import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
+import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
@@ -25,6 +28,17 @@ class IntelScreen extends StatelessWidget {
       tabKey: 'intel',
       title: '情报',
       segments: segments,
+      // The segment bodies are embedded pages with no bar of their own, so
+      // their 更新中 is drawn on the segment row (S106b).
+      updating: (ref, index) => index == 0
+          ? ref.watch(
+              miningRankControllerProvider.select((state) => state.refreshing),
+            )
+          : ref.watch(
+              marketOverviewControllerProvider.select(
+                (state) => state.refreshing,
+              ),
+            ),
       actionsBuilder: (context, index) => index == 1
           ? <Widget>[
               LoopIconButton(

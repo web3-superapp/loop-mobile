@@ -34,6 +34,9 @@ class ChatCreateMenuButton extends ConsumerWidget {
   Future<void> _open(BuildContext context, WidgetRef ref) async {
     final action = await showLoopSheet<_ChatCreateAction>(
       context,
+      // Over the floating tab bar, not under it: on the shell's navigator
+      // the bar covered 扫一扫 and the sheet had nothing left to scroll.
+      useRootNavigator: true,
       builder: (sheetContext) => LoopRecordGroup(
         key: const ValueKey<String>('chat-create-sheet'),
         rows: <LoopRecordRow>[
@@ -85,7 +88,9 @@ class ChatCreateMenuButton extends ConsumerWidget {
           context,
           ref,
           onOpenCommunity: (communityId) => unawaited(
-            context.push<void>('/community/profile?id=$communityId'),
+            context.push<void>(
+              '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+            ),
           ),
         );
       case _ChatCreateAction.scan:

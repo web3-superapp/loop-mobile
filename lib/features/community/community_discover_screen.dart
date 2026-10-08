@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
+import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -215,6 +216,14 @@ class _CommunityDiscoverScreenState
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '社区目录'),
+          // A refresh that failed over rows already shown keeps them and
+          // says so here; its retry is the refresh, not a next page.
+          LoopFreshnessStrip(
+            key: const ValueKey<String>('community-discover-freshness'),
+            refreshing: state.refreshing,
+            refreshFailed: state.refreshFailed,
+            onRetry: () => unawaited(controller.refresh()),
+          ),
           if (orderingReason != null)
             // The page answered and the order did not: an empty list here
             // would say 「没有社区」, which is not what was measured.
@@ -255,9 +264,7 @@ class _CommunityDiscoverScreenState
                   ),
               ],
             ),
-            if (state.nextCursor != null &&
-                state.failureKind != null &&
-                !state.loadingMore)
+            if (state.appendFailed && !state.loadingMore)
               // A failed next page keeps the rows and waits for the reader.
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),

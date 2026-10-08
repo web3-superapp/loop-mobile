@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -12,6 +14,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
+import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -43,6 +46,19 @@ class SquareScreen extends StatelessWidget {
       tabKey: 'square',
       title: '广场',
       segments: segments,
+      // The segment bodies are embedded pages with no bar of their own, so
+      // their 更新中 is drawn on the segment row (S106b).
+      updating: (ref, index) => index == 0
+          ? ref.watch(
+              communityDiscoverControllerProvider.select(
+                (state) => state.refreshing,
+              ),
+            )
+          : ref.watch(
+              liveVoiceRoomsControllerProvider.select(
+                (state) => state.refreshing,
+              ),
+            ),
       builder: (context, index) => index == 0
           ? CommunityDiscoverScreen(
               embedded: true,
@@ -101,6 +117,8 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
       });
     }
     final now = (widget.now ?? DateTime.now)().toUtc();
+    // The room this account is in, so its row says so (decision 0111).
+    final session = ref.watch(voiceRoomSessionProvider);
     return LoopStreamPage(
       key: const ValueKey<String>('square-voice-rooms'),
       archetype: LoopPageArchetype.listing,
@@ -114,6 +132,15 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: state.mode, resource: '语音房列表'),
+          // A refresh that failed over rows already shown keeps them and
+          // says so here; its retry is the refresh, not a next page.
+          LoopFreshnessStrip(
+            key: const ValueKey<String>('square-voice-room-freshness'),
+            refreshing: state.refreshing,
+            refreshFailed: state.refreshFailed,
+            readAt: state.observedAt,
+            onRetry: () => unawaited(controller.refresh()),
+          ),
           if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
               key: const ValueKey<String>('square-voice-room-state'),
@@ -134,16 +161,12 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
                     state.items[index],
                     now,
                     communityRowPosition(index, state.items.length),
+                    inRoom:
+                        session?.voiceRoomId == state.items[index].voiceRoomId,
                   ),
               ],
             ),
-            if (state.loadingMore)
-              const Padding(
-                key: ValueKey<String>('square-voice-room-loading-more'),
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
-              )
-            else if (state.failureKind != null && state.nextCursor != null)
+            if (state.appendFailed && !state.loadingMore)
               // A failed next page keeps the rows and waits for the reader.
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -154,13 +177,22 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
                   onPressed: () => unawaited(controller.loadMore()),
                 ),
               )
-            else if (state.nextCursor case final String cursor)
+            else if (state.nextCursor case final String cursor) ...<Widget>[
+              // The sentinel stays mounted while its page loads: replaced by
+              // the skeleton, it forgot which cursor it had asked for and a
+              // page answering with the same cursor was asked again.
               LoopLoadMoreSentinel(
                 key: const ValueKey<String>('square-voice-room-load-more'),
                 cursor: cursor,
                 onLoadMore: () => unawaited(controller.loadMore()),
-              )
-            else
+              ),
+              if (state.loadingMore)
+                const Padding(
+                  key: ValueKey<String>('square-voice-room-loading-more'),
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
+                ),
+            ] else
               const LoopProvenanceFooter(
                 key: ValueKey<String>('square-voice-room-end'),
                 text: '没有更多语音房',
@@ -179,8 +211,9 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
   LoopRecordRow _row(
     LiveVoiceRoom room,
     DateTime now,
-    LoopRowPosition position,
-  ) {
+    LoopRowPosition position, {
+    required bool inRoom,
+  }) {
     final host =
         room.host.displayName ??
         voiceRoomDisplayKeyText('voiceRoom.member.anonymousMember');
@@ -201,13 +234,20 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
       title: title,
       subtitle: subtitle,
       subtitleMaxLines: 2,
-      trailingBadge: room.joinable
+      trailingBadge: inRoom
+          ? const LoopBadge(
+              '已在房间',
+              key: ValueKey<String>('square-voice-room-in-room'),
+              kind: LoopBadgeKind.up,
+            )
+          : room.joinable
           ? const LoopBadge('直播中', kind: LoopBadgeKind.up)
           : const LoopBadge('需加入'),
       position: position,
       onTap: () => _open(room),
       semanticLabel:
           '$title，主持 $host，$listeners，$elapsed'
+          '${inRoom ? '，你已在房间里' : ''}'
           '${room.joinable ? '' : '，加入社区后可进入'}',
     );
   }

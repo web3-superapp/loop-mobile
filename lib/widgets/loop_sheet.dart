@@ -10,11 +10,17 @@ Future<T?> showLoopSheet<T>(
   required WidgetBuilder builder,
   String barrierLabel = '关闭弹层',
   bool isDismissible = true,
+  bool useRootNavigator = false,
 }) async {
   final previousFocus = FocusManager.instance.primaryFocus;
   final reduceMotion = MediaQuery.disableAnimationsOf(context);
   final result = await showModalBottomSheet<T>(
     context: context,
+    // A sheet opened from a tab page is pushed on the shell's own navigator
+    // by default, which the floating tab bar is painted over: the last row
+    // of a tall sheet sat under it (S106b). The root navigator lays the
+    // sheet over the bar instead.
+    useRootNavigator: useRootNavigator,
     useSafeArea: true,
     isScrollControlled: true,
     isDismissible: isDismissible,
@@ -25,7 +31,7 @@ Future<T?> showLoopSheet<T>(
     elevation: 0,
     transitionAnimationController: reduceMotion
         ? AnimationController(
-            vsync: Navigator.of(context),
+            vsync: Navigator.of(context, rootNavigator: useRootNavigator),
             duration: Duration.zero,
           )
         : null,

@@ -446,6 +446,16 @@ void main() {
       );
       expect(find.byKey(const ValueKey<String>('launch-screen')), findsOne);
       expect(find.text('发射台即将开放'), findsNothing);
+      // The embedded catalogue draws no bar, so its two tools stand on the
+      // segment row (S106b).
+      expect(
+        find.byKey(const ValueKey<String>('launch-stake-action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('launch-rules-action')),
+        findsOneWidget,
+      );
     });
   });
 

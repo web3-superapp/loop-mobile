@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// Which segment each v3 tab page was last showing (decision 0110).
@@ -43,6 +44,7 @@ class LoopSegmentedTabPage extends ConsumerWidget {
     required this.builder,
     super.key,
     this.actionsBuilder,
+    this.updating,
     this.archetype = LoopPageArchetype.listing,
   }) : assert(segments.length > 1, 'A segmented page has two segments or more');
 
@@ -60,6 +62,14 @@ class LoopSegmentedTabPage extends ConsumerWidget {
 
   /// Top-bar controls for the selected segment.
   final List<Widget> Function(BuildContext context, int index)? actionsBuilder;
+
+  /// Whether the selected segment is re-reading rows it already shows.
+  ///
+  /// An embedded segment page draws no bar, so its own 「更新中」 had nowhere
+  /// to go; the segment row carries it instead, beside the actions. Called
+  /// for the selected segment only, so a segment that is not on screen is
+  /// never read.
+  final bool Function(WidgetRef ref, int index)? updating;
   final LoopPageArchetype archetype;
 
   @override
@@ -67,6 +77,7 @@ class LoopSegmentedTabPage extends ConsumerWidget {
     final remembered = ref.watch(loopTabSegmentMemoryProvider)[tabKey] ?? 0;
     final selected = remembered.clamp(0, segments.length - 1);
     final actions = actionsBuilder?.call(context, selected) ?? const <Widget>[];
+    final isUpdating = updating?.call(ref, selected) ?? false;
     return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, LoopLayoutMode.stream),
@@ -123,6 +134,12 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      if (isUpdating) ...<Widget>[
+                        const SizedBox(width: 8),
+                        LoopUpdatingBadge(
+                          key: ValueKey<String>('$tabKey-segment-updating'),
+                        ),
+                      ],
                       for (final action in actions) ...<Widget>[
                         const SizedBox(width: 6),
                         action,
