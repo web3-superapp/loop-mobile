@@ -6,6 +6,10 @@ import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
+
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
+
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/search/loop_v2_search_api.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_social_api.dart';
@@ -146,6 +150,38 @@ Map<String, Object?> memberBody({
 
 void main() {
   group('community transport', () {
+    test(
+      'the detail resource reads boundAsset beside community (backend 0097)',
+      () {
+        final body = detailBody();
+        body['boundAsset'] = <String, Object?>{
+          'assetId': 'eip155:56:0x55d398326f99059ff775485246999027b3197955',
+          'symbol': 'USDT',
+          'name': 'Tether USD',
+          'logoUrl': null,
+          'hasRegisteredPool': true,
+        };
+        final root = LoopV2Contract.strictMapWithOptional(
+          body,
+          LoopV2ProjectionCodec.detailKeys,
+          LoopV2ProjectionCodec.detailOptionalKeys,
+        );
+        final detail = LoopV2ProjectionCodec.detail(root);
+        expect(detail.community.boundAsset?.symbol, 'USDT');
+        expect(detail.community.boundAsset?.hasRegisteredPool, isTrue);
+
+        // Absent (a deployment before 0097) reads as "binding nothing".
+        final plain = LoopV2ProjectionCodec.detail(
+          LoopV2Contract.strictMapWithOptional(
+            detailBody(),
+            LoopV2ProjectionCodec.detailKeys,
+            LoopV2ProjectionCodec.detailOptionalKeys,
+          ),
+        );
+        expect(plain.community.boundAsset, isNull);
+      },
+    );
+
     test('GET /v2/community/home carries no idempotency key', () async {
       RequestOptions? captured;
       final api = DioLoopV2CommunityApi(

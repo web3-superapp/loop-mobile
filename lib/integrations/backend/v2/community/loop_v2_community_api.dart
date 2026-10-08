@@ -352,9 +352,10 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
     try {
       final response = await send();
       LoopV2Contract.validateSuccess(response, statusCode: statusCode);
-      final root = LoopV2Contract.strictMap(
+      final root = LoopV2Contract.strictMapWithOptional(
         response.data,
         LoopV2ProjectionCodec.detailKeys,
+        LoopV2ProjectionCodec.detailOptionalKeys,
       );
       LoopV2ProjectionCodec.requireContractVersion(root);
       return LoopV2ProjectionCodec.detail(root);

@@ -807,8 +807,20 @@ abstract final class LoopV2ProjectionCodec {
   }
 
   static CommunityDetail detail(Map<String, Object?> root) {
+    // Backend decision 0097 puts the Asset Registry projection beside
+    // `community` on the resource, not inside it (the emulator read a resource
+    // this decoder refused, 2026-10-08). It is folded into the community map
+    // so one reader serves both placements; the inner one wins when both are
+    // sent.
+    final rawCommunity = root['community'];
+    final communityMap =
+        root.containsKey('boundAsset') &&
+            rawCommunity is Map<String, Object?> &&
+            !rawCommunity.containsKey('boundAsset')
+        ? <String, Object?>{...rawCommunity, 'boundAsset': root['boundAsset']}
+        : rawCommunity;
     return CommunityDetail(
-      community: community(root['community']),
+      community: community(communityMap),
       viewer: viewer(root['viewer']),
       miningPower: miningPowerFact(root['miningPower']),
       onlineCount: onlineCount(root['onlineCount']),
@@ -905,6 +917,10 @@ abstract final class LoopV2ProjectionCodec {
       application: review,
     );
   }
+
+  /// Sent beside `community` since backend decision 0097; optional so the
+  /// recorded responses that predate it still read.
+  static const detailOptionalKeys = <String>{'boundAsset'};
 
   static const detailKeys = <String>{
     'community',
