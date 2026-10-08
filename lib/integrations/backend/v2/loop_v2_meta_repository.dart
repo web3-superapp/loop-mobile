@@ -383,10 +383,12 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     // through an operator reference and carries no reason code; `launch`
     // confirms through the contract adapter (loop-api decision 0083) and
     // names that fact in `reasonCode`. Any other pairing is invalid.
+    // `meme` confirms the same way (loop-api decision 0101,
+    // `MEME_CONTRACT_OBSERVED`).
+    final confirmsWithReason =
+        id == LoopV2CapabilityId.launch || id == LoopV2CapabilityId.meme;
     if (status == LoopV2CapabilityEvidenceStatus.confirmed &&
-        (id == LoopV2CapabilityId.launch
-            ? reasonCode == null
-            : reasonCode != null)) {
+        (confirmsWithReason ? reasonCode == null : reasonCode != null)) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
     return LoopV2Capability(

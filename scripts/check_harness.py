@@ -845,7 +845,7 @@ S5_PORT_DEFAULTS = (
     ),
 )
 S5_CAPABILITY_META_PATH = Path("lib/integrations/backend/v2/loop_v2_meta.dart")
-# The contract's 31 capability ids, in contract order. Steps 6 and 7 both read
+# The contract's 32 capability ids, in contract order. Steps 6 and 7 both read
 # the frozen contract, which carries the three step-8 ids `security`,
 # `settings` and `support` alongside the three S7 ids.
 S5_CAPABILITY_IDS = (
@@ -880,6 +880,8 @@ S5_CAPABILITY_IDS = (
     "bridge",
     "dappExecution",
     "communityAi",
+    # Decision 0120 (loop-api decision 0101): the MEME curve launchpad.
+    "meme",
 )
 # The three S7 ports (decision 0058). Each production default is its own
 # `Unavailable…Gateway`, so Launch, Mining and Referral are unavailable until
@@ -8159,7 +8161,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 101-route manifest."""
+    """Keep the Dart route table equal to the frozen 105-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8175,8 +8177,8 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for module in manifest.get("modules", {}).values()
         for item in module
     ]
-    if manifest.get("count") != 101 or len(expected_slugs) != 101:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 101 routes")
+    if manifest.get("count") != 105 or len(expected_slugs) != 105:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 105 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "chat":
@@ -8210,7 +8212,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 101 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 105 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -10964,7 +10966,7 @@ def check_s5_truth_contract(root: Path) -> list[str]:
                 "S5 port is unavailable until lib/main.dart mounts its adapter"
             )
 
-    # 2. The capability enum follows the contract's 31 ids, in contract order.
+    # 2. The capability enum follows the contract's 32 ids, in contract order.
     meta_path = root / S5_CAPABILITY_META_PATH
     if meta_path.is_file():
         meta_source = strip_dart_comments(read_text(meta_path))

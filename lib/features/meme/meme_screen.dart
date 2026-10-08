@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/features/meme/meme_controllers.dart';
+import 'package:loop_mobile/features/meme/meme_launchpad.dart';
+import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 
-/// `meme` · MEME (decision 0110, S106 §4).
+/// `meme` · MEME (decision 0110; MEME curve launchpad, decision 0120).
 ///
-/// Two page segments. 发射台 renders the IDO Launch catalogue only while
-/// [LoopFeatureSwitches.idoLaunchVisible] is on; otherwise it says the launch
-/// pad is coming. 行情 has no source yet: platform MEME assets do not exist,
-/// and the segment says so rather than borrowing another list.
+/// 发射台 is the MEME curve launchpad: four chips, the create entry and one
+/// row per token. 行情 is the server's `meme` market category. The retired
+/// IDO Launch catalogue is hidden, not deleted: while
+/// [LoopFeatureSwitchValues.idoLaunchVisible] is on it comes back as a third
+/// segment with its own two tools.
 class MemeScreen extends ConsumerWidget {
   const MemeScreen({
     super.key,
+    this.onNavigate,
     this.onOpenLaunch,
     this.onOpenStake,
     this.onOpenRules,
@@ -23,6 +27,9 @@ class MemeScreen extends ConsumerWidget {
     this.onOpenApply,
   });
 
+  /// Where a launchpad row, the create entry or a market row is opened.
+  /// `null` pushes the location on the ambient router.
+  final void Function(String location)? onNavigate;
   final void Function(String launchId)? onOpenLaunch;
   final VoidCallback? onOpenStake;
   final VoidCallback? onOpenRules;
@@ -31,26 +38,38 @@ class MemeScreen extends ConsumerWidget {
 
   static const segments = <String>['发射台', '行情'];
 
+  /// The index of the IDO segment while the switch is on.
+  static const int idoSegment = 2;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final switches = ref.watch(loopFeatureSwitchesProvider);
+    final ido = switches.idoLaunchVisible;
+    void open(String location) {
+      final navigate = onNavigate;
+      if (navigate != null) {
+        navigate(location);
+        return;
+      }
+      context.push(location);
+    }
+
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('meme-screen'),
       tabKey: 'meme',
       title: 'MEME',
-      segments: segments,
-      // The 发射台 segment is the Launch page without its bar, so the bar's
-      // two tools and its 更新中 move up to the segment row (S106b).
-      updating: (ref, index) =>
-          index == 0 &&
-          switches.idoLaunchVisible &&
-          ref.watch(
-            launchOverviewControllerProvider.select(
-              (state) => state.refreshing,
-            ),
-          ),
-      actionsBuilder: (context, index) =>
-          index == 0 && switches.idoLaunchVisible
+      segments: <String>[...segments, if (ido) 'IDO'],
+      updating: (ref, index) => switch (index) {
+        0 => ref.watch(
+          memeListControllerProvider(MemeListTab.fresh)
+              .select((state) => state.refreshing),
+        ),
+        idoSegment when ido => ref.watch(
+          launchOverviewControllerProvider.select((state) => state.refreshing),
+        ),
+        _ => false,
+      },
+      actionsBuilder: (context, index) => index == idoSegment && ido
           ? <Widget>[
               Consumer(
                 builder: (context, ref, _) {
@@ -75,44 +94,18 @@ class MemeScreen extends ConsumerWidget {
               ),
             ]
           : const <Widget>[],
-      builder: (context, index) {
-        if (index == 0 && switches.idoLaunchVisible) {
-          return LaunchScreen(
-            embedded: true,
-            onOpenLaunch: onOpenLaunch,
-            onOpenStake: onOpenStake,
-            onOpenRules: onOpenRules,
-            onOpenEconomy: onOpenEconomy,
-            onOpenApply: onOpenApply,
-          );
-        }
-        return _MemeEmptySegment(
-          key: ValueKey<String>(
-            index == 0 ? 'meme-launchpad-empty' : 'meme-market-empty',
-          ),
-          message: index == 0 ? '发射台即将开放' : '平台 MEME 资产上线后在这里显示',
-        );
+      builder: (context, index) => switch (index) {
+        0 => MemeLaunchpadSegment(onNavigate: open),
+        idoSegment when ido => LaunchScreen(
+          embedded: true,
+          onOpenLaunch: onOpenLaunch,
+          onOpenStake: onOpenStake,
+          onOpenRules: onOpenRules,
+          onOpenEconomy: onOpenEconomy,
+          onOpenApply: onOpenApply,
+        ),
+        _ => MemeMarketSegment(onNavigate: open),
       },
-    );
-  }
-}
-
-class _MemeEmptySegment extends StatelessWidget {
-  const _MemeEmptySegment({required this.message, super.key});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopStreamPage(
-      archetype: LoopPageArchetype.state,
-      title: message,
-      embedded: true,
-      tabPage: true,
-      collection: ListView(
-        padding: const EdgeInsets.only(top: 48),
-        children: <Widget>[LoopEmpty(message: message)],
-      ),
     );
   }
 }

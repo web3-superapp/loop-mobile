@@ -1,4 +1,4 @@
-/// The 101-route product manifest.
+/// The 105-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -6,7 +6,8 @@
 /// `bdbe1832…`); decision 0110 (2026-10-08) added the four v3 tabs `chat`,
 /// `square`, `meme` and `intel` and re-froze the manifest; decision 0112
 /// (S109a, same day) added `user-profile` and `onboarding-communities`;
-/// decision 0113 (S109b, same day) added `scan` and `community-manage`.
+/// decision 0113 (S109b, same day) added `scan` and `community-manage`;
+/// decision 0120 (S117) added the four MEME curve launchpad routes.
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -109,7 +110,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      'f6269762299ff2e7c6370511fe9808dcdac194ca77706cd84e393c82c9fc8abe';
+      'a856fab14b49e5b0ee7fb2c1ae42c646f1bbe4a813692ba848b2d2e3ccb34d5e';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -611,7 +612,7 @@ abstract final class LoopRouteManifest {
       status: LoopRouteStatus.implemented,
       tab: true,
     ),
-    // 4-launch · Launch (12)
+    // 4-launch · Launch (16)
     LoopRouteEntry(
       slug: 'launch',
       path: '/launch',
@@ -721,6 +722,44 @@ abstract final class LoopRouteManifest {
       step: 7,
       status: LoopRouteStatus.implemented,
       tab: true,
+    ),
+    // S117 (decision 0120): the MEME curve launchpad's create flow, token
+    // page and the token's two full lists.
+    LoopRouteEntry(
+      slug: 'meme-create',
+      path: '/meme/create',
+      module: LoopRouteModule.launch,
+      title: '创建代币',
+      prototypeOrder: 108,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'meme-token',
+      path: '/meme/token',
+      module: LoopRouteModule.launch,
+      title: 'MEME 代币',
+      prototypeOrder: 109,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'meme-token-holders',
+      path: '/meme/token/holders',
+      module: LoopRouteModule.launch,
+      title: 'MEME 持有者',
+      prototypeOrder: 110,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'meme-token-trades',
+      path: '/meme/token/trades',
+      module: LoopRouteModule.launch,
+      title: 'MEME 动态',
+      prototypeOrder: 111,
+      step: 7,
+      status: LoopRouteStatus.implemented,
     ),
     // 5-mining · Mining (6)
     LoopRouteEntry(

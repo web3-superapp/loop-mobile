@@ -69,7 +69,10 @@ import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
 import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
+import 'package:loop_mobile/features/meme/meme_create_screen.dart';
+import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
+import 'package:loop_mobile/features/meme/meme_token_screen.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
@@ -931,6 +934,7 @@ GoRouter _buildRouter(
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
               child: MemeScreen(
+                onNavigate: (location) => context.push(location),
                 onOpenLaunch: (launchId) =>
                     context.push(LaunchRoute.detail(launchId)),
                 onOpenStake: () =>
@@ -1421,8 +1425,12 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/swap',
-        builder: (context, state) =>
-            SwapScreen(onBack: () => _popOrHome(context)),
+        builder: (context, state) => SwapScreen(
+          key: ValueKey<String>('swap-${state.uri.query}'),
+          onBack: () => _popOrHome(context),
+          initialSourceAssetId: _swapPrefill(state.uri, 'from'),
+          initialDestinationAssetId: _swapPrefill(state.uri, 'to'),
+        ),
       ),
       // The quote object itself travels to the detail page, so the read-only
       // view can never show a different quote from the one being confirmed.
@@ -1546,6 +1554,7 @@ GoRouter _buildRouter(
             PayScreen(onBack: () => _popOrHome(context)),
       ),
       ..._launchRoutes,
+      ..._memeRoutes,
       ..._miningRoutes,
       ..._pendingManifestRoutes,
       // Illegal locations are recorded and land on 聊天.
@@ -1644,6 +1653,59 @@ final List<RouteBase> _launchRoutes = <RouteBase>[
     path: '/launch/apply',
     builder: (context, state) =>
         LaunchApplyScreen(onBack: () => _popOrHome(context)),
+  ),
+];
+
+/// A canonical CAIP asset id carried to the Swap page, or `null`.
+String? _swapPrefill(Uri uri, String key) {
+  final value = uri.queryParameters[key];
+  if (value == null) return null;
+  return RegExp(r'^eip155:[1-9][0-9]{0,9}:(native|0x[0-9a-f]{40})$')
+          .hasMatch(value)
+      ? value
+      : null;
+}
+
+/// The four MEME curve launchpad pages (decision 0120). A token is addressed
+/// by the server's `memeTokenId` in the `id` query parameter; a missing or
+/// malformed one fails closed on the page.
+final List<RouteBase> _memeRoutes = <RouteBase>[
+  GoRoute(
+    path: MemeRoute.createPath,
+    builder: (context, state) => MemeCreateScreen(
+      key: ValueKey<String>('meme-create-${state.uri.query}'),
+      draftId: MemeRoute.idOf(state.uri, key: 'draft'),
+      onBack: () => _popOrHome(context),
+      onOpenToken: (memeTokenId) =>
+          context.pushReplacement(MemeRoute.token(memeTokenId)),
+    ),
+  ),
+  GoRoute(
+    path: MemeRoute.tokenPath,
+    builder: (context, state) => MemeTokenScreen(
+      key: ValueKey<String>('meme-token-${state.uri.query}'),
+      memeTokenId: MemeRoute.idOf(state.uri),
+      onBack: () => _popOrHome(context),
+      onNavigate: (location) => context.push(location),
+    ),
+  ),
+  GoRoute(
+    path: MemeRoute.holdersPath,
+    builder: (context, state) => MemeTokenListScreen(
+      memeTokenId: MemeRoute.idOf(state.uri),
+      holders: true,
+      onBack: () => _popOrHome(context),
+      onNavigate: (location) => context.push(location),
+    ),
+  ),
+  GoRoute(
+    path: MemeRoute.tradesPath,
+    builder: (context, state) => MemeTokenListScreen(
+      memeTokenId: MemeRoute.idOf(state.uri),
+      holders: false,
+      onBack: () => _popOrHome(context),
+      onNavigate: (location) => context.push(location),
+    ),
   ),
 ];
 

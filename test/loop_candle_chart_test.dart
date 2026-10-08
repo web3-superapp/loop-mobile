@@ -373,6 +373,10 @@ void main() {
         // Decision 0118: the 情报 · 行情 row's 「市值 \$1.6B」 second line,
         // the same kind of summary slot as the Token Card's cells.
         'lib/features/market/market_fomo_widgets.dart',
+        // Decision 0120: the MEME launchpad's 「市值 \$9,891」 second line and
+        // the holder / trade rows' token column — summary slots of the same
+        // kind. Quotes and signing facts use the exact `memeTokenFigure`.
+        'lib/features/meme/meme_format.dart',
       };
       final callers = <String>{};
       for (final file in Directory('lib').listSync(recursive: true)) {

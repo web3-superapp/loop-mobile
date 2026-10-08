@@ -582,9 +582,12 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     final quality = rawQuality is String
         ? LoopFactQuality.tryParse(rawQuality)
         : null;
+    // `derived` is a MEME token priced from its pool (loop-api decision
+    // 0103); its marker is drawn on the row (AGENTS rule 25).
     if (quality != LoopFactQuality.fresh &&
         quality != LoopFactQuality.stale &&
-        quality != LoopFactQuality.proxied) {
+        quality != LoopFactQuality.proxied &&
+        quality != LoopFactQuality.derived) {
       LoopV2ChainCodec.invalid();
     }
     return MarketCategoryQuote(
