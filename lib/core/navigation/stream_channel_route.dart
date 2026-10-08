@@ -88,6 +88,14 @@ String? loopCommunityIdForChannelCid(String cid) {
       '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
 }
 
+/// The official channel CID of one community, the inverse of
+/// [loopCommunityIdForChannelCid]. `null` for a value that is not a UUID.
+String? loopCommunityChannelCid(String communityId) {
+  final hex = communityId.replaceAll('-', '');
+  if (!_channelSuffixPattern.hasMatch(hex)) return null;
+  return 'messaging:$_communityChannelPrefix$hex';
+}
+
 /// The application location one channel CID opens.
 ///
 /// It is the single mapping shared by notifications, chat search and message

@@ -3,10 +3,10 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "d7b845af877122c9ef08a6bd7a37b4672e46d25581c42acb9fd64f9b29fecafb",
+  "sha256": "6b6a3017f473697082b5d3b3efaf0f2a259959636511468f147cc7e1daee5f97",
   "defaultRoute": "chat",
   "tabs": ["chat", "square", "meme", "intel", "wallet"],
-  "count": 97,
+  "count": 99,
   "modules": {
     "0-global-account": [
       {
@@ -58,6 +58,11 @@
         "slug": "region-blocked",
         "tab": false,
         "prototypeOrder": 9
+      },
+      {
+        "slug": "onboarding-communities",
+        "tab": false,
+        "prototypeOrder": 105
       }
     ],
     "2-community": [
@@ -465,6 +470,11 @@
         "slug": "support",
         "tab": false,
         "prototypeOrder": 81
+      },
+      {
+        "slug": "user-profile",
+        "tab": false,
+        "prototypeOrder": 104
       }
     ],
     "8-system": [

@@ -12,6 +12,10 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 
 import 'support/loop_ground_probe.dart';
 
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+
+import 'support/legacy_chat_identity.dart';
+
 const _firstProfileId = '11111111-1111-4111-8111-111111111111';
 const _secondProfileId = '22222222-2222-4222-8222-222222222222';
 const _groupIdValue = '33333333-3333-4333-8333-333333333333';
@@ -366,7 +370,14 @@ Future<void> _pumpAliasRoute(
   addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [groupAliasGatewayProvider.overrideWithValue(gateway)],
+      overrides: [
+        groupAliasGatewayProvider.overrideWithValue(gateway),
+        // The group Alias pages are hidden by default (decision 0112); these
+        // cases pin what they do when the switch turns them back on.
+        loopFeatureSwitchesProvider.overrideWithValue(
+          legacyChatIdentitySwitches,
+        ),
+      ],
       child: MaterialApp(theme: LoopTheme.dark, home: page),
     ),
   );

@@ -25,6 +25,9 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 
+import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
+import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
+
 const _ownId = 'LOOP-FE3EMCPE';
 const _peerId = 'LOOP-7K2M9QXA';
 const _stagingBase = 'https://api-staging.quant-dinger.cc';
@@ -79,6 +82,10 @@ void main() {
       expect(loopIdFromLinkPath('/u/onchain.mia'), isNull);
       expect(loopIdFromLinkPath('/profile'), isNull);
       expect(loopIdSearchLocation(_ownId), '/search?q=LOOP-FE3EMCPE');
+      expect(
+        userProfileLoopIdLocation(_ownId),
+        '/profile/user?loopId=LOOP-FE3EMCPE',
+      );
     });
   });
 
@@ -388,7 +395,9 @@ void main() {
   });
 
   group('/u/{loopId} profile link', () {
-    testWidgets('a link opened in the product lands on search with the ID', (
+    // Decision 0112: the link opens `user-profile` by LOOP ID (it opened the
+    // search page with the ID in its field until then).
+    testWidgets('a link opened in the product lands on the profile page', (
       tester,
     ) async {
       await _pumpPreviewApp(tester);
@@ -400,7 +409,7 @@ void main() {
 
       await _pushPlatformRoute(tester, '/u/loop-fe3emcpe');
 
-      _expectSearchWith(tester, _ownId);
+      _expectProfileWith(tester, _ownId);
     });
 
     testWidgets(
@@ -418,9 +427,9 @@ void main() {
 
         await _enterPreview(tester);
 
-        _expectSearchWith(tester, _ownId);
+        _expectProfileWith(tester, _ownId);
         expect(container.read(loopProfileLinkInboxProvider).pending, isNull);
-        // The account still landed on Community; search sits over it, so
+        // The account still landed on 聊天; the profile sits over it, so
         // going back returns there.
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
@@ -431,7 +440,7 @@ void main() {
       },
     );
 
-    testWidgets('a malformed link is an unknown route, not a search', (
+    testWidgets('a malformed link is an unknown route, not a profile', (
       tester,
     ) async {
       await _pumpPreviewApp(tester);
@@ -443,6 +452,10 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('global-search-screen')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('user-profile-screen')),
         findsNothing,
       );
     });
@@ -615,13 +628,11 @@ Future<void> _pushPlatformRoute(WidgetTester tester, String location) async {
 /// The page the link opened, and the ID it was opened with. The preview
 /// composition has no search capability, so the page draws its capability
 /// block; the ID reaching the page is what the route owes it.
-void _expectSearchWith(WidgetTester tester, String loopId) {
-  final screen = find.byKey(const ValueKey<String>('global-search-screen'));
+void _expectProfileWith(WidgetTester tester, String loopId) {
+  final screen = find.byKey(const ValueKey<String>('user-profile-screen'));
   expect(screen, findsOneWidget);
   expect(
-    tester
-        .widget<GlobalSearchScreen>(find.byType(GlobalSearchScreen))
-        .initialQuery,
-    loopId,
+    tester.widget<UserProfileScreen>(find.byType(UserProfileScreen)).target,
+    PublicProfileByLoopId(loopId),
   );
 }

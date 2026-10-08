@@ -28,7 +28,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
 /// `avatar:preset/community-01..12` — the server's community preset catalog.
 const String communityLogoPresetPrefix = 'avatar:preset/community-';
@@ -211,6 +213,24 @@ class CommunityLogo extends StatelessWidget {
         fallbackMonogram: monogram,
       );
     }
+    final tile = _monogramTile(context, corner, monogram);
+    // S107 §1: an uploaded logo, over the monogram tile until it arrives.
+    final mediaUrl = loopMediaUrlFor(context, logoRef);
+    if (mediaUrl != null) {
+      return LoopRemoteAvatar(
+        key: ValueKey<String>('community-logo-media-$logoRef'),
+        url: mediaUrl,
+        size: size,
+        shape: BoxShape.rectangle,
+        radius: corner,
+        semanticLabel: '$name 社区图标',
+        fallback: tile,
+      );
+    }
+    return tile;
+  }
+
+  Widget _monogramTile(BuildContext context, double corner, String monogram) {
     final ground = communityLogoGroundFor(identity);
     return Semantics(
       image: true,

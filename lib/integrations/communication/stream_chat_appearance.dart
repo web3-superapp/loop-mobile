@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Lime, as Stream's brand ladder reads it.
@@ -356,9 +357,11 @@ class LoopStreamMessageRow extends StatelessWidget {
         PositionedDirectional(
           top: resolvedPadding.top,
           start: resolvedPadding.left,
-          // The gutter belongs to the message row's own tap and long-press;
-          // LOOP passes no avatar tap (`onUserAvatarTap: null`).
+          // The gutter belongs to the message row's own tap and long-press,
+          // except when the avatar opens a profile (S107 §2): then the tile
+          // takes its own tap and the rest of the row keeps the message's.
           child: IgnorePointer(
+            ignoring: loopChatAvatarProfileOf(context, message.user) == null,
             child: StreamMessageLeading(key: avatarKey, message: message),
           ),
         ),
@@ -663,8 +666,9 @@ class _LoopStreamMessageLeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = loopStreamDisplayLabelOf(props.message.user);
-    final avatar = label == null
+    final user = props.message.user;
+    final initials = loopStreamDisplayLabelOf(user);
+    final tile = initials == null
         ? Container(
             key: const ValueKey<String>('loop-message-avatar-unnamed'),
             width: size,
@@ -683,9 +687,33 @@ class _LoopStreamMessageLeading extends StatelessWidget {
           )
         : LoopInitialsAvatar(
             key: const ValueKey<String>('loop-message-avatar-initials'),
-            label: label,
+            label: initials,
             size: size,
           );
+    // The account's own picture (S107 §2), over the initials it replaces.
+    final image = loopStreamDisplayImageOf(user);
+    final avatar = image == null
+        ? tile
+        : LoopRemoteAvatar(
+            key: const ValueKey<String>('loop-message-avatar-image'),
+            url: image,
+            size: size,
+            fallback: tile,
+          );
+    final profile = loopChatAvatarProfileOf(context, user);
+    final open = LoopChatAvatarTapScope.maybeOf(context);
+    if (profile != null && open != null) {
+      return Semantics(
+        button: true,
+        label: '查看资料',
+        child: GestureDetector(
+          key: const ValueKey<String>('loop-message-avatar-open-profile'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () => open(profile),
+          child: avatar,
+        ),
+      );
+    }
     final onTap = props.onTap;
     if (onTap == null) return avatar;
     return GestureDetector(
@@ -800,4 +828,12 @@ class LoopOutgoingQuotedMessage extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The public profile a chat avatar opens, or `null` when it opens nothing:
+/// the user carries no profile, or no conversation above installed a way to
+/// open one.
+String? loopChatAvatarProfileOf(BuildContext context, User? user) {
+  if (LoopChatAvatarTapScope.maybeOf(context) == null) return null;
+  return loopStreamDisplayProfileOf(user);
 }

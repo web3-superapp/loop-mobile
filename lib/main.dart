@@ -3,6 +3,14 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
+import 'package:loop_mobile/features/account/onboarding_communities.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
+import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
+import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_recommended_communities.dart';
+import 'package:loop_mobile/integrations/backend/v2/media/loop_v2_media.dart';
+import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_public_profiles.dart';
+import 'package:loop_mobile/integrations/communication/stream_community_channel_muter.dart';
+import 'package:loop_mobile/integrations/device/image_picker_avatar_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_live_voice_rooms.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
@@ -188,6 +196,27 @@ Future<void> main() async {
         ),
         liveVoiceRoomGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2LiveVoiceRoomGatewayProvider),
+        ),
+        // S109a (decision 0112): uploaded pictures, another account's
+        // page, the onboarding recommendation and its channel mute. Each
+        // stays unavailable until its transport and session exist; a server
+        // that does not serve a route yet (404) or closed it (503) reads as
+        // unavailable, never as a fixture.
+        loopMediaUrlResolverProvider.overrideWith(
+          (ref) => ref.watch(loopV2MediaUrlResolverProvider),
+        ),
+        avatarUploadGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2AvatarUploadGatewayProvider),
+        ),
+        avatarImagePickerProvider.overrideWithValue(ImagePickerAvatarSource()),
+        publicProfileGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2PublicProfileGatewayProvider),
+        ),
+        recommendedCommunitiesGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2RecommendedCommunitiesGatewayProvider),
+        ),
+        communityChannelMuterProvider.overrideWith(
+          (ref) => ref.watch(streamCommunityChannelMuterProvider),
         ),
         // The merged image is encoded on device and handed to the operating
         // system; it never reaches a LOOP service, in either composition.

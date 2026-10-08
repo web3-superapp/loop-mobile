@@ -93,7 +93,7 @@ void main() {
     ) async {
       await _pumpPrivacy(tester, size: _tall);
 
-      final row = find.byKey(const ValueKey<String>('privacy-anonymous-mode'));
+      final row = find.byKey(const ValueKey<String>('privacy-public-holdings'));
       expect(
         find.descendant(of: row, matching: find.byType(LoopBadge)),
         findsOneWidget,

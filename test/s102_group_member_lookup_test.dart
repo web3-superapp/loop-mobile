@@ -12,6 +12,8 @@ import 'package:loop_mobile/features/chat/group_alias/group_member_directory.dar
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
+import 'support/legacy_chat_identity.dart';
+
 const String _aliasId = 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e';
 const String _groupId = 'loop_group_8e7d73c5';
 
@@ -364,7 +366,8 @@ final class _Harness {
   bool _disposed = false;
 
   Future<void> pump(WidgetTester tester) async {
-    await tester.pumpWidget(
+    await pumpWithLegacyChatIdentity(
+      tester,
       MaterialApp(
         localizationsDelegates: const <LocalizationsDelegate<Object?>>[
           LoopStreamChatLocalizationsDelegate(),

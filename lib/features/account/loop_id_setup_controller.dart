@@ -21,9 +21,11 @@ final class LoopIdSetupState {
     this.resource,
     this.alias,
     this.avatarRef,
+    this.bio,
     this.interests = const <ProfileInterest>[],
     this.pushNotificationsRequested = true,
     this.failureKind,
+    this.bioSaveFailed = false,
   });
 
   factory LoopIdSetupState.initial(ProfileMode mode) => LoopIdSetupState(
@@ -41,6 +43,13 @@ final class LoopIdSetupState {
   final ProfileResource? resource;
   final String? alias;
   final String? avatarRef;
+
+  /// The optional bio. Activation carries no bio, so it is written with a
+  /// profile replace right after the activation answered (decision 0112).
+  final String? bio;
+
+  /// Kept for the activation body's shape. The page no longer offers the
+  /// tracks (S107 §4), so it is always submitted empty.
   final List<ProfileInterest> interests;
 
   /// Local-only display preference for this step. It is not sent to the
@@ -48,6 +57,9 @@ final class LoopIdSetupState {
   final bool pushNotificationsRequested;
 
   final ProfileGatewayFailureKind? failureKind;
+
+  /// The activation stood but the bio that followed it did not save.
+  final bool bioSaveFailed;
 
   String? get loopId => resource?.loopId;
 
@@ -58,7 +70,8 @@ final class LoopIdSetupState {
       resource != null &&
       !isBusy &&
       phase != LoopIdSetupPhase.activated &&
-      (alias?.trim().isNotEmpty ?? false);
+      (alias?.trim().isNotEmpty ?? false) &&
+      (bio == null || bio!.runes.length <= profileMaximumBioCodePoints);
 
   LoopIdSetupState copyWith({
     LoopIdSetupPhase? phase,
@@ -68,10 +81,13 @@ final class LoopIdSetupState {
     bool clearAlias = false,
     String? avatarRef,
     bool clearAvatarRef = false,
+    String? bio,
+    bool clearBio = false,
     List<ProfileInterest>? interests,
     bool? pushNotificationsRequested,
     ProfileGatewayFailureKind? failureKind,
     bool clearFailure = false,
+    bool? bioSaveFailed,
   }) {
     return LoopIdSetupState(
       phase: phase ?? this.phase,
@@ -79,10 +95,12 @@ final class LoopIdSetupState {
       resource: resource ?? this.resource,
       alias: clearAlias ? null : (alias ?? this.alias),
       avatarRef: clearAvatarRef ? null : (avatarRef ?? this.avatarRef),
+      bio: clearBio ? null : (bio ?? this.bio),
       interests: interests ?? this.interests,
       pushNotificationsRequested:
           pushNotificationsRequested ?? this.pushNotificationsRequested,
       failureKind: clearFailure ? null : (failureKind ?? this.failureKind),
+      bioSaveFailed: bioSaveFailed ?? this.bioSaveFailed,
     );
   }
 
@@ -95,6 +113,8 @@ final class LoopIdSetupState {
           other.resource == resource &&
           other.alias == alias &&
           other.avatarRef == avatarRef &&
+          other.bio == bio &&
+          other.bioSaveFailed == bioSaveFailed &&
           listEquals(other.interests, interests) &&
           other.pushNotificationsRequested == pushNotificationsRequested &&
           other.failureKind == failureKind;
@@ -106,6 +126,8 @@ final class LoopIdSetupState {
     resource,
     alias,
     avatarRef,
+    bio,
+    bioSaveFailed,
     Object.hashAll(interests),
     pushNotificationsRequested,
     failureKind,
@@ -171,9 +193,7 @@ final class LoopIdSetupController extends Notifier<LoopIdSetupState> {
         avatarRef:
             profileSubmittableAvatarRef(loaded.values.avatarRef) ??
             state.avatarRef,
-        interests: loaded.values.interests.isEmpty
-            ? state.interests
-            : loaded.values.interests,
+        bio: loaded.values.bio ?? state.bio,
         clearFailure: true,
       );
     } on ProfileGatewayException catch (error) {
@@ -202,6 +222,18 @@ final class LoopIdSetupController extends Notifier<LoopIdSetupState> {
     state = state.copyWith(
       avatarRef: submittable,
       clearAvatarRef: avatarRef == null,
+      clearFailure: true,
+      phase: state.phase == LoopIdSetupPhase.failure
+          ? LoopIdSetupPhase.ready
+          : state.phase,
+    );
+  }
+
+  void editBio(String? bio) {
+    final value = bio?.trim();
+    state = state.copyWith(
+      bio: value == null || value.isEmpty ? null : value,
+      clearBio: value == null || value.isEmpty,
       clearFailure: true,
       phase: state.phase == LoopIdSetupPhase.failure
           ? LoopIdSetupPhase.ready
@@ -264,11 +296,38 @@ final class LoopIdSetupController extends Notifier<LoopIdSetupState> {
         _publishFailure(ProfileGatewayFailureKind.invalidData);
         return;
       }
+      // Activation carries no bio. A bio typed on the page is written with
+      // one profile replace against the version activation just returned; a
+      // failure there does not undo the activation, and the page says so.
+      var resource = activated;
+      var bioSaveFailed = false;
+      final bio = state.bio;
+      if (bio != null && bio != activated.values.bio) {
+        try {
+          resource = ProfileResource.copyOf(
+            await ref
+                .read(profileGatewayProvider)
+                .replace(
+                  expectedVersion: activated.version,
+                  values: ProfileValues(
+                    alias: activated.values.alias,
+                    avatarRef: activated.values.avatarRef,
+                    bio: bio,
+                    interests: activated.values.interests,
+                  ),
+                ),
+          );
+        } catch (_) {
+          bioSaveFailed = true;
+        }
+        if (!_isCurrent(generation)) return;
+      }
       state = state.copyWith(
         phase: LoopIdSetupPhase.activated,
-        resource: activated,
-        alias: activated.values.alias ?? alias,
-        interests: activated.values.interests,
+        resource: resource,
+        alias: resource.values.alias ?? alias,
+        interests: resource.values.interests,
+        bioSaveFailed: bioSaveFailed,
         clearFailure: true,
       );
     } on ProfileGatewayException catch (error) {

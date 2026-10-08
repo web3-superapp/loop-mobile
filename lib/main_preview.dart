@@ -1,6 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
+import 'package:loop_mobile/features/account/onboarding_communities.dart';
+import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
+import 'package:loop_mobile/integrations/social/memory_public_profiles.dart';
 import 'package:loop_mobile/integrations/communication/memory_live_voice_rooms.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
@@ -47,6 +50,7 @@ import 'package:loop_mobile/integrations/sharing/system_wallet_activity_export_s
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
+  final previewCommunities = MemoryCommunityGateway();
   runApp(
     ProviderScope(
       overrides: [
@@ -73,7 +77,16 @@ Future<void> main() async {
         friendGatewayProvider.overrideWithValue(MemoryFriendGateway()),
         // Labelled memory-only S3 adapters. Every surface backed by one of
         // these renders the visible 演示数据 notice.
-        communityGatewayProvider.overrideWithValue(MemoryCommunityGateway()),
+        communityGatewayProvider.overrideWithValue(previewCommunities),
+        // S109a: another account's page and the onboarding recommendation,
+        // both labelled 演示数据. Upload and channel mute stay unavailable:
+        // there is no server to keep a picture and no Stream to mute.
+        publicProfileGatewayProvider.overrideWithValue(
+          MemoryPublicProfileGateway(),
+        ),
+        recommendedCommunitiesGatewayProvider.overrideWithValue(
+          MemoryRecommendedCommunitiesGateway(previewCommunities),
+        ),
         socialGatewayProvider.overrideWithValue(MemorySocialGateway()),
         searchGatewayProvider.overrideWithValue(const MemorySearchGateway()),
         chatV2GatewayProvider.overrideWithValue(MemoryChatV2Gateway()),

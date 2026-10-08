@@ -73,6 +73,10 @@ import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
+import 'package:loop_mobile/features/account/onboarding_communities.dart';
+import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
@@ -525,6 +529,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     );
   }
 
+  /// A chat avatar opens that account's profile page (decision 0112).
+  void _openProfileFromChat(String publicProfileId) {
+    unawaited(router.push<void>(userProfileLocation(publicProfileId)));
+  }
+
   /// Decision 0104: a profile link opened before the account landed.
   ///
   /// The landing itself is unchanged — a signed-in account arrives on
@@ -538,7 +547,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     final loopId = inbox.take();
     final roomCommunityId = inbox.takeRoom();
     final target = loopId != null
-        ? loopIdSearchLocation(loopId)
+        ? userProfileLoopIdLocation(loopId)
         : voiceRoomLinkLocation(roomCommunityId!);
     scheduleMicrotask(() {
       if (mounted) unawaited(router.push<void>(target));
@@ -561,6 +570,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   @override
   Widget build(BuildContext context) {
     final streamSession = ref.watch(streamChatSdkSessionProvider);
+    final mediaResolver = ref.watch(loopMediaUrlResolverProvider);
     final reduceMotion = ref.watch(
       loopDisplayPreferencesProvider.select(
         (preferences) => preferences.reduceMotion,
@@ -642,6 +652,16 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         // lock closed would print a line of the App over its own cover. It
         // is drawn over the App rather than replacing it, so unlocking
         // returns the owner to the page they were on.
+        // Uploaded pictures resolve against this build's backend, and a
+        // chat avatar opens the profile it carries (decision 0112).
+        // Both are read by plain builders with no `ref` of their own.
+        content = LoopMediaScope(
+          resolver: mediaResolver,
+          child: LoopChatAvatarTapScope(
+            onOpenProfile: _openProfileFromChat,
+            child: content,
+          ),
+        );
         return LoopPageRecoveryScope(
           retry: metaObserver.retryObservation,
           child: LoopAppLockGate(child: LoopToastHost(child: content)),
@@ -685,12 +705,11 @@ GoRouter _buildRouter(
       onNavigation?.call();
       final session = readSession();
       final location = state.matchedLocation;
-      // Decision 0104: `/u/{loopId}` is a profile link, not a page. It opens
-      // the search page (manifest `search`, where a friend is added) with the
-      // ID in its field; no route is added for it. A link that arrives before
-      // the account has landed is kept: the account still lands on Community,
-      // and the search page is pushed over it from there
-      // (`_deliverHeldProfileLink`).
+      // Decision 0104, amended by 0112: `/u/{loopId}` is a profile link, not
+      // a page. It opens `user-profile` by LOOP ID; no route is added for the
+      // link itself. A link that arrives before the account has landed is
+      // kept: the account still lands on 聊天, and the profile is pushed over
+      // it from there (`_deliverHeldProfileLink`).
       final linkedLoopId = loopIdFromLinkPath(state.uri.path);
       if (linkedLoopId != null) profileLinks.hold(linkedLoopId);
       // Decision 0105 · 4: `/c/{communityId}/room` is a room link, held and
@@ -730,7 +749,8 @@ GoRouter _buildRouter(
       }
       if (linkedLoopId != null) {
         profileLinks.take();
-        return loopIdSearchLocation(linkedLoopId);
+        // Decision 0112: a profile link opens the profile itself.
+        return userProfileLoopIdLocation(linkedLoopId);
       }
       if (linkedRoom != null) {
         profileLinks.takeRoom();
@@ -796,10 +816,38 @@ GoRouter _buildRouter(
                 unawaited(
                   ref.read(loopOnboardingSequenceProvider.notifier).complete(),
                 );
-                context.go(LoopRouteManifest.defaultPath);
+                // Decision 0112: one page of recommended communities comes
+                // between activation and 聊天.
+                context.go(LoopRouteManifest.pathFor('onboarding-communities'));
               },
             );
           },
+        ),
+      ),
+      GoRoute(
+        path: '/auth/communities',
+        builder: (context, state) => OnboardingCommunitiesScreen(
+          onDone: () => context.go(LoopRouteManifest.defaultPath),
+        ),
+      ),
+      GoRoute(
+        path: '/profile/user',
+        builder: (context, state) => UserProfileScreen(
+          key: ValueKey<String>('user-profile-${state.uri.query}'),
+          target: userProfileTargetFromQuery(state.uri.queryParameters),
+          onBack: () => _popOrHome(context),
+          // The viewer's own account is 我, never this page.
+          onOpenSelf: () => context.pushReplacement('/profile'),
+          onOpenDirectMessage: (profile) => context.push(
+            '/chat/dm',
+            extra: DirectMessageTarget(
+              publicProfileId: profile.publicProfileId!,
+              identity: profile,
+            ),
+          ),
+          onOpenFriendRequests: () => context.push('/chat/requests'),
+          onOpenToken: (assetId) =>
+              context.push(MarketAssetRoute.token(assetId)),
         ),
       ),
       ShellRoute(
@@ -957,6 +1005,9 @@ GoRouter _buildRouter(
           ),
           onOpenDirectMessage: (identity) =>
               _openDirectMessageFromProfile(context, identity),
+          // Decision 0112: a person opens their profile page.
+          onOpenProfile: (publicProfileId) =>
+              context.push(userProfileLocation(publicProfileId)),
           // An `assetDetail` result carries the registry's own CAIP id, and
           // the token page is the one route that takes one.
           onOpenAsset: (assetId) =>
@@ -1004,6 +1055,8 @@ GoRouter _buildRouter(
           onBack: () => _popOrHome(context),
           onOpenDirectMessage: (identity) =>
               _openDirectMessageFromProfile(context, identity),
+          onOpenProfile: (publicProfileId) =>
+              context.push(userProfileLocation(publicProfileId)),
         ),
       ),
       GoRoute(

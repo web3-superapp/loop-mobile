@@ -6,6 +6,8 @@ import 'package:loop_mobile/integrations/communication/stream_chat_appearance.da
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
+import 'support/legacy_chat_identity.dart';
+
 /// Real-device report 2026-09-19 · F5.
 ///
 /// LOOP publishes no profile facts to Stream, so every account arrives with an
@@ -96,7 +98,8 @@ StreamComponentBuilders _builders() => StreamComponentBuilders(
 );
 
 Future<void> _pump(WidgetTester tester, _Harness harness) async {
-  await tester.pumpWidget(
+  await pumpWithLegacyChatIdentity(
+    tester,
     MaterialApp(
       theme: LoopTheme.dark.copyWith(
         extensions: <ThemeExtension<Object?>>[

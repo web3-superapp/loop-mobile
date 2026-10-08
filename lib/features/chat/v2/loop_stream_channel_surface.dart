@@ -587,6 +587,10 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
       channel: StreamChannel.of(context).channel,
       directPeerLabel: LoopDirectPeerScope.maybeOf(context),
       currentUserId: StreamChat.of(context).currentUser?.id,
+      realIdentity: loopChannelUsesRealIdentity(
+        context,
+        StreamChannel.of(context).channel.cid,
+      ),
     );
   }
 

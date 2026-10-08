@@ -32,6 +32,7 @@ class GlobalSearchScreen extends ConsumerStatefulWidget {
     this.onOpenCommunity,
     this.onOpenDirectMessage,
     this.onOpenAsset,
+    this.onOpenProfile,
   });
 
   final String? initialQuery;
@@ -47,6 +48,10 @@ class GlobalSearchScreen extends ConsumerStatefulWidget {
 
   /// Opens the token page for an `assetDetail` result, by `assetId`.
   final ValueChanged<String>? onOpenAsset;
+
+  /// Opens `user-profile` for a `publicProfile` result, by its `stableId`
+  /// (decision 0112). Without it the result opens the shared sheet.
+  final ValueChanged<String>? onOpenProfile;
 
   @override
   ConsumerState<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
@@ -75,6 +80,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       // the row's symbol: two contracts may share a ticker.
       case SearchAssetDestination(:final assetId):
         widget.onOpenAsset?.call(assetId);
+      case SearchPublicProfileDestination() when widget.onOpenProfile != null:
+        widget.onOpenProfile!(result.stableId);
       case SearchPublicProfileDestination():
         unawaited(
           showPublicProfileSheet<Object>(

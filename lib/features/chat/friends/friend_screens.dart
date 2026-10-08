@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/chat/friends/friend_controllers.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
@@ -577,7 +578,9 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
                 : () => context.push(
                     '/chat/channel/${Uri.encodeComponent(group.receipt!.streamCid!)}',
                   ),
-            onSetAlias: group.receipt!.groupId == null
+            onSetAlias:
+                group.receipt!.groupId == null ||
+                    !ref.watch(loopFeatureSwitchesProvider).groupAliasVisible
                 ? null
                 : () => context.push(
                     '/chat/groups/${group.receipt!.groupId}/alias',

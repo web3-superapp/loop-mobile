@@ -1,10 +1,12 @@
-/// The 97-route product manifest.
+/// The 99-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
 /// 2026-09-01 from the cliview.org `loop-v2.html` build (SHA-256
 /// `bdbe1832…`); decision 0110 (2026-10-08) added the four v3 tabs `chat`,
-/// `square`, `meme` and `intel` and re-froze the manifest. `test/route_manifest_test.dart`
+/// `square`, `meme` and `intel` and re-froze the manifest; decision 0112
+/// (S109a, same day) added `user-profile` and `onboarding-communities`.
+/// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
 ///
@@ -106,7 +108,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      'd7b845af877122c9ef08a6bd7a37b4672e46d25581c42acb9fd64f9b29fecafb';
+      '6b6a3017f473697082b5d3b3efaf0f2a259959636511468f147cc7e1daee5f97';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -228,7 +230,7 @@ abstract final class LoopRouteManifest {
   ];
 
   static const List<LoopRouteEntry> entries = <LoopRouteEntry>[
-    // 0-global-account · 全局与账户 (10)
+    // 0-global-account · 全局与账户 (11)
     LoopRouteEntry(
       slug: 'splash',
       path: '/splash',
@@ -318,6 +320,17 @@ abstract final class LoopRouteManifest {
       title: '地区限制',
       prototypeOrder: 9,
       step: 1,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S109a (decision 0112): the one page after registration — recommended
+    // communities, five ticked, every joined chat muted.
+    LoopRouteEntry(
+      slug: 'onboarding-communities',
+      path: '/auth/communities',
+      module: LoopRouteModule.globalAccount,
+      title: '推荐社区',
+      prototypeOrder: 105,
+      step: 2,
       status: LoopRouteStatus.implemented,
     ),
     // 2-community · Community (18)
@@ -919,7 +932,7 @@ abstract final class LoopRouteManifest {
       step: 5,
       status: LoopRouteStatus.implemented,
     ),
-    // 7-profile · Profile / LOOP ID (14)
+    // 7-profile · Profile / LOOP ID (15)
     LoopRouteEntry(
       slug: 'profile',
       path: '/profile',
@@ -1044,6 +1057,17 @@ abstract final class LoopRouteManifest {
       title: '帮助与客服',
       prototypeOrder: 81,
       step: 8,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S109a (decision 0112): another account's profile — `?id=` or, from a
+    // `/u/{loopId}` link, `?loopId=`.
+    LoopRouteEntry(
+      slug: 'user-profile',
+      path: '/profile/user',
+      module: LoopRouteModule.profile,
+      title: '用户资料',
+      prototypeOrder: 104,
+      step: 3,
       status: LoopRouteStatus.implemented,
     ),
     // 8-system · 系统态与组件 (8)

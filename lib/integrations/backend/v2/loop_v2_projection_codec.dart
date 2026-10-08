@@ -17,8 +17,10 @@ abstract final class LoopV2ProjectionCodec {
   static final RegExp avatarRefPattern = RegExp(
     r'^avatar:[A-Za-z0-9][A-Za-z0-9._/-]{0,126}$',
   );
+
+  /// A preset community logo, or (S107 §1) a logo the community uploaded.
   static final RegExp communityLogoPattern = RegExp(
-    r'^avatar:preset/community-(0[1-9]|1[0-2])$',
+    r'^(?:avatar:preset/community-(0[1-9]|1[0-2])|logo:media/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$',
   );
   static final RegExp slugPattern = RegExp(r'^[a-z0-9-]{3,32}$');
   static final RegExp boundAssetKeyPattern = RegExp(

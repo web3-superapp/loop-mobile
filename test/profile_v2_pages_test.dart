@@ -151,8 +151,9 @@ void main() {
         return tester.widget<LoopRecordRow>(row).subtitle;
       }
 
-      // The privacy gateway in this harness stores 匿名模式 on.
-      expect(await subtitle('profile-open-privacy'), '匿名模式已开启');
+      // S107 §4: the row states the 公开持仓与交易 switch (the 匿名模式 line
+      // left with its own switch). This harness keeps both facets private.
+      expect(await subtitle('profile-open-privacy'), '持仓与交易仅自己可见');
       expect(await subtitle('profile-open-connections'), '关注 24 · 粉丝 108');
       // The wallet directory and the security posture were not read, so
       // those rows say nothing rather than 「读不到」.
@@ -396,12 +397,9 @@ void main() {
       expect(gateway.savedExpectedVersion, 1);
     });
 
-    testWidgets('the tags are a chip flow, and the hero scrolls with them', (
-      tester,
-    ) async {
-      // Device walkthrough 2026-09-23 · h04/h05: each tag was a full-width
-      // button on its own line, and the hero held a third of the screen
-      // while the fields scrolled underneath it.
+    testWidgets('a title, three groups and a pinned save', (tester) async {
+      // S107 §4 / docs/09 §6.2 #7: no hero repeating the alias, no interest
+      // tracks, and the save pinned under the scroll instead of after it.
       await _pump(
         tester,
         'profile-edit',
@@ -410,29 +408,21 @@ void main() {
 
       final page = tester.widget<LoopFocusPage>(find.byType(LoopFocusPage));
       expect(page.folio, isNull);
-      // The hero is still on the page — as the body's first row, inside the
-      // scroll view the prototype puts it in.
-      final hero = find.byType(LoopFolioPrimary);
-      expect(hero, findsOneWidget);
-      expect(
-        find.ancestor(of: hero, matching: find.byType(SingleChildScrollView)),
-        findsWidgets,
-      );
-
-      // Every interest chip measures its own label; none of them fills the
-      // page width, and each still meets the 44px touch target.
-      final width = tester.getSize(find.byType(LoopFocusPage)).width;
+      expect(page.actionsFollowBody, isFalse);
+      expect(find.byType(LoopFolioPrimary), findsNothing);
       for (final interest in ProfileInterest.values) {
-        final size = tester.getSize(
-          find.byKey(ValueKey<String>('interest-${interest.wireValue}')),
-        );
-        expect(size.width, lessThan(width / 2), reason: interest.wireValue);
         expect(
-          size.height,
-          greaterThanOrEqualTo(44),
-          reason: interest.wireValue,
+          find.byKey(ValueKey<String>('interest-${interest.wireValue}')),
+          findsNothing,
         );
       }
+      for (final label in <String>['用户名', '简介', 'LOOP ID', '公开范围']) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      expect(
+        find.byKey(const ValueKey<String>('profile-edit-copy-loop-id')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a rejected alias is shown as a failure, not a save', (
@@ -563,23 +553,32 @@ void main() {
         find.byKey(const ValueKey<String>('profile-avatar-picker')),
         findsOneWidget,
       );
-      expect(find.textContaining('自定义头像上传暂不可用'), findsOneWidget);
-      expect(find.textContaining('上传照片'), findsNothing);
+      // No upload transport in this harness: the button is shown, disabled,
+      // and the page says why.
+      expect(
+        tester
+            .widget<LoopButton>(
+              find.byKey(const ValueKey<String>('loop-avatar-upload')),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('loop-avatar-upload-unavailable')),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('an unreadable catalog keeps the current avatar', (
-      tester,
-    ) async {
+    testWidgets('no preset list is offered any more', (tester) async {
       await _pump(
         tester,
         'profile-edit',
         gateway: _Gateway(resource: active()),
-        avatars: _AvatarCatalog(fails: true),
       );
 
       expect(
-        find.byKey(const ValueKey<String>('profile-avatar-unavailable')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('profile-avatar-change')),
+        findsNothing,
       );
       expect(
         find.byKey(
@@ -753,15 +752,10 @@ final class _Gateway implements ProfileGateway {
 }
 
 final class _AvatarCatalog implements AvatarCatalogGateway {
-  _AvatarCatalog({this.fails = false});
-
-  final bool fails;
+  _AvatarCatalog();
 
   @override
   Future<List<AvatarPreset>> load() async {
-    if (fails) {
-      throw const AvatarCatalogException(AvatarCatalogFailureKind.unavailable);
-    }
     return const <AvatarPreset>[
       AvatarPreset(
         avatarRef: 'avatar:preset/people-01',

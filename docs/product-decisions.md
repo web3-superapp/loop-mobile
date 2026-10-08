@@ -15,8 +15,8 @@ This document applies to the Flutter source at the repository root. Material und
   keep their routes and pages as ordinary child pages. Decision 0048's
   Community, Mining, Launch, Market and Wallet shell is history.
 - `/home` and `/launchpad` are compatibility redirects to `/chat` and
-  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (97
-  routes since decision 0110, mirrored by
+  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (99
+  routes since decision 0112, mirrored by
   `lib/core/navigation/route_manifest.dart`) the only route inventory; every
   unimplemented slug mounts a truthful pending surface and every retired
   location is logged and returned to Chat. The former
@@ -266,3 +266,4 @@ Product priority and current delivery are separate:
 - 0095 · 加载体验：读控制器离开页面后保留上次答复 5 分钟、回来先画再后台重读；钱包/社区/行情/Launch 四个首屏在冷启动时可先画 ≤10 分钟的本机快照（线上原文经同一解码器重解，顶部标「数据来自 N 秒前，正在更新」，登出/换账号清空，余额快照不参与签名复核）；加载相用与真实行等高的骨架，内容 180 ms 淡入；钱包页目录一到就画动作与资产骨架，不再等全部；刷新失败保留内容并给失败条。
 - 0096 · motion batch 2a: `launch-detail` 发射轨道 becomes a horizontal accordion (weights 3:1, 280 ms, detail from 40 %) with the round in progress open and the vertical list as the large-type / narrow-screen fallback; the five-tab bar magnifies under a press-and-slide (1.45 / 1.15 / 1.0, Gaussian in cells, hit areas unchanged, lift selects, tap unchanged); the token fact tray shows the pair line, at most eight two-column fact cells with risk-class first, 「更多 N 项 › 简介」 and one provenance line, over an opaque quote panel as wide as the tray.
 - 0097 · 发射轨道默认展开「当前条」（进行中轮次 / 全部结束 → END / 否则下一轮 / 无轮次不展开）；手风琴 detail 宽度扣掉 1 dp 边框；`launch-detail` 读取中标题为同高骨架、caption「正在读取项目资料与链上状态」；Launch 首屏按目录里是否有链上读数给 `ON-CHAIN` 与「链上状态读自 BSC 测试网/主网」；launch evidence confirmed 时 baseline-pending 读作「已毕业名单/参与人数还没有开放读取」；发射中/已结束分段行副标题用链上 saleState。
+- 0112 · S109a 真实身份进聊天：社区群（`communityChatRealIdentity`）、小群（`!groupAliasVisible`）、私聊显示 Stream 用户名与头像，合并长图同规则；新路由 `user-profile`（`/profile/user?id=|loopId=`，`/u/{loopId}` 深链改指它，持仓/交易/社区三 Tab，`available`/`hidden`/`unavailable` + `reasonCode`）与 `onboarding-communities`（`/auth/communities`，激活后一页推荐社区，join + Stream 免打扰，可跳过），清单 99；`avatar:media/{id}` → `{baseUrl}/v2/media/{id}.webp`，`image_picker` 选图 + 方形裁剪上传；注册去预设头像网格与兴趣多选；隐私页「公开持仓与交易」单开关同写 `totalAssets`/`tradeHistory`，「匿名模式」开关隐藏（`anonymousModeVisible`）。与 S107 契约的偏离见 `docs/decisions/0112-*`。

@@ -16,14 +16,23 @@ final RegExp _profileAvatarReferencePattern = RegExp(
 /// Server-generated, immutable, non-enumerable public identifier.
 final RegExp profileLoopIdPattern = RegExp(r'^LOOP-[0-9A-HJKMNP-TV-Z]{8}$');
 
-/// The only avatar references a V2 write accepts.
+/// The preset avatar references a V2 write accepts.
 final RegExp profilePresetAvatarReferencePattern = RegExp(
   r'^avatar:preset/(?:people-(?:0[1-9]|1[0-2])|monogram)$',
 );
 
-/// True for a reference the V2 write contract accepts.
+/// An uploaded avatar (S107 §1): `avatar:media/{uuid}`. The server checks
+/// that the account uploaded it itself.
+final RegExp profileMediaAvatarReferencePattern = RegExp(
+  r'^avatar:media/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
+
+/// True for a reference the V2 write contract accepts: a preset, the
+/// monogram, or an uploaded picture.
 bool isProfilePresetAvatarRef(String? value) =>
-    value != null && profilePresetAvatarReferencePattern.hasMatch(value);
+    value != null &&
+    (profilePresetAvatarReferencePattern.hasMatch(value) ||
+        profileMediaAvatarReferencePattern.hasMatch(value));
 
 /// Converges a stored avatar reference onto a submittable value.
 ///

@@ -15,6 +15,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/loop_ground_probe.dart';
+import 'support/legacy_chat_identity.dart';
 
 void main() {
   // `stream_chat_appearance.dart` is a probe blind spot in
@@ -320,7 +321,8 @@ Future<void> _pumpMessage(
   StreamMessageLayoutData layout = const StreamMessageLayoutData(),
   EdgeInsetsGeometry? padding,
 }) async {
-  await tester.pumpWidget(
+  await pumpWithLegacyChatIdentity(
+    tester,
     MaterialApp(
       // The ground the chat page actually stands on: `LoopTheme.dark` with the
       // Stream extension injected above it, exactly as `lib/app.dart` does.
