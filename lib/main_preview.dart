@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
+import 'package:loop_mobile/integrations/device/mobile_scanner_qr_scanner.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/features/account/onboarding_communities.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
@@ -90,6 +92,9 @@ Future<void> main() async {
         socialGatewayProvider.overrideWithValue(MemorySocialGateway()),
         searchGatewayProvider.overrideWithValue(const MemorySearchGateway()),
         chatV2GatewayProvider.overrideWithValue(MemoryChatV2Gateway()),
+        // The camera decodes on device and reaches no service, so the
+        // Preview scans for real; the pages a code opens are the Preview's.
+        loopQrScannerProvider.overrideWithValue(MobileScannerQrScanner()),
         voiceRoomGatewayProvider.overrideWithValue(MemoryVoiceRoomGateway()),
         liveVoiceRoomGatewayProvider.overrideWithValue(
           MemoryLiveVoiceRoomGateway(),

@@ -257,6 +257,7 @@ final class CommunitySummary {
     required this.configVersion,
     this.miningPower,
     this.activity,
+    this.boundAsset,
   });
 
   final String communityId;
@@ -282,9 +283,38 @@ final class CommunitySummary {
   /// carried only by a discover page ordered by it.
   final CommunityActivityFact? activity;
 
+  /// What the server resolved [boundAssetKey] to (S108 §1.3, decision 0113):
+  /// symbol, name and whether a registered pool exists. `null` when the
+  /// community binds nothing, and also when the server did not send the block
+  /// — an older API answers without it, and absence then says nothing about
+  /// the pool.
+  final CommunityBoundAsset? boundAsset;
+
   bool get isVerified => verificationStatus == CommunityVerification.verified;
 
   bool get hasBoundAsset => boundAssetKey != null;
+}
+
+/// The bound asset as the community resource projects it (`boundAsset`).
+///
+/// It is the registry's own row, read by the server; the client derives no
+/// price, supply or holder fact from it. [hasRegisteredPool] is what decides
+/// whether 群友买入 can ever appear in the community's chat.
+@immutable
+final class CommunityBoundAsset {
+  const CommunityBoundAsset({
+    required this.assetId,
+    required this.symbol,
+    required this.name,
+    required this.logoUrl,
+    required this.hasRegisteredPool,
+  });
+
+  final String assetId;
+  final String symbol;
+  final String? name;
+  final String? logoUrl;
+  final bool hasRegisteredPool;
 }
 
 /// The owner's own view of a community application's review state.
@@ -421,6 +451,15 @@ final class CommunityViewer {
       membership?.role == CommunityRole.admin;
 
   bool get canGovern => canInviteAdmin || canMute || canBan;
+
+  /// Owner and admin open the manage center (decision 0113). The role is the
+  /// server's viewer projection; every write behind the center is still the
+  /// server's to admit. A banned membership manages nothing.
+  bool get mayManage =>
+      membership != null &&
+      membership!.status != CommunityMemberStatus.banned &&
+      (membership!.role == CommunityRole.owner ||
+          membership!.role == CommunityRole.admin);
 }
 
 /// Whether the official community channel can be opened right now.
@@ -906,7 +945,12 @@ final class CommunityMemberDirectory {
   final String? nextCursor;
 }
 
-/// Partial owner-only edit. `slug` and `verificationStatus` are not editable.
+/// Partial profile edit. `slug` and `verificationStatus` are not editable.
+///
+/// Owner and admin may both edit the profile (S109b-api, decision 0113); the
+/// bound asset is the owner's alone, so the sheet an admin opens never fills
+/// [boundAssetKey] or [clearBoundAssetKey], and the server refuses an admin
+/// who sends either (`OWNER_ONLY_FIELD`).
 @immutable
 final class CommunityProfileEdit {
   const CommunityProfileEdit({
@@ -915,6 +959,8 @@ final class CommunityProfileEdit {
     this.clearDescription = false,
     this.logoRef,
     this.clearLogoRef = false,
+    this.boundAssetKey,
+    this.clearBoundAssetKey = false,
   });
 
   final String? name;
@@ -923,12 +969,20 @@ final class CommunityProfileEdit {
   final String? logoRef;
   final bool clearLogoRef;
 
+  /// `eip155:{chainId}:0x…`, lower-cased. The server checks it against the
+  /// asset registry (422 `ASSET_NOT_REGISTERED`).
+  final String? boundAssetKey;
+  final bool clearBoundAssetKey;
+
+  bool get touchesBoundAsset => boundAssetKey != null || clearBoundAssetKey;
+
   bool get isEmpty =>
       name == null &&
       description == null &&
       !clearDescription &&
       logoRef == null &&
-      !clearLogoRef;
+      !clearLogoRef &&
+      !touchesBoundAsset;
 }
 
 @immutable

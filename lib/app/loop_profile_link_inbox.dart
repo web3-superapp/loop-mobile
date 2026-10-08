@@ -10,6 +10,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final class LoopProfileLinkInbox {
   String? _loopId;
   String? _roomCommunityId;
+  String? _communityId;
+
+  /// The community whose card link (`/c/{id}`, decision 0113) is waiting to
+  /// be opened, if any.
+  String? get pendingCommunity => _communityId;
+
+  void holdCommunity(String communityId) => _communityId = communityId;
+
+  /// Returns the waiting community link's id and forgets it.
+  String? takeCommunity() {
+    final id = _communityId;
+    _communityId = null;
+    return id;
+  }
 
   /// The community whose room link (`/c/{id}/room`, decision 0105) is
   /// waiting to be opened, if any.

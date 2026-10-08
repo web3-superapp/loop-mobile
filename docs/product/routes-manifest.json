@@ -3,10 +3,10 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "6b6a3017f473697082b5d3b3efaf0f2a259959636511468f147cc7e1daee5f97",
+  "sha256": "f6269762299ff2e7c6370511fe9808dcdac194ca77706cd84e393c82c9fc8abe",
   "defaultRoute": "chat",
   "tabs": ["chat", "square", "meme", "intel", "wallet"],
-  "count": 99,
+  "count": 101,
   "modules": {
     "0-global-account": [
       {
@@ -155,6 +155,16 @@
         "slug": "square",
         "tab": true,
         "prototypeOrder": 101
+      },
+      {
+        "slug": "scan",
+        "tab": false,
+        "prototypeOrder": 106
+      },
+      {
+        "slug": "community-manage",
+        "tab": false,
+        "prototypeOrder": 107
       }
     ],
     "3-market": [

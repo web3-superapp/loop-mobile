@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_controller.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
+import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -259,6 +260,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            // Decision 0113: this account's QR card, the same one 我 shows.
+            LoopButton(
+              key: const ValueKey<String>('user-profile-share-card'),
+              label: '分享名片',
+              block: true,
+              onPressed: () => Navigator.of(sheetContext).pop('share'),
+            ),
+            const SizedBox(height: 8),
             if (record.relationship.friendship ==
                 ProfileFriendship.friends) ...<Widget>[
               LoopButton(
@@ -305,6 +314,15 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
     if (choice == null || !mounted) return;
     switch (choice) {
+      case 'share':
+        await showLoopQrCardSheet(
+          context,
+          LoopUserQrCard(
+            loopId: record.loopId,
+            displayName: record.displayName,
+            avatarRef: record.avatarRef,
+          ),
+        );
       case 'unfriend':
         final confirmed = await confirmCommunityAction(
           context,

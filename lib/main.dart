@@ -11,6 +11,10 @@ import 'package:loop_mobile/integrations/backend/v2/media/loop_v2_media.dart';
 import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_public_profiles.dart';
 import 'package:loop_mobile/integrations/communication/stream_community_channel_muter.dart';
 import 'package:loop_mobile/integrations/device/image_picker_avatar_source.dart';
+import 'package:loop_mobile/integrations/device/mobile_scanner_qr_scanner.dart';
+import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
+import 'package:loop_mobile/features/chat/v2/group_rename.dart';
+import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_group_profile.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_live_voice_rooms.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
@@ -209,6 +213,11 @@ Future<void> main() async {
           (ref) => ref.watch(loopV2AvatarUploadGatewayProvider),
         ),
         avatarImagePickerProvider.overrideWithValue(ImagePickerAvatarSource()),
+        // S109b (decision 0113): the device QR scanner and the group rename.
+        loopQrScannerProvider.overrideWithValue(MobileScannerQrScanner()),
+        groupProfileGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2GroupProfileGatewayProvider),
+        ),
         publicProfileGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2PublicProfileGatewayProvider),
         ),

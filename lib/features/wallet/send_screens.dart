@@ -37,6 +37,7 @@ final class SendDraft {
     required this.symbol,
     this.recipientAddress,
     this.amount,
+    this.recipientPrefill,
   });
 
   final String walletId;
@@ -45,6 +46,11 @@ final class SendDraft {
 
   /// The EIP-55 checksum address the preflight returned.
   final String? recipientAddress;
+
+  /// An address the recipient field starts with, from a scanned code
+  /// (decision 0113). It is text in a field and nothing more: the reader
+  /// still asks the preflight to check it, exactly as if they had pasted it.
+  final String? recipientPrefill;
 
   /// The exact decimal string the owner typed, never a `double`.
   final String? amount;
@@ -58,7 +64,22 @@ final class SendDraft {
     symbol: symbol,
     recipientAddress: recipientAddress ?? this.recipientAddress,
     amount: amount ?? this.amount,
+    recipientPrefill: recipientPrefill,
   );
+}
+
+/// The typed state `/wallet/send` takes from the scanner (decision 0113):
+/// the address a code carried. It travels as navigation state, never in the
+/// URL, and the asset is still the reader's choice.
+@immutable
+final class SendRecipientPrefill {
+  const SendRecipientPrefill(this.address);
+
+  final String address;
+
+  /// The prefill [extra] carries, or null for any other navigation state.
+  static String? addressFrom(Object? extra) =>
+      extra is SendRecipientPrefill ? extra.address : null;
 }
 
 /// The shared gate for every money-action page: the module capability plus the
@@ -127,10 +148,18 @@ String? watchActiveMoneyWalletId(WidgetRef ref, {required bool blocked}) {
 
 /// `send` · step 1. Every row is a registry asset read at one block height.
 class SendAssetScreen extends ConsumerStatefulWidget {
-  const SendAssetScreen({super.key, this.onBack, this.onNavigate});
+  const SendAssetScreen({
+    super.key,
+    this.onBack,
+    this.onNavigate,
+    this.recipientPrefill,
+  });
 
   final VoidCallback? onBack;
   final void Function(String location, {Object? extra})? onNavigate;
+
+  /// A scanned address the next step's recipient field starts with.
+  final String? recipientPrefill;
 
   @override
   ConsumerState<SendAssetScreen> createState() => _SendAssetScreenState();
@@ -186,6 +215,15 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
         stamp: 'STEP 1',
       ),
       body: <Widget>[
+        if (widget.recipientPrefill != null)
+          LoopNotice(
+            key: const ValueKey<String>('send-recipient-prefill'),
+            icon: 'camera',
+            title: '收款地址来自扫码',
+            body:
+                '${loopTruncatedAddress(widget.recipientPrefill!)} 会填进下一步，'
+                '选好资产后仍要点「校验地址」核对。',
+          ),
         // A closed write gate used to take the whole page, leaving a centred
         // grey circle where the prototype has a primary, an asset list and a
         // mining warning (visual audit §A.10, item 4). The page keeps its
@@ -242,6 +280,7 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
                               walletId: walletId,
                               assetId: row.assetId,
                               symbol: row.symbol,
+                              recipientPrefill: widget.recipientPrefill,
                             ),
                           )
                         : null,
@@ -317,7 +356,7 @@ class SendRecipientScreen extends ConsumerStatefulWidget {
 
 class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
   late final TextEditingController _address = TextEditingController(
-    text: widget.draft.recipientAddress ?? '',
+    text: widget.draft.recipientAddress ?? widget.draft.recipientPrefill ?? '',
   );
   late final TextEditingController _amount = TextEditingController(
     text: widget.draft.amount ?? '',
@@ -551,7 +590,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
         const LoopNotice(
           key: ValueKey<String>('send-recipient-scan-unavailable'),
           icon: 'camera',
-          body: '扫码与最近联系人还没有开放，请粘贴或输入完整地址。',
+          body: '最近联系人还没有开放，请粘贴或输入完整地址；扫码请用钱包页的 Pay。',
         ),
         // An address check that never reached the server has not prepared an
         // intent, opened a wallet or submitted anything. It pauses; only a

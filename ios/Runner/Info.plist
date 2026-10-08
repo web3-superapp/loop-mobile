@@ -62,11 +62,11 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>用于在开启应用锁后验证你的身份</string>
 	<key>NSCameraUsageDescription</key>
-	<string>用于在聊天中拍照发送图片</string>
+	<string>用于在聊天中拍照发送图片，以及扫描二维码</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>用于在 Loop 语音房中发言</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>用于从相册选择图片，在聊天里发送或设置头像</string>
+	<string>用于从相册选择图片，在聊天里发送、设置头像或识别二维码</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>用于把聊天里的图片保存到你的相册</string>
 	<!-- APNs delivers a LOOP notification to a backgrounded app; without this

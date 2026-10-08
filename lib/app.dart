@@ -56,10 +56,13 @@ import 'package:loop_mobile/features/chat/v2/group_screens.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_ai_screen.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
+import 'package:loop_mobile/features/community/community_link.dart';
+import 'package:loop_mobile/features/community/community_manage_screen.dart';
 import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
+import 'package:loop_mobile/features/scan/scan_screen.dart';
 import 'package:loop_mobile/features/launch/launch_action_screens.dart';
 import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
 import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
@@ -541,14 +544,21 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   /// once it is there, so 返回 leads back to Community.
   void _deliverHeldProfileLink() {
     final inbox = ref.read(loopProfileLinkInboxProvider);
-    if (inbox.pending == null && inbox.pendingRoom == null) return;
+    if (inbox.pending == null &&
+        inbox.pendingRoom == null &&
+        inbox.pendingCommunity == null) {
+      return;
+    }
     final location = router.routerDelegate.currentConfiguration.uri.path;
     if (location != LoopRouteManifest.defaultPath) return;
     final loopId = inbox.take();
     final roomCommunityId = inbox.takeRoom();
+    final communityId = inbox.takeCommunity();
     final target = loopId != null
         ? userProfileLoopIdLocation(loopId)
-        : voiceRoomLinkLocation(roomCommunityId!);
+        : roomCommunityId != null
+        ? voiceRoomLinkLocation(roomCommunityId)
+        : communityProfileLocation(communityId!);
     scheduleMicrotask(() {
       if (mounted) unawaited(router.push<void>(target));
     });
@@ -717,6 +727,10 @@ GoRouter _buildRouter(
       // the live room over itself or says the room has ended.
       final linkedRoom = communityIdFromRoomLinkPath(state.uri.path);
       if (linkedRoom != null) profileLinks.holdRoom(linkedRoom);
+      // Decision 0113: `/c/{communityId}` is a community card link, held and
+      // delivered the same way. It opens the community's record.
+      final linkedCommunity = communityIdFromLinkPath(state.uri.path);
+      if (linkedCommunity != null) profileLinks.holdCommunity(linkedCommunity);
       // Credential pages reachable before a verified session. Everything else
       // stays behind the gate.
       const signedOutRoutes = <String>{
@@ -755,6 +769,10 @@ GoRouter _buildRouter(
       if (linkedRoom != null) {
         profileLinks.takeRoom();
         return voiceRoomLinkLocation(linkedRoom);
+      }
+      if (linkedCommunity != null) {
+        profileLinks.takeCommunity();
+        return communityProfileLocation(linkedCommunity);
       }
       return null;
     },
@@ -1082,6 +1100,24 @@ GoRouter _buildRouter(
           onBack: () => _popOrHome(context),
         ),
       ),
+      // S109b (decision 0113): the manage center and the scanner. A scanned
+      // code replaces the scanner with what it named, so 返回 from there
+      // leads back to where scanning started.
+      GoRoute(
+        path: '/community/manage',
+        builder: (context, state) => CommunityManageScreen(
+          communityId: state.uri.queryParameters['id'],
+          onBack: () => _popOrHome(context),
+        ),
+      ),
+      GoRoute(
+        path: '/scan',
+        builder: (context, state) => ScanScreen(
+          onBack: () => _popOrHome(context),
+          onOpen: (location, {extra}) =>
+              context.pushReplacement(location, extra: extra),
+        ),
+      ),
       // Manifest `networth` (legacy `/home/net-worth`, retired with Home).
       GoRoute(
         path: '/wallet/networth',
@@ -1341,8 +1377,11 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/send',
-        builder: (context, state) =>
-            SendAssetScreen(onBack: () => _popOrHome(context)),
+        builder: (context, state) => SendAssetScreen(
+          onBack: () => _popOrHome(context),
+          // Decision 0113: a scanned address rides in as typed state.
+          recipientPrefill: SendRecipientPrefill.addressFrom(state.extra),
+        ),
       ),
       // The Send draft travels as typed navigation state: an asset, a wallet
       // and the exact text the owner typed never belong in a URL.

@@ -15,8 +15,8 @@ This document applies to the Flutter source at the repository root. Material und
   keep their routes and pages as ordinary child pages. Decision 0048's
   Community, Mining, Launch, Market and Wallet shell is history.
 - `/home` and `/launchpad` are compatibility redirects to `/chat` and
-  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (99
-  routes since decision 0112, mirrored by
+  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (101
+  routes since decision 0113, mirrored by
   `lib/core/navigation/route_manifest.dart`) the only route inventory; every
   unimplemented slug mounts a truthful pending surface and every retired
   location is logged and returned to Chat. The former
@@ -267,3 +267,4 @@ Product priority and current delivery are separate:
 - 0096 · motion batch 2a: `launch-detail` 发射轨道 becomes a horizontal accordion (weights 3:1, 280 ms, detail from 40 %) with the round in progress open and the vertical list as the large-type / narrow-screen fallback; the five-tab bar magnifies under a press-and-slide (1.45 / 1.15 / 1.0, Gaussian in cells, hit areas unchanged, lift selects, tap unchanged); the token fact tray shows the pair line, at most eight two-column fact cells with risk-class first, 「更多 N 项 › 简介」 and one provenance line, over an opaque quote panel as wide as the tray.
 - 0097 · 发射轨道默认展开「当前条」（进行中轮次 / 全部结束 → END / 否则下一轮 / 无轮次不展开）；手风琴 detail 宽度扣掉 1 dp 边框；`launch-detail` 读取中标题为同高骨架、caption「正在读取项目资料与链上状态」；Launch 首屏按目录里是否有链上读数给 `ON-CHAIN` 与「链上状态读自 BSC 测试网/主网」；launch evidence confirmed 时 baseline-pending 读作「已毕业名单/参与人数还没有开放读取」；发射中/已结束分段行副标题用链上 saleState。
 - 0112 · S109a 真实身份进聊天：社区群（`communityChatRealIdentity`）、小群（`!groupAliasVisible`）、私聊显示 Stream 用户名与头像，合并长图同规则；新路由 `user-profile`（`/profile/user?id=|loopId=`，`/u/{loopId}` 深链改指它，持仓/交易/社区三 Tab，`available`/`hidden`/`unavailable` + `reasonCode`）与 `onboarding-communities`（`/auth/communities`，激活后一页推荐社区，join + Stream 免打扰，可跳过），清单 99；`avatar:media/{id}` → `{baseUrl}/v2/media/{id}.webp`，`image_picker` 选图 + 方形裁剪上传；注册去预设头像网格与兴趣多选；隐私页「公开持仓与交易」单开关同写 `totalAssets`/`tradeHistory`，「匿名模式」开关隐藏（`anonymousModeVisible`）。与 S107 契约的偏离见 `docs/decisions/0112-*`。
+- 0113 · S109b 二维码名片与海报（用户 / 社区两种，`/u/{loopId}` 与 `/c/{communityId}` 链接，海报 360×540 逻辑尺寸 ×3 导出 1080×1620 PNG，走既有系统分享出口）；入口：我的身份卡分享、`user-profile` 溢出菜单「分享名片」、社区页顶栏分享。新路由 `scan`（`/scan`，`mobile_scanner` 7.4.2，取景框 + 相册 + 手电筒；`/u/`、`LOOP-…`、`/c/`、`/c/…/room`、0x 地址 / `ethereum:0x…@56` → 对应页或发送页预填收款地址，其它显示原文 + 复制）与 `community-manage`（`/community/manage?id=`，owner / admin，资料 / 绑定代币（仅 owner）/ 成员 / 语音房 / 公告占位 / 分享 / 所有权（仅 owner）），清单 101；社区页底部「编辑社区资料」移入管理中心；`/c/{uuid}` 深链（Android 路径正则同步）；小群创建者改名 `PATCH /v2/chat/groups/{id}`，404/405/501 一律 unavailable；钱包 Pay 入口改开扫码。与契约的偏离见 `docs/decisions/0113-*`。

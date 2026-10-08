@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -11,18 +12,20 @@ import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
-import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_link.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/community/community_voice_room_open.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
@@ -311,6 +314,40 @@ class _CommunityProfileScreenState
                 ? null
                 : () => widget.onOpenMembers!(community.communityId),
           ),
+        // Decision 0113: every reader may hand the community's card on; only
+        // the owner and admins are offered the manage center, which is now
+        // where the profile is edited.
+        if (community != null)
+          LoopIconButton(
+            key: const ValueKey<String>('community-profile-share'),
+            icon: 'share',
+            label: '分享社区',
+            framed: true,
+            onPressed: () => unawaited(
+              showLoopQrCardSheet(
+                context,
+                LoopCommunityQrCard(
+                  communityId: community.communityId,
+                  name: community.name,
+                  memberCount: community.memberCount,
+                  logoRef: community.logoRef,
+                  description: community.description,
+                ),
+              ),
+            ),
+          ),
+        if (community != null && (detail?.viewer.mayManage ?? false))
+          LoopIconButton(
+            key: const ValueKey<String>('community-profile-manage'),
+            icon: 'settings',
+            label: '管理',
+            framed: true,
+            onPressed: () => unawaited(
+              context.push<void>(
+                communityManageLocation(community.communityId),
+              ),
+            ),
+          ),
       ],
       primary: _CommunityFolio(community: community),
       block: id != null && communityCapabilityBlocks(mode, capability)
@@ -440,7 +477,6 @@ class _CommunityProfileScreenState
             detail: detail,
             busy: state.busy,
             onLeave: () => _changeMembership(controller, joined: false),
-            onEditProfile: () => unawaited(_editProfile(controller, detail)),
           ),
           const SizedBox(height: 20),
         ],
@@ -508,36 +544,6 @@ class _CommunityProfileScreenState
     LoopToast.show(context, message: '已复制 ${link.label} 链接');
   }
 
-  Future<void> _editProfile(
-    CommunityProfileController controller,
-    CommunityDetail detail,
-  ) async {
-    final edit = await showCommunityProfileEditSheet(
-      context,
-      community: detail.community,
-    );
-    if (edit == null || !mounted) return;
-    final confirmed = await confirmCommunityAction(
-      context,
-      title: '提交社区资料修改？',
-      body: '短链接与验证状态不能在这里修改。',
-      confirmLabel: '提交',
-      sheetKey: 'community-edit-confirm-sheet',
-    );
-    if (!confirmed) return;
-    final failure = await controller.editProfile(edit);
-    if (!mounted) return;
-    if (failure == null) {
-      LoopToast.show(context, message: '社区资料已更新');
-      return;
-    }
-    LoopToast.show(
-      context,
-      message: communityFailureReason(failure),
-      kind: LoopToastKind.err,
-    );
-  }
-
   /// 修改资料后重新提交: the edit, and then the new review.
   ///
   /// They are two commands and they are kept two. The owner edits the profile
@@ -593,62 +599,15 @@ class _CommunityProfileScreenState
     }
   }
 
-  /// Opens a room for this community. The button exists only for a viewer the
-  /// server reports as owner or admin, but the admission is still the
-  /// server's: this states what came back and never claims a room that was
-  /// not confirmed.
-  Future<void> _createVoiceRoom(CommunityDetail detail) async {
-    final confirmed = await confirmCommunityAction(
-      context,
-      title: '开启语音房？',
-      body:
-          '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
-          '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
-      confirmLabel: '开启',
-      sheetKey: 'community-open-voice-room-sheet',
-    );
-    if (!confirmed || !mounted) return;
-    final outcome = await ref
-        .read(voiceRoomOpenControllerProvider.notifier)
-        .openRoom(detail.community.communityId);
-    if (!mounted) return;
-    final failure = outcome.failure;
-    if (failure == null) {
-      if (outcome.isOpen) {
-        LoopToast.show(context, message: '语音房已开启');
-        unawaited(
-          ref.read(communityProfileControllerProvider.notifier).reload(),
-        );
-        widget.onOpenVoiceRoom?.call(detail.community.communityId);
-        return;
-      }
-      // The room row exists and the call behind it does not, so nobody can be
-      // let in — including the host who just opened it. This is the state the
-      // review device met as a room it entered and could not hear. The page
-      // stays where it is and 「开启语音房」 stays on it: the next tap repeats
-      // the provider half of the same command, which is the one recovery
-      // there is. Asking for a second room would be refused — the room that
-      // cannot be entered is still the community's one live room.
-      LoopToast.show(
+  /// Opens a room for this community (shared with the manage center,
+  /// decision 0113).
+  Future<void> _createVoiceRoom(CommunityDetail detail) =>
+      openCommunityVoiceRoom(
         context,
-        message: voiceRoomOpenUnfinishedText(outcome.unconfirmedReason),
-        kind: LoopToastKind.warn,
+        ref,
+        detail,
+        onOpened: widget.onOpenVoiceRoom,
       );
-      return;
-    }
-    LoopToast.show(
-      context,
-      message: failure == CommunityFailureKind.resourceConflict
-          // The shared copy for this code is about a taken slug; here the
-          // conflict is a room that is already live.
-          ? '这个社区已经有进行中的语音房，没有重复创建。请刷新后进入。'
-          : communityFailureReason(failure),
-      kind: LoopToastKind.err,
-    );
-    if (failure == CommunityFailureKind.resourceConflict) {
-      unawaited(ref.read(communityProfileControllerProvider.notifier).reload());
-    }
-  }
 
   Future<void> _changeMembership(
     CommunityProfileController controller, {
@@ -1040,13 +999,11 @@ class _MembershipFooter extends StatelessWidget {
     required this.detail,
     required this.busy,
     required this.onLeave,
-    required this.onEditProfile,
   });
 
   final CommunityDetail detail;
   final bool busy;
   final VoidCallback onLeave;
-  final VoidCallback onEditProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -1076,22 +1033,19 @@ class _MembershipFooter extends StatelessWidget {
             style: LoopTypography.caption(12, color: LoopColors.text3),
           ),
         ),
-        LoopButtonPair(
-          children: <Widget>[
-            if (isOwner)
-              LoopButton(
-                key: const ValueKey<String>('community-edit-profile-action'),
-                label: '编辑社区资料',
-                onPressed: busy ? null : onEditProfile,
-              )
-            else
+        // Decision 0113: editing the profile moved to the manage center
+        // (top bar 管理). The owner has no control here — the one this line
+        // could offer is a leave the server would refuse.
+        if (!isOwner)
+          LoopButtonPair(
+            children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('community-leave-action'),
                 label: '退出社区',
                 onPressed: busy ? null : onLeave,
               ),
-          ],
-        ),
+            ],
+          ),
         if (isOwner)
           // The role the transfer actually leaves behind is Admin, which is
           // what the members page's own confirmation states.
