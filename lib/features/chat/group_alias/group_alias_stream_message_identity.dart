@@ -820,8 +820,13 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
           ? const <String>{}
           : loopGroupMessageUserIds(lastMessage),
     );
+    // A member-buy feed message names nobody (S108): the preview formatter
+    // recognises it by its sender — LOOP's feed bot — which the member
+    // projection below would replace, so it is previewed as it arrived.
     final displayMessage = lastMessage == null
         ? null
+        : loopIsMemberBuyMessage(lastMessage)
+        ? lastMessage
         : sanitizeLoopGroupMessageForDisplay(
             message: lastMessage,
             members: members,

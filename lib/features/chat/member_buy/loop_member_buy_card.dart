@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/member_buy/member_buy_event.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
@@ -31,44 +32,123 @@ final class LoopMemberBuyBuyer {
   final String? avatarRef;
 }
 
-/// The buyer from the profile route, cached for the session.
+/// What the profile route said about one buyer.
+sealed class LoopMemberBuyProfileAnswer {
+  const LoopMemberBuyProfileAnswer();
+}
+
+/// The profile exists and this reader may see it.
+final class LoopMemberBuyProfileFound extends LoopMemberBuyProfileAnswer {
+  const LoopMemberBuyProfileFound(this.buyer);
+
+  final LoopMemberBuyBuyer buyer;
+}
+
+/// `404 PROFILE_NOT_FOUND`: no such account, or one that blocked the reader —
+/// deliberately indistinguishable. The card reads 「群友」 whatever Stream
+/// knows about the account.
+final class LoopMemberBuyProfileHidden extends LoopMemberBuyProfileAnswer {
+  const LoopMemberBuyProfileHidden();
+}
+
+/// The route did not answer (offline, `503`, an unreadable body). Nothing
+/// was learned; the next card that mounts asks again.
+final class LoopMemberBuyProfileUnknown extends LoopMemberBuyProfileAnswer {
+  const LoopMemberBuyProfileUnknown();
+}
+
+/// Profile answers for member-buy cards, per account.
 ///
-/// A failure is the answer `null` — the card falls back to 「群友」 — and is
-/// cached too, so a list of fifty cards for one unreadable account asks once.
-/// Nothing is thrown, so Riverpod's automatic retry never re-asks in a loop.
-final memberBuyBuyerProvider =
-    FutureProvider.family<LoopMemberBuyBuyer?, String>((
-      ref,
-      publicProfileId,
-    ) async {
-      // A different account may get a different answer (a block reads as a
-      // 404), so the cache is per account.
-      ref.watch(loopAccountScopeProvider);
-      try {
-        final record = await ref
-            .read(publicProfileGatewayProvider)
-            .load(PublicProfileById(publicProfileId));
-        return LoopMemberBuyBuyer(
+/// Only an answer the server actually gave is kept for the session — the
+/// profile, or its `404` — because those are facts about this reader and that
+/// account (a block reads as a `404` to one reader and not to another, hence
+/// one cache per account). A transport failure, a `503` or an unreadable body
+/// is handed to the card that asked and forgotten, so the next card asks
+/// again. Concurrent cards for one buyer share one request.
+final class LoopMemberBuyProfileCache {
+  LoopMemberBuyProfileCache(this._gateway);
+
+  final PublicProfileGateway _gateway;
+  final Map<String, LoopMemberBuyProfileAnswer> _settled =
+      <String, LoopMemberBuyProfileAnswer>{};
+  final Map<String, Future<LoopMemberBuyProfileAnswer>> _inFlight =
+      <String, Future<LoopMemberBuyProfileAnswer>>{};
+
+  /// The kept answer for [publicProfileId], or `null`.
+  LoopMemberBuyProfileAnswer? settled(String publicProfileId) =>
+      _settled[publicProfileId];
+
+  Future<LoopMemberBuyProfileAnswer> load(String publicProfileId) {
+    final kept = _settled[publicProfileId];
+    if (kept != null) return Future<LoopMemberBuyProfileAnswer>.value(kept);
+    return _inFlight[publicProfileId] ??= _fetch(publicProfileId)
+        .whenComplete(() {
+          // A block body: the removed value is this very future, and
+          // returning it would make the future wait on itself.
+          _inFlight.remove(publicProfileId);
+        });
+  }
+
+  Future<LoopMemberBuyProfileAnswer> _fetch(String publicProfileId) async {
+    try {
+      final record = await _gateway.load(PublicProfileById(publicProfileId));
+      return _settled[publicProfileId] = LoopMemberBuyProfileFound(
+        LoopMemberBuyBuyer(
           name: record.displayName,
           avatarRef: record.avatarRef,
-        );
-      } catch (_) {
-        return null;
+        ),
+      );
+    } on CommunityGatewayException catch (error) {
+      if (error.kind == CommunityFailureKind.notFound) {
+        return _settled[publicProfileId] = const LoopMemberBuyProfileHidden();
       }
-    });
+      return const LoopMemberBuyProfileUnknown();
+    } catch (_) {
+      return const LoopMemberBuyProfileUnknown();
+    }
+  }
+}
+
+/// The session's [LoopMemberBuyProfileCache]; a different account gets a new
+/// one.
+final memberBuyProfileCacheProvider = Provider<LoopMemberBuyProfileCache>((
+  ref,
+) {
+  ref.watch(loopAccountScopeProvider);
+  return LoopMemberBuyProfileCache(ref.watch(publicProfileGatewayProvider));
+});
+
+/// Which Stream user carries which `publicProfileId`, per client.
+final Expando<_StreamBuyerIndex> _streamBuyerIndexes =
+    Expando<_StreamBuyerIndex>('loop-member-buy-stream-index');
+
+final class _StreamBuyerIndex {
+  /// `publicProfileId` → Stream user id, for every id already found.
+  final Map<String, String> hits = <String, String>{};
+
+  /// `publicProfileId` → how many users the client knew when a scan found
+  /// nothing. A scan is repeated only once the client has met more users.
+  final Map<String, int> misses = <String, int>{};
+}
 
 /// The buyer as the loaded Stream state already knows them, or `null`.
 ///
 /// Since S107 every activated account is a Stream user carrying its real
 /// name, image and `publicProfileId` (decision 0112). The channel's own
-/// members are read first, then every user the client has seen; a match costs
-/// no request.
+/// members are read first, then every user the client has seen. The answer is
+/// remembered per client by id, so fifty cards for one buyer scan once. It
+/// supplies a name and a picture only: whether the reader may see the buyer
+/// at all is the profile route's answer.
 @visibleForTesting
 LoopMemberBuyBuyer? loopMemberBuyBuyerFromStream(
   Channel? channel,
   String publicProfileId,
 ) {
   if (channel == null) return null;
+  final client = channel.client;
+  final index = _streamBuyerIndexes[client] ??= _StreamBuyerIndex();
+  final members = channel.state?.members ?? const <Member>[];
+
   LoopMemberBuyBuyer? from(User? user) {
     final identity = loopStreamRealIdentityOf(user);
     if (identity == null || identity.publicProfileId != publicProfileId) {
@@ -77,16 +157,51 @@ LoopMemberBuyBuyer? loopMemberBuyBuyerFromStream(
     return LoopMemberBuyBuyer(name: identity.name, imageUrl: identity.imageUrl);
   }
 
-  for (final member in channel.state?.members ?? const <Member>[]) {
-    final found = from(member.user);
-    if (found != null) return found;
+  User? byId(String userId) {
+    for (final member in members) {
+      if (member.user?.id == userId) return member.user;
+    }
+    return client.state.users[userId];
   }
-  for (final user in channel.client.state.users.values) {
+
+  final known = index.hits[publicProfileId];
+  if (known != null) {
+    final found = from(byId(known));
+    if (found != null) return found;
+    index.hits.remove(publicProfileId);
+  }
+  final population = client.state.users.length + members.length;
+  if (index.misses[publicProfileId] == population) return null;
+  for (final user in <User?>[
+    for (final member in members) member.user,
+    ...client.state.users.values,
+  ]) {
     final found = from(user);
-    if (found != null) return found;
+    if (found != null) {
+      index.hits[publicProfileId] = user!.id;
+      index.misses.remove(publicProfileId);
+      return found;
+    }
   }
+  index.misses[publicProfileId] = population;
   return null;
 }
+
+/// The buyer a card draws: Stream's name and picture when it has them, the
+/// profile's otherwise, and nobody once the profile route answered `404`.
+@visibleForTesting
+LoopMemberBuyBuyer? loopMemberBuyResolveBuyer({
+  required LoopMemberBuyBuyer? fromStream,
+  required LoopMemberBuyProfileAnswer? profile,
+}) => switch (profile) {
+  LoopMemberBuyProfileHidden() => null,
+  LoopMemberBuyProfileFound(:final buyer) => LoopMemberBuyBuyer(
+    name: fromStream?.name ?? buyer.name,
+    imageUrl: fromStream?.imageUrl,
+    avatarRef: buyer.avatarRef,
+  ),
+  LoopMemberBuyProfileUnknown() || null => fromStream,
+};
 
 /// 「群友买入」: one member of this community bought its bound token.
 ///
@@ -96,7 +211,7 @@ LoopMemberBuyBuyer? loopMemberBuyBuyerFromStream(
 /// payload carries; the name and the picture are read live from the buyer's
 /// own account. A payload LOOP cannot fully read is 「动态数据不完整」 — never a
 /// zero and never the fallback text pretending to be a message.
-class LoopMemberBuyCard extends ConsumerWidget {
+class LoopMemberBuyCard extends ConsumerStatefulWidget {
   const LoopMemberBuyCard({required this.message, super.key});
 
   final Message message;
@@ -109,19 +224,45 @@ class LoopMemberBuyCard extends ConsumerWidget {
   static const Key txKey = ValueKey<String>('loop-member-buy-tx');
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final event = LoopMemberBuyEvent.tryParse(message);
+  ConsumerState<LoopMemberBuyCard> createState() => _LoopMemberBuyCardState();
+}
+
+class _LoopMemberBuyCardState extends ConsumerState<LoopMemberBuyCard> {
+  /// What this card asked, so one card asks once per buyer and cache.
+  (LoopMemberBuyProfileCache, String)? _asked;
+  LoopMemberBuyProfileAnswer? _answer;
+
+  LoopMemberBuyProfileAnswer? _profileFor(
+    LoopMemberBuyProfileCache cache,
+    String publicProfileId,
+  ) {
+    final kept = cache.settled(publicProfileId);
+    if (kept != null) return kept;
+    final key = (cache, publicProfileId);
+    if (_asked != key) {
+      _asked = key;
+      _answer = null;
+      unawaited(
+        cache.load(publicProfileId).then((answer) {
+          if (mounted && _asked == key) setState(() => _answer = answer);
+        }),
+      );
+    }
+    return _answer;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final event = LoopMemberBuyEvent.tryParse(widget.message);
     if (event == null) return const _IncompleteCard();
     final channel = StreamChannel.maybeOf(context)?.channel;
-    final fromStream = loopMemberBuyBuyerFromStream(
-      channel,
-      event.publicProfileId,
+    final buyer = loopMemberBuyResolveBuyer(
+      fromStream: loopMemberBuyBuyerFromStream(channel, event.publicProfileId),
+      profile: _profileFor(
+        ref.watch(memberBuyProfileCacheProvider),
+        event.publicProfileId,
+      ),
     );
-    final buyer =
-        fromStream ??
-        ref
-            .watch(memberBuyBuyerProvider(event.publicProfileId))
-            .maybeWhen(data: (value) => value, orElse: () => null);
     return _Card(event: event, buyer: buyer);
   }
 }

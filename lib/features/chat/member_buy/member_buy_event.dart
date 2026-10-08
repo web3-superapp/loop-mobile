@@ -13,6 +13,12 @@ const String loopMemberBuySchemaField = 'loop_schema';
 /// The Stream user the backend sends community feed messages as.
 const String loopFeedBotUserId = 'loop_feed_bot';
 
+/// The custom field the backend sets to `true` on that Stream user.
+const String loopFeedBotFlagField = 'loop_bot';
+
+/// The custom field that carries the bought token's symbol.
+const String loopMemberBuySymbolField = 'symbol';
+
 /// What a buyer reads as when LOOP could not name them.
 const String loopMemberBuyNeutralBuyer = '群友';
 
@@ -29,11 +35,48 @@ const int loopMemberBuyDefaultQuoteDecimals = 18;
 
 /// Whether [message] is a member-buy feed message, however well formed.
 ///
-/// The tag alone decides the branch: a message that claims the schema and
-/// then fails validation renders the incomplete card, never a bubble that
-/// prints the raw fallback text as if a member had typed it.
-bool loopIsMemberBuyMessage(Message message) =>
-    message.extraData[loopMemberBuySchemaField] == loopMemberBuySchema;
+/// Two facts decide it: the schema tag, and that LOOP's feed bot sent it —
+/// the Stream user `loop_feed_bot` carrying `loop_bot: true`. Any member can
+/// put custom fields on their own message, so a tag from anybody else is just
+/// a message: it renders as an ordinary bubble with its text untouched. A bot
+/// message that claims the schema and then fails validation renders the
+/// incomplete card, never a bubble that prints the fallback text as if a
+/// member had typed it.
+bool loopIsMemberBuyMessage(Message message) {
+  final user = message.user;
+  return message.extraData[loopMemberBuySchemaField] == loopMemberBuySchema &&
+      user != null &&
+      user.id == loopFeedBotUserId &&
+      user.extraData[loopFeedBotFlagField] == true;
+}
+
+final RegExp _symbolCharacters = RegExp(
+  r'^[\p{L}\p{N}\p{M}$._-]+$',
+  unicode: true,
+);
+final RegExp _combiningMark = RegExp(r'^\p{M}$', unicode: true);
+
+/// The longest symbol, in user-perceived characters.
+const int loopMemberBuySymbolMaxLength = 20;
+
+/// Whether [symbol] is a token symbol a card may print.
+///
+/// Letters and digits of any script (`PEPE`, `狗狗币`, `ПЕПЕ`), their
+/// combining marks, and `$ . _ -`; at most [loopMemberBuySymbolMaxLength]
+/// characters. Everything else — whitespace, control characters, bidi
+/// overrides and isolates, zero-width joiners — is refused, so a symbol can
+/// never reorder or hide the text around it. A character is a base code point
+/// with the marks that follow it, which is what a reader counts.
+bool loopMemberBuySymbolIsValid(String symbol) {
+  if (symbol.isEmpty || !_symbolCharacters.hasMatch(symbol)) return false;
+  var characters = 0;
+  for (final rune in symbol.runes) {
+    final mark = _combiningMark.hasMatch(String.fromCharCode(rune));
+    if (mark && characters == 0) return false;
+    if (!mark) characters += 1;
+  }
+  return characters <= loopMemberBuySymbolMaxLength;
+}
 
 /// One validated `member_buy.v1` payload.
 ///
@@ -88,23 +131,22 @@ final class LoopMemberBuyEvent {
   );
   static final RegExp _txHash = RegExp(r'^0x[0-9a-fA-F]{64}$');
   static final RegExp _raw = RegExp(r'^(0|[1-9][0-9]{0,77})$');
-  static final RegExp _symbol = RegExp(r'^[A-Za-z0-9$._-]{1,20}$');
 
   /// The symbol a preview may print, or `null` when the payload has none LOOP
   /// accepts. Read on its own so a payload broken elsewhere still previews
   /// with its token.
   static String? previewSymbolOf(Message message) {
-    final raw = message.extraData['symbol'];
+    final raw = message.extraData[loopMemberBuySymbolField];
     if (raw is! String) return null;
     final symbol = raw.trim();
-    return _symbol.hasMatch(symbol) ? symbol : null;
+    return loopMemberBuySymbolIsValid(symbol) ? symbol : null;
   }
 
   /// The validated event, or `null` when any required field is missing or
   /// malformed. `null` renders 「动态数据不完整」 — never a zero.
   static LoopMemberBuyEvent? tryParse(Message message) {
     final data = message.extraData;
-    if (data[loopMemberBuySchemaField] != loopMemberBuySchema) return null;
+    if (!loopIsMemberBuyMessage(message)) return null;
     final profile = data['publicProfileId'];
     if (profile is! String || !_uuid.hasMatch(profile)) return null;
     final symbol = previewSymbolOf(message);
@@ -127,7 +169,8 @@ final class LoopMemberBuyEvent {
       return null;
     }
     final quoteSymbol = switch (data['quoteSymbol']) {
-      final String value when _symbol.hasMatch(value.trim()) => value.trim(),
+      final String value when loopMemberBuySymbolIsValid(value.trim()) =>
+        value.trim(),
       _ => 'WBNB',
     };
     return LoopMemberBuyEvent(
@@ -175,28 +218,30 @@ final Decimal _hundredMillion = Decimal.fromInt(100000000);
 ///
 /// From 1 万 up it is compact (`1.23万`, `4.5亿`); below that it is grouped
 /// with two fraction digits, and an amount under one keeps up to six so a
-/// small buy does not round to `0`.
+/// small buy does not round to `0`. The tier is chosen after rounding to the
+/// digits that will be shown, so `9,999.995` reads `1万`, not `10,000`, and
+/// `99,999,999.5` reads `1亿`, not `10,000万`.
 String loopFormatMemberBuyAmount(Decimal value) {
   if (value <= Decimal.zero) return '0';
-  if (value >= _hundredMillion) {
-    return '${_compact(value, _hundredMillion)}亿';
+  if (value < Decimal.one) {
+    final text = loopFormatDecimal(value, maxFractionDigits: 6);
+    // A positive amount that still rounds away reads as "under the floor",
+    // not as zero.
+    return text == '0' ? '<0.000001' : text;
   }
-  if (value >= _tenThousand) {
-    return '${_compact(value, _tenThousand)}万';
+  final plain = value.round(scale: 2);
+  if (plain < _tenThousand) {
+    return loopFormatDecimal(plain, maxFractionDigits: 2);
   }
-  if (value >= Decimal.one) {
-    return loopFormatDecimal(value, maxFractionDigits: 2);
+  final wan = _scaledTo(value, _tenThousand);
+  if (wan < _tenThousand) {
+    return '${loopFormatDecimal(wan, maxFractionDigits: 2)}万';
   }
-  final text = loopFormatDecimal(value, maxFractionDigits: 6);
-  // A positive amount that still rounds away reads as "under the floor",
-  // not as zero.
-  return text == '0' ? '<0.000001' : text;
+  return '${loopFormatDecimal(_scaledTo(value, _hundredMillion), maxFractionDigits: 2)}亿';
 }
 
-String _compact(Decimal value, Decimal unit) => loopFormatDecimal(
-  (value / unit).toDecimal(scaleOnInfinitePrecision: 4),
-  maxFractionDigits: 2,
-);
+Decimal _scaledTo(Decimal value, Decimal unit) =>
+    (value / unit).toDecimal(scaleOnInfinitePrecision: 8).round(scale: 2);
 
 /// The secondary line: `≈ $12.34` for a stable quote, `0.05 WBNB` otherwise.
 String loopFormatMemberBuyQuote(LoopMemberBuyEvent event) {

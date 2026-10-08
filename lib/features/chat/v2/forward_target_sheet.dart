@@ -85,33 +85,59 @@ final chatForwardPortProvider = Provider<ChatForwardPort>(
 /// Opens [ForwardTargetSheet] for [messages] and reports the outcome.
 ///
 /// Returns `null` when the reader closed the sheet without choosing. The
-/// toast is shown here, on [context], once the sheet is gone.
+/// toast is shown here, on [context], once the sheet is gone. [unavailable]
+/// counts ticked messages that were gone before the sheet opened (deleted, or
+/// no longer in the loaded conversation); they are skipped and the toast says
+/// so.
 Future<ChatForwardOutcome?> showChatForwardTargetSheet(
   BuildContext context, {
   required String sourceCid,
   required List<ChatForwardMessage> messages,
+  int unavailable = 0,
 }) async {
   final outcome = await showLoopSheet<ChatForwardOutcome>(
     context,
     barrierLabel: '关闭转发',
+    // A drag would close the sheet past its own PopScope while a forward is
+    // being sent; the barrier and the back gesture both respect it.
+    enableDrag: false,
     builder: (_) =>
         ForwardTargetSheet(sourceCid: sourceCid, messages: messages),
   );
   if (outcome == null || !context.mounted) return outcome;
-  final missed = outcome.skipped + outcome.failed;
   LoopToast.show(
     context,
-    message: switch ((outcome.sent, missed)) {
-      (0, _) => '没有转发任何消息',
-      (_, 0) when messages.length == 1 => '已转发',
-      (final sent, 0) => '已转发 $sent 条',
-      (final sent, final missed) => '已转发 $sent 条，跳过 $missed 条',
-    },
-    kind: outcome.sent > 0 && missed == 0
+    message: chatForwardOutcomeMessage(
+      outcome,
+      single: messages.length + unavailable == 1,
+      unavailable: unavailable,
+    ),
+    kind:
+        outcome.sent > 0 && outcome.skipped + outcome.failed + unavailable == 0
         ? LoopToastKind.ok
         : LoopToastKind.warn,
   );
   return outcome;
+}
+
+/// The toast after a forward.
+String chatForwardOutcomeMessage(
+  ChatForwardOutcome outcome, {
+  required bool single,
+  int unavailable = 0,
+}) {
+  final skipped = outcome.skipped + outcome.failed;
+  final parts = <String>[
+    if (outcome.sent == 0)
+      '没有转发任何消息'
+    else if (single && skipped + unavailable == 0)
+      '已转发'
+    else
+      '已转发 ${outcome.sent} 条',
+    if (skipped > 0) '跳过 $skipped 条',
+    if (unavailable > 0) '$unavailable 条已删除或不在本机，未转发',
+  ];
+  return parts.join('，');
 }
 
 /// `ForwardTargetSheet`: pick one recent conversation; the forward is sent
@@ -177,6 +203,15 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
   @override
   Widget build(BuildContext context) {
     final count = widget.messages.length;
+    // While a forward is being sent the sheet stays: closing it would hide
+    // the only place the outcome is reported.
+    return PopScope(
+      canPop: _sendingTo == null,
+      child: _content(context, count),
+    );
+  }
+
+  Widget _content(BuildContext context, int count) {
     return Padding(
       key: const ValueKey<String>('forward-target-sheet'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

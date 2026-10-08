@@ -6,6 +6,8 @@
 // bubble, and names the buyer live. A message's long-press sheet gains 「转发」
 // and 「多选」 and loses Stream's flag / mute / block; 多选 turns the room into
 // a selection with its own top bar and action bar.
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +19,7 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message
 import 'package:loop_mobile/features/chat/member_buy/loop_member_buy_card.dart';
 import 'package:loop_mobile/features/chat/member_buy/member_buy_event.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
 import 'package:loop_mobile/features/chat/v2/forward_target_sheet.dart';
 import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
@@ -30,6 +33,10 @@ import 'package:loop_mobile/integrations/communication/stream_display_identity.d
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+
+import 'support/communication_test_harness.dart';
+import 'support/community_test_harness.dart';
+import 'support/loop_ground_probe.dart';
 
 const String _cid = 'messaging:loop_community_99565a0c000000000000000000000000';
 const String _target = 'messaging:loop_group_9c1f0f2e5a7b4c3d8e9f0a1b2c3d4e5f';
@@ -69,13 +76,20 @@ Map<String, Object?> _buyFields({
   return fields;
 }
 
+User _feedBot() => User(
+  id: loopFeedBotUserId,
+  name: 'LOOP',
+  extraData: const <String, Object?>{'loop_bot': true},
+);
+
 Message _buyMessage({
   Map<String, Object?> overrides = const <String, Object?>{},
   Set<String> drop = const <String>{},
+  User? sender,
 }) => Message(
   id: 'loop_buy_1',
   text: '群友买入 · PEPE',
-  user: User(id: loopFeedBotUserId, name: 'LOOP'),
+  user: sender ?? _feedBot(),
   createdAt: DateTime.utc(2026, 10, 8, 4, 6),
   state: MessageState.sent,
   extraData: _buyFields(overrides: overrides, drop: drop),
@@ -100,9 +114,10 @@ PublicProfileRecord _profile() => PublicProfileRecord(
 );
 
 final class _Profiles implements PublicProfileGateway {
-  _Profiles({this.fail = false});
+  _Profiles({this.fail = false, this.failure = CommunityFailureKind.notFound});
 
   final bool fail;
+  final CommunityFailureKind failure;
   int loads = 0;
 
   @override
@@ -112,7 +127,7 @@ final class _Profiles implements PublicProfileGateway {
   Future<PublicProfileRecord> load(PublicProfileTarget target) async {
     loads += 1;
     if (fail) {
-      throw const CommunityGatewayException(CommunityFailureKind.notFound);
+      throw CommunityGatewayException(failure);
     }
     return _profile();
   }
@@ -135,11 +150,17 @@ Future<void> _pumpCard(
   Message message, {
   required _Profiles profiles,
   void Function(String id)? onOpenProfile,
+  ProviderContainer? container,
 }) async {
+  Widget scope(Widget child) => container == null
+      ? ProviderScope(
+          overrides: [publicProfileGatewayProvider.overrideWithValue(profiles)],
+          child: child,
+        )
+      : UncontrolledProviderScope(container: container, child: child);
   await tester.pumpWidget(
-    ProviderScope(
-      overrides: [publicProfileGatewayProvider.overrideWithValue(profiles)],
-      child: MaterialApp(
+    scope(
+      MaterialApp(
         theme: LoopTheme.dark,
         builder: (context, child) => LoopToastHost(child: child!),
         home: Scaffold(
@@ -175,6 +196,9 @@ class _LocalClient extends StreamChatClient {
 final class _Port implements ChatForwardPort {
   final List<(String, String, String)> sent = <(String, String, String)>[];
 
+  /// Holds every send until completed, when set.
+  Completer<void>? gate;
+
   @override
   Future<List<ChatForwardTarget>> recentTargets({
     required String excludeCid,
@@ -188,6 +212,7 @@ final class _Port implements ChatForwardPort {
     required String targetCid,
     required ChatForwardMessage message,
   }) async {
+    await gate?.future;
     sent.add((sourceCid, targetCid, message.text));
   }
 }
@@ -195,14 +220,18 @@ final class _Port implements ChatForwardPort {
 /// One community room of twelve text messages — odd ones the reader's own —
 /// and, optionally, a member-buy card as the newest row.
 final class _Room {
-  _Room({this.withBuy = false}) {
+  _Room({
+    this.withBuy = false,
+    this.cid = _cid,
+    this.extra = const <Message>[],
+  }) {
     // ignore: invalid_use_of_internal_member
     client.state.currentUser = OwnUser(id: _me, name: '我');
     channel = Channel.fromState(
       client,
       ChannelState(
         channel: ChannelModel(
-          id: _cid.split(':').last,
+          id: cid.split(':').last,
           type: 'messaging',
           ownCapabilities: const <String>[
             'quote-message',
@@ -221,12 +250,14 @@ final class _Room {
             user: User(id: _me),
           ),
         ],
-        messages: <Message>[...history, if (withBuy) _buyMessage()],
+        messages: <Message>[...history, ...extra, if (withBuy) _buyMessage()],
       ),
     );
   }
 
   final bool withBuy;
+  final String cid;
+  final List<Message> extra;
   final _LocalClient client = _LocalClient();
   final _Port port = _Port();
   final _Profiles profiles = _Profiles();
@@ -298,7 +329,7 @@ final class _Room {
                     Expanded(
                       child: LoopStreamMemberChannelBody(
                         client: client,
-                        cid: _cid,
+                        cid: cid,
                         userId: _me,
                         composerHint: loopChatComposerHint,
                         unresolvedMessage: null,
@@ -346,6 +377,8 @@ LoopButton _button(WidgetTester tester, String key) =>
     tester.widget<LoopButton>(find.byKey(ValueKey<String>(key)));
 
 void main() {
+  loopWatchGround();
+
   group('member-buy card', () {
     testWidgets('a complete payload names the buyer and states the facts', (
       tester,
@@ -432,6 +465,11 @@ void main() {
         '<0.000001',
       );
       expect(loopFormatMemberBuyAmount(Decimal.parse('0.25')), '0.25');
+      // The tier follows the rounded figure, not the raw one.
+      expect(loopFormatMemberBuyAmount(Decimal.parse('9999.995')), '1万');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('9999.994')), '9,999.99');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('99999999.5')), '1亿');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('99994999')), '9,999.5万');
     });
 
     testWidgets('the conversation preview is 「群友买入 · SYMBOL」', (tester) async {
@@ -480,8 +518,8 @@ void main() {
   });
 
   group('long-press sheet', () {
-    testWidgets('offers 转发 and 多选, keeps reply and copy, drops flag, mute '
-        'and block', (tester) async {
+    testWidgets('offers 转发 and 多选, keeps reply, copy and flag, drops '
+        'block', (tester) async {
       final room = _Room();
       await room.pump(tester);
       await room.openActions(tester, '消息 2');
@@ -490,7 +528,8 @@ void main() {
       expect(find.text('多选'), findsOneWidget);
       expect(find.text('回复'), findsOneWidget);
       expect(find.text('复制消息'), findsOneWidget);
-      expect(find.text('举报消息'), findsNothing);
+      // Main-agent ruling 2026-10-08: 举报 stays until LOOP has its own.
+      expect(find.text('举报消息'), findsOneWidget);
       expect(find.text('静音该用户'), findsNothing);
       expect(find.text('屏蔽该用户'), findsNothing);
       await room.dispose(tester);
@@ -682,9 +721,17 @@ void main() {
       // Unticking makes room again.
       expect(controller.toggle(message(3)), LoopMessageSelectionChange.removed);
       expect(controller.toggle(message(20)), LoopMessageSelectionChange.added);
-      // Oldest first.
-      expect(controller.selected.first.id, 'm0');
-      expect(controller.selected.last.id, 'm20');
+      // Only ids are kept; the messages are read back, oldest first, and a
+      // ticked message that is gone is counted rather than acted on.
+      final loaded = <Message>[
+        for (var i = 20; i >= 0; i -= 1)
+          if (i != 7) message(i),
+      ];
+      final resolved = controller.resolve(loaded);
+      expect(resolved.messages.first.id, 'm0');
+      expect(resolved.messages.last.id, 'm20');
+      expect(resolved.messages, hasLength(19));
+      expect(resolved.unavailable, 1);
       controller.cancel();
       expect(controller.active, isFalse);
       expect(controller.count, 0);
@@ -716,6 +763,386 @@ void main() {
         ),
         isTrue,
       );
+    });
+  });
+
+  group('the bot gate', () {
+    testWidgets('a member who tags their own message gets an ordinary bubble '
+        'and an ordinary preview', (tester) async {
+      final forged = _buyMessage(
+        sender: User(id: 'other', name: '成员'),
+      ).copyWith(id: 'forged', text: '看我伪造的卡片');
+      final unflagged = _buyMessage(
+        sender: User(id: loopFeedBotUserId, name: 'LOOP'),
+      );
+      expect(loopIsMemberBuyMessage(_buyMessage()), isTrue);
+      expect(loopIsMemberBuyMessage(forged), isFalse);
+      expect(loopIsMemberBuyMessage(unflagged), isFalse);
+      expect(LoopMemberBuyEvent.tryParse(forged), isNull);
+
+      late BuildContext context;
+      await tester.pumpWidget(
+        Builder(
+          builder: (inner) {
+            context = inner;
+            return const SizedBox.shrink();
+          },
+        ),
+      );
+      const formatter = LoopStreamTokenCardMessagePreviewFormatter();
+      // The forged message previews as what its author wrote.
+      expect(
+        formatter.formatMessage(context, forged).toPlainText(),
+        allOf(contains('看我伪造的卡片'), isNot(contains('群友买入'))),
+      );
+      expect(
+        formatter.formatMessageSemanticsLabel(context, forged),
+        isNot(contains('群友买入')),
+      );
+      // A bot id without the bot flag is not the bot either: its preview is
+      // its own text, not the card's line built from the symbol field.
+      final renamed = unflagged.copyWith(text: '普通消息');
+      expect(
+        formatter.formatMessage(context, renamed).toPlainText(),
+        allOf(contains('普通消息'), isNot(contains('群友买入'))),
+      );
+    });
+
+    testWidgets('in a room the forged message is a bubble with its own text', (
+      tester,
+    ) async {
+      final room = _Room(
+        extra: <Message>[
+          _buyMessage(
+            sender: User(id: 'other', name: '成员'),
+          ).copyWith(
+            id: 'forged',
+            text: '看我伪造的卡片',
+            createdAt: DateTime.utc(2026, 10, 8, 12),
+          ),
+        ],
+      );
+      await room.pump(tester);
+      expect(find.byKey(LoopMemberBuyCard.cardKey), findsNothing);
+      expect(find.byKey(LoopMemberBuyCard.incompleteKey), findsNothing);
+      expect(find.text('看我伪造的卡片'), findsOneWidget);
+      await room.dispose(tester);
+    });
+  });
+
+  group('the symbol rule', () {
+    const samples = <String, bool>{
+      'PEPE': true,
+      'pepe2': true,
+      r'$WIF': true,
+      'BTC.b': true,
+      'USD_1': true,
+      'A-B': true,
+      '狗狗币': true,
+      '龙': true,
+      'ПЕПЕ': true,
+      'é': true,
+      'e\u0301': true,
+      '12345678901234567890': true,
+      '123456789012345678901': false,
+      '狗狗币狗狗币狗狗币狗狗币狗狗币狗狗币狗狗': true,
+      '狗狗币狗狗币狗狗币狗狗币狗狗币狗狗币狗狗币': false,
+      '': false,
+      'PE PE': false,
+      '\u202EPEPE': false,
+      'PEPE\u2066': false,
+      'PE\u200DPE': false,
+      'PE\u0000PE': false,
+      'PE\nPE': false,
+      '\u0301E': false,
+      'PEPE🐸': false,
+      '<b>': false,
+    };
+
+    test('card and preview agree, sample by sample', () {
+      for (final MapEntry(key: symbol, value: valid) in samples.entries) {
+        expect(
+          loopMemberBuySymbolIsValid(symbol),
+          valid,
+          reason: 'card: ${symbol.runes.toList()}',
+        );
+        expect(
+          LoopStreamTokenCardMessagePreviewFormatter.memberBuySymbolIsValid(
+            symbol,
+          ),
+          valid,
+          reason: 'preview: ${symbol.runes.toList()}',
+        );
+        final message = _buyMessage(
+          overrides: <String, Object?>{'symbol': symbol},
+        );
+        expect(
+          LoopStreamTokenCardMessagePreviewFormatter.memberBuyPreview(message),
+          loopMemberBuyPreviewText(message),
+        );
+      }
+    });
+
+    test('the restated constants are the card\'s own', () {
+      expect(
+        LoopStreamTokenCardMessagePreviewFormatter.memberBuySchemaField,
+        loopMemberBuySchemaField,
+      );
+      expect(
+        LoopStreamTokenCardMessagePreviewFormatter.memberBuySchema,
+        loopMemberBuySchema,
+      );
+      expect(
+        LoopStreamTokenCardMessagePreviewFormatter.memberBuySymbolField,
+        loopMemberBuySymbolField,
+      );
+      expect(
+        LoopStreamTokenCardMessagePreviewFormatter.feedBotUserId,
+        loopFeedBotUserId,
+      );
+      expect(
+        LoopStreamTokenCardMessagePreviewFormatter.feedBotFlagField,
+        loopFeedBotFlagField,
+      );
+      expect(
+        LoopStreamTokenCardMessagePreviewFormatter.memberBuyLabel,
+        loopMemberBuyPreviewLabel,
+      );
+      expect(
+        LoopStreamTokenCardMessagePreviewFormatter.memberBuySymbolMaxLength,
+        loopMemberBuySymbolMaxLength,
+      );
+    });
+
+    testWidgets('a Chinese symbol renders on the card', (tester) async {
+      await _pumpCard(
+        tester,
+        _buyMessage(overrides: <String, Object?>{'symbol': '狗狗币'}),
+        profiles: _Profiles(),
+      );
+      expect(
+        find.textContaining('买入 1.23万 狗狗币', findRichText: true),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('buyer resolution', () {
+    const fromStream = LoopMemberBuyBuyer(
+      name: 'StreamName',
+      imageUrl: 'https://cdn.example/a.webp',
+    );
+    const fromProfile = LoopMemberBuyBuyer(
+      name: 'ProfileName',
+      avatarRef: 'avatar:preset/monogram',
+    );
+
+    test('a 404 hides the buyer even when Stream knows them', () {
+      expect(
+        loopMemberBuyResolveBuyer(
+          fromStream: fromStream,
+          profile: const LoopMemberBuyProfileHidden(),
+        ),
+        isNull,
+      );
+    });
+
+    test('Stream supplies the name and picture once the profile answers', () {
+      final buyer = loopMemberBuyResolveBuyer(
+        fromStream: fromStream,
+        profile: const LoopMemberBuyProfileFound(fromProfile),
+      );
+      expect(buyer?.name, 'StreamName');
+      expect(buyer?.imageUrl, 'https://cdn.example/a.webp');
+      expect(
+        loopMemberBuyResolveBuyer(
+          fromStream: null,
+          profile: const LoopMemberBuyProfileFound(fromProfile),
+        )?.name,
+        'ProfileName',
+      );
+      expect(
+        loopMemberBuyResolveBuyer(
+          fromStream: fromStream,
+          profile: const LoopMemberBuyProfileUnknown(),
+        )?.name,
+        'StreamName',
+      );
+    });
+
+    testWidgets('a 404 is kept; a transport failure is asked again', (
+      tester,
+    ) async {
+      for (final (failure, expectedLoads) in <(CommunityFailureKind, int)>[
+        (CommunityFailureKind.notFound, 1),
+        (CommunityFailureKind.offline, 2),
+        (CommunityFailureKind.unavailable, 2),
+      ]) {
+        final profiles = _Profiles(fail: true, failure: failure);
+        final container = ProviderContainer(
+          overrides: [publicProfileGatewayProvider.overrideWithValue(profiles)],
+        );
+        await _pumpCard(
+          tester,
+          _buyMessage(),
+          profiles: profiles,
+          container: container,
+        );
+        expect(find.text(loopMemberBuyNeutralBuyer), findsOneWidget);
+        // The card leaves and comes back.
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await _pumpCard(
+          tester,
+          _buyMessage(),
+          profiles: profiles,
+          container: container,
+        );
+        expect(profiles.loads, expectedLoads, reason: failure.name);
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+      }
+    });
+  });
+
+  group('selection, continued', () {
+    testWidgets('the system back gesture leaves selection, not the page', (
+      tester,
+    ) async {
+      final room = _Room();
+      await room.pump(tester);
+      await room.startSelection(tester, '消息 2');
+      expect(find.text('已选 1 条'), findsOneWidget);
+
+      final popped = await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(popped, isTrue);
+      expect(find.text('测试社区'), findsOneWidget);
+      expect(find.byKey(_composer), findsOneWidget);
+      expect(find.byType(LoopStreamMemberChannelBody), findsOneWidget);
+      await room.dispose(tester);
+    });
+
+    testWidgets('a half-typed message survives a round of selection', (
+      tester,
+    ) async {
+      final room = _Room();
+      await room.pump(tester);
+      final field = find.descendant(
+        of: find.byKey(_composer),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(field, '还没写完的草稿');
+      await tester.pump();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await room.startSelection(tester, '消息 2');
+      expect(find.byKey(_composer), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-selection-cancel')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(_composer),
+          matching: find.text('还没写完的草稿'),
+        ),
+        findsOneWidget,
+      );
+      await room.dispose(tester);
+    });
+
+    testWidgets('a ticked message deleted meanwhile is skipped and said so', (
+      tester,
+    ) async {
+      final room = _Room();
+      await room.pump(tester);
+      await room.startSelection(tester, '消息 2');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-selectable-h3')),
+      );
+      await tester.pump();
+      room.channel.state!.removeMessage(
+        room.history.firstWhere((m) => m.id == 'h3'),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-selection-forward-each')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('周末爬山群'));
+      await tester.pumpAndSettle();
+      expect(room.port.sent, <(String, String, String)>[
+        (_cid, _target, '消息 2'),
+      ]);
+      expect(find.text('已转发 1 条，1 条已删除或不在本机，未转发'), findsOneWidget);
+      await room.dispose(tester);
+    });
+
+    testWidgets('the forward sheet cannot be closed while it sends', (
+      tester,
+    ) async {
+      final room = _Room();
+      final gate = Completer<void>();
+      room.port.gate = gate;
+      await room.pump(tester);
+      await room.openActions(tester, '消息 2');
+      await tester.tap(find.text('转发'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('周末爬山群'));
+      await tester.pump();
+
+      final sheet = find.byKey(const ValueKey<String>('forward-target-sheet'));
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(sheet, findsOneWidget);
+      await tester.drag(sheet, const Offset(0, 500));
+      await tester.pump();
+      expect(sheet, findsOneWidget);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(sheet, findsNothing);
+      expect(room.port.sent, hasLength(1));
+      await room.dispose(tester);
+    });
+  });
+
+  group('direct conversation', () {
+    testWidgets('long-press forwards and multi-selects in a private chat', (
+      tester,
+    ) async {
+      final room = _Room(
+        cid: 'messaging:loop_direct_7e25aa0c000000000000000000000000',
+      );
+      await room.pump(tester);
+      await room.openActions(tester, '消息 2');
+      expect(find.text('转发'), findsOneWidget);
+      expect(find.text('多选'), findsOneWidget);
+      await tester.tap(find.text('转发'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('周末爬山群'));
+      await tester.pumpAndSettle();
+      expect(room.port.sent.single.$3, '消息 2');
+
+      await room.startSelection(tester, '消息 4');
+      expect(find.text('已选 1 条'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('loop-selection-bar')),
+        findsOneWidget,
+      );
+      await room.dispose(tester);
+    });
+
+    testWidgets('the dm page hosts a selection', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const DirectMessageScreen(),
+        chat: FakeChatV2Gateway(),
+      );
+      expect(find.byType(LoopMessageSelectionHost), findsOneWidget);
     });
   });
 }

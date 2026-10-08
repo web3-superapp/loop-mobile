@@ -35,45 +35,82 @@ bool loopMessageSelectable(Message message) =>
     !message.state.isOutgoing &&
     !loopIsMemberBuyMessage(message);
 
+/// The ticked messages as the conversation holds them now.
+@immutable
+final class LoopSelectedMessages {
+  const LoopSelectedMessages({
+    required this.messages,
+    required this.unavailable,
+  });
+
+  /// Still loaded and not deleted, oldest first — the order a forward sends
+  /// them in and the merged image lists them in.
+  final List<Message> messages;
+
+  /// Ticked, but deleted since or no longer in the loaded conversation.
+  final int unavailable;
+}
+
 /// One conversation's multi-select (S108 §2.2).
 ///
 /// Off until 「多选」 starts it on a message; then each row carries a check
 /// box, the top bar reads 「已选 N 条」 and the composer gives way to the
 /// action bar. At most [loopMessageSelectionLimit] messages.
+///
+/// Only ids are kept. A message can be edited or deleted while it is ticked,
+/// so every action reads the messages back from the channel when it runs
+/// ([resolve]) instead of acting on a copy taken when the box was ticked.
 class LoopMessageSelectionController extends ChangeNotifier {
-  final Map<String, Message> _selected = <String, Message>{};
+  final Set<String> _selected = <String>{};
   bool _active = false;
 
   bool get active => _active;
   int get count => _selected.length;
-  bool isSelected(String messageId) => _selected.containsKey(messageId);
-
-  /// The ticked messages, oldest first — the order a forward sends them in
-  /// and the merged image lists them in.
-  List<Message> get selected =>
-      _selected.values.toList(growable: false)
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  bool isSelected(String messageId) => _selected.contains(messageId);
+  Set<String> get selectedIds => Set<String>.unmodifiable(_selected);
 
   /// Enters selection with [message] already ticked.
   void start(Message message) {
     _active = true;
     _selected.clear();
-    if (loopMessageSelectable(message)) _selected[message.id] = message;
+    if (loopMessageSelectable(message)) _selected.add(message.id);
     notifyListeners();
   }
 
   LoopMessageSelectionChange toggle(Message message) {
     final LoopMessageSelectionChange change;
-    if (_selected.remove(message.id) != null) {
+    if (_selected.remove(message.id)) {
       change = LoopMessageSelectionChange.removed;
     } else if (_selected.length >= loopMessageSelectionLimit) {
       return LoopMessageSelectionChange.refusedAtLimit;
     } else {
-      _selected[message.id] = message;
+      _selected.add(message.id);
       change = LoopMessageSelectionChange.added;
     }
     notifyListeners();
     return change;
+  }
+
+  /// The ticked messages among [loaded] — the channel's current messages.
+  LoopSelectedMessages resolve(Iterable<Message> loaded) {
+    final byId = <String, Message>{
+      for (final message in loaded) message.id: message,
+    };
+    final messages = <Message>[];
+    var unavailable = 0;
+    for (final id in _selected) {
+      final message = byId[id];
+      if (message == null || message.isDeleted || message.state.isDeleted) {
+        unavailable += 1;
+      } else {
+        messages.add(message);
+      }
+    }
+    messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return LoopSelectedMessages(
+      messages: List<Message>.unmodifiable(messages),
+      unavailable: unavailable,
+    );
   }
 
   /// Leaves selection and forgets every tick.
@@ -355,14 +392,16 @@ class _LoopMessageSelectionBarState
     extends ConsumerState<LoopMessageSelectionBar> {
   bool _busy = false;
 
-  List<ChatForwardMessage> _projected(Channel channel) {
-    final cid = channel.cid ?? '';
+  LoopSelectedMessages _resolve(Channel channel) =>
+      widget.controller.resolve(channel.state?.messages ?? const <Message>[]);
+
+  List<ChatForwardMessage> _projected(Channel channel, List<Message> messages) {
     final realIdentity = chatForwardUsesRealIdentity(
       ref.read(loopFeatureSwitchesProvider),
-      cid,
+      channel.cid ?? '',
     );
     return <ChatForwardMessage>[
-      for (final message in widget.controller.selected)
+      for (final message in messages)
         chatForwardMessageOf(message, realIdentity: realIdentity),
     ];
   }
@@ -370,10 +409,12 @@ class _LoopMessageSelectionBarState
   Future<void> _forwardEach(Channel channel) async {
     final cid = channel.cid;
     if (cid == null) return;
+    final selection = _resolve(channel);
     final outcome = await showChatForwardTargetSheet(
       context,
       sourceCid: cid,
-      messages: _projected(channel),
+      messages: _projected(channel, selection.messages),
+      unavailable: selection.unavailable,
     );
     if (outcome != null && outcome.sent > 0 && mounted) {
       widget.controller.cancel();
@@ -383,14 +424,22 @@ class _LoopMessageSelectionBarState
   void _merge(Channel channel) {
     final cid = channel.cid;
     if (cid == null) return;
+    final selection = _resolve(channel);
     ref
         .read(chatForwardControllerProvider.notifier)
         .seedSelection(
           sourceCid: cid,
           sourceLabel: loopStoredConversationName(channel.extraData),
-          messages: _projected(channel),
+          messages: _projected(channel, selection.messages),
         );
     widget.controller.cancel();
+    if (selection.unavailable > 0) {
+      LoopToast.show(
+        context,
+        message: '${selection.unavailable} 条已删除或不在本机，没有放进长图',
+        kind: LoopToastKind.warn,
+      );
+    }
     final router = GoRouter.maybeOf(context);
     if (router != null) {
       unawaited(router.push<void>(loopChatMergePreviewLocation));
@@ -408,18 +457,21 @@ class _LoopMessageSelectionBarState
   }
 
   Future<void> _delete(Channel channel) async {
-    final messages = widget.controller.selected;
+    final count = widget.controller.count;
     final confirmed = await confirmCommunityAction(
       context,
-      title: '删除这 ${messages.length} 条消息？',
+      title: '删除这 $count 条消息？',
       body: '删除后会话里的每个人都会看到「消息已删除」，无法撤回。',
       confirmLabel: '删除',
       sheetKey: 'loop-selection-delete-confirm',
     );
     if (!confirmed || !mounted) return;
+    // Read back after the confirmation: a message deleted while the sheet
+    // was open is not deleted twice.
+    final selection = _resolve(channel);
     setState(() => _busy = true);
     var failed = 0;
-    for (final message in messages) {
+    for (final message in selection.messages) {
       try {
         await channel.deleteMessage(message);
       } catch (_) {
@@ -429,19 +481,24 @@ class _LoopMessageSelectionBarState
     if (!mounted) return;
     setState(() => _busy = false);
     widget.controller.cancel();
+    final deleted = selection.messages.length - failed;
     LoopToast.show(
       context,
-      message: failed == 0
-          ? '已删除 ${messages.length} 条'
-          : '已删除 ${messages.length - failed} 条，$failed 条没有删除成功',
-      kind: failed == 0 ? LoopToastKind.ok : LoopToastKind.warn,
+      message: <String>[
+        '已删除 $deleted 条',
+        if (failed > 0) '$failed 条没有删除成功',
+        if (selection.unavailable > 0) '${selection.unavailable} 条已不在本机，跳过',
+      ].join('，'),
+      kind: failed == 0 && selection.unavailable == 0
+          ? LoopToastKind.ok
+          : LoopToastKind.warn,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final channel = StreamChannel.of(context).channel;
-    final selected = widget.controller.selected;
+    final selected = _resolve(channel).messages;
     final userId = StreamChat.maybeOf(context)?.currentUser?.id;
     final anyForwardable = selected.any(chatForwardMessageIsForwardable);
     final allOwn =

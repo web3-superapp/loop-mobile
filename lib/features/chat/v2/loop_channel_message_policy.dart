@@ -43,14 +43,14 @@ List<StreamContextMenuAction<MessageAction>> loopWithoutPinActions(
     })
     .toList(growable: false);
 
-/// Whether [action] is one of the moderation actions LOOP removes from every
-/// long-press sheet: flag, mute / unmute and block / unblock (S108 §2.2).
+/// Whether [action] is one of the user-level actions LOOP removes from every
+/// long-press sheet: mute / unmute and block / unblock (S108 §2.2).
 ///
-/// Each has its own LOOP entry — reporting and blocking live on the person's
-/// profile, muting on the conversation — so Stream's copies, which call the
-/// provider directly and record nothing on LOOP's side, are taken away.
+/// Blocking lives on the person's profile, where LOOP records it; a
+/// user-level mute has no LOOP equivalent and Stream's would act behind
+/// LOOP's back. 「举报消息」 (flag) stays — main-agent ruling 2026-10-08 —
+/// until LOOP has a report endpoint of its own to replace it.
 bool loopIsModerationAction(MessageAction action) =>
-    action is FlagMessage ||
     action is MuteUser ||
     action is UnmuteUser ||
     action is BlockUser ||
@@ -82,7 +82,7 @@ bool loopFriendGroupCreatorMayPin(Channel channel, String userId) {
 /// Applies LOOP's long-press sheet to one message item.
 ///
 /// Stream's own actions stay — reply, copy, edit, delete, mark unread — minus
-/// the moderation actions LOOP has its own entries for, and minus pin and
+/// the user-level mute and block (flag stays), and minus pin and
 /// unpin when the nearest [LoopChannelMessagePolicy] says this reader may not
 /// pin. With no policy in scope Stream's own capabilities decide pinning.
 /// Every LOOP conversation sets one: a community group (owner / admin), a
