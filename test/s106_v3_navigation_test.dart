@@ -399,8 +399,10 @@ void main() {
 
       await tester.pumpWidget(app(square));
       await tester.pumpAndSettle();
+      // Decision 0116: the 社区 segment is the club list, not the discover
+      // page embedded.
       expect(
-        find.byKey(const ValueKey<String>('community-discover-screen')),
+        find.byKey(const ValueKey<String>('square-community-list')),
         findsOneWidget,
       );
       // The segment is the page heading; there is no bar title above it.

@@ -258,6 +258,8 @@ final class CommunitySummary {
     this.miningPower,
     this.activity,
     this.boundAsset,
+    this.assetBadge,
+    this.viewerMembership,
   });
 
   final String communityId;
@@ -290,9 +292,84 @@ final class CommunitySummary {
   /// the pool.
   final CommunityBoundAsset? boundAsset;
 
+  /// The three-field bound-asset summary a directory row carries (S111 §1,
+  /// decision 0116): symbol and logo only, never a pool or a price. `null`
+  /// when the row binds nothing and also when the server did not send it.
+  final CommunityAssetBadge? assetBadge;
+
+  /// The reader's relation to this community as a directory row states it
+  /// (S111 §1). `null` when the row did not carry the block — an older API —
+  /// and then the row says nothing about membership at all.
+  final CommunityDirectoryViewer? viewerMembership;
+
   bool get isVerified => verificationStatus == CommunityVerification.verified;
 
   bool get hasBoundAsset => boundAssetKey != null;
+
+  /// The bound token's symbol from whichever projection carried it.
+  String? get assetSymbol => assetBadge?.symbol ?? boundAsset?.symbol;
+
+  /// The same row with the reader's relation and member count the server
+  /// answered a join with. Every other fact is the row's own.
+  CommunitySummary withJoin({
+    required CommunityDirectoryViewer viewer,
+    required int memberCount,
+  }) => CommunitySummary(
+    communityId: communityId,
+    name: name,
+    slug: slug,
+    description: description,
+    logoRef: logoRef,
+    verificationStatus: verificationStatus,
+    boundAssetKey: boundAssetKey,
+    memberCount: memberCount,
+    createdAt: createdAt,
+    configVersion: configVersion,
+    miningPower: miningPower,
+    activity: activity,
+    boundAsset: boundAsset,
+    assetBadge: assetBadge,
+    viewerMembership: viewer,
+  );
+}
+
+/// `boundAsset` on a `GET /v2/communities` row: `{ assetId, symbol, logoUrl }`.
+@immutable
+final class CommunityAssetBadge {
+  const CommunityAssetBadge({
+    required this.assetId,
+    required this.symbol,
+    required this.logoUrl,
+  });
+
+  final String assetId;
+  final String symbol;
+  final String? logoUrl;
+}
+
+/// `viewerMembership` on a `GET /v2/communities` row (S111 §1).
+///
+/// No relation is `{ role: null, status: null, pending: false }`. [pending]
+/// is an application of this account's own still waiting on review.
+@immutable
+final class CommunityDirectoryViewer {
+  const CommunityDirectoryViewer({
+    required this.role,
+    required this.status,
+    required this.pending,
+  });
+
+  static const none = CommunityDirectoryViewer(
+    role: null,
+    status: null,
+    pending: false,
+  );
+
+  final CommunityRole? role;
+  final CommunityMemberStatus? status;
+  final bool pending;
+
+  bool get isBanned => status == CommunityMemberStatus.banned;
 }
 
 /// The bound asset as the community resource projects it (`boundAsset`).

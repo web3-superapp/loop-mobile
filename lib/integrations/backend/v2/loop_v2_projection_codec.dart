@@ -312,7 +312,12 @@ abstract final class LoopV2ProjectionCodec {
     final map = LoopV2Contract.strictMapWithOptional(
       raw,
       _communityKeys,
-      const <String>{'miningPower', 'activity', ..._communityOptionalKeys},
+      const <String>{
+        'miningPower',
+        'activity',
+        ..._communityOptionalKeys,
+        ..._communityRowOptionalKeys,
+      },
     );
     final power = map.containsKey('miningPower')
         ? miningPowerFact(map['miningPower'])
@@ -332,7 +337,79 @@ abstract final class LoopV2ProjectionCodec {
     // A community's power is a sum over its bound asset; an account's is not
     // a fact about the community, so a row carrying one cannot be ranked.
     if (power is LoopAccountMiningPower) invalid();
-    return _community(map, miningPower: power, activity: activityFact);
+    // A directory row's `boundAsset` is the three-field summary (S111 §1),
+    // not the detail resource's registry row, so it is read here and kept
+    // out of the detail reader.
+    final rowMap = <String, Object?>{...map}
+      ..remove('boundAsset')
+      ..remove('viewerMembership');
+    return _community(
+      rowMap,
+      miningPower: power,
+      activity: activityFact,
+      assetBadge: communityAssetBadge(map['boundAsset']),
+      viewerMembership: map.containsKey('viewerMembership')
+          ? communityDirectoryViewer(map['viewerMembership'])
+          : null,
+    );
+  }
+
+  /// Row-level tails of `GET /v2/communities` (S111 §1, decision 0116). An
+  /// API that predates them answers without either key.
+  static const _communityRowOptionalKeys = <String>{'viewerMembership'};
+
+  /// `boundAsset` on a directory row: `{ assetId, symbol, logoUrl }`, or
+  /// `null` for a community that binds nothing. The registry row's other two
+  /// fields are tolerated so a server that sends the full block still reads,
+  /// but nothing about a pool is taken from a row.
+  static CommunityAssetBadge? communityAssetBadge(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'assetId', 'symbol'},
+      const <String>{'logoUrl', 'name', 'hasRegisteredPool'},
+    );
+    final logoUrl = map['logoUrl'];
+    if (logoUrl != null && (logoUrl is! String || logoUrl.isEmpty)) invalid();
+    return CommunityAssetBadge(
+      assetId: LoopV2Contract.requiredString(
+        map,
+        'assetId',
+        pattern: boundAssetKeyPattern,
+      ),
+      symbol: requireText(map, 'symbol'),
+      logoUrl: logoUrl as String?,
+    );
+  }
+
+  /// `viewerMembership` on a directory row. Each field is read on its own: a
+  /// role and a status this build does not know, or a non-boolean `pending`,
+  /// are contract breaks; which combinations the server sends is its call.
+  static CommunityDirectoryViewer communityDirectoryViewer(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'role',
+      'status',
+      'pending',
+    });
+    final rawRole = map['role'];
+    final rawStatus = map['status'];
+    CommunityRole? role;
+    if (rawRole != null) {
+      if (rawRole is! String) invalid();
+      role = CommunityRole.tryParse(rawRole);
+      if (role == null) invalid();
+    }
+    CommunityMemberStatus? status;
+    if (rawStatus != null) {
+      if (rawStatus is! String) invalid();
+      status = CommunityMemberStatus.tryParse(rawStatus);
+      if (status == null) invalid();
+    }
+    return CommunityDirectoryViewer(
+      role: role,
+      status: status,
+      pending: requireBool(map, 'pending'),
+    );
   }
 
   /// `activity` on a discover row: a counted window, or the reason the
@@ -471,6 +548,8 @@ abstract final class LoopV2ProjectionCodec {
     Map<String, Object?> map, {
     LoopMiningPowerFact? miningPower,
     CommunityActivityFact? activity,
+    CommunityAssetBadge? assetBadge,
+    CommunityDirectoryViewer? viewerMembership,
   }) {
     final verification = map['verificationStatus'];
     final configVersion = map['configVersion'];
@@ -499,6 +578,8 @@ abstract final class LoopV2ProjectionCodec {
       miningPower: miningPower,
       activity: activity,
       boundAsset: communityBoundAsset(map['boundAsset']),
+      assetBadge: assetBadge,
+      viewerMembership: viewerMembership,
     );
   }
 

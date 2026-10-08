@@ -320,6 +320,71 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
     return reload();
   }
 
+  /// 广场's 全部 / 我加入的 group (decision 0116): the other filter is read
+  /// from page one under the order already chosen.
+  Future<void> selectMembership(CommunityMembershipFilter membership) {
+    if (membership == _membership &&
+        state.membership == membership &&
+        state.phase != CommunityViewPhase.loading) {
+      return Future<void>.value();
+    }
+    _membership = membership;
+    return reload();
+  }
+
+  /// Joins one community from its directory row (decision 0116) and returns
+  /// the refusal, or null once the server confirmed it.
+  ///
+  /// The row is changed only from the server's answer: the reader's relation
+  /// and the member count the join returned. It is not a directory read, so
+  /// it neither waits for nor cancels one; a row the list no longer holds is
+  /// left alone.
+  Future<CommunityFailureKind?> joinFromRow(String communityId) async {
+    final gateway = ref.read(communityGatewayProvider);
+    final CommunityDetail detail;
+    try {
+      detail = await gateway.join(communityId);
+    } on CommunityGatewayException catch (error) {
+      return error.kind;
+    } catch (_) {
+      return CommunityFailureKind.unexpected;
+    }
+    if (!ref.mounted) return null;
+    final membership = detail.viewer.membership;
+    final viewer = membership == null
+        ? CommunityDirectoryViewer.none
+        : CommunityDirectoryViewer(
+            role: membership.role,
+            status: membership.status,
+            pending: false,
+          );
+    final current = state;
+    final index = current.items.indexWhere(
+      (item) => item.communityId == communityId,
+    );
+    if (index < 0) return null;
+    final items = <CommunitySummary>[...current.items];
+    items[index] = items[index].withJoin(
+      viewer: viewer,
+      memberCount: detail.community.memberCount,
+    );
+    state = CommunityDiscoverState(
+      mode: current.mode,
+      phase: current.phase,
+      sort: current.sort,
+      membership: current.membership,
+      items: List<CommunitySummary>.unmodifiable(items),
+      nextCursor: current.nextCursor,
+      recommendation: current.recommendation,
+      ordering: current.ordering,
+      failureKind: current.failureKind,
+      loadingMore: current.loadingMore,
+      refreshing: current.refreshing,
+      refreshFailed: current.refreshFailed,
+    );
+    return null;
+  }
+
   Future<void> selectSort(CommunityDirectorySort sort) {
     if (sort == state.sort && state.phase == CommunityViewPhase.ready) {
       return Future<void>.value();
@@ -407,12 +472,13 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       if (!append) _readAt = _now();
       // A page that repeats a row already shown — the directory moved under
       // the cursor — keeps the first one: one community is one row.
-      final seen = <String>{
-        for (final item in previous.items) item.communityId,
-      };
+      // The rows on screen now, not the ones this read started from: a row
+      // joined while the page was in the air keeps its answer (0116).
+      final kept = append ? state.items : previous.items;
+      final seen = <String>{for (final item in kept) item.communityId};
       final merged = append
           ? <CommunitySummary>[
-              ...previous.items,
+              ...kept,
               for (final item in page.items)
                 if (seen.add(item.communityId)) item,
             ]

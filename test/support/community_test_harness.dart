@@ -323,6 +323,12 @@ final class FakeCommunityGateway implements CommunityGateway {
   Map<CommunityDirectorySort, CommunityDirectoryPage> directoryPagesBySort =
       <CommunityDirectorySort, CommunityDirectoryPage>{};
 
+  /// Per-membership directory pages (decision 0116), consulted before
+  /// [directoryPagesBySort]. A missing entry falls through.
+  Map<CommunityMembershipFilter, CommunityDirectoryPage>
+  directoryPagesByMembership =
+      <CommunityMembershipFilter, CommunityDirectoryPage>{};
+
   /// Per-filter directories. A missing entry falls back to [members], so an
   /// existing test keeps its single-view behaviour.
   Map<CommunityMemberFilter, CommunityMemberDirectory> membersByFilter;
@@ -405,7 +411,11 @@ final class FakeCommunityGateway implements CommunityGateway {
     String? cursor,
   }) {
     commands.add('list:${sort.wireName}:${membership.wireName}:$cursor');
-    return _read(directoryPagesBySort[sort] ?? directoryPage);
+    return _read(
+      directoryPagesByMembership[membership] ??
+          directoryPagesBySort[sort] ??
+          directoryPage,
+    );
   }
 
   @override
