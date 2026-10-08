@@ -106,6 +106,9 @@ void main() {
   });
 
   group('S77d · the lobby is `#scr-voiceroom`', () {
+    // Decision 0115 relaid the live room after DeBox: the host on a stage,
+    // the speakers, the listeners, and the controls in a fixed bar. The
+    // figures are the same three, and they still add up.
     testWidgets('a listener gets the grid, the count and the three controls', (
       tester,
     ) async {
@@ -115,27 +118,38 @@ void main() {
         voiceRoom: _gateway(),
       );
 
-      final folio = _folio(tester);
-      expect(folio.kicker, 'VOICE LOBBY');
-      expect(folio.heading, '46 人在房间里');
-      expect(folio.stamp, '46 LIVE');
-      expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
-      expect(find.text('正在发言'), findsOneWidget);
-      expect(find.text('听众 42'), findsOneWidget);
-
-      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
-      await scrollToCommunitySection(tester, leave);
-      expect(leave, findsOneWidget);
+      expect(find.text('46 在听'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('voiceroom-raise-hand')),
+        find.byKey(const ValueKey<String>('voiceroom-host')),
         findsOneWidget,
       );
-      // `#scr-voiceroom` closes on one `.notice` about the provider.
+      expect(find.text('发言者 3'), findsOneWidget);
+      expect(find.text('听众 42'), findsOneWidget);
+
+      final bar = find.byKey(const ValueKey<String>('voiceroom-control-bar'));
+      expect(
+        find.descendant(
+          of: bar,
+          matching: find.byKey(const ValueKey<String>('voiceroom-leave')),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: bar,
+          matching: find.byKey(const ValueKey<String>('voiceroom-raise-hand')),
+        ),
+        findsOneWidget,
+      );
+      // The provider note is in (i), not in the page.
+      expect(find.byType(LoopNotice), findsNothing);
+      await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
+      await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('voiceroom-provider-note')),
         findsOneWidget,
       );
-      expect(find.byType(LoopNotice), findsOneWidget);
+      expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
     });
 
     testWidgets('the table of figures and the repeated notes are gone', (
@@ -153,8 +167,12 @@ void main() {
       expect(find.text('返回不等于离开'), findsNothing);
       expect(find.textContaining('由 LOOP 授予'), findsNothing);
       expect(find.textContaining('服务商允许进入的账号'), findsNothing);
-      // The one line 「返回不等于离开」 was a whole notice for is in the hero.
-      expect(_folio(tester).caption, '返回会把房间收起在顶部，随时点开回来。');
+      // A live room has no hero any more (decision 0115); the one line
+      // 「返回不等于离开」 was a whole notice for is in (i).
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
+      await tester.pumpAndSettle();
+      expect(find.text('返回会把房间收起在顶部，随时点开回来。'), findsOneWidget);
     });
 
     testWidgets('the host is given 结束房间, not a paragraph about 离开', (
@@ -193,11 +211,13 @@ void main() {
         voiceRoom: _gateway(role: null),
       );
 
-      expect(_folio(tester).caption, '进入前确认主持人、在线人数与录音说明。');
       expect(
         find.byKey(const ValueKey<String>('voiceroom-join')),
         findsOneWidget,
       );
+      await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
+      await tester.pumpAndSettle();
+      expect(find.text('进入前确认主持人、在线人数与录音说明。'), findsOneWidget);
     });
 
     testWidgets('an ended room says so in words, and asks nothing', (

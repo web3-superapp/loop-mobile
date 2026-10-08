@@ -2,12 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
-import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Opens a room for this community. The button exists only for a viewer the
@@ -20,20 +18,13 @@ Future<void> openCommunityVoiceRoom(
   CommunityDetail detail, {
   ValueChanged<String>? onOpened,
 }) async {
-  final confirmed = await confirmCommunityAction(
+  // S110 (decision 0115): the start sheet asks for an optional title and runs
+  // the open command itself; null means the host cancelled.
+  final outcome = await showVoiceRoomStartSheet(
     context,
-    title: '开启语音房？',
-    body:
-        '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
-        '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
-    confirmLabel: '开启',
-    sheetKey: 'community-open-voice-room-sheet',
+    detail.community.communityId,
   );
-  if (!confirmed || !context.mounted) return;
-  final outcome = await ref
-      .read(voiceRoomOpenControllerProvider.notifier)
-      .openRoom(detail.community.communityId);
-  if (!context.mounted) return;
+  if (outcome == null || !context.mounted) return;
   final failure = outcome.failure;
   if (failure == null) {
     if (outcome.isOpen) {

@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_presentation.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_retry.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
@@ -544,7 +545,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         child: LoopStateCard(
           key: const ValueKey<String>('voiceroom-media-restored'),
           title: audioRoomRestoredMicrophoneNote,
-          message: '网络断开时你的麦克风是开着的。重新连接后保持静音，需要时再点「发言」。',
+          message:
+              '网络断开时你的麦克风是开着的。重新连接后保持静音，需要时再点'
+              '「${VoiceMediaPresentation.maybeOf(context)?.microphone == null ? '发言' : '取消静音'}」。',
           tone: LoopTone.positive,
           icon: Icons.mic_off_rounded,
         ),
@@ -706,7 +709,13 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
             ],
             const SizedBox(height: 10),
             Text(
-              audioRoomConnectionNote(widget.viewerRole),
+              audioRoomConnectionNote(
+                widget.viewerRole,
+                speakLabel:
+                    VoiceMediaPresentation.maybeOf(context)?.microphone == null
+                    ? '发言'
+                    : '取消静音',
+              ),
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ],
@@ -1554,12 +1563,19 @@ String audioRoomJoinRefusalText(AudioRoomJoinRefusal refusal) =>
 /// sentence written for a listener told a host to use a control that is not
 /// on the screen. A room whose role is not known yet keeps the listener's
 /// sentence: it is the part every member starts in.
-String audioRoomConnectionNote(AudioRoomViewerRole? role) => switch (role) {
+///
+/// [speakLabel] is the word on the control that opens the microphone: the
+/// call view's own 「发言」, or 「取消静音」 when the room page draws it in its
+/// bottom bar (decision 0115).
+String audioRoomConnectionNote(
+  AudioRoomViewerRole? role, {
+  String speakLabel = '发言',
+}) => switch (role) {
   AudioRoomViewerRole.host =>
-    '你是主持人，进入时同样静音，点「发言」才会申请麦克风权限；'
+    '你是主持人，进入时同样静音，点「$speakLabel」才会申请麦克风权限；'
         '语音没连上房间也不会结束，要结束请用下面的「结束房间」。',
   AudioRoomViewerRole.speaker =>
-    '你是发言人，进入时同样静音，点「发言」才会申请麦克风权限；'
+    '你是发言人，进入时同样静音，点「$speakLabel」才会申请麦克风权限；'
         '语音没连上也不会把你移出房间，要真正退出请用下面的「离开」。',
   _ =>
     '你以听众身份静音进入，不会申请麦克风权限；'

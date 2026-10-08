@@ -56,6 +56,7 @@ abstract interface class LoopV2CommunicationApi {
     required String clientVersion,
     required String idempotencyKey,
     required String communityId,
+    String? title,
   });
 
   Future<VoiceRoomSnapshot> getVoiceRoom({
@@ -109,6 +110,9 @@ enum VoiceRoomCommand {
   // command a viewer that is not the host may send, and only against itself.
   unmuteSpeaker('speakers', 'DELETE', targetsProfile: true, suffix: '/mute'),
   muteAll('mute-all', 'POST'),
+
+  /// Decision 0115 (S109b-api): the caller's own step-down to listener.
+  stepDown('speakers/me', 'DELETE'),
   endRoom('end', 'POST');
 
   const VoiceRoomCommand(
@@ -344,11 +348,15 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
     required String clientVersion,
     required String idempotencyKey,
     required String communityId,
+    String? title,
   }) async {
     final id = _requireId(communityId);
     try {
       final response = await _dio.post<Object?>(
         '$communitiesPath/$id/voice-rooms',
+        // Decision 0115: the optional `{ title }` body. A room opened without
+        // a title sends no body, exactly as before the field existed.
+        data: title == null ? null : <String, Object?>{'title': title},
         options: LoopV2ModuleRequest.writeOptions(
           accessToken,
           clientVersion,
@@ -357,10 +365,7 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
       );
       // The room resource is created, so the only success is `201`.
       LoopV2Contract.validateSuccess(response, statusCode: 201);
-      final root = LoopV2Contract.strictMap(
-        response.data,
-        LoopV2CommunicationCodec.snapshotKeys,
-      );
+      final root = LoopV2CommunicationCodec.snapshotRoot(response.data);
       final snapshot = LoopV2CommunicationCodec.snapshot(root);
       // A room for another community would put the viewer in a room the page
       // never asked for.
@@ -488,16 +493,23 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
           : await _dio.post<Object?>(path, options: options);
       return _snapshot(response, id);
     } on DioException catch (error) {
+      // Decision 0115: a server that does not serve the step-down yet answers
+      // 404 — often without the V2 envelope, which would otherwise read as an
+      // unresolved write. It is the command being unavailable, nothing else.
+      if (command == VoiceRoomCommand.stepDown &&
+          error.response?.statusCode == 404) {
+        throw const LoopBackendFailure(
+          LoopBackendFailureKind.unavailable,
+          statusCode: 404,
+        );
+      }
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: writeErrors);
     }
   }
 
   VoiceRoomSnapshot _snapshot(Response<Object?> response, String voiceRoomId) {
     LoopV2Contract.validateSuccess(response, statusCode: 200);
-    final root = LoopV2Contract.strictMap(
-      response.data,
-      LoopV2CommunicationCodec.snapshotKeys,
-    );
+    final root = LoopV2CommunicationCodec.snapshotRoot(response.data);
     final snapshot = LoopV2CommunicationCodec.snapshot(root);
     if (snapshot.room.voiceRoomId != voiceRoomId) {
       LoopV2ProjectionCodec.invalid();

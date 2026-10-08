@@ -16,7 +16,10 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.da
 /// Strict codec for `GET /v2/voice-rooms/live` (S106 §7, decision 0110).
 ///
 /// Every key is required and no other key is accepted: a page the client
-/// cannot fully read renders as a failed read, never as a partial list.
+/// cannot fully read renders as a failed read, never as a partial list. The
+/// two exceptions are decision 0115's `title` and `speakersPreview`, which a
+/// server that has not shipped S109b-api yet does not send: both are
+/// optional, and an absent one reads as null / empty.
 abstract final class LoopV2LiveVoiceRoomCodec {
   static const pageKeys = <String>{
     'items',
@@ -30,7 +33,6 @@ abstract final class LoopV2LiveVoiceRoomCodec {
     'communityId',
     'communityName',
     'communityLogoRef',
-    'title',
     'host',
     'listenerCount',
     'speakerCount',
@@ -38,6 +40,12 @@ abstract final class LoopV2LiveVoiceRoomCodec {
     'startedAt',
     'joinable',
   };
+
+  /// Decision 0115: keys a room row may carry and may also leave out.
+  static const optionalItemKeys = <String>{'title', 'speakersPreview'};
+
+  /// `speakersPreview` holds the host and at most three speakers.
+  static const maximumSpeakersPreview = 4;
 
   static const hostKeys = <String>{
     'publicProfileId',
@@ -65,7 +73,11 @@ abstract final class LoopV2LiveVoiceRoomCodec {
   }
 
   static LiveVoiceRoom room(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, itemKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      itemKeys,
+      optionalItemKeys,
+    );
     final countsObservedAt = map['countsObservedAt'] == null
         ? null
         : LoopV2ProjectionCodec.requireTimestamp(map, 'countsObservedAt');
@@ -78,8 +90,9 @@ abstract final class LoopV2LiveVoiceRoomCodec {
         'communityLogoRef',
         LoopV2ProjectionCodec.communityLogoPattern,
       ),
-      title: LoopV2ProjectionCodec.optionalText(map, 'title'),
+      title: _title(map['title']),
       host: host(map['host']),
+      speakersPreview: speakersPreview(map['speakersPreview']),
       listenerCount: LoopV2ProjectionCodec.requireCount(map, 'listenerCount'),
       speakerCount: LoopV2ProjectionCodec.requireCount(map, 'speakerCount'),
       countsObservedAt: countsObservedAt,
@@ -109,6 +122,24 @@ abstract final class LoopV2LiveVoiceRoomCodec {
       displayName: displayName,
       avatarRef: avatarRef,
     );
+  }
+
+  /// The faces on a card: absent or null is none. A longer list than the
+  /// contract's four keeps its first four rather than failing the page — the
+  /// order (host first) is the server's, and the card draws four at most.
+  static List<LiveVoiceRoomHost> speakersPreview(Object? raw) {
+    if (raw == null) return const <LiveVoiceRoomHost>[];
+    if (raw is! List) LoopV2ProjectionCodec.invalid();
+    return List<LiveVoiceRoomHost>.unmodifiable(<LiveVoiceRoomHost>[
+      for (final entry in raw.take(maximumSpeakersPreview)) host(entry),
+    ]);
+  }
+
+  static String? _title(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! String) LoopV2ProjectionCodec.invalid();
+    final trimmed = raw.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   static String _uuid(Map<String, Object?> map, String key) =>

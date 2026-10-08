@@ -1073,6 +1073,53 @@ void main() {
       expect(captured.single.data, isNull);
     });
 
+    // Decision 0115 (S109b-api): the optional `{ title }` body, and the
+    // optional `title` on the room resource.
+    test('a title travels as the one body field and comes back', () async {
+      final body = _roomBody(role: 'host', host: true);
+      (body['room']! as Map<String, Object?>)['title'] = '周五 AMA';
+      final (api, captured) = _api(body, statusCode: 201);
+
+      final snapshot = await api.createVoiceRoom(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        idempotencyKey: _key,
+        communityId: _communityId,
+        title: '周五 AMA',
+      );
+
+      expect(captured.single.data, <String, Object?>{'title': '周五 AMA'});
+      expect(snapshot.room.title, '周五 AMA');
+    });
+
+    test('a room without a title, or with a blank one, has none', () async {
+      for (final title in <Object?>[null, '   ']) {
+        final body = _roomBody(role: 'host', host: true);
+        (body['room']! as Map<String, Object?>)['title'] = title;
+        final (api, _) = _api(body, statusCode: 201);
+        final snapshot = await api.createVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          communityId: _communityId,
+        );
+        expect(snapshot.room.title, isNull);
+      }
+      // A title that is not text is not this contract.
+      final body = _roomBody(role: 'host', host: true);
+      (body['room']! as Map<String, Object?>)['title'] = 7;
+      final (api, _) = _api(body, statusCode: 201);
+      await expectLater(
+        api.createVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          communityId: _communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('a created room answered with 200 is an invalid payload', () async {
       final (api, _) = _api(_roomBody(role: 'host', host: true));
 
@@ -1108,6 +1155,153 @@ void main() {
         throwsA(isA<LoopBackendFailure>()),
       );
     });
+
+    // Decision 0115 (S109b-api): the caller's own step-down.
+    test(
+      '下麦 is DELETE speakers/me under a key, answered by the room',
+      () async {
+        final (api, captured) = _api(_roomBody());
+
+        final snapshot = await api.command(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          voiceRoomId: _roomId,
+          command: VoiceRoomCommand.stepDown,
+        );
+
+        expect(snapshot.viewer.role, VoiceRoomRole.listener);
+        expect(captured.single.method, 'DELETE');
+        expect(
+          captured.single.uri.path,
+          '/v2/voice-rooms/$_roomId/speakers/me',
+        );
+        expect(captured.single.headers['idempotency-key'], _key);
+        expect(captured.single.headers['x-loop-contract-version'], '2.0');
+      },
+    );
+
+    test(
+      'a server without 下麦 is unavailable, not an unresolved write',
+      () async {
+        final api = DioLoopV2CommunicationApi(
+          _dio((options, handler) {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                response: _response(options, <String, Object?>{
+                  'message':
+                      'Route DELETE:/v2/voice-rooms/x/speakers/me not found',
+                }, statusCode: 404),
+                type: DioExceptionType.badResponse,
+              ),
+            );
+          }),
+        );
+
+        await expectLater(
+          api.command(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            idempotencyKey: _key,
+            voiceRoomId: _roomId,
+            command: VoiceRoomCommand.stepDown,
+          ),
+          throwsA(
+            isA<LoopBackendFailure>().having(
+              (failure) => failure.kind,
+              'kind',
+              LoopBackendFailureKind.unavailable,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('the room names its host when the server sends one', () async {
+      final named = _roomBody()
+        ..['host'] = <String, Object?>{
+          'publicProfileId': _profileId,
+          'displayName': 'frog_maxi',
+          'avatarRef': 'avatar:preset/people-03',
+        };
+      final (api, _) = _api(named);
+      final snapshot = await api.getVoiceRoom(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        voiceRoomId: _roomId,
+      );
+      expect(snapshot.host?.displayName, 'frog_maxi');
+      expect(snapshot.host?.avatarRef, 'avatar:preset/people-03');
+
+      // Absent, null and anonymous are all accepted; a half-named host is not.
+      final (plain, _) = _api(_roomBody());
+      expect(
+        (await plain.getVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+        )).host,
+        isNull,
+      );
+      final anonymous = _roomBody()
+        ..['host'] = <String, Object?>{
+          'publicProfileId': null,
+          'displayName': null,
+          'avatarRef': null,
+        };
+      final (hidden, _) = _api(anonymous);
+      expect(
+        (await hidden.getVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+        )).host?.isAnonymous,
+        isTrue,
+      );
+      final halfNamed = _roomBody()
+        ..['host'] = <String, Object?>{
+          'publicProfileId': _profileId,
+          'displayName': null,
+          'avatarRef': null,
+        };
+      final (broken, _) = _api(halfNamed);
+      await expectLater(
+        broken.getVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test(
+      'a roster row may carry an avatar; an anonymous row never shows one',
+      () async {
+        final named = _memberRow()..['avatarRef'] = 'avatar:preset/people-02';
+        final hidden = _memberRow(publicProfileId: null, alias: null)
+          ..['avatarRef'] = null;
+        final (api, _) = _api(_membersBody(items: <Object?>[named, hidden]));
+        final page = await api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.listener,
+        );
+        expect(page.items.first.avatarRef, 'avatar:preset/people-02');
+        expect(page.items.last.avatarRef, isNull);
+        // A row from a server without the field reads as no avatar.
+        final (plain, _) = _api(_membersBody());
+        final old = await plain.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.listener,
+        );
+        expect(old.items.single.avatarRef, isNull);
+      },
+    );
 
     test('a live room answers the open command with a conflict', () async {
       final api = DioLoopV2CommunicationApi(

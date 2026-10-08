@@ -524,7 +524,7 @@ void main() {
       expect(handles.single.joinCalls, 1);
 
       await tester.tap(
-        find.byKey(const ValueKey<String>('voiceroom-open-full')),
+        find.byKey(const ValueKey<String>('voiceroom-invite-open')),
       );
       await tester.pumpAndSettle();
       expect(
@@ -556,7 +556,7 @@ void main() {
 
       // Into the session view and back once more.
       await tester.tap(
-        find.byKey(const ValueKey<String>('voiceroom-open-full')),
+        find.byKey(const ValueKey<String>('voiceroom-invite-open')),
       );
       await tester.pumpAndSettle();
       Navigator.of(
@@ -578,6 +578,8 @@ void main() {
       expect(voice.commands, isNot(contains('leave')));
     });
 
+    // Decision 0115: the host reaches the queue through 邀请发言 in the
+    // bottom bar; nobody else's bar has it.
     testWidgets('only the host is offered the session view', (tester) async {
       Future<bool> offered(VoiceRoomSnapshot snapshot) async {
         await pumpCommunityPage(
@@ -586,7 +588,7 @@ void main() {
           voiceRoom: FakeVoiceRoomGateway(snapshot: snapshot),
         );
         return find
-            .byKey(const ValueKey<String>('voiceroom-open-full'))
+            .byKey(const ValueKey<String>('voiceroom-invite-open'))
             .evaluate()
             .isNotEmpty;
       }

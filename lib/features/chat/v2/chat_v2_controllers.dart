@@ -1074,6 +1074,10 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
         ),
       );
 
+  /// This account's own step-down from speaker to listener (decision 0115).
+  Future<CommunityFailureKind?> stepDown() =>
+      _command((gateway, roomId) => gateway.stepDown(roomId));
+
   Future<CommunityFailureKind?> muteAll() =>
       _command((gateway, roomId) => gateway.muteAll(roomId));
 
@@ -1096,7 +1100,10 @@ final class VoiceRoomOpenController extends Notifier<bool> {
   @override
   bool build() => false;
 
-  Future<VoiceRoomOpenOutcome> openRoom(String communityId) async {
+  Future<VoiceRoomOpenOutcome> openRoom(
+    String communityId, {
+    String? title,
+  }) async {
     if (state) {
       return const VoiceRoomOpenOutcome.refused(CommunityFailureKind.stale);
     }
@@ -1104,7 +1111,7 @@ final class VoiceRoomOpenController extends Notifier<bool> {
     try {
       final room = await ref
           .read(voiceRoomGatewayProvider)
-          .createRoom(communityId);
+          .createRoom(communityId, title: title);
       state = false;
       return VoiceRoomOpenOutcome.opened(room);
     } on CommunityGatewayException catch (error) {

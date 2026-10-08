@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -61,6 +62,15 @@ final chatV2GatewayProvider = Provider<ChatV2Gateway>(
   (ref) => const UnavailableChatV2Gateway(),
 );
 
+/// An opening whose key is held for a retry (decision 0115): the retry sends
+/// the [title] the first attempt sent, so the 开播 sheet shows it locked.
+@immutable
+final class VoiceRoomPendingOpen {
+  const VoiceRoomPendingOpen({required this.title});
+
+  final String? title;
+}
+
 /// Feature-facing port for the pre-created Audio Room resource.
 ///
 /// LOOP owns the room record, the viewer role, the hand-raise queue and the
@@ -73,7 +83,19 @@ abstract interface class VoiceRoomGateway {
 
   /// Opens a room for one community. The server admits only an owner or an
   /// admin and creates the provider call itself; the client never does.
-  Future<VoiceRoomSnapshot> createRoom(String communityId);
+  ///
+  /// [title] is the host's own name for the room (decision 0115); null sends
+  /// no body at all, which is the request the server always accepted.
+  Future<VoiceRoomSnapshot> createRoom(String communityId, {String? title});
+
+  /// The opening of [communityId]'s room that is not finished yet — its
+  /// idempotency key is held, and a retry must carry the same title — or
+  /// null when the next 开播 is a new command.
+  VoiceRoomPendingOpen? pendingOpen(String communityId);
+
+  /// The caller's own step-down from speaker to listener (decision 0115,
+  /// `DELETE /v2/voice-rooms/{id}/speakers/me`).
+  Future<VoiceRoomSnapshot> stepDown(String voiceRoomId);
 
   Future<VoiceRoomSnapshot> load(String voiceRoomId);
 
@@ -142,7 +164,14 @@ final class UnavailableVoiceRoomGateway implements VoiceRoomGateway {
   Future<VoiceRoomCurrent> loadCurrent(String communityId) => _unavailable();
 
   @override
-  Future<VoiceRoomSnapshot> createRoom(String communityId) => _unavailable();
+  Future<VoiceRoomSnapshot> createRoom(String communityId, {String? title}) =>
+      _unavailable();
+
+  @override
+  VoiceRoomPendingOpen? pendingOpen(String communityId) => null;
+
+  @override
+  Future<VoiceRoomSnapshot> stepDown(String voiceRoomId) => _unavailable();
 
   @override
   Future<VoiceRoomSnapshot> load(String voiceRoomId) => _unavailable();

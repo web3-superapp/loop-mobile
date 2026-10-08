@@ -24,12 +24,31 @@ final class MemoryLiveVoiceRoomGateway implements LiveVoiceRoomGateway {
           communityId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
           communityName: '开发预览社区',
           communityLogoRef: 'avatar:preset/community-01',
-          title: null,
+          title: '开发预览 · 周五 AMA',
           host: const LiveVoiceRoomHost(
             publicProfileId: null,
             displayName: '预览主持人',
             avatarRef: null,
           ),
+          // Decision 0115: host first, then speakers; the last one shows
+          // anonymously and carries nothing.
+          speakersPreview: const <LiveVoiceRoomHost>[
+            LiveVoiceRoomHost(
+              publicProfileId: null,
+              displayName: '预览主持人',
+              avatarRef: 'avatar:preset/people-01',
+            ),
+            LiveVoiceRoomHost(
+              publicProfileId: null,
+              displayName: '预览发言人',
+              avatarRef: 'avatar:preset/people-02',
+            ),
+            LiveVoiceRoomHost(
+              publicProfileId: null,
+              displayName: null,
+              avatarRef: null,
+            ),
+          ],
           listenerCount: 12,
           speakerCount: 3,
           countsObservedAt: null,
