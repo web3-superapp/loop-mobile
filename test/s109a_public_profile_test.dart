@@ -177,6 +177,35 @@ final class _Profiles implements PublicProfileGateway {
   }
 }
 
+/// The production gateway: the command form is the one the page must use,
+/// since the search-flow form needs a search identity cache the profile page
+/// never fills.
+final class _CommandFriends extends Fake implements LoopSocialFriendGateway {
+  final List<String> commands = <String>[];
+
+  @override
+  FriendGatewayMode get mode => FriendGatewayMode.production;
+
+  @override
+  Future<FriendRequestSendReceipt> sendFriendRequestCommand({
+    required String operationId,
+    required FriendProfileRef targetProfileRef,
+  }) async {
+    commands.add(targetProfileRef.wireValue);
+    return FriendRequestSendReceipt(
+      operationId: operationId,
+      targetProfileRef: targetProfileRef,
+      friendRequestId: '9d1c5f64-5717-4562-b3fc-2c963f66a009',
+    );
+  }
+
+  @override
+  Future<FriendSearchResult> sendFriendRequest({
+    required String requestId,
+    required FriendProfileRef profileRef,
+  }) => throw StateError('the profile page must not use the search flow');
+}
+
 final class _Friends implements FriendGateway {
   _Friends({this.failure});
 
@@ -742,6 +771,31 @@ void main() {
       );
       expect(find.text('好友申请已发送'), findsOneWidget);
     });
+
+    testWidgets(
+      '加好友 on the production gateway uses the command form and re-reads',
+      (tester) async {
+        final friends = _CommandFriends();
+        final profiles = _Profiles(
+          record: _record(),
+          holdingsAnswer: LoopV2PublicProfileCodec.holdings(_holdingsWire()),
+        );
+        await _pump(tester, profiles: profiles, friends: friends);
+        profiles.record = _record(friendship: ProfileFriendship.pendingOut);
+        await _tap(tester, 'user-profile-friend-none');
+
+        expect(friends.commands, <String>[_id]);
+        expect(
+          profiles.calls.where((call) => call.startsWith('load')),
+          hasLength(2),
+        );
+        expect(
+          find.byKey(const ValueKey<String>('user-profile-friend-pending_out')),
+          findsOneWidget,
+        );
+        expect(find.text('好友申请已发送'), findsOneWidget);
+      },
+    );
 
     testWidgets('a refused request says why and changes nothing', (
       tester,
