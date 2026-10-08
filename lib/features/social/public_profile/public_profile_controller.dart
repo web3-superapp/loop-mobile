@@ -359,18 +359,29 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
         return outcome.viewerFollows ? '已关注' : '已取消关注';
       });
 
-  Future<PublicProfileActionOutcome?> requestFriend() =>
-      _command((record) async {
-        await ref
-            .read(friendGatewayProvider)
-            .sendFriendRequest(
-              requestId: const Uuid().v4(),
-              profileRef: FriendProfileRef.fromPublicProfileId(
-                record.publicProfileId,
-              ),
-            );
-        return '好友申请已发送';
-      });
+  Future<PublicProfileActionOutcome?> requestFriend() => _command((
+    record,
+  ) async {
+    final gateway = ref.read(friendGatewayProvider);
+    final target = FriendProfileRef.fromPublicProfileId(record.publicProfileId);
+    if (gateway is LoopSocialFriendGateway) {
+      // The command form answers with the receipt alone. The search-flow
+      // form also wants the target in the search identity cache, which a
+      // profile reached from a chat or a link never filled — the request
+      // then went out but was reported as 结果未确认 (emulator
+      // 2026-10-08).
+      await gateway.sendFriendRequestCommand(
+        operationId: const Uuid().v4(),
+        targetProfileRef: target,
+      );
+    } else {
+      await gateway.sendFriendRequest(
+        requestId: const Uuid().v4(),
+        profileRef: target,
+      );
+    }
+    return '好友申请已发送';
+  });
 
   Future<PublicProfileActionOutcome?> removeFriend() =>
       _command((record) async {
