@@ -11,6 +11,11 @@ Future<T?> showLoopSheet<T>(
   String barrierLabel = '关闭弹层',
   bool isDismissible = true,
   bool useRootNavigator = false,
+
+  /// Whether a downward drag closes the sheet. Defaults to [isDismissible].
+  /// A drag closes the route directly, past any `PopScope` inside the sheet,
+  /// so a sheet that must stay open for a while turns it off.
+  bool? enableDrag,
 }) async {
   final previousFocus = FocusManager.instance.primaryFocus;
   final reduceMotion = MediaQuery.disableAnimationsOf(context);
@@ -24,7 +29,7 @@ Future<T?> showLoopSheet<T>(
     useSafeArea: true,
     isScrollControlled: true,
     isDismissible: isDismissible,
-    enableDrag: isDismissible,
+    enableDrag: enableDrag ?? isDismissible,
     barrierColor: LoopColors.veil,
     barrierLabel: barrierLabel,
     backgroundColor: Colors.transparent,

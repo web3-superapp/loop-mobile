@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/group_rename.dart';
 import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
+import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -45,9 +46,12 @@ class GroupChatScreen extends ConsumerWidget {
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenInfo;
 
-  /// Both take the channel CID, so search and forwarding start from the exact
-  /// conversation the user is reading.
+  /// Takes the channel CID, so search starts from the exact conversation the
+  /// user is reading.
   final ValueChanged<String>? onOpenSearch;
+
+  /// No longer drawn (S108, decision 0114): forwarding starts from a
+  /// message's long-press. Kept so the router's wiring stays as it is.
   final ValueChanged<String>? onOpenForward;
 
   @override
@@ -58,84 +62,82 @@ class GroupChatScreen extends ConsumerWidget {
     final mode = ref.watch(chatV2GatewayProvider).mode;
     final cid = channelCid;
     final blocked = communityCapabilityBlocks(mode, capability);
-    return Scaffold(
-      key: const ValueKey<String>('group-screen'),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            LoopTopbar(
-              title: '群聊',
-              kicker: communityPreviewKicker(mode),
-              onBack: onBack,
-              minHeight: 72,
-              actions: <Widget>[
-                if (cid != null) ...<Widget>[
-                  LoopIconButton(
-                    key: const ValueKey<String>('group-open-search'),
-                    icon: 'search',
-                    label: '搜索这个会话',
-                    onPressed: () => onOpenSearch?.call(cid),
-                  ),
-                  LoopIconButton(
-                    key: const ValueKey<String>('group-open-forward'),
-                    icon: 'shuffle',
-                    label: '转发消息',
-                    onPressed: () => onOpenForward?.call(cid),
-                  ),
-                  LoopIconButton(
-                    key: const ValueKey<String>('group-open-info'),
-                    icon: 'info',
-                    label: '群信息',
-                    onPressed: () => onOpenInfo?.call(cid),
-                  ),
-                ],
-              ],
-            ),
-            Expanded(
-              child: switch ((blocked, cid)) {
-                (true, _) => _Block(
-                  blockKey: 'group-capability-unavailable',
-                  message: '群聊当前不可用',
-                  reason: capability.reasonCode == null
-                      ? '尚未读取到能力清单，本页不请求任何频道。'
-                      : communicationUnavailableReason(capability.reasonCode),
-                ),
-                (false, null) => const _Block(
-                  blockKey: 'group-missing-cid',
-                  message: '缺少群聊标识',
-                  reason: '请从会话列表或群信息进入，本页不会猜测要打开哪个群。',
-                ),
-                (false, final String value) => LoopStreamChannelSurface(
-                  key: ValueKey<String>('group-$value'),
-                  cid: value,
-                  keyPrefix: 'group-channel',
-                  composerHint: loopChatComposerHint,
-                  // S99c: only the group's creator pins (loop-api 0091).
-                  mayPinMessagesFor: loopFriendGroupCreatorMayPin,
-                  header: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      CommunityPreviewNotice(mode: mode, resource: '群聊'),
-                      LoopChatHeaderFold(
-                        collapsed: loopChatKeyboardIsUp(context),
-                        child: const LoopNotice(
-                          key: ValueKey<String>('group-scope-note'),
-                          icon: 'info',
-                          title: '普通群与社区的区别',
-                          body:
-                              '普通群没有社区币、没有 Mining Weight，也没有 Community AI。'
-                              '带币社区在「社区」栏。',
-                          margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
-                        ),
+    return LoopMessageSelectionHost(
+      child: Scaffold(
+        key: const ValueKey<String>('group-screen'),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopSelectionAwareTopbar(
+                child: LoopTopbar(
+                  title: '群聊',
+                  kicker: communityPreviewKicker(mode),
+                  onBack: onBack,
+                  minHeight: 72,
+                  actions: <Widget>[
+                    if (cid != null) ...<Widget>[
+                      LoopIconButton(
+                        key: const ValueKey<String>('group-open-search'),
+                        icon: 'search',
+                        label: '搜索这个会话',
+                        onPressed: () => onOpenSearch?.call(cid),
+                      ),
+                      LoopIconButton(
+                        key: const ValueKey<String>('group-open-info'),
+                        icon: 'info',
+                        label: '群信息',
+                        onPressed: () => onOpenInfo?.call(cid),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-              },
-            ),
-          ],
+              ),
+              Expanded(
+                child: switch ((blocked, cid)) {
+                  (true, _) => _Block(
+                    blockKey: 'group-capability-unavailable',
+                    message: '群聊当前不可用',
+                    reason: capability.reasonCode == null
+                        ? '尚未读取到能力清单，本页不请求任何频道。'
+                        : communicationUnavailableReason(capability.reasonCode),
+                  ),
+                  (false, null) => const _Block(
+                    blockKey: 'group-missing-cid',
+                    message: '缺少群聊标识',
+                    reason: '请从会话列表或群信息进入，本页不会猜测要打开哪个群。',
+                  ),
+                  (false, final String value) => LoopStreamChannelSurface(
+                    key: ValueKey<String>('group-$value'),
+                    cid: value,
+                    keyPrefix: 'group-channel',
+                    composerHint: loopChatComposerHint,
+                    // S99c: only the group's creator pins (loop-api 0091).
+                    mayPinMessagesFor: loopFriendGroupCreatorMayPin,
+                    header: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        CommunityPreviewNotice(mode: mode, resource: '群聊'),
+                        LoopChatHeaderFold(
+                          collapsed: loopChatKeyboardIsUp(context),
+                          child: const LoopNotice(
+                            key: ValueKey<String>('group-scope-note'),
+                            icon: 'info',
+                            title: '普通群与社区的区别',
+                            body:
+                                '普通群没有社区币、没有 Mining Weight，也没有 Community AI。'
+                                '带币社区在「社区」栏。',
+                            margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
