@@ -61,7 +61,7 @@ void main() {
       expect(gateway.commands, isEmpty);
     });
 
-    testWidgets('the channel name keeps one line beside its four tools', (
+    testWidgets('the channel name keeps one line beside its tools', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -74,7 +74,6 @@ void main() {
 
       for (final tool in <String>[
         'community-chat-open-search',
-        'community-chat-open-forward',
         'community-chat-open-voice',
         'community-chat-open-profile',
       ]) {
@@ -84,6 +83,12 @@ void main() {
           reason: tool,
         );
       }
+      // S108 (decision 0114): forwarding starts from a message's long-press,
+      // so the bar's shuffle tool is gone.
+      expect(
+        find.byKey(const ValueKey<String>('community-chat-open-forward')),
+        findsNothing,
+      );
 
       final title = find.text('Frog Holders');
       expect(title, findsOneWidget);

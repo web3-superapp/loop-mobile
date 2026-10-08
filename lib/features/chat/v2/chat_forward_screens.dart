@@ -89,6 +89,7 @@ final class ChatForwardState {
     this.failed = false,
     this.offline = false,
     this.busy = false,
+    this.seededFromSelection = false,
   });
 
   final String? sourceCid;
@@ -108,6 +109,11 @@ final class ChatForwardState {
   /// disproved, so the page pauses instead of reporting a failure.
   final bool offline;
   final bool busy;
+
+  /// The state was handed over by a conversation's multi-select (S108), not
+  /// read by `chat-forward` itself. Its message list is the selection only,
+  /// so a later visit to `chat-forward` reads the conversation again.
+  final bool seededFromSelection;
 
   List<ChatForwardMessage> get selectedMessages => <ChatForwardMessage>[
     for (final message in messages)
@@ -139,6 +145,7 @@ final class ChatForwardState {
     bool? failed,
     bool? offline,
     bool? busy,
+    bool? seededFromSelection,
   }) => ChatForwardState(
     sourceCid: sourceCid ?? this.sourceCid,
     sourceLabel: sourceLabel ?? this.sourceLabel,
@@ -149,6 +156,7 @@ final class ChatForwardState {
     failed: failed ?? this.failed,
     offline: offline ?? this.offline,
     busy: busy ?? this.busy,
+    seededFromSelection: seededFromSelection ?? this.seededFromSelection,
   );
 }
 
@@ -167,6 +175,101 @@ final class ChatForwardOutcome {
   final int failed;
 }
 
+/// Whether [cid] shows its members as their real accounts (decision 0112):
+/// a direct conversation always, a community or small group by its switch.
+bool chatForwardUsesRealIdentity(LoopFeatureSwitchValues switches, String cid) {
+  final surface = loopChatSurfaceForCid(cid);
+  return surface == LoopChatSurface.direct ||
+      switches.realIdentityFor(
+        communityChannel: surface == LoopChatSurface.communityChat,
+      );
+}
+
+/// Whether [message] can travel as a forward: a sent text message with no
+/// picture or file of its own. A link preview Stream scraped onto the text is
+/// not content the member attached, so it does not count.
+bool chatForwardMessageIsForwardable(Message message) =>
+    !message.isDeleted &&
+    !message.state.isDeleted &&
+    (message.text ?? '').trim().isNotEmpty &&
+    message.attachments.every((attachment) => attachment.ogScrapeUrl != null);
+
+/// One Stream message, reduced to what the forward pages may render.
+ChatForwardMessage chatForwardMessageOf(
+  Message message, {
+  required bool realIdentity,
+}) => ChatForwardMessage(
+  messageId: message.id,
+  text: message.text ?? '',
+  createdAt: message.createdAt,
+  forwardable: chatForwardMessageIsForwardable(message),
+  senderName: realIdentity
+      ? loopStreamRealIdentityOf(message.user)?.name
+      : null,
+);
+
+/// Sends one forwarded copy, labelled with where it came from.
+Future<void> chatForwardSendOne({
+  required Channel channel,
+  required String sourceCid,
+  required ChatForwardMessage message,
+}) => channel.sendMessage(
+  Message(
+    text: message.text,
+    extraData: <String, Object?>{
+      'loop_forwarded_from': <String, Object?>{
+        'cid': sourceCid,
+        'messageId': message.messageId,
+      },
+    },
+  ),
+);
+
+/// One bounded page of the account's most recently updated conversations a
+/// forward may land in: joined, LOOP-addressed, never [excludeCid].
+Future<List<ChatForwardTarget>> queryChatForwardTargets({
+  required StreamChatClient client,
+  required String userId,
+  required String? excludeCid,
+  required LoopDirectChannelDirectory? directory,
+}) async {
+  // The destination list is one bounded page of the account's most recently
+  // updated conversations; the page says so rather than implying it is the
+  // complete set.
+  final destinations = await client.queryChannelsOnline(
+    filter: Filter.in_('members', <Object>[userId]),
+    sort: const <SortOption<ChannelState>>[
+      SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
+    ],
+    paginationParams: const PaginationParams(limit: chatForwardTargetPageSize),
+  );
+  final targets = <ChatForwardTarget>[];
+  for (final channel in destinations) {
+    final cid = channel.cid;
+    if (cid == null || cid == excludeCid) continue;
+    final surface = loopChatSurfaceForCid(cid);
+    if (surface == null) continue;
+    // A destination must be a channel the account already belongs to.
+    if (channel.membership?.userId != userId) continue;
+    // The row is named after the conversation, not after its kind. Nine
+    // community channels used to arrive as nine rows reading 社区官方群, with
+    // nothing to tell them apart (audit 2026-09-20 · B.6). LOOP's own index of
+    // its direct channels is the one authority for who a 1:1 conversation is
+    // with; a read that has not landed leaves those rows neutral.
+    final label = resolveChatConversationLabel(
+      surface: surface,
+      extraData: channel.extraData,
+      cid: cid,
+      memberCount: channel.memberCount,
+      directory: directory,
+    );
+    targets.add(
+      ChatForwardTarget(cid: cid, label: label.title, detail: label.subtitle),
+    );
+  }
+  return List<ChatForwardTarget>.unmodifiable(targets);
+}
+
 /// Owns the selection shared by `chat-forward` and `chat-merge-preview`.
 ///
 /// Stream types stay inside this feature: the controller projects messages and
@@ -178,7 +281,11 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
   ChatForwardState build() => const ChatForwardState();
 
   Future<void> load(String sourceCid) async {
-    if (state.sourceCid == sourceCid && state.messages.isNotEmpty) return;
+    if (state.sourceCid == sourceCid &&
+        state.messages.isNotEmpty &&
+        !state.seededFromSelection) {
+      return;
+    }
     final session = ref.read(streamChatSdkSessionProvider);
     final userId = session?.client.state.currentUser?.id;
     if (session == null || userId == null) {
@@ -209,75 +316,26 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         );
         // Decision 0112: a room that shows its members as their accounts
         // shows them in the merged image too, by the same Stream name.
-        final surface = loopChatSurfaceForCid(sourceCid);
-        final realIdentity =
-            surface == LoopChatSurface.direct ||
-            ref
-                .read(loopFeatureSwitchesProvider)
-                .realIdentityFor(
-                  communityChannel: surface == LoopChatSurface.communityChat,
-                );
+        final realIdentity = chatForwardUsesRealIdentity(
+          ref.read(loopFeatureSwitchesProvider),
+          sourceCid,
+        );
         for (final message
             in sourceChannels.single.state?.messages ?? const <Message>[]) {
           messages.add(
-            ChatForwardMessage(
-              messageId: message.id,
-              text: message.text ?? '',
-              createdAt: message.createdAt,
-              forwardable:
-                  !message.isDeleted && (message.text ?? '').trim().isNotEmpty,
-              senderName: realIdentity
-                  ? loopStreamRealIdentityOf(message.user)?.name
-                  : null,
-            ),
+            chatForwardMessageOf(message, realIdentity: realIdentity),
           );
         }
       }
 
-      // The destination list is one bounded page of the account's most
-      // recently updated conversations; the page says so rather than implying
-      // it is the complete set.
-      final destinations = await session.client.queryChannelsOnline(
-        filter: Filter.in_('members', <Object>[userId]),
-        sort: const <SortOption<ChannelState>>[
-          SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
-        ],
-        paginationParams: const PaginationParams(
-          limit: chatForwardTargetPageSize,
-        ),
+      final targets = await queryChatForwardTargets(
+        client: session.client,
+        userId: userId,
+        excludeCid: sourceCid,
+        directory: ref
+            .read(directChannelDirectoryProvider)
+            .maybeWhen(data: (value) => value, orElse: () => null),
       );
-      // LOOP's own index of its direct channels: the one authority for who a
-      // 1:1 conversation is with. A read that has not landed leaves those
-      // rows neutral rather than borrowing a name from the provider.
-      final directory = ref
-          .read(directChannelDirectoryProvider)
-          .maybeWhen(data: (value) => value, orElse: () => null);
-      final targets = <ChatForwardTarget>[];
-      for (final channel in destinations) {
-        final cid = channel.cid;
-        if (cid == null || cid == sourceCid) continue;
-        final surface = loopChatSurfaceForCid(cid);
-        if (surface == null) continue;
-        // A destination must be a channel the account already belongs to.
-        if (channel.membership?.userId != userId) continue;
-        // The row is named after the conversation, not after its kind. Nine
-        // community channels used to arrive as nine rows reading 社区官方群,
-        // with nothing to tell them apart (audit 2026-09-20 · B.6).
-        final label = resolveChatConversationLabel(
-          surface: surface,
-          extraData: channel.extraData,
-          cid: cid,
-          memberCount: channel.memberCount,
-          directory: directory,
-        );
-        targets.add(
-          ChatForwardTarget(
-            cid: cid,
-            label: label.title,
-            detail: label.subtitle,
-          ),
-        );
-      }
       state = ChatForwardState(
         sourceCid: sourceCid,
         sourceLabel: sourceLabel,
@@ -294,6 +352,24 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         offline: offline,
       );
     }
+  }
+
+  /// Hands a conversation's multi-select to `chat-merge-preview` (S108).
+  ///
+  /// [messages] are exactly the ones the reader ticked, already projected,
+  /// oldest first; every one of them is selected.
+  void seedSelection({
+    required String sourceCid,
+    required List<ChatForwardMessage> messages,
+    String? sourceLabel,
+  }) {
+    state = ChatForwardState(
+      sourceCid: sourceCid,
+      sourceLabel: sourceLabel,
+      messages: List<ChatForwardMessage>.unmodifiable(messages),
+      selected: <String>{for (final message in messages) message.messageId},
+      seededFromSelection: true,
+    );
   }
 
   /// Returns false when the 20-message cap refused the selection.
@@ -334,16 +410,10 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         continue;
       }
       try {
-        await channel.sendMessage(
-          Message(
-            text: message.text,
-            extraData: <String, Object?>{
-              'loop_forwarded_from': <String, Object?>{
-                'cid': source,
-                'messageId': message.messageId,
-              },
-            },
-          ),
+        await chatForwardSendOne(
+          channel: channel,
+          sourceCid: source,
+          message: message,
         );
         sent += 1;
       } catch (_) {

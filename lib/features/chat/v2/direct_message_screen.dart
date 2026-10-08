@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
+import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -94,38 +95,43 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     }
 
     final identity = target?.identity;
-    return Scaffold(
-      key: const ValueKey<String>('dm-screen'),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            LoopTopbar(
-              title: identity?.displayName ?? '私聊',
-              // `#scr-dm .topbar` prints `NightOwl` at 15px and
-              // `LOOP-4D5E6F · 在线` at 11px *under* it. LOOP had the LOOP ID
-              // in the mono eyebrow above the name, which reads as a section
-              // marker and put the identifier before the person (audit
-              // 2026-09-20 · B.3).
-              kicker: communityPreviewKicker(mode),
-              // An account with no alias is already named by its LOOP ID on
-              // the title line; printing it twice says nothing the second
-              // time.
-              subtitle: identity == null || identity.alias == null
-                  ? null
-                  : identity.loopId,
-              onBack: widget.onBack,
-              minHeight: 72,
-              framedTools: true,
-            ),
-            Expanded(
-              child: _body(
-                blocked: blocked,
-                capabilityReason: capability.reasonCode,
+    // S108: a direct conversation multi-selects and forwards like a group.
+    return LoopMessageSelectionHost(
+      child: Scaffold(
+        key: const ValueKey<String>('dm-screen'),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopSelectionAwareTopbar(
+                child: LoopTopbar(
+                  title: identity?.displayName ?? '私聊',
+                  // `#scr-dm .topbar` prints `NightOwl` at 15px and
+                  // `LOOP-4D5E6F · 在线` at 11px *under* it. LOOP had the LOOP ID
+                  // in the mono eyebrow above the name, which reads as a section
+                  // marker and put the identifier before the person (audit
+                  // 2026-09-20 · B.3).
+                  kicker: communityPreviewKicker(mode),
+                  // An account with no alias is already named by its LOOP ID on
+                  // the title line; printing it twice says nothing the second
+                  // time.
+                  subtitle: identity == null || identity.alias == null
+                      ? null
+                      : identity.loopId,
+                  onBack: widget.onBack,
+                  minHeight: 72,
+                  framedTools: true,
+                ),
               ),
-            ),
-          ],
+              Expanded(
+                child: _body(
+                  blocked: blocked,
+                  capabilityReason: capability.reasonCode,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

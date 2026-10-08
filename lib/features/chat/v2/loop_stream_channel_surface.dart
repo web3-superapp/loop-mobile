@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message
 import 'package:loop_mobile/features/chat/token_card/chat_token_card_cache.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
+import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
@@ -619,6 +620,7 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
     final loopMentions = loopChannelAutocompleteTriggers(
       StreamChannel.of(context).channel.cid,
     );
+    final selection = LoopMessageSelectionScope.maybeOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -636,25 +638,31 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
           ),
         ),
         if (widget.footer != null) widget.footer!,
-        StreamMessageComposer(
-          key: const ValueKey<String>('loop-stream-message-composer'),
-          focusNode: _focusNode,
-          messageComposerController: _composerController,
-          onQuotedMessageCleared: _composerController.clearQuotedMessage,
-          preMessageSending: _beforeSend,
-          onMessageSent: _afterSend,
-          // Pictures go through the one gate in `loop_chat_image_composer.dart`
-          // — images only, 10 MB, nine per message — which the component
-          // builder applies to every composer, including this one. Voice
-          // recording stays off: LOOP has proven no recording capability.
-          enableVoiceRecording: false,
-          enableMentionsOverlay: loopMentions.isEmpty,
-          customAutocompleteTriggers: loopMentions,
-          allowedAttachmentPickerTypes: loopChatImagePickerTypes,
-          attachmentLimit: loopChatImageMaxCount,
-          useSystemAttachmentPicker: true,
-          placeholderBuilder: (context, placeholder) => widget.composerHint,
-        ),
+        // S108: while the page is multi-selecting, the composer gives way to
+        // the selection's own action bar. The composer's controller lives on
+        // this state, so a half-typed message is still there afterwards.
+        if (selection != null && selection.active)
+          LoopMessageSelectionBar(controller: selection)
+        else
+          StreamMessageComposer(
+            key: const ValueKey<String>('loop-stream-message-composer'),
+            focusNode: _focusNode,
+            messageComposerController: _composerController,
+            onQuotedMessageCleared: _composerController.clearQuotedMessage,
+            preMessageSending: _beforeSend,
+            onMessageSent: _afterSend,
+            // Pictures go through the one gate in `loop_chat_image_composer.dart`
+            // — images only, 10 MB, nine per message — which the component
+            // builder applies to every composer, including this one. Voice
+            // recording stays off: LOOP has proven no recording capability.
+            enableVoiceRecording: false,
+            enableMentionsOverlay: loopMentions.isEmpty,
+            customAutocompleteTriggers: loopMentions,
+            allowedAttachmentPickerTypes: loopChatImagePickerTypes,
+            attachmentLimit: loopChatImageMaxCount,
+            useSystemAttachmentPicker: true,
+            placeholderBuilder: (context, placeholder) => widget.composerHint,
+          ),
       ],
     );
   }

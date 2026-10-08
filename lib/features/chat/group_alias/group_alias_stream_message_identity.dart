@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/features/chat/member_buy/loop_member_buy_card.dart';
+import 'package:loop_mobile/features/chat/member_buy/member_buy_event.dart';
 import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
+import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
@@ -397,12 +400,25 @@ bool loopStreamChannelUsesGroupMessageAlias(String? cid) {
 /// actions, replies, and thread behavior. This wrapper only observes the
 /// official current-channel member projection and supplies a display-only
 /// message copy whose visible user projections use the group Alias boundary.
+///
+/// Two LOOP rows sit on top (S108, decision 0114): a member-buy feed message
+/// is [LoopMemberBuyCard], not a bubble, and while the conversation is
+/// multi-selecting every row carries its check box ([LoopSelectableMessage]).
 Widget loopStreamGroupMessageItemBuilder(
   BuildContext context,
   StreamMessageItemProps props,
-) => _LoopStreamGroupMessageItem(
-  props: loopApplyChannelMessagePolicy(context, props),
-);
+) {
+  final message = props.message;
+  final Widget item = loopIsMemberBuyMessage(message) && !message.isDeleted
+      ? LoopMemberBuyCard(
+          key: ValueKey<String>('loop-member-buy-${message.id}'),
+          message: message,
+        )
+      : _LoopStreamGroupMessageItem(
+          props: loopApplyChannelMessagePolicy(context, props),
+        );
+  return LoopSelectableMessage(message: message, child: item);
+}
 
 /// Root Stream component builder for mention autocomplete rows.
 ///
