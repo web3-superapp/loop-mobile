@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -43,16 +44,65 @@ enum CommunityDiscoverSegment {
   }
 }
 
+/// Collects a community application, confirms it, then submits it exactly
+/// once. The five refusal codes each get their own copy; only a 201
+/// navigates.
+///
+/// Shared by 发现社区's 申请入驻 and the 聊天 tab's 「＋ → 创建社区」
+/// (decision 0110), so there is one creation path.
+Future<void> startCommunityApplication(
+  BuildContext context,
+  WidgetRef ref, {
+  ValueChanged<String>? onOpenCommunity,
+}) async {
+  final application = await showCommunityApplySheet(context);
+  if (application == null || !context.mounted) return;
+  final confirmed = await confirmCommunityAction(
+    context,
+    title: '提交社区申请？',
+    body: '提交后社区状态为「审核中」，你是所有者。短链接一旦被接受就不能再改。',
+    confirmLabel: '提交',
+    sheetKey: 'community-apply-confirm-sheet',
+  );
+  if (!confirmed || !context.mounted) return;
+  final outcome = await ref
+      .read(communityApplicationControllerProvider.notifier)
+      .submit(application);
+  if (!context.mounted) return;
+  final detail = outcome.detail;
+  if (detail != null) {
+    // The answer arrives on 我的 → 我的社区 → 我创建的, and the applicant is
+    // told so here rather than left to find it.
+    await showCommunityApplicationSubmittedSheet(
+      context,
+      communityName: detail.community.name,
+    );
+    if (!context.mounted) return;
+    onOpenCommunity?.call(detail.community.communityId);
+    return;
+  }
+  LoopToast.show(
+    context,
+    message: communityApplyFailureReason(outcome.failureKind),
+    kind: LoopToastKind.err,
+  );
+}
+
 class CommunityDiscoverScreen extends ConsumerStatefulWidget {
   const CommunityDiscoverScreen({
     super.key,
     this.onBack,
     this.onOpenCommunity,
     this.joinedOnly = false,
+    this.embedded = false,
   });
 
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenCommunity;
+
+  /// The 社区 segment of 广场 (decision 0110): no bar of its own, and the
+  /// shell's tab-bar reserve at the foot.
+  final bool embedded;
 
   /// Entered from the home aggregate's "view all joined" action.
   final bool joinedOnly;
@@ -64,41 +114,11 @@ class CommunityDiscoverScreen extends ConsumerStatefulWidget {
 
 class _CommunityDiscoverScreenState
     extends ConsumerState<CommunityDiscoverScreen> {
-  /// Collects the application, confirms it, then submits it exactly once.
-  /// The five refusal codes each get their own copy; only a 201 navigates.
-  Future<void> _apply() async {
-    final application = await showCommunityApplySheet(context);
-    if (application == null || !mounted) return;
-    final confirmed = await confirmCommunityAction(
-      context,
-      title: '提交社区申请？',
-      body: '提交后社区状态为「审核中」，你是所有者。短链接一旦被接受就不能再改。',
-      confirmLabel: '提交',
-      sheetKey: 'community-apply-confirm-sheet',
-    );
-    if (!confirmed || !mounted) return;
-    final outcome = await ref
-        .read(communityApplicationControllerProvider.notifier)
-        .submit(application);
-    if (!mounted) return;
-    final detail = outcome.detail;
-    if (detail != null) {
-      // The answer arrives on 我的 → 我的社区 → 我创建的, and the applicant is
-      // told so here rather than left to find it.
-      await showCommunityApplicationSubmittedSheet(
-        context,
-        communityName: detail.community.name,
-      );
-      if (!mounted) return;
-      widget.onOpenCommunity?.call(detail.community.communityId);
-      return;
-    }
-    LoopToast.show(
-      context,
-      message: communityApplyFailureReason(outcome.failureKind),
-      kind: LoopToastKind.err,
-    );
-  }
+  Future<void> _apply() => startCommunityApplication(
+    context,
+    ref,
+    onOpenCommunity: widget.onOpenCommunity,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +155,8 @@ class _CommunityDiscoverScreenState
       title: widget.joinedOnly ? '已加入的社区' : '发现社区',
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
+      embedded: widget.embedded,
+      tabPage: widget.embedded,
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
@@ -186,6 +208,8 @@ class _CommunityDiscoverScreenState
           : null,
       onRefresh: controller.refresh,
       updating: state.refreshing,
+      // No page numbers and no 「载入更多」: the next cursor page is read as
+      // the reader nears the end of the rows already shown (v3, 6.2 · 4).
       collection: ListView(
         key: const ValueKey<String>('community-discover-list'),
         padding: const EdgeInsets.only(bottom: 24),
@@ -231,18 +255,32 @@ class _CommunityDiscoverScreenState
                   ),
               ],
             ),
-            if (state.nextCursor != null)
+            if (state.nextCursor != null &&
+                state.failureKind != null &&
+                !state.loadingMore)
+              // A failed next page keeps the rows and waits for the reader.
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: LoopButton(
-                  key: const ValueKey<String>('community-discover-load-more'),
-                  label: state.loadingMore ? '正在载入…' : '载入更多',
+                  key: const ValueKey<String>('community-discover-retry-more'),
+                  label: '重试',
                   block: true,
-                  onPressed: state.loadingMore
-                      ? null
-                      : () => unawaited(controller.loadMore()),
+                  onPressed: () => unawaited(controller.loadMore()),
                 ),
               )
+            else if (state.nextCursor case final String cursor) ...<Widget>[
+              LoopLoadMoreSentinel(
+                key: const ValueKey<String>('community-discover-load-more'),
+                cursor: cursor,
+                onLoadMore: () => unawaited(controller.loadMore()),
+              ),
+              if (state.loadingMore)
+                const Padding(
+                  key: ValueKey<String>('community-discover-loading-more'),
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: LoopSkeleton(type: LoopSkeletonType.record, rows: 2),
+                ),
+            ]
             // The last page's control simply disappeared, and a list that
             // ends in silence reads as one that stopped loading.
             else if (state.items.isNotEmpty)

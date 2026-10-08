@@ -35,12 +35,18 @@ void main() {
     test(
       'Dart table mirrors routes-manifest.json slug, module, tab and order',
       () {
-        expect(json['count'], 93);
+        expect(json['count'], 97);
+        expect(json['prototypeSha256'], LoopRouteManifest.prototypeSha256);
+        expect(
+          LoopRouteManifest.prototypeSha256,
+          startsWith('bdbe1832'),
+          reason: 'the frozen prototype the first 93 slugs came from',
+        );
         expect(json['defaultRoute'], LoopRouteManifest.defaultSlug);
         expect(json['tabs'], LoopRouteManifest.tabSlugs);
         expect(json['frozenAt'], LoopRouteManifest.frozenAt);
         expect(json['sha256'], LoopRouteManifest.sha256);
-        expect(LoopRouteManifest.entries, hasLength(93));
+        expect(LoopRouteManifest.entries, hasLength(97));
 
         final modules = json['modules']! as Map<String, Object?>;
         expect(
@@ -73,8 +79,8 @@ void main() {
     test('every slug maps to one unique path and non-empty page facts', () {
       final slugs = LoopRouteManifest.entries.map((entry) => entry.slug);
       final paths = LoopRouteManifest.entries.map((entry) => entry.path);
-      expect(slugs.toSet(), hasLength(93));
-      expect(paths.toSet(), hasLength(93));
+      expect(slugs.toSet(), hasLength(97));
+      expect(paths.toSet(), hasLength(97));
       for (final entry in LoopRouteManifest.entries) {
         expect(entry.path, startsWith('/'), reason: entry.slug);
         expect(entry.path, isNot(contains(':')), reason: entry.slug);
@@ -103,23 +109,50 @@ void main() {
     });
 
     test('five tabs keep the fixed order and no retired destination', () {
+      // Decision 0110 (v3): 聊天 / 广场 / MEME / 情报 / 钱包.
+      expect(LoopRouteManifest.tabSlugs, <String>[
+        'chat',
+        'square',
+        'meme',
+        'intel',
+        'wallet',
+      ]);
       expect(LoopRouteManifest.tabPaths, <String>[
-        '/community',
-        '/mining',
-        '/launch',
-        '/market',
+        '/chat',
+        '/square',
+        '/meme',
+        '/intel',
         '/wallet',
       ]);
       expect(LoopRouteManifest.entries.where((entry) => entry.tab).length, 5);
-      expect(LoopRouteManifest.defaultPath, '/community');
+      expect(LoopRouteManifest.defaultSlug, 'chat');
+      expect(LoopRouteManifest.defaultPath, '/chat');
       expect(LoopShell.destinationPaths, LoopRouteManifest.tabPaths);
       expect(LoopShell.destinationLabels, <String>[
-        '社区',
-        '挖矿',
-        'Launch',
-        '行情',
+        '聊天',
+        '广场',
+        'MEME',
+        '情报',
         '钱包',
       ]);
+      // The four v2 tabs keep their slug, path and page; only the tab flag
+      // moved.
+      for (final (slug, path) in <(String, String)>[
+        ('community', '/community'),
+        ('mining', '/mining'),
+        ('launch', '/launch'),
+        ('market', '/market'),
+      ]) {
+        final entry = LoopRouteManifest.bySlug(slug);
+        expect(entry.path, path, reason: slug);
+        expect(entry.tab, isFalse, reason: slug);
+        expect(entry.status, LoopRouteStatus.implemented, reason: slug);
+        expect(LoopRouteManifest.isTabPath(path), isFalse, reason: slug);
+      }
+      // `/chat` is a tab and its children stay ordinary child routes.
+      expect(LoopRouteManifest.pathFor('dm'), '/chat/dm');
+      expect(LoopRouteManifest.supplementaryPaths, isNot(contains('/chat')));
+      expect(LoopRouteManifest.compatibilityRedirects['/home'], '/chat');
       for (final retired in <String>[
         '/home',
         '/onboarding',
@@ -140,7 +173,6 @@ void main() {
       // The doc comment on `supplementaryPaths` promises this test names every
       // entry, so nothing can be added without an assertion changing.
       expect(LoopRouteManifest.supplementaryPaths, <String>[
-        '/chat',
         '/chat/channel/:cid',
         '/chat/groups/create',
         '/chat/groups/:groupId/alias',
@@ -322,50 +354,49 @@ void main() {
       expect(find.byType(LoopTabBar), findsNothing);
     });
 
-    testWidgets(
-      'illegal and retired locations are logged and land on Community',
-      (tester) async {
-        final routingErrors = LoopRoutingErrorLog();
-        final router = await _pumpApp(tester, routingErrors: routingErrors);
+    testWidgets('illegal and retired locations are logged and land on Chat', (
+      tester,
+    ) async {
+      final routingErrors = LoopRoutingErrorLog();
+      final router = await _pumpApp(tester, routingErrors: routingErrors);
 
-        for (final location in <String>[
-          '/not-a-loop-route',
-          '/onboarding',
-          '/notifications',
-          '/onramp',
-          '/auth/wallet/seed',
-          '/profile/recovery',
-          '/home/net-worth',
-          '/wallet/transaction',
-          '/inventory',
-        ]) {
-          router.go(location);
-          await tester.pumpAndSettle();
-
-          expect(
-            router.routeInformationProvider.value.uri.path,
-            '/community',
-            reason: location,
-          );
-          expect(routingErrors.last?.location, location, reason: location);
-          expect(routingErrors.last?.fallback, '/community');
-          expect(find.byType(LoopTabBar), findsOneWidget, reason: location);
-        }
-        expect(routingErrors.entries, hasLength(9));
-
-        router.go('/home');
+      for (final location in <String>[
+        '/not-a-loop-route',
+        '/onboarding',
+        '/notifications',
+        '/onramp',
+        '/auth/wallet/seed',
+        '/profile/recovery',
+        '/home/net-worth',
+        '/wallet/transaction',
+        '/inventory',
+      ]) {
+        router.go(location);
         await tester.pumpAndSettle();
-        expect(router.routeInformationProvider.value.uri.path, '/community');
-        router.go('/launchpad');
-        await tester.pumpAndSettle();
-        expect(router.routeInformationProvider.value.uri.path, '/launch');
+
         expect(
-          routingErrors.entries,
-          hasLength(9),
-          reason: 'compatibility redirects are not routing errors',
+          router.routeInformationProvider.value.uri.path,
+          '/chat',
+          reason: location,
         );
-      },
-    );
+        expect(routingErrors.last?.location, location, reason: location);
+        expect(routingErrors.last?.fallback, '/chat');
+        expect(find.byType(LoopTabBar), findsOneWidget, reason: location);
+      }
+      expect(routingErrors.entries, hasLength(9));
+
+      router.go('/home');
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
+      router.go('/launchpad');
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/launch');
+      expect(
+        routingErrors.entries,
+        hasLength(9),
+        reason: 'compatibility redirects are not routing errors',
+      );
+    });
 
     testWidgets('the tab bar is shown only on the five tab routes', (
       tester,
@@ -383,6 +414,11 @@ void main() {
         '/system/offline',
         '/preview/toast',
         '/launch/detail',
+        // Decision 0110: the four v2 tabs are child pages now.
+        '/community',
+        '/mining',
+        '/launch',
+        '/market',
       ]) {
         router.go(path);
         await tester.pumpAndSettle();
@@ -446,7 +482,7 @@ Future<GoRouter> _pumpApp(
   );
   await tester.pumpAndSettle();
   return GoRouter.of(
-    tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+    tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
   );
 }
 

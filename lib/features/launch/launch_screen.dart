@@ -41,7 +41,15 @@ class LaunchScreen extends ConsumerStatefulWidget {
     this.onOpenRules,
     this.onOpenEconomy,
     this.onOpenApply,
+    this.onBack,
+    this.embedded = false,
   });
+
+  /// Set when Launch is opened as a page of its own rather than as a tab.
+  final VoidCallback? onBack;
+
+  /// The 发射台 segment of MEME (decision 0110): no bar of its own.
+  final bool embedded;
 
   final void Function(String launchId)? onOpenLaunch;
   final VoidCallback? onOpenStake;
@@ -86,7 +94,9 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
       // The prototype's bar is one line: `Launch` plus two framed round tools.
       title: 'Launch',
       framedTools: true,
-      tabPage: true,
+      onBack: widget.onBack,
+      tabPage: widget.onBack == null,
+      embedded: widget.embedded,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('launch-stake-action'),

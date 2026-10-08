@@ -219,7 +219,7 @@ Future<GoRouter> _pumpAuthenticatedLoopApp(WidgetTester tester) async {
   await tester.pumpAndSettle();
 
   return GoRouter.of(
-    tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+    tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
   );
 }
 

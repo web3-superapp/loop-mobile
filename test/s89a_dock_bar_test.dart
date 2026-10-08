@@ -105,7 +105,7 @@ void main() {
       return selections;
     }
 
-    const slugs = <String>['community', 'mining', 'launch', 'market', 'wallet'];
+    const slugs = <String>['chat', 'square', 'meme', 'intel', 'wallet'];
 
     Finder cell(String slug) => find.byKey(ValueKey<String>('loop-tab-$slug'));
 
@@ -124,9 +124,7 @@ void main() {
       tester,
     ) async {
       final selections = await pumpBar(tester);
-      final gesture = await tester.startGesture(
-        tester.getCenter(cell('launch')),
-      );
+      final gesture = await tester.startGesture(tester.getCenter(cell('meme')));
       // Held, not moved, short of a long press: still just a tap.
       await tester.pump(const Duration(milliseconds: 120));
       expect(items(tester).every((item) => item.dock.atRest), isTrue);
@@ -136,7 +134,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(items(tester).every((item) => item.dock.atRest), isTrue);
       expect(
-        find.byKey(const ValueKey<String>('loop-tab-dock-launch')),
+        find.byKey(const ValueKey<String>('loop-tab-dock-meme')),
         findsNothing,
       );
     });
@@ -145,11 +143,11 @@ void main() {
         'cells keep their size, and lifting selects', (tester) async {
       final selections = await pumpBar(tester);
       final before = cellRects(tester);
-      final start = tester.getCenter(cell('mining'));
+      final start = tester.getCenter(cell('square'));
       final gesture = await tester.startGesture(start);
       await tester.pump();
       // Two steps past the touch slop, ending on the Launch cell's centre.
-      final target = tester.getCenter(cell('launch'));
+      final target = tester.getCenter(cell('meme'));
       await gesture.moveTo(Offset((start.dx + target.dx) / 2, start.dy));
       await tester.pump();
       await gesture.moveTo(Offset(target.dx, start.dy));
@@ -174,7 +172,7 @@ void main() {
       expect(docked[1].shift, lessThan(0));
       expect(docked[3].shift, greaterThan(0));
       expect(
-        find.byKey(const ValueKey<String>('loop-tab-dock-launch')),
+        find.byKey(const ValueKey<String>('loop-tab-dock-meme')),
         findsOneWidget,
       );
       // The hit areas are the laid-out cells, untouched by the magnification.
@@ -194,7 +192,7 @@ void main() {
       tester,
     ) async {
       final selections = await pumpBar(tester);
-      final start = tester.getCenter(cell('community'));
+      final start = tester.getCenter(cell('chat'));
       final gesture = await tester.startGesture(start);
       await gesture.moveBy(const Offset(40, 0));
       await tester.pump();
@@ -208,7 +206,7 @@ void main() {
     testWidgets('a held press becomes a slide too', (tester) async {
       final selections = await pumpBar(tester);
       final gesture = await tester.startGesture(
-        tester.getCenter(cell('market')),
+        tester.getCenter(cell('intel')),
       );
       await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
       for (var i = 0; i < 8; i += 1) {
@@ -230,11 +228,11 @@ void main() {
       tester,
     ) async {
       final selections = await pumpBar(tester, reduceMotion: true);
-      final start = tester.getCenter(cell('community'));
+      final start = tester.getCenter(cell('chat'));
       final gesture = await tester.startGesture(start);
       await gesture.moveBy(const Offset(40, 0));
       await tester.pump();
-      await gesture.moveTo(tester.getCenter(cell('market')));
+      await gesture.moveTo(tester.getCenter(cell('intel')));
       await tester.pump();
       expect(items(tester).every((item) => item.dock.atRest), isTrue);
       await gesture.up();

@@ -20,12 +20,12 @@ class LoopShell extends StatelessWidget {
   final String location;
 
   static const _destinations = <_LoopDestination>[
-    // Labels are zh-CN per the 01 handover (社区/挖矿/Launch/行情/钱包);
-    // slugs stay the stable test and analytics identifiers.
-    _LoopDestination('社区', '/community', 'community'),
-    _LoopDestination('挖矿', '/mining', 'mine-tab'),
-    _LoopDestination('Launch', '/launch', 'launch'),
-    _LoopDestination('行情', '/market', 'chart'),
+    // v3 (需求方 2026-10-08, decision 0110): 聊天/广场/MEME/情报/钱包.
+    // Slugs stay the stable test and analytics identifiers.
+    _LoopDestination('聊天', '/chat', 'chat'),
+    _LoopDestination('广场', '/square', 'compass'),
+    _LoopDestination('MEME', '/meme', 'launch'),
+    _LoopDestination('情报', '/intel', 'chart'),
     _LoopDestination('钱包', '/wallet', 'wallet'),
   ];
 
@@ -216,7 +216,7 @@ class LoopTabItem extends StatelessWidget {
 
   final String label;
 
-  /// Stable identifier (`community`, `mining`, ...) for keys and analytics.
+  /// Stable identifier (`chat`, `square`, ...) for keys and analytics.
   final String slug;
   final String icon;
   final bool selected;

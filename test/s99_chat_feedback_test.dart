@@ -503,7 +503,7 @@ void main() {
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const ValueKey<String>('community-screen')),
+          find.byKey(const ValueKey<String>('chat-tab-screen')),
           findsOneWidget,
         );
       });
@@ -514,7 +514,7 @@ void main() {
         await pushRoute(tester, '/c/community-alpha/room/extra');
         expect(find.byType(CommunityProfileScreen), findsNothing);
         expect(
-          find.byKey(const ValueKey<String>('community-screen')),
+          find.byKey(const ValueKey<String>('chat-tab-screen')),
           findsOneWidget,
         );
       });

@@ -33,6 +33,7 @@ class LoopTopbar extends StatelessWidget {
     this.subtitle,
     this.framedTools = false,
     this.titleField,
+    this.leading,
   });
 
   final String title;
@@ -64,6 +65,10 @@ class LoopTopbar extends StatelessWidget {
   /// thing the page offers is the thing it is for. When set, [title] is kept
   /// as the bar's accessibility name and is not drawn.
   final Widget? titleField;
+
+  /// A control before the title on a page without a back control — the
+  /// owner's avatar on 聊天 (decision 0110). Ignored when [onBack] is set.
+  final Widget? leading;
   final VoidCallback? onBack;
   final String backLabel;
   final List<Widget> actions;
@@ -112,6 +117,9 @@ class LoopTopbar extends StatelessWidget {
                 framed: framedTools,
               ),
               SizedBox(width: dense ? gap : 10),
+            ] else if (leading != null) ...<Widget>[
+              leading!,
+              const SizedBox(width: 10),
             ],
             if (titleField != null)
               Expanded(

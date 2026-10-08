@@ -1,10 +1,12 @@
 {
-  "frozenAt": "2026-09-01",
+  "frozenAt": "2026-10-08",
   "source": "https://cliview.org/loop-v2.html",
-  "sha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
-  "defaultRoute": "community",
-  "tabs": ["community", "mining", "launch", "market", "wallet"],
-  "count": 93,
+  "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
+  "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
+  "sha256": "d7b845af877122c9ef08a6bd7a37b4672e46d25581c42acb9fd64f9b29fecafb",
+  "defaultRoute": "chat",
+  "tabs": ["chat", "square", "meme", "intel", "wallet"],
+  "count": 97,
   "modules": {
     "0-global-account": [
       {
@@ -66,7 +68,7 @@
       },
       {
         "slug": "community",
-        "tab": true,
+        "tab": false,
         "prototypeOrder": 13
       },
       {
@@ -138,12 +140,22 @@
         "slug": "chat-merge-preview",
         "tab": false,
         "prototypeOrder": 91
+      },
+      {
+        "slug": "chat",
+        "tab": true,
+        "prototypeOrder": 100
+      },
+      {
+        "slug": "square",
+        "tab": true,
+        "prototypeOrder": 101
       }
     ],
     "3-market": [
       {
         "slug": "market",
-        "tab": true,
+        "tab": false,
         "prototypeOrder": 26
       },
       {
@@ -185,12 +197,17 @@
         "slug": "smart-money",
         "tab": false,
         "prototypeOrder": 34
+      },
+      {
+        "slug": "intel",
+        "tab": true,
+        "prototypeOrder": 103
       }
     ],
     "4-launch": [
       {
         "slug": "launch",
-        "tab": true,
+        "tab": false,
         "prototypeOrder": 35
       },
       {
@@ -242,12 +259,17 @@
         "slug": "launch-apply",
         "tab": false,
         "prototypeOrder": 45
+      },
+      {
+        "slug": "meme",
+        "tab": true,
+        "prototypeOrder": 102
       }
     ],
     "5-mining": [
       {
         "slug": "mining",
-        "tab": true,
+        "tab": false,
         "prototypeOrder": 46
       },
       {

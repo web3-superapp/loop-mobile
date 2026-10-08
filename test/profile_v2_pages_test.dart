@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
@@ -243,22 +244,64 @@ void main() {
         onNavigate: destinations.add,
       );
 
+      // Decision 0110 · S106 §5: 我, top to bottom — mining, invite,
+      // communities, account, settings. Every row reaches its own slug.
+      expect(find.text('我'), findsWidgets);
       for (final entry in <(String, String)>[
+        ('profile-open-mining', 'mining'),
+        ('profile-open-mining-assets', 'mining-assets'),
+        ('profile-open-mining-rewards', 'mining-rewards'),
+        ('profile-open-mining-rules', 'mining-rules'),
+        ('profile-open-mining-overview', 'mining'),
+        ('profile-open-referral', 'referral'),
         ('profile-open-communities', 'community-discover'),
+        ('profile-open-wallets', 'wallets'),
+        ('profile-open-privacy', 'privacy'),
+        ('profile-open-security', 'security'),
+        ('profile-open-connections', 'connections'),
+        ('profile-open-friend-requests', 'friend-requests'),
+        ('profile-open-notifications', 'notif-settings'),
+        ('profile-open-settings', 'settings'),
+      ]) {
+        await _scrollTo(tester, entry.$1);
+        await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
+        await tester.pumpAndSettle();
+        expect(destinations.last, entry.$2, reason: entry.$1);
+      }
+      // IDO Launch is hidden by default (需求方 2026-10-08): neither row is
+      // drawn, and 未开放 appears nowhere.
+      expect(
+        find.byKey(const ValueKey<String>('profile-open-launch-history')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('profile-open-launch-tier')),
+        findsNothing,
+      );
+      expect(find.text('未开放'), findsNothing);
+      expect(find.text('社区成员关系尚未接入'), findsNothing);
+    });
+
+    testWidgets('the IDO switch brings both Launch rows back', (tester) async {
+      final destinations = <String>[];
+      await _pump(
+        tester,
+        'profile',
+        gateway: _Gateway(resource: active()),
+        onNavigate: destinations.add,
+        switches: const LoopFeatureSwitchValues(idoLaunchVisible: true),
+      );
+
+      for (final entry in <(String, String)>[
         ('profile-open-launch-history', 'launch-history'),
         ('profile-open-launch-tier', 'launch-tier'),
-        ('profile-open-wallets', 'wallets'),
       ]) {
         await _scrollTo(tester, entry.$1);
         await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
         await tester.pumpAndSettle();
         expect(destinations.last, entry.$2);
       }
-      // Unconnected sources say so instead of showing a count. 我的社区 is no
-      // longer one of them: it reads the community aggregate, which this
-      // harness leaves closed, so it states that rather than "未接入".
       expect(find.text('未开放'), findsNWidgets(2));
-      expect(find.text('社区成员关系尚未接入'), findsNothing);
     });
 
     testWidgets('the primary action opens the edit page', (tester) async {
@@ -600,6 +643,7 @@ Future<void> _pump(
   MiningGateway? mining,
   SocialGateway? social,
   bool settle = true,
+  LoopFeatureSwitchValues? switches,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -614,6 +658,8 @@ Future<void> _pump(
         ),
         if (mining != null) miningGatewayProvider.overrideWithValue(mining),
         if (social != null) socialGatewayProvider.overrideWithValue(social),
+        if (switches != null)
+          loopFeatureSwitchesProvider.overrideWithValue(switches),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

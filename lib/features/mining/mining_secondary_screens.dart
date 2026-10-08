@@ -606,15 +606,31 @@ LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
 
 /// `mining-rank` · the power leaderboard.
 class MiningRankScreen extends ConsumerStatefulWidget {
-  const MiningRankScreen({super.key, this.onBack});
+  const MiningRankScreen({
+    super.key,
+    this.onBack,
+    this.embedded = false,
+    this.includeReferralScope = false,
+  });
 
   final VoidCallback? onBack;
+
+  /// The 算力榜 segment of 情报 (decision 0110): no bar of its own.
+  final bool embedded;
+
+  /// Adds the 推广 board next to 社区 and 个人. LOOP publishes no referral
+  /// ranking yet, so that board states it is not open and reads nothing.
+  final bool includeReferralScope;
 
   @override
   ConsumerState<MiningRankScreen> createState() => _MiningRankScreenState();
 }
 
 class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
+  /// The 推广 board is selected. It has no scope on the server, so it is a
+  /// page state and never reaches the controller.
+  bool _referral = false;
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -638,6 +654,8 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
       archetype: LoopPageArchetype.record,
       title: '算力排行榜',
       onBack: widget.onBack,
+      embedded: widget.embedded,
+      tabPage: widget.embedded,
       primary: MiningCompositePrimary(
         primary: _rankHero(rank),
         detail: <Widget>[
@@ -683,17 +701,36 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             labels: <String>[
               miningRankScopeLabel(MiningRankScope.communities),
               miningRankScopeLabel(MiningRankScope.users),
+              if (widget.includeReferralScope) miningReferralRankLabel,
             ],
-            selectedIndex: scope == MiningRankScope.communities ? 0 : 1,
-            onSelected: (index) => unawaited(
-              controller.select(
-                index == 0
-                    ? MiningRankScope.communities
-                    : MiningRankScope.users,
-              ),
-            ),
+            selectedIndex: _referral
+                ? 2
+                : scope == MiningRankScope.communities
+                ? 0
+                : 1,
+            onSelected: (index) {
+              if (index == 2) {
+                setState(() => _referral = true);
+                return;
+              }
+              setState(() => _referral = false);
+              unawaited(
+                controller.select(
+                  index == 0
+                      ? MiningRankScope.communities
+                      : MiningRankScope.users,
+                ),
+              );
+            },
           ),
-          if (rank == null)
+          if (_referral)
+            const LoopEmpty(
+              key: ValueKey<String>('mining-rank-referral-unavailable'),
+              icon: 'warn',
+              message: '推广榜还没有开放',
+              reason: '开放后这里按邀请带来的已确认算力排名。',
+            )
+          else if (rank == null)
             LaunchStateBlock(
               prefix: 'mining-rank',
               phase: state.phase,

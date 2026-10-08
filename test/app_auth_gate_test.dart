@@ -49,10 +49,7 @@ void main() {
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
     expect(find.text('登录配置不完整'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey<String>('chat-tab-screen')), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('enter-development-preview-button')),
       findsNothing,
@@ -76,7 +73,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
     );
     final backendGate = Completer<LoopBackendLogoutResult>();
     final exit = container
@@ -94,10 +91,7 @@ void main() {
       find.byKey(const ValueKey('privy-google-login-button')),
       findsNothing,
     );
-    expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey<String>('chat-tab-screen')), findsNothing);
 
     // Advancing beyond the removed outer 20-second timeout must not detach
     // the still-running backend revocation or reopen the login controls.
@@ -145,17 +139,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.byKey(const ValueKey<String>('community-screen')),
+      find.byKey(const ValueKey<String>('chat-tab-screen')),
       findsOneWidget,
     );
+    // The Preview build has no Stream session: 聊天 closes and lists nothing.
     expect(
-      find.byKey(const ValueKey<String>('community-capability-unavailable')),
+      find.byKey(const ValueKey<String>('stream-chat-unavailable')),
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('community-profile-action')),
-    );
+    await tester.tap(find.byKey(const ValueKey<String>('chat-open-profile')));
     await tester.pumpAndSettle();
     final signOut = find.byKey(const ValueKey<String>('profile-sign-out'));
     await tester.scrollUntilVisible(signOut, 240);
@@ -167,9 +160,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey<String>('community-screen')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey<String>('chat-tab-screen')), findsNothing);
   });
 }

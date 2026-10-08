@@ -1002,8 +1002,11 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey<String>('chat-create-menu')));
     await tester.pumpAndSettle();
-    expect(find.text('创建群组'), findsOneWidget);
-    expect(find.text('添加好友'), findsOneWidget);
+    // Decision 0110: 「＋」 is one sheet with every way to start something.
+    expect(find.text('创建群聊'), findsOneWidget);
+    expect(find.text('搜索 / 添加用户'), findsOneWidget);
+    expect(find.text('创建社区'), findsOneWidget);
+    expect(find.text('扫一扫'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey<String>('chat-create-group-menu-item')),
     );
@@ -1068,19 +1071,19 @@ void main() {
       router.go('/profile/friends');
       await tester.pumpAndSettle();
       expect(find.byType(FriendListPage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
 
       router.go('/chat/friends/add');
       await tester.pumpAndSettle();
       expect(find.byType(AddFriendPage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
 
       // Step 4 folded the V1 request inbox into `dm-requests`: the legacy
       // location is no longer mounted and lands back on Community.
       router.go('/chat/friends/requests');
       await tester.pumpAndSettle();
       expect(find.byType(FriendRequestsPage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
     },
   );
 }

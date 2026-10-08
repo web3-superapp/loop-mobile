@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/features/square/live_voice_rooms.dart';
+import 'package:loop_mobile/integrations/communication/memory_live_voice_rooms.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
@@ -76,6 +78,9 @@ Future<void> main() async {
         searchGatewayProvider.overrideWithValue(const MemorySearchGateway()),
         chatV2GatewayProvider.overrideWithValue(MemoryChatV2Gateway()),
         voiceRoomGatewayProvider.overrideWithValue(MemoryVoiceRoomGateway()),
+        liveVoiceRoomGatewayProvider.overrideWithValue(
+          MemoryLiveVoiceRoomGateway(),
+        ),
         // The merged image is encoded on device and handed to the operating
         // system; it never reaches a LOOP service, in either composition.
         chatMergeExportSinkProvider.overrideWithValue(

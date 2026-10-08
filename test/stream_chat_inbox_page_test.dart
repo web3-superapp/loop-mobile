@@ -17,6 +17,8 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
@@ -24,6 +26,7 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/communication_test_harness.dart';
+import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 
 void main() {
@@ -276,7 +279,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+        tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
       );
       router.go('/chat');
       await tester.pumpAndSettle();
@@ -333,26 +336,41 @@ void main() {
           privyAuthGatewayProvider.overrideWithValue(
             const AuthenticatedTestPrivyGateway(),
           ),
+          socialGatewayProvider.overrideWithValue(
+            FakeSocialGateway(
+              requests: MessageRequestPage(
+                items: <MessageRequestEntry>[
+                  MessageRequestEntry(
+                    messageRequestId: testRequestId,
+                    profile: testProfile(alias: 'fox_trader'),
+                    createdAt: DateTime.utc(2026, 9, 7),
+                    expiresAt: DateTime.utc(2026, 9, 14),
+                    preview: const LoopUnavailableFact(
+                      'MESSAGE_PREVIEW_DEFERRED',
+                    ),
+                    aiModeration: const LoopUnavailableFact(
+                      'AI_MODERATION_DEFERRED',
+                    ),
+                  ),
+                ],
+                nextCursor: null,
+              ),
+            ),
+          ),
         ],
         child: const LoopApp(),
       ),
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
-    );
-    router.go('/chat');
-    await tester.pumpAndSettle();
-
     // A request that has not been accepted is not a conversation and never
-    // enters the channel list, so the inbox carries its own entry.
+    // enters the channel list, so the inbox carries its own entry — only
+    // while one is waiting (decision 0110), with the count it read.
     final entry = find.byKey(
       const ValueKey<String>('stream-chat-message-requests-entry'),
     );
     expect(entry, findsOneWidget);
-    // No count is printed: LOOP publishes none this page could read.
-    expect(find.textContaining('条请求'), findsNothing);
+    expect(find.text('1 条待处理'), findsOneWidget);
 
     await tester.tap(entry);
     await tester.pumpAndSettle();
@@ -380,7 +398,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+        tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
       );
       router.go('/chat');
       await tester.pumpAndSettle();
@@ -521,7 +539,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
     );
     const hex = '0123456789abcdef0123456789abcdef';
     for (final (cid, path) in <(String, String)>[
@@ -538,7 +556,7 @@ void main() {
     // channel page.
     router.go('/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}');
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/community');
+    expect(router.routeInformationProvider.value.uri.path, '/chat');
   });
 
   testWidgets(
@@ -560,7 +578,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+        tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
       );
       router.go(
         '/chat/channel/${Uri.encodeComponent('messaging:loop_group_12345678')}'
@@ -572,7 +590,7 @@ void main() {
       // the LOOP group itself.
       expect(find.byType(StreamGroupAliasChannelRoutePage), findsNothing);
       expect(find.byType(GroupAliasChannelRoutePage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(router.routeInformationProvider.value.uri.path, '/chat');
       expect(resolver.calls, isEmpty);
     },
   );

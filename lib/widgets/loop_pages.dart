@@ -426,6 +426,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.subtitle,
     this.framedTools = false,
     this.bottomBar,
+    this.embedded = false,
   });
 
   final LoopPageArchetype archetype;
@@ -463,6 +464,11 @@ class LoopDashboardPage extends StatelessWidget {
 
   /// Top-level tab page: bottom inset comes from the shell.
   final bool tabPage;
+
+  /// The page is one segment of a v3 tab page (decision 0110): the tab page
+  /// draws the bar and the segment control, so this page draws no topbar and
+  /// starts at the top of the region it is given.
+  final bool embedded;
 
   /// The page is re-reading data it already shows (`state.refreshing`).
   final bool updating;
@@ -514,7 +520,7 @@ class LoopDashboardPage extends StatelessWidget {
     final bottom = tabPage
         ? MediaQuery.paddingOf(context).bottom
         : loopChildPageBottomInset(context);
-    final topPadding = MediaQuery.paddingOf(context).top;
+    final topPadding = embedded ? 0.0 : MediaQuery.paddingOf(context).top;
     return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, layoutMode),
@@ -525,26 +531,27 @@ class LoopDashboardPage extends StatelessWidget {
           onRefresh: refresh,
           // The sticky topbar scrolls inside this view, so the indicator is
           // pushed below it rather than over the title.
-          edgeOffset: LoopLayout.topbarHeight + topPadding,
+          edgeOffset: embedded ? 0 : LoopLayout.topbarHeight + topPadding,
           child: CustomScrollView(
             physics: loopRefreshablePhysics(refresh),
             slivers: <Widget>[
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyTopbar(
-                  topPadding: topPadding,
-                  child: LoopTopbar(
-                    title: title,
-                    kicker: kicker,
-                    subtitle: subtitle,
-                    onBack: onBack,
-                    actions: actions,
-                    minHeight: LoopLayout.topbarContentHeight,
-                    updating: updating,
-                    framedTools: framedTools,
+              if (!embedded)
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _StickyTopbar(
+                    topPadding: topPadding,
+                    child: LoopTopbar(
+                      title: title,
+                      kicker: kicker,
+                      subtitle: subtitle,
+                      onBack: onBack,
+                      actions: actions,
+                      minHeight: LoopLayout.topbarContentHeight,
+                      updating: updating,
+                      framedTools: framedTools,
+                    ),
                   ),
                 ),
-              ),
               if (block != null)
                 SliverFillRemaining(hasScrollBody: false, child: block!)
               else ...<Widget>[
@@ -685,6 +692,8 @@ class LoopStreamPage extends StatelessWidget {
     this.onRefresh,
     this.titleField,
     this.framedTools = false,
+    this.embedded = false,
+    this.leading,
   });
 
   final LoopPageArchetype archetype;
@@ -739,6 +748,14 @@ class LoopStreamPage extends StatelessWidget {
   final String? subtitle;
   final bool tabPage;
 
+  /// The page is one segment of a v3 tab page (decision 0110). The tab page
+  /// draws the bar, so this page draws none.
+  final bool embedded;
+
+  /// A control before the title (`LoopTopbar.leading`), for a tab page that
+  /// has no back control: 聊天 puts the owner's own avatar there.
+  final Widget? leading;
+
   /// The page is re-reading data it already shows (`state.refreshing`).
   final bool updating;
 
@@ -767,21 +784,24 @@ class LoopStreamPage extends StatelessWidget {
         key: ValueKey<String>('loop-page-${layoutMode.name}'),
         resizeToAvoidBottomInset: true,
         body: SafeArea(
+          top: !embedded,
           bottom: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopTopbar(
-                title: title,
-                kicker: kicker,
-                subtitle: subtitle,
-                onBack: onBack,
-                actions: actions,
-                minHeight: LoopLayout.topbarContentHeight,
-                updating: updating,
-                titleField: titleField,
-                framedTools: framedTools,
-              ),
+              if (!embedded)
+                LoopTopbar(
+                  title: title,
+                  kicker: kicker,
+                  subtitle: subtitle,
+                  onBack: onBack,
+                  leading: leading,
+                  actions: actions,
+                  minHeight: LoopLayout.topbarContentHeight,
+                  updating: updating,
+                  titleField: titleField,
+                  framedTools: framedTools,
+                ),
               if (block != null)
                 Expanded(child: block!)
               else ...<Widget>[

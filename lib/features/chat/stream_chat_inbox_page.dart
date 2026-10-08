@@ -6,14 +6,23 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
+import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/social/social_controllers.dart';
+import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -84,118 +93,178 @@ Future<Channel?> _loadExistingMemberChannel({
   return channel;
 }
 
-/// Production Chat entry point backed directly by official Stream UI/state.
-class StreamChatInboxPage extends ConsumerWidget {
-  const StreamChatInboxPage({super.key});
+/// The 聊天 tab's three filters (decision 0110, S106 §2). 好友 is every
+/// conversation that is not a community's official channel: direct messages
+/// and small groups.
+enum ChatInboxFilter {
+  all('全部'),
+  communities('社区'),
+  friends('好友');
+
+  const ChatInboxFilter(this.label);
+
+  final String label;
+
+  /// Whether one channel row belongs under this filter. The surface is read
+  /// from the server-assigned CID prefix, never from a display name; a CID
+  /// LOOP cannot classify appears only under 全部.
+  bool includes(String? cid) {
+    if (this == ChatInboxFilter.all) return true;
+    final surface = cid == null ? null : loopChatSurfaceForCid(cid);
+    return switch (this) {
+      ChatInboxFilter.all => true,
+      ChatInboxFilter.communities => surface == LoopChatSurface.communityChat,
+      ChatInboxFilter.friends =>
+        surface == LoopChatSurface.direct || surface == LoopChatSurface.group,
+    };
+  }
+}
+
+/// `chat` · 聊天, the first tab (decision 0110, S106 §2).
+///
+/// One list of every conversation this account is in — community channels,
+/// direct messages and small groups — ordered by Stream by the latest
+/// message, with a filter strip over it. The owner's own avatar opens 我,
+/// and 「＋」 holds every way to start something new.
+///
+/// The list is Stream's own: it is drawn only for a server-authorized Stream
+/// session. A Development Preview build and a session that is not connected
+/// both close the list and say so; neither ever shows a fixture conversation.
+class StreamChatInboxPage extends ConsumerStatefulWidget {
+  const StreamChatInboxPage({super.key, this.onOpenProfile});
+
+  /// Opens 我 (`/profile`).
+  final VoidCallback? onOpenProfile;
+
+  @override
+  ConsumerState<StreamChatInboxPage> createState() =>
+      _StreamChatInboxPageState();
+}
+
+class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
+  var _filter = ChatInboxFilter.all;
+
+  @override
+  Widget build(BuildContext context) {
+    final preview =
+        ref.watch(communicationGatewayProvider).mode ==
+        CommunicationMode.preview;
+    final Widget content;
+    if (preview) {
+      // The Preview build has no Stream session. Its fixture conversations
+      // stay on their own guarded pages and never enter this list.
+      content = const _StreamUnavailableCard(
+        message: '这个版本没有连接聊天服务，会话不会显示在这里。',
+      );
+    } else {
+      content = ref
+          .watch(streamChatAuthorizationProvider)
+          .when(
+            // Never keep an old authorized UI mounted while logout, account
+            // switch, or an explicit retry is revalidating the principal.
+            skipLoadingOnReload: false,
+            skipLoadingOnRefresh: false,
+            loading: () => const _StreamStatusCard(
+              key: ValueKey<String>('stream-chat-connecting'),
+              title: '正在连接会话',
+              message: '正在恢复这个账号的会话。',
+              icon: Icons.sync_rounded,
+            ),
+            error: (error, stackTrace) => _StreamUnavailableCard(
+              message: '会话没有恢复成功，这一页没有执行任何消息操作。',
+              onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
+            ),
+            data: (authorization) {
+              final session = ref.watch(streamChatSdkSessionProvider);
+              final currentUser = session?.client.state.currentUser;
+              if (authorization != StreamSessionAuthorization.authorized ||
+                  session == null ||
+                  currentUser == null) {
+                return _StreamUnavailableCard(
+                  message: '聊天服务还没有连接，稍后再试。',
+                  onRetry: () =>
+                      ref.invalidate(streamChatAuthorizationProvider),
+                );
+              }
+              return _StreamChannelListBody(
+                key: ValueKey<String>('stream-chat-list-${currentUser.id}'),
+                client: session.client,
+                userId: currentUser.id,
+                filter: _filter,
+              );
+            },
+          );
+    }
+
+    return LoopStreamPage(
+      key: const ValueKey<String>('chat-tab-screen'),
+      archetype: LoopPageArchetype.listing,
+      title: '聊天',
+      tabPage: true,
+      leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),
+      actions: const <Widget>[ChatCreateMenuButton()],
+      filters: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          // `#scr-community` puts 「陌生人请求」 above the conversations. A
+          // request that has not been accepted is not a conversation and
+          // never enters the list, so the row stands here — and only while
+          // there is something waiting.
+          const _MessageRequestsEntry(),
+          LoopSegBar(
+            key: const ValueKey<String>('chat-inbox-filters'),
+            labels: <String>[
+              for (final filter in ChatInboxFilter.values) filter.label,
+            ],
+            selectedIndex: _filter.index,
+            onSelected: (index) =>
+                setState(() => _filter = ChatInboxFilter.values[index]),
+          ),
+        ],
+      ),
+      collection: content,
+    );
+  }
+}
+
+/// The owner's own face at the head of 聊天, the way into 我.
+///
+/// It is read from the same profile resource 我 renders; before that read
+/// lands it is the monogram, never another account's picture.
+class _ChatOwnerAvatar extends ConsumerWidget {
+  const _ChatOwnerAvatar({required this.onPressed});
+
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authorization = ref.watch(streamChatAuthorizationProvider);
-    final content = authorization.when(
-      // Never keep an old authorized UI mounted while logout, account switch,
-      // or an explicit retry is revalidating the principal.
-      skipLoadingOnReload: false,
-      skipLoadingOnRefresh: false,
-      loading: () => const _StreamStatusCard(
-        key: ValueKey<String>('stream-chat-connecting'),
-        title: '正在连接会话',
-        message: 'LOOP 正在恢复这个账号的会话授权。',
-        icon: Icons.sync_rounded,
-      ),
-      error: (error, stackTrace) => _StreamUnavailableCard(
-        message: '会话授权没有恢复成功，这一页没有执行任何消息操作。',
-        onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
-      ),
-      data: (authorization) {
-        final session = ref.watch(streamChatSdkSessionProvider);
-        final currentUser = session?.client.state.currentUser;
-        if (authorization != StreamSessionAuthorization.authorized ||
-            session == null ||
-            currentUser == null) {
-          return _StreamUnavailableCard(
-            message: '聊天要先拿到服务端签发的会话身份和短期令牌才能连接，现在还没有拿到。',
-            onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
-          );
+    final state = ref.watch(profileControllerProvider);
+    if (state.phase == ProfilePhase.initial) {
+      scheduleMicrotask(() {
+        if (context.mounted) {
+          unawaited(ref.read(profileControllerProvider.notifier).load());
         }
-        return _StreamChannelListBody(
-          key: ValueKey<String>('stream-chat-list-${currentUser.id}'),
-          client: session.client,
-          userId: currentUser.id,
-        );
-      },
-    );
-
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          key: const ValueKey<String>('stream-chat-back-to-community'),
-          tooltip: '返回社区',
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              context.pop();
-            } else {
-              context.go('/community');
-            }
-          },
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        // Step 4 made every Audio Room a community resource: the lobby is
-        // reached from a community record, never from the generic inbox,
-        // because a room without a community has no locator.
-        actions: <Widget>[const ChatCreateMenuButton()],
-      ),
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: LoopBackdrop()),
-          SafeArea(
-            top: false,
-            bottom: false,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 104),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      Text(
-                        'DISCUSS',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: LoopColors.mint,
-                              letterSpacing: 1.4,
-                            ),
-                      ),
-                      const SizedBox(height: 9),
-                      Text(
-                        '会话',
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      // The provider's name is not a fact the owner can use;
-                      // this page states what is in the list instead.
-                      Text(
-                        '这个账号的官方会话，含送达状态与历史记录。',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      // `#scr-community` puts 「陌生人请求」 on the message
-                      // centre, above the conversations. It is the other half
-                      // of the direct-message path: a request that has not
-                      // been accepted yet is not a conversation and never
-                      // appears in this list, so without this row the only
-                      // way to reach one was the Community panel.
-                      const _MessageRequestsEntry(),
-                      const SizedBox(height: 16),
-                      Expanded(child: content),
-                    ],
-                  ),
-                ),
-              ),
+      });
+    }
+    final values = state.resource?.values;
+    return Semantics(
+      button: true,
+      label: '我',
+      excludeSemantics: true,
+      child: InkWell(
+        key: const ValueKey<String>('chat-open-profile'),
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: SizedBox.square(
+          dimension: LoopTouch.minimum,
+          child: Center(
+            child: LoopProfileAvatar(
+              avatarRef: values?.avatarRef,
+              alias: values?.alias,
+              size: 36,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -203,41 +272,42 @@ class StreamChatInboxPage extends ConsumerWidget {
 
 /// The inbox's entry to the stranger requests waiting on this account.
 ///
-/// It states what the page can do, not how many are waiting: LOOP publishes
-/// no pending count this page could read without opening the request list
-/// itself, and a number nobody read is not a number this row may print.
-class _MessageRequestsEntry extends StatelessWidget {
+/// Drawn only when the request list was read and is not empty: an entry
+/// with nothing behind it would be one more row to read on every visit.
+class _MessageRequestsEntry extends ConsumerWidget {
   const _MessageRequestsEntry();
 
   @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      key: const ValueKey<String>('stream-chat-message-requests-entry'),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      semanticLabel: '陌生人请求，接受、忽略或举报',
-      onTap: () => unawaited(context.push<void>('/chat/requests')),
-      child: Row(
-        children: <Widget>[
-          const Icon(
-            Icons.mark_email_unread_outlined,
-            size: 20,
-            color: LoopColors.chat,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text('陌生人请求', style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 2),
-                Text('接受、忽略或举报', style: Theme.of(context).textTheme.bodySmall),
-              ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(messageRequestsControllerProvider);
+    if (state.phase == CommunityViewPhase.loading && !state.refreshing) {
+      scheduleMicrotask(() {
+        if (context.mounted) {
+          unawaited(
+            ref.read(messageRequestsControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    if (state.phase != CommunityViewPhase.ready || state.items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final count = state.items.length;
+    final label = state.nextCursor == null ? '$count' : '$count+';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+      child: LoopRecordGroup(
+        rows: <LoopRecordRow>[
+          LoopRecordRow(
+            key: const ValueKey<String>('stream-chat-message-requests-entry'),
+            leading: const LoopRowIcon(
+              icon: 'mail',
+              tone: LoopRowIconTone.accent,
             ),
-          ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: LoopColors.vapor,
+            title: '陌生人请求',
+            subtitle: '$label 条待处理',
+            semanticLabel: '陌生人请求，$label 条待处理',
+            onTap: () => unawaited(context.push<void>('/chat/requests')),
           ),
         ],
       ),
@@ -520,11 +590,13 @@ class _StreamChannelListBody extends ConsumerStatefulWidget {
   const _StreamChannelListBody({
     required this.client,
     required this.userId,
+    required this.filter,
     super.key,
   });
 
   final StreamChatClient client;
   final String userId;
+  final ChatInboxFilter filter;
 
   @override
   ConsumerState<_StreamChannelListBody> createState() =>
@@ -581,15 +653,24 @@ class _StreamChannelListBodyState
         child: StreamChannelListView(
           controller: controller,
           padding: const EdgeInsets.symmetric(vertical: 8),
+          // The filter hides rows rather than re-querying: Stream cannot
+          // filter channels by an ID prefix, and one shared list keeps the
+          // order, unread state and pagination of every row in one place.
           itemBuilder: (context, channels, index, defaultItem) =>
-              loopStreamChannelListIdentityItem(defaultItem),
+              widget.filter.includes(channels[index].cid)
+              ? loopStreamChannelListIdentityItem(defaultItem)
+              : const SizedBox.shrink(),
+          separatorBuilder: (context, channels, index) =>
+              widget.filter.includes(channels[index].cid)
+              ? defaultChannelListViewSeparatorBuilder(context, channels, index)
+              : const SizedBox.shrink(),
           emptyBuilder: (context) => const Align(
             alignment: Alignment.topCenter,
             child: Padding(
               padding: EdgeInsets.all(16),
               child: LoopStateCard(
                 title: '还没有会话',
-                message: '为这个账号建立的会话会出现在这里。',
+                message: '加入社区或添加好友后，会话会出现在这里。',
                 icon: Icons.chat_bubble_outline_rounded,
               ),
             ),
@@ -695,10 +776,10 @@ class _StreamChannelUnavailablePage extends StatelessWidget {
 }
 
 class _StreamUnavailableCard extends StatelessWidget {
-  const _StreamUnavailableCard({required this.message, required this.onRetry});
+  const _StreamUnavailableCard({required this.message, this.onRetry});
 
   final String message;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -710,11 +791,13 @@ class _StreamUnavailableCard extends StatelessWidget {
         message: message,
         icon: Icons.cloud_off_outlined,
         tone: LoopTone.neutral,
-        action: OutlinedButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('重试'),
-        ),
+        action: onRetry == null
+            ? null
+            : OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重试'),
+              ),
       ),
     );
   }

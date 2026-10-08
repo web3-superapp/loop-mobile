@@ -4,9 +4,10 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Product shape and environments
 
-- Decision 0048 defines Community, Mining, Launch, Market and Wallet as the
-  five primary destinations. Community is the post-login home; Chat remains a
-  Community child flow and Profile remains a child domain outside the bottom
+- Decision 0110 defines Chat, Square, Meme, Intel and Wallet as the five
+  primary destinations (replacing decision 0048's Community, Mining, Launch,
+  Market and Wallet, whose pages stay mounted as child pages). Chat is the
+  post-login home and Profile (我) remains a child domain outside the bottom
   navigation. `/home` and `/launchpad` are compatibility redirects only. The
   product is spot-only; Perp is disabled and has no primary-feature entry.
 - Development and Hyperliquid Testnet are the only enabled environments. Mainnet, real deposits/withdrawals, and automated trading remain feature-flagged off.

@@ -558,6 +558,9 @@ String miningRankScopeLabel(MiningRankScope scope) => switch (scope) {
   MiningRankScope.communities => '社区榜',
 };
 
+/// The third board on 情报 (decision 0110). It has no server scope yet.
+const String miningReferralRankLabel = '推广榜';
+
 /// The two independent rules a ranking row is displayed under (decision 0049):
 /// [ruleKey] states that anonymous mode alone decides whether other readers see
 /// an alias or the anonymous member label, and [powerRuleKey] that the owner's

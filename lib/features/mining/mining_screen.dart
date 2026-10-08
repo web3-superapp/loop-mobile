@@ -38,7 +38,11 @@ class MiningScreen extends ConsumerStatefulWidget {
     this.onOpenRules,
     this.onOpenReferral,
     this.onOpenMarket,
+    this.onBack,
   });
+
+  /// Set when 挖矿 is opened as a page (from 我) rather than as a tab.
+  final VoidCallback? onBack;
 
   final VoidCallback? onOpenAssets;
   final VoidCallback? onOpenRewards;
@@ -96,7 +100,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的挖矿',
-      tabPage: true,
+      onBack: widget.onBack,
+      tabPage: widget.onBack == null,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('mining-rules-action'),

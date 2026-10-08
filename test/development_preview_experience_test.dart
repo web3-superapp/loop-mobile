@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +8,8 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
+import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -41,21 +45,28 @@ void main() {
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
     final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
     );
 
     router.go('/chat');
     await tester.pumpAndSettle();
 
-    expect(find.text('Offline preview · not connected'), findsWidgets);
-    expect(find.text('Glyph Hunters'), findsOneWidget);
-    expect(find.text('ETH Macro Room'), findsOneWidget);
-    expect(find.text('0xSable'), findsOneWidget);
+    // Decision 0110: the 聊天 tab is Stream's own list and closes in Preview,
+    // so it lists no fixture. The Preview conversations stay reachable at
+    // their own guarded locations.
+    expect(
+      find.byKey(const ValueKey<String>('stream-chat-unavailable')),
+      findsOneWidget,
+    );
+    expect(find.text('Glyph Hunters'), findsNothing);
+    expect(find.text('0xSable'), findsNothing);
 
-    final group = find.text('Glyph Hunters');
-    await tester.ensureVisible(group);
-    await tester.pumpAndSettle();
-    await tester.tap(group);
+    final location = PreviewConversationIdentity.locationForSummary(
+      conversationId: ChatContent.groupId,
+      kind: ConversationKind.group,
+    );
+    expect(location, isNotNull);
+    unawaited(router.push<void>(location!));
     await tester.pumpAndSettle();
 
     expect(
