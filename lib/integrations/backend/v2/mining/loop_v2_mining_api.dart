@@ -27,10 +27,13 @@ abstract interface class LoopV2MiningApi {
     required String clientVersion,
   });
 
+  /// One page of one board. A [cursor] continues the board it came from and
+  /// is sent alone: the page size travels inside it (decision 0100).
   Future<MiningRank> getRank({
     required String accessToken,
     required String clientVersion,
     required MiningRankScope scope,
+    String? cursor,
   });
 
   Future<MiningCommunity> getCommunity({
@@ -52,6 +55,11 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
   static const assetsPath = '/v2/mining/assets';
   static const rewardsPath = '/v2/mining/rewards';
   static const rankPath = '/v2/mining/rank';
+
+  /// `avatar:<ref>` as the profile resource stores it (decision 0100).
+  static final RegExp _avatarRefPattern = RegExp(
+    r'^avatar:[A-Za-z0-9][A-Za-z0-9._/-]{0,126}$',
+  );
   static const rulesPath = '/v2/mining/rules';
   static const communitiesPath = '/v2/mining/communities';
 
@@ -360,6 +368,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         LoopV2S7Codec.unavailable(raw).reasonCode,
       );
     }
+    if (scope == MiningRankScope.referrals) return _referralRanking(raw);
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'status',
       'scope',
@@ -416,7 +425,88 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
           items: List<MiningRankCommunityRow>.unmodifiable(items),
           participants: participants,
         );
+      case MiningRankScope.referrals:
+        // Branched off above: the referral board has its own shape.
+        LoopV2S7Codec.invalid();
     }
+  }
+
+  /// The 推广 board (decision 0100): every row holds a place and at least one
+  /// invitee, places never go backwards, and no two rows are the reader or
+  /// the same public profile.
+  static MiningRanking _referralRanking(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'scope',
+      'items',
+      'participants',
+      'ruleKey',
+    });
+    LoopV2S7Codec.requireEnum(map, 'scope', const <String>{'referrals'});
+    final ruleKey = LoopV2S7Codec.requireEnum(map, 'ruleKey', const <String>{
+      'mining.rank.referrals.directActiveEdges',
+    });
+    final entries = LoopV2S7Codec.requireList(map['items'], maximum: 100);
+    final participants = LoopV2S7Codec.requireCount(map, 'participants');
+    final items = <MiningRankReferralRow>[];
+    final profileIds = <String>{};
+    var selfSeen = false;
+    var lastPosition = 0;
+    for (final entry in entries) {
+      final row = LoopV2Contract.strictMap(entry, const <String>{
+        'position',
+        'invitedCount',
+        'display',
+        'isSelf',
+      });
+      final position = LoopV2S7Codec.requirePositiveInt(row, 'position');
+      if (position < lastPosition) LoopV2S7Codec.invalid();
+      lastPosition = position;
+      final isSelf = LoopV2S7Codec.requireBool(row, 'isSelf');
+      if (isSelf) {
+        if (selfSeen) LoopV2S7Codec.invalid();
+        selfSeen = true;
+      }
+      final display = _rankIdentity(row['display'], isSelf: isSelf);
+      if (display is MiningRankAlias &&
+          !profileIds.add(display.publicProfileId)) {
+        LoopV2S7Codec.invalid();
+      }
+      items.add(
+        MiningRankReferralRow(
+          position: position,
+          invitedCount: LoopV2S7Codec.requirePositiveInt(row, 'invitedCount'),
+          display: display,
+          isSelf: isSelf,
+        ),
+      );
+    }
+    return MiningRankingReferrals(
+      items: List<MiningRankReferralRow>.unmodifiable(items),
+      participants: participants,
+      ruleKey: ruleKey,
+    );
+  }
+
+  /// The reader's own place on the scope asked for (decision 0100). Only the
+  /// community board names a community, and it must.
+  static MiningRankMe? _rankMe(Object? raw, MiningRankScope scope) {
+    if (raw == null) return null;
+    final communities = scope == MiningRankScope.communities;
+    final map = communities
+        ? LoopV2Contract.strictMapWithOptional(
+            raw,
+            const <String>{'rank', 'value'},
+            const <String>{'communityId'},
+          )
+        : LoopV2Contract.strictMap(raw, const <String>{'rank', 'value'});
+    return MiningRankMe(
+      rank: LoopV2S7Codec.requirePositiveInt(map, 'rank'),
+      value: _decimal(map, 'value'),
+      communityId: communities
+          ? LoopV2S7Codec.optionalId(map, 'communityId')
+          : null,
+    );
   }
 
   /// A ranked row may never follow an unranked one: the board puts every
@@ -487,6 +577,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'alias',
         'publicProfileId',
         'audience',
+        'avatarRef',
       });
       final audience = _rankAudience(map, 'audience');
       // 「别人看到的是匿名成员」 is a statement about the reader's own row;
@@ -498,6 +589,12 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         alias: LoopV2S7Codec.requireText(map, 'alias', maxLength: 64),
         publicProfileId: LoopV2S7Codec.requireId(map, 'publicProfileId'),
         audience: audience,
+        avatarRef: LoopV2S7Codec.optionalPattern(
+          map,
+          'avatarRef',
+          _avatarRefPattern,
+          maxLength: 135,
+        ),
       );
     }
     // Nobody is anonymous to themselves.
@@ -1005,11 +1102,21 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     required String accessToken,
     required String clientVersion,
     required MiningRankScope scope,
+    String? cursor,
   }) async {
+    if (cursor != null &&
+        (cursor.length < 3 ||
+            cursor.length > 1536 ||
+            !LoopV2S7Codec.cursorPattern.hasMatch(cursor))) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
     try {
       final response = await _dio.get<Object?>(
         rankPath,
-        queryParameters: <String, Object?>{'scope': scope.wireName},
+        queryParameters: <String, Object?>{
+          'scope': scope.wireName,
+          'cursor': ?cursor,
+        },
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
@@ -1017,6 +1124,8 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'scope',
         'ranking',
         'myPosition',
+        'me',
+        'nextCursor',
         'snapshot',
         'display',
         'formula',
@@ -1027,6 +1136,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         LoopV2S7Codec.requireEnum(root, 'scope', const <String>{
           'users',
           'communities',
+          'referrals',
         }),
       );
       if (answered != scope) LoopV2S7Codec.invalid();
@@ -1039,6 +1149,13 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         scope: answered!,
         ranking: _ranking(root['ranking'], answered),
         myPosition: _rankPosition(root['myPosition']),
+        me: _rankMe(root['me'], answered),
+        nextCursor: LoopV2S7Codec.optionalPattern(
+          root,
+          'nextCursor',
+          LoopV2S7Codec.cursorPattern,
+          maxLength: 1536,
+        ),
         snapshot: _snapshot(root['snapshot']),
         display: MiningRankDisplayRule(
           anonymousMemberKey: LoopV2S7Codec.requireEnum(

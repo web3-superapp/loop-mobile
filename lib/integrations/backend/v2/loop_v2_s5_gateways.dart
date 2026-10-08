@@ -286,6 +286,29 @@ final class DioLoopV2MarketReadGateway
       clientVersion: clientVersion,
     ),
   );
+
+  @override
+  Future<MarketCategoryPage> loadCategory(
+    MarketCategory category, {
+    MarketCategorySort sort = MarketCategorySort.marketCap,
+    String? cursor,
+  }) => read(
+    (accessToken) => _api.getCategory(
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      category: category,
+      sort: sort,
+      cursor: cursor,
+    ),
+  );
+
+  @override
+  Future<IntelPromotions> loadPromotions() => read(
+    (accessToken) => _api.getPromotions(
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+    ),
+  );
 }
 
 final class DioLoopV2WatchlistGateway

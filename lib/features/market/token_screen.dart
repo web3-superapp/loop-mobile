@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -10,7 +12,9 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
+import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/market/market_mining_hooks.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
@@ -20,13 +24,24 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_membership_contr
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
-import 'package:loop_mobile/widgets/loop_tray_disclosure.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
-/// `token` · one registry asset's facts.
+/// `token` · one registry asset's facts, laid out the way the approved
+/// reference lays a token out (Fomo, decision 0118).
+///
+/// The bar carries the ticker and the three tools (提醒 / 自选 / 分享); under
+/// it one line names the asset and copies its address, then the price at the
+/// display step over its 24-hour move, the market cap beside it, and the
+/// chart — no card, about two fifths of the screen, a line by default and
+/// candles on request, panned, pinched and read with a crosshair. 持有者 /
+/// 动态 / 关于 sit under the chart and the 买入 / 卖出 bar stays pinned.
 ///
 /// The route identity is the canonical `assetId`; a missing or malformed one
 /// fails closed instead of substituting another asset. Every figure carries
@@ -49,12 +64,11 @@ class TokenDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<TokenDetailScreen> createState() => _TokenDetailScreenState();
 }
 
-/// The four tabs the approved design puts under the chart, in its order.
+/// The three tabs under the chart, in the reference's order.
 enum TokenSectionTab {
-  community('社区'),
-  holders('持有人'),
-  trades('成交'),
-  about('简介');
+  holders('持有者'),
+  activity('动态'),
+  about('关于');
 
   const TokenSectionTab(this.label);
 
@@ -63,7 +77,7 @@ enum TokenSectionTab {
 
 class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
   LoopCandleInterval _interval = LoopCandleInterval.oneHour;
-  TokenSectionTab _tab = TokenSectionTab.community;
+  TokenSectionTab _tab = TokenSectionTab.holders;
 
   void _open(String location) {
     final navigate = widget.onNavigate;
@@ -83,6 +97,20 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         .toggle();
     if (!mounted) return;
     showWatchlistToggleToast(context, result);
+  }
+
+  /// Hands the asset's name and contract to the system share sheet. No
+  /// figure goes with it: a price out of its page has no source beside it.
+  Future<void> _share(String assetId, MarketAssetDetail? detail) async {
+    final asset = detail?.asset.settled;
+    final text = <String>[
+      if (asset != null) '${loopAssetSymbolLabel(asset)} · ${asset.name}',
+      if (asset?.address case final address?) '合约 $address' else assetId,
+      '在 LOOP 查看行情',
+    ].join('\n');
+    final shown = await ref.read(loopTextShareProvider)(text);
+    if (!mounted || shown) return;
+    LoopToast.show(context, message: '系统分享暂时打不开', kind: LoopToastKind.warn);
   }
 
   @override
@@ -126,7 +154,11 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
     // the read for the page without rebuilding the page on every candle state.
     if (!blocked) {
       final candles = marketCandlesControllerProvider(
-        MarketCandleRequest(assetId: assetId, interval: _interval),
+        MarketCandleRequest(
+          assetId: assetId,
+          interval: _interval,
+          limit: MarketCandleRequest.chartLimit,
+        ),
       );
       ref.listen(candles, (_, _) {});
       if (ref.read(candles).phase == LoopChainViewPhase.loading) {
@@ -167,14 +199,11 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
     }
 
     // Why 兑换 cannot be used has one answer, and it is the gate the wallet's
-    // funds row and the swap page both read. Without it this page fell back to
-    // a sentence of its own and the same closed switch got a third name.
+    // funds row and the swap page both read.
     final swapGate = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.privySwap),
     );
-    // Mining, where 行情 touches it: the prototype's Token Card carries a
-    // `Mining Weight` strip and LOOP printed 「不可用」 over the whole module
-    // (audit 2026-09-21 §G.2). This is the rules answer the Mining module
+    // Mining, where 行情 touches it: the rules answer the Mining module
     // already reads; a weight it does not list is left off.
     final miningRules = watchMarketMiningRules(ref);
     final miningWeight = marketMiningWeightFor(miningRules, assetId);
@@ -182,18 +211,34 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         ? (detail?.capability.reasonCode ?? 'SWAP_MODULE_NOT_DELIVERED')
         : (swapGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE');
 
+    // The chart takes about two fifths of the screen (decision 0118).
+    final chartHeight = (MediaQuery.sizeOf(context).height * 0.4 - 96).clamp(
+      200.0,
+      420.0,
+    );
+
     return LoopDashboardPage(
       key: ValueKey<String>('token-screen-$assetId'),
-      onRefresh: ref
-          .read(marketAssetControllerProvider(assetId).notifier)
-          .reload,
+      onRefresh: () async {
+        await Future.wait(<Future<void>>[
+          ref.read(marketAssetControllerProvider(assetId).notifier).reload(),
+          ref
+              .read(
+                marketCandlesControllerProvider(
+                  MarketCandleRequest(
+                    assetId: assetId,
+                    interval: _interval,
+                    limit: MarketCandleRequest.chartLimit,
+                  ),
+                ).notifier,
+              )
+              .reload(),
+        ]);
+      },
       archetype: LoopPageArchetype.record,
-      // The approved design pins the two actions to the foot of the page:
-      // on an exchange they are reachable from wherever the reader is, and
-      // this page is long. Same single gate, same two labels, new place
-      // (decision 0086; 0084's first unlanded item). The bar is withheld
-      // while the page has no facts at all — there is nothing to trade on a
-      // page that is still a skeleton or a whole-page refusal.
+      // The two actions stay pinned to the foot of the page (decision 0086):
+      // same single gate, same two labels. The bar is withheld while the page
+      // has no facts at all.
       bottomBar: detail == null || detail.capability.blocksEntirePage
           ? null
           : MarketTradeBar(
@@ -201,17 +246,9 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               tradable: detail.capability.swappable,
               onTrade: () => _open('/wallet/swap'),
             ),
-      // `ETH / USD` over `Ethereum · BSC · 0x2170…33f8`: the approved design's
-      // top bar states the pair and, under it, what the pair is written
-      // against. The quote currency is part of the reading — the price on the
-      // line below is in it.
       title: detail == null
           ? loopTruncatedAssetId(assetId)
-          : '${marketAssetIdentityLabel(detail.asset)} / USD',
-      subtitle: <String>[
-        ?detail?.asset.settled?.name,
-        loopTruncatedAssetId(assetId),
-      ].join(' · '),
+          : marketAssetIdentityLabel(detail.asset),
       onBack: widget.onBack,
       updating: state.refreshing,
       actions: <Widget>[
@@ -222,8 +259,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           onPressed: () => _open(MarketAssetRoute.alerts(assetId)),
         ),
         // The star is the whole "add to watchlist" path: it states membership
-        // and toggles it. It never navigates, because the editor can only
-        // reorder and remove what is already there.
+        // and toggles it. It never navigates.
         LoopIconButton(
           key: const ValueKey<String>('token-watchlist-action'),
           icon: 'star',
@@ -238,10 +274,13 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               ? null
               : () => unawaited(_toggleWatchlist(assetId)),
         ),
+        LoopIconButton(
+          key: const ValueKey<String>('token-share-action'),
+          icon: 'share',
+          label: '分享',
+          onPressed: () => unawaited(_share(assetId, detail)),
+        ),
       ],
-      // The approved design opens on the quote itself: no card, no hero. A
-      // signature card around the price spent a third of the first screen on
-      // its own border and pushed the chart off it.
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('token-capability-block'),
@@ -271,111 +310,53 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             reasonCode: detail.capability.reasonCode ?? 'ASSET_BLOCKED',
           )
         else ...<Widget>[
-          MarketQuoteHeader(
+          TokenIdentityLine(detail: detail, assetId: assetId),
+          // Nothing could describe this contract for this request. The page
+          // still stands — every figure below states its own reason — but it
+          // names the address it asked about instead of an identity.
+          if (detail.asset case final MarketAssetIdentityUnavailable identity)
+            LoopInlineUnavailable(
+              key: const ValueKey<String>('token-asset-unavailable'),
+              message:
+                  '${marketAssetUnavailableHeading(identity)} · '
+                  '${loopReasonCodeText(identity.reasonCode)}',
+              // The server said the asks are coming too fast. Asking again
+              // now spends the next one for the same sentence, so the retry
+              // is withheld while that is the reason.
+              onRetry: _providerRateLimited(identity.reasonCode)
+                  ? null
+                  : () => unawaited(
+                      ref
+                          .read(marketAssetControllerProvider(assetId).notifier)
+                          .reload(),
+                    ),
+            )
+          else if (detail.capability.suppressesLiveFigures)
+            LoopInlineUnavailable(
+              key: const ValueKey<String>('token-live-suppressed'),
+              message:
+                  '链上读取暂时不可用 · ${loopReasonCodeText(detail.capability.reasonCode ?? 'BSC_CHAIN_RUNTIME_UNAVAILABLE')}',
+            ),
+          TokenPriceHeader(
             key: const ValueKey<String>('token-quote'),
             price: detail.price,
             change: detail.priceChange24h,
+            marketCap: detail.marketCap,
           ),
-          // The design's own four: the window first, then the two size
-          // figures. 持有人 and 流动性 move down to the 社区 tab's strip —
-          // neither is read while the reader is looking at the price.
-          //
-          // The pool and contract facts ride in a tray under the four cells
-          // (decision 0092): one line closed, every fact with its source and
-          // time when opened. The same facts keep their own blocks under 成交
-          // and 简介; the tray is where they are read without leaving the
-          // quote.
-          LoopTrayDisclosure(
-            key: const ValueKey<String>('token-facts-tray'),
-            // The four cells sit on a panel exactly as wide as the tray, so
-            // the pair reads as a card with its tray rather than a figure
-            // row with a pill floating under it (decision 0096).
-            trayInset: LoopSpacing.page,
-            semanticLabel: '池与合约事实',
-            card: TokenQuotePanel(
-              child: MarketQuoteCells(
-                key: const ValueKey<String>('token-quote-cells'),
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                cells: <MarketStatCell>[
-                  marketRangeCell('24h 高', detail.range24h, high: true),
-                  marketRangeCell('24h 低', detail.range24h, high: false),
-                  MarketStatCell.fact(
-                    '24h 成交额',
-                    detail.volume24h,
-                    formatter: loopFormatCompactFigure,
-                  ),
-                  MarketStatCell.fact(
-                    '市值',
-                    detail.marketCap,
-                    formatter: loopFormatCompactFigure,
-                  ),
-                ],
-              ),
-            ),
-            summary: Text(
-              tokenFactsTraySummary(detail.primaryPair, detail.security),
-              key: const ValueKey<String>('token-facts-tray-summary'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopTypography.caption(12, color: LoopColors.text2),
-            ),
-            detail: TokenFactsTrayDetail(
-              pair: detail.primaryPair,
-              security: detail.security,
-              onOpenAbout: () => setState(() => _tab = TokenSectionTab.about),
-            ),
-            margin: const EdgeInsets.only(bottom: 6),
-          ),
-          // Nothing could describe this contract for this request. The page
-          // still stands — every figure below states its own reason — but it
-          // opens by naming the address it asked about instead of a heading
-          // that would read as an identity LOOP has.
-          if (detail.asset case final MarketAssetIdentityUnavailable identity)
-            LoopUnavailableCard(
-              key: const ValueKey<String>('token-asset-unavailable'),
-              label: marketAssetUnavailableHeading(identity),
-              reasonCode: identity.reasonCode,
-              action: LoopButton(
-                key: const ValueKey<String>('token-asset-unavailable-retry'),
-                label: '重试',
-                // The server said the asks are coming too fast. Asking again
-                // now spends the next one for the same sentence, so the
-                // button states the wait rather than inviting it.
-                onPressed: _providerRateLimited(identity.reasonCode)
-                    ? null
-                    : () => unawaited(
-                        ref
-                            .read(
-                              marketAssetControllerProvider(assetId).notifier,
-                            )
-                            .reload(),
-                      ),
-              ),
-            )
-          else if (detail.capability.suppressesLiveFigures)
-            LoopUnavailableCard(
-              key: const ValueKey<String>('token-live-suppressed'),
-              label: '链上读取暂时不可用',
-              reasonCode:
-                  detail.capability.reasonCode ??
-                  'BSC_CHAIN_RUNTIME_UNAVAILABLE',
-            ),
-          // 周期 + MA，一行，紧贴 K 线上方 —— the design's own control row.
-          // The chart carries the volume bars in the same panel, so the whole
-          // reading is on the first screen.
-          _TokenCandleBlock(
+          TokenCandleSection(
             assetId: assetId,
             interval: _interval,
+            height: chartHeight,
             onIntervalChanged: (value) => setState(() => _interval = value),
-            onExpand: () => _open(MarketAssetRoute.chart(assetId)),
+            trailing: LoopIconButton(
+              key: const ValueKey<String>('token-chart-expand'),
+              icon: 'expand',
+              label: '打开全屏图表',
+              onPressed: () => _open(MarketAssetRoute.chart(assetId)),
+            ),
           ),
-          // 社区 / 持有人 / 成交 / 简介 — the design's lower half. The page
-          // used to run every block down one column with a 「更多」 group of
-          // links at the foot; a reader looking for the holders had to scroll
-          // past the contract facts to find a row that opened another page.
-          // The tab strip keeps every block one tap away and the page one
-          // screen long. Switching a tab changes what is listed and nothing
-          // else: no read is re-issued and no figure moves.
+          // 持有者 / 动态 / 关于. Switching a tab changes what is listed and
+          // nothing else; 动态 reads its trades the first time it opens.
           MarketTabBar(
             key: const ValueKey<String>('token-section-tabs'),
             keyPrefix: 'token-tab',
@@ -386,146 +367,269 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             onSelected: (index) =>
                 setState(() => _tab = TokenSectionTab.values[index]),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           ...switch (_tab) {
-            // 社区 lists the bound community as a row, as the design does,
-            // and follows it with the three figures the quote strip no longer
-            // has room for.
-            TokenSectionTab.community => <Widget>[
-              _CommunityBlock(
-                block: detail.community,
-                onOpenCommunity: (communityId) =>
-                    _open('/community/profile?id=$communityId'),
-              ),
-              const SizedBox(height: 10),
-              MarketQuoteCells(
-                key: const ValueKey<String>('token-community-cells'),
-                cells: <MarketStatCell>[
-                  MarketStatCell.fact(
-                    '持有人',
-                    detail.holderCount,
-                    formatter: (value) =>
-                        loopFormatCompactFigure(value, usd: false),
-                  ),
-                  MarketStatCell.fact(
-                    '流动性',
-                    detail.liquidityUsd,
-                    formatter: loopFormatCompactFigure,
-                  ),
-                ],
-              ),
-              // The one place this page states the weight, and the one of the
-              // two that opens 挖矿. The development label is not printed
-              // beside the figure: which rules version published it is a
-              // property of the release, and 关于 describes the release.
-              if (miningWeight == null)
-                const LoopUnavailableCard(
-                  key: ValueKey<String>('token-mining-unavailable'),
-                  label: '挖矿权重与预估收益不可用',
-                  reasonCode: 'MINING_RUNTIME_DEFERRED',
+            TokenSectionTab.holders => _holderSections(detail),
+            TokenSectionTab.activity => _tradeSections(assetId),
+            TokenSectionTab.about => <Widget>[
+              ..._aboutSections(assetId, detail, miningWeight: miningWeight),
+              // The only gate for a Swap entry point. The backend pins it to
+              // false until D15, so the bar's 买入 / 卖出 are drawn disabled
+              // and this line says why.
+              if (detail.capability.swappable)
+                LoopButton(
+                  key: const ValueKey<String>('token-swap-entry'),
+                  label: '兑换',
+                  primary: true,
+                  block: true,
+                  onPressed: () => _open('/wallet/swap'),
                 )
               else
-                LoopPowerHint(
-                  key: const ValueKey<String>('token-mining-weight'),
-                  text: '挖矿权重',
-                  figure: miningWeight.label,
-                  onTap: () => _open('/mining'),
+                LoopInlineUnavailable(
+                  key: const ValueKey<String>('token-swap-unavailable'),
+                  // A closed gate is the whole app's answer and outranks this
+                  // asset's own.
+                  message:
+                      '买入、卖出与兑换当前不可用 · ${loopReasonCodeText(swapBlockedReason)}',
                 ),
-            ],
-            TokenSectionTab.holders => <Widget>[
-              LoopRecordGroup(
-                rows: <LoopRecordRow>[
-                  LoopRecordRow(
-                    key: const ValueKey<String>('token-holders-entry'),
-                    title: '持有人分布',
-                    // A row's second line states the value it can read, and
-                    // falls back to a description only when it cannot.
-                    subtitle: detail.holderCount.isAvailable
-                        ? '${loopFormatDecimal(detail.holderCount.value!, maxFractionDigits: 0)} 持有人 · 分布与集中度暂时读不到'
-                        : '持有人总数与分布暂时读不到',
-                    subtitleMaxLines: 2,
-                    onTap: () => _open(MarketAssetRoute.holders(assetId)),
-                  ),
-                ],
-              ),
-              MarketFactProvenance(
-                key: const ValueKey<String>('token-holders-provenance'),
-                prefix: '持有人',
-                facts: <LoopFact>[detail.holderCount],
-              ),
-            ],
-            TokenSectionTab.trades => <Widget>[
-              LoopRecordGroup(
-                rows: <LoopRecordRow>[
-                  LoopRecordRow(
-                    key: const ValueKey<String>('token-trades-entry'),
-                    title: '交易活动',
-                    subtitle: '已登记池的链上成交，带确认状态',
-                    onTap: () => _open(MarketAssetRoute.trades(assetId)),
-                  ),
-                ],
-              ),
-              _PrimaryPairCard(pair: detail.primaryPair),
-            ],
-            TokenSectionTab.about => <Widget>[
-              // The cells over the chart and under 社区 carry every figure the
-              // page holds except this one, which has no cell anywhere. What
-              // is left for 简介 is that figure, where the set came from, what
-              // the contract says, and the notifications this asset raised.
-              LoopSurfaceCard(
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    LoopFactLine(label: '完全稀释估值', fact: detail.fdv),
-                  ],
-                ),
-              ),
-              MarketFactProvenance(
-                key: const ValueKey<String>('token-facts-provenance'),
-                prefix: '上方四格',
-                facts: <LoopFact>[
-                  detail.volume24h,
-                  detail.marketCap,
-                  detail.liquidityUsd,
-                  detail.holderCount,
-                ],
-              ),
-              const LoopLabel('合约事实'),
-              _SecurityBlock(block: detail.security),
-              const LoopNotice(
-                key: ValueKey<String>('token-facts-notice'),
-                title: '只给标注出处和时间的数据',
-                body: '这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。',
-              ),
-              const LoopLabel('通知'),
-              _TokenNotificationFeed(assetId: assetId),
             ],
           },
-          // The only gate for a Swap entry point. The backend pins it to
-          // false until D15, so the card's 买入 / 卖出 segments above are
-          // drawn disabled and this card holds the one full sentence that
-          // says why.
-          if (detail.capability.swappable)
-            LoopButton(
-              key: const ValueKey<String>('token-swap-entry'),
-              label: '兑换',
-              primary: true,
-              block: true,
-              onPressed: () => _open('/wallet/swap'),
-            )
-          else
-            LoopUnavailableCard(
-              key: const ValueKey<String>('token-swap-unavailable'),
-              label: '买入、卖出与兑换当前不可用',
-              // A closed gate is the whole app's answer and outranks this
-              // asset's own: while it is shut, every surface says the one
-              // sentence it publishes. Only once it opens can this asset have
-              // a reason of its own.
-              reasonCode: swapBlockedReason,
-            ),
         ],
       ],
+    );
+  }
+
+  /// 持有者: the holder count, and the distribution LOOP cannot read yet.
+  List<Widget> _holderSections(MarketAssetDetail detail) {
+    final count = detail.holderCount;
+    return <Widget>[
+      Padding(
+        key: const ValueKey<String>('token-holders-count'),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        child: Row(
+          children: <Widget>[
+            Text(
+              '持有人数',
+              style: LoopType.body.copyWith(color: LoopColors.text2),
+            ),
+            const Spacer(),
+            Text(
+              count.isAvailable
+                  ? loopFormatDecimal(count.value!, maxFractionDigits: 0)
+                  : loopReasonCodeSummaryText(count.reasonCode),
+              style: count.isAvailable
+                  ? LoopType.figureMd
+                  : LoopType.caption.copyWith(color: LoopColors.text3),
+            ),
+          ],
+        ),
+      ),
+      const LoopInlineUnavailable(
+        key: ValueKey<String>('token-holders-distribution-unavailable'),
+        icon: 'info',
+        message: '持有人分布暂不可用',
+      ),
+      _factsProvenance(
+        key: const ValueKey<String>('token-holders-provenance'),
+        facts: <LoopFact>[count],
+        prefix: '持有人数',
+      ),
+    ];
+  }
+
+  /// 动态: the indexed trades of the registered pool, a cursor page at a time
+  /// as the reader scrolls. Each row is its own section so the list is built
+  /// lazily and the next page is asked for only when its end comes into view.
+  List<Widget> _tradeSections(String assetId) {
+    final provider = marketTradesControllerProvider(assetId);
+    final state = ref.watch(provider);
+    final controller = ref.read(provider.notifier);
+    if (state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(provider.notifier).load());
+      });
+    }
+    final block = state.value?.trades;
+    if (!state.isReady || block == null) {
+      return <Widget>[
+        LoopChainStateBlock(
+          keyPrefix: 'token-trades',
+          phase: state.phase,
+          failureKind: state.failureKind,
+          rows: 4,
+          emptyMessage: '还没有成交',
+          onRetry: () => unawaited(controller.reload()),
+        ),
+      ];
+    }
+    switch (block) {
+      case MarketTradesUnavailable(reasonCode: final reasonCode):
+        return <Widget>[
+          LoopInlineUnavailable(
+            key: const ValueKey<String>('token-trades-unavailable'),
+            message: '成交记录暂时读不到 · ${loopReasonCodeText(reasonCode)}',
+          ),
+        ];
+      case MarketTradesAvailable(:final items) when items.isEmpty:
+        return <Widget>[
+          const LoopEmpty(
+            key: ValueKey<String>('token-trades-empty'),
+            message: '还没有成交',
+            reason: '索引器已经读到最新区块，其中没有这个池的成交。',
+          ),
+          _tradesProvenance(block),
+        ];
+      case MarketTradesAvailable(:final items, :final nextCursor):
+        return <Widget>[
+          for (final trade in items) TokenTradeRow(trade: trade),
+          if (controller.appendFailed && !state.busy)
+            LoopInlineUnavailable(
+              key: const ValueKey<String>('token-trades-more-failed'),
+              message: '下一页没有读到',
+              onRetry: () => unawaited(controller.loadMore()),
+            )
+          else if (nextCursor != null) ...<Widget>[
+            LoopLoadMoreSentinel(
+              key: const ValueKey<String>('token-trades-load-more'),
+              cursor: nextCursor,
+              onLoadMore: () => unawaited(controller.loadMore()),
+            ),
+            if (state.busy)
+              const LoopSkeleton(
+                key: ValueKey<String>('token-trades-loading-more'),
+                type: LoopSkeletonType.record,
+                rows: 2,
+              ),
+          ] else
+            const MarketListEnd(key: ValueKey<String>('token-trades-end')),
+          _tradesProvenance(block),
+        ];
+    }
+  }
+
+  Widget _tradesProvenance(MarketTradesAvailable block) {
+    final freshness = block.freshness;
+    final lag = freshness.lagBlocks;
+    return LoopProvenanceLine(
+      key: const ValueKey<String>('token-trades-provenance'),
+      sources: <String>[loopFactSourceLabel(block.source)],
+      observedAt: freshness.observedAt,
+      prefix:
+          '索引高度 ${loopGroupedFigure(freshness.indexerBlockNumber.toString())}',
+      detail: <String>[
+        if (lag != null) '数据落后 ${loopGroupedFigure(lag.toString())} 块。',
+        '成交来自已登记池的 Swap 事件。LOOP 不下发对手方地址，只标出哪一笔是你自己的钱包发起的。',
+      ].join(''),
+    );
+  }
+
+  /// 关于: what the asset is, its community, its pool and contract facts, and
+  /// the notifications it raised.
+  List<Widget> _aboutSections(
+    String assetId,
+    MarketAssetDetail detail, {
+    required MarketMiningWeight? miningWeight,
+  }) {
+    final asset = detail.asset.settled;
+    return <Widget>[
+      const LoopLabel('简介'),
+      MarketQuoteCells(
+        key: const ValueKey<String>('token-about-cells'),
+        cells: <MarketStatCell>[
+          marketRangeCell('24h 高', detail.range24h, high: true),
+          marketRangeCell('24h 低', detail.range24h, high: false),
+          MarketStatCell.fact(
+            '24h 成交额',
+            detail.volume24h,
+            formatter: loopFormatCompactFigure,
+          ),
+        ],
+      ),
+      MarketQuoteCells(
+        key: const ValueKey<String>('token-about-cells-2'),
+        cells: <MarketStatCell>[
+          MarketStatCell.fact(
+            '流动性',
+            detail.liquidityUsd,
+            formatter: loopFormatCompactFigure,
+          ),
+          MarketStatCell.fact(
+            '完全稀释估值',
+            detail.fdv,
+            formatter: loopFormatCompactFigure,
+          ),
+          MarketStatCell.fact(
+            '市值',
+            detail.marketCap,
+            formatter: loopFormatCompactFigure,
+          ),
+        ],
+      ),
+      if (asset != null)
+        LoopKeyValue(
+          key: const ValueKey<String>('token-about-contract'),
+          label: '合约',
+          value: asset.address == null
+              ? '链上原生资产'
+              : loopTruncatedAddress(asset.address!),
+        ),
+      _factsProvenance(
+        key: const ValueKey<String>('token-facts-provenance'),
+        facts: <LoopFact>[
+          detail.volume24h,
+          detail.liquidityUsd,
+          detail.fdv,
+          detail.marketCap,
+        ],
+      ),
+      const LoopLabel('社区'),
+      _CommunityBlock(
+        block: detail.community,
+        onOpenCommunity: (communityId) => _open(
+          '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+        ),
+      ),
+      if (miningWeight != null)
+        LoopPowerHint(
+          key: const ValueKey<String>('token-mining-weight'),
+          text: '挖矿权重',
+          figure: miningWeight.label,
+          onTap: () => _open('/mining'),
+        ),
+      const LoopLabel('池与合约事实'),
+      TokenPoolAndContractFacts(
+        pair: detail.primaryPair,
+        security: detail.security,
+      ),
+      const LoopLabel('通知'),
+      _TokenNotificationFeed(assetId: assetId),
+    ];
+  }
+
+  static Widget _factsProvenance({
+    required Key key,
+    required List<LoopFact> facts,
+    String? prefix,
+  }) {
+    final sources = <String>[];
+    DateTime? oldest;
+    var marked = false;
+    for (final fact in facts) {
+      if (!fact.isAvailable) continue;
+      final source = fact.source;
+      if (source != null) sources.add(loopFactSourceLabel(source));
+      final at = fact.fetchedAt;
+      if (at != null && (oldest == null || at.isBefore(oldest))) oldest = at;
+      if (loopFactQualityMarker(fact.quality) != null) marked = true;
+    }
+    return LoopProvenanceLine(
+      key: key,
+      sources: sources,
+      observedAt: oldest,
+      prefix: <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · ').isEmpty
+          ? null
+          : <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · '),
+      detail: '读不到的数值写明原因，不会显示 0。',
     );
   }
 }
@@ -537,41 +641,265 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
 bool _providerRateLimited(String? reasonCode) =>
     reasonCode == 'MARKET_PROVIDER_RATE_LIMITED';
 
-class _TokenCandleBlock extends ConsumerWidget {
-  const _TokenCandleBlock({
+/// The line under the bar: the asset's mark, its name and its contract, and
+/// a copy control for the address.
+class TokenIdentityLine extends StatelessWidget {
+  const TokenIdentityLine({
+    required this.detail,
     required this.assetId,
-    required this.interval,
-    required this.onIntervalChanged,
-    required this.onExpand,
+    super.key,
   });
 
+  final MarketAssetDetail detail;
   final String assetId;
-  final LoopCandleInterval interval;
-  final ValueChanged<LoopCandleInterval> onIntervalChanged;
-  final VoidCallback onExpand;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return TokenCandleSection(
-      assetId: assetId,
-      interval: interval,
-      onIntervalChanged: onIntervalChanged,
-      // The design's own shape: the periods and the two averages on one line
-      // directly over the panel, the panel itself carrying the volume bars.
-      compactControls: true,
-      height: 236,
-      movingAveragePeriods: const <int>[7, 25],
-      trailing: LoopIconButton(
-        key: const ValueKey<String>('token-chart-expand'),
-        icon: 'expand',
-        label: '打开全屏 K 线',
-        onPressed: onExpand,
+  Widget build(BuildContext context) {
+    final asset = detail.asset.settled;
+    final symbol = marketAssetIdentityLabel(detail.asset);
+    final address = asset?.address;
+    return Padding(
+      key: const ValueKey<String>('token-identity'),
+      padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+      child: Row(
+        children: <Widget>[
+          LoopTokenLogo(
+            assetSymbol: symbol,
+            logoUrl: detail.logoUrl,
+            fallbackMonogram: symbol,
+            size: 32,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              <String>[
+                ?asset?.name,
+                address == null
+                    ? loopTruncatedAssetId(assetId)
+                    : loopTruncatedAddress(address),
+              ].join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.caption.copyWith(color: LoopColors.text2),
+            ),
+          ),
+          if (address != null)
+            LoopIconButton(
+              key: const ValueKey<String>('token-copy-address'),
+              icon: 'copy',
+              label: '复制合约地址',
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: address));
+                if (!context.mounted) return;
+                LoopToast.show(context, message: '已复制合约地址');
+              },
+            ),
+        ],
       ),
     );
   }
 }
 
-/// The candle block shared by `token` and `chart-full`.
+/// The price at the display step, the 24-hour move under it in rise / fall,
+/// and the market cap on the right (decision 0118).
+class TokenPriceHeader extends StatelessWidget {
+  const TokenPriceHeader({
+    required this.price,
+    required this.change,
+    required this.marketCap,
+    super.key,
+  });
+
+  final LoopFact price;
+  final LoopFact change;
+  final LoopFact marketCap;
+
+  /// The move restated in dollars: `price − price ÷ (1 + change/100)`. It is
+  /// derived from the two figures beside it and from nothing else, and is
+  /// left out whenever either was not read or the change is −100 %.
+  static Decimal? absoluteMove(Decimal price, Decimal percent) {
+    final hundred = Decimal.fromInt(100);
+    final ratio =
+        Decimal.one +
+        (percent / hundred).toDecimal(scaleOnInfinitePrecision: 18);
+    if (ratio == Decimal.zero) return null;
+    final previous = (price / ratio).toDecimal(scaleOnInfinitePrecision: 8);
+    return price - previous;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final priceValue = price.isAvailable ? price.value : null;
+    final changeValue = change.isAvailable ? change.value : null;
+    final move = LoopPriceMove.of(changeValue);
+    final absolute = priceValue == null || changeValue == null
+        ? null
+        : absoluteMove(priceValue, changeValue);
+    final cap = marketCap.isAvailable ? marketCap.value : null;
+    final marker = priceValue == null
+        ? null
+        : marketQuoteQualityMarker(price.quality);
+    final moveText = changeValue == null
+        ? '24h 涨跌${loopReasonCodeSummaryText(change.reasonCode)}'
+        : <String>[
+            if (absolute != null)
+              '${move == LoopPriceMove.down
+                      ? '▼'
+                      : move == LoopPriceMove.up
+                      ? '▲'
+                      : ''} '
+                  '${marketRowPrice(absolute < Decimal.zero ? -absolute : absolute)}'
+                  ' (${marketMoveLabel(changeValue).replaceAll('▲ ', '').replaceAll('▼ ', '')})'
+            else
+              marketMoveLabel(changeValue),
+            '24h',
+          ].join(' · ').trim();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (priceValue == null)
+                  LoopInlineUnavailable(
+                    key: const ValueKey<String>('token-price-unavailable'),
+                    message:
+                        '价格${loopReasonCodeSummaryText(price.reasonCode)}'
+                        ' · ${loopReasonCodeText(price.reasonCode)}',
+                    padding: EdgeInsets.zero,
+                  )
+                else
+                  Text(
+                    marketRowPrice(priceValue),
+                    key: const ValueKey<String>('token-price'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.figureXl,
+                  ),
+                const SizedBox(height: 2),
+                Text(
+                  <String>[moveText, ?marker].join(' · '),
+                  key: const ValueKey<String>('token-change'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.figureSm.copyWith(
+                    color: changeValue == null ? LoopColors.text3 : move.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                cap == null
+                    ? loopReasonCodeSummaryText(marketCap.reasonCode)
+                    : loopFormatCompactFigure(cap),
+                key: const ValueKey<String>('token-market-cap'),
+                style: cap == null
+                    ? LoopType.caption.copyWith(color: LoopColors.text3)
+                    : LoopType.figureMd,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '市值',
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One indexed swap on 动态: direction in rise / fall, the two amounts, and
+/// when it happened.
+class TokenTradeRow extends StatelessWidget {
+  TokenTradeRow({required this.trade})
+    : super(key: ValueKey<String>('trade-${trade.tradeId}'));
+
+  final MarketTrade trade;
+
+  @override
+  Widget build(BuildContext context) {
+    final buy = trade.direction == MarketTradeDirection.buy;
+    final move = buy ? LoopPriceMove.up : LoopPriceMove.down;
+    final reorged = trade.status == LoopConfirmationStatus.reorged;
+    return Semantics(
+      label: <String>[
+        if (trade.isOwn) '我',
+        buy ? '买入' : '卖出',
+        '${loopFormatDecimal(trade.amountQuote, maxFractionDigits: 2)} ${trade.quoteSymbol}',
+        loopFormatDecimal(trade.amountAsset),
+        loopConfirmationLabel(trade.status),
+        loopRelativeTime(trade.blockTimestamp),
+      ].join('，'),
+      excludeSemantics: true,
+      child: Container(
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: LoopColors.line)),
+        ),
+        child: Row(
+          children: <Widget>[
+            SizedBox(
+              width: 44,
+              child: Text(
+                buy ? '买入' : '卖出',
+                style: LoopType.title.copyWith(color: move.color),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    '${loopFormatDecimal(trade.amountQuote, maxFractionDigits: 2)} ${trade.quoteSymbol}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.figure,
+                  ),
+                  Text(
+                    <String>[
+                      if (trade.isOwn) '我',
+                      loopRelativeTime(trade.blockTimestamp),
+                      loopConfirmationLabel(trade.status),
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+                  ),
+                ],
+              ),
+            ),
+            if (reorged) ...<Widget>[
+              const LoopBadge('已回滚', kind: LoopBadgeKind.down),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              loopFormatDecimal(trade.amountAsset, maxFractionDigits: 4),
+              maxLines: 1,
+              style: LoopType.figureSm.copyWith(color: LoopColors.text2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The chart block shared by `token` and `chart-full`: a toolbar (line or
+/// candles, MA, VOL), the chart, the interval chips and one source line.
 class TokenCandleSection extends ConsumerStatefulWidget {
   const TokenCandleSection({
     required this.assetId,
@@ -579,46 +907,35 @@ class TokenCandleSection extends ConsumerStatefulWidget {
     required this.onIntervalChanged,
     super.key,
     this.trailing,
-    this.height = 210,
-    this.movingAveragePeriods = const <int>[],
-    this.showVolume = true,
-    this.footer,
-    this.compactControls = false,
+    this.height = 280,
   });
 
   final String assetId;
   final LoopCandleInterval interval;
   final ValueChanged<LoopCandleInterval> onIntervalChanged;
+
+  /// A control at the end of the interval row (the full-screen glyph).
   final Widget? trailing;
   final double height;
-
-  /// `.kline-ma`: the close-price averages drawn over the bodies and read out
-  /// above them. Empty on the inline card, which has no indicator row.
-  final List<int> movingAveragePeriods;
-
-  /// `.kline-volume`: the bar row under the price panel.
-  final bool showVolume;
-
-  /// `.kline-tools`: the control row the owning page puts under the interval
-  /// segments, inside the same terminal card.
-  final Widget? footer;
-
-  /// The approved design's layout: the five periods and the moving-average
-  /// readout share **one** line directly above the panel, and the panel has no
-  /// card of its own. 代币 uses it. `chart-full` keeps the segmented bar under
-  /// the card, where it has a whole screen to spend.
-  final bool compactControls;
 
   @override
   ConsumerState<TokenCandleSection> createState() => _TokenCandleSectionState();
 }
 
 class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
+  /// A line by default; candles on request (decision 0118).
+  LoopChartStyle _style = LoopChartStyle.line;
+
+  /// MA off and VOL on by default.
+  bool _averages = false;
+  bool _volume = true;
+
   @override
   Widget build(BuildContext context) {
     final request = MarketCandleRequest(
       assetId: widget.assetId,
       interval: widget.interval,
+      limit: MarketCandleRequest.chartLimit,
     );
     final state = ref.watch(marketCandlesControllerProvider(request));
     if (state.phase == LoopChainViewPhase.loading) {
@@ -630,404 +947,378 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
         }
       });
     }
-    final series = state.value;
-    final block = series?.candles;
-
-    final body = <Widget>[
-      if (widget.compactControls)
-        // 周期 + MA 读数，一行，紧贴 K 线上方 (the approved design). The
-        // averages are computed from the closes already on screen, so they
-        // are read out beside the control that chose them rather than
-        // borrowing the series' own provenance line.
-        _CompactChartControls(
-          selected: widget.interval,
-          onSelected: widget.onIntervalChanged,
-          periods: widget.movingAveragePeriods,
-          candles: block is MarketCandlesAvailable ? block.items : null,
-          trailing: widget.trailing,
-        )
-      else
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                // The provider's unit string is printed verbatim — it
-                // names the two assets and LOOP does not translate a
-                // fact — but it is not a heading, and standing alone it
-                // left this card labelled only 「USD per WBNB」.
-                block is MarketCandlesAvailable
-                    ? 'K 线 · 单位 ${block.priceUnit}'
-                    : 'K 线',
-                style: LoopMono.label,
-              ),
-            ),
-            if (widget.trailing != null) widget.trailing!,
-          ],
-        ),
-      const SizedBox(height: 8),
+    final block = state.value?.candles;
+    final candles = block is MarketCandlesAvailable ? block.items : null;
+    final averages = <String>[
+      if (_averages && candles != null && candles.isNotEmpty)
+        for (final period in LoopMarketChart.averagePeriods)
+          ?loopCandleMovingAverageLabel(candles, period),
     ];
     return Column(
+      key: const ValueKey<String>('token-chart-section'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSurfaceCard(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 4, 0),
+          child: Row(
             children: <Widget>[
-              ...body,
-              if (!state.isReady || block == null)
-                LoopChainStateBlock(
-                  keyPrefix: 'candles',
-                  phase: state.phase,
-                  failureKind: state.failureKind,
-                  skeleton: LoopSkeletonType.chart,
-                  emptyMessage: '这个区间没有成交',
-                  onRetry: () => unawaited(
-                    ref
-                        .read(marketCandlesControllerProvider(request).notifier)
-                        .reload(),
-                  ),
-                )
-              else
-                switch (block) {
-                  MarketCandlesUnavailable(reasonCode: final reasonCode) =>
-                    LoopUnavailableCard(
-                      key: const ValueKey<String>('candles-unavailable'),
-                      label: 'K 线不可用',
-                      reasonCode: reasonCode,
-                      margin: EdgeInsets.zero,
-                    ),
-                  MarketCandlesAvailable() => _CandleBody(
-                    block: block,
-                    height: widget.height,
-                    movingAveragePeriods: widget.movingAveragePeriods,
-                    showVolume: widget.showVolume,
-                    // The compact layout already reads the averages out on the
-                    // control line; repeating them under the OHLC row would
-                    // print MA7 twice on one screen.
-                    readOutAverages: !widget.compactControls,
-                  ),
-                },
+              Expanded(
+                child: Text(
+                  averages.isEmpty ? '' : '${averages.join(' · ')} · 本机计算',
+                  key: const ValueKey<String>('token-moving-averages'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.figureXs.copyWith(color: LoopColors.text2),
+                ),
+              ),
+              _ChartToggle(
+                key: const ValueKey<String>('token-chart-style'),
+                label: _style == LoopChartStyle.line ? 'K线' : '折线',
+                semantic: _style == LoopChartStyle.line ? '切换到 K 线' : '切换到折线',
+                on: false,
+                onTap: () => setState(
+                  () => _style = _style == LoopChartStyle.line
+                      ? LoopChartStyle.candles
+                      : LoopChartStyle.line,
+                ),
+              ),
+              _ChartToggle(
+                key: const ValueKey<String>('token-chart-ma'),
+                label: 'MA',
+                semantic: '均线',
+                on: _averages,
+                onTap: () => setState(() => _averages = !_averages),
+              ),
+              _ChartToggle(
+                key: const ValueKey<String>('token-chart-vol'),
+                label: 'VOL',
+                semantic: '成交量',
+                on: _volume,
+                onTap: () => setState(() => _volume = !_volume),
+              ),
             ],
           ),
         ),
-        if (!widget.compactControls)
-          _IntervalBar(
-            selected: widget.interval,
-            onSelected: widget.onIntervalChanged,
-          ),
-        if (widget.footer != null) widget.footer!,
+        if (!state.isReady || block == null)
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: widget.height),
+            child: LoopChainStateBlock(
+              keyPrefix: 'candles',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              skeleton: LoopSkeletonType.chart,
+              emptyMessage: '这个区间没有成交',
+              onRetry: () => unawaited(
+                ref
+                    .read(marketCandlesControllerProvider(request).notifier)
+                    .reload(),
+              ),
+            ),
+          )
+        else
+          switch (block) {
+            MarketCandlesUnavailable(reasonCode: final reasonCode) => SizedBox(
+              height: widget.height,
+              child: Center(
+                child: LoopInlineUnavailable(
+                  key: const ValueKey<String>('candles-unavailable'),
+                  message: '图表暂时读不到 · ${loopReasonCodeText(reasonCode)}',
+                  onRetry: _providerRateLimited(reasonCode)
+                      ? null
+                      : () => unawaited(
+                          ref
+                              .read(
+                                marketCandlesControllerProvider(request)
+                                    .notifier,
+                              )
+                              .reload(),
+                        ),
+                ),
+              ),
+            ),
+            MarketCandlesAvailable(items: final items) when items.isEmpty =>
+              SizedBox(
+                height: widget.height,
+                child: const Center(
+                  child: LoopEmpty(
+                    key: ValueKey<String>('candles-empty'),
+                    message: '这个区间没有成交',
+                    reason: '只画有成交的桶，空桶不会补 0。',
+                    margin: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+            MarketCandlesAvailable() => LoopMarketChart(
+              key: const ValueKey<String>('token-candle-chart'),
+              candles: block.items,
+              interval: widget.interval,
+              style: _style,
+              showMovingAverages: _averages,
+              showVolume: _volume,
+              height: widget.height,
+              semanticLabel:
+                  '${block.items.length} 根${loopChartIntervalLabel(widget.interval)}'
+                  '${_style == LoopChartStyle.line ? '收盘价折线' : 'K 线'}，'
+                  '单位 ${block.priceUnit}'
+                  '${block.items.last.isOpen ? '，最后一根尚未收盘' : ''}',
+            ),
+          },
+        _IntervalChips(
+          selected: widget.interval,
+          onSelected: widget.onIntervalChanged,
+          trailing: widget.trailing,
+        ),
+        if (block is MarketCandlesAvailable) _CandleProvenance(block: block),
       ],
     );
   }
 }
 
-class _CandleBody extends StatelessWidget {
-  const _CandleBody({
-    required this.block,
-    required this.height,
-    this.movingAveragePeriods = const <int>[],
-    this.showVolume = true,
-    this.readOutAverages = true,
-  });
+/// One weak line under the chart: the series' source, pool and unit, and
+/// its marker when it is stale, derived or proxied (AGENTS rule 25).
+class _CandleProvenance extends StatelessWidget {
+  const _CandleProvenance({required this.block});
 
   final MarketCandlesAvailable block;
-  final double height;
-  final List<int> movingAveragePeriods;
-  final bool showVolume;
-
-  /// Whether the averages get their own line under the OHLC row.
-  final bool readOutAverages;
 
   @override
   Widget build(BuildContext context) {
-    if (block.items.isEmpty) {
-      return const LoopEmpty(
-        key: ValueKey<String>('candles-empty'),
-        message: '这个区间没有成交',
-        reason: '只画有成交的桶，空桶不会补 0。',
-        margin: EdgeInsets.zero,
-      );
-    }
-    final last = block.items.last;
     final marker = loopFactQualityMarker(block.quality);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Wrap(
-          spacing: 12,
-          runSpacing: 4,
-          children: <Widget>[
-            Text('O ${loopFormatCandlePrice(last.open)}', style: LoopMono.body),
-            Text('H ${loopFormatCandlePrice(last.high)}', style: LoopMono.body),
-            Text('L ${loopFormatCandlePrice(last.low)}', style: LoopMono.body),
-            Text(
-              'C ${loopFormatCandlePrice(last.close)}',
-              style: LoopMono.body.copyWith(
-                // A falling close used to be Chalk — the colour of O, H and L
-                // beside it — so the one figure on the line that carries a
-                // direction was the one figure that did not show it
-                // (decision 0086).
-                color: LoopPriceMove.between(
-                  open: last.open,
-                  close: last.close,
-                ).color,
-              ),
-            ),
-          ],
-        ),
-        // `.kline-ma`: the averages the chart draws, read out above it. They
-        // are computed here from the closes already on screen, so the line
-        // says so rather than borrowing the series' source.
-        if (readOutAverages && movingAveragePeriods.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 6),
-          Wrap(
-            key: const ValueKey<String>('candles-moving-averages'),
-            spacing: 12,
-            runSpacing: 4,
-            children: <Widget>[
-              for (final period in movingAveragePeriods)
-                if (loopCandleMovingAverageLabel(block.items, period)
-                    case final label?)
-                  Text(label, style: LoopMono.body),
-              Text(
-                'VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}',
-                style: LoopMono.body,
-              ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 8),
-        LoopCandleChart(
-          key: const ValueKey<String>('token-candle-chart'),
-          candles: block.items,
-          height: height,
-          movingAveragePeriods: movingAveragePeriods,
-          showVolume: showVolume,
-          semanticLabel:
-              '${block.items.length} 根 K 线，单位 ${block.priceUnit}'
-              '${last.isOpen ? '，最后一根尚未收盘' : ''}',
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: <Widget>[
-            if (marker != null) ...<Widget>[
-              LoopBadge(
-                marker,
-                key: const ValueKey<String>('candles-quality-marker'),
-                // Only a stale series is a warning; `derived` and `proxied`
-                // are honest descriptions of what is being charted.
-                kind: block.quality == LoopFactQuality.stale
-                    ? LoopBadgeKind.down
-                    : LoopBadgeKind.mute,
-              ),
-              const SizedBox(width: 8),
-            ],
-            if (last.isOpen) ...<Widget>[
-              const LoopBadge(
-                '最后一根进行中',
-                key: ValueKey<String>('candles-open-marker'),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              child: Text(
-                <String>[
-                  // A proxied series may also be an on-chain aggregate, so
-                  // the label is shown whenever the server sends one.
-                  if (block.hasSourceLabel)
-                    marketCandleLabelText(block.labelKey),
-                  // The compact layout has no card heading to carry the
-                  // provider's unit string, and 「2,770.44」 is only a reading
-                  // once the reader knows what it is priced in. It prints
-                  // verbatim, as it does in the heading: LOOP does not
-                  // translate a fact.
-                  if (!readOutAverages) '单位 ${block.priceUnit}',
-                  // Source and pool are one clause: a provider top pool is
-                  // charted but not indexed by LOOP, and saying 「来源
-                  // GeckoTerminal」 apart from 「未登记池」 would let the chart
-                  // imply a trade feed that this asset does not have.
-                  marketCandleSourcePoolText(block.source, block.pool),
-                  '观察于 ${loopRelativeTime(block.fetchedAt)}',
-                ].where((part) => part.isNotEmpty).join(' · '),
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            ),
-          ],
-        ),
-      ],
+    final open = block.items.isNotEmpty && block.items.last.isOpen;
+    return LoopProvenanceLine(
+      key: const ValueKey<String>('candles-provenance'),
+      prefix: <String>{
+        ?marker,
+        if (block.hasSourceLabel) marketCandleLabelText(block.labelKey),
+        // A provider top pool is not one LOOP indexes (decision 0064): the
+        // line says so, so the chart never implies a trade feed.
+        if (block.pool.isProviderPool) '未登记池',
+        if (open) '最后一根进行中',
+        '单位 ${block.priceUnit}',
+      }.join(' · '),
+      sources: <String>[loopFactSourceLabel(block.source)],
+      observedAt: block.fetchedAt,
+      detail: <String>[
+        '${marketCandleSourcePoolText(block.source, block.pool)}。',
+        if (open) '最后一根尚未收盘，收盘前还会变化。',
+        'MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源。',
+      ].join(''),
     );
   }
 }
 
-/// 周期 + MA 读数，一行 (approved design). Five periods on the left as compact
-/// chips, the two averages read out on the right.
-///
-/// It replaces a 44pt segmented bar **under** the chart card with a 28pt line
-/// **over** it, which is what puts the whole reading — price, window, periods,
-/// averages, candles and volume — on the first screen.
-class _CompactChartControls extends StatelessWidget {
-  const _CompactChartControls({
+/// A 44pt toolbar control drawn as a small label.
+class _ChartToggle extends StatelessWidget {
+  const _ChartToggle({
+    required this.label,
+    required this.semantic,
+    required this.on,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final String semantic;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    toggled: on,
+    label: semantic,
+    excludeSemantics: true,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: LoopTouch.minimum,
+          minHeight: LoopTouch.minimum,
+        ),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: on ? LoopColors.chalk.withValues(alpha: 0.12) : null,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: LoopColors.line),
+            ),
+            child: Text(
+              label,
+              style: LoopType.figureXs.copyWith(
+                color: on ? LoopColors.chalk : LoopColors.text3,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// 15分 / 1时 / 4时 / 1日 / 1周, then the caller's trailing control.
+class _IntervalChips extends StatelessWidget {
+  const _IntervalChips({
     required this.selected,
     required this.onSelected,
-    required this.periods,
-    required this.candles,
     this.trailing,
   });
 
   final LoopCandleInterval selected;
   final ValueChanged<LoopCandleInterval> onSelected;
-  final List<int> periods;
-
-  /// `null` while the series is not readable: the periods stay operable and
-  /// the readout says nothing rather than printing a stale average.
-  final List<LoopCandle>? candles;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final series = candles;
-    final labels = <String>[
-      if (series != null)
-        for (final period in periods)
-          ?loopCandleMovingAverageLabel(series, period),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            for (final interval in LoopCandleInterval.values)
-              Semantics(
-                button: true,
-                selected: interval == selected,
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: InkWell(
-                    key: ValueKey<String>(
-                      'token-interval-${interval.wireName}',
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 2, 4, 0),
+      child: Row(
+        children: <Widget>[
+          for (final interval in LoopCandleInterval.values)
+            Semantics(
+              button: true,
+              selected: interval == selected,
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  key: ValueKey<String>('token-interval-${interval.wireName}'),
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => onSelected(interval),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: LoopTouch.minimum,
+                      minHeight: LoopTouch.minimum,
                     ),
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: () => onSelected(interval),
-                    child: Container(
-                      height: 28,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: interval == selected
-                            ? LoopColors.chalk.withValues(alpha: 0.1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        interval.label,
-                        // The chosen period takes the ladder's own small title —
-                        // Chalk by default — and the rest take it at the grey the
-                        // tab strip uses, so the row has one weight and one size.
-                        style: interval == selected
-                            ? LoopType.titleSm
-                            : LoopType.titleSm.copyWith(
-                                color: LoopColors.text3,
-                              ),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: interval == selected
+                              ? LoopColors.chalk.withValues(alpha: 0.1)
+                              : null,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          loopChartIntervalLabel(interval),
+                          style: interval == selected
+                              ? LoopType.titleSm
+                              : LoopType.titleSm.copyWith(
+                                  color: LoopColors.text3,
+                                ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            const Spacer(),
-            ?trailing,
-          ],
-        ),
-        // The averages get the line under the periods, not the room left
-        // beside them: five tabs and the expand glyph leave a 360dp phone
-        // about 60dp, and 「MA7 780.2386 · MA25 786.5496」 was reaching the
-        // reader as 「MA7 7…」.
-        if (labels.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 6),
-          Text(
-            labels.join(' · '),
-            key: const ValueKey<String>('token-moving-averages'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LoopType.figureXs,
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _IntervalBar extends StatelessWidget {
-  const _IntervalBar({required this.selected, required this.onSelected});
-
-  final LoopCandleInterval selected;
-  final ValueChanged<LoopCandleInterval> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Row(
-        children: <Widget>[
-          for (final interval in LoopCandleInterval.values) ...<Widget>[
-            LoopSeg(
-              key: ValueKey<String>('candle-interval-${interval.wireName}'),
-              label: interval.label,
-              selected: interval == selected,
-              onSelected: () => onSelected(interval),
             ),
-            if (interval != LoopCandleInterval.values.last)
-              const SizedBox(width: 8),
-          ],
+          const Spacer(),
+          ?trailing,
         ],
       ),
     );
   }
 }
 
-/// The one line the token page's fact tray shows closed.
-///
-/// It names what the tray holds and how much of it was read, never a verdict:
-/// a count of contract facts is not a statement that any of them is good.
-String tokenFactsTraySummary(
-  MarketPrimaryPair? pair,
-  MarketSecurityBlock security,
-) {
-  final pool = pair == null
-      ? '没有主交易对'
-      : '主交易对 ${pair.dexId} · 报价币 ${pair.quoteTokenSymbol}';
-  final facts = switch (security) {
-    MarketSecurityAvailable(facts: final facts) when facts.isEmpty =>
-      '合约事实暂时读不到',
-    MarketSecurityAvailable(facts: final facts) => '合约事实 ${facts.length} 项',
-    MarketSecurityUnavailable() => '合约事实不可用',
-  };
-  return '$pool · $facts';
-}
+/// 关于 · 池与合约事实: the primary pool on one line and every contract fact,
+/// risk-class first, then one source line (formerly the quote's tray).
+class TokenPoolAndContractFacts extends StatelessWidget {
+  const TokenPoolAndContractFacts({
+    required this.pair,
+    required this.security,
+    super.key,
+  });
 
-/// The quote cells' own ground: an opaque panel one step off the page, as
-/// wide as the fact tray tucked under it.
-///
-/// It is opaque on purpose: the tray is painted first and runs up under the
-/// panel's lower edge, and a translucent panel would show it through.
-class TokenQuotePanel extends StatelessWidget {
-  const TokenQuotePanel({required this.child, super.key});
-
-  final Widget child;
+  final MarketPrimaryPair? pair;
+  final MarketSecurityBlock security;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      child: DecoratedBox(
-        key: const ValueKey<String>('token-quote-panel'),
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(LoopGround.tintOf(context), LoopColors.ink),
-          borderRadius: LoopRadius.card,
-          border: Border.all(color: LoopGround.hairlineOf(context)),
+    final style = LoopTypography.caption(12, color: LoopColors.text2);
+    final resolved = pair;
+    final children = <Widget>[
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
+          resolved == null
+              ? '主交易对：没有以该资产为 base 的交易对'
+              : '主交易对：${marketDexLabel(resolved.dexId)} · 报价币 '
+                    '${resolved.quoteTokenSymbol} · '
+                    '${loopTruncatedAddress(resolved.pairAddress)}',
+          key: const ValueKey<String>('token-facts-pair'),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: style,
         ),
-        child: child,
       ),
+      const SizedBox(height: 8),
+    ];
+    switch (security) {
+      case MarketSecurityUnavailable(reasonCode: final reasonCode):
+        children.add(
+          LoopInlineUnavailable(
+            key: const ValueKey<String>('token-security-unavailable'),
+            message: '合约事实暂时读不到 · ${loopReasonCodeText(reasonCode)}',
+          ),
+        );
+      case MarketSecurityAvailable(facts: final facts) when facts.isEmpty:
+        children.add(
+          const LoopInlineUnavailable(
+            key: ValueKey<String>('token-security-empty'),
+            icon: 'info',
+            message: '暂时读不到合约信息；少了某一项不代表安全或不安全',
+          ),
+        );
+      case MarketSecurityAvailable(facts: final facts):
+        final ordered = tokenSecurityFactsInTrayOrder(facts);
+        children.add(
+          Padding(
+            key: const ValueKey<String>('token-security-facts'),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                for (var row = 0; row < ordered.length; row += 2)
+                  Row(
+                    children: <Widget>[
+                      Expanded(child: TokenFactCell(fact: ordered[row])),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: row + 1 < ordered.length
+                            ? TokenFactCell(fact: ordered[row + 1])
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        );
+        final sources = <String>[
+          for (final fact in facts) loopFactSourceLabel(fact.source),
+        ];
+        var oldest = facts.first.observedAt;
+        for (final fact in facts) {
+          if (fact.observedAt.isBefore(oldest)) oldest = fact.observedAt;
+        }
+        children.add(
+          LoopProvenanceLine(
+            key: const ValueKey<String>('token-security-provenance'),
+            prefix: '合约事实 ${facts.length} 项',
+            sources: sources,
+            observedAt: oldest,
+            detail: '这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。',
+          ),
+        );
+    }
+    return Column(
+      key: const ValueKey<String>('token-pool-contract-facts'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     );
   }
 }
@@ -1099,146 +1390,6 @@ List<MarketSecurityFact> tokenSecurityFactsInTrayOrder(
   ...facts.where((fact) => !tokenSecurityFactIsRisk(fact)),
 ];
 
-/// The one provenance line under the tray's grid: every source the facts
-/// name, and the oldest observation among them — the grid is only as fresh
-/// as its stalest cell.
-String tokenSecurityProvenanceLine(List<MarketSecurityFact> facts) {
-  final sources = <String>{
-    for (final fact in facts) loopFactSourceLabel(fact.source),
-  };
-  var oldest = facts.first.observedAt;
-  for (final fact in facts) {
-    if (fact.observedAt.isBefore(oldest)) oldest = fact.observedAt;
-  }
-  return '来源 ${sources.join('、')} · 观察于 ${loopRelativeTime(oldest)}';
-}
-
-/// The open fact tray (decision 0096): the pool on one line, then at most
-/// [maxCells] contract facts as a compact two-column grid — risk-class ones
-/// first, each behind a Warning dot, the rest behind a neutral one — then,
-/// when there are more, one control that opens 简介 where every fact is
-/// listed, and a single provenance line at the foot.
-class TokenFactsTrayDetail extends StatelessWidget {
-  const TokenFactsTrayDetail({
-    required this.pair,
-    required this.security,
-    required this.onOpenAbout,
-    super.key,
-  });
-
-  static const int maxCells = 8;
-
-  final MarketPrimaryPair? pair;
-  final MarketSecurityBlock security;
-  final VoidCallback onOpenAbout;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = LoopTypography.caption(12, color: LoopColors.text2);
-    final resolved = pair;
-    final pairLine = resolved == null
-        ? '主交易对：没有以该资产为 base 的交易对'
-        : '主交易对：${resolved.dexId} · 报价币 ${resolved.quoteTokenSymbol} · '
-              '${loopTruncatedAddress(resolved.pairAddress)}';
-    final children = <Widget>[
-      Text(
-        pairLine,
-        key: const ValueKey<String>('token-facts-tray-pair'),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: style,
-      ),
-      const SizedBox(height: 8),
-    ];
-    switch (security) {
-      case MarketSecurityUnavailable(reasonCode: final reasonCode):
-        children.add(
-          Text('合约事实不可用：${loopReasonCodeText(reasonCode)}', style: style),
-        );
-      case MarketSecurityAvailable(facts: final facts) when facts.isEmpty:
-        children.add(Text('暂时读不到合约信息。少了某一项只表示读不到，不代表安全或不安全。', style: style));
-      case MarketSecurityAvailable(facts: final facts):
-        final ordered = tokenSecurityFactsInTrayOrder(facts);
-        final shown = ordered.take(maxCells).toList(growable: false);
-        final hidden = ordered.length - shown.length;
-        children.add(
-          Column(
-            key: const ValueKey<String>('token-facts-tray-grid'),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              for (var row = 0; row < shown.length; row += 2)
-                Row(
-                  children: <Widget>[
-                    Expanded(child: TokenFactCell(fact: shown[row])),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: row + 1 < shown.length
-                          ? TokenFactCell(fact: shown[row + 1])
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        );
-        if (hidden > 0) {
-          children.add(
-            Semantics(
-              button: true,
-              label: '更多 $hidden 项，在简介查看',
-              excludeSemantics: true,
-              child: InkWell(
-                key: const ValueKey<String>('token-facts-tray-more'),
-                onTap: onOpenAbout,
-                borderRadius: LoopRadius.control,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: LoopTouch.minimum,
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Text(
-                        '更多 $hidden 项',
-                        style: LoopTypography.caption(
-                          12,
-                          color: LoopColors.chalk,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const LoopIcon(
-                        'chevron',
-                        size: 12,
-                        color: LoopColors.text2,
-                      ),
-                      const SizedBox(width: 6),
-                      Text('简介', style: style),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        } else {
-          children.add(const SizedBox(height: 6));
-        }
-        children.add(
-          Text(
-            tokenSecurityProvenanceLine(facts),
-            key: const ValueKey<String>('token-facts-tray-source'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LoopTypography.caption(11, color: LoopColors.text3),
-          ),
-        );
-    }
-    return Column(
-      key: const ValueKey<String>('token-facts-tray-detail'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: children,
-    );
-  }
-}
-
 /// One cell of the tray's fact grid: a dot and the fact's short label. The
 /// full sentence is what a screen reader hears.
 class TokenFactCell extends StatelessWidget {
@@ -1285,44 +1436,6 @@ class TokenFactCell extends StatelessWidget {
   }
 }
 
-class _PrimaryPairCard extends StatelessWidget {
-  const _PrimaryPairCard({required this.pair});
-
-  final MarketPrimaryPair? pair;
-
-  @override
-  Widget build(BuildContext context) {
-    final resolved = pair;
-    if (resolved == null) {
-      return const LoopUnavailableCard(
-        key: ValueKey<String>('token-primary-pair-unavailable'),
-        label: '没有以该资产为 base 的交易对',
-        reasonCode: 'MARKET_PAIR_NOT_FOUND',
-      );
-    }
-    return LoopSurfaceCard(
-      key: const ValueKey<String>('token-primary-pair'),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text('主交易对', style: LoopMono.label),
-          const SizedBox(height: 6),
-          Text(
-            '${resolved.dexId} · 报价币 ${resolved.quoteTokenSymbol}',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            loopTruncatedAddress(resolved.pairAddress),
-            style: LoopMono.stamp,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CommunityBlock extends StatelessWidget {
   const _CommunityBlock({required this.block, required this.onOpenCommunity});
 
@@ -1333,10 +1446,10 @@ class _CommunityBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (block) {
       case MarketCommunityUnavailable(reasonCode: final reasonCode):
-        return LoopUnavailableCard(
+        return LoopInlineUnavailable(
           key: const ValueKey<String>('token-community-unavailable'),
-          label: '还没有绑定的 LOOP 社区',
-          reasonCode: reasonCode,
+          icon: 'info',
+          message: '还没有绑定的 LOOP 社区 · ${loopReasonCodeText(reasonCode)}',
         );
       case MarketCommunityBound(
         communityId: final communityId,
@@ -1352,52 +1465,6 @@ class _CommunityBlock extends StatelessWidget {
               onTap: () => onOpenCommunity(communityId),
             ),
           ],
-        );
-    }
-  }
-}
-
-class _SecurityBlock extends StatelessWidget {
-  const _SecurityBlock({required this.block});
-
-  final MarketSecurityBlock block;
-
-  @override
-  Widget build(BuildContext context) {
-    switch (block) {
-      case MarketSecurityUnavailable(reasonCode: final reasonCode):
-        return LoopUnavailableCard(
-          key: const ValueKey<String>('token-security-unavailable'),
-          label: '合约事实不可用',
-          reasonCode: reasonCode,
-        );
-      case MarketSecurityAvailable(facts: final facts):
-        if (facts.isEmpty) {
-          return const LoopEmpty(
-            key: ValueKey<String>('token-security-empty'),
-            message: '暂时读不到合约信息',
-            reason: '少了某一项只表示读不到，不代表安全或不安全。',
-          );
-        }
-        return LoopSurfaceCard(
-          key: const ValueKey<String>('token-security-facts'),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              for (final fact in facts) ...<Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(
-                    '${marketSecurityFactText(fact)} —— '
-                    '来源 ${loopFactSourceLabel(fact.source)}，'
-                    '观察于 ${loopRelativeTime(fact.observedAt)}',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ],
-          ),
         );
     }
   }

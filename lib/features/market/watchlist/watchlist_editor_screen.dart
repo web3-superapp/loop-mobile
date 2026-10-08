@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -18,6 +19,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `watchlist-edit` · reorder, remove and group the owner's Watchlist.
@@ -44,6 +46,22 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
       return;
     }
     context.push(location);
+  }
+
+  /// Where 添加资产 goes: a list whose rows open token pages. While the new
+  /// pairs list is hidden (decision 0118) that is 情报 · 行情.
+  void _openAddAsset() {
+    if (ref.read(loopFeatureSwitchesProvider).outboundMarketListsVisible) {
+      _open('/market/new');
+      return;
+    }
+    ref.read(loopTabSegmentMemoryProvider.notifier).select('intel', 1);
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.go('/intel');
+    } else {
+      _open('/intel');
+    }
   }
 
   @override
@@ -177,7 +195,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 action: LoopButton(
                   key: const ValueKey<String>('watchlist-group-empty-add'),
                   label: '添加资产',
-                  onPressed: () => _open('/market/new'),
+                  onPressed: _openAddAsset,
                 ),
               )
             else
@@ -241,7 +259,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 LoopButton(
                   key: const ValueKey<String>('watchlist-add-asset'),
                   label: '添加资产',
-                  onPressed: () => _open('/market/new'),
+                  onPressed: _openAddAsset,
                 ),
                 LoopButton(
                   key: const ValueKey<String>('watchlist-new-group'),
@@ -261,7 +279,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                   '加入自选只有一条路：打开代币页，点右上角星标。'
                   '这样加入的资产进入默认分组「$watchlistDefaultGroupName」，'
                   '本页不能把它移到别的分组。'
-                  '行情的「趋势」和「新币发现」都能打开代币页。',
+                  '情报 · 行情里的每一行都能打开代币页。',
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             ),
             // A control that greys out without a word looks broken. At the

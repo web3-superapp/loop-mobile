@@ -24,7 +24,7 @@ import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
-import 'package:loop_mobile/features/market/market_widgets.dart';
+import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
@@ -113,6 +113,16 @@ final class _ScriptedMarket implements MarketReadGateway {
 
   @override
   Future<LoopUnavailable> loadSmartMoney() => _inner.loadSmartMoney();
+
+  @override
+  Future<MarketCategoryPage> loadCategory(
+    MarketCategory category, {
+    MarketCategorySort sort = MarketCategorySort.marketCap,
+    String? cursor,
+  }) => _inner.loadCategory(category, sort: sort, cursor: cursor);
+
+  @override
+  Future<IntelPromotions> loadPromotions() => _inner.loadPromotions();
 }
 
 /// The balances answer from a completer the test owns.
@@ -794,7 +804,7 @@ void main() {
       );
       await _frames(tester);
 
-      expect(find.byType(MarketAssetTile), findsWidgets);
+      expect(find.byType(MarketFomoRow), findsWidgets);
       expect(
         find.byKey(const ValueKey<String>('market-state-loading')),
         findsNothing,
@@ -822,7 +832,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-freshness-text')),
         findsNothing,
       );
-      expect(find.byType(MarketAssetTile), findsWidgets);
+      expect(find.byType(MarketFomoRow), findsWidgets);
     });
 
     testWidgets('no snapshot loads as rows of the list\'s own height', (
@@ -840,11 +850,11 @@ void main() {
         find.byKey(const ValueKey<String>('market-state-loading')),
       );
       expect(skeleton.type, LoopSkeletonType.priceRow);
-      expect(skeleton.rowHeight, marketRowHeight);
+      expect(skeleton.rowHeight, marketFomoRowHeight);
       final row = find.byKey(const ValueKey<String>('loop-skeleton-price-row'));
       expect(row, findsOneWidget);
-      expect(tester.getSize(row).height, marketRowHeight * 6);
-      expect(find.byType(MarketAssetTile), findsNothing);
+      expect(tester.getSize(row).height, marketFomoRowHeight * 6);
+      expect(find.byType(MarketFomoRow), findsNothing);
     });
 
     testWidgets('a refresh keeps the rows and a failed one says so', (
@@ -852,7 +862,7 @@ void main() {
     ) async {
       final market = _ScriptedMarket(FakeMarketReadGateway());
       await pumpS5Page(tester, const MarketScreen(), market: market);
-      expect(find.byType(MarketAssetTile), findsWidgets);
+      expect(find.byType(MarketFomoRow), findsWidgets);
 
       final refresh = Completer<MarketOverview>();
       market.script.add(refresh);
@@ -864,7 +874,7 @@ void main() {
       );
       await _frames(tester);
       // Nothing flashes back to a skeleton while the read runs.
-      expect(find.byType(MarketAssetTile), findsWidgets);
+      expect(find.byType(MarketFomoRow), findsWidgets);
       expect(find.byType(LoopSkeleton), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('loop-updating-badge')),
@@ -875,7 +885,7 @@ void main() {
         const LoopChainException(LoopChainFailureKind.offline),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(MarketAssetTile), findsWidgets);
+      expect(find.byType(MarketFomoRow), findsWidgets);
       expect(_stripText(tester), startsWith('更新失败，显示的是'));
       expect(
         find.byKey(const ValueKey<String>('loop-freshness-retry')),

@@ -210,6 +210,7 @@ Map<String, Object?> _aliasRow({
     'alias': 'whale',
     'publicProfileId': profileId,
     'audience': audience,
+    'avatarRef': null,
   },
   'isSelf': isSelf,
 };
@@ -254,10 +255,14 @@ Map<String, Object?> _miningRank({
   Object? myPosition,
   Object? snapshot,
   Object? formula,
+  Object? me,
+  Object? nextCursor,
 }) => <String, Object?>{
   'scope': scope,
   'ranking': ranking,
   'myPosition': myPosition ?? _unavailable('MINING_RANK_NOT_RANKED'),
+  'me': me,
+  'nextCursor': nextCursor,
   'snapshot': snapshot ?? _miningSnapshot(),
   'display': _rankDisplay(),
   'formula': formula ?? _effectiveFormula(),

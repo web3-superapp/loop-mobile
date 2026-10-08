@@ -92,53 +92,51 @@ void main() {
   });
 
   group('token · the page opens on the quote, not on a card', () {
-    testWidgets(
-      'the quote, the four cells and the two actions, in that order',
-      (tester) async {
-        await pumpS5Page(
-          tester,
-          const TokenDetailScreen(assetId: s5WbnbAssetId),
-          market: FakeMarketReadGateway(),
-        );
+    testWidgets('the quote, the market cap and the two actions', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(),
+      );
 
-        // S78b: the approved design opens on the price itself. The signature
-        // card spent a third of the first screen on its own border and pushed
-        // the chart off it, and its small 1H line said the same thing the K
-        // line under it says at eight times the size.
-        expect(find.byKey(const ValueKey<String>('token-card')), findsNothing);
-        expect(
-          find.byKey(const ValueKey<String>('token-quote')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('token-quote-cells')),
-          findsOneWidget,
-        );
-        // S82a: the two actions moved into the pinned bar at the foot of the
-        // page, so they are reachable from wherever in the page the reader is.
-        expect(
-          find.byKey(const ValueKey<String>('token-trade-bar')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('token-buy-action')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('token-sell-action')),
-          findsOneWidget,
-        );
-        // The chart on this page is the K line, and there is exactly one of it.
-        expect(
-          find.byKey(const ValueKey<String>('token-card-chart-line')),
-          findsNothing,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('token-candle-chart')),
-          findsOneWidget,
-        );
-      },
-    );
+      // S78b: the approved design opens on the price itself. The signature
+      // card spent a third of the first screen on its own border and pushed
+      // the chart off it, and its small 1H line said the same thing the K
+      // line under it says at eight times the size.
+      expect(find.byKey(const ValueKey<String>('token-card')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('token-quote')), findsOneWidget);
+      // Decision 0118: the market cap sits beside the price; the other
+      // figures moved under 关于.
+      expect(
+        find.byKey(const ValueKey<String>('token-market-cap')),
+        findsOneWidget,
+      );
+      // S82a: the two actions moved into the pinned bar at the foot of the
+      // page, so they are reachable from wherever in the page the reader is.
+      expect(
+        find.byKey(const ValueKey<String>('token-trade-bar')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('token-buy-action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('token-sell-action')),
+        findsOneWidget,
+      );
+      // The chart on this page is the K line, and there is exactly one of it.
+      expect(
+        find.byKey(const ValueKey<String>('token-card-chart-line')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('token-candle-chart')),
+        findsOneWidget,
+      );
+    });
 
     testWidgets('an unavailable series is stated once, by the K line', (
       tester,

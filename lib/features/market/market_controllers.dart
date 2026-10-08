@@ -54,20 +54,33 @@ final marketAssetControllerProvider = NotifierProvider.autoDispose
 /// The (assetId, interval) pair that identifies one candle request.
 @immutable
 final class MarketCandleRequest {
-  const MarketCandleRequest({required this.assetId, required this.interval});
+  const MarketCandleRequest({
+    required this.assetId,
+    required this.interval,
+    this.limit,
+  });
 
   final String assetId;
   final LoopCandleInterval interval;
+
+  /// How many buckets to ask for (1–300); `null` takes the server's default.
+  /// The token chart asks for [chartLimit] so it can be panned and zoomed
+  /// without a second read (decision 0118).
+  final int? limit;
+
+  /// The most buckets one candle read returns.
+  static const int chartLimit = 300;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is MarketCandleRequest &&
           other.assetId == assetId &&
-          other.interval == interval;
+          other.interval == interval &&
+          other.limit == limit;
 
   @override
-  int get hashCode => Object.hash(assetId, interval);
+  int get hashCode => Object.hash(assetId, interval, limit);
 }
 
 /// `token` chart / `chart-full` · `…/candles?interval=`.
@@ -83,7 +96,11 @@ final class MarketCandlesController
   @override
   Future<MarketCandleSeries> fetch() => ref
       .read(marketReadGatewayProvider)
-      .loadCandles(request.assetId, interval: request.interval);
+      .loadCandles(
+        request.assetId,
+        interval: request.interval,
+        limit: request.limit,
+      );
 }
 
 final marketCandlesControllerProvider = NotifierProvider.autoDispose
@@ -93,19 +110,90 @@ final marketCandlesControllerProvider = NotifierProvider.autoDispose
       MarketCandleRequest
     >(MarketCandlesController.new);
 
-/// `token-trades` · `…/trades`.
+/// `token-trades` · `…/trades`, read a cursor page at a time.
 final class MarketTradesController
     extends LoopChainReadController<MarketTradesPage> {
   MarketTradesController(this.assetId);
 
   final String assetId;
+  bool _appendFailed = false;
+
+  /// The last page request failed; the trades read so far stay.
+  bool get appendFailed => _appendFailed;
 
   @override
   LoopChainGatewayMode watchMode() => _marketMode(ref);
 
   @override
-  Future<MarketTradesPage> fetch() =>
-      ref.read(marketReadGatewayProvider).loadTrades(assetId);
+  Future<MarketTradesPage> fetch() {
+    _appendFailed = false;
+    return ref.read(marketReadGatewayProvider).loadTrades(assetId);
+  }
+
+  /// Reads the page after the trades on screen (decision 0118: lists scroll
+  /// on). Does nothing while a page is in flight or when the list is whole.
+  Future<void> loadMore() async {
+    final current = state.value;
+    final block = current?.trades;
+    if (current == null || block is! MarketTradesAvailable || state.busy) {
+      return;
+    }
+    final cursor = block.nextCursor;
+    if (cursor == null) return;
+    _appendFailed = false;
+    state = state.working(true);
+    try {
+      final page = await ref
+          .read(marketReadGatewayProvider)
+          .loadTrades(assetId, cursor: cursor);
+      if (!ref.mounted) return;
+      final next = page.trades;
+      if (next is! MarketTradesAvailable) {
+        // The feed closed between two pages: the rows read so far stay, and
+        // the list ends where it is rather than in a retry loop.
+        state = state
+            .working(false)
+            .ready(
+              MarketTradesPage(
+                assetId: assetId,
+                trades: MarketTradesAvailable(
+                  source: block.source,
+                  items: block.items,
+                  nextCursor: null,
+                  freshness: block.freshness,
+                ),
+              ),
+            );
+        return;
+      }
+      final held = <String>{for (final trade in block.items) trade.tradeId};
+      state = state
+          .working(false)
+          .ready(
+            MarketTradesPage(
+              assetId: assetId,
+              trades: MarketTradesAvailable(
+                source: block.source,
+                items: <MarketTrade>[
+                  ...block.items,
+                  for (final trade in next.items)
+                    if (held.add(trade.tradeId)) trade,
+                ],
+                nextCursor: next.nextCursor,
+                freshness: next.freshness,
+              ),
+            ),
+          );
+    } on LoopChainException catch (error) {
+      if (!ref.mounted) return;
+      _appendFailed = true;
+      state = state.working(false).failed(error.kind);
+    } catch (_) {
+      if (!ref.mounted) return;
+      _appendFailed = true;
+      state = state.working(false).failed(LoopChainFailureKind.unexpected);
+    }
+  }
 }
 
 final marketTradesControllerProvider = NotifierProvider.autoDispose
@@ -170,3 +258,82 @@ final marketSmartMoneyControllerProvider =
       MarketSmartMoneyController,
       LoopChainResourceState<LoopUnavailable>
     >(MarketSmartMoneyController.new);
+
+/// 情报 · 行情 · one category list (decision 0100 / 0118), read a cursor
+/// page at a time as the reader scrolls. The server orders it by market cap.
+final class MarketCategoryController
+    extends LoopChainReadController<MarketCategoryPage> {
+  MarketCategoryController(this.category);
+
+  final MarketCategory category;
+  bool _appendFailed = false;
+
+  /// The last page request failed; the rows read so far stay.
+  bool get appendFailed => _appendFailed;
+
+  @override
+  LoopChainGatewayMode watchMode() => _marketMode(ref);
+
+  @override
+  Future<MarketCategoryPage> fetch() {
+    _appendFailed = false;
+    return ref.read(marketReadGatewayProvider).loadCategory(category);
+  }
+
+  /// Reads the page after the rows on screen.
+  ///
+  /// A cursor is bound to the account, the category and the order and lives
+  /// ten minutes; one the server refuses (400) sends the list back to its
+  /// first page rather than ending it in an error.
+  Future<void> loadMore() async {
+    final current = state.value;
+    final cursor = current?.nextCursor;
+    if (current == null || cursor == null || state.busy) return;
+    _appendFailed = false;
+    state = state.working(true);
+    try {
+      final page = await ref
+          .read(marketReadGatewayProvider)
+          .loadCategory(category, sort: current.sort, cursor: cursor);
+      if (!ref.mounted) return;
+      state = state.working(false).ready(current.append(page));
+    } on LoopChainException catch (error) {
+      if (!ref.mounted) return;
+      if (error.kind == LoopChainFailureKind.invalidData) {
+        state = state.working(false);
+        await reload();
+        return;
+      }
+      _appendFailed = true;
+      state = state.working(false).failed(error.kind);
+    } catch (_) {
+      if (!ref.mounted) return;
+      _appendFailed = true;
+      state = state.working(false).failed(LoopChainFailureKind.unexpected);
+    }
+  }
+}
+
+final marketCategoryControllerProvider = NotifierProvider.autoDispose
+    .family<
+      MarketCategoryController,
+      LoopChainResourceState<MarketCategoryPage>,
+      MarketCategory
+    >(MarketCategoryController.new);
+
+/// 情报 · 活动位 · `GET /v2/intel/promotions`.
+final class IntelPromotionsController
+    extends LoopChainReadController<IntelPromotions> {
+  @override
+  LoopChainGatewayMode watchMode() => _marketMode(ref);
+
+  @override
+  Future<IntelPromotions> fetch() =>
+      ref.read(marketReadGatewayProvider).loadPromotions();
+}
+
+final intelPromotionsControllerProvider =
+    NotifierProvider.autoDispose<
+      IntelPromotionsController,
+      LoopChainResourceState<IntelPromotions>
+    >(IntelPromotionsController.new);

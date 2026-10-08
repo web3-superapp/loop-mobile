@@ -601,8 +601,12 @@ MiningRank s7MiningRank({
   MiningRankPosition? myPosition,
   MiningSnapshotRef? snapshot,
   MiningFormulaGate? formula,
+  MiningRankMe? me,
+  String? nextCursor,
 }) => MiningRank(
   scope: scope,
+  me: me,
+  nextCursor: nextCursor,
   ranking: ranking ?? const MiningRankingUnavailable(s7FormulaPending),
   myPosition:
       myPosition ?? const MiningRankPositionUnavailable(s7FormulaPending),

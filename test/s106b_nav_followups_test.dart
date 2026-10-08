@@ -16,7 +16,7 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
-import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
+import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/features/square/square_screen.dart';
@@ -325,28 +325,21 @@ void main() {
   });
 
   group('intel · 算力榜 position card', () {
-    testWidgets('only the user board carries NETWORK POSITION', (tester) async {
+    testWidgets('every board opens on 我的名次, never NETWORK POSITION', (
+      tester,
+    ) async {
       await pumpS7Page(
         tester,
-        const MiningRankScreen(embedded: true, includeReferralScope: true),
+        IntelRankBoard(onNavigate: (_) {}),
         mining: FakeMiningGateway(),
       );
-      final card = find.byKey(const ValueKey<String>('mining-rank-reading'));
-      // The community board is selected first.
-      expect(card, findsNothing);
-      expect(find.text('NETWORK POSITION'), findsNothing);
-      expect(find.textContaining('社区榜不显示个人名次'), findsNothing);
-
-      await tester.tap(find.text('用户榜'));
-      await tester.pumpAndSettle();
-      expect(card, findsOneWidget);
-      expect(find.text('NETWORK POSITION'), findsOneWidget);
-
-      await tester.tap(find.text('推广榜'));
-      await tester.pumpAndSettle();
-      expect(card, findsNothing);
-      expect(find.text('NETWORK POSITION'), findsNothing);
-      expect(find.textContaining('不显示个人名次'), findsNothing);
+      final card = find.byKey(const ValueKey<String>('intel-rank-me'));
+      for (final label in <String>['社区', '用户', '推广']) {
+        await tester.tap(find.text(label));
+        await tester.pumpAndSettle();
+        expect(card, findsOneWidget, reason: label);
+        expect(find.text('NETWORK POSITION'), findsNothing);
+      }
     });
   });
 

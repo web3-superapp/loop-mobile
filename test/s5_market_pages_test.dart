@@ -2,16 +2,18 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
-import 'package:loop_mobile/features/market/loop_candle_chart.dart';
+import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/features/market/market_secondary_screens.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
@@ -50,8 +52,8 @@ void main() {
       // Watchlist — 自选管理 counted 47 while this block held 4 — so the tab
       // states what is on this page and calls nothing a total.
       expect(find.textContaining('个自选资产'), findsNothing);
-      // S78b: the one statistics line, and only counts on it.
-      expect(find.textContaining('自选 1 · '), findsOneWidget);
+      // Decision 0118: no statistics line; one weak source line instead.
+      expect(find.textContaining('自选 1 · '), findsNothing);
       expect(find.text('\$747.39'), findsWidgets);
       expect(find.textContaining('来源 DexScreener'), findsWidgets);
       expect(find.textContaining('观察于'), findsWidgets);
@@ -77,7 +79,8 @@ void main() {
         ),
       );
 
-      expect(find.text('数据可能过期'), findsWidgets);
+      // Decision 0118: the row's second line carries the marker.
+      expect(find.textContaining('延迟'), findsWidgets);
       expect(find.text('\$747.39'), findsWidgets);
     });
 
@@ -103,7 +106,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('没有找到这个资产的交易对'), findsWidgets);
+      expect(find.text('没有交易对'), findsWidgets);
       expect(find.text('\$0'), findsNothing);
       expect(find.text('0'), findsNothing);
     });
@@ -144,12 +147,22 @@ void main() {
           ),
         ),
       );
-      await pumpS5Page(tester, const MarketScreen(), market: market);
+      await pumpS5Page(
+        tester,
+        const MarketScreen(),
+        market: market,
+        // Decision 0118 hides 新币 behind a switch; the tab is still whole.
+        overrides: [
+          loopFeatureSwitchesProvider.overrideWithValue(
+            const LoopFeatureSwitchValues(outboundMarketListsVisible: true),
+          ),
+        ],
+      );
 
       // A reader on 自选 does not pay for a provider they did not ask for.
       expect(market.newPairs.resolves, 0);
 
-      await tester.tap(find.byKey(const ValueKey<String>('market-tab-新币')));
+      await tester.tap(find.text('新币'));
       await tester.pumpAndSettle();
       expect(market.newPairs.resolves, 1);
       expect(find.textContaining('four.meme'), findsOneWidget);
@@ -159,20 +172,6 @@ void main() {
         find.byKey(const ValueKey<String>('market-new-pairs-page')),
         findsOneWidget,
       );
-    });
-
-    testWidgets('the trending block always states its ordering rule', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(),
-      );
-
-      await tester.tap(find.byKey(const ValueKey<String>('market-tab-热门')));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('按 DexScreener 24h 成交量排序'), findsOneWidget);
     });
 
     testWidgets('an empty watchlist offers the editor, not a zero', (
@@ -193,8 +192,9 @@ void main() {
         ),
       );
 
-      expect(find.text('还没有自选资产'), findsOneWidget);
-      expect(find.text('管理自选'), findsWidgets);
+      expect(find.text('还没有自选'), findsOneWidget);
+      expect(find.text('去主流看看'), findsOneWidget);
+      expect(find.text('0'), findsNothing);
     });
 
     testWidgets('offline pauses the page instead of blanking it', (
@@ -278,6 +278,13 @@ void main() {
         find.byKey(const ValueKey<String>('token-swap-entry')),
         findsNothing,
       );
+      // Decision 0118: the gate's sentence lives under 关于.
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-section-tabs')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-swap-unavailable')),
@@ -301,12 +308,10 @@ void main() {
           market: FakeMarketReadGateway(),
         );
 
-        expect(find.byType(LoopCandleChart), findsOneWidget);
-        expect(find.text('按成交价折算'), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey<String>('candles-open-marker')),
-          findsOneWidget,
-        );
+        expect(find.byType(LoopMarketChart), findsOneWidget);
+        // Decision 0118: the series' marks ride on its one source line.
+        expect(find.textContaining('按成交价折算'), findsOneWidget);
+        expect(find.textContaining('最后一根进行中'), findsOneWidget);
         // The price unit is the pool's other token, never USD. It is the
         // provider's own string and prints verbatim. S82a gave the card's
         // heading row to the periods and the averages, so the unit moved onto
@@ -336,7 +341,7 @@ void main() {
         );
 
         // Same chip as the wallet page's proxied valuation.
-        expect(find.text('以 WBNB 计价'), findsOneWidget);
+        expect(find.textContaining('以 WBNB 计价'), findsOneWidget);
         // The aggregate note is not swallowed by the proxy note; it sits in
         // the provenance line under the chart.
         expect(find.textContaining('按成交价折算'), findsOneWidget);
@@ -366,8 +371,12 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('主池来自 GeckoTerminal'), findsOneWidget);
       expect(find.textContaining('未登记池'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('candles-provenance')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('主池来自 GeckoTerminal'), findsOneWidget);
       // 「来源 X · 池 Y」 is the registered wording; it must not read as if
       // LOOP indexed this pool.
       expect(find.textContaining('来源 GeckoTerminal · 池'), findsNothing);
@@ -382,8 +391,12 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      expect(find.textContaining('来源 LOOP 链上索引 · 池 0x'), findsOneWidget);
       expect(find.textContaining('未登记池'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('candles-provenance')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('来源 LOOP 链上索引 · 池 0x'), findsOneWidget);
     });
 
     testWidgets('an unavailable candle block states its reason', (
@@ -418,143 +431,6 @@ void main() {
       );
     });
 
-    testWidgets('the pool and contract facts ride in a tray under the cells', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const TokenDetailScreen(assetId: s5WbnbAssetId),
-        market: FakeMarketReadGateway(),
-      );
-
-      final tray = find.byKey(const ValueKey<String>('token-facts-tray'));
-      expect(
-        find.descendant(
-          of: tray,
-          matching: find.byKey(const ValueKey<String>('token-quote-cells')),
-        ),
-        findsOneWidget,
-      );
-      final summary = tester.widget<Text>(
-        find.byKey(const ValueKey<String>('token-facts-tray-summary')),
-      );
-      expect(summary.data, startsWith('主交易对 pancakeswap · 报价币 USDT · 合约事实 '));
-      // Closed: the facts are not built, so nothing on the quote repeats them.
-      expect(
-        find.byKey(const ValueKey<String>('token-facts-tray-detail')),
-        findsNothing,
-      );
-
-      await tester.tap(
-        find.descendant(
-          of: tray,
-          matching: find.byKey(const ValueKey<String>('loop-tray-toggle')),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 140));
-      await tester.pumpAndSettle();
-      final detail = find.byKey(
-        const ValueKey<String>('token-facts-tray-detail'),
-      );
-      expect(
-        find.descendant(
-          of: detail,
-          matching: find.textContaining('主交易对：pancakeswap · 报价币 USDT'),
-        ),
-        findsOneWidget,
-      );
-      // Decision 0096: each fact is a short grid cell, and the source and
-      // time are stated once, at the foot of the tray; none is a verdict.
-      expect(
-        find.descendant(of: detail, matching: find.text('已验证开源')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: detail, matching: find.textContaining('—— 来源')),
-        findsNothing,
-      );
-      expect(
-        tester
-            .widget<Text>(
-              find.byKey(const ValueKey<String>('token-facts-tray-source')),
-            )
-            .data,
-        startsWith('来源 GoPlus · 观察于 '),
-      );
-
-      await tester.tap(
-        find.descendant(
-          of: tray,
-          matching: find.byKey(const ValueKey<String>('loop-tray-toggle')),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(detail, findsNothing);
-    });
-
-    testWidgets('the four cells summarise; the page prints no figure twice', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const TokenDetailScreen(assetId: s5WbnbAssetId),
-        market: FakeMarketReadGateway(),
-      );
-
-      final cells = find.byKey(const ValueKey<String>('token-quote-cells'));
-      // A cell is a quarter of the screen wide, so it carries the magnitude
-      // and a phrase, never a full figure and never a whole sentence. The
-      // window is the server's own (decision 0074 §4.1) and prints at the
-      // list's price step.
-      expect(
-        find.descendant(of: cells, matching: find.text(r'$748.90')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: cells, matching: find.text(r'$746.50')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: cells, matching: find.text(r'$1.2M')),
-        findsOneWidget,
-      );
-      // 市值 was not reported, so its cell says so rather than printing 0.
-      expect(
-        find.descendant(of: cells, matching: find.text('未报告')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: cells, matching: find.textContaining('1,234,567')),
-        findsNothing,
-      );
-
-      // S82a: 24h 高 / 24h 低 / 24h 成交额 / 市值 are the four cells the
-      // approved design puts over the chart; 持有人 and 流动性 moved to the
-      // 社区 tab's strip and 完全稀释估值 — the one figure with no cell
-      // anywhere — to 简介, with one provenance line for the whole read.
-      await scrollToS5Section(
-        tester,
-        find.byKey(const ValueKey<String>('token-section-tabs')),
-      );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
-      await tester.pumpAndSettle();
-      await scrollToS5Section(
-        tester,
-        find.byKey(const ValueKey<String>('fact-完全稀释估值')),
-      );
-      expect(find.text('99,999,999'), findsOneWidget);
-      expect(find.byKey(const ValueKey<String>('fact-流动性')), findsNothing);
-      expect(find.byKey(const ValueKey<String>('fact-市值')), findsNothing);
-      expect(find.byKey(const ValueKey<String>('fact-持有人数')), findsNothing);
-      expect(find.byKey(const ValueKey<String>('fact-24H 成交额')), findsNothing);
-      expect(find.text('9,876,543.21'), findsNothing);
-      expect(find.text('1,234,567.89'), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('token-facts-provenance')),
-        findsOneWidget,
-      );
-    });
-
     testWidgets('security facts render with their own source and time', (
       tester,
     ) async {
@@ -568,14 +444,14 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('token-security-facts')),
+        find.byKey(const ValueKey<String>('token-security-provenance')),
       );
-      expect(find.textContaining('合约已验证开源 —— 来源 GoPlus，观察于'), findsOneWidget);
-      expect(find.textContaining('不给评级、评分或结论'), findsOneWidget);
+      expect(find.text('已验证开源'), findsOneWidget);
+      expect(find.textContaining('来源 GoPlus · 观察于'), findsOneWidget);
     });
 
     testWidgets('a blocked asset hides every fact', (tester) async {
@@ -620,11 +496,13 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('这个地址暂时读不到 · ${loopTruncatedAssetId(s5WbnbAssetId)}'),
+        find.textContaining(
+          '这个地址暂时读不到 · ${loopTruncatedAssetId(s5WbnbAssetId)}',
+        ),
         findsOneWidget,
       );
       // The server's own sentence, not the code it travelled as.
-      expect(find.text('数据服务限流中，暂时没有新数值。'), findsWidgets);
+      expect(find.textContaining('数据服务限流中，暂时没有新数值。'), findsWidgets);
       expect(find.textContaining('MARKET_PROVIDER'), findsNothing);
       // There is no ticker to head the page with, so the address does it.
       expect(find.text('WBNB'), findsNothing);
@@ -632,12 +510,11 @@ void main() {
       // of them renders as a zero.
       expect(find.text(r'$747.39'), findsNothing);
       expect(find.text(r'$0.00'), findsNothing);
-      // The provider's quota is spent: the retry is stated and held shut.
-      final retry = tester.widget<LoopButton>(
-        find.byKey(const ValueKey<String>('token-asset-unavailable-retry')),
+      // The provider's quota is spent: the retry is held shut.
+      final line = tester.widget<LoopInlineUnavailable>(
+        find.byKey(const ValueKey<String>('token-asset-unavailable')),
       );
-      expect(retry.label, '重试');
-      expect(retry.onPressed, isNull);
+      expect(line.onRetry, isNull);
     });
 
     testWidgets('an unreadable address that is not rate limited may retry', (
@@ -656,7 +533,12 @@ void main() {
 
       final reads = market.assetReads.length;
       await tester.tap(
-        find.byKey(const ValueKey<String>('token-asset-unavailable-retry')),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('token-asset-unavailable')),
+          matching: find.byKey(
+            const ValueKey<String>('loop-inline-unavailable-retry'),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
       expect(market.assetReads.length, greaterThan(reads));
@@ -692,7 +574,7 @@ void main() {
 
       for (final interval in LoopCandleInterval.values) {
         expect(
-          find.byKey(ValueKey<String>('candle-interval-${interval.wireName}')),
+          find.byKey(ValueKey<String>('token-interval-${interval.wireName}')),
           findsOneWidget,
         );
       }
@@ -737,11 +619,9 @@ void main() {
       // sit below the fold on a short test surface.
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('candle-interval-1d')),
+        find.byKey(const ValueKey<String>('token-interval-1d')),
       );
-      await tester.tap(
-        find.byKey(const ValueKey<String>('candle-interval-1d')),
-      );
+      await tester.tap(find.byKey(const ValueKey<String>('token-interval-1d')));
       await tester.pumpAndSettle();
 
       expect(market.intervals, contains(LoopCandleInterval.oneDay));

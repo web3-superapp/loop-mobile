@@ -361,7 +361,7 @@ final class FakeMiningGateway implements MiningGateway {
   Future<MiningRewards> loadRewards() => rewards.resolve();
 
   @override
-  Future<MiningRank> loadRank(MiningRankScope scope) {
+  Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor}) {
     scopes.add(scope);
     final answer = rank;
     final value = answer.value;

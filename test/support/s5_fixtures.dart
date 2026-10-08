@@ -944,6 +944,58 @@ MarketOverview s5Overview({
   observedAt: DateTime.utc(2026, 9, 8, 7, 31),
 );
 
+/// One 情报 category row (decision 0100). `quote: null` needs [reasonCode].
+MarketCategoryRow s5CategoryRow({
+  String assetId = s5WbnbAssetId,
+  String symbol = 'WBNB',
+  String name = 'Wrapped BNB',
+  String? price = '747.39',
+  String? change = '2.5',
+  String? marketCap = '1640000000',
+  String? reasonCode,
+  LoopFactQuality quality = LoopFactQuality.fresh,
+  MarketCategoryCommunity? community,
+}) => MarketCategoryRow(
+  assetId: assetId,
+  symbol: symbol,
+  name: name,
+  logoUrl: null,
+  quote: price == null
+      ? null
+      : MarketCategoryQuote(
+          priceUsd: s5Decimal(price),
+          change24hPct: change == null ? null : s5Decimal(change),
+          marketCapUsd: marketCap == null ? null : s5Decimal(marketCap),
+          volume24hUsd: s5Decimal('512345678.9'),
+          observedAt: DateTime.utc(2026, 10, 8, 9, 30),
+          source: LoopFactSource.dexscreener,
+          quality: quality,
+        ),
+  quoteUnavailableReason: price == null
+      ? (reasonCode ?? 'MARKET_CHAIN_NOT_PRICED')
+      : null,
+  sparkline: null,
+  community: community,
+);
+
+/// One page of a 情报 category.
+MarketCategoryPage s5CategoryPage({
+  MarketCategory category = MarketCategory.major,
+  List<MarketCategoryRow>? items,
+  String? nextCursor,
+}) => MarketCategoryPage(
+  category: category,
+  sort: MarketCategorySort.marketCap,
+  items: items ?? <MarketCategoryRow>[s5CategoryRow()],
+  nextCursor: nextCursor,
+  rules: MarketCategoryRules(
+    configVersion: 'marketCategoriesV1',
+    effectiveAt: DateTime.utc(2026, 10, 8),
+    ordering: 'dexscreener_market_cap_desc',
+  ),
+  observedAt: DateTime.utc(2026, 10, 8, 9, 30),
+);
+
 LoopChainAsset s5Asset({String assetId = s5WbnbAssetId}) => LoopChainAsset(
   assetId: assetId,
   chainId: 'eip155:56',

@@ -337,15 +337,13 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('行情 折线 · the row carries its own series', () {
-    testWidgets('a row with a series draws it and asks for no candles', (
-      tester,
-    ) async {
+    testWidgets('the list asks for no candles', (tester) async {
       final market = FakeMarketReadGateway();
       await pumpS5Page(tester, const MarketScreen(), market: market);
 
-      expect(find.byType(LoopSparkline), findsWidgets);
-      // The regression this replaces: one `1h` candle request per visible row
-      // against a rate-limited provider.
+      // Decision 0118: the Fomo row draws no line at all. The regression this
+      // guards stays guarded: no `1h` candle request per visible row against
+      // a rate-limited provider.
       expect(market.candles.resolves, 0);
       expect(market.intervals, isEmpty);
     });

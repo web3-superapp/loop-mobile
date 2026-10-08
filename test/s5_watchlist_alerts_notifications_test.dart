@@ -534,12 +534,13 @@ void main() {
         ),
       );
 
-      // S82a: 简介 carries the contract facts and this asset's notifications.
+      // Decision 0118: 关于 carries the contract facts and this asset's
+      // notifications.
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-简介')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
       await tester.pumpAndSettle();
       final row = find.byKey(ValueKey<String>('token-feed-$s5NotificationId'));
       await scrollToS5Section(tester, row);
@@ -577,16 +578,15 @@ void main() {
         notifications: notifications,
       );
 
+      // Decision 0118: no 载入更多 button; the next page is read when the end
+      // of the history comes into reach.
       final loadMore = find.byKey(
         const ValueKey<String>('alerts-feed-load-more'),
       );
-      await scrollToS5Section(tester, loadMore);
-      expect(
-        find.byKey(const ValueKey<String>('alerts-feed-end')),
-        findsNothing,
+      await scrollToS5Section(
+        tester,
+        find.byKey(ValueKey<String>('alerts-feed-$s5NotificationId')),
       );
-
-      await tester.tap(loadMore);
       await tester.pumpAndSettle();
 
       // The first read carries no cursor, the second carries the server's and

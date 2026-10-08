@@ -1,67 +1,81 @@
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
-import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
-import 'package:loop_mobile/features/market/market_mining_hooks.dart';
+import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
-import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
-/// The four lists 行情 offers, in the approved design's order.
+/// The lists 行情 offers, in the order the chips are drawn (decision 0118).
 ///
-/// 热门 and 涨幅榜 are the **same** trending read under two orderings; neither
-/// issues a request of its own and neither is a ranking LOOP publishes. 新币
-/// is the new-pairs read, listed here and still reachable as its own page.
+/// 自选 is the Watchlist block of the overview; 主流, MEME and 社区代币 are
+/// the three server categories (decision 0100), each read a page at a time
+/// and ordered by the server. 新币 is drawn only while
+/// [LoopFeatureSwitchValues.outboundMarketListsVisible] is on.
 enum MarketTab {
   watchlist('自选'),
-  trending('热门'),
-  gainers('涨幅榜'),
+  major('主流'),
+  meme('MEME'),
+  community('社区代币'),
   newPairs('新币');
 
   const MarketTab(this.label);
 
   final String label;
+
+  /// The server category this chip reads, or `null` for 自选 and 新币.
+  MarketCategory? get category => switch (this) {
+    MarketTab.major => MarketCategory.major,
+    MarketTab.meme => MarketCategory.meme,
+    MarketTab.community => MarketCategory.community,
+    MarketTab.watchlist || MarketTab.newPairs => null,
+  };
 }
 
-/// `market` · the 行情 tab.
+/// `market` · the 行情 list, and the 行情 segment of 情报.
 ///
-/// A price list, at a price list's density (approved design 2026-09-23,
-/// decision 0084). Every block reads its own state: the Watchlist, the
-/// trending ordering, new pairs and smart money each fail independently, so
-/// one missing provider never blanks the page.
+/// A price list read the way the approved reference reads one (Fomo,
+/// 2026-10-08): a strip of running promotions when there are any, the
+/// chips, and then one continuous table of 64pt rows — ticker over market
+/// cap, price over the 24-hour move in rise / fall. Every list scrolls on to
+/// its last page and says when there is nothing more. The source and time of
+/// the figures are one weak line under the table, which opens the full
+/// statement (AGENTS rule 25).
 class MarketScreen extends ConsumerStatefulWidget {
   const MarketScreen({
     super.key,
     this.onNavigate,
     this.onBack,
     this.embedded = false,
-    this.hideOutboundLists = false,
+    this.onOpenPromotion,
   });
 
   final void Function(String location)? onNavigate;
 
+  /// Where a promotion card's in-app location is opened. `null` pushes it
+  /// like any other location.
+  final ValueChanged<String>? onOpenPromotion;
+
   /// Set when 行情 is opened as a page of its own rather than as a tab.
   final VoidCallback? onBack;
 
-  /// The 行情 segment of 情报 (decision 0110): no bar of its own.
+  /// The 行情 segment of 情报 (decision 0110): no bar of its own, and the
+  /// promotion strip on top.
   final bool embedded;
-
-  /// 情报 drops 新币 and 聪明钱 (需求方 2026-10-08): lists that send the
-  /// reader out of LOOP. Their pages stay mounted at their own locations.
-  final bool hideOutboundLists;
 
   @override
   ConsumerState<MarketScreen> createState() => _MarketScreenState();
@@ -69,11 +83,9 @@ class MarketScreen extends ConsumerStatefulWidget {
 
 class _MarketScreenState extends ConsumerState<MarketScreen> {
   MarketTab _tab = MarketTab.watchlist;
-  MarketSort _sort = MarketSort.volume;
-  bool _descending = true;
 
-  /// Whether this page drew the list as a skeleton. Only then does the list
-  /// fade in when it lands (decision 0095).
+  /// Whether this page drew the Watchlist as a skeleton. Only then does the
+  /// list fade in when it lands (decision 0095).
   bool _sawSkeleton = false;
 
   void _open(String location) {
@@ -85,16 +97,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     context.push(location);
   }
 
-  /// A second press on the live column reverses it; a press on another column
-  /// takes it, largest first.
-  void _sortBy(MarketSort key) => setState(() {
-    if (_sort == key) {
-      _descending = !_descending;
-      return;
-    }
-    _sort = key;
-    _descending = true;
-  });
+  void _select(MarketTab tab) => setState(() => _tab = tab);
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +106,14 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     );
     final mode = ref.watch(marketReadGatewayProvider).mode;
     final blocked = loopChainCapabilityBlocks(mode, capability);
+    final switches = ref.watch(loopFeatureSwitchesProvider);
+    final outbound = switches.outboundMarketListsVisible;
+    final tabs = <MarketTab>[
+      for (final tab in MarketTab.values)
+        if (tab != MarketTab.newPairs || outbound) tab,
+    ];
+    if (!tabs.contains(_tab)) _tab = MarketTab.watchlist;
+
     final state = ref.watch(marketOverviewControllerProvider);
     if (!blocked && state.phase == LoopChainViewPhase.loading) {
       scheduleMicrotask(() {
@@ -111,7 +122,6 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         }
       });
     }
-
     final overview = state.value;
     if (!blocked &&
         overview == null &&
@@ -119,15 +129,24 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       _sawSkeleton = true;
     }
     final controller = ref.read(marketOverviewControllerProvider.notifier);
-    // Mining, where 行情 touches it: the rules answer the Mining module
-    // already reads. No request type of this page's own, and a weight it
-    // cannot find is left off the row.
-    final miningRules = watchMarketMiningRules(ref);
+    final category = _tab.category;
+    final categoryState = category == null || blocked
+        ? null
+        : ref.watch(marketCategoryControllerProvider(category));
+    if (category != null &&
+        categoryState != null &&
+        categoryState.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(marketCategoryControllerProvider(category).notifier)
+                .load(),
+          );
+        }
+      });
+    }
 
-    final tabs = <MarketTab>[
-      for (final tab in MarketTab.values)
-        if (!(widget.hideOutboundLists && tab == MarketTab.newPairs)) tab,
-    ];
     return LoopDashboardPage(
       key: const ValueKey<String>('market-screen'),
       archetype: LoopPageArchetype.listing,
@@ -135,17 +154,22 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       onBack: widget.onBack,
       tabPage: widget.onBack == null,
       embedded: widget.embedded,
-      // A re-read over an overview the page already shows is marked, not
-      // replaced by a skeleton.
-      updating: state.refreshing,
-      // Pull to re-read the overview. The Watchlist, the trending ordering and
-      // the discovery entries arrive in one read, so one gesture refreshes the
-      // page without replacing what it already shows.
-      onRefresh: () =>
+      updating: state.refreshing || (categoryState?.refreshing ?? false),
+      // Pull to re-read what is on screen: the overview always (自选 and the
+      // freshness line come from it), and the chosen category from its first
+      // page.
+      onRefresh: () async {
+        final reads = <Future<void>>[
           ref.read(marketOverviewControllerProvider.notifier).reload(),
-      // A closed capability is not an empty section: the page has nothing at
-      // all, so it renders the whole-page block instead of a strip under the
-      // list.
+          if (category != null)
+            ref
+                .read(marketCategoryControllerProvider(category).notifier)
+                .reload(),
+          if (widget.embedded)
+            ref.read(intelPromotionsControllerProvider.notifier).reload(),
+        ];
+        await Future.wait(reads);
+      },
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('market-capability-block'),
@@ -164,10 +188,6 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           onPressed: () => _open(MarketAssetRoute.alertsPath),
         ),
       ],
-      // The approved design opens straight on the list: no hero. A 行情 tab
-      // whose first screen is a Lime card states one row's change in 27pt and
-      // pushes the other seven below the fold, which is the opposite of what
-      // this page is for.
       sections: <Widget>[
         LoopFreshnessStrip(
           key: const ValueKey<String>('market-freshness'),
@@ -177,60 +197,30 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           refreshFailed: overview != null && state.failureKind != null,
           onRetry: () => unawaited(controller.reload()),
         ),
-        MarketSearchField(onPressed: () => _open('/search')),
-        MarketTabBar(
+        if (widget.embedded)
+          _IntelPromotions(onOpen: widget.onOpenPromotion ?? _open)
+        else
+          MarketSearchField(onPressed: () => _open('/search')),
+        LoopSegBar(
           key: const ValueKey<String>('market-tabs'),
           labels: <String>[for (final tab in tabs) tab.label],
           selectedIndex: tabs.indexOf(_tab),
-          onSelected: (index) => setState(() => _tab = tabs[index]),
+          onSelected: (index) => _select(tabs[index]),
         ),
-        if (overview == null && state.phase == LoopChainViewPhase.loading)
-          // Rows of the list's own fixed height, so nothing moves when the
-          // prices land (decision 0095).
-          const LoopSkeleton(
-            key: ValueKey<String>('market-state-loading'),
-            type: LoopSkeletonType.priceRow,
-            rows: 6,
-            rowHeight: marketRowHeight,
-            leadingSize: marketRowLogoSize,
-          )
-        else if (!state.isReady || overview == null)
-          LoopChainStateBlock(
-            keyPrefix: 'market',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '暂时没有可展示的行情',
-            emptyReason: '加入自选后，这里会显示价格，并标注出处。',
-            onRetry: () => unawaited(
-              ref.read(marketOverviewControllerProvider.notifier).reload(),
+        ...switch (_tab) {
+          MarketTab.watchlist => _watchlistSections(state),
+          MarketTab.major ||
+          MarketTab.meme ||
+          MarketTab.community => _categorySections(category!, categoryState),
+          MarketTab.newPairs => <Widget>[
+            MarketNewPairsList(
+              key: const ValueKey<String>('market-new-pairs-tab'),
+              onOpenAsset: (assetId) => _open(MarketAssetRoute.token(assetId)),
+              onOpenPage: () => _open('/market/new'),
             ),
-          )
-        else
-          ...switch (_tab) {
-            MarketTab.watchlist => _assetTab(
-              block: overview.watchlist,
-              label: '自选',
-              observedAt: overview.observedAt,
-              miningRules: miningRules,
-            ),
-            MarketTab.trending || MarketTab.gainers => _assetTab(
-              block: overview.trending,
-              label: '热门',
-              observedAt: overview.observedAt,
-              miningRules: miningRules,
-            ),
-            MarketTab.newPairs => <Widget>[
-              MarketNewPairsList(
-                key: const ValueKey<String>('market-new-pairs-tab'),
-                onOpenAsset: (assetId) =>
-                    _open(MarketAssetRoute.token(assetId)),
-                onOpenPage: () => _open('/market/new'),
-              ),
-            ],
-          },
-        if (overview != null &&
-            _tab != MarketTab.newPairs &&
-            !widget.hideOutboundLists)
+          ],
+        },
+        if (outbound && overview != null && _tab != MarketTab.newPairs)
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
@@ -242,248 +232,242 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
               ),
             ],
           ),
-        const LoopNotice(
-          key: ValueKey<String>('market-truth-notice'),
-          title: '不只看价格',
-          body: 'LOOP 只显示标注了出处和时间的数据，不给评分、评级或结论。读不到时会说明原因，不会显示 0。',
-        ),
       ],
     );
   }
 
-  /// One of the three asset tabs: the statistics line, the column header and
-  /// the rows, in the order the reader's eye goes down them.
-  List<Widget> _assetTab({
-    required Object block,
-    required String label,
-    required DateTime observedAt,
-    required LaunchResourceState<MiningRules> miningRules,
-  }) {
-    final String? reasonCode = switch (block) {
-      MarketWatchlistUnavailable(reasonCode: final code) => code,
-      MarketTrendingUnavailable(reasonCode: final code) => code,
-      _ => null,
-    };
-    if (reasonCode != null) {
-      return <Widget>[
-        LoopUnavailableCard(
-          key: ValueKey<String>(
-            '${_tab == MarketTab.watchlist ? 'market-watchlist' : 'market-trending'}-unavailable',
-          ),
-          label: _tab == MarketTab.watchlist ? '自选行情不可用' : '热门列表不可用',
-          reasonCode: reasonCode,
+  /// 自选: the Watchlist block of the overview, as rows.
+  List<Widget> _watchlistSections(
+    LoopChainResourceState<MarketOverview> state,
+  ) {
+    final overview = state.value;
+    if (overview == null && state.phase == LoopChainViewPhase.loading) {
+      // Rows of the list's own fixed height, so nothing moves when the
+      // prices land (decision 0095).
+      return const <Widget>[
+        LoopSkeleton(
+          key: ValueKey<String>('market-state-loading'),
+          type: LoopSkeletonType.priceRow,
+          rows: 6,
+          rowHeight: marketFomoRowHeight,
+          leadingSize: marketFomoLogoSize,
         ),
       ];
     }
-    final items = switch (block) {
-      MarketWatchlistAvailable(items: final rows) => rows,
-      MarketTrendingAvailable(items: final rows) => rows,
-      _ => const <MarketAssetRow>[],
-    };
-    final rules = block is MarketTrendingAvailable ? block.rules : null;
-    final summary = MarketSignalSummary.of(items);
-
+    if (!state.isReady || overview == null) {
+      return <Widget>[
+        LoopChainStateBlock(
+          keyPrefix: 'market',
+          phase: state.phase,
+          failureKind: state.failureKind,
+          emptyMessage: '暂时没有可展示的行情',
+          onRetry: () => unawaited(
+            ref.read(marketOverviewControllerProvider.notifier).reload(),
+          ),
+        ),
+      ];
+    }
+    final block = overview.watchlist;
+    if (block is MarketWatchlistUnavailable) {
+      return <Widget>[
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('market-watchlist-unavailable'),
+          message: '自选行情暂时读不到 · ${loopReasonCodeText(block.reasonCode)}',
+          onRetry: () => unawaited(
+            ref.read(marketOverviewControllerProvider.notifier).reload(),
+          ),
+        ),
+      ];
+    }
+    final items = (block as MarketWatchlistAvailable).items;
     if (items.isEmpty) {
       return <Widget>[
-        if (_tab == MarketTab.watchlist) ...<Widget>[
-          LoopEmpty(
-            key: const ValueKey<String>('market-watchlist-empty'),
-            message: '还没有自选资产',
-            reason: '在代币页点右上角星标加入自选，这里会显示它们的价格事实。',
-            action: LoopButton(
-              label: '管理自选',
-              onPressed: () => _open(MarketAssetRoute.alertsPath),
-            ),
+        LoopEmpty(
+          key: const ValueKey<String>('market-watchlist-empty'),
+          icon: 'star',
+          message: '还没有自选',
+          reason: '在代币页点右上角星标，就能把它加进自选。',
+          action: LoopButton(
+            key: const ValueKey<String>('market-watchlist-browse-major'),
+            label: '去主流看看',
+            onPressed: () => _select(MarketTab.major),
           ),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[_addRow(() => _open('/market/new'))],
-          ),
-        ] else
-          const LoopEmpty(
-            key: ValueKey<String>('market-trending-empty'),
-            message: '暂时没有可排序的资产',
-            reason: '还没有可以显示成交量的资产。',
-          ),
+        ),
       ];
     }
-
-    // 涨幅榜 is this list under one fixed ordering, so the header follows it
-    // rather than contradicting it.
-    final sort = _tab == MarketTab.gainers ? MarketSort.change : _sort;
-    final descending = _tab == MarketTab.gainers ? true : _descending;
-    final ordered = marketSortRows(items, sort: sort, descending: descending);
-
     return <Widget>[
-      MarketStatsLine(
-        key: const ValueKey<String>('market-stats'),
-        label: label,
-        total: items.length,
-        up: summary.up,
-        down: summary.down,
-        flat: summary.flat,
-        observedAt: observedAt,
-      ),
-      MarketColumnHeader(
-        key: const ValueKey<String>('market-column-header'),
-        sort: sort,
-        descending: descending,
-        onSelected: _tab == MarketTab.gainers ? (_) {} : _sortBy,
-      ),
-      LoopContentArrival(
-        animate: _sawSkeleton,
-        child: MarketAssetTileGroup(
-          tiles: <Widget>[
-            for (final row in ordered)
-              MarketAssetTile(
-                key: ValueKey<String>('market-asset-${row.assetId}'),
-                row: row,
-                miningWeight: marketMiningWeightFor(miningRules, row.assetId),
-                sparkline: MarketRowSparkline(series: row.sparkline),
-                onTap: () => _open(MarketAssetRoute.token(row.assetId)),
-              ),
-          ],
+      for (final row in items)
+        LoopContentArrival(
+          key: ValueKey<String>('market-asset-${row.assetId}'),
+          animate: _sawSkeleton,
+          child: MarketFomoRow.watchlist(
+            row,
+            onTap: () => _open(MarketAssetRoute.token(row.assetId)),
+          ),
         ),
+      LoopRecordGroup(
+        rows: <LoopRecordRow>[
+          LoopRecordRow(
+            key: const ValueKey<String>('market-watchlist-manage'),
+            title: '管理自选',
+            subtitle: '排序、分组与移除',
+            onTap: () => _open('/market/watchlist'),
+          ),
+        ],
       ),
-      if (_tab == MarketTab.watchlist)
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            _addRow(() => _open('/market/new')),
-            LoopRecordRow(
-              key: const ValueKey<String>('market-watchlist-manage'),
-              title: '管理自选',
-              subtitle: '排序、分组与移除',
-              onTap: () => _open('/market/watchlist'),
-            ),
-          ],
-        ),
-      // The row's own source and observation time moved off its second line,
-      // so the block still names both — once, for the rows it just listed.
-      MarketBlockProvenance.ofRows(
-        key: const ValueKey<String>('market-list-provenance'),
-        rows: items,
-      ),
-      if (rules != null)
-        LoopProvenanceFooter(
-          key: const ValueKey<String>('market-trending-rules'),
-          // The server's published order, and — when the reader has changed
-          // it — that this device did the re-ordering.
-          text: sort == MarketSort.volume && descending
-              ? rules.orderingLabel
-              : '${rules.orderingLabel} · 本页按${sort.label}'
-                    '${descending ? '从高到低' : '从低到高'}重排（本机）',
-        ),
+      const MarketListEnd(key: ValueKey<String>('market-list-end')),
+      _provenanceOfRows(items),
     ];
   }
 
-  /// The row that answers 「在哪儿增加自选」.
-  ///
-  /// C-30 (8): the empty state named the star and nothing on screen led to a
-  /// page that has one. Adding is a write on the token page — the list has no
-  /// add of its own — so this row is a route to an asset list, and it says so
-  /// instead of pretending the tap adds anything.
-  LoopRecordRow _addRow(VoidCallback onTap) => widget.hideOutboundLists
-      ? LoopRecordRow(
-          key: const ValueKey<String>('market-watchlist-add'),
-          title: '添加自选资产',
-          subtitle: '打开代币页，点右上角星标 · 「热门」里的每一行都能打开代币页',
-          onTap: () => setState(() => _tab = MarketTab.trending),
-        )
-      : LoopRecordRow(
-          key: const ValueKey<String>('market-watchlist-add'),
-          title: '添加自选资产',
-          subtitle: '打开代币页，点右上角星标 · 「热门」和「新币」都能打开代币页',
-          onTap: onTap,
-        );
-}
-
-/// What the statistics line above a 行情 list counts.
-///
-/// Every figure here is a count of one row's own 24-hour change: the page
-/// computes no price, no average and no ordering of its own. A row whose
-/// change was not readable is counted nowhere — the row itself carries the
-/// 读不到 block, which is where the reader is when they want to know about
-/// that row.
-@immutable
-final class MarketSignalSummary {
-  const MarketSignalSummary({
-    required this.up,
-    required this.down,
-    required this.flat,
-    required this.unread,
-    required this.leader,
-  });
-
-  factory MarketSignalSummary.of(List<MarketAssetRow> items) {
-    MarketAssetRow? leader;
-    var up = 0;
-    var down = 0;
-    var flat = 0;
-    var unread = 0;
-    for (final row in items) {
-      switch (MarketMove.of(row.priceChange24h)) {
-        case MarketMove.up:
-          up += 1;
-        case MarketMove.down:
-          down += 1;
-        case MarketMove.flat:
-          flat += 1;
-        case MarketMove.unread:
-          unread += 1;
-          continue;
-      }
-      final change = row.priceChange24h.value!;
-      final best = leader?.priceChange24h.value;
-      if (best == null || change > best) leader = row;
-    }
-    return MarketSignalSummary(
-      up: up,
-      down: down,
-      flat: flat,
-      unread: unread,
-      leader: leader,
+  /// One of the three server categories, a page at a time.
+  List<Widget> _categorySections(
+    MarketCategory category,
+    LoopChainResourceState<MarketCategoryPage>? state,
+  ) {
+    final keyBase = 'market-category-${category.wireName}';
+    if (state == null) return const <Widget>[];
+    final page = state.value;
+    final controller = ref.read(
+      marketCategoryControllerProvider(category).notifier,
     );
+    if (page == null && state.phase == LoopChainViewPhase.loading) {
+      return <Widget>[
+        LoopSkeleton(
+          key: ValueKey<String>('$keyBase-loading'),
+          type: LoopSkeletonType.priceRow,
+          rows: 6,
+          rowHeight: marketFomoRowHeight,
+          leadingSize: marketFomoLogoSize,
+        ),
+      ];
+    }
+    if (page == null) {
+      return <Widget>[
+        LoopChainStateBlock(
+          keyPrefix: keyBase,
+          phase: state.phase,
+          failureKind: state.failureKind,
+          emptyMessage: '这个分类还没有代币',
+          onRetry: () => unawaited(controller.reload()),
+        ),
+      ];
+    }
+    if (page.items.isEmpty) {
+      return <Widget>[
+        LoopEmpty(
+          key: ValueKey<String>('$keyBase-empty'),
+          message: '「${category.label}」里还没有代币',
+          reason: switch (category) {
+            MarketCategory.major => '主流资产名单里暂时没有可展示的资产。',
+            MarketCategory.meme => '还没有已登记的 Launch 项目代币。',
+            MarketCategory.community => '还没有已认证社区绑定代币。',
+          },
+        ),
+      ];
+    }
+    final cursor = page.nextCursor;
+    return <Widget>[
+      for (final row in page.items)
+        MarketFomoRow.category(
+          row,
+          key: ValueKey<String>('market-asset-${row.assetId}'),
+          onTap: () => _open(MarketAssetRoute.token(row.assetId)),
+        ),
+      if (controller.appendFailed && !state.busy)
+        LoopInlineUnavailable(
+          key: ValueKey<String>('$keyBase-more-failed'),
+          message: '下一页没有读到',
+          onRetry: () => unawaited(controller.loadMore()),
+        )
+      else if (cursor != null) ...<Widget>[
+        LoopLoadMoreSentinel(
+          key: ValueKey<String>('$keyBase-load-more'),
+          cursor: cursor,
+          onLoadMore: () => unawaited(controller.loadMore()),
+        ),
+        if (state.busy)
+          MarketListLoadingMore(key: ValueKey<String>('$keyBase-loading-more')),
+      ] else
+        const MarketListEnd(key: ValueKey<String>('market-list-end')),
+      LoopProvenanceLine(
+        key: const ValueKey<String>('market-list-provenance'),
+        sources: <String>[
+          for (final row in page.items)
+            if (row.quote case final quote?) loopFactSourceLabel(quote.source),
+        ],
+        observedAt: _oldestQuote(page.items) ?? page.observedAt,
+        detail:
+            '${page.rules.orderingLabel}。'
+            '读不到报价的代币排在最后，并写明原因；不会显示 0。',
+      ),
+    ];
   }
 
-  final int up;
-  final int down;
-  final int flat;
+  static DateTime? _oldestQuote(List<MarketCategoryRow> rows) {
+    DateTime? oldest;
+    for (final row in rows) {
+      final at = row.quote?.observedAt;
+      if (at != null && (oldest == null || at.isBefore(oldest))) oldest = at;
+    }
+    return oldest;
+  }
 
-  /// Rows whose 24-hour change was not readable. Counted so a caller can say
-  /// so if it has somewhere honest to say it; the statistics line does not.
-  final int unread;
-
-  /// The row with the largest readable rise, or `null`.
-  final MarketAssetRow? leader;
+  /// The source line of the Watchlist rows: every provider the readable
+  /// prices name, and the oldest of their observation times.
+  static Widget _provenanceOfRows(List<MarketAssetRow> rows) {
+    final sources = <String>[];
+    DateTime? oldest;
+    for (final row in rows) {
+      final price = row.price;
+      if (!price.isAvailable) continue;
+      final source = price.source;
+      if (source != null) sources.add(loopFactSourceLabel(source));
+      final at = price.fetchedAt;
+      if (at != null && (oldest == null || at.isBefore(oldest))) oldest = at;
+    }
+    return LoopProvenanceLine(
+      key: const ValueKey<String>('market-list-provenance'),
+      sources: sources,
+      observedAt: oldest,
+      detail: '自选的价格与 24 小时涨跌，读不到的行写明原因；不会显示 0。',
+    );
+  }
 }
 
-/// Orders [rows] for the reader's chosen column.
-///
-/// A row missing the figure being sorted on keeps the server's own relative
-/// order and sinks to the end: it is not a zero, and promoting it to the top
-/// of a descending column would read as the largest value there is.
-List<MarketAssetRow> marketSortRows(
-  List<MarketAssetRow> rows, {
-  required MarketSort sort,
-  required bool descending,
-}) {
-  Decimal? key(MarketAssetRow row) => switch (sort) {
-    MarketSort.volume => row.volume24h?.value,
-    MarketSort.price => row.price.isAvailable ? row.price.value : null,
-    MarketSort.change =>
-      row.priceChange24h.isAvailable ? row.priceChange24h.value : null,
-  };
-  final indexed = <(int, MarketAssetRow)>[
-    for (var index = 0; index < rows.length; index += 1) (index, rows[index]),
-  ];
-  indexed.sort((a, b) {
-    final left = key(a.$2);
-    final right = key(b.$2);
-    if (left == null && right == null) return a.$1.compareTo(b.$1);
-    if (left == null) return 1;
-    if (right == null) return -1;
-    final compared = left.compareTo(right);
-    if (compared != 0) return descending ? -compared : compared;
-    return a.$1.compareTo(b.$1);
-  });
-  return <MarketAssetRow>[for (final entry in indexed) entry.$2];
+/// The promotion strip, read on its own: a strip that cannot be read, or
+/// that has no running card, is simply not drawn.
+class _IntelPromotions extends ConsumerStatefulWidget {
+  const _IntelPromotions({required this.onOpen});
+
+  final ValueChanged<String> onOpen;
+
+  @override
+  ConsumerState<_IntelPromotions> createState() => _IntelPromotionsState();
+}
+
+class _IntelPromotionsState extends ConsumerState<_IntelPromotions> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(intelPromotionsControllerProvider);
+    if (state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(intelPromotionsControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    final items = state.value?.items ?? const <IntelPromotion>[];
+    if (items.isEmpty) {
+      return const SizedBox.shrink(
+        key: ValueKey<String>('intel-promotions-hidden'),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: IntelPromotionStrip(promotions: items, onOpen: widget.onOpen),
+    );
+  }
 }

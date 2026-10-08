@@ -25,6 +25,17 @@ abstract interface class MarketReadGateway {
 
   /// Always resolves to an unavailable projection in this step.
   Future<LoopUnavailable> loadSmartMoney();
+
+  /// One page of one 情报 category (decision 0100). [cursor] continues the
+  /// list it came from, under the same [sort].
+  Future<MarketCategoryPage> loadCategory(
+    MarketCategory category, {
+    MarketCategorySort sort = MarketCategorySort.marketCap,
+    String? cursor,
+  });
+
+  /// The 情报 promotion strip (decision 0100).
+  Future<IntelPromotions> loadPromotions();
 }
 
 final class UnavailableMarketReadGateway implements MarketReadGateway {
@@ -62,6 +73,16 @@ final class UnavailableMarketReadGateway implements MarketReadGateway {
 
   @override
   Future<LoopUnavailable> loadSmartMoney() => _unavailable();
+
+  @override
+  Future<MarketCategoryPage> loadCategory(
+    MarketCategory category, {
+    MarketCategorySort sort = MarketCategorySort.marketCap,
+    String? cursor,
+  }) => _unavailable();
+
+  @override
+  Future<IntelPromotions> loadPromotions() => _unavailable();
 }
 
 final marketReadGatewayProvider = Provider<MarketReadGateway>(

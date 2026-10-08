@@ -191,8 +191,26 @@ final class FakeMarketReadGateway implements MarketReadGateway {
     S5Answer<MarketHolders>? holders,
     S5Answer<MarketNewPairsPage>? newPairs,
     S5Answer<LoopUnavailable>? smartMoney,
+    Map<MarketCategory, S5Answer<MarketCategoryPage>>? categories,
+    Map<String, S5Answer<MarketCategoryPage>>? categoryPages,
+    S5Answer<IntelPromotions>? promotions,
+    Map<String, S5Answer<MarketTradesPage>>? tradePages,
     this.mode = LoopChainGatewayMode.production,
-  }) : overview = overview ?? S5Answer<MarketOverview>(value: s5Overview()),
+  }) : categories =
+           categories ?? <MarketCategory, S5Answer<MarketCategoryPage>>{},
+       categoryPages =
+           categoryPages ?? <String, S5Answer<MarketCategoryPage>>{},
+       tradePages = tradePages ?? <String, S5Answer<MarketTradesPage>>{},
+       promotions =
+           promotions ??
+           S5Answer<IntelPromotions>(
+             value: IntelPromotions(
+               items: const <IntelPromotion>[],
+               configVersion: 'intelPromotionsV1',
+               effectiveAt: DateTime.utc(2026, 10, 8),
+             ),
+           ),
+       overview = overview ?? S5Answer<MarketOverview>(value: s5Overview()),
        asset = asset ?? S5Answer<MarketAssetDetail>(value: s5Detail()),
        candles = candles ?? S5Answer<MarketCandleSeries>(value: s5Series()),
        trades =
@@ -250,7 +268,28 @@ final class FakeMarketReadGateway implements MarketReadGateway {
   final S5Answer<MarketNewPairsPage> newPairs;
   final S5Answer<LoopUnavailable> smartMoney;
 
+  /// The first page of each category; a category not listed answers an
+  /// empty first page.
+  final Map<MarketCategory, S5Answer<MarketCategoryPage>> categories;
+
+  /// Continuation pages, keyed by the cursor that asks for them.
+  final Map<String, S5Answer<MarketCategoryPage>> categoryPages;
+  final S5Answer<IntelPromotions> promotions;
+
+  /// Trade pages after the first, keyed by cursor.
+  final Map<String, S5Answer<MarketTradesPage>> tradePages;
+
   final List<LoopCandleInterval> intervals = <LoopCandleInterval>[];
+
+  /// The `limit` each candle read asked for.
+  final List<int?> candleLimits = <int?>[];
+
+  /// Every category read: (category, sort, cursor).
+  final List<(MarketCategory, MarketCategorySort, String?)> categoryRequests =
+      <(MarketCategory, MarketCategorySort, String?)>[];
+
+  /// Every trades read's cursor.
+  final List<String?> tradeCursors = <String?>[];
 
   /// Every asset the page asked for by identity. A Uniswap V4 pool id is not
   /// an address and must never appear as one of these reads.
@@ -275,12 +314,19 @@ final class FakeMarketReadGateway implements MarketReadGateway {
     int? limit,
   }) {
     intervals.add(interval);
+    candleLimits.add(limit);
     return candles.resolve();
   }
 
   @override
-  Future<MarketTradesPage> loadTrades(String assetId, {String? cursor}) =>
-      trades.resolve();
+  Future<MarketTradesPage> loadTrades(String assetId, {String? cursor}) {
+    tradeCursors.add(cursor);
+    if (cursor != null) {
+      final page = tradePages[cursor];
+      if (page != null) return page.resolve();
+    }
+    return trades.resolve();
+  }
 
   @override
   Future<MarketHolders> loadHolders(String assetId) => holders.resolve();
@@ -290,6 +336,30 @@ final class FakeMarketReadGateway implements MarketReadGateway {
 
   @override
   Future<LoopUnavailable> loadSmartMoney() => smartMoney.resolve();
+
+  @override
+  Future<MarketCategoryPage> loadCategory(
+    MarketCategory category, {
+    MarketCategorySort sort = MarketCategorySort.marketCap,
+    String? cursor,
+  }) {
+    categoryRequests.add((category, sort, cursor));
+    if (cursor != null) {
+      final page = categoryPages[cursor];
+      if (page != null) return page.resolve();
+      return Future<MarketCategoryPage>.error(
+        const LoopChainException(LoopChainFailureKind.invalidData),
+      );
+    }
+    final first = categories[category];
+    if (first != null) return first.resolve();
+    return Future<MarketCategoryPage>.value(
+      s5CategoryPage(category: category, items: const <MarketCategoryRow>[]),
+    );
+  }
+
+  @override
+  Future<IntelPromotions> loadPromotions() => promotions.resolve();
 }
 
 final class FakeWatchlistGateway implements WatchlistGateway {

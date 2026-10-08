@@ -539,7 +539,11 @@ final class MiningRewards {
 
 enum MiningRankScope {
   users('users'),
-  communities('communities');
+  communities('communities'),
+
+  /// Inviters ranked by direct invitees in force (decision 0100). Read live
+  /// from the referral graph, not from a power snapshot.
+  referrals('referrals');
 
   const MiningRankScope(this.wireName);
 
@@ -556,6 +560,7 @@ enum MiningRankScope {
 String miningRankScopeLabel(MiningRankScope scope) => switch (scope) {
   MiningRankScope.users => '用户榜',
   MiningRankScope.communities => '社区榜',
+  MiningRankScope.referrals => miningReferralRankLabel,
 };
 
 /// The third board on 情报 (decision 0110). It has no server scope yet.
@@ -625,10 +630,15 @@ final class MiningRankAlias extends MiningRankIdentity {
     required this.alias,
     required this.publicProfileId,
     required this.audience,
+    this.avatarRef,
   });
 
   final String alias;
   final String publicProfileId;
+
+  /// The profile's stored avatar reference (decision 0100), resolved like a
+  /// profile `avatarRef`; `null` when it has none and the monogram is drawn.
+  final String? avatarRef;
 
   /// [MiningRankAudience.self] only on the reader's own row while anonymous
   /// mode is on: the reader sees the alias, every other reader sees the
@@ -734,6 +744,59 @@ final class MiningRankingCommunities extends MiningRanking {
   final int participants;
 }
 
+/// One inviter on the 推广 board (decision 0100): a place by direct invitees
+/// in force, shared on ties. The count is always public.
+@immutable
+final class MiningRankReferralRow {
+  const MiningRankReferralRow({
+    required this.position,
+    required this.invitedCount,
+    required this.display,
+    required this.isSelf,
+  });
+
+  final int position;
+  final int invitedCount;
+  final MiningRankIdentity display;
+  final bool isSelf;
+}
+
+@immutable
+final class MiningRankingReferrals extends MiningRanking {
+  const MiningRankingReferrals({
+    required this.items,
+    required this.participants,
+    required this.ruleKey,
+  });
+
+  final List<MiningRankReferralRow> items;
+
+  /// Inviters with at least one direct invitee in force.
+  final int participants;
+
+  /// The counting rule the server publishes for this board.
+  final String ruleKey;
+}
+
+/// The reader's own place on the scope that was asked for (decision 0100).
+///
+/// `value` is the power on the user and community boards and the direct
+/// invitee count on the 推广 board, as the server's decimal string.
+/// [communityId] is set only on the community board: the reader's
+/// best-ranked community.
+@immutable
+final class MiningRankMe {
+  const MiningRankMe({
+    required this.rank,
+    required this.value,
+    this.communityId,
+  });
+
+  final int rank;
+  final String value;
+  final String? communityId;
+}
+
 /// The reader's own place on the board.
 @immutable
 sealed class MiningRankPosition {
@@ -767,10 +830,19 @@ final class MiningRank {
     required this.snapshot,
     required this.display,
     required this.formula,
+    this.me,
+    this.nextCursor,
   });
 
   final MiningRankScope scope;
   final MiningRanking ranking;
+
+  /// The reader's own place on [scope]; `null` when unranked or while the
+  /// ranking is unavailable (decision 0100).
+  final MiningRankMe? me;
+
+  /// The next page of [ranking], or `null` on the last one.
+  final String? nextCursor;
   final MiningRankPosition myPosition;
   final MiningSnapshotRef snapshot;
   final MiningRankDisplayRule display;

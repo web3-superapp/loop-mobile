@@ -932,3 +932,218 @@ final class MarketNewPairsPage {
   /// conclusion from any other field.
   final LoopUnavailable riskScreening;
 }
+
+// ---------------------------------------------------------------------------
+// 情报 · 行情 · GET /v2/market/assets?category= (decision 0100 / 0118)
+// ---------------------------------------------------------------------------
+
+/// The three lists 情报 · 行情 offers beside 自选.
+enum MarketCategory {
+  major('major', '主流'),
+  meme('meme', 'MEME'),
+  community('community', '社区代币');
+
+  const MarketCategory(this.wireName, this.label);
+
+  final String wireName;
+  final String label;
+
+  static MarketCategory? tryParse(String value) {
+    for (final category in values) {
+      if (category.wireName == value) return category;
+    }
+    return null;
+  }
+}
+
+/// The server-side order of one category list. Rows without the figure come
+/// last; the server publishes the rule in `rules.ordering`.
+enum MarketCategorySort {
+  marketCap('marketCap'),
+  change24h('change24h'),
+  volume24h('volume24h');
+
+  const MarketCategorySort(this.wireName);
+
+  final String wireName;
+
+  static MarketCategorySort? tryParse(String value) {
+    for (final sort in values) {
+      if (sort.wireName == value) return sort;
+    }
+    return null;
+  }
+}
+
+/// One row's DexScreener figures, all from one read of the deepest pair.
+///
+/// Any figure may be `null`: the provider did not report it this time, and
+/// the row says so rather than printing a zero. [change24hPct] is in percent
+/// points (`-2.5` is −2.5 %).
+@immutable
+final class MarketCategoryQuote {
+  const MarketCategoryQuote({
+    required this.priceUsd,
+    required this.change24hPct,
+    required this.marketCapUsd,
+    required this.volume24hUsd,
+    required this.observedAt,
+    required this.source,
+    required this.quality,
+  });
+
+  final Decimal priceUsd;
+  final Decimal? change24hPct;
+  final Decimal? marketCapUsd;
+  final Decimal? volume24hUsd;
+  final DateTime observedAt;
+  final LoopFactSource source;
+
+  /// `fresh`, `stale` (past its TTL inside the grace window) or `proxied`
+  /// (native BNB priced through WBNB).
+  final LoopFactQuality quality;
+}
+
+/// The community a `community` row belongs to.
+@immutable
+final class MarketCategoryCommunity {
+  const MarketCategoryCommunity({
+    required this.communityId,
+    required this.name,
+    required this.logoRef,
+  });
+
+  final String communityId;
+  final String name;
+  final String? logoRef;
+}
+
+/// One row of a category list.
+@immutable
+final class MarketCategoryRow {
+  const MarketCategoryRow({
+    required this.assetId,
+    required this.symbol,
+    required this.name,
+    required this.logoUrl,
+    required this.quote,
+    required this.quoteUnavailableReason,
+    required this.sparkline,
+    this.community,
+  });
+
+  final String assetId;
+  final String symbol;
+  final String name;
+  final String? logoUrl;
+
+  /// `null` exactly when [quoteUnavailableReason] is set.
+  final MarketCategoryQuote? quote;
+  final String? quoteUnavailableReason;
+  final MarketRowSparklineSeries? sparkline;
+  final MarketCategoryCommunity? community;
+}
+
+/// The published rule behind a category list.
+@immutable
+final class MarketCategoryRules {
+  const MarketCategoryRules({
+    required this.configVersion,
+    required this.effectiveAt,
+    required this.ordering,
+  });
+
+  final String configVersion;
+  final DateTime effectiveAt;
+  final String ordering;
+
+  String get orderingLabel => switch (ordering) {
+    'dexscreener_market_cap_desc' => '按 DexScreener 市值从高到低',
+    'dexscreener_price_change_h24_desc' => '按 DexScreener 24h 涨跌从高到低',
+    'dexscreener_volume_h24_desc' => '按 DexScreener 24h 成交额从高到低',
+    _ => '排序规则 $ordering',
+  };
+}
+
+/// One page of a category list.
+@immutable
+final class MarketCategoryPage {
+  MarketCategoryPage({
+    required this.category,
+    required this.sort,
+    required List<MarketCategoryRow> items,
+    required this.nextCursor,
+    required this.rules,
+    required this.observedAt,
+  }) : items = List<MarketCategoryRow>.unmodifiable(items);
+
+  final MarketCategory category;
+  final MarketCategorySort sort;
+  final List<MarketCategoryRow> items;
+  final String? nextCursor;
+  final MarketCategoryRules rules;
+  final DateTime observedAt;
+
+  /// This page followed by [next]'s rows. A row already held is not listed
+  /// twice: prices move between pages and a row may cross the boundary.
+  MarketCategoryPage append(MarketCategoryPage next) {
+    final held = <String>{for (final row in items) row.assetId};
+    return MarketCategoryPage(
+      category: category,
+      sort: sort,
+      items: <MarketCategoryRow>[
+        ...items,
+        for (final row in next.items)
+          if (held.add(row.assetId)) row,
+      ],
+      nextCursor: next.nextCursor,
+      rules: rules,
+      observedAt: observedAt,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 情报 · 活动位 · GET /v2/intel/promotions (decision 0100 / 0118)
+// ---------------------------------------------------------------------------
+
+/// One promotion card. [deeplink] is only ever one of the in-app locations
+/// the server allows (`/intel`, `/square`, `/meme`,
+/// `/community/profile?id=<uuid>`); the decoder refuses anything else.
+@immutable
+final class IntelPromotion {
+  const IntelPromotion({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.imageUrl,
+    required this.deeplink,
+    required this.startsAt,
+    required this.endsAt,
+    required this.order,
+  });
+
+  final String id;
+  final String title;
+  final String subtitle;
+  final String? imageUrl;
+  final String deeplink;
+  final DateTime startsAt;
+  final DateTime endsAt;
+  final int order;
+}
+
+@immutable
+final class IntelPromotions {
+  IntelPromotions({
+    required List<IntelPromotion> items,
+    required this.configVersion,
+    required this.effectiveAt,
+  }) : items = List<IntelPromotion>.unmodifiable(items);
+
+  /// In the server's `order`. Empty means no card is running: the strip is
+  /// not drawn at all.
+  final List<IntelPromotion> items;
+  final String configVersion;
+  final DateTime effectiveAt;
+}
