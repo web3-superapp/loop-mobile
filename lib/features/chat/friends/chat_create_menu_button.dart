@@ -1,97 +1,112 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/community/community_discover_screen.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
-enum _ChatCreateAction { createGroup, addFriend }
+enum _ChatCreateAction { addFriend, createCommunity, createGroup, scan }
 
-/// WeChat-style creation menu shared by Preview and production Chat headers.
-class ChatCreateMenuButton extends StatelessWidget {
+/// The 聊天 tab's 「＋」 (decision 0110, S106 §2): every way to start a
+/// relationship, in one bottom sheet.
+///
+/// 搜索/添加用户 opens the global search, where a person is found and asked;
+/// 创建社区 is the same application 发现社区 submits; 创建群聊 opens the group
+/// form; 扫一扫 has no camera path in this build and says so instead of
+/// opening one.
+class ChatCreateMenuButton extends ConsumerWidget {
   const ChatCreateMenuButton({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<_ChatCreateAction>(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return LoopIconButton(
       key: const ValueKey<String>('chat-create-menu'),
-      tooltip: '添加',
-      icon: const Icon(Icons.add_rounded),
-      offset: const Offset(0, 8),
-      color: LoopColors.basalt,
-      shape: RoundedRectangleBorder(
-        borderRadius: LoopRadius.medium,
-        side: const BorderSide(color: LoopColors.line),
+      icon: 'plus',
+      label: '添加',
+      onPressed: () => unawaited(_open(context, ref)),
+    );
+  }
+
+  Future<void> _open(BuildContext context, WidgetRef ref) async {
+    final action = await showLoopSheet<_ChatCreateAction>(
+      context,
+      builder: (sheetContext) => LoopRecordGroup(
+        key: const ValueKey<String>('chat-create-sheet'),
+        rows: <LoopRecordRow>[
+          _row(
+            sheetContext,
+            key: 'chat-add-friend-menu-item',
+            icon: 'search',
+            title: '搜索 / 添加用户',
+            subtitle: '按 LOOP ID 或昵称找人，发送消息请求',
+            action: _ChatCreateAction.addFriend,
+            position: LoopRowPosition.first,
+          ),
+          _row(
+            sheetContext,
+            key: 'chat-create-community-menu-item',
+            icon: 'community',
+            title: '创建社区',
+            subtitle: '提交入驻申请，审核通过后上线',
+            action: _ChatCreateAction.createCommunity,
+          ),
+          _row(
+            sheetContext,
+            key: 'chat-create-group-menu-item',
+            icon: 'users',
+            title: '创建群聊',
+            subtitle: '和好友建一个小群',
+            action: _ChatCreateAction.createGroup,
+          ),
+          _row(
+            sheetContext,
+            key: 'chat-scan-menu-item',
+            icon: 'camera',
+            title: '扫一扫',
+            subtitle: '暂未开放',
+            action: _ChatCreateAction.scan,
+            position: LoopRowPosition.last,
+          ),
+        ],
       ),
-      onSelected: (action) {
-        switch (action) {
-          case _ChatCreateAction.createGroup:
-            context.push('/chat/groups/create');
-          case _ChatCreateAction.addFriend:
-            context.push('/search');
-        }
-      },
-      itemBuilder: (context) => const <PopupMenuEntry<_ChatCreateAction>>[
-        PopupMenuItem<_ChatCreateAction>(
-          key: ValueKey<String>('chat-create-group-menu-item'),
-          value: _ChatCreateAction.createGroup,
-          child: _ChatCreateMenuRow(
-            icon: Icons.group_add_outlined,
-            label: '创建群组',
-          ),
-        ),
-        PopupMenuDivider(),
-        PopupMenuItem<_ChatCreateAction>(
-          key: ValueKey<String>('chat-add-friend-menu-item'),
-          value: _ChatCreateAction.addFriend,
-          // The item opens search, and search is where the path starts: find
-          // the account, open its card, send the request. Naming only 「添加
-          // 好友」 left a reader who landed on a search field with no idea
-          // that this was the same errand.
-          child: _ChatCreateMenuRow(
-            icon: Icons.person_add_alt_1_outlined,
-            label: '添加好友',
-            detail: '搜索用户并发送消息请求',
-          ),
-        ),
-      ],
     );
-  }
-}
-
-class _ChatCreateMenuRow extends StatelessWidget {
-  const _ChatCreateMenuRow({
-    required this.icon,
-    required this.label,
-    this.detail,
-  });
-
-  final IconData icon;
-  final String label;
-
-  /// What the item actually does, when the label alone would leave the
-  /// reader guessing where it lands.
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final detail = this.detail;
-    return Row(
-      children: <Widget>[
-        Icon(icon, size: 20, color: LoopColors.chat),
-        const SizedBox(width: 12),
-        if (detail == null)
-          Text(label)
-        else
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(label),
-                const SizedBox(height: 2),
-                Text(detail, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
+    if (action == null || !context.mounted) return;
+    switch (action) {
+      case _ChatCreateAction.addFriend:
+        unawaited(context.push<void>('/search'));
+      case _ChatCreateAction.createGroup:
+        unawaited(context.push<void>('/chat/groups/create'));
+      case _ChatCreateAction.createCommunity:
+        await startCommunityApplication(
+          context,
+          ref,
+          onOpenCommunity: (communityId) => unawaited(
+            context.push<void>('/community/profile?id=$communityId'),
           ),
-      ],
-    );
+        );
+      case _ChatCreateAction.scan:
+        LoopToast.show(context, message: '扫一扫暂未开放', kind: LoopToastKind.warn);
+    }
   }
+
+  static LoopRecordRow _row(
+    BuildContext sheetContext, {
+    required String key,
+    required String icon,
+    required String title,
+    required String subtitle,
+    required _ChatCreateAction action,
+    LoopRowPosition position = LoopRowPosition.middle,
+  }) => LoopRecordRow(
+    key: ValueKey<String>(key),
+    leading: LoopRowIcon(icon: icon),
+    title: title,
+    subtitle: subtitle,
+    position: position,
+    onTap: () => Navigator.of(sheetContext).pop(action),
+  );
 }

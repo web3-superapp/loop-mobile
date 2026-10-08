@@ -392,8 +392,17 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       );
       if (!isCurrent(generation)) return;
       if (!append) _readAt = _now();
+      // A page that repeats a row already shown — the directory moved under
+      // the cursor — keeps the first one: one community is one row.
+      final seen = <String>{
+        for (final item in previous.items) item.communityId,
+      };
       final merged = append
-          ? <CommunitySummary>[...previous.items, ...page.items]
+          ? <CommunitySummary>[
+              ...previous.items,
+              for (final item in page.items)
+                if (seen.add(item.communityId)) item,
+            ]
           : page.items;
       state = CommunityDiscoverState(
         mode: previous.mode,

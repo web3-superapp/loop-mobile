@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
@@ -352,6 +354,36 @@ void main() {
       gateway: _UnknownInboxGateway(),
     );
     router.go('/chat');
+    await tester.pumpAndSettle();
+
+    // Decision 0110: the 聊天 tab never lists a Preview conversation at all.
+    expect(find.text('Decoy group'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('stream-chat-unavailable')),
+      findsOneWidget,
+    );
+
+    // The retained Preview inbox still refuses the unregistered row itself.
+    final inboxRouter = GoRouter(
+      routes: <RouteBase>[
+        GoRoute(path: '/', builder: (context, state) => const ChatInboxPage()),
+      ],
+    );
+    addTearDown(inboxRouter.dispose);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          communicationGatewayProvider.overrideWithValue(
+            _UnknownInboxGateway(),
+          ),
+        ],
+        child: MaterialApp.router(
+          theme: LoopTheme.dark,
+          routerConfig: inboxRouter,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Decoy group'));

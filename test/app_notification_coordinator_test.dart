@@ -63,7 +63,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('chat-tab-screen')),
         findsOneWidget,
       );
 
@@ -82,7 +82,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('chat-tab-screen')),
         findsOneWidget,
       );
 

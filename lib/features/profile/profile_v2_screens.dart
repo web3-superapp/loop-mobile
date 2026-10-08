@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -353,6 +355,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
       unawaited(ref.read(walletDirectoryControllerProvider.notifier).load());
       unawaited(ref.read(privacyControllerProvider.notifier).load());
       unawaited(ref.read(connectionsControllerProvider.notifier).load());
+      unawaited(ref.read(referralControllerProvider.notifier).load());
     });
   }
 
@@ -371,20 +374,16 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final alias = resource?.values.alias;
     final phase = profileResourcePhase(state);
     final isPreview = state.mode == ProfileMode.preview;
+    final switches = ref.watch(loopFeatureSwitchesProvider);
 
+    // 我 (decision 0110, S106 §5), top to bottom: identity, mining, invite,
+    // communities, account, settings. It is reached from the avatar on 聊天.
     return LoopDashboardPage(
+      key: const ValueKey<String>('profile-home-screen'),
       archetype: LoopPageArchetype.record,
-      title: '我的',
+      title: '我',
       kicker: loopPreviewKicker(isPreview),
       onBack: widget.onBack,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('profile-open-settings'),
-          icon: 'settings',
-          label: '设置',
-          onPressed: () => widget.onNavigate('settings'),
-        ),
-      ],
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.record,
@@ -410,40 +409,65 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           ),
         const LoopLabel('挖矿'),
         // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
-        // under it. The row used to say 「这一页不读算力」 — an explanation of
-        // its own implementation standing where the figure belongs, while the
-        // mining tab held 4.48 and 第 47 名 (device walkthrough 2026-09-23 ·
-        // h01). It reads the same two projections the mining tab does.
-        LoopRecordGroup(rows: <LoopRecordRow>[_miningRow()]),
-        const LoopLabel('我的社区'),
-        ProfileCommunitiesRow(onNavigate: widget.onNavigate),
-        const LoopLabel('Launch'),
+        // under it, read from the same two projections the mining page does.
+        // Since decision 0110 the three mining record pages hang under it:
+        // 挖矿 is no longer a tab, and 我 is where an account's own mining is.
         LoopRecordGroup(
           rows: <LoopRecordRow>[
+            _miningRow(),
             LoopRecordRow(
-              key: const ValueKey<String>('profile-open-launch-history'),
-              title: '参与记录',
-              subtitle: 'Launch 参与数据还没有开放',
-              trailing: '未开放',
-              position: LoopRowPosition.first,
-              onTap: () => widget.onNavigate('launch-history'),
+              key: const ValueKey<String>('profile-open-mining-assets'),
+              title: '挖矿资产',
+              onTap: () => widget.onNavigate('mining-assets'),
             ),
             LoopRecordRow(
-              key: const ValueKey<String>('profile-open-launch-tier'),
-              title: '我的资格',
-              subtitle: '质押与 Tier 数据还没有开放',
-              trailing: '未开放',
-              position: LoopRowPosition.last,
-              onTap: () => widget.onNavigate('launch-tier'),
+              key: const ValueKey<String>('profile-open-mining-rewards'),
+              title: '挖矿奖励',
+              onTap: () => widget.onNavigate('mining-rewards'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-mining-rules'),
+              title: '挖矿规则',
+              onTap: () => widget.onNavigate('mining-rules'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-mining-overview'),
+              title: '挖矿总览',
+              onTap: () => widget.onNavigate('mining'),
             ),
           ],
         ),
-        // The prototype's 账户 group is four rows and each second line is a
-        // state value, not a description of the destination: 「2 个已绑定」,
-        // 「匿名模式已开启」, 「关注 24 · 粉丝 108」. Each is read from the
-        // module that owns it; a row whose state this device has not read
-        // carries no second line at all, because 「读不到」 is not a state a
-        // reader can act on (device walkthrough 2026-09-23 · h02).
+        const LoopLabel('邀请'),
+        LoopRecordGroup(rows: <LoopRecordRow>[_inviteRow()]),
+        const LoopLabel('我的社区'),
+        ProfileCommunitiesRow(onNavigate: widget.onNavigate),
+        // 需求方 2026-10-08: IDO Launch keeps its code and its pages, and its
+        // entries on 我 follow the one switch that brings it back.
+        if (switches.idoLaunchVisible) ...<Widget>[
+          const LoopLabel('Launch'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-launch-history'),
+                title: '参与记录',
+                subtitle: 'Launch 参与数据还没有开放',
+                trailing: '未开放',
+                onTap: () => widget.onNavigate('launch-history'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-launch-tier'),
+                title: '我的资格',
+                subtitle: '质押与 Tier 数据还没有开放',
+                trailing: '未开放',
+                onTap: () => widget.onNavigate('launch-tier'),
+              ),
+            ],
+          ),
+        ],
+        // The prototype's 账户 rows carry a state value on their second line
+        // — 「2 个已绑定」, 「匿名模式已开启」, 「关注 24 · 粉丝 108」 — read
+        // from the module that owns it; a row whose state this device has not
+        // read carries no second line at all.
         const LoopLabel('账户'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
@@ -451,7 +475,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               key: const ValueKey<String>('profile-open-wallets'),
               title: '我的钱包',
               subtitle: _walletSubtitle(),
-              position: LoopRowPosition.first,
               onTap: () => widget.onNavigate('wallets'),
             ),
             LoopRecordRow(
@@ -472,28 +495,28 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               key: const ValueKey<String>('profile-open-connections'),
               title: '关注与粉丝',
               subtitle: _connectionsSubtitle(),
-              position: LoopRowPosition.last,
               onTap: () => widget.onNavigate('connections'),
             ),
-          ],
-        ),
-        // Two destinations the prototype reaches from elsewhere but this
-        // build has nowhere else to put; they stay, under their own label,
-        // instead of swelling the prototype's four-row group to six.
-        const LoopLabel('消息'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-friend-requests'),
               title: '好友请求',
-              position: LoopRowPosition.first,
               onTap: () => widget.onNavigate('friend-requests'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-notifications'),
               title: '通知设置',
-              position: LoopRowPosition.last,
               onTap: () => widget.onNavigate('notif-settings'),
+            ),
+          ],
+        ),
+        const LoopLabel('设置'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-settings'),
+              leading: const LoopRowIcon(icon: 'settings'),
+              title: '设置',
+              onTap: () => widget.onNavigate('settings'),
             ),
           ],
         ),
@@ -544,6 +567,27 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     );
   }
 
+  /// 邀请码 with a one-tap copy; the row itself opens the referral page.
+  ///
+  /// The code is the one `GET /v2/referral` issued to this account. Until
+  /// it is read the row says nothing about it and offers no copy, because
+  /// there is nothing yet to copy.
+  LoopRecordRow _inviteRow() {
+    final referral = ref.watch(referralControllerProvider);
+    final code = referral.value?.inviteCode.code;
+    return LoopRecordRow(
+      key: const ValueKey<String>('profile-open-referral'),
+      leading: const LoopRowIcon(icon: 'users', tone: LoopRowIconTone.accent),
+      title: code ?? '邀请码',
+      subtitle: code == null
+          ? (referral.phase == LaunchViewPhase.loading ? '正在读取邀请码' : '邀请好友')
+          : '邀请好友，查看邀请算力',
+      trailingBadge: code == null ? null : _CopyInviteCodeButton(code: code),
+      semanticLabel: code == null ? '邀请好友' : '我的邀请码 $code',
+      onTap: () => widget.onNavigate('referral'),
+    );
+  }
+
   /// `我的名次 第 47 名`, or the server's reason for having none.
   static String? _rankLine(MiningRank? rank) => switch (rank?.myPosition) {
     MiningRankPositionSettled(:final position) => '我的名次 第 $position 名',
@@ -572,6 +616,27 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final counts = ref.watch(connectionsControllerProvider).counts;
     if (counts == null) return null;
     return '关注 ${counts.following} · 粉丝 ${counts.followers}';
+  }
+}
+
+/// Copies the account's invite code; the row around it stays a link.
+class _CopyInviteCodeButton extends StatelessWidget {
+  const _CopyInviteCodeButton({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopIconButton(
+      key: const ValueKey<String>('profile-copy-invite-code'),
+      icon: 'copy',
+      label: '复制邀请码',
+      onPressed: () async {
+        await Clipboard.setData(ClipboardData(text: code));
+        if (!context.mounted) return;
+        LoopToast.show(context, message: '邀请码已复制', kind: LoopToastKind.ok);
+      },
+    );
   }
 }
 

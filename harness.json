@@ -3,12 +3,12 @@
   "project": {
     "name": "Loop Mobile",
     "phase": "active",
-    "purpose": "Build Loop, a Flutter iOS/Android app with five primary destinations—Community, Mining, Launch, Market, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video inside Community, and reviewed backend-mediated V2 capabilities.",
+    "purpose": "Build Loop, a Flutter iOS/Android app with five primary destinations—Chat, Square, Meme, Intel, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video for conversations and community voice rooms, and reviewed backend-mediated V2 capabilities.",
     "primary_destinations": [
-      "Community",
-      "Mining",
-      "Launch",
-      "Market",
+      "Chat",
+      "Square",
+      "Meme",
+      "Intel",
       "Wallet"
     ],
     "ownership_boundaries": [

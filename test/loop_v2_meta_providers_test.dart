@@ -112,7 +112,7 @@ void main() {
       expect(repository.policyCalls, 1);
       expect(repository.capabilityCalls, 1);
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('chat-tab-screen')),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
@@ -125,7 +125,7 @@ void main() {
       }
       expect(repository.policyCalls, 1 + LoopV2MetaObserver.maxRetries);
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('chat-tab-screen')),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
@@ -155,7 +155,7 @@ void main() {
 
       expect(find.text('欢迎来到 LOOP'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('chat-tab-screen')),
         findsNothing,
       );
       expect(tester.takeException(), isNull);

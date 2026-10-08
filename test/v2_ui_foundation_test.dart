@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 
@@ -97,129 +96,40 @@ void main() {
       }
     });
 
-    testWidgets('search and message panels are mutually exclusive', (
+    testWidgets('the retired search and message panels are gone', (
       tester,
     ) async {
+      // Decision 0110: 聊天 owns conversations, requests and search, so the
+      // community index no longer carries either panel or a profile button.
       await _pumpCommunity(tester);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-search-toggle')),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('community-search-panel')),
-        findsOne,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('community-message-panel')),
-        findsNothing,
-      );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-message-toggle')),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('community-search-panel')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('community-message-panel')),
-        findsOne,
-      );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-message-close')),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('community-message-panel')),
-        findsNothing,
-      );
+      for (final key in <String>[
+        'community-search-toggle',
+        'community-message-toggle',
+        'community-profile-action',
+        'community-search-panel',
+        'community-message-panel',
+      ]) {
+        expect(find.byKey(ValueKey<String>(key)), findsNothing, reason: key);
+      }
     });
 
-    testWidgets('floating panels are opaque and close from the scrim', (
+    testWidgets('opened as a child page it offers the way back', (
       tester,
     ) async {
-      await _pumpCommunity(tester);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-message-toggle')),
+      var backs = 0;
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(900, 1400);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: ProviderScope(child: CommunityScreen(onBack: () => backs++)),
+        ),
       );
       await tester.pumpAndSettle();
-      final panel = tester.widget<LoopSurfaceCard>(
-        find.byKey(const ValueKey<String>('community-message-panel')),
-      );
-      // The page card fill is translucent by design; a panel floating over
-      // page content must paint an opaque surface so nothing shows through.
-      expect(panel.background, LoopColors.elevated);
-      expect(panel.background!.a, 1.0);
-      expect(
-        find.byKey(const ValueKey<String>('community-panel-scrim')),
-        findsOne,
-      );
-
-      await tester.tapAt(
-        tester
-            .getRect(
-              find.byKey(const ValueKey<String>('community-panel-scrim')),
-            )
-            .bottomCenter
-            .translate(0, -8),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('community-message-panel')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('community-panel-scrim')),
-        findsNothing,
-      );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-search-toggle')),
-      );
-      await tester.pumpAndSettle();
-      final search = tester.widget<LoopSurfaceCard>(
-        find.byKey(const ValueKey<String>('community-search-panel')),
-      );
-      expect(search.background, LoopColors.elevated);
-    });
-
-    testWidgets('the search panel does not explain where the panel is', (
-      tester,
-    ) async {
-      await _pumpCommunity(tester);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-search-toggle')),
-      );
-      await tester.pumpAndSettle();
-
-      // 01 §3 / §12.2 fixes the entry sentence for `chat-search`, which is
-      // the page that has to send a reader somewhere else. Printing it inside
-      // the global search panel told a reader who had just opened it from the
-      // Community tab where to open it (device walkthrough 2026-09-23 · a08).
-      expect(
-        find.byKey(const ValueKey<String>('community-search-entry-note')),
-        findsNothing,
-      );
-      expect(find.textContaining('唯一的全局搜索入口'), findsNothing);
-      // The retired Home entry must not be described anywhere.
-      expect(find.textContaining('从首页'), findsNothing);
-    });
-
-    testWidgets('the profile action reaches the profile domain', (
-      tester,
-    ) async {
-      final destinations = <String>[];
-      await _pumpCommunity(tester, onNavigate: destinations.add);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-profile-action')),
-      );
-      expect(destinations, <String>['/profile']);
+      await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
+      expect(backs, 1);
     });
 
     testWidgets('remains usable at phone width and 2x text scale', (
@@ -248,7 +158,8 @@ void main() {
 
       expect(mining, hasLength(6));
       expect(mining.first.slug, 'mining');
-      expect(mining.first.tab, isTrue);
+      // Decision 0110: no longer a tab; the page stays mounted.
+      expect(mining.first.tab, isFalse);
       expect(
         mining.every((entry) => entry.status == LoopRouteStatus.implemented),
         isTrue,

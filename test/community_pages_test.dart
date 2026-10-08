@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
-import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -64,23 +63,6 @@ CommunityHome _home({
     ruleVersion: 'rule:verified-members-v1',
   ),
 );
-
-CommunityHome _homeWith({
-  required LoopUnavailableFact unread,
-  required LoopUnavailableFact liveVoice,
-}) {
-  final home = _home();
-  return CommunityHome(
-    joined: home.joined,
-    joinedTruncated: home.joinedTruncated,
-    discover: home.discover,
-    unread: unread,
-    liveVoice: liveVoice,
-    observedAt: home.observedAt,
-    source: home.source,
-    recommendation: home.recommendation,
-  );
-}
 
 void main() {
   group('community · home aggregate', () {
@@ -324,70 +306,6 @@ void main() {
       );
     });
 
-    testWidgets('the message panel states what is true, not two failures', (
-      tester,
-    ) async {
-      await pumpCommunityPage(
-        tester,
-        const CommunityScreen(),
-        community: FakeCommunityGateway(home: _home()),
-      );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-message-toggle')),
-      );
-      await tester.pumpAndSettle();
-
-      // Neither line is a failed read: LOOP publishes no total unread count
-      // in this version, and this account is in no room.
-      expect(
-        find.byKey(const ValueKey<String>('community-unread-deferred')),
-        findsOneWidget,
-      );
-      expect(find.text('你现在不在任何语音房里'), findsOneWidget);
-      expect(find.textContaining('暂时读不到'), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('community-unread-unavailable')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('community-live-voice-unavailable')),
-        findsNothing,
-      );
-      expect(find.textContaining('3 NEW'), findsNothing);
-    });
-
-    testWidgets('a reason the panel does not recognise stays a failure', (
-      tester,
-    ) async {
-      final home = _homeWith(
-        unread: const LoopUnavailableFact('COMMUNICATION_RUNTIME_UNAVAILABLE'),
-        liveVoice: const LoopUnavailableFact(
-          'COMMUNICATION_RUNTIME_UNAVAILABLE',
-        ),
-      );
-      await pumpCommunityPage(
-        tester,
-        const CommunityScreen(),
-        community: FakeCommunityGateway(home: home),
-      );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-message-toggle')),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byKey(const ValueKey<String>('community-unread-unavailable')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('community-live-voice-unavailable')),
-        findsOneWidget,
-      );
-      expect(find.text('你现在不在任何语音房里'), findsNothing);
-    });
-
     testWidgets('the page is laid out in the prototype\'s own order', (
       tester,
     ) async {
@@ -583,39 +501,6 @@ void main() {
       expect(find.text('JO'), findsOneWidget);
     });
 
-    testWidgets('the message panel states a room this account is in', (
-      tester,
-    ) async {
-      await pumpCommunityPage(
-        tester,
-        const CommunityScreen(),
-        community: FakeCommunityGateway(home: _home()),
-        voiceRoomSession: const VoiceRoomSession(
-          communityId: testCommunityId,
-          communityName: 'Frog Holders',
-          voiceRoomId: 'room-1',
-          callRoomId: null,
-          role: VoiceRoomRole.listener,
-          joinedCount: 12,
-        ),
-      );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('community-message-toggle')),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byKey(const ValueKey<String>('community-live-voice-row')),
-        findsOneWidget,
-      );
-      expect(find.text('LIVE'), findsOneWidget);
-      expect(find.text('1 NEW'), findsOneWidget);
-      // The room is on the panel as a row, so the panel does not also say
-      // this account is in no room.
-      expect(find.text('你现在不在任何语音房里'), findsNothing);
-    });
-
     testWidgets('a truncated joined list routes to the paginated directory', (
       tester,
     ) async {
@@ -738,6 +623,9 @@ void main() {
         community: gateway,
       );
 
+      // The end of the list was in view, so the next cursor page was read
+      // without a button; the repeated row is not drawn twice and the same
+      // cursor coming back is not read again.
       expect(find.text('已载入 1 个社区'), findsOneWidget);
       expect(find.text('1 个社区'), findsNothing);
 

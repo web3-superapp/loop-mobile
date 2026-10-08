@@ -394,7 +394,7 @@ void main() {
       await _pumpPreviewApp(tester);
       await _enterPreview(tester);
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('chat-tab-screen')),
         findsOneWidget,
       );
 
@@ -425,7 +425,7 @@ void main() {
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const ValueKey<String>('community-screen')),
+          find.byKey(const ValueKey<String>('chat-tab-screen')),
           findsOneWidget,
         );
       },
@@ -438,7 +438,7 @@ void main() {
       await _enterPreview(tester);
       await _pushPlatformRoute(tester, '/u/not-an-id');
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('chat-tab-screen')),
         findsOneWidget,
       );
       expect(

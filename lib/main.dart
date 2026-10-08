@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/features/square/live_voice_rooms.dart';
+import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_live_voice_rooms.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
@@ -183,6 +185,9 @@ Future<void> main() async {
         ),
         voiceRoomGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2VoiceRoomGatewayProvider),
+        ),
+        liveVoiceRoomGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2LiveVoiceRoomGatewayProvider),
         ),
         // The merged image is encoded on device and handed to the operating
         // system; it never reaches a LOOP service, in either composition.

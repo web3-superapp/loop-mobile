@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,15 +37,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.byKey(const ValueKey<String>('community-screen')),
+      find.byKey(const ValueKey<String>('chat-tab-screen')),
       findsOneWidget,
     );
-    for (final destination in <String>['挖矿', 'Launch', '行情', '钱包', '社区']) {
+    for (final destination in <String>['广场', 'MEME', '情报', '钱包', '聊天']) {
       await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
     }
     expect(
-      find.byKey(const ValueKey<String>('community-screen')),
+      find.byKey(const ValueKey<String>('chat-tab-screen')),
       findsOneWidget,
     );
   });
@@ -61,7 +63,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '行情'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '情报'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('intel-segment-1')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('market-screen')), findsOneWidget);
     expect(find.textContaining('Perp trading'), findsNothing);
@@ -72,25 +76,16 @@ void main() {
     expect(find.text('Trading account'), findsNothing);
     expect(find.textContaining('Hyperliquid margin'), findsNothing);
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '社区'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
     await tester.pumpAndSettle();
     expect(find.textContaining('PERP EQUITY'), findsNothing);
     expect(find.textContaining('Spot to perp'), findsNothing);
-
-    await tester.tap(
-      find.byKey(const ValueKey<String>('community-search-toggle')),
-    );
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey<String>('community-search-panel')),
-      findsOneWidget,
-    );
     expect(find.text('ETH'), findsNothing);
     expect(find.text('ETH-PERP'), findsNothing);
   });
 
   testWidgets(
-    'retained Perp paths are unmounted and fall back to Community with a logged error',
+    'retained Perp paths are unmounted and fall back to Chat with a logged error',
     (tester) async {
       final routingErrors = LoopRoutingErrorLog();
       await tester.pumpWidget(
@@ -115,7 +110,7 @@ void main() {
         router.go(path);
         await tester.pumpAndSettle();
 
-        expect(router.routeInformationProvider.value.uri.path, '/community');
+        expect(router.routeInformationProvider.value.uri.path, '/chat');
         expect(routingErrors.last?.location, path, reason: path);
         expect(find.text('Perpetuals'), findsNothing, reason: path);
         expect(find.text('Positions'), findsNothing, reason: path);
@@ -284,13 +279,19 @@ void main() {
     await tester.pumpAndSettle();
 
     final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
     );
     router.go('/chat');
     await tester.pumpAndSettle();
 
-    expect(find.text('Offline preview · not connected'), findsWidgets);
-    expect(find.byKey(const ValueKey('communication-mode-status')), findsOne);
+    // Decision 0110: the 聊天 tab is Stream's own list. A Preview build has no
+    // Stream session, so the tab closes and draws no fixture conversation.
+    expect(
+      find.byKey(const ValueKey<String>('stream-chat-unavailable')),
+      findsOneWidget,
+    );
+    expect(find.text('Glyph Hunters'), findsNothing);
+    expect(find.text('ETH Macro Room'), findsNothing);
     expect(find.textContaining('126 online'), findsNothing);
     expect(find.textContaining('listening'), findsNothing);
   });
@@ -311,7 +312,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
     );
     router.go('/chat');
     await tester.pumpAndSettle();
@@ -346,13 +347,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
     );
-    router.go('/chat');
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('ETH Macro Room'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('ETH Macro Room'));
+    // The Preview room is no longer listed on the 聊天 tab; it is reached by
+    // its own guarded location.
+    unawaited(router.push<void>('/chat/voice'));
     await tester.pumpAndSettle();
 
     expect(find.text('Offline preview'), findsOneWidget);

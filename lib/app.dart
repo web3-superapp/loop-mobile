@@ -63,8 +63,10 @@ import 'package:loop_mobile/features/community/search_screen.dart';
 import 'package:loop_mobile/features/launch/launch_action_screens.dart';
 import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
 import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
+import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
@@ -79,6 +81,7 @@ import 'package:loop_mobile/features/social/dm_requests_screen.dart';
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
+import 'package:loop_mobile/features/square/square_screen.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
@@ -376,12 +379,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         if (landing != LoopProfileLanding.loopIdSetup) return;
         // Only lift an owner out of the credential, launch or landing pages.
         // A deep link the owner opened deliberately is never interrupted.
-        const liftable = <String>{
-          '/auth',
-          '/auth/otp',
-          '/community',
-          '/splash',
-        };
+        const liftable = <String>{'/auth', '/auth/otp', '/chat', '/splash'};
         final location = router.state.matchedLocation;
         if (liftable.contains(location)) _goToOnboardingStep();
       },
@@ -728,9 +726,7 @@ GoRouter _buildRouter(
       // still opening goes to the step it is on, never through Community.
       if (credentialRoutes.contains(location) || location == '/splash') {
         final step = readOnboarding().step;
-        return step == null
-            ? '/community'
-            : LoopRouteManifest.pathFor(step.slug);
+        return step == null ? '/chat' : LoopRouteManifest.pathFor(step.slug);
       }
       if (linkedLoopId != null) {
         profileLinks.take();
@@ -743,7 +739,7 @@ GoRouter _buildRouter(
       return null;
     },
     routes: <RouteBase>[
-      GoRoute(path: '/', redirect: (context, state) => '/community'),
+      GoRoute(path: '/', redirect: (context, state) => '/chat'),
       GoRoute(
         path: '/auth',
         builder: (context, state) => PrivyLoginScreen(
@@ -831,37 +827,33 @@ GoRouter _buildRouter(
         // own over a route a user can return from.
         routes: <RouteBase>[
           GoRoute(
-            path: '/community',
+            path: '/chat',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const CommunityScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/mining',
-            pageBuilder: (context, state) => LoopTabPage<void>(
-              key: state.pageKey,
-              child: MiningScreen(
-                onOpenAssets: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-assets')),
-                onOpenRewards: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-rewards')),
-                onOpenRank: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-rank')),
-                onOpenRules: () =>
-                    context.push(LoopRouteManifest.pathFor('mining-rules')),
-                onOpenReferral: () =>
-                    context.push(LoopRouteManifest.pathFor('referral')),
-                onOpenMarket: () =>
-                    context.go(LoopRouteManifest.pathFor('market')),
+              child: StreamChatInboxPage(
+                onOpenProfile: () =>
+                    context.push(LoopRouteManifest.pathFor('profile')),
               ),
             ),
           ),
           GoRoute(
-            path: '/launch',
+            path: '/square',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: LaunchScreen(
+              child: SquareScreen(
+                onOpenCommunity: (communityId) =>
+                    context.push('/community/profile?id=$communityId'),
+                onOpenVoiceRoom: (communityId) => context.push(
+                  '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/meme',
+            pageBuilder: (context, state) => LoopTabPage<void>(
+              key: state.pageKey,
+              child: MemeScreen(
                 onOpenLaunch: (launchId) =>
                     context.push(LaunchRoute.detail(launchId)),
                 onOpenStake: () =>
@@ -876,10 +868,12 @@ GoRouter _buildRouter(
             ),
           ),
           GoRoute(
-            path: '/market',
+            path: '/intel',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const MarketScreen(),
+              child: IntelScreen(
+                onNavigate: (location) => context.push(location),
+              ),
             ),
           ),
           GoRoute(
@@ -891,11 +885,53 @@ GoRouter _buildRouter(
           ),
         ],
       ),
-      GoRoute(path: '/home', redirect: (context, state) => '/community'),
+      GoRoute(path: '/home', redirect: (context, state) => '/chat'),
       GoRoute(path: '/launchpad', redirect: (context, state) => '/launch'),
+      // Decision 0110: the four v2 tabs stay mounted as ordinary pages. They
+      // are reached from 我, from 广场 and by deep link, and each one now
+      // offers a way back.
       GoRoute(
-        path: '/chat',
-        builder: (context, state) => const ChatInboxPage(),
+        path: '/community',
+        builder: (context, state) =>
+            CommunityScreen(onBack: () => _popOrHome(context)),
+      ),
+      GoRoute(
+        path: '/mining',
+        builder: (context, state) => MiningScreen(
+          onBack: () => _popOrHome(context),
+          onOpenAssets: () =>
+              context.push(LoopRouteManifest.pathFor('mining-assets')),
+          onOpenRewards: () =>
+              context.push(LoopRouteManifest.pathFor('mining-rewards')),
+          onOpenRank: () =>
+              context.push(LoopRouteManifest.pathFor('mining-rank')),
+          onOpenRules: () =>
+              context.push(LoopRouteManifest.pathFor('mining-rules')),
+          onOpenReferral: () =>
+              context.push(LoopRouteManifest.pathFor('referral')),
+          onOpenMarket: () => context.push(LoopRouteManifest.pathFor('market')),
+        ),
+      ),
+      GoRoute(
+        path: '/launch',
+        builder: (context, state) => LaunchScreen(
+          onBack: () => _popOrHome(context),
+          onOpenLaunch: (launchId) =>
+              context.push(LaunchRoute.detail(launchId)),
+          onOpenStake: () =>
+              context.push(LoopRouteManifest.pathFor('loop-stake')),
+          onOpenRules: () =>
+              context.push(LoopRouteManifest.pathFor('launch-rounds')),
+          onOpenEconomy: () =>
+              context.push(LoopRouteManifest.pathFor('loop-economy')),
+          onOpenApply: () =>
+              context.push(LoopRouteManifest.pathFor('launch-apply')),
+        ),
+      ),
+      GoRoute(
+        path: '/market',
+        builder: (context, state) =>
+            MarketScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/profile',
@@ -1153,7 +1189,7 @@ GoRouter _buildRouter(
           production: () => GroupInfoScreen(
             channelCid: state.uri.queryParameters['cid'],
             onBack: () => _popOrHome(context),
-            onLeft: () => context.go('/community'),
+            onLeft: () => context.go(LoopRouteManifest.defaultPath),
           ),
         ),
       ),
@@ -1392,7 +1428,7 @@ GoRouter _buildRouter(
         path: '/profile/referral',
         builder: (context, state) => ReferralScreen(
           onBack: () => _popOrHome(context),
-          onOpenMining: () => context.go(LoopRouteManifest.pathFor('mining')),
+          onOpenMining: () => context.push(LoopRouteManifest.pathFor('mining')),
         ),
       ),
       ..._systemRoutes,
@@ -1406,12 +1442,12 @@ GoRouter _buildRouter(
       ..._launchRoutes,
       ..._miningRoutes,
       ..._pendingManifestRoutes,
-      // Illegal locations are recorded and land on Community.
+      // Illegal locations are recorded and land on 聊天.
       GoRoute(
         path: '/:unmatched(.*)',
         redirect: (context, state) {
           routingErrors.record(state.uri.toString());
-          return '/community';
+          return '/chat';
         },
       ),
     ],
@@ -2089,6 +2125,9 @@ String _profilePath(String id) => switch (id) {
   'about' => LoopRouteManifest.pathFor('about'),
   'support' => LoopRouteManifest.pathFor('support'),
   'mining' => LoopRouteManifest.pathFor('mining'),
+  'mining-assets' => LoopRouteManifest.pathFor('mining-assets'),
+  'mining-rewards' => LoopRouteManifest.pathFor('mining-rewards'),
+  'mining-rules' => LoopRouteManifest.pathFor('mining-rules'),
   'referral' => LoopRouteManifest.pathFor('referral'),
   _ => LoopRouteManifest.pathFor('profile'),
 };
@@ -2101,18 +2140,18 @@ class UnknownRouteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      title: 'Route not found',
+      title: '页面不存在',
       eyebrow: '404',
       subtitle: location,
       children: <Widget>[
         LoopStateCard(
-          title: 'This location is not in the 93-route product map',
-          message: 'Return to Community. The request has been recorded.',
+          title: '这个地址不在 LOOP 的页面里',
+          message: '这次访问已记录。',
           icon: Icons.route_outlined,
           tone: LoopTone.warning,
           action: FilledButton(
             onPressed: () => context.go(LoopRouteManifest.defaultPath),
-            child: const Text('Go to Community'),
+            child: const Text('回到聊天'),
           ),
         ),
       ],

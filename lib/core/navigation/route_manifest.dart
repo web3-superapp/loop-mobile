@@ -1,8 +1,10 @@
-/// The 93-route product manifest.
+/// The 97-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
-/// `LOOP/docs/routes-manifest.json`, frozen 2026-09-01 from the cliview.org
-/// `loop-v2.html` build, SHA-256 `bdbe1832…`). `test/route_manifest_test.dart`
+/// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
+/// 2026-09-01 from the cliview.org `loop-v2.html` build (SHA-256
+/// `bdbe1832…`); decision 0110 (2026-10-08) added the four v3 tabs `chat`,
+/// `square`, `meme` and `intel` and re-froze the manifest. `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
 ///
@@ -94,28 +96,37 @@ final class LoopRouteEntry {
 }
 
 abstract final class LoopRouteManifest {
-  static const String frozenAt = '2026-09-01';
+  static const String frozenAt = '2026-10-08';
   static const String source = 'https://cliview.org/loop-v2.html';
-  static const String sha256 =
+
+  /// The frozen prototype the first 93 slugs were restored from.
+  static const String prototypeSha256 =
       'bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a';
 
-  /// Post-login and illegal-route landing slug.
-  static const String defaultSlug = 'community';
-  static const String defaultPath = '/community';
+  /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
+  /// JSON); `scripts/check_harness.py` recomputes it.
+  static const String sha256 =
+      'd7b845af877122c9ef08a6bd7a37b4672e46d25581c42acb9fd64f9b29fecafb';
 
-  /// The five primary destinations in their fixed order.
+  /// Post-login and illegal-route landing slug (v3, decision 0110).
+  static const String defaultSlug = 'chat';
+  static const String defaultPath = '/chat';
+
+  /// The five primary destinations in their fixed order (v3, decision 0110).
+  /// The four destinations they replaced — `community`, `mining`, `launch`
+  /// and `market` — stay mounted as ordinary pages.
   static const List<String> tabSlugs = <String>[
-    'community',
-    'mining',
-    'launch',
-    'market',
+    'chat',
+    'square',
+    'meme',
+    'intel',
     'wallet',
   ];
 
   /// Compatibility redirects for installed clients. These are the only
   /// retired locations that stay mounted, and only as redirects.
   static const Map<String, String> compatibilityRedirects = <String, String>{
-    '/home': '/community',
+    '/home': '/chat',
     '/launchpad': '/launch',
   };
 
@@ -208,7 +219,6 @@ abstract final class LoopRouteManifest {
   /// can hide here. `/chat/channel/:cid` is a redirect only: it resolves a
   /// server-issued CID onto `community-chat`, `dm` or `group`.
   static const List<String> supplementaryPaths = <String>[
-    '/chat',
     '/chat/channel/:cid',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
@@ -310,7 +320,7 @@ abstract final class LoopRouteManifest {
       step: 1,
       status: LoopRouteStatus.implemented,
     ),
-    // 2-community · Community (16)
+    // 2-community · Community (18)
     LoopRouteEntry(
       slug: 'search',
       path: '/search',
@@ -328,7 +338,6 @@ abstract final class LoopRouteManifest {
       prototypeOrder: 13,
       step: 3,
       status: LoopRouteStatus.implemented,
-      tab: true,
     ),
     LoopRouteEntry(
       slug: 'community-discover',
@@ -456,7 +465,27 @@ abstract final class LoopRouteManifest {
       step: 4,
       status: LoopRouteStatus.implemented,
     ),
-    // 3-market · Market (9)
+    LoopRouteEntry(
+      slug: 'chat',
+      path: '/chat',
+      module: LoopRouteModule.community,
+      title: '聊天 Tab',
+      prototypeOrder: 100,
+      step: 3,
+      status: LoopRouteStatus.implemented,
+      tab: true,
+    ),
+    LoopRouteEntry(
+      slug: 'square',
+      path: '/square',
+      module: LoopRouteModule.community,
+      title: '广场 Tab',
+      prototypeOrder: 101,
+      step: 3,
+      status: LoopRouteStatus.implemented,
+      tab: true,
+    ),
+    // 3-market · Market (10)
     LoopRouteEntry(
       slug: 'market',
       path: '/market',
@@ -465,7 +494,6 @@ abstract final class LoopRouteManifest {
       prototypeOrder: 26,
       step: 5,
       status: LoopRouteStatus.implemented,
-      tab: true,
     ),
     LoopRouteEntry(
       slug: 'token',
@@ -539,7 +567,17 @@ abstract final class LoopRouteManifest {
       step: 5,
       status: LoopRouteStatus.implemented,
     ),
-    // 4-launch · Launch (11)
+    LoopRouteEntry(
+      slug: 'intel',
+      path: '/intel',
+      module: LoopRouteModule.market,
+      title: '情报 Tab',
+      prototypeOrder: 103,
+      step: 5,
+      status: LoopRouteStatus.implemented,
+      tab: true,
+    ),
+    // 4-launch · Launch (12)
     LoopRouteEntry(
       slug: 'launch',
       path: '/launch',
@@ -548,7 +586,6 @@ abstract final class LoopRouteManifest {
       prototypeOrder: 35,
       step: 7,
       status: LoopRouteStatus.implemented,
-      tab: true,
     ),
     LoopRouteEntry(
       slug: 'launch-detail',
@@ -641,6 +678,16 @@ abstract final class LoopRouteManifest {
       status: LoopRouteStatus.implemented,
       legacyPath: '/launchpad/apply',
     ),
+    LoopRouteEntry(
+      slug: 'meme',
+      path: '/meme',
+      module: LoopRouteModule.launch,
+      title: 'MEME Tab',
+      prototypeOrder: 102,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+      tab: true,
+    ),
     // 5-mining · Mining (6)
     LoopRouteEntry(
       slug: 'mining',
@@ -650,7 +697,6 @@ abstract final class LoopRouteManifest {
       prototypeOrder: 46,
       step: 7,
       status: LoopRouteStatus.implemented,
-      tab: true,
     ),
     LoopRouteEntry(
       slug: 'mining-assets',

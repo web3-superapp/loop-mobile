@@ -17,7 +17,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PRIMARY_DESTINATIONS = ["Community", "Mining", "Launch", "Market", "Wallet"]
+PRIMARY_DESTINATIONS = ["Chat", "Square", "Meme", "Intel", "Wallet"]
 PINNED_DEPENDENCIES = {
     "cupertino_icons": "1.0.8",
     "decimal": "3.2.6",
@@ -2085,7 +2085,7 @@ def check_profile(root: Path, profile: dict[str, Any]) -> list[str]:
         errors.append("harness.json project purpose must be non-empty")
     if project.get("primary_destinations") != PRIMARY_DESTINATIONS:
         errors.append(
-            "harness.json must preserve Community / Mining / Launch / Market / Wallet in order"
+            "harness.json must preserve Chat / Square / Meme / Intel / Wallet in order"
         )
 
     for field in ("ownership_boundaries",):
@@ -2269,7 +2269,7 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             ),
             "test/app_navigation_test.dart": (
                 # Step 5 retired the Spot-ledger walk with the screens it drove.
-                "retained Perp paths are unmounted and fall back to Community with a logged error",
+                "retained Perp paths are unmounted and fall back to Chat with a logged error",
             ),
             "test/route_manifest_test.dart": (
                 "manifest keeps every retired Perp path unmounted",
@@ -3212,12 +3212,12 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
     ),
 }
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
-    "a87079e5bdfaf6321f20537d89a657deec2e18d86d5944787e7e50f52fefa852"
+    "cf36256748798f9534f53ad071d2b0a2ecd29f5cdd0ee6efda55c65b574c8398"
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "9b441d2d8c58355db0d3bc47100f6d85534a4f4569a646126496a62b68520547",
     "primary_routes": "9a800ba14a805f9a0e5f62a611441da4c42aaf56eb3f3eba3eb87c34152ffef7",
-    "secondary_routes": "cb31c8b5beb308a8a629bac006ab92372383c436482518da19ae7a2bbba22252",
+    "secondary_routes": "bff4439838659362e0cc9f1276bad476b8fcf459313e248275d7d3205fbc48d5",
     "conversation_pages": "4d71552865ef9c3f872da63d4cdcb9299468e3f07e0bafdf40f7e72f97f51a11",
     "group_info": "d967998206d33611981bbd5107e9b51975cbfbf2c69a121800b0584731a0b54c",
     "member_list": "9e34dccc196b4237baba7ea8a6b1ece71c297d010b1a5a8c7cd264d9419350bd",
@@ -7991,14 +7991,14 @@ def check_product_contract(root: Path) -> list[str]:
         {
             "README.md": (
                 "Repository phase: `active`.",
-                "Community / Mining / Launch / Market / Wallet",
+                "Chat / Square / Meme / Intel / Wallet",
                 "harness.json",
                 "python3 scripts/check_harness.py",
             ),
             "AGENTS.md": (
                 "Repository phase: `active`.",
-                "Community / Mining / Launch / Market / Wallet",
-                "Community is the post-login home",
+                "Chat / Square / Meme / Intel / Wallet",
+                "Chat is the post-login home",
                 "python3 scripts/check_harness.py",
             ),
             "docs/product/implementation-constraints.md": (
@@ -8150,7 +8150,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 93-route manifest."""
+    """Keep the Dart route table equal to the frozen 97-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8166,12 +8166,31 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for module in manifest.get("modules", {}).values()
         for item in module
     ]
-    if manifest.get("count") != 93 or len(expected_slugs) != 93:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 93 routes")
-    if manifest.get("tabs") != ["community", "mining", "launch", "market", "wallet"]:
+    if manifest.get("count") != 97 or len(expected_slugs) != 97:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 97 routes")
+    if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
-    if manifest.get("defaultRoute") != "community":
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must land on community")
+    if manifest.get("defaultRoute") != "chat":
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must land on chat")
+    # Decision 0110: the manifest's own content is its fingerprint, so a slug,
+    # tab or order change that does not re-freeze it is caught here.
+    basis = {
+        key: manifest.get(key) for key in ("defaultRoute", "tabs", "count", "modules")
+    }
+    canonical = json.dumps(
+        basis, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    if manifest.get("sha256") != hashlib.sha256(canonical.encode("utf-8")).hexdigest():
+        errors.append(
+            f"{ROUTE_MANIFEST_JSON_PATH} sha256 must be recomputed over its content"
+        )
+    dart_manifest = read_text(dart_path)
+    if f"'{manifest.get('sha256')}'" not in dart_manifest or (
+        f"'{manifest.get('frozenAt')}'" not in dart_manifest
+    ):
+        errors.append(
+            "lib/core/navigation/route_manifest.dart must carry the manifest sha256 and frozenAt"
+        )
     if [name.title() for name in manifest.get("tabs", [])] != PRIMARY_DESTINATIONS:
         errors.append("harness primary destinations must mirror the manifest tabs")
 
@@ -8182,7 +8201,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 93 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 97 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -8596,17 +8615,16 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "Do not call, mock or pre-empt the backend D0/D1 `/v2` contract",
         ),
         "docs/product-decisions.md": (
-            "Community,\n  Mining, Launch, Market and Wallet",
+            "Chat, Square, Meme, Intel and\n  Wallet",
             "`/home` and `/launchpad` are compatibility redirects",
         ),
         "docs/product/implementation-constraints.md": (
-            "Community, Mining, Launch, Market and Wallet",
+            "Chat, Square, Meme, Intel and Wallet",
             "`/home` and `/launchpad` are compatibility redirects only",
         ),
         "lib/features/community/community_screen.dart": (
             "class CommunityScreen",
-            "'/chat'",
-            "'/profile'",
+            "onBack: widget.onBack,",
         ),
         # The page states the formula is unapproved in the user's words; the
         # backend step id it used to cite is banned copy (decision 0070).
@@ -8648,10 +8666,10 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
         else:
             block = source[start:end]
             markers = (
-                ("'社区'", "'/community'"),
-                ("'挖矿'", "'/mining'"),
-                ("'Launch'", "'/launch'"),
-                ("'行情'", "'/market'"),
+                ("'聊天'", "'/chat'"),
+                ("'广场'", "'/square'"),
+                ("'MEME'", "'/meme'"),
+                ("'情报'", "'/intel'"),
                 ("'钱包'", "'/wallet'"),
             )
             positions: list[int] = []
@@ -8668,11 +8686,13 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                 errors.append("LoopShell V2 destinations must retain their reviewed order")
             for forbidden in (
                 "'Home'",
-                "'Chat'",
                 "'Profile'",
                 "'首页'",
-                "'聊天'",
                 "'/launchpad'",
+                "'/community'",
+                "'/mining'",
+                "'/launch'",
+                "'/market'",
             ):
                 if forbidden in block:
                     errors.append(
@@ -8704,10 +8724,19 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             errors.append("lib/app.dart must retain an inspectable V2 ShellRoute")
         else:
             shell = compact_source[shell_start:shell_end]
-            for path in ("/community", "/mining", "/launch", "/market", "/wallet"):
+            for path in ("/chat", "/square", "/meme", "/intel", "/wallet"):
                 if re.search(rf"path\s*:\s*'{re.escape(path)}'", shell) is None:
                     errors.append(f"V2 ShellRoute must own `{path}`")
-            for path in ("/home", "/launchpad", "/chat", "/profile"):
+            # Decision 0110: the four v2 tabs stay mounted, outside the shell.
+            for path in (
+                "/home",
+                "/launchpad",
+                "/profile",
+                "/community",
+                "/mining",
+                "/launch",
+                "/market",
+            ):
                 if re.search(rf"path\s*:\s*'{re.escape(path)}'", shell) is not None:
                     errors.append(f"V2 ShellRoute must not own legacy child `{path}`")
 
@@ -8762,13 +8791,13 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             r"if\s*\(\s*credentialRoutes\.contains\(location\)\s*\|\|\s*"
             r"location\s*==\s*'/splash'\s*\)\s*\{\s*"
             r"final\s+step\s*=\s*readOnboarding\(\)\.step\s*;\s*"
-            r"return\s+step\s*==\s*null\s*\?\s*'/community'\s*:\s*"
+            r"return\s+step\s*==\s*null\s*\?\s*'/chat'\s*:\s*"
             r"LoopRouteManifest\.pathFor\(step\.slug\)\s*;",
             compact_source,
         ) is None:
             errors.append(
                 "a decided landing must hand the credential and launch pages "
-                "to the account's own step, or to Community"
+                "to the account's own step, or to Chat"
             )
         credential_routes = re.search(
             r"const\s+credentialRoutes\s*=\s*<String>\{([^}]*)\}", compact_source
@@ -8795,16 +8824,16 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                 "locations"
             )
         for path, destination in (
-            ("/", "/community"),
-            ("/home", "/community"),
+            ("/", "/chat"),
+            ("/home", "/chat"),
             ("/launchpad", "/launch"),
-            ("/:unmatched(.*)", "/community"),
+            ("/:unmatched(.*)", "/chat"),
         ):
             if not has_direct_redirect(path, destination):
                 errors.append(
                     f"V2 app routes must redirect `{path}` to `{destination}`"
                 )
-        for path in ("/chat", "/profile"):
+        for path in ("/profile", "/community", "/mining", "/launch", "/market"):
             if re.search(rf"path\s*:\s*'{re.escape(path)}'", compact_source) is None:
                 errors.append(f"V2 app routes must retain child route `{path}`")
 
@@ -8838,17 +8867,18 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
         chat_slice = source[
             chat_start : chat_end if chat_end >= 0 else len(source)
         ]
+        # Decision 0110: 聊天 is the first tab. It has no back control; its
+        # head is the owner's avatar, the way into 我.
         chat_fallback_fragments = (
-            "ValueKey<String>('stream-chat-back-to-community')",
-            "Navigator.of(context).canPop()",
-            "context.pop();",
-            "context.go('/community');",
+            "ValueKey<String>('chat-open-profile')",
+            "onTap: onPressed,",
+            "tabPage: true,",
         )
         if chat_start < 0 or chat_end < 0 or any(
             fragment not in chat_slice for fragment in chat_fallback_fragments
         ):
             errors.append(
-                "Chat root must expose a direct-link fallback that returns to Community"
+                "Chat tab must open 我 from the owner's avatar"
             )
     else:
         errors.append(
@@ -8864,13 +8894,21 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             errors.append("LoopRouteManifest must expose runtime tabSlugs")
         else:
             block = source[start:end]
-            expected = ["community", "mining", "launch", "market", "wallet"]
+            expected = ["chat", "square", "meme", "intel", "wallet"]
             positions = [block.find(f"'{slug}'") for slug in expected]
             if any(position < 0 for position in positions):
                 errors.append("LoopRouteManifest tabSlugs must contain all five V2 slugs")
             elif positions != sorted(positions):
                 errors.append("LoopRouteManifest tabSlugs must retain V2 order")
-            for retired in ("home", "launchpad", "chat", "profile"):
+            for retired in (
+                "home",
+                "launchpad",
+                "profile",
+                "community",
+                "mining",
+                "launch",
+                "market",
+            ):
                 if f"'{retired}'" in block:
                     errors.append(
                         f"LoopRouteManifest tabSlugs must not retain `{retired}`"
@@ -9074,8 +9112,8 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
         root,
         {
             "lib/features/chat/stream_chat_inbox_page.dart": (
-                "class StreamChatInboxPage extends ConsumerWidget",
-                "const ChatCreateMenuButton()",
+                "class StreamChatInboxPage extends ConsumerStatefulWidget",
+                "ChatCreateMenuButton()",
             ),
             "lib/features/chat/voice_room_page.dart": (
                 "gateway.mode == CommunicationMode.production",
@@ -12267,13 +12305,13 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
         {
             "lib/features/chat/friends/chat_create_menu_button.dart": (
                 "ValueKey<String>('chat-create-menu')",
-                "ValueKey<String>('chat-create-group-menu-item')",
-                "ValueKey<String>('chat-add-friend-menu-item')",
-                "label: '创建群组'",
-                "label: '添加好友'",
-                "context.push('/chat/groups/create')",
+                "key: 'chat-create-group-menu-item'",
+                "key: 'chat-add-friend-menu-item'",
+                "title: '创建群聊'",
+                "title: '搜索 / 添加用户'",
+                "context.push<void>('/chat/groups/create')",
                 # Step 3 folded the V1 alias search into the V2 global search.
-                "context.push('/search')",
+                "context.push<void>('/search')",
             ),
             "lib/features/chat/friends/friend_models.dart": (
                 "factory FriendProfileRef.fromPublicProfileId(String value)",
@@ -12473,7 +12511,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "SocialPrivacyMode get mode => SocialPrivacyMode.preview",
             ),
             "lib/features/chat/stream_chat_inbox_page.dart": (
-                "const ChatCreateMenuButton()",
+                "ChatCreateMenuButton()",
                 "class StreamGroupAliasChannelRoutePage extends ConsumerWidget",
                 "GroupAliasStreamChannelId.fromCid(cid)",
                 "class _ExistingMemberGroupAliasPage extends StatefulWidget",
@@ -12724,6 +12762,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
 
         if re.search(
             r"itemBuilder\s*:\s*\([^)]*\bdefaultItem\b[^)]*\)\s*=>\s*"
+            r"(?:widget\.filter\.includes\([^)]*\)\s*\?\s*)?"
             r"loopStreamChannelListIdentityItem\s*\(\s*defaultItem\s*\)",
             stream_route,
             re.DOTALL,

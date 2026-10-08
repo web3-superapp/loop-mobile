@@ -7,15 +7,19 @@ This document applies to the Flutter source at the repository root. Material und
 ## Product shape
 
 - LOOP is a Flutter iOS and Android app. Web output is only a local UI-verification target.
-- Decision 0048 adopts five primary destinations in this order: Community,
-  Mining, Launch, Market and Wallet. Community is the post-login home; Chat is
-  a Community child flow, while Profile is opened as a child surface rather
-  than a bottom-navigation destination.
-- `/home` and `/launchpad` are compatibility redirects to `/community` and
-  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (93
-  routes, mirrored by `lib/core/navigation/route_manifest.dart`) the only
-  route inventory; every unimplemented slug mounts a truthful pending surface
-  and every retired location is logged and returned to Community. The former
+- Decision 0110 (v3, 2026-10-08) replaces decision 0048's destinations with
+  five primary destinations in this order: Chat, Square, Meme, Intel and
+  Wallet (聊天 / 广场 / MEME / 情报 / 钱包). Chat is the post-login home; 我
+  (Profile) opens from the avatar on Chat rather than from the bottom
+  navigation. The four v2 tabs `community`, `mining`, `launch` and `market`
+  keep their routes and pages as ordinary child pages. Decision 0048's
+  Community, Mining, Launch, Market and Wallet shell is history.
+- `/home` and `/launchpad` are compatibility redirects to `/chat` and
+  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (97
+  routes since decision 0110, mirrored by
+  `lib/core/navigation/route_manifest.dart`) the only route inventory; every
+  unimplemented slug mounts a truthful pending surface and every retired
+  location is logged and returned to Chat. The former
   103-surface catalog is read-only history, not a routing source or evidence
   that the 93 pages are complete.
 - LOOP is spot-only. Perpetuals are disabled, have no primary-feature entry, and receive no further product work.

@@ -43,9 +43,25 @@ enum MarketTab {
 /// trending ordering, new pairs and smart money each fail independently, so
 /// one missing provider never blanks the page.
 class MarketScreen extends ConsumerStatefulWidget {
-  const MarketScreen({super.key, this.onNavigate});
+  const MarketScreen({
+    super.key,
+    this.onNavigate,
+    this.onBack,
+    this.embedded = false,
+    this.hideOutboundLists = false,
+  });
 
   final void Function(String location)? onNavigate;
+
+  /// Set when 行情 is opened as a page of its own rather than as a tab.
+  final VoidCallback? onBack;
+
+  /// The 行情 segment of 情报 (decision 0110): no bar of its own.
+  final bool embedded;
+
+  /// 情报 drops 新币 and 聪明钱 (需求方 2026-10-08): lists that send the
+  /// reader out of LOOP. Their pages stay mounted at their own locations.
+  final bool hideOutboundLists;
 
   @override
   ConsumerState<MarketScreen> createState() => _MarketScreenState();
@@ -108,11 +124,17 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     // cannot find is left off the row.
     final miningRules = watchMarketMiningRules(ref);
 
+    final tabs = <MarketTab>[
+      for (final tab in MarketTab.values)
+        if (!(widget.hideOutboundLists && tab == MarketTab.newPairs)) tab,
+    ];
     return LoopDashboardPage(
       key: const ValueKey<String>('market-screen'),
       archetype: LoopPageArchetype.listing,
       title: '行情',
-      tabPage: true,
+      onBack: widget.onBack,
+      tabPage: widget.onBack == null,
+      embedded: widget.embedded,
       // A re-read over an overview the page already shows is marked, not
       // replaced by a skeleton.
       updating: state.refreshing,
@@ -158,9 +180,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         MarketSearchField(onPressed: () => _open('/search')),
         MarketTabBar(
           key: const ValueKey<String>('market-tabs'),
-          labels: <String>[for (final tab in MarketTab.values) tab.label],
-          selectedIndex: _tab.index,
-          onSelected: (index) => setState(() => _tab = MarketTab.values[index]),
+          labels: <String>[for (final tab in tabs) tab.label],
+          selectedIndex: tabs.indexOf(_tab),
+          onSelected: (index) => setState(() => _tab = tabs[index]),
         ),
         if (overview == null && state.phase == LoopChainViewPhase.loading)
           // Rows of the list's own fixed height, so nothing moves when the
@@ -206,7 +228,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
               ),
             ],
           },
-        if (overview != null && _tab != MarketTab.newPairs)
+        if (overview != null &&
+            _tab != MarketTab.newPairs &&
+            !widget.hideOutboundLists)
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
@@ -357,12 +381,19 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
   /// page that has one. Adding is a write on the token page — the list has no
   /// add of its own — so this row is a route to an asset list, and it says so
   /// instead of pretending the tap adds anything.
-  LoopRecordRow _addRow(VoidCallback onTap) => LoopRecordRow(
-    key: const ValueKey<String>('market-watchlist-add'),
-    title: '添加自选资产',
-    subtitle: '打开代币页，点右上角星标 · 「热门」和「新币」都能打开代币页',
-    onTap: onTap,
-  );
+  LoopRecordRow _addRow(VoidCallback onTap) => widget.hideOutboundLists
+      ? LoopRecordRow(
+          key: const ValueKey<String>('market-watchlist-add'),
+          title: '添加自选资产',
+          subtitle: '打开代币页，点右上角星标 · 「热门」里的每一行都能打开代币页',
+          onTap: () => setState(() => _tab = MarketTab.trending),
+        )
+      : LoopRecordRow(
+          key: const ValueKey<String>('market-watchlist-add'),
+          title: '添加自选资产',
+          subtitle: '打开代币页，点右上角星标 · 「热门」和「新币」都能打开代币页',
+          onTap: onTap,
+        );
 }
 
 /// What the statistics line above a 行情 list counts.

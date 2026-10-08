@@ -541,7 +541,7 @@ void main() {
         status: ProfileStatus.active,
       );
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(await store.read(partition), isNull);
     });
 
@@ -551,7 +551,7 @@ void main() {
       final store = InMemoryLoopOnboardingProgressStore();
       final router = await _pumpLoopApp(tester, store: store, profile: null);
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(await store.read(partition), isNull);
     });
   });
@@ -585,7 +585,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(router.state.matchedLocation, '/auth/wallet/create');
-      expect(history, isNot(contains('/community')));
+      expect(history, isNot(contains('/chat')));
       expect(history.last, '/auth/wallet/create');
     });
 
@@ -604,7 +604,7 @@ void main() {
       );
 
       expect(router.state.matchedLocation, '/auth/security');
-      expect(history, isNot(contains('/community')));
+      expect(history, isNot(contains('/chat')));
       expect(history, isNot(contains('/auth/wallet/create')));
     });
 
@@ -620,7 +620,7 @@ void main() {
         history: history,
       );
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(history, contains('/splash'));
       for (final step in LoopOnboardingStep.values) {
         expect(history, isNot(contains(LoopRouteManifest.pathFor(step.slug))));
@@ -651,7 +651,7 @@ void main() {
         status: ProfileStatus.active,
       );
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(_mountedScope(tester).read(loopCommunityArrivalProvider), isTrue);
     });
 
@@ -676,7 +676,7 @@ void main() {
       await tester.pump(loopPostAuthProfileReadCeiling);
       await tester.pumpAndSettle();
 
-      expect(router.state.matchedLocation, '/community');
+      expect(router.state.matchedLocation, '/chat');
       expect(
         find.byKey(const ValueKey<String>('profile-availability-banner')),
         findsOneWidget,

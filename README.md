@@ -8,7 +8,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 ## 当前已完成
 
-- 五个固定主入口：Community / Mining / Launch / Market / Wallet；登录后进入 Community，Chat 是 Community 子流程，Profile 从 Community 顶部进入
+- 五个固定主入口：Chat / Square / Meme / Intel / Wallet（聊天 / 广场 / MEME / 情报 / 钱包，决策 0110）；登录后进入 Chat，我（Profile）从聊天页头像进入；旧 Community / Mining / Launch / Market 页面保留为子页面
 - V2 UI Foundation 已开始迁移：Ink / Lime / Chalk / Graphite 视觉 token、五栏浮动导航、Community UI-first 入口和 Mining 真实不可用态。旧 `/home` 与 `/launchpad` 仅保留兼容重定向；路由表已改为只从 93 route manifest 生成（决策 0050/0051），未接入的页面挂真实的“尚未接入”占位，原 103-surface 目录仅作只读历史
 - 93 route manifest 驱动的路由表：Sora / IBM Plex Mono 字体、原型 SVG sprite 与素材、完整设计 Token、Chalk 浮动底栏、非法路由回 `community` 并记录 `LoopRoutingErrorLog`；原 103-surface 目录仅作只读历史（产品优先级 A / B / C 的旧说明不再是交付依据）
 - Privy 身份入口现支持 Email OTP、Google OAuth、iOS-only Apple OAuth，以及外部 EVM 钱包的 SIWE 登录/绑定。它们复用同一个 Privy 0.10.1 实例和单飞身份操作边界；缺少 Mobile App Client ID 时全部保持不可登录，缺少有效 Reown Project ID 时只关闭外部钱包入口。供应商 Dashboard、回跳、签名钱包与真机行为仍未验证
@@ -114,7 +114,7 @@ flutter build web --release
 
 ## 已锁定工程基线
 
-本仓库的目的为：Build Loop, a Flutter iOS/Android app with five primary destinations—Community, Mining, Launch, Market, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video inside Community, and reviewed backend-mediated V2 capabilities.
+本仓库的目的为：Build Loop, a Flutter iOS/Android app with five primary destinations—Chat, Square, Meme, Intel, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video for conversations and community voice rooms, and reviewed backend-mediated V2 capabilities.
 
 - Flutter 3.47.1 / Dart 3.13.1
 - Android API 28–36、AGP 8.13.2、Gradle 8.14、Kotlin 2.3.20、Java 17

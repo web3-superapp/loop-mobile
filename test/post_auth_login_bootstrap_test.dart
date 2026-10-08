@@ -62,7 +62,7 @@ void main() {
         expect(repository.calls, 1);
         expect(tokens.calls, 1);
         expect(
-          find.byKey(const ValueKey<String>('community-screen')),
+          find.byKey(const ValueKey<String>('chat-tab-screen')),
           findsOneWidget,
         );
       },
