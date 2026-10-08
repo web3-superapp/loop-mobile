@@ -164,7 +164,7 @@ void main() {
   });
 
   group('the mining read on the wallet page is retained (decision 0095)', () {
-    testWidgets('a second visit sends nothing; a pull reads again', (
+    testWidgets('a second visit sends nothing; the tag reads the summary', (
       tester,
     ) async {
       final mining = _CountingMining();
@@ -198,23 +198,27 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(mining.assetsCalls, 1);
-      final summaryAfterFirst = mining.summaryCalls;
+      // Decision 0119: the rows no longer carry a per-asset power figure, so
+      // the page reads no mining composition at all. The account's power is
+      // read when the 「产生算力」 tag is opened.
+      expect(mining.assetsCalls, 0);
+      expect(mining.summaryCalls, 0);
+      await tester.tap(_key('wallet-power-tag'));
+      await tester.pumpAndSettle();
+      expect(mining.summaryCalls, 1);
+      await tester.tap(_key('wallet-power-sheet-close'));
+      await tester.pumpAndSettle();
 
-      // Leave the page and come back inside the revisit floor.
+      // Leave the page and come back inside the revisit floor, and open the
+      // note again: the summary is retained, nothing is sent.
       visible.value = false;
       await tester.pumpAndSettle();
       visible.value = true;
       await tester.pumpAndSettle();
-      expect(mining.assetsCalls, 1);
-      expect(mining.summaryCalls, summaryAfterFirst);
-
-      // The page's own pull callback, called the way the indicator calls it.
-      await tester
-          .widget<RefreshIndicator>(_key('loop-page-refresh'))
-          .onRefresh();
+      await tester.tap(_key('wallet-power-tag'));
       await tester.pumpAndSettle();
-      expect(mining.assetsCalls, 2);
+      expect(mining.summaryCalls, 1);
+      expect(mining.assetsCalls, 0);
     });
   });
 

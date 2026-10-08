@@ -974,7 +974,7 @@ void main() {
       );
       expect(skeleton.type, LoopSkeletonType.record);
       expect(
-        find.byKey(const ValueKey<String>('loop-folio-heading-skeleton')),
+        find.byKey(const ValueKey<String>('wallet-total-loading')),
         findsOneWidget,
       );
       expect(find.textContaining('\$'), findsNothing);
@@ -1001,7 +1001,7 @@ void main() {
         findsNothing,
       );
       expect(
-        find.byKey(const ValueKey<String>('loop-folio-heading-skeleton')),
+        find.byKey(const ValueKey<String>('wallet-total-loading')),
         findsNothing,
       );
       expect(find.textContaining('\$'), findsWidgets);

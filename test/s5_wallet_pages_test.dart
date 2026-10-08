@@ -40,48 +40,55 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
+      // Decision 0119: one provenance line under the list; the
+      // confirmations sit in the statement it opens.
       expect(find.textContaining('区块 120,628,164'), findsOneWidget);
-      expect(find.textContaining('15 确认'), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
-      expect(find.textContaining('可动用 6.995'), findsOneWidget);
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('wallet-snapshot-footer')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-provenance-line')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('15 确认'), findsOneWidget);
     });
 
-    testWidgets(
-      'the assets share one grouped card, spendable and power on each row',
-      (tester) async {
-        // User ruling 2026-09-27 on decision 0092: the per-asset tray cards
-        // are withdrawn from this page; the rows go back into one group and
-        // carry 「可动用 · 算力」 on their own second line.
-        await pumpS5Page(
-          tester,
-          const WalletScreen(),
-          wallet: FakeWalletReadGateway(),
-        );
+    testWidgets('the assets are unboxed rows: amount over value and 24h', (
+      tester,
+    ) async {
+      // Decision 0119: no wrapping card; the row is Logo 40 · SYMBOL over
+      // name · amount over ≈\$x and the 24h move in rise / fall.
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(),
+      );
 
-        final row = find.byKey(
-          const ValueKey<String>('wallet-balance-$s5NativeAssetId'),
-        );
-        await scrollToS5Section(tester, row);
-        expect(
-          find.ancestor(of: row, matching: find.byType(LoopRecordGroup)),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(
-            const ValueKey<String>('wallet-balance-tray-$s5NativeAssetId'),
-          ),
-          findsNothing,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('loop-tray-toggle')),
-          findsNothing,
-        );
-        expect(
-          tester.widget<LoopRecordRow>(row).subtitle,
-          allOf(contains('可动用 6.995'), contains('算力 ')),
-        );
-      },
-    );
+      final row = find.byKey(
+        const ValueKey<String>('wallet-balance-$s5NativeAssetId'),
+      );
+      await scrollToS5Section(tester, row);
+      expect(
+        find.ancestor(of: row, matching: find.byType(LoopRecordGroup)),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('wallet-balance-tray-$s5NativeAssetId'),
+        ),
+        findsNothing,
+      );
+      final value = tester.widget<Text>(
+        find.byKey(
+          const ValueKey<String>('wallet-balance-value-$s5NativeAssetId'),
+        ),
+      );
+      expect(value.textSpan!.toPlainText(), '≈\$5,231.73 · ▲5%');
+      final change = (value.textSpan! as TextSpan).children!.last as TextSpan;
+      expect(change.style!.color, LoopColors.rise);
+    });
 
     testWidgets('the gas reserve comes from the server, never a constant', (
       tester,
@@ -108,7 +115,15 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('手续费保留 0.005 BNB'), findsOneWidget);
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('wallet-snapshot-footer')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-provenance-line')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('0.005 BNB'), findsOneWidget);
       // The reserve is the server's figure; the configuration version behind
       // it is a backend identifier and never reaches the footer.
       expect(find.textContaining('walletGasReserveV1'), findsNothing);
@@ -140,13 +155,24 @@ void main() {
                 priceSource: LoopFactSource.dexscreener,
                 asOf: DateTime.utc(2026, 9, 8, 7),
                 isSpendable: false,
+                change24h: const LoopNetWorthChangeUnavailable(
+                  'PRICE_CHANGE_PARTIAL',
+                ),
               ),
             ),
           ),
         ),
       );
 
-      expect(find.text('读不到'), findsOneWidget);
+      // Decision 0119: the unread row keeps its logo and ticker and says so
+      // in one weak line, with the server's reason — never a zero.
+      expect(
+        find.byKey(
+          const ValueKey<String>('wallet-balance-unavailable-$s5NativeAssetId'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('余额读不到'), findsWidgets);
       expect(find.textContaining('链上节点暂时连不上，与你的网络无关'), findsWidgets);
       expect(find.text('0'), findsNothing);
     });
@@ -158,10 +184,10 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      expect(find.text('以 WBNB 计价'), findsWidgets);
+      expect(find.textContaining('以 WBNB 计价'), findsWidgets);
     });
 
-    testWidgets('the security rows never state a count', (tester) async {
+    testWidgets('the entry group never states a count', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -170,21 +196,25 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('wallet-approvals-entry')),
+        find.byKey(const ValueKey<String>('wallet-settings-entry')),
       );
-      // The prototype's four rows, in its order, none of them stating a figure
-      // this page never read.
+      // Decision 0119: 跨链 · 授权与网络 · 安全中心 · 设置, none of them
+      // stating a figure this page never read, none in developer words.
+      expect(find.text('跨链'), findsOneWidget);
+      expect(find.text('授权与网络'), findsOneWidget);
       expect(find.text('安全中心'), findsOneWidget);
-      expect(find.text('DApp 核对'), findsOneWidget);
-      expect(find.text('授权盘点'), findsOneWidget);
-      expect(find.text('网络与 RPC'), findsOneWidget);
+      expect(find.text('设置'), findsOneWidget);
+      expect(find.textContaining('approve('), findsNothing);
+      expect(find.textContaining('allowance()'), findsNothing);
       expect(find.textContaining('8 个有效授权'), findsNothing);
       expect(find.textContaining('4 条链已启用'), findsNothing);
+      // The English eyebrows are gone (v3 需求 §6.2).
+      expect(find.text('WALLET LEDGER'), findsNothing);
+      expect(find.text('WALLET ASSETS'), findsNothing);
+      expect(find.text('SECURITY & CONNECTIONS'), findsNothing);
     });
 
-    testWidgets('the security rows open their own manifest slugs', (
-      tester,
-    ) async {
+    testWidgets('the entries open their own manifest slugs', (tester) async {
       final opened = <String>[];
       await pumpS5Page(
         tester,
@@ -192,28 +222,54 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      for (final entry in const <(String, String)>[
-        ('wallet-security-entry', '/profile/security'),
-        ('wallet-dapp-entry', '/wallet/dapp'),
-        ('wallet-approvals-entry', '/wallet/approvals'),
-        ('wallet-networks-entry', '/wallet/networks'),
+      for (final entry in const <String>[
+        'wallet-bridge-entry',
+        'wallet-security-entry',
+        'wallet-settings-entry',
       ]) {
-        await scrollToS5Section(tester, find.byKey(ValueKey<String>(entry.$1)));
-        await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
+        await scrollToS5Section(tester, find.byKey(ValueKey<String>(entry)));
+        await tester.tap(find.byKey(ValueKey<String>(entry)));
         await tester.pumpAndSettle();
+      }
+      // 授权与网络 is a second-level list of the three pages it gathers.
+      for (final entry in const <String>[
+        'wallet-approvals-entry',
+        'wallet-networks-entry',
+        'wallet-dapp-entry',
+      ]) {
+        await scrollToS5Section(
+          tester,
+          find.byKey(const ValueKey<String>('wallet-connections-entry')),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('wallet-connections-entry')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey<String>('wallet-connections-sheet')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(ValueKey<String>(entry)));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey<String>('wallet-connections-sheet')),
+          findsNothing,
+        );
       }
 
       // Each entry opens its own page, which owns its unavailable state; this
-      // page never speaks for the four destinations.
+      // page never speaks for the destinations.
       expect(opened, <String>[
+        '/wallet/bridge',
         '/profile/security',
-        '/wallet/dapp',
+        '/profile/settings',
         '/wallet/approvals',
         '/wallet/networks',
+        '/wallet/dapp',
       ]);
     });
 
-    testWidgets('the prototype blocks are laid out in the prototype order', (
+    testWidgets('the blocks are laid out in the decision 0119 order', (
       tester,
     ) async {
       await pumpS5Page(
@@ -222,16 +278,17 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      // Pay + 兑换, then 发送 / 接收 / 跨链, then the holdings power strip,
-      // then the assets. The order is the page's whole argument, so it is
-      // pinned rather than left to a screenshot.
+      // 总资产, then the four keys in one row, then 资产 with its power tag
+      // and the rows, then the entry group. The order is the page's whole
+      // argument, so it is pinned rather than left to a screenshot.
       final order = <Key>[
-        const ValueKey<String>('wallet-pay-entry'),
-        const ValueKey<String>('wallet-swap-entry'),
-        const ValueKey<String>('wallet-send-entry'),
+        const ValueKey<String>('wallet-total-header'),
         const ValueKey<String>('wallet-receive-entry'),
+        const ValueKey<String>('wallet-power-tag'),
+        const ValueKey<String>('wallet-balance-$s5NativeAssetId'),
+        const ValueKey<String>('wallet-snapshot-footer'),
         const ValueKey<String>('wallet-bridge-entry'),
-        const ValueKey<String>('wallet-power-hint'),
+        const ValueKey<String>('wallet-settings-entry'),
       ];
       var previous = double.negativeInfinity;
       for (final key in order) {
@@ -245,38 +302,101 @@ void main() {
         );
         previous = top;
       }
+      // The four keys share one row, equally wide.
+      final keys = <String>[
+        'wallet-receive-entry',
+        'wallet-send-entry',
+        'wallet-swap-entry',
+        'wallet-pay-entry',
+      ];
+      final tops = keys
+          .map((key) => tester.getTopLeft(find.byKey(ValueKey<String>(key))).dy)
+          .toSet();
+      expect(tops, hasLength(1));
+      final widths = keys
+          .map((key) => tester.getSize(find.byKey(ValueKey<String>(key))).width)
+          .toSet();
+      expect(widths, hasLength(1));
+      var left = double.negativeInfinity;
+      for (final key in keys) {
+        final x = tester.getTopLeft(find.byKey(ValueKey<String>(key))).dx;
+        expect(x, greaterThan(left), reason: '$key is out of order');
+        left = x;
+      }
     });
 
-    testWidgets('a holding carries the mining power the snapshot read', (
-      tester,
-    ) async {
+    testWidgets('the power tag opens the mining note', (tester) async {
+      final opened = <String>[];
       await pumpS5Page(
         tester,
-        const WalletScreen(),
+        WalletScreen(onNavigate: opened.add),
         wallet: FakeWalletReadGateway(),
       );
 
-      // Mining is not wired in this harness, so the snapshot has no row for
-      // the holding: the slot renders a dash and never a zero.
-      expect(find.textContaining('算力 —'), findsWidgets);
-      expect(find.textContaining('算力 0'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey<String>('wallet-power-tag')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('wallet-power-sheet')),
+        findsOneWidget,
+      );
+      // Mining is not wired in this harness: the figure is a dash, never 0.
+      expect(find.textContaining('— 算力'), findsOneWidget);
+      expect(find.textContaining('0 算力'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey<String>('wallet-power-hint')));
+      await tester.pumpAndSettle();
+      expect(opened, <String>['/mining']);
     });
 
-    testWidgets('an unavailable chain capability stops the page', (
+    testWidgets('a closed chain node is one inline line, not a page block', (
       tester,
     ) async {
+      final wallet = FakeWalletReadGateway();
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: wallet,
+        meta: s5MetaSnapshot(bscRead: LoopV2CapabilityAvailability.unavailable),
+      );
+
+      // Decision 0119: the dev RPC being down shuts the balances, not the
+      // page. The keys and the entry group still stand.
+      expect(
+        find.byKey(const ValueKey<String>('wallet-capability-block')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallet-balances-state-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallet-receive-entry')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('\$'), findsNothing);
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('wallet-settings-entry')),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallet-settings-entry')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a closed wallet module still stops the page', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
         wallet: FakeWalletReadGateway(),
-        meta: s5MetaSnapshot(bscRead: LoopV2CapabilityAvailability.unavailable),
+        meta: s5MetaSnapshot(
+          walletRead: LoopV2CapabilityAvailability.unavailable,
+        ),
       );
 
       expect(
         find.byKey(const ValueKey<String>('wallet-capability-block')),
         findsOneWidget,
       );
-      expect(find.textContaining('链上数据暂时读不到'), findsOneWidget);
     });
 
     testWidgets('a disconnected provider is an error, not an empty wallet', (
@@ -312,7 +432,7 @@ void main() {
 
       expect(find.text('这个账号还没有钱包'), findsOneWidget);
       expect(find.textContaining('尚未读取成功'), findsNothing);
-      expect(find.textContaining('创建后余额会出现在这里'), findsOneWidget);
+      expect(find.text('还没有钱包'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
         findsOneWidget,
@@ -476,11 +596,14 @@ void main() {
       );
 
       expect(find.text('\$6,352.82'), findsWidgets);
+      // Decision 0119: the statement sits behind the (i) beside 总资产.
+      await tester.tap(find.byKey(const ValueKey<String>('networth-info')));
+      await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey<String>('wallet-networth-not-spendable')),
+        find.byKey(const ValueKey<String>('networth-not-spendable')),
         findsOneWidget,
       );
-      expect(find.text('不是可用余额'), findsOneWidget);
+      expect(find.textContaining('不是可用余额'), findsOneWidget);
     });
 
     testWidgets('a partial total says how many rows have no price', (
@@ -501,15 +624,21 @@ void main() {
                 priceSource: LoopFactSource.dexscreener,
                 asOf: DateTime.utc(2026, 9, 8, 7),
                 isSpendable: false,
+                change24h: const LoopNetWorthChangeUnavailable(
+                  'PRICE_CHANGE_PARTIAL',
+                ),
               ),
             ),
           ),
         ),
       );
 
-      expect(find.text('部分估值 · 2 项无价格'), findsOneWidget);
-      expect(find.textContaining('只是已估值资产的合计，不是总资产'), findsOneWidget);
-      expect(find.text('数据可能过期'), findsWidgets);
+      expect(find.textContaining('2 项资产暂无价格，未计入'), findsOneWidget);
+      expect(find.textContaining('数据可能过期'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey<String>('networth-change24h-unavailable')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the trend chart is unavailable, not an invented series', (
@@ -525,7 +654,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('networth-trend-unavailable')),
       );
-      expect(find.textContaining('净值走势与 24h 涨跌'), findsOneWidget);
+      expect(find.textContaining('净值走势还没有数据来源'), findsOneWidget);
     });
 
     testWidgets('an unavailable net worth states its reason', (tester) async {
@@ -543,8 +672,12 @@ void main() {
         ),
       );
 
-      expect(find.text('净值不可用'), findsWidgets);
+      expect(find.text('暂不可用'), findsWidgets);
       expect(find.textContaining('暂时读不到价格'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey<String>('networth-change24h')),
+        findsNothing,
+      );
     });
 
     testWidgets('a walletless account is offered a wallet, not a skeleton', (
@@ -1090,11 +1223,12 @@ void main() {
         wallet: wallet,
       );
 
+      // Decision 0119 (v3 需求 6.2 · 4): there is no 加载更多 button. The end
+      // of the tape coming into view asks for the next cursor by itself, and
+      // the same cursor answered again is never asked twice.
+      expect(find.text('加载更多'), findsNothing);
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('tx-history-load-more')),
-      );
-      await tester.tap(
         find.byKey(const ValueKey<String>('tx-history-load-more')),
       );
       await tester.pumpAndSettle();

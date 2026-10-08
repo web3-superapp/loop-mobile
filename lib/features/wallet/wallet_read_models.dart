@@ -210,6 +210,7 @@ final class LoopValuationAvailable extends LoopValuation {
     required this.proxyAsset,
     required this.priceUsd,
     required this.valueUsd,
+    this.change24hPct,
   });
 
   final LoopFactSource priceSource;
@@ -224,6 +225,11 @@ final class LoopValuationAvailable extends LoopValuation {
   final String? proxyAsset;
   final Decimal priceUsd;
   final Decimal valueUsd;
+
+  /// Decision 0100 (loop-api): the same pair's DexScreener `priceChange.h24`,
+  /// in percent points (`-2.5` is -2.5 %). `null` when the Provider did not
+  /// report it — that is "not read", never "did not move".
+  final Decimal? change24hPct;
 
   bool get isProxied => quality == LoopFactQuality.proxied;
 }
@@ -322,6 +328,7 @@ final class LoopNetWorthValued extends LoopNetWorth {
     required this.priceSource,
     required this.asOf,
     required this.isSpendable,
+    required this.change24h,
   });
 
   /// `partial` means some rows could not be valued: [valueUsd] is only the sum
@@ -336,6 +343,37 @@ final class LoopNetWorthValued extends LoopNetWorth {
 
   /// Always false on the wire; retained so the assertion is visible in tests.
   final bool isSpendable;
+
+  /// The 24h movement of the total (loop-api decision 0100). It is either the
+  /// server's whole answer or the server's reason for giving none: the backend
+  /// never sends a sum over only the rows that had a 24h figure.
+  final LoopNetWorthChange change24h;
+}
+
+/// `netWorth.change24h` — the two states a valued net worth can carry.
+///
+/// The third state of the wire, "`netWorth` itself is unavailable", has no
+/// change at all and is [LoopNetWorthUnavailable].
+sealed class LoopNetWorthChange {
+  const LoopNetWorthChange();
+}
+
+/// `{ usd, pct }`: the signed USD change (6 places) and the signed change in
+/// percent points (4 places), both derived by the server from the same price
+/// read as the rows.
+final class LoopNetWorthChangeAvailable extends LoopNetWorthChange {
+  const LoopNetWorthChangeAvailable({required this.usd, required this.pct});
+
+  final Decimal usd;
+  final Decimal pct;
+}
+
+/// `change24h: null` with `change24hUnavailable.reasonCode` — some valued row
+/// had no 24h figure (`PRICE_CHANGE_PARTIAL`). It is never shown as zero.
+final class LoopNetWorthChangeUnavailable extends LoopNetWorthChange {
+  const LoopNetWorthChangeUnavailable(this.reasonCode);
+
+  final String reasonCode;
 }
 
 final class LoopNetWorthUnavailable extends LoopNetWorth {

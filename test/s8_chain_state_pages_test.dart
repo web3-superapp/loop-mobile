@@ -1017,13 +1017,8 @@ void main() {
           wallet: wallet,
         );
 
-        await scrollToS5Section(
-          tester,
-          find.byKey(const ValueKey<String>('tx-history-load-more')),
-        );
-        await tester.tap(
-          find.byKey(const ValueKey<String>('tx-history-load-more')),
-        );
+        // Decision 0119: the end of the tape asks for the next page by
+        // itself; there is no button to press.
         await tester.pumpAndSettle();
 
         expect(wallet.activityCursors, <String?>[null, s5Cursor]);
