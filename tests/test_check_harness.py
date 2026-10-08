@@ -201,6 +201,7 @@ FRIEND_FRONTEND_FIXTURE_FILES = (
     "lib/features/chat/group_alias/group_alias_models.dart",
     "lib/features/chat/group_alias/group_alias_screen.dart",
     "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
+    "lib/features/chat/group_alias/group_member_directory.dart",
     "lib/features/profile/social_privacy/social_privacy_controller.dart",
     "lib/features/profile/social_privacy/social_privacy_gateway.dart",
     "lib/features/profile/social_privacy/social_privacy_models.dart",
@@ -1267,7 +1268,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_route_manifest_contract(root)
 
         self.assertTrue(
-            any("97 manifest slugs in manifest order" in error for error in result),
+            any("101 manifest slugs in manifest order" in error for error in result),
             msg=f"expected manifest slug drift guard: {result}",
         )
 
