@@ -88,17 +88,18 @@ void main() {
       expect(_navigated, contains('blocklist'));
     });
 
-    testWidgets('a preference states itself as a pill, never as a value', (
+    // Decision 0126 supersedes the pill: a flat settings page states a
+    // preference as a switch, and still never as a value.
+    testWidgets('a preference states itself as a switch, never as a value', (
       tester,
     ) async {
       await _pumpPrivacy(tester, size: _tall);
 
       final row = find.byKey(const ValueKey<String>('privacy-public-holdings'));
       expect(
-        find.descendant(of: row, matching: find.byType(LoopBadge)),
+        find.descendant(of: row, matching: find.byType(Switch)),
         findsOneWidget,
       );
-      expect(find.byType(Switch), findsNothing);
     });
   });
 
@@ -143,7 +144,8 @@ void main() {
         size: _tall,
       );
 
-      expect(find.byType(Switch), findsNothing);
+      // Decision 0126: one switch per category, nothing else on the row.
+      expect(find.byType(Switch), findsNWidgets(10));
       expect(
         find.byKey(const ValueKey<String>('loop-page-primary')),
         findsNothing,
@@ -159,8 +161,13 @@ void main() {
           ValueKey<String>('notification-category-${category.wireName}'),
         );
         expect(
-          find.descendant(of: row, matching: find.byType(LoopBadge)),
+          find.descendant(of: row, matching: find.byType(Switch)),
           findsOneWidget,
+          reason: category.wireName,
+        );
+        expect(
+          find.descendant(of: row, matching: find.byType(LoopBadge)),
+          findsNothing,
           reason: category.wireName,
         );
       }
@@ -182,14 +189,19 @@ void main() {
       );
       expect(_labels(tester), <String>['联系我们', '常见问题', '提交工单', '我的工单']);
       // Five bundled answers and the one human entry point.
-      expect(find.byType(LoopDisclosure), findsNWidgets(6));
+      expect(find.byType(LoopDisclosure), findsNWidgets(5));
       expect(
         find.byKey(const ValueKey<String>('support-open-community')),
         findsOneWidget,
       );
-      // The warning closes the page in the prototype; the disclosure is last.
+      // Decision 0126: the warning closes the page; the policy card and its
+      // English eyebrow are gone, the reply window is the footnote line.
       expect(
         find.byKey(const ValueKey<String>('support-policy-disclosure')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('support-scam-notice')),
         findsOneWidget,
       );
     });
@@ -206,11 +218,12 @@ void main() {
         size: _tall,
       );
 
-      final folio = tester.widget<LoopFolioPrimary>(
+      // Decision 0126: the posture card restated the device count the 设备
+      // row carries; the flat page opens on 验证.
+      expect(
         find.byKey(const ValueKey<String>('security-folio')),
+        findsNothing,
       );
-      expect(folio.variant, LoopFolioVariant.chalk);
-      expect(folio.ring, isFalse);
       expect(_labels(tester), <String>[
         '验证',
         '恢复',

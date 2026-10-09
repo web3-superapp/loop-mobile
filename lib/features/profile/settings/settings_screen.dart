@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart'
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `settings` · the account resource plus the device-local display switch.
@@ -76,201 +77,220 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
         ? '${loopAppLockFactorText(appLock.capability!)} · 这次有效，重开 App 后不会记得'
         : loopAppLockFactorText(appLock.capability!);
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('settings-screen'),
-      archetype: LoopPageArchetype.action,
-      title: '设置',
-      onBack: widget.onBack,
-      // The prototype opens straight on 通用. A hero here restated the page
-      // title as its own heading — 「设置」 above 「设置」 (audit 2026-09-21
-      // §D+ #13).
-      sections: <Widget>[
-        const LoopLabel('通用'),
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('settings-capability-block'),
-            label: '账号设置当前不可用',
-            reasonCode: capability.reasonCode ?? 'SETTINGS_RUNTIME_UNAVAILABLE',
-          )
-        else if (settings == null)
-          LoopChainStateBlock(
-            keyPrefix: 'settings',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '还没有账号设置',
-            onRetry: () => unawaited(
-              ref.read(accountSettingsControllerProvider.notifier).reload(),
+    // The one implemented display switch; the row and its switch share it.
+    void toggleReduceMotion() => ref
+        .read(loopDisplayPreferencesProvider.notifier)
+        .setReduceMotion(!preferences.reduceMotion);
+
+    // Decision 0126: flat sections, switches for the two device toggles.
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('settings-screen'),
+        archetype: LoopPageArchetype.action,
+        title: '设置',
+        onBack: widget.onBack,
+        // The prototype opens straight on 通用. A hero here restated the page
+        // title as its own heading — 「设置」 above 「设置」 (audit 2026-09-21
+        // §D+ #13).
+        sections: <Widget>[
+          const LoopLabel('通用'),
+          if (blocked)
+            LoopUnavailableCard(
+              key: const ValueKey<String>('settings-capability-block'),
+              label: '账号设置当前不可用',
+              reasonCode:
+                  capability.reasonCode ?? 'SETTINGS_RUNTIME_UNAVAILABLE',
+            )
+          else if (settings == null)
+            LoopChainStateBlock(
+              keyPrefix: 'settings',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '还没有账号设置',
+              onRetry: () => unawaited(
+                ref.read(accountSettingsControllerProvider.notifier).reload(),
+              ),
             ),
-          ),
-        // `.row`: title, the current value in the figure column, chevron. The
-        // 「为什么不能改」 sentence each of these carried turned a one-line
-        // state list into a two-line functional catalogue and made the page a
-        // screen longer (audit 2026-09-21 §D+ #11, §J.13).
-        //
-        // 主题 and 减少动效 belong to 通用 in the prototype, and neither reads
-        // the account resource: they stay in the card whatever the account
-        // half of the page answered.
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            if (settings != null) ...<LoopRecordRow>[
+          // `.row`: title, the current value in the figure column, chevron. The
+          // 「为什么不能改」 sentence each of these carried turned a one-line
+          // state list into a two-line functional catalogue and made the page a
+          // screen longer (audit 2026-09-21 §D+ #11, §J.13).
+          //
+          // 主题 and 减少动效 belong to 通用 in the prototype, and neither reads
+          // the account resource: they stay in the card whatever the account
+          // half of the page answered.
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              if (settings != null) ...<LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('settings-language'),
+                  title: '语言',
+                  trailing: settings.values.languageLabel,
+                  position: LoopRowPosition.first,
+                ),
+                LoopRecordRow(
+                  key: const ValueKey<String>('settings-display-currency'),
+                  title: '货币单位',
+                  trailing: settings.values.displayCurrency,
+                ),
+              ],
               LoopRecordRow(
-                key: const ValueKey<String>('settings-language'),
-                title: '语言',
-                trailing: settings.values.languageLabel,
+                key: const ValueKey<String>('settings-theme'),
+                title: '主题',
+                trailing: '深色',
+                position: settings == null
+                    ? LoopRowPosition.first
+                    : LoopRowPosition.middle,
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-reduce-motion'),
+                title: '减少动效',
+                // The storage line is only news when it is not the usual one.
+                subtitle:
+                    preferences.persistence ==
+                        LoopDisplayPreferencesPersistence.available
+                    ? null
+                    : persistenceDetail,
+                trailingBadge: LoopFlatSwitch(
+                  value: preferences.reduceMotion,
+                  onChanged: toggleReduceMotion,
+                ),
+                chevron: false,
+                onTap: toggleReduceMotion,
+                semanticLabel:
+                    '减少动效，${preferences.reduceMotion ? '已开启' : '已关闭'}',
+              ),
+              // The device-local lock belongs beside 减少动效: it is this
+              // installation's choice, it reads no account resource, and the
+              // account half of the page being unavailable has nothing to do
+              // with it. The prototype's three groups stay three.
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-app-lock'),
+                title: '应用锁',
+                subtitle: appLockDetail,
+                subtitleMaxLines: 2,
+                trailingBadge: appLock.isAvailable && !appLock.busy
+                    ? LoopFlatSwitch(
+                        value: appLock.enabled,
+                        onChanged: () => unawaited(
+                          appLock.enabled
+                              ? ref.read(loopAppLockProvider.notifier).disable()
+                              : ref.read(loopAppLockProvider.notifier).enable(),
+                        ),
+                      )
+                    : LoopBadge(
+                        appLockLabel,
+                        kind: appLock.enabled
+                            ? LoopBadgeKind.up
+                            : LoopBadgeKind.mute,
+                      ),
+                chevron: false,
+                // Both directions run the system's own prompt first: a lock
+                // that could be switched off without it would not be a lock.
+                onTap: appLock.isAvailable && !appLock.busy
+                    ? () => unawaited(
+                        appLock.enabled
+                            ? ref.read(loopAppLockProvider.notifier).disable()
+                            : ref.read(loopAppLockProvider.notifier).enable(),
+                      )
+                    : null,
+                semanticLabel: appLock.isAvailable
+                    ? '应用锁，$appLockLabel，点按后验证身份可切换'
+                    : '应用锁，不可用：$appLockDetail',
+                position: LoopRowPosition.last,
+              ),
+            ],
+          ),
+          if (preferences.persistence ==
+              LoopDisplayPreferencesPersistence.unavailable)
+            LoopNotice(
+              key: const ValueKey<String>(
+                'settings-display-storage-unavailable',
+              ),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '本机保存不可用',
+              body: '减少动效仍会在本次运行内生效。重试只会再读一次本机存储，不会使用账号或后端。',
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              trailing: LoopButton(
+                key: const ValueKey<String>('settings-retry-display-storage'),
+                label: '重试',
+                onPressed: ref
+                    .read(loopDisplayPreferencesProvider.notifier)
+                    .retryPersistence,
+              ),
+            ),
+          const LoopLabel('账户'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              // Four destinations, no second line: the prototype's account rows
+              // carry a state value or nothing at all, and this page cannot
+              // read any of those four states without a second request each.
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-open-privacy'),
+                title: '隐私中心',
+                onTap: () => widget.onNavigate('privacy'),
                 position: LoopRowPosition.first,
               ),
               LoopRecordRow(
-                key: const ValueKey<String>('settings-display-currency'),
-                title: '货币单位',
-                trailing: settings.values.displayCurrency,
+                key: const ValueKey<String>('settings-open-security'),
+                title: '安全中心',
+                onTap: () => widget.onNavigate('security'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-open-notifications'),
+                title: '通知',
+                onTap: () => widget.onNavigate('notif-settings'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-open-networks'),
+                title: '网络与 RPC',
+                onTap: () => widget.onNavigate('networks'),
+                position: LoopRowPosition.last,
               ),
             ],
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-theme'),
-              title: '主题',
-              trailing: '深色',
-              position: settings == null
-                  ? LoopRowPosition.first
-                  : LoopRowPosition.middle,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-reduce-motion'),
-              title: '减少动效',
-              subtitle: persistenceDetail,
-              trailingBadge: LoopBadge(
-                preferences.reduceMotion ? '已开启' : '已关闭',
-                kind: preferences.reduceMotion
-                    ? LoopBadgeKind.up
-                    : LoopBadgeKind.mute,
+          ),
+          const LoopLabel('关于'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-open-about'),
+                title: '关于与法务',
+                onTap: () => widget.onNavigate('about'),
+                position: LoopRowPosition.first,
               ),
-              onTap: () => ref
-                  .read(loopDisplayPreferencesProvider.notifier)
-                  .setReduceMotion(!preferences.reduceMotion),
-              semanticLabel: '减少动效，${preferences.reduceMotion ? '已开启' : '已关闭'}',
-            ),
-            // The device-local lock belongs beside 减少动效: it is this
-            // installation's choice, it reads no account resource, and the
-            // account half of the page being unavailable has nothing to do
-            // with it. The prototype's three groups stay three.
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-app-lock'),
-              title: '应用锁',
-              subtitle: appLockDetail,
-              subtitleMaxLines: 2,
-              trailingBadge: LoopBadge(
-                appLockLabel,
-                kind: appLock.enabled ? LoopBadgeKind.up : LoopBadgeKind.mute,
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-open-support'),
+                title: '帮助与客服',
+                onTap: () => widget.onNavigate('support'),
+                position: LoopRowPosition.last,
               ),
-              // Both directions run the system's own prompt first: a lock
-              // that could be switched off without it would not be a lock.
-              onTap: appLock.isAvailable && !appLock.busy
-                  ? () => unawaited(
-                      appLock.enabled
-                          ? ref.read(loopAppLockProvider.notifier).disable()
-                          : ref.read(loopAppLockProvider.notifier).enable(),
-                    )
-                  : null,
-              semanticLabel: appLock.isAvailable
-                  ? '应用锁，$appLockLabel，点按后验证身份可切换'
-                  : '应用锁，不可用：$appLockDetail',
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
-        if (preferences.persistence ==
-            LoopDisplayPreferencesPersistence.unavailable)
-          LoopNotice(
-            key: const ValueKey<String>('settings-display-storage-unavailable'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '本机保存不可用',
-            body: '减少动效仍会在本次运行内生效。重试只会再读一次本机存储，不会使用账号或后端。',
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            trailing: LoopButton(
-              key: const ValueKey<String>('settings-retry-display-storage'),
-              label: '重试',
-              onPressed: ref
-                  .read(loopDisplayPreferencesProvider.notifier)
-                  .retryPersistence,
-            ),
+            ],
           ),
-        const LoopLabel('账户'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            // Four destinations, no second line: the prototype's account rows
-            // carry a state value or nothing at all, and this page cannot
-            // read any of those four states without a second request each.
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-open-privacy'),
-              title: '隐私中心',
-              onTap: () => widget.onNavigate('privacy'),
-              position: LoopRowPosition.first,
+          if (settings != null)
+            LoopProvenanceFooter(
+              key: const ValueKey<String>('settings-version'),
+              // The CAS version is how the client keeps two devices from
+              // overwriting each other; it is not a fact about the account, and
+              // 「尚未写入过」 named a row in a table rather than anything the
+              // reader did or did not do.
+              text: settings.updatedAt == null
+                  ? '当前使用默认设置'
+                  : '更新于 ${loopRelativeTime(settings.updatedAt!)}',
             ),
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-open-security'),
-              title: '安全中心',
-              onTap: () => widget.onNavigate('security'),
+          if (widget.onSignOut != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              child: LoopButton(
+                key: const ValueKey<String>('settings-sign-out'),
+                label: '退出登录',
+                block: true,
+                onPressed: () => unawaited(widget.onSignOut!()),
+              ),
             ),
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-open-notifications'),
-              title: '通知',
-              onTap: () => widget.onNavigate('notif-settings'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-open-networks'),
-              title: '网络与 RPC',
-              onTap: () => widget.onNavigate('networks'),
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
-        const LoopLabel('关于'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-open-about'),
-              title: '关于与法务',
-              onTap: () => widget.onNavigate('about'),
-              position: LoopRowPosition.first,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('settings-open-support'),
-              title: '帮助与客服',
-              onTap: () => widget.onNavigate('support'),
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
-        if (settings != null)
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('settings-version'),
-            // The CAS version is how the client keeps two devices from
-            // overwriting each other; it is not a fact about the account, and
-            // 「尚未写入过」 named a row in a table rather than anything the
-            // reader did or did not do.
-            text: settings.updatedAt == null
-                ? '当前使用默认设置'
-                : '更新于 ${loopRelativeTime(settings.updatedAt!)}',
-          ),
-        const LoopNotice(
-          key: ValueKey<String>('settings-data-usage-absent'),
-          icon: 'info',
-          title: '没有"数据用量"',
-          body: '读不到流量统计，与其显示一个编造的数字，不如不显示。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
-        ),
-        if (widget.onSignOut != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: LoopButton(
-              key: const ValueKey<String>('settings-sign-out'),
-              label: '退出登录',
-              block: true,
-              onPressed: () => unawaited(widget.onSignOut!()),
-            ),
-          ),
-        const SizedBox(height: 20),
-      ],
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 }

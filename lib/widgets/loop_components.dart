@@ -5,6 +5,7 @@ import 'dart:ui' show PointMode;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 
@@ -100,6 +101,9 @@ class LoopTopbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Decision 0126: a flat second-level page states its title once, at 20
+    // bold on one line, beside the back control.
+    final flat = LoopFlat.of(context);
     final horizontal = dense ? 12.0 : LoopSpacing.page;
     final gap = dense ? 5.0 : 6.0;
     return Padding(
@@ -147,9 +151,20 @@ class LoopTopbar extends StatelessWidget {
                         // all fit, and the subtitle is the line that carries
                         // the room's own state, so the title gives up its
                         // second line rather than the bar overflowing.
-                        maxLines: subtitle == null ? titleMaxLines : 1,
+                        maxLines: flat
+                            ? 1
+                            : subtitle == null
+                            ? titleMaxLines
+                            : 1,
                         overflow: TextOverflow.ellipsis,
-                        style: dense
+                        style: flat
+                            ? (LoopFlat.stepOf(context)
+                                  ? LoopTypography.heading(
+                                      24,
+                                      weight: FontWeight.w700,
+                                    )
+                                  : loopFlatTitleStyle())
+                            : dense
                             ? theme.textTheme.headlineSmall
                             : theme.textTheme.headlineLarge,
                       ),
@@ -304,6 +319,36 @@ class LoopLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Decision 0126: inside a flat page the label is the OKX section title —
+    // 22 bold in the page's own words, 24 above it.
+    if (LoopFlat.of(context)) {
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          tight
+              ? 12
+              : followsLabel
+              ? 16
+              : LoopSpacing.x6,
+          LoopSpacing.page,
+          4,
+        ),
+        child: Semantics(
+          header: true,
+          // Inside an unstretched Column a bare Text would centre itself.
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 44),
+            alignment: AlignmentDirectional.centerStart,
+            // A tight label sits inside a block (a disclosure, a sheet), where
+            // a 22 title would outweigh the page's own sections.
+            child: Text(
+              text,
+              style: tight ? LoopTypography.title(15) : loopFlatSectionStyle(),
+            ),
+          ),
+        ),
+      );
+    }
     final top = tight
         ? 14.0
         : followsLabel
@@ -1193,10 +1238,20 @@ class LoopRecordRow extends StatelessWidget {
     this.subtitleMaxLines = 1,
     this.selected = false,
     this.chevron = true,
+    this.trailingColor,
+    this.trailingStrong = false,
   });
 
   final Widget? leading;
   final String title;
+
+  /// Paints [trailing] in a colour of its own — an amount received in `rise`,
+  /// sent in `fall` (decision 0126 · 交易记录).
+  final Color? trailingColor;
+
+  /// [trailing] is the row's figure (an amount), drawn at 16 semibold in a
+  /// flat page instead of the 14 grey value.
+  final bool trailingStrong;
   final String? subtitle;
 
   /// The secondary line when part of it carries its own voice.
@@ -1274,6 +1329,7 @@ class LoopRecordRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (LoopFlat.of(context)) return _buildFlat(context);
     final theme = Theme.of(context);
     final topRadius =
         position == LoopRowPosition.first || position == LoopRowPosition.single;
@@ -1340,7 +1396,13 @@ class LoopRecordRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 if (trailing != null)
-                  Text(trailing!, style: LoopTypography.figure(13)),
+                  Text(
+                    trailing!,
+                    style: LoopTypography.figure(
+                      13,
+                      color: trailingColor ?? LoopColors.chalk,
+                    ),
+                  ),
                 if (trailingCaption != null)
                   Text(
                     trailingCaption!,
@@ -1437,6 +1499,137 @@ class LoopRecordRow extends StatelessWidget {
   }
 }
 
+/// The OKX entry row (decision 0126): no ground, no separator, 56 tall; a
+/// 20 glyph, a 16 title, a 13 grey second line, a 14 grey value and a
+/// chevron. A chosen row carries a Lime check instead of a wash.
+extension on LoopRecordRow {
+  Widget _buildFlat(BuildContext context) {
+    final content = Container(
+      constraints: const BoxConstraints(minHeight: LoopFlat.rowHeight),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        8,
+      ),
+      child: Row(
+        children: <Widget>[
+          if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.title(16),
+                ),
+                if (subtitleSpans != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text.rich(
+                      TextSpan(children: subtitleSpans),
+                      maxLines: subtitleMaxLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.body(13, color: LoopColors.text2),
+                    ),
+                  )
+                else if (subtitle != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      subtitle!,
+                      maxLines: subtitleMaxLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.body(13, color: LoopColors.text2),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (trailingBadge != null) ...<Widget>[
+            const SizedBox(width: 10),
+            trailingBadge!,
+          ],
+          if (trailingChart != null) ...<Widget>[
+            const SizedBox(width: 8),
+            SizedBox(
+              width: LoopRecordRow.trailingChartSize.width,
+              height: LoopRecordRow.trailingChartSize.height,
+              child: trailingChart,
+            ),
+          ],
+          if (trailing != null || trailingCaption != null) ...<Widget>[
+            const SizedBox(width: 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.sizeOf(context).width * 0.42,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (trailing != null)
+                    Text(
+                      trailing!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: trailingStrong
+                          ? LoopTypography.figure(
+                              16,
+                              color: trailingColor ?? LoopColors.chalk,
+                            )
+                          : LoopTypography.figure(
+                              14,
+                              weight: FontWeight.w500,
+                              color: trailingColor ?? LoopColors.text2,
+                            ),
+                    ),
+                  if (trailingCaption != null)
+                    Text(
+                      trailingCaption!,
+                      style: LoopTypography.figure(
+                        11,
+                        color: switch (trailingCaptionUp) {
+                          true => LoopPriceMove.up.color,
+                          false => LoopPriceMove.down.color,
+                          null => LoopColors.text3,
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          if (selected && trailingBadge == null) ...<Widget>[
+            const SizedBox(width: 8),
+            const LoopIcon('check', size: 18, color: LoopColors.lime),
+          ] else if (!selected && onTap != null && chevron) ...<Widget>[
+            const SizedBox(width: 6),
+            const LoopIcon('chevron', size: 16, color: LoopColors.text3),
+          ],
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      selected: selected,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          highlightColor: LoopColors.card,
+          child: content,
+        ),
+      ),
+    );
+  }
+}
+
 /// Lays out [rows] as one grouped card by assigning [LoopRowPosition].
 class LoopRecordGroup extends StatelessWidget {
   const LoopRecordGroup({required this.rows, super.key});
@@ -1466,6 +1659,9 @@ class LoopRecordGroup extends StatelessWidget {
             onTap: rows[index].onTap,
             semanticLabel: rows[index].semanticLabel,
             selected: rows[index].selected,
+            chevron: rows[index].chevron,
+            trailingColor: rows[index].trailingColor,
+            trailingStrong: rows[index].trailingStrong,
             position: rows.length == 1
                 ? LoopRowPosition.single
                 : index == 0
@@ -1529,6 +1725,47 @@ class LoopNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Decision 0126: inside a flat page an informational notice is one 11px
+    // grey line with an ⓘ — it explains, it asks nothing of the reader. A
+    // warning or danger notice keeps its card, because that one does.
+    if (LoopFlat.of(context) &&
+        tone == LoopNoticeTone.normal &&
+        !chalk &&
+        happened == null &&
+        trailing == null) {
+      final line = <String?>[title, body].whereType<String>().join('。');
+      return Padding(
+        padding: EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          margin.top == 0 ? 8 : margin.top,
+          LoopSpacing.page,
+          8,
+        ),
+        child: Semantics(
+          container: true,
+          label: line,
+          child: ExcludeSemantics(
+            child: Row(
+              key: const ValueKey<String>('loop-notice-normal'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Padding(
+                  padding: EdgeInsets.only(top: 1),
+                  child: LoopIcon('info', size: 13, color: LoopColors.text3),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    line,
+                    style: LoopTypography.caption(11, color: LoopColors.text3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final (background, border) = chalk
         ? (LoopColors.chalk, Colors.transparent)
         : switch (tone) {
@@ -1912,6 +2149,13 @@ class LoopButton extends StatelessWidget {
     // enabled button in an odd colour rather than as a control that is off —
     // 自选管理's 保存 was read as "disabled-looking" while it was disabled.
     final paintPrimary = primary && enabled;
+    // Decision 0126: inside a flat page a block button is decision 0127's
+    // `LoopWideButton` — 52 tall, fully rounded, flat Lime, 16 label — so
+    // the two second-level passes share one form button.
+    final wide = block && LoopFlat.of(context);
+    final radius = wide
+        ? const BorderRadius.all(Radius.circular(26))
+        : const BorderRadius.all(Radius.circular(14));
     // A secondary button is the ground plus a little: its fill, its edge and
     // its label all come from whatever it was put on. Named as
     // `card2`/`line2`/`chalk` it was an invisible rectangle with an invisible
@@ -1920,7 +2164,12 @@ class LoopButton extends StatelessWidget {
     final foreground = paintPrimary
         ? LoopColors.ink
         : LoopGround.inkOf(context);
-    final decoration = paintPrimary
+    final decoration = wide
+        ? BoxDecoration(
+            color: paintPrimary ? LoopColors.lime : LoopColors.card2,
+            borderRadius: radius,
+          )
+        : paintPrimary
         ? const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -1952,7 +2201,7 @@ class LoopButton extends StatelessWidget {
           );
     final child = Container(
       constraints: BoxConstraints(
-        minHeight: LoopTouch.primaryButton,
+        minHeight: wide ? 52 : LoopTouch.primaryButton,
         minWidth: block ? double.infinity : LoopTouch.minimum,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -1974,11 +2223,13 @@ class LoopButton extends StatelessWidget {
               child: Text(
                 label,
                 textAlign: TextAlign.center,
-                style: LoopTypography.label(
-                  12,
-                  weight: FontWeight.w700,
-                  color: foreground,
-                ),
+                style: wide
+                    ? LoopTypography.title(16, color: foreground)
+                    : LoopTypography.label(
+                        12,
+                        weight: FontWeight.w700,
+                        color: foreground,
+                      ),
               ),
             ),
         ],
@@ -1998,7 +2249,7 @@ class LoopButton extends StatelessWidget {
                 'loop-button-${primary ? 'primary' : 'secondary'}',
               ),
               onTap: onPressed,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: radius,
               child: ExcludeSemantics(child: child),
             ),
           ),

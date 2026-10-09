@@ -16,6 +16,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -70,167 +71,176 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
     }
     final assets = state.value;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('mining-assets-screen'),
-      onRefresh: controller.reload,
-      updating: state.refreshing,
-      archetype: LoopPageArchetype.record,
-      title: '算力明细',
-      onBack: widget.onBack,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('mining-assets-rules-action'),
-          icon: 'info',
-          label: '查看规则',
-          onPressed: widget.onOpenRules,
-        ),
-      ],
-      primary: MiningCompositePrimary(
-        primary: _assetsHero(assets, state.phase),
-        detail: <Widget>[
-          MiningDetailRow(
-            key: const ValueKey<String>('mining-assets-total'),
-            label: '我的总算力',
-            value: switch (assets?.totalPower) {
-              MiningFigureValue(:final value) => loopGroupedFigure(value),
-              _ => launchMissingFigure,
-            },
-            spoken: switch (assets?.totalPower) {
-              MiningFigureValue(:final value) => loopGroupedFigure(value),
-              MiningFigureUnavailable(:final reasonCode) =>
-                launchReasonCodeText(reasonCode),
-              null => '还没有读到',
-            },
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('mining-assets-screen'),
+        onRefresh: controller.reload,
+        updating: state.refreshing,
+        archetype: LoopPageArchetype.record,
+        title: '算力明细',
+        onBack: widget.onBack,
+        actions: <Widget>[
+          LoopIconButton(
+            key: const ValueKey<String>('mining-assets-rules-action'),
+            icon: 'info',
+            label: '查看规则',
+            onPressed: widget.onOpenRules,
           ),
-          if (assets != null && miningGateIsBaseline(assets.formula))
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                miningBaselineLabel,
-                key: const ValueKey<String>('mining-assets-total-baseline'),
-                style: LoopTypography.caption(11, color: LoopColors.text2),
-              ),
-            ),
         ],
-      ),
-      block: blocked
-          ? _miningCapabilityBlock(
-              'mining-assets-capability-unavailable',
-              '算力明细',
-              capability,
-            )
-          : null,
-      sections: <Widget>[
-        if (assets == null)
-          LaunchStateBlock(
-            prefix: 'mining-assets',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '没有读到算力明细',
-            emptyReason: '暂时读不到资产数据。',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else ...<Widget>[
-          MiningStaleNotice(
-            slug: 'assets',
-            snapshot: assets.source,
-            symbols: _assetSymbols(assets),
-          ),
-          MiningSnapshotProvenanceLine(slug: 'assets', snapshot: assets.source),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('mining-assets-open-communities'),
-                leading: const LoopRowIcon(icon: 'clock'),
-                title: '查看社区挖矿面板',
-                subtitle: '每个社区的权重按审核结果授予',
-                onTap: widget.onOpenCommunities,
+        primary: MiningCompositePrimary(
+          primary: _assetsHero(assets, state.phase),
+          detail: <Widget>[
+            MiningDetailRow(
+              key: const ValueKey<String>('mining-assets-total'),
+              label: '我的总算力',
+              value: switch (assets?.totalPower) {
+                MiningFigureValue(:final value) => loopGroupedFigure(value),
+                _ => launchMissingFigure,
+              },
+              spoken: switch (assets?.totalPower) {
+                MiningFigureValue(:final value) => loopGroupedFigure(value),
+                MiningFigureUnavailable(:final reasonCode) =>
+                  launchReasonCodeText(reasonCode),
+                null => '还没有读到',
+              },
+            ),
+            if (assets != null && miningGateIsBaseline(assets.formula))
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  miningBaselineLabel,
+                  key: const ValueKey<String>('mining-assets-total-baseline'),
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
               ),
-            ],
-          ),
-          const LoopLabel('Included Assets'),
-          if (assets.isUnsettled)
-            const LoopNotice(
-              key: ValueKey<String>('mining-assets-empty-notice'),
-              icon: 'info',
-              title: '空列表是正常结果',
-              body: '计入与排除列表都是空的。这不代表你的钱包没有持仓，也不代表某个资产被排除。',
-              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+          ],
+        ),
+        block: blocked
+            ? _miningCapabilityBlock(
+                'mining-assets-capability-unavailable',
+                '算力明细',
+                capability,
+              )
+            : null,
+        sections: <Widget>[
+          if (assets == null)
+            LaunchStateBlock(
+              prefix: 'mining-assets',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '没有读到算力明细',
+              emptyReason: '暂时读不到资产数据。',
+              onRetry: () => unawaited(controller.reload()),
             )
-          else if (assets.included.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('mining-assets-included-empty'),
-              icon: 'info',
-              message: '这次快照没有计入任何资产',
-              reason: '你的持仓里没有可以计入的资产。',
-            )
-          else
+          else ...<Widget>[
+            MiningStaleNotice(
+              slug: 'assets',
+              snapshot: assets.source,
+              symbols: _assetSymbols(assets),
+            ),
+            MiningSnapshotProvenanceLine(
+              slug: 'assets',
+              snapshot: assets.source,
+            ),
             LoopRecordGroup(
-              key: const ValueKey<String>('mining-assets-included'),
               rows: <LoopRecordRow>[
-                for (var index = 0; index < assets.included.length; index += 1)
-                  miningCompositionRow(
-                    assets.included[index],
-                    launchRowPosition(index, assets.included.length),
-                    symbols: _assetSymbols(assets),
-                  ),
+                LoopRecordRow(
+                  key: const ValueKey<String>('mining-assets-open-communities'),
+                  leading: const LoopRowIcon(icon: 'clock'),
+                  title: '查看社区挖矿面板',
+                  subtitle: '每个社区的权重按审核结果授予',
+                  onTap: widget.onOpenCommunities,
+                ),
               ],
             ),
-          if (!assets.isUnsettled) ...<Widget>[
-            const LoopLabel('Excluded Assets'),
-            if (assets.excluded.isEmpty)
-              const LoopEmpty(
-                key: ValueKey<String>('mining-assets-excluded-empty'),
+            const LoopLabel('计入的资产'),
+            if (assets.isUnsettled)
+              const LoopNotice(
+                key: ValueKey<String>('mining-assets-empty-notice'),
                 icon: 'info',
-                message: '没有被排除的资产',
-                reason: '你持有的资产这次都计入了。',
+                title: '空列表是正常结果',
+                body: '计入与排除列表都是空的。这不代表你的钱包没有持仓，也不代表某个资产被排除。',
+                margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+              )
+            else if (assets.included.isEmpty)
+              const LoopEmpty(
+                key: ValueKey<String>('mining-assets-included-empty'),
+                icon: 'info',
+                message: '这次快照没有计入任何资产',
+                reason: '你的持仓里没有可以计入的资产。',
               )
             else
               LoopRecordGroup(
-                key: const ValueKey<String>('mining-assets-excluded'),
+                key: const ValueKey<String>('mining-assets-included'),
                 rows: <LoopRecordRow>[
                   for (
                     var index = 0;
-                    index < assets.excluded.length;
+                    index < assets.included.length;
                     index += 1
                   )
-                    _excludedRow(
-                      assets.excluded[index],
-                      launchRowPosition(index, assets.excluded.length),
+                    miningCompositionRow(
+                      assets.included[index],
+                      launchRowPosition(index, assets.included.length),
+                      symbols: _assetSymbols(assets),
                     ),
                 ],
               ),
+            if (!assets.isUnsettled) ...<Widget>[
+              const LoopLabel('未计入的资产'),
+              if (assets.excluded.isEmpty)
+                const LoopEmpty(
+                  key: ValueKey<String>('mining-assets-excluded-empty'),
+                  icon: 'info',
+                  message: '没有被排除的资产',
+                  reason: '你持有的资产这次都计入了。',
+                )
+              else
+                LoopRecordGroup(
+                  key: const ValueKey<String>('mining-assets-excluded'),
+                  rows: <LoopRecordRow>[
+                    for (
+                      var index = 0;
+                      index < assets.excluded.length;
+                      index += 1
+                    )
+                      _excludedRow(
+                        assets.excluded[index],
+                        launchRowPosition(index, assets.excluded.length),
+                      ),
+                  ],
+                ),
+            ],
+            const LoopLabel('参考价'),
+            _ReferencePriceBlock(referencePrice: assets.referencePrice),
+            const LoopLabel('公式版本'),
+            MiningFormulaBlock(formula: assets.formula),
+            const LoopLabel(miningSnapshotSectionLabel),
+            _AssetsSourceBlock(
+              source: assets.source,
+              symbols: _assetSymbols(assets),
+            ),
+            LoopNotice(
+              key: const ValueKey<String>('mining-assets-price-notice'),
+              icon: 'shield',
+              title: '参考价不是瞬时成交价',
+              body: switch ((
+                assets.included.any((row) => row.isProxiedPrice),
+                assets.included.any((row) => row.isDerivedPrice),
+              )) {
+                (true, _) =>
+                  '参考价由多个渠道的价格计算得出。有的资产没有自己的交易对，'
+                      '用的是另一个已登记代币的价格，这里已经逐行标出。',
+                (false, true) =>
+                  '参考价由多个渠道的价格计算得出。有的资产只出现在别的代币的报价对里，'
+                      '价格由那个报价对推导得出，并且必须落在公式版本声明的区间内，这里已经逐行标出。',
+                (false, false) => '参考价由多个渠道的价格计算得出，不是某一笔成交的价格。',
+              },
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
+            const SizedBox(height: 20),
           ],
-          const LoopLabel('Reference Price'),
-          _ReferencePriceBlock(referencePrice: assets.referencePrice),
-          const LoopLabel('公式版本'),
-          MiningFormulaBlock(formula: assets.formula),
-          const LoopLabel(miningSnapshotSectionLabel),
-          _AssetsSourceBlock(
-            source: assets.source,
-            symbols: _assetSymbols(assets),
-          ),
-          LoopNotice(
-            key: const ValueKey<String>('mining-assets-price-notice'),
-            icon: 'shield',
-            title: '参考价不是瞬时成交价',
-            body: switch ((
-              assets.included.any((row) => row.isProxiedPrice),
-              assets.included.any((row) => row.isDerivedPrice),
-            )) {
-              (true, _) =>
-                '参考价由多个渠道的价格计算得出。有的资产没有自己的交易对，'
-                    '用的是另一个已登记代币的价格，这里已经逐行标出。',
-              (false, true) =>
-                '参考价由多个渠道的价格计算得出。有的资产只出现在别的代币的报价对里，'
-                    '价格由那个报价对推导得出，并且必须落在公式版本声明的区间内，这里已经逐行标出。',
-              (false, false) => '参考价由多个渠道的价格计算得出，不是某一笔成交的价格。',
-            },
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
-          const SizedBox(height: 20),
         ],
-      ],
+      ),
     );
   }
 }
@@ -259,7 +269,7 @@ LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
-    kicker: 'POWER FORMULA',
+    kicker: '算力公式',
     heading: miningPowerFormulaHeading,
     caption: caption,
     margin: EdgeInsets.zero,
@@ -420,127 +430,131 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
     }
     final rewards = state.value;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('mining-rewards-screen'),
-      onRefresh: controller.reload,
-      updating: state.refreshing,
-      archetype: LoopPageArchetype.record,
-      title: '奖励与领取',
-      onBack: widget.onBack,
-      primary: MiningCompositePrimary(
-        primary: _rewardsHero(rewards, state.phase),
-        detail: <Widget>[
-          Text(
-            '待领取 LOOP · 每日 00:00 UTC 结算',
-            key: const ValueKey<String>('mining-rewards-cadence'),
-            style: LoopTypography.caption(11, color: LoopColors.text2),
-          ),
-          const MiningDetailRule(),
-          MiningDetailRow(
-            key: const ValueKey<String>('mining-rewards-readings'),
-            label: '今日预估',
-            value: switch (rewards?.estimatedToday) {
-              MiningDailyOutputEstimate(:final value) => loopGroupedFigure(
-                value,
-              ),
-              _ => launchMissingFigure,
-            },
-            spoken: switch (rewards?.estimatedToday) {
-              MiningDailyOutputEstimate(:final value) => loopGroupedFigure(
-                value,
-              ),
-              MiningDailyOutputUnavailable(:final reasonCode) =>
-                launchReasonCodeText(reasonCode),
-              null => '还没有读到',
-            },
-            trailingLabel: '累计已挖',
-            trailingValue: launchMissingFigure,
-          ),
-          if (rewards?.estimatedToday case final MiningDailyOutputEstimate e)
-            if (e.isPlaceholderBudget)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  <String>[
-                    if (e.scope.isBaseline) miningBaselineLabel,
-                    '按占位产量估算，奖励代币还没有确定。',
-                  ].join(' · '),
-                  key: const ValueKey<String>('mining-rewards-budget-note'),
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('mining-rewards-screen'),
+        onRefresh: controller.reload,
+        updating: state.refreshing,
+        archetype: LoopPageArchetype.record,
+        title: '奖励与领取',
+        onBack: widget.onBack,
+        primary: MiningCompositePrimary(
+          primary: _rewardsHero(rewards, state.phase),
+          detail: <Widget>[
+            Text(
+              '待领取 LOOP · 每日 00:00 UTC 结算',
+              key: const ValueKey<String>('mining-rewards-cadence'),
+              style: LoopTypography.caption(11, color: LoopColors.text2),
+            ),
+            const MiningDetailRule(),
+            MiningDetailRow(
+              key: const ValueKey<String>('mining-rewards-readings'),
+              label: '今日预估',
+              value: switch (rewards?.estimatedToday) {
+                MiningDailyOutputEstimate(:final value) => loopGroupedFigure(
+                  value,
                 ),
+                _ => launchMissingFigure,
+              },
+              spoken: switch (rewards?.estimatedToday) {
+                MiningDailyOutputEstimate(:final value) => loopGroupedFigure(
+                  value,
+                ),
+                MiningDailyOutputUnavailable(:final reasonCode) =>
+                  launchReasonCodeText(reasonCode),
+                null => '还没有读到',
+              },
+              trailingLabel: '累计已挖',
+              trailingValue: launchMissingFigure,
+            ),
+            if (rewards?.estimatedToday case final MiningDailyOutputEstimate e)
+              if (e.isPlaceholderBudget)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    <String>[
+                      if (e.scope.isBaseline) miningBaselineLabel,
+                      '按占位产量估算，奖励代币还没有确定。',
+                    ].join(' · '),
+                    key: const ValueKey<String>('mining-rewards-budget-note'),
+                    style: LoopTypography.caption(11, color: LoopColors.text2),
+                  ),
+                ),
+          ],
+        ),
+        block: blocked
+            ? _miningCapabilityBlock(
+                'mining-rewards-capability-unavailable',
+                '奖励与领取',
+                capability,
+              )
+            : null,
+        sections: <Widget>[
+          if (rewards == null)
+            LaunchStateBlock(
+              prefix: 'mining-rewards',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '没有读到奖励记录',
+              emptyReason: '暂时读不到奖励数据。',
+              onRetry: () => unawaited(controller.reload()),
+            )
+          else ...<Widget>[
+            MiningDashReasons(
+              slug: 'mining-rewards',
+              // 待领取 is the heading itself, and the caption under it is the
+              // claim's own reason; it is not written twice.
+              said: <String>{
+                launchReasonCodeText(rewards.claimable.reasonCode),
+              },
+              entries: <(String, String)>[
+                if (rewards.estimatedToday case MiningDailyOutputUnavailable(
+                  :final reasonCode,
+                ))
+                  ('今日预估', launchReasonCodeText(reasonCode)),
+                ('累计已挖', launchReasonCodeText(rewards.accumulated.reasonCode)),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              child: LoopButton(
+                key: const ValueKey<String>('mining-rewards-claim'),
+                label: '领取到钱包',
+                primary: true,
+                block: true,
+                // Disabled by the server's own `claimExecutable: false`.
+                onPressed: rewards.claimExecutable ? () {} : null,
+                semanticLabel: '领取到钱包，当前不可执行',
               ),
+            ),
+            const LoopNotice(
+              key: ValueKey<String>('mining-rewards-claim-notice'),
+              icon: 'lock',
+              tone: LoopNoticeTone.warn,
+              title: '领取入口不可执行',
+              // The reason is the folio's, once. This says what the control does,
+              // which is the thing the folio does not say.
+              body: '可以领取时，这个按钮会变为可用；现在它不会提交任何操作。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
+            const LoopLabel('领取记录'),
+            _RewardsLedgerBlock(
+              source: rewards.source,
+              claimable: rewards.claimable,
+            ),
+            const LoopNotice(
+              key: ValueKey<String>('mining-rewards-ledger-notice'),
+              icon: 'chart',
+              title: '结算公式',
+              body:
+                  '我的算力 ÷ 全网算力 × 当日产量。预估会随全网算力变化，最终以服务端结算状态为准；'
+                  '这里只列奖励账本的条目，算力在算力明细里。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
+            const SizedBox(height: 20),
+          ],
         ],
       ),
-      block: blocked
-          ? _miningCapabilityBlock(
-              'mining-rewards-capability-unavailable',
-              '奖励与领取',
-              capability,
-            )
-          : null,
-      sections: <Widget>[
-        if (rewards == null)
-          LaunchStateBlock(
-            prefix: 'mining-rewards',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '没有读到奖励记录',
-            emptyReason: '暂时读不到奖励数据。',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else ...<Widget>[
-          MiningDashReasons(
-            slug: 'mining-rewards',
-            // 待领取 is the heading itself, and the caption under it is the
-            // claim's own reason; it is not written twice.
-            said: <String>{launchReasonCodeText(rewards.claimable.reasonCode)},
-            entries: <(String, String)>[
-              if (rewards.estimatedToday case MiningDailyOutputUnavailable(
-                :final reasonCode,
-              ))
-                ('今日预估', launchReasonCodeText(reasonCode)),
-              ('累计已挖', launchReasonCodeText(rewards.accumulated.reasonCode)),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: LoopButton(
-              key: const ValueKey<String>('mining-rewards-claim'),
-              label: '领取到钱包',
-              primary: true,
-              block: true,
-              // Disabled by the server's own `claimExecutable: false`.
-              onPressed: rewards.claimExecutable ? () {} : null,
-              semanticLabel: '领取到钱包，当前不可执行',
-            ),
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('mining-rewards-claim-notice'),
-            icon: 'lock',
-            tone: LoopNoticeTone.warn,
-            title: '领取入口不可执行',
-            // The reason is the folio's, once. This says what the control does,
-            // which is the thing the folio does not say.
-            body: '可以领取时，这个按钮会变为可用；现在它不会提交任何操作。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
-          const LoopLabel('Claim Records'),
-          _RewardsLedgerBlock(
-            source: rewards.source,
-            claimable: rewards.claimable,
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('mining-rewards-ledger-notice'),
-            icon: 'chart',
-            title: '结算公式',
-            body:
-                '我的算力 ÷ 全网算力 × 当日产量。预估会随全网算力变化，最终以服务端结算状态为准；'
-                '这里只列奖励账本的条目，算力在算力明细里。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ],
     );
   }
 }
@@ -593,7 +607,7 @@ LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
     // module, and the App had painted both of them the quiet green.
     variant: LoopFolioVariant.lime,
     archetype: LoopFolioArchetype.record,
-    kicker: 'CLAIMABLE REWARD',
+    kicker: '可领取',
     heading: heading,
     caption: caption,
     // `.folio-stamp` states a reading, never a state name: it appears only
@@ -1495,183 +1509,185 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         ? const <String, String>{}
         : _assetSymbols(assets);
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('mining-rules-screen'),
-      onRefresh: controller.reload,
-      updating: state.refreshing,
-      archetype: LoopPageArchetype.record,
-      // The prototype's topbar says 挖矿规则 and its hero says 权重与价格保护;
-      // the App had the two the other way round (visual audit §I.7).
-      title: '挖矿规则',
-      onBack: widget.onBack,
-      primary: MiningCompositePrimary(
-        primary: LoopFolioPrimary(
-          variant: LoopFolioVariant.quiet,
-          archetype: LoopFolioArchetype.record,
-          kicker: 'POWER RULES',
-          // The hero used to announce a draft over a page whose first section
-          // is 「已批准的版本」 with an 已批准 badge inside it, so one screen
-          // said both that the rule was pending and that it was approved. The
-          // sentence now follows whether a version has been approved, and the
-          // big line shows the rule in force when there is one.
-          heading: '权重与价格保护',
-          caption: switch ((approved, draft)) {
-            (null, null) => '还没有已批准的公式，也没有待批准的草案。',
-            (null, _) => '还没有已批准的公式。下面这条是等待批准的草案。',
-            (_, null) => '这一版已批准，当前生效；没有待批准的草案。',
-            (_, _) => '这一版已批准，当前生效。下面另有等待批准的草案。',
-          },
-          stamp: switch ((approved, draft)) {
-            (_?, _) => '已批准',
-            (null, _?) => '待批准',
-            (null, null) => null,
-          },
-          ring: false,
-          margin: EdgeInsets.zero,
-          squareBottom: true,
-        ),
-        detail: <Widget>[
-          Text('DAILY OUTPUT', style: LoopMono.label),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              children: <InlineSpan>[
-                TextSpan(
-                  text: '每日产出 ',
-                  style: LoopTypography.withWeight(
-                    LoopTypography.caption(11, color: LoopColors.chalk),
-                    FontWeight.w700,
-                  ),
-                ),
-                TextSpan(
-                  text: switch (approved ?? draft) {
-                    final MiningFormulaVersion version => miningRuleKeyText(
-                      version.dailyOutputKey,
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('mining-rules-screen'),
+        onRefresh: controller.reload,
+        updating: state.refreshing,
+        archetype: LoopPageArchetype.record,
+        // The prototype's topbar says 挖矿规则 and its hero says 权重与价格保护;
+        // the App had the two the other way round (visual audit §I.7).
+        title: '挖矿规则',
+        onBack: widget.onBack,
+        primary: MiningCompositePrimary(
+          primary: LoopFolioPrimary(
+            variant: LoopFolioVariant.quiet,
+            archetype: LoopFolioArchetype.record,
+            kicker: '算力规则',
+            // The hero used to announce a draft over a page whose first section
+            // is 「已批准的版本」 with an 已批准 badge inside it, so one screen
+            // said both that the rule was pending and that it was approved. The
+            // sentence now follows whether a version has been approved, and the
+            // big line shows the rule in force when there is one.
+            heading: '权重与价格保护',
+            caption: switch ((approved, draft)) {
+              (null, null) => '还没有已批准的公式，也没有待批准的草案。',
+              (null, _) => '还没有已批准的公式。下面这条是等待批准的草案。',
+              (_, null) => '这一版已批准，当前生效；没有待批准的草案。',
+              (_, _) => '这一版已批准，当前生效。下面另有等待批准的草案。',
+            },
+            stamp: switch ((approved, draft)) {
+              (_?, _) => '已批准',
+              (null, _?) => '待批准',
+              (null, null) => null,
+            },
+            ring: false,
+            margin: EdgeInsets.zero,
+            squareBottom: true,
+          ),
+          detail: <Widget>[
+            Text('DAILY OUTPUT', style: LoopMono.label),
+            const SizedBox(height: 8),
+            Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: '每日产出 ',
+                    style: LoopTypography.withWeight(
+                      LoopTypography.caption(11, color: LoopColors.chalk),
+                      FontWeight.w700,
                     ),
-                    null => launchMissingFigure,
-                  },
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                  ),
+                  TextSpan(
+                    text: switch (approved ?? draft) {
+                      final MiningFormulaVersion version => miningRuleKeyText(
+                        version.dailyOutputKey,
+                      ),
+                      null => launchMissingFigure,
+                    },
+                    style: LoopTypography.caption(11, color: LoopColors.text2),
+                  ),
+                ],
+              ),
+              key: const ValueKey<String>('mining-rules-daily-output'),
+            ),
+          ],
+        ),
+        block: blocked
+            ? _miningCapabilityBlock(
+                'mining-rules-capability-unavailable',
+                '挖矿规则',
+                capability,
+              )
+            : null,
+        sections: <Widget>[
+          if (rules == null)
+            LaunchStateBlock(
+              prefix: 'mining-rules',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              skeleton: LoopSkeletonType.detail,
+              emptyMessage: '没有读到规则',
+              emptyReason: '暂时读不到公式版本。',
+              onRetry: () => unawaited(controller.reload()),
+            )
+          else ...<Widget>[
+            const LoopLabel('已批准的版本'),
+            // The version in force, said the way every other mining page says
+            // it. Without one, the block keeps the server's own reason.
+            switch (rules.baseline) {
+              MiningFormulaEffective() => MiningFormulaBlock(
+                formula: rules.baseline,
+              ),
+              MiningFormulaPending(:final reasonCode) => LaunchUnavailableCard(
+                label: '已批准的公式版本',
+                fact: LaunchUnavailable(reasonCode),
+              ),
+            },
+            if (rules.approved != null)
+              _FormulaVersionBlock(
+                version: rules.approved!,
+                keyPrefix: 'mining-rules-approved',
+                symbols: symbols,
+              ),
+            if (rules.approved?.scope.isBaseline ?? false)
+              // Decision 0121: what a baseline means is in the ⓘ, not a
+              // banner.
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: LoopProvenanceLine(
+                  key: ValueKey<String>('mining-rules-baseline-notice'),
+                  prefix: miningBaselineLabel,
+                  sources: <String>['LOOP 挖矿规则'],
+                  detail: miningBaselineDetail,
+                ),
+              ),
+            const LoopLabel('待批准的版本'),
+            if (rules.pendingApproval.isEmpty)
+              const LoopEmpty(
+                key: ValueKey<String>('mining-rules-no-pending'),
+                icon: 'info',
+                message: '没有待批准的版本',
+                reason: '目前没有草案版本。',
+              )
+            else
+              for (final version in rules.pendingApproval)
+                _FormulaVersionBlock(
+                  version: version,
+                  keyPrefix: 'mining-rules-pending-${version.configVersion}',
+                  symbols: symbols,
+                ),
+            const LoopLabel('邀请关系规则'),
+            LoopRecordGroup(
+              key: const ValueKey<String>('mining-rules-referral'),
+              rows: <LoopRecordRow>[
+                for (
+                  var index = 0;
+                  index < rules.referral.levels.length;
+                  index += 1
+                )
+                  LoopRecordRow(
+                    key: ValueKey<String>(
+                      'mining-rules-referral-l'
+                      '${rules.referral.levels[index].level}',
+                    ),
+                    title: 'L${rules.referral.levels[index].level}',
+                    subtitle:
+                        '生效于 '
+                        '${launchTimestampLabel(rules.referral.effectiveAt)}',
+                    trailing: '${rules.referral.levels[index].boostPercent}%',
+                    position: launchRowPosition(
+                      index,
+                      rules.referral.levels.length,
+                    ),
+                  ),
+              ],
+            ),
+            LoopButtonPair(
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('mining-rules-open-referral'),
+                  label: '查看我的邀请关系',
+                  onPressed: widget.onOpenReferral,
                 ),
               ],
             ),
-            key: const ValueKey<String>('mining-rules-daily-output'),
-          ),
+            // Only while nothing is in force. Once a version is approved the
+            // page above it prints a pinned range and a budget, and this
+            // sentence would be the same screen calling those numbers absent.
+            // What the approved version is, the baseline notice already says.
+            if (rules.approved == null)
+              const LoopNotice(
+                key: ValueKey<String>('mining-rules-notice'),
+                icon: 'shield',
+                title: '草案不是生效规则',
+                body: '待批准的版本不会参与任何计算。权重区间与价格保护阈值只有规则条目，没有数值；批准之后才会公布。',
+                margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+              ),
+            const SizedBox(height: 20),
+          ],
         ],
       ),
-      block: blocked
-          ? _miningCapabilityBlock(
-              'mining-rules-capability-unavailable',
-              '挖矿规则',
-              capability,
-            )
-          : null,
-      sections: <Widget>[
-        if (rules == null)
-          LaunchStateBlock(
-            prefix: 'mining-rules',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到规则',
-            emptyReason: '暂时读不到公式版本。',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else ...<Widget>[
-          const LoopLabel('已批准的版本'),
-          // The version in force, said the way every other mining page says
-          // it. Without one, the block keeps the server's own reason.
-          switch (rules.baseline) {
-            MiningFormulaEffective() => MiningFormulaBlock(
-              formula: rules.baseline,
-            ),
-            MiningFormulaPending(:final reasonCode) => LaunchUnavailableCard(
-              label: '已批准的公式版本',
-              fact: LaunchUnavailable(reasonCode),
-            ),
-          },
-          if (rules.approved != null)
-            _FormulaVersionBlock(
-              version: rules.approved!,
-              keyPrefix: 'mining-rules-approved',
-              symbols: symbols,
-            ),
-          if (rules.approved?.scope.isBaseline ?? false)
-            // Decision 0121: what a baseline means is in the ⓘ, not a
-            // banner.
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
-              child: LoopProvenanceLine(
-                key: ValueKey<String>('mining-rules-baseline-notice'),
-                prefix: miningBaselineLabel,
-                sources: <String>['LOOP 挖矿规则'],
-                detail: miningBaselineDetail,
-              ),
-            ),
-          const LoopLabel('待批准的版本'),
-          if (rules.pendingApproval.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('mining-rules-no-pending'),
-              icon: 'info',
-              message: '没有待批准的版本',
-              reason: '目前没有草案版本。',
-            )
-          else
-            for (final version in rules.pendingApproval)
-              _FormulaVersionBlock(
-                version: version,
-                keyPrefix: 'mining-rules-pending-${version.configVersion}',
-                symbols: symbols,
-              ),
-          const LoopLabel('邀请关系规则'),
-          LoopRecordGroup(
-            key: const ValueKey<String>('mining-rules-referral'),
-            rows: <LoopRecordRow>[
-              for (
-                var index = 0;
-                index < rules.referral.levels.length;
-                index += 1
-              )
-                LoopRecordRow(
-                  key: ValueKey<String>(
-                    'mining-rules-referral-l'
-                    '${rules.referral.levels[index].level}',
-                  ),
-                  title: 'L${rules.referral.levels[index].level}',
-                  subtitle:
-                      '生效于 '
-                      '${launchTimestampLabel(rules.referral.effectiveAt)}',
-                  trailing: '${rules.referral.levels[index].boostPercent}%',
-                  position: launchRowPosition(
-                    index,
-                    rules.referral.levels.length,
-                  ),
-                ),
-            ],
-          ),
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('mining-rules-open-referral'),
-                label: '查看我的邀请关系',
-                onPressed: widget.onOpenReferral,
-              ),
-            ],
-          ),
-          // Only while nothing is in force. Once a version is approved the
-          // page above it prints a pinned range and a budget, and this
-          // sentence would be the same screen calling those numbers absent.
-          // What the approved version is, the baseline notice already says.
-          if (rules.approved == null)
-            const LoopNotice(
-              key: ValueKey<String>('mining-rules-notice'),
-              icon: 'shield',
-              title: '草案不是生效规则',
-              body: '待批准的版本不会参与任何计算。权重区间与价格保护阈值只有规则条目，没有数值；批准之后才会公布。',
-              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-            ),
-          const SizedBox(height: 20),
-        ],
-      ],
     );
   }
 }

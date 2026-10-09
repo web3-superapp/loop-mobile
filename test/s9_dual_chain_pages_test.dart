@@ -381,9 +381,9 @@ void main() {
       expect(find.text('待校验'), findsOneWidget);
       expect(find.text('异常'), findsNothing);
       // The primary chain row is untouched by the Launch slot's pending
-      // verification. Its endpoint carries the same badge behind the operator
-      // disclosure, which this assertion does not open.
-      expect(find.text('正常'), findsOneWidget);
+      // verification. Decision 0126: its health is the row's own value
+      // (「1 / 1 正常」); the endpoint badge stays behind the disclosure.
+      expect(find.text('1 / 1 正常'), findsOneWidget);
     });
 
     testWidgets('an unreachable or mismatched slot stays 异常', (tester) async {

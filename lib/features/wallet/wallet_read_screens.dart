@@ -8,6 +8,7 @@ import 'package:loop_mobile/app/loop_backend_identity.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/qr/loop_qr_code.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
@@ -27,9 +28,12 @@ import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
@@ -651,106 +655,114 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
     final balances = state?.value;
     final netWorth = balances?.netWorth;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('networth-screen'),
-      onRefresh: walletId == null
-          ? null
-          : () => ref
-                .read(walletBalancesControllerProvider(walletId).notifier)
-                .reload(),
-      updating: state?.refreshing ?? false,
-      archetype: LoopPageArchetype.listing,
-      title: '净值明细',
-      onBack: widget.onBack,
-      // Decision 0119: the page heads with the same 总资产 block the wallet tab
-      // does — figure, eye, 24h line — the way a token page heads with its
-      // price. 「不是可用余额」 and the sources sit behind its (i).
-      primary: WalletTotalHeader(
-        key: const ValueKey<String>('networth-folio'),
-        keyPrefix: 'networth',
-        balances: balances,
-        loading:
-            !blocked &&
-            !noWalletYet &&
-            (state?.phase ??
-                    ref.watch(walletDirectoryControllerProvider).phase) ==
-                LoopChainViewPhase.loading,
-        unreadText: noWalletYet ? '还没有钱包' : '暂不可用',
-      ),
-      block: blocked
-          ? _walletPageBlock(
-              ref,
-              key: const ValueKey<String>('networth-capability-block'),
-              title: '钱包读取当前不可用',
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('networth-screen'),
+        onRefresh: walletId == null
+            ? null
+            : () => ref
+                  .read(walletBalancesControllerProvider(walletId).notifier)
+                  .reload(),
+        updating: state?.refreshing ?? false,
+        archetype: LoopPageArchetype.listing,
+        title: '净值明细',
+        onBack: widget.onBack,
+        // Decision 0119: the page heads with the same 总资产 block the wallet tab
+        // does — figure, eye, 24h line — the way a token page heads with its
+        // price. 「不是可用余额」 and the sources sit behind its (i).
+        primary: WalletTotalHeader(
+          key: const ValueKey<String>('networth-folio'),
+          keyPrefix: 'networth',
+          balances: balances,
+          loading:
+              !blocked &&
+              !noWalletYet &&
+              (state?.phase ??
+                      ref.watch(walletDirectoryControllerProvider).phase) ==
+                  LoopChainViewPhase.loading,
+          unreadText: noWalletYet ? '还没有钱包' : '暂不可用',
+        ),
+        block: blocked
+            ? _walletPageBlock(
+                ref,
+                key: const ValueKey<String>('networth-capability-block'),
+                title: '钱包读取当前不可用',
+              )
+            : null,
+        sections: <Widget>[
+          if (noWalletYet)
+            const WalletCreationBlock(keyPrefix: 'networth')
+          else if (walletId == null || state == null || !state.isReady)
+            LoopChainStateBlock(
+              keyPrefix: 'networth',
+              phase: state?.phase ?? LoopChainViewPhase.loading,
+              failureKind: state?.failureKind,
+              emptyMessage: '还没有可估值的资产',
+              onRetry: walletId == null
+                  ? null
+                  : () => unawaited(
+                      ref
+                          .read(
+                            walletBalancesControllerProvider(walletId).notifier,
+                          )
+                          .reload(),
+                    ),
             )
-          : null,
-      sections: <Widget>[
-        if (noWalletYet)
-          const WalletCreationBlock(keyPrefix: 'networth')
-        else if (walletId == null || state == null || !state.isReady)
-          LoopChainStateBlock(
-            keyPrefix: 'networth',
-            phase: state?.phase ?? LoopChainViewPhase.loading,
-            failureKind: state?.failureKind,
-            emptyMessage: '还没有可估值的资产',
-            onRetry: walletId == null
-                ? null
-                : () => unawaited(
-                    ref
-                        .read(
-                          walletBalancesControllerProvider(walletId).notifier,
-                        )
-                        .reload(),
-                  ),
-          )
-        else ...<Widget>[
-          const WalletSectionHeading(title: '按资产', top: LoopSpacing.tight),
-          // The prototype's 按资产 / 按链 / 按社区 segment bar is not here: one
-          // chain is published and community binding has no read, so two of
-          // the three chips would be dead and the third would group the list
-          // it already is.
-          // A registry with no readable row must say so. An unlabelled empty
-          // group would read as "this wallet holds nothing", which the read
-          // does not prove.
-          if (balances!.balances.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('networth-empty'),
-              message: '这个钱包还没有可计入净值的资产',
-              reason: '净值只累计已登记且可读的资产；读不到的资产不会被当作 0。',
-            )
-          else
-            for (final row in balances.balances)
-              WalletAssetLine(
-                row: row,
-                hidden: ref.watch(walletAmountsHiddenProvider),
-                onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
-              ),
-          LoopProvenanceLine(
-            key: const ValueKey<String>('wallet-snapshot-footer'),
-            prefix:
-                '区块 ${loopGroupedFigure(balances.snapshot.blockNumber.toString())}',
-            sources: <String>[
-              if (netWorth is LoopNetWorthValued)
-                loopFactSourceLabel(netWorth.priceSource),
-            ],
-            observedAt: balances.snapshot.observedAt,
-            detail:
-                '净值只累计已登记且有价格的资产，是展示用的估值，不是可用余额。'
-                '每一行余额都读自同一个区块（'
-                '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认）。',
-          ),
-          // The prototype's 30D area chart keeps its panel. Nothing is drawn
-          // in it: net worth over time needs the holdings this account held on
-          // each of those days, and no read reports them. Multiplying today's
-          // holdings by yesterday's prices would answer a different question
-          // in the shape of this one.
-          const LoopChartPanel(
-            key: ValueKey<String>('networth-trend-unavailable'),
-            range: '30D',
-            absence: '净值走势还没有数据来源，读到之前这里不画任何走势。',
-          ),
+          else ...<Widget>[
+            const WalletSectionHeading(title: '按资产', top: LoopSpacing.tight),
+            // The prototype's 按资产 / 按链 / 按社区 segment bar is not here: one
+            // chain is published and community binding has no read, so two of
+            // the three chips would be dead and the third would group the list
+            // it already is.
+            // A registry with no readable row must say so. An unlabelled empty
+            // group would read as "this wallet holds nothing", which the read
+            // does not prove.
+            if (balances!.balances.isEmpty)
+              const LoopEmptyState(
+                key: ValueKey<String>('networth-empty'),
+                illustration: LoopIllustration.watchlist,
+                title: '还没有可计入净值的资产',
+                message: '读不到的资产不会被当作 0。',
+                compact: true,
+              )
+            else
+              for (final row in balances.balances)
+                WalletAssetLine(
+                  row: row,
+                  hidden: ref.watch(walletAmountsHiddenProvider),
+                  onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
+                ),
+            LoopProvenanceLine(
+              key: const ValueKey<String>('wallet-snapshot-footer'),
+              prefix:
+                  '区块 ${loopGroupedFigure(balances.snapshot.blockNumber.toString())}',
+              sources: <String>[
+                if (netWorth is LoopNetWorthValued)
+                  loopFactSourceLabel(netWorth.priceSource),
+              ],
+              observedAt: balances.snapshot.observedAt,
+              detail:
+                  '净值只累计已登记且有价格的资产，是展示用的估值，不是可用余额。'
+                  '每一行余额都读自同一个区块（'
+                  '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认）。',
+            ),
+            // The prototype's 30D area chart keeps its panel. Nothing is drawn
+            // in it: net worth over time needs the holdings this account held on
+            // each of those days, and no read reports them. Multiplying today's
+            // holdings by yesterday's prices would answer a different question
+            // in the shape of this one.
+            //
+            // Decision 0126: the empty panel became the shared empty state.
+            const LoopEmptyState(
+              key: ValueKey<String>('networth-trend-unavailable'),
+              illustration: LoopIllustration.chartEmpty,
+              title: '还没有净值走势',
+              message: '有了每天的持仓记录后，这里会画出 30 天走势。',
+              compact: true,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -1066,7 +1078,7 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('wallet-asset-chain-row'),
-                leading: const LoopNetworkLogo(network: 'bsc', size: 44),
+                leading: const LoopNetworkLogo(network: 'bsc', size: 36),
                 title: _assetChainName(assetId),
                 subtitle: switch (row.balance) {
                   LoopBalanceAvailable(displayBalance: final value) =>
@@ -1569,104 +1581,102 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     final networks = state?.value?.networks ?? const <LoopReceiveNetwork>[];
     final network = _selected < networks.length ? networks[_selected] : null;
 
-    return LoopFocusPage(
-      key: const ValueKey<String>('receive-screen'),
-      archetype: LoopPageArchetype.action,
-      title: '接收',
-      onBack: widget.onBack,
-      // The prototype's receive primary is a Chalk card; the app painted the
-      // same dark folio every page wears (audit §A.4, item 2).
-      folio: LoopFolioPrimary(
-        key: const ValueKey<String>('receive-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        archetype: LoopFolioArchetype.action,
-        kicker: '收款地址',
-        heading: network == null
-            ? '收款地址还没有读到'
-            : '${network.name} · ${loopTruncatedAddress(network.address)}',
-        caption: '二维码与完整地址绑定当前网络，复制前请再次核对。',
-        stamp: network == null ? null : 'QR READY',
-      ),
-      block: blocked
-          ? _walletPageBlock(
-              ref,
-              key: const ValueKey<String>('receive-capability-block'),
-              title: '钱包读取当前不可用',
+    // Decision 0126 (OKX 收款): network chips, the code centred, the address
+    // in one capsule, then 复制 / 分享 — no folio restating the address.
+    return LoopFlat(
+      child: LoopFocusPage(
+        key: const ValueKey<String>('receive-screen'),
+        archetype: LoopPageArchetype.action,
+        title: '接收',
+        onBack: widget.onBack,
+        block: blocked
+            ? _walletPageBlock(
+                ref,
+                key: const ValueKey<String>('receive-capability-block'),
+                title: '钱包读取当前不可用',
+              )
+            : null,
+        body: <Widget>[
+          if (noWalletYet)
+            const WalletCreationBlock(keyPrefix: 'receive')
+          else if (walletId == null || state == null || !state.isReady)
+            LoopChainStateBlock(
+              keyPrefix: 'receive',
+              phase: state?.phase ?? LoopChainViewPhase.loading,
+              failureKind: state?.failureKind,
+              emptyMessage: '没有可用的接收地址',
+              onRetry: walletId == null
+                  ? null
+                  : () => unawaited(
+                      ref
+                          .read(
+                            walletReceiveControllerProvider(walletId).notifier,
+                          )
+                          .reload(),
+                    ),
             )
-          : null,
-      body: <Widget>[
-        if (noWalletYet)
-          const WalletCreationBlock(keyPrefix: 'receive')
-        else if (walletId == null || state == null || !state.isReady)
-          LoopChainStateBlock(
-            keyPrefix: 'receive',
-            phase: state?.phase ?? LoopChainViewPhase.loading,
-            failureKind: state?.failureKind,
-            emptyMessage: '没有可用的接收地址',
-            onRetry: walletId == null
-                ? null
-                : () => unawaited(
-                    ref
-                        .read(
-                          walletReceiveControllerProvider(walletId).notifier,
-                        )
-                        .reload(),
+          else if (network == null)
+            const LoopEmpty(
+              key: ValueKey<String>('receive-no-network'),
+              icon: 'warn',
+              message: '没有可接收的网络',
+              reason: '暂时读不到可接收的网络。',
+            )
+          else ...<Widget>[
+            // Only the networks the server published are listed: a chip for a
+            // network LOOP does not publish would be an address that does not
+            // exist.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  for (final (index, item) in networks.indexed) ...<Widget>[
+                    if (index > 0) const SizedBox(width: 7),
+                    LoopSeg(
+                      key: ValueKey<String>('receive-network-${item.chainId}'),
+                      quiet: true,
+                      label: item.name,
+                      selected: index == _selected,
+                      onSelected: () => setState(() => _selected = index),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            _ReceiveQrCard(
+              network: network,
+              onCopy: () => unawaited(_copy(network.address, '地址已复制')),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+              child: LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>('receive-copy-address'),
+                    label: '复制地址',
+                    primary: true,
+                    onPressed: () => unawaited(_copy(network.address, '地址已复制')),
                   ),
-          )
-        else if (network == null)
-          const LoopEmpty(
-            key: ValueKey<String>('receive-no-network'),
-            icon: 'warn',
-            message: '没有可接收的网络',
-            reason: '暂时读不到可接收的网络。',
-          )
-        else ...<Widget>[
-          _ReceiveQrCard(network: network),
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('receive-copy-address'),
-                label: '复制地址',
-                primary: true,
-                onPressed: () => unawaited(_copy(network.address, '地址已复制')),
-              ),
-              LoopButton(
-                key: const ValueKey<String>('receive-copy-uri'),
-                label: '复制付款链接',
-                onPressed: () => unawaited(_copy(network.uri, '付款链接已复制')),
-              ),
-            ],
-          ),
-          // `.segs` under the buttons, as the prototype has it. Only the
-          // networks the server published are listed: a chip for a network
-          // LOOP does not publish would be an address that does not exist.
-          const LoopLabel('网络'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
-              children: <Widget>[
-                for (final (index, item) in networks.indexed) ...<Widget>[
-                  if (index > 0) const SizedBox(width: 7),
-                  LoopSeg(
-                    key: ValueKey<String>('receive-network-${item.chainId}'),
-                    label: item.name,
-                    selected: index == _selected,
-                    onSelected: () => setState(() => _selected = index),
+                  LoopButton(
+                    key: const ValueKey<String>('receive-share'),
+                    label: '分享',
+                    onPressed: () => unawaited(_share(network)),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
-          LoopNotice(
-            key: const ValueKey<String>('receive-warning'),
-            tone: LoopNoticeTone.warn,
-            icon: 'warn',
-            title: '只接收这一条网络的资产',
-            body: loopReceiveWarningText(network.warningKey),
-          ),
+            LoopNotice(
+              key: const ValueKey<String>('receive-warning'),
+              tone: LoopNoticeTone.warn,
+              icon: 'warn',
+              title: '只接收这一条网络的资产',
+              body: loopReceiveWarningText(network.warningKey),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -1675,59 +1685,91 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     if (!mounted) return;
     LoopToast.show(context, message: message, kind: LoopToastKind.ok);
   }
+
+  /// Hands the address to the system share sheet; nothing goes to LOOP.
+  Future<void> _share(LoopReceiveNetwork network) async {
+    final shared = await ref.read(loopTextShareProvider)(
+      '${network.name} 收款地址\n${network.address}',
+      subject: '${network.name} 收款地址',
+    );
+    if (!mounted || shared) return;
+    LoopToast.show(context, message: '这台设备打不开分享面板，请改用复制地址');
+  }
 }
 
 class _ReceiveQrCard extends StatelessWidget {
-  const _ReceiveQrCard({required this.network});
+  const _ReceiveQrCard({required this.network, required this.onCopy});
 
   final LoopReceiveNetwork network;
+  final VoidCallback onCopy;
 
   @override
   Widget build(BuildContext context) {
     // The EIP-681 string is encoded on the device; the backend never sends an
     // image, and no dependency was added for it (decision 0057).
     final code = LoopQrCode.encode(network.uri);
-    return LoopChalkCard(
+    return Column(
       key: const ValueKey<String>('receive-card'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (code == null)
-            const LoopUnavailableCard(
-              key: ValueKey<String>('receive-qr-unavailable'),
-              label: '二维码不可用',
-              reasonCode: 'RECEIVE_QR_ENCODING_FAILED',
-              margin: EdgeInsets.zero,
-            )
-          else
-            Center(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (code == null)
+          const LoopUnavailableCard(
+            key: ValueKey<String>('receive-qr-unavailable'),
+            label: '二维码不可用',
+            reasonCode: 'RECEIVE_QR_ENCODING_FAILED',
+          )
+        else
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: LoopColors.chalk,
+                borderRadius: LoopRadius.card,
+              ),
               child: Semantics(
                 key: const ValueKey<String>('receive-qr'),
                 image: true,
                 label: '${network.name} 收款二维码',
                 child: SizedBox(
-                  width: 200,
-                  height: 200,
+                  width: 208,
+                  height: 208,
                   child: CustomPaint(painter: _QrPainter(code: code)),
                 ),
               ),
             ),
-          const SizedBox(height: 16),
-          SelectableText(
-            network.address,
-            key: const ValueKey<String>('receive-address-text'),
-            textAlign: TextAlign.center,
-            style: LoopMono.stamp.copyWith(color: LoopColors.ink),
           ),
-          const SizedBox(height: 6),
-          Text(
-            network.uri,
-            key: const ValueKey<String>('receive-uri-text'),
-            textAlign: TextAlign.center,
-            style: LoopMono.stamp.copyWith(color: LoopColors.inkText3),
+        const SizedBox(height: 20),
+        // The address capsule: the whole address, selectable, and a copy
+        // glyph at its end.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            key: const ValueKey<String>('receive-address-capsule'),
+            padding: const EdgeInsets.fromLTRB(16, 6, 4, 6),
+            decoration: const BoxDecoration(
+              color: LoopColors.card,
+              borderRadius: LoopRadius.inner,
+            ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: SelectableText(
+                    network.address,
+                    key: const ValueKey<String>('receive-address-text'),
+                    style: LoopMono.address.copyWith(color: LoopColors.chalk),
+                  ),
+                ),
+                LoopIconButton(
+                  key: const ValueKey<String>('receive-address-copy'),
+                  icon: 'copy',
+                  label: '复制地址',
+                  onPressed: onCopy,
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1802,161 +1844,145 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
     final controller = ref.read(walletDirectoryControllerProvider.notifier);
     final directory = state.value;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('wallets-screen'),
-      onRefresh: controller.reload,
-      updating: state.refreshing,
-      archetype: LoopPageArchetype.record,
-      title: '我的钱包',
-      onBack: widget.onBack,
-      actions: <Widget>[
-        // The prototype's 添加, as a glyph (decision 0087). There is one
-        // creation path and it is the wallet-less block's own button. A greyed
-        // chip whose only answer was a toast at the foot of the page read as a
-        // control that does nothing, so the tap opens a sheet that stays until
-        // it is dismissed and says what the product does and does not do here.
-        LoopIconButton(
-          key: const ValueKey<String>('wallets-add-action'),
-          icon: 'plus',
-          label: '添加',
-          framed: true,
-          onBlocked: () => unawaited(
-            showLoopSheet<void>(
-              context,
-              builder: (sheetContext) => LoopSheet(
-                key: const ValueKey<String>('wallets-add-sheet'),
-                title: '暂不支持绑定第二个钱包',
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    const LoopNotice(
-                      key: ValueKey<String>('wallets-add-sheet-reason'),
-                      icon: 'id',
-                      title: '一个账号，一个嵌入式钱包',
-                      body:
-                          'LOOP 为每个账号创建一个 Privy 嵌入式钱包，它已经在下面的列表里。'
-                          '绑定外部钱包（MetaMask 等）和绑定第二个嵌入式钱包都还没有开放，'
-                          '所以这里没有可以添加的东西。',
-                      margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
-                    ),
-                    const LoopNotice(
-                      key: ValueKey<String>('wallets-add-sheet-scope'),
-                      icon: 'info',
-                      title: '开放之后会发生什么',
-                      body: '已绑定钱包里的社区币都会计入算力，不需要把资产搬到某一个钱包。',
-                      margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
-                    ),
-                    LoopButton(
-                      key: const ValueKey<String>('wallets-add-sheet-close'),
-                      label: '知道了',
-                      primary: true,
-                      block: true,
-                      onPressed: () => Navigator.of(sheetContext).pop(),
-                    ),
-                  ],
+    // Decision 0126: a flat list of wallets; the folio that repeated the
+    // active address above the row that carries it is gone.
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('wallets-screen'),
+        onRefresh: controller.reload,
+        updating: state.refreshing,
+        archetype: LoopPageArchetype.record,
+        title: '我的钱包',
+        onBack: widget.onBack,
+        actions: <Widget>[
+          // The prototype's 添加, as a glyph (decision 0087). There is one
+          // creation path and it is the wallet-less block's own button. A greyed
+          // chip whose only answer was a toast at the foot of the page read as a
+          // control that does nothing, so the tap opens a sheet that stays until
+          // it is dismissed and says what the product does and does not do here.
+          LoopIconButton(
+            key: const ValueKey<String>('wallets-add-action'),
+            icon: 'plus',
+            label: '添加',
+            onBlocked: () => unawaited(
+              showLoopSheet<void>(
+                context,
+                builder: (sheetContext) => LoopSheet(
+                  key: const ValueKey<String>('wallets-add-sheet'),
+                  title: '暂不支持绑定第二个钱包',
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      const LoopNotice(
+                        key: ValueKey<String>('wallets-add-sheet-reason'),
+                        icon: 'id',
+                        title: '一个账号，一个嵌入式钱包',
+                        body:
+                            'LOOP 为每个账号创建一个 Privy 嵌入式钱包，它已经在下面的列表里。'
+                            '绑定外部钱包（MetaMask 等）和绑定第二个嵌入式钱包都还没有开放，'
+                            '所以这里没有可以添加的东西。',
+                        margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+                      ),
+                      const LoopNotice(
+                        key: ValueKey<String>('wallets-add-sheet-scope'),
+                        icon: 'info',
+                        title: '开放之后会发生什么',
+                        body: '已绑定钱包里的社区币都会计入算力，不需要把资产搬到某一个钱包。',
+                        margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+                      ),
+                      LoopButton(
+                        key: const ValueKey<String>('wallets-add-sheet-close'),
+                        label: '知道了',
+                        primary: true,
+                        block: true,
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
-      // The heading is the wallet in use, which is what this page is about.
-      // 「1 个钱包」 counted the list instead of naming it, and 「我的钱包」
-      // was the page's own title in the primary (audit item 1).
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('wallets-folio'),
-        archetype: LoopFolioArchetype.record,
-        kicker: '我的钱包',
-        heading: switch (directory?.active) {
-          final LoopWalletAccount active => active.truncatedAddress,
-          null when directory != null => '还没有选定当前钱包',
-          null => '钱包清单还没有读到',
-        },
-        caption: '一个 LOOP ID 可以绑定多个钱包；地址是公开的链上事实，不是账号标识。',
-        stamp: directory == null ? null : '${directory.wallets.length} WALLETS',
-      ),
-      block: blocked
-          ? _walletPageBlock(
-              ref,
-              key: const ValueKey<String>('wallets-capability-block'),
-              title: '钱包清单当前不可用',
-            )
-          : null,
-      sections: <Widget>[
-        if (!state.isReady || directory == null)
-          LoopChainStateBlock(
-            keyPrefix: 'wallets',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '钱包清单还没有读到',
-            emptyReason: '这不是“没有钱包”，只是这次没有读到清单。',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        // The list was read and holds nothing. That is a different answer from
-        // the block above, and it is the one this page can act on.
-        else if (directory.isEmpty)
-          const WalletCreationBlock(keyPrefix: 'wallets')
-        else ...<Widget>[
-          // A switch that never reached the server changed nothing: the
-          // active wallet below is still the server's own answer. Offline is
-          // therefore a pause, not a failed switch.
-          if (loopChainIsOffline(state.failureKind))
-            LoopOfflineState(
-              cause: loopOfflineCauseFor(state.failureKind),
-              key: const ValueKey<String>('wallets-switch-offline'),
-              pausedActions: const <String>['切换活跃钱包'],
-              onRetry: () => unawaited(controller.reload()),
-            )
-          else if (state.failureKind != null)
-            LoopErrorState(
-              key: const ValueKey<String>('wallets-switch-error'),
-              title: '活跃钱包没有切换',
-              reason: loopChainFailureReason(state.failureKind),
-              onRetry: () => unawaited(controller.reload()),
-            ),
-          // The prototype puts the identity rule right under the primary,
-          // where it explains the list that follows.
-          const LoopNotice(
-            key: ValueKey<String>('wallets-notice'),
-            icon: 'id',
-            title: '一个 LOOP ID，多个钱包',
-            body: 'LOOP ID 是你的社交身份；钱包是可绑定、可更换的凭证。地址不是账号标识：每个请求指向的是一个不透明的钱包编号。',
-          ),
-          const LoopLabel('Privy 嵌入式钱包'),
-          _WalletList(
-            wallets: directory.embedded,
-            activeWalletId: directory.activeWalletId,
-            busy: state.busy,
-            onActivate: (wallet) =>
-                unawaited(_confirmActivate(controller, wallet)),
-            emptyMessage: '没有嵌入式钱包',
-          ),
-          const LoopLabel('已连接的外部钱包'),
-          _WalletList(
-            wallets: directory.externals,
-            activeWalletId: directory.activeWalletId,
-            busy: state.busy,
-            onActivate: (wallet) =>
-                unawaited(_confirmActivate(controller, wallet)),
-            emptyMessage: '没有已连接的外部钱包',
-          ),
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('wallets-source'),
-            text: '来源 Privy · 观察于 ${loopRelativeTime(directory.observedAt)}',
-          ),
-          // The prototype closes this page on mining, because binding an old
-          // wallet is how a holding starts counting.
-          const LoopNotice(
-            key: ValueKey<String>('wallets-mining-notice'),
-            tone: LoopNoticeTone.warn,
-            icon: 'mine',
-            title: '所有绑定钱包的持仓都计入算力',
-            body: '老钱包里的社区币不用搬家，绑定后就参与挖矿。已归档的钱包会保留，但不能成为活跃钱包。',
-          ),
-          const SizedBox(height: 20),
         ],
-      ],
+        block: blocked
+            ? _walletPageBlock(
+                ref,
+                key: const ValueKey<String>('wallets-capability-block'),
+                title: '钱包清单当前不可用',
+              )
+            : null,
+        sections: <Widget>[
+          if (!state.isReady || directory == null)
+            LoopChainStateBlock(
+              keyPrefix: 'wallets',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '钱包清单还没有读到',
+              emptyReason: '这不是“没有钱包”，只是这次没有读到清单。',
+              onRetry: () => unawaited(controller.reload()),
+            )
+          // The list was read and holds nothing. That is a different answer from
+          // the block above, and it is the one this page can act on.
+          else if (directory.isEmpty)
+            const WalletCreationBlock(keyPrefix: 'wallets')
+          else ...<Widget>[
+            // A switch that never reached the server changed nothing: the
+            // active wallet below is still the server's own answer. Offline is
+            // therefore a pause, not a failed switch.
+            if (loopChainIsOffline(state.failureKind))
+              LoopOfflineState(
+                cause: loopOfflineCauseFor(state.failureKind),
+                key: const ValueKey<String>('wallets-switch-offline'),
+                pausedActions: const <String>['切换活跃钱包'],
+                onRetry: () => unawaited(controller.reload()),
+              )
+            else if (state.failureKind != null)
+              LoopErrorState(
+                key: const ValueKey<String>('wallets-switch-error'),
+                title: '活跃钱包没有切换',
+                reason: loopChainFailureReason(state.failureKind),
+                onRetry: () => unawaited(controller.reload()),
+              ),
+            // The prototype puts the identity rule right under the primary,
+            // where it explains the list that follows.
+            const LoopLabel('嵌入式钱包'),
+            _WalletList(
+              wallets: directory.embedded,
+              activeWalletId: directory.activeWalletId,
+              busy: state.busy,
+              onActivate: (wallet) =>
+                  unawaited(_confirmActivate(controller, wallet)),
+              emptyMessage: '没有嵌入式钱包',
+            ),
+            const LoopLabel('外部钱包'),
+            _WalletList(
+              wallets: directory.externals,
+              activeWalletId: directory.activeWalletId,
+              busy: state.busy,
+              onActivate: (wallet) =>
+                  unawaited(_confirmActivate(controller, wallet)),
+              emptyMessage: '没有已连接的外部钱包',
+            ),
+            // The prototype closes this page on mining, because binding an old
+            // wallet is how a holding starts counting. Decision 0126: one ⓘ
+            // line that also carries the identity rule, then the source.
+            const LoopNotice(
+              key: ValueKey<String>('wallets-mining-notice'),
+              icon: 'mine',
+              body:
+                  '所有绑定钱包的持仓都计入算力，不用搬家。'
+                  'LOOP ID 是你的身份，钱包只是可更换的凭证，地址不是账号标识。',
+              margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            ),
+            LoopProvenanceFooter(
+              key: const ValueKey<String>('wallets-source'),
+              text: '来源 Privy · 观察于 ${loopRelativeTime(directory.observedAt)}',
+            ),
+            const SizedBox(height: 20),
+          ],
+        ],
+      ),
     );
   }
 
@@ -2024,10 +2050,11 @@ class _WalletList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (wallets.isEmpty) {
-      return LoopEmpty(
+      return LoopEmptyState(
         key: ValueKey<String>('wallets-empty-$emptyMessage'),
-        message: emptyMessage,
-        reason: 'Privy 当前没有报告这一类钱包。',
+        illustration: LoopIllustration.profile,
+        title: emptyMessage,
+        compact: true,
       );
     }
     return LoopRecordGroup(
@@ -2038,21 +2065,18 @@ class _WalletList extends StatelessWidget {
             // `.row-ico` with the address's own first characters. The
             // prototype's wallet rows all carry one (audit item 7).
             leading: LoopRowIcon(
-              monogram: wallet.address.length >= 4
-                  ? wallet.address.substring(2, 4).toUpperCase()
-                  : '··',
-              tone: wallet.walletId == activeWalletId
-                  ? LoopRowIconTone.accent
-                  : LoopRowIconTone.neutral,
+              circle: true,
+              icon: wallet.kind == LoopWalletKind.embedded ? 'wallet' : 'link',
             ),
             // The prototype marks the wallet in use on the row itself, not
             // only with the badge in the value column.
             selected: wallet.walletId == activeWalletId,
-            title: wallet.kind == LoopWalletKind.embedded ? '嵌入式钱包' : '外部钱包',
-            // Truncation is a client-side display concern; the model keeps the
-            // full address and the request only ever carries `walletId`.
+            // Decision 0126: the section already names the kind, so the row
+            // leads with the wallet's own address. Truncation is a display
+            // concern; the request only ever carries `walletId`.
+            title: wallet.truncatedAddress,
             subtitle:
-                '${wallet.truncatedAddress} · '
+                '${wallet.kind == LoopWalletKind.embedded ? '嵌入式钱包' : '外部钱包'} · '
                 '${wallet.status == LoopWalletStatus.archived ? '已归档' : '可用'}',
             trailingBadge: wallet.walletId == activeWalletId
                 ? const LoopBadge('使用中', kind: LoopBadgeKind.up)
@@ -2192,159 +2216,138 @@ class _TransactionHistoryScreenState
     }
     final page = state?.value;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('tx-history-screen'),
-      onRefresh: walletId == null
-          ? null
-          : () => ref
-                .read(walletActivityControllerProvider(walletId).notifier)
-                .reload(),
-      updating: state?.refreshing ?? false,
-      archetype: LoopPageArchetype.record,
-      title: '交易历史',
-      onBack: widget.onBack,
-      actions: <Widget>[
-        // The prototype's 导出, doing what it says: the rows this page is
-        // currently listing are encoded as CSV on device and handed to the
-        // system share sheet. Nothing is uploaded, and nothing beyond what is
-        // on screen is fetched. Decision 0087 draws it as the share glyph —
-        // 「交给系统」 is exactly what the tap does — and the name still
-        // switches to 导出中 while a run is in flight, because that state was
-        // only ever carried by the word.
-        LoopIconButton(
-          key: const ValueKey<String>('tx-history-export-action'),
-          icon: 'share',
-          label: _exporting ? '导出中' : '导出',
-          framed: true,
-          onPressed: page == null || _exporting
-              ? null
-              : () => unawaited(_export(page)),
-          onBlocked: page != null
-              ? null
-              : () => LoopToast.show(
-                  context,
-                  message: '记录还没有读到，没有可以导出的内容。',
-                  kind: LoopToastKind.warn,
-                ),
-        ),
-      ],
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('tx-history-folio'),
-        archetype: LoopFolioArchetype.record,
-        kicker: '钱包记录',
-        // The figure counts what the segment below actually lists. A tape
-        // filtered to 发出 and showing nothing used to keep 「1 笔」 in the
-        // hero, which reads as a row the list lost.
-        heading: page == null ? '记录还没有读到' : '${_segmentCount(page)} 笔',
-        caption: '发送、接收、兑换与跨链结果按时间形成统一钱包记录。',
-      ),
-      block: blocked
-          ? _walletPageBlock(
-              ref,
-              key: const ValueKey<String>('tx-history-capability-block'),
-              title: '钱包活动当前不可用',
-            )
-          : null,
-      sections: <Widget>[
-        if (noWalletYet)
-          const WalletCreationBlock(keyPrefix: 'tx-history')
-        else if (walletId == null || state == null || page == null)
-          LoopChainStateBlock(
-            keyPrefix: 'tx-history',
-            phase: state?.phase ?? LoopChainViewPhase.loading,
-            failureKind: state?.failureKind,
-            emptyMessage: '还没有链上活动',
-            emptyReason: '索引器已经读到这个区间，但其中没有属于这个钱包的转账。',
-            onRetry: walletId == null
+    // Decision 0126: a flat record page — chips, OKX record rows, nothing
+    // at the end. The folio that counted the rows is gone.
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('tx-history-screen'),
+        onRefresh: walletId == null
+            ? null
+            : () => ref
+                  .read(walletActivityControllerProvider(walletId).notifier)
+                  .reload(),
+        updating: state?.refreshing ?? false,
+        archetype: LoopPageArchetype.record,
+        title: '交易历史',
+        onBack: widget.onBack,
+        actions: <Widget>[
+          // The prototype's 导出, doing what it says: the rows this page is
+          // currently listing are encoded as CSV on device and handed to the
+          // system share sheet. Nothing is uploaded, and nothing beyond what is
+          // on screen is fetched. Decision 0087 draws it as the share glyph —
+          // 「交给系统」 is exactly what the tap does — and the name still
+          // switches to 导出中 while a run is in flight, because that state was
+          // only ever carried by the word.
+          LoopIconButton(
+            key: const ValueKey<String>('tx-history-export-action'),
+            icon: 'share',
+            label: _exporting ? '导出中' : '导出',
+            onPressed: page == null || _exporting
                 ? null
-                : () => unawaited(
-                    ref
-                        .read(
-                          walletActivityControllerProvider(walletId).notifier,
-                        )
-                        .reload(),
+                : () => unawaited(_export(page)),
+            onBlocked: page != null
+                ? null
+                : () => LoopToast.show(
+                    context,
+                    message: '记录还没有读到，没有可以导出的内容。',
+                    kind: LoopToastKind.warn,
                   ),
-          )
-        else ...<Widget>[
-          _ActivitySegments(
-            selected: _segment,
-            onSelected: (index) => setState(() => _segment = index),
           ),
-          ..._segmentBody(page, walletId),
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('tx-history-freshness'),
-            text: <String>[
-              '索引高度 '
-                  '${loopGroupedFigure(page.freshness.indexerBlockNumber.toString())}',
-              if (page.freshness.lagBlocks != null)
-                '数据落后 '
-                    '${loopGroupedFigure(page.freshness.lagBlocks.toString())} 块',
-              '观察于 ${loopRelativeTime(page.freshness.observedAt)}',
-            ].join(' · '),
-          ),
-          // The pages already read stay on screen. A next page that never
-          // reached the server is a pause on "load more", not a broken tape.
-          if (loopChainIsOffline(state.failureKind))
-            LoopOfflineState(
-              cause: loopOfflineCauseFor(state.failureKind),
-              key: const ValueKey<String>('tx-history-page-offline'),
-              pausedActions: const <String>['继续加载'],
-              onRetry: () => unawaited(
-                ref
-                    .read(walletActivityControllerProvider(walletId).notifier)
-                    .loadMore(),
-              ),
-            )
-          else if (state.failureKind != null)
-            LoopErrorState(
-              key: const ValueKey<String>('tx-history-page-error'),
-              title: '这一页没有加载完',
-              reason: loopChainFailureReason(state.failureKind),
-              onRetry: () => unawaited(
-                ref
-                    .read(walletActivityControllerProvider(walletId).notifier)
-                    .loadMore(),
-              ),
-            )
-          // v3 需求 6.2 · 4 (decision 0119): the tape scrolls on. The
-          // sentinel asks for the next cursor once it is built — that is,
-          // once the reader has scrolled near the end — and each cursor once.
-          else if (page.nextCursor case final String cursor) ...<Widget>[
-            LoopLoadMoreSentinel(
-              key: const ValueKey<String>('tx-history-load-more'),
-              cursor: cursor,
-              onLoadMore: () => unawaited(_loadMore(walletId)),
-            ),
-            if (_loadingMore)
-              const LoopSkeleton(
-                key: ValueKey<String>('tx-history-loading-more'),
-                type: LoopSkeletonType.record,
-                rows: 1,
-              ),
-          ] else if (page.items.isNotEmpty)
-            const LoopProvenanceFooter(
-              key: ValueKey<String>('tx-history-end'),
-              text: '没有更早的记录',
-            ),
         ],
-      ],
+        block: blocked
+            ? _walletPageBlock(
+                ref,
+                key: const ValueKey<String>('tx-history-capability-block'),
+                title: '钱包活动当前不可用',
+              )
+            : null,
+        sections: <Widget>[
+          if (noWalletYet)
+            const WalletCreationBlock(keyPrefix: 'tx-history')
+          else if (walletId == null || state == null || page == null)
+            LoopChainStateBlock(
+              keyPrefix: 'tx-history',
+              phase: state?.phase ?? LoopChainViewPhase.loading,
+              failureKind: state?.failureKind,
+              emptyMessage: '还没有链上活动',
+              emptyReason: '索引器已经读到这个区间，但其中没有属于这个钱包的转账。',
+              onRetry: walletId == null
+                  ? null
+                  : () => unawaited(
+                      ref
+                          .read(
+                            walletActivityControllerProvider(walletId).notifier,
+                          )
+                          .reload(),
+                    ),
+            )
+          else ...<Widget>[
+            _ActivitySegments(
+              selected: _segment,
+              onSelected: (index) => setState(() => _segment = index),
+            ),
+            ..._segmentBody(page, walletId),
+            LoopProvenanceFooter(
+              key: const ValueKey<String>('tx-history-freshness'),
+              text: <String>[
+                '索引高度 '
+                    '${loopGroupedFigure(page.freshness.indexerBlockNumber.toString())}',
+                if (page.freshness.lagBlocks != null)
+                  '数据落后 '
+                      '${loopGroupedFigure(page.freshness.lagBlocks.toString())} 块',
+                '观察于 ${loopRelativeTime(page.freshness.observedAt)}',
+              ].join(' · '),
+            ),
+            // The pages already read stay on screen. A next page that never
+            // reached the server is a pause on "load more", not a broken tape.
+            if (loopChainIsOffline(state.failureKind))
+              LoopOfflineState(
+                cause: loopOfflineCauseFor(state.failureKind),
+                key: const ValueKey<String>('tx-history-page-offline'),
+                pausedActions: const <String>['继续加载'],
+                onRetry: () => unawaited(
+                  ref
+                      .read(walletActivityControllerProvider(walletId).notifier)
+                      .loadMore(),
+                ),
+              )
+            else if (state.failureKind != null)
+              LoopErrorState(
+                key: const ValueKey<String>('tx-history-page-error'),
+                title: '这一页没有加载完',
+                reason: loopChainFailureReason(state.failureKind),
+                onRetry: () => unawaited(
+                  ref
+                      .read(walletActivityControllerProvider(walletId).notifier)
+                      .loadMore(),
+                ),
+              )
+            // v3 需求 6.2 · 4 (decision 0119): the tape scrolls on. The
+            // sentinel asks for the next cursor once it is built — that is,
+            // once the reader has scrolled near the end — and each cursor once.
+            else if (page.nextCursor case final String cursor) ...<Widget>[
+              LoopLoadMoreSentinel(
+                key: const ValueKey<String>('tx-history-load-more'),
+                cursor: cursor,
+                onLoadMore: () => unawaited(_loadMore(walletId)),
+              ),
+              if (_loadingMore)
+                const LoopSkeleton(
+                  key: ValueKey<String>('tx-history-loading-more'),
+                  type: LoopSkeletonType.record,
+                  rows: 1,
+                ),
+            ] else if (page.items.isNotEmpty)
+              // S121 §1.1.1 #10: the end of the tape draws nothing.
+              const SizedBox(
+                key: ValueKey<String>('tx-history-end'),
+                height: 12,
+              ),
+          ],
+        ],
+      ),
     );
   }
-
-  /// How many rows the selected segment lists. The two segments that carry an
-  /// unavailable fact rather than a list count the whole tape: their own card
-  /// says why they have no rows, and a zero there would read as an answer.
-  int _segmentCount(LoopWalletActivityPage page) => switch (_segment) {
-    1 =>
-      page.items
-          .where((entry) => entry.direction == LoopTransferDirection.incoming)
-          .length,
-    2 =>
-      page.items
-          .where((entry) => entry.direction == LoopTransferDirection.outgoing)
-          .length,
-    _ => page.items.length,
-  };
 
   List<Widget> _segmentBody(LoopWalletActivityPage page, String walletId) {
     switch (_segment) {
@@ -2391,10 +2394,12 @@ class _TransactionHistoryScreenState
 
   Widget _activityList(List<LoopWalletActivityEntry> entries) {
     if (entries.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('tx-history-empty'),
-        message: '这一段没有记录',
-        reason: '索引器已经读到这个区间，但其中没有符合的转账。',
+        illustration: LoopIllustration.history,
+        title: '这一段没有记录',
+        message: '收到或发出的转账会出现在这里。',
+        compact: true,
       );
     }
     return LoopRecordGroup(
@@ -2578,6 +2583,7 @@ class _ActivitySegments extends StatelessWidget {
             for (final (index, label) in labels.indexed) ...<Widget>[
               LoopSeg(
                 key: ValueKey<String>('tx-history-seg-$index'),
+                quiet: true,
                 label: label,
                 selected: index == selected,
                 onSelected: () => onSelected(index),
@@ -2626,209 +2632,203 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
     }
     final status = state.value;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('networks-screen'),
-      onRefresh: ref.read(chainStatusControllerProvider.notifier).reload,
-      updating: state.refreshing,
-      archetype: LoopPageArchetype.record,
-      title: '网络与 RPC',
-      onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('networks-folio'),
-        archetype: LoopFolioArchetype.record,
-        kicker: '网络状态',
-        // Lime is the success colour, and 「1 / 4 正常」 in Lime read as good
-        // news over four endpoints of which two were unreachable. The figure
-        // stays; the colour follows the majority of what was measured.
-        headingTone: status == null || status.rpc.endpoints.isEmpty
-            ? LoopFolioHeadingTone.neutral
-            : status.rpc.healthyCount * 2 >= status.rpc.endpoints.length
-            ? LoopFolioHeadingTone.accent
-            : LoopFolioHeadingTone.neutral,
-        heading: status == null
-            ? '网络状态还没有读到'
-            : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} 正常',
-        stamp: status == null
-            ? null
-            : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} OK',
-        caption: status?.launchChain == null
-            ? '只有 BNB Smart Chain 一条网络；端点只显示主机名，永远不下发完整 RPC 地址。'
-            : '主网 BNB Smart Chain 加上 LOOP 发布的 Launch 链；'
-                  '端点只显示主机名，永远不下发完整 RPC 地址。',
-      ),
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('networks-capability-block'),
-              title: '链上读取当前不可用',
-              capability: capability,
-              fallbackReasonCode: 'BSC_RPC_NOT_CONFIGURED',
+    // Decision 0126: flat. The folio's 「1 / 4 正常」 is the chain row's own
+    // badge; the endpoint detail stays one tap away below.
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('networks-screen'),
+        onRefresh: ref.read(chainStatusControllerProvider.notifier).reload,
+        updating: state.refreshing,
+        archetype: LoopPageArchetype.record,
+        title: '网络与 RPC',
+        onBack: widget.onBack,
+        block: blocked
+            ? LoopCapabilityPageBlock.of(
+                key: const ValueKey<String>('networks-capability-block'),
+                title: '链上读取当前不可用',
+                capability: capability,
+                fallbackReasonCode: 'BSC_RPC_NOT_CONFIGURED',
+              )
+            : null,
+        sections: <Widget>[
+          if (!state.isReady || status == null)
+            LoopChainStateBlock(
+              keyPrefix: 'networks',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '没有可展示的网络',
+              onRetry: () => unawaited(
+                ref.read(chainStatusControllerProvider.notifier).reload(),
+              ),
             )
-          : null,
-      sections: <Widget>[
-        if (!state.isReady || status == null)
-          LoopChainStateBlock(
-            keyPrefix: 'networks',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '没有可展示的网络',
-            onRetry: () => unawaited(
-              ref.read(chainStatusControllerProvider.notifier).reload(),
+          else if (status.chainIdMismatched)
+            const LoopUnavailableCard(
+              key: ValueKey<String>('networks-chain-mismatch'),
+              label: '端点返回的不是 BNB Smart Chain',
+              reasonCode: 'BSC_CHAIN_ID_MISMATCH',
+            )
+          else ...<Widget>[
+            const LoopLabel('已启用'),
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('networks-chain-row'),
+                  // The prototype's chain rows all carry the chain's own logo;
+                  // the app's row had no leading column at all (audit item 7).
+                  leading: const LoopNetworkLogo(network: 'bsc', size: 36),
+                  title: status.chain.name,
+                  // 延迟 is what the prototype's row says, and it is the one
+                  // fact a reader can act on. The chain id, the confirmation
+                  // depth and the reorg window are operator facts; they moved
+                  // into the disclosure below with the endpoints.
+                  subtitle: _chainLatencyText(status),
+                  subtitleMaxLines: 2,
+                  // Decision 0126: the folio's 「1 / 4 正常」 is this row's value now.
+                  // Lime is the success colour, so it follows the majority of what was
+                  // measured; the head block moved into the operator line below.
+                  trailing: status.rpc.endpoints.isEmpty
+                      ? null
+                      : '${status.rpc.healthyCount} / '
+                            '${status.rpc.endpoints.length} 正常',
+                  trailingColor:
+                      status.rpc.endpoints.isNotEmpty &&
+                          status.rpc.healthyCount * 2 >=
+                              status.rpc.endpoints.length
+                      ? LoopColors.lime
+                      : LoopColors.chalk,
+                  // The 正常 / 异常 pill said the count's news twice; it stays
+                  // only when there is no count to read.
+                  trailingBadge: status.rpc.endpoints.isNotEmpty
+                      ? null
+                      : LoopBadge(
+                          status.rpc.available ? '正常' : '异常',
+                          kind: status.rpc.available
+                              ? LoopBadgeKind.up
+                              : LoopBadgeKind.down,
+                        ),
+                ),
+              ],
             ),
-          )
-        else if (status.chainIdMismatched)
-          const LoopUnavailableCard(
-            key: ValueKey<String>('networks-chain-mismatch'),
-            label: '端点返回的不是 BNB Smart Chain',
-            reasonCode: 'BSC_CHAIN_ID_MISMATCH',
-          )
-        else ...<Widget>[
-          const LoopLabel('已启用'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('networks-chain-row'),
-                // The prototype's chain rows all carry the chain's own logo;
-                // the app's row had no leading column at all (audit item 7).
-                leading: const LoopNetworkLogo(network: 'bsc', size: 44),
-                title: status.chain.name,
-                // 延迟 is what the prototype's row says, and it is the one
-                // fact a reader can act on. The chain id, the confirmation
-                // depth and the reorg window are operator facts; they moved
-                // into the disclosure below with the endpoints.
-                subtitle: _chainLatencyText(status),
-                subtitleMaxLines: 2,
-                trailing: status.rpc.head == null
-                    ? null
-                    : loopGroupedFigure(
-                        status.rpc.head!.blockNumber.toString(),
-                      ),
-                trailingBadge: LoopBadge(
-                  status.rpc.available ? '正常' : '异常',
-                  kind: status.rpc.available
-                      ? LoopBadgeKind.up
-                      : LoopBadgeKind.down,
+            // Decision 0038: a second row exists only when the backend published
+            // a Launch chain slot of its own. While the slot equals the primary
+            // chain the key is absent and this page shows nothing extra — not an
+            // unavailable placeholder. Custom RPC and testnets stay unavailable.
+            if (status.launchChain != null)
+              _LaunchChainRow(launchChain: status.launchChain!),
+            // The prototype's 设置 group: two rows, not a whole-width card.
+            const LoopLabel('设置'),
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('networks-custom-rpc'),
+                  title: '自定义 RPC',
+                  subtitle: loopReasonCodeText('WALLET_CUSTOM_RPC_DEFERRED'),
+                  subtitleMaxLines: 2,
+                  trailingBadge: const LoopBadge('不可用'),
                 ),
-              ),
-            ],
-          ),
-          // Decision 0038: a second row exists only when the backend published
-          // a Launch chain slot of its own. While the slot equals the primary
-          // chain the key is absent and this page shows nothing extra — not an
-          // unavailable placeholder. Custom RPC and testnets stay unavailable.
-          if (status.launchChain != null)
-            _LaunchChainRow(launchChain: status.launchChain!),
-          // The prototype's 设置 group: two rows, not a whole-width card.
-          const LoopLabel('设置'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('networks-custom-rpc'),
-                title: '自定义 RPC',
-                subtitle: loopReasonCodeText('WALLET_CUSTOM_RPC_DEFERRED'),
-                subtitleMaxLines: 2,
-                trailingBadge: const LoopBadge('不可用'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('networks-testnet'),
-                title: '测试网',
-                // Decision 0038: the Launch slot is the only testnet the
-                // product has, and it is published by the server, never
-                // toggled here.
-                subtitle: status.launchChain == null
-                    ? '没有已发布的测试网'
-                    : '${status.launchChain!.name} · 只有 Launch 使用',
-                trailingBadge: LoopBadge(
-                  status.launchChain == null ? '已关闭' : '已发布',
-                  kind: status.launchChain == null
-                      ? LoopBadgeKind.mute
-                      : LoopBadgeKind.launch,
-                ),
-              ),
-            ],
-          ),
-          // The endpoint list, the indexer lanes, the chain id, the reorg
-          // window and the registry counts are operator facts. They filled
-          // the page above the chain rows (audit item 5); they are still all
-          // here, one tap away.
-          LoopDisclosure(
-            key: const ValueKey<String>('networks-operator-disclosure'),
-            summary: '端点、索引器与链参数',
-            child: Padding(
-              padding: const EdgeInsets.only(top: 6, bottom: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  LoopProvenanceFooter(
-                    key: const ValueKey<String>('networks-chain-parameters'),
-                    text:
-                        '${status.chain.chainId} · '
-                        '${loopGroupedFigure(status.chain.confirmations.toString())} 确认 · '
-                        '重组跟踪 '
-                        '${loopGroupedFigure(status.chain.reorgDepthBlocks.toString())} 块',
+                LoopRecordRow(
+                  key: const ValueKey<String>('networks-testnet'),
+                  title: '测试网',
+                  // Decision 0038: the Launch slot is the only testnet the
+                  // product has, and it is published by the server, never
+                  // toggled here.
+                  subtitle: status.launchChain == null
+                      ? '没有已发布的测试网'
+                      : '${status.launchChain!.name} · 只有 Launch 使用',
+                  trailingBadge: LoopBadge(
+                    status.launchChain == null ? '已关闭' : '已发布',
+                    kind: status.launchChain == null
+                        ? LoopBadgeKind.mute
+                        : LoopBadgeKind.launch,
                   ),
-                  const LoopLabel('RPC 端点', tight: true),
-                  if (status.rpc.endpoints.isEmpty)
-                    LoopUnavailableCard(
-                      key: const ValueKey<String>('networks-no-endpoints'),
-                      label: '没有已配置的 RPC 端点',
-                      reasonCode:
-                          status.rpc.reasonCode ?? 'BSC_RPC_NOT_CONFIGURED',
-                    )
-                  else
+                ),
+              ],
+            ),
+            // The endpoint list, the indexer lanes, the chain id, the reorg
+            // window and the registry counts are operator facts. They filled
+            // the page above the chain rows (audit item 5); they are still all
+            // here, one tap away.
+            LoopDisclosure(
+              key: const ValueKey<String>('networks-operator-disclosure'),
+              summary: '端点、索引器与链参数',
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    LoopProvenanceFooter(
+                      key: const ValueKey<String>('networks-chain-parameters'),
+                      text:
+                          '${status.rpc.head == null ? '' : '区块 ${loopGroupedFigure(status.rpc.head!.blockNumber.toString())} · '}'
+                          '${status.chain.chainId} · '
+                          '${loopGroupedFigure(status.chain.confirmations.toString())} 确认 · '
+                          '重组跟踪 '
+                          '${loopGroupedFigure(status.chain.reorgDepthBlocks.toString())} 块',
+                    ),
+                    const LoopLabel('RPC 端点', tight: true),
+                    if (status.rpc.endpoints.isEmpty)
+                      LoopUnavailableCard(
+                        key: const ValueKey<String>('networks-no-endpoints'),
+                        label: '没有已配置的 RPC 端点',
+                        reasonCode:
+                            status.rpc.reasonCode ?? 'BSC_RPC_NOT_CONFIGURED',
+                      )
+                    else
+                      LoopRecordGroup(
+                        rows: <LoopRecordRow>[
+                          for (
+                            var index = 0;
+                            index < status.rpc.endpoints.length;
+                            index += 1
+                          )
+                            _endpointRow(status.rpc.endpoints[index], index),
+                        ],
+                      ),
+                    const LoopLabel('索引器', tight: true),
                     LoopRecordGroup(
                       rows: <LoopRecordRow>[
-                        for (
-                          var index = 0;
-                          index < status.rpc.endpoints.length;
-                          index += 1
-                        )
-                          _endpointRow(status.rpc.endpoints[index], index),
+                        for (final lane in status.indexer)
+                          LoopRecordRow(
+                            key: ValueKey<String>('lane-${lane.lane.wireName}'),
+                            title: loopIndexerLaneLabel(lane.lane),
+                            subtitle: lane.available
+                                ? <String>[
+                                    if (lane.lastBlockNumber != null)
+                                      '高度 '
+                                          '${loopGroupedFigure(lane.lastBlockNumber.toString())}',
+                                    if (lane.lagBlocks != null)
+                                      '落后 '
+                                          '${loopGroupedFigure(lane.lagBlocks.toString())} 块',
+                                    if (lane.reorgCount != null)
+                                      '重组 ${lane.reorgCount} 次',
+                                    if (lane.updatedAt != null)
+                                      loopRelativeTime(lane.updatedAt!),
+                                  ].join(' · ')
+                                : loopReasonCodeText(lane.reasonCode),
+                            trailingBadge: LoopBadge(
+                              lane.available ? '运行中' : '未运行',
+                              kind: lane.available
+                                  ? LoopBadgeKind.up
+                                  : LoopBadgeKind.down,
+                            ),
+                          ),
                       ],
                     ),
-                  const LoopLabel('索引器', tight: true),
-                  LoopRecordGroup(
-                    rows: <LoopRecordRow>[
-                      for (final lane in status.indexer)
-                        LoopRecordRow(
-                          key: ValueKey<String>('lane-${lane.lane.wireName}'),
-                          title: loopIndexerLaneLabel(lane.lane),
-                          subtitle: lane.available
-                              ? <String>[
-                                  if (lane.lastBlockNumber != null)
-                                    '高度 '
-                                        '${loopGroupedFigure(lane.lastBlockNumber.toString())}',
-                                  if (lane.lagBlocks != null)
-                                    '落后 '
-                                        '${loopGroupedFigure(lane.lagBlocks.toString())} 块',
-                                  if (lane.reorgCount != null)
-                                    '重组 ${lane.reorgCount} 次',
-                                  if (lane.updatedAt != null)
-                                    loopRelativeTime(lane.updatedAt!),
-                                ].join(' · ')
-                              : loopReasonCodeText(lane.reasonCode),
-                          trailingBadge: LoopBadge(
-                            lane.available ? '运行中' : '未运行',
-                            kind: lane.available
-                                ? LoopBadgeKind.up
-                                : LoopBadgeKind.down,
-                          ),
-                        ),
-                    ],
-                  ),
-                  LoopProvenanceFooter(
-                    key: const ValueKey<String>('networks-registry'),
-                    text:
-                        '可读资产 ${status.registry.readableAssetCount} 个 · '
-                        '已登记池 ${status.registry.registeredPoolCount} 个',
-                  ),
-                ],
+                    LoopProvenanceFooter(
+                      key: const ValueKey<String>('networks-registry'),
+                      text:
+                          '可读资产 ${status.registry.readableAssetCount} 个 · '
+                          '已登记池 ${status.registry.registeredPoolCount} 个',
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

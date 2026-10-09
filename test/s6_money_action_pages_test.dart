@@ -668,10 +668,7 @@ void main() {
         find.byKey(const ValueKey<String>('approvals-page-block')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey<String>('approvals-folio')),
-        findsOneWidget,
-      );
+      // Decision 0126: no folio; the page keeps its section heading.
       expect(find.text('按额度排序'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('approvals-state-unavailable')),
@@ -752,7 +749,7 @@ void main() {
         find.byKey(const ValueKey<String>('approvals-empty')),
         findsOneWidget,
       );
-      expect(find.textContaining('当前额度为 0 的授权不会列出'), findsWidgets);
+      expect(find.textContaining('额度为 0 的授权不会列出'), findsWidgets);
     });
   });
 

@@ -411,7 +411,9 @@ void main() {
       }
     });
 
-    testWidgets('the track advances from the previous step into this one', (
+    // Decision 0126: five dots and the step's name replace the `03 / 05`
+    // counter over a filling track (decision 0092's animation retired).
+    testWidgets('five dots, the current one a Lime pill, and the step name', (
       tester,
     ) async {
       await _pump(
@@ -420,55 +422,38 @@ void main() {
           body: IdentityProgress(step: 3, total: 5, label: '设置恢复方式'),
         ),
       );
-      final track = find.byKey(
-        const ValueKey<String>('identity-progress-track'),
-      );
-      final bar = find.descendant(
-        of: track,
-        matching: find.byKey(const ValueKey<String>('loop-progress-fill-bar')),
-      );
-      final width = tester.getSize(track).width;
-      await tester.pump(const Duration(milliseconds: 100));
-      final mid = tester.getSize(bar).width;
-      expect(mid, greaterThan(width * 0.4));
-      expect(mid, lessThan(width * 0.6));
       await tester.pumpAndSettle();
-      expect(tester.getSize(bar).width, moreOrLessEquals(width * 0.6));
+      for (var index = 1; index <= 5; index++) {
+        final dot = find.byKey(ValueKey<String>('loop-step-dot-$index'));
+        expect(dot, findsOneWidget);
+        expect(tester.getSize(dot).width, index == 3 ? 18 : 6);
+        final box =
+            tester.widget<AnimatedContainer>(dot).decoration! as BoxDecoration;
+        expect(box.color, index <= 3 ? LoopColors.lime : LoopColors.line2);
+      }
+      expect(find.text('设置恢复方式'), findsOneWidget);
+      expect(find.text('03 / 05'), findsNothing);
+      expect(find.bySemanticsLabel('流程第 3 步，共 5 步：设置恢复方式'), findsOneWidget);
     });
 
-    testWidgets('the last step fills the track and brightens once', (
-      tester,
-    ) async {
+    testWidgets('the last step lights every dot', (tester) async {
       await _pump(
         tester,
         const Scaffold(
-          body: IdentityProgress(step: 5, total: 5, label: '创建 LOOP ID'),
+          body: IdentityProgress(step: 5, total: 5, label: '完善资料'),
         ),
       );
-      final flash = find.byKey(
-        const ValueKey<String>('loop-progress-fill-flash'),
-      );
-      await tester.pump(const Duration(milliseconds: 280));
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(flash, findsOneWidget);
       await tester.pumpAndSettle();
-      expect(flash, findsNothing);
-      final track = find.byKey(
-        const ValueKey<String>('identity-progress-track'),
-      );
-      expect(
-        tester
-            .getSize(
-              find.descendant(
-                of: track,
-                matching: find.byKey(
-                  const ValueKey<String>('loop-progress-fill-bar'),
-                ),
-              ),
-            )
-            .width,
-        moreOrLessEquals(tester.getSize(track).width),
-      );
+      for (var index = 1; index <= 5; index++) {
+        final box =
+            tester
+                    .widget<AnimatedContainer>(
+                      find.byKey(ValueKey<String>('loop-step-dot-$index')),
+                    )
+                    .decoration!
+                as BoxDecoration;
+        expect(box.color, LoopColors.lime);
+      }
     });
 
     testWidgets('an unknown account id fails closed', (tester) async {

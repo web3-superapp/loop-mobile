@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/profile/about/about_controller.dart';
 import 'package:loop_mobile/features/profile/about/about_models.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_screen.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `about` · the public server record plus the locally read client build.
@@ -47,138 +48,135 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         ? '未声明'
         : config.declaredBuildModeName;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('about-screen'),
-      archetype: LoopPageArchetype.record,
-      title: '关于',
-      onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('about-folio'),
-        archetype: LoopFolioArchetype.record,
-        kicker: 'PRODUCT RECORD',
-        heading: clientVersion.isEmpty ? 'LOOP' : 'LOOP · $clientVersion',
-        caption: '版本与构建号来自这台设备；协议版本、规则与开源清单由 LOOP 提供。',
-        stamp: about == null ? null : 'CONTRACT ${about.contractVersion}',
-      ),
-      // The prototype's order: 法务 first, then the risk disclosure — the one
-      // compliance text this page owns. Build and policy rows are this
-      // build's own additions and follow (audit 2026-09-21 §J.14).
-      sections: <Widget>[
-        const LoopLabel('法务'),
-        if (state.value == null)
-          LoopChainStateBlock(
-            keyPrefix: 'about',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '暂时读不到产品记录',
-            skeleton: LoopSkeletonType.detail,
-            onRetry: () =>
-                unawaited(ref.read(aboutControllerProvider.notifier).reload()),
-          )
-        else
-          _AboutTermsBlock(termsGate: about!.termsGate),
-        const LoopLabel('风险提示'),
-        const LoopNotice(
-          key: ValueKey<String>('about-risk-notice'),
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          title: '加密资产风险',
-          body:
-              '加密资产价格波动剧烈，可能损失全部本金。LOOP 是非托管工具，不提供投资建议，'
-              '不对任何交易结果负责。挖矿产出取决于全网算力竞争，不构成收益承诺。',
-        ),
-        const LoopLabel('本机构建'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('about-client-version'),
-              title: '客户端版本',
-              subtitle: clientVersion.isEmpty
-                  ? '构建配置里没有合法的版本号，这里不编造一个'
-                  : '来自这台设备的构建配置，不会上传',
-              trailing: clientVersion.isEmpty ? null : clientVersion,
-              trailingBadge: clientVersion.isEmpty
-                  ? const LoopBadge('未配置')
-                  : null,
-              position: LoopRowPosition.first,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('about-backend-host'),
-              title: '服务端',
-              // Decision 0100: which backend this build was pointed at, read
-              // from the build configuration; no request is made for it.
-              subtitle: backendHost == null
-                  ? '构建配置里没有服务端地址'
-                  : '${loopBackendTier(backendHost)} · 来自这次构建的配置',
-              trailing: backendHost,
-              trailingBadge: backendHost == null
-                  ? const LoopBadge('未配置')
-                  : null,
-              position: LoopRowPosition.middle,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('about-build-mode'),
-              title: '构建模式',
-              subtitle:
-                  '声明 $declaredMode · 运行时 ${loopRuntimeBuildMode()} · '
-                  '${config.declaredModeMatchesRuntime ? '一致' : '不一致'}',
-              trailing: declaredMode,
-              position: LoopRowPosition.middle,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('about-network-diagnostics'),
-              title: '网络诊断',
-              // Decision 0102: a pushed child page, not one of the 93 routes.
-              subtitle: '测这台设备到各项服务的连通性和耗时',
-              onTap: () => unawaited(openNetworkDiagnostics(context)),
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
-        if (about != null) ...<Widget>[
-          const LoopLabel('当前规则'),
-          _AboutRulesBlock(versions: about.configVersions),
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('about-config-note'),
-            text: '这里只用于查看，不会固定任何一个版本。',
+    // Decision 0126: flat sections; the version that the folio printed
+    // stays in the 本机构建 row it was already in.
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('about-screen'),
+        archetype: LoopPageArchetype.record,
+        title: '关于',
+        onBack: widget.onBack,
+        // The prototype's order: 法务 first, then the risk disclosure — the one
+        // compliance text this page owns. Build and policy rows are this
+        // build's own additions and follow (audit 2026-09-21 §J.14).
+        sections: <Widget>[
+          const LoopLabel('法务'),
+          if (state.value == null)
+            LoopChainStateBlock(
+              keyPrefix: 'about',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '暂时读不到产品记录',
+              skeleton: LoopSkeletonType.detail,
+              onRetry: () => unawaited(
+                ref.read(aboutControllerProvider.notifier).reload(),
+              ),
+            )
+          else
+            _AboutTermsBlock(termsGate: about!.termsGate),
+          const LoopLabel('风险提示'),
+          const LoopNotice(
+            key: ValueKey<String>('about-risk-notice'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '加密资产风险',
+            body:
+                '加密资产价格波动剧烈，可能损失全部本金。LOOP 是非托管工具，不提供投资建议，'
+                '不对任何交易结果负责。挖矿产出取决于全网算力竞争，不构成收益承诺。',
           ),
-        ],
-        const LoopLabel('开源许可'),
-        const LoopNotice(
-          key: ValueKey<String>('about-open-source-summary'),
-          icon: 'book',
-          title: '本应用使用的开源组件',
-          body:
-              '下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；'
-              '精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。',
-        ),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            for (final entry in loopClientOpenSourceEntries)
+          const LoopLabel('本机构建'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
               LoopRecordRow(
-                key: ValueKey<String>('about-open-source-${entry.name}'),
-                title: entry.name,
-                // The licence rides in the subtitle rather than the value
-                // column: a vendor agreement's name is wider than that column
-                // and would be cut, and the licence is the point of the row.
-                subtitle: '${entry.purpose} · ${entry.license}',
-                subtitleMaxLines: 2,
+                key: const ValueKey<String>('about-client-version'),
+                title: '客户端版本',
+                subtitle: clientVersion.isEmpty
+                    ? '构建配置里没有合法的版本号，这里不编造一个'
+                    : '来自这台设备的构建配置，不会上传',
+                trailing: clientVersion.isEmpty ? null : clientVersion,
+                trailingBadge: clientVersion.isEmpty
+                    ? const LoopBadge('未配置')
+                    : null,
+                position: LoopRowPosition.first,
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('about-backend-host'),
+                title: '服务端',
+                // Decision 0100: which backend this build was pointed at, read
+                // from the build configuration; no request is made for it.
+                subtitle: backendHost == null
+                    ? '构建配置里没有服务端地址'
+                    : '${loopBackendTier(backendHost)} · 来自这次构建的配置',
+                trailing: backendHost,
+                trailingBadge: backendHost == null
+                    ? const LoopBadge('未配置')
+                    : null,
                 position: LoopRowPosition.middle,
               ),
-          ],
-        ),
-        const LoopProvenanceFooter(
-          key: ValueKey<String>('about-open-source-note'),
-          text: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
-        ),
-        if (about != null)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('about-client-build-note'),
-            label: 'LOOP 不发布客户端版本',
-            reasonCode: about.clientBuildReasonCode,
+              LoopRecordRow(
+                key: const ValueKey<String>('about-build-mode'),
+                title: '构建模式',
+                subtitle:
+                    '声明 $declaredMode · 运行时 ${loopRuntimeBuildMode()} · '
+                    '${config.declaredModeMatchesRuntime ? '一致' : '不一致'}',
+                trailing: declaredMode,
+                position: LoopRowPosition.middle,
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('about-network-diagnostics'),
+                title: '网络诊断',
+                // Decision 0102: a pushed child page, not one of the 93 routes.
+                subtitle: '测这台设备到各项服务的连通性和耗时',
+                onTap: () => unawaited(openNetworkDiagnostics(context)),
+                position: LoopRowPosition.last,
+              ),
+            ],
           ),
-        const SizedBox(height: 20),
-      ],
+          if (about != null) ...<Widget>[
+            const LoopLabel('当前规则'),
+            _AboutRulesBlock(versions: about.configVersions),
+            LoopProvenanceFooter(
+              key: const ValueKey<String>('about-config-note'),
+              text: '这里只用于查看，不会固定任何一个版本。',
+            ),
+          ],
+          const LoopLabel('开源许可'),
+          const LoopNotice(
+            key: ValueKey<String>('about-open-source-summary'),
+            icon: 'book',
+            title: '本应用使用的开源组件',
+            body:
+                '下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；'
+                '精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。',
+          ),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              for (final entry in loopClientOpenSourceEntries)
+                LoopRecordRow(
+                  key: ValueKey<String>('about-open-source-${entry.name}'),
+                  title: entry.name,
+                  // The licence rides in the subtitle rather than the value
+                  // column: a vendor agreement's name is wider than that column
+                  // and would be cut, and the licence is the point of the row.
+                  subtitle: '${entry.purpose} · ${entry.license}',
+                  subtitleMaxLines: 2,
+                  position: LoopRowPosition.middle,
+                ),
+            ],
+          ),
+          const LoopProvenanceFooter(
+            key: ValueKey<String>('about-open-source-note'),
+            text: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
+          ),
+          if (about != null)
+            LoopUnavailableCard(
+              key: const ValueKey<String>('about-client-build-note'),
+              label: 'LOOP 不发布客户端版本',
+              reasonCode: about.clientBuildReasonCode,
+            ),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 }

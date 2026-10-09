@@ -77,7 +77,14 @@ void main() {
     // No score, no badge, no "protections ready" claim.
     expect(find.text('GOOD'), findsNothing);
     expect(find.textContaining('项保护已开启'), findsNothing);
-    expect(find.text('2 台设备 · 2 个会话'), findsOneWidget);
+    // Decision 0126: the device count is the 设备 row's own value; the
+    // posture card that repeated it is gone.
+    expect(find.text('2 台设备 · 2 个会话'), findsNothing);
+    final devices = tester.widget<LoopRecordRow>(
+      find.byKey(const ValueKey<String>('security-devices-entry')),
+    );
+    expect(devices.trailing, '2');
+    expect(devices.subtitle, startsWith('2 个活跃会话'));
 
     for (final id in LoopSecurityCapabilityId.values) {
       final row = find.byKey(

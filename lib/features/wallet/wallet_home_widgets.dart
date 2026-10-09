@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_environment_tag.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -505,15 +506,19 @@ class _QuickActionTile extends StatelessWidget {
     // OKX round action keys (decision 0122): a 56 solid Lime disc with an
     // Ink glyph; a closed key keeps its place on the quiet card ground.
     final ink = enabled ? LoopColors.ink : LoopGround.auxiliaryOf(context);
+    final onTap = run ?? (reason == null ? null : () => onBlocked(reason));
     return Semantics(
       button: true,
       enabled: enabled,
       label: enabled ? action.label : '${action.label}，暂不可用',
+      // The gesture below is excluded with the rest of the subtree, so the
+      // tap is offered here or a screen reader could not press the key.
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         key: action.actionKey,
         behavior: HitTestBehavior.opaque,
-        onTap: run ?? (reason == null ? null : () => onBlocked(reason)),
+        onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 74),
           child: Column(
@@ -576,9 +581,10 @@ class WalletSectionHeading extends StatelessWidget {
             header: true,
             child: Text(
               title,
-              style: LoopType.titleLg.copyWith(
-                color: LoopGround.inkOf(context),
-              ),
+              // Decision 0126: a flat second-level page's section title.
+              style: LoopFlat.of(context)
+                  ? loopFlatSectionStyle()
+                  : LoopType.titleLg.copyWith(color: LoopGround.inkOf(context)),
             ),
           ),
           const Spacer(),

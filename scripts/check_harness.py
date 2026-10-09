@@ -14459,6 +14459,9 @@ ILLUSTRATION_NAMES = (
     # Decision 0127: the member directory and the friend lists.
     "members",
     "friends",
+    # Decision 0126: account and wallet record pages.
+    "profile",
+    "history",
 )
 # Lime for the main stroke, Chalk (at the text3 weight) for the secondary
 # one, and the two medal colours. Nothing else may be painted.

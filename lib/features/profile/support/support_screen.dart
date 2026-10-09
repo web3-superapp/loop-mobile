@@ -12,7 +12,11 @@ import 'package:loop_mobile/features/profile/support/support_gateway.dart';
 import 'package:loop_mobile/features/profile/support/support_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -112,213 +116,177 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
     final problem = LoopSupportDraft.problemFor(_body.text);
     final submittable = !state.busy && !blocked && problem == null;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('support-screen'),
-      archetype: LoopPageArchetype.record,
-      title: '帮助与客服',
-      onBack: widget.onBack,
-      // The prototype has no hero here: it opens on 联系我们, and its
-      // 「先查答案，再提交工单」 card is the body of the closing disclosure.
-      // A hero carrying that line over a page with no answers on it was the
-      // page denying itself (audit 2026-09-21 §D+ #13, §D+ #14).
-      sections: <Widget>[
-        const LoopLabel('联系我们'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('support-open-community'),
-              leading: const LoopRowIcon(monogram: 'LOOP'),
-              title: 'LOOP 官方社区',
-              subtitle: '成员数与在线状态暂时读不到，这里不显示数字',
-              position: LoopRowPosition.single,
-              onTap: () => widget.onNavigate('community-discover'),
-            ),
-          ],
-        ),
-        // Five bundled answers, so the page has a first path that is not a
-        // ticket. They are product copy, not an indexed article resource.
-        const LoopLabel('常见问题'),
-        Column(
-          children: <Widget>[
-            for (final answer in _supportAnswers)
-              LoopDisclosure(
-                key: ValueKey<String>('support-answer-${answer.$1}'),
-                summary: answer.$1,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                  child: Text(
-                    answer.$2,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
+    // Decision 0126: flat sections; the policy card and its English
+    // eyebrow are gone, the reply window is one footnote line.
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('support-screen'),
+        archetype: LoopPageArchetype.record,
+        title: '帮助与客服',
+        onBack: widget.onBack,
+        // The prototype has no hero here: it opens on 联系我们, and its
+        // 「先查答案，再提交工单」 card is the body of the closing disclosure.
+        // A hero carrying that line over a page with no answers on it was the
+        // page denying itself (audit 2026-09-21 §D+ #13, §D+ #14).
+        sections: <Widget>[
+          const LoopLabel('联系我们'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('support-open-community'),
+                leading: const LoopRowIcon(icon: 'community'),
+                title: 'LOOP 官方社区',
+                position: LoopRowPosition.single,
+                onTap: () => widget.onNavigate('community-discover'),
               ),
-          ],
-        ),
-        const LoopLabel('提交工单'),
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('support-capability-block'),
-            label: '客服工单当前不可用',
-            reasonCode: capability.reasonCode ?? 'SUPPORT_RUNTIME_UNAVAILABLE',
-          )
-        else ...<Widget>[
-          LoopSegBar(
-            key: const ValueKey<String>('support-category-bar'),
-            labels: <String>[
-              for (final category in LoopSupportCategory.values) category.label,
             ],
-            selectedIndex: LoopSupportCategory.values.indexOf(_category),
-            onSelected: (index) =>
-                setState(() => _category = LoopSupportCategory.values[index]),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              key: const ValueKey<String>('support-body-field'),
-              controller: _body,
-              // The server refuses every control character, a newline
-              // included, so one is never typed rather than typed and then
-              // rejected.
-              maxLines: 1,
-              enabled: !state.busy,
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
+          // Five bundled answers, so the page has a first path that is not a
+          // ticket. They are product copy, not an indexed article resource.
+          const LoopLabel('常见问题'),
+          Column(
+            children: <Widget>[
+              for (final answer in _supportAnswers)
+                LoopDisclosure(
+                  key: ValueKey<String>('support-answer-${answer.$1}'),
+                  summary: answer.$1,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                    child: Text(
+                      answer.$2,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const LoopLabel('提交工单'),
+          if (blocked)
+            LoopUnavailableCard(
+              key: const ValueKey<String>('support-capability-block'),
+              label: '客服工单当前不可用',
+              reasonCode:
+                  capability.reasonCode ?? 'SUPPORT_RUNTIME_UNAVAILABLE',
+            )
+          else ...<Widget>[
+            LoopSegBar(
+              key: const ValueKey<String>('support-category-bar'),
+              labels: <String>[
+                for (final category in LoopSupportCategory.values)
+                  category.label,
               ],
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: '描述你遇到的问题；不要填写私钥、助记词或验证码',
+              selectedIndex: LoopSupportCategory.values.indexOf(_category),
+              onSelected: (index) =>
+                  setState(() => _category = LoopSupportCategory.values[index]),
+            ),
+            const SizedBox(height: 12),
+            LoopFlatField(
+              key: const ValueKey<String>('support-body'),
+              label: '问题描述',
+              footnote:
+                  '$length / ${LoopSupportPolicy.maximumBodyLength} 码点'
+                  '${problem != null && length > 0 ? ' · ${problem.explanation}' : ''}',
+              error: problem != null && length > 0,
+              child: TextField(
+                key: const ValueKey<String>('support-body-field'),
+                controller: _body,
+                // The server refuses every control character, a newline
+                // included, so one is never typed rather than typed and then
+                // rejected.
+                maxLines: 1,
+                enabled: !state.busy,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
+                ],
+                onChanged: (_) => setState(() {}),
+                style: LoopTypography.body(15, color: LoopColors.chalk),
+                decoration: loopFormFieldDecoration(
+                  hint: '描述你遇到的问题；不要填写私钥、助记词或验证码',
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              '$length / ${LoopSupportPolicy.maximumBodyLength} 码点',
-              style: LoopMono.label,
-            ),
-          ),
-          if (problem != null && length > 0)
+            if (problem != null && length > 0)
+              const SizedBox.shrink(
+                key: ValueKey<String>('support-body-problem'),
+              ),
+            if (state.commandFailureKind != null)
+              LoopErrorState(
+                key: const ValueKey<String>('support-command-error'),
+                title: '工单没有提交',
+                reason: loopChainFailureReason(state.commandFailureKind),
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-              child: Text(
-                key: const ValueKey<String>('support-body-problem'),
-                problem.explanation,
-                style: LoopTypography.caption(11, color: LoopColors.text3),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: LoopButton(
+                key: const ValueKey<String>('support-submit'),
+                label: state.busy ? '提交中' : '提交工单',
+                block: true,
+                primary: true,
+                onPressed: submittable ? () => unawaited(_submit()) : null,
               ),
             ),
-          if (state.commandFailureKind != null)
-            LoopErrorState(
-              key: const ValueKey<String>('support-command-error'),
-              title: '工单没有提交',
-              reason: loopChainFailureReason(state.commandFailureKind),
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            if (page != null)
+              LoopUnavailableCard.fact(
+                key: const ValueKey<String>('support-attachments-unavailable'),
+                label: '暂不支持附件',
+                fact: page.attachments,
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              ),
+            const LoopLabel('我的工单'),
+            if (!state.resource.isReady)
+              LoopChainStateBlock(
+                keyPrefix: 'support',
+                phase: state.resource.phase,
+                failureKind: state.resource.failureKind,
+                emptyMessage: '还没有提交过工单',
+                onRetry: () => unawaited(
+                  ref.read(supportControllerProvider.notifier).reload(),
+                ),
+              )
+            else if (page!.items.isEmpty)
+              const LoopEmptyState(
+                key: ValueKey<String>('support-tickets-empty'),
+                illustration: LoopIllustration.history,
+                title: '还没有提交过工单',
+                message: '提交后，这里会显示状态与客服回复。',
+                compact: true,
+              )
+            else
+              LoopRecordGroup(
+                rows: <LoopRecordRow>[
+                  for (final ticket in page.items) _ticketRow(ticket),
+                ],
+              ),
+            if (page?.nextCursor != null)
+              const LoopNotice(
+                key: ValueKey<String>('support-more-tickets'),
+                icon: 'info',
+                title: '还有更早的工单',
+                body: '目前只显示最新的一页，更早的工单暂时看不到。',
+                margin: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              ),
+          ],
+          if (policy != null)
+            LoopProvenanceFooter(
+              key: const ValueKey<String>('support-escalation'),
+              text:
+                  '${policy.businessDaysOnly ? '工作日 ' : ''}'
+                  '${policy.responseWindowHours} 小时内回复；'
+                  '紧急问题请在工单正文里写明。',
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: LoopButton(
-              key: const ValueKey<String>('support-submit'),
-              label: state.busy ? '提交中' : '提交工单',
-              block: true,
-              primary: true,
-              onPressed: submittable ? () => unawaited(_submit()) : null,
-            ),
+          // The prototype closes on the warning, not opens on it.
+          const LoopNotice(
+            key: ValueKey<String>('support-scam-notice'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '官方不会主动私聊你',
+            body: '任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。',
+            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
-          if (page != null)
-            LoopUnavailableCard.fact(
-              key: const ValueKey<String>('support-attachments-unavailable'),
-              label: '暂不支持附件',
-              fact: page.attachments,
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            ),
-          const LoopLabel('我的工单'),
-          if (!state.resource.isReady)
-            LoopChainStateBlock(
-              keyPrefix: 'support',
-              phase: state.resource.phase,
-              failureKind: state.resource.failureKind,
-              emptyMessage: '还没有提交过工单',
-              onRetry: () => unawaited(
-                ref.read(supportControllerProvider.notifier).reload(),
-              ),
-            )
-          else if (page!.items.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('support-tickets-empty'),
-              message: '还没有提交过工单',
-              reason: '提交后，这里会显示状态与客服回复。',
-            )
-          else
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                for (final ticket in page.items) _ticketRow(ticket),
-              ],
-            ),
-          if (page?.nextCursor != null)
-            const LoopNotice(
-              key: ValueKey<String>('support-more-tickets'),
-              icon: 'info',
-              title: '还有更早的工单',
-              body: '目前只显示最新的一页，更早的工单暂时看不到。',
-              margin: EdgeInsets.fromLTRB(16, 12, 16, 0),
-            ),
+          const SizedBox(height: 20),
         ],
-        if (policy != null)
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('support-escalation'),
-            text: '紧急问题请在工单正文里写明，目前没有单独的加急通道。',
-          ),
-        // The prototype closes on the warning, not opens on it.
-        const LoopNotice(
-          key: ValueKey<String>('support-scam-notice'),
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          title: '官方不会主动私聊你',
-          body: '任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-        ),
-        LoopDisclosure(
-          key: const ValueKey<String>('support-policy-disclosure'),
-          summary: '查看客服说明',
-          child: LoopChalkCard(
-            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  'LOOP SUPPORT',
-                  style: LoopTypography.eyebrow(
-                    10,
-                    color: LoopColors.ink.withValues(alpha: 0.62),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '先查答案，再提交工单',
-                  style: LoopTypography.heading(
-                    26,
-                    weight: FontWeight.w800,
-                    color: LoopColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  policy == null
-                      ? '官方不会主动私聊你，也不会索要私钥、助记词或验证码。'
-                      : '${policy.businessDaysOnly ? '工作日 ' : ''}'
-                            '${policy.responseWindowHours} 小时内回复；'
-                            '官方不会主动私聊你。',
-                  style: LoopTypography.caption(
-                    11,
-                    color: LoopColors.ink.withValues(alpha: 0.72),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
+      ),
     );
   }
 

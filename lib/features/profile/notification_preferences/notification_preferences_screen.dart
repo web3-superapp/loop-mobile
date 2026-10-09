@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -14,6 +13,7 @@ import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -58,12 +58,12 @@ class _NotificationPreferencesScreenState
         !capability.evidencePending) {
       return const SizedBox.shrink();
     }
+    // Decision 0126: nothing here asks the reader to act, so it is an ⓘ
+    // line, not a banner.
     return const LoopNotice(
       key: ValueKey<String>('notification-preferences-push-channel'),
-      tone: LoopNoticeTone.warn,
-      icon: 'warn',
-      title: '推送还没有在真机上确认过',
-      body: '推送通道已经配好，但还没有一台设备确认收到过。开关照常保存，也照常影响站内的通知列表。',
+      icon: 'info',
+      body: '推送还没有在真机上确认过。开关照常保存，也照常影响站内的通知列表。',
     );
   }
 
@@ -171,151 +171,125 @@ class _NotificationPreferencesScreenState
     );
     final resource = state.resource;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('notification-preferences-screen'),
-      archetype: LoopPageArchetype.action,
-      title: '通知设置',
-      kicker: loopChainPreviewKicker(mode),
-      onBack: widget.onBack,
-      // The prototype has no `[data-page-primary]` here: it opens on a Chalk
-      // summary card and then goes straight to 挖矿. The hero that stood in
-      // its place printed 「通知设置」 twice in one screen (§D+ #13).
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('notification-capability-block'),
-              title: '通知设置当前不可用',
-              capability: capability,
-              fallbackReasonCode: 'NOTIFICATIONS_RUNTIME_UNAVAILABLE',
-            )
-          : null,
-      sections: <Widget>[
-        LoopChainPreviewNotice(mode: mode, resource: '通知设置'),
-        // 0067 §7.6: the push channel is a separate fact from the ten
-        // switches. Saving a preference has always worked; whether anything
-        // can be delivered is the server's answer, and the page says which of
-        // the two it is talking about rather than letting a switch imply both.
-        _pushChannelNotice(
-          ref.watch(
-            loopCapabilityProvider(LoopV2CapabilityId.pushNotifications),
-          ),
-        ),
-        if (resource != null)
-          LoopChalkCard(
-            key: const ValueKey<String>('notification-preferences-summary'),
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  'NOTIFICATION SUMMARY',
-                  style: LoopTypography.eyebrow(
-                    10,
-                    color: LoopColors.ink.withValues(alpha: 0.62),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                // 「9 项开启」 counted stored intents and read as nine kinds of
-                // notification; only price alerts are emitted.
-                Text(
-                  '${resource.deliveringEnabledCount} 项开启并生效',
-                  style: LoopTypography.heading(
-                    26,
-                    weight: FontWeight.w800,
-                    color: LoopColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '安全事件始终开启且无法关闭；这里保存的是意图，不代表已经能送达。',
-                  style: LoopTypography.caption(
-                    11,
-                    color: LoopColors.ink.withValues(alpha: 0.72),
-                  ),
-                ),
-              ],
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('notification-preferences-screen'),
+        archetype: LoopPageArchetype.action,
+        title: '通知设置',
+        kicker: loopChainPreviewKicker(mode),
+        onBack: widget.onBack,
+        // The prototype has no `[data-page-primary]` here: it opens on a Chalk
+        // summary card and then goes straight to 挖矿. The hero that stood in
+        // its place printed 「通知设置」 twice in one screen (§D+ #13).
+        block: blocked
+            ? LoopCapabilityPageBlock.of(
+                key: const ValueKey<String>('notification-capability-block'),
+                title: '通知设置当前不可用',
+                capability: capability,
+                fallbackReasonCode: 'NOTIFICATIONS_RUNTIME_UNAVAILABLE',
+              )
+            : null,
+        sections: <Widget>[
+          LoopChainPreviewNotice(mode: mode, resource: '通知设置'),
+          // 0067 §7.6: the push channel is a separate fact from the ten
+          // switches. Saving a preference has always worked; whether anything
+          // can be delivered is the server's answer, and the page says which of
+          // the two it is talking about rather than letting a switch imply both.
+          _pushChannelNotice(
+            ref.watch(
+              loopCapabilityProvider(LoopV2CapabilityId.pushNotifications),
             ),
           ),
-        if (!state.isReady || resource == null)
-          LoopChainStateBlock(
-            keyPrefix: 'notification-preferences',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '还没有通知设置',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else ...<Widget>[
-          if (state.requiresReload)
+          // Decision 0126: the Chalk summary card became one ⓘ line.
+          if (resource != null)
             LoopNotice(
-              key: const ValueKey<String>('notification-preferences-conflict'),
-              tone: LoopNoticeTone.warn,
-              icon: 'warn',
-              title: '版本冲突 —— 没有覆盖任何内容',
-              body: '通知设置已在其他设备上改动。请重新加载后再修改。',
-              trailing: LoopButton(
-                key: const ValueKey<String>(
-                  'notification-preferences-conflict-reload',
-                ),
-                label: '重新加载',
-                onPressed: () => unawaited(controller.reload()),
-              ),
-            )
-          // A save that never reached the server changed nothing on either
-          // side. It is a pause, not a failure: the switches keep the values
-          // that are still loaded and the page says which action stopped.
-          else if (loopChainIsOffline(state.failureKind))
-            LoopOfflineState(
-              cause: loopOfflineCauseFor(state.failureKind),
-              key: const ValueKey<String>(
-                'notification-preferences-save-offline',
-              ),
-              pausedActions: const <String>['保存通知设置'],
-              onRetry: () => unawaited(controller.reload()),
-            )
-          else if (LoopChainCommandPermission.covers(state.failureKind))
-            LoopChainCommandPermission(
-              blockKey: 'notification-preferences-permission',
+              key: const ValueKey<String>('notification-preferences-summary'),
+              icon: 'info',
+              // 「9 项开启」 counted stored intents and read as nine kinds of
+              // notification; only price alerts are emitted.
+              body:
+                  '${resource.deliveringEnabledCount} 项开启并生效。'
+                  '目前只有价格提醒会生成应用内通知；安全事件始终开启。',
+              margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            ),
+          if (!state.isReady || resource == null)
+            LoopChainStateBlock(
+              keyPrefix: 'notification-preferences',
+              phase: state.phase,
               failureKind: state.failureKind,
-              title: '当前账号无权修改通知设置',
-              onOpenSecurity: widget.onOpenSecurity,
-            )
-          else if (state.failureKind != null)
-            LoopErrorState(
-              key: const ValueKey<String>('notification-preferences-error'),
-              title: '设置没有保存',
-              reason: loopChainFailureReason(state.failureKind),
+              emptyMessage: '还没有通知设置',
               onRetry: () => unawaited(controller.reload()),
+            )
+          else ...<Widget>[
+            if (state.requiresReload)
+              LoopNotice(
+                key: const ValueKey<String>(
+                  'notification-preferences-conflict',
+                ),
+                tone: LoopNoticeTone.warn,
+                icon: 'warn',
+                title: '版本冲突 —— 没有覆盖任何内容',
+                body: '通知设置已在其他设备上改动。请重新加载后再修改。',
+                trailing: LoopButton(
+                  key: const ValueKey<String>(
+                    'notification-preferences-conflict-reload',
+                  ),
+                  label: '重新加载',
+                  onPressed: () => unawaited(controller.reload()),
+                ),
+              )
+            // A save that never reached the server changed nothing on either
+            // side. It is a pause, not a failure: the switches keep the values
+            // that are still loaded and the page says which action stopped.
+            else if (loopChainIsOffline(state.failureKind))
+              LoopOfflineState(
+                cause: loopOfflineCauseFor(state.failureKind),
+                key: const ValueKey<String>(
+                  'notification-preferences-save-offline',
+                ),
+                pausedActions: const <String>['保存通知设置'],
+                onRetry: () => unawaited(controller.reload()),
+              )
+            else if (LoopChainCommandPermission.covers(state.failureKind))
+              LoopChainCommandPermission(
+                blockKey: 'notification-preferences-permission',
+                failureKind: state.failureKind,
+                title: '当前账号无权修改通知设置',
+                onOpenSecurity: widget.onOpenSecurity,
+              )
+            else if (state.failureKind != null)
+              LoopErrorState(
+                key: const ValueKey<String>('notification-preferences-error'),
+                title: '设置没有保存',
+                reason: loopChainFailureReason(state.failureKind),
+                onRetry: () => unawaited(controller.reload()),
+              ),
+            // The server's own statement about the channel. Once it has one
+            // this disappears and `_pushChannelNotice` takes over, because
+            // "there is a channel" and "this device has been seen receiving
+            // something" are two different claims and only the first is made
+            // here.
+            if (resource.push != null)
+              LoopUnavailableCard.fact(
+                key: const ValueKey<String>('notification-push-unavailable'),
+                label: '推送尚不可用',
+                fact: resource.push!,
+              ),
+            // LOOP's own answer first, then this device's. They are two
+            // different claims and the page keeps them apart.
+            _pushDeviceNotice(),
+            for (final section in _sections)
+              ..._sectionWidgets(section, resource, state, controller),
+            LoopProvenanceFooter(
+              key: const ValueKey<String>('notification-preferences-version'),
+              // The CAS version belongs to the write path, not to the page.
+              text: resource.updatedAt == null
+                  ? '当前使用默认设置'
+                  : '更新于 ${loopRelativeTime(resource.updatedAt!)}',
             ),
-          // The server's own statement about the channel. Once it has one
-          // this disappears and `_pushChannelNotice` takes over, because
-          // "there is a channel" and "this device has been seen receiving
-          // something" are two different claims and only the first is made
-          // here.
-          if (resource.push != null)
-            LoopUnavailableCard.fact(
-              key: const ValueKey<String>('notification-push-unavailable'),
-              label: '推送尚不可用',
-              fact: resource.push!,
-            ),
-          // LOOP's own answer first, then this device's. They are two
-          // different claims and the page keeps them apart.
-          _pushDeviceNotice(),
-          for (final section in _sections)
-            ..._sectionWidgets(section, resource, state, controller),
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('notification-preferences-version'),
-            // The CAS version belongs to the write path, not to the page.
-            text: resource.updatedAt == null
-                ? '当前使用默认设置'
-                : '更新于 ${loopRelativeTime(resource.updatedAt!)}',
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('notification-preferences-notice'),
-            title: '开关只是意图',
-            body: '目前只有"价格提醒"会生成应用内通知，其他类别还没有开放。',
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -389,9 +363,13 @@ class _NotificationPreferencesScreenState
       title: category.label,
       subtitle: detail.isEmpty ? null : detail,
       subtitleMaxLines: 2,
-      trailingBadge: LoopBadge(
-        state,
-        kind: enabled ? LoopBadgeKind.up : LoopBadgeKind.mute,
+      // Decision 0126 supersedes the pill (audit §D+ #12): on a flat page a
+      // preference is a switch, as on every settings list the reader knows.
+      trailingBadge: LoopFlatSwitch(
+        value: enabled,
+        onChanged: locked || busy
+            ? null
+            : () => unawaited(_request(controller, category, !enabled)),
       ),
       position: position,
       chevron: false,
