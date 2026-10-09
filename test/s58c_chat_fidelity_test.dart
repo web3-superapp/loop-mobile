@@ -261,9 +261,9 @@ void main() {
       final folio = _folio(tester);
       expect(folio.variant, LoopFolioVariant.chalk);
       expect(folio.ring, isFalse);
-      // 01 §3 / §12.2: this is the page that has to name the global entry,
-      // and it names the Community tab, never the retired Home.
-      expect(folio.caption, contains('全局资产与社区搜索从社区 Tab 顶部进入'));
+      // m16 (decision 0129): the caption no longer points at a 社区 Tab that
+      // the v3 navigation does not have, and never at the retired Home.
+      expect(folio.caption, isNot(contains('社区 Tab')));
       expect(folio.caption, isNot(contains('首页')));
     });
 

@@ -2891,20 +2891,26 @@ void main() {
         voiceRoom: voice,
       );
 
+      // Decision 0129: no 载入更多 — the roster reads on once its foot
+      // comes into view.
       final more = find.byKey(
         const ValueKey<String>('voiceroom-roster-listener-load-more'),
       );
-      await scrollToCommunitySection(tester, more);
-      await tester.tap(more);
+      await scrollToCommunitySection(
+        tester,
+        find.byKey(const ValueKey<String>('voiceroom-roster-listener-footer')),
+      );
       await tester.pumpAndSettle();
 
       expect(voice.commands, contains('members:listener:page2.cursor'));
-      expect(find.text('DeFiMaxi_349'), findsOneWidget);
-      // The last page ends in a sentence, not in silence.
       expect(
-        find.byKey(const ValueKey<String>('voiceroom-roster-listener-end')),
-        findsOneWidget,
+        voice.commands.where((command) => command.startsWith('members:')),
+        hasLength(3),
       );
+      await scrollToCommunitySection(tester, find.text('DeFiMaxi_349'));
+      expect(find.text('DeFiMaxi_349'), findsOneWidget);
+      // The last page draws nothing after it (decision 0127).
+      expect(find.textContaining('没有更多'), findsNothing);
       expect(more, findsNothing);
     });
 

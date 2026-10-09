@@ -25,6 +25,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 
 /// The chip label of each board, in the order they are drawn.
 String intelRankScopeLabel(MiningRankScope scope) => switch (scope) {
@@ -86,78 +87,87 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
       }
     }
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('intel-rank-board'),
-      archetype: LoopPageArchetype.listing,
-      title: '算力榜',
-      embedded: true,
-      tabPage: true,
-      onRefresh: controller.reload,
-      updating: state.refreshing,
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('intel-rank-capability-block'),
-              title: '算力榜当前不可用',
-              capability: capability,
-            )
-          : null,
-      sections: <Widget>[
-        LoopSegBar(
-          key: const ValueKey<String>('intel-rank-scope'),
-          labels: <String>[
-            for (final scope in scopes) intelRankScopeLabel(scope),
-          ],
-          icons: <String>[
-            for (final scope in scopes) intelRankScopeIcon(scope),
-          ],
-          selectedIndex: scopes.indexOf(state.scope),
-          onSelected: (index) => unawaited(controller.select(scopes[index])),
-        ),
-        if (rank == null)
-          LaunchStateBlock(
-            prefix: 'intel-rank',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            skeleton: LoopSkeletonType.record,
-            rows: 6,
-            emptyMessage: '没有读到算力榜',
-            emptyReason: '暂时读不到排行数据。',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else ...<Widget>[
-          IntelRankMePill(rank: rank, faces: faces),
-          MiningStaleNotice(slug: 'intel-rank', snapshot: rank.snapshot),
-          ..._rows(rank, faces),
-          if (_hasRows(rank.ranking)) ...<Widget>[
-            if (state.appendFailed && !state.loadingMore)
-              LoopInlineUnavailable(
-                key: const ValueKey<String>('intel-rank-more-failed'),
-                message: '下一页没有读到',
-                onRetry: () => unawaited(controller.loadMore()),
+    // The three boards follow a sideways swipe as well as a tap on their
+    // chips (S123 m7); past the first or last board the swipe moves 情报's
+    // own segments.
+    return LoopSegmentSwipe(
+      key: const ValueKey<String>('intel-rank-swipe'),
+      index: scopes.indexOf(state.scope),
+      count: scopes.length,
+      onSelect: (index) => unawaited(controller.select(scopes[index])),
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('intel-rank-board'),
+        archetype: LoopPageArchetype.listing,
+        title: '算力榜',
+        embedded: true,
+        tabPage: true,
+        onRefresh: controller.reload,
+        updating: state.refreshing,
+        block: blocked
+            ? LoopCapabilityPageBlock.of(
+                key: const ValueKey<String>('intel-rank-capability-block'),
+                title: '算力榜当前不可用',
+                capability: capability,
               )
-            else if (rank.nextCursor case final String cursor) ...<Widget>[
-              LoopLoadMoreSentinel(
-                key: const ValueKey<String>('intel-rank-load-more'),
-                cursor: cursor,
-                onLoadMore: () => unawaited(controller.loadMore()),
-              ),
-              if (state.loadingMore)
-                const LoopSkeleton(
-                  key: ValueKey<String>('intel-rank-loading-more'),
-                  type: LoopSkeletonType.record,
-                  rows: 2,
+            : null,
+        sections: <Widget>[
+          LoopSegBar(
+            key: const ValueKey<String>('intel-rank-scope'),
+            labels: <String>[
+              for (final scope in scopes) intelRankScopeLabel(scope),
+            ],
+            icons: <String>[
+              for (final scope in scopes) intelRankScopeIcon(scope),
+            ],
+            selectedIndex: scopes.indexOf(state.scope),
+            onSelected: (index) => unawaited(controller.select(scopes[index])),
+          ),
+          if (rank == null)
+            LaunchStateBlock(
+              prefix: 'intel-rank',
+              phase: state.phase,
+              failureKind: state.failureKind,
+              skeleton: LoopSkeletonType.record,
+              rows: 6,
+              emptyMessage: '没有读到算力榜',
+              emptyReason: '暂时读不到排行数据。',
+              onRetry: () => unawaited(controller.reload()),
+            )
+          else ...<Widget>[
+            IntelRankMePill(rank: rank, faces: faces),
+            MiningStaleNotice(slug: 'intel-rank', snapshot: rank.snapshot),
+            ..._rows(rank, faces),
+            if (_hasRows(rank.ranking)) ...<Widget>[
+              if (state.appendFailed && !state.loadingMore)
+                LoopInlineUnavailable(
+                  key: const ValueKey<String>('intel-rank-more-failed'),
+                  message: '下一页没有读到',
+                  onRetry: () => unawaited(controller.loadMore()),
+                )
+              else if (rank.nextCursor case final String cursor) ...<Widget>[
+                LoopLoadMoreSentinel(
+                  key: const ValueKey<String>('intel-rank-load-more'),
+                  cursor: cursor,
+                  onLoadMore: () => unawaited(controller.loadMore()),
                 ),
-            ] else
-              // A board that has reached its end draws nothing more
-              // (decision 0122, OKX rule 10).
-              const SizedBox(
-                key: ValueKey<String>('intel-rank-end'),
-                height: 12,
-              ),
+                if (state.loadingMore)
+                  const LoopSkeleton(
+                    key: ValueKey<String>('intel-rank-loading-more'),
+                    type: LoopSkeletonType.record,
+                    rows: 2,
+                  ),
+              ] else
+                // A board that has reached its end draws nothing more
+                // (decision 0122, OKX rule 10).
+                const SizedBox(
+                  key: ValueKey<String>('intel-rank-end'),
+                  height: 12,
+                ),
+            ],
+            _provenance(rank),
           ],
-          _provenance(rank),
         ],
-      ],
+      ),
     );
   }
 

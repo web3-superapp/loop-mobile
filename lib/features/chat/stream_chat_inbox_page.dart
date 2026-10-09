@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/chat_inbox_row_actions.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
@@ -21,6 +22,8 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart'
+    show confirmCommunityAction;
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
@@ -32,6 +35,7 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -65,7 +69,10 @@ StreamChannelListController createLoopStreamChannelListController({
       Filter.equal('type', 'messaging'),
       Filter.in_('members', <Object>[userId]),
     ]),
+    // A pinned conversation stands above the rest (decision 0129); within
+    // each part Stream keeps the newest message first.
     channelStateSort: const <SortOption<ChannelState>>[
+      SortOption<ChannelState>.desc(ChannelSortKey.pinnedAt),
       SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
     ],
     presence: true,
@@ -802,69 +809,141 @@ class _StreamChannelListBodyState
           filter: widget.filter,
           child: KeyedSubtree(
             key: const ValueKey<String>('stream-chat-channel-list'),
-            child: StreamChannelListView(
-              controller: controller,
-              // Decision 0123: the last row ends above the 「发起」 button
-              // (56 + its 32 margin), never under it.
-              padding: const EdgeInsets.fromLTRB(
-                0,
-                8,
-                0,
-                chatInboxListBottomPadding,
-              ),
-              // The filter hides rows rather than re-querying: Stream cannot
-              // filter channels by an ID prefix, and one shared list keeps the
-              // order, unread state and pagination of every row in one place.
-              itemBuilder: (context, channels, index, defaultItem) =>
-                  widget.filter.includes(channels[index].cid)
-                  ? loopStreamChannelListIdentityItem(defaultItem)
-                  : const SizedBox.shrink(),
-              // OKX's conversation list has no hairlines (decision 0123).
-              // Rows are told apart by the tile's own vertical padding — about
-              // 38 between two avatars; an extra 12 made the list loose.
-              separatorBuilder: (context, channels, index) =>
-                  const SizedBox.shrink(),
-              emptyBuilder: (context) => SingleChildScrollView(
-                child: LoopEmptyState(
-                  key: const ValueKey<String>('stream-chat-empty'),
-                  illustration: LoopIllustration.chat,
-                  title: '还没有会话',
-                  message: '加入社区或添加好友后，会话会出现在这里',
-                  action: LoopButton(
-                    key: const ValueKey<String>(
-                      'stream-chat-empty-find-friends',
-                    ),
-                    label: '找朋友',
-                    icon: 'users',
-                    primary: true,
-                    onPressed: () => unawaited(context.push<void>('/search')),
+            // Pull to re-read the list (S123 M2). The rows stay on screen
+            // while Stream answers: the refresh does not reset the value.
+            child: loopRefreshable(
+              onRefresh: () => controller.refresh(resetValue: false),
+              child: ChatInboxSwipeScope(
+                child: StreamChannelListView(
+                  controller: controller,
+                  // Decision 0123: the last row ends above the 「发起」 button
+                  // (56 + its 32 margin), never under it.
+                  padding: const EdgeInsets.fromLTRB(
+                    0,
+                    8,
+                    0,
+                    chatInboxListBottomPadding,
                   ),
+                  // The filter hides rows rather than re-querying: Stream cannot
+                  // filter channels by an ID prefix, and one shared list keeps the
+                  // order, unread state and pagination of every row in one place.
+                  itemBuilder: (context, channels, index, defaultItem) {
+                    final channel = channels[index];
+                    if (!widget.filter.includes(channel.cid)) {
+                      return const SizedBox.shrink();
+                    }
+                    // A swipe reveals the row's actions; a tap still opens the
+                    // conversation, and an open row closes on tap instead.
+                    return ChatInboxSwipeRow(
+                      key: ValueKey<String>('chat-inbox-row-${channel.cid}'),
+                      actions: () =>
+                          chatInboxRowActions(ChatInboxRowFacts.of(channel)),
+                      onAction: (action) =>
+                          unawaited(_runAction(channel, action, controller)),
+                      child: loopStreamChannelListIdentityItem(defaultItem),
+                    );
+                  },
+                  // OKX's conversation list has no hairlines (decision 0123).
+                  // Rows are told apart by the tile's own vertical padding — about
+                  // 38 between two avatars; an extra 12 made the list loose.
+                  separatorBuilder: (context, channels, index) =>
+                      const SizedBox.shrink(),
+                  emptyBuilder: (context) => SingleChildScrollView(
+                    child: LoopEmptyState(
+                      key: const ValueKey<String>('stream-chat-empty'),
+                      illustration: LoopIllustration.chat,
+                      title: '还没有会话',
+                      message: '加入社区或添加好友后，会话会出现在这里',
+                      action: LoopButton(
+                        key: const ValueKey<String>(
+                          'stream-chat-empty-find-friends',
+                        ),
+                        label: '找朋友',
+                        icon: 'users',
+                        primary: true,
+                        onPressed: () =>
+                            unawaited(context.push<void>('/search')),
+                      ),
+                    ),
+                  ),
+                  errorBuilder: (context, error) => Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: LoopStateCard(
+                        title: '会话列表读不到',
+                        message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
+                        icon: Icons.cloud_off_outlined,
+                        tone: LoopTone.warning,
+                        action: OutlinedButton.icon(
+                          onPressed: () => controller.refresh(),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('重试'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  onChannelTap: (channel) =>
+                      _openChannel(context, channel, directory),
+                  onChannelLongPress: (channel) =>
+                      unawaited(_openRowSheet(channel, controller)),
                 ),
               ),
-              errorBuilder: (context, error) => Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: LoopStateCard(
-                    title: '会话列表读不到',
-                    message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
-                    icon: Icons.cloud_off_outlined,
-                    tone: LoopTone.warning,
-                    action: OutlinedButton.icon(
-                      onPressed: () => controller.refresh(),
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('重试'),
-                    ),
-                  ),
-                ),
-              ),
-              onChannelTap: (channel) =>
-                  _openChannel(context, channel, directory),
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// The long-press menu: the swipe's actions, in a sheet (S123 M2).
+  Future<void> _openRowSheet(
+    Channel channel,
+    StreamChannelListController controller,
+  ) async {
+    final actions = chatInboxRowActions(ChatInboxRowFacts.of(channel));
+    if (actions.isEmpty) return;
+    final choice = await showChatInboxRowActionSheet(
+      context,
+      title: '会话操作',
+      actions: actions,
+    );
+    if (choice == null || !mounted) return;
+    await _runAction(channel, choice, controller);
+  }
+
+  Future<void> _runAction(
+    Channel channel,
+    ChatInboxRowAction action,
+    StreamChannelListController controller,
+  ) async {
+    if (action.destructive) {
+      final confirmed = await confirmCommunityAction(
+        context,
+        title: '删除这个会话？',
+        body: '会话会从列表移除，有新消息时会重新出现。聊天记录不会被清除。',
+        confirmLabel: '删除',
+        sheetKey: 'chat-inbox-delete-confirm',
+      );
+      if (!confirmed || !mounted) return;
+    }
+    try {
+      await runChatInboxRowAction(channel, action);
+    } catch (_) {
+      if (!mounted) return;
+      LoopToast.show(
+        context,
+        message: '「${action.label}」没有完成，稍后再试',
+        kind: LoopToastKind.err,
+      );
+      return;
+    }
+    // Stream does not move a row when its pin changes; the list is read
+    // again so the pinned part stays on top.
+    if (action == ChatInboxRowAction.pin ||
+        action == ChatInboxRowAction.unpin) {
+      await controller.refresh(resetValue: false);
+    }
   }
 
   static void _openChannel(

@@ -269,10 +269,32 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
   bool _offline = false;
   int _generation = 0;
 
+  /// One keystroke is not one request (m16, decision 0129): the field
+  /// settles for this long before Stream is asked.
+  static const Duration searchDebounce = Duration(milliseconds: 300);
+  Timer? _debounce;
+
   @override
   void dispose() {
+    _debounce?.cancel();
     _query.dispose();
     super.dispose();
+  }
+
+  /// Results follow the text as it is typed; there is no search key to
+  /// press. The return key still searches at once.
+  void _onChanged(String _) {
+    _debounce?.cancel();
+    _debounce = Timer(searchDebounce, () {
+      _debounce = null;
+      if (mounted) unawaited(_search());
+    });
+  }
+
+  void _searchNow() {
+    _debounce?.cancel();
+    _debounce = null;
+    unawaited(_search());
   }
 
   List<ChatSearchScope> get _scopes => <ChatSearchScope>[
@@ -287,6 +309,8 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     final text = _query.text.trim();
     final gateway = ref.read(chatSearchGatewayProvider);
     if (text.length < _minimumQueryLength || !gateway.connected) {
+      // A shorter text also outdates any answer still in flight.
+      _generation += 1;
       setState(() {
         _hits = null;
         _failed = false;
@@ -353,7 +377,8 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         enabled: connected,
         autofocus: true,
         textInputAction: TextInputAction.search,
-        onSubmitted: (_) => unawaited(_search()),
+        onChanged: _onChanged,
+        onSubmitted: (_) => _searchNow(),
         style: LoopTypography.caption(13.5),
         decoration: InputDecoration(
           hintText: '搜消息',
@@ -391,7 +416,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         heading: hits == null
             ? '${_scope.label} · 还没有检索'
             : '${_scope.label} · ${hits.length} 条',
-        caption: '只在你有权访问的会话里检索；全局资产与社区搜索从社区 Tab 顶部进入。',
+        caption: '只在你有权访问的会话里检索，输入即出结果。',
       ),
       filters: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -402,7 +427,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           onSelected: (index) {
             if (!connected) return;
             setState(() => _scope = _scopes[index]);
-            unawaited(_search());
+            _searchNow();
           },
         ),
       ),

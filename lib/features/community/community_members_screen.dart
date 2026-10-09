@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -358,19 +359,16 @@ class _CommunityMembersScreenState
               for (final entry in group.$2)
                 _memberRow(entry: entry, state: state, controller: controller),
             ],
-            if (state.nextCursor != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: LoopButton(
-                  key: const ValueKey<String>('community-members-load-more'),
-                  label: state.loadingMore ? '正在载入…' : '载入更多',
-                  block: true,
-                  onPressed: state.loadingMore
-                      ? null
-                      : () => unawaited(controller.loadMore()),
-                ),
-              ),
-            // The end of the directory draws nothing (decision 0127).
+            // The directory reads on as it is scrolled (decision 0129); its
+            // end draws nothing (decision 0127).
+            LoopLoadMoreFooter(
+              key: const ValueKey<String>('community-members-footer'),
+              keyPrefix: 'community-members',
+              cursor: state.nextCursor,
+              canLoadMore: state.canLoadMore && !state.refreshing,
+              loading: state.loadingMore,
+              onLoadMore: controller.loadMore,
+            ),
           ],
         ],
       ),

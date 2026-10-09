@@ -6,7 +6,6 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
@@ -31,6 +30,7 @@ import 'package:loop_mobile/integrations/communication/stream_video_providers.da
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -502,9 +502,8 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               leading: _hostSpeakerRow(snapshot),
               onRetry: () =>
                   unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
-              onLoadMore: () => unawaited(
-                controller.loadMoreRoster(VoiceRoomRosterView.speaker),
-              ),
+              onLoadMore: () =>
+                  controller.loadMoreRoster(VoiceRoomRosterView.speaker),
               onCommand: (member, command) =>
                   _runMemberCommand(controller, member, command),
             ),
@@ -536,9 +535,8 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               onRetry: () => unawaited(
                 controller.loadRoster(VoiceRoomRosterView.listener),
               ),
-              onLoadMore: () => unawaited(
-                controller.loadMoreRoster(VoiceRoomRosterView.listener),
-              ),
+              onLoadMore: () =>
+                  controller.loadMoreRoster(VoiceRoomRosterView.listener),
               onCommand: (member, command) =>
                   _runMemberCommand(controller, member, command),
             ),
@@ -1481,7 +1479,7 @@ class _RosterSection extends StatelessWidget {
   /// the page LOOP read. A view with one of these is never empty.
   final LoopRecordRow? leading;
   final VoidCallback onRetry;
-  final VoidCallback onLoadMore;
+  final Future<void> Function() onLoadMore;
   final Future<void> Function(
     VoiceRoomMember member,
     VoiceRoomMemberCommand command,
@@ -1546,20 +1544,16 @@ class _RosterSection extends StatelessWidget {
             ),
             CommunityViewPhase.ready => _rows(context, roster),
           },
-        if (roster.isReady && roster.nextCursor != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: LoopButton(
-              key: ValueKey<String>('voiceroom-roster-$slug-load-more'),
-              label: roster.loadingMore ? '正在载入…' : '载入更多',
-              block: true,
-              onPressed: roster.loadingMore ? null : onLoadMore,
-            ),
-          )
-        else if (roster.isReady)
-          LoopProvenanceFooter(
-            key: ValueKey<String>('voiceroom-roster-$slug-end'),
-            text: '没有更多${view.label}',
+        // The roster reads on as it comes into view (decision 0129); its end
+        // draws nothing (decision 0127).
+        if (roster.isReady)
+          LoopLoadMoreFooter(
+            key: ValueKey<String>('voiceroom-roster-$slug-footer'),
+            keyPrefix: 'voiceroom-roster-$slug',
+            cursor: roster.nextCursor,
+            canLoadMore: roster.canLoadMore,
+            loading: roster.loadingMore,
+            onLoadMore: onLoadMore,
           ),
       ],
     );

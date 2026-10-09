@@ -547,6 +547,11 @@ void main() {
         ),
       );
       await _pumpRequestsPage(tester, gateway);
+      // The footers read the next pages as soon as the page is built.
+      expect(
+        gateway.requestPageCalls.map((call) => call.cursor),
+        containsAll(<String>['incoming-more', 'outgoing-more']),
+      );
 
       await tester.tap(
         find.byKey(
@@ -570,26 +575,12 @@ void main() {
             .onPressed,
         isNull,
       );
-      expect(
-        tester
-            .widget<OutlinedButton>(
-              find.byKey(
-                const ValueKey<String>('friend-requests-incoming-more'),
-              ),
-            )
-            .onPressed,
-        isNull,
-      );
-      expect(
-        tester
-            .widget<OutlinedButton>(
-              find.byKey(
-                const ValueKey<String>('friend-requests-outgoing-more'),
-              ),
-            )
-            .onPressed,
-        isNull,
-      );
+      // Decision 0129: the next pages are read on their own, with no
+      // 加载更多 control; nothing more is read while the outcome is unknown.
+      expect(find.textContaining('加载更多'), findsNothing);
+      final pagesBefore = gateway.requestPageCalls.length;
+      await tester.pump(const Duration(seconds: 1));
+      expect(gateway.requestPageCalls, hasLength(pagesBefore));
       expect(
         find.byKey(
           ValueKey<String>('friend-request-reject-${incoming.friendRequestId}'),

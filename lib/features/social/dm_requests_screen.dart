@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -112,16 +113,14 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
                 onDecide: (decision) =>
                     unawaited(_decide(entry, decision, controller)),
               ),
-            if (state.canLoadMore)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: LoopButton(
-                  key: const ValueKey<String>('dm-requests-load-more'),
-                  label: '载入更多',
-                  block: true,
-                  onPressed: () => unawaited(controller.loadMore()),
-                ),
-              ),
+            LoopLoadMoreFooter(
+              key: const ValueKey<String>('dm-requests-footer'),
+              keyPrefix: 'dm-requests',
+              cursor: state.nextCursor,
+              canLoadMore: state.canLoadMore && !state.refreshing,
+              loading: state.loadingMore,
+              onLoadMore: controller.loadMore,
+            ),
           ],
         ],
       ),

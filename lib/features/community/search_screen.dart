@@ -19,6 +19,7 @@ import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -244,16 +245,14 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                   _resultRow(state.results[index], index, state.results.length),
               ],
             ),
-            if (state.canLoadMore)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: LoopButton(
-                  key: const ValueKey<String>('search-load-more'),
-                  label: '载入更多',
-                  block: true,
-                  onPressed: () => unawaited(controller.loadMore()),
-                ),
-              ),
+            LoopLoadMoreFooter(
+              key: const ValueKey<String>('search-footer'),
+              keyPrefix: 'search',
+              cursor: state.nextCursor,
+              canLoadMore: state.canLoadMore,
+              loading: state.loadingMore,
+              onLoadMore: controller.loadMore,
+            ),
           ],
         ],
       ),

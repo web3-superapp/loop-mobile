@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -195,24 +196,16 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
           ],
         ),
       ),
-      if (state.nextCursor != null) ...<Widget>[
-        const SizedBox(height: 14),
-        Center(
-          child: OutlinedButton.icon(
-            key: const ValueKey<String>('friends-load-more'),
-            onPressed: state.isBusy
-                ? null
-                : () => unawaited(controller.loadMore()),
-            icon: state.isBusy
-                ? const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.expand_more_rounded),
-            label: const Text('加载更多'),
-          ),
-        ),
-      ],
+      // The directory reads on as it is scrolled (decision 0129).
+      LoopLoadMoreFooter(
+        key: const ValueKey<String>('friends-footer'),
+        keyPrefix: 'friends',
+        cursor: state.nextCursor,
+        canLoadMore: state.canLoadMore,
+        loading: state.isBusy,
+        padding: const EdgeInsets.only(top: 14),
+        onLoadMore: controller.loadMore,
+      ),
     ]);
     return content;
   }

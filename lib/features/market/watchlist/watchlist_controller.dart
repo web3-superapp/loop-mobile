@@ -65,6 +65,22 @@ final class WatchlistEditorState {
     return total;
   }
 
+  /// How many distinct assets the owner watches (S123 M3).
+  ///
+  /// The heading used to add up every group's rows, so one asset kept in
+  /// three groups counted three times and the page announced 47 over a list
+  /// of 4. An asset is watched once however many groups hold it — the same
+  /// de-duplication 行情 applies to the overview.
+  int get distinctAssetCount {
+    final seen = <String>{};
+    for (final group in groups) {
+      for (final item in group.items) {
+        seen.add(item.assetId);
+      }
+    }
+    return seen.length;
+  }
+
   bool get isDirty {
     final committed = snapshot?.groups;
     final current = draft;
@@ -250,6 +266,25 @@ final class WatchlistEditorController extends Notifier<WatchlistEditorState>
     if (group == null || index < 0 || index >= group.items.length) return;
     final items = List<WatchlistItem>.of(group.items)..removeAt(index);
     _replaceSelected(group.copyWith(items: items));
+  }
+
+  /// Puts back a row that [removeAt] took out, in the group it came from and
+  /// at the place it had (the 撤销 of a swipe-to-delete). A group that is no
+  /// longer in the draft, or a row that is already back, changes nothing.
+  void restore({
+    required String groupKey,
+    required int index,
+    required WatchlistItem item,
+  }) {
+    final groups = List<WatchlistGroup>.of(state.groups);
+    final at = groups.indexWhere((group) => group.key == groupKey);
+    if (at < 0) return;
+    final group = groups[at];
+    if (group.items.any((entry) => entry.assetId == item.assetId)) return;
+    final items = List<WatchlistItem>.of(group.items)
+      ..insert(index.clamp(0, group.items.length), item);
+    groups[at] = group.copyWith(items: items);
+    state = state.copyWith(draft: groups, clearFailure: true);
   }
 
   void discard() {

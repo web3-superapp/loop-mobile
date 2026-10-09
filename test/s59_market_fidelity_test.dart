@@ -453,7 +453,7 @@ void main() {
       expect(done.label, '完成');
       expect(done.icon, 'check');
       // The prototype's order: the list the page exists to edit comes first.
-      final hint = tester.getTopLeft(find.text('拖动排序 · 左滑删除')).dy;
+      final hint = tester.getTopLeft(find.text('MINING 3 · 拖动排序 · 左滑删除')).dy;
       final groups = tester.getTopLeft(find.text('分组')).dy;
       expect(hint, lessThan(groups));
       // `.badge.badge-down`: a word, not a bin glyph.
