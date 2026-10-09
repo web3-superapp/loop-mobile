@@ -38,6 +38,7 @@ import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -1052,10 +1053,13 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
             ],
           ),
         ),
-        body,
+        // The periods sit above the chart, not under it: under it they ended
+        // exactly where the pinned 买入 / 卖出 bar begins on a first screen
+        // and were half covered by it (audit 2026-10-09 m18, decision 0131).
         SingleChildScrollView(
+          key: const ValueKey<String>('meme-interval-strip'),
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
           child: Row(
             children: <Widget>[
               for (final interval in MemeCandleInterval.values) ...<Widget>[
@@ -1070,6 +1074,7 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
             ],
           ),
         ),
+        body,
         if (series != null)
           MemeProvenance(
             key: const ValueKey<String>('meme-candles-provenance'),
@@ -1425,55 +1430,59 @@ class _MemeShareSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final code = address == null ? null : LoopQrCode.encode(address!);
-    return LoopSheet(
-      title: '分享代币',
-      child: Padding(
-        key: const ValueKey<String>('meme-share-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(title, style: LoopType.titleLg),
-            const SizedBox(height: 12),
-            if (code != null)
-              Container(
-                width: 180,
-                height: 180,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: LoopColors.chalk,
-                  borderRadius: BorderRadius.circular(LoopRadius.innerValue),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('分享代币'),
+        Padding(
+          key: const ValueKey<String>('meme-share-sheet'),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(title, style: LoopType.titleLg),
+              const SizedBox(height: 12),
+              if (code != null)
+                Container(
+                  width: 180,
+                  height: 180,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: LoopColors.chalk,
+                    borderRadius: BorderRadius.circular(LoopRadius.innerValue),
+                  ),
+                  child: LoopQrView(code: code, semanticLabel: '代币合约地址二维码'),
                 ),
-                child: LoopQrView(code: code, semanticLabel: '代币合约地址二维码'),
-              ),
-            if (address != null) ...<Widget>[
-              const SizedBox(height: 8),
-              Text(
-                address!,
-                textAlign: TextAlign.center,
-                style: LoopType.codeSm.copyWith(color: LoopColors.text2),
-              ),
-            ],
-            const SizedBox(height: 14),
-            LoopButtonPair(
-              padded: false,
-              children: <Widget>[
-                LoopButton(
-                  key: const ValueKey<String>('meme-share-copy'),
-                  label: '复制',
-                  onPressed: onCopy,
-                ),
-                LoopButton(
-                  key: const ValueKey<String>('meme-share-system'),
-                  label: '分享',
-                  primary: true,
-                  onPressed: () => unawaited(onShare()),
+              if (address != null) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(
+                  address!,
+                  textAlign: TextAlign.center,
+                  style: LoopType.codeSm.copyWith(color: LoopColors.text2),
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 14),
+              LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>('meme-share-copy'),
+                    label: '复制',
+                    onPressed: onCopy,
+                  ),
+                  LoopButton(
+                    key: const ValueKey<String>('meme-share-system'),
+                    label: '分享',
+                    primary: true,
+                    onPressed: () => unawaited(onShare()),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

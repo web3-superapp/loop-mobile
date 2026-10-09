@@ -15,12 +15,16 @@ import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
+import 'package:loop_mobile/features/wallet/money_asset_picker.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -143,233 +147,169 @@ String? watchActiveMoneyWalletId(WidgetRef ref, {required bool blocked}) {
 }
 
 // ---------------------------------------------------------------------------
-// send · choose the asset
+// send · send-to · the two input steps (decision 0131)
 // ---------------------------------------------------------------------------
 
-/// `send` · step 1. Every row is a registry asset read at one block height.
-class SendAssetScreen extends ConsumerStatefulWidget {
+/// The typed state `/wallet/send` pushes `/scan` with: the scanner hands a
+/// recognised wallet address back to the page that asked instead of opening
+/// a new send flow on top of it.
+@immutable
+final class SendScanForRecipient {
+  const SendScanForRecipient();
+}
+
+/// How long a typed full-length address waits before it is checked by itself.
+const Duration sendRecipientCheckDebounce = Duration(milliseconds: 400);
+
+/// The three send steps, in the order a wallet app asks for them.
+const int sendStepCount = 3;
+
+/// `send` · the route that starts the flow at its first step.
+///
+/// The class keeps its name because the route table builds it; since decision
+/// 0131 it is the recipient step of [SendFlowScreen], not an asset list. A
+/// scanned address arrives as [recipientPrefill] and is checked at once.
+class SendAssetScreen extends StatelessWidget {
   const SendAssetScreen({
     super.key,
     this.onBack,
     this.onNavigate,
+    this.onScan,
     this.recipientPrefill,
   });
 
   final VoidCallback? onBack;
   final void Function(String location, {Object? extra})? onNavigate;
+  final Future<String?> Function()? onScan;
 
-  /// A scanned address the next step's recipient field starts with.
+  /// A scanned address the recipient field starts with.
   final String? recipientPrefill;
 
   @override
-  ConsumerState<SendAssetScreen> createState() => _SendAssetScreenState();
+  Widget build(BuildContext context) => SendFlowScreen(
+    onBack: onBack,
+    onNavigate: onNavigate,
+    onScan: onScan,
+    recipientPrefill: recipientPrefill,
+  );
 }
 
-class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
-  void _open(String location, {Object? extra}) {
-    final navigate = widget.onNavigate;
-    if (navigate != null) {
-      navigate(location, extra: extra);
-      return;
-    }
-    context.push(location, extra: extra);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final blocked = sendCapabilityBlocks(ref);
-    final walletId = watchActiveMoneyWalletId(ref, blocked: blocked);
-    final directory = ref.watch(walletDirectoryControllerProvider);
-    final balancesState = walletId == null
-        ? null
-        : ref.watch(walletBalancesControllerProvider(walletId));
-    if (!blocked &&
-        walletId != null &&
-        balancesState != null &&
-        balancesState.phase == LoopChainViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) {
-          unawaited(
-            ref
-                .read(walletBalancesControllerProvider(walletId).notifier)
-                .load(),
-          );
-        }
-      });
-    }
-    final balances = balancesState?.value;
-
-    return LoopFocusPage(
-      key: const ValueKey<String>('send-asset-screen'),
-      archetype: LoopPageArchetype.action,
-      title: '发送',
-      onBack: widget.onBack,
-      // The prototype's send primary is a Chalk card with the STEP 1 stamp.
-      folio: const LoopFolioPrimary(
-        key: ValueKey<String>('send-asset-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        kicker: 'FROM WALLET',
-        heading: '选择要发送的资产',
-        caption: '余额、网络与算力影响先展示，再进入收款地址。',
-        stamp: 'STEP 1',
-      ),
-      body: <Widget>[
-        if (widget.recipientPrefill != null)
-          LoopNotice(
-            key: const ValueKey<String>('send-recipient-prefill'),
-            icon: 'camera',
-            title: '收款地址来自扫码',
-            body:
-                '${loopTruncatedAddress(widget.recipientPrefill!)} 会填进下一步，'
-                '选好资产后仍要点「校验地址」核对。',
-          ),
-        // A closed write gate used to take the whole page, leaving a centred
-        // grey circle where the prototype has a primary, an asset list and a
-        // mining warning (visual audit §A.10, item 4). The page keeps its
-        // shape; the gate's own sentence stands where the list would be, and
-        // nothing on it can be acted on.
-        if (blocked) ...<Widget>[
-          const LoopLabel('选择资产'),
-          sendCapabilityBlockCard(
-            ref,
-            key: const ValueKey<String>('send-capability-block'),
-            label: '发送当前不可用',
-          ),
-        ] else if (walletId == null)
-          LoopChainStateBlock(
-            keyPrefix: 'send-directory',
-            phase: directory.phase,
-            failureKind: directory.failureKind,
-            emptyMessage: '这个账号还没有可用于发送的钱包',
-            emptyReason: '只有 Privy 嵌入式钱包可以从本机签名并广播。',
-            onRetry: () => unawaited(
-              ref.read(walletDirectoryControllerProvider.notifier).reload(),
-            ),
-          )
-        else if (balancesState == null || !balancesState.isReady)
-          LoopChainStateBlock(
-            keyPrefix: 'send-balances',
-            phase: balancesState?.phase ?? LoopChainViewPhase.loading,
-            failureKind: balancesState?.failureKind,
-            emptyMessage: '这个钱包还没有可读资产',
-            onRetry: () => unawaited(
-              ref
-                  .read(walletBalancesControllerProvider(walletId).notifier)
-                  .reload(),
-            ),
-          )
-        else ...<Widget>[
-          const LoopLabel('选择资产'),
-          if (balances!.balances.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('send-assets-empty'),
-              message: '还没有可读取的资产',
-              reason: '登记资产后，这里会为每一个资产恒定保留一行。',
-            )
-          else
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                for (final row in balances.balances)
-                  _sendAssetRow(
-                    row,
-                    onTap: row.balance is LoopBalanceAvailable
-                        ? () => _open(
-                            '/wallet/send/to',
-                            extra: SendDraft(
-                              walletId: walletId,
-                              assetId: row.assetId,
-                              symbol: row.symbol,
-                              recipientPrefill: widget.recipientPrefill,
-                            ),
-                          )
-                        : null,
-                  ),
-              ],
-            ),
-          WalletSnapshotFooter(snapshot: balances.snapshot),
-          const LoopNotice(
-            key: ValueKey<String>('send-power-notice'),
-            icon: 'mine',
-            tone: LoopNoticeTone.warn,
-            title: '发送会降低算力',
-            body: '转出有权重的社区币后，算力会随持仓下降。具体数值暂时读不到，这里不做估算。',
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// A row whose chain read failed is kept and stated, never hidden and never
-  /// rendered as a zero balance — but it cannot be selected either.
-  LoopRecordRow _sendAssetRow(LoopAssetBalanceRow row, {VoidCallback? onTap}) {
-    final balance = row.balance;
-    return LoopRecordRow(
-      key: ValueKey<String>('send-asset-${row.assetId}'),
-      onTap: onTap,
-      leading: LoopTokenLogo(
-        assetSymbol: row.symbol,
-        logoUrl: row.logoUrl,
-        fallbackMonogram: row.symbol,
-      ),
-      title: row.symbol,
-      subtitle: switch (balance) {
-        LoopBalanceUnavailable(reasonCode: final reasonCode) =>
-          loopReasonCodeText(reasonCode),
-        LoopBalanceAvailable(spendableBalance: final spendable) =>
-          '${row.name} · 可动用 ${loopFormatDecimal(spendable)}',
-      },
-      trailing: switch (balance) {
-        LoopBalanceUnavailable() => null,
-        LoopBalanceAvailable(displayBalance: final display) =>
-          loopFormatDecimal(display),
-      },
-      trailingBadge: balance is LoopBalanceUnavailable
-          ? const LoopBadge('读不到', kind: LoopBadgeKind.down)
-          : null,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// send-to · recipient and amount
-// ---------------------------------------------------------------------------
-
-/// `send-to` · step 2. The recipient is checked by the server's preflight; the
-/// amount is checked against the same balance snapshot the review will use.
-class SendRecipientScreen extends ConsumerStatefulWidget {
+/// `send-to` · the same flow, entered with a draft another page prepared — a
+/// wallet asset page's 发送 names the asset. The flow still starts at the
+/// recipient; the asset is already chosen when the amount step opens.
+class SendRecipientScreen extends StatelessWidget {
   const SendRecipientScreen({
     required this.draft,
     super.key,
     this.onBack,
     this.onNavigate,
+    this.onScan,
   });
 
   final SendDraft draft;
   final VoidCallback? onBack;
   final void Function(String location, {Object? extra})? onNavigate;
+  final Future<String?> Function()? onScan;
 
   @override
-  ConsumerState<SendRecipientScreen> createState() =>
-      _SendRecipientScreenState();
+  Widget build(BuildContext context) => SendFlowScreen(
+    initialDraft: draft,
+    onBack: onBack,
+    onNavigate: onNavigate,
+    onScan: onScan,
+  );
 }
 
-class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
+/// Steps 1 and 2 of 发送 (decision 0131, audit 2026-10-09 M9).
+///
+/// Step 1 is the recipient alone: the field takes a paste or a scan from
+/// its own trailing controls and asks the server's preflight by itself — on
+/// a paste, a scan, leaving the field, the keyboard's done key, or a typed
+/// address that has reached its full length — and 下一步 opens only on a
+/// checked address. Step 2 is the asset and the amount, with 全部 filling
+/// the spendable balance (the gas reserve already taken off). Step 3 is
+/// `send-confirm`, where the server's intent is reviewed and the one signing
+/// sheet opens. System back on step 2 returns to step 1.
+class SendFlowScreen extends ConsumerStatefulWidget {
+  const SendFlowScreen({
+    super.key,
+    this.initialDraft,
+    this.recipientPrefill,
+    this.onBack,
+    this.onNavigate,
+    this.onScan,
+  });
+
+  /// A draft from another page: its asset is preselected, and a recipient in
+  /// it is a prefill that is checked again like any other.
+  final SendDraft? initialDraft;
+  final String? recipientPrefill;
+  final VoidCallback? onBack;
+  final void Function(String location, {Object? extra})? onNavigate;
+
+  /// Opens the scanner and returns the address it read, or null. Defaults to
+  /// pushing `/scan` with [SendScanForRecipient].
+  final Future<String?> Function()? onScan;
+
+  @override
+  ConsumerState<SendFlowScreen> createState() => _SendFlowScreenState();
+}
+
+class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
   late final TextEditingController _address = TextEditingController(
-    text: widget.draft.recipientAddress ?? widget.draft.recipientPrefill ?? '',
+    text:
+        widget.initialDraft?.recipientAddress ??
+        widget.initialDraft?.recipientPrefill ??
+        widget.recipientPrefill ??
+        '',
   );
   late final TextEditingController _amount = TextEditingController(
-    text: widget.draft.amount ?? '',
+    text: widget.initialDraft?.amount ?? '',
   );
+  final FocusNode _addressFocus = FocusNode();
+
+  int _step = 1;
+  String? _assetId;
+  String? _symbol;
 
   LoopSendPreflight? _preflight;
   LoopChainException? _preflightFailure;
   bool _checking = false;
 
+  /// The address the current preflight answer (or request) is about. An
+  /// answer for any other text is dropped.
+  String? _checkedAddress;
+  int _checkRequest = 0;
+  Timer? _debounce;
+
+  /// Whether the field has been left once with text in it, so a malformed
+  /// address is pointed out only after the owner is done typing it.
+  bool _addressTouched = false;
+
   static final RegExp _addressPattern = RegExp(r'^0x[0-9a-fA-F]{40}$');
 
   @override
+  void initState() {
+    super.initState();
+    _assetId = widget.initialDraft?.assetId;
+    _symbol = widget.initialDraft?.symbol;
+    _addressFocus.addListener(_onAddressFocus);
+    // A prefilled address — scanned, or carried by a draft — is checked as
+    // soon as the page has a wallet to check it against.
+    if (_address.text.trim().isNotEmpty) {
+      _addressTouched = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_check());
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    _debounce?.cancel();
+    _addressFocus
+      ..removeListener(_onAddressFocus)
+      ..dispose();
     _address.dispose();
     _amount.dispose();
     super.dispose();
@@ -384,284 +324,560 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
     context.push(location, extra: extra);
   }
 
+  void _onAddressFocus() {
+    if (_addressFocus.hasFocus) return;
+    if (_address.text.trim().isEmpty) return;
+    setState(() => _addressTouched = true);
+    unawaited(_check());
+  }
+
+  void _addressEdited() {
+    _debounce?.cancel();
+    setState(() {
+      _preflight = null;
+      _preflightFailure = null;
+      _checkedAddress = null;
+      _checking = false;
+      _checkRequest += 1;
+    });
+    if (_addressPattern.hasMatch(_address.text.trim())) {
+      _debounce = Timer(sendRecipientCheckDebounce, () => unawaited(_check()));
+    }
+  }
+
+  void _setAddress(String text) {
+    _debounce?.cancel();
+    setState(() {
+      _address.text = text;
+      _addressTouched = true;
+      _preflight = null;
+      _preflightFailure = null;
+      _checkedAddress = null;
+    });
+    unawaited(_check());
+  }
+
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? '';
+    if (!mounted || text.isEmpty) return;
+    _setAddress(text);
+  }
+
+  Future<void> _scan() async {
+    final scan = widget.onScan;
+    final String? scanned = scan != null
+        ? await scan()
+        : await context.push<String>(
+            '/scan',
+            extra: const SendScanForRecipient(),
+          );
+    if (!mounted || scanned == null || scanned.trim().isEmpty) return;
+    _setAddress(scanned.trim());
+  }
+
+  /// Asks the server's preflight about the address in the field, once per
+  /// distinct address. A malformed address is never sent.
   Future<void> _check() async {
+    _debounce?.cancel();
     final address = _address.text.trim();
-    if (_checking || !_addressPattern.hasMatch(address)) return;
+    if (!_addressPattern.hasMatch(address)) return;
+    final walletId = ref
+        .read(walletDirectoryControllerProvider)
+        .value
+        ?.activeWalletId;
+    if (walletId == null || sendCapabilityBlocks(ref)) return;
+    final lowered = address.toLowerCase();
+    if (_checkedAddress == lowered && (_checking || _preflight != null)) {
+      return;
+    }
+    final request = ++_checkRequest;
     setState(() {
       _checking = true;
+      _checkedAddress = lowered;
       _preflight = null;
       _preflightFailure = null;
     });
     try {
       final result = await ref
           .read(walletIntentsGatewayProvider)
-          .preflightRecipient(
-            walletId: widget.draft.walletId,
-            address: address,
-          );
-      if (!mounted) return;
+          .preflightRecipient(walletId: walletId, address: address);
+      if (!mounted || request != _checkRequest) return;
       setState(() {
         _preflight = result;
         _checking = false;
         // The server normalises the address; the field adopts its checksum
         // form so what is reviewed is what was checked.
         _address.text = result.recipient.checksumAddress;
+        _checkedAddress = result.recipient.checksumAddress.toLowerCase();
       });
     } on LoopChainException catch (failure) {
-      if (!mounted) return;
+      if (!mounted || request != _checkRequest) return;
       setState(() {
         _preflightFailure = failure;
         _checking = false;
+        _checkedAddress = null;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || request != _checkRequest) return;
       setState(() {
         _preflightFailure = const LoopChainException(
           LoopChainFailureKind.unexpected,
         );
         _checking = false;
+        _checkedAddress = null;
       });
     }
+  }
+
+  void _retryCheck() {
+    _checkedAddress = null;
+    unawaited(_check());
+  }
+
+  void _toStep(int step) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _step = step);
+  }
+
+  void _back() {
+    if (_step > 1) {
+      _toStep(_step - 1);
+      return;
+    }
+    final back = widget.onBack;
+    if (back != null) {
+      back();
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+
+  void _loadBalances(String walletId) {
+    scheduleMicrotask(() {
+      if (mounted) {
+        unawaited(
+          ref.read(walletBalancesControllerProvider(walletId).notifier).load(),
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final blocked = sendCapabilityBlocks(ref);
-    final balancesState = ref.watch(
-      walletBalancesControllerProvider(widget.draft.walletId),
-    );
-    if (!blocked && balancesState.phase == LoopChainViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) {
-          unawaited(
-            ref
-                .read(
-                  walletBalancesControllerProvider(widget.draft.walletId)
-                      .notifier,
-                )
-                .load(),
-          );
-        }
+    final walletId = watchActiveMoneyWalletId(ref, blocked: blocked);
+    final directory = ref.watch(walletDirectoryControllerProvider);
+    // A prefill waits for the wallet directory; it is checked once the
+    // wallet is known.
+    if (!blocked &&
+        walletId != null &&
+        _preflight == null &&
+        _preflightFailure == null &&
+        !_checking &&
+        _checkedAddress == null &&
+        _addressPattern.hasMatch(_address.text.trim()) &&
+        (_debounce == null || !_debounce!.isActive)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_check());
       });
     }
-    final row = balancesState.value?.rowFor(widget.draft.assetId);
+    return PopScope(
+      canPop: _step == 1,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _step > 1) _toStep(_step - 1);
+      },
+      child: _step == 1
+          ? _recipientStep(context, blocked, walletId, directory)
+          : _amountStep(context, blocked, walletId!),
+    );
+  }
+
+  Widget _recipientStep(
+    BuildContext context,
+    bool blocked,
+    String? walletId,
+    LoopChainResourceState<LoopWalletDirectory> directory,
+  ) {
+    final preflight = _preflight;
+    final text = _address.text.trim();
+    final wellFormed = _addressPattern.hasMatch(text);
+    final String? status = _checking
+        ? '正在校验地址…'
+        : preflight != null
+        ? '地址已校验 · BNB Smart Chain'
+        : text.isEmpty
+        ? null
+        : !wellFormed && _addressTouched
+        ? '地址格式不对：0x 开头，共 42 位'
+        : null;
+    final ready = !blocked && walletId != null && preflight != null;
+    return LoopFocusPage(
+      key: const ValueKey<String>('send-address-screen'),
+      archetype: LoopPageArchetype.action,
+      title: '发送',
+      onBack: _back,
+      primaryAction: blocked
+          ? null
+          : _nextWithReason(
+              missing: walletId == null || ready || _checking
+                  ? null
+                  : wellFormed
+                  ? (_preflightFailure == null ? '还差一步：等待地址校验。' : null)
+                  : '还差一步：填写完整的收款地址（0x 开头，42 位）。',
+              missingKey: 'send-recipient-missing',
+              button: LoopButton(
+                key: const ValueKey<String>('send-address-next'),
+                label: '下一步',
+                primary: true,
+                block: true,
+                onPressed: ready ? () => _toStep(2) : null,
+              ),
+            ),
+      block: blocked
+          ? sendCapabilityPageBlock(
+              ref,
+              key: const ValueKey<String>('send-capability-block'),
+              title: '发送当前不可用',
+            )
+          : null,
+      body: <Widget>[
+        const LoopStepDots(step: 1, total: sendStepCount, label: '收款地址'),
+        const SizedBox(height: 12),
+        if (walletId == null)
+          LoopChainStateBlock(
+            keyPrefix: 'send-directory',
+            phase: directory.phase,
+            failureKind: directory.failureKind,
+            emptyMessage: '这个账号还没有可用于发送的钱包',
+            emptyReason: '只有 Privy 嵌入式钱包可以从本机签名并广播。',
+            onRetry: () => unawaited(
+              ref.read(walletDirectoryControllerProvider.notifier).reload(),
+            ),
+          )
+        else ...<Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+            child: LoopSurfaceCard(
+              child: TextField(
+                key: const ValueKey<String>('send-recipient-field'),
+                controller: _address,
+                focusNode: _addressFocus,
+                autocorrect: false,
+                enableSuggestions: false,
+                keyboardType: TextInputType.visiblePassword,
+                textInputAction: TextInputAction.done,
+                maxLength: 42,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                onChanged: (_) => _addressEdited(),
+                onSubmitted: (_) {
+                  setState(() => _addressTouched = true);
+                  unawaited(_check());
+                },
+                decoration: InputDecoration(
+                  labelText: '收款地址（BNB Smart Chain）',
+                  hintText: '0x…',
+                  counterText: '',
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      LoopIconButton(
+                        key: const ValueKey<String>('send-recipient-paste'),
+                        icon: 'copy',
+                        label: '粘贴',
+                        onPressed: () => unawaited(_paste()),
+                      ),
+                      LoopIconButton(
+                        key: const ValueKey<String>('send-recipient-scan'),
+                        icon: 'camera',
+                        label: '扫码',
+                        onPressed: () => unawaited(_scan()),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (status != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: Text(
+                status,
+                key: const ValueKey<String>('send-recipient-status'),
+                style: LoopTypography.label(
+                  11,
+                  color: preflight != null
+                      ? LoopColors.lime
+                      : _checking
+                      ? LoopColors.text2
+                      : LoopColors.warning,
+                ),
+              ),
+            ),
+          if (widget.recipientPrefill != null && text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: Text(
+                '收款地址来自扫码，已自动校验',
+                key: const ValueKey<String>('send-recipient-prefill'),
+                style: LoopTypography.label(11, color: LoopColors.text3),
+              ),
+            ),
+          // An address check that never reached the server has not prepared
+          // an intent, opened a wallet or submitted anything. It pauses; only
+          // a server answer is an error.
+          if (MoneyOfflinePause.covers(_preflightFailure))
+            MoneyOfflinePause(
+              blockKey: 'send-recipient-preflight-offline',
+              failureKind: _preflightFailure?.kind,
+              pausedActions: const <String>['校验地址', '下一步', '签名'],
+              onRetry: _retryCheck,
+            )
+          // The server read the address and refused to answer for it. It is
+          // a refusal, not a failed read: retrying cannot change it.
+          else if (MoneyPolicyNotice.covers(_preflightFailure))
+            MoneyPolicyNotice(
+              blockKey: 'send-to-permission',
+              failure: _preflightFailure!,
+              onOpenSecurity: () => _open('/profile/security'),
+            )
+          else if (_preflightFailure != null)
+            LoopErrorState(
+              key: const ValueKey<String>('send-recipient-preflight-error'),
+              title: '地址没有校验成功',
+              reason: loopChainFailureReason(_preflightFailure!.kind),
+              onRetry: _retryCheck,
+            ),
+          if (preflight != null) _RecipientChecks(preflight: preflight),
+        ],
+      ],
+    );
+  }
+
+  Widget _amountStep(BuildContext context, bool blocked, String walletId) {
+    final preflight = _preflight!;
+    final balancesState = ref.watch(walletBalancesControllerProvider(walletId));
+    if (!blocked && balancesState.phase == LoopChainViewPhase.loading) {
+      _loadBalances(walletId);
+    }
+    final balances = balancesState.value;
+    final candidates =
+        balances?.balances.where(moneyRowHasSpendable).toList() ??
+        const <LoopAssetBalanceRow>[];
+    // One asset with something to send needs no choice.
+    if (_assetId == null && candidates.length == 1) {
+      _assetId = candidates.single.assetId;
+      _symbol = candidates.single.symbol;
+    }
+    final row = _assetId == null ? null : balances?.rowFor(_assetId!);
     final spendable = row?.balance is LoopBalanceAvailable
         ? (row!.balance as LoopBalanceAvailable).spendableBalance
         : null;
     final amount = TransferAmount.tryParse(_amount.text.trim());
-    final preflight = _preflight;
     final overSpendable =
         amount != null &&
         spendable != null &&
         Decimal.parse(amount.wire) > spendable;
     final ready =
-        !blocked && preflight != null && amount != null && !overSpendable;
-    // What the disabled button is still waiting for. A grey 下一步 with no
-    // sentence beside it reads as a broken control: on the device the address
-    // was filled, the button stayed grey, and nothing on screen said the
-    // amount — two screens further down — had not been typed yet.
-    final missing = blocked
-        ? null
-        : preflight == null
-        ? (_addressPattern.hasMatch(_address.text.trim())
-              ? '还差一步：点「校验地址」核对这个收款地址。'
-              : '还差一步：填写完整的收款地址（0x 开头，42 位）。')
-        : amount == null
-        ? '还差一步：填写发送数量。'
-        : overSpendable
-        ? '发送数量超过了可动用余额，请改小。'
-        : null;
-    // With the keyboard up this page keeps about a third of its height. The
-    // primary is folded away while typing so the address controls and the
-    // amount card stay inside the viewport; dismissing the keyboard brings it
-    // back unchanged.
-    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
-
+        !blocked &&
+        _assetId != null &&
+        _symbol != null &&
+        amount != null &&
+        spendable != null &&
+        !overSpendable;
+    final symbol = _symbol;
     return LoopFocusPage(
-      key: const ValueKey<String>('send-recipient-screen'),
+      key: const ValueKey<String>('send-amount-screen'),
       archetype: LoopPageArchetype.action,
-      title: '发送到',
-      onBack: widget.onBack,
-      folioCollapsed: typing,
-      // The amount pad has no return key on iOS (decision 0091).
+      title: '发送',
+      onBack: _back,
       keyboardAccessory: true,
-      // Chalk, with the recipient the preflight checked as the heading — the
-      // prototype's `0x71bd…0b91` (audit §A.15). Before a preflight there is
-      // no recipient, and the heading says what the step is for.
-      folio: LoopFolioPrimary(
-        key: const ValueKey<String>('send-recipient-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        kicker: 'WALLET SEND',
-        heading: preflight == null
-            ? '填写收款地址'
-            : loopTruncatedAddress(preflight.recipient.checksumAddress),
-        caption: '地址与网络先校验，金额会在下一步单独确认。',
-        stamp: 'STEP 2',
-      ),
-      primaryAction: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (missing != null) ...<Widget>[
-            Text(
-              missing,
-              key: const ValueKey<String>('send-recipient-missing'),
-              style: Theme.of(context).textTheme.labelMedium,
+      primaryAction: blocked
+          ? null
+          : _nextWithReason(
+              missing: balances == null || !balancesState.isReady
+                  ? null
+                  : _assetId == null
+                  ? '还差一步：选择要发送的资产。'
+                  : amount == null
+                  ? '还差一步：填写发送数量。'
+                  : overSpendable
+                  ? '发送数量超过了可动用余额，请改小。'
+                  : null,
+              missingKey: 'send-amount-missing',
+              button: LoopButton(
+                key: const ValueKey<String>('send-amount-next'),
+                label: '下一步',
+                primary: true,
+                block: true,
+                onPressed: ready
+                    ? () => _open(
+                        '/wallet/send/confirm',
+                        extra: SendDraft(
+                          walletId: walletId,
+                          assetId: _assetId!,
+                          symbol: symbol!,
+                          recipientAddress: preflight.recipient.checksumAddress,
+                          amount: amount.wire,
+                        ),
+                      )
+                    : null,
+              ),
             ),
-            const SizedBox(height: 8),
-          ],
-          LoopButton(
-            key: const ValueKey<String>('send-recipient-next'),
-            label: '下一步',
-            primary: true,
-            block: true,
-            onPressed: ready
-                ? () => _open(
-                    '/wallet/send/confirm',
-                    extra: widget.draft.copyWith(
-                      recipientAddress: preflight.recipient.checksumAddress,
-                      amount: amount.wire,
-                    ),
-                  )
-                : null,
-          ),
-        ],
-      ),
       block: blocked
           ? sendCapabilityPageBlock(
               ref,
-              key: const ValueKey<String>('send-recipient-capability-block'),
+              key: const ValueKey<String>('send-amount-capability-block'),
               title: '发送当前不可用',
             )
           : null,
       body: <Widget>[
-        const LoopLabel('收款地址'),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: LoopSurfaceCard(
-            child: TextField(
-              key: const ValueKey<String>('send-recipient-field'),
-              controller: _address,
-              autocorrect: false,
-              enableSuggestions: false,
-              maxLength: 42,
-              maxLengthEnforcement: MaxLengthEnforcement.enforced,
-              onChanged: (_) => setState(() {
-                _preflight = null;
-                _preflightFailure = null;
-              }),
-              onSubmitted: (_) => unawaited(_check()),
-              decoration: const InputDecoration(
-                labelText: '完整收款地址（BNB Smart Chain）',
-                hintText: '0x…',
-                counterText: '',
-              ),
-            ),
-          ),
-        ),
-        LoopButtonPair(
-          children: <Widget>[
-            LoopButton(
-              key: const ValueKey<String>('send-recipient-paste'),
-              label: '粘贴',
-              onPressed: () async {
-                final data = await Clipboard.getData(Clipboard.kTextPlain);
-                final text = data?.text?.trim() ?? '';
-                if (!mounted || text.isEmpty) return;
-                setState(() {
-                  _address.text = text;
-                  _preflight = null;
-                  _preflightFailure = null;
-                });
-              },
-            ),
-            LoopButton(
-              key: const ValueKey<String>('send-recipient-check'),
-              label: _checking ? '校验中' : '校验地址',
-              primary: true,
-              onPressed:
-                  _checking || !_addressPattern.hasMatch(_address.text.trim())
-                  ? null
-                  : () => unawaited(_check()),
+        const LoopStepDots(step: 2, total: sendStepCount, label: '金额与资产'),
+        const SizedBox(height: 12),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('send-amount-recipient'),
+              leading: const LoopRowIcon(icon: 'wallet'),
+              title: loopTruncatedAddress(preflight.recipient.checksumAddress),
+              subtitle: '收款地址 · 已校验',
+              trailingCaption: '修改',
+              chevron: false,
+              onTap: () => _toStep(1),
             ),
           ],
         ),
-        const LoopNotice(
-          key: ValueKey<String>('send-recipient-scan-unavailable'),
-          icon: 'camera',
-          body: '最近联系人还没有开放，请粘贴或输入完整地址；扫码请用钱包页的「扫码」。',
-        ),
-        // An address check that never reached the server has not prepared an
-        // intent, opened a wallet or submitted anything. It pauses; only a
-        // server answer is an error.
-        if (MoneyOfflinePause.covers(_preflightFailure))
-          MoneyOfflinePause(
-            blockKey: 'send-recipient-preflight-offline',
-            failureKind: _preflightFailure?.kind,
-            pausedActions: const <String>['校验地址', '下一步', '签名'],
-            onRetry: () => unawaited(_check()),
+        if (balances == null || !balancesState.isReady)
+          LoopChainStateBlock(
+            keyPrefix: 'send-balances',
+            phase: balancesState.phase,
+            failureKind: balancesState.failureKind,
+            emptyMessage: '这个钱包还没有可读资产',
+            onRetry: () => unawaited(
+              ref
+                  .read(walletBalancesControllerProvider(walletId).notifier)
+                  .reload(),
+            ),
           )
-        // The server read the address and refused to answer for it. It is a
-        // refusal, not a failed read: retrying cannot change it.
-        else if (MoneyPolicyNotice.covers(_preflightFailure))
-          MoneyPolicyNotice(
-            blockKey: 'send-to-permission',
-            failure: _preflightFailure!,
-            onOpenSecurity: () => _open('/profile/security'),
+        else if (balances.balances.isEmpty)
+          const LoopEmpty(
+            key: ValueKey<String>('send-assets-empty'),
+            message: '还没有可读取的资产',
+            reason: '登记资产后，这里会为每一个资产恒定保留一行。',
           )
-        else if (_preflightFailure != null)
-          LoopErrorState(
-            key: const ValueKey<String>('send-recipient-preflight-error'),
-            title: '地址没有校验成功',
-            reason: loopChainFailureReason(_preflightFailure!.kind),
-            onRetry: () => unawaited(_check()),
+        else ...<Widget>[
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('send-asset-selector'),
+                leading: row == null
+                    ? const LoopRowIcon(icon: 'wallet')
+                    : LoopTokenLogo(
+                        assetSymbol: row.symbol,
+                        logoUrl: row.logoUrl,
+                        fallbackMonogram: row.symbol,
+                      ),
+                title: row?.symbol ?? '选择资产',
+                subtitle: row == null
+                    ? candidates.isEmpty
+                          ? '没有可动用余额的资产'
+                          : '${candidates.length} 个资产可发送'
+                    : switch (row.balance) {
+                        LoopBalanceAvailable(spendableBalance: final s) =>
+                          '可动用 ${loopFormatDecimal(s)} ${row.symbol}'
+                              '（已扣除手续费保留）',
+                        LoopBalanceUnavailable(reasonCode: final reasonCode) =>
+                          loopReasonCodeText(reasonCode),
+                      },
+                onTap: () => unawaited(_pickAsset(balances)),
+              ),
+            ],
           ),
-        if (preflight != null) _RecipientChecks(preflight: preflight),
-        const LoopLabel('金额'),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: LoopSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                TextField(
-                  key: const ValueKey<String>('send-amount-field'),
-                  controller: _amount,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  textInputAction: TextInputAction.done,
-                  // The amount stays the exact text all the way to the wire.
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                  ],
-                  maxLength: TransferAmount.maxWireLength,
-                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: '发送数量（${widget.draft.symbol}）',
-                    counterText: '',
-                    errorText: overSpendable ? '超过可动用余额' : null,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: LoopSurfaceCard(
+              child: TextField(
+                key: const ValueKey<String>('send-amount-field'),
+                controller: _amount,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textInputAction: TextInputAction.done,
+                // The amount stays the exact text all the way to the wire.
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                maxLength: TransferAmount.maxWireLength,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: symbol == null ? '发送数量' : '发送数量（$symbol）',
+                  counterText: '',
+                  errorText: overSpendable ? '超过可动用余额' : null,
+                  suffixIcon: TextButton(
+                    key: const ValueKey<String>('send-amount-max'),
+                    onPressed: spendable != null && spendable > Decimal.zero
+                        ? () => setState(
+                            () => _amount.text = spendable.toString(),
+                          )
+                        : null,
+                    child: const Text('全部'),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  spendable == null
-                      ? '读不到可用余额，这里不做估算。'
-                      : '可动用 ${loopFormatDecimal(spendable)} '
-                            '${widget.draft.symbol}'
-                            '（已扣除手续费保留）',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-        if (balancesState.value != null)
-          WalletSnapshotFooter(snapshot: balancesState.value!.snapshot),
+          WalletSnapshotFooter(snapshot: balances.snapshot),
+          const LoopNotice(
+            key: ValueKey<String>('send-power-notice'),
+            icon: 'mine',
+            tone: LoopNoticeTone.warn,
+            title: '发送会降低算力',
+            body: '转出有权重的社区币后，算力会随持仓下降。具体数值暂时读不到，这里不做估算。',
+          ),
+        ],
       ],
     );
+  }
+
+  /// 下一步, with the one thing it is still waiting for said above it: a grey
+  /// button with no sentence beside it reads as a broken control.
+  Widget _nextWithReason({
+    required String? missing,
+    required String missingKey,
+    required Widget button,
+  }) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      if (missing != null) ...<Widget>[
+        Text(
+          missing,
+          key: ValueKey<String>(missingKey),
+          style: Theme.of(context).textTheme.labelMedium,
+        ),
+        const SizedBox(height: 8),
+      ],
+      button,
+    ],
+  );
+
+  Future<void> _pickAsset(LoopWalletBalances balances) async {
+    final picked = await showMoneyAssetPicker(
+      context,
+      balances: balances,
+      rowKeyPrefix: 'send-asset',
+      selectedAssetId: _assetId,
+    );
+    if (picked == null || !mounted) return;
+    final row = balances.rowFor(picked);
+    if (row == null) return;
+    setState(() {
+      if (picked != _assetId) _amount.clear();
+      _assetId = picked;
+      _symbol = row.symbol;
+    });
   }
 }
 
@@ -804,15 +1020,6 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
       archetype: LoopPageArchetype.action,
       title: '确认发送',
       onBack: widget.onBack,
-      folio: LoopFolioPrimary(
-        key: const ValueKey<String>('send-confirm-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        kicker: 'FINAL REVIEW',
-        heading: '${widget.draft.amount ?? ''} ${widget.draft.symbol}'.trim(),
-        caption: '收款方、网络费与到账数量全部确认后才请求签名。',
-        stamp: 'SIGN',
-      ),
       primaryAction: intent == null
           ? null
           : MoneyCountdown(
@@ -850,6 +1057,8 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
         // promises 「全部确认后才请求签名」 and then lists nothing at all
         // (which is what a 403 on prepare left behind) confirms nothing. The
         // draft's own two lines stand until the intent replaces them.
+        const LoopStepDots(step: 3, total: sendStepCount, label: '确认并签名'),
+        const SizedBox(height: 12),
         if (intent == null) _SendDraftFacts(draft: widget.draft),
         if (other != null)
           _PendingIntentBlock(

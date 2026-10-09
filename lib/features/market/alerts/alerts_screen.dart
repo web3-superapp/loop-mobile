@@ -14,7 +14,6 @@ import 'package:loop_mobile/features/market/alerts/alerts_controller.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
-import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
@@ -27,6 +26,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `alerts` · price alerts plus the context notification feed.
@@ -134,32 +134,17 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                 ),
         ),
       ],
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('alerts-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        archetype: LoopFolioArchetype.listing,
-        kicker: marketAlertsKicker,
-        // The list answers one cursor page at a time and the response carries
-        // no total, so the armed count describes this page only. It is stated
-        // as a count of what is listening exactly when the last page is in;
-        // before that the hero says how many rows it has loaded.
-        heading: !state.isReady
-            ? '价格提醒'
-            : focusLabel != null
-            ? '$focusLabel · ${armed.length} 个提醒正在监听'
-            : state.page!.nextCursor != null
-            ? '已载入 ${state.items.length} 条提醒'
-            : '${armed.length} 个提醒正在监听',
-        caption: focusLabel != null
-            ? '只显示这个资产的提醒。触发一次后提醒会停下来，重新编辑才会再次生效。'
-            : state.isReady && state.page!.nextCursor != null
-            ? '这一页之后还有提醒没有载入。触发一次后提醒会停下来，重新编辑才会再次生效。'
-            : '触发一次后提醒会停下来，重新编辑才会再次生效。',
-        // No stamp: the prototype's `.folio-stamp` carries a settled reading,
-        // never a state name, and 「9 ACTIVE」 restated the heading in English
-        // over a figure that only counted one page.
-      ),
+      // Decision 0131: a tool page opens on its list. The count — of what is
+      // listening, or of what has loaded while more pages remain (the list
+      // carries no total) — and the one rule a reader needs are the bar's
+      // one line.
+      subtitle: !state.isReady
+          ? null
+          : focusLabel != null
+          ? '$focusLabel · ${armed.length} 个提醒正在监听 · 触发一次即停'
+          : state.page!.nextCursor != null
+          ? '已载入 ${state.items.length} 条提醒 · 触发一次即停'
+          : '${armed.length} 个提醒正在监听 · 触发一次即停',
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('alerts-capability-block'),
@@ -393,10 +378,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     String? presetAssetId,
   }) async {
     final assetId = existing?.assetId ?? presetAssetId;
-    final result = await showModalBottomSheet<_AlertEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    final result = await showLoopSheet<_AlertEditorResult>(
+      context,
       builder: (sheetContext) => _AlertEditorSheet(
         existing: existing,
         initialAssetId: assetId,
@@ -591,37 +574,41 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
   Future<void> _confirmDelete() async {
     final confirmed = await showLoopSheet<bool>(
       context,
-      builder: (sheetContext) => LoopSheet(
+      builder: (sheetContext) => Column(
         key: const ValueKey<String>('alert-delete-confirm'),
-        title: '删除这个提醒？',
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const LoopNotice(
-              key: ValueKey<String>('alert-delete-confirm-body'),
-              icon: 'warn',
-              tone: LoopNoticeTone.warn,
-              title: '删除之后不会再监听这个价格',
-              body: '已经触发过的记录留在触发历史里，不会被删掉。',
-              margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
-            ),
-            LoopButtonPair(
-              children: <Widget>[
-                LoopButton(
-                  label: '不删除',
-                  onPressed: () => Navigator.of(sheetContext).pop(false),
-                ),
-                LoopButton(
-                  key: const ValueKey<String>('alert-delete-confirm-yes'),
-                  label: '删除',
-                  primary: true,
-                  onPressed: () => Navigator.of(sheetContext).pop(true),
-                ),
-              ],
-            ),
-          ],
-        ),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopSheetHeading('删除这个提醒？'),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const LoopNotice(
+                key: ValueKey<String>('alert-delete-confirm-body'),
+                icon: 'warn',
+                tone: LoopNoticeTone.warn,
+                title: '删除之后不会再监听这个价格',
+                body: '已经触发过的记录留在触发历史里，不会被删掉。',
+                margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+              ),
+              LoopButtonPair(
+                children: <Widget>[
+                  LoopButton(
+                    label: '不删除',
+                    onPressed: () => Navigator.of(sheetContext).pop(false),
+                  ),
+                  LoopButton(
+                    key: const ValueKey<String>('alert-delete-confirm-yes'),
+                    label: '删除',
+                    primary: true,
+                    onPressed: () => Navigator.of(sheetContext).pop(true),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
     if (confirmed != true || !mounted) return;
@@ -632,127 +619,134 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
   Widget build(BuildContext context) {
     final existing = widget.existing;
     final choice = _choice;
-    return LoopSheet(
-      title: existing == null ? '新建价格提醒' : '编辑价格提醒',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const LoopLabel('资产'),
-          if (choice == null)
-            LoopButton(
-              key: const ValueKey<String>('alert-asset-pick'),
-              label: '从自选里选择资产',
-              block: true,
-              onPressed: () => unawaited(_pickAsset()),
-            )
-          else
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                LoopRecordRow(
-                  key: const ValueKey<String>('alert-asset-row'),
-                  leading: LoopTokenLogo(
-                    assetSymbol:
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading(existing == null ? '新建价格提醒' : '编辑价格提醒'),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const LoopLabel('资产'),
+            if (choice == null)
+              LoopButton(
+                key: const ValueKey<String>('alert-asset-pick'),
+                label: '从自选里选择资产',
+                block: true,
+                onPressed: () => unawaited(_pickAsset()),
+              )
+            else
+              LoopRecordGroup(
+                rows: <LoopRecordRow>[
+                  LoopRecordRow(
+                    key: const ValueKey<String>('alert-asset-row'),
+                    leading: LoopTokenLogo(
+                      assetSymbol:
+                          choice.symbol ?? loopTruncatedAssetId(choice.assetId),
+                      logoUrl: choice.logoUrl,
+                      fallbackMonogram: choice.monogram,
+                    ),
+                    title:
                         choice.symbol ?? loopTruncatedAssetId(choice.assetId),
-                    logoUrl: choice.logoUrl,
-                    fallbackMonogram: choice.monogram,
+                    subtitle: choice.name ?? '这个资产的名称暂时读不到',
+                    // An existing alert is bound to its asset: the contract has
+                    // no way to move one, so this row is a fact, not a control.
+                    onTap: existing == null
+                        ? () => unawaited(_pickAsset())
+                        : null,
+                    trailingBadge: existing == null
+                        ? const LoopBadge('可更换')
+                        : const LoopBadge('不可更换', kind: LoopBadgeKind.mute),
                   ),
-                  title: choice.symbol ?? loopTruncatedAssetId(choice.assetId),
-                  subtitle: choice.name ?? '这个资产的名称暂时读不到',
-                  // An existing alert is bound to its asset: the contract has
-                  // no way to move one, so this row is a fact, not a control.
-                  onTap: existing == null
-                      ? () => unawaited(_pickAsset())
-                      : null,
-                  trailingBadge: existing == null
-                      ? const LoopBadge('可更换')
-                      : const LoopBadge('不可更换', kind: LoopBadgeKind.mute),
+                ],
+              ),
+            const SizedBox(height: 12),
+            const LoopLabel('触发条件'),
+            // `.segs`: one row, four segments — the same control the prototype
+            // uses everywhere a choice is exclusive.
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: <Widget>[
+                  for (final (index, condition)
+                      in LoopAlertCondition.values.indexed) ...<Widget>[
+                    if (index > 0) const SizedBox(width: 8),
+                    LoopSeg(
+                      key: ValueKey<String>(
+                        'alert-condition-${condition.wireName}',
+                      ),
+                      label: condition.label,
+                      selected: condition == _condition,
+                      onSelected: () => setState(() => _condition = condition),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              alertConditionExplanation(_condition),
+              key: const ValueKey<String>('alert-condition-explanation'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const ValueKey<String>('alert-threshold-field'),
+              controller: _thresholdController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              // The threshold never becomes a `double`: it stays the exact text
+              // the user typed all the way to the wire.
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
+              decoration: const InputDecoration(
+                labelText: '阈值（USD）',
+                hintText: '例如 800.5',
+              ),
+            ),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: 10),
+              Text(
+                _error!,
+                key: const ValueKey<String>('alert-editor-error'),
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+            const SizedBox(height: 16),
+            LoopButtonPair(
+              children: <Widget>[
+                LoopButton(
+                  label: '取消',
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                LoopButton(
+                  key: const ValueKey<String>('alert-editor-submit'),
+                  label: '保存',
+                  primary: true,
+                  onPressed: _submit,
                 ),
               ],
             ),
-          const SizedBox(height: 12),
-          const LoopLabel('触发条件'),
-          // `.segs`: one row, four segments — the same control the prototype
-          // uses everywhere a choice is exclusive.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: <Widget>[
-                for (final (index, condition)
-                    in LoopAlertCondition.values.indexed) ...<Widget>[
-                  if (index > 0) const SizedBox(width: 8),
-                  LoopSeg(
-                    key: ValueKey<String>(
-                      'alert-condition-${condition.wireName}',
-                    ),
-                    label: condition.label,
-                    selected: condition == _condition,
-                    onSelected: () => setState(() => _condition = condition),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            alertConditionExplanation(_condition),
-            key: const ValueKey<String>('alert-condition-explanation'),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            key: const ValueKey<String>('alert-threshold-field'),
-            controller: _thresholdController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            // The threshold never becomes a `double`: it stays the exact text
-            // the user typed all the way to the wire.
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-            ],
-            decoration: const InputDecoration(
-              labelText: '阈值（USD）',
-              hintText: '例如 800.5',
-            ),
-          ),
-          if (_error != null) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              _error!,
-              key: const ValueKey<String>('alert-editor-error'),
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ],
-          const SizedBox(height: 16),
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                label: '取消',
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              LoopButton(
-                key: const ValueKey<String>('alert-editor-submit'),
-                label: '保存',
-                primary: true,
-                onPressed: _submit,
+            // 删除 is not a peer of 保存: it used to sit directly under it, full
+            // width, one thumb-width from the primary action of the sheet. It
+            // is a secondary text control now, and it asks first.
+            if (existing != null) ...<Widget>[
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.center,
+                child: TextButton(
+                  key: const ValueKey<String>('alert-editor-delete'),
+                  onPressed: () => unawaited(_confirmDelete()),
+                  child: const Text('删除这个提醒'),
+                ),
               ),
             ],
-          ),
-          // 删除 is not a peer of 保存: it used to sit directly under it, full
-          // width, one thumb-width from the primary action of the sheet. It
-          // is a secondary text control now, and it asks first.
-          if (existing != null) ...<Widget>[
-            const SizedBox(height: 14),
-            Align(
-              alignment: Alignment.center,
-              child: TextButton(
-                key: const ValueKey<String>('alert-editor-delete'),
-                onPressed: () => unawaited(_confirmDelete()),
-                child: const Text('删除这个提醒'),
-              ),
-            ),
           ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -786,61 +780,65 @@ class _AlertAssetPickerSheetState
         items.putIfAbsent(item.assetId, () => item);
       }
     }
-    return LoopSheet(
+    return Column(
       key: const ValueKey<String>('alert-asset-picker'),
-      title: '选择资产',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (!state.isReady)
-            LoopChainStateBlock(
-              keyPrefix: 'alert-asset-picker',
-              phase: state.phase,
-              failureKind: state.failureKind,
-              emptyMessage: '自选列表还没有读到',
-              onRetry: () => unawaited(
-                ref.read(watchlistEditorControllerProvider.notifier).reload(),
-              ),
-            )
-          else if (items.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('alert-asset-picker-empty'),
-              message: '自选里还没有资产',
-              reason: '先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。',
-            )
-          else
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                for (final item in items.values)
-                  LoopRecordRow(
-                    key: ValueKey<String>('alert-asset-pick-${item.assetId}'),
-                    leading: LoopTokenLogo(
-                      assetSymbol:
-                          item.asset?.symbol ??
-                          loopTruncatedAssetId(item.assetId),
-                      logoUrl: item.logoUrl,
-                      fallbackMonogram:
-                          item.asset?.symbol ??
-                          loopTruncatedAssetId(item.assetId),
-                    ),
-                    title:
-                        item.asset?.symbol ??
-                        loopTruncatedAssetId(item.assetId),
-                    subtitle: item.asset?.name ?? '这个资产的名称暂时读不到',
-                    onTap: () => Navigator.of(context).pop(
-                      _AlertAssetChoice(
-                        assetId: item.assetId,
-                        symbol: item.asset?.symbol,
-                        name: item.asset?.name,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('选择资产'),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (!state.isReady)
+              LoopChainStateBlock(
+                keyPrefix: 'alert-asset-picker',
+                phase: state.phase,
+                failureKind: state.failureKind,
+                emptyMessage: '自选列表还没有读到',
+                onRetry: () => unawaited(
+                  ref.read(watchlistEditorControllerProvider.notifier).reload(),
+                ),
+              )
+            else if (items.isEmpty)
+              const LoopEmpty(
+                key: ValueKey<String>('alert-asset-picker-empty'),
+                message: '自选里还没有资产',
+                reason: '先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。',
+              )
+            else
+              LoopRecordGroup(
+                rows: <LoopRecordRow>[
+                  for (final item in items.values)
+                    LoopRecordRow(
+                      key: ValueKey<String>('alert-asset-pick-${item.assetId}'),
+                      leading: LoopTokenLogo(
+                        assetSymbol:
+                            item.asset?.symbol ??
+                            loopTruncatedAssetId(item.assetId),
                         logoUrl: item.logoUrl,
+                        fallbackMonogram:
+                            item.asset?.symbol ??
+                            loopTruncatedAssetId(item.assetId),
+                      ),
+                      title:
+                          item.asset?.symbol ??
+                          loopTruncatedAssetId(item.assetId),
+                      subtitle: item.asset?.name ?? '这个资产的名称暂时读不到',
+                      onTap: () => Navigator.of(context).pop(
+                        _AlertAssetChoice(
+                          assetId: item.assetId,
+                          symbol: item.asset?.symbol,
+                          name: item.asset?.name,
+                          logoUrl: item.logoUrl,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-        ],
-      ),
+                ],
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

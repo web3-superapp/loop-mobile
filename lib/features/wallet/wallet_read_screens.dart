@@ -41,6 +41,7 @@ import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 
@@ -1908,39 +1909,45 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
             onBlocked: () => unawaited(
               showLoopSheet<void>(
                 context,
-                builder: (sheetContext) => LoopSheet(
+                builder: (sheetContext) => Column(
                   key: const ValueKey<String>('wallets-add-sheet'),
-                  title: '暂不支持绑定第二个钱包',
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      const LoopNotice(
-                        key: ValueKey<String>('wallets-add-sheet-reason'),
-                        icon: 'id',
-                        title: '一个账号，一个嵌入式钱包',
-                        body:
-                            'LOOP 为每个账号创建一个 Privy 嵌入式钱包，它已经在下面的列表里。'
-                            '绑定外部钱包（MetaMask 等）和绑定第二个嵌入式钱包都还没有开放，'
-                            '所以这里没有可以添加的东西。',
-                        margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
-                      ),
-                      const LoopNotice(
-                        key: ValueKey<String>('wallets-add-sheet-scope'),
-                        icon: 'info',
-                        title: '开放之后会发生什么',
-                        body: '已绑定钱包里的社区币都会计入算力，不需要把资产搬到某一个钱包。',
-                        margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
-                      ),
-                      LoopButton(
-                        key: const ValueKey<String>('wallets-add-sheet-close'),
-                        label: '知道了',
-                        primary: true,
-                        block: true,
-                        onPressed: () => Navigator.of(sheetContext).pop(),
-                      ),
-                    ],
-                  ),
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    const LoopSheetHeading('暂不支持绑定第二个钱包'),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        const LoopNotice(
+                          key: ValueKey<String>('wallets-add-sheet-reason'),
+                          icon: 'id',
+                          title: '一个账号，一个嵌入式钱包',
+                          body:
+                              'LOOP 为每个账号创建一个 Privy 嵌入式钱包，它已经在下面的列表里。'
+                              '绑定外部钱包（MetaMask 等）和绑定第二个嵌入式钱包都还没有开放，'
+                              '所以这里没有可以添加的东西。',
+                          margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+                        ),
+                        const LoopNotice(
+                          key: ValueKey<String>('wallets-add-sheet-scope'),
+                          icon: 'info',
+                          title: '开放之后会发生什么',
+                          body: '已绑定钱包里的社区币都会计入算力，不需要把资产搬到某一个钱包。',
+                          margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+                        ),
+                        LoopButton(
+                          key: const ValueKey<String>(
+                            'wallets-add-sheet-close',
+                          ),
+                          label: '知道了',
+                          primary: true,
+                          block: true,
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -2031,37 +2038,39 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
     WalletDirectoryController controller,
     LoopWalletAccount wallet,
   ) async {
-    final confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => LoopSheet(
-        title: '切换活跃钱包',
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              '钱包 ${wallet.truncatedAddress} 会成为余额、活动与收款页的当前钱包。',
-              style: Theme.of(sheetContext).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            LoopButtonPair(
-              children: <Widget>[
-                LoopButton(
-                  label: '取消',
-                  onPressed: () => Navigator.of(sheetContext).pop(false),
-                ),
-                LoopButton(
-                  key: const ValueKey<String>('wallets-activate-confirm'),
-                  label: '切换',
-                  primary: true,
-                  onPressed: () => Navigator.of(sheetContext).pop(true),
-                ),
-              ],
-            ),
-          ],
-        ),
+    final confirmed = await showLoopSheet<bool>(
+      context,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopSheetHeading('切换活跃钱包'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                '钱包 ${wallet.truncatedAddress} 会成为余额、活动与收款页的当前钱包。',
+                style: Theme.of(sheetContext).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              LoopButtonPair(
+                children: <Widget>[
+                  LoopButton(
+                    label: '取消',
+                    onPressed: () => Navigator.of(sheetContext).pop(false),
+                  ),
+                  LoopButton(
+                    key: const ValueKey<String>('wallets-activate-confirm'),
+                    label: '切换',
+                    primary: true,
+                    onPressed: () => Navigator.of(sheetContext).pop(true),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
     if (!(confirmed ?? false)) return;
@@ -2500,107 +2509,114 @@ class WalletActivityDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = explorerUrl(entry);
-    return LoopSheet(
+    return Column(
       key: const ValueKey<String>('tx-entry-sheet'),
-      title: '交易详情',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          LoopSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('交易详情'),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            LoopSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  LoopKeyValue(
+                    label: '方向',
+                    value: switch (entry.direction) {
+                      LoopTransferDirection.incoming => '收到',
+                      LoopTransferDirection.outgoing => '发出',
+                      LoopTransferDirection.self => '自转',
+                    },
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  LoopKeyValue(
+                    label: '数量',
+                    value:
+                        '${loopFormatDecimal(entry.displayValue)} ${entry.symbol}',
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  LoopKeyValue(
+                    label: '对方地址',
+                    value: entry.counterpartyAddress,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  LoopKeyValue(
+                    label: '网络',
+                    value: _assetChainName(entry.assetId),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  LoopKeyValue(
+                    label: '区块',
+                    value: loopGroupedFigure(entry.blockNumber.toString()),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  LoopKeyValue(
+                    label: '状态',
+                    value: loopConfirmationLabel(entry.status),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  LoopKeyValue(
+                    label: '观察于',
+                    value: loopRelativeTime(entry.observedAt),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const LoopLabel('交易哈希'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: SelectableText(
+                entry.transactionHash,
+                key: const ValueKey<String>('tx-entry-sheet-hash'),
+                style: LoopMono.body,
+              ),
+            ),
+            LoopButtonPair(
               children: <Widget>[
-                LoopKeyValue(
-                  label: '方向',
-                  value: switch (entry.direction) {
-                    LoopTransferDirection.incoming => '收到',
-                    LoopTransferDirection.outgoing => '发出',
-                    LoopTransferDirection.self => '自转',
-                  },
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                LoopButton(
+                  key: const ValueKey<String>('tx-entry-sheet-copy-hash'),
+                  label: '复制哈希',
+                  primary: true,
+                  onPressed: () => _copy(
+                    context,
+                    value: entry.transactionHash,
+                    what: '交易哈希',
+                  ),
                 ),
-                LoopKeyValue(
-                  label: '数量',
-                  value:
-                      '${loopFormatDecimal(entry.displayValue)} ${entry.symbol}',
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                LoopKeyValue(
-                  label: '对方地址',
-                  value: entry.counterpartyAddress,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                LoopKeyValue(
-                  label: '网络',
-                  value: _assetChainName(entry.assetId),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                LoopKeyValue(
-                  label: '区块',
-                  value: loopGroupedFigure(entry.blockNumber.toString()),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                LoopKeyValue(
-                  label: '状态',
-                  value: loopConfirmationLabel(entry.status),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                LoopKeyValue(
-                  label: '观察于',
-                  value: loopRelativeTime(entry.observedAt),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
+                if (url != null)
+                  LoopButton(
+                    key: const ValueKey<String>('tx-entry-sheet-copy-link'),
+                    label: '复制 BscScan 链接',
+                    onPressed: () => _copy(context, value: url, what: '浏览器链接'),
+                  ),
               ],
             ),
-          ),
-          const SizedBox(height: 12),
-          const LoopLabel('交易哈希'),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: SelectableText(
-              entry.transactionHash,
-              key: const ValueKey<String>('tx-entry-sheet-hash'),
-              style: LoopMono.body,
-            ),
-          ),
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('tx-entry-sheet-copy-hash'),
-                label: '复制哈希',
-                primary: true,
-                onPressed: () =>
-                    _copy(context, value: entry.transactionHash, what: '交易哈希'),
+            if (url != null) ...<Widget>[
+              const SizedBox(height: 10),
+              SelectableText(
+                url,
+                key: const ValueKey<String>('tx-entry-sheet-link'),
+                style: Theme.of(context).textTheme.labelMedium,
               ),
-              if (url != null)
-                LoopButton(
-                  key: const ValueKey<String>('tx-entry-sheet-copy-link'),
-                  label: '复制 BscScan 链接',
-                  onPressed: () => _copy(context, value: url, what: '浏览器链接'),
-                ),
             ],
-          ),
-          if (url != null) ...<Widget>[
-            const SizedBox(height: 10),
-            SelectableText(
-              url,
-              key: const ValueKey<String>('tx-entry-sheet-link'),
-              style: Theme.of(context).textTheme.labelMedium,
+            // Opening an external browser needs a launcher this build does not
+            // compose, so the sheet hands over the address instead of promising
+            // a jump it cannot make.
+            const LoopNotice(
+              key: ValueKey<String>('tx-entry-sheet-explorer-notice'),
+              icon: 'info',
+              title: '在浏览器里打开要自己粘贴',
+              body: 'LOOP 目前不能直接唤起外部浏览器。复制链接后在浏览器里打开，看到的是链上的同一笔。',
+              margin: EdgeInsets.fromLTRB(0, 12, 0, 0),
             ),
           ],
-          // Opening an external browser needs a launcher this build does not
-          // compose, so the sheet hands over the address instead of promising
-          // a jump it cannot make.
-          const LoopNotice(
-            key: ValueKey<String>('tx-entry-sheet-explorer-notice'),
-            icon: 'info',
-            title: '在浏览器里打开要自己粘贴',
-            body: 'LOOP 目前不能直接唤起外部浏览器。复制链接后在浏览器里打开，看到的是链上的同一笔。',
-            margin: EdgeInsets.fromLTRB(0, 12, 0, 0),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

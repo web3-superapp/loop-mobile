@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -9,7 +10,9 @@ import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
 /// What the panel hands back to the token page: one side, one whole-unit
 /// amount and the slippage the owner chose. The page prepares the intent.
@@ -93,6 +96,27 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
   LoopChainException? _quoteFailure;
   bool _quoting = false;
 
+  /// The confirm button's place in the sheet's scroll view. A quote arriving
+  /// under an open keypad left 「确认买入」 half under it (audit 2026-10-09
+  /// M16); the sheet is scrolled so the button sits just above the keypad.
+  final GlobalKey _confirmKey = GlobalKey();
+
+  void _revealConfirm() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _confirmKey.currentContext;
+      if (!mounted || target == null || !target.mounted) return;
+      unawaited(
+        Scrollable.ensureVisible(
+          target,
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        ),
+      );
+    });
+  }
+
   MemeTokenDetail get _detail => widget.detail;
   String get _ticker => '\$${_detail.row.symbol}';
 
@@ -154,6 +178,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
         _quote = quote;
         _quoting = false;
       });
+      _revealConfirm();
     } on LoopChainException catch (failure) {
       if (!mounted || request != _request) return;
       setState(() {
@@ -246,158 +271,179 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
         slippage != null;
     final balance = _balance;
     final viewerReason = _detail.viewerUnavailableReason;
-    return LoopSheet(
-      title: _side == MemeTradeSide.buy ? '买入 $_ticker' : '卖出 $_ticker',
-      child: Padding(
-        key: const ValueKey<String>('meme-trade-panel'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            LoopSegBar(
-              key: const ValueKey<String>('meme-trade-side'),
-              labels: const <String>['买入', '卖出'],
-              selectedIndex: _side == MemeTradeSide.buy ? 0 : 1,
-              onSelected: (index) {
-                _selectSide(
-                  index == 0 ? MemeTradeSide.buy : MemeTradeSide.sell,
-                );
-                setState(() {});
-              },
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              key: const ValueKey<String>('meme-trade-amount'),
-              controller: _amount,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.done,
-              // One line: a long amount scrolls inside the field instead of
-              // wrapping under the suffix (decision 0121).
-              maxLines: 1,
-              style: LoopType.figureLg,
-              decoration: InputDecoration(
-                labelText: _side == MemeTradeSide.buy ? '支付' : '卖出',
-                suffixText: _side == MemeTradeSide.buy ? 'USD1' : _ticker,
-                hintText: '0',
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              key: const ValueKey<String>('meme-trade-balance'),
-              balance == null
-                  ? '钱包读数暂时取不到 · ${memeReasonText(viewerReason ?? 'MEME_VIEWER_WALLET_MISSING')}'
-                  : _side == MemeTradeSide.buy
-                  ? '可用 ${memeUsd1Label(balance)}'
-                  : '持有 ${memeTokenLabel(balance, _ticker)}',
-              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: <Widget>[
-                for (final percent in const <int>[25, 50, 75, 100]) ...<Widget>[
-                  Expanded(
-                    child: _FillChip(
-                      key: ValueKey<String>('meme-trade-fill-$percent'),
-                      label: '$percent%',
-                      onTap: balance == null || balance <= BigInt.zero
-                          ? null
-                          : () => _fill(percent),
-                    ),
-                  ),
-                  if (percent != 100) const SizedBox(width: 8),
-                ],
-              ],
-            ),
-            const SizedBox(height: 10),
-            _QuoteBlock(
-              quote: quote,
-              quoting: _quoting,
-              failure: _quoteFailure,
-              side: _side,
-              ticker: _ticker,
-            ),
-            if (blocking != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  blocking,
-                  key: const ValueKey<String>('meme-trade-blocking'),
-                  style: LoopType.caption.copyWith(color: LoopColors.warning),
-                ),
-              ),
-            const SizedBox(height: 10),
-            Text(
-              '滑点上限',
-              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: <Widget>[
-                for (final bps in memeSlippagePresets) ...<Widget>[
-                  LoopSeg(
-                    key: ValueKey<String>('meme-trade-slippage-$bps'),
-                    label: memeBpsLabel(bps),
-                    selected: !_customSelected && _slippageBps == bps,
-                    onSelected: () => setState(() {
-                      _customSelected = false;
-                      _slippageBps = bps;
-                    }),
-                  ),
-                  const SizedBox(width: 6),
-                ],
-                LoopSeg(
-                  key: const ValueKey<String>('meme-trade-slippage-custom'),
-                  label: '自定义',
-                  selected: _customSelected,
-                  onSelected: () => setState(() => _customSelected = true),
-                ),
-                if (_customSelected) ...<Widget>[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      key: const ValueKey<String>(
-                        'meme-trade-slippage-custom-input',
-                      ),
-                      controller: _customSlippage,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        suffixText: '%',
-                        hintText: '0.01–50',
-                        errorText:
-                            _customSlippage.text.isNotEmpty && slippage == null
-                            ? '0.01–50'
-                            : null,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 14),
-            LoopButton(
-              key: const ValueKey<String>('meme-trade-confirm'),
-              label: _side == MemeTradeSide.buy ? '确认买入' : '确认卖出',
-              primary: true,
-              block: true,
-              onPressed: canConfirm
-                  ? () => Navigator.of(context).pop(
-                      MemeTradeRequest(
-                        side: _side,
-                        amount: memeDecimalString(raw),
-                        slippageBps: slippage,
-                      ),
-                    )
-                  : null,
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading(
+          _side == MemeTradeSide.buy ? '买入 $_ticker' : '卖出 $_ticker',
         ),
-      ),
+        Padding(
+          key: const ValueKey<String>('meme-trade-panel'),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopSegBar(
+                key: const ValueKey<String>('meme-trade-side'),
+                labels: const <String>['买入', '卖出'],
+                selectedIndex: _side == MemeTradeSide.buy ? 0 : 1,
+                onSelected: (index) {
+                  _selectSide(
+                    index == 0 ? MemeTradeSide.buy : MemeTradeSide.sell,
+                  );
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                key: const ValueKey<String>('meme-trade-amount'),
+                controller: _amount,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                textInputAction: TextInputAction.done,
+                // One line: a long amount scrolls inside the field instead of
+                // wrapping under the suffix (decision 0121).
+                maxLines: 1,
+                style: LoopType.figureLg,
+                decoration: InputDecoration(
+                  labelText: _side == MemeTradeSide.buy ? '支付' : '卖出',
+                  suffixText: _side == MemeTradeSide.buy ? 'USD1' : _ticker,
+                  hintText: '0',
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                key: const ValueKey<String>('meme-trade-balance'),
+                balance == null
+                    ? '钱包读数暂时取不到 · ${memeReasonText(viewerReason ?? 'MEME_VIEWER_WALLET_MISSING')}'
+                    : _side == MemeTradeSide.buy
+                    ? '可用 ${memeUsd1Label(balance)}'
+                    : '持有 ${memeTokenLabel(balance, _ticker)}',
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  for (final percent in const <int>[
+                    25,
+                    50,
+                    75,
+                    100,
+                  ]) ...<Widget>[
+                    Expanded(
+                      child: _FillChip(
+                        key: ValueKey<String>('meme-trade-fill-$percent'),
+                        label: '$percent%',
+                        onTap: balance == null || balance <= BigInt.zero
+                            ? null
+                            : () => _fill(percent),
+                      ),
+                    ),
+                    if (percent != 100) const SizedBox(width: 8),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              _QuoteBlock(
+                quote: quote,
+                quoting: _quoting,
+                failure: _quoteFailure,
+                side: _side,
+                ticker: _ticker,
+              ),
+              if (blocking != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    blocking,
+                    key: const ValueKey<String>('meme-trade-blocking'),
+                    style: LoopType.caption.copyWith(color: LoopColors.warning),
+                  ),
+                ),
+              const SizedBox(height: 10),
+              Text(
+                '滑点上限',
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: <Widget>[
+                  for (final bps in memeSlippagePresets) ...<Widget>[
+                    LoopSeg(
+                      key: ValueKey<String>('meme-trade-slippage-$bps'),
+                      label: memeBpsLabel(bps),
+                      selected: !_customSelected && _slippageBps == bps,
+                      onSelected: () => setState(() {
+                        _customSelected = false;
+                        _slippageBps = bps;
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  LoopSeg(
+                    key: const ValueKey<String>('meme-trade-slippage-custom'),
+                    label: '自定义',
+                    selected: _customSelected,
+                    onSelected: () => setState(() => _customSelected = true),
+                  ),
+                  if (_customSelected) ...<Widget>[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        key: const ValueKey<String>(
+                          'meme-trade-slippage-custom-input',
+                        ),
+                        controller: _customSlippage,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        ],
+                        decoration: InputDecoration(
+                          isDense: true,
+                          suffixText: '%',
+                          hintText: '0.01–50',
+                          errorText:
+                              _customSlippage.text.isNotEmpty &&
+                                  slippage == null
+                              ? '0.01–50'
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 14),
+              KeyedSubtree(
+                key: _confirmKey,
+                child: LoopButton(
+                  key: const ValueKey<String>('meme-trade-confirm'),
+                  label: _side == MemeTradeSide.buy ? '确认买入' : '确认卖出',
+                  primary: true,
+                  block: true,
+                  onPressed: canConfirm
+                      ? () => Navigator.of(context).pop(
+                          MemeTradeRequest(
+                            side: _side,
+                            amount: memeDecimalString(raw),
+                            slippageBps: slippage,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -493,8 +539,7 @@ class _FillChip extends StatelessWidget {
       enabled: enabled,
       label: label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: LoopPressable(
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44),

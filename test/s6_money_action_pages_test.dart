@@ -67,8 +67,8 @@ void main() {
           balances: S5Answer<LoopWalletBalances>(pending: true),
         ),
         intents: FakeWalletIntentsGateway(),
-        settle: false,
       );
+      await sendToAmountStep(tester, settle: false);
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
     });
@@ -86,6 +86,7 @@ void main() {
         ),
         intents: FakeWalletIntentsGateway(),
       );
+      await sendToAmountStep(tester);
 
       expect(
         find.byKey(const ValueKey<String>('send-assets-empty')),
@@ -106,6 +107,7 @@ void main() {
         ),
         intents: FakeWalletIntentsGateway(),
       );
+      await sendToAmountStep(tester);
 
       expect(
         find.byKey(const ValueKey<String>('send-balances-state-offline')),
@@ -132,9 +134,18 @@ void main() {
         ),
         intents: FakeWalletIntentsGateway(),
       );
+      await sendToAmountStep(tester);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('send-asset-selector')),
+      );
+      await tester.pumpAndSettle();
 
       expect(find.text('读不到'), findsOneWidget);
       expect(find.text('0'), findsNothing);
+      final row = tester.widget<LoopRecordRow>(
+        find.byKey(ValueKey<String>('send-asset-$s5NativeAssetId')),
+      );
+      expect(row.onTap, isNull);
     });
 
     testWidgets('the power impact is stated without inventing a number', (
@@ -146,6 +157,7 @@ void main() {
         wallet: FakeWalletReadGateway(),
         intents: FakeWalletIntentsGateway(),
       );
+      await sendToAmountStep(tester);
 
       expect(find.textContaining('具体数值暂时读不到'), findsOneWidget);
     });
@@ -168,10 +180,7 @@ void main() {
           ),
         ),
       );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('send-recipient-check')),
-      );
+      // The drafted recipient is checked by itself, with no button.
       await tester.pumpAndSettle();
 
       expect(
@@ -188,13 +197,18 @@ void main() {
     testWidgets('an unchecked recipient cannot continue', (tester) async {
       await pumpS6Page(
         tester,
-        const SendRecipientScreen(draft: _draft),
+        const SendAssetScreen(),
         wallet: FakeWalletReadGateway(),
         intents: FakeWalletIntentsGateway(),
       );
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('send-recipient-field')),
+        '0x1234',
+      );
+      await tester.pumpAndSettle();
 
       final next = tester.widget<LoopButton>(
-        find.byKey(const ValueKey<String>('send-recipient-next')),
+        find.byKey(const ValueKey<String>('send-address-next')),
       );
       expect(next.onPressed, isNull);
     });
@@ -210,10 +224,6 @@ void main() {
           failure: LoopChainFailureKind.validationFailed,
         ),
       );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('send-recipient-check')),
-      );
       await tester.pumpAndSettle();
 
       expect(
@@ -221,7 +231,7 @@ void main() {
         findsOneWidget,
       );
       final next = tester.widget<LoopButton>(
-        find.byKey(const ValueKey<String>('send-recipient-next')),
+        find.byKey(const ValueKey<String>('send-address-next')),
       );
       expect(next.onPressed, isNull);
     });
@@ -235,10 +245,8 @@ void main() {
         wallet: FakeWalletReadGateway(),
         intents: FakeWalletIntentsGateway(),
       );
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('send-recipient-check')),
-      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('send-address-next')));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey<String>('send-amount-field')),
@@ -248,7 +256,7 @@ void main() {
 
       expect(find.text('超过可动用余额'), findsOneWidget);
       final next = tester.widget<LoopButton>(
-        find.byKey(const ValueKey<String>('send-recipient-next')),
+        find.byKey(const ValueKey<String>('send-amount-next')),
       );
       expect(next.onPressed, isNull);
     });

@@ -12,13 +12,13 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
-import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -152,17 +152,12 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           onPressed: state.canSave ? () => unawaited(_save(controller)) : null,
         ),
       ],
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('watchlist-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        archetype: LoopFolioArchetype.listing,
-        kicker: marketWatchlistKicker,
-        // Distinct assets, not the sum of every group's rows (S123 M3).
-        heading: state.isReady ? '${state.distinctAssetCount} 个自选资产' : '自选管理',
-        caption: '排序与移除只影响自选列表，不改变钱包持仓，也不是行情事实。',
-        stamp: state.isDirty ? '未保存' : '编辑',
-      ),
+      // Decision 0131: an edit page opens on its list; the count and the
+      // unsaved mark are the bar's one line.
+      subtitle: state.isReady
+          // Distinct assets, not the sum of every group's rows (S123 M3).
+          ? '${state.distinctAssetCount} 个自选资产${state.isDirty ? ' · 未保存' : ''}'
+          : null,
       // An edit surface takes no pull-to-refresh: a background re-read would
       // drop an ordering the user has not saved yet.
       block: blocked
@@ -236,7 +231,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           // list onto the second screen (audit 2026-09-21 §G.6).
           if (group != null) ...<Widget>[
             // The list shows one group, so its label names that group and
-            // its own count; the heading above counts the whole Watchlist.
+            // its own count; the bar above counts the whole Watchlist.
             LoopLabel(
               '${group.name} ${group.items.length} · 拖动排序 · 左滑删除',
               key: const ValueKey<String>('watchlist-group-label'),
@@ -401,10 +396,8 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
     WatchlistEditorController controller,
     WatchlistEditorState state,
   ) async {
-    final name = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    final name = await showLoopSheet<String>(
+      context,
       builder: (sheetContext) => _NewGroupSheet(groups: state.groups),
     );
     if (name == null || !mounted) return;
@@ -461,58 +454,62 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return LoopSheet(
-      title: '新建分组',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          TextField(
-            key: const ValueKey<String>('watchlist-group-name-field'),
-            controller: _name,
-            autofocus: true,
-            maxLength: watchlistMaxNameCodePoints,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: '分组名称',
-              hintText: '1–$watchlistMaxNameCodePoints 个字符',
-            ),
-            onChanged: (_) {
-              if (_issue != null) setState(() => _issue = null);
-            },
-            onSubmitted: (_) => _submit(),
-          ),
-          if (_issue case final issue?) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              watchlistGroupNameIssueText(issue),
-              key: const ValueKey<String>('watchlist-group-name-error'),
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ],
-          const SizedBox(height: 16),
-          LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              LoopButton(
-                label: '取消',
-                onPressed: () => Navigator.of(context).pop(),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('新建分组'),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextField(
+              key: const ValueKey<String>('watchlist-group-name-field'),
+              controller: _name,
+              autofocus: true,
+              maxLength: watchlistMaxNameCodePoints,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                labelText: '分组名称',
+                hintText: '1–$watchlistMaxNameCodePoints 个字符',
               ),
-              LoopButton(
-                key: const ValueKey<String>('watchlist-group-name-confirm'),
-                label: '添加分组',
-                primary: true,
-                onPressed: _submit,
+              onChanged: (_) {
+                if (_issue != null) setState(() => _issue = null);
+              },
+              onSubmitted: (_) => _submit(),
+            ),
+            if (_issue case final issue?) ...<Widget>[
+              const SizedBox(height: 10),
+              Text(
+                watchlistGroupNameIssueText(issue),
+                key: const ValueKey<String>('watchlist-group-name-error'),
+                style: Theme.of(context).textTheme.labelMedium,
               ),
             ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '分组保存后才会生效，最多 $watchlistMaxGroups 个。',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
+            const SizedBox(height: 16),
+            LoopButtonPair(
+              padded: false,
+              children: <Widget>[
+                LoopButton(
+                  label: '取消',
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                LoopButton(
+                  key: const ValueKey<String>('watchlist-group-name-confirm'),
+                  label: '添加分组',
+                  primary: true,
+                  onPressed: _submit,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '分组保存后才会生效，最多 $watchlistMaxGroups 个。',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

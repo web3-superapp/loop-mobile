@@ -127,3 +127,25 @@ Future<void> pumpS6Page(
     await tester.pump();
   }
 }
+
+/// Walks a mounted send flow through its first step (decision 0131): types
+/// the fixture recipient, lets the automatic check run, and opens step 2.
+Future<void> sendToAmountStep(
+  WidgetTester tester, {
+  String address = '0x000000000000000000000000000000000000dEaD',
+  bool settle = true,
+}) async {
+  await tester.enterText(
+    find.byKey(const ValueKey<String>('send-recipient-field')),
+    address,
+  );
+  await tester.pump(const Duration(milliseconds: 450));
+  await tester.pump();
+  await tester.tap(find.byKey(const ValueKey<String>('send-address-next')));
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}

@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
 import 'package:loop_mobile/features/scan/scan_result.dart';
+import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -27,9 +29,21 @@ const String scanCameraDeniedBody = '扫码功能不可用；可在 系统设置
 /// an unrecognised code (shown, copyable, 继续扫描); offline does not apply —
 /// decoding is on device, and the page it opens owns its own offline state.
 class ScanScreen extends ConsumerStatefulWidget {
-  const ScanScreen({super.key, this.onBack, this.onOpen});
+  const ScanScreen({
+    super.key,
+    this.onBack,
+    this.onOpen,
+    this.returnsRecipient,
+  });
 
   final VoidCallback? onBack;
+
+  /// Whether a wallet address is handed back to the page that opened the
+  /// scanner (decision 0131: 发送's own 扫码 control) instead of opening a
+  /// new send flow. Null reads the route's state: `/scan` pushed with
+  /// [SendScanForRecipient] returns the address as the push's result. In this
+  /// mode a code that is not an address is shown as text, never opened.
+  final bool? returnsRecipient;
 
   /// Opens what a code named. The route replaces this page with it, so 返回
   /// from there leads back to where scanning started.
@@ -102,8 +116,31 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     _dispatch(raw);
   }
 
+  bool get _returnsRecipient {
+    final explicit = widget.returnsRecipient;
+    if (explicit != null) return explicit;
+    try {
+      return GoRouterState.of(context).extra is SendScanForRecipient;
+    } on GoError {
+      return false;
+    }
+  }
+
   void _dispatch(String raw) {
     final result = loopScanResultFor(raw);
+    if (_returnsRecipient) {
+      switch (result) {
+        case LoopScanAddress(:final address):
+          _handled = true;
+          LoopHaptics.selection();
+          Navigator.of(context).pop(address);
+        case LoopScanDestination():
+          setState(() => _unknown = raw.trim());
+        case LoopScanUnknown(:final text):
+          setState(() => _unknown = text);
+      }
+      return;
+    }
     switch (result) {
       case LoopScanDestination():
         _handled = true;

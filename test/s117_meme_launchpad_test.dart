@@ -19,6 +19,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -1036,6 +1037,60 @@ void main() {
         tester.widget<LoopButton>(_key('meme-trade-confirm')).onPressed,
         isNull,
       );
+      await _drain(tester);
+    });
+
+    testWidgets('S123e · one sheet, and 确认买入 is lifted above the keypad', (
+      tester,
+    ) async {
+      final meme = gateway(
+        memeDetail(),
+        quote: _Answer<MemeQuote>.value(memeQuote()),
+      );
+      await _pump(tester, page(), meme: meme);
+      await tester.tap(_key('meme-token-buy'));
+      await tester.pumpAndSettle();
+      // Decision 0131: showLoopSheet draws the one surface; the panel adds
+      // none of its own.
+      expect(find.byType(LoopSheet), findsOneWidget);
+      expect(find.text(r'买入 $FROG'), findsOneWidget);
+      // A phone-sized screen with a 340pt keypad up, as on the device in
+      // audit 2026-10-09 73b.
+      final ratio = tester.view.devicePixelRatio;
+      tester.view.physicalSize = Size(390 * ratio, 760 * ratio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final keypad = 340 * ratio;
+      tester.view.viewInsets = FakeViewPadding(bottom: keypad);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('meme-trade-amount'), '10');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(_key('meme-trade-quote'), findsOneWidget);
+      final visibleBottom =
+          (tester.view.physicalSize.height - keypad) /
+          tester.view.devicePixelRatio;
+      final confirm = tester.getRect(_key('meme-trade-confirm'));
+      expect(confirm.bottom, lessThanOrEqualTo(visibleBottom + 0.5));
+      await _drain(tester);
+    });
+
+    testWidgets('S123e · the chart periods sit above the chart', (
+      tester,
+    ) async {
+      final meme = gateway(memeDetail());
+      await _pump(tester, page(), meme: meme);
+      final strip = tester.getTopLeft(_key('meme-interval-strip')).dy;
+      final chart = find.byWidgetPredicate((widget) {
+        final key = widget.key;
+        return key is ValueKey<String> &&
+            key.value.startsWith('meme-chart-') &&
+            key.value != 'meme-chart-style' &&
+            key.value != 'meme-chart-section';
+      });
+      expect(chart, findsWidgets);
+      expect(strip, lessThan(tester.getTopLeft(chart.first).dy));
       await _drain(tester);
     });
 
