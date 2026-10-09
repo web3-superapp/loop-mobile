@@ -57,9 +57,10 @@ Accepted 2026-10-09。主代理设计（`LOOP/docs/modules/S121-visual-second-pa
 
 ## Consequences
 
-- 与 S121a 的合并点：`intel_rank_board.dart` 用本地 `intelMiningProvenanceDetail(snapshot)`（S121a 的
-  `miningProvenanceDetail` 合并后可替换）；`search_screen.dart` 只加了一个 `empty:` 参数；`MiningDemoHoldingsNotice`
-  本单已不再引用。
+- 已合并 S121a（`git merge integration/v2`）：算力榜来源行 ⓘ 用 S121a 的
+  `miningProvenanceDetail(rank.snapshot, formula: rank.formula)`；MEME 图表空态沿用 S121a 的 key
+  `meme-chart-empty` 与标题 `memeChartEmptyMessage`（「还没有成交」），换成 chart-empty compact 插图；
+  `search_screen.dart` 只加了一个 `empty:` 参数；`MiningDemoHoldingsNotice` 不再引用。
 - harness：`check_illustrations` 新增；群聊行检查把 `avatar: LoopInitialsAvatar(` 放宽为 `LoopInitialsAvatar(` 并要求
   `loopCommunityIdForChannelCid(cid)` 与 `CommunityLogo(`；聊天页 `ChatCreateMenuButton()` 放宽为 `ChatCreateMenuButton(`。
 - 「没有更多」在行情 / 算力榜 / 发射台已移除（`MarketListEnd` 现在只留 12 的空白）。
@@ -114,3 +115,49 @@ Accepted 2026-10-09。主代理设计（`LOOP/docs/modules/S121-visual-second-pa
 - 记忆点：沿用页面已有的价格大字。
 - 删掉什么：「只画有成交的时段，空时段不会补 0」这类工程说明移进来源行 ⓘ（MEME 页）；代币详情的图表空态归 S121a。
 - 自检：compact 插图 64，不抢价格大字。
+
+### 第二轮（OKX §1.1.1）六行计划
+
+- 发射台 · 色/字/布局：底纯黑、行无卡无线；代号 18 粗 / 市值 14 灰；价格 18 粗 / 1h 涨跌 14 色字；最右 96×44 进度胶囊。
+  记忆点：进度胶囊（Lime 只出现在它和「创建代币」上）。删掉：卡片描边、行内 `$SYMBOL` 胶囊、名称、持有数（都在代币页）、
+  第一轮的 56 Logo 与右侧环。自检：对照 4909，结构一致；价格太长时缩放不省略，下标折叠零。
+- 行情 · 同上结构，涨跌进胶囊，价格不再着色；活动卡去描边；末尾不画「没有更多」。记忆点：涨跌胶囊列。
+- 聊天 · 对照 4910：头像 + 整宽搜索；chips 深灰胶囊；Lime 只剩未读角标与右下「发起」圆键。删掉：标题「聊天」、右上「+」。
+- 算力榜 · 领奖台卡去描边（第一名靠更亮的面 + 皇冠 + Lime 奖牌），数值统一 Chalk。删掉：第一轮的 Lime 描边与 Lime 数值、榜底「没有更多」。
+- 钱包 · 对照 4908：四个 56 实心 Lime 圆键 + Ink 图标 + 下方 13 字。其余不动（资产行改 OKX 行留给下一单，见未做项）。
+- 空态 · 空页居中（插图 96、约占内容区 64% 高度后居中），分段内 compact；推广卡式「标题左、图右」本单没有落点（没有推广卡空态）。
+
+### 偏离表
+
+| 设计条目 | 实际 | 原因 |
+| --- | --- | --- |
+| §4.2 卡片：Logo 56、名称 + `$SYMBOL` 胶囊、副行市值·持有、第三行来源、右侧进度环 40 | OKX 行：Logo 36 圆、代号 / 市值、价格 / 1h、最右 96×44 进度胶囊；来源只在列表底的来源行 | 主代理转达 §1.1.1（以其为准）；在模拟器 412dp 上第一轮卡片 + 第二轮「环套 Logo + 涨跌胶囊」都把名称挤到 2–3 个字（截图 03a），进度放胶囊位、涨跌改色字后代号与价格都完整 |
+| §4.2 已毕业：实心 Lime 圆 + 毕业帽 | 进度胶囊满填充 limeSoft + 毕业帽 +「已毕业」Lime 字 | 一列 4 个实心 Lime 圆过重，违背「Lime 只留进度/主按钮」 |
+| §4.2 hero 卡只说「快打满」横滑 | 只在「新发 / 热门」显示，「快打满 / 已毕业」不显示；数据取服务端 `graduating` 列表并滤掉已毕业 | 避免与「快打满」列表重复；dev 当前 `graduating` 为空，真机上看不到 hero（只有 widget 测试覆盖） |
+| §4.3 领奖台第一名 Lime | 第一名：Lime 奖牌 + Lime 皇冠，卡面更亮；卡无描边、数值 Chalk | §1.1.1 第 3、5 条 |
+| §4.3「我的名次」贴 chips 右侧或下方 | 在 chips 下方一行 | chips 已占满一行 |
+| §4.4 私聊对方头像 | 维持 S107 已有实现；小群仍是首字母块 | 小群没有图；harness 要求群行保留中性块 |
+| §4.1 LoopEmpty 页面级「垂直居中在内容区」 | 最小高度 = 视口 64% 并在其中居中 | 列表页内容在 ListView 里，取不到剩余高度；截图 10 看位置合适 |
+| §4.5 关于 Tab 链接行加图标 | 未做 | 时间给了第二轮 OKX 改造 |
+| 搜索 chips | 保留 S121a 的 `LoopSubChip`（描边小胶囊），没有换成 `LoopSeg(quiet)` | S121a 测试按类型查找它；它本身就是 §1.1.1 第 3 条的二级 chip |
+
+### 截图（`LOOP/docs/evidence/2026-10-09-s121/`，模拟器 loop_pixel7_api34，dev 数据，账号 cy）
+
+- `01-chat-list.png` 聊天：头像 + 搜索框、深灰 chips 带图标、社区 Logo、Lime 未读、右下「发起」。
+- `02-chat-list-quiet-rows.png` 聊天下滑：没有消息的社区显示简介首句（第一轮包，头部为旧样式）。
+- `03a-launchpad-first-pass.png` 第一轮卡片（被推翻，留作对比）；`03-launchpad-okx-rows.png` 最终发射台。
+- `04-launchpad-empty-graduating.png` 「快打满」空态插图 +「创建第一个」（第一轮包，chips 为旧 Lime 样式）。
+- `05-meme-token-chart-empty.png` MEME 代币页图表 compact 空态、Logo 44。
+- `06a-rank-podium-first-pass.png` / `06-rank-podium.png` 算力榜领奖台第一轮 / 第二轮。
+- `07a-rank-referrals-empty-first-pass.png` 推广榜 rank 插图空态 +「去邀请」（第一轮包）。
+- `08-intel-market-okx-rows.png` 情报 · 行情 OKX 行与涨跌胶囊。
+- `09-square-chips.png` 广场 chips（全部 / 我加入的带图标，深灰胶囊）。
+- `10-voice-room-empty.png`（`10a` 为第一轮位置偏上）语音房空态居中。
+- `11-search-empty.png` 搜索空输入插图（第一轮包，含 S121a 合并前的 Launch/DApp chips）。
+- `12-wallet-round-keys.png` 钱包四个 Lime 圆键。
+
+### 未做 / 留给下一单
+
+- 钱包资产行、代币详情「关于」链接行图标、自选空态与图表外的其他 `LoopEmpty` 调用点（约 180 处内联用法保持原样）。
+- 「快打满」hero 在 dev 没有数据，未能真机截图。
+- 聊天行之间的 Stream 分隔线仍在（Stream 默认 separator），OKX 无分隔线。

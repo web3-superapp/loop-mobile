@@ -52,6 +52,9 @@ enum MemeTokenTab {
   final String label;
 }
 
+/// The token page's chart when fewer than two candles exist (decision 0121).
+const String memeChartEmptyMessage = '还没有成交';
+
 /// `meme-token` · one MEME curve token (archetype `record`, layout
 /// `dashboard`), laid out on the S113 token skeleton (decision 0118).
 ///
@@ -999,9 +1002,9 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
         child: const SingleChildScrollView(
           physics: NeverScrollableScrollPhysics(),
           child: LoopEmptyState(
-            key: ValueKey<String>('meme-candles-empty'),
+            key: ValueKey<String>('meme-chart-empty'),
             illustration: LoopIllustration.chartEmpty,
-            title: '成交还太少',
+            title: memeChartEmptyMessage,
             message: '多几笔成交，走势就会画出来',
             compact: true,
           ),

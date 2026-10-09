@@ -1576,10 +1576,10 @@ String audioRoomConnectionNote(
         '语音没连上房间也不会结束，要结束请用下面的「结束房间」。',
   AudioRoomViewerRole.speaker =>
     '你是发言人，进入时同样静音，点「$speakLabel」才会申请麦克风权限；'
-        '语音没连上也不会把你移出房间，要真正退出请用下面的「离开」。',
+        '语音没连上，你仍在房间里；要退出请点下面的「离开」。',
   _ =>
     '你以听众身份静音进入，不会申请麦克风权限；'
-        '语音没连上也不会把你移出房间，要真正退出请用下面的「离开」。',
+        '语音没连上，你仍在房间里；要退出请点下面的「离开」。',
 };
 
 class _AudioRoomLobbyFacts extends StatelessWidget {

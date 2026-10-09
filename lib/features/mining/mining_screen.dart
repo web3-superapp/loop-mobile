@@ -158,9 +158,13 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          // Directly under the hero: the figures it just printed are what the
-          // demonstration holdings changed.
-          MiningDemoHoldingsNotice(slug: 'summary', snapshot: summary.snapshot),
+          // Directly under the hero: the snapshot the figures came from, with
+          // the demonstration-holdings note in its sheet (decision 0121).
+          MiningSnapshotProvenanceLine(
+            slug: 'summary',
+            snapshot: summary.snapshot,
+            formula: summary.formula,
+          ),
           MiningDashReasons(
             slug: 'mining-hero',
             // The hero caption already speaks for every dash the pending
@@ -245,9 +249,6 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
               MiningFormulaPending() =>
                 '挖矿公式还没有批准的版本。'
                     'LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。',
-              MiningFormulaEffective(:final scope) when scope.isBaseline =>
-                '当前生效的是开发基线，算出来的数字只用于开发验证，'
-                    '不是收益，也不构成承诺。LOOP 不会在这台设备上累计积分。',
               MiningFormulaEffective() =>
                 'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。',
             },
@@ -275,11 +276,10 @@ String? _heroUnit(MiningSummary summary) =>
 
 String _heroCaption(MiningSummary summary) => switch (summary.formula) {
   MiningFormulaPending() => '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。',
-  MiningFormulaEffective(:final scope) => switch (summary.power) {
+  MiningFormulaEffective() => switch (summary.power) {
     MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
       reasonCode,
     ),
-    MiningFigureValue() when scope.isBaseline => '这些数字来自开发基线，只用于开发验证，不是收益。',
     MiningFigureValue() => '持仓与社区权重共同构成当前算力，不是收益承诺。',
   },
 };

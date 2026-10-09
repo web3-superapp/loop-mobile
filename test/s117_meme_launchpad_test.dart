@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
+import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -1054,7 +1055,11 @@ void main() {
       await tester.tap(_key('meme-trade-fill-25'));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
-      // 25% of 1,000 USD1.
+      // 25% of 1,000 USD1, printed at display precision (decision 0121).
+      expect(
+        tester.widget<TextField>(_key('meme-trade-amount')).controller!.text,
+        '250.00',
+      );
       expect(meme.quoteCalls.single.$2, '250');
       await tester.tap(_key('meme-trade-slippage-300'));
       await tester.pump();
@@ -1070,6 +1075,73 @@ void main() {
       expect(wallet.handed.single.kind, IntentKind.launchPurchase);
       expect(meme.reportCalls.single, _hash);
       expect(find.text('已广播'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a chart with one candle says 「还没有成交」 and nothing else', (
+      tester,
+    ) async {
+      final meme = gateway(memeDetail())
+        ..candles = _Answer<MemeCandleSeries>.value(memeCandles(count: 1));
+      await _pump(tester, page(), meme: meme);
+      expect(_key('meme-chart-empty'), findsOneWidget);
+      expect(find.text('还没有成交'), findsOneWidget);
+      expect(find.textContaining('画不出走势'), findsNothing);
+      expect(find.textContaining('补 0'), findsNothing);
+      await _drain(tester);
+    });
+
+    test('a shortcut prints two decimals and never rounds up', () {
+      BigInt raw(String units) => memeRawFromInput(units)!;
+      expect(memeFillText(raw('250')), '250.00');
+      expect(memeFillText(raw('10.129999999999999999')), '10.12');
+      expect(memeFillText(raw('0.004')), '0.00');
+      expect(memeFillText(raw('123456789012.5')), '123456789012.50');
+    });
+
+    testWidgets('100% shows two decimals and sells the exact holding', (
+      tester,
+    ) async {
+      // Decision 0121: the field reads 「3.14」 while the quote and the
+      // request carry every one of the 18 decimals held.
+      const held = '3141592653589793238';
+      final meme = gateway(
+        memeDetail(viewer: memeViewerJson(balance: held)),
+        quote: _Answer<MemeQuote>.value(memeQuote(side: 'sell')),
+      );
+      await _pump(tester, page(), meme: meme);
+      await tester.tap(_key('meme-token-sell'));
+      await tester.pumpAndSettle();
+      // Four outlined pills in one row (OKX reference, decision 0121).
+      final fills = <Rect>[
+        for (final percent in <int>[25, 50, 75, 100])
+          tester.getRect(_key('meme-trade-fill-$percent')),
+      ];
+      expect(fills.map((rect) => rect.top).toSet(), hasLength(1));
+      expect(fills.first.height, greaterThanOrEqualTo(44));
+      final pill = tester.widget<Container>(
+        find.descendant(
+          of: _key('meme-trade-fill-100'),
+          matching: find.byType(Container),
+        ),
+      );
+      final decoration = pill.decoration! as BoxDecoration;
+      expect(decoration.color, isNull);
+      expect(decoration.border, isNotNull);
+      await tester.tap(_key('meme-trade-fill-100'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      final field = tester.widget<TextField>(_key('meme-trade-amount'));
+      expect(field.controller!.text, '3.14');
+      expect(field.maxLines, 1);
+      expect(meme.quoteCalls.single.$2, '3.141592653589793238');
+      expect(find.text('卖出数量超过持有'), findsNothing);
+
+      // Typing over the shortcut sends what was typed.
+      await tester.enterText(_key('meme-trade-amount'), '3.1');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      expect(meme.quoteCalls.last.$2, '3.1');
       await _drain(tester);
     });
 

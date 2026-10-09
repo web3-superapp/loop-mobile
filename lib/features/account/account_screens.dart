@@ -1444,6 +1444,12 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
 // security-setup · intro / focus
 // ---------------------------------------------------------------------------
 
+/// 大额交易二次验证's subtitle on `security-setup` (decision 0121).
+const String securityLargeAmountSubtitle = '超过阈值时再验一次身份 · 即将推出';
+
+/// The one 11px line under `security-setup`'s rows (decision 0121).
+const String securityBiometricFallbackLine = '设备不支持生物识别时，会改用系统锁屏密码验证。';
+
 class SecuritySetupScreen extends StatelessWidget {
   const SecuritySetupScreen({
     required this.capabilities,
@@ -1493,37 +1499,33 @@ class SecuritySetupScreen extends StatelessWidget {
       body: <Widget>[
         const IdentityProgress(step: 4, total: 5, label: '安全设置'),
         const IdentityStepCopy('应用锁由这台设备把关，交易验证由登录服务决定。'),
-        const LoopNotice(
-          key: ValueKey<String>('protection-setup-unavailable'),
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          title: '交易验证还开不了',
-          body: '下面写的是每一项开不了的原因。LOOP 不会保存 PIN，也不会把「能开」说成「已经开了」。',
-        ),
+        // Decision 0121 (device report 2026-10-09 · 4): the warning banner
+        // that opened this page spoke to engineers. Each row below states its
+        // own state; the page saves no PIN and claims no protection is on.
         const LoopLabel('应用锁'),
-        LoopRecordGroup(rows: <LoopRecordRow>[_appLockRow()]),
+        _SecurityCard(rows: <LoopRecordRow>[_appLockRow()]),
         const LoopLabel('交易验证'),
         // Prototype order: the amount rule first, the second factor after it.
-        LoopRecordGroup(
+        _SecurityCard(
           rows: <LoopRecordRow>[
-            _row(
+            // The threshold is a rule nobody has written down yet, and this
+            // build has no on-chain write that could cross one. The row offers
+            // no switch; it says the protection is coming (decision 0121).
+            const LoopRecordRow(
+              key: ValueKey<String>('security-大额交易二次验证'),
               title: '大额交易二次验证',
-              detail: '超过阈值时重新验证身份',
-              // The threshold is a rule nobody has written down yet, and this
-              // build has no on-chain write that could cross one. Opening a
-              // switch for it would be a switch with nothing behind it.
-              available: false,
-              reason: '多大金额要再验一次还没有定下来，这个版本也还没有会触发它的链上操作',
+              subtitle: securityLargeAmountSubtitle,
+              subtitleMaxLines: 2,
               position: LoopRowPosition.first,
+              semanticLabel: '大额交易二次验证，即将推出',
             ),
             _mfaRow(),
           ],
         ),
-        const LoopNotice(
-          icon: 'info',
-          title: '设备不支持生物识别时',
-          body: '会退回到系统层面的锁屏验证，不会因此阻断使用；App 不会自行存储 PIN。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+        Padding(
+          key: const ValueKey<String>('security-biometric-fallback'),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Text(securityBiometricFallbackLine, style: LoopType.captionSm),
         ),
       ],
     );
@@ -1612,26 +1614,122 @@ class SecuritySetupScreen extends StatelessWidget {
           : 'MFA，不可用：$reason',
     );
   }
+}
 
-  LoopRecordRow _row({
-    required String title,
-    required String detail,
-    required bool available,
-    required String reason,
-    required LoopRowPosition position,
-    String? icon,
-  }) {
-    return LoopRecordRow(
-      key: ValueKey<String>('security-$title'),
-      leading: icon == null ? null : IdentityOptionIcon(icon),
-      title: title,
-      subtitle: available ? detail : '$detail · $reason',
-      // The reason a protection is off is the whole point of the row; one
-      // line ellipsed it away (audit 2026-09-20 §C.7).
-      subtitleMaxLines: 2,
-      trailing: available ? '可用' : '不可用',
-      position: position,
-      semanticLabel: available ? '$title，可用但未开启' : '$title，不可用：$reason',
+/// `security-setup`'s grouped rows on the OKX reference (S121 §1.1.1 · 5):
+/// one `card` face, radius 16, no edge and no shadow, a hairline between
+/// rows (decision 0121).
+class _SecurityCard extends StatelessWidget {
+  const _SecurityCard({required this.rows});
+
+  final List<LoopRecordRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      decoration: BoxDecoration(
+        color: LoopColors.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          for (var index = 0; index < rows.length; index++) ...<Widget>[
+            if (index > 0)
+              const Divider(
+                height: 1,
+                thickness: 1,
+                indent: 16,
+                endIndent: 16,
+                color: LoopColors.line,
+              ),
+            _SecurityRow.of(rows[index]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One row inside [_SecurityCard]: title and subtitle on the left, the state
+/// as a grey word and a chevron on the right when the row opens something.
+///
+/// It is still a [LoopRecordRow] — the same fields, the same key — drawn
+/// without the shared row's own face, edge and shadow.
+class _SecurityRow extends LoopRecordRow {
+  _SecurityRow.of(LoopRecordRow row)
+    : super(
+        key: row.key,
+        title: row.title,
+        leading: row.leading,
+        subtitle: row.subtitle,
+        subtitleMaxLines: row.subtitleMaxLines,
+        trailing: row.trailing,
+        onTap: row.onTap,
+        semanticLabel: row.semanticLabel,
+        selected: row.selected,
+        position: row.position,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final content = Container(
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: <Widget>[
+          if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium,
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    maxLines: subtitleMaxLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
+                  ),
+              ],
+            ),
+          ),
+          if (trailing != null) ...<Widget>[
+            const SizedBox(width: 12),
+            Text(
+              trailing!,
+              style: LoopType.body.copyWith(color: LoopColors.text3),
+            ),
+          ],
+          if (onTap != null) ...<Widget>[
+            const SizedBox(width: 4),
+            const LoopIcon('chevron', size: 15, color: LoopColors.text3),
+          ],
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          highlightColor: LoopColors.card2,
+          child: content,
+        ),
+      ),
     );
   }
 }

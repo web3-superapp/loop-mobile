@@ -412,7 +412,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('没有执行任何操作'), findsOneWidget);
+      expect(find.textContaining('请稍后再试'), findsOneWidget);
       expect(find.text('这个账号还没有钱包'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
@@ -982,7 +982,7 @@ void main() {
       );
 
       expect(find.byKey(const ValueKey<String>('receive-qr')), findsNothing);
-      expect(find.textContaining('没有执行任何操作'), findsOneWidget);
+      expect(find.textContaining('请稍后再试'), findsOneWidget);
     });
   });
 

@@ -490,7 +490,7 @@ String communityAiReason(String? reasonCode) => switch (reasonCode) {
   // The five abilities nothing backs yet.
   'KNOWLEDGE_DOCUMENTS_NOT_INGESTED' => '还没有收录项目文档，这一项暂时答不了。',
   'EDUCATION_CONTENT_NOT_INGESTED' => '还没有收录新手教程，这一项暂时答不了。',
-  'ANNOUNCEMENT_SOURCE_UNAVAILABLE' => '还没有接入公告和官方动态，这一项暂时答不了。',
+  'ANNOUNCEMENT_SOURCE_UNAVAILABLE' => '公告和官方动态暂未开放，这一项暂时答不了。',
   'AI_WRITE_LANE_NOT_DELIVERED' => 'AI 巡查还没有开放。',
   'COMMUNITY_ANALYTICS_NOT_DELIVERED' => '社区分析还没有开放。',
   // Why today's summary is missing. The eight codes are a closed set; an
@@ -505,7 +505,7 @@ String communityAiReason(String? reasonCode) => switch (reasonCode) {
   'COMMUNITY_AI_PROVIDER_REJECTED' => 'AI 拒绝了这次请求，再试也不会有结果。',
   'COMMUNITY_AI_PROVIDER_MALFORMED' => 'AI 返回的内容不完整，这次没有采用。',
   'COMMUNITY_AI_NO_KNOWLEDGE_SOURCE' => '这个社区现在没有任何可用来源，暂时问不了。',
-  'COMMUNITY_AI_RUNTIME_DEFERRED' => 'AI 助理还没有接入。',
+  'COMMUNITY_AI_RUNTIME_DEFERRED' => 'AI 助理暂未开放。',
   _ => '这一项暂时读不到。',
 };
 

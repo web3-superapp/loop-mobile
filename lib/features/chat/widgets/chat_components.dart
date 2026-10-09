@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart
 import 'package:loop_mobile/features/chat/widgets/token_card_view.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 const _avatarColors = <Color>[
@@ -700,10 +701,37 @@ class ChatMessageTile extends StatelessWidget {
                                 border: Border.all(color: LoopColors.line),
                                 borderRadius: LoopRadius.pill,
                               ),
-                              child: Text(
-                                '${loopReactionLabel(entry.key)} '
-                                '${entry.value}',
-                                style: Theme.of(context).textTheme.labelMedium,
+                              // Decision 0121: the glyph and the count.
+                              child: Semantics(
+                                label:
+                                    '${loopReactionLabel(entry.key)} '
+                                    '${entry.value}',
+                                excludeSemantics: true,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    switch (loopReactionIconName(entry.key)) {
+                                      final String icon => LoopIcon(
+                                        icon,
+                                        size: 16,
+                                        color: LoopColors.chalk,
+                                      ),
+                                      null => Text(
+                                        loopReactionLabel(entry.key),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelMedium,
+                                      ),
+                                    },
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${entry.value}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium,
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           })

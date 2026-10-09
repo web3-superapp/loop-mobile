@@ -344,7 +344,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             '匿名时显示「${miningRuleKeyText(rank.display.anonymousMemberKey)}」。',
         miningRuleKeyText(rank.display.powerRuleKey),
         ?intelRankParticipantsDetail(rank),
-        ?intelMiningProvenanceDetail(snapshot),
+        ?miningProvenanceDetail(snapshot, formula: formula),
       ].join('\n'),
     );
   }
@@ -365,17 +365,6 @@ String? intelRankParticipantsDetail(MiningRank rank) {
     return null;
   }
   return '有算力的成员：${<String>[for (final row in ranking.items) '${row.community.name} ${row.participants} 人'].join('、')}。';
-}
-
-/// What the source line adds about the snapshot itself.
-///
-/// The 「含演示持仓」 banner is gone from the board (decision 0122, S121a
-/// removes the component); the same fact is one sentence behind the ⓘ. S121a
-/// publishes `miningProvenanceDetail(snapshot)` in the mining module for the
-/// same purpose — this is its local equivalent until the two land together.
-String? intelMiningProvenanceDetail(MiningSnapshotRef? snapshot) {
-  if (!miningSnapshotIncludesDemonstrationHoldings(snapshot)) return null;
-  return '这次快照里有测试用的演示持仓，链上没有人真的持有它们；正式上线前会清除。';
 }
 
 /// One place on a board, before it is drawn on the podium or as a row.

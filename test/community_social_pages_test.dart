@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -248,7 +250,7 @@ void main() {
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('开发基线'), findsOneWidget);
+      expect(find.text(miningBaselineLabel), findsOneWidget);
       // A member row is one person across every asset: no community weight
       // and no head count could explain it, so neither is on the row.
       expect(
@@ -291,7 +293,7 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('230.5'), findsOneWidget);
-      expect(find.text('开发基线'), findsNothing);
+      expect(find.text(miningBaselineLabel), findsNothing);
     });
 
     testWidgets('an unavailable reading is still never a zero', (tester) async {
@@ -719,10 +721,17 @@ void main() {
           ),
         },
       );
+      // Decision 0121 hides both chips; with the switch on they return and
+      // still state the server's reason.
       await pumpCommunityPage(
         tester,
         const GlobalSearchScreen(initialQuery: 'frog'),
         search: gateway,
+        overrides: <Override>[
+          loopFeatureSwitchesProvider.overrideWithValue(
+            const LoopFeatureSwitchValues(searchOutboundDomainsVisible: true),
+          ),
+        ],
       );
 
       expect(find.text('Frog Holders'), findsOneWidget);
@@ -731,6 +740,10 @@ void main() {
         SearchDomain.launch,
         SearchDomain.dapps,
       ]) {
+        await tester.ensureVisible(
+          find.byKey(ValueKey<String>('search-seg-${domain.wireName}')),
+        );
+        await tester.pumpAndSettle();
         await tester.tap(
           find.byKey(ValueKey<String>('search-seg-${domain.wireName}')),
         );
@@ -763,6 +776,11 @@ void main() {
         tester,
         const GlobalSearchScreen(),
         search: gateway,
+        overrides: <Override>[
+          loopFeatureSwitchesProvider.overrideWithValue(
+            const LoopFeatureSwitchValues(searchOutboundDomainsVisible: true),
+          ),
+        ],
       );
 
       // No query has been typed, yet the reason is read from the server
@@ -801,11 +819,12 @@ void main() {
         find.byKey(const ValueKey<String>('search-field')),
       );
       expect(field.decoration!.labelText, searchFieldLabel);
-      // The five chips stay: a deferred domain still states its own reason.
+      // Decision 0121: only the three domains that answer get a chip.
       for (final domain in searchDomainOrder) {
         expect(
           find.byKey(ValueKey<String>('search-seg-${domain.wireName}')),
-          findsOneWidget,
+          searchDomainIsDeferred(domain) ? findsNothing : findsOneWidget,
+          reason: domain.wireName,
         );
       }
     });
@@ -840,7 +859,7 @@ void main() {
         'users:frog',
       ]);
       expect(find.text('frog_maxi'), findsOneWidget);
-      final seg = tester.widget<LoopSeg>(
+      final seg = tester.widget<LoopSubChip>(
         find.byKey(const ValueKey<String>('search-seg-users')),
       );
       expect(seg.selected, isTrue);
