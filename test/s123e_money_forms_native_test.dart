@@ -5,13 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
 import 'package:loop_mobile/features/scan/scan_screen.dart';
+import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_asset_picker.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/swap_screens.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -391,6 +396,68 @@ void main() {
       await tester.pumpAndSettle();
       expect(result, s6RecipientChecksum);
       expect(find.byType(ScanScreen), findsNothing);
+    });
+  });
+
+  group('scan · through the router', () {
+    testWidgets('/scan pushed with SendScanForRecipient fills step 1', (
+      tester,
+    ) async {
+      final scanner = _FakeScanner();
+      final router = GoRouter(
+        routes: <RouteBase>[
+          GoRoute(
+            path: '/',
+            builder: (context, state) => const SendAssetScreen(),
+          ),
+          GoRoute(
+            path: '/scan',
+            builder: (context, state) => ScanScreen(
+              onOpen: (location, {extra}) =>
+                  context.pushReplacement(location, extra: extra),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 2400);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            loopQrScannerProvider.overrideWithValue(scanner),
+            walletReadGatewayProvider.overrideWithValue(
+              FakeWalletReadGateway(),
+            ),
+            walletIntentsGatewayProvider.overrideWithValue(
+              FakeWalletIntentsGateway(),
+            ),
+            loopV2MetaSnapshotProvider.overrideWith(
+              (ref) async => s5MetaSnapshot(
+                sendApprovals: LoopV2CapabilityAvailability.available,
+              ),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: LoopTheme.dark,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(_key('send-recipient-scan'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ScanScreen), findsOneWidget);
+      scanner.session.emit(s6RecipientChecksum);
+      await tester.pumpAndSettle();
+      // The scanner returned the address instead of opening a second flow.
+      expect(find.byType(ScanScreen), findsNothing);
+      expect(find.byType(SendFlowScreen), findsOneWidget);
+      final field = tester.widget<TextField>(_key('send-recipient-field'));
+      expect(field.controller!.text, s6RecipientChecksum);
+      expect(_button(tester, 'send-address-next').onPressed, isNotNull);
     });
   });
 
