@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/communication/communication_gateway.dar
 import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 const _avatarColors = <Color>[
   LoopColors.market,
@@ -1139,7 +1140,5 @@ class ChatMiniVoiceBar extends ConsumerWidget {
 }
 
 void _showNotice(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
+  LoopToast.show(context, message: message);
 }

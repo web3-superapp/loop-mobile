@@ -9,7 +9,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
-import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// What a failed second-factor call means, in the owner's words.
 ///
@@ -136,9 +136,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
   /// The secret goes to the clipboard as typed, for the authenticator that
   /// cannot scan; nothing else about it is kept or logged.
   Future<void> _copySecret(String secret) async {
-    await Clipboard.setData(ClipboardData(text: secret));
-    if (!mounted) return;
-    LoopToast.show(context, message: '已复制密钥', kind: LoopToastKind.ok);
+    await LoopCopy.text(context, secret, message: '已复制密钥');
   }
 
   List<Widget> _enrolment(LoopMfaController controller, LoopMfaState state) {

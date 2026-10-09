@@ -1,14 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
 import 'package:loop_mobile/features/scan/scan_result.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// The camera-permission sentence LOOP already uses on `permission-notice`.
 const String scanCameraDeniedBody = '扫码功能不可用；可在 系统设置 → LOOP → 相机 中重新开启。';
@@ -106,7 +107,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     switch (result) {
       case LoopScanDestination():
         _handled = true;
-        unawaited(HapticFeedback.selectionClick());
+        LoopHaptics.selection();
         widget.onOpen?.call(result.location, extra: result.extra);
       case LoopScanUnknown(:final text):
         setState(() => _unknown = text);
@@ -146,9 +147,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
   }
 
   Future<void> _copyUnknown(String text) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    LoopToast.show(context, message: '已复制二维码内容');
+    await LoopCopy.text(context, text, message: '已复制二维码内容');
   }
 
   @override

@@ -24,6 +24,11 @@ enum LoopPushRegistrationGate {
   /// there and nowhere earlier.
   awaitingCommunity,
 
+  /// The account is in Community and the device has not allowed LOOP to
+  /// notify, and the owner has not yet pressed 『开启』 on LOOP's own
+  /// explanation card (decision 0130). The system dialog waits for that.
+  awaitingOptIn,
+
   /// A platform LOOP registered no push application for.
   noPlatform,
 

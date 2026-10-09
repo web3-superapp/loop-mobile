@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// What a [LoopRoundKey] is for, which decides its disc.
 enum LoopRoundKeyTone {
@@ -86,8 +87,7 @@ class LoopRoundKey extends StatelessWidget {
       // here so a screen reader can press the key (decision 0126).
       onTap: onPressed ?? onBlocked,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: LoopPressable(
         onTap: onPressed ?? onBlocked,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 80, minWidth: 64),

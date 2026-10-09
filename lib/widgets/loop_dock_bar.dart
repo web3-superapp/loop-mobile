@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 
 /// How one cell of a [LoopDockBar] is drawn at this moment.
@@ -132,6 +133,10 @@ class _LoopDockBarState extends State<LoopDockBar>
   double? _fingerX;
   bool _sliding = false;
 
+  /// Where the current pointer went down, for telling a tap from a slide
+  /// when it lifts.
+  Offset? _downAt;
+
   @override
   void dispose() {
     _strength.dispose();
@@ -164,9 +169,28 @@ class _LoopDockBarState extends State<LoopDockBar>
         0,
         widget.count - 1,
       );
-      if (index != widget.selectedIndex) widget.onSelect(index);
+      if (index != widget.selectedIndex) {
+        LoopHaptics.selection();
+        widget.onSelect(index);
+      }
     }
     _settle();
+  }
+
+  /// Decision 0130: switching tabs is a selection, and a tap switches tabs
+  /// as well as a slide does. The tap itself belongs to the cell (the shell
+  /// owns what a cell does), so the bar answers it from the pointer: a lift
+  /// that did not travel, over a cell that is not the selected one, while no
+  /// slide is under way. A slide is answered in [_end] instead, once.
+  void _pointerUp(PointerUpEvent event, double width) {
+    final down = _downAt;
+    _downAt = null;
+    if (down == null || _sliding || width <= 0) return;
+    if ((event.localPosition - down).distance > kTouchSlop) return;
+    final index = (event.localPosition.dx / (width / widget.count))
+        .floor()
+        .clamp(0, widget.count - 1);
+    if (index != widget.selectedIndex) LoopHaptics.selection();
   }
 
   void _cancel() {
@@ -200,66 +224,72 @@ class _LoopDockBarState extends State<LoopDockBar>
           fingerX: _fingerX,
           strength: strength,
         );
-        return RawGestureDetector(
-          // The slide is a pointer affordance on top of five buttons that
-          // each carry their own semantics; announcing the row as scrollable
-          // would be a second, wrong description of it.
-          excludeFromSemantics: true,
+        return Listener(
           behavior: HitTestBehavior.translucent,
-          gestures: <Type, GestureRecognizerFactory>{
-            HorizontalDragGestureRecognizer:
-                GestureRecognizerFactoryWithHandlers<
-                  HorizontalDragGestureRecognizer
-                >(() => HorizontalDragGestureRecognizer(debugOwner: this), (
-                  recognizer,
-                ) {
-                  recognizer
-                    ..dragStartBehavior = DragStartBehavior.down
-                    ..onStart = (details) {
-                      _begin(details.localPosition);
-                    }
-                    ..onUpdate = (details) {
-                      _move(details.localPosition);
-                    }
-                    ..onEnd = (_) {
-                      _end(width);
-                    }
-                    ..onCancel = _cancel;
-                }),
-            LongPressGestureRecognizer:
-                GestureRecognizerFactoryWithHandlers<
-                  LongPressGestureRecognizer
-                >(() => LongPressGestureRecognizer(debugOwner: this), (
-                  recognizer,
-                ) {
-                  recognizer
-                    ..onLongPressStart = (details) {
-                      _begin(details.localPosition);
-                    }
-                    ..onLongPressMoveUpdate = (details) {
-                      _move(details.localPosition);
-                    }
-                    ..onLongPressEnd = (_) {
-                      _end(width);
-                    }
-                    ..onLongPressCancel = _cancel;
-                }),
-          },
-          child: Stack(
-            children: <Widget>[
-              if (widget.backgroundBuilder != null)
-                Positioned.fill(
-                  child: widget.backgroundBuilder!(context, cells),
+          onPointerDown: (event) => _downAt = event.localPosition,
+          onPointerCancel: (_) => _downAt = null,
+          onPointerUp: (event) => _pointerUp(event, width),
+          child: RawGestureDetector(
+            // The slide is a pointer affordance on top of five buttons that
+            // each carry their own semantics; announcing the row as scrollable
+            // would be a second, wrong description of it.
+            excludeFromSemantics: true,
+            behavior: HitTestBehavior.translucent,
+            gestures: <Type, GestureRecognizerFactory>{
+              HorizontalDragGestureRecognizer:
+                  GestureRecognizerFactoryWithHandlers<
+                    HorizontalDragGestureRecognizer
+                  >(() => HorizontalDragGestureRecognizer(debugOwner: this), (
+                    recognizer,
+                  ) {
+                    recognizer
+                      ..dragStartBehavior = DragStartBehavior.down
+                      ..onStart = (details) {
+                        _begin(details.localPosition);
+                      }
+                      ..onUpdate = (details) {
+                        _move(details.localPosition);
+                      }
+                      ..onEnd = (_) {
+                        _end(width);
+                      }
+                      ..onCancel = _cancel;
+                  }),
+              LongPressGestureRecognizer:
+                  GestureRecognizerFactoryWithHandlers<
+                    LongPressGestureRecognizer
+                  >(() => LongPressGestureRecognizer(debugOwner: this), (
+                    recognizer,
+                  ) {
+                    recognizer
+                      ..onLongPressStart = (details) {
+                        _begin(details.localPosition);
+                      }
+                      ..onLongPressMoveUpdate = (details) {
+                        _move(details.localPosition);
+                      }
+                      ..onLongPressEnd = (_) {
+                        _end(width);
+                      }
+                      ..onLongPressCancel = _cancel;
+                  }),
+            },
+            child: Stack(
+              children: <Widget>[
+                if (widget.backgroundBuilder != null)
+                  Positioned.fill(
+                    child: widget.backgroundBuilder!(context, cells),
+                  ),
+                Row(
+                  children: <Widget>[
+                    for (var index = 0; index < widget.count; index += 1)
+                      Expanded(
+                        child: widget.cellBuilder(context, index, cells[index]),
+                      ),
+                  ],
                 ),
-              Row(
-                children: <Widget>[
-                  for (var index = 0; index < widget.count; index += 1)
-                    Expanded(
-                      child: widget.cellBuilder(context, index, cells[index]),
-                    ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

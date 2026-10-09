@@ -89,6 +89,13 @@ final class LoopPushRegistrationCoordinator {
   String? _registeredToken;
   LoopStreamPushDevice? _registeredStreamDevice;
   String? _askedPrincipal;
+
+  /// The account whose owner pressed 『开启』 on LOOP's own explanation card.
+  ///
+  /// Decision 0130 (audit 2026-10-09 M15): the system dialog is raised only
+  /// after the owner has read what notifications are for and asked for them.
+  /// Arriving in Community no longer raises it by itself.
+  String? _optedInPrincipal;
   LoopPushPermission _permission = LoopPushPermission.unsupported;
 
   /// The server said it has no push runtime. Set once per run; a retry would
@@ -125,6 +132,18 @@ final class LoopPushRegistrationCoordinator {
   void onIdentityMayHaveChanged() {
     if (_disposed) return;
     _enqueue(_synchronize);
+  }
+
+  /// The owner pressed 『开启』 on the in-App explanation (decision 0130).
+  ///
+  /// This is the only path that may raise the system permission dialog. It
+  /// still passes every gate [_synchronize] has — an account the backend has
+  /// accepted, the arrival in Community, a push capability — so a press that
+  /// comes too early asks nothing and is remembered for this account.
+  Future<void> requestPermissionFromOwner() {
+    if (_disposed) return Future<void>.value();
+    _optedInPrincipal = _readPrincipalKey();
+    return _enqueue(_synchronize);
   }
 
   /// Drops this device's registration **while the session still exists**.
@@ -191,8 +210,24 @@ final class LoopPushRegistrationCoordinator {
     // change would re-prompt on Android 13 and, worse, teach the owner that
     // the answer does not stick.
     if (_askedPrincipal != principal) {
-      _permission = await _source.requestPermission();
-      _askedPrincipal = principal;
+      // Decision 0130: read first, without drawing anything. A device that
+      // already allows LOOP registers silently; one that does not waits for
+      // the owner to ask through LOOP's own card, and only then is the
+      // system dialog raised.
+      final current = await _source.currentPermission();
+      if (current == LoopPushPermission.granted ||
+          current == LoopPushPermission.provisional ||
+          current == LoopPushPermission.unsupported) {
+        _permission = current;
+        _askedPrincipal = principal;
+      } else if (_optedInPrincipal != principal) {
+        _permission = current;
+        _record(LoopPushRegistrationGate.awaitingOptIn);
+        return;
+      } else {
+        _permission = await _source.requestPermission();
+        _askedPrincipal = principal;
+      }
     } else if (_permission == LoopPushPermission.denied) {
       // The owner was told where to change it, so the refusal is read again
       // — never asked again. `currentPermission` draws nothing; it is the
@@ -339,6 +374,7 @@ final class LoopPushRegistrationCoordinator {
     _registeredToken = null;
     _registeredStreamDevice = null;
     _askedPrincipal = null;
+    _optedInPrincipal = null;
     if (streamDevice != null) await _removeStreamDevice(streamDevice);
     if (!hadRegistration) return;
     try {

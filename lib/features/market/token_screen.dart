@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -35,6 +34,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// `token` · one registry asset's facts, laid out the way the approved
 /// reference lays a token out (Fomo, decision 0118).
@@ -694,9 +694,7 @@ class TokenIdentityLine extends StatelessWidget {
               icon: 'copy',
               label: '复制合约地址',
               onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: address));
-                if (!context.mounted) return;
-                LoopToast.show(context, message: '已复制合约地址');
+                await LoopCopy.text(context, address, message: '已复制合约地址');
               },
             ),
         ],

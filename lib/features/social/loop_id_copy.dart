@@ -1,15 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
-import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// A printed LOOP ID with its copy glyph right behind it (decision 0104,
 /// S97b layout).
 ///
 /// The glyph is the ID's own control rather than a button under it: 16 dp in
-/// the ID's colour, a 32×32 target, spoken as 「复制 LOOP ID」. A long press on
+/// the ID's colour, a 44×44 target (audit 2026-10-09 m3; it was 32), spoken as 「复制 LOOP ID」. A long press on
 /// the ID itself copies too. Both put only the ID on the clipboard and say
 /// 「已复制 LOOP ID」.
 class LoopIdCopyLine extends StatelessWidget {
@@ -30,7 +30,7 @@ class LoopIdCopyLine extends StatelessWidget {
 
   /// The glyph's edge and its target, in logical pixels.
   static const double glyphSize = 16;
-  static const double targetSize = 32;
+  static const double targetSize = 44;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,11 @@ class LoopIdCopyLine extends StatelessWidget {
       mainAxisAlignment: mainAxisAlignment,
       children: <Widget>[
         Flexible(
-          child: GestureDetector(
+          child: LoopPressable(
+            scale: false,
+            // The copy glyph beside it is the accessible way to copy; the
+            // long press on the printed ID is the shortcut for the finger.
+            excludeFromSemantics: true,
             onLongPress: () => unawaited(copyLoopId(context, loopId)),
             child: Text(loopId, key: textKey, style: style),
           ),
@@ -70,7 +74,5 @@ class LoopIdCopyLine extends StatelessWidget {
 
 /// Puts [loopId] alone on the clipboard and says so.
 Future<void> copyLoopId(BuildContext context, String loopId) async {
-  await Clipboard.setData(ClipboardData(text: loopId));
-  if (!context.mounted) return;
-  LoopToast.show(context, message: '已复制 LOOP ID', kind: LoopToastKind.ok);
+  await LoopCopy.text(context, loopId, message: '已复制 LOOP ID');
 }

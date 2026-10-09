@@ -107,8 +107,8 @@ void main() {
           hasFocusAction: true,
         ),
       );
-      // S97b: a 32×32 target right behind the ID, on its line, no button row.
-      expect(tester.getSize(copy), const Size(32, 32));
+      // S97b + S123c m3: a 44×44 target right behind the ID, on its line.
+      expect(tester.getSize(copy), const Size(44, 44));
       expect(
         tester.getCenter(copy).dy,
         moreOrLessEquals(tester.getCenter(id).dy, epsilon: 1),
@@ -258,7 +258,7 @@ void main() {
       );
       expect(copy, findsOneWidget);
       // S97b: the same glyph behind the ID as on 我的, not a block button.
-      expect(tester.getSize(copy), const Size(32, 32));
+      expect(tester.getSize(copy), const Size(44, 44));
       expect(find.text('复制 LOOP ID'), findsNothing);
       expect(
         tester.getTopLeft(copy).dx,

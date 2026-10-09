@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -95,11 +96,92 @@ Widget loopRefreshable({
               parent: ambient.getScrollPhysics(context),
             ),
           ),
-          child: child,
+          child: LoopRefreshArmHaptic(predicate: predicate, child: child),
         );
       },
     ),
   );
+}
+
+/// Decision 0130: a pull answers once, at the moment it is far enough to
+/// refresh — the instant the indicator turns solid — so letting go is a
+/// decision made with the finger, not by watching the arc.
+///
+/// `RefreshIndicator` publishes no "armed" moment on its spinner variant, so
+/// this listens to the same notifications under the same predicate and
+/// repeats its arithmetic: a drag that starts at the top edge accumulates its
+/// overscroll, and the indicator is opaque — armed — once that reaches a
+/// sixth of the viewport (`0.25 × extent`, reached at `1 / 1.5` of the
+/// indicator's travel).
+class LoopRefreshArmHaptic extends StatefulWidget {
+  const LoopRefreshArmHaptic({
+    required this.child,
+    super.key,
+    this.predicate = defaultScrollNotificationPredicate,
+  });
+
+  final Widget child;
+  final ScrollNotificationPredicate predicate;
+
+  /// The share of the viewport a pull has to travel to arm the refresh.
+  static const double armedFraction = 0.25 / 1.5;
+
+  @override
+  State<LoopRefreshArmHaptic> createState() => _LoopRefreshArmHapticState();
+}
+
+class _LoopRefreshArmHapticState extends State<LoopRefreshArmHaptic> {
+  double? _drag;
+  bool _armed = false;
+
+  bool _onScroll(ScrollNotification notification) {
+    if (!widget.predicate(notification) ||
+        notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+    if (notification is ScrollStartNotification &&
+        notification.dragDetails != null &&
+        notification.metrics.extentBefore == 0) {
+      _drag = 0;
+      _armed = false;
+      return false;
+    }
+    final drag = _drag;
+    if (drag == null) return false;
+    var next = drag;
+    if (notification is ScrollUpdateNotification) {
+      if (notification.dragDetails == null) {
+        _drag = null;
+        return false;
+      }
+      next -= notification.scrollDelta ?? 0;
+    } else if (notification is OverscrollNotification) {
+      next -= notification.overscroll;
+    } else if (notification is ScrollEndNotification) {
+      _drag = null;
+      return false;
+    }
+    if (next < 0) {
+      _drag = null;
+      return false;
+    }
+    _drag = next;
+    final threshold =
+        notification.metrics.viewportDimension *
+        LoopRefreshArmHaptic.armedFraction;
+    if (!_armed && next >= threshold) {
+      _armed = true;
+      LoopHaptics.light();
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: widget.child,
+      );
 }
 
 /// Hears one scrolling region that is coordinated by a [NestedScrollView].
@@ -314,6 +396,8 @@ class LoopFocusPage extends StatelessWidget {
         body: keyboardAccessory
             ? GestureDetector(
                 key: const ValueKey<String>('loop-page-keyboard-dismiss'),
+                // loop-press-exempt: the whole page, not a control. A tap
+                // here only puts the keyboard away and has no pressed look.
                 // Translucent, so the rows and buttons underneath keep their
                 // own taps: the arena gives a tap to the innermost claimant,
                 // and only a tap nothing else wanted reaches this one.
