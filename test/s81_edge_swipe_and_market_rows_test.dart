@@ -25,22 +25,27 @@ import 'support/s5_page_harness.dart';
 // § 1 · the edge swipe goes back (decision 0085)
 // ---------------------------------------------------------------------------
 
-/// The app's own shape: five tabs inside a `ShellRoute`, every other page
-/// pushed on the root navigator above it.
+/// The app's own shape: tabs as branches of a `StatefulShellRoute`
+/// (decision 0128), every other page pushed on the root navigator above it.
 GoRouter _shellRouter({Widget detail = const Scaffold(body: Text('detail'))}) {
   return GoRouter(
     initialLocation: '/community',
     routes: <RouteBase>[
-      ShellRoute(
-        builder: (context, state, child) =>
-            LoopShell(location: state.uri.path, child: child),
-        routes: <RouteBase>[
-          GoRoute(
-            path: '/community',
-            pageBuilder: (context, state) => LoopTabPage<void>(
-              key: state.pageKey,
-              child: const Center(child: Text('community')),
-            ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => LoopShell(
+          location: state.uri.path,
+          navigationShell: navigationShell,
+          child: navigationShell,
+        ),
+        branches: <StatefulShellBranch>[
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/community',
+                builder: (context, state) =>
+                    const Center(child: Text('community')),
+              ),
+            ],
           ),
         ],
       ),

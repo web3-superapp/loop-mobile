@@ -235,6 +235,17 @@ class _CommunityProfileScreenState
     }
   }
 
+  /// 进群聊 (S123 M5): a record opened from this community's own chat
+  /// returns to that chat instead of stacking a second copy of it, so
+  /// 会话 → 社区 → 进群聊 → 返回 never cycles.
+  void _openChat(String communityId) {
+    if (communityChatIsBelow(context, communityId)) {
+      Navigator.of(context).pop();
+      return;
+    }
+    widget.onOpenChat?.call(communityId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -374,8 +385,7 @@ class _CommunityProfileScreenState
           _CommunityKeys(
             detail: detail,
             opening: ref.watch(voiceRoomOpenControllerProvider),
-            onOpenChat: () =>
-                widget.onOpenChat?.call(detail.community.communityId),
+            onOpenChat: () => _openChat(detail.community.communityId),
             onOpenVoiceRoom: () {
               _warmVoiceSession();
               widget.onOpenVoiceRoom?.call(detail.community.communityId);
@@ -442,7 +452,7 @@ class _CommunityProfileScreenState
             CommunityAnnouncementBoard(
               feed: detail.announcements,
               onOpen: detail.chat.isAvailable || detail.chat.isSyncing
-                  ? () => widget.onOpenChat?.call(detail.community.communityId)
+                  ? () => _openChat(detail.community.communityId)
                   : null,
             ),
           ],
@@ -1131,4 +1141,21 @@ String? voiceRoomArrivalOutcome(CommunityDetail detail) {
   if (!detail.viewer.hasJoined) return '加入社区后才能进入语音房';
   if (!detail.voice.isLive) return '语音房已结束';
   return null;
+}
+
+/// Whether the page directly under the current one is the official chat of
+/// [communityId] (`/community/chat?id=…`).
+@visibleForTesting
+bool communityChatIsBelow(BuildContext context, String communityId) {
+  final router = GoRouter.maybeOf(context);
+  if (router == null) return false;
+  final configuration = router.routerDelegate.currentConfiguration;
+  final matches = configuration.matches;
+  if (matches.length < 2) return false;
+  final previous = matches[matches.length - 2];
+  final uri = previous is ImperativeRouteMatch
+      ? previous.matches.uri
+      : configuration.uri;
+  return uri.path == '/community/chat' &&
+      uri.queryParameters['id'] == communityId;
 }
