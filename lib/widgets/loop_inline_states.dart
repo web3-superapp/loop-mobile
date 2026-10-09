@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 // ---------------------------------------------------------------------------
 // Compact data-dense states (decision 0117)
@@ -99,8 +100,7 @@ class _InlineTextAction extends StatelessWidget {
       enabled: enabled,
       label: label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: LoopPressable(
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(
@@ -268,9 +268,9 @@ class LoopProvenanceLine extends StatelessWidget {
         button: true,
         label: '$line，查看数据来源说明',
         excludeSemantics: true,
-        child: GestureDetector(
+        child: LoopPressable(
           key: const ValueKey<String>('loop-provenance-line'),
-          behavior: HitTestBehavior.opaque,
+          scale: false,
           onTap: () => _open(context),
           child: ConstrainedBox(
             constraints: const BoxConstraints(

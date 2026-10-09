@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -39,6 +38,7 @@ import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// `community-profile` · one community record.
 ///
@@ -532,9 +532,7 @@ class _CommunityProfileScreenState
 
   /// LOOP opens no browser here, so the pill hands over the address itself.
   Future<void> _copyLink(CommunityOfficialLink link) async {
-    await Clipboard.setData(ClipboardData(text: link.url));
-    if (!mounted) return;
-    LoopToast.show(context, message: '已复制 ${link.label} 链接');
+    await LoopCopy.text(context, link.url, message: '已复制 ${link.label} 链接');
   }
 
   /// 修改资料后重新提交: the edit, and then the new review.

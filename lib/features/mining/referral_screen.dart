@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -16,6 +15,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// `referral` · my invite code and relationship counts.
 ///
@@ -232,13 +232,7 @@ class _InviteCodeBlock extends ConsumerWidget {
               label: '复制邀请码',
               primary: true,
               onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: code.code));
-                if (!context.mounted) return;
-                LoopToast.show(
-                  context,
-                  message: '邀请码已复制',
-                  kind: LoopToastKind.ok,
-                );
+                await LoopCopy.text(context, code.code, message: '邀请码已复制');
               },
             ),
           ],

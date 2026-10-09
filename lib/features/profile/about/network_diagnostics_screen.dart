@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_backend_identity.dart';
@@ -12,6 +11,7 @@ import 'package:loop_mobile/integrations/diagnostics/loop_network_probe.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// Opens 网络诊断 over 关于 (decision 0102). It is a pushed child page, not a
 /// route: the route manifest stays at 93 entries.
@@ -192,9 +192,7 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
 
   Future<void> _copy(BuildContext context, WidgetRef ref) async {
     final text = reportText(ref);
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!context.mounted) return;
-    LoopToast.show(context, message: '诊断结果已复制', kind: LoopToastKind.ok);
+    await LoopCopy.text(context, text, message: '诊断结果已复制');
   }
 
   Future<void> _share(BuildContext context, WidgetRef ref) async {

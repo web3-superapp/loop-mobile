@@ -9620,5 +9620,164 @@ class ChatTokenCardContractTests(unittest.TestCase):
         )
 
 
+PRESS_HAPTICS_FIXTURE_FILES = (
+    "lib/core/haptics/loop_haptics.dart",
+    "lib/widgets/loop_pressable.dart",
+    "lib/widgets/loop_dock_bar.dart",
+    "lib/widgets/loop_tab_segments.dart",
+    "lib/widgets/loop_components.dart",
+    "lib/widgets/loop_pages.dart",
+    "lib/widgets/loop_copy.dart",
+    "lib/widgets/loop_sign_sheet.dart",
+    "lib/widgets/loop_sheet.dart",
+    "lib/features/market/loop_market_chart.dart",
+    "lib/features/wallet/wallet_home_widgets.dart",
+    "lib/core/theme/loop_theme.dart",
+    "lib/app.dart",
+    "test/s123c_haptics_press_test.dart",
+)
+
+
+def write_press_haptics_fixture(root: Path) -> None:
+    for relative in PRESS_HAPTICS_FIXTURE_FILES:
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(REPOSITORY_ROOT / relative, target)
+
+
+class PressHapticsContractTests(unittest.TestCase):
+    """Decision 0130 · audit 2026-10-09 §五 rules 9, 10, 11, 12, 14."""
+
+    def _check(self, edits: dict[str, tuple[str, str]] | None = None,
+               extra: dict[str, str] | None = None) -> list[str]:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_press_haptics_fixture(root)
+            for relative, (old, new) in (edits or {}).items():
+                path = root / relative
+                source = path.read_text(encoding="utf-8")
+                self.assertIn(old, source, msg=f"{relative} lost its anchor")
+                path.write_text(source.replace(old, new, 1), encoding="utf-8")
+            for relative, text in (extra or {}).items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding="utf-8")
+            return check_harness.check_press_haptics_contract(root)
+
+    def test_the_reviewed_slice_passes(self) -> None:
+        self.assertEqual([], self._check())
+
+    def test_a_bare_tap_gesture_detector_is_rejected(self) -> None:
+        result = self._check(
+            extra={
+                "lib/widgets/loop_new_row.dart": (
+                    "Widget row(VoidCallback f) => GestureDetector(\n"
+                    "  onTap: f,\n"
+                    "  child: const SizedBox(),\n"
+                    ");\n"
+                ),
+            }
+        )
+        self.assertTrue(
+            any("no pressed state" in error for error in result), msg=str(result)
+        )
+
+    def test_an_exempted_or_tapless_detector_is_accepted(self) -> None:
+        source = (
+            "Widget a(VoidCallback f) => GestureDetector(\n"
+            "  // loop-press-exempt: the page, not a control.\n"
+            "  onTap: f,\n"
+            ");\n"
+            "Widget b(VoidCallback f) => GestureDetector(onLongPress: f);\n"
+            "Widget c(VoidCallback f) => RawGestureDetector(onTap: f);\n"
+        )
+        self.assertEqual([], check_harness.bare_tap_gesture_detectors(source))
+
+    def test_a_snackbar_is_rejected(self) -> None:
+        result = self._check(
+            extra={
+                "lib/features/x/page.dart": (
+                    "void f(c) => ScaffoldMessenger.of(c).showSnackBar("
+                    "const SnackBar(content: Text('x')));\n"
+                ),
+            }
+        )
+        self.assertTrue(
+            any("showSnackBar" in error for error in result), msg=str(result)
+        )
+
+    def test_a_direct_haptic_or_clipboard_write_is_rejected(self) -> None:
+        result = self._check(
+            extra={
+                "lib/features/x/page.dart": (
+                    "void f() { HapticFeedback.lightImpact(); "
+                    "Clipboard.setData(const ClipboardData(text: 'x')); }\n"
+                ),
+            }
+        )
+        self.assertTrue(
+            any("HapticFeedback directly" in error for error in result),
+            msg=str(result),
+        )
+        self.assertTrue(
+            any("LoopCopy.text" in error for error in result), msg=str(result)
+        )
+
+    def test_a_dropped_touch_is_rejected(self) -> None:
+        result = self._check(
+            edits={
+                "lib/widgets/loop_sign_sheet.dart": (
+                    "LoopHaptics.error()",
+                    "LoopHaptics.light()",
+                ),
+            }
+        )
+        self.assertTrue(
+            any("LoopHaptics.error()" in error for error in result),
+            msg=str(result),
+        )
+
+    def test_english_system_controls_are_rejected(self) -> None:
+        result = self._check(
+            edits={
+                "lib/app.dart": (
+                    "GlobalMaterialLocalizations.delegate,",
+                    "",
+                ),
+            }
+        )
+        self.assertTrue(
+            any("GlobalMaterialLocalizations" in error for error in result),
+            msg=str(result),
+        )
+
+    def test_a_missing_tap_target_guideline_is_rejected(self) -> None:
+        result = self._check(
+            edits={
+                "test/s123c_haptics_press_test.dart": (
+                    "meetsGuideline(labeledTapTargetGuideline)",
+                    "isNotNull",
+                ),
+            }
+        )
+        self.assertTrue(
+            any("labeledTapTargetGuideline" in error for error in result),
+            msg=str(result),
+        )
+
+    def test_a_ripple_theme_is_rejected(self) -> None:
+        result = self._check(
+            edits={
+                "lib/core/theme/loop_theme.dart": (
+                    "splashFactory: NoSplash.splashFactory",
+                    "splashFactory: InkSparkle.splashFactory",
+                ),
+            }
+        )
+        self.assertTrue(
+            any("ripple" in error for error in result), msg=str(result)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

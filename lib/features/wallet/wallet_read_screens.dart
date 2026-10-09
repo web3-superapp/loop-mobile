@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/loop_backend_identity.dart';
@@ -28,6 +29,7 @@ import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/sharing/system_image_share.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -40,6 +42,7 @@ import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// Shared gate for the wallet read pages: both the wallet module and the chain
 /// runtime must be available before any figure is requested.
@@ -1681,17 +1684,32 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
   }
 
   Future<void> _copy(String value, String message) async {
-    await Clipboard.setData(ClipboardData(text: value));
-    if (!mounted) return;
-    LoopToast.show(context, message: message, kind: LoopToastKind.ok);
+    await LoopCopy.text(context, value, message: message);
   }
 
-  /// Hands the address to the system share sheet; nothing goes to LOOP.
+  /// Hands the address — and, since decision 0130 (audit 2026-10-09 m12),
+  /// the same QR code the page shows, as a PNG drawn on this device — to the
+  /// system share sheet. Nothing goes to LOOP. A code that cannot be drawn
+  /// falls back to the address alone.
   Future<void> _share(LoopReceiveNetwork network) async {
-    final shared = await ref.read(loopTextShareProvider)(
-      '${network.name} 收款地址\n${network.address}',
-      subject: '${network.name} 收款地址',
-    );
+    final text = '${network.name} 收款地址\n${network.address}';
+    final subject = '${network.name} 收款地址';
+    final code = LoopQrCode.encode(network.uri);
+    final png = code == null ? null : await receiveQrPng(code);
+    if (!mounted) return;
+    var shared = false;
+    if (png != null) {
+      shared = await ref.read(loopImageShareProvider)(
+        pngBytes: png,
+        fileName: 'loop-receive-${network.chainId}.png',
+        text: text,
+        subject: subject,
+      );
+    }
+    if (!mounted) return;
+    if (!shared) {
+      shared = await ref.read(loopTextShareProvider)(text, subject: subject);
+    }
     if (!mounted || shared) return;
     LoopToast.show(context, message: '这台设备打不开分享面板，请改用复制地址');
   }
@@ -1771,6 +1789,29 @@ class _ReceiveQrCard extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// The receive code as a PNG: [size] pixels square, Ink modules on a Chalk
+/// plate with the four-module quiet zone, the same drawing the page shows.
+/// `null` when the engine could not encode it.
+Future<Uint8List?> receiveQrPng(LoopQrCode code, {int size = 1024}) async {
+  final recorder = ui.PictureRecorder();
+  _QrPainter(code: code)
+      .paint(Canvas(recorder), Size(size.toDouble(), size.toDouble()));
+  final picture = recorder.endRecording();
+  try {
+    final image = await picture.toImage(size, size);
+    try {
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      return data?.buffer.asUint8List();
+    } finally {
+      image.dispose();
+    }
+  } catch (_) {
+    return null;
+  } finally {
+    picture.dispose();
   }
 }
 
@@ -2453,8 +2494,7 @@ class WalletActivityDetailSheet extends StatelessWidget {
     required String value,
     required String what,
   }) {
-    unawaited(Clipboard.setData(ClipboardData(text: value)));
-    LoopToast.show(context, message: '$what已复制');
+    unawaited(LoopCopy.text(context, value, message: '$what已复制'));
   }
 
   @override

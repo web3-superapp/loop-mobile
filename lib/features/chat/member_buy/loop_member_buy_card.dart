@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -15,7 +14,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_localizations
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
-import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Who bought, as far as LOOP could tell.
@@ -434,9 +433,7 @@ class _TxHash extends StatelessWidget {
   );
 
   Future<void> _copy(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: event.txHash));
-    if (!context.mounted) return;
-    LoopToast.show(context, message: '已复制交易哈希');
+    await LoopCopy.text(context, event.txHash, message: '已复制交易哈希');
   }
 }
 

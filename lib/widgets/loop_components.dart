@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -2007,7 +2008,15 @@ class LoopSeg extends StatelessWidget {
                 ),
               ),
         child: InkWell(
-          onTap: onSelected ?? onBlocked,
+          onTap: onSelected == null
+              ? onBlocked
+              : () {
+                  // Decision 0130: choosing a peer (a filter, a slippage
+                  // step, a chart period) is a selection. Re-choosing the
+                  // chosen one is not.
+                  if (!selected) LoopHaptics.selection();
+                  onSelected!();
+                },
           customBorder: quiet ? const StadiumBorder() : null,
           borderRadius: quiet ? null : BorderRadius.circular(14),
           child: ConstrainedBox(
