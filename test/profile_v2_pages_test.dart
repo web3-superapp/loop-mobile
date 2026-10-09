@@ -148,7 +148,8 @@ void main() {
       Future<String?> subtitle(String key) async {
         final row = find.byKey(ValueKey<String>(key));
         await tester.scrollUntilVisible(row, 120);
-        return tester.widget<LoopRecordRow>(row).subtitle;
+        // Decision 0126: the state is the row's grey value on the right.
+        return tester.widget<LoopRecordRow>(row).trailing;
       }
 
       // S107 §4: the row states the 公开持仓与交易 switch (the 匿名模式 line
@@ -249,18 +250,22 @@ void main() {
       // communities, account, settings. Every row reaches its own slug.
       expect(find.text('我'), findsWidgets);
       for (final entry in <(String, String)>[
+        // Decision 0126: the round keys under the header, then the three
+        // sections top to bottom; 挖矿总览 became the fourth key.
+        ('profile-open-scan', 'scan'),
+        ('profile-open-friends', 'connections'),
+        ('profile-open-mining-key', 'mining'),
+        ('profile-open-wallets', 'wallets'),
+        ('profile-open-connections', 'connections'),
+        ('profile-open-friend-requests', 'friend-requests'),
+        ('profile-open-referral', 'referral'),
+        ('profile-open-communities', 'community-discover'),
         ('profile-open-mining', 'mining'),
         ('profile-open-mining-assets', 'mining-assets'),
         ('profile-open-mining-rewards', 'mining-rewards'),
         ('profile-open-mining-rules', 'mining-rules'),
-        ('profile-open-mining-overview', 'mining'),
-        ('profile-open-referral', 'referral'),
-        ('profile-open-communities', 'community-discover'),
-        ('profile-open-wallets', 'wallets'),
         ('profile-open-privacy', 'privacy'),
         ('profile-open-security', 'security'),
-        ('profile-open-connections', 'connections'),
-        ('profile-open-friend-requests', 'friend-requests'),
         ('profile-open-notifications', 'notif-settings'),
         ('profile-open-settings', 'settings'),
       ]) {
@@ -416,9 +421,24 @@ void main() {
           findsNothing,
         );
       }
-      for (final label in <String>['用户名', '简介', 'LOOP ID', '公开范围']) {
+      // Decision 0126: each label sits inside its 52-high field.
+      for (final label in <String>['用户名', '简介', 'LOOP ID']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
+      for (final key in <String>[
+        'profile-edit-alias',
+        'profile-edit-bio',
+        'profile-edit-loop-id-field',
+      ]) {
+        final field = find.byKey(ValueKey<String>(key));
+        expect(field, findsOneWidget, reason: key);
+        expect(
+          tester.getSize(field).height,
+          greaterThanOrEqualTo(52),
+          reason: key,
+        );
+      }
+      expect(find.text('公开范围'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('profile-edit-copy-loop-id')),
         findsOneWidget,

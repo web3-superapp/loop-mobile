@@ -12,7 +12,9 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -409,114 +411,122 @@ class _OnboardingCommunitiesScreenState
         : count == 0
         ? '进入 LOOP'
         : '加入 $count 个社区并进入';
-    return LoopStreamPage(
-      key: const ValueKey<String>('onboarding-communities-screen'),
-      archetype: LoopPageArchetype.action,
-      title: '加入社区',
-      kicker: communityPreviewKicker(state.mode),
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('onboarding-communities-skip'),
-          icon: 'close',
-          label: '跳过',
-          onPressed: state.submitting ? null : widget.onDone,
-        ),
-      ],
-      footnote: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            LoopButton(
-              key: const ValueKey<String>('onboarding-communities-enter'),
-              label: enterLabel,
-              primary: true,
-              block: true,
-              onPressed: state.submitting
-                  ? null
-                  : state.hasFailures
-                  ? widget.onDone
-                  : () => unawaited(_enter(controller)),
-            ),
-            const SizedBox(height: 6),
-            TextButton(
-              key: const ValueKey<String>('onboarding-communities-skip-text'),
-              onPressed: state.submitting ? null : widget.onDone,
-              child: Text(
-                '跳过',
-                style: LoopTypography.label(14, color: LoopColors.muted),
-              ),
-            ),
-          ],
-        ),
-      ),
-      collection: ListView(
-        key: const ValueKey<String>('onboarding-communities-list'),
-        padding: const EdgeInsets.only(bottom: 16),
-        children: <Widget>[
-          CommunityPreviewNotice(mode: state.mode, resource: '推荐社区'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-            child: Text(
-              '选几个感兴趣的社区。加入后默认免打扰，随时可以退出。',
-              style: LoopTypography.body(14, color: LoopColors.text2),
-            ),
+    // Decision 0126: the last step of the opening, flat — Logo 36, name and
+    // members, a Lime tick circle on the right.
+    return LoopFlat(
+      step: true,
+      child: LoopStreamPage(
+        key: const ValueKey<String>('onboarding-communities-screen'),
+        archetype: LoopPageArchetype.action,
+        title: '加入社区',
+        kicker: communityPreviewKicker(state.mode),
+        actions: <Widget>[
+          LoopIconButton(
+            key: const ValueKey<String>('onboarding-communities-skip'),
+            icon: 'close',
+            label: '跳过',
+            onPressed: state.submitting ? null : widget.onDone,
           ),
-          if (state.phase != CommunityViewPhase.ready)
-            CommunityStateBlock(
-              key: const ValueKey<String>('onboarding-communities-state'),
-              phase: state.phase,
-              failureKind: state.failureKind,
-              skeleton: LoopSkeletonType.record,
-              rows: 5,
-              emptyMessage: '还没有可加入的社区',
-              emptyReason: '可以先进入 LOOP，之后在广场里找社区。',
-              onRetry: () => unawaited(controller.reload()),
-            )
-          else ...<Widget>[
-            LoopRecordGroup(
-              key: const ValueKey<String>('onboarding-communities-group'),
-              rows: <LoopRecordRow>[
-                for (var index = 0; index < state.items.length; index += 1)
-                  _row(
-                    state,
-                    controller,
-                    state.items[index],
-                    communityRowPosition(index, state.items.length),
-                  ),
-              ],
-            ),
-            if (state.appendFailed)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: LoopButton(
-                  key: const ValueKey<String>(
-                    'onboarding-communities-retry-more',
-                  ),
-                  label: '重试',
-                  block: true,
-                  onPressed: () => unawaited(controller.retryMore()),
-                ),
-              )
-            else if (!state.directoryEnded) ...<Widget>[
-              LoopLoadMoreSentinel(
-                key: const ValueKey<String>('onboarding-communities-load-more'),
-                cursor: state.directoryCursor ?? 'recommended',
-                onLoadMore: () => unawaited(controller.loadMore()),
-              ),
-              if (state.loadingMore)
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
-                ),
-            ] else
-              const LoopProvenanceFooter(
-                key: ValueKey<String>('onboarding-communities-end'),
-                text: '没有更多社区',
-              ),
-          ],
         ],
+        footnote: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('onboarding-communities-enter'),
+                label: enterLabel,
+                primary: true,
+                block: true,
+                onPressed: state.submitting
+                    ? null
+                    : state.hasFailures
+                    ? widget.onDone
+                    : () => unawaited(_enter(controller)),
+              ),
+              const SizedBox(height: 6),
+              TextButton(
+                key: const ValueKey<String>('onboarding-communities-skip-text'),
+                onPressed: state.submitting ? null : widget.onDone,
+                child: Text(
+                  '跳过',
+                  style: LoopTypography.label(14, color: LoopColors.muted),
+                ),
+              ),
+            ],
+          ),
+        ),
+        collection: ListView(
+          key: const ValueKey<String>('onboarding-communities-list'),
+          padding: const EdgeInsets.only(bottom: 16),
+          children: <Widget>[
+            CommunityPreviewNotice(mode: state.mode, resource: '推荐社区'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+              child: Text(
+                '选几个感兴趣的社区。加入后默认免打扰，随时可以退出。',
+                style: LoopTypography.body(14, color: LoopColors.text2),
+              ),
+            ),
+            if (state.phase != CommunityViewPhase.ready)
+              CommunityStateBlock(
+                key: const ValueKey<String>('onboarding-communities-state'),
+                phase: state.phase,
+                failureKind: state.failureKind,
+                skeleton: LoopSkeletonType.record,
+                rows: 5,
+                emptyMessage: '还没有可加入的社区',
+                emptyReason: '可以先进入 LOOP，之后在广场里找社区。',
+                onRetry: () => unawaited(controller.reload()),
+              )
+            else ...<Widget>[
+              LoopRecordGroup(
+                key: const ValueKey<String>('onboarding-communities-group'),
+                rows: <LoopRecordRow>[
+                  for (var index = 0; index < state.items.length; index += 1)
+                    _row(
+                      state,
+                      controller,
+                      state.items[index],
+                      communityRowPosition(index, state.items.length),
+                    ),
+                ],
+              ),
+              if (state.appendFailed)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: LoopButton(
+                    key: const ValueKey<String>(
+                      'onboarding-communities-retry-more',
+                    ),
+                    label: '重试',
+                    block: true,
+                    onPressed: () => unawaited(controller.retryMore()),
+                  ),
+                )
+              else if (!state.directoryEnded) ...<Widget>[
+                LoopLoadMoreSentinel(
+                  key: const ValueKey<String>(
+                    'onboarding-communities-load-more',
+                  ),
+                  cursor: state.directoryCursor ?? 'recommended',
+                  onLoadMore: () => unawaited(controller.loadMore()),
+                ),
+                if (state.loadingMore)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
+                  ),
+              ] else
+                // Decision 0126 (S121 §1.1.1 #10): the end draws nothing.
+                const SizedBox(
+                  key: ValueKey<String>('onboarding-communities-end'),
+                  height: 12,
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -539,28 +549,25 @@ class _OnboardingCommunitiesScreenState
         identity: id,
         name: community.name,
         logoRef: community.logoRef,
-        size: 40,
-        radius: 12,
+        size: 36,
+        radius: 18,
       ),
       title: community.name,
       subtitle: switch (result) {
         OnboardingJoinResult.joined => '已加入 · 已免打扰',
         OnboardingJoinResult.joinedNotMuted ||
         OnboardingJoinResult.failed => reason ?? '没有加入成功',
-        null =>
-          community.description == null
-              ? members
-              : '$members · ${community.description}',
+        null => members,
       },
-      subtitleMaxLines: 2,
-      trailingBadge: LoopBadge(
-        result == OnboardingJoinResult.joined
+      subtitleMaxLines: 1,
+      trailingBadge: _OnboardingTick(
+        key: ValueKey<String>('onboarding-community-badge-$id'),
+        state: result == OnboardingJoinResult.joined
             ? '已加入'
             : selected
             ? '已选'
             : '未选',
-        key: ValueKey<String>('onboarding-community-badge-$id'),
-        kind: selected ? LoopBadgeKind.mining : LoopBadgeKind.mute,
+        on: selected || result == OnboardingJoinResult.joined,
       ),
       selected: selected,
       chevron: false,
@@ -569,6 +576,36 @@ class _OnboardingCommunitiesScreenState
           ? null
           : () => controller.toggle(id),
       semanticLabel: '${community.name}，$members，${selected ? '已选' : '未选'}',
+    );
+  }
+}
+
+/// The Lime tick circle of a chosen community (decision 0126): a filled Lime
+/// disc with an Ink tick, or an empty ring. The state word stays its name.
+class _OnboardingTick extends StatelessWidget {
+  const _OnboardingTick({required this.state, required this.on, super.key});
+
+  final String state;
+  final bool on;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: state,
+      excludeSemantics: true,
+      child: Container(
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: on ? LoopColors.lime : Colors.transparent,
+          shape: BoxShape.circle,
+          border: on ? null : Border.all(color: LoopColors.line2, width: 1.5),
+        ),
+        child: on
+            ? const LoopIcon('check', size: 15, color: LoopColors.ink)
+            : null,
+      ),
     );
   }
 }

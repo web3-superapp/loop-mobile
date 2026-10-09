@@ -8722,9 +8722,12 @@ class HarnessTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
+                # Decision 0126 removed the posture folio; the guard still
+                # reads the whole Security Center slice, so the claim is
+                # planted on the page title instead.
                 source.replace(
-                    "kicker: 'SECURITY POSTURE',",
-                    "kicker: 'SECURITY POSTURE',\n        stamp: 'Core protections ready',",
+                    "title: '安全中心',",
+                    "title: '安全中心',\n        subtitle: 'Core protections ready',",
                     1,
                 ),
                 encoding="utf-8",

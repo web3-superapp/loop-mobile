@@ -10,8 +10,8 @@ import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_progress_fill.dart';
 
 /// Capabilities confirmed by the Privy integration at runtime.
 ///
@@ -191,72 +191,20 @@ class IdentityProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fraction = (step / total).clamp(0.0, 1.0);
+    // Decision 0126: one dot per step and the step's name, instead of the
+    // `04 / 05` counter over a filled track.
     return Semantics(
       container: true,
       label: '流程第 $step 步，共 $total 步：$label',
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          LoopSpacing.page,
-          2,
-          LoopSpacing.page,
-          14,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            ExcludeSemantics(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  RichText(
-                    text: TextSpan(
-                      children: <InlineSpan>[
-                        TextSpan(
-                          text: step.toString().padLeft(2, '0'),
-                          style: LoopTypography.figure(
-                            13,
-                            color: LoopColors.lime,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' / ${total.toString().padLeft(2, '0')}',
-                          style: LoopTypography.figure(
-                            12,
-                            weight: FontWeight.w500,
-                            height: 1.5,
-                            color: LoopColors.text3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: LoopTypography.figure(
-                      11,
-                      weight: FontWeight.w500,
-                      color: LoopColors.text2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Each step is its own page, so the track would otherwise appear
-            // already standing at this step. It starts where the previous
-            // step left it and advances into this one; the last step fills
-            // the width and brightens once (decision 0092).
-            LoopProgressFill(
-              key: const ValueKey<String>('identity-progress-track'),
-              progress: fraction,
-              from: ((step - 1) / total).clamp(0.0, 1.0),
-              height: 4,
-              fillColor: LoopColors.lime,
-              trackColor: LoopColors.line2,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ],
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: LoopStepDots(
+            key: const ValueKey<String>('identity-progress-track'),
+            step: step,
+            total: total,
+            label: label,
+          ),
         ),
       ),
     );
@@ -715,73 +663,76 @@ class ExternalWalletScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.intro,
-      title: '连接钱包',
-      onBack: onBack,
-      actionsFollowBody: true,
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('external-wallet-connect'),
-        label: '选择钱包并签名',
-        primary: true,
-        block: true,
-        onPressed: capabilityAvailable ? onConnect : null,
-      ),
-      disclosure: const LoopDisclosure(
-        summary: '扫码连接与失败说明',
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              LoopNotice(
-                icon: 'info',
-                title: '外部钱包只是登录凭证',
-                body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
-                margin: EdgeInsets.only(bottom: 10),
-              ),
-              LoopNotice(
-                icon: 'mine',
-                title: '连接已有钱包就能挖矿',
-                body: '你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。',
-                margin: EdgeInsets.only(bottom: 10),
-              ),
-              LoopNotice(
-                icon: 'close',
-                tone: LoopNoticeTone.danger,
-                title: '签名被拒绝',
-                body: '连接钱包需要一次签名以验证所有权，不会转移任何资产。取消签名不会改变任何状态。',
-                margin: EdgeInsets.only(bottom: 10),
-              ),
-              LoopNotice(
-                icon: 'clock',
-                tone: LoopNoticeTone.warn,
-                title: '连接超时',
-                body: '会话已过期，请回到这一页重新发起连接。',
-                margin: EdgeInsets.zero,
-              ),
-            ],
+    return LoopFlat(
+      step: true,
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.intro,
+        title: '连接钱包',
+        onBack: onBack,
+        actionsFollowBody: true,
+        primaryAction: LoopButton(
+          key: const ValueKey<String>('external-wallet-connect'),
+          label: '选择钱包并签名',
+          primary: true,
+          block: true,
+          onPressed: capabilityAvailable ? onConnect : null,
+        ),
+        disclosure: const LoopDisclosure(
+          summary: '扫码连接与失败说明',
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                LoopNotice(
+                  icon: 'info',
+                  title: '外部钱包只是登录凭证',
+                  body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
+                  margin: EdgeInsets.only(bottom: 10),
+                ),
+                LoopNotice(
+                  icon: 'mine',
+                  title: '连接已有钱包就能挖矿',
+                  body: '你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。',
+                  margin: EdgeInsets.only(bottom: 10),
+                ),
+                LoopNotice(
+                  icon: 'close',
+                  tone: LoopNoticeTone.danger,
+                  title: '签名被拒绝',
+                  body: '连接钱包需要一次签名以验证所有权，不会转移任何资产。取消签名不会改变任何状态。',
+                  margin: EdgeInsets.only(bottom: 10),
+                ),
+                LoopNotice(
+                  icon: 'clock',
+                  tone: LoopNoticeTone.warn,
+                  title: '连接超时',
+                  body: '会话已过期，请回到这一页重新发起连接。',
+                  margin: EdgeInsets.zero,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      body: <Widget>[
-        const IdentityProgress(step: 1, total: 2, label: '选择钱包'),
-        const IdentityStepCopy('连接只验证所有权，不会转移资产。'),
-        if (!capabilityAvailable)
-          const LoopNotice(
-            key: ValueKey<String>('external-wallet-unavailable'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '外部钱包连接暂不可用',
-            body: '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。',
+        body: <Widget>[
+          const IdentityProgress(step: 1, total: 2, label: '选择钱包'),
+          const IdentityStepCopy('连接只验证所有权，不会转移资产。'),
+          if (!capabilityAvailable)
+            const LoopNotice(
+              key: ValueKey<String>('external-wallet-unavailable'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '外部钱包连接暂不可用',
+              body: '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。',
+            ),
+          const LoopLabel('可连接的钱包'),
+          const LoopEmpty(
+            key: ValueKey<String>('external-wallet-list-unavailable'),
+            message: '已安装钱包清单暂不可读',
+            reason: '连接钱包后才会显示可用的钱包名称。',
           ),
-        const LoopLabel('可连接的钱包'),
-        const LoopEmpty(
-          key: ValueKey<String>('external-wallet-list-unavailable'),
-          message: '已安装钱包清单暂不可读',
-          reason: '连接钱包后才会显示可用的钱包名称。',
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -823,113 +774,115 @@ class WalletCreateScreen extends StatelessWidget {
         'Privy 尚未确认内置钱包能力，这一页不会伪造进度。LOOP 不使用助记词。',
       ),
     };
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.intro,
-      title: '创建 LOOP 钱包',
-      onBack: onBack,
-      // `.wallet-create-action{margin-top:auto}`: this is the one step page
-      // whose button the prototype does push to the bottom, because the ring
-      // above it owns the rest of the screen.
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('wallet-create-continue'),
-        label: '设置恢复方式',
-        primary: true,
-        block: true,
-        onPressed: facts.canContinue ? onContinue : null,
-      ),
-      body: <Widget>[
-        const IdentityProgress(step: 2, total: 5, label: '创建钱包'),
-        const IdentityStepCopy('安全钱包正在本地初始化。'),
-        if (phase == LoopWalletCreationPhase.unavailable)
-          const LoopNotice(
-            key: ValueKey<String>('wallet-create-unavailable'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '钱包创建暂不可用',
-            body: 'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。',
-          ),
-        if (facts.providerMessage case final String message)
-          LoopNotice(
-            key: const ValueKey<String>('wallet-create-provider-message'),
-            icon: 'warn',
-            tone: LoopNoticeTone.danger,
-            title: '这次创建没有完成',
-            body: message,
-          ),
-        // `.wallet-create-progress`: the ring, the headline, one line of copy
-        // and the plain checklist. The prototype's ring spins; a static arc
-        // says the same thing and says it the same way under reduceMotion.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            26,
-            LoopSpacing.page,
-            0,
-          ),
-          child: Column(
-            children: <Widget>[
-              WalletCreationRing(
-                key: ValueKey<String>('wallet-create-ring-${phase.name}'),
-                complete: facts.walletObserved,
-              ),
-              const SizedBox(height: 26),
-              Text(
-                key: switch (phase) {
-                  LoopWalletCreationPhase.observed => const ValueKey<String>(
-                    'wallet-create-observed',
-                  ),
-                  LoopWalletCreationPhase.working => const ValueKey<String>(
-                    'wallet-create-progress',
-                  ),
-                  LoopWalletCreationPhase.timedOut => const ValueKey<String>(
-                    'wallet-create-timeout',
-                  ),
-                  LoopWalletCreationPhase.unavailable => const ValueKey<String>(
-                    'wallet-create-idle',
-                  ),
-                },
-                headline,
-                textAlign: TextAlign.center,
-                style: LoopTypography.display(21),
-              ),
-              const SizedBox(height: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 260),
-                child: Text(
-                  detail,
-                  textAlign: TextAlign.center,
-                  style: LoopTypography.body(12.5, color: LoopColors.text2),
-                ),
-              ),
-              const SizedBox(height: 22),
-              _step(
-                id: 'keypair',
-                title: '生成密钥对',
-                done: facts.walletObserved,
-                pendingDetail: '钱包出现后才算完成',
-              ),
-              _step(
-                id: 'secure-element',
-                title: '写入安全区',
-                done: facts.walletObserved,
-                pendingDetail: '钱包出现后才算完成',
-              ),
-              _step(
-                id: 'recovery',
-                title: '设置恢复方式',
-                done: facts.recoveryEnrolled,
-                pendingDetail: '第 3 步选择后才算完成',
-              ),
-              _step(
-                id: 'loop-id',
-                title: '绑定 LOOP ID',
-                done: facts.loopIdActivated,
-                pendingDetail: '第 5 步完成后才算完成',
-              ),
-            ],
-          ),
+    return LoopFlat(
+      step: true,
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.intro,
+        title: '创建 LOOP 钱包',
+        onBack: onBack,
+        // `.wallet-create-action{margin-top:auto}`: this is the one step page
+        // whose button the prototype does push to the bottom, because the ring
+        // above it owns the rest of the screen.
+        primaryAction: LoopButton(
+          key: const ValueKey<String>('wallet-create-continue'),
+          label: '设置恢复方式',
+          primary: true,
+          block: true,
+          onPressed: facts.canContinue ? onContinue : null,
         ),
-      ],
+        body: <Widget>[
+          const IdentityProgress(step: 2, total: 5, label: '创建钱包'),
+          const IdentityStepCopy('安全钱包正在本地初始化。'),
+          if (phase == LoopWalletCreationPhase.unavailable)
+            const LoopNotice(
+              key: ValueKey<String>('wallet-create-unavailable'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '钱包创建暂不可用',
+              body: 'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。',
+            ),
+          if (facts.providerMessage case final String message)
+            LoopNotice(
+              key: const ValueKey<String>('wallet-create-provider-message'),
+              icon: 'warn',
+              tone: LoopNoticeTone.danger,
+              title: '这次创建没有完成',
+              body: message,
+            ),
+          // `.wallet-create-progress`: the ring, the headline, one line of copy
+          // and the plain checklist. The prototype's ring spins; a static arc
+          // says the same thing and says it the same way under reduceMotion.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              26,
+              LoopSpacing.page,
+              0,
+            ),
+            child: Column(
+              children: <Widget>[
+                WalletCreationRing(
+                  key: ValueKey<String>('wallet-create-ring-${phase.name}'),
+                  complete: facts.walletObserved,
+                ),
+                const SizedBox(height: 26),
+                Text(
+                  key: switch (phase) {
+                    LoopWalletCreationPhase.observed => const ValueKey<String>(
+                      'wallet-create-observed',
+                    ),
+                    LoopWalletCreationPhase.working => const ValueKey<String>(
+                      'wallet-create-progress',
+                    ),
+                    LoopWalletCreationPhase.timedOut => const ValueKey<String>(
+                      'wallet-create-timeout',
+                    ),
+                    LoopWalletCreationPhase.unavailable =>
+                      const ValueKey<String>('wallet-create-idle'),
+                  },
+                  headline,
+                  textAlign: TextAlign.center,
+                  style: LoopTypography.display(21),
+                ),
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: Text(
+                    detail,
+                    textAlign: TextAlign.center,
+                    style: LoopTypography.body(12.5, color: LoopColors.text2),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                _step(
+                  id: 'keypair',
+                  title: '生成密钥对',
+                  done: facts.walletObserved,
+                  pendingDetail: '钱包出现后才算完成',
+                ),
+                _step(
+                  id: 'secure-element',
+                  title: '写入安全区',
+                  done: facts.walletObserved,
+                  pendingDetail: '钱包出现后才算完成',
+                ),
+                _step(
+                  id: 'recovery',
+                  title: '设置恢复方式',
+                  done: facts.recoveryEnrolled,
+                  pendingDetail: '第 3 步选择后才算完成',
+                ),
+                _step(
+                  id: 'loop-id',
+                  title: '绑定 LOOP ID',
+                  done: facts.loopIdActivated,
+                  pendingDetail: '第 5 步完成后才算完成',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1228,123 +1181,126 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
   @override
   Widget build(BuildContext context) {
     final blocked = widget.loading || widget.failureReason != null;
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.intro,
-      title: '恢复方式',
-      onBack: widget.onBack,
-      // The prototype stacks the two full-width buttons under the options and
-      // puts the skip risk above them, so the risk is read before the choice
-      // is made. Both flow with the body rather than sitting on a pinned bar.
-      actionsFollowBody: true,
-      primaryActionBeforeDisclosure: false,
-      primaryAction: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // The step is never a dead end. An account already has a working
-          // recovery method the moment its wallet exists, so 确认 continues
-          // with whatever is true — the chosen method if one was chosen, the
-          // default otherwise. Disabling it left owners on a page they could
-          // not leave when nothing was enrollable (device report 2026-09-21
-          // · F2).
-          LoopButton(
-            key: const ValueKey<String>('wallet-recovery-confirm'),
-            label: '确认',
-            primary: true,
-            block: true,
-            onPressed: blocked ? null : () => _decide(_chosen),
+    return LoopFlat(
+      step: true,
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.intro,
+        title: '恢复方式',
+        onBack: widget.onBack,
+        // The prototype stacks the two full-width buttons under the options and
+        // puts the skip risk above them, so the risk is read before the choice
+        // is made. Both flow with the body rather than sitting on a pinned bar.
+        actionsFollowBody: true,
+        primaryActionBeforeDisclosure: false,
+        primaryAction: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // The step is never a dead end. An account already has a working
+            // recovery method the moment its wallet exists, so 确认 continues
+            // with whatever is true — the chosen method if one was chosen, the
+            // default otherwise. Disabling it left owners on a page they could
+            // not leave when nothing was enrollable (device report 2026-09-21
+            // · F2).
+            LoopButton(
+              key: const ValueKey<String>('wallet-recovery-confirm'),
+              label: '确认',
+              primary: true,
+              block: true,
+              onPressed: blocked ? null : () => _decide(_chosen),
+            ),
+            const SizedBox(height: 10),
+            LoopButton(
+              key: const ValueKey<String>('wallet-recovery-later'),
+              label: '稍后设置',
+              block: true,
+              onPressed: () => _decide(null),
+            ),
+          ],
+        ),
+        disclosure: LoopDisclosure(
+          summary: '其他恢复方式与跳过风险',
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const LoopLabel('另外', tight: true),
+                LoopRecordGroup(
+                  rows: <LoopRecordRow>[
+                    _capabilityRow(
+                      title: '社交恢复 2-of-3',
+                      detail: '指定 3 个守护人，2 个同意即可恢复',
+                      available: widget.capabilities.canUseSocialRecovery,
+                      reason: walletRecoveryProviderPending,
+                      position: LoopRowPosition.first,
+                    ),
+                    _capabilityRow(
+                      title: '导出私钥',
+                      detail: '随时可导出，这是你的逃生舱',
+                      available: widget.capabilities.canExportPrivateKey,
+                      reason: walletRecoveryProviderPending,
+                      position: LoopRowPosition.last,
+                    ),
+                  ],
+                ),
+                // The honest residual risk. It is no longer "you may lose
+                // everything": the account has a recovery method. What it
+                // depends on is the login method, and that is the thing to
+                // keep.
+                const LoopNotice(
+                  icon: 'warn',
+                  tone: LoopNoticeTone.warn,
+                  title: '自动恢复依赖你的登录方式',
+                  body: '邮箱或登录方式丢了，钱包也会一起丢。再加一种方式会更稳妥，等这些方式开放后可以随时补上。',
+                  margin: EdgeInsets.only(top: 12),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          LoopButton(
-            key: const ValueKey<String>('wallet-recovery-later'),
-            label: '稍后设置',
-            block: true,
-            onPressed: () => _decide(null),
+        ),
+        body: <Widget>[
+          const IdentityProgress(step: 3, total: 5, label: '设置恢复方式'),
+          const IdentityStepCopy('你的钱包已经有一种恢复方式，其余的等开放后再补。'),
+          const LoopNotice(
+            key: ValueKey<String>('wallet-recovery-default'),
+            icon: 'check',
+            title: '换手机后你已经能拿回资产',
+            body: '$walletAutomaticRecoveryEvidence。LOOP 没有助记词，这条路就是默认的那条。',
           ),
-        ],
-      ),
-      disclosure: LoopDisclosure(
-        summary: '其他恢复方式与跳过风险',
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              const LoopLabel('另外', tight: true),
-              LoopRecordGroup(
-                rows: <LoopRecordRow>[
-                  _capabilityRow(
-                    title: '社交恢复 2-of-3',
-                    detail: '指定 3 个守护人，2 个同意即可恢复',
-                    available: widget.capabilities.canUseSocialRecovery,
-                    reason: walletRecoveryProviderPending,
-                    position: LoopRowPosition.first,
-                  ),
-                  _capabilityRow(
-                    title: '导出私钥',
-                    detail: '随时可导出，这是你的逃生舱',
-                    available: widget.capabilities.canExportPrivateKey,
-                    reason: walletRecoveryProviderPending,
-                    position: LoopRowPosition.last,
-                  ),
-                ],
+          if (widget.loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: LoopSkeleton(
+                key: ValueKey<String>('wallet-recovery-loading'),
+                type: LoopSkeletonType.list,
+                rows: 3,
               ),
-              // The honest residual risk. It is no longer "you may lose
-              // everything": the account has a recovery method. What it
-              // depends on is the login method, and that is the thing to
-              // keep.
+            )
+          else if (widget.failureReason != null)
+            LoopErrorState(
+              key: const ValueKey<String>('wallet-recovery-error'),
+              reason: widget.failureReason!,
+              source: '能力清单',
+              onRetry: widget.onRetry,
+            )
+          else ...<Widget>[
+            if (!_anySelectable)
               const LoopNotice(
-                icon: 'warn',
-                tone: LoopNoticeTone.warn,
-                title: '自动恢复依赖你的登录方式',
-                body: '邮箱或登录方式丢了，钱包也会一起丢。再加一种方式会更稳妥，等这些方式开放后可以随时补上。',
-                margin: EdgeInsets.only(top: 12),
+                key: ValueKey<String>('wallet-recovery-unavailable'),
+                icon: 'info',
+                title: '现在还不能再加一种',
+                body: '$walletRecoveryProviderPending。下面的选项不会在本地模拟，也不会预先勾选。',
               ),
-            ],
-          ),
-        ),
-      ),
-      body: <Widget>[
-        const IdentityProgress(step: 3, total: 5, label: '设置恢复方式'),
-        const IdentityStepCopy('你的钱包已经有一种恢复方式，其余的等开放后再补。'),
-        const LoopNotice(
-          key: ValueKey<String>('wallet-recovery-default'),
-          icon: 'check',
-          title: '换手机后你已经能拿回资产',
-          body: '$walletAutomaticRecoveryEvidence。LOOP 没有助记词，这条路就是默认的那条。',
-        ),
-        if (widget.loading)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSkeleton(
-              key: ValueKey<String>('wallet-recovery-loading'),
-              type: LoopSkeletonType.list,
-              rows: 3,
+            const LoopLabel('恢复方式'),
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                for (final method in WalletRecoveryMethod.values)
+                  _methodRow(method),
+              ],
             ),
-          )
-        else if (widget.failureReason != null)
-          LoopErrorState(
-            key: const ValueKey<String>('wallet-recovery-error'),
-            reason: widget.failureReason!,
-            source: '能力清单',
-            onRetry: widget.onRetry,
-          )
-        else ...<Widget>[
-          if (!_anySelectable)
-            const LoopNotice(
-              key: ValueKey<String>('wallet-recovery-unavailable'),
-              icon: 'info',
-              title: '现在还不能再加一种',
-              body: '$walletRecoveryProviderPending。下面的选项不会在本地模拟，也不会预先勾选。',
-            ),
-          const LoopLabel('恢复方式'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              for (final method in WalletRecoveryMethod.values)
-                _methodRow(method),
-            ],
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -1484,50 +1440,56 @@ class SecuritySetupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.intro,
-      title: '安全设置',
-      onBack: onBack,
-      actionsFollowBody: true,
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('security-setup-continue'),
-        label: '下一步',
-        primary: true,
-        block: true,
-        onPressed: onContinue,
-      ),
-      body: <Widget>[
-        const IdentityProgress(step: 4, total: 5, label: '安全设置'),
-        const IdentityStepCopy('应用锁由这台设备把关，交易验证由登录服务决定。'),
-        // Decision 0121 (device report 2026-10-09 · 4): the warning banner
-        // that opened this page spoke to engineers. Each row below states its
-        // own state; the page saves no PIN and claims no protection is on.
-        const LoopLabel('应用锁'),
-        _SecurityCard(rows: <LoopRecordRow>[_appLockRow()]),
-        const LoopLabel('交易验证'),
-        // Prototype order: the amount rule first, the second factor after it.
-        _SecurityCard(
-          rows: <LoopRecordRow>[
-            // The threshold is a rule nobody has written down yet, and this
-            // build has no on-chain write that could cross one. The row offers
-            // no switch; it says the protection is coming (decision 0121).
-            const LoopRecordRow(
-              key: ValueKey<String>('security-大额交易二次验证'),
-              title: '大额交易二次验证',
-              subtitle: securityLargeAmountSubtitle,
-              subtitleMaxLines: 2,
-              position: LoopRowPosition.first,
-              semanticLabel: '大额交易二次验证，即将推出',
+    return LoopFlat(
+      step: true,
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.intro,
+        title: '安全设置',
+        onBack: onBack,
+        actionsFollowBody: true,
+        primaryAction: LoopButton(
+          key: const ValueKey<String>('security-setup-continue'),
+          label: '下一步',
+          primary: true,
+          block: true,
+          onPressed: onContinue,
+        ),
+        body: <Widget>[
+          const IdentityProgress(step: 4, total: 5, label: '安全设置'),
+          const IdentityStepCopy('应用锁由这台设备把关，交易验证由登录服务决定。'),
+          // Decision 0121 (device report 2026-10-09 · 4): the warning banner
+          // that opened this page spoke to engineers. Each row below states its
+          // own state; the page saves no PIN and claims no protection is on.
+          const LoopLabel('应用锁'),
+          _SecurityCard(rows: <LoopRecordRow>[_appLockRow()]),
+          const LoopLabel('交易验证'),
+          // Prototype order: the amount rule first, the second factor after it.
+          _SecurityCard(
+            rows: <LoopRecordRow>[
+              // The threshold is a rule nobody has written down yet, and this
+              // build has no on-chain write that could cross one. The row offers
+              // no switch; it says the protection is coming (decision 0121).
+              const LoopRecordRow(
+                key: ValueKey<String>('security-大额交易二次验证'),
+                title: '大额交易二次验证',
+                subtitle: securityLargeAmountSubtitle,
+                subtitleMaxLines: 2,
+                position: LoopRowPosition.first,
+                semanticLabel: '大额交易二次验证，即将推出',
+              ),
+              _mfaRow(),
+            ],
+          ),
+          Padding(
+            key: const ValueKey<String>('security-biometric-fallback'),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Text(
+              securityBiometricFallbackLine,
+              style: LoopType.captionSm,
             ),
-            _mfaRow(),
-          ],
-        ),
-        Padding(
-          key: const ValueKey<String>('security-biometric-fallback'),
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Text(securityBiometricFallbackLine, style: LoopType.captionSm),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 

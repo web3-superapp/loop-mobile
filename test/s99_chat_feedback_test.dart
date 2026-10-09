@@ -652,8 +652,15 @@ void main() {
 
       expect(notifications.written, isEmpty);
       expect(
-        find.descendant(of: row('mining.weight'), matching: find.text('已开启')),
-        findsOneWidget,
+        tester
+            .widget<Switch>(
+              find.descendant(
+                of: row('mining.weight'),
+                matching: find.byType(Switch),
+              ),
+            )
+            .value,
+        isTrue,
       );
     });
 

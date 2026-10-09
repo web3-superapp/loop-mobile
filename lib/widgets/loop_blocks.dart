@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 
 /// Prototype blocks the wallet pages are built out of.
 ///
@@ -342,6 +344,7 @@ class LoopRowIcon extends StatelessWidget {
     this.tone = LoopRowIconTone.neutral,
     this.semanticLabel,
     this.size = 44,
+    this.circle = false,
   }) : assert(
          icon != null || monogram != null,
          'A row icon carries a glyph or a monogram.',
@@ -353,8 +356,23 @@ class LoopRowIcon extends StatelessWidget {
   final String? semanticLabel;
   final double size;
 
+  /// The OKX record mark (decision 0126): a 36 `LoopEntryIcon`, the same in
+  /// a flat page and outside one.
+  final bool circle;
+
   @override
   Widget build(BuildContext context) {
+    // Decision 0126: a record mark (`circle`) and every row glyph on a flat
+    // page are decision 0127's `LoopEntryIcon` — a round card2 tile with a
+    // 20 glyph — at 36 for a record and 40 for an entry.
+    final mark = icon;
+    if (mark != null && (circle || LoopFlat.of(context))) {
+      return Semantics(
+        label: semanticLabel,
+        excludeSemantics: semanticLabel == null,
+        child: LoopEntryIcon(mark, size: circle ? 36 : 40),
+      );
+    }
     final (background, foreground) = switch (tone) {
       LoopRowIconTone.accent => (LoopColors.limeSoft, LoopColors.lime),
       LoopRowIconTone.neutral => (

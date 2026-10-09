@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/wallet/approval_screens.dart';
 import 'package:loop_mobile/features/wallet/deferred_screens.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
@@ -111,12 +112,11 @@ void main() {
         const ValueKey<String>('wallet-snapshot-footer'),
         const ValueKey<String>('networth-trend-unavailable'),
       ]);
-      // The chart panel keeps its place and draws nothing: net worth over time
-      // needs the holdings held on each of those days, and no read reports
-      // them.
+      // Decision 0126: the empty chart panel became the shared empty state;
+      // it still draws no series.
       expect(
         find.byKey(const ValueKey<String>('loop-chart-panel-absence')),
-        findsOneWidget,
+        findsNothing,
       );
       // The total is the heading; it is not printed a second time as a card.
       expect(find.text('净值（USD）'), findsNothing);
@@ -133,16 +133,17 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      expect(variantOf(tester, 'receive-folio'), LoopFolioVariant.chalk);
+      // Decision 0126 (OKX 收款): the network chip, the code with its address
+      // capsule, 复制 / 分享, then the warning. No folio.
+      expect(find.byKey(const ValueKey<String>('receive-folio')), findsNothing);
       expectOrder(tester, <Key>[
-        const ValueKey<String>('receive-folio'),
+        ValueKey<String>('receive-network-$loopPrimaryChainId'),
         const ValueKey<String>('receive-card'),
         const ValueKey<String>('receive-copy-address'),
+        const ValueKey<String>('receive-share'),
         const ValueKey<String>('receive-warning'),
       ]);
-      // The prototype's 网络 chip row exists even with one network published;
-      // what it must never do is offer a network LOOP did not publish.
-      expect(find.text('网络'), findsOneWidget);
+      // The chip row never offers a network LOOP did not publish.
       expect(find.text('Solana'), findsNothing);
       expect(find.text('Base'), findsNothing);
     });
@@ -158,11 +159,11 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
+      // Decision 0126: no folio; the rows, the ⓘ line, then the source.
+      expect(find.byKey(const ValueKey<String>('wallets-folio')), findsNothing);
       expectOrder(tester, <Key>[
-        const ValueKey<String>('wallets-folio'),
-        const ValueKey<String>('wallets-notice'),
-        const ValueKey<String>('wallets-source'),
         const ValueKey<String>('wallets-mining-notice'),
+        const ValueKey<String>('wallets-source'),
       ]);
       // A count is not an identity: the heading names the wallet in use.
       expect(find.text('1 个钱包'), findsNothing);
@@ -201,8 +202,12 @@ void main() {
         chain: FakeChainGateway(),
       );
 
+      // Decision 0126: no folio; the endpoint health is the chain row's value.
+      expect(
+        find.byKey(const ValueKey<String>('networks-folio')),
+        findsNothing,
+      );
       expectOrder(tester, <Key>[
-        const ValueKey<String>('networks-folio'),
         const ValueKey<String>('networks-chain-row'),
         const ValueKey<String>('networks-custom-rpc'),
         const ValueKey<String>('networks-testnet'),
@@ -240,9 +245,12 @@ void main() {
         approvals: FakeApprovalsGateway(),
       );
 
-      expect(variantOf(tester, 'approvals-folio'), LoopFolioVariant.chalk);
+      // Decision 0126: no folio; the two counts lead.
+      expect(
+        find.byKey(const ValueKey<String>('approvals-folio')),
+        findsNothing,
+      );
       expectOrder(tester, <Key>[
-        const ValueKey<String>('approvals-folio'),
         const ValueKey<String>('approvals-stat-unlimited'),
         const ValueKey<String>('approvals-stat-limited'),
         const ValueKey<String>('approvals-source-disclosure'),

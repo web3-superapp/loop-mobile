@@ -83,7 +83,9 @@ void main() {
         find.byKey(const ValueKey<String>('tx-history-state-offline')),
         findsNothing,
       );
-      expect(find.byKey(const ValueKey<String>('tx-history-folio')), findsOne);
+      // Decision 0126: no folio; the segments are the first thing a read
+      // that landed draws.
+      expect(find.byKey(const ValueKey<String>('tx-history-seg-0')), findsOne);
     });
 
     testWidgets('a read that keeps failing does pause the page', (

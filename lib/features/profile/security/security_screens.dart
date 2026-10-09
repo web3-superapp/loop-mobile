@@ -12,6 +12,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -131,116 +132,93 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
       }
     }
     final resource = summary.value;
-    final devices = resource?.devices;
 
-    return LoopDashboardPage(
-      key: const ValueKey<String>('security-screen'),
-      archetype: LoopPageArchetype.action,
-      title: '安全中心',
-      onBack: widget.onBack,
-      // `.folio-primary.chalk-card`: the prototype's security posture card is
-      // white on the Ink page, which is what gives this module its light /
-      // dark rhythm. It had been the only page of the four here that kept the
-      // dark hero (audit 2026-09-21 §J.5, §D #2). LOOP does not score a
-      // posture, so the heading stays a figure the server sent.
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('security-folio'),
-        variant: LoopFolioVariant.chalk,
-        archetype: LoopFolioArchetype.action,
-        kicker: 'SECURITY POSTURE',
-        heading: switch (devices) {
-          LoopSecurityDevicesAvailable(
-            deviceCount: final count,
-            activeSessionCount: final sessions,
-          ) =>
-            '$count 台设备 · $sessions 个会话',
-          _ => '安全中心',
-        },
-        caption:
-            '这里不打安全评分。LOOP 还没有开放的写「还没有开放」，'
-            '你可以开而没有开的写「未开启」。',
-        ring: false,
-      ),
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('security-capability-block'),
-              title: '安全中心当前不可用',
-              capability: capability,
-              fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
-            )
-          : null,
-      sections: <Widget>[
-        // 验证 and 恢复 are the prototype's own two groups; one 账户保护 list
-        // of six put 「导出私钥」 next to 「多因素验证」 and lost the reading
-        // order the page is arranged by (audit 2026-09-21 §J.5).
-        if (!methods.isReady) ...<Widget>[
-          const LoopLabel('验证'),
-          LoopChainStateBlock(
-            keyPrefix: 'security-methods',
-            phase: methods.phase,
-            failureKind: methods.failureKind,
-            emptyMessage: '没有可展示的安全能力',
-            onRetry: () => unawaited(
-              ref
-                  .read(securityCapabilitiesControllerProvider.notifier)
-                  .reload(),
-            ),
-          ),
-        ] else
-          _SecurityMethodGroup(
-            capabilities: methods.value!,
-            onNavigate: widget.onNavigate,
-          ),
-        const LoopLabel('设备'),
-        if (!summary.isReady)
-          LoopChainStateBlock(
-            keyPrefix: 'security-summary',
-            phase: summary.phase,
-            failureKind: summary.failureKind,
-            emptyMessage: '还没有安全汇总',
-            onRetry: () => unawaited(
-              ref.read(securitySummaryControllerProvider.notifier).reload(),
-            ),
-          )
-        else ...<Widget>[
-          _SecurityDevicesBlock(
-            block: resource!.devices,
-            onOpenDevices: () => widget.onNavigate('devices'),
-          ),
-          const LoopLabel('授权盘点'),
-          _SecurityApprovalsBlock(block: resource.approvals),
-          const LoopLabel('通知'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('security-notification-lock'),
-                title: '安全事件通知',
-                subtitle: '始终开启，无法关闭；保存的是意图，不代表已经能送达。',
-                // 「保存的是意图，不代…」 stopped before the qualification that
-                // is the whole point of the sentence.
-                subtitleMaxLines: 2,
-                trailingBadge: const LoopBadge('已开启', kind: LoopBadgeKind.up),
-                onTap: () => widget.onNavigate('notif-settings'),
+    // Decision 0126: flat sections. The Chalk posture card restated the
+    // device count the 设备 row already carries, so it is gone.
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('security-screen'),
+        archetype: LoopPageArchetype.action,
+        title: '安全中心',
+        onBack: widget.onBack,
+        block: blocked
+            ? LoopCapabilityPageBlock.of(
+                key: const ValueKey<String>('security-capability-block'),
+                title: '安全中心当前不可用',
+                capability: capability,
+                fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
+              )
+            : null,
+        sections: <Widget>[
+          // 验证 and 恢复 are the prototype's own two groups; one 账户保护 list
+          // of six put 「导出私钥」 next to 「多因素验证」 and lost the reading
+          // order the page is arranged by (audit 2026-09-21 §J.5).
+          if (!methods.isReady) ...<Widget>[
+            const LoopLabel('验证'),
+            LoopChainStateBlock(
+              keyPrefix: 'security-methods',
+              phase: methods.phase,
+              failureKind: methods.failureKind,
+              emptyMessage: '没有可展示的安全能力',
+              onRetry: () => unawaited(
+                ref
+                    .read(securityCapabilitiesControllerProvider.notifier)
+                    .reload(),
               ),
-            ],
+            ),
+          ] else
+            _SecurityMethodGroup(
+              capabilities: methods.value!,
+              onNavigate: widget.onNavigate,
+            ),
+          const LoopLabel('设备'),
+          if (!summary.isReady)
+            LoopChainStateBlock(
+              keyPrefix: 'security-summary',
+              phase: summary.phase,
+              failureKind: summary.failureKind,
+              emptyMessage: '还没有安全汇总',
+              onRetry: () => unawaited(
+                ref.read(securitySummaryControllerProvider.notifier).reload(),
+              ),
+            )
+          else ...<Widget>[
+            _SecurityDevicesBlock(
+              block: resource!.devices,
+              onOpenDevices: () => widget.onNavigate('devices'),
+            ),
+            const LoopLabel('授权盘点'),
+            _SecurityApprovalsBlock(block: resource.approvals),
+            const LoopLabel('通知'),
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('security-notification-lock'),
+                  title: '安全事件通知',
+                  subtitle: '始终开启，无法关闭',
+                  // 「保存的是意图，不代…」 stopped before the qualification that
+                  // is the whole point of the sentence.
+                  subtitleMaxLines: 2,
+                  trailingBadge: const LoopBadge('已开启', kind: LoopBadgeKind.up),
+                  onTap: () => widget.onNavigate('notif-settings'),
+                ),
+              ],
+            ),
+            const LoopLabel('最近安全事件'),
+            _SecurityEventsBlock(block: resource.recentSecurityEvents),
+            LoopProvenanceFooter(
+              key: const ValueKey<String>('security-observed-at'),
+              text: '观察于 ${loopRelativeTime(resource.observedAt)}',
+            ),
+          ],
+          const LoopNotice(
+            key: ValueKey<String>('security-scope-notice'),
+            icon: 'shield',
+            body: '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。',
           ),
-          const LoopLabel('最近安全事件'),
-          _SecurityEventsBlock(block: resource.recentSecurityEvents),
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('security-observed-at'),
-            text: '观察于 ${loopRelativeTime(resource.observedAt)}',
-          ),
+          const SizedBox(height: 12),
         ],
-        const LoopNotice(
-          key: ValueKey<String>('security-scope-notice'),
-          icon: 'shield',
-          title: '这一页只说明状态',
-          body:
-              'LOOP 不会在本地模拟"已开启"。多因素验证、Passkey、恢复与导出都由 Privy 提供，'
-              '在完成验证之前，它们对所有账号都不可用。',
-        ),
-        const SizedBox(height: 12),
-      ],
+      ),
     );
   }
 }

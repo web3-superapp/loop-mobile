@@ -720,13 +720,18 @@ void main() {
           ),
         );
       }
-      // The locked row says so on its own line, carries the 已开启 pill and
-      // offers no control. The prototype has no slider anywhere, so neither
-      // does this page (audit 2026-09-21 §D+ #12).
-      expect(find.byType(Switch), findsNothing);
+      // Decision 0126: a flat settings page states each preference as a
+      // switch (it supersedes the pill of audit 2026-09-21 §D+ #12). The
+      // locked row says so on its own line and its switch takes no input.
+      expect(find.byType(Switch), findsNWidgets(10));
       final lockedRow = find.byKey(
         const ValueKey<String>('notification-category-security.event'),
       );
+      final lockedSwitch = tester.widget<Switch>(
+        find.descendant(of: lockedRow, matching: find.byType(Switch)),
+      );
+      expect(lockedSwitch.value, isTrue);
+      expect(lockedSwitch.onChanged, isNull);
       expect(
         find.descendant(of: lockedRow, matching: find.textContaining('无法关闭')),
         findsOneWidget,
@@ -746,7 +751,7 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      expect(find.text('1 项开启并生效'), findsOneWidget);
+      expect(find.textContaining('1 项开启并生效'), findsOneWidget);
       expect(find.text('9 项开启'), findsNothing);
 
       // Every switch that stores an intent without producing anything says so
@@ -858,7 +863,7 @@ void main() {
         pushDiagnostics: _pushDiagnostics(LoopPushRegistrationGate.noPrincipal),
       );
 
-      expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
+      expect(find.textContaining('还没有向这台设备请求通知权限'), findsOneWidget);
     });
 
     // Decision 0076: the prompt waits for Community, and the page
@@ -873,8 +878,8 @@ void main() {
         ),
       );
 
-      expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
-      expect(find.text('进入社区后会请求一次。'), findsOneWidget);
+      expect(find.textContaining('还没有向这台设备请求通知权限'), findsOneWidget);
+      expect(find.textContaining('进入社区后会请求一次。'), findsOneWidget);
     });
 
     testWidgets('a refused permission names the one step that changes it', (
@@ -889,7 +894,7 @@ void main() {
         ),
       );
 
-      expect(find.text('通知权限已拒绝，这台设备收不到推送'), findsOneWidget);
+      expect(find.textContaining('通知权限已拒绝，这台设备收不到推送'), findsOneWidget);
       expect(find.text('可以在系统设置里为 LOOP 重新打开通知。'), findsOneWidget);
     });
 
@@ -903,8 +908,8 @@ void main() {
         pushDiagnostics: _pushDiagnostics(LoopPushRegistrationGate.registered),
       );
 
-      expect(find.text('这台设备已登记接收推送'), findsOneWidget);
-      expect(find.text('这不代表已经能送达。'), findsOneWidget);
+      expect(find.textContaining('这台设备已登记接收推送'), findsOneWidget);
+      expect(find.textContaining('这不代表已经能送达。'), findsOneWidget);
     });
 
     // The server's own statement is not repeated in this device's words: one
@@ -943,13 +948,13 @@ void main() {
           notifications: FakeNotificationsGateway(),
           pushDiagnostics: recorder,
         );
-        expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
+        expect(find.textContaining('还没有向这台设备请求通知权限'), findsOneWidget);
 
         recorder.record(LoopPushRegistrationGate.registered);
         await tester.pumpAndSettle();
 
-        expect(find.text('还没有向这台设备请求通知权限'), findsNothing);
-        expect(find.text('这台设备已登记接收推送'), findsOneWidget);
+        expect(find.textContaining('还没有向这台设备请求通知权限'), findsNothing);
+        expect(find.textContaining('这台设备已登记接收推送'), findsOneWidget);
       },
     );
 
@@ -969,7 +974,7 @@ void main() {
 
       expect(find.text('推送尚不可用'), findsNothing);
       // 通道有了，不等于这台设备收到过；页面只说后面这件事。
-      expect(find.text('推送还没有在真机上确认过'), findsOneWidget);
+      expect(find.textContaining('推送还没有在真机上确认过'), findsOneWidget);
     });
 
     testWidgets('真机确认过之后，这一行也收起来', (tester) async {
@@ -988,7 +993,7 @@ void main() {
       );
 
       expect(find.text('推送尚不可用'), findsNothing);
-      expect(find.text('推送还没有在真机上确认过'), findsNothing);
+      expect(find.textContaining('推送还没有在真机上确认过'), findsNothing);
     });
 
     testWidgets('an unavailable capability stops the page', (tester) async {

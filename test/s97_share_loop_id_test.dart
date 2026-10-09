@@ -18,7 +18,6 @@ import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'support/community_test_harness.dart';
@@ -143,14 +142,17 @@ void main() {
       expect(find.text('已复制 LOOP ID'), findsOneWidget);
     });
 
-    testWidgets('分享 is a 44×44 glyph in the card\'s top-right corner', (
+    // Decision 0126: 分享名片 is the first of 我's four 56 Lime round keys,
+    // under the identity header, not a glyph in a card's corner.
+    testWidgets('分享名片 is the first 56 round key under the header', (
       tester,
     ) async {
       await _pumpProfile(tester, loopId: _ownId);
 
-      final card = find.byKey(const ValueKey<String>('profile-identity-card'));
+      final header = find.byKey(
+        const ValueKey<String>('profile-identity-card'),
+      );
       final share = find.byKey(const ValueKey<String>('profile-share-loop-id'));
-      expect(tester.getSize(share), const Size(44, 44));
       expect(
         tester.getSemantics(share),
         matchesSemantics(
@@ -159,16 +161,22 @@ void main() {
           hasEnabledState: true,
           isEnabled: true,
           hasTapAction: true,
-          isFocusable: true,
-          hasFocusAction: true,
         ),
       );
-      final glyph = tester.widget<LoopIconButton>(share);
-      expect(glyph.icon, 'share');
-      final cardBox = tester.getRect(card);
-      final shareBox = tester.getRect(share);
-      expect(cardBox.right - shareBox.right, lessThan(24));
-      expect(shareBox.top - cardBox.top, lessThan(24));
+      final disc = find.descendant(
+        of: share,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Container &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
+        ),
+      );
+      expect(tester.getSize(disc), const Size(56, 56));
+      expect(
+        tester.getRect(share).top,
+        greaterThanOrEqualTo(tester.getRect(header).bottom),
+      );
       // The outlined 复制 / 分享 buttons under the ID are gone.
       expect(find.text('复制'), findsNothing);
       expect(find.text('分享'), findsNothing);
@@ -218,9 +226,17 @@ void main() {
         find.byKey(const ValueKey<String>('profile-copy-loop-id')),
         findsNothing,
       );
+      // The key keeps its place and says why it cannot share.
       expect(
-        find.byKey(const ValueKey<String>('profile-share-loop-id')),
-        findsNothing,
+        tester.getSemantics(
+          find.byKey(const ValueKey<String>('profile-share-loop-id')),
+        ),
+        matchesSemantics(
+          label: '分享名片，暂不可用',
+          isButton: true,
+          hasEnabledState: true,
+          hasTapAction: true,
+        ),
       );
     });
   });

@@ -92,9 +92,10 @@ void main() {
       );
 
       expect(_labels(tester), <String>[
-        'Included Assets',
-        'Excluded Assets',
-        'Reference Price',
+        // Decision 0126: the page's own words.
+        '计入的资产',
+        '未计入的资产',
+        '参考价',
         '公式版本',
         '算力快照',
       ]);
@@ -115,7 +116,7 @@ void main() {
         size: _tall,
       );
 
-      expect(_labels(tester), <String>['Claim Records']);
+      expect(_labels(tester), <String>['领取记录']);
       for (final key in <String>[
         'mining-rewards-cadence',
         'mining-rewards-readings',

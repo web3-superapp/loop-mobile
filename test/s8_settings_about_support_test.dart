@@ -179,7 +179,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('操作没有完成，请稍后再试。'), findsNothing);
-      expect(find.text('本应用使用的开源组件'), findsOneWidget);
+      expect(find.textContaining('本应用使用的开源组件'), findsOneWidget);
     });
 
     testWidgets('the legal rows are a version slot, never a document link', (
@@ -208,7 +208,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('docs/open-source-attribution.md'), findsNothing);
-      expect(find.text('本应用使用的开源组件'), findsOneWidget);
+      expect(find.textContaining('本应用使用的开源组件'), findsOneWidget);
 
       final entry = find.byKey(const ValueKey<String>('about-open-source-dio'));
       await scrollToS8Section(tester, entry);
@@ -449,12 +449,10 @@ void main() {
       );
 
       // 「工作日24 小时内回复」 ran a Chinese word straight into a Latin digit.
-      // The sentence now lives in the page's closing disclosure, which is the
-      // prototype's own home for it.
-      await tester.tap(
-        find.byKey(const ValueKey<String>('support-policy-disclosure')),
+      // Decision 0126: the sentence is the page's footnote line.
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('support-escalation')),
       );
-      await tester.pumpAndSettle();
       expect(find.textContaining('工作日 24 小时内回复'), findsOneWidget);
       expect(find.textContaining('工作日24'), findsNothing);
     });

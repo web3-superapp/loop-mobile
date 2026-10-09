@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s5_fixtures.dart';
@@ -661,7 +662,9 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('networth-trend-unavailable')),
       );
-      expect(find.textContaining('净值走势还没有数据来源'), findsOneWidget);
+      // Decision 0126: the shared empty state, still drawing no series.
+      expect(find.text('还没有净值走势'), findsOneWidget);
+      expect(find.byType(LoopChartPanel), findsNothing);
     });
 
     testWidgets('an unavailable net worth states its reason', (tester) async {
@@ -891,7 +894,13 @@ void main() {
 
       expect(find.byKey(const ValueKey<String>('receive-qr')), findsOneWidget);
       expect(find.text(s5Address), findsOneWidget);
-      expect(find.text('ethereum:$s5Address@56'), findsOneWidget);
+      // Decision 0126: the EIP-681 string is the code itself; the page no
+      // longer prints it under the address capsule.
+      expect(find.text('ethereum:$s5Address@56'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('receive-address-capsule')),
+        findsOneWidget,
+      );
       expect(find.textContaining('只接收 BNB Smart Chain'), findsOneWidget);
     });
 
@@ -947,14 +956,17 @@ void main() {
       );
       expect(find.text('地址已复制'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey<String>('receive-copy-uri')));
+      // The capsule's own copy glyph copies the same full address.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('receive-address-copy')),
+      );
       await tester.pumpAndSettle();
 
+      expect(writes, hasLength(2));
       expect(
         (writes.last.arguments as Map<Object?, Object?>)['text'],
-        'ethereum:$s5Address@56',
+        s5Address,
       );
-      expect(find.text('付款链接已复制'), findsOneWidget);
     });
 
     testWidgets('a walletless account is offered a wallet, not a skeleton', (
@@ -1001,11 +1013,11 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      expect(find.text('PRIVY 嵌入式钱包'), findsOneWidget);
-      expect(find.text('已连接的外部钱包'.toUpperCase()), findsOneWidget);
-      // The active wallet is the page's heading as well as a row, so the
-      // truncation appears twice; the full address appears nowhere.
-      expect(find.textContaining('0x0000…00a1'), findsNWidgets(2));
+      // Decision 0126: two flat sections in the page's own words, and the
+      // address heads its row (the folio that repeated it is gone).
+      expect(find.text('嵌入式钱包'), findsOneWidget);
+      expect(find.text('外部钱包'), findsOneWidget);
+      expect(find.text('0x0000…00a1'), findsOneWidget);
       expect(find.text(s5Address), findsNothing);
       expect(find.text('使用中'), findsOneWidget);
     });
@@ -1135,17 +1147,23 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
+      // Decision 0126 (OKX record row): kind and the other side on the
+      // left, the signed amount and its time on the right; the block and
+      // the confirmations are one tap away, in the detail sheet.
       expect(find.text('收到 WBNB'), findsOneWidget);
-      expect(
-        find.textContaining('已确认 · 101 确认 · 区块 120,628,064'),
-        findsOneWidget,
-      );
-      expect(find.text('1.5'), findsOneWidget);
+      expect(find.textContaining('来自 0x'), findsOneWidget);
+      expect(find.text('+1.5'), findsOneWidget);
+      expect(find.textContaining('区块 120,628,064'), findsNothing);
       expect(find.textContaining('数据落后 33 块'), findsOneWidget);
       // One screen, one way of writing a number: the block number grouped and
       // the indexer height two lines under it did not.
       expect(find.textContaining('索引高度 120,628,771'), findsOneWidget);
       expect(find.textContaining('索引高度 120628771'), findsNothing);
+
+      await tester.tap(find.text('收到 WBNB'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('tx-entry-sheet')), findsOne);
+      expect(find.text('120,628,064'), findsOneWidget);
     });
 
     testWidgets('a reorged row is marked as rolled back', (tester) async {

@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `auth-otp`: the second Privy email step on its own manifest route.
@@ -56,162 +57,140 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
     final cooldown = authState.resendCooldownSeconds(now);
     final canResend = authState.canResend(now);
 
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.intro,
-      title: '验证邮箱',
-      onBack: widget.onBack ?? () => controller.changeEmail(),
-      actionsFollowBody: true,
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('privy-auth-primary-button'),
-        label: authState.isBusy ? '验证中…' : '验证',
-        primary: true,
-        block: true,
-        onPressed:
-            authState.isBusy ||
-                destination == null ||
+    return LoopFlat(
+      step: true,
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.intro,
+        title: '验证邮箱',
+        onBack: widget.onBack ?? () => controller.changeEmail(),
+        actionsFollowBody: true,
+        primaryAction: LoopButton(
+          key: const ValueKey<String>('privy-auth-primary-button'),
+          label: authState.isBusy ? '验证中…' : '验证',
+          primary: true,
+          block: true,
+          onPressed:
+              authState.isBusy ||
+                  destination == null ||
+                  authState.attemptsExhausted
+              ? null
+              : () => unawaited(controller.verifyCode(_codeController.text)),
+        ),
+        body: <Widget>[
+          const IdentityProgress(step: 1, total: 5, label: '验证邮箱'),
+          IdentityStepCopy(
+            destination == null ? '尚未发送验证码，请先回到上一步输入邮箱。' : '已发送至 $destination',
+          ),
+          if (destination == null)
+            const LoopEmpty(
+              key: ValueKey<String>('privy-otp-no-destination'),
+              message: '没有待验证的邮箱',
+              reason: '返回登录页重新输入邮箱后再来这一步。',
+            )
+          else ...<Widget>[
+            _OtpGrid(
+              controller: _codeController,
+              focusNode: _codeFocusNode,
+              enabled: !authState.isBusy && !authState.attemptsExhausted,
+              onChanged: (_) => setState(() {}),
+              onSubmitted: authState.isBusy || authState.attemptsExhausted
+                  ? null
+                  : controller.verifyCode,
+            ),
+            if (authState.activeOperation ==
+                IdentityAuthOperation.verifyEmailCode)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                child: LoopSkeleton(
+                  key: ValueKey<String>('privy-otp-verifying'),
+                  type: LoopSkeletonType.list,
+                  rows: 1,
+                ),
+              ),
+            if (authState.deliveryUnconfirmed)
+              LoopOfflineState(
+                key: const ValueKey<String>('privy-otp-offline'),
+                pausedActions: const <String>['重新发送验证码'],
+                onRetry: canResend
+                    ? () => unawaited(controller.resendCode())
+                    : null,
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
+              ),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  key: const ValueKey<String>('privy-otp-resend-hint'),
+                  cooldown > 0 ? '$cooldown 秒后可重新发送' : '现在可以重新发送验证码',
+                  textAlign: TextAlign.center,
+                  style: LoopTypography.caption(12, color: LoopColors.text3),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                6,
+                LoopSpacing.page,
+                0,
+              ),
+              child: Text(
+                key: const ValueKey<String>('privy-otp-attempts'),
                 authState.attemptsExhausted
-            ? null
-            : () => unawaited(controller.verifyCode(_codeController.text)),
-      ),
-      disclosure: const LoopDisclosure(
-        summary: '验证失败时会看到什么',
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
+                    ? '尝试次数已用完，请重新发送验证码。'
+                    : '还可尝试 ${authState.remainingAttempts} 次',
+                textAlign: TextAlign.center,
+                style: LoopTypography.caption(
+                  12,
+                  color: authState.attemptsExhausted
+                      ? LoopColors.chalk
+                      : LoopColors.text3,
+                ),
+              ),
+            ),
+            if (authState.errorMessage != null)
               LoopNotice(
+                key: const ValueKey<String>('privy-otp-error'),
                 icon: 'close',
                 tone: LoopNoticeTone.danger,
-                title: '验证码错误',
-                body: '每次失败都会扣掉一次尝试机会；用完后需要重新发送验证码。',
-                margin: EdgeInsets.only(bottom: 10),
+                title: '验证未通过',
+                body: authState.errorMessage!,
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               ),
-              LoopNotice(
-                icon: 'clock',
-                tone: LoopNoticeTone.warn,
-                title: '验证码已过期',
-                body: '倒计时结束后可以重新发送；旧验证码会立即失效。',
-                margin: EdgeInsets.zero,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
               ),
-            ],
-          ),
-        ),
-      ),
-      body: <Widget>[
-        const IdentityProgress(step: 1, total: 5, label: '验证邮箱'),
-        IdentityStepCopy(
-          destination == null ? '尚未发送验证码，请先回到上一步输入邮箱。' : '已发送至 $destination',
-        ),
-        if (destination == null)
-          const LoopEmpty(
-            key: ValueKey<String>('privy-otp-no-destination'),
-            message: '没有待验证的邮箱',
-            reason: '返回登录页重新输入邮箱后再来这一步。',
-          )
-        else ...<Widget>[
-          _OtpGrid(
-            controller: _codeController,
-            focusNode: _codeFocusNode,
-            enabled: !authState.isBusy && !authState.attemptsExhausted,
-            onChanged: (_) => setState(() {}),
-            onSubmitted: authState.isBusy || authState.attemptsExhausted
-                ? null
-                : controller.verifyCode,
-          ),
-          if (authState.activeOperation ==
-              IdentityAuthOperation.verifyEmailCode)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: LoopSkeleton(
-                key: ValueKey<String>('privy-otp-verifying'),
-                type: LoopSkeletonType.list,
-                rows: 1,
+              child: LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>('privy-otp-change-email'),
+                    label: '换个邮箱',
+                    onPressed: authState.isBusy ? null : controller.changeEmail,
+                  ),
+                  LoopButton(
+                    key: const ValueKey<String>('privy-otp-resend'),
+                    label: '重新发送',
+                    onPressed: canResend
+                        ? () => unawaited(controller.resendCode())
+                        : null,
+                  ),
+                ],
               ),
             ),
-          if (authState.deliveryUnconfirmed)
-            LoopOfflineState(
-              key: const ValueKey<String>('privy-otp-offline'),
-              pausedActions: const <String>['重新发送验证码'],
-              onRetry: canResend
-                  ? () => unawaited(controller.resendCode())
-                  : null,
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Semantics(
-              liveRegion: true,
-              child: Text(
-                key: const ValueKey<String>('privy-otp-resend-hint'),
-                cooldown > 0 ? '$cooldown 秒后可重新发送' : '现在可以重新发送验证码',
-                textAlign: TextAlign.center,
-                style: LoopTypography.caption(12, color: LoopColors.text3),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              6,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Text(
-              key: const ValueKey<String>('privy-otp-attempts'),
-              authState.attemptsExhausted
-                  ? '尝试次数已用完，请重新发送验证码。'
-                  : '还可尝试 ${authState.remainingAttempts} 次',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(
-                12,
-                color: authState.attemptsExhausted
-                    ? LoopColors.chalk
-                    : LoopColors.text3,
-              ),
-            ),
-          ),
-          if (authState.errorMessage != null)
-            LoopNotice(
-              key: const ValueKey<String>('privy-otp-error'),
-              icon: 'close',
-              tone: LoopNoticeTone.danger,
-              title: '验证未通过',
-              body: authState.errorMessage!,
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
-            child: LoopButtonPair(
-              padded: false,
-              children: <Widget>[
-                LoopButton(
-                  key: const ValueKey<String>('privy-otp-change-email'),
-                  label: '换个邮箱',
-                  onPressed: authState.isBusy ? null : controller.changeEmail,
-                ),
-                LoopButton(
-                  key: const ValueKey<String>('privy-otp-resend'),
-                  label: '重新发送',
-                  onPressed: canResend
-                      ? () => unawaited(controller.resendCode())
-                      : null,
-                ),
-              ],
-            ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

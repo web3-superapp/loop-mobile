@@ -148,7 +148,10 @@ enum LoopIllustration {
   watchlist('watchlist'),
   rank('rank'),
   members('members'),
-  friends('friends');
+  friends('friends'),
+  // Decision 0126: account and wallet record pages.
+  profile('profile'),
+  history('history');
 
   const LoopIllustration(this.fileName);
 

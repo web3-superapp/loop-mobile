@@ -194,17 +194,25 @@ LoopRecordRow walletActivityRow(
   DateTime? now,
   VoidCallback? onTap,
 }) {
-  final incoming = entry.direction == LoopTransferDirection.incoming;
+  // Decision 0126 (OKX record row): a 36 circle mark, the kind and the
+  // other side on two lines, the signed amount in rise / fall and the time
+  // under it at 11. Block, confirmations and hash are in the detail sheet.
+  final sign = switch (entry.direction) {
+    LoopTransferDirection.incoming => '+',
+    LoopTransferDirection.outgoing => '-',
+    LoopTransferDirection.self => '',
+  };
+  final settled = entry.status == LoopConfirmationStatus.confirmed;
   return LoopRecordRow(
     key: ValueKey<String>('tx-entry-${entry.entryId}'),
     onTap: onTap,
     leading: LoopRowIcon(
+      circle: true,
       icon: switch (entry.direction) {
         LoopTransferDirection.incoming => 'arrow-down',
         LoopTransferDirection.outgoing => 'arrow-up',
         LoopTransferDirection.self => 'shuffle',
       },
-      tone: incoming ? LoopRowIconTone.accent : LoopRowIconTone.neutral,
     ),
     title:
         '${switch (entry.direction) {
@@ -213,20 +221,18 @@ LoopRecordRow walletActivityRow(
           LoopTransferDirection.self => '自转',
         }} ${entry.symbol}',
     subtitle: <String>[
-      loopConfirmationLabel(entry.status),
-      if (entry.confirmations != null)
-        '${loopGroupedFigure(entry.confirmations.toString())} 确认',
-      '区块 ${loopGroupedFigure(entry.blockNumber.toString())}',
-      '对方 ${loopTruncatedAddress(entry.counterpartyAddress)}',
-      loopRelativeTime(entry.observedAt, now: now),
+      '${entry.direction == LoopTransferDirection.incoming ? '来自' : '发往'} '
+          '${loopTruncatedAddress(entry.counterpartyAddress)}',
+      if (!settled) loopConfirmationLabel(entry.status),
     ].join(' · '),
-    // Five facts beside a figure column: the line ended at
-    // 「已确认 · 17 确认 · 区块 122235831 · 9 …」, losing the counterparty and
-    // the stamp.
-    subtitleMaxLines: 3,
-    trailing: loopFormatDecimal(entry.displayValue),
-    trailingCaptionUp: incoming,
-    trailingCaption: loopTruncatedAddress(entry.transactionHash),
+    trailing: '$sign${loopFormatDecimal(entry.displayValue)}',
+    trailingStrong: true,
+    trailingColor: switch (entry.direction) {
+      LoopTransferDirection.incoming => LoopColors.rise,
+      LoopTransferDirection.outgoing => LoopColors.fall,
+      LoopTransferDirection.self => null,
+    },
+    trailingCaption: loopRelativeTime(entry.observedAt, now: now),
     trailingBadge: entry.status == LoopConfirmationStatus.reorged
         ? const LoopBadge('已回滚', kind: LoopBadgeKind.down)
         : null,

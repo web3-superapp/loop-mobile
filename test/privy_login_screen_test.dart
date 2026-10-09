@@ -43,6 +43,34 @@ void main() {
     expect(find.textContaining('不是 LOOP 交易钱包'), findsOneWidget);
   });
 
+  // Decision 0126: title 24 bold, subtitle 14 grey, the email in a 52-high
+  // flat field with its label inside, no Emoji on the page.
+  testWidgets('the welcome reads 24 / 14 and the email field is flat', (
+    tester,
+  ) async {
+    await _pump(tester, showApple: false);
+
+    final title = tester.widget<Text>(find.text('欢迎来到 LOOP'));
+    expect(title.style?.fontSize, 24);
+    expect(title.style?.fontWeight, FontWeight.w700);
+    final subtitle = tester.widget<Text>(find.text('登录后自动创建钱包，持仓即产生算力。'));
+    expect(subtitle.style?.fontSize, 14);
+    final field = find.byKey(const ValueKey('privy-email'));
+    expect(field, findsOneWidget);
+    expect(tester.getSize(field).height, greaterThanOrEqualTo(52));
+    expect(
+      find.descendant(of: field, matching: find.text('邮箱')),
+      findsOneWidget,
+    );
+    final emoji = RegExp(
+      r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]',
+      unicode: true,
+    );
+    for (final text in tester.widgetList<Text>(find.byType(Text))) {
+      expect(emoji.hasMatch(text.data ?? ''), isFalse, reason: text.data);
+    }
+  });
+
   testWidgets('shows Apple only for the iOS composition', (tester) async {
     await _pump(tester, showApple: true);
 

@@ -2327,6 +2327,8 @@ String _profilePath(String id) => switch (id) {
   'mining-rewards' => LoopRouteManifest.pathFor('mining-rewards'),
   'mining-rules' => LoopRouteManifest.pathFor('mining-rules'),
   'referral' => LoopRouteManifest.pathFor('referral'),
+  // Decision 0126: 我's 扫一扫 key opens the same scanner as 钱包's 扫码.
+  'scan' => LoopRouteManifest.pathFor('scan'),
   _ => LoopRouteManifest.pathFor('profile'),
 };
 

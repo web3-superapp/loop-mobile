@@ -517,7 +517,10 @@ void main() {
       );
     });
 
-    testWidgets('the Receive page puts the address on a Chalk card', (
+    // Decision 0126: the address moved into a flat capsule on the Ink page;
+    // the only light ground left is the plate behind the code, which carries
+    // no text for the probe to sample.
+    testWidgets('the Receive page draws its code on a Chalk plate', (
       tester,
     ) async {
       await pumpS5Page(
@@ -526,9 +529,18 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
+      final plate = tester.widget<Container>(
+        find
+            .ancestor(
+              of: find.byKey(const ValueKey<String>('receive-qr')),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      expect((plate.decoration! as BoxDecoration).color, LoopColors.chalk);
       expect(
         groundsOf(tester, find.byType(ReceiveScreen)),
-        contains(LoopColors.chalk.toARGB32()),
+        isNot(contains(LoopColors.chalk.toARGB32())),
       );
     });
   });

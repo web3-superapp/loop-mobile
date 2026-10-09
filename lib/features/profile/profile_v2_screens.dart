@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
@@ -38,8 +39,11 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
+import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 // ---------------------------------------------------------------------------
@@ -327,10 +331,13 @@ class LoopTogglePreferenceRow extends StatelessWidget {
         // a mono value in the figure column. A row that read 「已关闭 ›」 in
         // the same grey as a number could not be scanned for its state at all
         // (audit 2026-09-21 §J.4).
-        trailingBadge: LoopBadge(
-          value ? onLabel : offLabel,
-          kind: value ? LoopBadgeKind.up : LoopBadgeKind.mute,
-        ),
+        // Decision 0126: a flat page states the preference as a switch.
+        trailingBadge: LoopFlat.of(context)
+            ? LoopFlatSwitch(value: value, onChanged: onChanged)
+            : LoopBadge(
+                value ? onLabel : offLabel,
+                kind: value ? LoopBadgeKind.up : LoopBadgeKind.mute,
+              ),
         onTap: onChanged,
         position: position,
         chevron: false,
@@ -404,162 +411,224 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final isPreview = state.mode == ProfileMode.preview;
     final switches = ref.watch(loopFeatureSwitchesProvider);
 
-    // 我 (decision 0110, S106 §5), top to bottom: identity, mining, invite,
-    // communities, account, settings. It is reached from the avatar on 聊天.
-    return LoopDashboardPage(
-      key: const ValueKey<String>('profile-home-screen'),
-      archetype: LoopPageArchetype.record,
-      title: '我',
-      kicker: loopPreviewKicker(isPreview),
-      onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.lime,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'PUBLIC PROFILE',
-        heading: alias ?? '尚未设置别名',
-        caption: 'LOOP ID 是你的社交身份；钱包地址只是可更换的凭证。',
-        stamp: 'PUBLIC',
-      ),
-      sections: <Widget>[
-        LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
-        if (phase != LoopResourcePhase.ready)
-          _ProfileStateBlock(
-            phase: phase,
-            state: state,
-            onRetry: () =>
-                ref.read(profileControllerProvider.notifier).reload(),
-            onOpenSecurity: () => widget.onNavigate('security'),
-          )
-        else
-          _ProfileIdentityCard(
-            resource: resource!,
-            onEdit: () => widget.onNavigate('profile-edit'),
-          ),
-        const LoopLabel('挖矿'),
-        // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
-        // under it, read from the same two projections the mining page does.
-        // Since decision 0110 the three mining record pages hang under it:
-        // 挖矿 is no longer a tab, and 我 is where an account's own mining is.
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            _miningRow(),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-mining-assets'),
-              title: '挖矿资产',
-              onTap: () => widget.onNavigate('mining-assets'),
+    // 我 (decision 0126, OKX 资产页 4908): the person, four round keys, then
+    // three flat sections — 账号, 资产与挖矿, 设置 — and the version last.
+    final loopId = resource?.loopId;
+    final version = ref
+        .watch(appConfigProvider)
+        .loopClientVersionForCurrentBuild;
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('profile-home-screen'),
+        archetype: LoopPageArchetype.record,
+        title: '我',
+        kicker: loopPreviewKicker(isPreview),
+        onBack: widget.onBack,
+        sections: <Widget>[
+          LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
+          if (phase != LoopResourcePhase.ready)
+            _ProfileStateBlock(
+              phase: phase,
+              state: state,
+              onRetry: () =>
+                  ref.read(profileControllerProvider.notifier).reload(),
+              onOpenSecurity: () => widget.onNavigate('security'),
+            )
+          else
+            _ProfileIdentityCard(
+              resource: resource!,
+              onEdit: () => widget.onNavigate('profile-edit'),
             ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-mining-rewards'),
-              title: '挖矿奖励',
-              onTap: () => widget.onNavigate('mining-rewards'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-mining-rules'),
-              title: '挖矿规则',
-              onTap: () => widget.onNavigate('mining-rules'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-mining-overview'),
-              title: '挖矿总览',
-              onTap: () => widget.onNavigate('mining'),
-            ),
-          ],
-        ),
-        const LoopLabel('邀请'),
-        LoopRecordGroup(rows: <LoopRecordRow>[_inviteRow()]),
-        const LoopLabel('我的社区'),
-        ProfileCommunitiesRow(onNavigate: widget.onNavigate),
-        // 需求方 2026-10-08: IDO Launch keeps its code and its pages, and its
-        // entries on 我 follow the one switch that brings it back.
-        if (switches.idoLaunchVisible) ...<Widget>[
-          const LoopLabel('Launch'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-launch-history'),
-                title: '参与记录',
-                subtitle: 'Launch 参与数据还没有开放',
-                trailing: '未开放',
-                onTap: () => widget.onNavigate('launch-history'),
+          // Decision 0126 on decision 0127's round keys: four 56 Lime discs.
+          LoopRoundKeyRow(
+            key: const ValueKey<String>('profile-round-keys'),
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+            keys: <Widget>[
+              LoopRoundKey(
+                key: const ValueKey<String>('profile-share-loop-id'),
+                icon: 'share',
+                label: '分享名片',
+                onPressed: loopId == null
+                    ? null
+                    : () => unawaited(
+                        showLoopQrCardSheet(
+                          context,
+                          LoopUserQrCard(
+                            loopId: loopId,
+                            displayName: alias ?? loopId,
+                            avatarRef: resource?.values.avatarRef,
+                          ),
+                        ),
+                      ),
+                onBlocked: () =>
+                    LoopToast.show(context, message: '资料还没读到，暂时不能分享'),
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-launch-tier'),
-                title: '我的资格',
-                subtitle: '质押与 Tier 数据还没有开放',
-                trailing: '未开放',
-                onTap: () => widget.onNavigate('launch-tier'),
+              LoopRoundKey(
+                key: const ValueKey<String>('profile-open-scan'),
+                icon: 'camera',
+                label: '扫一扫',
+                onPressed: () => widget.onNavigate('scan'),
+              ),
+              LoopRoundKey(
+                key: const ValueKey<String>('profile-open-friends'),
+                icon: 'users',
+                label: '好友',
+                onPressed: () => widget.onNavigate('connections'),
+              ),
+              LoopRoundKey(
+                key: const ValueKey<String>('profile-open-mining-key'),
+                icon: 'mine',
+                label: '挖矿',
+                onPressed: () => widget.onNavigate('mining'),
               ),
             ],
           ),
-        ],
-        // The prototype's 账户 rows carry a state value on their second line
-        // — 「2 个已绑定」, 「匿名模式已开启」, 「关注 24 · 粉丝 108」 — read
-        // from the module that owns it; a row whose state this device has not
-        // read carries no second line at all.
-        const LoopLabel('账户'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-wallets'),
-              title: '我的钱包',
-              subtitle: _walletSubtitle(),
-              onTap: () => widget.onNavigate('wallets'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-privacy'),
-              title: '隐私中心',
-              subtitle: _privacySubtitle(),
-              onTap: () => widget.onNavigate('privacy'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-security'),
-              title: '安全中心',
-              // The security projection reports every method as unavailable
-              // while the device holds Privy MFA of its own (walkthrough ·
-              // h17). Until the two agree this row states no posture.
-              onTap: () => widget.onNavigate('security'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-connections'),
-              title: '关注与粉丝',
-              subtitle: _connectionsSubtitle(),
-              onTap: () => widget.onNavigate('connections'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-friend-requests'),
-              title: '好友请求',
-              onTap: () => widget.onNavigate('friend-requests'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-notifications'),
-              title: '通知设置',
-              onTap: () => widget.onNavigate('notif-settings'),
-            ),
-          ],
-        ),
-        const LoopLabel('设置'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-settings'),
-              leading: const LoopRowIcon(icon: 'settings'),
-              title: '设置',
-              onTap: () => widget.onNavigate('settings'),
-            ),
-          ],
-        ),
-        if (widget.onSignOut != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-            child: LoopButton(
-              key: const ValueKey<String>('profile-sign-out'),
-              label: '退出登录',
-              block: true,
-              onPressed: () => unawaited(widget.onSignOut!()),
-            ),
+          // The prototype's 账户 rows carry a state value on their second
+          // line — 「2 个已绑定」, 「关注 24 · 粉丝 108」 — read from the module
+          // that owns it; a row whose state this device has not read carries
+          // no second line at all.
+          const LoopLabel('账号'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-wallets'),
+                leading: const LoopRowIcon(icon: 'wallet'),
+                title: '我的钱包',
+                trailing: _walletSubtitle(),
+                onTap: () => widget.onNavigate('wallets'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-connections'),
+                leading: const LoopRowIcon(icon: 'users'),
+                title: '关注与粉丝',
+                trailing: _connectionsSubtitle(),
+                onTap: () => widget.onNavigate('connections'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-friend-requests'),
+                leading: const LoopRowIcon(icon: 'hand'),
+                title: '好友请求',
+                onTap: () => widget.onNavigate('friend-requests'),
+              ),
+              _inviteRow(),
+            ],
           ),
-        const SizedBox(height: 20),
-      ],
+          ProfileCommunitiesRow(onNavigate: widget.onNavigate),
+          const LoopLabel('资产与挖矿'),
+          // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
+          // under it, read from the same two projections the mining page
+          // does. Since decision 0110 the mining record pages hang under it.
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              _miningRow(),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-mining-assets'),
+                leading: const LoopRowIcon(icon: 'droplet'),
+                title: '挖矿资产',
+                onTap: () => widget.onNavigate('mining-assets'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-mining-rewards'),
+                leading: const LoopRowIcon(icon: 'parachute'),
+                title: '挖矿奖励',
+                onTap: () => widget.onNavigate('mining-rewards'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-mining-rules'),
+                leading: const LoopRowIcon(icon: 'book'),
+                title: '挖矿规则',
+                onTap: () => widget.onNavigate('mining-rules'),
+              ),
+              // 需求方 2026-10-08: IDO Launch keeps its code and its pages,
+              // and its entries on 我 follow the one switch that brings it
+              // back.
+              if (switches.idoLaunchVisible) ...<LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('profile-open-launch-history'),
+                  leading: const LoopRowIcon(icon: 'launch'),
+                  title: '参与记录',
+                  trailing: '未开放',
+                  onTap: () => widget.onNavigate('launch-history'),
+                ),
+                LoopRecordRow(
+                  key: const ValueKey<String>('profile-open-launch-tier'),
+                  leading: const LoopRowIcon(icon: 'ticket'),
+                  title: '我的资格',
+                  trailing: '未开放',
+                  onTap: () => widget.onNavigate('launch-tier'),
+                ),
+              ],
+            ],
+          ),
+          const LoopLabel('设置'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-privacy'),
+                leading: const LoopRowIcon(icon: 'lock'),
+                title: '隐私中心',
+                trailing: _privacySubtitle(),
+                onTap: () => widget.onNavigate('privacy'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-security'),
+                leading: const LoopRowIcon(icon: 'shield'),
+                title: '安全中心',
+                // The security projection reports every method as
+                // unavailable while the device holds Privy MFA of its own
+                // (walkthrough · h17). Until the two agree this row states no
+                // posture.
+                onTap: () => widget.onNavigate('security'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-notifications'),
+                leading: const LoopRowIcon(icon: 'bell'),
+                title: '通知设置',
+                onTap: () => widget.onNavigate('notif-settings'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-settings'),
+                leading: const LoopRowIcon(icon: 'settings'),
+                title: '通用设置',
+                onTap: () => widget.onNavigate('settings'),
+              ),
+            ],
+          ),
+          // Leaving is not a setting: one quiet centred line under the
+          // list, so it is found when looked for and never hit by accident.
+          if (widget.onSignOut != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              child: Semantics(
+                button: true,
+                label: '退出登录',
+                excludeSemantics: true,
+                child: InkWell(
+                  key: const ValueKey<String>('profile-sign-out'),
+                  onTap: () => unawaited(widget.onSignOut!()),
+                  borderRadius: LoopRadius.inner,
+                  child: SizedBox(
+                    height: 48,
+                    child: Center(
+                      child: Text(
+                        '退出登录',
+                        style: LoopTypography.title(
+                          15,
+                          weight: FontWeight.w500,
+                          color: LoopColors.text2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          LoopFlatFootnote(
+            version.isEmpty ? 'LOOP' : 'LOOP $version',
+            key: const ValueKey<String>('profile-version'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -585,7 +654,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     };
     return LoopRecordRow(
       key: const ValueKey<String>('profile-open-mining'),
-      leading: const LoopRowIcon(icon: 'mine', tone: LoopRowIconTone.accent),
+      leading: const LoopRowIcon(icon: 'mine'),
       title: '总算力',
       subtitle: line,
       subtitleMaxLines: 2,
@@ -605,12 +674,24 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final code = referral.value?.inviteCode.code;
     return LoopRecordRow(
       key: const ValueKey<String>('profile-open-referral'),
-      leading: const LoopRowIcon(icon: 'users', tone: LoopRowIconTone.accent),
-      title: code ?? '邀请码',
-      subtitle: code == null
-          ? (referral.phase == LaunchViewPhase.loading ? '正在读取邀请码' : '邀请好友')
-          : '邀请好友，查看邀请算力',
-      trailingBadge: code == null ? null : _CopyInviteCodeButton(code: code),
+      leading: const LoopRowIcon(icon: 'ticket'),
+      title: '邀请好友',
+      trailingBadge: code == null
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  code,
+                  style: LoopTypography.figure(
+                    14,
+                    weight: FontWeight.w500,
+                    color: LoopColors.text2,
+                  ),
+                ),
+                _CopyInviteCodeButton(code: code),
+              ],
+            ),
       semanticLabel: code == null ? '邀请好友' : '我的邀请码 $code',
       onTap: () => widget.onNavigate('referral'),
     );
@@ -781,6 +862,7 @@ class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-communities'),
+              leading: const LoopRowIcon(icon: 'community'),
               title: '我加入的',
               subtitle: subtitle,
               trailing: trailing,
@@ -794,7 +876,8 @@ class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
           ],
         ),
         if (owned.isNotEmpty) ...<Widget>[
-          const LoopLabel('我创建的', followsLabel: true),
+          // Decision 0126: a sub-group of 账号 on 我, so the small label.
+          const LoopLabel('我创建的', followsLabel: true, tight: true),
           LoopRecordGroup(
             key: const ValueKey<String>('profile-owned-communities'),
             rows: <LoopRecordRow>[for (final entry in owned) _ownedRow(entry)],
@@ -826,6 +909,8 @@ class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
         identity: community.communityId,
         name: community.name,
         logoRef: community.logoRef,
+        size: 40,
+        radius: 12,
       ),
       title: community.name,
       subtitle: line,
@@ -930,6 +1015,9 @@ class _ProfileApplicationNotificationsState
   }
 }
 
+/// The person at the top of 我 (decision 0126, OKX 资产页): avatar 56, the
+/// name at 18 bold, the LOOP ID at 13 grey with its copy glyph, and one edit
+/// glyph on the right. Sharing moved to the first round key under it.
 class _ProfileIdentityCard extends ConsumerWidget {
   const _ProfileIdentityCard({required this.resource, required this.onEdit});
 
@@ -941,147 +1029,76 @@ class _ProfileIdentityCard extends ConsumerWidget {
     final alias = resource.values.alias;
     final loopId = resource.loopId;
     final idStyle = LoopTypography.figure(
-      11,
-      weight: FontWeight.w500,
-      color: LoopColors.ink.withValues(alpha: 0.64),
+      13,
+      weight: FontWeight.w400,
+      color: LoopColors.text3,
     );
-    final body = Column(
-      children: <Widget>[
-        LoopProfileAvatar(avatarRef: resource.values.avatarRef, alias: alias),
-        const SizedBox(height: 10),
-        Text(
-          alias ?? '尚未设置别名',
-          style: LoopTypography.heading(
-            18,
-            weight: FontWeight.w700,
-            color: LoopColors.ink,
-          ),
-        ),
-        const SizedBox(height: 3),
-        // Decision 0104 (S97b layout): the copy glyph follows the ID it
-        // copies; an ID this device could not read offers nothing to copy.
-        if (loopId != null)
-          LoopIdCopyLine(
-            loopId: loopId,
-            style: idStyle,
-            textKey: const ValueKey<String>('profile-loop-id'),
-            copyKey: const ValueKey<String>('profile-copy-loop-id'),
-            mainAxisAlignment: MainAxisAlignment.center,
-          )
-        else
-          Text(
-            'LOOP ID 不可读',
-            key: const ValueKey<String>('profile-loop-id'),
-            style: idStyle,
-          ),
-        if (resource.values.bio != null) ...<Widget>[
-          const SizedBox(height: 8),
-          Text(
-            resource.values.bio!,
-            textAlign: TextAlign.center,
-            style: LoopTypography.caption(
-              12,
-              color: LoopColors.ink.withValues(alpha: 0.72),
-            ),
-          ),
-        ],
-        const SizedBox(height: 12),
-        _ChalkCardButton(
-          key: const ValueKey<String>('profile-open-edit'),
-          label: '编辑资料',
-          onTap: onEdit,
-        ),
-      ],
-    );
-    return LoopChalkCard(
+    return Padding(
       key: const ValueKey<String>('profile-identity-card'),
-      // The share glyph sits in the card's corner, so the card keeps a thin
-      // edge and the body carries the rest of the usual 16.
-      padding: const EdgeInsets.all(_identityCardEdge),
-      child: Stack(
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 8, 6, 16),
+      child: Row(
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(16 - _identityCardEdge),
-            child: body,
+          GestureDetector(
+            onTap: onEdit,
+            child: LoopProfileAvatar(
+              avatarRef: resource.values.avatarRef,
+              alias: alias,
+              size: 56,
+            ),
           ),
-          // Decision 0104 (S97b layout): sharing is the card's top-bar glyph,
-          // the same unframed 44×44 control as 设置 above it, in Ink on Chalk.
-          // Decision 0113: it opens the QR card, which keeps 复制邀请文字.
-          if (loopId != null)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: LoopIconButton(
-                key: const ValueKey<String>('profile-share-loop-id'),
-                icon: 'share',
-                label: '分享名片',
-                color: LoopColors.ink,
-                onPressed: () => unawaited(
-                  showLoopQrCardSheet(
-                    context,
-                    LoopUserQrCard(
-                      loopId: loopId,
-                      displayName: alias ?? loopId,
-                      avatarRef: resource.values.avatarRef,
-                    ),
-                  ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  alias ?? '尚未设置别名',
+                  key: const ValueKey<String>('profile-alias'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.heading(18, weight: FontWeight.w700),
                 ),
-              ),
+                const SizedBox(height: 2),
+                // Decision 0104 (S97b layout): the copy glyph follows the ID
+                // it copies; an ID this device could not read offers nothing
+                // to copy.
+                if (loopId != null)
+                  LoopIdCopyLine(
+                    loopId: loopId,
+                    style: idStyle,
+                    textKey: const ValueKey<String>('profile-loop-id'),
+                    copyKey: const ValueKey<String>('profile-copy-loop-id'),
+                  )
+                else
+                  Text(
+                    'LOOP ID 不可读',
+                    key: const ValueKey<String>('profile-loop-id'),
+                    style: idStyle,
+                  ),
+              ],
             ),
-        ],
-      ),
-    );
-  }
-
-  static const double _identityCardEdge = 4;
-}
-
-/// `.chalk-card .seg`: Ink ground with Chalk text, not the Lime fill.
-///
-/// A Chalk card is the one ground where the app's secondary button vanishes:
-/// its fill and its edge are derived from the ground it sits on, which on
-/// Chalk is Chalk. The prototype paints this control Ink and its word Chalk.
-class _ChalkCardButton extends StatelessWidget {
-  const _ChalkCardButton({required this.label, required this.onTap, super.key});
-
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: label,
-      child: Material(
-        color: enabled ? LoopColors.ink : LoopColors.ink.withValues(alpha: 0.4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: LoopColors.ink),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            constraints: const BoxConstraints(
-              minWidth: LoopTouch.minimum,
-              minHeight: LoopTouch.minimum,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            alignment: Alignment.center,
-            child: ExcludeSemantics(
-              child: Text(
-                label,
-                style: LoopTypography.label(
-                  12,
-                  weight: FontWeight.w700,
+          ),
+          Semantics(
+            key: const ValueKey<String>('profile-open-edit'),
+            button: true,
+            label: '编辑资料',
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: onEdit,
+              customBorder: const CircleBorder(),
+              child: const SizedBox(
+                width: LoopTouch.minimum,
+                height: LoopTouch.minimum,
+                child: Icon(
+                  Icons.edit_outlined,
+                  size: 20,
                   color: LoopColors.chalk,
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -1209,181 +1226,182 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     // public basics, where they are seen — and one pinned save. The Chalk
     // hero that repeated the alias above the field holding it is gone, and
     // with it a screen of scrolling before the first field.
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.action,
-      title: '编辑资料',
-      kicker: loopPreviewKicker(state.mode == ProfileMode.preview),
-      onBack: widget.onBack,
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('profile-edit-save'),
-        label: state.phase == ProfilePhase.saving ? '保存中…' : '保存',
-        primary: true,
-        block: true,
-        onPressed: state.canSave && state.phase != ProfilePhase.saving
-            ? () => unawaited(_save(controller))
-            : null,
-      ),
-      body: <Widget>[
-        LoopPreviewModeNotice(
-          isPreview: state.mode == ProfileMode.preview,
-          resource: '资料',
+    return LoopFlat(
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.action,
+        title: '编辑资料',
+        kicker: loopPreviewKicker(state.mode == ProfileMode.preview),
+        onBack: widget.onBack,
+        primaryAction: LoopButton(
+          key: const ValueKey<String>('profile-edit-save'),
+          label: state.phase == ProfilePhase.saving ? '保存中…' : '保存',
+          primary: true,
+          block: true,
+          onPressed: state.canSave && state.phase != ProfilePhase.saving
+              ? () => unawaited(_save(controller))
+              : null,
         ),
-        if (phase != LoopResourcePhase.ready)
-          _ProfileStateBlock(
-            phase: phase,
-            state: state,
-            onRetry: controller.reload,
-            onOpenSecurity: () => widget.onNavigate('security'),
-          )
-        else ...<Widget>[
-          if (state.requiresReload)
-            LoopNotice(
-              key: const ValueKey<String>('profile-edit-conflict'),
-              icon: 'warn',
-              tone: LoopNoticeTone.warn,
-              title: '资料已在别处修改',
-              body: profileFailureReason(state.failureKind),
-              trailing: LoopButton(label: '重新载入', onPressed: controller.reload),
-            ),
-          if (_validationMessage != null)
-            LoopNotice(
-              key: const ValueKey<String>('profile-edit-validation'),
-              icon: 'warn',
-              tone: LoopNoticeTone.danger,
-              title: '无法保存',
-              body: _validationMessage!,
-            ),
-          // A failed save must never look like a success. The draft is kept
-          // and the sanitized reason is shown next to the save action.
-          if (state.phase == ProfilePhase.failure)
-            switch (state.failureKind) {
-              ProfileGatewayFailureKind.offline => LoopOfflineState(
-                key: const ValueKey<String>('profile-edit-offline'),
-                pausedActions: const <String>['保存资料'],
-                onRetry: () => unawaited(_save(controller)),
-              ),
-              ProfileGatewayFailureKind.permissionDenied ||
-              ProfileGatewayFailureKind.regionBlocked ||
-              ProfileGatewayFailureKind.stepUpRequired => LoopPermissionState(
-                key: const ValueKey<String>('profile-edit-permission'),
-                icon: 'shield',
-                denied: true,
-                title:
-                    state.failureKind ==
-                        ProfileGatewayFailureKind.stepUpRequired
-                    ? '这一步需要二次验证'
-                    : state.failureKind ==
-                          ProfileGatewayFailureKind.regionBlocked
-                    ? '当前地区不能修改资料'
-                    : '当前账号无权修改资料',
-                purpose: profileFailureReason(state.failureKind),
-                settingsLabel: '前往安全中心',
-                onOpenSettings: () => widget.onNavigate('security'),
-              ),
-              _ => LoopNotice(
-                key: const ValueKey<String>('profile-edit-failure'),
-                icon: 'close',
-                tone: LoopNoticeTone.danger,
-                title: '保存未完成',
+        body: <Widget>[
+          LoopPreviewModeNotice(
+            isPreview: state.mode == ProfileMode.preview,
+            resource: '资料',
+          ),
+          if (phase != LoopResourcePhase.ready)
+            _ProfileStateBlock(
+              phase: phase,
+              state: state,
+              onRetry: controller.reload,
+              onOpenSecurity: () => widget.onNavigate('security'),
+            )
+          else ...<Widget>[
+            if (state.requiresReload)
+              LoopNotice(
+                key: const ValueKey<String>('profile-edit-conflict'),
+                icon: 'warn',
+                tone: LoopNoticeTone.warn,
+                title: '资料已在别处修改',
                 body: profileFailureReason(state.failureKind),
+                trailing: LoopButton(
+                  label: '重新载入',
+                  onPressed: controller.reload,
+                ),
               ),
-            },
-          Padding(
-            key: const ValueKey<String>('profile-avatar-picker'),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-            child: LoopAvatarEditor(
-              avatarRef: state.draft.avatarRef,
-              alias: state.draft.alias,
-              enabled: state.canEdit,
-              onChanged: controller.editAvatarRef,
-            ),
-          ),
-          const LoopLabel('用户名'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSurfaceCard(
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      key: const ValueKey<String>('profile-edit-alias-field'),
-                      controller: _aliasController,
-                      enabled: state.canEdit,
-                      maxLength: 40,
-                      buildCounter: (
-                        context, {
-                        required currentLength,
-                        required isFocused,
-                        required maxLength,
-                      }) => null,
-                      style: LoopTypography.body(16, color: LoopColors.chalk),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: '1–40 个字符，可以和别人重复',
-                      ),
-                      onChanged: (value) => _applyAlias(controller, value),
-                    ),
-                  ),
-                  LoopSeg(
-                    key: const ValueKey<String>('profile-edit-alias-suggest'),
-                    label: '换一个',
-                    selected: false,
-                    onSelected: state.canEdit
-                        ? () => _suggestAlias(controller)
-                        : null,
-                  ),
-                ],
+            if (_validationMessage != null)
+              LoopNotice(
+                key: const ValueKey<String>('profile-edit-validation'),
+                icon: 'warn',
+                tone: LoopNoticeTone.danger,
+                title: '无法保存',
+                body: _validationMessage!,
+              ),
+            // A failed save must never look like a success. The draft is kept
+            // and the sanitized reason is shown next to the save action.
+            if (state.phase == ProfilePhase.failure)
+              switch (state.failureKind) {
+                ProfileGatewayFailureKind.offline => LoopOfflineState(
+                  key: const ValueKey<String>('profile-edit-offline'),
+                  pausedActions: const <String>['保存资料'],
+                  onRetry: () => unawaited(_save(controller)),
+                ),
+                ProfileGatewayFailureKind.permissionDenied ||
+                ProfileGatewayFailureKind.regionBlocked ||
+                ProfileGatewayFailureKind.stepUpRequired => LoopPermissionState(
+                  key: const ValueKey<String>('profile-edit-permission'),
+                  icon: 'shield',
+                  denied: true,
+                  title:
+                      state.failureKind ==
+                          ProfileGatewayFailureKind.stepUpRequired
+                      ? '这一步需要二次验证'
+                      : state.failureKind ==
+                            ProfileGatewayFailureKind.regionBlocked
+                      ? '当前地区不能修改资料'
+                      : '当前账号无权修改资料',
+                  purpose: profileFailureReason(state.failureKind),
+                  settingsLabel: '前往安全中心',
+                  onOpenSettings: () => widget.onNavigate('security'),
+                ),
+                _ => LoopNotice(
+                  key: const ValueKey<String>('profile-edit-failure'),
+                  icon: 'close',
+                  tone: LoopNoticeTone.danger,
+                  title: '保存未完成',
+                  body: profileFailureReason(state.failureKind),
+                ),
+              },
+            Padding(
+              key: const ValueKey<String>('profile-avatar-picker'),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              child: LoopAvatarEditor(
+                avatarRef: state.draft.avatarRef,
+                alias: state.draft.alias,
+                enabled: state.canEdit,
+                onChanged: controller.editAvatarRef,
               ),
             ),
-          ),
-          const LoopLabel('简介'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LoopSurfaceCard(
+            // Decision 0126: labelled 52-high form fields (decision 0127's
+            // field), no section label over each one.
+            LoopFlatField(
+              key: const ValueKey<String>('profile-edit-alias'),
+              label: '用户名',
+              trailing: LoopSeg(
+                key: const ValueKey<String>('profile-edit-alias-suggest'),
+                label: '换一个',
+                selected: false,
+                onSelected: state.canEdit
+                    ? () => _suggestAlias(controller)
+                    : null,
+              ),
+              child: TextField(
+                key: const ValueKey<String>('profile-edit-alias-field'),
+                controller: _aliasController,
+                enabled: state.canEdit,
+                maxLength: 40,
+                buildCounter: (
+                  context, {
+                  required currentLength,
+                  required isFocused,
+                  required maxLength,
+                }) => null,
+                style: LoopTypography.body(16, color: LoopColors.chalk),
+                decoration: loopFormFieldDecoration(hint: '1–40 个字符，可以和别人重复'),
+                onChanged: (value) => _applyAlias(controller, value),
+              ),
+            ),
+            LoopFlatField(
+              key: const ValueKey<String>('profile-edit-bio'),
+              label: '简介',
               child: TextField(
                 key: const ValueKey<String>('profile-edit-bio-field'),
                 controller: _bioController,
                 enabled: state.canEdit,
                 maxLength: 160,
                 maxLines: 4,
-                minLines: 2,
+                minLines: 1,
+                buildCounter: (
+                  context, {
+                  required currentLength,
+                  required isFocused,
+                  required maxLength,
+                }) => null,
                 style: LoopTypography.body(15, color: LoopColors.chalk),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: '一句话介绍自己（可以不填）',
-                ),
+                decoration: loopFormFieldDecoration(hint: '一句话介绍自己（可以不填）'),
                 onChanged: (value) => _applyBio(controller, value),
               ),
             ),
-          ),
-          if (loopId != null) ...<Widget>[
-            const LoopLabel('LOOP ID'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: LoopSurfaceCard(
-                child: LoopIdCopyLine(
-                  loopId: loopId,
-                  textKey: const ValueKey<String>('profile-edit-loop-id'),
-                  copyKey: const ValueKey<String>('profile-edit-copy-loop-id'),
-                  style: LoopTypography.figure(
-                    15,
-                    height: 1.3,
-                    color: LoopColors.chalk,
+            if (loopId != null)
+              LoopFlatField(
+                key: const ValueKey<String>('profile-edit-loop-id-field'),
+                label: 'LOOP ID',
+                boxed: true,
+                child: Padding(
+                  padding: EdgeInsets.zero,
+                  child: LoopIdCopyLine(
+                    loopId: loopId,
+                    textKey: const ValueKey<String>('profile-edit-loop-id'),
+                    copyKey: const ValueKey<String>(
+                      'profile-edit-copy-loop-id',
+                    ),
+                    style: LoopTypography.figure(
+                      15,
+                      height: 1.3,
+                      color: LoopColors.chalk,
+                    ),
                   ),
                 ),
               ),
+            const SizedBox(height: 4),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-edit-open-privacy'),
+              leading: const LoopRowIcon(icon: 'lock'),
+              title: '隐私中心',
+              subtitle: '持仓与交易是否公开、谁能加你',
+              onTap: () => widget.onNavigate('privacy'),
             ),
+            const SizedBox(height: 16),
           ],
-          const LoopLabel('公开范围'),
-          LoopRecordRow(
-            key: const ValueKey<String>('profile-edit-open-privacy'),
-            title: '隐私中心',
-            subtitle: '持仓与交易是否公开、谁能加你',
-            onTap: () => widget.onNavigate('privacy'),
-          ),
-          const SizedBox(height: 16),
         ],
-      ],
+      ),
     );
   }
 
@@ -1511,239 +1529,224 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
     final phase = privacyResourcePhase(state);
     final draft = state.draft;
 
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.action,
-      title: '隐私中心',
-      kicker: loopPreviewKicker(state.mode == PrivacyMode.preview),
-      onBack: widget.onBack,
-      folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.chalk,
-        archetype: LoopFolioArchetype.action,
-        kicker: 'PRIVACY STATUS',
-        heading: privacyHoldingsPublic(draft.visibility)
-            ? '持仓与交易已公开'
-            : '持仓与交易仅自己可见',
-        caption: '谁能看到你的持仓与交易、谁能找到你、谁能加你，分别控制。',
-        stamp: privacyHoldingsPublic(draft.visibility) ? 'PUBLIC' : 'SELF',
-        compact: true,
-        ring: false,
-      ),
-      // `.folio-body` order, and a save that flows under the last row instead
-      // of sitting in a pinned bar above it. Pinned, the bar took the bottom
-      // of the viewport and 「屏蔽名单」 came to rest two pixels above it on
-      // first entry — reachable only after a second drag inside the list
-      // (audit 2026-09-21 §J.4).
-      actionsFollowBody: true,
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('privacy-save'),
-        label: state.phase == PrivacyPhase.saving ? '保存中…' : '保存',
-        primary: true,
-        block: true,
-        onPressed: state.canSave && state.phase != PrivacyPhase.saving
-            ? () => unawaited(_save(controller))
-            : null,
-      ),
-      body: <Widget>[
-        LoopPreviewModeNotice(
-          isPreview: state.mode == PrivacyMode.preview,
-          resource: '隐私设置',
+    // Decision 0126: a flat settings page — three sections of switches, the
+    // state is the switch itself, so the folio that restated it is gone.
+    return LoopFlat(
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.action,
+        title: '隐私中心',
+        kicker: loopPreviewKicker(state.mode == PrivacyMode.preview),
+        onBack: widget.onBack,
+        // `.folio-body` order, and a save that flows under the last row instead
+        // of sitting in a pinned bar above it. Pinned, the bar took the bottom
+        // of the viewport and 「屏蔽名单」 came to rest two pixels above it on
+        // first entry — reachable only after a second drag inside the list
+        // (audit 2026-09-21 §J.4).
+        actionsFollowBody: true,
+        primaryAction: LoopButton(
+          key: const ValueKey<String>('privacy-save'),
+          label: state.phase == PrivacyPhase.saving ? '保存中…' : '保存',
+          primary: true,
+          block: true,
+          onPressed: state.canSave && state.phase != PrivacyPhase.saving
+              ? () => unawaited(_save(controller))
+              : null,
         ),
-        if (phase != LoopResourcePhase.ready)
-          _PrivacyStateBlock(
-            phase: phase,
-            state: state,
-            onRetry: controller.reload,
-            onOpenSecurity: () => widget.onNavigate('security'),
-          )
-        else ...<Widget>[
-          if (state.requiresReload)
-            LoopNotice(
-              key: const ValueKey<String>('privacy-conflict'),
-              icon: 'warn',
-              tone: LoopNoticeTone.warn,
-              title: '隐私设置已在别处修改',
-              body: privacyFailureReason(state.failureKind),
-              trailing: LoopButton(label: '重新载入', onPressed: controller.reload),
-            ),
-          // A save that did not commit must say so next to the switches it
-          // failed to change; a silent no-op reads as "saved". Offline keeps
-          // its own block: nothing was submitted, so it pauses, not fails.
-          if (!state.requiresReload && state.phase == PrivacyPhase.failure)
-            switch (state.failureKind) {
-              PrivacyGatewayFailureKind.offline => LoopOfflineState(
-                key: const ValueKey<String>('privacy-save-offline'),
-                pausedActions: const <String>['保存隐私设置'],
-                onRetry: () => unawaited(_save(controller)),
-              ),
-              // The server answered: it refused. Offering a retry would claim
-              // the refusal might not hold, so the block offers the only real
-              // next step instead.
-              PrivacyGatewayFailureKind.permissionDenied ||
-              PrivacyGatewayFailureKind.regionBlocked ||
-              PrivacyGatewayFailureKind.stepUpRequired => LoopPermissionState(
-                key: const ValueKey<String>('privacy-save-permission'),
-                icon: 'shield',
-                denied: true,
-                title:
-                    state.failureKind ==
-                        PrivacyGatewayFailureKind.stepUpRequired
-                    ? '这一步需要二次验证'
-                    : state.failureKind ==
-                          PrivacyGatewayFailureKind.regionBlocked
-                    ? '当前地区不能修改隐私设置'
-                    : '当前账号无权修改隐私设置',
-                purpose: privacyFailureReason(state.failureKind),
-                settingsLabel: '前往安全中心',
-                onOpenSettings: () => widget.onNavigate('security'),
-              ),
-              _ => LoopNotice(
-                key: const ValueKey<String>('privacy-save-failure'),
-                icon: 'close',
-                tone: LoopNoticeTone.danger,
-                title: '保存未完成',
+        body: <Widget>[
+          LoopPreviewModeNotice(
+            isPreview: state.mode == PrivacyMode.preview,
+            resource: '隐私设置',
+          ),
+          if (phase != LoopResourcePhase.ready)
+            _PrivacyStateBlock(
+              phase: phase,
+              state: state,
+              onRetry: controller.reload,
+              onOpenSecurity: () => widget.onNavigate('security'),
+            )
+          else ...<Widget>[
+            if (state.requiresReload)
+              LoopNotice(
+                key: const ValueKey<String>('privacy-conflict'),
+                icon: 'warn',
+                tone: LoopNoticeTone.warn,
+                title: '隐私设置已在别处修改',
                 body: privacyFailureReason(state.failureKind),
+                trailing: LoopButton(
+                  label: '重新载入',
+                  onPressed: controller.reload,
+                ),
               ),
-            },
-          const LoopLabel('身份'),
-          // S107 §2: a person is drawn with their own avatar and name
-          // everywhere, so the 匿名模式 switch is hidden (not removed); the
-          // field stays in the resource and is resubmitted unchanged.
-          if (ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible)
+            // A save that did not commit must say so next to the switches it
+            // failed to change; a silent no-op reads as "saved". Offline keeps
+            // its own block: nothing was submitted, so it pauses, not fails.
+            if (!state.requiresReload && state.phase == PrivacyPhase.failure)
+              switch (state.failureKind) {
+                PrivacyGatewayFailureKind.offline => LoopOfflineState(
+                  key: const ValueKey<String>('privacy-save-offline'),
+                  pausedActions: const <String>['保存隐私设置'],
+                  onRetry: () => unawaited(_save(controller)),
+                ),
+                // The server answered: it refused. Offering a retry would claim
+                // the refusal might not hold, so the block offers the only real
+                // next step instead.
+                PrivacyGatewayFailureKind.permissionDenied ||
+                PrivacyGatewayFailureKind.regionBlocked ||
+                PrivacyGatewayFailureKind.stepUpRequired => LoopPermissionState(
+                  key: const ValueKey<String>('privacy-save-permission'),
+                  icon: 'shield',
+                  denied: true,
+                  title:
+                      state.failureKind ==
+                          PrivacyGatewayFailureKind.stepUpRequired
+                      ? '这一步需要二次验证'
+                      : state.failureKind ==
+                            PrivacyGatewayFailureKind.regionBlocked
+                      ? '当前地区不能修改隐私设置'
+                      : '当前账号无权修改隐私设置',
+                  purpose: privacyFailureReason(state.failureKind),
+                  settingsLabel: '前往安全中心',
+                  onOpenSettings: () => widget.onNavigate('security'),
+                ),
+                _ => LoopNotice(
+                  key: const ValueKey<String>('privacy-save-failure'),
+                  icon: 'close',
+                  tone: LoopNoticeTone.danger,
+                  title: '保存未完成',
+                  body: privacyFailureReason(state.failureKind),
+                ),
+              },
+            const LoopLabel('身份'),
+            // S107 §2: a person is drawn with their own avatar and name
+            // everywhere, so the 匿名模式 switch is hidden (not removed); the
+            // field stays in the resource and is resubmitted unchanged.
+            if (ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible)
+              LoopTogglePreferenceRow(
+                key: const ValueKey<String>('privacy-anonymous-mode'),
+                title: '匿名模式',
+                subtitle: '只显示别名，不显示钱包地址',
+                value: draft.anonymousMode,
+                position: LoopRowPosition.first,
+                onChanged: state.canEdit
+                    ? () => controller.editAnonymousMode(!draft.anonymousMode)
+                    : null,
+              ),
             LoopTogglePreferenceRow(
-              key: const ValueKey<String>('privacy-anonymous-mode'),
-              title: '匿名模式',
-              subtitle: '只显示别名，不显示钱包地址',
-              value: draft.anonymousMode,
-              position: LoopRowPosition.first,
-              onChanged: state.canEdit
-                  ? () => controller.editAnonymousMode(!draft.anonymousMode)
-                  : null,
-            ),
-          LoopTogglePreferenceRow(
-            key: const ValueKey<String>('privacy-discoverable'),
-            // Decision 0105 (backend decision 0090): the switch governs being
-            // found by nickname and being followed. A LOOP ID is always found
-            // by an exact search, whichever way this switch is set.
-            title: '可被发现',
-            // The subtitle described the switch turned on while the row read
-            // 已关闭 beside it, so the state and the sentence disagreed.
-            // Decision 0096 (S107b): the switch governs search listings only;
-            // follows and friend requests from a reached profile are not
-            // gated by it.
-            subtitle: draft.discoverable
-                ? '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索'
-                : '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
-            value: draft.discoverable,
-            position:
-                ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible
-                ? LoopRowPosition.last
-                : LoopRowPosition.single,
-            onChanged: state.canEdit
-                ? () => controller.editDiscoverable(!draft.discoverable)
-                : null,
-          ),
-          // 社交 · the three admission gates (decision 0070). They sit apart
-          // from 可见性 because they are not display preferences: the server
-          // reads them before it lets a request, a direct channel or a group
-          // invite reach this account. The prototype's 持仓广播 card is not
-          // implemented, so this group takes the middle slot of the page.
-          const LoopLabel('社交'),
-          for (final gate in PrivacySocialGate.values)
-            LoopTogglePreferenceRow(
-              key: ValueKey<String>('privacy-social-${gate.wireValue}'),
-              title: gate.label,
-              subtitle: _socialGateSubtitle(gate, open: draft.social[gate]),
-              value: draft.social[gate],
-              position: gate == PrivacySocialGate.values.first
-                  ? LoopRowPosition.first
-                  : gate == PrivacySocialGate.values.last
+              key: const ValueKey<String>('privacy-discoverable'),
+              // Decision 0105 (backend decision 0090): the switch governs being
+              // found by nickname and being followed. A LOOP ID is always found
+              // by an exact search, whichever way this switch is set.
+              title: '可被发现',
+              // The subtitle described the switch turned on while the row read
+              // 已关闭 beside it, so the state and the sentence disagreed.
+              // Decision 0096 (S107b): the switch governs search listings only;
+              // follows and friend requests from a reached profile are not
+              // gated by it.
+              subtitle: draft.discoverable
+                  ? '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索'
+                  : '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
+              value: draft.discoverable,
+              position:
+                  ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible
                   ? LoopRowPosition.last
-                  : LoopRowPosition.middle,
+                  : LoopRowPosition.single,
               onChanged: state.canEdit
-                  ? () => controller.editSocialGate(
-                      gate,
-                      open: !draft.social[gate],
-                    )
+                  ? () => controller.editDiscoverable(!draft.discoverable)
                   : null,
             ),
-          const LoopLabel('可见性'),
-          // S107 §4: one switch for what the profile page shows others —
-          // holdings and trades together. It writes `totalAssets` and
-          // `tradeHistory` to the same audience.
-          LoopTogglePreferenceRow(
-            key: const ValueKey<String>('privacy-public-holdings'),
-            title: '公开持仓与交易',
-            subtitle: privacyHoldingsPublic(draft.visibility)
-                ? '别人在你的主页能看到持仓和交易记录，不显示钱包地址'
-                : '只有你自己能看到持仓和交易记录',
-            value: privacyHoldingsPublic(draft.visibility),
-            onLabel: '所有人',
-            offLabel: '仅自己',
-            position: LoopRowPosition.first,
-            onChanged: state.canEdit
-                ? () {
-                    final audience = privacyHoldingsPublic(draft.visibility)
-                        ? PrivacyAudience.self
-                        : PrivacyAudience.everyone;
-                    controller
-                      ..editVisibility(
-                        PrivacyVisibilityFacet.totalAssets,
-                        audience,
+            // 社交 · the three admission gates (decision 0070). They sit apart
+            // from 可见性 because they are not display preferences: the server
+            // reads them before it lets a request, a direct channel or a group
+            // invite reach this account. The prototype's 持仓广播 card is not
+            // implemented, so this group takes the middle slot of the page.
+            const LoopLabel('社交'),
+            for (final gate in PrivacySocialGate.values)
+              LoopTogglePreferenceRow(
+                key: ValueKey<String>('privacy-social-${gate.wireValue}'),
+                title: gate.label,
+                subtitle: _socialGateSubtitle(gate, open: draft.social[gate]),
+                value: draft.social[gate],
+                position: gate == PrivacySocialGate.values.first
+                    ? LoopRowPosition.first
+                    : gate == PrivacySocialGate.values.last
+                    ? LoopRowPosition.last
+                    : LoopRowPosition.middle,
+                onChanged: state.canEdit
+                    ? () => controller.editSocialGate(
+                        gate,
+                        open: !draft.social[gate],
                       )
-                      ..editVisibility(
-                        PrivacyVisibilityFacet.tradeHistory,
-                        audience,
-                      );
-                  }
-                : null,
-          ),
-          for (final facet in const <PrivacyVisibilityFacet>[
-            PrivacyVisibilityFacet.miningPower,
-            PrivacyVisibilityFacet.communities,
-          ])
+                    : null,
+              ),
+            const LoopLabel('可见性'),
+            // S107 §4: one switch for what the profile page shows others —
+            // holdings and trades together. It writes `totalAssets` and
+            // `tradeHistory` to the same audience.
             LoopTogglePreferenceRow(
-              key: ValueKey<String>('privacy-visibility-${facet.wireValue}'),
-              title: facet.label,
-              value: draft.visibility[facet] == PrivacyAudience.everyone,
+              key: const ValueKey<String>('privacy-public-holdings'),
+              title: '公开持仓与交易',
+              subtitle: privacyHoldingsPublic(draft.visibility)
+                  ? '别人在你的主页能看到持仓和交易记录，不显示钱包地址'
+                  : '只有你自己能看到持仓和交易记录',
+              value: privacyHoldingsPublic(draft.visibility),
               onLabel: '所有人',
               offLabel: '仅自己',
-              position: LoopRowPosition.middle,
+              position: LoopRowPosition.first,
               onChanged: state.canEdit
-                  ? () => controller.editVisibility(
-                      facet,
-                      draft.visibility[facet] == PrivacyAudience.everyone
+                  ? () {
+                      final audience = privacyHoldingsPublic(draft.visibility)
                           ? PrivacyAudience.self
-                          : PrivacyAudience.everyone,
-                    )
+                          : PrivacyAudience.everyone;
+                      controller
+                        ..editVisibility(
+                          PrivacyVisibilityFacet.totalAssets,
+                          audience,
+                        )
+                        ..editVisibility(
+                          PrivacyVisibilityFacet.tradeHistory,
+                          audience,
+                        );
+                    }
                   : null,
             ),
-          // The prototype closes the 可见性 card with this row rather than
-          // floating it alone under the card.
-          LoopRecordRow(
-            key: const ValueKey<String>('privacy-open-blocklist'),
-            title: '屏蔽名单',
-            position: LoopRowPosition.last,
-            onTap: () => widget.onNavigate('blocklist'),
-          ),
-          const LoopNotice(
-            icon: 'info',
-            title: '可见性不是授权',
-            body:
-                '可见性开关只影响展示，不会建立社交关系，也不会让别人复制你的交易或访问你的钱包。'
-                '社交开关决定别人能否向你发起请求，关掉它不会解除已经存在的好友关系或已经打开的会话。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
-          ),
+            for (final facet in const <PrivacyVisibilityFacet>[
+              PrivacyVisibilityFacet.miningPower,
+              PrivacyVisibilityFacet.communities,
+            ])
+              LoopTogglePreferenceRow(
+                key: ValueKey<String>('privacy-visibility-${facet.wireValue}'),
+                title: facet.label,
+                value: draft.visibility[facet] == PrivacyAudience.everyone,
+                onLabel: '所有人',
+                offLabel: '仅自己',
+                position: LoopRowPosition.middle,
+                onChanged: state.canEdit
+                    ? () => controller.editVisibility(
+                        facet,
+                        draft.visibility[facet] == PrivacyAudience.everyone
+                            ? PrivacyAudience.self
+                            : PrivacyAudience.everyone,
+                      )
+                    : null,
+              ),
+            // The prototype closes the 可见性 card with this row rather than
+            // floating it alone under the card.
+            LoopRecordRow(
+              key: const ValueKey<String>('privacy-open-blocklist'),
+              title: '屏蔽名单',
+              position: LoopRowPosition.last,
+              onTap: () => widget.onNavigate('blocklist'),
+            ),
+            const LoopNotice(
+              key: ValueKey<String>('privacy-visibility-note'),
+              icon: 'info',
+              body:
+                  '可见性只影响展示，不会让别人复制你的交易或访问你的钱包；'
+                  '头像和用户名在聊天与主页上始终显示，钱包地址从不出现在主页上。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+            ),
+          ],
         ],
-      ],
-      disclosure: LoopDisclosure(
-        summary: '隐私状态说明',
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-          child: Text(
-            '你的头像和用户名在聊天、成员列表和主页上都会显示。钱包地址任何时候都不会出现在主页上。',
-            style: LoopTypography.caption(11, color: LoopColors.text2),
-          ),
-        ),
       ),
     );
   }

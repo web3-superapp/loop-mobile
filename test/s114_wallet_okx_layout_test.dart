@@ -535,7 +535,7 @@ void main() {
       tester,
     ) async {
       final entries = <LoopWalletActivityEntry>[
-        for (var index = 0; index < 14; index += 1)
+        for (var index = 0; index < 30; index += 1)
           LoopWalletActivityEntry(
             assetId: s5WbnbAssetId,
             symbol: 'WBNB',

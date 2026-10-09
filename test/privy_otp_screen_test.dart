@@ -54,6 +54,25 @@ void main() {
     expect(find.text('还可尝试 3 次'), findsOneWidget);
   });
 
+  // Decision 0126: five dots and the step name instead of `01 / 05`, a
+  // 24 bold step title, and no explanation tray under the action.
+  testWidgets('the step reads as five dots, a 24 title and no tray', (
+    tester,
+  ) async {
+    final container = await _pump(tester, _Gateway());
+    await _sendCode(tester, container);
+
+    expect(find.byKey(const ValueKey('loop-step-dot-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('loop-step-dot-5')), findsOneWidget);
+    expect(find.text('01 / 05'), findsNothing);
+    expect(find.text('验证失败时会看到什么'), findsNothing);
+    final title = tester.widget<Text>(
+      find.descendant(of: find.byType(LoopTopbar), matching: find.text('验证邮箱')),
+    );
+    expect(title.style?.fontSize, 24);
+    expect(title.style?.fontWeight, FontWeight.w700);
+  });
+
   testWidgets('a rejected code spends one attempt and shows the remainder', (
     tester,
   ) async {

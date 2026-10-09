@@ -82,6 +82,9 @@ class LoopRoundKey extends StatelessWidget {
       label:
           semanticLabel ??
           (count == null ? label : '$label，$count') + (enabled ? '' : '，暂不可用'),
+      // The gesture below is excluded with the subtree; the tap is offered
+      // here so a screen reader can press the key (decision 0126).
+      onTap: onPressed ?? onBlocked,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

@@ -78,7 +78,10 @@ void main() {
 
     final setting = find.byKey(reduceMotionRow);
     expect(MediaQuery.disableAnimationsOf(tester.element(setting)), isTrue);
-    expect(find.text('只保存在本机，不写入账号，也不调用后端'), findsOneWidget);
+    // Decision 0126: the usual storage line is not news; only an unavailable
+    // store speaks under the switch.
+    expect(find.text('只保存在本机，不写入账号，也不调用后端'), findsNothing);
+    expect(find.text('减少动效'), findsOneWidget);
   });
 
   testWidgets('system animation setting remains stricter than stored false', (
@@ -112,7 +115,8 @@ void main() {
 
     expect(find.textContaining('142MB'), findsNothing);
     expect(find.text('数据用量'), findsNothing);
-    expect(find.text('没有"数据用量"'), findsOneWidget);
+    // Decision 0126: the explanation card went too; nothing names the row.
+    expect(find.text('没有"数据用量"'), findsNothing);
   });
 }
 

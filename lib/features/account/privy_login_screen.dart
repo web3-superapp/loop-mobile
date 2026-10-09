@@ -9,6 +9,8 @@ import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `auth`: the identity entry point backed by Privy credentials.
@@ -100,19 +102,23 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                         semanticLabel: 'LOOP',
                       ),
                       const SizedBox(height: 14),
+                      // Decision 0126: step title 24 bold, subtitle 14 grey.
                       Text(
                         '欢迎来到 LOOP',
                         textAlign: TextAlign.center,
-                        style: LoopTypography.display(24),
+                        style: LoopTypography.heading(
+                          24,
+                          weight: FontWeight.w700,
+                        ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
                       ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 280),
+                        constraints: const BoxConstraints(maxWidth: 300),
                         child: Text(
                           '登录后自动创建钱包，持仓即产生算力。',
                           textAlign: TextAlign.center,
-                          style: LoopTypography.caption(
-                            11,
+                          style: LoopTypography.body(
+                            14,
                             color: LoopColors.text2,
                           ),
                         ),
@@ -152,46 +158,41 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                 unavailableReason: '缺少 Privy Mobile App Client ID',
                 onPressed: authState.isBusy ? null : controller.loginWithGoogle,
               ),
+              // Decision 0126: the flat 52 field with its label inside, and
+              // the send action directly under it.
+              LoopFlatField(
+                key: const ValueKey<String>('privy-email'),
+                label: '邮箱',
+                child: AutofillGroup(
+                  child: TextField(
+                    key: const ValueKey<String>('privy-email-field'),
+                    controller: _emailController,
+                    enabled: !authState.isBusy,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const <String>[AutofillHints.email],
+                    autocorrect: false,
+                    style: LoopTypography.body(16),
+                    decoration: loopFormFieldDecoration(
+                      hint: 'name@example.com',
+                    ),
+                    onSubmitted: authState.isBusy
+                        ? null
+                        : (_) => unawaited(_sendCode(controller)),
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: LoopSpacing.page,
                 ),
-                child: LoopSurfaceCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      AutofillGroup(
-                        child: TextField(
-                          key: const ValueKey<String>('privy-email-field'),
-                          controller: _emailController,
-                          enabled: !authState.isBusy,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const <String>[AutofillHints.email],
-                          autocorrect: false,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isDense: true,
-                            hintText: '用邮箱登录 · name@example.com',
-                          ),
-                          onSubmitted: authState.isBusy
-                              ? null
-                              : (_) => unawaited(_sendCode(controller)),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      LoopButton(
-                        key: const ValueKey<String>(
-                          'privy-auth-primary-button',
-                        ),
-                        label: authState.isBusy ? '发送中…' : '发送验证码',
-                        block: true,
-                        onPressed: authState.isBusy
-                            ? null
-                            : () => unawaited(_sendCode(controller)),
-                      ),
-                    ],
-                  ),
+                child: LoopButton(
+                  key: const ValueKey<String>('privy-auth-primary-button'),
+                  label: authState.isBusy ? '发送中…' : '发送验证码',
+                  block: true,
+                  onPressed: authState.isBusy
+                      ? null
+                      : () => unawaited(_sendCode(controller)),
                 ),
               ),
               if (authState.errorMessage != null)
@@ -512,18 +513,14 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                     ),
                   ),
                 ] else ...<Widget>[
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: LoopNotice(
-                      key: const ValueKey<String>(
-                        'privy-restore-unavailable-notice',
-                      ),
-                      icon: 'offline',
-                      tone: LoopNoticeTone.danger,
-                      title: '暂时无法确认登录状态',
-                      body: '$message\n未收到 Privy 的“未登录”答复，因此不会要求你重新登录。',
+                  _CentredStateCopy(
+                    key: const ValueKey<String>(
+                      'privy-restore-unavailable-notice',
                     ),
+                    title: '暂时无法确认登录状态',
+                    body: '$message\n还没有收到「未登录」的答复，所以不会要求你重新登录。',
                   ),
+                  const SizedBox(height: 20),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: LoopSpacing.page,
@@ -585,17 +582,12 @@ class PrivySessionAwaitingNetworkScreen extends StatelessWidget {
                     semanticLabel: 'LOOP',
                   ),
                   const SizedBox(height: 24),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: const LoopNotice(
-                      key: ValueKey<String>('privy-awaiting-network-notice'),
-                      icon: 'offline',
-                      tone: LoopNoticeTone.warn,
-                      title: title,
-                      body: message,
-                    ),
+                  const _CentredStateCopy(
+                    key: ValueKey<String>('privy-awaiting-network-notice'),
+                    title: title,
+                    body: message,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 20),
                   // Indeterminate: the frame is waiting, and a full bar would
                   // claim an answer arrived.
                   const SizedBox(
@@ -663,6 +655,43 @@ class PrivySessionSignOutScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The centred copy of a waiting frame (decision 0126): an offline glyph, a
+/// 16 title and a 14 grey sentence under the brand mark, no card.
+class _CentredStateCopy extends StatelessWidget {
+  const _CentredStateCopy({required this.title, required this.body, super.key});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const LoopIcon('offline', size: 28, color: LoopColors.text3),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: LoopTypography.title(16),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: LoopTypography.body(14, color: LoopColors.text2),
+            ),
+          ],
         ),
       ),
     );

@@ -241,8 +241,12 @@ void main() {
 
     testWidgets('five are ticked by default', (tester) async {
       await _pump(tester, recommended: _Recommended(answer: answer()));
-      expect(find.text('已选'), findsNWidgets(5));
-      expect(find.text('未选'), findsNWidgets(2));
+      // Decision 0126: the state is a Lime tick circle named 已选 / 未选.
+      Finder tick(String state) => find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.label == state,
+      );
+      expect(tick('已选'), findsNWidgets(5));
+      expect(tick('未选'), findsNWidgets(2));
       expect(find.text('加入 5 个社区并进入'), findsOneWidget);
     });
 
