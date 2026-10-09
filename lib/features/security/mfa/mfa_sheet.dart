@@ -229,7 +229,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
         LoopNotice(
           key: const ValueKey<String>('mfa-sheet-passkey-unavailable'),
           icon: 'info',
-          title: 'Passkey 还开不了',
+          title: 'Passkey 暂不可用',
           body: loopMfaFailureText(
             LoopMfaFailureKind.passkeyDomainUnconfigured,
           ),

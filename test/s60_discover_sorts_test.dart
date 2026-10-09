@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
+import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining/loop_v2_mining_api.dart';
@@ -694,8 +695,8 @@ void main() {
       );
     });
 
-    testWidgets('a figure computed from demonstration holdings says so under '
-        'the hero', (tester) async {
+    testWidgets('a figure computed from demonstration holdings says so in '
+        'the source line under the hero', (tester) async {
       await pumpS7Page(
         tester,
         const MiningScreen(),
@@ -710,11 +711,17 @@ void main() {
         ),
       );
 
-      expect(
-        find.byKey(const ValueKey<String>('mining-demo-holdings-summary')),
-        findsOneWidget,
+      // Decision 0121: no banner — the fact sits in the ⓘ of the source line.
+      expect(find.textContaining('仅开发环境'), findsNothing);
+      expect(find.text(miningDemoHoldingsDetail), findsNothing);
+      final line = find.byKey(
+        const ValueKey<String>('mining-provenance-summary'),
       );
-      expect(find.text('含演示持仓 · 仅开发环境'), findsOneWidget);
+      expect(line, findsOneWidget);
+      await tester.ensureVisible(line);
+      await tester.tap(line);
+      await tester.pumpAndSettle();
+      expect(find.text(miningDemoHoldingsDetail), findsOneWidget);
     });
 
     testWidgets('a chain-only run prints no demonstration line', (
@@ -734,10 +741,13 @@ void main() {
         ),
       );
 
-      expect(
-        find.byKey(const ValueKey<String>('mining-demo-holdings-summary')),
-        findsNothing,
+      final line = find.byKey(
+        const ValueKey<String>('mining-provenance-summary'),
       );
+      expect(line, findsOneWidget);
+      await tester.ensureVisible(line);
+      await tester.tap(line);
+      await tester.pumpAndSettle();
       expect(find.textContaining('演示持仓'), findsNothing);
     });
   });

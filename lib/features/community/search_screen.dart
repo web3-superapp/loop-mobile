@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide SearchController;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -20,7 +22,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
-/// `search` · the five-domain global search.
+/// `search` · the global search: 资产 / 社区 / 用户 (decision 0121 hides
+/// Launch and DApp behind `searchOutboundDomainsVisible`).
 ///
 /// A result is opened only through its `destination.kind`; a route is never
 /// assembled from the display copy, a ticker or a domain name.
@@ -109,6 +112,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     final mode = ref.watch(searchGatewayProvider).mode;
     final state = ref.watch(searchControllerProvider);
     final controller = ref.read(searchControllerProvider.notifier);
+    final switches = ref.watch(loopFeatureSwitchesProvider);
     final initial = widget.initialQuery;
     if (!communityCapabilityBlocks(mode, capability) &&
         !_submittedInitialQuery &&
@@ -152,16 +156,27 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               ],
             ),
           ),
+          // S121a · decision 0121: one line under the field says what a
+          // nickname search can reach, in place of the 「搜索范围」 card that
+          // sat under the results. The switch is the privacy centre's
+          // 「可被发现」 (decision 0105); a LOOP ID is always found exactly.
+          Padding(
+            key: const ValueKey<String>('search-scope-hint'),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+            child: Text(searchScopeHint, style: LoopType.captionSm),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: <Widget>[
-                  for (final domain in searchDomainOrder)
+                  for (final domain in visibleSearchDomains(
+                    outboundVisible: switches.searchOutboundDomainsVisible,
+                  ))
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: LoopSeg(
+                      child: LoopSubChip(
                         key: ValueKey<String>('search-seg-${domain.wireName}'),
                         label: domain.label,
                         selected: state.domain == domain,
@@ -194,7 +209,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 'search-domain-unavailable-${state.domain.wireName}',
               ),
               icon: 'warn',
-              message: '"${state.domain.label}" 域暂不可用',
+              message: '${state.domain.label} 暂时搜不到',
               reason: communityUnavailableReason(state.reasonCode!),
             )
           else if (state.phase != CommunityViewPhase.ready)
@@ -227,18 +242,6 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 ),
               ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('search-scope-notice'),
-            icon: 'info',
-            title: '搜索范围',
-            // The switch is called 「可被发现」 in the privacy centre
-            // (decision 0105), and it governs nickname search only: a LOOP ID
-            // is always found by an exact search.
-            body:
-                '聊天内容不进入本搜索。按昵称只能搜到开启了"可被发现"的账号，'
-                'LOOP ID 始终可以精确搜索。',
-            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
-          ),
         ],
       ),
     );
@@ -333,6 +336,62 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       position: communityRowPosition(index, length),
       onTap: () => _openResult(result),
       semanticLabel: '${result.title}${subtitle == null ? '' : '，$subtitle'}',
+    );
+  }
+}
+
+/// A secondary chip on the OKX reference (S121 §1.1.1 · 3, decision 0121): a
+/// small outlined pill, filled dark grey when chosen — Lime stays for the
+/// primary action. The pill is 32 tall inside a 44 touch target.
+class LoopSubChip extends StatelessWidget {
+  const LoopSubChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+    super.key,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onSelected,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? LoopColors.card2 : null,
+                border: selected ? null : Border.all(color: LoopColors.line),
+                borderRadius: LoopRadius.pill,
+              ),
+              child: Text(
+                label,
+                style:
+                    LoopTypography.withWeight(
+                      LoopType.body,
+                      selected ? FontWeight.w600 : FontWeight.w400,
+                    ).copyWith(
+                      color: selected ? LoopColors.chalk : LoopColors.text2,
+                    ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

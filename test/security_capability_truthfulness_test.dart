@@ -37,21 +37,23 @@ void main() {
         ),
       );
 
+      // Decision 0121: no engineering banner; each row states its own state.
       expect(
         find.byKey(const ValueKey<String>('protection-setup-unavailable')),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('交易验证还开不了'), findsOneWidget);
+      expect(find.text('交易验证还开不了'), findsNothing);
       expect(find.byType(Switch), findsNothing);
       expect(find.byType(TextField), findsNothing);
       expect(find.text('Save protection'), findsNothing);
       expect(find.textContaining('stored by the app'), findsNothing);
-      expect(find.textContaining('LOOP 不会保存 PIN'), findsOneWidget);
+      expect(find.textContaining('PIN'), findsNothing);
       // A declared Privy capability is never reported as an enabled
       // protection, and with no device lock composed the one row that can be
-      // on says 不可用 like the rest: 大额交易二次验证, MFA and 应用锁.
+      // on says 不可用 like MFA; 大额交易二次验证 says it is coming.
       expect(find.text('可用'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(3));
+      expect(find.text('不可用'), findsNWidgets(2));
+      expect(find.textContaining('即将推出'), findsOneWidget);
 
       await _tap(
         tester,
@@ -147,13 +149,13 @@ void main() {
 
     expect(
       find.byKey(const ValueKey<String>('protection-setup-unavailable')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.text('可用'), findsNothing);
-    // 应用锁, 大额交易二次验证 and MFA. In a widget test the device answers
-    // that it can authenticate nobody, so even the one protection that can
-    // be on is offered as unavailable.
-    expect(find.text('不可用'), findsNWidgets(3));
+    // 应用锁 and MFA. In a widget test the device answers that it can
+    // authenticate nobody, so even the one protection that can be on is
+    // offered as unavailable; 大额交易二次验证 says it is coming.
+    expect(find.text('不可用'), findsNWidgets(2));
     expect(find.text('已开启'), findsNothing);
     expect(find.byType(Switch), findsNothing);
   });

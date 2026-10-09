@@ -64,9 +64,9 @@ void main() {
       }
       expect(field.decoration?.labelText, isNot(contains('搜索社区或用户')));
 
-      // And it sends people to the switch by the name the privacy centre
-      // gives it.
-      expect(find.textContaining('可被发现'), findsOneWidget);
+      // And one line under the field says what a nickname search reaches
+      // (decision 0121).
+      expect(find.textContaining('允许被发现'), findsOneWidget);
       expect(find.textContaining('显示 LOOP ID'), findsNothing);
     });
 

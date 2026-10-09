@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 /// The formula gate, as the summary, the composition page and the ranking all
 /// read it.
@@ -201,16 +202,31 @@ class MiningStaleNotice extends StatelessWidget {
   }
 }
 
-/// The line a page prints when the figures above it counted holdings that
-/// were written for development instead of observed on chain (decision 0061).
+/// What the ⓘ of a mining figure's source line adds about the holdings the
+/// snapshot counted (decision 0121), or `null` when there is nothing to add.
 ///
-/// The arithmetic is real — real prices, the formula in force — and the
-/// holdings are not held by anyone, so the number is a demonstration rather
-/// than a statement about what this account owns. A deployment that reads
-/// only chain balances prints nothing here, and production can publish no
-/// other value.
-class MiningDemoHoldingsNotice extends StatelessWidget {
-  const MiningDemoHoldingsNotice({
+/// Decision 0061 marks a snapshot that counted holdings written for a
+/// demonstration instead of observed on chain: the arithmetic is real, the
+/// holdings are not held by anyone. That used to be a warning banner under
+/// the figures (「含演示持仓 · 仅开发环境」); the device report of 2026-10-09
+/// (§4) asked for no development-build banners, so the fact moved into the
+/// source line's sheet, in the reader's words. Production publishes no such
+/// snapshot, and this answers `null` there.
+///
+/// S121b's 情报算力榜 hands this to its own `LoopProvenanceLine.detail`.
+String? miningProvenanceDetail(MiningSnapshotRef? snapshot) =>
+    miningSnapshotIncludesDemonstrationHoldings(snapshot)
+    ? miningDemoHoldingsDetail
+    : null;
+
+/// The sentence [miningProvenanceDetail] answers for a demonstration snapshot.
+const String miningDemoHoldingsDetail = '这次算力里含演示持仓：它们不在链上，没有人真的持有，数字只用来体验。';
+
+/// The 11px source line under a mining page's figures: the snapshot they
+/// came from and when it was computed, with [miningProvenanceDetail] in its
+/// sheet. A snapshot that was never computed prints nothing.
+class MiningSnapshotProvenanceLine extends StatelessWidget {
+  const MiningSnapshotProvenanceLine({
     required this.slug,
     required this.snapshot,
     super.key,
@@ -221,16 +237,16 @@ class MiningDemoHoldingsNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!miningSnapshotIncludesDemonstrationHoldings(snapshot)) {
-      return const SizedBox.shrink();
-    }
-    return LoopNotice(
-      key: ValueKey<String>('mining-demo-holdings-$slug'),
-      icon: 'warn',
-      tone: LoopNoticeTone.warn,
-      title: '含演示持仓 · 仅开发环境',
-      body: '这些算力里有开发环境写入的持仓，链上没有人真的持有它们。',
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    final source = snapshot;
+    if (source is! MiningSnapshotComputed) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: LoopProvenanceLine(
+        key: ValueKey<String>('mining-provenance-$slug'),
+        sources: const <String>['LOOP 算力快照'],
+        observedAt: source.computedAt,
+        detail: miningProvenanceDetail(source),
+      ),
     );
   }
 }

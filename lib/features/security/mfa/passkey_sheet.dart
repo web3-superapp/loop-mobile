@@ -79,7 +79,7 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
                   ? LoopNoticeTone.warn
                   : LoopNoticeTone.danger,
               title: switch (failure) {
-                LoopMfaFailureKind.passkeyDomainUnconfigured => 'Passkey 还开不了',
+                LoopMfaFailureKind.passkeyDomainUnconfigured => 'Passkey 暂不可用',
                 LoopMfaFailureKind.cancelled => '这次没有完成',
                 _ => '这一步没有完成',
               },
@@ -106,7 +106,7 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
         LoopNotice(
           key: const ValueKey<String>('passkey-sheet-unavailable'),
           icon: 'info',
-          title: 'Passkey 还开不了',
+          title: 'Passkey 暂不可用',
           body: loopMfaFailureText(
             LoopMfaFailureKind.passkeyDomainUnconfigured,
           ),

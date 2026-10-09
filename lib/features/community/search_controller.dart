@@ -26,6 +26,19 @@ const List<SearchDomain> searchDomainOrder = <SearchDomain>[
   SearchDomain.dapps,
 ];
 
+/// The chips the search page draws (decision 0121).
+///
+/// Launch and DApp have no directory to search, and a chip that only ever
+/// answers 「搜不到」 is an offer the page cannot keep (device report
+/// 2026-10-09 · 6). They stay in [SearchDomain] and in [searchDomainOrder]
+/// and come back when `LoopFeatureSwitches.searchOutboundDomainsVisible`
+/// is turned on.
+List<SearchDomain> visibleSearchDomains({required bool outboundVisible}) =>
+    outboundVisible ? searchDomainOrder : searchableDomains;
+
+/// The one line under the search field (decision 0121).
+const String searchScopeHint = '按昵称只能搜到允许被发现的账号，LOOP ID 可以精确搜索';
+
 /// The domains this build can actually search, in prototype order.
 final List<SearchDomain> searchableDomains = List<SearchDomain>.unmodifiable(
   searchDomainOrder.where((domain) => !searchDomainIsDeferred(domain)),

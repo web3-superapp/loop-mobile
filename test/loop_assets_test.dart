@@ -20,10 +20,20 @@ void main() {
         reason: name,
       );
     }
-    // 61 sprites imported from the prototype plus four drawn for LOOP:
+    // 61 sprites imported from the prototype plus nine drawn for LOOP:
     // `refresh`, `plus` / `share` for the top-bar words decision 0087
-    // turned into glyphs, and `copy` for the LOOP ID (decision 0104, S97b).
-    expect(LoopIconNames.all, hasLength(65));
+    // turned into glyphs, `copy` for the LOOP ID (decision 0104, S97b) and
+    // the five message reactions (decision 0121, S121a).
+    expect(LoopIconNames.all, hasLength(70));
+    for (final name in <String>[
+      'react-like',
+      'react-laugh',
+      'react-heart',
+      'react-wow',
+      'react-sad',
+    ]) {
+      expect(LoopIconNames.contains(name), isTrue, reason: name);
+    }
     expect(LoopIconNames.contains('refresh'), isTrue);
     expect(LoopIconNames.contains('plus'), isTrue);
     expect(LoopIconNames.contains('share'), isTrue);
@@ -34,7 +44,7 @@ void main() {
           .whereType<File>()
           .where((file) => file.path.endsWith('.svg'))
           .length,
-      65,
+      70,
     );
     for (final file in LoopTokenAssets.bySymbol.values) {
       expect(

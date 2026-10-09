@@ -347,7 +347,9 @@ void main() {
         for (final type in resolver.defaultReactions)
           (resolver.resolve(type) as StreamUnicodeEmoji).emoji,
       ];
-      expect(words, <String>['赞', '哈', '心', '哇', '叹']);
+      // Decision 0121: the words are the reactions' accessible names; the
+      // bar and the capsules draw the sprite glyphs.
+      expect(words, <String>['点赞', '大笑', '喜欢', '惊讶', '难过']);
       for (final word in words) {
         expect(_emoji.hasMatch(word), isFalse, reason: word);
       }
@@ -384,7 +386,7 @@ void main() {
       }
     });
 
-    testWidgets('a Preview message draws its reactions as words', (
+    testWidgets('a Preview message draws its reactions as glyphs', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -394,8 +396,10 @@ void main() {
           ),
         ),
       );
-      expect(find.text('赞 18'), findsOneWidget);
-      expect(find.text('哇 6'), findsOneWidget);
+      expect(find.bySemanticsLabel('点赞 18'), findsOneWidget);
+      expect(find.bySemanticsLabel('惊讶 6'), findsOneWidget);
+      expect(find.text('18'), findsOneWidget);
+      expect(find.text('赞 18'), findsNothing);
     });
   });
 }

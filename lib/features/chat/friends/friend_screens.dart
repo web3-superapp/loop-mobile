@@ -555,7 +555,7 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
           ? '开发预览 · NEW GROUP'
           : 'NEW GROUP',
       title: '创建群组',
-      subtitle: '从已接受的好友中选择成员。LOOP 不会把钱包地址或群内昵称当作成员身份。',
+      subtitle: '从已接受的好友中选择成员。',
       children: <Widget>[
         if (group.mode == FriendGatewayMode.preview) ...<Widget>[
           const _FriendPreviewBanner(),

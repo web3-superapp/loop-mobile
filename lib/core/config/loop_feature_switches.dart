@@ -24,6 +24,11 @@ abstract final class LoopFeatureSwitches {
   /// S113 · 决策 0118：行情里的「新币」「聪明钱」入口隐藏（它们把读者带出
   /// LOOP，且数据源未开放）；页面与路由保留，改 true 即恢复入口。
   static const bool outboundMarketListsVisible = false;
+
+  /// S121a · 决策 0121：搜索里的 Launch、DApp 两个域隐藏（两域都没有可搜的
+  /// 目录，用户 2026-10-09：「不能搜就别放」）；枚举与探测逻辑保留，改 true
+  /// 即恢复两个 chips。
+  static const bool searchOutboundDomainsVisible = false;
 }
 
 /// The switch values one build runs with.
@@ -40,6 +45,8 @@ final class LoopFeatureSwitchValues {
     this.anonymousModeVisible = LoopFeatureSwitches.anonymousModeVisible,
     this.outboundMarketListsVisible =
         LoopFeatureSwitches.outboundMarketListsVisible,
+    this.searchOutboundDomainsVisible =
+        LoopFeatureSwitches.searchOutboundDomainsVisible,
   });
 
   final bool idoLaunchVisible;
@@ -47,6 +54,7 @@ final class LoopFeatureSwitchValues {
   final bool communityChatRealIdentity;
   final bool anonymousModeVisible;
   final bool outboundMarketListsVisible;
+  final bool searchOutboundDomainsVisible;
 
   /// Whether a channel draws its members as their real Stream user (name,
   /// image, tap to the public profile) rather than as a channel-scoped name.

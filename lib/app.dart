@@ -126,9 +126,12 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
   // own renderer doubles every newline into a paragraph break and eats `|`,
   // `*` and `_`; this one prints what the member typed, on band 4.
   messageText: loopStreamMessageTextBuilder,
-  // Decision 0117: the long-press reaction bar keeps LOOP's five words and
-  // drops Stream's 「+」, which opened an empty Emoji catalogue.
+  // Decisions 0117 / 0121: the long-press reaction bar draws LOOP's five
+  // glyphs and drops Stream's 「+」, which opened an empty Emoji catalogue.
   reactionPicker: loopStreamReactionPickerBuilder,
+  // Decision 0121: a message's reactions are 「glyph + count」 capsules under
+  // the bubble from its leading edge, not Stream's chips on its top corner.
+  reactions: loopStreamReactionsBuilder,
   extensions: streamChatComponentBuilders(
     // S45: a member may send pictures. The composer is the official one,
     // behind LOOP's own gate — images only, four formats, 10 MB each, nine per
@@ -165,8 +168,8 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
 
 /// The configuration every official Stream widget in LOOP reads.
 final loopStreamChatConfiguration = StreamChatConfigurationData(
-  // Decision 0117: reactions are drawn as LOOP's own words, never as system
-  // Emoji, and the picker's 「+」 offers no Emoji catalogue.
+  // Decisions 0117 / 0121: reactions are drawn as LOOP's own glyphs, never as
+  // system Emoji, and the picker's 「+」 offers no Emoji catalogue.
   reactionIconResolver: const LoopStreamReactionIconResolver(),
   messagePreviewFormatter: const LoopStreamTokenCardMessagePreviewFormatter(),
   attachmentBuilders: const <LoopStreamTokenCardAttachmentBuilder>[
