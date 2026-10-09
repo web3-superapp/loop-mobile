@@ -235,7 +235,8 @@ class _CommunityProfileScreenState
   }
 
   /// Keeps the poll armed for exactly the page that can use it.
-  void _bindVoicePoll({required bool watching}) {
+  void _bindVoicePoll({required bool watching, required bool visible}) {
+    _voicePoll.setVisible(visible);
     if (watching) {
       _voicePoll.start();
     } else {
@@ -271,6 +272,9 @@ class _CommunityProfileScreenState
           detail != null &&
           detail.community.communityId == id &&
           detail.viewer.hasJoined,
+      // Covered by a chat, a room, or another tab, the page is not looked
+      // at; it reads once when it is uncovered (decision 0125).
+      visible: LoopForegroundPoll.pageVisible(context),
     );
     // Held, not read: the value is the room page's business. Watching it here
     // is what keeps the session alive across the push, so the work done at
