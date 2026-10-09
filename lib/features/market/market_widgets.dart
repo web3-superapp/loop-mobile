@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/market/market_mining_hooks.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -839,12 +840,16 @@ class MarketRowSparkline extends StatelessWidget {
       );
     }
     final closes = resolved.closes;
-    return LoopSparkline(
-      key: const ValueKey<String>('market-spark-line'),
-      closes: closes,
-      semanticLabel:
-          '${closes.length} 个 ${resolved.interval.label} 收盘价的走势线，'
-          '观察于 ${loopRelativeTime(resolved.observedAt)}',
+    // A chart is never a segment swipe (S123 m7): a drag that starts on
+    // the line stays with the row.
+    return LoopSegmentSwipeBarrier(
+      child: LoopSparkline(
+        key: const ValueKey<String>('market-spark-line'),
+        closes: closes,
+        semanticLabel:
+            '${closes.length} 个 ${resolved.interval.label} 收盘价的走势线，'
+            '观察于 ${loopRelativeTime(resolved.observedAt)}',
+      ),
     );
   }
 }

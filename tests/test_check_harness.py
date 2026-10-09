@@ -4675,6 +4675,57 @@ class HarnessTests(unittest.TestCase):
         self.assertIn("loopStreamReactionsBuilder", joined)
         self.assertEqual(2, len(result), msg=result)
 
+    def test_list_refresh_contract_requires_pull_or_exemption(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            features = root / "lib" / "features" / "demo"
+            features.mkdir(parents=True)
+            (features / "bare_list.dart").write_text(
+                "final page = LoopStreamPage(archetype: LoopPageArchetype.listing);\n",
+                encoding="utf-8",
+            )
+            (features / "pulled_list.dart").write_text(
+                "final page = LoopStreamPage(archetype: LoopPageArchetype.listing,"
+                " onRefresh: reload);\n",
+                encoding="utf-8",
+            )
+            (features / "wrapped_list.dart").write_text(
+                "final page = loopRefreshable(onRefresh: reload, child: "
+                "LoopStreamPage(archetype: LoopPageArchetype.listing));\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_list_refresh_contract(root)
+
+        joined = "\n".join(result)
+        self.assertIn("lib/features/demo/bare_list.dart", joined)
+        self.assertNotIn("pulled_list.dart", joined)
+        self.assertNotIn("wrapped_list.dart", joined)
+        # Every exemption that no longer exists in this scratch tree is named.
+        self.assertIn("LIST_REFRESH_EXEMPT names", joined)
+
+    def test_paging_button_copy_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "demo" / "demo_list.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final a = LoopButton(label: '载入更多');\n"
+                "final b = Text('加载更多收到的申请');\n"
+                "final c = LoopButton(label: '查看更多');\n"
+                "final d = LoopButton(label: '下一页');\n"
+                "final e = LoopInlineUnavailable(message: '下一页没有读到');\n"
+                "// 载入更多 in a comment is not copy\n"
+                "final f = LoopButton(label: '重试');\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_no_paging_buttons(root)
+
+        joined = "\n".join(result)
+        self.assertEqual(4, len(result), msg=result)
+        self.assertIn("demo_list.dart:1", joined)
+        self.assertIn("demo_list.dart:4", joined)
+        self.assertNotIn("下一页没有读到", joined)
+
     def test_user_visible_copy_rejects_interpolated_identifiers(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

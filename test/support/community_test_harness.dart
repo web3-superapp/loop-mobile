@@ -338,6 +338,14 @@ final class FakeCommunityGateway implements CommunityGateway {
   Map<String?, CommunityMemberDirectory> membersByQuery =
       <String?, CommunityMemberDirectory>{};
 
+  /// The page a cursor continues to (decision 0129). Consulted first when the
+  /// gateway is called with a cursor.
+  Map<String, CommunityMemberDirectory> membersByCursor =
+      <String, CommunityMemberDirectory>{};
+
+  /// Cursors whose page fails, once each, so a retry can then succeed.
+  Set<String> failingMemberCursors = <String>{};
+
   /// Set when the application must be accepted; otherwise `writeFailure`
   /// (or `failure`) decides the refusal.
   CommunityDetail? createdDetail;
@@ -455,6 +463,13 @@ final class FakeCommunityGateway implements CommunityGateway {
     String? cursor,
   }) {
     commands.add('members:${role.wireName}:$q:$cursor');
+    if (cursor != null && failingMemberCursors.remove(cursor)) {
+      return Future<CommunityMemberDirectory>.error(
+        const CommunityGatewayException(CommunityFailureKind.unexpected),
+      );
+    }
+    final continued = cursor == null ? null : membersByCursor[cursor];
+    if (continued != null) return _read(continued);
     return _read(membersByQuery[q] ?? membersByFilter[role] ?? members);
   }
 
@@ -511,6 +526,10 @@ final class FakeSocialGateway implements SocialGateway {
   /// answer immediately.
   Completer<void>? hold;
 
+  /// Cursors whose connections page fails once (decision 0129: the next page
+  /// is read on its own, so a test arms the failure before the page opens).
+  Set<String> failingConnectionCursors = <String>{};
+
   final List<String> commands = <String>[];
 
   Future<T> _read<T>(T? value) {
@@ -542,6 +561,11 @@ final class FakeSocialGateway implements SocialGateway {
     String? cursor,
   }) {
     commands.add('connections:${direction.wireName}');
+    if (cursor != null && failingConnectionCursors.remove(cursor)) {
+      return Future<ConnectionPage>.error(
+        const CommunityGatewayException(CommunityFailureKind.offline),
+      );
+    }
     return _read(connections);
   }
 

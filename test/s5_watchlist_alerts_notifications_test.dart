@@ -49,7 +49,7 @@ void main() {
       expect(find.textContaining('\$'), findsNothing);
     });
 
-    testWidgets('removing asks for a second confirmation first', (
+    testWidgets('removing takes the row out at once and offers 撤销', (
       tester,
     ) async {
       final watchlist = FakeWatchlistGateway();
@@ -63,13 +63,12 @@ void main() {
         find.byKey(ValueKey<String>('watchlist-remove-$s5WbnbAssetId')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('3 个自选资产'), findsOneWidget);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
-      );
-      await tester.pumpAndSettle();
+      // Decision 0129: the undo is the confirmation; nothing is written yet.
       expect(find.textContaining('2 个自选资产'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('watchlist-undo-toast')),
+        findsOneWidget,
+      );
       // Nothing is committed until the explicit save.
       expect(watchlist.written, isEmpty);
     });
@@ -86,10 +85,6 @@ void main() {
 
       await tester.tap(
         find.byKey(ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
       );
       await tester.pumpAndSettle();
 
@@ -124,10 +119,6 @@ void main() {
         find.byKey(ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
-      );
-      await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('watchlist-save')),
@@ -157,10 +148,6 @@ void main() {
 
       await tester.tap(
         find.byKey(ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
       );
       await tester.pumpAndSettle();
       await scrollToS5Section(
@@ -211,10 +198,6 @@ void main() {
 
       await tester.tap(
         find.byKey(ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
       );
       await tester.pumpAndSettle();
       await scrollToS5Section(

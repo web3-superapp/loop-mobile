@@ -161,9 +161,20 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                 child: MediaQuery.removePadding(
                   context: context,
                   removeTop: true,
-                  child: KeyedSubtree(
-                    key: ValueKey<String>('$tabKey-segment-body-$selected'),
-                    child: builder(context, selected),
+                  // A sideways swipe over the body moves to the neighbouring
+                  // segment (S123 m7); a horizontal list or a chart inside
+                  // the body keeps its own drag.
+                  child: LoopSegmentSwipe(
+                    key: ValueKey<String>('$tabKey-segment-swipe'),
+                    index: selected,
+                    count: segments.length,
+                    onSelect: (index) => ref
+                        .read(loopTabSegmentMemoryProvider.notifier)
+                        .select(tabKey, index),
+                    child: KeyedSubtree(
+                      key: ValueKey<String>('$tabKey-segment-body-$selected'),
+                      child: builder(context, selected),
+                    ),
                   ),
                 ),
               ),
@@ -234,4 +245,112 @@ class _SegmentTab extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Lets a sideways swipe over a segmented body move to the neighbouring
+/// segment (decision 0129, S123 m7). Nothing about the look changes.
+///
+/// It listens for a horizontal drag and decides only when the finger lifts:
+/// past [distanceThreshold] or faster than [velocityThreshold], towards the
+/// start moves to the next segment and towards the end to the previous one.
+///
+/// It never competes with a horizontal element inside the body. A horizontal
+/// list is a scrollable deeper in the tree, so the gesture arena gives it the
+/// drag first; a region that draws its own horizontal content without a
+/// scrollable — a chart — is wrapped in [LoopSegmentSwipeBarrier].
+///
+/// Swipes nest: a body that is itself segmented (算力榜's three boards inside
+/// 情报) handles the swipe first, and passes it to the page's own segments
+/// only when it is already on its first or last board.
+class LoopSegmentSwipe extends StatefulWidget {
+  const LoopSegmentSwipe({
+    required this.index,
+    required this.count,
+    required this.onSelect,
+    required this.child,
+    super.key,
+  });
+
+  static const double distanceThreshold = 72;
+  static const double velocityThreshold = 520;
+
+  final int index;
+  final int count;
+  final ValueChanged<int> onSelect;
+  final Widget child;
+
+  @override
+  State<LoopSegmentSwipe> createState() => _LoopSegmentSwipeState();
+}
+
+class _LoopSegmentSwipeState extends State<LoopSegmentSwipe> {
+  double _dx = 0;
+
+  /// Moves by [step] (+1 next, -1 previous). Answers whether this level or
+  /// one above it moved.
+  bool _move(int step) {
+    final target = widget.index + step;
+    if (target >= 0 && target < widget.count) {
+      LoopHaptics.selection();
+      widget.onSelect(target);
+      return true;
+    }
+    return _LoopSegmentSwipeScope.maybeOf(context)?._move(step) ?? false;
+  }
+
+  void _end(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    final dx = _dx;
+    _dx = 0;
+    final fast = velocity.abs() >= LoopSegmentSwipe.velocityThreshold;
+    final far = dx.abs() >= LoopSegmentSwipe.distanceThreshold;
+    if (!fast && !far) return;
+    final towardsStart = fast ? velocity < 0 : dx < 0;
+    // A fling against the drag that carried it is no decision.
+    if (fast && far && (velocity < 0) != (dx < 0)) return;
+    _move(towardsStart ? 1 : -1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart: (_) => _dx = 0,
+      onHorizontalDragUpdate: (details) => _dx += details.primaryDelta ?? 0,
+      onHorizontalDragEnd: _end,
+      onHorizontalDragCancel: () => _dx = 0,
+      child: _LoopSegmentSwipeScope(state: this, child: widget.child),
+    );
+  }
+}
+
+class _LoopSegmentSwipeScope extends InheritedWidget {
+  const _LoopSegmentSwipeScope({required this.state, required super.child});
+
+  final _LoopSegmentSwipeState state;
+
+  static _LoopSegmentSwipeState? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_LoopSegmentSwipeScope>()?.state;
+
+  @override
+  bool updateShouldNotify(_LoopSegmentSwipeScope oldWidget) => false;
+}
+
+/// A region inside a segmented body whose horizontal drags are its own — a
+/// chart, a horizontally swiped card — and must not switch the segment.
+///
+/// It claims the horizontal drag in the gesture arena (it sits deeper than
+/// [LoopSegmentSwipe]) and does nothing with it; taps, long presses and
+/// vertical scrolling pass through untouched.
+class LoopSegmentSwipeBarrier extends StatelessWidget {
+  const LoopSegmentSwipeBarrier({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onHorizontalDragStart: (_) {},
+    child: child,
+  );
 }

@@ -134,10 +134,6 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
-      );
-      await tester.pumpAndSettle();
 
       await tapByName(tester, '完成');
 

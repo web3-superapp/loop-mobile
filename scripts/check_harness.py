@@ -10568,6 +10568,98 @@ def _first_positional_argument(arguments: str) -> str | None:
     return first
 
 
+# ---------------------------------------------------------------------------
+# List gestures (decision 0129, S123 §五 rules 7 and 8)
+# ---------------------------------------------------------------------------
+
+# A listing page whose rows are a read must answer a pull with a re-read. The
+# exemptions are pages where a pull would be wrong, each with its reason.
+LIST_REFRESH_EXEMPT: dict[str, str] = {
+    "lib/widgets/loop_tab_segments.dart": (
+        "the segmented container; each segment body installs its own refresh"
+    ),
+    "lib/features/market/watchlist/watchlist_editor_screen.dart": (
+        "an edit surface: a background re-read would drop an unsaved order"
+    ),
+    "lib/features/chat/v2/chat_search_screen.dart": (
+        "results of the typed query; typing is the re-read"
+    ),
+    "lib/features/community/search_screen.dart": (
+        "results of the typed query; typing is the re-read"
+    ),
+    "lib/features/chat/v2/voice_room_screens.dart": (
+        "a live room kept current by its own session events"
+    ),
+    "lib/features/wallet/approval_screens.dart": (
+        "a scan the reader starts from its own action; a pull would be a "
+        "second, unannounced scan"
+    ),
+    "lib/features/wallet/deferred_screens.dart": (
+        "an unavailable surface with nothing to re-read"
+    ),
+}
+
+LIST_REFRESH_MARKERS = ("loopRefreshable(", "onRefresh:")
+
+
+def check_list_refresh_contract(root: Path) -> list[str]:
+    """Rule 7: a listing page installs pull-to-refresh or is exempt."""
+
+    errors: list[str] = []
+    lib = root / "lib"
+    if not lib.exists():
+        return errors
+    for path in sorted(lib.rglob("*.dart")):
+        relative = path.relative_to(root).as_posix()
+        source = strip_dart_comments(read_text(path))
+        if "LoopPageArchetype.listing" not in source:
+            continue
+        if any(marker in source for marker in LIST_REFRESH_MARKERS):
+            continue
+        if relative in LIST_REFRESH_EXEMPT:
+            continue
+        errors.append(
+            f"{relative} is a listing page without pull-to-refresh: wrap the "
+            "collection in loopRefreshable / pass onRefresh, or add the page "
+            "to LIST_REFRESH_EXEMPT with its reason (decision 0129)"
+        )
+    for relative in sorted(LIST_REFRESH_EXEMPT):
+        if not (root / relative).exists() and (root / "lib").exists():
+            errors.append(
+                f"LIST_REFRESH_EXEMPT names {relative}, which no longer exists"
+            )
+    return errors
+
+
+# A list reads on as it is scrolled; it never asks for a page by hand. A
+# literal that *opens* with one of these is a control label. Sentences that
+# report a failed page (「下一页没有读到」) are status copy, not a control.
+PAGING_BUTTON_COPY = re.compile(r"^\s*(加载更多|载入更多|查看更多|下一页|上一页)")
+PAGING_STATUS_COPY = re.compile(r"没有|失败|读不到")
+
+
+def check_no_paging_buttons(root: Path) -> list[str]:
+    """Rule 8: no 「加载更多 / 载入更多 / 下一页 / 上一页 / 查看更多」 control."""
+
+    errors: list[str] = []
+    lib = root / "lib"
+    if not lib.exists():
+        return errors
+    for path in sorted(lib.rglob("*.dart")):
+        relative = path.relative_to(root).as_posix()
+        for line, literal in _dart_string_literals(read_text(path)):
+            if not PAGING_BUTTON_COPY.search(literal):
+                continue
+            if PAGING_STATUS_COPY.search(literal):
+                continue
+            errors.append(
+                f"{relative}:{line} labels a control 「{literal}」: lists load "
+                "the next page with LoopLoadMoreFooter / LoopLoadMoreSentinel "
+                "(decision 0129)"
+            )
+    return errors
+
+
 def check_stream_user_identity_rendering(root: Path) -> list[str]:
     """Keep the Stream account id and account name off the screen.
 
@@ -13186,13 +13278,24 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "Group Stream channel routes must select the safe page after membership proof while direct channels keep the official page"
             )
 
-        if re.search(
-            r"itemBuilder\s*:\s*\([^)]*\bdefaultItem\b[^)]*\)\s*=>\s*"
-            r"(?:widget\.filter\.includes\([^)]*\)\s*\?\s*)?"
-            r"loopStreamChannelListIdentityItem\s*\(\s*defaultItem\s*\)",
+        # The builder may wrap the safe item (decision 0129 puts it inside a
+        # swipe row), but the official default item is never drawn itself:
+        # inside the builder `defaultItem` appears exactly twice — as the
+        # parameter and as the argument of the safe identity item.
+        item_builder = re.search(
+            r"itemBuilder\s*:\s*\([^)]*\bdefaultItem\b[^)]*\)(.*?)separatorBuilder\s*:",
             stream_route,
             re.DOTALL,
-        ) is None:
+        )
+        if (
+            item_builder is None
+            or re.search(
+                r"loopStreamChannelListIdentityItem\s*\(\s*defaultItem\s*\)",
+                item_builder.group(1),
+            )
+            is None
+            or len(re.findall(r"\bdefaultItem\b", item_builder.group(1))) != 1
+        ):
             errors.append(
                 "Group Stream channel list must route every official default item through the safe identity item"
             )
@@ -15050,6 +15153,8 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_perp_positions_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_user_visible_copy(root))
+    errors.extend(check_list_refresh_contract(root))
+    errors.extend(check_no_paging_buttons(root))
     errors.extend(check_stream_user_identity_rendering(root))
     errors.extend(check_typography_band_contract(root))
     errors.extend(check_price_move_colour_contract(root))

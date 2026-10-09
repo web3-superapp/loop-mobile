@@ -77,6 +77,7 @@ void main() {
         ]),
       );
       expect(controller.channelStateSort, const <SortOption<ChannelState>>[
+        SortOption<ChannelState>.desc(ChannelSortKey.pinnedAt),
         SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
       ]);
       expect(controller.presence, isTrue);

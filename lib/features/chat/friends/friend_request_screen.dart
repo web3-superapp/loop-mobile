@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/friends/friend_request_controller.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -135,20 +136,15 @@ class _FriendRequestsPageState extends ConsumerState<FriendRequestsPage> {
             controller.decide(requestId, FriendRequestDecision.reject),
           ),
         ),
-      if (state.incomingCursor != null) ...<Widget>[
-        const SizedBox(height: 10),
-        Center(
-          child: OutlinedButton(
-            key: const ValueKey<String>('friend-requests-incoming-more'),
-            onPressed: state.canLoadMore(FriendRequestDirection.incoming)
-                ? () => unawaited(
-                    controller.loadMore(FriendRequestDirection.incoming),
-                  )
-                : null,
-            child: const Text('加载更多收到的申请'),
-          ),
-        ),
-      ],
+      LoopLoadMoreFooter(
+        key: const ValueKey<String>('friend-requests-incoming-footer'),
+        keyPrefix: 'friend-requests-incoming',
+        cursor: state.incomingCursor,
+        canLoadMore: state.canLoadMore(FriendRequestDirection.incoming),
+        loading: state.phase == FriendRequestsPhase.loading,
+        padding: const EdgeInsets.only(top: 10),
+        onLoadMore: () => controller.loadMore(FriendRequestDirection.incoming),
+      ),
       const SizedBox(height: 22),
       const LoopSectionLabel('已发送'),
       if (state.outgoing.isEmpty)
@@ -164,20 +160,19 @@ class _FriendRequestsPageState extends ConsumerState<FriendRequestsPage> {
           decidingRequestId: null,
           enabled: false,
         ),
-      if (state.outgoingCursor != null) ...<Widget>[
-        const SizedBox(height: 10),
-        Center(
-          child: OutlinedButton(
-            key: const ValueKey<String>('friend-requests-outgoing-more'),
-            onPressed: state.canLoadMore(FriendRequestDirection.outgoing)
-                ? () => unawaited(
-                    controller.loadMore(FriendRequestDirection.outgoing),
-                  )
-                : null,
-            child: const Text('加载更多已发送申请'),
-          ),
-        ),
-      ],
+      LoopLoadMoreFooter(
+        key: const ValueKey<String>('friend-requests-outgoing-footer'),
+        keyPrefix: 'friend-requests-outgoing',
+        cursor: state.outgoingCursor,
+        // The two lists share one read at a time, and the sent list sits
+        // under the received one: it reads on once the received list ended.
+        canLoadMore:
+            state.incomingCursor == null &&
+            state.canLoadMore(FriendRequestDirection.outgoing),
+        loading: state.phase == FriendRequestsPhase.loading,
+        padding: const EdgeInsets.only(top: 10),
+        onLoadMore: () => controller.loadMore(FriendRequestDirection.outgoing),
+      ),
     ]);
     return content;
   }

@@ -379,19 +379,20 @@ void main() {
           counts: const ConnectionCounts(following: 24, followers: 108),
           nextCursor: 'AbC-1_2.dEf-3_4',
         ),
-      );
+      )..failingConnectionCursors = <String>{'AbC-1_2.dEf-3_4'};
+      // Decision 0129: the next page is read as soon as the foot of the list
+      // is in view; there is no 载入更多 to press.
       await pumpCommunityPage(
         tester,
         const ConnectionsScreen(),
         social: gateway,
       );
-      expect(find.text('frog_member'), findsOneWidget);
-
-      gateway.failure = CommunityFailureKind.offline;
-      await tester.tap(
-        find.byKey(const ValueKey<String>('connections-load-more')),
-      );
       await tester.pumpAndSettle();
+      expect(find.text('载入更多'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('connections-more-failed')),
+        findsOneWidget,
+      );
 
       // The first page survives: only the appended page failed.
       expect(find.text('frog_member'), findsOneWidget);
