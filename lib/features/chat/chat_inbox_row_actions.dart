@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -130,7 +130,7 @@ Future<ChatInboxRowAction?> showChatInboxRowActionSheet(
   required String title,
   required List<ChatInboxRowAction> actions,
 }) {
-  unawaited(HapticFeedback.mediumImpact());
+  LoopHaptics.medium();
   return showLoopSheet<ChatInboxRowAction>(
     context,
     barrierLabel: '关闭会话操作',
@@ -330,7 +330,7 @@ class _ChatInboxSwipeRowState extends State<ChatInboxSwipeRow>
     final extent = next < 0 ? _trailingExtent : _leadingExtent;
     final crossed = extent > 0 && next.abs() >= extent / 2;
     if (crossed && !_crossedThreshold) {
-      unawaited(HapticFeedback.selectionClick());
+      LoopHaptics.selection();
     }
     _crossedThreshold = crossed;
   }
@@ -456,6 +456,8 @@ class _OpenRowGuard extends StatelessWidget {
             if (open)
               Positioned.fill(
                 child: GestureDetector(
+                  // loop-press-exempt: an invisible catcher over an open
+                  // row; the row sliding shut is the feedback.
                   key: const ValueKey<String>('chat-inbox-swipe-close'),
                   behavior: HitTestBehavior.opaque,
                   onTap: onClose,

@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chat/friends/friend_request_controller.dart
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 class FriendRequestsPage extends ConsumerStatefulWidget {
   const FriendRequestsPage({super.key});
@@ -28,9 +29,7 @@ class _FriendRequestsPageState extends ConsumerState<FriendRequestsPage> {
       final receipt = next.decisionReceipt;
       if (receipt == null || previous?.decisionReceipt == receipt) return;
       final accepted = receipt.decision == FriendRequestDecision.accept;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(accepted ? '好友申请已接受' : '好友申请已拒绝')));
+      LoopToast.show(context, message: accepted ? '好友申请已接受' : '好友申请已拒绝');
       controller.acknowledgeDecision();
     });
     if (state.phase == FriendRequestsPhase.initial) {

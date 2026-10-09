@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/platform/loop_android_sdk.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 
@@ -41,15 +42,53 @@ abstract final class LoopToast {
     bool? clearsTabBar,
   }) {
     final host = LoopToastHost.maybeOf(context);
-    assert(host != null, 'LoopToastHost is missing above this context.');
-    host?.show(
+    final clears = clearsTabBar ?? LoopTabBarScope.of(context);
+    if (host == null) {
+      // Decision 0130 made this the only transient message LOOP shows (the
+      // SnackBars are gone), so a subtree mounted without the application's
+      // host — a sheet built on its own, a page in a test — still gets the
+      // same toast, laid on the nearest overlay for the same duration.
+      _showOnOverlay(
+        context,
+        LoopToastEntry(message: message, kind: kind, clearsTabBar: clears),
+        duration ?? defaultDuration,
+      );
+      return;
+    }
+    host.show(
       message: message,
       kind: kind,
       duration: duration,
       // The host sits above the router and cannot tell which page called it;
       // the caller's own context can.
-      clearsTabBar: clearsTabBar ?? LoopTabBarScope.of(context),
+      clearsTabBar: clears,
     );
+  }
+
+  static OverlayEntry? _overlayEntry;
+
+  static void _showOnOverlay(
+    BuildContext context,
+    LoopToastEntry entry,
+    Duration duration,
+  ) {
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+    final previous = _overlayEntry;
+    if (previous != null && previous.mounted) previous.remove();
+    late final OverlayEntry inserted;
+    inserted = OverlayEntry(
+      builder: (context) => _OverlayToast(
+        entry: entry,
+        duration: duration,
+        onDone: () {
+          if (inserted.mounted) inserted.remove();
+          if (identical(_overlayEntry, inserted)) _overlayEntry = null;
+        },
+      ),
+    );
+    _overlayEntry = inserted;
+    overlay.insert(inserted);
   }
 }
 
@@ -100,6 +139,16 @@ class LoopToastHost extends StatefulWidget {
 }
 
 class LoopToastHostState extends State<LoopToastHost> {
+  @override
+  void initState() {
+    super.initState();
+    // Decision 0130: the copy path needs to know, synchronously, whether
+    // the system confirms clipboard writes itself. The host is mounted once
+    // at start-up, so the one platform read happens here, long before the
+    // first copy.
+    unawaited(LoopAndroidSdk.level());
+  }
+
   LoopToastEntry? _entry;
   bool _visible = false;
   Timer? _hideTimer;
@@ -247,4 +296,53 @@ class LoopToastView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The overlay-borne toast used when no [LoopToastHost] is above the caller.
+///
+/// Its timer belongs to its own state, so it ends with the tree it was laid
+/// on and never outlives it.
+class _OverlayToast extends StatefulWidget {
+  const _OverlayToast({
+    required this.entry,
+    required this.duration,
+    required this.onDone,
+  });
+
+  final LoopToastEntry entry;
+  final Duration duration;
+  final VoidCallback onDone;
+
+  @override
+  State<_OverlayToast> createState() => _OverlayToastState();
+}
+
+class _OverlayToastState extends State<_OverlayToast> {
+  Timer? _life;
+
+  @override
+  void initState() {
+    super.initState();
+    _life = Timer(widget.duration, () {
+      if (mounted) widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _life?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: LoopSpacing.page,
+    right: LoopSpacing.page,
+    bottom:
+        (widget.entry.clearsTabBar
+            ? LoopToast.bottomOffset
+            : LoopToast.pageBottomOffset) +
+        MediaQuery.paddingOf(context).bottom,
+    child: IgnorePointer(child: LoopToastView(entry: widget.entry)),
+  );
 }

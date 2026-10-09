@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -21,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// `watchlist-edit` · reorder, remove and group the owner's Watchlist.
 ///
@@ -58,7 +59,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
     final group = ref.read(watchlistEditorControllerProvider).selectedGroup;
     if (group == null || index < 0 || index >= group.items.length) return;
     final item = group.items[index];
-    unawaited(HapticFeedback.mediumImpact());
+    LoopHaptics.medium();
     controller.removeAt(index);
     _undoTimer?.cancel();
     setState(() {
@@ -417,9 +418,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
   }
 
   Future<void> _copyDraft(String draft) async {
-    await Clipboard.setData(ClipboardData(text: draft));
-    if (!mounted) return;
-    LoopToast.show(context, message: '草稿已复制', kind: LoopToastKind.ok);
+    await LoopCopy.text(context, draft, message: '草稿已复制');
   }
 
   Future<void> _save(WatchlistEditorController controller) async {

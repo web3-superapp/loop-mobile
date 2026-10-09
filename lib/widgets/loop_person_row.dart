@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// One OKX-shaped row about a person or an entry (decision 0127): a face on
 /// the left, a 16 name with an optional small tag after it, a 13 grey line
@@ -221,8 +222,7 @@ class LoopPillAction extends StatelessWidget {
       enabled: enabled,
       label: label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: LoopPressable(
         onTap: onPressed,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
@@ -303,8 +303,7 @@ class LoopSeeAll extends StatelessWidget {
     button: true,
     label: label,
     excludeSemantics: true,
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    child: LoopPressable(
       onTap: onPressed,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 44, minWidth: 44),

@@ -1,8 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -125,11 +123,19 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                                     ),
                                     label: segments[index],
                                     selected: index == selected,
-                                    onTap: () => ref
-                                        .read(
-                                          loopTabSegmentMemoryProvider.notifier,
-                                        )
-                                        .select(tabKey, index),
+                                    onTap: () {
+                                      // Decision 0130: a segment change is
+                                      // a selection.
+                                      if (index != selected) {
+                                        LoopHaptics.selection();
+                                      }
+                                      ref
+                                          .read(
+                                            loopTabSegmentMemoryProvider
+                                                .notifier,
+                                          )
+                                          .select(tabKey, index);
+                                    },
                                   ),
                                 ],
                               ],
@@ -285,7 +291,7 @@ class _LoopSegmentSwipeState extends State<LoopSegmentSwipe> {
   bool _move(int step) {
     final target = widget.index + step;
     if (target >= 0 && target < widget.count) {
-      unawaited(HapticFeedback.selectionClick());
+      LoopHaptics.selection();
       widget.onSelect(target);
       return true;
     }

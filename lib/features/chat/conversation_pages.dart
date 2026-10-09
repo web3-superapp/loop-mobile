@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chat/preview_conversation_unavailable_page.
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 class GroupChatPage extends StatelessWidget {
   const GroupChatPage({required this.conversationId, super.key});
@@ -233,26 +234,18 @@ class _ConversationPage extends ConsumerWidget {
                         conversationMessagesProvider(conversationId),
                       );
                       if (preview) {
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Simulated message added to the offline preview.',
-                              ),
-                            ),
-                          );
+                        LoopToast.show(
+                          context,
+                          message:
+                              'Simulated message added to the offline preview.',
+                        );
                       }
                     } else {
-                      ScaffoldMessenger.of(context)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Message not sent. Check your connection.',
-                            ),
-                          ),
-                        );
+                      LoopToast.show(
+                        context,
+                        message: 'Message not sent. Check your connection.',
+                        kind: LoopToastKind.err,
+                      );
                     }
                   },
                 ),
@@ -274,15 +267,11 @@ class _PinnedMessageBanner extends StatelessWidget {
       color: LoopColors.basalt,
       child: InkWell(
         onTap: () {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Pinned: Review the unlock schedule before sharing a call.',
-                ),
-              ),
-            );
+          LoopToast.show(
+            context,
+            message:
+                'Pinned: Review the unlock schedule before sharing a call.',
+          );
         },
         child: Container(
           width: double.infinity,

@@ -3,9 +3,13 @@ package com.cywd.loop
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
@@ -46,6 +50,41 @@ class MainActivity : FlutterFragmentActivity() {
                     result.notImplemented()
                 }
             }
+        // Decision 0130: Android 13+ draws its own confirmation for every
+        // clipboard write, so LOOP's toast steps aside there. The level is the
+        // only fact this channel answers. Mirrored by
+        // `lib/core/platform/loop_android_sdk.dart`.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PLATFORM_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "sdkInt") {
+                    result.success(Build.VERSION.SDK_INT)
+                } else {
+                    result.notImplemented()
+                }
+            }
+    }
+
+    // Decision 0130 (audit 2026-10-09 m17): after a hardware key or a D-pad
+    // event Android draws its default focus highlight around the focused
+    // view, and the focused view is the FlutterView — the whole window got a
+    // tinted outline. Flutter draws its own focus where a widget wants one,
+    // so the platform's is switched off on the FlutterView. The view is
+    // created by the fragment after onCreate, hence here.
+    override fun onPostResume() {
+        super.onPostResume()
+        disableDefaultFocusHighlight(window.decorView)
+    }
+
+    private fun disableDefaultFocusHighlight(view: View) {
+        if (view is FlutterView) {
+            view.defaultFocusHighlightEnabled = false
+            return
+        }
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                disableDefaultFocusHighlight(view.getChildAt(index))
+            }
+        }
     }
 
     // Profile links (decision 0104) and voice-room links (decision 0105).
@@ -101,6 +140,9 @@ class MainActivity : FlutterFragmentActivity() {
     private companion object {
         // Mirrored by `lib/integrations/device/voice_room_back_guard.dart`.
         const val VOICE_ROOM_BACK_CHANNEL = "com.cywd.loop/voice_room_back"
+
+        // Mirrored by `lib/core/platform/loop_android_sdk.dart`.
+        const val PLATFORM_CHANNEL = "com.cywd.loop/platform"
 
         val PROFILE_LINK_PATH = Regex("^/u/[A-Za-z0-9-]{1,32}/?$")
 

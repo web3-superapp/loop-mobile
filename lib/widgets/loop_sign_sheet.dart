@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -112,99 +113,145 @@ class LoopSignSheet extends StatelessWidget {
       // What the chain did is the result page's to say.
       LoopSignSheetState.complete => '已广播',
     };
-    return Semantics(
-      container: true,
-      label: networkBadge == null
-          ? '$title · $stateLabel'
-          : '$title · $networkBadge · $stateLabel',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          key: ValueKey<String>('loop-sign-sheet-${state.name}'),
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: LoopRadius.card,
-            border: Border.all(color: borderColor),
-            boxShadow: LoopDepth.liftCard,
-          ),
-          child: state == LoopSignSheetState.signing
-              ? _SigningBody(cancelLabel: cancelLabel)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(title, style: theme.textTheme.titleLarge),
-                        ),
-                        if (networkBadge != null) ...<Widget>[
-                          LoopBadge(
-                            key: const ValueKey<String>(
-                              'loop-sign-sheet-network-badge',
+    return _SignOutcomeHaptics(
+      state: state,
+      child: Semantics(
+        container: true,
+        label: networkBadge == null
+            ? '$title · $stateLabel'
+            : '$title · $networkBadge · $stateLabel',
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            key: ValueKey<String>('loop-sign-sheet-${state.name}'),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: LoopRadius.card,
+              border: Border.all(color: borderColor),
+              boxShadow: LoopDepth.liftCard,
+            ),
+            child: state == LoopSignSheetState.signing
+                ? _SigningBody(cancelLabel: cancelLabel)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: theme.textTheme.titleLarge,
                             ),
-                            networkBadge!,
                           ),
-                          const SizedBox(width: 6),
+                          if (networkBadge != null) ...<Widget>[
+                            LoopBadge(
+                              key: const ValueKey<String>(
+                                'loop-sign-sheet-network-badge',
+                              ),
+                              networkBadge!,
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          LoopBadge(
+                            stateLabel,
+                            kind:
+                                state == LoopSignSheetState.pending ||
+                                    state == LoopSignSheetState.complete
+                                ? LoopBadgeKind.up
+                                : LoopBadgeKind.mute,
+                          ),
                         ],
-                        LoopBadge(
-                          stateLabel,
-                          kind:
-                              state == LoopSignSheetState.pending ||
-                                  state == LoopSignSheetState.complete
-                              ? LoopBadgeKind.up
-                              : LoopBadgeKind.mute,
+                      ),
+                      const SizedBox(height: 8),
+                      for (final fact in facts)
+                        LoopKeyValue(
+                          label: fact.label,
+                          value: fact.value,
+                          valueUp: fact.down ? false : null,
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                        ),
+                      if (reason != null) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Text(
+                          reason!,
+                          style: LoopTypography.caption(
+                            11,
+                            color: LoopColors.text2,
+                          ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 8),
-                    for (final fact in facts)
-                      LoopKeyValue(
-                        label: fact.label,
-                        value: fact.value,
-                        valueUp: fact.down ? false : null,
-                        padding: const EdgeInsets.symmetric(vertical: 7),
-                      ),
-                    if (reason != null) ...<Widget>[
-                      const SizedBox(height: 8),
-                      Text(
-                        reason!,
-                        style: LoopTypography.caption(
-                          11,
-                          color: LoopColors.text2,
-                        ),
+                      const SizedBox(height: 12),
+                      LoopButtonPair(
+                        padded: false,
+                        children: <Widget>[
+                          if (state == LoopSignSheetState.policyRejected &&
+                              onAdjustPolicy != null)
+                            LoopButton(
+                              label: '调整策略',
+                              onPressed: onAdjustPolicy,
+                            ),
+                          LoopButton(
+                            label:
+                                state == LoopSignSheetState.complete ||
+                                    state == LoopSignSheetState.policyRejected
+                                ? '关闭'
+                                : cancelLabel,
+                            onPressed: cancelEnabled ? onCancel : null,
+                          ),
+                          if (state != LoopSignSheetState.complete)
+                            LoopButton(
+                              label: confirmLabel,
+                              primary: true,
+                              onPressed: confirmEnabled ? onConfirm : null,
+                            ),
+                        ],
                       ),
                     ],
-                    const SizedBox(height: 12),
-                    LoopButtonPair(
-                      padded: false,
-                      children: <Widget>[
-                        if (state == LoopSignSheetState.policyRejected &&
-                            onAdjustPolicy != null)
-                          LoopButton(label: '调整策略', onPressed: onAdjustPolicy),
-                        LoopButton(
-                          label:
-                              state == LoopSignSheetState.complete ||
-                                  state == LoopSignSheetState.policyRejected
-                              ? '关闭'
-                              : cancelLabel,
-                          onPressed: cancelEnabled ? onCancel : null,
-                        ),
-                        if (state != LoopSignSheetState.complete)
-                          LoopButton(
-                            label: confirmLabel,
-                            primary: true,
-                            onPressed: confirmEnabled ? onConfirm : null,
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+          ),
         ),
       ),
     );
   }
+}
+
+/// Decision 0130: the signing exit answers its own outcome under the finger.
+///
+/// Only a change *out of* [LoopSignSheetState.signing] plays anything: that
+/// is the one moment the owner is waiting for an answer they did not cause
+/// with the tap they just made. A sheet that opens already refused (a failed
+/// simulation, a policy) is read, not felt — nothing was attempted.
+class _SignOutcomeHaptics extends StatefulWidget {
+  const _SignOutcomeHaptics({required this.state, required this.child});
+
+  final LoopSignSheetState state;
+  final Widget child;
+
+  @override
+  State<_SignOutcomeHaptics> createState() => _SignOutcomeHapticsState();
+}
+
+class _SignOutcomeHapticsState extends State<_SignOutcomeHaptics> {
+  @override
+  void didUpdateWidget(covariant _SignOutcomeHaptics oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state != LoopSignSheetState.signing) return;
+    switch (widget.state) {
+      case LoopSignSheetState.complete:
+        LoopHaptics.success();
+      case LoopSignSheetState.simulationFailed:
+      case LoopSignSheetState.policyRejected:
+        LoopHaptics.error();
+      case LoopSignSheetState.pending:
+      case LoopSignSheetState.signing:
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _SigningBody extends StatelessWidget {
