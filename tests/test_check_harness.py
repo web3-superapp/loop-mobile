@@ -9620,6 +9620,104 @@ class ChatTokenCardContractTests(unittest.TestCase):
         )
 
 
+NAVIGATION_SHELL_FIXTURE_FILES = (
+    "lib/app.dart",
+    "lib/features/shell/loop_shell.dart",
+    "lib/features/shell/loop_orientation.dart",
+    "lib/widgets/loop_sheet.dart",
+    "lib/main.dart",
+    "lib/features/market/market_secondary_screens.dart",
+    "lib/features/meme/meme_create_screen.dart",
+    "test/s123a_navigation_shell_test.dart",
+)
+
+
+class NavigationShellContractTests(unittest.TestCase):
+    """S123a / decision 0128."""
+
+    def _check(self, relative: str | None = None, old: str = "", new: str = "") -> list[str]:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in NAVIGATION_SHELL_FIXTURE_FILES:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(
+                    (REPOSITORY_ROOT / name).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+            if relative is not None:
+                path = root / relative
+                source = path.read_text(encoding="utf-8")
+                mutated = source.replace(old, new, 1)
+                self.assertNotEqual(source, mutated, msg=f"fixture drift: {old}")
+                path.write_text(mutated, encoding="utf-8")
+            return check_harness.check_navigation_shell_contract(root)
+
+    def test_current_tree_passes(self) -> None:
+        self.assertEqual(self._check(), [])
+
+    def test_rejects_a_plain_shell_route(self) -> None:
+        result = self._check(
+            "lib/app.dart", "StatefulShellRoute.indexedStack(", "ShellRoute("
+        )
+        self.assertTrue(any("plain ShellRoute" in e for e in result), msg=result)
+
+    def test_rejects_go_between_tabs(self) -> None:
+        result = self._check(
+            "lib/features/shell/loop_shell.dart",
+            "shell.goBranch(index, initialLocation: index == shell.currentIndex);",
+            "context.go(LoopShell._destinations[index].path);",
+        )
+        self.assertTrue(any("goBranch" in e for e in result), msg=result)
+
+    def test_rejects_a_tab_back_that_leaves_the_app(self) -> None:
+        result = self._check(
+            "lib/features/shell/loop_shell.dart",
+            "canPop: selectedIndex == 0",
+            "canPop: true",
+        )
+        self.assertTrue(any("聊天" in e for e in result), msg=result)
+
+    def test_rejects_a_sheet_off_the_root_navigator(self) -> None:
+        result = self._check(
+            "lib/widgets/loop_sheet.dart",
+            "bool useRootNavigator = true",
+            "bool useRootNavigator = false",
+        )
+        self.assertTrue(any("root navigator" in e for e in result), msg=result)
+        result = self._check(
+            "lib/features/meme/meme_create_screen.dart",
+            "        sheetKey: 'meme-create-abandon-sheet',",
+            "        sheetKey: 'meme-create-abandon-sheet',\n"
+            "        useRootNavigator: false,",
+        )
+        self.assertTrue(
+            any("useRootNavigator: false" in e for e in result), msg=result
+        )
+
+    def test_rejects_a_multi_step_page_without_pop_scope(self) -> None:
+        result = self._check(
+            "lib/features/meme/meme_create_screen.dart",
+            "return PopScope(",
+            "return KeyedSubtree(",
+        )
+        self.assertTrue(any("multi-step" in e for e in result), msg=result)
+
+    def test_rejects_an_unlocked_start(self) -> None:
+        result = self._check(
+            "lib/main.dart",
+            "final orientationLock = loopLockPortrait();",
+            "final orientationLock = Future<void>.value();",
+        )
+        self.assertTrue(any("portrait" in e for e in result), msg=result)
+
+    def test_rejects_a_chart_that_unlocks_every_orientation(self) -> None:
+        result = self._check(
+            "lib/features/market/market_secondary_screens.dart",
+            "unawaited(loopLockPortrait());",
+            "unawaited(\n      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]),\n    );",
+        )
+        self.assertTrue(any("portrait" in e for e in result), msg=result)
 PRESS_HAPTICS_FIXTURE_FILES = (
     "lib/core/haptics/loop_haptics.dart",
     "lib/widgets/loop_pressable.dart",

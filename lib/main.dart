@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/communication/stream_community_channel_
 import 'package:loop_mobile/integrations/device/image_picker_avatar_source.dart';
 import 'package:loop_mobile/integrations/device/mobile_scanner_qr_scanner.dart';
 import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
+import 'package:loop_mobile/features/shell/loop_orientation.dart';
 import 'package:loop_mobile/features/chat/v2/group_rename.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_group_profile.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_live_voice_rooms.dart';
@@ -79,6 +80,9 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Decision 0128 (S123 M13): portrait only, from before the first frame.
+  // The full-screen chart turns itself sideways and restores this on leave.
+  final orientationLock = loopLockPortrait();
   // Firebase is brought up here and nowhere else, and only when this build was
   // given a configuration. `FIREBASE_CONFIGURED=false`, a build-profile
   // mismatch, and an initialization the device refused all end in the same
@@ -106,6 +110,7 @@ Future<void> main() async {
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
   final snapshotStore = await snapshotStoreOpening;
   final firebaseApp = await firebaseStarting;
+  await orientationLock;
   // `ensureApp` records the two failures it can tell apart. This is the
   // third: a build that was never given a configuration to try.
   if (!config.canInitializeFirebase) {

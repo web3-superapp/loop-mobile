@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,11 +14,27 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// Mobile: a solid Chalk floating bar, only on the five tab routes; the page
 /// body extends behind it and receives a `90 + safe-area` bottom padding.
 /// Widths from [LoopLayout.railBreakpoint] use a navigation rail instead.
-class LoopShell extends StatelessWidget {
-  const LoopShell({required this.child, required this.location, super.key});
+///
+/// Decision 0128: the five tabs are the branches of one
+/// `StatefulShellRoute.indexedStack`, handed in as [navigationShell]. A tab
+/// that is left keeps its page, its scroll offset and its state; selecting
+/// it again shows it exactly as it was. Selecting the tab that is already
+/// showing scrolls it back to the top. The system back on any tab but the
+/// first returns to 聊天 instead of leaving the App.
+///
+/// Without a [navigationShell] (a detached widget test) the shell selects by
+/// [location] and switches with `go`.
+class LoopShell extends StatefulWidget {
+  const LoopShell({
+    required this.child,
+    super.key,
+    this.location = '/chat',
+    this.navigationShell,
+  });
 
   final Widget child;
   final String location;
+  final StatefulNavigationShell? navigationShell;
 
   static const _destinations = <_LoopDestination>[
     // v3 (需求方 2026-10-08, decision 0110): 聊天/广场/MEME/情报/钱包.
@@ -36,18 +53,94 @@ class LoopShell extends StatelessWidget {
   static List<String> get destinationPaths =>
       _destinations.map((item) => item.path).toList(growable: false);
 
+  /// Brings every vertical scroll region of [context]'s subtree back to its
+  /// start: animated, or in one jump under reduced motion.
+  ///
+  /// It asks the scroll positions themselves rather than one
+  /// `PrimaryScrollController`, because a folio page coordinates its header
+  /// and list through a `NestedScrollView` whose inner position is not the
+  /// route's primary controller. Offstage subtrees (a segment that is not
+  /// showing) are left where they are.
+  static void scrollToTop(BuildContext context) {
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final positions = <ScrollPosition>[];
+    void visit(Element element) {
+      final widget = element.widget;
+      if (widget is Offstage && widget.offstage) return;
+      if (element is StatefulElement && element.state is ScrollableState) {
+        final position = (element.state as ScrollableState).position;
+        if (position.axis == Axis.vertical &&
+            position.hasPixels &&
+            position.hasContentDimensions &&
+            position.pixels > position.minScrollExtent &&
+            !positions.contains(position)) {
+          positions.add(position);
+        }
+      }
+      element.visitChildElements(visit);
+    }
+
+    context.visitChildElements(visit);
+    for (final position in positions) {
+      if (reduceMotion) {
+        position.jumpTo(position.minScrollExtent);
+      } else {
+        unawaited(
+          position.animateTo(
+            position.minScrollExtent,
+            duration: scrollToTopDuration,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+      }
+    }
+  }
+
+  static const Duration scrollToTopDuration = Duration(milliseconds: 320);
+
+  @override
+  State<LoopShell> createState() => _LoopShellState();
+}
+
+class _LoopShellState extends State<LoopShell> {
   int get _selectedIndex {
-    final match = _destinations.indexWhere((item) => location == item.path);
+    final shell = widget.navigationShell;
+    if (shell != null) return shell.currentIndex;
+    final match = LoopShell._destinations.indexWhere(
+      (item) => widget.location == item.path,
+    );
     return match < 0 ? 0 : match;
+  }
+
+  void _select(BuildContext context, int index) {
+    final current = _selectedIndex;
+    if (index == current) {
+      // m21: the tab that is already showing goes back to its top.
+      final branchContext = widget
+          .navigationShell
+          ?.route
+          .branches[index]
+          .navigatorKey
+          .currentContext;
+      LoopShell.scrollToTop(branchContext ?? context);
+    }
+    final shell = widget.navigationShell;
+    if (shell == null) {
+      context.go(LoopShell._destinations[index].path);
+      return;
+    }
+    shell.goBranch(index, initialLocation: index == shell.currentIndex);
   }
 
   @override
   Widget build(BuildContext context) {
     assert(
-      destinationPaths.join(',') == LoopRouteManifest.tabPaths.join(','),
+      LoopShell.destinationPaths.join(',') ==
+          LoopRouteManifest.tabPaths.join(','),
       'LoopShell destinations must follow the manifest tab order.',
     );
-    return LayoutBuilder(
+    final selectedIndex = _selectedIndex;
+    final body = LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= LoopLayout.railBreakpoint;
         if (wide) {
@@ -55,15 +148,15 @@ class LoopShell extends StatelessWidget {
             body: Row(
               children: <Widget>[
                 _DesktopRail(
-                  selectedIndex: _selectedIndex,
-                  onSelect: (index) => context.go(_destinations[index].path),
+                  selectedIndex: selectedIndex,
+                  onSelect: (index) => _select(context, index),
                 ),
                 const VerticalDivider(
                   width: 1,
                   thickness: 1,
                   color: LoopColors.line,
                 ),
-                Expanded(child: child),
+                Expanded(child: widget.child),
               ],
             ),
           );
@@ -71,14 +164,26 @@ class LoopShell extends StatelessWidget {
         return LoopTabBarScope(
           child: Scaffold(
             extendBody: true,
-            body: child,
+            body: widget.child,
             bottomNavigationBar: LoopTabBar(
-              selectedIndex: _selectedIndex,
-              onSelect: (index) => context.go(_destinations[index].path),
+              selectedIndex: selectedIndex,
+              onSelect: (index) => _select(context, index),
             ),
           ),
         );
       },
+    );
+    if (widget.navigationShell == null) return body;
+    // B2: back on 广场, MEME, 情报 or 钱包 goes to 聊天 first; only 聊天 lets
+    // the system close the App. `PopScope` is what Android's predictive back
+    // reads, so the system shows no "leave the App" preview on those tabs.
+    return PopScope(
+      canPop: selectedIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        widget.navigationShell?.goBranch(0);
+      },
+      child: body,
     );
   }
 }
@@ -305,20 +410,59 @@ class LoopTabItem extends StatelessWidget {
   }
 }
 
-/// Page wrapper for the five tab routes: peers switch with a fade only.
-class LoopTabPage<T> extends CustomTransitionPage<T> {
-  LoopTabPage({required super.child, super.key, super.name})
-    : super(
-        transitionDuration: const Duration(milliseconds: 180),
-        reverseTransitionDuration: const Duration(milliseconds: 180),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          if (MediaQuery.disableAnimationsOf(context)) return child;
-          return FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            child: child,
-          );
-        },
-      );
+/// The peer-tab fade (decision 0128 keeps decision 0071's fade).
+///
+/// The branches of the indexed stack are never rebuilt when one is selected,
+/// so there is no page transition to fade; instead the branch container fades
+/// in over 180ms each time [index] changes. Reduced motion shows it at once.
+class LoopTabSwitchFade extends StatefulWidget {
+  const LoopTabSwitchFade({
+    required this.index,
+    required this.child,
+    super.key,
+  });
+
+  final int index;
+  final Widget child;
+
+  static const Duration duration = Duration(milliseconds: 180);
+
+  @override
+  State<LoopTabSwitchFade> createState() => _LoopTabSwitchFadeState();
+}
+
+class _LoopTabSwitchFadeState extends State<LoopTabSwitchFade>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: LoopTabSwitchFade.duration,
+    value: 1,
+  );
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOut,
+  );
+
+  @override
+  void didUpdateWidget(LoopTabSwitchFade oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index == widget.index) return;
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      _controller.value = 1;
+    } else {
+      unawaited(_controller.forward(from: 0));
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FadeTransition(opacity: _opacity, child: widget.child);
 }
 
 class _DesktopRail extends StatelessWidget {

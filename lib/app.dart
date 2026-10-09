@@ -925,91 +925,107 @@ GoRouter _buildRouter(
               context.push(MarketAssetRoute.token(assetId)),
         ),
       ),
-      ShellRoute(
+      StatefulShellRoute.indexedStack(
         // Decision 0076: the one place in LOOP that may say a product page is
         // actually on screen. Every tab and every page under one is drawn
         // inside this shell, and nothing above it can tell a router location
         // from a frame.
-        builder: (context, state, child) => LoopProductFrameReporter(
+        //
+        // Decision 0128: the five tabs are five branches of one indexed
+        // stack. A tab that is left is kept, scroll offset and state
+        // included, and is shown again as it was; the peer fade is the
+        // branch container's, not a page transition.
+        builder: (context, state, navigationShell) => LoopProductFrameReporter(
           onDrawn: onProductFrameDrawn ?? () {},
           child: LoopShell(
             location: state.uri.path,
+            navigationShell: navigationShell,
             child: Column(
               children: <Widget>[
                 const LoopSoftUpdatePrompt(),
                 const ProfileAvailabilityBanner(),
-                Expanded(child: child),
+                Expanded(
+                  child: LoopTabSwitchFade(
+                    index: navigationShell.currentIndex,
+                    child: navigationShell,
+                  ),
+                ),
               ],
             ),
           ),
         ),
-        // Peer tabs fade. Every other route is pushed on the root navigator
-        // and takes the platform's own push — Cupertino on iOS, predictive
-        // back on Android — so the edge-swipe-back works on all of them
-        // (decision 0085); nothing here may install a page transition of its
-        // own over a route a user can return from.
-        routes: <RouteBase>[
-          GoRoute(
-            path: '/chat',
-            pageBuilder: (context, state) => LoopTabPage<void>(
-              key: state.pageKey,
-              child: StreamChatInboxPage(
-                onOpenProfile: () =>
-                    context.push(LoopRouteManifest.pathFor('profile')),
-                onOpenVoiceRoom: (communityId) => context.push(
-                  '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
+        // Every other route is pushed on the root navigator and takes the
+        // platform's own push — Cupertino on iOS, predictive back on Android
+        // — so the edge-swipe-back works on all of them (decision 0085);
+        // nothing here may install a page transition of its own over a route
+        // a user can return from.
+        branches: <StatefulShellBranch>[
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/chat',
+                builder: (context, state) => StreamChatInboxPage(
+                  onOpenProfile: () =>
+                      context.push(LoopRouteManifest.pathFor('profile')),
+                  onOpenVoiceRoom: (communityId) => context.push(
+                    '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-          GoRoute(
-            path: '/square',
-            pageBuilder: (context, state) => LoopTabPage<void>(
-              key: state.pageKey,
-              child: SquareScreen(
-                onOpenCommunity: (communityId) => context.push(
-                  '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/square',
+                builder: (context, state) => SquareScreen(
+                  onOpenCommunity: (communityId) => context.push(
+                    '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',
+                  ),
+                  onOpenVoiceRoom: (communityId) => context.push(
+                    '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
+                  ),
                 ),
-                onOpenVoiceRoom: (communityId) => context.push(
-                  '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/meme',
+                builder: (context, state) => MemeScreen(
+                  onNavigate: (location) => context.push(location),
+                  onOpenLaunch: (launchId) =>
+                      context.push(LaunchRoute.detail(launchId)),
+                  onOpenStake: () =>
+                      context.push(LoopRouteManifest.pathFor('loop-stake')),
+                  onOpenRules: () =>
+                      context.push(LoopRouteManifest.pathFor('launch-rounds')),
+                  onOpenEconomy: () =>
+                      context.push(LoopRouteManifest.pathFor('loop-economy')),
+                  onOpenApply: () =>
+                      context.push(LoopRouteManifest.pathFor('launch-apply')),
                 ),
               ),
-            ),
+            ],
           ),
-          GoRoute(
-            path: '/meme',
-            pageBuilder: (context, state) => LoopTabPage<void>(
-              key: state.pageKey,
-              child: MemeScreen(
-                onNavigate: (location) => context.push(location),
-                onOpenLaunch: (launchId) =>
-                    context.push(LaunchRoute.detail(launchId)),
-                onOpenStake: () =>
-                    context.push(LoopRouteManifest.pathFor('loop-stake')),
-                onOpenRules: () =>
-                    context.push(LoopRouteManifest.pathFor('launch-rounds')),
-                onOpenEconomy: () =>
-                    context.push(LoopRouteManifest.pathFor('loop-economy')),
-                onOpenApply: () =>
-                    context.push(LoopRouteManifest.pathFor('launch-apply')),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/intel',
+                builder: (context, state) => IntelScreen(
+                  onNavigate: (location) => context.push(location),
+                ),
               ),
-            ),
+            ],
           ),
-          GoRoute(
-            path: '/intel',
-            pageBuilder: (context, state) => LoopTabPage<void>(
-              key: state.pageKey,
-              child: IntelScreen(
-                onNavigate: (location) => context.push(location),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/wallet',
+                builder: (context, state) => const WalletScreen(),
               ),
-            ),
-          ),
-          GoRoute(
-            path: '/wallet',
-            pageBuilder: (context, state) => LoopTabPage<void>(
-              key: state.pageKey,
-              child: const WalletScreen(),
-            ),
+            ],
           ),
         ],
       ),

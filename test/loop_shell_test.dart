@@ -257,23 +257,33 @@ void main() {
     final router = GoRouter(
       initialLocation: '/community',
       routes: <RouteBase>[
-        ShellRoute(
-          builder: (context, state, child) =>
-              LoopShell(location: state.uri.path, child: child),
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/community',
-              pageBuilder: (context, state) => LoopTabPage<void>(
-                key: state.pageKey,
-                child: const Center(child: Text('community')),
-              ),
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) => LoopShell(
+            location: state.uri.path,
+            navigationShell: navigationShell,
+            child: LoopTabSwitchFade(
+              index: navigationShell.currentIndex,
+              child: navigationShell,
             ),
-            GoRoute(
-              path: '/wallet',
-              pageBuilder: (context, state) => LoopTabPage<void>(
-                key: state.pageKey,
-                child: const Center(child: Text('wallet')),
-              ),
+          ),
+          branches: <StatefulShellBranch>[
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: '/community',
+                  builder: (context, state) =>
+                      const Center(child: Text('community')),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: '/wallet',
+                  builder: (context, state) =>
+                      const Center(child: Text('wallet')),
+                ),
+              ],
             ),
           ],
         ),
@@ -293,7 +303,15 @@ void main() {
     router.go('/wallet');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 90));
-    expect(find.byType(FadeTransition), findsWidgets);
+    final fade = tester.widget<FadeTransition>(
+      find
+          .descendant(
+            of: find.byType(LoopTabSwitchFade),
+            matching: find.byType(FadeTransition),
+          )
+          .first,
+    );
+    expect(fade.opacity.value, inExclusiveRange(0, 1));
     expect(find.byType(LoopTabBar), findsOneWidget);
     await tester.pumpAndSettle();
 
@@ -320,55 +338,30 @@ void main() {
   });
 
   testWidgets('reduced motion removes the peer-tab fade', (tester) async {
-    // The page transition itself is the platform's now (decision 0085), and
+    // The page transition itself is the platform's (decision 0085), and
     // under reduced motion the platform collapses its own duration — so the
-    // assertion is on the one transition LOOP still owns: `LoopTabPage`'s
-    // peer fade, asked directly rather than through a route that carries the
-    // platform's fade above it.
-    const marker = SizedBox(key: ValueKey<String>('tab-child'));
-    final page = LoopTabPage<void>(child: marker);
-    Widget? moving;
-    Widget? still;
+    // assertion is on the one transition LOOP still owns: the branch
+    // container's peer fade (decision 0128).
+    var index = 0;
+    late StateSetter setIndex;
     await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: Column(
-          children: <Widget>[
-            MediaQuery(
-              data: const MediaQueryData(),
-              child: Builder(
-                builder: (context) {
-                  moving = page.transitionsBuilder(
-                    context,
-                    kAlwaysCompleteAnimation,
-                    kAlwaysDismissedAnimation,
-                    marker,
-                  );
-                  return const SizedBox.shrink();
-                },
-              ),
-            ),
-            MediaQuery(
-              data: const MediaQueryData(disableAnimations: true),
-              child: Builder(
-                builder: (context) {
-                  still = page.transitionsBuilder(
-                    context,
-                    kAlwaysCompleteAnimation,
-                    kAlwaysDismissedAnimation,
-                    marker,
-                  );
-                  return const SizedBox.shrink();
-                },
-              ),
-            ),
-          ],
+      MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            setIndex = setState;
+            return LoopTabSwitchFade(
+              index: index,
+              child: const SizedBox(key: ValueKey<String>('tab-child')),
+            );
+          },
         ),
       ),
     );
-
-    expect(moving, isA<FadeTransition>());
-    expect(still, same(marker));
+    setIndex(() => index = 1);
+    await tester.pump();
+    final fade = tester.widget<FadeTransition>(find.byType(FadeTransition));
+    expect(fade.opacity.value, 1);
   });
 
   testWidgets('wide layouts keep the rail with sprite icons and Ink ground', (
