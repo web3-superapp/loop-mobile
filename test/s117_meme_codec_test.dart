@@ -244,7 +244,7 @@ void main() {
         }
 
         final hidden = withListing('hidden', <String, Object?>{
-          'reasonCode': 'user_reports',
+          'reasonCode': 'OPERATOR_USER_REPORTS',
           'reasonText': '多位用户举报，已下架',
         });
         final listed = withListing('listed', null);
@@ -260,7 +260,7 @@ void main() {
           memeTokenId: memeTokenIdA,
         );
         expect(a.isHidden, isTrue);
-        expect(a.listingReason?.reasonCode, 'user_reports');
+        expect(a.listingReason?.reasonCode, 'OPERATOR_USER_REPORTS');
         expect(a.listingReason?.reasonText, '多位用户举报，已下架');
         final b = await api.getToken(
           accessToken: _token,
