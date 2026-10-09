@@ -1241,10 +1241,16 @@ class LoopRecordRow extends StatelessWidget {
     this.chevron = true,
     this.trailingColor,
     this.trailingStrong = false,
+    this.readOnly = false,
   });
 
   final Widget? leading;
   final String title;
+
+  /// The row states a value the reader cannot change here (audit 2026-10-09
+  /// m8): no chevron, no pressed state, the value in the weakest ink, and a
+  /// screen reader hears 「不可更改」. Ignored when [onTap] is set.
+  final bool readOnly;
 
   /// Paints [trailing] in a colour of its own — an amount received in `rise`,
   /// sent in `fall` (decision 0126 · 交易记录).
@@ -1483,7 +1489,15 @@ class LoopRecordRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
       child: row,
     );
-    if (onTap == null) return padded;
+    if (onTap == null) {
+      if (!readOnly) return padded;
+      return Semantics(
+        readOnly: true,
+        label: semanticLabel ?? '$title，${trailing ?? ''}，不可更改',
+        excludeSemantics: true,
+        child: padded,
+      );
+    }
     return Semantics(
       button: true,
       label: semanticLabel,
@@ -1585,7 +1599,11 @@ extension on LoopRecordRow {
                           : LoopTypography.figure(
                               14,
                               weight: FontWeight.w500,
-                              color: trailingColor ?? LoopColors.text2,
+                              color:
+                                  trailingColor ??
+                                  (readOnly && onTap == null
+                                      ? LoopColors.text3
+                                      : LoopColors.text2),
                             ),
                     ),
                   if (trailingCaption != null)
@@ -1614,7 +1632,15 @@ extension on LoopRecordRow {
         ],
       ),
     );
-    if (onTap == null) return content;
+    if (onTap == null) {
+      if (!readOnly) return content;
+      return Semantics(
+        readOnly: true,
+        label: semanticLabel ?? '$title，${trailing ?? ''}，不可更改',
+        excludeSemantics: true,
+        child: content,
+      );
+    }
     return Semantics(
       button: true,
       label: semanticLabel,
@@ -1663,6 +1689,7 @@ class LoopRecordGroup extends StatelessWidget {
             chevron: rows[index].chevron,
             trailingColor: rows[index].trailingColor,
             trailingStrong: rows[index].trailingStrong,
+            readOnly: rows[index].readOnly,
             position: rows.length == 1
                 ? LoopRowPosition.single
                 : index == 0

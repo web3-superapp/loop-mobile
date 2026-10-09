@@ -90,22 +90,6 @@ void main() {
       expect(find.textContaining('\$'), findsNothing);
     });
 
-    testWidgets('networth pauses without inventing a total', (tester) async {
-      await pumpS5Page(
-        tester,
-        const NetWorthScreen(),
-        wallet: FakeWalletReadGateway(
-          balances: S5Answer<LoopWalletBalances>(
-            failure: LoopChainFailureKind.offline,
-          ),
-        ),
-      );
-
-      await expectOffline(tester, 'networth');
-      expect(find.text('净值不可用'), findsNothing);
-      expect(find.textContaining('6,352'), findsNothing);
-    });
-
     testWidgets('asset pauses without a balance', (tester) async {
       await pumpS5Page(
         tester,
@@ -202,22 +186,6 @@ void main() {
 
       await expectPermission(tester, 'wallet-directory');
       expect(find.textContaining('没有执行这个操作的权限'), findsOneWidget);
-    });
-
-    testWidgets('networth reads a refused account as a permission state', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const NetWorthScreen(),
-        wallet: FakeWalletReadGateway(
-          balances: S5Answer<LoopWalletBalances>(
-            failure: LoopChainFailureKind.permissionDenied,
-          ),
-        ),
-      );
-
-      await expectPermission(tester, 'networth');
     });
 
     testWidgets('asset reads a refused account as a permission state', (

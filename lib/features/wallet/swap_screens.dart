@@ -22,6 +22,8 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// How long the pay amount rests before it is quoted by itself (decision
@@ -146,16 +148,24 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       // 报价与费用明细 is a page about one quote. Without a quote it has
       // nothing to open, and the chevron that used to sit there took the tap,
       // changed nothing, and pushed no route at all.
-      actions: quote == null
-          ? const <Widget>[]
-          : <Widget>[
-              LoopIconButton(
-                key: const ValueKey<String>('swap-route-action'),
-                icon: 'chevron',
-                label: '报价与费用明细',
-                onPressed: () => _open('/wallet/swap/route', extra: quote),
-              ),
-            ],
+      actions: <Widget>[
+        // Decision 0133: 「路由由供应商选择」 and 「算力影响不可用」 ask nothing
+        // of the reader. They were two cards under the form; they are this
+        // (i) now, and the page is the form.
+        LoopIconButton(
+          key: const ValueKey<String>('swap-info-action'),
+          icon: 'info',
+          label: '关于兑换',
+          onPressed: () => unawaited(showSwapInfoSheet(context)),
+        ),
+        if (quote != null)
+          LoopIconButton(
+            key: const ValueKey<String>('swap-route-action'),
+            icon: 'chevron',
+            label: '报价与费用明细',
+            onPressed: () => _open('/wallet/swap/route', extra: quote),
+          ),
+      ],
       primaryAction: blocked ? null : _primaryAction(capability, quote),
       body: <Widget>[
         // A closed gate used to take the whole page. The prototype's swap is
@@ -207,12 +217,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           // One sentence, not two: the title used to restate the reason code
           // printed directly under it (「兑换还在验证中，暂时不能执行」 over
           // 「兑换还在验证中，可以查看报价，但不能执行。」).
+          //
+          // Decision 0133: a real limit, so it stays on the page — as one
+          // small line, not a banner over the form.
           if (capability.evidencePending)
-            LoopNotice(
+            LoopInlineUnavailable(
               key: const ValueKey<String>('swap-evidence-pending'),
-              icon: 'warn',
-              tone: LoopNoticeTone.warn,
-              body: loopReasonCodeText(capability.evidenceReasonCode),
+              message: loopReasonCodeText(capability.evidenceReasonCode),
             ),
           _AssetField(
             keyPrefix: 'swap-source',
@@ -312,19 +323,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               onPressed: () => _open('/wallet/swap/route', extra: quote),
             ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('swap-routing-notice'),
-            title: '路由由供应商选择',
-            body:
-                'LOOP 不自建路由，也不做逐跳拆解。这里只展示 Privy 返回的最终报价；'
-                '兑换所得资产直接进入本钱包。',
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('swap-power-notice'),
-            icon: 'mine',
-            title: '算力影响不可用',
-            body: '买入后的算力变化暂时读不到，这里不做估算。',
-          ),
         ],
       ],
     );
@@ -937,3 +935,25 @@ class SwapRouteScreen extends StatelessWidget {
     );
   }
 }
+
+/// What the 兑换 page's (i) says (decision 0133): the two explanations that
+/// used to stand under the form as cards, word for word.
+Future<void> showSwapInfoSheet(BuildContext context) => showLoopInfoSheet(
+  context,
+  title: '关于兑换',
+  sheetKey: 'swap-info-sheet',
+  notes: const <LoopInfoNote>[
+    LoopInfoNote(
+      key: ValueKey<String>('swap-routing-notice'),
+      title: '路由由供应商选择',
+      body:
+          'LOOP 不自建路由，也不做逐跳拆解。这里只展示 Privy 返回的最终报价；'
+          '兑换所得资产直接进入本钱包。',
+    ),
+    LoopInfoNote(
+      key: ValueKey<String>('swap-power-notice'),
+      title: '算力影响不可用',
+      body: '买入后的算力变化暂时读不到，这里不做估算。',
+    ),
+  ],
+);

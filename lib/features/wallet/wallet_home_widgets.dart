@@ -7,7 +7,6 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_environment_tag.dart';
@@ -109,7 +108,6 @@ class WalletTotalHeader extends ConsumerWidget {
     this.unreadText = '暂不可用',
     this.address,
     this.environmentTag,
-    this.onOpenNetWorth,
   });
 
   final String keyPrefix;
@@ -122,9 +120,6 @@ class WalletTotalHeader extends ConsumerWidget {
 
   /// Decision 0100: the backend environment on a non-release build.
   final String? environmentTag;
-
-  /// Opens 净值明细; `null` on that page itself.
-  final VoidCallback? onOpenNetWorth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -153,7 +148,8 @@ class WalletTotalHeader extends ConsumerWidget {
         loopReasonCodeText(reason),
     ].join(' · ');
 
-    final openNetWorth = onOpenNetWorth;
+    // Decision 0133 (audit m9): no chevron to 净值明细. That page repeated
+    // this header and the asset list below it; the (i) carries the rest.
     final figureText = Text(
       figure,
       key: ValueKey<String>('$keyPrefix-total-figure'),
@@ -216,30 +212,7 @@ class WalletTotalHeader extends ConsumerWidget {
               child: const LoopSkeletonBlock(width: 168, height: 30),
             )
           else
-            Row(
-              children: <Widget>[
-                Flexible(
-                  child: openNetWorth == null
-                      ? figureText
-                      : Semantics(
-                          button: true,
-                          label: '$figure，查看净值明细',
-                          excludeSemantics: true,
-                          child: LoopPressable(
-                            onTap: openNetWorth,
-                            child: figureText,
-                          ),
-                        ),
-                ),
-                if (openNetWorth != null)
-                  LoopIconButton(
-                    key: const ValueKey<String>('wallet-networth-entry'),
-                    icon: 'chevron',
-                    label: '查看净值明细',
-                    onPressed: openNetWorth,
-                  ),
-              ],
-            ),
+            figureText,
           WalletChangeLine(
             keyPrefix: keyPrefix,
             netWorth: netWorth,
@@ -892,66 +865,4 @@ class WalletZeroBalanceToggle extends StatelessWidget {
       ),
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// 授权与网络
-// ---------------------------------------------------------------------------
-
-/// The second-level list behind 「授权与网络」: token approvals, networks and
-/// the DApp address check, each opening the page it always opened.
-Future<void> showWalletConnectionsSheet(
-  BuildContext context, {
-  required void Function(String location) onOpen,
-}) {
-  return showLoopSheet<void>(
-    context,
-    barrierLabel: '关闭授权与网络',
-    builder: (sheetContext) {
-      void open(String location) {
-        Navigator.of(sheetContext).pop();
-        onOpen(location);
-      }
-
-      return Padding(
-        key: const ValueKey<String>('wallet-connections-sheet'),
-        padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: Text('授权与网络', style: LoopType.headingSm),
-            ),
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                LoopRecordRow(
-                  key: const ValueKey<String>('wallet-approvals-entry'),
-                  leading: const LoopRowIcon(icon: 'shield'),
-                  title: '代币授权',
-                  subtitle: '查看授出的额度，不再需要的可以收回',
-                  onTap: () => open('/wallet/approvals'),
-                ),
-                LoopRecordRow(
-                  key: const ValueKey<String>('wallet-networks-entry'),
-                  leading: const LoopRowIcon(icon: 'globe'),
-                  title: '网络',
-                  subtitle: '已启用的网络与连接状态',
-                  onTap: () => open('/wallet/networks'),
-                ),
-                LoopRecordRow(
-                  key: const ValueKey<String>('wallet-dapp-entry'),
-                  leading: const LoopRowIcon(icon: 'link'),
-                  title: 'DApp 网址核对',
-                  subtitle: '打开前先核对网址；连接与签名暂未开放',
-                  onTap: () => open('/wallet/dapp'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    },
-  );
 }

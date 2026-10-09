@@ -252,8 +252,8 @@ void main() {
       for (final entry in <(String, String)>[
         // Decision 0126: the round keys under the header, then the three
         // sections top to bottom; 挖矿总览 became the fourth key.
+        // Decision 0133: 好友 was 关注与粉丝 under a second name.
         ('profile-open-scan', 'scan'),
-        ('profile-open-friends', 'connections'),
         ('profile-open-mining-key', 'mining'),
         ('profile-open-wallets', 'wallets'),
         ('profile-open-connections', 'connections'),

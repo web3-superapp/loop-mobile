@@ -120,18 +120,18 @@ void main() {
         findsNothing,
       );
       expect(find.byType(LoopFolioPrimary), findsNothing);
-      expect(_labels(tester), <String>['通用', '账户', '关于']);
+      // Decision 0133: the 账户 group repeated rows 我 and 钱包 already carry.
+      expect(_labels(tester), <String>['通用', '关于']);
 
-      // §D+ #11: 语言 reads its value, not a sentence about why it is fixed.
+      // §D+ #11: 语言 reads its value, not a sentence about why it is fixed;
+      // decision 0133 (m8) makes it a read-only value with one shared note.
       final language = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('settings-language')),
       );
       expect(language.subtitle, isNull);
       expect(language.trailing, isNotNull);
-      final privacy = tester.widget<LoopRecordRow>(
-        find.byKey(const ValueKey<String>('settings-open-privacy')),
-      );
-      expect(privacy.subtitle, isNull);
+      expect(language.readOnly, isTrue);
+      expect(language.onTap, isNull);
     });
   });
 

@@ -87,7 +87,7 @@ void main() {
       expect(find.textContaining('尚未写入过'), findsNothing);
     });
 
-    testWidgets('the privacy entry names rows the privacy page has', (
+    testWidgets('the rows 我 and 钱包 already carry are not repeated', (
       tester,
     ) async {
       await pumpS8Page(
@@ -96,17 +96,20 @@ void main() {
         settings: FakeAccountSettingsGateway(),
       );
 
-      final row = find.byKey(const ValueKey<String>('settings-open-privacy'));
-      await scrollToS8Section(tester, row);
+      // Decision 0133 (audit m9): 隐私中心 / 安全中心 / 通知 are rows on 我
+      // and 网络 a row on 钱包; one entry per hub.
+      for (final key in <String>[
+        'settings-open-privacy',
+        'settings-open-security',
+        'settings-open-notifications',
+        'settings-open-networks',
+      ]) {
+        expect(find.byKey(ValueKey<String>(key)), findsNothing, reason: key);
+      }
       // Copytrade is retired and the V2 privacy contract carries no facet for
       // it; the page also has no row called 可被搜索.
       expect(find.textContaining('跟单'), findsNothing);
       expect(find.textContaining('可被搜索'), findsNothing);
-      // The prototype's account rows are a title, a value and a chevron. This
-      // page reads no privacy state, so the row carries no second line rather
-      // than a description of the destination (audit 2026-09-21 §D+ #11).
-      expect(tester.widget<LoopRecordRow>(row).subtitle, isNull);
-      expect(tester.widget<LoopRecordRow>(row).onTap, isNotNull);
     });
 
     testWidgets('sign out is offered only when the composition provides it', (
@@ -125,6 +128,16 @@ void main() {
       final button = find.byKey(const ValueKey<String>('settings-sign-out'));
       await scrollToS8Section(tester, button);
       await tester.tap(button);
+      await tester.pumpAndSettle();
+      // Decision 0133 (M14): the tap asks first.
+      expect(signedOut, 0);
+      expect(
+        find.byKey(const ValueKey<String>('sign-out-confirm-sheet')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
       await tester.pumpAndSettle();
       expect(signedOut, 1);
     });

@@ -7375,10 +7375,11 @@ class HarnessTests(unittest.TestCase):
             application_path = root / check_harness.NOTIFICATION_APPLICATION_PATH
             source = application_path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "navigate: (intent) => router.go(intent.location),",
+                "navigate: (intent) =>\n"
+                "          loopOpenNotificationLocation(router, intent.location),",
                 "navigate: (intent) {\n"
                 "        router.go('/wallet');\n"
-                "        router.go(intent.location);\n"
+                "        loopOpenNotificationLocation(router, intent.location);\n"
                 "      },",
             )
             self.assertNotEqual(source, mutated)
@@ -10019,3 +10020,118 @@ class MoneyFormsNativeContractTests(unittest.TestCase):
             result = check_harness.check_money_forms_native_contract(root)
         self.assertEqual(1, len(result), result)
         self.assertIn("send_screens.dart", result[0])
+
+
+class IaCleanupContractTests(unittest.TestCase):
+    """Decision 0133: audit 2026-10-09 M14, m8–m16, §五 rules 15 and 18."""
+
+    def _write(self, root: Path, relative: str, source: str) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+
+    def _copy(self, root: Path, relative: str) -> str:
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        self._write(root, relative, source)
+        return source
+
+    def test_current_repository_passes(self) -> None:
+        self.assertEqual([], check_harness.check_ia_cleanup_contract(REPOSITORY_ROOT))
+
+    def test_unconfirmed_sign_out_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/profile/settings/settings_screen.dart",
+                "Widget f() => LoopButton(\n"
+                "  label: '退出登录',\n"
+                "  onPressed: () => unawaited(widget.onSignOut!()),\n"
+                ");\n",
+            )
+            result = check_harness.check_ia_cleanup_contract(root)
+        self.assertTrue(any("LoopSignOutButton" in error for error in result), result)
+        self.assertTrue(any("directly" in error for error in result), result)
+
+    def test_sign_out_owner_without_confirmation_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                check_harness.IA_SIGN_OUT_OWNER,
+                "class LoopSignOutButton {}\n",
+            )
+            result = check_harness.check_ia_cleanup_contract(root)
+        self.assertTrue(any("confirmCommunityAction" in error for error in result), result)
+
+    def test_settings_value_row_that_looks_tappable_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/profile/settings/settings_screen.dart"
+            source = self._copy(root, relative)
+            mutated = source.replace(
+                "trailing: '深色',\n                readOnly: true,",
+                "trailing: '深色',\n                onTap: () {},",
+            )
+            self.assertNotEqual(source, mutated)
+            self._write(root, relative, mutated)
+            result = check_harness.check_ia_cleanup_contract(root)
+        self.assertTrue(any("settings-theme" in error for error in result), result)
+
+    def test_net_worth_page_mounted_again_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/app.dart",
+                "GoRoute(\n"
+                "  path: '/wallet/networth',\n"
+                "  builder: (context, state) => const NetWorthScreen(),\n"
+                "),\n",
+            )
+            result = check_harness.check_ia_cleanup_contract(root)
+        self.assertTrue(any("/wallet/networth" in error for error in result), result)
+
+    def test_landscape_in_info_plist_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "ios/Runner/Info.plist"
+            source = self._copy(root, relative)
+            mutated = source.replace(
+                "<key>UISupportedInterfaceOrientations</key>\n\t<array>\n"
+                "\t\t<string>UIInterfaceOrientationPortrait</string>\n",
+                "<key>UISupportedInterfaceOrientations</key>\n\t<array>\n"
+                "\t\t<string>UIInterfaceOrientationPortrait</string>\n"
+                "\t\t<string>UIInterfaceOrientationLandscapeLeft</string>\n",
+            )
+            self.assertNotEqual(source, mutated)
+            self._write(root, relative, mutated)
+            self._write(root, "ios/Runner/AppDelegate.swift", "class AppDelegate {}\n")
+            result = check_harness.check_ia_cleanup_contract(root)
+        self.assertTrue(any("portrait only" in error for error in result), result)
+        self.assertTrue(
+            any("supportedInterfaceOrientationsFor" in error for error in result),
+            result,
+        )
+
+    def test_testnet_card_in_wallet_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/wallet_read_widgets.dart",
+                "Widget f() => LoopTestnetNotice(visible: true);\n",
+            )
+            result = check_harness.check_ia_cleanup_contract(root)
+        self.assertTrue(any("LoopTestnetNotice" in error for error in result), result)
+
+    def test_copy_naming_a_retired_tab_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/chat/x.dart",
+                "const String hint = '全局搜索从社区 Tab 顶部进入。';\n",
+            )
+            result = check_harness.check_ia_cleanup_contract(root)
+        self.assertTrue(any("rule 18" in error for error in result), result)

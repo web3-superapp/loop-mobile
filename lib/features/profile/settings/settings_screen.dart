@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/settings/settings_controller.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
+import 'package:loop_mobile/features/profile/sign_out_button.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -126,18 +128,21 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                   key: const ValueKey<String>('settings-language'),
                   title: '语言',
                   trailing: settings.values.languageLabel,
+                  readOnly: true,
                   position: LoopRowPosition.first,
                 ),
                 LoopRecordRow(
                   key: const ValueKey<String>('settings-display-currency'),
                   title: '货币单位',
                   trailing: settings.values.displayCurrency,
+                  readOnly: true,
                 ),
               ],
               LoopRecordRow(
                 key: const ValueKey<String>('settings-theme'),
                 title: '主题',
                 trailing: '深色',
+                readOnly: true,
                 position: settings == null
                     ? LoopRowPosition.first
                     : LoopRowPosition.middle,
@@ -201,6 +206,17 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               ),
             ],
           ),
+          // Audit 2026-10-09 m8: 语言 / 货币单位 / 主题 looked like rows to
+          // open and did nothing. They are stated values now (no chevron, no
+          // pressed state, grey value), and this one line says why.
+          Padding(
+            key: const ValueKey<String>('settings-fixed-values-note'),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Text(
+              settings == null ? '主题在当前版本固定，不能更改。' : '语言、货币单位与主题在当前版本固定，不能更改。',
+              style: LoopTypography.caption(12, color: LoopColors.text3),
+            ),
+          ),
           if (preferences.persistence ==
               LoopDisplayPreferencesPersistence.unavailable)
             LoopNotice(
@@ -220,36 +236,9 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                     .retryPersistence,
               ),
             ),
-          const LoopLabel('账户'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              // Four destinations, no second line: the prototype's account rows
-              // carry a state value or nothing at all, and this page cannot
-              // read any of those four states without a second request each.
-              LoopRecordRow(
-                key: const ValueKey<String>('settings-open-privacy'),
-                title: '隐私中心',
-                onTap: () => widget.onNavigate('privacy'),
-                position: LoopRowPosition.first,
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('settings-open-security'),
-                title: '安全中心',
-                onTap: () => widget.onNavigate('security'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('settings-open-notifications'),
-                title: '通知',
-                onTap: () => widget.onNavigate('notif-settings'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('settings-open-networks'),
-                title: '网络与 RPC',
-                onTap: () => widget.onNavigate('networks'),
-                position: LoopRowPosition.last,
-              ),
-            ],
-          ),
+          // Decision 0133 (audit m9): 隐私中心, 安全中心 and 通知 are rows on 我,
+          // one level up, and 网络 is a row on 钱包. The 账户 group repeated
+          // all four; a destination has one entry per hub.
           const LoopLabel('关于'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
@@ -279,14 +268,9 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                   : '更新于 ${loopRelativeTime(settings.updatedAt!)}',
             ),
           if (widget.onSignOut != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: LoopButton(
-                key: const ValueKey<String>('settings-sign-out'),
-                label: '退出登录',
-                block: true,
-                onPressed: () => unawaited(widget.onSignOut!()),
-              ),
+            LoopSignOutButton(
+              key: const ValueKey<String>('settings-sign-out'),
+              onSignOut: widget.onSignOut!,
             ),
           const SizedBox(height: 20),
         ],

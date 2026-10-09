@@ -30,6 +30,7 @@ import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
+import 'package:loop_mobile/features/profile/sign_out_button.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
@@ -439,7 +440,9 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               resource: resource!,
               onEdit: () => widget.onNavigate('profile-edit'),
             ),
-          // Decision 0126 on decision 0127's round keys: four 56 Lime discs.
+          // Decision 0126 on decision 0127's round keys: 56 Lime discs. The
+          // fourth, 好友, opened 关注与粉丝 — the row below — under another
+          // name (decision 0133, audit m9).
           LoopRoundKeyRow(
             key: const ValueKey<String>('profile-round-keys'),
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
@@ -468,12 +471,6 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
                 icon: 'camera',
                 label: '扫一扫',
                 onPressed: () => widget.onNavigate('scan'),
-              ),
-              LoopRoundKey(
-                key: const ValueKey<String>('profile-open-friends'),
-                icon: 'users',
-                label: '好友',
-                onPressed: () => widget.onNavigate('connections'),
               ),
               LoopRoundKey(
                 key: const ValueKey<String>('profile-open-mining-key'),
@@ -507,7 +504,9 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('profile-open-friend-requests'),
                 leading: const LoopRowIcon(icon: 'hand'),
-                title: '好友请求',
+                // The page it opens, and the row on 聊天, both say 陌生人请求
+                // (audit m9).
+                title: '陌生人请求',
                 onTap: () => widget.onNavigate('friend-requests'),
               ),
               _inviteRow(),
@@ -594,34 +593,12 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               ),
             ],
           ),
-          // Leaving is not a setting: one quiet centred line under the
-          // list, so it is found when looked for and never hit by accident.
+          // Decision 0133 (audit M14, m15): the same confirmed control 设置
+          // carries, at the foot of the list.
           if (widget.onSignOut != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: Semantics(
-                button: true,
-                label: '退出登录',
-                excludeSemantics: true,
-                child: InkWell(
-                  key: const ValueKey<String>('profile-sign-out'),
-                  onTap: () => unawaited(widget.onSignOut!()),
-                  borderRadius: LoopRadius.inner,
-                  child: SizedBox(
-                    height: 48,
-                    child: Center(
-                      child: Text(
-                        '退出登录',
-                        style: LoopTypography.title(
-                          15,
-                          weight: FontWeight.w500,
-                          color: LoopColors.text2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            LoopSignOutButton(
+              key: const ValueKey<String>('profile-sign-out'),
+              onSignOut: widget.onSignOut!,
             ),
           LoopFlatFootnote(
             version.isEmpty ? 'LOOP' : 'LOOP $version',
