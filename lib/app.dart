@@ -2,12 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
-// `flutter_localizations` is part of the Flutter SDK and already resolved in
-// pubspec.lock (through the pinned Stream Video graph). Declaring it directly
-// rewrites the lockfile's dependency kind, which is a dependency decision this
-// slice does not take (decision 0130); the import is therefore the transitive
-// SDK package.
-// ignore: depend_on_referenced_packages
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

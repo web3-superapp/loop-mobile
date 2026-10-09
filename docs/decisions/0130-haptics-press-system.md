@@ -4,7 +4,7 @@
 
 Accepted 2026-10-09。主代理下单（S123c + S123d），基线 `integration/v2` bd52fd1。
 来源：`docs/integration/review-2026-10-09/s123-interaction-audit.md` 的 M6、M4、M15、m1、m2、m3、m4、m5、m12、m17、m20 与 §五 规则 9、10、11、12、14。
-不新增依赖、`pubspec.yaml` / `pubspec.lock` 不变、路由清单不变。并行：S123a（路由壳、`showLoopSheet` 的 `useRootNavigator`）、S123b（列表手势）、S123e（资金表单）。
+依赖只多直接声明一个 SDK 包 `flutter_localizations`（lock 中仅 transitive → direct main，版本不变，见下），路由清单不变。并行：S123a（路由壳、`showLoopSheet` 的 `useRootNavigator`）、S123b（列表手势）、S123e（资金表单）。
 
 ## Context
 
@@ -37,7 +37,7 @@ Android 13+ 复制时系统提示与 LOOP toast 叠两层；SnackBar 与 LoopToa
 复制 LOOP ID 32 → 44；钱包 (i) / 隐藏金额 36×44 → 44×44。`test/s123c_haptics_press_test.dart` 对共用件跑
 `iOSTapTargetGuideline`、`labeledTapTargetGuideline` 与 `loopAndroidTapTargetGuideline`。
 **偏离**：Flutter 的 `androidTapTargetGuideline` 是 48dp，LOOP 的触控 token 是两端 44（`LoopTouch.minimum`）；改 48 会动全部布局，
-所以 Android 检查用 `MinimumTapTargetGuideline(size: 44×44)`。若要 48 需单独决策。自选删除（高 39）在 S123b 文件里，未改。
+所以 Android 检查用 `MinimumTapTargetGuideline(size: 44×44)`。主代理裁定先按 44，48dp 记为待办。自选删除（高 39）在 S123b 文件里，未改。
 
 ### 抽屉把手（m1）
 
@@ -48,9 +48,7 @@ Android 13+ 复制时系统提示与 LOOP toast 叠两层；SnackBar 与 LoopToa
 
 `MaterialApp.router` 固定 `locale: Locale('zh', 'CN')`，`supportedLocales` 只有它，挂 Stream 中文 + `GlobalMaterialLocalizations / GlobalCupertinoLocalizations / GlobalWidgetsLocalizations`
 （`lib/app.dart` 的 `loopAppLocale` / `loopLocalizationsDelegates`）。
-**依赖说明**：`flutter_localizations` 是 SDK 包，已经以 transitive 身份在 `pubspec.lock`（经 Stream Video）。在 pubspec 直接声明时 `pub get --enforce-lockfile` 通过，
-但任何普通 `pub get`（`flutter analyze` / `flutter test` 会隐式跑）都会把 lock 里这一项的 `dependency: transitive` 改成 `"direct main"`。
-按「不改 lockfile」的要求，本单不声明，`lib/app.dart` 以 `// ignore: depend_on_referenced_packages` 引入。正式做法是声明 + 接受 lock 一行元数据变化，待主代理决定。
+**依赖说明**（主代理 2026-10-09 裁定）：`flutter_localizations`（Flutter SDK 包，版本 0.0.0）在 `pubspec.yaml` 直接声明；`pubspec.lock` 只有这一项的元数据从 `dependency: transitive` 变为 `"direct main"`，版本不变，`pub get --enforce-lockfile` 通过。
 
 ### 推送权限前置说明（M15）
 
