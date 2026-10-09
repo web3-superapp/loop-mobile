@@ -900,7 +900,7 @@ void main() {
       expect(gateway.queries, <String>['communities:frog', 'users:frog']);
       expect(find.text('Frog Holders'), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('community-state-empty')),
+        find.byKey(const ValueKey<String>('search-empty')),
         findsOneWidget,
       );
     });
@@ -1007,7 +1007,7 @@ void main() {
 
       expect(gateway.queries, isEmpty);
       expect(
-        find.byKey(const ValueKey<String>('community-state-empty')),
+        find.byKey(const ValueKey<String>('search-empty')),
         findsOneWidget,
       );
     });

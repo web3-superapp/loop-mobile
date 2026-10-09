@@ -19,7 +19,9 @@ import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -88,10 +90,17 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
         LoopSegBar(
           key: const ValueKey<String>('meme-list-chips'),
           labels: <String>[for (final tab in MemeListTab.values) tab.label],
+          icons: <String>[for (final tab in MemeListTab.values) tab.icon],
           selectedIndex: MemeListTab.values.indexOf(_tab),
           onSelected: (index) =>
               setState(() => _tab = MemeListTab.values[index]),
         ),
+        if (!blocked && (_tab == MemeListTab.fresh || _tab == MemeListTab.hot))
+          MemeGraduatingStrip(
+            onOpen: (row) =>
+                widget.onNavigate(MemeRoute.token(row.memeTokenId)),
+            onOpenAll: () => setState(() => _tab = MemeListTab.graduating),
+          ),
         if (blocked)
           LoopInlineUnavailable(
             key: const ValueKey<String>('meme-launchpad-unavailable'),
@@ -113,8 +122,8 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           key: ValueKey<String>('$keyBase-loading'),
           type: LoopSkeletonType.priceRow,
           rows: 6,
-          rowHeight: memeRowHeight,
-          leadingSize: memeLogoSize,
+          rowHeight: memeCardHeight,
+          leadingSize: memeCardLogoSize,
         ),
       ];
     }
@@ -140,15 +149,17 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
     }
     if (page.items.isEmpty) {
       return <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: ValueKey<String>('$keyBase-empty'),
-          icon: 'plus',
+          illustration: LoopIllustration.launchpad,
+          title: _tab == MemeListTab.fresh ? '还没有代币' : '「${_tab.label}」里还没有代币',
           message: _tab == MemeListTab.fresh
-              ? '还没有代币，来创建第一个'
-              : '「${_tab.label}」里还没有代币',
+              ? '来创建第一个，打满自动上 PancakeSwap'
+              : null,
           action: LoopButton(
             key: const ValueKey<String>('meme-empty-create'),
-            label: '创建代币',
+            label: '创建第一个',
+            icon: 'plus',
             primary: true,
             onPressed: () => widget.onNavigate(MemeRoute.createPath),
           ),
@@ -157,8 +168,9 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
     }
     final cursor = page.nextCursor;
     return <Widget>[
+      const SizedBox(height: 2),
       for (final row in page.items)
-        MemeTokenRowTile(
+        MemeTokenCard(
           row: row,
           onTap: () => widget.onNavigate(MemeRoute.token(row.memeTokenId)),
         ),
@@ -179,10 +191,11 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
             key: ValueKey<String>('$keyBase-loading-more'),
             type: LoopSkeletonType.priceRow,
             rows: 2,
-            rowHeight: memeRowHeight,
-            leadingSize: memeLogoSize,
+            rowHeight: memeCardHeight,
+            leadingSize: memeCardLogoSize,
           ),
       ] else
+        // The list ends on space and its source line, not on 「没有更多」.
         const MarketListEnd(key: ValueKey<String>('meme-list-end')),
       MemeProvenance(
         key: const ValueKey<String>('meme-list-provenance'),
@@ -196,6 +209,80 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
             '读不到价格的代币写明原因，不会显示 0。',
       ),
     ];
+  }
+}
+
+/// The 「快打满」 strip over the 新发 and 热门 lists (decision 0122): up to
+/// five hero cards from the server's own `graduating` list, scrolled
+/// sideways. Nothing is drawn while that list is loading, empty or closed —
+/// the strip is a shortcut, never a state of its own.
+class MemeGraduatingStrip extends ConsumerWidget {
+  const MemeGraduatingStrip({
+    required this.onOpen,
+    required this.onOpenAll,
+    super.key,
+  });
+
+  static const int limit = 5;
+
+  final ValueChanged<MemeTokenRow> onOpen;
+  final VoidCallback onOpenAll;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = memeListControllerProvider(MemeListTab.graduating);
+    final state = ref.watch(provider);
+    if (state.phase == LoopChainViewPhase.loading && state.value == null) {
+      scheduleMicrotask(() => unawaited(ref.read(provider.notifier).load()));
+    }
+    final rows = <MemeTokenRow>[
+      for (final row in state.value?.items ?? const <MemeTokenRow>[])
+        if (!row.isGraduated) row,
+    ].take(limit).toList(growable: false);
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Column(
+      key: const ValueKey<String>('meme-graduating-strip'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 4, 0),
+          child: Row(
+            children: <Widget>[
+              const LoopIcon('target', size: 16, color: LoopColors.lime),
+              const SizedBox(width: 6),
+              Text(MemeListTab.graduating.label, style: LoopType.title),
+              const Spacer(),
+              TextButton(
+                key: const ValueKey<String>('meme-graduating-all'),
+                onPressed: onOpenAll,
+                style: TextButton.styleFrom(
+                  foregroundColor: LoopColors.text2,
+                  minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
+                ),
+                child: Text(
+                  '全部',
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: MemeHeroCard.height,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+            itemCount: rows.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) => MemeHeroCard(
+              row: rows[index],
+              onTap: () => onOpen(rows[index]),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+      ],
+    );
   }
 }
 

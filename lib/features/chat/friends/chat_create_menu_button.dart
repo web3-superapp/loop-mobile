@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -17,10 +19,37 @@ enum _ChatCreateAction { addFriend, createCommunity, createGroup, scan }
 /// 创建社区 is the same application 发现社区 submits; 创建群聊 opens the group
 /// form; 扫一扫 opens the scanner (decision 0113).
 class ChatCreateMenuButton extends ConsumerWidget {
-  const ChatCreateMenuButton({super.key});
+  const ChatCreateMenuButton({super.key, this.floating = false});
+
+  /// The OKX round action key (decision 0122): a 56 Lime disc with an Ink
+  /// glyph, floated at the foot of 聊天 instead of the bar's 「＋」.
+  final bool floating;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (floating) {
+      return Semantics(
+        button: true,
+        label: '发起',
+        excludeSemantics: true,
+        child: Material(
+          key: const ValueKey<String>('chat-create-menu'),
+          color: LoopColors.lime,
+          shape: const CircleBorder(),
+          elevation: 0,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => unawaited(_open(context, ref)),
+            child: const SizedBox.square(
+              dimension: 56,
+              child: Center(
+                child: LoopIcon('plus', size: 24, color: LoopColors.ink),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return LoopIconButton(
       key: const ValueKey<String>('chat-create-menu'),
       icon: 'plus',

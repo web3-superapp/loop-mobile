@@ -16,6 +16,9 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
@@ -24,8 +27,10 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -108,6 +113,13 @@ enum ChatInboxFilter {
   const ChatInboxFilter(this.label);
 
   final String label;
+
+  /// The chip's sprite glyph (decision 0122).
+  String get icon => switch (this) {
+    ChatInboxFilter.all => 'chat',
+    ChatInboxFilter.communities => 'community',
+    ChatInboxFilter.friends => 'users',
+  };
 
   /// Whether one channel row belongs under this filter. The surface is read
   /// from the server-assigned CID prefix, never from a display name; a CID
@@ -207,13 +219,15 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
           );
     }
 
-    return LoopStreamPage(
+    final page = LoopStreamPage(
       key: const ValueKey<String>('chat-tab-screen'),
       archetype: LoopPageArchetype.listing,
       title: '聊天',
       tabPage: true,
       leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),
-      actions: const <Widget>[ChatCreateMenuButton()],
+      // OKX social head (decision 0122): the owner's face and one search
+      // field across the bar; 「发起」 is the round Lime key at the foot.
+      titleField: const _ChatSearchEntry(),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -233,6 +247,9 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
             labels: <String>[
               for (final filter in ChatInboxFilter.values) filter.label,
             ],
+            icons: <String>[
+              for (final filter in ChatInboxFilter.values) filter.icon,
+            ],
             selectedIndex: _filter.index,
             onSelected: (index) =>
                 setState(() => _filter = ChatInboxFilter.values[index]),
@@ -241,7 +258,54 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
       ),
       collection: content,
     );
+    return Stack(
+      children: <Widget>[
+        Positioned.fill(child: page),
+        Positioned(
+          right: LoopSpacing.page,
+          bottom:
+              MediaQuery.paddingOf(context).bottom +
+              LoopLayout.tabPageBottomReserve,
+          child: const ChatCreateMenuButton(floating: true),
+        ),
+      ],
+    );
   }
+}
+
+/// The search field across the head of 聊天; it opens 聊天搜索.
+class _ChatSearchEntry extends StatelessWidget {
+  const _ChatSearchEntry();
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '搜索聊天',
+    excludeSemantics: true,
+    child: Material(
+      color: LoopColors.card2,
+      shape: const StadiumBorder(),
+      child: InkWell(
+        key: const ValueKey<String>('chat-search-entry'),
+        customBorder: const StadiumBorder(),
+        onTap: () => unawaited(context.push<void>('/chat/search')),
+        child: SizedBox(
+          height: LoopTouch.minimum,
+          child: Row(
+            children: <Widget>[
+              const SizedBox(width: 14),
+              const LoopIcon('search', size: 18, color: LoopColors.text2),
+              const SizedBox(width: 8),
+              Text(
+                '搜索聊天',
+                style: LoopType.body.copyWith(color: LoopColors.text3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// The owner's own face at the head of 聊天, the way into 我.
@@ -278,7 +342,7 @@ class _ChatOwnerAvatar extends ConsumerWidget {
             child: LoopProfileAvatar(
               avatarRef: values?.avatarRef,
               alias: values?.alias,
-              size: 36,
+              size: 40,
             ),
           ),
         ),
@@ -702,64 +766,86 @@ class _StreamChannelListBodyState
     final directory =
         ref.watch(directChannelDirectoryProvider).value ??
         LoopDirectChannelDirectory.empty();
+    // The community rows draw the community's own logo (decision 0122). The
+    // channel carries none, so the inbox reads the community home aggregate
+    // once — it lists every community this account is in — and the rows
+    // take their faces from what it, and the directory, already answered.
+    final home = ref.watch(communityHomeControllerProvider);
+    if (home.phase == CommunityViewPhase.loading && home.value == null) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(communityHomeControllerProvider.notifier).load());
+        }
+      });
+    }
+    final faces = ref.watch(communityFacesProvider);
     // No filled panel around the list: it is laid out in the page's whole
     // remaining height, so one conversation came out as a single row at the
     // top of an 1100px empty box. The rows sit on the page itself.
-    return LoopDirectChannelDirectoryScope(
-      directory: directory,
-      child: ChatInboxFilterEmptyGate(
-        controller: controller,
-        filter: widget.filter,
-        child: KeyedSubtree(
-          key: const ValueKey<String>('stream-chat-channel-list'),
-          child: StreamChannelListView(
-            controller: controller,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            // The filter hides rows rather than re-querying: Stream cannot
-            // filter channels by an ID prefix, and one shared list keeps the
-            // order, unread state and pagination of every row in one place.
-            itemBuilder: (context, channels, index, defaultItem) =>
-                widget.filter.includes(channels[index].cid)
-                ? loopStreamChannelListIdentityItem(defaultItem)
-                : const SizedBox.shrink(),
-            separatorBuilder: (context, channels, index) =>
-                widget.filter.includes(channels[index].cid)
-                ? defaultChannelListViewSeparatorBuilder(
-                    context,
-                    channels,
-                    index,
-                  )
-                : const SizedBox.shrink(),
-            emptyBuilder: (context) => const Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: LoopStateCard(
+    return CommunityFacesScope(
+      faces: faces,
+      child: LoopDirectChannelDirectoryScope(
+        directory: directory,
+        child: ChatInboxFilterEmptyGate(
+          controller: controller,
+          filter: widget.filter,
+          child: KeyedSubtree(
+            key: const ValueKey<String>('stream-chat-channel-list'),
+            child: StreamChannelListView(
+              controller: controller,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              // The filter hides rows rather than re-querying: Stream cannot
+              // filter channels by an ID prefix, and one shared list keeps the
+              // order, unread state and pagination of every row in one place.
+              itemBuilder: (context, channels, index, defaultItem) =>
+                  widget.filter.includes(channels[index].cid)
+                  ? loopStreamChannelListIdentityItem(defaultItem)
+                  : const SizedBox.shrink(),
+              separatorBuilder: (context, channels, index) =>
+                  widget.filter.includes(channels[index].cid)
+                  ? defaultChannelListViewSeparatorBuilder(
+                      context,
+                      channels,
+                      index,
+                    )
+                  : const SizedBox.shrink(),
+              emptyBuilder: (context) => SingleChildScrollView(
+                child: LoopEmptyState(
+                  key: const ValueKey<String>('stream-chat-empty'),
+                  illustration: LoopIllustration.chat,
                   title: '还没有会话',
-                  message: '加入社区或添加好友后，会话会出现在这里。',
-                  icon: Icons.chat_bubble_outline_rounded,
-                ),
-              ),
-            ),
-            errorBuilder: (context, error) => Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: LoopStateCard(
-                  title: '会话列表读不到',
-                  message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
-                  icon: Icons.cloud_off_outlined,
-                  tone: LoopTone.warning,
-                  action: OutlinedButton.icon(
-                    onPressed: () => controller.refresh(),
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('重试'),
+                  message: '加入社区或添加好友后，会话会出现在这里',
+                  action: LoopButton(
+                    key: const ValueKey<String>(
+                      'stream-chat-empty-find-friends',
+                    ),
+                    label: '找朋友',
+                    icon: 'users',
+                    primary: true,
+                    onPressed: () => unawaited(context.push<void>('/search')),
                   ),
                 ),
               ),
+              errorBuilder: (context, error) => Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: LoopStateCard(
+                    title: '会话列表读不到',
+                    message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
+                    icon: Icons.cloud_off_outlined,
+                    tone: LoopTone.warning,
+                    action: OutlinedButton.icon(
+                      onPressed: () => controller.refresh(),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('重试'),
+                    ),
+                  ),
+                ),
+              ),
+              onChannelTap: (channel) =>
+                  _openChannel(context, channel, directory),
             ),
-            onChannelTap: (channel) =>
-                _openChannel(context, channel, directory),
           ),
         ),
       ),
@@ -830,20 +916,16 @@ class ChatInboxFilterEmptyGate extends StatelessWidget {
               child: Offstage(offstage: empty, child: list),
             ),
             if (empty)
-              Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: LoopStateCard(
-                    key: ValueKey<String>(
-                      'chat-inbox-filter-empty-${filter.name}',
-                    ),
-                    title: communities ? '还没有社区会话' : '还没有好友会话',
-                    message: communities
-                        ? '加入社区后，社区群聊会出现在这里。'
-                        : '和好友私聊或建群后，会话会出现在这里。',
-                    icon: Icons.chat_bubble_outline_rounded,
+              SingleChildScrollView(
+                child: LoopEmptyState(
+                  key: ValueKey<String>(
+                    'chat-inbox-filter-empty-${filter.name}',
                   ),
+                  illustration: LoopIllustration.chat,
+                  title: communities ? '还没有社区会话' : '还没有好友会话',
+                  message: communities
+                      ? '加入社区后，社区群聊会出现在这里'
+                      : '和好友私聊或建群后，会话会出现在这里',
                 ),
               ),
           ],

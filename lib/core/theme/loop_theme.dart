@@ -73,6 +73,14 @@ abstract final class LoopColors {
   /// Fall at 13% — the soft ground behind a falling badge.
   static const Color fallSoft = Color(0x21EF4444);
 
+  /// Second place · #D9B36A. Medals and illustration strokes only (decision
+  /// 0122); never a brand accent, a state or a price direction.
+  static const Color brass = Color(0xFFD9B36A);
+
+  /// Third place · #B87B5A. Medals and illustration strokes only (decision
+  /// 0122).
+  static const Color copper = Color(0xFFB87B5A);
+
   // Semantic aliases retained for existing widgets.
   static const Color textSecondary = text2;
   static const Color textTertiary = text3;

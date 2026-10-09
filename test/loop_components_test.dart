@@ -313,7 +313,9 @@ void main() {
     final selectedMaterial = tester.widget<Material>(
       find.ancestor(of: find.text('全部'), matching: find.byType(Material)).first,
     );
-    expect(selectedMaterial.color, LoopColors.lime);
+    // Decision 0122: a filter strip is the OKX look — the chosen chip is a
+    // dark-grey pill, never Lime.
+    expect(selectedMaterial.color, LoopColors.line);
     await tester.tap(find.text('资产'));
     await tester.pump();
     expect(selected, 2);

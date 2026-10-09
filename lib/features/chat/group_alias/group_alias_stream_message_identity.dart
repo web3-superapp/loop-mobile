@@ -13,7 +13,10 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_member_directory.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_card.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_detection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
@@ -605,6 +608,10 @@ Message loopPrepareChannelMessageForSend({
   );
 }
 
+/// The second line of a group or community row that has no message yet
+/// (decision 0122), in place of Stream's 「还没有消息」.
+const String loopChannelQuietLabel = '还没有人说话';
+
 /// Uses a reviewed group name without falling back to Stream member names.
 @visibleForTesting
 String resolveLoopGroupConversationLabel(Map<String, Object?> extraData) {
@@ -635,9 +642,11 @@ Widget loopStreamChannelListTrailing(Widget time, int unreadCount) {
     children: <Widget>[
       time,
       const SizedBox(width: 6),
+      // Decision 0122: Lime, LOOP's own mark, rather than the warning red.
       LoopUnreadBadge(
         key: const ValueKey<String>('loop-channel-unread-badge'),
         count: unreadCount,
+        color: LoopColors.lime,
       ),
     ],
   );
@@ -647,6 +656,7 @@ Widget loopStreamChannelListTimestamp(Channel channel) =>
     ChannelLastMessageDate(
       channel: channel,
       formatter: (context, date) => loopStreamChannelListDateLabel(date),
+      textStyle: LoopType.captionSm.copyWith(color: LoopColors.text3),
     );
 
 /// Replaces every cell in an official [StreamChannelListView].
@@ -835,6 +845,14 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
     final label = resolveLoopGroupConversationLabel(
       channelState.channel?.extraData ?? channel.extraData,
     );
+    // A community's official channel wears the community's own face
+    // (decision 0122), read from the summaries this account already loaded;
+    // the CID carries the community id, never its picture.
+    final cid = channel.cid;
+    final communityId = cid == null ? null : loopCommunityIdForChannelCid(cid);
+    final face = communityId == null
+        ? null
+        : CommunityFacesScope.of(context)[communityId];
 
     return StreamBuilder<bool>(
       initialData: channel.isMuted,
@@ -846,15 +864,30 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
           initialData: state.unreadCount,
           stream: state.unreadCountStream,
           builder: (context, unreadSnapshot) => StreamChannelListTile(
-            avatar: LoopInitialsAvatar(
-              key: const ValueKey<String>('loop-group-channel-neutral-avatar'),
-              label: label,
-              size: 40,
-              shape: BoxShape.rectangle,
-            ),
+            avatar: communityId != null
+                ? CommunityLogo(
+                    key: const ValueKey<String>('loop-community-channel-logo'),
+                    identity: communityId,
+                    name: label,
+                    logoRef: face?.logoRef,
+                    size: 40,
+                  )
+                : LoopInitialsAvatar(
+                    key: const ValueKey<String>(
+                      'loop-group-channel-neutral-avatar',
+                    ),
+                    label: label,
+                    size: 40,
+                    shape: BoxShape.rectangle,
+                  ),
             title: Text(label),
             subtitle: displayMessage == null
-                ? Text(context.translations.emptyMessagesText)
+                ? Text(
+                    face?.firstSentence ?? loopChannelQuietLabel,
+                    key: const ValueKey<String>('loop-channel-quiet'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )
                 : StreamMessagePreviewText(
                     message: displayMessage,
                     channel: channelState.channel,

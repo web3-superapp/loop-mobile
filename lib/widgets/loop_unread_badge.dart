@@ -16,9 +16,18 @@ String? loopUnreadBadgeLabel(int? count) {
 /// and excluded from semantics: the control it sits on says the count in its
 /// own label.
 class LoopUnreadBadge extends StatelessWidget {
-  const LoopUnreadBadge({required this.count, super.key, this.dot = false});
+  const LoopUnreadBadge({
+    required this.count,
+    super.key,
+    this.dot = false,
+    this.color = LoopColors.danger,
+  });
 
   final int? count;
+
+  /// The badge's fill. The inbox rows draw it in Lime (decision 0122); every
+  /// other place keeps the warning red, which reads on a Lime control too.
+  final Color color;
 
   /// A dot without a number.
   final bool dot;
@@ -31,16 +40,13 @@ class LoopUnreadBadge extends StatelessWidget {
     final label = loopUnreadBadgeLabel(count);
     if (label == null) return const SizedBox.shrink();
     if (dot) {
-      return const ExcludeSemantics(
+      return ExcludeSemantics(
         child: SizedBox(
-          key: ValueKey<String>('loop-unread-dot'),
+          key: const ValueKey<String>('loop-unread-dot'),
           width: dotSize,
           height: dotSize,
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: LoopColors.danger,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
         ),
       );
@@ -52,9 +58,9 @@ class LoopUnreadBadge extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: pillHeight),
         padding: const EdgeInsets.symmetric(horizontal: 4),
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: LoopColors.danger,
-          borderRadius: BorderRadius.all(Radius.circular(pillHeight / 2)),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: const BorderRadius.all(Radius.circular(pillHeight / 2)),
         ),
         child: Text(
           label,

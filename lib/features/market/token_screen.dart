@@ -27,6 +27,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -472,10 +474,12 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         ];
       case MarketTradesAvailable(:final items) when items.isEmpty:
         return <Widget>[
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('token-trades-empty'),
-            message: '还没有成交',
-            reason: '索引器已经读到最新区块，其中没有这个池的成交。',
+            illustration: LoopIllustration.chartEmpty,
+            title: '还没有成交',
+            message: '这个池子最近还没有人交易',
+            compact: true,
           ),
           _tradesProvenance(block),
         ];
@@ -667,7 +671,7 @@ class TokenIdentityLine extends StatelessWidget {
             assetSymbol: symbol,
             logoUrl: detail.logoUrl,
             fallbackMonogram: symbol,
-            size: 32,
+            size: 44,
           ),
           const SizedBox(width: 10),
           Expanded(

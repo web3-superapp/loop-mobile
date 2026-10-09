@@ -6,12 +6,17 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
+import 'package:loop_mobile/widgets/loop_unread_badge.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/legacy_chat_identity.dart';
 
 const String _aliasId = 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e';
+const String _communityHex = '11111111222233334444555555555555';
+const String _communityId = '11111111-2222-3333-4444-555555555555';
 
 void main() {
   group('member projection parser', () {
@@ -587,6 +592,83 @@ void main() {
   });
 
   testWidgets(
+    'a community row wears its logo and its description, not a monogram',
+    (tester) async {
+      final harness = _ChannelHarness.community(
+        member: _member(userId: 'stream-sender', accountName: ''),
+        withMessage: false,
+      );
+      addTearDown(harness.dispose);
+      await _pumpInChannel(
+        tester,
+        harness: harness,
+        faces: const <String, CommunityFace>{
+          _communityId: CommunityFace(
+            name: 'DeFi 早读会',
+            logoRef: 'avatar:preset/community-03',
+            description: '每周一起读 DeFi。欢迎新人',
+          ),
+        },
+        child: loopStreamChannelListIdentityItem(
+          StreamChannelListItem(channel: harness.channel),
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('loop-community-channel-logo')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'community-logo-image-avatar:preset/community-03',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('loop-group-channel-neutral-avatar')),
+        findsNothing,
+      );
+      expect(find.text('每周一起读 DeFi'), findsOneWidget);
+      expect(find.text('还没有消息'), findsNothing);
+      await _disposeHarness(tester, harness);
+    },
+  );
+
+  testWidgets(
+    'a community this account has not read keeps its id face and says nobody spoke',
+    (tester) async {
+      final harness = _ChannelHarness.community(
+        member: _member(userId: 'stream-sender', accountName: ''),
+        withMessage: false,
+      );
+      addTearDown(harness.dispose);
+      await _pumpInChannel(
+        tester,
+        harness: harness,
+        faces: const <String, CommunityFace>{},
+        child: loopStreamChannelListIdentityItem(
+          StreamChannelListItem(channel: harness.channel),
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('loop-community-channel-logo')),
+        findsOneWidget,
+      );
+      expect(find.text(loopChannelQuietLabel), findsOneWidget);
+      await _disposeHarness(tester, harness);
+    },
+  );
+
+  testWidgets('the inbox unread badge is Lime', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: loopStreamChannelListTrailing(const Text('10:44'), 4)),
+    );
+    final pill = tester.widget<LoopUnreadBadge>(find.byType(LoopUnreadBadge));
+    expect(pill.color, LoopColors.lime);
+  });
+
+  testWidgets(
     'every inbox cell is named by LOOP, never by a Stream identity projection',
     (tester) async {
       var tapped = false;
@@ -934,8 +1016,13 @@ Future<void> _pumpInChannel(
   required Widget child,
   String? peer,
   LoopDirectChannelDirectory? directory,
+  Map<String, CommunityFace>? faces,
 }) async {
   Widget body = Scaffold(body: child);
+  // What the inbox publishes about the communities this account has read.
+  if (faces != null) {
+    body = CommunityFacesScope(faces: faces, child: body);
+  }
   // What the `dm` page publishes about the person the conversation is with.
   if (peer != null) {
     body = LoopDirectPeerScope(displayName: peer, child: body);
@@ -1004,6 +1091,18 @@ final class _ChannelHarness {
     mentionedUsers: mentionedUsers,
   );
 
+  factory _ChannelHarness.community({
+    required Member member,
+    String channelName = 'DeFi 早读会',
+    bool withMessage = true,
+  }) => _ChannelHarness._create(
+    channelId: 'loop_community_$_communityHex',
+    member: member,
+    senderId: 'stream-sender',
+    channelName: channelName,
+    withMessage: withMessage,
+  );
+
   factory _ChannelHarness.direct({
     required Member member,
     required String senderId,
@@ -1024,6 +1123,7 @@ final class _ChannelHarness {
     String? channelName,
     String messageText = 'Hello from LOOP',
     List<User> mentionedUsers = const <User>[],
+    bool withMessage = true,
   }) {
     final client = StreamChatClient(
       'public-stream-api-key',
@@ -1049,7 +1149,7 @@ final class _ChannelHarness {
               : <String, Object?>{'name': channelName},
         ),
         members: <Member>[member],
-        messages: <Message>[message],
+        messages: withMessage ? <Message>[message] : const <Message>[],
       ),
     );
     return _ChannelHarness._(

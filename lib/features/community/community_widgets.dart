@@ -111,6 +111,7 @@ class CommunityStateBlock extends StatelessWidget {
     this.skeleton = LoopSkeletonType.list,
     this.rows = 3,
     this.refreshing = false,
+    this.empty,
   });
 
   final CommunityViewPhase phase;
@@ -118,6 +119,10 @@ class CommunityStateBlock extends StatelessWidget {
   final VoidCallback? onRetry;
   final String emptyMessage;
   final String? emptyReason;
+
+  /// What the empty phase draws instead of the inline strip — a centred
+  /// `LoopEmptyState` (decision 0122). [emptyMessage] stays its fallback.
+  final Widget? empty;
   final String permissionTitle;
   final LoopSkeletonType skeleton;
   final int rows;
@@ -136,11 +141,12 @@ class CommunityStateBlock extends StatelessWidget {
           rows: rows,
         );
       case CommunityViewPhase.empty:
-        return LoopEmpty(
-          key: const ValueKey<String>('community-state-empty'),
-          message: emptyMessage,
-          reason: emptyReason,
-        );
+        return empty ??
+            LoopEmpty(
+              key: const ValueKey<String>('community-state-empty'),
+              message: emptyMessage,
+              reason: emptyReason,
+            );
       case CommunityViewPhase.offline:
         return LoopOfflineState(
           key: const ValueKey<String>('community-state-offline'),

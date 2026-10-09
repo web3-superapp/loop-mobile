@@ -18,6 +18,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// The lists 行情 offers, in the order the chips are drawn (decision 0118).
@@ -36,6 +38,15 @@ enum MarketTab {
   const MarketTab(this.label);
 
   final String label;
+
+  /// The chip's sprite glyph (decision 0122).
+  String get icon => switch (this) {
+    MarketTab.watchlist => 'star',
+    MarketTab.major => 'globe',
+    MarketTab.meme => 'launch',
+    MarketTab.community => 'community',
+    MarketTab.newPairs => 'clock',
+  };
 
   /// The server category this chip reads, or `null` for 自选 and 新币.
   MarketCategory? get category => switch (this) {
@@ -204,6 +215,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         LoopSegBar(
           key: const ValueKey<String>('market-tabs'),
           labels: <String>[for (final tab in tabs) tab.label],
+          icons: <String>[for (final tab in tabs) tab.icon],
           selectedIndex: tabs.indexOf(_tab),
           onSelected: (index) => _select(tabs[index]),
         ),
@@ -282,14 +294,16 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     final items = (block as MarketWatchlistAvailable).items;
     if (items.isEmpty) {
       return <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: const ValueKey<String>('market-watchlist-empty'),
-          icon: 'star',
-          message: '还没有自选',
-          reason: '在代币页点右上角星标，就能把它加进自选。',
+          illustration: LoopIllustration.watchlist,
+          title: '还没有自选',
+          message: '在代币页点右上角的星标，就能加进自选',
           action: LoopButton(
             key: const ValueKey<String>('market-watchlist-browse-major'),
             label: '去主流看看',
+            icon: 'globe',
+            primary: true,
             onPressed: () => _select(MarketTab.major),
           ),
         ),

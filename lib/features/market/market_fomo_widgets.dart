@@ -8,8 +8,8 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
 // ---------------------------------------------------------------------------
 // 情报 · 行情 rows (decision 0118)
@@ -22,7 +22,7 @@ import 'package:loop_mobile/widgets/loop_price_move.dart';
 // the surfaces that still use it; this is the list's own row.
 
 /// The one height every 情报 · 行情 row takes.
-const double marketFomoRowHeight = 64;
+const double marketFomoRowHeight = loopQuoteRowHeight;
 
 /// The mark at the head of a row.
 const double marketFomoLogoSize = 36;
@@ -155,10 +155,10 @@ class MarketFomoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final value = price;
     final move = change;
-    final secondary = <String>[subtitle, ?marker].join(' · ');
     final spoken = <String>[
       symbol,
-      secondary,
+      subtitle,
+      ?marker,
       if (value == null)
         marketQuoteUnavailableLabel(unavailableReason)
       else
@@ -166,122 +166,44 @@ class MarketFomoRow extends StatelessWidget {
       if (value != null)
         move == null ? '24 小时涨跌未报告' : '24 小时 ${loopFormatPercent(move)}',
     ].join('，');
-    final row = Container(
-      height: marketFomoRowHeight,
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: LoopColors.line)),
+    return LoopQuoteRow(
+      leading: LoopTokenLogo(
+        assetSymbol: symbol,
+        logoUrl: logoUrl,
+        fallbackMonogram: symbol,
+        size: marketFomoLogoSize,
       ),
-      child: Row(
-        children: <Widget>[
-          LoopTokenLogo(
-            assetSymbol: symbol,
-            logoUrl: logoUrl,
-            fallbackMonogram: symbol,
-            size: marketFomoLogoSize,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  symbol,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.titleLg,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  secondary,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          if (value == null)
-            SizedBox(
-              width: marketFomoUnavailableWidth,
-              child: LoopInlineUnavailable(
-                key: const ValueKey<String>('market-row-unavailable'),
-                message: marketQuoteUnavailableLabel(unavailableReason),
-                padding: EdgeInsets.zero,
-              ),
+      title: symbol,
+      subtitle: subtitle,
+      value: value == null ? null : loopFoldedZerosPrice(marketRowPrice(value)),
+      valueKey: const ValueKey<String>('market-row-price'),
+      valueCaption: value == null
+          ? Text(
+              marketQuoteUnavailableLabel(unavailableReason),
+              key: const ValueKey<String>('market-row-unavailable'),
+              style: LoopType.caption.copyWith(color: LoopColors.text3),
             )
-          else
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 160),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  Text(
-                    marketRowPrice(value),
-                    key: const ValueKey<String>('market-row-price'),
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: marketRowPriceStyle.copyWith(
-                      color: LoopPriceMove.of(move).color,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    move == null ? '涨跌未报告' : marketMoveLabel(move),
-                    key: const ValueKey<String>('market-row-change'),
-                    maxLines: 1,
-                    softWrap: false,
-                    style: LoopType.figureSm.copyWith(
-                      color: move == null
-                          ? LoopColors.text3
-                          : LoopPriceMove.of(move).color,
-                    ),
-                  ),
-                ],
-              ),
+          : (marker == null ? null : Text(marker!)),
+      trailing: value == null
+          ? null
+          : KeyedSubtree(
+              key: const ValueKey<String>('market-row-change'),
+              child: LoopChangePill(change: move),
             ),
-        ],
-      ),
-    );
-    final tap = onTap;
-    if (tap == null) {
-      return Semantics(label: spoken, excludeSemantics: true, child: row);
-    }
-    return Semantics(
-      button: true,
-      label: spoken,
-      excludeSemantics: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: tap,
-          highlightColor: LoopColors.card2,
-          child: row,
-        ),
-      ),
+      onTap: onTap,
+      semanticLabel: spoken,
     );
   }
 }
 
-/// The weak line a scrolled list ends on once every page is in.
+/// Where a scrolled list ends once every page is in: nothing but room
+/// (decision 0122, OKX rule 10 — a list that has reached its end draws no
+/// 「没有更多」).
 class MarketListEnd extends StatelessWidget {
-  const MarketListEnd({super.key, this.text = '没有更多'});
-
-  final String text;
+  const MarketListEnd({super.key});
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-    child: Text(
-      text,
-      textAlign: TextAlign.center,
-      style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-    ),
-  );
+  Widget build(BuildContext context) => const SizedBox(height: 12);
 }
 
 /// The two rows a list shows while its next page is being read.
@@ -365,10 +287,8 @@ class _IntelPromotionCard extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         color: LoopColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: LoopRadius.card,
-          side: const BorderSide(color: LoopColors.line),
-        ),
+        // OKX card: a flat face, no edge (decision 0122).
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.card),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -415,7 +335,7 @@ class _IntelPromotionCard extends StatelessWidget {
                 const Positioned(
                   right: 12,
                   bottom: 12,
-                  child: LoopIcon('chevron', size: 14, color: LoopColors.lime),
+                  child: LoopIcon('chevron', size: 14, color: LoopColors.text3),
                 ),
               ],
             ),

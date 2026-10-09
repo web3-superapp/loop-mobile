@@ -162,6 +162,9 @@ void main() {
       // A reader on 自选 does not pay for a provider they did not ask for.
       expect(market.newPairs.resolves, 0);
 
+      // The chips scroll sideways; bring this one into view first.
+      await tester.ensureVisible(find.text('新币'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('新币'));
       await tester.pumpAndSettle();
       expect(market.newPairs.resolves, 1);

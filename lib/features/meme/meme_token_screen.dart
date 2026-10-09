@@ -32,6 +32,8 @@ import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -726,7 +728,11 @@ class _IdentityLine extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
     child: Row(
       children: <Widget>[
-        MemeLogo(symbol: detail.row.symbol, imageUrl: detail.row.imageUrl),
+        MemeLogo(
+          symbol: detail.row.symbol,
+          imageUrl: detail.row.imageUrl,
+          identity: detail.row.memeTokenId,
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -990,12 +996,14 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
     } else if (series.candles.length < 2) {
       body = SizedBox(
         height: widget.height,
-        child: const Center(
-          child: LoopEmpty(
+        child: const SingleChildScrollView(
+          physics: NeverScrollableScrollPhysics(),
+          child: LoopEmptyState(
             key: ValueKey<String>('meme-candles-empty'),
-            message: '成交还太少，画不出走势',
-            reason: '只画有成交的时段，空时段不会补 0。',
-            margin: EdgeInsets.zero,
+            illustration: LoopIllustration.chartEmpty,
+            title: '成交还太少',
+            message: '多几笔成交，走势就会画出来',
+            compact: true,
           ),
         ),
       );
@@ -1128,7 +1136,13 @@ List<Widget> memeHolderSections(
       ),
     ),
     if (page.items.isEmpty)
-      LoopEmpty(key: ValueKey<String>('$keyPrefix-empty'), message: '还没有持有者')
+      LoopEmptyState(
+        key: ValueKey<String>('$keyPrefix-empty'),
+        illustration: LoopIllustration.holders,
+        title: '还没有持有者',
+        message: '第一笔买入后，持有者会出现在这里',
+        compact: true,
+      )
     else
       for (final (index, holder) in page.items.indexed)
         _HolderRow(
@@ -1276,7 +1290,13 @@ List<Widget> memeTradeSections(
         ),
       ),
     if (page.items.isEmpty)
-      LoopEmpty(key: ValueKey<String>('$keyPrefix-empty'), message: '还没有成交')
+      LoopEmptyState(
+        key: ValueKey<String>('$keyPrefix-empty'),
+        illustration: LoopIllustration.chartEmpty,
+        title: '还没有成交',
+        message: '买入或卖出后，成交会出现在这里',
+        compact: true,
+      )
     else
       for (final trade in page.items)
         _TradeRow(

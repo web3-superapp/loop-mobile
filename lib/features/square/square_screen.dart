@@ -15,7 +15,9 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -158,6 +160,22 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
               rows: 4,
               emptyMessage: '现在没有正在直播的语音房',
               emptyReason: '有社区开播时会出现在这里。',
+              empty: LoopEmptyState(
+                key: const ValueKey<String>('square-voice-room-empty'),
+                illustration: LoopIllustration.voiceRoom,
+                title: '还没有人开播',
+                message: '社区开播时会出现在这里',
+                action: LoopButton(
+                  key: const ValueKey<String>('square-voice-room-browse'),
+                  label: '去社区看看',
+                  icon: 'community',
+                  primary: true,
+                  // Back to the 社区 segment of the same page.
+                  onPressed: () => ref
+                      .read(loopTabSegmentMemoryProvider.notifier)
+                      .select('square', 0),
+                ),
+              ),
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[

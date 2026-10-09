@@ -501,9 +501,9 @@ class _QuickActionTile extends StatelessWidget {
     final run = action.onPressed;
     final reason = action.blockedReason;
     final enabled = run != null;
-    final ink = enabled
-        ? LoopGround.inkOf(context)
-        : LoopGround.auxiliaryOf(context);
+    // OKX round action keys (decision 0122): a 56 solid Lime disc with an
+    // Ink glyph; a closed key keeps its place on the quiet card ground.
+    final ink = enabled ? LoopColors.ink : LoopGround.auxiliaryOf(context);
     return Semantics(
       button: true,
       enabled: enabled,
@@ -519,23 +519,24 @@ class _QuickActionTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: LoopGround.fillOf(context),
+                  color: enabled ? LoopColors.lime : LoopGround.fillOf(context),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: action.glyph(ink),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 action.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopType.caption.copyWith(
+                style: LoopTypography.title(
+                  13,
                   color: enabled
-                      ? LoopGround.secondaryOf(context)
+                      ? LoopGround.inkOf(context)
                       : LoopGround.auxiliaryOf(context),
                 ),
               ),

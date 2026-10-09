@@ -248,7 +248,12 @@ class LoopChainStateBlock extends StatelessWidget {
     this.rows = 3,
     this.keyPrefix = 'chain',
     this.refreshing = false,
+    this.empty,
   });
+
+  /// What the empty phase draws instead of the inline strip — a centred
+  /// `LoopEmptyState` (decision 0122).
+  final Widget? empty;
 
   final LoopChainViewPhase phase;
   final LoopChainFailureKind? failureKind;
@@ -282,11 +287,12 @@ class LoopChainStateBlock extends StatelessWidget {
           rows: rows,
         );
       case LoopChainViewPhase.empty:
-        return LoopEmpty(
-          key: ValueKey<String>('$keyPrefix-state-empty'),
-          message: emptyMessage,
-          reason: emptyReason,
-        );
+        return empty ??
+            LoopEmpty(
+              key: ValueKey<String>('$keyPrefix-state-empty'),
+              message: emptyMessage,
+              reason: emptyReason,
+            );
       case LoopChainViewPhase.offline:
         return LoopOfflineState(
           key: ValueKey<String>('$keyPrefix-state-offline'),
