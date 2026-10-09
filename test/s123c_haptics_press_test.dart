@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
+import 'package:loop_mobile/integrations/communication/stream_unread_pill_band.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_dock_bar.dart';
@@ -399,6 +400,12 @@ void main() {
                 copyKey: const ValueKey<String>('id-copy'),
               ),
               WalletPowerTag(onTap: () {}),
+              // Decision 0135: the docked 「↑ N 条未读 ×」 pill.
+              LoopUnreadJumpPill(
+                label: '4 条未读',
+                onJump: () {},
+                onDismiss: () {},
+              ),
               WalletZeroBalanceToggle(
                 hideZero: true,
                 zeroCount: 3,
