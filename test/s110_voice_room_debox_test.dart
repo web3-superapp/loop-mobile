@@ -330,7 +330,7 @@ void main() {
   });
 
   group('S110 · the three sections', () {
-    testWidgets('more than eighteen listeners end on 「+N」', (tester) async {
+    testWidgets('more than fifteen listeners end on 「+N」', (tester) async {
       final opened = <String>[];
       await pumpCommunityPage(
         tester,
@@ -343,7 +343,8 @@ void main() {
 
       final grid = find.byKey(const ValueKey<String>('voiceroom-listeners'));
       await scrollToCommunitySection(tester, grid);
-      // Seventeen faces and the count: the room holds 42 listeners.
+      // Fourteen faces and the count — three rows of five (decision 0127):
+      // the room holds 42 listeners.
       expect(
         find.descendant(
           of: grid,
@@ -355,9 +356,9 @@ void main() {
                 ),
           ),
         ),
-        findsNWidgets(17),
+        findsNWidgets(14),
       );
-      expect(find.text('+25'), findsOneWidget);
+      expect(find.text('+28'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('voiceroom-listeners-more')),
       );
@@ -365,9 +366,9 @@ void main() {
       expect(opened, <String>[testCommunityId]);
     });
 
-    test('eighteen or fewer are all drawn, with no count', () {
-      expect(VoiceRoomListenerGrid.layout(rows: 18, total: 18, more: false), (
-        faces: 18,
+    test('fifteen or fewer are all drawn, with no count', () {
+      expect(VoiceRoomListenerGrid.layout(rows: 15, total: 15, more: false), (
+        faces: 15,
         more: null,
       ));
       expect(VoiceRoomListenerGrid.layout(rows: 5, total: 5, more: false), (
@@ -375,11 +376,12 @@ void main() {
         more: null,
       ));
       // A roster with another page counts as more than it holds.
-      expect(VoiceRoomListenerGrid.layout(rows: 18, total: 0, more: true), (
-        faces: 17,
+      expect(VoiceRoomListenerGrid.layout(rows: 15, total: 0, more: true), (
+        faces: 14,
         more: 2,
       ));
-      expect(voiceRoomListenerGridLimit, 18);
+      expect(voiceRoomListenerGridLimit, 15);
+      expect(voiceRoomListenerColumns, 5);
     });
 
     testWidgets('speakers carry the microphone mark, muted with the slash', (
@@ -704,7 +706,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(of: bar, matching: find.text('46 在听')),
+        find.descendant(of: bar, matching: find.textContaining('46 在听 · ')),
         findsOneWidget,
       );
       expect(
@@ -729,7 +731,9 @@ void main() {
       expect(
         find.descendant(
           of: bar,
-          matching: find.text('$testVoiceRoomCommunityName · 46 在听'),
+          matching: find.textContaining(
+            '$testVoiceRoomCommunityName · 46 在听 · ',
+          ),
         ),
         findsOneWidget,
       );

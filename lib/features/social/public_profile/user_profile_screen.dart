@@ -16,7 +16,12 @@ import 'package:loop_mobile/features/social/public_profile/public_profile_contro
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
+import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -138,17 +143,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       kicker: communityPreviewKicker(state.mode),
       onBack: widget.onBack,
       onRefresh: record == null ? null : controller.reload,
-      actions: <Widget>[
-        if (record != null)
-          LoopIconButton(
-            key: const ValueKey<String>('user-profile-more'),
-            icon: 'settings',
-            label: '更多操作',
-            onPressed: state.busy
-                ? null
-                : () => unawaited(_openMore(record, controller)),
-          ),
-      ],
       collection: ListView(
         key: const ValueKey<String>('user-profile-list'),
         padding: const EdgeInsets.only(bottom: 32),
@@ -161,7 +155,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
-            _ProfileHeader(record: record),
+            _ProfileHeader(
+              record: record,
+              busy: state.busy,
+              onFollow: record.relationship.blocked
+                  ? null
+                  : () => unawaited(
+                      _run(
+                        controller.setFollowing(!record.relationship.following),
+                      ),
+                    ),
+            ),
             if (record.relationship.blocked)
               _BlockedNotice(
                 busy: state.busy,
@@ -172,6 +176,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 record: record,
                 busy: state.busy,
                 onFriend: () => unawaited(_friend(record, controller)),
+                onShare: () => unawaited(_shareCard(record)),
+                onMore: () => unawaited(_openMore(record, controller)),
                 onMessage: widget.onOpenDirectMessage == null
                     ? null
                     : () => widget.onOpenDirectMessage!(
@@ -182,9 +188,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           avatarRef: record.avatarRef,
                         ),
                       ),
-                onFollow: () => unawaited(
-                  _run(controller.setFollowing(!record.relationship.following)),
-                ),
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 18),
@@ -246,6 +249,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
+  /// Decision 0113: this account's QR card, the same one 我 shows.
+  Future<void> _shareCard(PublicProfileRecord record) => showLoopQrCardSheet(
+    context,
+    LoopUserQrCard(
+      loopId: record.loopId,
+      displayName: record.displayName,
+      avatarRef: record.avatarRef,
+    ),
+  );
+
   Future<void> _openMore(
     PublicProfileRecord record,
     PublicProfileController controller,
@@ -260,14 +273,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Decision 0113: this account's QR card, the same one 我 shows.
-            LoopButton(
-              key: const ValueKey<String>('user-profile-share-card'),
-              label: '分享名片',
-              block: true,
-              onPressed: () => Navigator.of(sheetContext).pop('share'),
-            ),
-            const SizedBox(height: 8),
             if (record.relationship.friendship ==
                 ProfileFriendship.friends) ...<Widget>[
               LoopButton(
@@ -314,15 +319,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
     if (choice == null || !mounted) return;
     switch (choice) {
-      case 'share':
-        await showLoopQrCardSheet(
-          context,
-          LoopUserQrCard(
-            loopId: record.loopId,
-            displayName: record.displayName,
-            avatarRef: record.avatarRef,
-          ),
-        );
       case 'unfriend':
         final confirmed = await confirmCommunityAction(
           context,
@@ -389,17 +385,28 @@ class _RecordStateBlock extends StatelessWidget {
   }
 }
 
+/// The header (decision 0127, Fomo / OKX): the face at 72, the name at 22
+/// over the LOOP ID, 关注 as a small capsule on the right, the bio and the
+/// three counts.
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.record});
+  const _ProfileHeader({
+    required this.record,
+    required this.busy,
+    required this.onFollow,
+  });
 
   final PublicProfileRecord record;
+  final bool busy;
+  final VoidCallback? onFollow;
 
   @override
   Widget build(BuildContext context) {
     final bio = record.bio;
+    final following = record.relationship.following;
+    final follow = onFollow;
     return Padding(
       key: const ValueKey<String>('user-profile-header'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -410,7 +417,7 @@ class _ProfileHeader extends StatelessWidget {
                 alias: record.displayName,
                 size: 72,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,11 +425,14 @@ class _ProfileHeader extends StatelessWidget {
                     Text(
                       record.displayName,
                       key: const ValueKey<String>('user-profile-name'),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.title(20, color: LoopColors.chalk),
+                      style: LoopTypography.heading(
+                        22,
+                        weight: FontWeight.w700,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     LoopIdCopyLine(
                       loopId: record.loopId,
                       textKey: const ValueKey<String>('user-profile-loop-id'),
@@ -430,15 +440,24 @@ class _ProfileHeader extends StatelessWidget {
                         'user-profile-copy-loop-id',
                       ),
                       style: LoopTypography.figure(
-                        12,
-                        weight: FontWeight.w500,
+                        13,
+                        weight: FontWeight.w400,
                         height: 1.5,
-                        color: LoopColors.muted,
+                        color: LoopColors.text2,
                       ),
                     ),
                   ],
                 ),
               ),
+              if (follow != null)
+                LoopPillAction(
+                  key: ValueKey<String>(
+                    following ? 'user-profile-unfollow' : 'user-profile-follow',
+                  ),
+                  label: following ? '已关注' : '关注',
+                  primary: false,
+                  onPressed: busy ? null : follow,
+                ),
             ],
           ),
           if (bio != null) ...<Widget>[
@@ -446,10 +465,12 @@ class _ProfileHeader extends StatelessWidget {
             Text(
               bio,
               key: const ValueKey<String>('user-profile-bio'),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: LoopTypography.body(14, color: LoopColors.text2),
             ),
           ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Row(
             key: const ValueKey<String>('user-profile-counts'),
             children: <Widget>[
@@ -479,84 +500,81 @@ class _Count extends StatelessWidget {
     children: <Widget>[
       Text(
         loopFormatDecimal(Decimal.fromInt(value), maxFractionDigits: 0),
-        style: LoopTypography.figure(15, color: LoopColors.chalk),
+        style: LoopTypography.figure(16, color: LoopColors.chalk),
       ),
       const SizedBox(width: 4),
-      Text(label, style: LoopTypography.caption(12, color: LoopColors.muted)),
+      Text(label, style: LoopTypography.caption(13, color: LoopColors.text2)),
     ],
   );
 }
 
+/// The round keys (decision 0127): 加好友 while there is no friendship, then
+/// 私聊, 分享 and 更多. A friend has three keys; a stranger four.
 class _ActionRow extends StatelessWidget {
   const _ActionRow({
     required this.record,
     required this.busy,
     required this.onFriend,
     required this.onMessage,
-    required this.onFollow,
+    required this.onShare,
+    required this.onMore,
   });
 
   final PublicProfileRecord record;
   final bool busy;
   final VoidCallback onFriend;
   final VoidCallback? onMessage;
-  final VoidCallback onFollow;
+  final VoidCallback onShare;
+  final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
-    final relationship = record.relationship;
-    final friendship = relationship.friendship;
-    final friendLabel = switch (friendship) {
-      ProfileFriendship.none => '加好友',
-      ProfileFriendship.pendingOut => '已申请',
-      ProfileFriendship.pendingIn => '处理申请',
-      ProfileFriendship.friends => '已是好友',
-    };
+    final friendship = record.relationship.friendship;
     final friendEnabled =
         !busy &&
         (friendship == ProfileFriendship.none ||
             friendship == ProfileFriendship.pendingIn);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: LoopButton(
-              key: ValueKey<String>(
-                'user-profile-friend-${friendship.wireName}',
-              ),
-              label: friendLabel,
-              primary:
-                  friendship == ProfileFriendship.none ||
-                  friendship == ProfileFriendship.pendingIn,
-              block: true,
-              onPressed: friendEnabled ? onFriend : null,
-            ),
+    final message = onMessage;
+    return LoopRoundKeyRow(
+      key: const ValueKey<String>('user-profile-keys'),
+      keys: <Widget>[
+        if (friendship != ProfileFriendship.friends)
+          LoopRoundKey(
+            key: ValueKey<String>('user-profile-friend-${friendship.wireName}'),
+            icon: switch (friendship) {
+              ProfileFriendship.none => 'plus',
+              ProfileFriendship.pendingIn => 'mail',
+              _ => 'check',
+            },
+            label: switch (friendship) {
+              ProfileFriendship.none => '加好友',
+              ProfileFriendship.pendingOut => '已申请',
+              ProfileFriendship.pendingIn => '处理申请',
+              ProfileFriendship.friends => '已是好友',
+            },
+            onPressed: friendEnabled ? onFriend : null,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: LoopButton(
-              key: const ValueKey<String>('user-profile-message'),
-              label: '私聊',
-              block: true,
-              onPressed: busy ? null : onMessage,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: LoopButton(
-              key: ValueKey<String>(
-                relationship.following
-                    ? 'user-profile-unfollow'
-                    : 'user-profile-follow',
-              ),
-              label: relationship.following ? '已关注' : '关注',
-              block: true,
-              onPressed: busy ? null : onFollow,
-            ),
-          ),
-        ],
-      ),
+        LoopRoundKey(
+          key: const ValueKey<String>('user-profile-message'),
+          icon: 'chat',
+          label: friendship == ProfileFriendship.friends ? '聊天' : '私聊',
+          onPressed: busy || message == null ? null : message,
+        ),
+        LoopRoundKey(
+          key: const ValueKey<String>('user-profile-share-card'),
+          icon: 'share',
+          label: '分享',
+          semanticLabel: '分享名片',
+          onPressed: onShare,
+        ),
+        LoopRoundKey(
+          key: const ValueKey<String>('user-profile-more'),
+          icon: 'keypad',
+          label: '更多',
+          semanticLabel: '更多操作',
+          onPressed: busy ? null : onMore,
+        ),
+      ],
     );
   }
 }
@@ -591,11 +609,12 @@ class _HiddenSection extends StatelessWidget {
   final String what;
 
   @override
-  Widget build(BuildContext context) => LoopEmpty(
+  Widget build(BuildContext context) => LoopEmptyState(
     key: ValueKey<String>('user-profile-$sectionKey-hidden'),
-    icon: 'lock',
-    message: '对方未公开$what',
-    reason: '对方在隐私设置里关闭了「公开持仓与交易」。',
+    illustration: LoopIllustration.watchlist,
+    title: '对方未公开$what',
+    message: '对方在隐私设置里关闭了「公开持仓与交易」。',
+    compact: true,
   );
 }
 
@@ -615,11 +634,12 @@ class _UnavailableSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => reasonCode == 'WALLET_NOT_BOUND'
-      ? LoopEmpty(
+      ? LoopEmptyState(
           key: ValueKey<String>('user-profile-$sectionKey-no-wallet'),
-          icon: 'wallet',
-          message: '对方暂无钱包',
-          reason: '对方还没有绑定钱包，没有可显示的$what。',
+          illustration: LoopIllustration.watchlist,
+          title: '对方暂无钱包',
+          message: '对方还没有绑定钱包，没有可显示的$what。',
+          compact: true,
         )
       : LoopEmpty(
           key: ValueKey<String>('user-profile-$sectionKey-unavailable'),
@@ -711,31 +731,27 @@ class _HoldingsSection extends StatelessWidget {
           ),
         ),
         if (value.items.isEmpty)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('user-profile-holdings-empty'),
-            icon: 'wallet',
-            message: '还没有持仓',
-            reason: '对方的钱包里暂时没有可显示的资产。',
+            illustration: LoopIllustration.watchlist,
+            title: '还没有持仓',
+            message: '对方的钱包里暂时没有可显示的资产。',
+            compact: true,
           )
         else
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              for (var index = 0; index < value.items.length; index += 1)
-                _holdingRow(
-                  value.items[index],
-                  communityRowPosition(index, value.items.length),
-                ),
-            ],
-          ),
+          for (final item in value.items) _holdingRow(item),
       ],
     );
   }
 
-  LoopRecordRow _holdingRow(ProfileHolding item, LoopRowPosition position) {
+  /// One OKX quote row (decision 0127): the token, the value over the
+  /// balance. A holding without a quote shows the balance as the figure.
+  Widget _holdingRow(ProfileHolding item) {
     final usd = item.usdValue;
     final balance =
         '${loopFormatDecimal(item.balance, maxFractionDigits: 4)} ${item.symbol}';
-    return LoopRecordRow(
+    final open = onOpenToken;
+    return LoopQuoteRow(
       key: ValueKey<String>('user-profile-holding-${item.assetId}'),
       leading: LoopTokenLogo(
         assetSymbol: item.symbol,
@@ -744,11 +760,11 @@ class _HoldingsSection extends StatelessWidget {
       ),
       title: item.symbol,
       subtitle: item.name,
-      trailing: usd == null ? balance : loopFormatUsd(usd),
-      trailingCaption: usd == null ? '暂无报价' : balance,
-      position: position,
-      chevron: onOpenToken != null,
-      onTap: onOpenToken == null ? null : () => onOpenToken!(item.assetId),
+      value: usd == null ? balance : loopFormatUsd(usd),
+      valueCaption: Text(usd == null ? '暂无报价' : balance),
+      onTap: open == null ? null : () => open(item.assetId),
+      semanticLabel:
+          '${item.symbol}，${usd == null ? balance : loopFormatUsd(usd)}',
     );
   }
 }
@@ -802,26 +818,19 @@ class _TradesSection extends StatelessWidget {
         break;
     }
     if (state.items.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('user-profile-trades-empty'),
-        icon: 'swap-vert',
-        message: '还没有交易',
-        reason: '对方的钱包还没有可显示的买卖或转账。',
+        illustration: LoopIllustration.chartEmpty,
+        title: '还没有交易',
+        message: '对方的钱包还没有可显示的买卖或转账。',
+        compact: true,
       );
     }
     return Column(
       key: const ValueKey<String>('user-profile-trades'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            for (var index = 0; index < state.items.length; index += 1)
-              _tradeRow(
-                state.items[index],
-                communityRowPosition(index, state.items.length),
-              ),
-          ],
-        ),
+        for (final trade in state.items) _tradeRow(trade),
         if (state.appendFailed && !state.loadingMore)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -843,35 +852,40 @@ class _TradesSection extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
             ),
-        ] else
-          const LoopProvenanceFooter(
-            key: ValueKey<String>('user-profile-trades-end'),
-            text: '没有更多交易',
-          ),
+        ],
+        // The end of the list draws nothing (decision 0127).
       ],
     );
   }
 
-  LoopRecordRow _tradeRow(ProfileTrade trade, LoopRowPosition position) {
+  /// One OKX quote row (decision 0127): 买入 / 卖出 and the token, when,
+  /// the signed amount over its dollar value.
+  Widget _tradeRow(ProfileTrade trade) {
     final usd = trade.usdValue;
     final inbound =
         trade.kind == ProfileTradeKind.buy ||
         trade.kind == ProfileTradeKind.transferIn;
-    return LoopRecordRow(
+    final amount =
+        '${inbound ? '+' : '-'}${loopFormatDecimal(trade.amount, maxFractionDigits: 4)}';
+    return LoopQuoteRow(
       key: ValueKey<String>('user-profile-trade-${trade.eventId}'),
-      leading: LoopTokenLogo(assetSymbol: trade.symbol, size: 32),
+      leading: LoopTokenLogo(assetSymbol: trade.symbol, size: 36),
       title: '${trade.kind.label} ${trade.symbol}',
       subtitle: switch ((trade.blockTimestamp, trade.blockNumber)) {
         (final DateTime at, _) => loopLocalTimestampLabel(at),
         (null, final String block) => '区块 #$block',
         (null, null) => null,
       },
-      trailing:
-          '${inbound ? '+' : '-'}${loopFormatDecimal(trade.amount, maxFractionDigits: 4)}',
-      trailingCaption: usd == null ? null : loopFormatUsd(usd),
-      trailingCaptionUp: inbound,
-      position: position,
-      chevron: false,
+      value: amount,
+      valueCaption: usd == null
+          ? null
+          : Text(
+              loopFormatUsd(usd),
+              style: LoopTypography.body(
+                14,
+                color: inbound ? LoopColors.rise : LoopColors.text2,
+              ),
+            ),
     );
   }
 }

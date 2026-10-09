@@ -210,7 +210,9 @@ void main() {
           community: gateway,
         );
 
-        expect(gateway.reads, 2);
+        // The record twice (one re-attempt), then the member strip's one
+        // directory read (decision 0127).
+        expect(gateway.reads, 3);
         expect(find.byType(LoopOfflineState), findsNothing);
         expect(
           find.byKey(const ValueKey<String>('community-state-error')),

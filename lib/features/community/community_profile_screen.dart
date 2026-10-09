@@ -17,25 +17,28 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_link.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
+import 'package:loop_mobile/features/community/community_member_faces.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_voice_room_open.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
-import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
-import 'package:loop_mobile/features/market/market_read_models.dart';
-import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
+import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-import 'package:loop_mobile/widgets/loop_price_move.dart';
-import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// `community-profile` · one community record.
 ///
@@ -209,27 +212,15 @@ class _CommunityProfileScreenState
     return null;
   }
 
-  /// Holds and starts the bound asset's quote and its 1H candles from a hint,
-  /// while the record that will name the same asset is still being read.
-  ///
-  /// S94b: the card's line is the token page's own `1h` series (same provider,
-  /// same retention), so the card and a later visit to the token page share
-  /// one read.
+  /// Holds and starts the bound asset's quote from a hint, while the record
+  /// that will name the same asset is still being read (same provider as the
+  /// `token` page, so a later visit shares the read).
   void _prefetchBoundAsset(String assetKey) {
     final quote = marketAssetControllerProvider(assetKey);
     ref.listen(quote, (_, _) {});
     if (ref.read(quote).phase == LoopChainViewPhase.loading) {
       scheduleMicrotask(() {
         if (mounted) unawaited(ref.read(quote.notifier).load());
-      });
-    }
-    final candles = marketCandlesControllerProvider(
-      boundAssetCandleRequest(assetKey),
-    );
-    ref.listen(candles, (_, _) {});
-    if (ref.read(candles).phase == LoopChainViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) unawaited(ref.read(candles.notifier).load());
       });
     }
   }
@@ -296,64 +287,36 @@ class _CommunityProfileScreenState
         !state.refreshing) {
       _answerRoomLinkArrival(detail);
     }
+    final joinable =
+        detail != null &&
+        detail.community.communityId == id &&
+        !detail.viewer.hasJoined &&
+        detail.viewer.membership?.status != CommunityMemberStatus.banned;
     return LoopDashboardPage(
       key: const ValueKey<String>('community-profile-screen'),
       archetype: LoopPageArchetype.record,
-      title: community?.name ?? communityMissingName,
+      // Decision 0127: the bar says where the reader is; the name is the
+      // header's, once, at 22.
+      title: '社区',
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
-      actions: <Widget>[
-        // A top-bar action is an icon on the 44 grid like every other one
-        // (audit 2026-09-20 · B.2). 成员 wore a `LoopSeg`, which is the
-        // segmented control this page uses to switch sections — a control
-        // that reads as "you are here" next to one that leaves the page.
-        // The spoken label still says 成员.
-        if (community != null)
-          LoopIconButton(
-            key: const ValueKey<String>('community-profile-open-members'),
-            icon: 'users',
-            label: '成员',
-            framed: true,
-            onPressed: widget.onOpenMembers == null
-                ? null
-                : () => widget.onOpenMembers!(community.communityId),
-          ),
-        // Decision 0113: every reader may hand the community's card on; only
-        // the owner and admins are offered the manage center, which is now
-        // where the profile is edited.
-        if (community != null)
-          LoopIconButton(
-            key: const ValueKey<String>('community-profile-share'),
-            icon: 'share',
-            label: '分享社区',
-            framed: true,
-            onPressed: () => unawaited(
-              showLoopQrCardSheet(
-                context,
-                LoopCommunityQrCard(
-                  communityId: community.communityId,
-                  name: community.name,
-                  memberCount: community.memberCount,
-                  logoRef: community.logoRef,
-                  description: community.description,
-                ),
-              ),
+      primary: community == null
+          ? null
+          : _CommunityHeader(
+              community: community,
+              onlineCount: detail?.onlineCount,
+              onExplainPresence: switch (detail?.onlineCount) {
+                CommunityOnlineCountObserved(:final count, :final observedAt) =>
+                  () => unawaited(
+                    showCommunityPresenceMeaningSheet(
+                      context,
+                      count: count,
+                      observedAt: observedAt,
+                    ),
+                  ),
+                _ => null,
+              },
             ),
-          ),
-        if (community != null && (detail?.viewer.mayManage ?? false))
-          LoopIconButton(
-            key: const ValueKey<String>('community-profile-manage'),
-            icon: 'settings',
-            label: '管理',
-            framed: true,
-            onPressed: () => unawaited(
-              context.push<void>(
-                communityManageLocation(community.communityId),
-              ),
-            ),
-          ),
-      ],
-      primary: _CommunityFolio(community: community),
       block: id != null && communityCapabilityBlocks(mode, capability)
           ? CommunityCapabilityPageBlock(
               key: const ValueKey<String>(
@@ -365,6 +328,14 @@ class _CommunityProfileScreenState
           : null,
       onRefresh: id == null ? null : controller.reload,
       updating: state.refreshing,
+      // Decision 0127: a reader who has not joined has one thing to do here,
+      // and it stands at the foot of the screen at full width.
+      bottomBar: joinable
+          ? _JoinBar(
+              busy: state.busy,
+              onJoin: () => _changeMembership(controller, joined: true),
+            )
+          : null,
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '社区档案'),
         if (id == null)
@@ -381,47 +352,30 @@ class _CommunityProfileScreenState
             skeleton: LoopSkeletonType.detail,
             emptyMessage: '找不到这个社区',
             emptyReason: '它可能已被移除，或对当前账号不可见。',
+            empty: const LoopEmptyState(
+              key: ValueKey<String>('community-profile-not-found'),
+              illustration: LoopIllustration.holders,
+              title: '找不到这个社区',
+              message: '它可能已被移除，或对当前账号不可见。',
+            ),
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          // 0 · the owner's own review, directly under the hero. It is the
-          // first thing on the page for exactly one reader, because a pending
-          // or refused application is the only thing about this community
-          // that reader can still do something about. Every other viewer is
-          // sent no `application` and sees nothing here.
+          // The owner's own review, directly under the header. Every other
+          // viewer is sent no `application` and sees nothing here.
           CommunityApplicationStatusCard(
             review: detail.application,
             viewer: detail.viewer,
             busy: state.busy,
             onResubmit: () => unawaited(_resubmit(controller, detail)),
           ),
-          // 1 · identity: the logo, the name, one mono line of counts and the
-          // community's own description.
-          CommunityIdentityBlock(
-            community: detail.community,
-            onlineCount: detail.onlineCount,
-            onExplainPresence: switch (detail.onlineCount) {
-              CommunityOnlineCountObserved(:final count, :final observedAt) =>
-                () => unawaited(
-                  showCommunityPresenceMeaningSheet(
-                    context,
-                    count: count,
-                    observedAt: observedAt,
-                  ),
-                ),
-              CommunityOnlineCountUnavailable() => null,
-            },
-          ),
-          const SizedBox(height: 14),
-          // 2 · the three things a community record can start: the official
-          // group, Community AI and the voice room.
-          _CommunityActionPair(
+          // The round keys: 进群聊 / 语音房 / 分享, and 管理 for an owner or
+          // an admin (decision 0127, OKX 4908).
+          _CommunityKeys(
             detail: detail,
-            busy: state.busy,
             opening: ref.watch(voiceRoomOpenControllerProvider),
             onOpenChat: () =>
                 widget.onOpenChat?.call(detail.community.communityId),
-            onOpenAi: () => widget.onOpenAi?.call(detail.community.communityId),
             onOpenVoiceRoom: () {
               _warmVoiceSession();
               widget.onOpenVoiceRoom?.call(detail.community.communityId);
@@ -430,7 +384,23 @@ class _CommunityProfileScreenState
               _warmVoiceSession();
               unawaited(_createVoiceRoom(detail));
             },
-            onJoin: () => _changeMembership(controller, joined: true),
+            onShare: () => unawaited(
+              showLoopQrCardSheet(
+                context,
+                LoopCommunityQrCard(
+                  communityId: detail.community.communityId,
+                  name: detail.community.name,
+                  memberCount: detail.community.memberCount,
+                  logoRef: detail.community.logoRef,
+                  description: detail.community.description,
+                ),
+              ),
+            ),
+            onManage: () => unawaited(
+              context.push<void>(
+                communityManageLocation(detail.community.communityId),
+              ),
+            ),
           ),
           if (state.failureKind != null)
             LoopNotice(
@@ -441,21 +411,24 @@ class _CommunityProfileScreenState
               body: communityFailureReason(state.failureKind),
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
-          // 3 · the community's token.
-          if (!detail.community.hasBoundAsset) ...<Widget>[
-            const LoopLabel('社区币'),
-            const CommunityQuietLine(
-              key: ValueKey<String>('community-profile-no-asset'),
-              text: '未绑定社区币',
-            ),
-          ] else
+          // 绑定代币: one OKX quote row.
+          if (detail.community.hasBoundAsset)
             _BoundAssetSection(
               assetKey: detail.community.boundAssetKey!,
               onOpenToken: widget.onOpenToken,
-              onOpenChart: widget.onOpenChart,
             ),
-          // 4 · mining.
-          const LoopLabel('挖矿'),
+          // 成员: the directory's first faces, sideways.
+          _MembersSection(
+            detail: detail,
+            onOpenMembers: widget.onOpenMembers == null
+                ? null
+                : () => widget.onOpenMembers!(detail.community.communityId),
+          ),
+          // 社区 AI: one entry row.
+          _AiEntryRow(
+            onOpen: () => widget.onOpenAi?.call(detail.community.communityId),
+          ),
+          const LoopSectionTitle('挖矿'),
           CommunityMiningSummaryCard(
             fact: detail.miningPower,
             account: _accountReading(detail),
@@ -463,20 +436,24 @@ class _CommunityProfileScreenState
                 ? null
                 : () => widget.onOpenMiningPanel!(detail.community.communityId),
           ),
-          // 5 · what the community published about itself.
-          const LoopLabel('公告'),
-          CommunityAnnouncementBoard(
-            feed: detail.announcements,
-            onOpen: detail.chat.isAvailable || detail.chat.isSyncing
-                ? () => widget.onOpenChat?.call(detail.community.communityId)
-                : null,
-          ),
-          const LoopLabel('官方链接'),
-          CommunityOfficialLinkRow(
-            links: detail.officialLinks,
-            onCopy: _copyLink,
-          ),
-          // 6 · membership, last: it is the page's exit, not its subject.
+          // What the community published about itself — only when it has.
+          if (_hasAnnouncements(detail)) ...<Widget>[
+            const LoopSectionTitle('公告'),
+            CommunityAnnouncementBoard(
+              feed: detail.announcements,
+              onOpen: detail.chat.isAvailable || detail.chat.isSyncing
+                  ? () => widget.onOpenChat?.call(detail.community.communityId)
+                  : null,
+            ),
+          ],
+          if (_hasLinks(detail)) ...<Widget>[
+            const LoopSectionTitle('官方链接'),
+            CommunityOfficialLinkRow(
+              links: detail.officialLinks,
+              onCopy: _copyLink,
+            ),
+          ],
+          // Membership, last: it is the page's exit, not its subject.
           _MembershipFooter(
             detail: detail,
             busy: state.busy,
@@ -487,6 +464,18 @@ class _CommunityProfileScreenState
       ],
     );
   }
+
+  static bool _hasAnnouncements(CommunityDetail detail) =>
+      switch (detail.announcements) {
+        CommunityAnnouncementFeedPublished(:final items) => items.isNotEmpty,
+        CommunityAnnouncementFeedUnavailable() => false,
+      };
+
+  static bool _hasLinks(CommunityDetail detail) =>
+      switch (detail.officialLinks) {
+        CommunityOfficialLinksPublished(:final items) => items.isNotEmpty,
+        CommunityOfficialLinksUnavailable() => false,
+      };
 
   /// The reader's own three cells on this community's bound asset.
   ///
@@ -639,82 +628,177 @@ class _CommunityProfileScreenState
   }
 }
 
-/// `.ledger-card.ledger-quiet.folio-primary` — the record's own heading.
-///
-/// It carries the community's logo at the top right and its verification at
-/// the bottom right, which is the one place the state is stated: the identity
-/// block below it carries the same fact in no other form.
-class _CommunityFolio extends StatelessWidget {
-  const _CommunityFolio({required this.community});
+/// The record's header (decision 0127): the logo at 72, the name at 22 with
+/// its verification as a small mark, one grey line of counts and the bound
+/// token's ticker, and the community's own description.
+class _CommunityHeader extends StatelessWidget {
+  const _CommunityHeader({
+    required this.community,
+    required this.onlineCount,
+    this.onExplainPresence,
+  });
 
-  final CommunitySummary? community;
+  final CommunitySummary community;
+  final CommunityOnlineCount? onlineCount;
+  final VoidCallback? onExplainPresence;
 
   @override
   Widget build(BuildContext context) {
-    final resolved = community;
-    return LoopFolioPrimary(
-      variant: LoopFolioVariant.quiet,
-      archetype: LoopFolioArchetype.record,
-      kicker: 'COMMUNITY RECORD',
-      heading: resolved?.name ?? communityMissingName,
-      caption: resolved == null
-          ? '社区资料暂时读不到，这里不显示数字。'
-          : '成员、资产、Mining 与官方信息汇合为一份社区档案。',
-      // The stamp says the state in words rather than in an English status
-      // name, and it is now the only carrier of it (S22b): the identity card
-      // that used to repeat it as 「已验证」 is gone.
-      stamp: resolved == null
-          ? null
-          : communityVerificationLabel(resolved.verificationStatus),
-      trailing: resolved == null
-          ? null
-          : CommunityLogo(
-              key: const ValueKey<String>('community-folio-logo'),
-              identity: resolved.communityId,
-              name: resolved.name,
-              logoRef: resolved.logoRef,
-              size: 72,
-              radius: LoopRadius.shellValue,
-              bordered: true,
+    final observed = onlineCount is CommunityOnlineCountObserved
+        ? onlineCount! as CommunityOnlineCountObserved
+        : null;
+    final symbol = community.boundAsset?.symbol;
+    final counts = <InlineSpan>[
+      TextSpan(text: '${communityCountLabel(community.memberCount)} 成员'),
+      if (observed != null) ...<InlineSpan>[
+        const TextSpan(text: ' · '),
+        TextSpan(
+          text: '${communityCountLabel(observed.count)} 在线',
+          style: LoopTypography.figure(14, color: LoopColors.lime),
+        ),
+      ],
+      if (symbol != null) TextSpan(text: ' · \$$symbol'),
+    ];
+    final countLine = Text.rich(
+      TextSpan(
+        children: counts,
+        style: LoopTypography.figure(
+          14,
+          weight: FontWeight.w400,
+          color: LoopColors.text2,
+        ),
+      ),
+      key: const ValueKey<String>('community-profile-counts'),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    final verification = community.verificationStatus;
+    final description = community.description;
+    return Padding(
+      key: const ValueKey<String>('community-profile-header'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              CommunityLogo(
+                key: const ValueKey<String>('community-profile-logo'),
+                identity: community.communityId,
+                name: community.name,
+                logoRef: community.logoRef,
+                size: 72,
+                radius: 20,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            community.name,
+                            key: const ValueKey<String>(
+                              'community-profile-name',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopTypography.heading(
+                              22,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // The verification state, in words, once.
+                        LoopTag(
+                          communityVerificationLabel(verification),
+                          key: const ValueKey<String>(
+                            'community-profile-verification',
+                          ),
+                          lime: verification == CommunityVerification.verified,
+                          icon: verification == CommunityVerification.verified
+                              ? 'check'
+                              : null,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    if (observed != null && onExplainPresence != null)
+                      // The online figure says how it was counted when it is
+                      // tapped; the line is the control, 44 tall.
+                      Semantics(
+                        button: true,
+                        label: '在线人数是怎么数的',
+                        child: GestureDetector(
+                          key: const ValueKey<String>(
+                            'community-online-count-explain',
+                          ),
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onExplainPresence,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: 1,
+                              child: countLine,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      countLine,
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (description != null) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(
+              description,
+              key: const ValueKey<String>('community-profile-description'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.body(14, color: LoopColors.text2),
             ),
+          ],
+        ],
+      ),
     );
   }
 }
 
-/// `.btn-pair` — 进入聊天 / AI / 语音, in the prototype's own order.
+/// The record's round keys (decision 0127): 进群聊 / 语音房 / 分享, and 管理
+/// for an owner or an admin.
 ///
-/// Each button states its own condition. A reader who has not joined is
-/// offered the join first, because the official group is not open to them
-/// until the server says it is; AI opens the community's AI page, which
-/// carries the reason it is closed on the page itself; the voice control is
-/// an entry while a room is live, an opening for an owner or an admin when
-/// none is, and the server's own reason for anybody else.
-class _CommunityActionPair extends ConsumerWidget {
-  const _CommunityActionPair({
+/// Each key states its own condition. The voice key is an entry while a room
+/// is live, an opening for an owner or an admin when none is, and the
+/// server's own reason for anybody else. Every key that cannot act says why,
+/// once, in the one line under the row.
+class _CommunityKeys extends ConsumerWidget {
+  const _CommunityKeys({
     required this.detail,
-    required this.busy,
     required this.opening,
     required this.onOpenChat,
-    required this.onOpenAi,
     required this.onOpenVoiceRoom,
     required this.onCreateVoiceRoom,
-    required this.onJoin,
+    required this.onShare,
+    required this.onManage,
   });
 
   final CommunityDetail detail;
 
-  /// A membership write is in flight.
-  final bool busy;
-
-  /// An open-room command is in flight, so the button must not start another.
+  /// An open-room command is in flight, so the key must not start another.
   final bool opening;
   final VoidCallback onOpenChat;
-  final VoidCallback onOpenAi;
   final VoidCallback onOpenVoiceRoom;
   final VoidCallback onCreateVoiceRoom;
-  final VoidCallback onJoin;
-
-  static const _aiDeferred = 'COMMUNITY_AI_RUNTIME_DEFERRED';
+  final VoidCallback onShare;
+  final VoidCallback onManage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -722,113 +806,90 @@ class _CommunityActionPair extends ConsumerWidget {
     final voice = detail.voice;
     // The record's own voice row was read when the page opened. While the
     // page is on screen that row is read again, so a room somebody else
-    // opened lights this control up without the reader touching anything.
+    // opened lights this key up without the reader touching anything; a room
+    // that ended takes the entry with it (it replaces the record's row, for
+    // this community only).
     final watched = ref.watch(communityVoiceLiveControllerProvider);
-    // A room that ended has to take the control with it: an entry left
-    // standing over a room nobody is in is a door into 「房间已结束」, and the
-    // owner cannot open the next room while it is there. So the watched row
-    // replaces the record's own rather than being added to it — for this
-    // community, and never for another one's answer.
     final voiceLive =
         watched != null && watched.communityId == detail.community.communityId
         ? watched.isLive
         : voice.isLive;
     final joined = detail.viewer.hasJoined;
-    final banned =
-        detail.viewer.membership?.status == CommunityMemberStatus.banned;
-    final chatOpenable = chat.isAvailable || chat.isSyncing;
-    final aiCapability = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.communityAi),
-    );
-    // The AI button explains itself only while the capability is closed. An
-    // open one kept printing 「Community AI 还没有开放」 under a control that
-    // opens a working page, which is a sentence the page itself contradicts.
-    final aiReason = aiCapability.isAvailable
-        ? null
-        : communicationUnavailableReason(
-            aiCapability.reasonCode ?? _aiDeferred,
-          );
+    final chatOpenable = joined && (chat.isAvailable || chat.isSyncing);
     final mayOpenRoom = detail.viewer.mayOpenVoiceRoom && !voiceLive;
-    final chatReason = chatOpenable
+    // A reader who has not joined is told so by the join bar at the foot;
+    // the keys do not repeat it.
+    final chatReason = chatOpenable || !joined
         ? null
         : communicationUnavailableReason(chat.reasonCode);
-    final voiceReason = voiceLive || mayOpenRoom
+    final voiceReason = voiceLive || mayOpenRoom || !joined
         ? null
         : communicationUnavailableReason(voice.reasonCode);
-    final reasons = <String>[?chatReason, ?voiceReason, ?aiReason];
+    final reasons = <String>[?chatReason, ?voiceReason];
+    final Widget voiceKey;
+    if (voiceLive) {
+      voiceKey = LoopRoundKey(
+        key: const ValueKey<String>('community-profile-open-voice'),
+        icon: 'voice',
+        label: '直播中',
+        semanticLabel: '进入语音房 · 进行中',
+        onPressed: onOpenVoiceRoom,
+      );
+    } else if (mayOpenRoom) {
+      voiceKey = LoopRoundKey(
+        key: const ValueKey<String>('community-profile-create-voice-room'),
+        icon: 'voice',
+        label: '开语音房',
+        semanticLabel: '开启语音房',
+        onPressed: opening ? null : onCreateVoiceRoom,
+      );
+    } else {
+      voiceKey = const LoopRoundKey(
+        key: ValueKey<String>('community-profile-open-voice'),
+        icon: 'voice-off',
+        label: '语音房',
+        semanticLabel: '语音房',
+        onPressed: null,
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopButtonPair(
-          children: <Widget>[
-            if (!joined && !banned)
-              LoopButton(
-                key: const ValueKey<String>('community-join-action'),
-                label: '加入社区',
-                primary: true,
-                onPressed: busy ? null : onJoin,
-              )
-            else
-              LoopButton(
-                key: const ValueKey<String>('community-profile-open-chat'),
-                label: '进入聊天',
-                primary: true,
-                onPressed: chatOpenable ? onOpenChat : null,
-              ),
-            LoopButton(
-              key: const ValueKey<String>('community-profile-open-ai'),
-              label: 'AI',
-              icon: 'ai',
-              // The capability is closed, and for a while the tap answered
-              // with a toast that took the sentence away again — which read
-              // as a button that does nothing. It opens the page instead:
-              // `community-ai` states what the AI will do, what it cannot do
-              // yet, and why, and it stays on screen to be read.
-              onPressed: onOpenAi,
+        LoopRoundKeyRow(
+          key: const ValueKey<String>('community-profile-keys'),
+          keys: <Widget>[
+            LoopRoundKey(
+              key: const ValueKey<String>('community-profile-open-chat'),
+              icon: 'chat',
+              label: '进群聊',
+              onPressed: chatOpenable ? onOpenChat : null,
             ),
-            if (voiceLive)
-              // A room that is running says so on the control itself. The
-              // glyph alone changed nothing a reader could see: on the review
-              // device the only mark of a live room was the strip at the top
-              // of the app, and the community page it was standing on looked
-              // exactly as it had a moment before (walkthrough 2026-09-23 ·
-              // a34 / community-profile).
-              LoopButton(
-                key: const ValueKey<String>('community-profile-open-voice'),
-                label: 'LIVE',
-                icon: 'voice',
-                semanticLabel: '进入语音房 · 进行中',
-                onPressed: onOpenVoiceRoom,
-              )
-            else if (mayOpenRoom)
-              LoopButton(
-                key: const ValueKey<String>(
-                  'community-profile-create-voice-room',
-                ),
-                label: '',
-                icon: 'voice',
-                semanticLabel: '开启语音房',
-                onPressed: opening ? null : onCreateVoiceRoom,
-              )
-            else
-              LoopButton(
-                key: const ValueKey<String>('community-profile-open-voice'),
-                label: '',
-                icon: 'voice-off',
-                semanticLabel: '语音房',
-                onPressed: null,
+            voiceKey,
+            LoopRoundKey(
+              key: const ValueKey<String>('community-profile-share'),
+              icon: 'share',
+              label: '分享',
+              semanticLabel: '分享社区',
+              onPressed: onShare,
+            ),
+            // Decision 0113: only the owner and admins are offered the
+            // manage center, which is where the profile is edited.
+            if (detail.viewer.mayManage)
+              LoopRoundKey(
+                key: const ValueKey<String>('community-profile-manage'),
+                icon: 'settings',
+                label: '管理',
+                onPressed: onManage,
               ),
           ],
         ),
-        // Every control that cannot act says why, once, under the row it
-        // belongs to. A row on which all three can act says nothing at all,
-        // rather than keeping an empty line where a reason used to be.
         if (reasons.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: Text(
               reasons.join(' '),
               key: const ValueKey<String>('community-profile-action-reasons'),
+              textAlign: TextAlign.center,
               style: LoopTypography.caption(11, color: LoopColors.text3),
             ),
           ),
@@ -837,31 +898,116 @@ class _CommunityActionPair extends ConsumerWidget {
   }
 }
 
-/// The series the bound-asset card draws: the token page's `1h` candles for
-/// the same asset (S94b).
-@visibleForTesting
-MarketCandleRequest boundAssetCandleRequest(String assetKey) =>
-    MarketCandleRequest(
-      assetId: assetKey,
-      interval: LoopCandleInterval.oneHour,
-    );
+/// 加入社区, at full width at the foot of a record the reader has not joined.
+class _JoinBar extends StatelessWidget {
+  const _JoinBar({required this.busy, required this.onJoin});
 
-/// `社区币 · <symbol>` and the signature Token Card under it.
+  final bool busy;
+  final VoidCallback onJoin;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(color: LoopColors.ink),
+    child: Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        10,
+        16,
+        10 + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: LoopWideButton(
+        key: const ValueKey<String>('community-join-action'),
+        label: busy ? '正在加入…' : '加入社区',
+        busy: busy,
+        onPressed: onJoin,
+      ),
+    ),
+  );
+}
+
+/// 成员: a section title with 「查看全部」 and the directory's first faces.
+class _MembersSection extends ConsumerWidget {
+  const _MembersSection({required this.detail, required this.onOpenMembers});
+
+  final CommunityDetail detail;
+  final VoidCallback? onOpenMembers;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final community = detail.community;
+    // The directory is a member's read: a reader who has not joined is not
+    // asked for it, and the strip is simply not drawn.
+    final faces = detail.viewer.hasJoined
+        ? ref.watch(communityMemberFacesProvider(community.communityId))
+        : null;
+    final members = faces?.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSectionTitle(
+          '成员 ${communityCountLabel(community.memberCount)}',
+          trailing: LoopSeeAll(
+            key: const ValueKey<String>('community-profile-open-members'),
+            onPressed: onOpenMembers,
+          ),
+        ),
+        if (members != null && members.isNotEmpty)
+          CommunityMemberStrip(
+            members: members,
+            onOpenProfile: (publicProfileId) => unawaited(
+              context.push<void>(userProfileLocation(publicProfileId)),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// 社区 AI, as one entry row. The page it opens states what the AI will do
+/// and, while the capability is closed, why it cannot yet; the row's grey
+/// line says the same in one sentence.
+class _AiEntryRow extends ConsumerWidget {
+  const _AiEntryRow({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  static const _aiDeferred = 'COMMUNITY_AI_RUNTIME_DEFERRED';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.communityAi),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: LoopPersonRow(
+        key: const ValueKey<String>('community-profile-open-ai'),
+        leading: const LoopEntryIcon('ai'),
+        title: '社区 AI',
+        subtitle: capability.isAvailable
+            ? '问问这个社区的事'
+            : communicationUnavailableReason(
+                capability.reasonCode ?? _aiDeferred,
+              ),
+        chevron: true,
+        onTap: onOpen,
+        semanticLabel: '社区 AI',
+      ),
+    );
+  }
+}
+
+/// 绑定代币: one OKX quote row (decision 0127) — the token's logo, its
+/// ticker over its name, the price over 「24h」 and the 24h change pill.
 ///
-/// Every figure on the card comes from `GET /v2/market/assets/{assetKey}` —
-/// the same read the `token` page makes — and an unavailable one renders the
-/// server's reason instead of a number. The community module still knows only
-/// the address; it derives nothing from it.
+/// Every figure comes from `GET /v2/market/assets/{assetKey}`, the same read
+/// the `token` page makes; an unread price is the server's reason in the
+/// grey line, never a zero.
 class _BoundAssetSection extends ConsumerStatefulWidget {
-  const _BoundAssetSection({
-    required this.assetKey,
-    this.onOpenToken,
-    this.onOpenChart,
-  });
+  const _BoundAssetSection({required this.assetKey, this.onOpenToken});
 
   final String assetKey;
   final ValueChanged<String>? onOpenToken;
-  final ValueChanged<String>? onOpenChart;
 
   @override
   ConsumerState<_BoundAssetSection> createState() => _BoundAssetSectionState();
@@ -885,119 +1031,51 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
     final detail = state.value;
     final symbol =
         detail?.asset.settled?.symbol ?? loopTruncatedAssetId(widget.assetKey);
-    // S94b: the card starts its own line's read. It used to only watch the
-    // series and wait for the sparkline to ask — but the sparkline is mounted
-    // only once the series is ready, so the card said 「1H K 线读取中」 for
-    // good. Single flight: a read already started from the 社区 tab hint is
-    // not asked twice.
-    final candleRequest = marketCandlesControllerProvider(
-      boundAssetCandleRequest(widget.assetKey),
-    );
-    final candles = ref.watch(candleRequest);
-    if (candles.phase == LoopChainViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) unawaited(ref.read(candleRequest.notifier).load());
-      });
-    }
-    final absence = tokenCardSparklineAbsence(candles);
+    final name = detail?.asset.settled?.name;
     final price = detail?.price;
     final change = detail?.priceChange24h;
+    final priced = price != null && price.isAvailable;
+    final open = widget.onOpenToken;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopLabel('社区币 · $symbol'),
-        KeyedSubtree(
+        const LoopSectionTitle('绑定代币'),
+        LoopQuoteRow(
           key: const ValueKey<String>('community-bound-asset'),
-          child: LoopTokenCard(
-            state: LoopTokenCardState.normal,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            model: LoopTokenCardModel(
-              symbol: symbol,
-              identifier: loopTruncatedAssetId(widget.assetKey),
-              logoUrl: detail?.logoUrl,
-              price: price != null && price.isAvailable
-                  ? loopFormatUsd(price.value!)
-                  : null,
-              priceReason: price == null
-                  ? '暂无价格'
-                  : price.isAvailable
-                  ? null
-                  : loopReasonCodeSummaryText(price.reasonCode),
-              change: change != null && change.isAvailable
-                  ? loopFormatPercent(change.value!)
-                  : null,
-              move: LoopPriceMove.of(
-                change != null && change.isAvailable ? change.value : null,
-              ),
-              metrics: <LoopTokenMetric>[
-                _metric('市值', detail?.marketCap),
-                _metric('流动性', detail?.liquidityUsd),
-                _metric('持有人', detail?.holderCount, usd: false),
-              ],
-              communityIcon: 'info',
-              communityLine: detail == null
-                  ? '这个地址由社区所有者登记，行情暂时读不到，卡片上不显示数字。'
-                  : price != null && price.isAvailable
-                  ? '报价 ${loopFactProvenance(price)}'
-                  : '这张卡片的每个数字都取自行情页的同一份数据，读不到的一项会说明原因，不会显示 0。',
-              chartRangeLabel: absence == null
-                  ? '1H · 最近 $loopSparklineWindow 根收盘价'
-                  : null,
-              chart: absence == null
-                  ? TokenCardSparkline(
-                      assetId: widget.assetKey,
-                      keyPrefix: 'community-bound-asset-chart',
-                    )
-                  : null,
-            ),
-            actions: <LoopTokenCardAction>[
-              LoopTokenCardAction(
-                '行情',
-                onTap: widget.onOpenToken == null
-                    ? null
-                    : () => widget.onOpenToken!(widget.assetKey),
-              ),
-              LoopTokenCardAction(
-                '图表',
-                onTap: widget.onOpenChart == null
-                    ? null
-                    : () => widget.onOpenChart!(widget.assetKey),
-              ),
-            ],
+          leading: LoopTokenLogo(
+            assetSymbol: symbol,
+            logoUrl: detail?.logoUrl,
+            size: 36,
           ),
+          title: symbol,
+          subtitle: priced
+              ? (name == null || name == symbol
+                    ? loopTruncatedAssetId(widget.assetKey)
+                    : name)
+              : price == null
+              ? (detail == null ? '行情读取中' : '暂无价格')
+              : loopReasonCodeSummaryText(price.reasonCode),
+          value: priced
+              ? loopFoldedZerosPrice(loopFormatUsd(price.value!))
+              : null,
+          valueKey: const ValueKey<String>('community-bound-asset-price'),
+          valueCaption: priced ? const Text('24h') : null,
+          trailing: LoopChangePill(
+            change: change != null && change.isAvailable ? change.value : null,
+          ),
+          onTap: open == null ? null : () => open(widget.assetKey),
+          semanticLabel: priced
+              ? '$symbol，${loopFormatUsd(price.value!)}'
+              : symbol,
         ),
-        if (absence != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              '暂无走势：${absence.text}',
-              key: const ValueKey<String>('community-bound-asset-chart-note'),
-              style: LoopTypography.caption(11, color: LoopColors.text3),
-            ),
-          ),
       ],
-    );
-  }
-
-  /// One metric cell. A figure with no read behind it states the reason it
-  /// has none; it never falls back to a zero.
-  LoopTokenMetric _metric(String label, LoopFact? fact, {bool usd = true}) {
-    if (fact == null) return LoopTokenMetric(label, communityMissingFigure);
-    return LoopTokenMetric(
-      label,
-      fact.isAvailable
-          ? loopFormatCompactFigure(fact.value!, usd: usd)
-          : loopReasonCodeSummaryText(fact.reasonCode),
     );
   }
 }
 
-/// Membership, at the foot of the record.
-///
-/// It is one line saying what this account is here, and one quiet control for
-/// the one thing that line allows. A banned membership says so and offers
-/// nothing; an owner is told why the control is not there, because the server
-/// refuses the write until ownership is transferred.
+/// Membership, at the foot of the record: a quiet 退出社区 row for a member
+/// who may leave, one grey line for an owner who may not, and the ban stated
+/// for a banned account.
 class _MembershipFooter extends StatelessWidget {
   const _MembershipFooter({
     required this.detail,
@@ -1019,50 +1097,31 @@ class _MembershipFooter extends StatelessWidget {
         icon: 'shield',
         tone: LoopNoticeTone.danger,
         title: '你已被该社区封禁',
-        body:
-            '社区聊天与治理动作对你不可用，你也不在默认成员目录里。'
-            '只有社区的所有者或管理员可以解除封禁；解除后你会恢复为活跃成员，无需重新加入。',
+        body: '社区聊天与治理动作对你不可用。只有所有者或管理员可以解除封禁，解除后无需重新加入。',
         margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
       );
     }
-    final isOwner = membership.role == CommunityRole.owner;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 22, 16, 8),
-          child: Text(
-            '我的身份 · ${communityMembershipLabel(membership)}',
-            key: const ValueKey<String>('community-membership-status'),
-            style: LoopTypography.caption(12, color: LoopColors.text3),
-          ),
+    if (membership.role == CommunityRole.owner) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+        child: Text(
+          '所有者需要先在「成员」页转让所有者，降为 Admin 后才能退出。',
+          key: const ValueKey<String>('community-owner-cannot-leave'),
+          style: LoopTypography.caption(11, color: LoopColors.text3),
         ),
-        // Decision 0113: editing the profile moved to the manage center
-        // (top bar 管理). The owner has no control here — the one this line
-        // could offer is a leave the server would refuse.
-        if (!isOwner)
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('community-leave-action'),
-                label: '退出社区',
-                onPressed: busy ? null : onLeave,
-              ),
-            ],
-          ),
-        if (isOwner)
-          // The role the transfer actually leaves behind is Admin, which is
-          // what the members page's own confirmation states.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              '所有者不能直接退出：先在「成员」页对某位成员执行「转让所有者」，'
-              '你会降为 Admin，之后才能退出。',
-              key: const ValueKey<String>('community-owner-cannot-leave'),
-              style: LoopTypography.caption(11, color: LoopColors.text3),
-            ),
-          ),
-      ],
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: LoopPersonRow(
+        key: const ValueKey<String>('community-leave-action'),
+        leading: const LoopEntryIcon('close'),
+        title: '退出社区',
+        titleColor: LoopColors.fall,
+        subtitle: '我的身份 · ${communityMembershipLabel(membership)}',
+        onTap: busy ? null : onLeave,
+        semanticLabel: '退出社区',
+      ),
     );
   }
 }

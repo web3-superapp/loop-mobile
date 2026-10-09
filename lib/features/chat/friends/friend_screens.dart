@@ -8,6 +8,9 @@ import 'package:loop_mobile/features/chat/friends/friend_controllers.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 class FriendListPage extends ConsumerStatefulWidget {
@@ -550,12 +553,11 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
       });
     }
 
+    // Decision 0127: no English eyebrow; a preview build keeps its 开发预览
+    // mark, which is the one label that must stay visible.
     return LoopPage(
-      eyebrow: group.mode == FriendGatewayMode.preview
-          ? '开发预览 · NEW GROUP'
-          : 'NEW GROUP',
+      eyebrow: group.mode == FriendGatewayMode.preview ? '开发预览' : null,
       title: '创建群组',
-      subtitle: '从已接受的好友中选择成员。',
       children: <Widget>[
         if (group.mode == FriendGatewayMode.preview) ...<Widget>[
           const _FriendPreviewBanner(),
@@ -598,11 +600,7 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
             enabled: group.canEdit,
             maxLength: 60,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: '群组名称',
-              hintText: '例如 Spot Research',
-              prefixIcon: Icon(Icons.forum_outlined),
-            ),
+            decoration: loopFormFieldDecoration(hint: '群组名称', counterText: ''),
             onChanged: groupController.editName,
           ),
           LoopSectionLabel(
@@ -620,29 +618,19 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
             groupController,
           ),
           const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              key: const ValueKey<String>('friend-group-create-submit'),
-              onPressed: group.canCreate
-                  ? () => unawaited(groupController.create())
-                  : null,
-              icon: group.phase == FriendGroupPhase.creating
-                  ? const SizedBox.square(
-                      dimension: 17,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.group_add_outlined),
-              label: Text(
-                group.phase == FriendGroupPhase.creating ? '创建中…' : '创建群组',
-              ),
-            ),
+          LoopWideButton(
+            key: const ValueKey<String>('friend-group-create-submit'),
+            label: group.phase == FriendGroupPhase.creating ? '创建中…' : '创建群组',
+            busy: group.phase == FriendGroupPhase.creating,
+            onPressed: group.canCreate
+                ? () => unawaited(groupController.create())
+                : null,
           ),
           const SizedBox(height: 10),
           Text(
-            '至少选择 $groupMinimumSelectedFriends 位好友；当前用户会由后端加入群组。',
+            '至少选择 $groupMinimumSelectedFriends 位好友',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: LoopTypography.caption(11, color: LoopColors.text3),
           ),
         ],
       ],
@@ -694,33 +682,19 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
       ];
     }
 
+    // OKX rows (decision 0127): no card and no dividers.
     final content = <Widget>[
-      LoopCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: <Widget>[
-            for (
-              var index = 0;
-              index < directory.friends.length;
-              index++
-            ) ...<Widget>[
-              _SelectableFriendRow(
-                rowKey: 'friend-select-result-$index',
-                identity: directory.friends[index],
-                selected: group.selectedFriendRefs.contains(
-                  directory.friends[index].profileRef,
-                ),
-                enabled: group.canEdit,
-                onChanged: () => groupController.toggleFriend(
-                  directory.friends[index].profileRef,
-                ),
-              ),
-              if (index != directory.friends.length - 1)
-                const Divider(height: 1, indent: 72),
-            ],
-          ],
+      for (var index = 0; index < directory.friends.length; index++)
+        _SelectableFriendRow(
+          rowKey: 'friend-select-result-$index',
+          identity: directory.friends[index],
+          selected: group.selectedFriendRefs.contains(
+            directory.friends[index].profileRef,
+          ),
+          enabled: group.canEdit,
+          onChanged: () =>
+              groupController.toggleFriend(directory.friends[index].profileRef),
         ),
-      ),
     ];
     if (group.phase == FriendGroupPhase.failure) {
       final unresolved =
@@ -934,6 +908,9 @@ class _FriendSearchResultRow extends StatelessWidget {
   }
 }
 
+/// One friend to pick (decision 0127): the face at 36, the alias over the
+/// LOOP code, and a 24 round check on the right — Lime and filled once
+/// picked.
 class _SelectableFriendRow extends StatelessWidget {
   const _SelectableFriendRow({
     required this.rowKey,
@@ -956,41 +933,57 @@ class _SelectableFriendRow extends StatelessWidget {
       checked: selected,
       enabled: enabled,
       label: '${identity.alias}，${selected ? '已选择' : '未选择'}',
+      excludeSemantics: true,
       child: InkWell(
         key: ValueKey<String>(rowKey),
         onTap: enabled ? onChanged : null,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: <Widget>[
-              Checkbox(
-                value: selected,
-                onChanged: enabled ? (_) => onChanged() : null,
-              ),
-              const SizedBox(width: 4),
-              ChatAvatar(
-                label: identity.alias,
-                colorSeed: identity.colorSeed,
-                size: 40,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      identity.alias,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'LOOP #${identity.profileCode}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: <Widget>[
+                ChatAvatar(
+                  label: identity.alias,
+                  colorSeed: identity.colorSeed,
+                  size: 36,
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        identity.alias,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopTypography.title(16),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'LOOP #${identity.profileCode}',
+                        style: LoopTypography.body(13, color: LoopColors.text2),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 24,
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? LoopColors.lime : Colors.transparent,
+                    border: selected
+                        ? null
+                        : Border.all(color: LoopColors.line2, width: 1.5),
+                  ),
+                  child: selected
+                      ? const LoopIcon('check', size: 14, color: LoopColors.ink)
+                      : null,
+                ),
+              ],
+            ),
           ),
         ),
       ),

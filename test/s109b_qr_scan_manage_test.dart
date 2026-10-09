@@ -598,8 +598,7 @@ void main() {
         'community-manage-members-group',
         'community-manage-voice-group',
         'community-manage-announcements',
-        'community-manage-share-group',
-        'community-manage-ownership-group',
+        'community-manage-share',
         'community-manage-transfer',
       ]) {
         final finder = find.byKey(ValueKey<String>(key));
@@ -640,7 +639,6 @@ void main() {
       for (final key in <String>[
         'community-manage-bound-asset',
         'community-manage-no-pool',
-        'community-manage-ownership-group',
         'community-manage-transfer',
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsNothing, reason: key);

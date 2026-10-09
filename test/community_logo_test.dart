@@ -328,7 +328,7 @@ void main() {
         community: FakeCommunityGateway(detail: testDetail(community: summary)),
       );
       expect(
-        find.byKey(const ValueKey<String>('community-folio-logo')),
+        find.byKey(const ValueKey<String>('community-profile-logo')),
         findsOneWidget,
       );
       expect(_groundOf(tester), expected);

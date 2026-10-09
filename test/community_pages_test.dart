@@ -14,12 +14,13 @@ import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_round_key.dart';
 
 import 'support/communication_test_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/community_test_harness.dart';
-import 'support/loop_stream_scroll.dart';
 
 CommunityHome _home({
   int joined = 1,
@@ -740,7 +741,7 @@ void main() {
   });
 
   group('community-profile', () {
-    testWidgets('成员 is a top-bar icon control, not a section switch', (
+    testWidgets('成员 is a section whose 查看全部 opens the directory', (
       tester,
     ) async {
       final opened = <String>[];
@@ -753,17 +754,15 @@ void main() {
         community: FakeCommunityGateway(detail: testDetail()),
       );
 
+      // Decision 0127: the directory is a section on the record with one
+      // 「查看全部」, not a top-bar icon.
       final action = find.byKey(
         const ValueKey<String>('community-profile-open-members'),
       );
+      await scrollToCommunitySection(tester, action);
       expect(action, findsOneWidget);
-      final button = tester.widget<LoopIconButton>(action);
-      expect(button.icon, 'users');
-      expect(button.label, '成员');
+      expect(tester.widget<LoopSeeAll>(action).label, '查看全部');
       expect(tester.getSize(action).height, greaterThanOrEqualTo(44));
-      // The word is spoken, not printed: a labelled segment beside the title
-      // read as a section the page was already on.
-      expect(find.text('成员'), findsNothing);
 
       await tester.tap(action);
       await tester.pumpAndSettle();
@@ -792,12 +791,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(opened, <String>[testCommunityId]);
-      // The reason stays on the record's own line, once; it is no longer a
-      // second copy that appears and takes itself away again.
-      expect(
-        find.byKey(const ValueKey<String>('community-profile-action-reasons')),
-        findsOneWidget,
-      );
+      // The reason is the AI row's own grey line, once (decision 0127); it
+      // is no longer a copy that appears and takes itself away again.
       expect(find.textContaining('Community AI 还没有开放'), findsOneWidget);
     });
 
@@ -1179,24 +1174,21 @@ void main() {
       expect(find.textContaining('权重还在审核中'), findsNothing);
     });
 
-    testWidgets('an unbound asset renders no token card', (tester) async {
+    testWidgets('an unbound asset draws no 绑定代币 section', (tester) async {
       await pumpCommunityPage(
         tester,
         const CommunityProfileScreen(communityId: testCommunityId),
         community: FakeCommunityGateway(detail: testDetail()),
       );
 
-      expect(
-        find.byKey(const ValueKey<String>('community-profile-no-asset')),
-        findsOneWidget,
-      );
+      // Decision 0127: an absence takes no room at all — no section title,
+      // no quiet line, no card.
       expect(
         find.byKey(const ValueKey<String>('community-bound-asset')),
         findsNothing,
       );
-      // One quiet line, not an information card: an absence must not take
-      // more room than the facts around it.
-      expect(find.text('未绑定社区币'), findsOneWidget);
+      expect(find.text('绑定代币'), findsNothing);
+      expect(find.text('未绑定社区币'), findsNothing);
     });
 
     testWidgets('a bound asset shows the key without a market figure', (
@@ -1218,17 +1210,21 @@ void main() {
       final card = find.byKey(const ValueKey<String>('community-bound-asset'));
       await scrollToCommunitySection(tester, card);
       expect(card, findsOneWidget);
-      // The card reads the market module for this key. Nothing answers in
-      // this harness, so every figure states its absence and none of them
-      // becomes a number.
-      expect(find.textContaining('行情暂时读不到'), findsOneWidget);
-      expect(find.text('暂无价格'), findsOneWidget);
-      expect(find.textContaining(r'$'), findsNothing);
-      // No series is readable either, so the card carries no chart slot: an
-      // empty 106px box under a range label points at a line that is not
-      // there.
-      expect(find.textContaining('暂无走势'), findsOneWidget);
-      expect(find.textContaining('根收盘价'), findsNothing);
+      // One quote row (decision 0127) reads the market module for this key.
+      // Nothing answers in this harness, so the row states its absence and
+      // no figure becomes a number.
+      expect(
+        find.descendant(of: card, matching: find.textContaining(r'$')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-bound-asset-price')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: card, matching: find.text('未报告')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('mining, presence, announcements and links stay unavailable', (
@@ -1247,18 +1243,20 @@ void main() {
       );
       await scrollToCommunitySection(tester, mining);
       expect(find.textContaining('挖矿规则还没有确定'), findsOneWidget);
-      final announcements = find.byKey(
-        const ValueKey<String>('community-announcements-unavailable'),
+      // Decision 0127: a board with nothing on it takes no room — no section
+      // title and no 「暂无」 line — and still never becomes a figure.
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-announcements-unavailable'),
+        ),
+        findsNothing,
       );
-      await scrollToCommunitySection(tester, announcements);
-      expect(announcements, findsOneWidget);
-      expect(find.textContaining('暂无公告'), findsOneWidget);
-      final links = find.byKey(
-        const ValueKey<String>('community-links-unavailable'),
+      expect(find.textContaining('暂无公告'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-links-unavailable')),
+        findsNothing,
       );
-      await scrollToCommunitySection(tester, links);
-      expect(links, findsOneWidget);
-      expect(find.textContaining('暂无官方链接'), findsOneWidget);
+      expect(find.textContaining('暂无官方链接'), findsNothing);
     });
 
     testWidgets('a verified community is not told its channel waits on '
@@ -1499,14 +1497,16 @@ void main() {
         ),
       );
 
-      // The frozen order, top to bottom: folio, identity, the three
-      // controls, the token card, mining, announcements, official links,
+      // The order, top to bottom (decision 0127): header, the round keys,
+      // 绑定代币, 成员, 社区 AI, mining, announcements, official links,
       // membership. A section that moves moves this test.
       final order = <Finder>[
         find.byKey(const ValueKey<String>('loop-page-primary')),
         find.byKey(const ValueKey<String>('community-profile-logo')),
         find.byKey(const ValueKey<String>('community-profile-open-chat')),
         find.byKey(const ValueKey<String>('community-bound-asset')),
+        find.byKey(const ValueKey<String>('community-profile-open-members')),
+        find.byKey(const ValueKey<String>('community-profile-open-ai')),
         find.byKey(const ValueKey<String>('community-mining-summary')),
         find.byKey(const ValueKey<String>('community-announcements')),
         find.byKey(const ValueKey<String>('community-links')),
@@ -1524,11 +1524,11 @@ void main() {
         );
         previous = offset;
       }
-      // The two blocks the record no longer carries: a second identity card
-      // repeating the folio, and a 聊天与语音 row group.
+      // The blocks the record no longer carries: a second identity card, a
+      // 聊天与语音 row group, an English eyebrow.
       expect(find.text('社区官方群'), findsNothing);
-      expect(find.text('语音房'), findsNothing);
       expect(find.text('在线'), findsNothing);
+      expect(find.text('COMMUNITY RECORD'), findsNothing);
     });
   });
 
@@ -1605,10 +1605,10 @@ void main() {
       );
       await scrollToVoice(tester, enter);
       expect(createButton, findsNothing);
-      expect(tester.widget<LoopButton>(enter).onPressed, isNotNull);
+      expect(tester.widget<LoopRoundKey>(enter).onPressed, isNotNull);
       // S77d: a room that is running is marked on the control itself.
-      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房 · 进行中');
-      expect(tester.widget<LoopButton>(enter).label, 'LIVE');
+      expect(tester.widget<LoopRoundKey>(enter).semanticLabel, '进入语音房 · 进行中');
+      expect(tester.widget<LoopRoundKey>(enter).label, '直播中');
     });
 
     testWidgets('ending the room drops the row the community page had read', (
@@ -1749,7 +1749,7 @@ void main() {
         const ValueKey<String>('community-profile-open-voice'),
       );
       await scrollToVoice(tester, enter);
-      expect(tester.widget<LoopButton>(enter).onPressed, isNull);
+      expect(tester.widget<LoopRoundKey>(enter).onPressed, isNull);
 
       // Somebody opens a room. Nothing on this page was touched.
       voiceRoom.snapshot = testVoiceRoomSnapshot();
@@ -1757,10 +1757,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(voiceRoom.commands, contains('current:$testCommunityId'));
-      expect(tester.widget<LoopButton>(enter).onPressed, isNotNull);
+      expect(tester.widget<LoopRoundKey>(enter).onPressed, isNotNull);
       // S77d: a room that is running is marked on the control itself.
-      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房 · 进行中');
-      expect(tester.widget<LoopButton>(enter).label, 'LIVE');
+      expect(tester.widget<LoopRoundKey>(enter).semanticLabel, '进入语音房 · 进行中');
+      expect(tester.widget<LoopRoundKey>(enter).label, '直播中');
     });
 
     testWidgets('a room that ends takes the entry with it', (tester) async {
@@ -1782,8 +1782,8 @@ void main() {
       );
       await scrollToVoice(tester, enter);
       // S77d: a room that is running is marked on the control itself.
-      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房 · 进行中');
-      expect(tester.widget<LoopButton>(enter).label, 'LIVE');
+      expect(tester.widget<LoopRoundKey>(enter).semanticLabel, '进入语音房 · 进行中');
+      expect(tester.widget<LoopRoundKey>(enter).label, '直播中');
 
       // The room ends somewhere else.
       voiceRoom.snapshot = null;
@@ -1893,8 +1893,8 @@ void main() {
     });
   });
 
-  group('community-members · member preview (decision 0092)', () {
-    testWidgets('stacks the first faces, counts the rest, spreads to names', (
+  group('community-members · OKX rows (decision 0127)', () {
+    testWidgets('every row is a face, a name, a role mark and the LOOP ID', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -1915,96 +1915,34 @@ void main() {
         ),
       );
 
-      final preview = find.byKey(
-        const ValueKey<String>('community-members-preview'),
-      );
-      expect(preview, findsOneWidget);
-      // 128 in the directory, two faces drawn.
+      // Whose directory this is: the community's face, once, in a row.
       expect(
-        find.descendant(of: preview, matching: find.text('+126')),
+        find.byKey(const ValueKey<String>('community-members-logo')),
         findsOneWidget,
       );
-      // Stacked: no names are built inside the preview.
-      expect(
-        find.descendant(of: preview, matching: find.text('pepe_founder')),
-        findsNothing,
-      );
-
-      await tester.ensureVisible(preview);
-      await tester.tap(
-        find.descendant(
-          of: preview,
-          matching: find.byKey(
-            const ValueKey<String>('loop-avatar-stack-toggle'),
-          ),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 120));
-      await tester.pumpAndSettle();
-      // Spread: each face is named with the directory's own display name,
-      // the LOOP ID for a member who has no alias.
-      // Names longer than six characters are cut with 「…」 (user ruling
-      // 2026-09-27 on decision 0092); the reader still hears them whole.
-      expect(
-        find.descendant(of: preview, matching: find.text('pepe_f…')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: preview, matching: find.text('LOOP-7…')),
-        findsOneWidget,
-      );
-      // Default 40 faces; the row scrolls sideways and shows each name whole.
-      final face = find.descendant(
-        of: preview,
-        matching: find.byKey(
-          const ValueKey<String>('loop-avatar-stack-face-0'),
-        ),
-      );
-      expect(tester.getSize(face).height, 40);
-      final scroll = tester.getRect(
-        find.descendant(
-          of: preview,
-          matching: find.byKey(
-            const ValueKey<String>('loop-avatar-stack-scroll'),
-          ),
-        ),
-      );
-      final name = tester.getRect(
-        find.descendant(of: preview, matching: find.text('pepe_f…')),
-      );
-      expect(name.bottom, lessThanOrEqualTo(scroll.bottom));
-
-      await tester.tap(
-        find.descendant(
-          of: preview,
-          matching: find.byKey(
-            const ValueKey<String>('loop-avatar-stack-toggle'),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.descendant(of: preview, matching: find.text('pepe_f…')),
-        findsNothing,
-      );
-    });
-
-    testWidgets('a narrowed directory carries no preview', (tester) async {
-      await pumpCommunityPage(
-        tester,
-        const CommunityMembersScreen(communityId: testCommunityId),
-        community: FakeCommunityGateway(members: testDirectory()),
-      );
-      expect(
-        find.byKey(const ValueKey<String>('community-members-preview')),
-        findsOneWidget,
-      );
-      await tester.tap(find.byKey(const ValueKey<String>('members-seg-admin')));
-      await tester.pumpAndSettle();
+      // No stacked preview, no hero card, no rules card.
       expect(
         find.byKey(const ValueKey<String>('community-members-preview')),
         findsNothing,
       );
+      expect(find.text('MEMBER DIRECTORY'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-members-rules')),
+        findsNothing,
+      );
+      expect(find.byType(LoopPersonRow), findsWidgets);
+      // The owner carries its role as a small mark; a plain member none.
+      final ownerRow = find.byWidgetPredicate(
+        (widget) => widget is LoopPersonRow && widget.title == 'pepe_founder',
+      );
+      expect(ownerRow, findsOneWidget);
+      expect(
+        find.descendant(of: ownerRow, matching: find.byType(LoopTag)),
+        findsOneWidget,
+      );
+      final row = tester.widget<LoopPersonRow>(ownerRow);
+      expect(row.height, greaterThanOrEqualTo(56));
+      expect(tester.getSize(ownerRow).height, greaterThanOrEqualTo(56));
     });
   });
 
@@ -2029,29 +1967,34 @@ void main() {
             .onSelected,
         isNull,
       );
-      // The directory never observes presence, so this page states that it
-      // does not carry the figure rather than that a read failed.
+      // The directory never observes presence. The disabled 在线 chip says so
+      // when tapped (below); the page carries no standing card about it
+      // (decision 0127), and never a read failure.
       expect(
         find.byKey(
           const ValueKey<String>('community-members-online-not-observed'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.textContaining('在线人数暂时读不到'), findsNothing);
     });
 
-    testWidgets('the last page of members says it is the last', (tester) async {
+    testWidgets('the last page of members draws nothing after it', (
+      tester,
+    ) async {
       await pumpCommunityPage(
         tester,
         const CommunityMembersScreen(communityId: testCommunityId),
         community: FakeCommunityGateway(members: testDirectory()),
       );
 
-      final end = find.byKey(const ValueKey<String>('community-members-end'));
-      await scrollToCommunitySection(tester, end);
-      // The 载入更多 control simply vanished on the last page, and a list that
-      // ends in silence reads as one that stopped loading.
-      expect(end, findsOneWidget);
+      // Decision 0127 (S121 §1.1.1 · 10): the end of a list is not a line of
+      // its own — no 「没有更多」 — and there is no 载入更多 either.
+      expect(
+        find.byKey(const ValueKey<String>('community-members-end')),
+        findsNothing,
+      );
+      expect(find.textContaining('没有更多'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('community-members-load-more')),
         findsNothing,
@@ -2111,7 +2054,20 @@ void main() {
       // The chip row is reached by scrolling the horizontal strip, and on a
       // short viewport that also carries the hero off the top. The heading is
       // read where it is read: at the top of the list.
-      await loopStreamScrollToTop(tester);
+      tester
+          .state<ScrollableState>(
+            find
+                .descendant(
+                  of: find.byKey(
+                    const ValueKey<String>('community-members-list'),
+                  ),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          )
+          .position
+          .jumpTo(0);
+      await tester.pumpAndSettle();
 
       // The server counts roles, never this filter: the directory's 128 is
       // not the number of banned members and is not printed over them.
@@ -2172,7 +2128,7 @@ void main() {
         220,
         scrollable: find.byType(Scrollable).first,
       );
-      final rendered = tester.widget<LoopRecordRow>(row);
+      final rendered = tester.widget<LoopPersonRow>(row);
       expect(rendered.title, 'LOOP-3HJKMNPQ');
       expect(rendered.subtitle, isNot('LOOP-3HJKMNPQ'));
       expect(rendered.subtitle, startsWith('加入于 '));
@@ -2819,7 +2775,10 @@ void main() {
       final before = tester.element(searchField());
       final node = tester.widget<TextField>(searchField()).focusNode!;
       expect(node.hasFocus, isTrue);
-      expect(find.text('MEMBER DIRECTORY'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-members-owner-row')),
+        findsOneWidget,
+      );
 
       // The soft keyboard arrives one frame after the field takes focus.
       tester.view.viewInsets = const FakeViewPadding(bottom: 289);
@@ -2828,7 +2787,10 @@ void main() {
 
       // The hero is folded away — and the field is the same element, still
       // focused, so the keyboard stays up and what is typed arrives.
-      expect(find.text('MEMBER DIRECTORY'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-members-owner-row')),
+        findsNothing,
+      );
       expect(tester.element(searchField()), same(before));
       expect(node.hasFocus, isTrue);
 
@@ -2842,7 +2804,10 @@ void main() {
       // the field.
       tester.view.resetViewInsets();
       await tester.pumpAndSettle();
-      expect(find.text('MEMBER DIRECTORY'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-members-owner-row')),
+        findsOneWidget,
+      );
       expect(tester.element(searchField()), same(before));
       expect(node.hasFocus, isTrue);
     });

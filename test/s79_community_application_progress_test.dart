@@ -566,14 +566,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Nothing is written before the confirmation.
-      expect(gateway.commands, isEmpty);
+      // Nothing is written before the confirmation. The member strip's one
+      // directory read (decision 0127) is a read, not a write.
+      bool isWrite(String command) => !command.startsWith('members:');
+      expect(gateway.commands.where(isWrite), isEmpty);
       await tester.tap(
         find.byKey(const ValueKey<String>('community-confirm-accept')),
       );
       await tester.pumpAndSettle();
 
-      expect(gateway.commands, <String>[
+      expect(gateway.commands.where(isWrite), <String>[
         'edit:$testCommunityId:Frog Holders DAO',
         'resubmit:$testCommunityId',
       ]);

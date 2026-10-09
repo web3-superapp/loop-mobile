@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
@@ -599,7 +600,13 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     // Everybody in the room is listening — the host and the speakers too —
     // so the bar's figure is the room's own total, the same one every other
     // figure on these pages adds up to (decision 0115).
-    final listening = '${headcount.inRoom} 在听';
+    // Decision 0127: 「N 在听 · 开播 x 分钟」, the room's two figures in the
+    // bar's grey line.
+    final listening = voiceRoomLiveLine(
+      inRoom: headcount.inRoom,
+      openedAt: room.createdAt,
+      now: ref.watch(loopReadClockProvider)(),
+    );
     ValueChanged<VoiceRoomMember>? openMember;
     if (!state.busy) {
       openMember = (member) => unawaited(_openMember(controller, member));
@@ -610,6 +617,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         name: host.name,
         avatarRef: host.avatarRef,
         mic: _hostMic(snapshot, live, host.knownName, speakers),
+        info: _infoButton(context, snapshot),
       ),
       if (viewer.hasJoined && room.isJoinable)
         if (!room.audioOpen)
@@ -755,7 +763,6 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                   framed: true,
                   onPressed: () => unawaited(_share(context, room)),
                 ),
-                _infoButton(context, snapshot, framed: true),
               ],
             ),
           ),
@@ -2578,3 +2585,11 @@ String? voiceRoomTopbarLine(VoiceRoomSnapshot? snapshot) {
   final headcount = VoiceRoomHeadcount.of(snapshot);
   return '进行中 · 发言 ${headcount.speaking} · 听众 ${headcount.listening}';
 }
+
+/// 「N 在听 · 开播 x 分钟」 (decision 0127): everybody in the room and how
+/// long ago it opened, in the plaza's own words for the same fact.
+String voiceRoomLiveLine({
+  required int inRoom,
+  required DateTime openedAt,
+  required DateTime now,
+}) => '$inRoom 在听 · ${liveVoiceRoomElapsedLabel(openedAt, now)}';

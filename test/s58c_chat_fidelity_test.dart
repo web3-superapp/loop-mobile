@@ -319,25 +319,15 @@ void main() {
   });
 
   group('B.4 · the request page states what it counts', () {
-    test(
-      'the stamp names what it counts, and counts nothing it has not read',
-      () {
-        expect(messageRequestsStamp(CommunityViewPhase.ready, 1), '1 NEW');
-        expect(messageRequestsStamp(CommunityViewPhase.empty, 0), '0 NEW');
-        expect(messageRequestsStamp(CommunityViewPhase.loading, 0), isNull);
-        expect(messageRequestsStamp(CommunityViewPhase.error, 0), isNull);
-      },
-    );
-
-    testWidgets('the hero keeps no ring and the fourth card is gone', (
+    testWidgets('the count is the bar\'s grey line; no hero card, no English', (
       tester,
     ) async {
       await pumpCommunityPage(tester, const MessageRequestsScreen());
 
-      final folio = _folio(tester);
-      expect(folio.variant, LoopFolioVariant.chalk);
-      expect(folio.ring, isFalse);
-      // One explanation per page is the ceiling (audit · D-5).
+      // Decision 0127: the hero card and its `N NEW` stamp are gone; the
+      // count is said once, in Chinese, under the title.
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(find.textContaining('NEW'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('dm-requests-scope-notice')),
         findsNothing,

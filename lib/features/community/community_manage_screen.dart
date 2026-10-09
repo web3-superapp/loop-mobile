@@ -17,8 +17,8 @@ import 'package:loop_mobile/features/community/community_voice_room_open.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -91,14 +91,27 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
       title: '社区管理',
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.action,
-        kicker: 'MANAGE',
-        heading: detail?.community.name ?? communityMissingName,
-        caption: '资料、成员、语音房、公告、分享与所有权。这里的每一项修改都由服务端确认。',
-        stamp: viewer?.membership?.role.label,
-      ),
+      // Decision 0127: the community's face and name head the page as one
+      // row; the hero card and its English eyebrow are gone.
+      primary: detail == null
+          ? null
+          : LoopPersonRow(
+              key: const ValueKey<String>('community-manage-header'),
+              height: 72,
+              leading: CommunityLogo(
+                identity: detail.community.communityId,
+                name: detail.community.name,
+                logoRef: detail.community.logoRef,
+                size: 48,
+                radius: 14,
+              ),
+              title: detail.community.name,
+              tag: viewer?.membership == null
+                  ? null
+                  : LoopTag(viewer!.membership!.role.label, lime: true),
+              subtitle:
+                  '${communityCountLabel(detail.community.memberCount)} 成员',
+            ),
       block: id != null && blocked
           ? CommunityCapabilityPageBlock(
               key: const ValueKey<String>(
@@ -143,6 +156,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
     );
   }
 
+  /// Three sections of entry rows (decision 0127): 资料, 成员, 语音房.
   List<Widget> _groups(
     BuildContext context,
     CommunityDetail detail, {
@@ -154,93 +168,127 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
     final counts = ref.watch(communityManageCountsProvider(id));
     return <Widget>[
       // 资料
-      const LoopLabel('资料'),
-      LoopRecordGroup(
+      const LoopSectionTitle('资料', top: 12),
+      Column(
         key: const ValueKey<String>('community-manage-profile-group'),
-        rows: <LoopRecordRow>[
-          LoopRecordRow(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LoopPersonRow(
             key: const ValueKey<String>('community-manage-edit-profile'),
-            leading: CommunityLogo(
-              identity: id,
-              name: community.name,
-              logoRef: community.logoRef,
-              size: 36,
-            ),
+            leading: const LoopEntryIcon('id'),
             title: '名称与简介',
-            subtitle: community.description == null
-                ? '${community.name} · 还没有简介'
-                : '${community.name} · ${community.description}',
+            subtitle: community.description ?? '还没有简介',
+            chevron: true,
             onTap: busy
                 ? null
                 : () =>
                       unawaited(_editProfile(detail, includeBoundAsset: false)),
           ),
           if (isOwner)
-            LoopRecordRow(
+            LoopPersonRow(
               key: const ValueKey<String>('community-manage-bound-asset'),
-              leading: const LoopRowIcon(icon: 'wallet'),
+              leading: const LoopEntryIcon('wallet'),
               title: '绑定代币',
+              tag: const LoopTag('仅所有者'),
               subtitle: _boundAssetLine(community),
-              trailingBadge: const LoopBadge('仅所有者'),
+              chevron: true,
               onTap: busy
                   ? null
                   : () => unawaited(
                       _editProfile(detail, includeBoundAsset: true),
                     ),
             ),
+          if (isOwner &&
+              community.boundAsset != null &&
+              !community.boundAsset!.hasRegisteredPool)
+            Padding(
+              key: const ValueKey<String>('community-manage-no-pool'),
+              padding: const EdgeInsets.fromLTRB(68, 0, 16, 8),
+              child: Text(
+                '尚无已注册池子，群友买入动态不会出现。',
+                style: LoopTypography.caption(11, color: LoopColors.warning),
+              ),
+            ),
+          LoopPersonRow(
+            key: const ValueKey<String>('community-manage-share'),
+            leading: const LoopEntryIcon('share'),
+            title: '社区二维码名片',
+            subtitle: '分享海报或复制社区链接',
+            chevron: true,
+            onTap: () => unawaited(
+              showLoopQrCardSheet(
+                context,
+                LoopCommunityQrCard(
+                  communityId: id,
+                  name: community.name,
+                  memberCount: community.memberCount,
+                  logoRef: community.logoRef,
+                  description: community.description,
+                ),
+              ),
+            ),
+          ),
+          // Publishing waits on the operator console; the row says so in its
+          // grey line and takes no tap.
+          const LoopPersonRow(
+            key: ValueKey<String>('community-manage-announcements'),
+            leading: LoopEntryIcon('news'),
+            title: '公告',
+            subtitle: '公告发布即将推出',
+          ),
         ],
       ),
-      if (isOwner &&
-          community.boundAsset != null &&
-          !community.boundAsset!.hasRegisteredPool)
-        const LoopNotice(
-          key: ValueKey<String>('community-manage-no-pool'),
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          body: '尚无已注册池子，群友买入动态不会出现。',
-        ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        child: Text(
-          '社区图标暂不能在这里更换；短链接与验证状态不能修改。',
-          key: const ValueKey<String>('community-manage-logo-note'),
-          style: LoopTypography.caption(11),
-        ),
-      ),
       // 成员
-      const LoopLabel('成员'),
-      LoopRecordGroup(
+      const LoopSectionTitle('成员'),
+      Column(
         key: const ValueKey<String>('community-manage-members-group'),
-        rows: <LoopRecordRow>[
-          LoopRecordRow(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LoopPersonRow(
             key: const ValueKey<String>('community-manage-members'),
-            leading: const LoopRowIcon(icon: 'users'),
+            leading: const LoopEntryIcon('users'),
             title: '成员与权限',
             subtitle: switch (counts) {
               AsyncData(:final value) =>
                 'Owner ${value.owner} · Admin ${value.admin} · 共 ${value.all} 人',
-              AsyncError() => '${community.memberCount} 位成员 · 角色计数暂时读不到',
-              _ => '${community.memberCount} 位成员 · 正在读取角色计数',
+              AsyncError() => '${community.memberCount} 位成员',
+              _ => '${community.memberCount} 位成员',
             },
+            chevron: true,
             onTap: () => unawaited(
               context.push<void>(
                 '/community/members?id=${Uri.encodeQueryComponent(id)}',
               ),
             ),
           ),
+          if (isOwner)
+            LoopPersonRow(
+              key: const ValueKey<String>('community-manage-transfer'),
+              leading: const LoopEntryIcon('crown'),
+              title: '转让所有者',
+              subtitle: '在成员页选择成员，转让后你会降为 Admin',
+              chevron: true,
+              onTap: () => unawaited(
+                context.push<void>(
+                  '/community/members?id=${Uri.encodeQueryComponent(id)}',
+                ),
+              ),
+            ),
         ],
       ),
       // 语音房
-      const LoopLabel('语音房'),
-      LoopRecordGroup(
+      const LoopSectionTitle('语音房'),
+      Column(
         key: const ValueKey<String>('community-manage-voice-group'),
-        rows: <LoopRecordRow>[
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
           if (detail.voice.isLive)
-            LoopRecordRow(
+            LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-enter'),
-              leading: const LoopRowIcon(icon: 'voice'),
+              leading: const LoopEntryIcon('voice'),
               title: '进入语音房',
               subtitle: '社区正在开播',
+              chevron: true,
               onTap: () => unawaited(
                 context.push<void>(
                   '/chat/voice?id=${Uri.encodeQueryComponent(id)}',
@@ -248,11 +296,12 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
               ),
             )
           else
-            LoopRecordRow(
+            LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-open'),
-              leading: const LoopRowIcon(icon: 'mic'),
+              leading: const LoopEntryIcon('mic'),
               title: '开启语音房',
               subtitle: '你是主持人，麦克风默认关闭',
+              chevron: true,
               onTap: ref.watch(voiceRoomOpenControllerProvider)
                   ? null
                   : () => unawaited(
@@ -271,67 +320,14 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             ),
         ],
       ),
-      // 公告
-      const LoopLabel('公告'),
-      const LoopNotice(
-        key: ValueKey<String>('community-manage-announcements'),
-        icon: 'news',
-        title: '公告发布',
-        body: '公告发布随运营后台开放；在那之前，这里不提供发布入口。',
-      ),
-      // 分享
-      const LoopLabel('分享'),
-      LoopRecordGroup(
-        key: const ValueKey<String>('community-manage-share-group'),
-        rows: <LoopRecordRow>[
-          LoopRecordRow(
-            key: const ValueKey<String>('community-manage-share'),
-            leading: const LoopRowIcon(icon: 'share'),
-            title: '社区二维码名片',
-            subtitle: '分享海报或复制社区链接',
-            onTap: () => unawaited(
-              showLoopQrCardSheet(
-                context,
-                LoopCommunityQrCard(
-                  communityId: id,
-                  name: community.name,
-                  memberCount: community.memberCount,
-                  logoRef: community.logoRef,
-                  description: community.description,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      // 所有权
-      if (isOwner) ...<Widget>[
-        const LoopLabel('所有权'),
-        LoopRecordGroup(
-          key: const ValueKey<String>('community-manage-ownership-group'),
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('community-manage-transfer'),
-              leading: const LoopRowIcon(icon: 'crown'),
-              title: '转让所有者',
-              subtitle: '在成员页对某位成员执行「转让所有者」，你会降为 Admin',
-              onTap: () => unawaited(
-                context.push<void>(
-                  '/community/members?id=${Uri.encodeQueryComponent(id)}',
-                ),
-              ),
-            ),
-          ],
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+        child: Text(
+          isOwner ? '社区图标、短链接与验证状态不能在这里修改；不提供解散社区。' : '社区图标、短链接与验证状态不能在这里修改。',
+          key: const ValueKey<String>('community-manage-logo-note'),
+          style: LoopTypography.caption(11),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: Text(
-            '解散社区不提供。',
-            key: const ValueKey<String>('community-manage-no-dissolve'),
-            style: LoopTypography.caption(11),
-          ),
-        ),
-      ],
+      ),
       const SizedBox(height: 24),
     ];
   }

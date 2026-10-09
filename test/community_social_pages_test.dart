@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -126,16 +127,16 @@ SearchPage _searchPage(
 );
 
 void main() {
+  // Decision 0127 took the power card off the 关注与粉丝 page (a card about
+  // the first row only); the card itself is still the community module's
+  // one renderer of a row's settled power, so it is exercised on its own.
   group('mining power on a row', () {
     testWidgets('a settled reading prints the number, not an em dash', (
       tester,
     ) async {
       await pumpCommunityPage(
         tester,
-        const ConnectionsScreen(),
-        social: FakeSocialGateway(
-          connections: _connections(miningPower: testSettledMiningPower),
-        ),
+        _PowerCardHost(_connections(miningPower: testSettledMiningPower)),
       );
 
       final card = find.byKey(
@@ -166,9 +167,8 @@ void main() {
     ) async {
       await pumpCommunityPage(
         tester,
-        const ConnectionsScreen(),
-        social: FakeSocialGateway(
-          connections: _connections(
+        _PowerCardHost(
+          _connections(
             miningPower: LoopAccountMiningPower(
               power: '230.5',
               snapshotId: testSnapshotId,
@@ -202,10 +202,7 @@ void main() {
     testWidgets('the settling version stays inside the 详情', (tester) async {
       await pumpCommunityPage(
         tester,
-        const ConnectionsScreen(),
-        social: FakeSocialGateway(
-          connections: _connections(miningPower: testSettledMiningPower),
-        ),
+        _PowerCardHost(_connections(miningPower: testSettledMiningPower)),
       );
 
       final details = find.byKey(
@@ -236,10 +233,7 @@ void main() {
     ) async {
       await pumpCommunityPage(
         tester,
-        const ConnectionsScreen(),
-        social: FakeSocialGateway(
-          connections: _connections(miningPower: testSettledMiningPower),
-        ),
+        _PowerCardHost(_connections(miningPower: testSettledMiningPower)),
       );
 
       final card = find.byKey(
@@ -270,9 +264,8 @@ void main() {
     ) async {
       await pumpCommunityPage(
         tester,
-        const ConnectionsScreen(),
-        social: FakeSocialGateway(
-          connections: _connections(
+        _PowerCardHost(
+          _connections(
             miningPower: LoopAccountMiningPower(
               power: '230.5',
               snapshotId: testSnapshotId,
@@ -297,11 +290,7 @@ void main() {
     });
 
     testWidgets('an unavailable reading is still never a zero', (tester) async {
-      await pumpCommunityPage(
-        tester,
-        const ConnectionsScreen(),
-        social: FakeSocialGateway(connections: _connections()),
-      );
+      await pumpCommunityPage(tester, _PowerCardHost(_connections()));
 
       expect(
         find.byKey(const ValueKey<String>('community-mining-power-row')),
@@ -319,7 +308,9 @@ void main() {
         social: FakeSocialGateway(connections: _connections()),
       );
 
-      expect(find.text('24 关注 · 108 粉丝'), findsOneWidget);
+      // Decision 0127: the counts ride on the two chips; the hero card that
+      // repeated them is gone.
+      expect(find.text('24 关注 · 108 粉丝'), findsNothing);
       expect(find.text('关注 24'), findsOneWidget);
       expect(find.text('粉丝 108'), findsOneWidget);
     });
@@ -334,7 +325,8 @@ void main() {
       );
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
-      expect(find.text(communityMissingHeading), findsOneWidget);
+      // The chips carry no figure the read has not returned.
+      expect(find.text('关注'), findsOneWidget);
       expect(find.text(communityMissingFigure), findsNothing);
       expect(find.textContaining('关注 ·'), findsNothing);
     });
@@ -589,30 +581,35 @@ void main() {
   });
 
   group('dm-requests', () {
-    testWidgets('the preview and the AI verdict stay unavailable', (
-      tester,
-    ) async {
+    testWidgets('a row is the sender and 接受; no body and no verdict is '
+        'invented', (tester) async {
       await pumpCommunityPage(
         tester,
         const MessageRequestsScreen(),
         social: FakeSocialGateway(requests: _requests()),
       );
 
+      // Decision 0127: one OKX row — face, name, LOOP ID, a Lime 接受 — and
+      // no cards for the two facts that have no source yet.
+      expect(
+        find.byKey(ValueKey<String>('dm-request-row-$testRequestId')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<LoopPillAction>(
+              find.byKey(ValueKey<String>('dm-request-accept-$testRequestId')),
+            )
+            .primary,
+        isTrue,
+      );
       expect(
         find.byKey(
           const ValueKey<String>(
             'community-unavailable-MESSAGE_PREVIEW_DEFERRED',
           ),
         ),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(
-          const ValueKey<String>(
-            'community-unavailable-AI_MODERATION_DEFERRED',
-          ),
-        ),
-        findsOneWidget,
+        findsNothing,
       );
       // The prototype's sample body and fraud verdict must not appear.
       expect(find.textContaining('AI 巡查标记为诈骗'), findsNothing);
@@ -629,6 +626,11 @@ void main() {
         social: gateway,
       );
 
+      // 忽略 and 举报 are in the sheet the row opens (decision 0127).
+      await tester.tap(
+        find.byKey(ValueKey<String>('dm-request-row-$testRequestId')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(ValueKey<String>('dm-request-report-$testRequestId')),
       );
@@ -1073,4 +1075,24 @@ void main() {
       expect(find.textContaining('请稍后再试'), findsOneWidget);
     });
   });
+}
+
+/// The power card for the first row of [page], on a scrolling page.
+class _PowerCardHost extends StatelessWidget {
+  const _PowerCardHost(this.page);
+
+  final ConnectionPage page;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: ListView(
+      children: <Widget>[
+        if (page.items.isNotEmpty)
+          CommunityMiningPowerCard(
+            label: '行内算力',
+            fact: page.items.first.miningPower,
+          ),
+      ],
+    ),
+  );
 }
