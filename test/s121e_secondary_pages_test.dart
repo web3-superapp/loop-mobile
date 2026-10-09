@@ -13,7 +13,6 @@ import 'package:loop_mobile/features/wallet/approval_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -145,7 +144,7 @@ void main() {
   });
 
   group('我', () {
-    testWidgets('header, four round keys, three sections, the version', (
+    testWidgets('header, three round keys, three sections, the version', (
       tester,
     ) async {
       final destinations = <String>[];
@@ -164,13 +163,17 @@ void main() {
         findsOneWidget,
       );
 
-      // Four 56 Lime discs, in order, under the header.
+      // 56 Lime discs, in order, under the header. Decision 0133: 好友
+      // opened 关注与粉丝, a row below, under a second name, and is gone.
       final keys = <String>[
         'profile-share-loop-id',
         'profile-open-scan',
-        'profile-open-friends',
         'profile-open-mining-key',
       ];
+      expect(
+        find.byKey(const ValueKey<String>('profile-open-friends')),
+        findsNothing,
+      );
       double? previous;
       for (final key in keys) {
         final finder = find.byKey(ValueKey<String>(key));
@@ -446,22 +449,6 @@ void main() {
       expect(_labels(tester), containsAll(<String>['嵌入式钱包', '外部钱包']));
       expect(find.text('0x0000…00a1'), findsOneWidget);
       expect(find.byType(LoopFolioPrimary), findsNothing);
-      _expectCleanCopy(tester);
-    });
-
-    testWidgets('networth: the trend is the shared empty state', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const NetWorthScreen(),
-        wallet: FakeWalletReadGateway(),
-      );
-      final trend = find.byKey(
-        const ValueKey<String>('networth-trend-unavailable'),
-      );
-      await scrollToS5Section(tester, trend);
-      expect(tester.widget(trend), isA<LoopEmptyState>());
       _expectCleanCopy(tester);
     });
 

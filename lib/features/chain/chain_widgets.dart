@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 
 /// Whether an S5 page must stop at the capability gate instead of reading.
 bool loopChainCapabilityBlocks(
@@ -783,6 +784,19 @@ class LoopTestnetBadge extends StatelessWidget {
     onLedger: onLedger,
   );
 }
+
+/// The testnet explanation behind an (i) (decision 0133, audit m14).
+///
+/// A list that already carries [LoopTestnetBadge] on its row states the
+/// chain; the four sentences of [loopTestnetNoticeBody] are one tap away
+/// rather than a card in the list.
+Future<void> showLoopTestnetInfoSheet(BuildContext context) =>
+    showLoopInfoSheet(
+      context,
+      title: loopTestnetNoticeTitle,
+      sheetKey: 'loop-testnet-info-sheet',
+      notes: const <LoopInfoNote>[LoopInfoNote(body: loopTestnetNoticeBody)],
+    );
 
 /// The one-time explanation that accompanies the badge.
 ///

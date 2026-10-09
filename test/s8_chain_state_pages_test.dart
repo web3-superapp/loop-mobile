@@ -227,23 +227,6 @@ final List<_Case> _cases = <_Case>[
     ),
   ),
   _Case(
-    slug: 'networth',
-    prefix: 'networth',
-    absentWhileLoading: find.textContaining('6,352'),
-    absentWhileLoadingLabel: 'the net-worth total',
-    pump: (tester, {failure, pending = false}) => pumpS5Page(
-      tester,
-      const NetWorthScreen(),
-      wallet: FakeWalletReadGateway(
-        balances: S5Answer<LoopWalletBalances>(
-          failure: failure,
-          pending: pending,
-        ),
-      ),
-      settle: !pending,
-    ),
-  ),
-  _Case(
     slug: 'asset',
     prefix: 'wallet-asset',
     absentWhileLoading: find.text('7'),
@@ -732,36 +715,6 @@ void main() {
         findsNothing,
       );
     });
-  });
-
-  group('networth · empty', () {
-    testWidgets(
-      'networth labels a zero-row breakdown instead of showing none',
-      (tester) async {
-        await pumpS5Page(
-          tester,
-          const NetWorthScreen(),
-          wallet: FakeWalletReadGateway(
-            balances: S5Answer<LoopWalletBalances>(
-              value: s5Balances(rows: const <LoopAssetBalanceRow>[]),
-            ),
-          ),
-        );
-
-        await scrollToS5Section(
-          tester,
-          find.byKey(const ValueKey<String>('networth-empty')),
-        );
-        expect(
-          find.byKey(const ValueKey<String>('networth-empty')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey<String>('networth-state-empty')),
-          findsNothing,
-        );
-      },
-    );
   });
 
   group('asset · empty', () {

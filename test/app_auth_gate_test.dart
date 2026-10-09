@@ -158,6 +158,22 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(signOut);
     await tester.pumpAndSettle();
+    // Decision 0133 (M14): leaving asks first, and cancelling leaves nothing.
+    expect(
+      find.byKey(const ValueKey<String>('sign-out-confirm-sheet')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('community-confirm-cancel')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('欢迎来到 LOOP'), findsNothing);
+    await tester.tap(signOut);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('community-confirm-accept')),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('chat-tab-screen')), findsNothing);

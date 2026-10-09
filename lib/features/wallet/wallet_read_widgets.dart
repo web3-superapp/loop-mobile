@@ -239,6 +239,71 @@ LoopRecordRow walletActivityRow(
   );
 }
 
+/// The day header a transfer is listed under (decision 0133, audit m13):
+/// 今天, 昨天, 「9月16日」 within this year, 「2025年9月16日」 before it — all in
+/// the device's local calendar.
+String walletActivityDayLabel(DateTime at, {DateTime? now}) {
+  final local = at.toLocal();
+  final today = (now ?? DateTime.now()).toLocal();
+  // Calendar days, counted in UTC so a daylight-saving night is not short.
+  final day = DateTime.utc(local.year, local.month, local.day);
+  final reference = DateTime.utc(today.year, today.month, today.day);
+  final days = reference.difference(day).inDays;
+  if (days == 0) return '今天';
+  if (days == 1) return '昨天';
+  if (local.year == today.year) return '${local.month}月${local.day}日';
+  return '${local.year}年${local.month}月${local.day}日';
+}
+
+/// The local calendar day [at] falls on, as `yyyy-mm-dd` (a stable key).
+String walletActivityDayKey(DateTime at) {
+  final local = at.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${local.year}-${two(local.month)}-${two(local.day)}';
+}
+
+/// [entries] cut into consecutive runs of one local day, in list order.
+///
+/// The tape is already newest-first; grouping never reorders it, so a day
+/// that appears twice (an out-of-order page) gets two headers rather than a
+/// row moved away from its neighbours.
+List<({String key, String label, List<LoopWalletActivityEntry> entries})>
+walletActivityDays(List<LoopWalletActivityEntry> entries, {DateTime? now}) {
+  final days =
+      <({String key, String label, List<LoopWalletActivityEntry> entries})>[];
+  for (final entry in entries) {
+    final key = walletActivityDayKey(entry.observedAt);
+    if (days.isEmpty || days.last.key != key) {
+      days.add((
+        key: key,
+        label: walletActivityDayLabel(entry.observedAt, now: now),
+        entries: <LoopWalletActivityEntry>[],
+      ));
+    }
+    days.last.entries.add(entry);
+  }
+  return days;
+}
+
+/// The small header over one day of the tape.
+class WalletActivityDayHeader extends StatelessWidget {
+  const WalletActivityDayHeader({required this.label, super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 16, 4),
+      child: Text(
+        label,
+        style: LoopTypography.caption(13, color: LoopColors.text2),
+      ),
+    ),
+  );
+}
+
 /// The snapshot footer every balance block carries: all figures come from one
 /// block height, observed at one moment.
 class WalletSnapshotFooter extends StatelessWidget {
@@ -433,7 +498,6 @@ class WalletLaunchChainCard extends StatelessWidget {
             snapshot: native.snapshot,
           ),
         ],
-        LoopTestnetNotice(visible: launchChain.isTestnet),
       ],
     );
   }

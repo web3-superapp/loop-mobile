@@ -1047,7 +1047,7 @@ void main() {
   });
 
   testWidgets(
-    'Profile exposes 好友请求 and the retired friend routes fail closed',
+    'Profile exposes 陌生人请求 and the retired friend routes fail closed',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -1068,9 +1068,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('好友请求'));
+      // Decision 0133: the row carries the name of the page it opens.
+      await tester.ensureVisible(find.text('陌生人请求'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('好友请求'));
+      await tester.tap(find.text('陌生人请求'));
       expect(destination, 'friend-requests');
       expect(tester.takeException(), isNull);
 

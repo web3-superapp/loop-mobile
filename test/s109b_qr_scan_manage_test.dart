@@ -362,6 +362,56 @@ void main() {
       expect(find.text('这张图片里没有识别到二维码'), findsOneWidget);
     });
 
+    testWidgets('the camera fills the screen, not a card (decision 0133)', (
+      tester,
+    ) async {
+      final opened = await _pumpScan(tester);
+      opened.scanner.session.set(LoopQrCameraStatus.running);
+      await tester.pumpAndSettle();
+
+      final screen = tester.getRect(
+        find.byKey(const ValueKey<String>('scan-screen')),
+      );
+      final viewfinder = tester.getRect(
+        find.byKey(const ValueKey<String>('scan-viewfinder')),
+      );
+      // Audit m11: the picture is the whole page, edge to edge.
+      expect(viewfinder, screen);
+      expect(viewfinder.size, const Size(390, 900));
+      expect(
+        find.ancestor(
+          of: find.byKey(const ValueKey<String>('scan-viewfinder')),
+          matching: find.byType(ClipRRect),
+        ),
+        findsNothing,
+      );
+      // The window to aim at is drawn over the picture; the bar and the two
+      // tools float on it.
+      expect(find.byKey(const ValueKey<String>('scan-mask')), findsOneWidget);
+      expect(find.text('扫一扫'), findsOneWidget);
+      final hint = tester.getRect(
+        find.byKey(const ValueKey<String>('scan-hint')),
+      );
+      final tools = tester.getRect(
+        find.byKey(const ValueKey<String>('scan-pick-image')),
+      );
+      expect(hint.bottom, lessThanOrEqualTo(tools.top));
+      expect(tools.bottom, lessThanOrEqualTo(screen.bottom));
+      expect(tools.height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(
+          find.byKey(const ValueKey<String>('scan-pick-image')),
+        ),
+        matchesSemantics(
+          label: '从相册选图',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+    });
+
     testWidgets('the torch follows the camera', (tester) async {
       final opened = await _pumpScan(tester);
       await _tap(tester, find.byKey(const ValueKey<String>('scan-torch')));

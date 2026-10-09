@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:go_router/go_router.dart';
@@ -185,6 +186,25 @@ class StreamChatInboxPage extends ConsumerStatefulWidget {
 class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
   var _filter = ChatInboxFilter.all;
 
+  /// Whether 「发起」 is standing (decision 0133, audit m10). It steps out of
+  /// the way while the reader scrolls on through the list — it stood over
+  /// the time of the row under it — and comes back on the first scroll back
+  /// or at the top.
+  bool _createVisible = true;
+
+  bool _onListScroll(UserScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final atTop =
+        notification.metrics.pixels <= notification.metrics.minScrollExtent;
+    final visible = switch (notification.direction) {
+      ScrollDirection.reverse => atTop,
+      ScrollDirection.forward => true,
+      ScrollDirection.idle => _createVisible || atTop,
+    };
+    if (visible != _createVisible) setState(() => _createVisible = visible);
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final preview =
@@ -276,15 +296,41 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
       ),
       collection: content,
     );
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Stack(
       children: <Widget>[
-        Positioned.fill(child: page),
+        Positioned.fill(
+          child: NotificationListener<UserScrollNotification>(
+            onNotification: _onListScroll,
+            child: page,
+          ),
+        ),
         Positioned(
           right: LoopSpacing.page,
           bottom:
               MediaQuery.paddingOf(context).bottom +
               LoopLayout.tabPageBottomReserve,
-          child: const ChatCreateMenuButton(floating: true),
+          child: IgnorePointer(
+            ignoring: !_createVisible,
+            child: AnimatedSlide(
+              key: const ValueKey<String>('chat-create-slot'),
+              offset: _createVisible ? Offset.zero : const Offset(0, 2),
+              duration: reduceMotion
+                  ? Duration.zero
+                  : const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              child: AnimatedOpacity(
+                opacity: _createVisible ? 1 : 0,
+                duration: reduceMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 160),
+                child: ExcludeSemantics(
+                  excluding: !_createVisible,
+                  child: const ChatCreateMenuButton(floating: true),
+                ),
+              ),
+            ),
+          ),
         ),
       ],
     );

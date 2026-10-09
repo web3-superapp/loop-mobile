@@ -391,6 +391,11 @@ void main() {
       router.go('/launchpad');
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, '/launch');
+      // Decision 0133: 净值明细 was folded into the wallet tab; its manifest
+      // path still resolves, to the tab.
+      router.go('/wallet/networth');
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/wallet');
       expect(
         routingErrors.entries,
         hasLength(9),
@@ -410,7 +415,6 @@ void main() {
       for (final path in <String>[
         '/profile',
         '/search',
-        '/wallet/networth',
         '/system/offline',
         '/preview/toast',
         '/launch/detail',

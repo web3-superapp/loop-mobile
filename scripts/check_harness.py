@@ -11109,9 +11109,13 @@ def check_notification_contract(root: Path) -> list[str]:
                 "production notification coordinator must bind the disabled source and "
                 "real root session/bootstrap providers"
             )
+        # Decision 0133: a tapped notification is pushed over the page the
+        # reader was on (a tab or an account gate is still replaced), through
+        # the one helper that decides which.
         typed_navigation_pattern = re.compile(
-            r"navigate\s*:\s*\(\s*intent\s*\)\s*=>\s*router\s*\.\s*go\s*"
-            r"\(\s*intent\s*\.\s*location\s*\)\s*,"
+            r"navigate\s*:\s*\(\s*intent\s*\)\s*=>\s*"
+            r"loopOpenNotificationLocation\s*\(\s*router\s*,\s*"
+            r"intent\s*\.\s*location\s*,?\s*\)\s*,"
         )
         if (
             len(
@@ -12661,7 +12665,7 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "Preview selects accepted friends and creates no Stream channel",
         "production group success requires a canonical CID and routes to guarded Chat",
         "Chat add menu exposes create-group and add-friend routes",
-        "Profile exposes 好友请求 and the retired friend routes fail closed",
+        "Profile exposes 陌生人请求 and the retired friend routes fail closed",
     ),
     Path("test/friend_request_feature_test.dart"): (
         "loads incoming and outgoing first pages and paginates each list independently",
@@ -13055,7 +13059,8 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             # Social privacy entry retired with the V2 privacy resource.
             "lib/features/profile/profile_v2_screens.dart": (
                 # Step 3: the friend list retired; only the request inbox stays.
-                "title: '好友请求'",
+                # Decision 0133: it carries the name of the page it opens.
+                "title: '陌生人请求'",
                 "onTap: () => widget.onNavigate('friend-requests')",
                 "onTap: () => widget.onNavigate('connections')",
                 "onTap: () => widget.onNavigate('privacy')",
@@ -14178,6 +14183,239 @@ def check_money_forms_native_contract(root: Path) -> list[str]:
     return errors
 
 
+# Decision 0133 (S123g, audit 2026-10-09 M14, m8–m16 and §五 rules 15, 18).
+IA_SIGN_OUT_OWNER = "lib/features/profile/sign_out_button.dart"
+IA_SIGN_OUT_PAGES = (
+    "lib/features/profile/profile_v2_screens.dart",
+    "lib/features/profile/settings/settings_screen.dart",
+)
+IA_SETTINGS_READ_ONLY_KEYS = (
+    "settings-language",
+    "settings-display-currency",
+    "settings-theme",
+)
+IA_STALE_IA_COPY = ("社区 Tab", "Tab 顶部", "从首页", "回到首页")
+
+
+def _ia_widget_arguments(source: str, key: str) -> str | None:
+    """The argument list of the constructor call that carries [key]."""
+
+    marker = f"ValueKey<String>('{key}')"
+    index = source.find(marker)
+    if index < 0:
+        return None
+    opening = source.rfind("(", 0, source.rfind("key:", 0, index))
+    if opening < 0:
+        return None
+    closing = _closing_index(source, opening)
+    return source[opening : closing + 1] if closing >= 0 else None
+
+
+def check_ia_cleanup_contract(root: Path) -> list[str]:
+    """Decision 0133: one entry per destination, confirmed leaving, stated
+    values, a full-screen scanner, explanations behind (i), portrait on iOS.
+
+    15 — 退出登录 is destructive for this device: both pages draw the one
+         `LoopSignOutButton`, and it confirms through the shared sheet.
+    18 — copy never points at an IA that no longer exists.
+    m8 — 语言 / 货币单位 / 主题 are `readOnly` rows with no tap.
+    m9 — 净值明细 is folded into 钱包 (its path redirects), the 授权与网络
+         sheet is flat rows, 安全中心 has no wallet row, 我 has no 好友 key.
+    m11 — the scanner's picture is not boxed in a card.
+    m14 — the testnet card and the swap notes are behind (i).
+    M13 — iOS declares portrait only; the chart's landscape is granted at
+          run time by the app delegate.
+    """
+
+    errors: list[str] = []
+
+    def source_of(relative: str, strings: bool = True) -> str | None:
+        path = root / relative
+        if not path.is_file():
+            return None
+        text = read_text(path)
+        return strip_dart_comments(text) if strings else strip_dart_comments_and_strings(text)
+
+    owner = source_of(IA_SIGN_OUT_OWNER)
+    if owner is not None and "confirmCommunityAction(" not in owner:
+        errors.append(
+            f"{IA_SIGN_OUT_OWNER} must confirm sign-out through the shared "
+            "confirmation sheet (`confirmCommunityAction`, decision 0133)"
+        )
+    for relative in IA_SIGN_OUT_PAGES:
+        source = source_of(relative)
+        if source is None:
+            continue
+        if "onSignOut" in source and "LoopSignOutButton(" not in source:
+            errors.append(
+                f"{relative} must offer 退出登录 through `LoopSignOutButton` "
+                "(one style, confirmed first; decision 0133)"
+            )
+        if re.search(r"onSignOut!?\s*\(\s*\)", source):
+            errors.append(
+                f"{relative} calls `onSignOut` directly; leaving must be "
+                "confirmed first (decision 0133, audit M14)"
+            )
+
+    settings = source_of("lib/features/profile/settings/settings_screen.dart")
+    if settings is not None:
+        for key in IA_SETTINGS_READ_ONLY_KEYS:
+            arguments = _ia_widget_arguments(settings, key)
+            if arguments is None:
+                continue
+            if "readOnly: true" not in arguments or "onTap:" in arguments:
+                errors.append(
+                    f"settings row `{key}` must be `readOnly: true` with no "
+                    "`onTap` (decision 0133, audit m8)"
+                )
+        for key in (
+            "settings-open-privacy",
+            "settings-open-security",
+            "settings-open-notifications",
+            "settings-open-networks",
+        ):
+            if f"'{key}'" in settings:
+                errors.append(
+                    f"settings must not repeat `{key}`; 我 and 钱包 carry it "
+                    "(decision 0133, audit m9)"
+                )
+
+    wallet = source_of("lib/features/wallet/wallet_read_screens.dart")
+    if wallet is not None:
+        for marker, reason in (
+            ("showWalletConnectionsSheet", "the 授权与网络 sheet is flat rows"),
+            ("'wallet-security-entry'", "安全中心 is a row on 我 only"),
+            ("'/wallet/networth'", "净值明细 is folded into the tab"),
+            ("NetWorthScreen", "净值明细 is folded into the tab"),
+        ):
+            if marker in wallet:
+                errors.append(
+                    f"lib/features/wallet/wallet_read_screens.dart must not "
+                    f"contain {marker}: {reason} (decision 0133)"
+                )
+        if "walletActivityDays(" not in wallet:
+            errors.append(
+                "交易历史 must list its rows under day headers "
+                "(`walletActivityDays`, decision 0133, audit m13)"
+            )
+    app = source_of("lib/app.dart")
+    if app is not None and re.search(
+        r"path:\s*'/wallet/networth',\s*builder:", app
+    ):
+        errors.append(
+            "lib/app.dart must redirect `/wallet/networth` to the wallet tab "
+            "(decision 0133)"
+        )
+    profile = source_of("lib/features/profile/profile_v2_screens.dart")
+    if profile is not None and "'profile-open-friends'" in profile:
+        errors.append(
+            "我 must not carry a 好友 key that opens 关注与粉丝 a second time "
+            "(decision 0133, audit m9)"
+        )
+
+    widgets = source_of("lib/features/wallet/wallet_read_widgets.dart", strings=False)
+    if widgets is not None and "LoopTestnetNotice(" in widgets:
+        errors.append(
+            "the wallet's Launch chain block states the testnet behind an (i), "
+            "not a `LoopTestnetNotice` card (decision 0133, audit m14)"
+        )
+    swap = source_of("lib/features/wallet/swap_screens.dart")
+    if swap is not None:
+        if re.search(
+            r"LoopNotice\(\s*key:\s*(?:const\s+)?ValueKey<String>\("
+            r"'swap-(?:routing|power)-notice'\)",
+            swap,
+        ):
+            errors.append(
+                "兑换's routing and power notes belong in the (i) sheet "
+                "(`LoopInfoNote`), not on the page (decision 0133)"
+            )
+        if re.search(
+            r"LoopNotice\(\s*key:\s*(?:const\s+)?ValueKey<String>\("
+            r"'swap-evidence-pending'\)",
+            swap,
+        ):
+            errors.append(
+                "兑换's pending-evidence limit is one inline line "
+                "(`LoopInlineUnavailable`), not a banner (decision 0133)"
+            )
+
+    scan = source_of("lib/features/scan/scan_screen.dart", strings=False)
+    if scan is not None:
+        running = scan[scan.find("ValueListenableBuilder<LoopQrCameraState>") :]
+        if "AspectRatio(" in running or "ClipRRect(" in running.split("class ")[0]:
+            errors.append(
+                "the scanner's picture fills the screen; it is not boxed in a "
+                "card (decision 0133, audit m11)"
+            )
+
+    features = root / "lib" / "features"
+    for path in sorted(features.rglob("*.dart")) if features.is_dir() else []:
+        relative = path.relative_to(root).as_posix()
+        source = strip_dart_comments(read_text(path))
+        for phrase in IA_STALE_IA_COPY:
+            if phrase in source:
+                errors.append(
+                    f"{relative} names 「{phrase}」, which is not where anything "
+                    "is any more (audit §五 rule 18)"
+                )
+
+    info = root / "ios/Runner/Info.plist"
+    if info.is_file():
+        plist, plist_errors = _parse_plist(info, "iOS Runner Info.plist")
+        errors.extend(plist_errors)
+        if plist is not None:
+            for key in (
+                "UISupportedInterfaceOrientations",
+                "UISupportedInterfaceOrientations~ipad",
+            ):
+                if plist.get(key) != ["UIInterfaceOrientationPortrait"]:
+                    errors.append(
+                        f"ios/Runner/Info.plist {key} must be portrait only, as "
+                        "Android is (decision 0133)"
+                    )
+            if plist.get("UIRequiresFullScreen") is not True:
+                errors.append(
+                    "ios/Runner/Info.plist must set UIRequiresFullScreen: a "
+                    "portrait-only iPad build may not offer multitasking "
+                    "(decision 0133)"
+                )
+        delegate = root / "ios/Runner/AppDelegate.swift"
+        if delegate.is_file() and (
+            "supportedInterfaceOrientationsFor" not in read_text(delegate)
+        ):
+            errors.append(
+                "ios/Runner/AppDelegate.swift must grant the full-screen "
+                "chart's landscape at run time (`supportedInterfaceOrientationsFor`); "
+                "with a portrait-only Info.plist its request would otherwise "
+                "throw UIApplicationInvalidInterfaceOrientation (decision 0133)"
+            )
+
+    test = root / "test/s123g_ia_cleanup_test.dart"
+    if (root / IA_SIGN_OUT_OWNER).is_file():
+        if not test.is_file():
+            errors.append(
+                "test/s123g_ia_cleanup_test.dart must pin decision 0133"
+            )
+        else:
+            text = read_text(test)
+            for marker in (
+                "sign-out-confirm-sheet",
+                "community-confirm-cancel",
+                "isReadOnly: true",
+                "tx-history-day-",
+                "swap-info-sheet",
+                "chat-create-slot",
+                "LoopNotificationOpenMode.push",
+            ):
+                if marker not in text:
+                    errors.append(
+                        "test/s123g_ia_cleanup_test.dart must keep asserting "
+                        f"`{marker}` (decision 0133)"
+                    )
+    return errors
+
+
 def check_launch_icon_contract(root: Path) -> list[str]:
     """The adaptive foreground carries the mark only; any baked plate is cropped
     into an octagon by the launcher and Android 12+ splash circular masks."""
@@ -15175,6 +15413,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_topbar_action_glyph_contract(root))
     errors.extend(check_press_haptics_contract(root))
     errors.extend(check_money_forms_native_contract(root))
+    errors.extend(check_ia_cleanup_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -15205,6 +15444,8 @@ def main() -> int:
         "plate-free launch icon, glyph-only top-bar actions, "
         "one haptics owner, pressed states, Chinese system controls, one toast, "
         "native money forms with one sheet surface and no hero on tool pages, "
+        "confirmed sign-out, one entry per destination, stated values, "
+        "a full-screen scanner, explanations behind (i), portrait iOS, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "channel-resolved chat names, recognised chat contract addresses, "

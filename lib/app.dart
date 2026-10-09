@@ -13,6 +13,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
+import 'package:loop_mobile/app/notifications/loop_notification_navigation.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/app/session/loop_community_arrival.dart';
@@ -333,7 +334,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       source: ref.read(loopNotificationEventSourceProvider),
       readSession: () => ref.read(loopSessionProvider),
       readBootstrapSession: () => ref.read(loopBootstrapSessionProvider),
-      navigate: (intent) => router.go(intent.location),
+      // Decision 0133: a notification opens over what the reader was on, so
+      // 返回 goes back there; a tab, or a stack still at an account gate, is
+      // replaced instead.
+      navigate: (intent) =>
+          loopOpenNotificationLocation(router, intent.location),
       // Decision 0067: the push payload is a pointer, never a result. Before
       // anything opens, the notification is looked up again in *this*
       // account's feed, and the destination comes from that record. A pointer
@@ -1193,10 +1198,12 @@ GoRouter _buildRouter(
         ),
       ),
       // Manifest `networth` (legacy `/home/net-worth`, retired with Home).
+      // Decision 0133 (audit m9): 净值明细 repeated the wallet tab's header and
+      // asset list, so it was folded into the tab. The slug keeps its path
+      // for any link that still names it, and lands on 钱包.
       GoRoute(
         path: '/wallet/networth',
-        builder: (context, state) =>
-            NetWorthScreen(onBack: () => _popOrHome(context)),
+        redirect: (context, state) => '/wallet',
       ),
       GoRoute(
         path: MarketAssetRoute.tokenPath,

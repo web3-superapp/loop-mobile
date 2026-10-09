@@ -272,7 +272,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         LoopIconButton(
           key: const ValueKey<String>('wallet-history-action'),
           icon: 'clock',
-          label: '交易记录',
+          // The page it opens is titled 交易历史 (audit m9).
+          label: '交易历史',
           onPressed: () => _open('/wallet/history'),
         ),
         LoopIconButton(
@@ -299,7 +300,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             : '暂不可用',
         address: directory.value?.active?.truncatedAddress,
         environmentTag: ref.watch(loopEnvironmentTagProvider),
-        onOpenNetWorth: () => _open('/wallet/networth'),
       ),
       sections: <Widget>[
         LoopFreshnessStrip(
@@ -416,7 +416,21 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           // never added to the assets above or to the net worth.
           if (balances?.launchChain
               case final LoopLaunchChainBalance launch) ...<Widget>[
-            const WalletSectionHeading(title: 'Launch 链'),
+            WalletSectionHeading(
+              title: 'Launch 链',
+              // Audit m14 (decision 0133): the testnet explanation is behind
+              // this (i), not a five-line card in the asset list.
+              trailing: launch.isTestnet
+                  ? LoopIconButton(
+                      key: const ValueKey<String>('wallet-launch-chain-info'),
+                      icon: 'info',
+                      label: '关于 Launch 测试网',
+                      color: LoopColors.text2,
+                      onPressed: () =>
+                          unawaited(showLoopTestnetInfoSheet(context)),
+                    )
+                  : null,
+            ),
             WalletLaunchChainCard(launchChain: launch),
           ],
         ],
@@ -569,8 +583,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     };
   }
 
-  /// The wallet's management pages, in one group at the bottom: 跨链, the
-  /// second-level 授权与网络 list, 安全中心 and 设置 (B6).
+  /// The wallet's management pages, in one group at the bottom (B6).
+  ///
+  /// Decision 0133 (audit m9): the three pages that sat behind a 授权与网络
+  /// sheet are rows here — a sheet that only lists links is one more tap and
+  /// one more surface for nothing — and 安全中心, an account page, is on 我
+  /// only.
   Widget _entryGroup() => LoopRecordGroup(
     key: const ValueKey<String>('wallet-entry-group'),
     rows: <LoopRecordRow>[
@@ -584,191 +602,35 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         onTap: () => _open('/wallet/bridge'),
       ),
       LoopRecordRow(
-        key: const ValueKey<String>('wallet-connections-entry'),
+        key: const ValueKey<String>('wallet-approvals-entry'),
         leading: const LoopRowIcon(icon: 'shield'),
-        title: '授权与网络',
-        subtitle: '代币授权、网络与 DApp 网址核对',
-        onTap: () =>
-            unawaited(showWalletConnectionsSheet(context, onOpen: _open)),
+        title: '代币授权',
+        subtitle: '查看授出的额度，不再需要的可以收回',
+        onTap: () => _open('/wallet/approvals'),
       ),
       LoopRecordRow(
-        key: const ValueKey<String>('wallet-security-entry'),
-        leading: const LoopRowIcon(icon: 'lock'),
-        title: '安全中心',
-        subtitle: '设备、登录与账户保护',
-        onTap: () => _open('/profile/security'),
+        key: const ValueKey<String>('wallet-networks-entry'),
+        leading: const LoopRowIcon(icon: 'globe'),
+        title: '网络',
+        subtitle: '已启用的网络与连接状态',
+        onTap: () => _open('/wallet/networks'),
+      ),
+      LoopRecordRow(
+        key: const ValueKey<String>('wallet-dapp-entry'),
+        leading: const LoopRowIcon(icon: 'link'),
+        title: 'DApp 网址核对',
+        subtitle: '打开前先核对网址；连接与签名暂未开放',
+        onTap: () => _open('/wallet/dapp'),
       ),
       LoopRecordRow(
         key: const ValueKey<String>('wallet-settings-entry'),
         leading: const LoopRowIcon(icon: 'settings'),
         title: '设置',
-        subtitle: '通用、通知与显示',
+        subtitle: '语言、显示与应用锁',
         onTap: () => _open('/profile/settings'),
       ),
     ],
   );
-}
-
-// ---------------------------------------------------------------------------
-// networth
-// ---------------------------------------------------------------------------
-
-/// `networth` · the valuation breakdown of the active wallet.
-class NetWorthScreen extends ConsumerStatefulWidget {
-  const NetWorthScreen({super.key, this.onBack, this.onNavigate});
-
-  final VoidCallback? onBack;
-  final void Function(String location)? onNavigate;
-
-  @override
-  ConsumerState<NetWorthScreen> createState() => _NetWorthScreenState();
-}
-
-class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
-  void _open(String location) {
-    final navigate = widget.onNavigate;
-    if (navigate != null) {
-      navigate(location);
-      return;
-    }
-    context.push(location);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final blocked = _walletBlocked(ref);
-    final walletId = _watchActiveWalletId(ref, blocked: blocked);
-    // A walletless account is not a page that is still loading.
-    final noWalletYet = _noWalletYet(ref) && walletId == null;
-    final state = walletId == null
-        ? null
-        : ref.watch(walletBalancesControllerProvider(walletId));
-    if (walletId != null &&
-        state != null &&
-        state.phase == LoopChainViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) {
-          unawaited(
-            ref
-                .read(walletBalancesControllerProvider(walletId).notifier)
-                .load(),
-          );
-        }
-      });
-    }
-    final balances = state?.value;
-    final netWorth = balances?.netWorth;
-
-    return LoopFlat(
-      child: LoopDashboardPage(
-        key: const ValueKey<String>('networth-screen'),
-        onRefresh: walletId == null
-            ? null
-            : () => ref
-                  .read(walletBalancesControllerProvider(walletId).notifier)
-                  .reload(),
-        updating: state?.refreshing ?? false,
-        archetype: LoopPageArchetype.listing,
-        title: '净值明细',
-        onBack: widget.onBack,
-        // Decision 0119: the page heads with the same 总资产 block the wallet tab
-        // does — figure, eye, 24h line — the way a token page heads with its
-        // price. 「不是可用余额」 and the sources sit behind its (i).
-        primary: WalletTotalHeader(
-          key: const ValueKey<String>('networth-folio'),
-          keyPrefix: 'networth',
-          balances: balances,
-          loading:
-              !blocked &&
-              !noWalletYet &&
-              (state?.phase ??
-                      ref.watch(walletDirectoryControllerProvider).phase) ==
-                  LoopChainViewPhase.loading,
-          unreadText: noWalletYet ? '还没有钱包' : '暂不可用',
-        ),
-        block: blocked
-            ? _walletPageBlock(
-                ref,
-                key: const ValueKey<String>('networth-capability-block'),
-                title: '钱包读取当前不可用',
-              )
-            : null,
-        sections: <Widget>[
-          if (noWalletYet)
-            const WalletCreationBlock(keyPrefix: 'networth')
-          else if (walletId == null || state == null || !state.isReady)
-            LoopChainStateBlock(
-              keyPrefix: 'networth',
-              phase: state?.phase ?? LoopChainViewPhase.loading,
-              failureKind: state?.failureKind,
-              emptyMessage: '还没有可估值的资产',
-              onRetry: walletId == null
-                  ? null
-                  : () => unawaited(
-                      ref
-                          .read(
-                            walletBalancesControllerProvider(walletId).notifier,
-                          )
-                          .reload(),
-                    ),
-            )
-          else ...<Widget>[
-            const WalletSectionHeading(title: '按资产', top: LoopSpacing.tight),
-            // The prototype's 按资产 / 按链 / 按社区 segment bar is not here: one
-            // chain is published and community binding has no read, so two of
-            // the three chips would be dead and the third would group the list
-            // it already is.
-            // A registry with no readable row must say so. An unlabelled empty
-            // group would read as "this wallet holds nothing", which the read
-            // does not prove.
-            if (balances!.balances.isEmpty)
-              const LoopEmptyState(
-                key: ValueKey<String>('networth-empty'),
-                illustration: LoopIllustration.watchlist,
-                title: '还没有可计入净值的资产',
-                message: '读不到的资产不会被当作 0。',
-                compact: true,
-              )
-            else
-              for (final row in balances.balances)
-                WalletAssetLine(
-                  row: row,
-                  hidden: ref.watch(walletAmountsHiddenProvider),
-                  onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
-                ),
-            LoopProvenanceLine(
-              key: const ValueKey<String>('wallet-snapshot-footer'),
-              prefix:
-                  '区块 ${loopGroupedFigure(balances.snapshot.blockNumber.toString())}',
-              sources: <String>[
-                if (netWorth is LoopNetWorthValued)
-                  loopFactSourceLabel(netWorth.priceSource),
-              ],
-              observedAt: balances.snapshot.observedAt,
-              detail:
-                  '净值只累计已登记且有价格的资产，是展示用的估值，不是可用余额。'
-                  '每一行余额都读自同一个区块（'
-                  '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认）。',
-            ),
-            // The prototype's 30D area chart keeps its panel. Nothing is drawn
-            // in it: net worth over time needs the holdings this account held on
-            // each of those days, and no read reports them. Multiplying today's
-            // holdings by yesterday's prices would answer a different question
-            // in the shape of this one.
-            //
-            // Decision 0126: the empty panel became the shared empty state.
-            const LoopEmptyState(
-              key: ValueKey<String>('networth-trend-unavailable'),
-              illustration: LoopIllustration.chartEmpty,
-              title: '还没有净值走势',
-              message: '有了每天的持仓记录后，这里会画出 30 天走势。',
-              compact: true,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1293,8 +1155,9 @@ class _WalletAssetTransfers extends ConsumerWidget {
             LoopRecordRow(
               key: const ValueKey<String>('wallet-asset-history-entry'),
               leading: const LoopRowIcon(icon: 'clock'),
-              title: '这个钱包的收发记录',
-              subtitle: '来自链上索引的 ERC-20 转账',
+              // Named after the page it opens (audit m9).
+              title: '交易历史',
+              subtitle: '这个钱包的全部 ERC-20 转账，来自链上索引',
               onTap: onOpenHistory,
             ),
           ],
@@ -2452,21 +2315,37 @@ class _TransactionHistoryScreenState
         compact: true,
       );
     }
-    return LoopRecordGroup(
-      rows: <LoopRecordRow>[
-        for (final entry in entries)
-          walletActivityRow(
-            entry,
-            // A tape row used to take the tap and do nothing: the hash it
-            // printed was truncated, could not be copied, and led nowhere.
-            onTap: () => unawaited(
-              showLoopSheet<void>(
-                context,
-                builder: (sheetContext) =>
-                    WalletActivityDetailSheet(entry: entry),
-              ),
-            ),
+    // Decision 0133 (audit m13): the tape is read by day, as a bank or
+    // wallet statement is — one small header per local day, rows unchanged.
+    return Column(
+      key: const ValueKey<String>('tx-history-days'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (final day in walletActivityDays(entries)) ...<Widget>[
+          WalletActivityDayHeader(
+            key: ValueKey<String>('tx-history-day-${day.key}'),
+            label: day.label,
           ),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              for (final entry in day.entries)
+                walletActivityRow(
+                  entry,
+                  // A tape row used to take the tap and do nothing: the hash
+                  // it printed was truncated, could not be copied, and led
+                  // nowhere.
+                  onTap: () => unawaited(
+                    showLoopSheet<void>(
+                      context,
+                      builder: (sheetContext) =>
+                          WalletActivityDetailSheet(entry: entry),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ],
     );
   }

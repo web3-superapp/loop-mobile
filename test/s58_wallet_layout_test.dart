@@ -89,40 +89,6 @@ void main() {
     });
   });
 
-  group('networth', () {
-    testWidgets('the total header, the rows, the source, the chart', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const NetWorthScreen(),
-        wallet: FakeWalletReadGateway(),
-      );
-
-      // Decision 0119: the page heads with the wallet tab's 总资产 block,
-      // the way a token page heads with its price.
-      expect(
-        find.byKey(const ValueKey<String>('networth-total-header')),
-        findsOneWidget,
-      );
-      expectOrder(tester, <Key>[
-        const ValueKey<String>('networth-folio'),
-        const ValueKey<String>('networth-change24h'),
-        const ValueKey<String>('wallet-balance-$s5NativeAssetId'),
-        const ValueKey<String>('wallet-snapshot-footer'),
-        const ValueKey<String>('networth-trend-unavailable'),
-      ]);
-      // Decision 0126: the empty chart panel became the shared empty state;
-      // it still draws no series.
-      expect(
-        find.byKey(const ValueKey<String>('loop-chart-panel-absence')),
-        findsNothing,
-      );
-      // The total is the heading; it is not printed a second time as a card.
-      expect(find.text('净值（USD）'), findsNothing);
-    });
-  });
-
   group('receive', () {
     testWidgets('a Chalk primary, the code, the buttons, the networks', (
       tester,

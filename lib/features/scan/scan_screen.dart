@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
@@ -10,6 +11,7 @@ import 'package:loop_mobile/features/scan/scan_result.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 
@@ -206,84 +208,289 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
         body: const <Widget>[],
       );
     }
+    // Decision 0133 (audit m11): the camera fills the screen, as every
+    // system and wallet scanner does. The bar floats over the picture, the
+    // window in the middle is where to hold the code, and the two tools sit
+    // at the foot within thumb reach.
     return ValueListenableBuilder<LoopQrCameraState>(
       valueListenable: session.state,
       builder: (context, camera, _) {
         final unknown = _unknown;
         final torchOn = camera.torch == LoopQrTorch.on;
-        return LoopFocusPage(
-          key: const ValueKey<String>('scan-screen'),
-          archetype: LoopPageArchetype.action,
-          title: '扫一扫',
-          onBack: widget.onBack,
-          body: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(LoopRadius.cardValue),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      const ColoredBox(color: LoopColors.ink),
-                      // Mounted for the session's whole life: a start must
-                      // never wait on a preview that is not there.
-                      KeyedSubtree(
-                        key: const ValueKey<String>('scan-viewfinder'),
-                        child: session.buildPreview(context),
-                      ),
-                      _ViewfinderState(
-                        status: camera.status,
-                        onRetry: () => unawaited(session.retry()),
-                      ),
-                      if (camera.status == LoopQrCameraStatus.running)
-                        const IgnorePointer(child: _ViewfinderFrame()),
-                    ],
+        final running = camera.status == LoopQrCameraStatus.running;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle.light,
+          child: Material(
+            key: const ValueKey<String>('scan-screen'),
+            color: LoopColors.ink,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                // Mounted for the session's whole life: a start must never
+                // wait on a preview that is not there.
+                KeyedSubtree(
+                  key: const ValueKey<String>('scan-viewfinder'),
+                  child: session.buildPreview(context),
+                ),
+                if (running)
+                  const IgnorePointer(
+                    child: _ViewfinderMask(key: ValueKey<String>('scan-mask')),
+                  ),
+                _ViewfinderState(
+                  status: camera.status,
+                  onRetry: () => unawaited(session.retry()),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: SafeArea(
+                    bottom: false,
+                    child: _ScanBar(onBack: widget.onBack),
                   ),
                 ),
-              ),
-            ),
-            if (unknown != null)
-              _UnknownCode(
-                text: unknown,
-                onCopy: () => unawaited(_copyUnknown(unknown)),
-                onContinue: () => setState(() => _unknown = null),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  '对准 LOOP 名片、社区二维码或钱包地址二维码。',
-                  key: const ValueKey<String>('scan-hint'),
-                  textAlign: TextAlign.center,
-                  style: LoopTypography.caption(12),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  // An unrecognised code is read on a solid panel, not over
+                  // the moving picture.
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: unknown == null ? null : LoopColors.ink,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          if (unknown != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: _UnknownCode(
+                                text: unknown,
+                                onCopy: () => unawaited(_copyUnknown(unknown)),
+                                onContinue: () =>
+                                    setState(() => _unknown = null),
+                              ),
+                            )
+                          else
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                              child: Text(
+                                '对准 LOOP 名片、社区二维码或钱包地址二维码。',
+                                key: const ValueKey<String>('scan-hint'),
+                                textAlign: TextAlign.center,
+                                style: LoopTypography.caption(
+                                  13,
+                                  color: LoopColors.chalk,
+                                ),
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: <Widget>[
+                                _ScanTool(
+                                  key: const ValueKey<String>(
+                                    'scan-pick-image',
+                                  ),
+                                  icon: Icons.photo_library_outlined,
+                                  label: _pickingImage ? '正在读取…' : '相册',
+                                  semanticLabel: '从相册选图',
+                                  onPressed: _pickingImage
+                                      ? null
+                                      : () => unawaited(_pickImage()),
+                                ),
+                                _ScanTool(
+                                  key: const ValueKey<String>('scan-torch'),
+                                  icon: torchOn
+                                      ? Icons.flashlight_off_outlined
+                                      : Icons.flashlight_on_outlined,
+                                  label: torchOn ? '关闭手电筒' : '手电筒',
+                                  toggled: torchOn,
+                                  onPressed:
+                                      running &&
+                                          camera.torch !=
+                                              LoopQrTorch.unavailable
+                                      ? () => unawaited(session.toggleTorch())
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-          ],
-          primaryAction: LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('scan-pick-image'),
-                label: _pickingImage ? '正在读取…' : '从相册选图',
-                onPressed: _pickingImage ? null : () => unawaited(_pickImage()),
-              ),
-              LoopButton(
-                key: const ValueKey<String>('scan-torch'),
-                label: torchOn ? '关闭手电筒' : '手电筒',
-                onPressed:
-                    camera.status == LoopQrCameraStatus.running &&
-                        camera.torch != LoopQrTorch.unavailable
-                    ? () => unawaited(session.toggleTorch())
-                    : null,
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
+}
+
+/// The bar over the picture: back and the page name, Chalk on the camera.
+class _ScanBar extends StatelessWidget {
+  const _ScanBar({required this.onBack});
+
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      6,
+      LoopSpacing.page,
+      0,
+    ),
+    child: SizedBox(
+      height: LoopTouch.minimum,
+      child: Row(
+        children: <Widget>[
+          if (onBack != null) ...<Widget>[
+            LoopIconButton(
+              key: const ValueKey<String>('loop-topbar-back'),
+              icon: 'back',
+              label: '返回',
+              color: LoopColors.chalk,
+              onPressed: onBack,
+            ),
+            const SizedBox(width: 10),
+          ],
+          Semantics(
+            header: true,
+            child: Text(
+              '扫一扫',
+              style: LoopTypography.heading(20, weight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// One tool at the foot of the scanner: a 56 round glyph and its name.
+class _ScanTool extends StatelessWidget {
+  const _ScanTool({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    super.key,
+    this.semanticLabel,
+    this.toggled,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? semanticLabel;
+  final bool? toggled;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final ink = enabled ? LoopColors.chalk : LoopColors.text3;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      toggled: toggled,
+      label: semanticLabel ?? label,
+      excludeSemantics: true,
+      onTap: onPressed,
+      child: LoopPressable(
+        onTap: onPressed,
+        child: SizedBox(
+          width: 88,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: toggled == true
+                      ? LoopColors.lime
+                      : LoopColors.chalk.withValues(alpha: 0.16),
+                ),
+                child: Icon(
+                  icon,
+                  size: 24,
+                  color: toggled == true ? LoopColors.ink : ink,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopTypography.caption(12, color: ink),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The window to hold a code in: the picture outside it is dimmed, and four
+/// Lime corners mark its edge. It is centred a little above the middle so the
+/// tools at the foot never sit over it.
+class _ViewfinderMask extends StatelessWidget {
+  const _ViewfinderMask({super.key});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final side = (constraints.maxWidth * 0.68).clamp(180.0, 320.0);
+      final window = Rect.fromCenter(
+        center: Offset(constraints.maxWidth / 2, constraints.maxHeight * 0.42),
+        width: side,
+        height: side,
+      );
+      return CustomPaint(
+        size: constraints.biggest,
+        painter: _MaskPainter(window),
+      );
+    },
+  );
+}
+
+class _MaskPainter extends CustomPainter {
+  const _MaskPainter(this.window);
+
+  final Rect window;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final veil = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRRect(RRect.fromRectAndRadius(window, const Radius.circular(16)));
+    canvas.drawPath(
+      veil,
+      Paint()..color = LoopColors.ink.withValues(alpha: 0.55),
+    );
+    canvas.save();
+    canvas.translate(window.left, window.top);
+    const _CornerPainter().paint(canvas, window.size);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _MaskPainter oldDelegate) =>
+      oldDelegate.window != window;
 }
 
 /// What stands over the viewfinder while there is no picture to scan.
@@ -321,14 +528,14 @@ class _ViewfinderState extends StatelessWidget {
         key: ValueKey<String>('scan-state-unsupported'),
         icon: 'camera',
         message: '这台设备没有可用的相机',
-        reason: '可以改用「从相册选图」识别二维码图片。',
+        reason: '可以改用下方的「相册」识别二维码图片。',
       ),
     ),
     LoopQrCameraStatus.failed => Center(
       child: SingleChildScrollView(
         child: LoopErrorState(
           key: const ValueKey<String>('scan-state-error'),
-          reason: '相机没有打开。可以重试，或改用「从相册选图」。',
+          reason: '相机没有打开。可以重试，或改用下方的「相册」。',
           onRetry: onRetry,
         ),
       ),
@@ -337,16 +544,6 @@ class _ViewfinderState extends StatelessWidget {
 }
 
 /// Four Lime corners: where to hold the code.
-class _ViewfinderFrame extends StatelessWidget {
-  const _ViewfinderFrame();
-
-  @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.all(36),
-    child: CustomPaint(painter: _CornerPainter()),
-  );
-}
-
 class _CornerPainter extends CustomPainter {
   const _CornerPainter();
 

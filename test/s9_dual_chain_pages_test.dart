@@ -235,6 +235,36 @@ void main() {
       expect(testnetBadge, findsOneWidget);
     });
 
+    testWidgets('the testnet explanation is behind an (i), not a card', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(
+          balances: S5Answer<LoopWalletBalances>(
+            value: s5Balances(launchChain: _launchChainBalance()),
+          ),
+        ),
+      );
+
+      final info = find.byKey(
+        const ValueKey<String>('wallet-launch-chain-info'),
+      );
+      await scrollToS5Section(tester, info);
+      // Decision 0133 (audit m14): no five-line card in the asset list.
+      expect(testnetNotice, findsNothing);
+      expect(find.text(loopTestnetNoticeBody), findsNothing);
+      await tester.tap(info);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('loop-testnet-info-sheet')),
+        findsOneWidget,
+      );
+      expect(find.text(loopTestnetNoticeTitle), findsOneWidget);
+      expect(find.text(loopTestnetNoticeBody), findsOneWidget);
+    });
+
     testWidgets('an unavailable slot states the reason and never a zero', (
       tester,
     ) async {
