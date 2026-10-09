@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
@@ -50,6 +51,12 @@ void main() {
               loopBootstrapRepositoryProvider.overrideWithValue(repository),
               loopBackendAccessTokenSourceProvider.overrideWithValue(tokens),
               isIosIdentityPlatformProvider.overrideWithValue(true),
+              // The Apple button ships hidden until Privy migrates the Apple
+              // client to the new team (loop_feature_switches.dart); the
+              // bootstrap contract still has to hold for it.
+              loopFeatureSwitchesProvider.overrideWithValue(
+                const LoopFeatureSwitchValues(appleLoginVisible: true),
+              ),
             ],
             child: const LoopApp(),
           ),

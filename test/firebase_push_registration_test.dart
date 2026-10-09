@@ -74,9 +74,9 @@ void main() {
       );
       expect(
         DefaultFirebaseOptions.ios.appId,
-        '1:225868941577:ios:7d96d5ce4f5679a464abd8',
+        '1:225868941577:ios:f002339179ad0ce564abd8',
       );
-      expect(DefaultFirebaseOptions.ios.iosBundleId, 'com.cywd.loop');
+      expect(DefaultFirebaseOptions.ios.iosBundleId, 'com.cywd.loopapp');
       expect(
         DefaultFirebaseOptions.ios.projectId,
         DefaultFirebaseOptions.android.projectId,
