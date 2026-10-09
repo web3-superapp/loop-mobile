@@ -563,7 +563,11 @@ abstract final class LoopV2MemeCodec {
         final text = r['reasonText'];
         if (code != null &&
             (code is! String ||
-                !RegExp(r'^[a-z][a-z0-9_]{0,63}$').hasMatch(code))) {
+                // Decision 0105 publishes `OPERATOR_<CODE>`; the lowercase
+                // form is what a server before it sent.
+                !RegExp(
+                  r'^(OPERATOR_[A-Z][A-Z0-9_]{0,63}|[a-z][a-z0-9_]{0,63})$',
+                ).hasMatch(code))) {
           invalid();
         }
         if (text != null &&
