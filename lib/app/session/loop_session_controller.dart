@@ -166,6 +166,52 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     return _startRestore(ref.read(privyAuthGatewayProvider));
   }
 
+  /// Asks Privy again for the session it holds, after the network came back
+  /// or the App returned to the foreground (decision 0123).
+  ///
+  /// A session Privy restored with no network is published as
+  /// `authenticatedUnverified`, and Privy confirms it on its own once it sees
+  /// the network again — but only through its own network monitor, which can
+  /// lag the radio by a minute or miss a quick flap entirely. LOOP therefore
+  /// reads Privy's current answer itself whenever its own connectivity signal
+  /// fires. Only an `authenticated` answer is taken: this path never signs
+  /// anybody out and never moves a session that is already settled.
+  ///
+  /// The undecided state is deliberately left alone: it has its own 重试,
+  /// and an automatic [retryRestore] spends the cold-start grace, so a
+  /// premature `Unauthenticated` from Privy would sign the owner out — an
+  /// emulator run reproduced exactly that false sign-out (decision 0123).
+  Future<void> recheckAfterNetwork() async {
+    if (state.mode != LoopSessionMode.authenticatedUnverified) return;
+    final active = _recheckOperation;
+    if (active != null) return active;
+    final operation = _recheck(ref.read(privyAuthGatewayProvider));
+    _recheckOperation = operation;
+    try {
+      await operation;
+    } finally {
+      if (identical(_recheckOperation, operation)) _recheckOperation = null;
+    }
+  }
+
+  Future<void>? _recheckOperation;
+
+  Future<void> _recheck(PrivyAuthGateway gateway) async {
+    final PrivySessionSnapshot snapshot;
+    try {
+      snapshot = await gateway.restoreSession();
+    } catch (_) {
+      // Still no answer: the session stays where it was, waiting.
+      return;
+    }
+    if (!ref.mounted ||
+        state.mode != LoopSessionMode.authenticatedUnverified ||
+        snapshot.kind != PrivySessionKind.authenticated) {
+      return;
+    }
+    _receiveSnapshot(snapshot);
+  }
+
   Future<void> _startRestore(PrivyAuthGateway gateway) {
     final active = _restoreOperation;
     if (active != null) return active;

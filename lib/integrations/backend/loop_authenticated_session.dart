@@ -69,7 +69,11 @@ final class LoopAuthenticatedSession {
     );
     if (result != LoopBootstrapAuthorization.authorized ||
         _bootstrapSession.identity == null) {
-      throw const LoopBackendFailure(LoopBackendFailureKind.unavailable);
+      // Decision 0123: a bootstrap that failed on the network leaves the
+      // session signed in and offline. Its own transport failure is what the
+      // page hears, so it says 离线 and retries, never 不可用.
+      throw _bootstrapSession.lastTransportFailure ??
+          const LoopBackendFailure(LoopBackendFailureKind.unavailable);
     }
   }
 

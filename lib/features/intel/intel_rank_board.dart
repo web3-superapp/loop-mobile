@@ -528,8 +528,9 @@ class IntelRankMePill extends ConsumerWidget {
 }
 
 /// The first three places (decision 0122): three cards side by side, the
-/// winner in the middle and one crown taller, each with a 56 face and a
-/// medal in its place colour.
+/// winner in the middle with a crown and a 56 face, second and third with 48
+/// faces, all three one height (decision 0123), each with a medal in its
+/// place colour.
 class IntelRankPodium extends StatelessWidget {
   const IntelRankPodium({required this.entries, super.key})
     : assert(entries.length >= 1 && entries.length <= 3);
@@ -547,23 +548,30 @@ class IntelRankPodium extends StatelessWidget {
     return Padding(
       key: const ValueKey<String>('intel-rank-podium'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          for (var slot = 0; slot < order.length; slot += 1) ...<Widget>[
-            if (slot > 0) const SizedBox(width: 8),
-            Expanded(
-              child: _PodiumCard(
-                entry: entries[order[slot]],
-                place: order[slot] + 1,
+      // Decision 0123: the three cards share one height, so a two-line name
+      // never makes one card taller than its neighbours.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (var slot = 0; slot < order.length; slot += 1) ...<Widget>[
+              if (slot > 0) const SizedBox(width: 8),
+              Expanded(
+                child: _PodiumCard(
+                  entry: entries[order[slot]],
+                  place: order[slot] + 1,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 }
+
+/// The face size on the podium: the winner 56, second and third 48.
+double intelPodiumFaceSize(int place) => place == 1 ? 56 : 48;
 
 class _PodiumCard extends StatelessWidget {
   const _PodiumCard({required this.entry, required this.place});
@@ -587,16 +595,23 @@ class _PodiumCard extends StatelessWidget {
         borderRadius: const BorderRadius.all(Radius.circular(16)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (first) ...<Widget>[
             const LoopIcon('crown', size: 18, color: LoopColors.lime),
             const SizedBox(height: 6),
-          ],
+          ] else
+            // Second and third stand lower than the winner: the spare height
+            // of the equal cards goes above their faces, not between the
+            // name and the figure (decision 0123).
+            const Spacer(),
           Stack(
             clipBehavior: Clip.none,
             children: <Widget>[
-              entry.leading(56),
+              SizedBox.square(
+                key: ValueKey<String>('intel-rank-face-$place'),
+                dimension: intelPodiumFaceSize(place),
+                child: entry.leading(intelPodiumFaceSize(place)),
+              ),
               Positioned(
                 right: -6,
                 bottom: -6,
@@ -626,11 +641,14 @@ class _PodiumCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             entry.name,
-            maxLines: 1,
+            key: ValueKey<String>('intel-rank-name-$place'),
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: LoopTypography.title(14),
           ),
+          // The figures sit on one line across the three cards.
+          if (first) const Spacer(),
           const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,

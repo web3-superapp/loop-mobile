@@ -361,10 +361,11 @@ String memeTokenSpokenLabel(MemeTokenRow row) {
   ].join('，');
 }
 
-/// The curve's progress in the quote row's fixed 96 × 44 slot (decision
-/// 0122): a pill whose Lime-soft fill runs to the progress, with the short
-/// percentage in Lime. A graduated token's pill is full and says 「已毕业」
-/// beside the cap.
+/// The curve's progress in the quote row's fixed 96 × 44 slot: the short
+/// percentage in Lime over a 4px Lime bar (decision 0123; a ring-and-figure
+/// pill was built and compared on the emulator and lost on legibility). A
+/// graduated token's pill is unchanged from decision 0122: Lime-soft, the
+/// cap and 「已毕业」.
 class MemeProgressPill extends StatelessWidget {
   const MemeProgressPill({required this.row, super.key});
 
@@ -396,40 +397,59 @@ class MemeProgressPill extends StatelessWidget {
         ),
       );
     }
+    final fraction = memeProgressFraction(row.progressBps);
+    final label = Text(
+      memeRingLabel(row.progressBps),
+      key: const ValueKey<String>('meme-progress-label'),
+      maxLines: 1,
+      style: LoopTypography.figure(
+        16,
+        weight: FontWeight.w700,
+        color: LoopColors.lime,
+        height: 1,
+      ),
+    );
     final duration = LoopMotion.of(context, LoopMotion.progressFill);
-    return ClipRRect(
-      borderRadius: radius,
-      child: SizedBox(
-        width: size.width,
-        height: size.height,
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            const ColoredBox(color: LoopColors.card2),
-            TweenAnimationBuilder<double>(
-              tween: Tween<double>(end: memeProgressFraction(row.progressBps)),
-              duration: duration,
-              curve: LoopMotion.progressCurve,
-              builder: (context, value, _) => FractionallySizedBox(
-                key: const ValueKey<String>('meme-progress-fill'),
-                alignment: Alignment.centerLeft,
-                widthFactor: value.clamp(0, 1),
-                child: const ColoredBox(color: LoopColors.limeSoft),
+    // Decision 0123: the percentage over a 4px Lime bar, the bar's track the
+    // pill's own line colour. The pill no longer fills behind the figure.
+    return Container(
+      width: size.width,
+      height: size.height,
+      padding: const EdgeInsets.fromLTRB(12, 7, 12, 8),
+      decoration: const BoxDecoration(
+        color: LoopColors.card2,
+        borderRadius: radius,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          FittedBox(fit: BoxFit.scaleDown, child: label),
+          const SizedBox(height: 5),
+          ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(2)),
+            child: SizedBox(
+              height: 4,
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  const ColoredBox(color: LoopColors.line),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(end: fraction),
+                    duration: duration,
+                    curve: LoopMotion.progressCurve,
+                    builder: (context, value, _) => FractionallySizedBox(
+                      key: const ValueKey<String>('meme-progress-fill'),
+                      alignment: Alignment.centerLeft,
+                      // A curve that has started never reads as empty.
+                      widthFactor: value <= 0 ? 0 : value.clamp(0.04, 1),
+                      child: const ColoredBox(color: LoopColors.lime),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Center(
-              child: Text(
-                memeRingLabel(row.progressBps),
-                maxLines: 1,
-                style: LoopTypography.figure(
-                  16,
-                  weight: FontWeight.w700,
-                  color: LoopColors.lime,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

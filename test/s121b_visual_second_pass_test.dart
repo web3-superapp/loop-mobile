@@ -217,9 +217,7 @@ void main() {
       weight: '1.$position',
     );
 
-    testWidgets('three places, the winner in the middle and taller', (
-      tester,
-    ) async {
+    testWidgets('three places, the winner in the middle', (tester) async {
       await _pump(
         tester,
         IntelRankPodium(
@@ -231,7 +229,9 @@ void main() {
       final third = tester.getRect(_key('intel-rank-user-3'));
       expect(second.left, lessThan(first.left));
       expect(first.left, lessThan(third.left));
-      expect(first.height, greaterThan(second.height));
+      // Decision 0123: one height for all three; the winner stands out by
+      // its crown, its 56 face and its lighter card.
+      expect(first.height, second.height);
       expect(second.height, third.height);
       for (final place in <int>[1, 2, 3]) {
         expect(_key('intel-rank-medal-$place'), findsOneWidget);

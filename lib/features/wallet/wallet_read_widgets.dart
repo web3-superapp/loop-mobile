@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_tray_disclosure.dart';
 
@@ -396,27 +397,30 @@ class WalletLaunchChainCard extends StatelessWidget {
             reasonCode: launchChain.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
           )
         else ...<Widget>[
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-launch-chain-row'),
-                title: native.symbol,
-                subtitle:
-                    '${launchChain.name} · '
-                    '可动用 ${loopFormatDecimal(native.spendableBalance)} · '
-                    '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
-                // Chain, spendable and reserve beside a figure column: on a
-                // phone the line ended at 「手续费保留 0…」.
-                subtitleMaxLines: 2,
-                trailing: loopFormatDecimal(native.displayBalance),
-                trailingBadge: launchChain.isTestnet
-                    ? const LoopTestnetBadge()
-                    : null,
-                semanticLabel:
-                    '${launchChain.name} ${native.symbol} '
-                    '${loopFormatDecimal(native.displayBalance)}',
-              ),
-            ],
+          // The same OKX row as the assets above (decision 0123). No pill:
+          // a testnet balance has no price and no 24h move.
+          LoopQuoteRow(
+            key: const ValueKey<String>('wallet-launch-chain-row'),
+            leading: LoopTokenLogo(
+              assetSymbol: native.symbol,
+              fallbackMonogram: native.symbol,
+              size: 36,
+            ),
+            title: native.symbol,
+            titleTrailing: launchChain.isTestnet
+                ? const LoopTestnetBadge()
+                : null,
+            // The testnet badge already names the chain; the grey line keeps
+            // only the reserve (decision 0123, one element removed).
+            subtitle: launchChain.isTestnet ? null : launchChain.name,
+            subtitleMark: '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
+            value: loopFormatDecimal(native.displayBalance),
+            valueCaption: Text(
+              '可动用 ${loopFormatDecimal(native.spendableBalance)}',
+            ),
+            semanticLabel:
+                '${launchChain.name} ${native.symbol} '
+                '${loopFormatDecimal(native.displayBalance)}',
           ),
           WalletSnapshotFooter(
             key: const ValueKey<String>('wallet-launch-chain-snapshot'),

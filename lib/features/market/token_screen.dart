@@ -33,6 +33,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `token` · one registry asset's facts, laid out the way the approved
@@ -1464,6 +1465,7 @@ class _CommunityBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('token-community-entry'),
+              leading: const LoopRowIcon(icon: 'community'),
               title: '进入 LOOP 社区',
               subtitle: '$name · $memberCount 名成员',
               onTap: () => onOpenCommunity(communityId),

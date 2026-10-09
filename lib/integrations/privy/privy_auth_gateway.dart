@@ -642,7 +642,16 @@ class PrivySdkAuthGateway
     switch (result) {
       case Success<String>(value: final token):
         return token;
-      case Failure<String>():
+      case Failure<String>(error: final error):
+        // Decision 0123: a token refresh that could not reach Privy is the
+        // network, not a credential answer; the caller says 离线.
+        if (PrivyFailureClassifier.of(error.message) ==
+            PrivyFailureKind.network) {
+          throw const PrivyGatewayException(
+            '暂时无法连接登录服务，请检查网络后重试。',
+            kind: PrivyFailureKind.network,
+          );
+        }
         throw const PrivyGatewayException('登录凭证已失效，请重新尝试。');
     }
   }
