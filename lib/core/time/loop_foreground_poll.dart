@@ -21,6 +21,10 @@ import 'package:flutter/widgets.dart';
 /// * it stops while LOOP is not in the foreground, and reads once on the way
 ///   back, so a phone in a pocket makes no requests and a reader who comes
 ///   back is not shown the moment they left;
+/// * it stops while the page is covered — another page pushed over it, or its
+///   tab put behind another tab — and starts its interval again when the page
+///   is uncovered (decision 0125: a community page left under a chat or a
+///   room kept asking for the room every five seconds, nobody looking);
 /// * it never runs two reads at once, and a read that takes longer than the
 ///   interval simply delays the next one.
 final class LoopForegroundPoll with WidgetsBindingObserver {
@@ -37,6 +41,20 @@ final class LoopForegroundPoll with WidgetsBindingObserver {
   var _running = false;
   var _reading = false;
   var _foreground = true;
+  var _visible = true;
+
+  /// Whether the page that owns this poll is the one the reader sees: its
+  /// route is the top one and its subtree is not an offstage tab. Calling
+  /// this from `build` makes the page rebuild when either changes, so a page
+  /// passes the answer straight to [setVisible].
+  static bool pageVisible(BuildContext context) {
+    final routeCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+    return routeCurrent && TickerMode.valuesOf(context).enabled;
+  }
+
+  /// Whether the interval is held because the page is covered. Visible for
+  /// tests.
+  bool get isVisible => _visible;
 
   /// Whether a read is on its way out right now. Visible for tests.
   bool get isReading => _reading;
@@ -53,7 +71,29 @@ final class LoopForegroundPoll with WidgetsBindingObserver {
         lifecycle == null ||
         lifecycle == AppLifecycleState.resumed ||
         lifecycle == AppLifecycleState.inactive;
-    if (_foreground) _arm();
+    if (_foreground && _visible) _arm();
+  }
+
+  /// Tells the poll whether its page can be seen. Covered, the interval is
+  /// dropped; uncovered, the interval starts again from that moment.
+  ///
+  /// Uncovering does not read at once: a sheet or a dialog the page opened
+  /// covers it too, and what the page does when that closes — the command the
+  /// sheet confirmed, the answer it brought back — is the page's to read, not
+  /// a poll's to race. The next read is one interval away, as it was before
+  /// the page was covered.
+  ///
+  /// It may be called from `build`; it only arms or drops a timer.
+  void setVisible(bool visible) {
+    if (visible == _visible) return;
+    _visible = visible;
+    if (!_running) return;
+    if (!visible) {
+      _timer?.cancel();
+      _timer = null;
+      return;
+    }
+    if (_foreground && !_reading) _arm();
   }
 
   void stop() {
@@ -70,7 +110,7 @@ final class LoopForegroundPoll with WidgetsBindingObserver {
   /// event, a command it just sent — so the interval is the floor of how
   /// stale a page can be, never the speed at which it answers.
   void readNow() {
-    if (!_running || !_foreground) return;
+    if (!_active) return;
     unawaited(_tick());
   }
 
@@ -81,7 +121,7 @@ final class LoopForegroundPoll with WidgetsBindingObserver {
         state == AppLifecycleState.inactive;
     if (foreground == _foreground) return;
     _foreground = foreground;
-    if (!_running) return;
+    if (!_running || !_visible) return;
     if (!foreground) {
       _timer?.cancel();
       _timer = null;
@@ -96,8 +136,10 @@ final class LoopForegroundPoll with WidgetsBindingObserver {
     _timer = Timer(interval, () => unawaited(_tick()));
   }
 
+  bool get _active => _running && _foreground && _visible;
+
   Future<void> _tick() async {
-    if (!_running || !_foreground) return;
+    if (!_active) return;
     if (_reading) return;
     _reading = true;
     try {
@@ -107,7 +149,7 @@ final class LoopForegroundPoll with WidgetsBindingObserver {
       // what the page already has. A poll never raises one of its own.
     } finally {
       _reading = false;
-      if (_running && _foreground) _arm();
+      if (_active) _arm();
     }
   }
 }
