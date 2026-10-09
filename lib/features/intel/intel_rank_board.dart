@@ -102,7 +102,6 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
         else ...<Widget>[
           IntelRankMeCard(rank: rank),
           MiningStaleNotice(slug: 'intel-rank', snapshot: rank.snapshot),
-          MiningDemoHoldingsNotice(slug: 'intel-rank', snapshot: rank.snapshot),
           ..._rows(rank),
           if (_hasRows(rank.ranking)) ...<Widget>[
             if (state.appendFailed && !state.loadingMore)

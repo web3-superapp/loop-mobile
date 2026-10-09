@@ -823,12 +823,12 @@ void main() {
       expect(_stepCounter(tester), '04 / 05');
       expect(
         find.byKey(const ValueKey<String>('protection-setup-unavailable')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byType(Switch), findsNothing);
       // Nothing is on: this tree composed no device lock at all.
       expect(find.text('已开启'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(3));
+      expect(find.text('不可用'), findsNWidgets(2));
       expect(_enabled(tester, 'security-setup-continue'), isTrue);
     });
 
@@ -842,7 +842,7 @@ void main() {
 
       for (final reason in <String>[
         '还没有读到这台设备的锁屏能力',
-        '多大金额要再验一次还没有定下来',
+        '超过阈值时再验一次身份 · 即将推出',
         '这次运行没有连上登录服务',
       ]) {
         expect(find.textContaining(reason), findsOneWidget);

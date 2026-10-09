@@ -351,7 +351,7 @@ String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
   CommunityFailureKind.timedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。',
   CommunityFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
   CommunityFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
-  CommunityFailureKind.unavailable => '社区服务当前不可用，没有执行任何操作。',
+  CommunityFailureKind.unavailable => '社区服务暂时不可用，请稍后再试。',
   CommunityFailureKind.permissionDenied => '当前账号没有执行这个操作的权限。',
   CommunityFailureKind.notFound => '目标不存在、已被移除，或对当前账号不可见。',
   CommunityFailureKind.stale => '状态已经改变（可能已被他人处理）。请刷新后重新决定。',
@@ -434,7 +434,7 @@ String communityUnavailableReason(String reasonCode) => switch (reasonCode) {
   // decision 0071 gave each its own code and opened the asset domain.
   'ASSET_REGISTRY_NOT_COMPOSED' => '资产注册表这次没有组合出来，稍后再试。',
   'LAUNCH_PROJECT_DIRECTORY_PENDING' => 'LOOP 还没有 Launch 项目目录，这里没有可搜的条目。',
-  'DAPP_DIRECTORY_NOT_INTEGRATED' => 'DApp 目录还没有接入，这一域搜不到东西。',
+  'DAPP_DIRECTORY_NOT_INTEGRATED' => 'DApp 目录暂未开放。',
   'REFERRAL_GRAPH_DEFERRED' => '邀请数据还没有开放。',
   'INVITE_CODE_DEFERRED' => '邀请码还没有开放，暂时不能分享。',
   'COMMUNITY_RUNTIME_UNAVAILABLE' => '社区暂时不可用，稍后再试。',

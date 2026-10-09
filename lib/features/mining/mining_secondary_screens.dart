@@ -16,6 +16,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// The capability gate copy shared by the five secondary mining pages.
@@ -135,7 +136,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             snapshot: assets.source,
             symbols: _assetSymbols(assets),
           ),
-          MiningDemoHoldingsNotice(slug: 'assets', snapshot: assets.source),
+          MiningSnapshotProvenanceLine(slug: 'assets', snapshot: assets.source),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
@@ -718,7 +719,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             )
           else ...<Widget>[
             MiningStaleNotice(slug: 'rank', snapshot: rank.snapshot),
-            MiningDemoHoldingsNotice(slug: 'rank', snapshot: rank.snapshot),
+            MiningSnapshotProvenanceLine(slug: 'rank', snapshot: rank.snapshot),
             LoopLabel(
               scope == MiningRankScope.communities
                   ? 'Community Ranking'
@@ -1098,7 +1099,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
           )
         else ...<Widget>[
           MiningStaleNotice(slug: 'community', snapshot: community.snapshot),
-          MiningDemoHoldingsNotice(
+          MiningSnapshotProvenanceLine(
             slug: 'community',
             snapshot: community.snapshot,
           ),
@@ -1595,12 +1596,16 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               symbols: symbols,
             ),
           if (rules.approved?.scope.isBaseline ?? false)
-            const LoopNotice(
-              key: ValueKey<String>('mining-rules-baseline-notice'),
-              icon: 'info',
-              title: '开发基线的数值只用于开发验证',
-              body: '这一版把每个资产的权重都定为 1，当日产量是占位预算，奖励代币还没有确定。它不是产品规则。',
-              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            // Decision 0121: what a baseline means is in the ⓘ, not a
+            // banner.
+            const Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: LoopProvenanceLine(
+                key: ValueKey<String>('mining-rules-baseline-notice'),
+                prefix: miningBaselineLabel,
+                sources: <String>['LOOP 挖矿规则'],
+                detail: miningBaselineDetail,
+              ),
             ),
           const LoopLabel('待批准的版本'),
           if (rules.pendingApproval.isEmpty)

@@ -4621,6 +4621,60 @@ class HarnessTests(unittest.TestCase):
         # one line is reported twice; every other line is reported once.
         self.assertEqual(6, len(result))
 
+    def test_user_visible_copy_rejects_development_build_wording(self) -> None:
+        # Decision 0121 (device report 2026-10-09 · 4).
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "demo" / "demo_screen.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "// 仅开发环境 belongs in a comment, never on a screen.\n"
+                "const a = '含演示持仓 · 仅开发环境';\n"
+                "const b = 'DApp 目录还没有接入。';\n"
+                "const c = '交易验证还开不了';\n"
+                "const d = 'Passkey 暂不可用';\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        self.assertEqual(3, len(result), msg=result)
+        self.assertTrue(
+            all("development-build wording" in error for error in result)
+        )
+
+    def test_no_emoji_requires_the_reaction_glyphs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in (
+                "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart",
+                "lib/integrations/communication/loop_reactions.dart",
+                "lib/app.dart",
+                "test/s112_reaction_picker_test.dart",
+                "assets/icons/i-react-like.svg",
+                "assets/icons/i-react-laugh.svg",
+                "assets/icons/i-react-heart.svg",
+                "assets/icons/i-react-wow.svg",
+            ):
+                target = root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(
+                    (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+            app = root / "lib/app.dart"
+            app.write_text(
+                app.read_text(encoding="utf-8").replace(
+                    "reactions: loopStreamReactionsBuilder,", ""
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_no_emoji(root)
+
+        joined = "\n".join(result)
+        self.assertIn("i-react-sad.svg is missing", joined)
+        self.assertIn("loopStreamReactionsBuilder", joined)
+        self.assertEqual(2, len(result), msg=result)
+
     def test_user_visible_copy_rejects_interpolated_identifiers(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -8583,7 +8637,9 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "会退回到系统层面的锁屏验证，不会因此阻断使用；App 不会自行存储 PIN。",
+                    # Decision 0121 moved the fallback line into a constant
+                    # outside the class; the step copy is inside it.
+                    "应用锁由这台设备把关，交易验证由登录服务决定。",
                     "Fallback protection stored by the app",
                     1,
                 ),

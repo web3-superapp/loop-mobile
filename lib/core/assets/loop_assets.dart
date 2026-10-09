@@ -36,7 +36,7 @@ abstract final class LoopAssetPaths {
 /// Linear SVG sprite names, without the `i-` prefix.
 ///
 /// Sixty-one of them are the prototype's own set from `shell-open.html`.
-/// Four are drawn here, to the same specification as the imported sheet — a
+/// Nine are drawn here, to the same specification as the imported sheet — a
 /// 24 box, `fill="none"`, `currentColor` at 1.7 with round caps and joins — so
 /// they inherit colour and size from their caller exactly as the rest do:
 ///
@@ -48,6 +48,10 @@ abstract final class LoopAssetPaths {
 ///   sheet it shipped has no glyph for either 「多一个」 or 「交给系统」.
 /// * `copy`: decision 0104 (S97b) puts a copy glyph right behind a printed
 ///   LOOP ID in place of a 复制 button, and the prototype's sheet has none.
+/// * `react-like`, `react-laugh`, `react-heart`, `react-wow`, `react-sad`:
+///   decision 0121 (S121a) draws LOOP's five message reactions as glyphs.
+///   LOOP prints no system Emoji (decision 0117), and the single Han
+///   characters that stood in for them read as stray text on the device.
 abstract final class LoopIconNames {
   static const Set<String> all = <String>{
     'ai',
@@ -97,6 +101,11 @@ abstract final class LoopIconNames {
     'pin',
     'plus',
     'question',
+    'react-heart',
+    'react-laugh',
+    'react-like',
+    'react-sad',
+    'react-wow',
     'refresh',
     'search',
     'settings',

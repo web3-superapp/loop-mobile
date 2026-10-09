@@ -3550,7 +3550,9 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             # page's single keyed primary button.
             r"\b_tap\s*\(\s*tester\s*,\s*find\.byKey\s*\(\s*const\s+"
             r"ValueKey<String>\s*\(",
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+            # Decision 0121: 应用锁 and MFA say 不可用; 大额交易二次验证
+            # says it is coming.
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*2\s*\)",
             r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
         ),
         "H5 states each protection method is off, with its reason": (
@@ -3566,10 +3568,10 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\brouter\.go\s*\(",
             r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNothing",
-            # Every reviewed A11 method stays unavailable in production: the
-            # two Privy ones, and the device lock a widget test has no device
-            # to open.
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+            # Every reviewed A11 method stays unavailable in production: MFA,
+            # and the device lock a widget test has no device to open; the
+            # amount rule says it is coming (decision 0121).
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*2\s*\)",
             r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
         ),
         "production LoopApp H5 fails closed with no adapter": (
@@ -3950,9 +3952,12 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
         {
             # Decision 0053 rebuilt A11 on the V2 design system in zh-CN.
             "lib/features/account/account_screens.dart": (
-                "protection-setup-unavailable",
+                # Decision 0121: the engineering banner left; the page still
+                # offers no switch it cannot back and says the amount rule
+                # is coming rather than on.
                 "security-setup-continue",
-                "LOOP 不会保存 PIN",
+                "securityLargeAmountSubtitle",
+                "security-biometric-fallback",
                 # F2: what a page says about a method it does not offer is
                 # said in the owner's words, and what it says about the one
                 # method that is in force carries its evidence.
@@ -4079,7 +4084,11 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             # that row has to read the lock's state rather than guess it.
             lock_start = setup.find("LoopRecordRow _appLockRow()")
             mfa_start = setup.find("LoopRecordRow _mfaRow()")
+            # Decision 0121 removed the generic `_row` helper that used to
+            # follow `_mfaRow`; the MFA slice then runs to the class's end.
             row_start = setup.find("LoopRecordRow _row(")
+            if row_start < 0:
+                row_start = len(setup)
             lock = (
                 setup[lock_start:mfa_start]
                 if 0 <= lock_start < mfa_start
@@ -9522,6 +9531,13 @@ def check_no_emoji(root: Path) -> list[str]:
         # Stream's default bar pins a 「+」 that opens the Emoji catalogue
         # filtered by `supportedReactions`; LOOP supports none, so the bar is
         # LOOP's own and draws no 「+」.
+        # Decision 0121: the reactions on a message are LOOP's capsules
+        # under the bubble, drawn with the sprite's reaction glyphs.
+        if "reactions: loopStreamReactionsBuilder," not in app_source:
+            errors.append(
+                "lib/app.dart must install loopStreamReactionsBuilder; "
+                "Stream's default chips sit on the bubble's top corner"
+            )
         if "reactionPicker: loopStreamReactionPickerBuilder," not in app_source:
             errors.append(
                 "lib/app.dart must install loopStreamReactionPickerBuilder; "
@@ -9539,10 +9555,45 @@ def check_no_emoji(root: Path) -> list[str]:
                     "The LOOP reaction bar must drop the 「+」 when no reaction "
                     f"beyond the quick five is supported; missing `{required}`"
                 )
+        if "LoopReactionGlyph(" not in source:
+            errors.append(
+                "The LOOP reaction bar and capsules must draw the sprite's "
+                "reaction glyphs (decision 0121); missing `LoopReactionGlyph(`"
+            )
         if "add_reaction" in strip_dart_comments(source) or "icons.plus" in source:
             errors.append(
                 "LoopStreamReactionBar must not draw Stream's 「+」 button"
             )
+    reactions = root / "lib/integrations/communication/loop_reactions.dart"
+    reaction_source = read_text(reactions) if reactions.is_file() else ""
+    for reaction_type, icon in (
+        ("like", "react-like"),
+        ("haha", "react-laugh"),
+        ("love", "react-heart"),
+        ("wow", "react-wow"),
+        ("sad", "react-sad"),
+    ):
+        if f"'{reaction_type}': '{icon}'" not in reaction_source:
+            errors.append(
+                "lib/integrations/communication/loop_reactions.dart must map "
+                f"`{reaction_type}` to the `{icon}` glyph (decision 0121)"
+            )
+        svg = root / f"assets/icons/i-{icon}.svg"
+        if not svg.is_file():
+            errors.append(f"assets/icons/i-{icon}.svg is missing (decision 0121)")
+            continue
+        drawing = read_text(svg)
+        for attribute in (
+            'viewBox="0 0 24 24"',
+            'fill="none"',
+            'stroke="currentColor"',
+            'stroke-width="1.7"',
+        ):
+            if attribute not in drawing:
+                errors.append(
+                    f"assets/icons/i-{icon}.svg must be drawn in the sprite's "
+                    f"pen; missing `{attribute}`"
+                )
     if not (root / "test/s112_reaction_picker_test.dart").is_file():
         errors.append(
             "test/s112_reaction_picker_test.dart is missing; the long-press bar's "
@@ -10053,6 +10104,12 @@ COPY_INTERNAL_VOCABULARY = (
     (re.compile(r"rule:"), "a rule id"),
     (re.compile(r"_PENDING\b|_UNAVAILABLE\b"), "a reason code"),
     (re.compile(r"口径|观测|投影|聚合"), "internal vocabulary"),
+    # Decision 0121 (device report 2026-10-09 · 4): a development build's
+    # honesty is told in the reader's words or kept in a source line's ⓘ.
+    (
+        re.compile(r"仅开发环境|还没有接入|还开不了|开发基线|开发验证"),
+        "development-build wording",
+    ),
 )
 
 # Diagnostics are written for engineers, never rendered on a surface.

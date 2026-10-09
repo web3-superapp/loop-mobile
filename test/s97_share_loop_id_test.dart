@@ -309,7 +309,7 @@ void main() {
       expect(gateway.queries, <String>['users:$_ownId']);
       expect(
         tester
-            .widget<LoopSeg>(
+            .widget<LoopSubChip>(
               find.byKey(const ValueKey<String>('search-seg-users')),
             )
             .selected,

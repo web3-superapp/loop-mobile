@@ -42,6 +42,18 @@ Future<MemeTradeRequest?> showMemeTradePanel(
   builder: (context) => MemeTradePanel(detail: detail, initialSide: side),
 );
 
+/// The text a 25 / 50 / 75 / 100% shortcut puts in the amount field: the
+/// amount cut down (never rounded up, which could exceed the balance) to two
+/// decimals, the display precision of both USD1 and a MEME token
+/// (decision 0121). The panel keeps the exact amount behind it.
+String memeFillText(BigInt raw) {
+  final unit = BigInt.from(10).pow(memeDecimals);
+  final cents = BigInt.from(10).pow(memeDecimals - 2);
+  final whole = raw ~/ unit;
+  final fraction = (raw % unit) ~/ cents;
+  return '$whole.${fraction.toString().padLeft(2, '0')}';
+}
+
 /// 买入 / 卖出 (S115–S118 §3): an amount in USD1 or in the token, the
 /// 25 / 50 / 75 / 100% shortcuts, the server's quote — what arrives, the fee,
 /// the price impact and any cap the trade would hit — and the slippage. A cap
@@ -67,6 +79,13 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
   late MemeTradeSide _side = widget.initialSide;
   int? _slippageBps = memeSlippagePresets.first;
   bool _customSelected = false;
+
+  /// The exact amount a 25 / 50 / 75 / 100% shortcut chose, and the text it
+  /// printed for it (decision 0121). The field shows the amount at display
+  /// precision; while the field still holds that text, the quote and the
+  /// request carry the full-precision amount, so 100% sells all of it.
+  BigInt? _filledRaw;
+  String? _filledText;
 
   Timer? _debounce;
   int _request = 0;
@@ -94,20 +113,32 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
     super.dispose();
   }
 
+  /// The amount the field stands for: the shortcut's exact amount while its
+  /// text is untouched, otherwise what was typed.
+  BigInt? get _enteredRaw {
+    final text = _amount.text.trim();
+    final filled = _filledRaw;
+    if (filled != null && text == _filledText) return filled;
+    return memeRawFromInput(text);
+  }
+
   void _amountChanged() {
     _debounce?.cancel();
     _request += 1;
+    final raw = _enteredRaw;
     setState(() {
       _quote = null;
       _quoteFailure = null;
-      _quoting = memeRawFromInput(_amount.text) != null;
+      _quoting = raw != null;
     });
-    if (memeRawFromInput(_amount.text) == null) return;
+    if (raw == null) return;
     _debounce = Timer(memeQuoteDebounce, () => unawaited(_fetchQuote()));
   }
 
   Future<void> _fetchQuote() async {
-    final amount = _amount.text.trim();
+    final raw = _enteredRaw;
+    if (raw == null) return;
+    final amount = memeDecimalString(raw);
     final request = _request;
     try {
       final quote = await ref
@@ -143,6 +174,8 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
   void _selectSide(MemeTradeSide side) {
     if (side == _side) return;
     _side = side;
+    _filledRaw = null;
+    _filledText = null;
     _amount.clear();
   }
 
@@ -156,7 +189,10 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
     if (balance == null || balance <= BigInt.zero) return;
     final raw = balance * BigInt.from(percent) ~/ BigInt.from(100);
     if (raw <= BigInt.zero) return;
-    _amount.text = memeDecimalString(raw);
+    final text = memeFillText(raw);
+    _filledRaw = raw;
+    _filledText = text;
+    _amount.text = text;
   }
 
   /// The chosen slippage in basis points, or `null` while a typed one is not
@@ -175,7 +211,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
 
   /// What keeps 「确认」 closed, said in one line, or `null`.
   String? get _blockingReason {
-    final raw = memeRawFromInput(_amount.text);
+    final raw = _enteredRaw;
     if (raw == null) return null;
     final balance = _balance;
     if (balance != null && raw > balance) {
@@ -198,7 +234,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
 
   @override
   Widget build(BuildContext context) {
-    final raw = memeRawFromInput(_amount.text);
+    final raw = _enteredRaw;
     final quote = _quote;
     final blocking = _blockingReason;
     final slippage = _effectiveSlippage;
@@ -238,6 +274,9 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                 decimal: true,
               ),
               textInputAction: TextInputAction.done,
+              // One line: a long amount scrolls inside the field instead of
+              // wrapping under the suffix (decision 0121).
+              maxLines: 1,
               style: LoopType.figureLg,
               decoration: InputDecoration(
                 labelText: _side == MemeTradeSide.buy ? '支付' : '卖出',
@@ -260,17 +299,15 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
               children: <Widget>[
                 for (final percent in const <int>[25, 50, 75, 100]) ...<Widget>[
                   Expanded(
-                    child: LoopSeg(
+                    child: _FillChip(
                       key: ValueKey<String>('meme-trade-fill-$percent'),
                       label: '$percent%',
-                      selected: false,
-                      block: true,
-                      onSelected: balance == null || balance <= BigInt.zero
+                      onTap: balance == null || balance <= BigInt.zero
                           ? null
                           : () => _fill(percent),
                     ),
                   ),
-                  if (percent != 100) const SizedBox(width: 6),
+                  if (percent != 100) const SizedBox(width: 8),
                 ],
               ],
             ),
@@ -435,6 +472,53 @@ class _QuoteBlock extends StatelessWidget {
               : '链上暂时读不到，报价按索引快照计算，可能落后几个区块。',
         ),
       ],
+    );
+  }
+}
+
+/// One of the four amount shortcuts, on the OKX reference (S121 §1.1.1,
+/// decision 0121): an outlined 32px pill in a 44px touch target, four to a
+/// row. It is an action, not a choice, so it never stays selected.
+class _FillChip extends StatelessWidget {
+  const _FillChip({required this.label, required this.onTap, super.key});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Center(
+            child: Container(
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                border: Border.all(color: LoopColors.line),
+                borderRadius: LoopRadius.pill,
+              ),
+              child: Text(
+                label,
+                style: LoopType.caption.copyWith(
+                  color: enabled ? LoopColors.chalk : LoopColors.text3,
+                  fontFeatures: const <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

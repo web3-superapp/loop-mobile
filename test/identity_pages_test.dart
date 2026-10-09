@@ -368,14 +368,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('protection-setup-unavailable')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byType(Switch), findsNothing);
       // Nothing is on: this tree composed no device lock, and a Privy
       // capability is never an enabled protection.
       expect(find.textContaining('已开启'), findsNothing);
       expect(find.text('可用'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(3));
+      expect(find.text('不可用'), findsNWidgets(2));
 
       await _tap(tester, 'security-setup-continue');
       expect(destinations, <String>['loop-id-setup']);

@@ -7,6 +7,7 @@
 // onto the Stream field that renders it. See decision 0065.
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/integrations/communication/loop_stream_reaction_icon_resolver.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -330,7 +331,14 @@ class LoopStreamMessageRow extends StatelessWidget {
   static const Key avatarKey = Key('loop-message-avatar');
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LoopOwnReactionScope(
+    // Decision 0121: the capsules under the bubble light the reader's own
+    // reaction, and Stream's reactions props do not carry the message.
+    message: message,
+    child: Builder(builder: _buildRow),
+  );
+
+  Widget _buildRow(BuildContext context) {
     if (message.user == null) return child;
 
     final theme = StreamMessageItemTheme.of(context);

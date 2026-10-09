@@ -976,7 +976,7 @@ void main() {
       expect(find.text('0.8'), findsOneWidget);
       expect(find.textContaining('社区总算力 0'), findsOneWidget);
       // The reading says which baseline settled it, and when.
-      expect(find.textContaining('开发基线'), findsOneWidget);
+      expect(find.textContaining(miningBaselineLabel), findsOneWidget);
       expect(
         find.textContaining(
           loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58)),

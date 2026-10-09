@@ -356,11 +356,33 @@ void main() {
       // is.
       expect(find.textContaining('1,000'), findsWidgets);
       expect(find.textContaining('4,000'), findsOneWidget);
-      expect(find.textContaining('开发基线'), findsWidgets);
+      expect(find.textContaining(miningBaselineLabel), findsWidgets);
       // A placeholder budget is never a bare 1000000 on the screen.
       expect(find.text('1000000'), findsNothing);
       // The version is an identifier: it stays out of every sentence.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
+    });
+
+    testWidgets('what a baseline means is in the source line ⓘ', (
+      tester,
+    ) async {
+      // Decision 0121 (coordinator ruling 2026-10-09).
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+        ),
+      );
+      expect(find.textContaining('开发'), findsNothing);
+      expect(find.text(miningBaselineDetail), findsNothing);
+      final line = find.byKey(
+        const ValueKey<String>('mining-provenance-summary'),
+      );
+      await tester.ensureVisible(line);
+      await tester.tap(line);
+      await tester.pumpAndSettle();
+      expect(find.textContaining(miningBaselineDetail), findsOneWidget);
     });
 
     testWidgets('the effective version stays inside the 详情', (tester) async {
@@ -415,7 +437,7 @@ void main() {
       // A settled zero is a reading, not an absence: it keeps the figure and
       // says which rule produced it.
       expect(find.textContaining('0'), findsWidgets);
-      expect(find.textContaining('开发基线'), findsWidgets);
+      expect(find.textContaining(miningBaselineLabel), findsWidgets);
       expect(find.textContaining('全网算力为 0'), findsOneWidget);
       // 我的算力 is the settled heading, not one of the em-dash cells.
       final heading = find.byKey(
