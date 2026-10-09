@@ -50,6 +50,48 @@ final loopConnectivitySignalProvider = Provider<LoopConnectivitySignal>(
   (ref) => ConnectivityPlusSignal(),
 );
 
+/// Whether the device reports any transport right now (decision 0124).
+///
+/// `true`: the radio reports a transport. `false`: it reports none at all.
+/// `null`: the question could not be answered (no plugin, a platform error).
+///
+/// It has exactly one reader: the cold-start session restore, which treats a
+/// Privy `Unauthenticated` received while this says `false` as undecided
+/// rather than as a sign-out. A `true` is not evidence that Privy or LOOP is
+/// reachable, and `null` must be read as "no information" — callers keep
+/// their behaviour unchanged for it.
+abstract interface class LoopDeviceTransport {
+  Future<bool?> hasTransport();
+}
+
+/// The `connectivity_plus` adapter for [LoopDeviceTransport].
+///
+/// It arms no timer: a platform call that never answers simply leaves the
+/// reading unknown.
+final class ConnectivityPlusTransport implements LoopDeviceTransport {
+  ConnectivityPlusTransport({Connectivity? connectivity})
+    : _injected = connectivity;
+
+  final Connectivity? _injected;
+  Connectivity? _connectivity;
+
+  @override
+  Future<bool?> hasTransport() async {
+    try {
+      final connectivity = _connectivity ??= _injected ?? Connectivity();
+      final results = await connectivity.checkConnectivity();
+      if (results.isEmpty) return null;
+      return ConnectivityPlusSignal.hasTransport(results);
+    } on Object {
+      return null;
+    }
+  }
+}
+
+final loopDeviceTransportProvider = Provider<LoopDeviceTransport>(
+  (ref) => ConnectivityPlusTransport(),
+);
+
 /// A counter that moves once each time the device may have come back online:
 /// the radio reported a transport again, or the App returned to the
 /// foreground (decision 0123).

@@ -42,6 +42,14 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     final session = ref.watch(loopSessionProvider);
     // Decision 0064: restoring and "temporarily unreachable" are both
     // undecided. Only an explicit Privy sign-out reaches the form below.
+    // Decision 0124: Privy said "unauthenticated" with no network behind it.
+    // The frame waits for the network instead of showing the form.
+    if (session.isAwaitingNetwork) {
+      return PrivySessionAwaitingNetworkScreen(
+        onUseAnotherAccount: () =>
+            ref.read(loopSessionProvider.notifier).useAnotherAccount(),
+      );
+    }
     if (session.isRestoring) {
       return PrivySessionRestoreScreen(
         unreachableMessage: session.isRestoreUnavailable
@@ -531,6 +539,91 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                   ),
                 ],
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The cold-start frame for a session waiting on the network (decision 0124).
+///
+/// Privy answered `Unauthenticated` while the device reported no transport,
+/// which Privy could not have checked. The owner keeps the launch frame, is
+/// told what LOOP is waiting for, and is not asked to sign in again; when the
+/// radio comes back the session asks Privy once more on its own. The secondary
+/// entry is for an owner who really does want the credential form.
+class PrivySessionAwaitingNetworkScreen extends StatelessWidget {
+  const PrivySessionAwaitingNetworkScreen({
+    super.key,
+    this.onUseAnotherAccount,
+  });
+
+  final VoidCallback? onUseAnotherAccount;
+
+  static const String title = '网络不可用，正在等待连接';
+  static const String message = '联网后会自动确认这台设备上的登录状态，不需要重新登录。';
+  static const String anotherAccountLabel = '换个账号登录';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: const ValueKey<String>('privy-awaiting-network-screen'),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Semantics(
+              label: 'LOOP $title',
+              liveRegion: true,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const LoopBrandMark(
+                    kind: LoopBrandMarkKind.wordmark,
+                    height: 88,
+                    semanticLabel: 'LOOP',
+                  ),
+                  const SizedBox(height: 24),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: const LoopNotice(
+                      key: ValueKey<String>('privy-awaiting-network-notice'),
+                      icon: 'offline',
+                      tone: LoopNoticeTone.warn,
+                      title: title,
+                      body: message,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Indeterminate: the frame is waiting, and a full bar would
+                  // claim an answer arrived.
+                  const SizedBox(
+                    width: 244,
+                    child: LinearProgressIndicator(
+                      key: ValueKey<String>('privy-awaiting-network-progress'),
+                      minHeight: 2,
+                      backgroundColor: LoopColors.line2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        LoopColors.lime,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: LoopSpacing.page,
+                    ),
+                    child: LoopButton(
+                      key: const ValueKey<String>(
+                        'privy-awaiting-network-another-account',
+                      ),
+                      label: anotherAccountLabel,
+                      onPressed: onUseAnotherAccount,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
