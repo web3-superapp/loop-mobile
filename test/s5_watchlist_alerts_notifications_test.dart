@@ -42,7 +42,7 @@ void main() {
         watchlist: FakeWatchlistGateway(),
       );
 
-      expect(find.text('3 个自选资产'), findsOneWidget);
+      expect(find.textContaining('3 个自选资产'), findsOneWidget);
       expect(find.text('不可读'), findsOneWidget);
       expect(find.textContaining('这个资产已经读不到'), findsOneWidget);
       // No price is rendered: the Watchlist is not a market fact.
@@ -63,13 +63,13 @@ void main() {
         find.byKey(ValueKey<String>('watchlist-remove-$s5WbnbAssetId')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('3 个自选资产'), findsOneWidget);
+      expect(find.textContaining('3 个自选资产'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 个自选资产'), findsOneWidget);
       // Nothing is committed until the explicit save.
       expect(watchlist.written, isEmpty);
     });
@@ -141,7 +141,7 @@ void main() {
       );
       expect(find.textContaining('没有覆盖任何内容'), findsOneWidget);
       // The local draft survives the conflict.
-      expect(find.text('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 个自选资产'), findsOneWidget);
       expect(find.text('自选已保存'), findsNothing);
     });
 
@@ -266,7 +266,7 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      expect(find.text('1 个提醒正在监听'), findsOneWidget);
+      expect(find.textContaining('1 个提醒正在监听'), findsOneWidget);
       expect(find.text('WBNB 涨到 800.5'), findsOneWidget);
       expect(find.textContaining('评估于'), findsOneWidget);
     });
@@ -290,7 +290,7 @@ void main() {
 
       // One page of an unknown number: the hero may not call its armed rows
       // the alerts that are listening, and it never prints 「N ACTIVE」.
-      expect(find.text('已载入 1 条提醒'), findsOneWidget);
+      expect(find.textContaining('已载入 1 条提醒'), findsOneWidget);
       expect(find.textContaining('个提醒正在监听'), findsNothing);
       expect(find.textContaining('ACTIVE'), findsNothing);
     });

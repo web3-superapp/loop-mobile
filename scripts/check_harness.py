@@ -13977,6 +13977,101 @@ def check_topbar_action_glyph_contract(root: Path) -> list[str]:
     return errors
 
 
+MONEY_FORM_TOOL_PAGES = (
+    "lib/features/wallet/send_screens.dart",
+    "lib/features/wallet/swap_screens.dart",
+    "lib/features/wallet/money_asset_picker.dart",
+    "lib/features/chat/v2/chat_search_screen.dart",
+    "lib/features/market/watchlist/watchlist_editor_screen.dart",
+    "lib/features/market/alerts/alerts_screen.dart",
+    "lib/features/meme/meme_create_screen.dart",
+)
+
+LOOP_SHEET_OWNER = "lib/widgets/loop_sheet.dart"
+
+_MONEY_FIELD_PATTERN = re.compile(r"(?<![A-Za-z0-9_])(?:TextField|TextFormField)\(")
+_MONEY_FIELD_KEY = re.compile(r"key:\s*(?:const\s+)?ValueKey<String>\(\s*'([^']*)'")
+_AMOUNT_FIELD_KEY = re.compile(r"amount|quantity|first-buy")
+_ADDRESS_FIELD_KEY = re.compile(r"address|recipient|spender")
+
+
+def check_money_forms_native_contract(root: Path) -> list[str]:
+    """Decision 0131 (audit 2026-10-09 §五 rules 6, 16 and 19).
+
+    6  — an amount or quantity field opens the decimal pad and filters what
+         it accepts; an address field turns autocorrect and suggestions off.
+    16 — `showLoopSheet` draws the one sheet surface: no widget outside
+         `loop_sheet.dart` constructs a `LoopSheet` of its own, which nested a
+         second surface (and a second keyboard inset) inside the first.
+    19 — a tool or step page (发送, 兑换, 搜索, 自选管理, 提醒, 创建) opens on
+         its controls, not on a `LoopFolioPrimary` hero card.
+    """
+
+    errors: list[str] = []
+    features = root / "lib" / "features"
+    for path in sorted(features.rglob("*.dart")) if features.is_dir() else []:
+        relative = path.relative_to(root).as_posix()
+        source = strip_dart_comments(read_text(path))
+        for match in _MONEY_FIELD_PATTERN.finditer(source):
+            opening = match.end() - 1
+            closing = _closing_index(source, opening)
+            if closing < 0:
+                continue
+            arguments = source[opening : closing + 1]
+            key_match = _MONEY_FIELD_KEY.search(arguments)
+            key = key_match.group(1) if key_match else ""
+            line = source[: match.start()].count("\n") + 1
+            numeric = "numberWithOptions" in arguments
+            formatted = "inputFormatters" in arguments
+            if numeric and not formatted:
+                errors.append(
+                    f"{relative}:{line} a numeric field must filter its input "
+                    "with `inputFormatters` (decision 0131)"
+                )
+            if _AMOUNT_FIELD_KEY.search(key) and not (
+                numeric and "decimal: true" in arguments and formatted
+            ):
+                errors.append(
+                    f"{relative}:{line} amount field `{key}` must use "
+                    "`TextInputType.numberWithOptions(decimal: true)` and "
+                    "`inputFormatters` (decision 0131)"
+                )
+            if _ADDRESS_FIELD_KEY.search(key) and not (
+                "autocorrect: false" in arguments
+                and "enableSuggestions: false" in arguments
+            ):
+                errors.append(
+                    f"{relative}:{line} address field `{key}` must set "
+                    "`autocorrect: false` and `enableSuggestions: false` "
+                    "(decision 0131)"
+                )
+    lib = root / "lib"
+    for path in sorted(lib.rglob("*.dart")) if lib.is_dir() else []:
+        relative = path.relative_to(root).as_posix()
+        if relative == LOOP_SHEET_OWNER:
+            continue
+        source = strip_dart_comments_and_strings(read_text(path))
+        for match in re.finditer(r"(?<![A-Za-z0-9_.])LoopSheet\s*\(", source):
+            line = source[: match.start()].count("\n") + 1
+            errors.append(
+                f"{relative}:{line} constructs a second `LoopSheet`; "
+                "`showLoopSheet` already draws the sheet — use "
+                "`LoopSheetHeading` for a title (decision 0131)"
+            )
+    for relative in MONEY_FORM_TOOL_PAGES:
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = strip_dart_comments_and_strings(read_text(path))
+        for match in re.finditer(r"(?<![A-Za-z0-9_])LoopFolioPrimary\s*\(", source):
+            line = source[: match.start()].count("\n") + 1
+            errors.append(
+                f"{relative}:{line} a tool or step page must not open on a "
+                "`LoopFolioPrimary` card (decision 0131)"
+            )
+    return errors
+
+
 def check_launch_icon_contract(root: Path) -> list[str]:
     """The adaptive foreground carries the mark only; any baked plate is cropped
     into an octagon by the launcher and Android 12+ splash circular masks."""
@@ -14733,7 +14828,6 @@ PRESS_FEEDBACK_DEBT = {
     "lib/features/community/community_widgets.dart": 1,
     "lib/features/community/search_screen.dart": 1,
     "lib/features/intel/intel_rank_board.dart": 1,
-    "lib/features/meme/meme_trade_panel.dart": 1,
     "lib/features/profile/profile_v2_screens.dart": 1,
     "lib/features/square/square_community_list.dart": 1,
     "lib/integrations/communication/loop_chat_image_attachments.dart": 1,
@@ -14969,6 +15063,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_launch_icon_contract(root))
     errors.extend(check_topbar_action_glyph_contract(root))
     errors.extend(check_press_haptics_contract(root))
+    errors.extend(check_money_forms_native_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -14998,6 +15093,7 @@ def main() -> int:
         "armed page ground probe, watched self-mounted pages, "
         "plate-free launch icon, glyph-only top-bar actions, "
         "one haptics owner, pressed states, Chinese system controls, one toast, "
+        "native money forms with one sheet surface and no hero on tool pages, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "channel-resolved chat names, recognised chat contract addresses, "

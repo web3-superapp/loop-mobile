@@ -429,7 +429,8 @@ void main() {
         alerts: FakeAlertsGateway(),
         notifications: FakeNotificationsGateway(),
       );
-      await expectChalk(tester, const SizedBox.shrink());
+      // Decision 0131: a tool page opens on its list, with no folio card.
+      expect(find.byType(LoopFolioPrimary), findsNothing);
       // Decision 0087: the word moved into the glyph's name.
       final create = tester.widget<LoopIconButton>(
         find.byKey(const ValueKey<String>('alerts-create-action')),
@@ -446,7 +447,8 @@ void main() {
         const WatchlistEditorScreen(),
         watchlist: FakeWatchlistGateway(),
       );
-      await expectChalk(tester, const SizedBox.shrink());
+      // Decision 0131: a tool page opens on its list, with no folio card.
+      expect(find.byType(LoopFolioPrimary), findsNothing);
       final done = tester.widget<LoopIconButton>(
         find.byKey(const ValueKey<String>('watchlist-save-action')),
       );

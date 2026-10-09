@@ -64,14 +64,14 @@ FakeWalletReadGateway _twoAssetWallet() => FakeWalletReadGateway(
   ),
 );
 
-/// Types an address into `send-to` and asks the server to check it.
+/// Types an address into `send-to`; the page asks the server to check it by
+/// itself once the address rests (decision 0131).
 Future<void> _check(WidgetTester tester, {bool settle = true}) async {
   await tester.enterText(
     find.byKey(const ValueKey<String>('send-recipient-field')),
     s6Recipient,
   );
-  await tester.pump();
-  await tester.tap(find.byKey(const ValueKey<String>('send-recipient-check')));
+  await tester.pump(sendRecipientCheckDebounce);
   if (settle) {
     await tester.pumpAndSettle();
   } else {
@@ -79,7 +79,7 @@ Future<void> _check(WidgetTester tester, {bool settle = true}) async {
   }
 }
 
-/// Chooses both Swap assets and types an amount, without asking for a quote.
+/// Chooses both Swap assets and types an amount; the quote follows by itself.
 Future<void> _swapInputs(WidgetTester tester) async {
   await tester.tap(find.byKey(const ValueKey<String>('swap-source-pick')));
   await tester.pumpAndSettle();
@@ -109,7 +109,7 @@ void main() {
       );
       await _check(tester, settle: false);
 
-      expect(find.text('校验中'), findsOneWidget);
+      expect(find.text('正在校验地址…'), findsOneWidget);
       // Nothing has been decided about the address yet.
       expect(
         find.byKey(const ValueKey<String>('send-recipient-preflight-error')),
@@ -120,7 +120,7 @@ void main() {
         findsNothing,
       );
       final next = tester.widget<LoopButton>(
-        find.byKey(const ValueKey<String>('send-recipient-next')),
+        find.byKey(const ValueKey<String>('send-address-next')),
       );
       expect(next.onPressed, isNull);
     });
@@ -176,7 +176,7 @@ void main() {
       );
       expect(find.text('地址没有校验成功'), findsNothing);
       final next = tester.widget<LoopButton>(
-        find.byKey(const ValueKey<String>('send-recipient-next')),
+        find.byKey(const ValueKey<String>('send-address-next')),
       );
       expect(next.onPressed, isNull);
       // Nothing was prepared, so no wallet could have been opened.
@@ -337,10 +337,9 @@ void main() {
         quotes: FakeSwapQuoteGateway(pending: true),
       );
       await _swapInputs(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('swap-quote-action')));
-      await tester.pump();
+      await tester.pump(swapQuoteDebounce);
 
-      expect(find.text('报价中'), findsOneWidget);
+      expect(find.text('报价中…'), findsWidgets);
       expect(
         find.byKey(const ValueKey<String>('swap-quote-facts')),
         findsNothing,
@@ -369,7 +368,7 @@ void main() {
         quotes: FakeSwapQuoteGateway(),
       );
       await _swapInputs(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('swap-quote-action')));
+      await tester.pump(swapQuoteDebounce);
       await tester.pumpAndSettle();
 
       expect(
@@ -389,7 +388,7 @@ void main() {
         quotes: FakeSwapQuoteGateway(failure: LoopChainFailureKind.offline),
       );
       await _swapInputs(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('swap-quote-action')));
+      await tester.pump(swapQuoteDebounce);
       await tester.pumpAndSettle();
 
       expect(
@@ -745,7 +744,7 @@ void main() {
         ),
       );
       await _swapInputs(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('swap-quote-action')));
+      await tester.pump(swapQuoteDebounce);
       await tester.pumpAndSettle();
 
       expect(

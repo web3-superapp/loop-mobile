@@ -263,7 +263,7 @@ void main() {
   });
 
   group('send', () {
-    testWidgets('a closed gate keeps the primary, the group and the reason', (
+    testWidgets('a closed gate states the reason and offers no field', (
       tester,
     ) async {
       await pumpS6Page(
@@ -274,9 +274,12 @@ void main() {
         sendApprovals: LoopV2CapabilityAvailability.unavailable,
       );
 
-      expect(variantOf(tester, 'send-asset-folio'), LoopFolioVariant.chalk);
-      expect(find.text('选择要发送的资产'), findsOneWidget);
-      expect(find.text('选择资产'), findsOneWidget);
+      // Decision 0131: a step page carries no folio card.
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('send-recipient-field')),
+        findsNothing,
+      );
       expect(
         find.byKey(const ValueKey<String>('send-capability-block')),
         findsOneWidget,
@@ -298,9 +301,8 @@ void main() {
         privySwap: LoopV2CapabilityAvailability.unavailable,
       );
 
-      expect(variantOf(tester, 'swap-folio'), LoopFolioVariant.chalk);
+      expect(find.byType(LoopFolioPrimary), findsNothing);
       expectOrder(tester, <Key>[
-        const ValueKey<String>('swap-folio'),
         const ValueKey<String>('swap-source-blocked'),
         const ValueKey<String>('swap-destination-blocked'),
         const ValueKey<String>('swap-capability-block'),

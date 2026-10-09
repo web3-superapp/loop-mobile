@@ -379,20 +379,11 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           ),
         ),
       ),
-      folio: LoopFolioPrimary(
-        // `#scr-chat-search` is a Chalk page, and its heading is the scope
-        // and the size of what is being searched — `PEPE 社区 · 1,284 条` —
-        // not the page's own title.
-        variant: LoopFolioVariant.chalk,
-        archetype: LoopFolioArchetype.listing,
-        ring: false,
-        compact: true,
-        kicker: 'MESSAGE SEARCH',
-        heading: hits == null
-            ? '${_scope.label} · 还没有检索'
-            : '${_scope.label} · ${hits.length} 条',
-        caption: '只在你有权访问的会话里检索；全局资产与社区搜索从社区 Tab 顶部进入。',
-      ),
+      // Decision 0131: a search page opens on its field and its scopes, not on
+      // a hero card; the scope and the hit count are the bar's one line.
+      subtitle: hits == null
+          ? '${_scope.label} · 还没有检索'
+          : '${_scope.label} · ${hits.length} 条',
       filters: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
         child: LoopSegBar(
