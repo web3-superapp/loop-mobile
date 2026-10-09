@@ -22,6 +22,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
+import 'package:loop_mobile/core/cache/loop_owner_face.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
@@ -141,6 +142,9 @@ Future<void> main() async {
         ),
         loopSnapshotRestorerProvider.overrideWith(
           (ref) => ref.watch(loopV2SnapshotSessionProvider),
+        ),
+        loopSnapshotRecorderProvider.overrideWith(
+          (ref) => ref.watch(loopV2SnapshotSessionProvider)?.record,
         ),
         loopDisplayPreferencesStoreProvider.overrideWithValue(
           displayBootstrap.store,

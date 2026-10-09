@@ -9,17 +9,24 @@ import 'package:path_provider/path_provider.dart';
 /// The read-only answers a cold start may draw before the network answers
 /// (decision 0095).
 ///
-/// Exactly four reads qualify — the wallet (its directory and the balances of
-/// the active wallet), the community index, the market overview and the
-/// Launch catalogue. Nothing a signature, a write or a figure check depends on
-/// is ever stored here: the signing exit re-reads what it signs.
+/// Four reads qualify by decision 0095 — the wallet (its directory and the
+/// balances of the active wallet), the community index, the market overview
+/// and the Launch catalogue. Decision 0132 adds two that never change under
+/// the reader: a wallet's receive addresses, and the owner's own face (alias
+/// and avatar reference) for the heads that draw it. Nothing a signature, a
+/// write or a figure check depends on is ever stored here: the signing exit
+/// re-reads what it signs, and the profile editor never opens on the face.
 abstract final class LoopSnapshotResource {
   static const String walletDirectory = 'wallet.directory';
   static const String marketOverview = 'market.overview';
   static const String communityHome = 'community.home';
   static const String launchOverview = 'launch.overview';
 
+  /// The owner's alias and avatar reference (decision 0132). Display only.
+  static const String ownerFace = 'profile.face';
+
   static const String _walletBalancesPrefix = 'wallet.balances.';
+  static const String _walletReceivePrefix = 'wallet.receive.';
 
   /// The balances of one wallet, addressed by its opaque id.
   static String walletBalances(String walletId) =>
@@ -31,12 +38,34 @@ abstract final class LoopSnapshotResource {
       ? resource.substring(_walletBalancesPrefix.length)
       : null;
 
+  /// The receive addresses of one wallet, addressed by its opaque id
+  /// (decision 0132).
+  static String walletReceive(String walletId) =>
+      '$_walletReceivePrefix$walletId';
+
+  /// The wallet id a receive resource names, or `null` for any other one.
+  static String? receiveWalletIdOf(String resource) =>
+      resource.startsWith(_walletReceivePrefix)
+      ? resource.substring(_walletReceivePrefix.length)
+      : null;
+
   static bool isKnown(String resource) =>
       resource == walletDirectory ||
       resource == marketOverview ||
       resource == communityHome ||
       resource == launchOverview ||
-      (walletIdOf(resource)?.isNotEmpty ?? false);
+      resource == ownerFace ||
+      (walletIdOf(resource)?.isNotEmpty ?? false) ||
+      (receiveWalletIdOf(resource)?.isNotEmpty ?? false);
+
+  /// Whether [resource] describes something that does not move while the
+  /// reader looks away (decision 0132): a wallet's receive addresses and the
+  /// owner's own face. Such an answer is drawn however old it is and every
+  /// time a page opens without one, because an old copy of it is still true;
+  /// the live read behind it replaces it the moment it lands.
+  static bool isStable(String resource) =>
+      resource == ownerFace ||
+      (receiveWalletIdOf(resource)?.isNotEmpty ?? false);
 }
 
 /// How long a read is kept, and how old it may be before it is not drawn.
@@ -54,8 +83,15 @@ abstract final class LoopSnapshotPolicy {
   /// refresh, and long enough that bouncing between two tabs is not a storm.
   static const Duration revisitFloor = Duration(seconds: 10);
 
+  /// How long a [LoopSnapshotResource.isStable] answer is kept drawable.
+  static const Duration stableMaxAge = Duration(days: 30);
+
+  /// The age limit for [resource].
+  static Duration maxAgeFor(String resource) =>
+      LoopSnapshotResource.isStable(resource) ? stableMaxAge : maxAge;
+
   /// Storage is bounded: one account, a handful of resources.
-  static const int maxEntries = 16;
+  static const int maxEntries = 24;
 }
 
 /// One stored answer: the body exactly as LOOP returned it, and the moment

@@ -10019,3 +10019,91 @@ class MoneyFormsNativeContractTests(unittest.TestCase):
             result = check_harness.check_money_forms_native_contract(root)
         self.assertEqual(1, len(result), result)
         self.assertIn("send_screens.dart", result[0])
+
+
+class FirstFrameCacheContractTests(unittest.TestCase):
+    """Decision 0132: audit 2026-10-09 §五 rule 20 (M11, M12, m19)."""
+
+    def _copy_contract(self, root: Path) -> None:
+        for entry in check_harness.FIRST_FRAME_CACHE_CONTRACT:
+            relative = entry.split("#", 1)[0]
+            target = root / relative
+            if target.exists():
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+    def test_current_repository_passes(self) -> None:
+        self.assertEqual(
+            [], check_harness.check_first_frame_cache_contract(REPOSITORY_ROOT)
+        )
+
+    def test_placeholder_title_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_contract(root)
+            path = root / "lib/features/chat/v2/community_chat_screen.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nconst _x = communityMissingName;\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_first_frame_cache_contract(root)
+        self.assertEqual(1, len(result), result)
+        self.assertIn("communityMissingName", result[0])
+
+    def test_conversation_without_cached_channel_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_contract(root)
+            path = root / "lib/features/chat/v2/loop_stream_channel_surface.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "if (cached != null) return _conversation(cached);", ""
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_first_frame_cache_contract(root)
+        self.assertTrue(
+            any("_conversation(cached)" in error for error in result), result
+        )
+
+    def test_receive_without_snapshot_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_contract(root)
+            path = root / "lib/features/wallet/wallet_read_controllers.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "snapshotResource => LoopSnapshotResource.walletReceive(walletId);",
+                    "snapshotResource => null;",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_first_frame_cache_contract(root)
+        self.assertEqual(1, len(result), result)
+        self.assertIn("walletReceive", result[0])
+
+    def test_per_slot_avatar_decode_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_contract(root)
+            path = root / "lib/widgets/loop_remote_avatar.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nfinal _y = ResizeImage.resizeIfNeeded;\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_first_frame_cache_contract(root)
+        self.assertEqual(1, len(result), result)
+        self.assertIn("resizeIfNeeded", result[0])
+
+    def test_missing_file_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result = check_harness.check_first_frame_cache_contract(
+                Path(temporary)
+            )
+        self.assertTrue(any("is missing" in error for error in result), result)

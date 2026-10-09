@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/cache/loop_owner_face.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
@@ -54,12 +55,18 @@ final class LoopV2SnapshotSession implements LoopSnapshotRestorer {
 
   @override
   LoopRestoredSnapshot? restore(String resource) {
-    if (!_spent.add(resource)) return null;
+    // A stable answer (decision 0132) may be drawn every time a page opens
+    // without one: an older copy of a receive address is still the address.
+    if (!_spent.add(resource) && !LoopSnapshotResource.isStable(resource)) {
+      return null;
+    }
     final record = _store.read(accountKey, resource);
     if (record == null) return null;
     // Older than the window, it is not drawn at all: the page loads as a
     // skeleton rather than presenting a stale answer as the present.
-    if (record.ageAt(_clock()) > LoopSnapshotPolicy.maxAge) return null;
+    if (record.ageAt(_clock()) > LoopSnapshotPolicy.maxAgeFor(resource)) {
+      return null;
+    }
     try {
       final value = decode(resource, record.body);
       if (value == null) return null;
@@ -82,6 +89,13 @@ final class LoopV2SnapshotSession implements LoopSnapshotRestorer {
         return DioLoopV2CommunityApi.decodeHome(body);
       case LoopSnapshotResource.launchOverview:
         return DioLoopV2LaunchApi.decodeOverview(body);
+      case LoopSnapshotResource.ownerFace:
+        return LoopOwnerFace.decode(body);
+    }
+    final receiveWalletId = LoopSnapshotResource.receiveWalletIdOf(resource);
+    if (receiveWalletId != null) {
+      if (receiveWalletId.isEmpty) return null;
+      return DioLoopV2WalletApi.decodeReceive(body, walletId: receiveWalletId);
     }
     final walletId = LoopSnapshotResource.walletIdOf(resource);
     if (walletId == null || walletId.isEmpty) return null;
