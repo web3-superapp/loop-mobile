@@ -14289,8 +14289,11 @@ PUSH_COPY_FORBIDDEN_SUBSTITUTIONS = ("%@", "%s", "%d", "%1$", "%2$")
 FIREBASE_PROJECT_ID = "loop-d4746"
 FIREBASE_SENDER_ID = "225868941577"
 FIREBASE_ANDROID_APP_ID = "1:225868941577:android:fe779e131119af7c64abd8"
-FIREBASE_IOS_APP_ID = "1:225868941577:ios:7d96d5ce4f5679a464abd8"
+# 2026-10-09: the iOS app was re-created under the new Apple team as
+# com.cywd.loopapp (docs/13); Android keeps com.cywd.loop.
+FIREBASE_IOS_APP_ID = "1:225868941577:ios:f002339179ad0ce564abd8"
 FIREBASE_APPLICATION_ID = "com.cywd.loop"
+FIREBASE_IOS_BUNDLE_ID = "com.cywd.loopapp"
 # What the Stream dashboard calls the two push configurations of the LOOP app.
 # Stream routes by these names; a value here that no longer exists in the
 # dashboard stops chat pushes without any error anybody can see.
@@ -14314,7 +14317,7 @@ def check_push_registration_contract(root: Path) -> list[str]:
             f"appId: '{FIREBASE_ANDROID_APP_ID}'",
             f"appId: '{FIREBASE_IOS_APP_ID}'",
             f"messagingSenderId: '{FIREBASE_SENDER_ID}'",
-            f"iosBundleId: '{FIREBASE_APPLICATION_ID}'",
+            f"iosBundleId: '{FIREBASE_IOS_BUNDLE_ID}'",
         ):
             if fragment not in options:
                 errors.append(
@@ -14368,7 +14371,7 @@ def check_push_registration_contract(root: Path) -> list[str]:
         for key, expected in (
             ("PROJECT_ID", FIREBASE_PROJECT_ID),
             ("GCM_SENDER_ID", FIREBASE_SENDER_ID),
-            ("BUNDLE_ID", FIREBASE_APPLICATION_ID),
+            ("BUNDLE_ID", FIREBASE_IOS_BUNDLE_ID),
             ("GOOGLE_APP_ID", FIREBASE_IOS_APP_ID),
         ):
             if ios_config.get(key) != expected:

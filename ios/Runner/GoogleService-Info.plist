@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.cywd.loop</string>
+	<string>com.cywd.loopapp</string>
 	<key>PROJECT_ID</key>
 	<string>loop-d4746</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:225868941577:ios:7d96d5ce4f5679a464abd8</string>
+	<string>1:225868941577:ios:f002339179ad0ce564abd8</string>
 </dict>
 </plist>

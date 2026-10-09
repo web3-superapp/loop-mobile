@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart'
 /// Derived by hand from the two files the Firebase console produced for
 /// project `loop-d4746` — `android/app/google-services.json` (package
 /// `com.cywd.loop`) and `ios/Runner/GoogleService-Info.plist` (bundle
-/// `com.cywd.loop`) — and kept identical to what `flutterfire configure`
+/// `com.cywd.loopapp`, re-created 2026-10-09 under the new Apple team) — and kept identical to what `flutterfire configure`
 /// would have written. Both files are committed next to this one, so a
 /// mismatch between the Dart values and the native ones is visible in a diff
 /// rather than at runtime on a device.
@@ -30,11 +30,11 @@ abstract final class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB-hoTeevMjvZrxy91WuRnU3FdJHmnbQUE',
-    appId: '1:225868941577:ios:7d96d5ce4f5679a464abd8',
+    appId: '1:225868941577:ios:f002339179ad0ce564abd8',
     messagingSenderId: '225868941577',
     projectId: projectId,
     storageBucket: 'loop-d4746.firebasestorage.app',
-    iosBundleId: 'com.cywd.loop',
+    iosBundleId: 'com.cywd.loopapp',
   );
 
   /// The options for the platform this build is running on, or `null`.
