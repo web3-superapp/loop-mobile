@@ -15,6 +15,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 // ---------------------------------------------------------------------------
 // The wallet tab's OKX-style first screen (decision 0119)
@@ -224,8 +225,7 @@ class WalletTotalHeader extends ConsumerWidget {
                           button: true,
                           label: '$figure，查看净值明细',
                           excludeSemantics: true,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
+                          child: LoopPressable(
                             onTap: openNetWorth,
                             child: figureText,
                           ),
@@ -330,10 +330,15 @@ class _HeaderGlyphButton extends StatelessWidget {
     toggled: toggled,
     label: label,
     excludeSemantics: true,
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    child: LoopPressable(
       onTap: onTap,
-      child: SizedBox(width: 36, height: 44, child: Center(child: child)),
+      // 44 × 44 (audit 2026-10-09 m3): the glyph stays 36 wide in the eye,
+      // the finger gets the whole square.
+      child: SizedBox(
+        width: LoopTouch.minimum,
+        height: LoopTouch.minimum,
+        child: Center(child: child),
+      ),
     ),
   );
 }
@@ -515,9 +520,8 @@ class _QuickActionTile extends StatelessWidget {
       // tap is offered here or a screen reader could not press the key.
       onTap: onTap,
       excludeSemantics: true,
-      child: GestureDetector(
+      child: LoopPressable(
         key: action.actionKey,
-        behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 74),
@@ -608,9 +612,8 @@ class WalletPowerTag extends StatelessWidget {
       button: true,
       label: '持仓产生算力，查看说明',
       excludeSemantics: true,
-      child: GestureDetector(
+      child: LoopPressable(
         key: const ValueKey<String>('wallet-power-tag'),
-        behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
@@ -740,18 +743,14 @@ class WalletAssetLine extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              GestureDetector(onTap: onTap, child: logo),
+              LoopPressable(onTap: onTap, child: logo),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onTap,
-                      child: symbol,
-                    ),
+                    LoopPressable(onTap: onTap, scale: false, child: symbol),
                     LoopInlineUnavailable(
                       key: ValueKey<String>(
                         'wallet-balance-unavailable-${row.assetId}',
@@ -864,9 +863,9 @@ class WalletZeroBalanceToggle extends StatelessWidget {
       toggled: hideZero,
       label: '隐藏零余额资产，$zeroCount 项',
       excludeSemantics: true,
-      child: GestureDetector(
+      child: LoopPressable(
         key: const ValueKey<String>('wallet-zero-toggle'),
-        behavior: HitTestBehavior.opaque,
+        scale: false,
         onTap: onToggle,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44),

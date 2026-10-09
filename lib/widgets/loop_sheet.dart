@@ -21,7 +21,13 @@ Future<T?> showLoopSheet<T>(
   /// A drag closes the route directly, past any `PopScope` inside the sheet,
   /// so a sheet that must stay open for a while turns it off.
   bool? enableDrag,
+
+  /// The grabber at the top edge (audit 2026-10-09 m1). It is drawn only
+  /// while a downward drag can actually close the sheet: a handle on a sheet
+  /// that refuses the drag would promise a gesture that does nothing.
+  bool showDragHandle = true,
 }) async {
+  final draggable = enableDrag ?? isDismissible;
   final previousFocus = FocusManager.instance.primaryFocus;
   final reduceMotion = MediaQuery.disableAnimationsOf(context);
   final result = await showModalBottomSheet<T>(
@@ -34,7 +40,7 @@ Future<T?> showLoopSheet<T>(
     useSafeArea: true,
     isScrollControlled: true,
     isDismissible: isDismissible,
-    enableDrag: enableDrag ?? isDismissible,
+    enableDrag: draggable,
     barrierColor: LoopColors.veil,
     barrierLabel: barrierLabel,
     backgroundColor: Colors.transparent,
@@ -45,7 +51,10 @@ Future<T?> showLoopSheet<T>(
             duration: Duration.zero,
           )
         : null,
-    builder: (context) => LoopSheet(child: builder(context)),
+    builder: (context) => LoopSheet(
+      showDragHandle: showDragHandle && draggable,
+      child: builder(context),
+    ),
   );
   // Focus restoration: the opener regains focus after the sheet closes.
   if (previousFocus != null && previousFocus.context?.mounted == true) {
@@ -58,10 +67,23 @@ const BorderRadius _radius = BorderRadius.vertical(top: Radius.circular(26));
 
 /// The sheet surface itself (also usable inline for showcase pages).
 class LoopSheet extends StatelessWidget {
-  const LoopSheet({required this.child, super.key, this.title});
+  const LoopSheet({
+    required this.child,
+    super.key,
+    this.title,
+    this.showDragHandle = false,
+  });
 
   final Widget child;
   final String? title;
+
+  /// Draws the grabber in the sheet's top margin. [showLoopSheet] turns it on
+  /// for every draggable sheet; an inline sheet (a showcase, a sheet body
+  /// nested in another) has nothing to drag and leaves it off.
+  final bool showDragHandle;
+
+  /// The grabber's size: 36 × 4, the iOS sheet proportion.
+  static const Size dragHandleSize = Size(36, 4);
 
   @override
   Widget build(BuildContext context) {
@@ -117,11 +139,36 @@ class LoopSheet extends StatelessWidget {
                 borderRadius: _radius,
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 20, 0, 24),
+                // The grabber lives inside the same 20 px top margin the sheet
+                // always had (8 + 4 + 8), so a sheet with a handle is exactly
+                // as tall as one without.
+                padding: EdgeInsets.fromLTRB(0, showDragHandle ? 8 : 20, 0, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
+                    if (showDragHandle)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Center(
+                          child: ExcludeSemantics(
+                            child: DecoratedBox(
+                              key: const ValueKey<String>(
+                                'loop-sheet-drag-handle',
+                              ),
+                              decoration: const BoxDecoration(
+                                color: LoopColors.line2,
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(2),
+                                ),
+                              ),
+                              child: SizedBox.fromSize(
+                                size: LoopSheet.dragHandleSize,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     if (title != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),

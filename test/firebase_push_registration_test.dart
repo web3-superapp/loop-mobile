@@ -328,7 +328,7 @@ void main() {
       final harness = _Harness(principal: null);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.source.permissionRequests, 0);
@@ -340,7 +340,7 @@ void main() {
       final harness = _Harness(principal: _principal, gatewayAvailable: false);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.source.permissionRequests, 0);
@@ -354,7 +354,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.source.permissionRequests, 0);
@@ -368,7 +368,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       harness.coordinator.onIdentityMayHaveChanged();
       await _settle();
@@ -382,7 +382,7 @@ void main() {
       final harness = _Harness(principal: _principal);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gateway.registered, <String>[_firebaseToken]);
@@ -403,7 +403,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gateway.registered, <String>[
@@ -429,7 +429,7 @@ void main() {
       final harness = _Harness(principal: _principal);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       harness.coordinator.onIdentityMayHaveChanged();
       await _settle();
@@ -442,7 +442,7 @@ void main() {
       final harness = _Harness(principal: _principal);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       harness.source.emitRefresh(_rotatedFirebaseToken);
       await _settle();
@@ -469,7 +469,7 @@ void main() {
       final harness = _Harness(principal: _principal, gatewayDefers: true);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       harness.coordinator.onIdentityMayHaveChanged();
       await _settle();
@@ -484,7 +484,7 @@ void main() {
       final harness = _Harness(principal: _principal);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       await harness.coordinator.revokeForSignOut();
 
@@ -504,7 +504,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       await harness.coordinator.revokeForSignOut();
 
@@ -525,7 +525,7 @@ void main() {
       final harness = _Harness(principal: null);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.noPrincipal);
@@ -540,7 +540,7 @@ void main() {
       final harness = _Harness(principal: null, platform: null);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.noPlatform);
@@ -550,7 +550,7 @@ void main() {
       final harness = _Harness(principal: _principal, gatewayAvailable: false);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.gatewayNotProduction);
@@ -564,7 +564,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.capabilityUnavailable);
@@ -578,7 +578,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.tokenSourceDisabled);
@@ -592,7 +592,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.permissionDenied);
@@ -606,7 +606,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.noTokenYet);
@@ -617,7 +617,7 @@ void main() {
       final harness = _Harness(principal: _principal);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(
@@ -634,7 +634,7 @@ void main() {
       final harness = _Harness(principal: _principal, gatewayDefers: true);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.runtimeDeferred);
@@ -647,7 +647,7 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.registerFailed);
@@ -664,7 +664,7 @@ void main() {
       // Firebase could not be brought up.
       harness.diagnostics.record(LoopPushRegistrationGate.tokenSourceDisabled);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(
@@ -679,7 +679,7 @@ void main() {
       final harness = _Harness(principal: null, sourceEnabled: false);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(
@@ -697,18 +697,22 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       expect(harness.gate, LoopPushRegistrationGate.permissionDenied);
       expect(harness.source.permissionRequests, 1);
-      expect(harness.source.permissionReads, 0);
+      expect(
+        harness.source.permissionReads,
+        2,
+        reason: '0130：先读一次（未问过），按下开启后再读一次才弹',
+      );
 
       // 回到前台：读一次系统设置，不再弹第二次。
       harness.coordinator.onIdentityMayHaveChanged();
       await _settle();
 
       expect(harness.source.permissionRequests, 1, reason: '同一个账号只被问一次，第二次只能读');
-      expect(harness.source.permissionReads, 1);
+      expect(harness.source.permissionReads, 3);
       expect(harness.gateway.registered, <String>[_firebaseToken]);
       expect(harness.gate, LoopPushRegistrationGate.registered);
     });
@@ -720,13 +724,13 @@ void main() {
       );
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       harness.coordinator.onIdentityMayHaveChanged();
       await _settle();
 
       expect(harness.source.permissionRequests, 1);
-      expect(harness.source.permissionReads, 1);
+      expect(harness.source.permissionReads, 3);
       expect(harness.gate, LoopPushRegistrationGate.permissionDenied);
       expect(harness.gateway.registered, isEmpty);
     });
@@ -737,13 +741,20 @@ void main() {
       final harness = _Harness(principal: null);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       expect(harness.gate, LoopPushRegistrationGate.noPrincipal);
       expect(harness.source.permissionRequests, 0);
 
       harness.principal = _principal;
       harness.coordinator.onIdentityMayHaveChanged();
+      await _settle();
+      // Decision 0130: the account is ready, and LOOP now waits for the
+      // owner to ask through its own card.
+      expect(harness.gate, LoopPushRegistrationGate.awaitingOptIn);
+      expect(harness.source.permissionRequests, 0);
+
+      await harness.coordinator.requestPermissionFromOwner();
       await _settle();
 
       expect(harness.source.permissionRequests, 1);
@@ -753,11 +764,43 @@ void main() {
   });
 
   group('通知权限在社区里问，开号途中不问（决定 0076）', () {
+    test('进了社区也不直接弹：先等用户在 App 内点开启（决定 0130）', () async {
+      final harness = _Harness(principal: _principal, ownerOptsIn: false);
+      addTearDown(harness.dispose);
+
+      await harness.start();
+      await _settle();
+
+      expect(harness.gate, LoopPushRegistrationGate.awaitingOptIn);
+      expect(harness.source.permissionRequests, 0);
+      expect(harness.gateway.registered, isEmpty);
+
+      await harness.coordinator.requestPermissionFromOwner();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 1);
+      expect(harness.gateway.registered, <String>[_firebaseToken]);
+      expect(harness.gate, LoopPushRegistrationGate.registered);
+    });
+
+    test('系统里本来就允许时，不需要再点开启，直接登记（决定 0130）', () async {
+      final harness = _Harness(principal: _principal, ownerOptsIn: false);
+      harness.source.beforeAsking = LoopPushPermission.granted;
+      addTearDown(harness.dispose);
+
+      await harness.start();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 0);
+      expect(harness.gateway.registered, <String>[_firebaseToken]);
+      expect(harness.gate, LoopPushRegistrationGate.registered);
+    });
+
     test('开号还没走完时，什么都不问、也不登记', () async {
       final harness = _Harness(principal: _principal, communityReached: false);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.gate, LoopPushRegistrationGate.awaitingCommunity);
@@ -769,7 +812,7 @@ void main() {
       final harness = _Harness(principal: _principal, communityReached: false);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       expect(harness.source.permissionRequests, 0);
 
@@ -786,7 +829,7 @@ void main() {
       final harness = _Harness(principal: _principal, communityReached: false);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       harness.communityReached = true;
       harness.coordinator
@@ -808,7 +851,7 @@ void main() {
       final harness = _Harness(principal: _principal);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
 
       expect(harness.source.permissionRequests, 1);
@@ -820,7 +863,7 @@ void main() {
       final harness = _Harness(principal: _principal, communityReached: false);
       addTearDown(harness.dispose);
 
-      harness.coordinator.start();
+      await harness.start();
       await _settle();
       harness.source.emitRefresh(_rotatedFirebaseToken);
       await _settle();
@@ -968,6 +1011,17 @@ void main() {
       container.read(loopPushRegistrationCoordinatorProvider)
         ..onIdentityMayHaveChanged()
         ..onIdentityMayHaveChanged();
+      await _settle();
+      expect(
+        diagnostics.value.gate,
+        LoopPushRegistrationGate.awaitingOptIn,
+        reason: '0130：账号就绪后先等用户在 App 内点开启，不直接弹系统框',
+      );
+      expect(source.permissionRequests, 0);
+
+      await container
+          .read(loopPushRegistrationCoordinatorProvider)
+          .requestPermissionFromOwner();
       await _settle();
 
       expect(source.permissionRequests, 1, reason: '这一次才轮到系统弹窗，而且只弹一次');
@@ -1162,6 +1216,7 @@ final class _Harness {
     bool pushCapabilityAvailable = true,
     bool revokeHangs = false,
     Duration revokeTimeout = const Duration(seconds: 3),
+    this.ownerOptsIn = true,
   }) : source = _TestPushTokenSource(
          permission: permission,
          apnsToken: apnsToken,
@@ -1209,6 +1264,18 @@ final class _Harness {
 
   LoopPushRegistrationGate get gate => diagnostics.value.gate;
 
+  /// Decision 0130: whether the owner presses 『开启』 on LOOP's own card as
+  /// soon as the coordinator starts. Without it nothing is ever prompted.
+  final bool ownerOptsIn;
+
+  /// Starts the coordinator, lets its first look finish, and then — when
+  /// [ownerOptsIn] — presses 『开启』 the way the notification page does.
+  Future<void> start() async {
+    coordinator.start();
+    await _settle();
+    if (ownerOptsIn) await coordinator.requestPermissionFromOwner();
+  }
+
   String? _readPrincipal() => principal;
 
   Future<void> dispose() async {
@@ -1249,10 +1316,14 @@ final class _TestPushTokenSource implements LoopPushTokenSource {
   @override
   bool get isEnabled => enabled;
 
+  /// What the device reads before it has ever been asked. Firebase maps
+  /// `notDetermined` to [LoopPushPermission.denied].
+  LoopPushPermission beforeAsking = LoopPushPermission.denied;
+
   @override
   Future<LoopPushPermission> currentPermission() async {
     permissionReads += 1;
-    return settingsPermission;
+    return permissionRequests == 0 ? beforeAsking : settingsPermission;
   }
 
   void emitRefresh(String token) => _refreshes.add(token);

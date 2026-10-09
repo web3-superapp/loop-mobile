@@ -61,6 +61,11 @@ abstract final class LoopColors {
   /// Sheet veil · rgba(5,6,4,.76)
   static const Color veil = Color(0xC2050604);
 
+  /// The pressed-state wash every ink response paints (decision 0130): Muted
+  /// at 16 %, which darkens a Chalk ground and lifts an Ink one by about the
+  /// same step, so one value answers on both grounds. There is no ripple.
+  static const Color pressHighlight = Color(0x297F897B);
+
   /// Market rise · #22C55E. Price movement only (decision 0117).
   static const Color rise = Color(0xFF22C55E);
 
@@ -746,7 +751,13 @@ abstract final class LoopTheme {
       canvasColor: LoopColors.ink,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
-      splashFactory: InkSparkle.splashFactory,
+      // Decision 0130: an iOS-style pressed wash on both platforms, never a
+      // Material ripple. Every InkWell that does not say otherwise highlights
+      // while held and splashes nothing.
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: LoopColors.pressHighlight,
+      splashColor: Colors.transparent,
+      hoverColor: Colors.transparent,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       pageTransitionsTheme: loopPageTransitionsTheme,

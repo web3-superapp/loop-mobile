@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chat/preview_conversation_unavailable_page.
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 class GroupInfoPage extends ConsumerStatefulWidget {
   const GroupInfoPage({required this.conversationId, super.key});
@@ -399,9 +400,7 @@ class _MessageRequestsPageState extends ConsumerState<MessageRequestsPage> {
   }
 
   void _showRequestNotice(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    LoopToast.show(context, message: message);
   }
 }
 
@@ -649,11 +648,11 @@ class _MessageSearchPageState extends ConsumerState<MessageSearchPage> {
       _results = result.value ?? const <MessageSearchResult>[];
     });
     if (!result.isSuccess) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Search is unavailable. Try again.')),
-        );
+      LoopToast.show(
+        context,
+        message: 'Search is unavailable. Try again.',
+        kind: LoopToastKind.warn,
+      );
     }
   }
 }

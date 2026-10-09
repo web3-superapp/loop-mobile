@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// Who a QR card introduces (decision 0113, S109b §3.1).
 ///
@@ -225,9 +226,7 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
   }
 
   Future<void> _copy(String text, String done) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    LoopToast.show(context, message: done);
+    await LoopCopy.text(context, text, message: done);
   }
 
   /// Captures the poster, encodes it as PNG on device and hands the bytes to

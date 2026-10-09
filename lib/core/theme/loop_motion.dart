@@ -95,6 +95,21 @@ abstract final class LoopMotion {
   static const Duration dockRelease = Duration(milliseconds: 180);
   static const Curve dockCurve = Curves.easeOutCubic;
 
+  // --- LoopPressable (decision 0130) -------------------------------------
+
+  /// How far a pressed control shrinks. Small on purpose: it says "this is
+  /// under your finger", not "this is moving".
+  static const double pressScale = 0.98;
+
+  /// The opacity a pressed control dims to. The dim is the feedback that
+  /// stays when motion is reduced; only the shrink goes.
+  static const double pressOpacity = 0.6;
+
+  /// Going down follows the finger at once; coming back up eases out.
+  static const Duration pressIn = Duration(milliseconds: 60);
+  static const Duration pressOut = Duration(milliseconds: 160);
+  static const Curve pressCurve = Curves.easeOut;
+
   /// Whether motion is switched off for [context]: either the platform's own
   /// accessibility setting or the app's 减弱动态效果, which `LoopApp` folds
   /// into the same [MediaQuery] flag.

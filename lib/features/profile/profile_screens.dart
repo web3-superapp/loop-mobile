@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/profile/security/security_screens.dart';
 import 'package:loop_mobile/features/profile/settings/settings_screen.dart';
 import 'package:loop_mobile/features/profile/support/support_screen.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 @immutable
 class ProfileIdentity {
@@ -105,9 +106,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
       onNavigate!(destination);
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('This setting is ready to open.')),
-    );
+    LoopToast.show(context, message: 'This setting is ready to open.');
   }
 
   @override

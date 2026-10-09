@@ -70,6 +70,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(harness.router.state.matchedLocation, '/chat');
+    // Decision 0130 (audit 2026-10-09 M15): arriving no longer raises the
+    // system dialog. LOOP waits for the owner to ask through its own card.
+    expect(harness.source.permissionRequests, 0);
+    expect(harness.gateway.registered, isEmpty);
+    expect(
+      harness.diagnostics.value.gate,
+      LoopPushRegistrationGate.awaitingOptIn,
+    );
+
+    await _optIn(tester);
+
     expect(harness.source.permissionRequests, 1);
     expect(harness.gateway.registered, hasLength(1));
     expect(harness.diagnostics.value.gate, LoopPushRegistrationGate.registered);
@@ -79,6 +90,7 @@ void main() {
     tester,
   ) async {
     final harness = await _pumpApp(tester);
+    await _optIn(tester);
     expect(harness.source.permissionRequests, 1);
 
     harness.router.go('/market');
@@ -89,6 +101,19 @@ void main() {
     expect(harness.source.permissionRequests, 1);
     expect(harness.gateway.registered, hasLength(1));
   });
+}
+
+/// The owner presses 『开启』 on the notification page's card.
+Future<void> _optIn(WidgetTester tester) async {
+  final container = ProviderScope.containerOf(
+    tester.element(find.byType(LoopShell)),
+  );
+  await tester.runAsync(
+    () => container
+        .read(loopPushRegistrationCoordinatorProvider)
+        .requestPermissionFromOwner(),
+  );
+  await tester.pumpAndSettle();
 }
 
 final class _Harness {
@@ -193,9 +218,12 @@ final class _CountingPushTokenSource implements LoopPushTokenSource {
     return LoopPushPermission.granted;
   }
 
+  /// Firebase reads `notDetermined` as denied until the device is asked.
   @override
   Future<LoopPushPermission> currentPermission() async =>
-      LoopPushPermission.granted;
+      permissionRequests == 0
+      ? LoopPushPermission.denied
+      : LoopPushPermission.granted;
 
   @override
   Future<String?> currentToken() async => _firebaseToken;

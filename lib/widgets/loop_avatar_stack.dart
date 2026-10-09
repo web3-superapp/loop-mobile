@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// One person in a [LoopAvatarStack].
 @immutable
@@ -296,9 +297,9 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
       expanded: _expanded,
       label: semantics,
       excludeSemantics: true,
-      child: GestureDetector(
+      child: LoopPressable(
         key: const ValueKey<String>('loop-avatar-stack-toggle'),
-        behavior: HitTestBehavior.opaque,
+        scale: false,
         onTap: count == 0 ? null : _toggle,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: LoopTouch.minimum),

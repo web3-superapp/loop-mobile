@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:loop_mobile/core/theme/loop_scroll_behavior.dart';
@@ -205,6 +206,20 @@ final loopStreamChatConfiguration = StreamChatConfigurationData(
     showFloatingDateDivider: false,
   ),
 );
+
+/// The one application locale (decision 0130): Simplified Chinese, China.
+const Locale loopAppLocale = Locale('zh', 'CN');
+
+/// Every localization the application installs (decision 0130): Stream's
+/// Chinese copy, and the framework's own Material, Cupertino and Widgets
+/// strings for [loopAppLocale].
+const List<LocalizationsDelegate<Object>> loopLocalizationsDelegates =
+    <LocalizationsDelegate<Object>>[
+      LoopStreamChatLocalizationsDelegate(),
+      GlobalMaterialLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+    ];
 
 class LoopApp extends ConsumerStatefulWidget {
   const LoopApp({super.key});
@@ -628,13 +643,16 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     return MaterialApp.router(
       title: 'LOOP',
       debugShowCheckedModeBanner: false,
-      // The official Stream widgets are the only localized surface in the
-      // app; every LOOP page writes its Chinese copy directly. The delegate
-      // answers for any locale, so the application locale — and with it
-      // `MaterialLocalizations` — stays the framework default.
-      localizationsDelegates: const <LocalizationsDelegate<Object>>[
-        LoopStreamChatLocalizationsDelegate(),
-      ],
+      // Decision 0130 (audit 2026-10-09 M4): LOOP ships one language, and
+      // the system's own controls speak it too — the text-selection toolbar
+      // (粘贴 / 全选), date pickers, and every label a screen reader reads off
+      // a Material or Cupertino widget. The locale is fixed rather than taken
+      // from the device: every LOOP page writes its Chinese copy directly, so
+      // an English device would otherwise get Chinese pages with English
+      // system controls. The Stream delegate answers for any locale.
+      locale: loopAppLocale,
+      supportedLocales: const <Locale>[loopAppLocale],
+      localizationsDelegates: loopLocalizationsDelegates,
       theme: LoopTheme.dark,
       darkTheme: LoopTheme.dark,
       themeMode: ThemeMode.dark,
