@@ -483,14 +483,19 @@ void main() {
           ),
         ),
         wallet: FakeWalletReadGateway(),
-        intents: FakeWalletIntentsGateway(),
+        intents: FakeWalletIntentsGateway(preflightPending: true),
       );
       final field = tester.widget<TextField>(
         find.byKey(const ValueKey<String>('send-recipient-field')),
       );
       expect(field.controller?.text, _address);
-      // A prefill is text in a field: nothing was checked on its behalf.
-      expect(find.text('还差一步：点「校验地址」核对这个收款地址。'), findsOneWidget);
+      // A prefill is text in a field: the server's preflight still checks
+      // it — by itself since decision 0131 — and nothing is decided before.
+      expect(find.text('正在校验地址…'), findsOneWidget);
+      final next = tester.widget<LoopButton>(
+        find.byKey(const ValueKey<String>('send-address-next')),
+      );
+      expect(next.onPressed, isNull);
     });
   });
 

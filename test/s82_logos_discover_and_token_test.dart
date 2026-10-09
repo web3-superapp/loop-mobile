@@ -114,6 +114,12 @@ void main() {
         ),
         intents: FakeWalletIntentsGateway(),
       );
+      // Decision 0131: the asset is chosen at step 2, in the shared picker.
+      await sendToAmountStep(tester);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('send-asset-selector')),
+      );
+      await tester.pumpAndSettle();
 
       final row = find.byKey(
         const ValueKey<String>('send-asset-$s5NativeAssetId'),

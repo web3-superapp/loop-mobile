@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -784,6 +784,9 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
           controller: _firstBuy,
           enabled: !submission.busy && !submission.locked,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: <TextInputFormatter>[
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+          ],
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
             labelText: '用 USD1 首买',

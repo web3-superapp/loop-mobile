@@ -9622,3 +9622,92 @@ class ChatTokenCardContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MoneyFormsNativeContractTests(unittest.TestCase):
+    """Decision 0131: audit 2026-10-09 §五 rules 6, 16 and 19."""
+
+    def _write(self, root: Path, relative: str, source: str) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+
+    def test_current_repository_passes(self) -> None:
+        self.assertEqual(
+            [], check_harness.check_money_forms_native_contract(REPOSITORY_ROOT)
+        )
+
+    def test_amount_field_without_decimal_pad_and_formatter_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/x.dart",
+                "Widget f() => TextField(\n"
+                "  key: const ValueKey<String>('x-amount-field'),\n"
+                "  keyboardType: TextInputType.text,\n"
+                ");\n",
+            )
+            result = check_harness.check_money_forms_native_contract(root)
+        self.assertTrue(any("amount field" in error for error in result), result)
+
+    def test_numeric_field_without_formatter_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/meme/x.dart",
+                "Widget f() => TextField(\n"
+                "  keyboardType: const TextInputType.numberWithOptions(decimal: true),\n"
+                ");\n",
+            )
+            result = check_harness.check_money_forms_native_contract(root)
+        self.assertTrue(any("inputFormatters" in error for error in result), result)
+
+    def test_address_field_with_suggestions_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/x.dart",
+                "Widget f() => TextField(\n"
+                "  key: const ValueKey<String>('send-recipient-field'),\n"
+                "  autocorrect: false,\n"
+                ");\n",
+            )
+            result = check_harness.check_money_forms_native_contract(root)
+        self.assertTrue(any("address field" in error for error in result), result)
+
+    def test_second_loop_sheet_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/market/x.dart",
+                "Widget f() => LoopSheet(title: 't', child: Text('a'));\n",
+            )
+            self._write(
+                root,
+                "lib/widgets/loop_sheet.dart",
+                "Widget g() => LoopSheet(child: Text('a'));\n",
+            )
+            result = check_harness.check_money_forms_native_contract(root)
+        self.assertEqual(1, len(result), result)
+        self.assertIn("lib/features/market/x.dart", result[0])
+
+    def test_folio_on_a_tool_page_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/send_screens.dart",
+                "Widget f() => LoopFolioPrimary(heading: 'h');\n",
+            )
+            self._write(
+                root,
+                "lib/features/mining/mining_screen.dart",
+                "Widget f() => LoopFolioPrimary(heading: 'h');\n",
+            )
+            result = check_harness.check_money_forms_native_contract(root)
+        self.assertEqual(1, len(result), result)
+        self.assertIn("send_screens.dart", result[0])

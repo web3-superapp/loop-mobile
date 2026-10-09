@@ -130,7 +130,7 @@ void main() {
       expect(
         tester
             .widget<LoopButton>(
-              find.byKey(const ValueKey<String>('send-recipient-next')),
+              find.byKey(const ValueKey<String>('send-address-next')),
             )
             .onPressed,
         isNull,
@@ -152,14 +152,15 @@ void main() {
         find.byKey(const ValueKey<String>('send-recipient-field')),
         s5Address,
       );
+      // No 校验地址 button: a full address is checked once it rests.
+      await tester.pump(sendRecipientCheckDebounce);
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('send-recipient-check')),
-      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('send-address-next')));
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const ValueKey<String>('send-recipient-missing')),
+        find.byKey(const ValueKey<String>('send-amount-missing')),
         findsOneWidget,
       );
       expect(find.textContaining('填写发送数量'), findsOneWidget);
@@ -179,10 +180,8 @@ void main() {
         find.byKey(const ValueKey<String>('send-recipient-field')),
         s5Address,
       );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('send-recipient-check')),
-      );
+      // No 校验地址 button: a full address is checked once it rests.
+      await tester.pump(sendRecipientCheckDebounce);
       await tester.pumpAndSettle();
 
       // Folded: the warning cards are inside a disclosure whose summary says
@@ -230,10 +229,8 @@ void main() {
         find.byKey(const ValueKey<String>('send-recipient-field')),
         s5Address,
       );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('send-recipient-check')),
-      );
+      // No 校验地址 button: a full address is checked once it rests.
+      await tester.pump(sendRecipientCheckDebounce);
       await tester.pumpAndSettle();
 
       expect(

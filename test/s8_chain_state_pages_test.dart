@@ -1088,7 +1088,7 @@ void main() {
       );
       expect(find.text('自选已保存'), findsNothing);
       // The draft that was typed is still exactly what is on screen.
-      expect(find.text('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 个自选资产'), findsOneWidget);
     });
   });
 
@@ -1181,7 +1181,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('自选已保存'), findsNothing);
-      expect(find.text('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 个自选资产'), findsOneWidget);
     });
   });
 

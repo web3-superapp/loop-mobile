@@ -466,7 +466,9 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('launch-round-1')));
       await tester.enterText(
         find.byKey(const ValueKey<String>('launch-trade-amount')),
-        '5,00',
+        // The field filters to digits and points (decision 0131), so the
+        // malformed text that survives the filter is a doubled point.
+        '5..00',
       );
       await tester.pumpAndSettle();
 

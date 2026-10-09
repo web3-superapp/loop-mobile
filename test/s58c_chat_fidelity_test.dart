@@ -239,7 +239,7 @@ void main() {
   });
 
   group('B.5 · the search page opens on the search', () {
-    testWidgets('the field is the top bar, and the hero is Chalk', (
+    testWidgets('the field is the top bar, and there is no hero', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -258,13 +258,11 @@ void main() {
         findsOneWidget,
       );
 
-      final folio = _folio(tester);
-      expect(folio.variant, LoopFolioVariant.chalk);
-      expect(folio.ring, isFalse);
-      // 01 §3 / §12.2: this is the page that has to name the global entry,
-      // and it names the Community tab, never the retired Home.
-      expect(folio.caption, contains('全局资产与社区搜索从社区 Tab 顶部进入'));
-      expect(folio.caption, isNot(contains('首页')));
+      // Decision 0131: a search page carries no folio card; the scope and
+      // the hit count are the top bar's one line.
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(bar.subtitle, contains('还没有检索'));
+      expect(find.textContaining('首页'), findsNothing);
     });
 
     testWidgets('a result row carries a tile and the term in Lime', (

@@ -14,16 +14,19 @@ import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
+import 'package:loop_mobile/features/wallet/money_asset_picker.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_sheet.dart';
+
+/// How long the pay amount rests before it is quoted by itself (decision
+/// 0131, the MEME panel's pattern).
+const Duration swapQuoteDebounce = Duration(milliseconds: 400);
 
 /// `swap` · quote, review and confirm one Privy swap.
 ///
@@ -70,6 +73,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   /// The capability document is being re-read before the sheet opens.
   bool _checkingCapability = false;
 
+  /// Typing, choosing an asset or a slippage asks for a quote by itself
+  /// after [swapQuoteDebounce]; only the newest request's answer is kept.
+  Timer? _debounce;
+  int _quoteRequest = 0;
+
   static const List<int> _slippageChoices = <int>[50, 100, 300];
 
   @override
@@ -81,6 +89,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _amount.dispose();
     super.dispose();
   }
@@ -147,21 +156,6 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 onPressed: () => _open('/wallet/swap/route', extra: quote),
               ),
             ],
-      // The prototype's swap primary is a Chalk card and its heading is the
-      // quote itself (audit §A.11, items 1 and 2).
-      folio: LoopFolioPrimary(
-        key: const ValueKey<String>('swap-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        kicker: 'SWAP QUOTE',
-        heading: quote == null
-            ? '还没有报价'
-            : '${quote.quote.inputAmount.display} ${quote.sourceAsset.symbol}'
-                  ' → ${quote.quote.estimatedOutputAmount.display} '
-                  '${quote.destinationAsset.symbol}',
-        caption: '钱包内兑换；报价、滑点、路由和费用都在同一页可核对。',
-        stamp: quote == null ? null : 'REVIEW QUOTE',
-      ),
       primaryAction: blocked ? null : _primaryAction(capability, quote),
       body: <Widget>[
         // A closed gate used to take the whole page. The prototype's swap is
@@ -227,25 +221,27 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             balanceLine: _balanceLineFor(balances, _sourceAssetId),
             controller: _amount,
             onPick: () => unawaited(
-              _pickAsset(balances!, (assetId) {
-                setState(() {
-                  _sourceAssetId = assetId;
-                  _quote = null;
-                });
-              }),
+              _pickAsset(balances!, source: true, walletId: walletId),
             ),
-            onAmountChanged: () => setState(() => _quote = null),
+            onAmountChanged: () => _inputsChanged(walletId),
+          ),
+          Center(
+            child: LoopIconButton(
+              key: const ValueKey<String>('swap-flip'),
+              icon: 'swap-vert',
+              label: '互换支付与获得',
+              framed: true,
+              onPressed: _sourceAssetId == null && _destinationAssetId == null
+                  ? null
+                  : () => _flip(walletId),
+            ),
           ),
           _ReceiveField(
             symbol: _symbolFor(balances, _destinationAssetId),
             quote: quote,
+            quoting: _busy && quote == null,
             onPick: () => unawaited(
-              _pickAsset(balances!, (assetId) {
-                setState(() {
-                  _destinationAssetId = assetId;
-                  _quote = null;
-                });
-              }),
+              _pickAsset(balances!, source: false, walletId: walletId),
             ),
           ),
           const LoopLabel('滑点上限'),
@@ -263,10 +259,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                     key: ValueKey<String>('swap-slippage-$bps'),
                     label: moneySlippageLabel(bps),
                     selected: bps == _slippageBps,
-                    onSelected: () => setState(() {
+                    onSelected: () {
                       _slippageBps = bps;
-                      _quote = null;
-                    }),
+                      _inputsChanged(walletId);
+                    },
                   ),
               ],
             ),
@@ -283,7 +279,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             MoneyOfflinePause(
               blockKey: 'swap-quote-offline',
               failureKind: _failure?.kind,
-              pausedActions: const <String>['获取报价', '兑换', '签名'],
+              pausedActions: const <String>['报价', '兑换', '签名'],
               onRetry: () => unawaited(_requestQuote(walletId)),
             )
           else if (_failure != null)
@@ -339,22 +335,27 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     LoopSwapQuoteView? quote,
   ) {
     if (quote == null) {
+      // There is nothing to press before a quote: it is asked for by
+      // itself, and the button only says where that stands.
+      final amountReady = TransferAmount.tryParse(_amount.text.trim()) != null;
       final walletId = ref
           .watch(walletDirectoryControllerProvider)
           .value
           ?.activeWalletId;
-      final ready =
-          walletId != null &&
-          _sourceAssetId != null &&
-          _destinationAssetId != null &&
-          _sourceAssetId != _destinationAssetId &&
-          TransferAmount.tryParse(_amount.text.trim()) != null;
       return LoopButton(
         key: const ValueKey<String>('swap-quote-action'),
-        label: _busy ? '报价中' : '获取报价',
+        label: _busy
+            ? '报价中…'
+            : _sourceAssetId == null || _destinationAssetId == null
+            ? '选择支付与获得的资产'
+            : !amountReady
+            ? '输入数量后自动报价'
+            : _failure != null
+            ? '重新报价'
+            : '报价中…',
         primary: true,
         block: true,
-        onPressed: ready && !_busy
+        onPressed: !_busy && amountReady && _failure != null && walletId != null
             ? () => unawaited(_requestQuote(walletId))
             : null,
       );
@@ -418,23 +419,80 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   }
 
   Future<void> _pickAsset(
-    LoopWalletBalances balances,
-    void Function(String assetId) onPicked,
-  ) async {
-    final picked = await showLoopSheet<String>(
+    LoopWalletBalances balances, {
+    required bool source,
+    required String walletId,
+  }) async {
+    final picked = await showMoneyAssetPicker(
       context,
-      builder: (context) => _AssetPickerSheet(balances: balances),
+      balances: balances,
+      rowKeyPrefix: 'swap-pick',
+      selectedAssetId: source ? _sourceAssetId : _destinationAssetId,
+      // The side that pays needs something to pay with; the side that
+      // receives can be an asset this wallet does not hold yet.
+      requireBalance: source,
+      title: source ? '选择支付资产' : '选择获得资产',
     );
-    if (picked != null) onPicked(picked);
+    if (picked == null || !mounted) return;
+    final other = source ? _destinationAssetId : _sourceAssetId;
+    if (picked == other) {
+      // Choosing the other side's asset turns the pair around.
+      _flip(walletId);
+      return;
+    }
+    if (source) {
+      _sourceAssetId = picked;
+    } else {
+      _destinationAssetId = picked;
+    }
+    _inputsChanged(walletId);
   }
 
-  Future<void> _requestQuote(String walletId) async {
+  /// 互换: the pay and receive assets trade places; the typed amount stays
+  /// the amount paid and is quoted again.
+  void _flip(String walletId) {
+    final source = _sourceAssetId;
+    _sourceAssetId = _destinationAssetId;
+    _destinationAssetId = source;
+    _inputsChanged(walletId);
+  }
+
+  /// Drops the quote every changed input makes stale and asks for a new one
+  /// once the inputs rest.
+  void _inputsChanged(String walletId) {
+    _debounce?.cancel();
+    _quoteRequest += 1;
+    final ready =
+        _sourceAssetId != null &&
+        _destinationAssetId != null &&
+        _sourceAssetId != _destinationAssetId &&
+        TransferAmount.tryParse(_amount.text.trim()) != null;
+    setState(() {
+      _quote = null;
+      _failure = null;
+      _confirmPriceImpact = false;
+      _busy = ready;
+    });
+    if (!ready) return;
+    _debounce = Timer(
+      swapQuoteDebounce,
+      () => unawaited(_requestQuote(walletId, auto: true)),
+    );
+  }
+
+  Future<void> _requestQuote(String walletId, {bool auto = false}) async {
     final source = _sourceAssetId;
     final destination = _destinationAssetId;
     final amount = TransferAmount.tryParse(_amount.text.trim());
-    if (_busy || source == null || destination == null || amount == null) {
+    if ((_busy && !auto) ||
+        source == null ||
+        destination == null ||
+        source == destination ||
+        amount == null) {
       return;
     }
+    _debounce?.cancel();
+    final request = auto ? _quoteRequest : ++_quoteRequest;
     setState(() {
       _busy = true;
       _failure = null;
@@ -450,19 +508,19 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             amount: amount.wire,
             slippageBps: _slippageBps,
           );
-      if (!mounted) return;
+      if (!mounted || request != _quoteRequest) return;
       setState(() {
         _quote = quote;
         _busy = false;
       });
     } on LoopChainException catch (failure) {
-      if (!mounted) return;
+      if (!mounted || request != _quoteRequest) return;
       setState(() {
         _failure = failure;
         _busy = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || request != _quoteRequest) return;
       setState(() {
         _failure = const LoopChainException(LoopChainFailureKind.unexpected);
         _busy = false;
@@ -613,10 +671,12 @@ class _ReceiveField extends StatelessWidget {
     required this.symbol,
     required this.quote,
     required this.onPick,
+    this.quoting = false,
   });
 
   final String? symbol;
   final LoopSwapQuoteView? quote;
+  final bool quoting;
   final VoidCallback onPick;
 
   @override
@@ -635,7 +695,7 @@ class _ReceiveField extends StatelessWidget {
                   child: Text(
                     key: const ValueKey<String>('swap-receive-amount'),
                     quote == null
-                        ? '报价后显示'
+                        ? (quoting ? '报价中…' : '报价后显示')
                         : quote!.quote.estimatedOutputAmount.display,
                     style: LoopMono.headline,
                   ),
@@ -651,35 +711,6 @@ class _ReceiveField extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _AssetPickerSheet extends StatelessWidget {
-  const _AssetPickerSheet({required this.balances});
-
-  final LoopWalletBalances balances;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        const LoopLabel('选择资产'),
-        for (final row in balances.balances)
-          LoopRecordRow(
-            key: ValueKey<String>('swap-pick-${row.assetId}'),
-            leading: LoopTokenLogo(
-              assetSymbol: row.symbol,
-              logoUrl: row.logoUrl,
-              fallbackMonogram: row.symbol,
-            ),
-            title: row.symbol,
-            subtitle: row.name,
-            onTap: () => Navigator.of(context).pop(row.assetId),
-          ),
-      ],
     );
   }
 }
@@ -814,17 +845,6 @@ class SwapRouteScreen extends StatelessWidget {
       archetype: LoopPageArchetype.record,
       title: '报价与费用',
       onBack: onBack,
-      folio: LoopFolioPrimary(
-        key: const ValueKey<String>('swap-route-folio'),
-        variant: LoopFolioVariant.chalk,
-        ring: false,
-        kicker: 'ROUTE & FEES',
-        heading:
-            '${value.estimatedOutputAmount.display} '
-            '${quote.destinationAsset.symbol}',
-        caption: '报价方、最少获得、滑点与价格影响逐项公开。',
-        stamp: 'FINAL',
-      ),
       primaryAction: LoopButton(
         key: const ValueKey<String>('swap-route-back'),
         label: '返回兑换并确认',
