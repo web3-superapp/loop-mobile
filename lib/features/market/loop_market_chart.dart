@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
@@ -535,8 +536,11 @@ class LoopMarketChartState extends State<LoopMarketChart> {
                     behavior: HitTestBehavior.opaque,
                     onScaleStart: _onScaleStart,
                     onScaleUpdate: _onScaleUpdate,
-                    onLongPressStart: (details) =>
-                        _crosshairAt(details.localPosition.dx),
+                    onLongPressStart: (details) {
+                      // Decision 0130: the crosshair appearing is a pick-up.
+                      LoopHaptics.medium();
+                      _crosshairAt(details.localPosition.dx);
+                    },
                     onLongPressMoveUpdate: (details) =>
                         _crosshairAt(details.localPosition.dx),
                     onLongPressEnd: (_) => setState(() => _crosshair = null),

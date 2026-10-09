@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
@@ -42,6 +41,7 @@ import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// The three tabs under the chart, in the reference's order.
 enum MemeTokenTab {
@@ -187,9 +187,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
   }
 
   Future<void> _copy(String text, String done) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    LoopToast.show(context, message: done);
+    await LoopCopy.text(context, text, message: done);
   }
 
   Future<void> _share(MemeTokenDetail detail) async {

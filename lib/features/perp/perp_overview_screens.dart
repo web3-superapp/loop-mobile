@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/perp/perp_models.dart';
 import 'package:loop_mobile/features/perp/perp_widgets.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// D1 — Hyperliquid Core market list.
 class PerpMarketScreen extends StatelessWidget {
@@ -115,12 +116,10 @@ class _PerpTradeScreenState extends ConsumerState<PerpTradeScreen> {
       unawaited(context.push('/perp/confirm', extra: intent));
     } on Object {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Hyperliquid preview gateway is unavailable. No order intent was created.',
-          ),
-        ),
+      LoopToast.show(
+        context,
+        message: 'Hyperliquid preview gateway is unavailable. No order intent was created.',
+        kind: LoopToastKind.warn,
       );
     } finally {
       if (mounted) setState(() => _preparing = false);

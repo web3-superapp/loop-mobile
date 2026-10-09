@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 enum _InboxFilter { all, groups, direct }
 
@@ -96,15 +97,10 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
           alias: _aliases[_aliasIndex],
           onShuffle: () {
             setState(() => _aliasIndex = (_aliasIndex + 1) % _aliases.length);
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'You now appear as ${_aliases[(_aliasIndex)]}.',
-                  ),
-                ),
-              );
+            LoopToast.show(
+              context,
+              message: 'You now appear as ${_aliases[(_aliasIndex)]}.',
+            );
           },
         ),
         LoopSectionLabel(
@@ -215,15 +211,11 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
       kind: conversation.kind,
     );
     if (location == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Preview conversation unavailable. No fallback was opened.',
-            ),
-          ),
-        );
+      LoopToast.show(
+        context,
+        message: 'Preview conversation unavailable. No fallback was opened.',
+        kind: LoopToastKind.warn,
+      );
       return;
     }
     context.push(location);

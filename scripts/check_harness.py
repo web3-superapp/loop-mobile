@@ -3037,10 +3037,12 @@ CHAT_PREVIEW_REQUEST_TEST_MARKERS = {
 CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
     "aed18499ecd432806bd70742207106214ac6d8af2e5074fdbe1ab6991e3e4865"
 )
+# Decision 0130 re-reviewed `page` and `inbox`: their SnackBars became
+# LoopToast with the same copy; nothing else in the slices changed.
 CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS = {
-    "page": "7816c49c960272acff1caa32f824a6edd5b55ec22b982a41f739c143a421f7e8",
+    "page": "726d50ec89ae4d17051651faa2ba249d3015ef2af5dbf8ebe679070a098e930b",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
-    "inbox": "4b2ffcb9f2a69dbebde32b27aab185b8ab8136c37a23bb7cf176c22d4103a3e7",
+    "inbox": "225e12f426fcc96db95dd6d569956a2fb8434d0fe2afeacf96d0ffda7a989bbb",
 }
 
 
@@ -3219,15 +3221,17 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
     "cf36256748798f9534f53ad071d2b0a2ecd29f5cdd0ee6efda55c65b574c8398"
 )
+# Decision 0130 re-reviewed `conversation_pages`, `group_info`, `search` and
+# `inbox_navigation`: SnackBar → LoopToast, same copy, same exact-ID rules.
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "9b441d2d8c58355db0d3bc47100f6d85534a4f4569a646126496a62b68520547",
     "primary_routes": "9a800ba14a805f9a0e5f62a611441da4c42aaf56eb3f3eba3eb87c34152ffef7",
     "secondary_routes": "bff4439838659362e0cc9f1276bad476b8fcf459313e248275d7d3205fbc48d5",
-    "conversation_pages": "4d71552865ef9c3f872da63d4cdcb9299468e3f07e0bafdf40f7e72f97f51a11",
-    "group_info": "d967998206d33611981bbd5107e9b51975cbfbf2c69a121800b0584731a0b54c",
+    "conversation_pages": "8d1db5d8e280821d2f6e7b12256321fc31b77d4920e195c2345cef3339c31574",
+    "group_info": "0ce32c9b8f47e0c567e1600120dd58dfa2057c68c22b66d59247f77ffcc9d29d",
     "member_list": "9e34dccc196b4237baba7ea8a6b1ece71c297d010b1a5a8c7cd264d9419350bd",
-    "search": "6684f9a8aae999ba5a780340283fee75a1df0bfba701e7f94652e8ccba02b96a",
-    "inbox_navigation": "e854a63e6871f7c56b14a0671617413c3191670b656ccef4fa13fe8b0abe72fe",
+    "search": "1b1357ed7f54f8b7ddc9f2387549d93dbdc51c4242414c55f470bd6a87172e40",
+    "inbox_navigation": "f8c472edf8290c8c1c7f51cbca6bc8ff74efe1a0cb4fb53a796b7072353ca9b9",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
     "home_notification": "7dacb554dd1ad92063d87548c5f0a34069b5643bf69dc2de83c7da820658ed85",
     "production_cid": "cd1ec47454a1c55cb2225b7e119b5f5f36ff61dbf6e1434edcaa26705b89f98a",
@@ -14645,6 +14649,220 @@ def check_illustrations(root: Path) -> list[str]:
     return errors
 
 
+# Decision 0130 (S123c/S123d, audit 2026-10-09 §五 rules 9, 10, 11, 12, 14).
+PRESS_HAPTICS_TEST_PATH = "test/s123c_haptics_press_test.dart"
+
+PRESS_HAPTICS_TEST_MARKERS = {
+    Path(PRESS_HAPTICS_TEST_PATH): (
+        "the five touches map onto the platform haptics",
+        "a tab tap and a tab slide each play one selection",
+        "choosing a segment plays a selection; re-choosing does not",
+        "a pull plays one light touch when it is far enough to refresh",
+        "a draggable sheet draws a handle and closes on a downward drag",
+        "system controls speak Chinese",
+        "shared controls meet the tap target guidelines",
+        "the wallet round key shows a pressed state",
+    ),
+}
+
+# Where each touch is played. A call site moving is fine; a touch vanishing
+# from the control it confirms is the regression this guards.
+PRESS_HAPTICS_CALL_SITES = {
+    "lib/widgets/loop_dock_bar.dart": ("LoopHaptics.selection()",),
+    "lib/widgets/loop_tab_segments.dart": ("LoopHaptics.selection()",),
+    "lib/widgets/loop_components.dart": ("LoopHaptics.selection()",),
+    "lib/widgets/loop_pages.dart": ("LoopHaptics.light()",),
+    "lib/widgets/loop_copy.dart": ("LoopHaptics.light()",),
+    "lib/widgets/loop_sign_sheet.dart": (
+        "LoopHaptics.success()",
+        "LoopHaptics.error()",
+    ),
+    "lib/widgets/loop_pressable.dart": ("LoopHaptics.medium()",),
+    "lib/features/market/loop_market_chart.dart": ("LoopHaptics.medium()",),
+}
+
+PRESS_HAPTICS_OWNER = "lib/core/haptics/loop_haptics.dart"
+PRESSABLE_OWNER = "lib/widgets/loop_pressable.dart"
+COPY_OWNER = "lib/widgets/loop_copy.dart"
+
+# Rule 10 debt: tappable `GestureDetector`s that still show no pressed state,
+# counted per file. `lib/widgets/**` and the wallet home are already clean
+# and are not listed; a file here may only lose entries, never gain them.
+PRESS_FEEDBACK_DEBT = {
+    "lib/features/chat/member_buy/loop_member_buy_card.dart": 1,
+    "lib/features/chat/v2/loop_message_selection.dart": 1,
+    "lib/features/community/community_ai_screen.dart": 1,
+    "lib/features/community/community_member_faces.dart": 1,
+    "lib/features/community/community_profile_screen.dart": 1,
+    "lib/features/community/community_widgets.dart": 1,
+    "lib/features/community/search_screen.dart": 1,
+    "lib/features/intel/intel_rank_board.dart": 1,
+    "lib/features/profile/profile_v2_screens.dart": 1,
+    "lib/features/square/square_community_list.dart": 1,
+    "lib/integrations/communication/loop_chat_image_attachments.dart": 1,
+    "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart": 1,
+    "lib/integrations/communication/stream_chat_appearance.dart": 2,
+}
+
+PRESS_FEEDBACK_EXEMPT_MARKER = "loop-press-exempt"
+
+
+def bare_tap_gesture_detectors(raw: str) -> list[int]:
+    """Line numbers of `GestureDetector(... onTap: ...)` with no exemption."""
+
+    source = strip_dart_comments_and_strings(raw)
+    lines: list[int] = []
+    for match in re.finditer(r"(?<![A-Za-z0-9_])GestureDetector\s*\(", source):
+        end = _dart_match_bracket(source, match.end() - 1)
+        arguments = source[match.end() : end]
+        if not re.search(r"\bonTap\s*:", arguments):
+            continue
+        if PRESS_FEEDBACK_EXEMPT_MARKER in raw[match.start() : end]:
+            continue
+        lines.append(source.count("\n", 0, match.start()) + 1)
+    return lines
+
+
+def check_press_haptics_contract(root: Path) -> list[str]:
+    """Touch feedback, pressed states, hit targets, Chinese system controls and
+    one toast (decision 0130)."""
+
+    errors: list[str] = []
+    lib = root / "lib"
+    if not lib.is_dir():
+        return errors
+
+    owner = root / PRESS_HAPTICS_OWNER
+    if not owner.is_file():
+        errors.append(f"missing {PRESS_HAPTICS_OWNER} (decision 0130)")
+    else:
+        text = strip_dart_comments(read_text(owner))
+        for fragment in (
+            "HapticFeedback.selectionClick()",
+            "HapticFeedback.lightImpact()",
+            "HapticFeedback.mediumImpact()",
+            "HapticFeedback.successNotification()",
+            "HapticFeedback.errorNotification()",
+        ):
+            if fragment not in text:
+                errors.append(
+                    f"{PRESS_HAPTICS_OWNER} must map its touches onto `{fragment}`"
+                )
+        if "MediaQuery" in text or "disableAnimations" in text:
+            errors.append(
+                f"{PRESS_HAPTICS_OWNER} must not read reduce motion: a touch is "
+                "not an animation (decision 0130)"
+            )
+    pressable = root / PRESSABLE_OWNER
+    if not pressable.is_file() or "class LoopPressable" not in read_text(pressable):
+        errors.append(f"{PRESSABLE_OWNER} must define LoopPressable (decision 0130)")
+
+    # Rule 11: the touches stay where they confirm something.
+    for relative, fragments in PRESS_HAPTICS_CALL_SITES.items():
+        path = root / relative
+        if not path.is_file():
+            continue
+        text = strip_dart_comments(read_text(path))
+        for fragment in fragments:
+            if fragment not in text:
+                errors.append(
+                    f"{relative} must play `{fragment}` (decision 0130)"
+                )
+
+    sheet = root / "lib/widgets/loop_sheet.dart"
+    if sheet.is_file() and "bool showDragHandle = true" not in read_text(sheet):
+        errors.append(
+            "showLoopSheet must draw its drag handle by default "
+            "(`bool showDragHandle = true`, decision 0130)"
+        )
+    theme = root / "lib/core/theme/loop_theme.dart"
+    if theme.is_file():
+        text = strip_dart_comments(read_text(theme))
+        if "splashFactory: NoSplash.splashFactory" not in text:
+            errors.append(
+                "the product theme must press with a wash, not a ripple "
+                "(`splashFactory: NoSplash.splashFactory`, decision 0130)"
+            )
+
+    # Rule 12: the system controls speak the application's one language.
+    application = root / "lib/app.dart"
+    if application.is_file():
+        text = strip_dart_comments(read_text(application))
+        for fragment in (
+            "GlobalMaterialLocalizations.delegate",
+            "GlobalCupertinoLocalizations.delegate",
+            "GlobalWidgetsLocalizations.delegate",
+            "Locale('zh', 'CN')",
+            "locale: loopAppLocale",
+            "supportedLocales: const <Locale>[loopAppLocale]",
+        ):
+            if fragment not in text:
+                errors.append(
+                    "lib/app.dart must install Chinese system localizations "
+                    f"(`{fragment}`, decision 0130)"
+                )
+
+    for path in sorted(lib.rglob("*.dart")):
+        relative = path.relative_to(root).as_posix()
+        raw = read_text(path)
+        code = strip_dart_comments_and_strings(raw)
+        # Rule 11: one owner of the platform haptics.
+        if relative != PRESS_HAPTICS_OWNER and re.search(
+            r"\bHapticFeedback\.", code
+        ):
+            errors.append(
+                f"{relative} calls HapticFeedback directly; play a LoopHaptics "
+                "touch instead (decision 0130)"
+            )
+        # Rule 14: one transient message, LoopToast.
+        for pattern, name in (
+            (r"\bshowSnackBar\s*\(", "showSnackBar"),
+            (r"\bScaffoldMessenger\b", "ScaffoldMessenger"),
+            (r"(?<![A-Za-z0-9_])SnackBar\s*\(", "SnackBar"),
+        ):
+            if re.search(pattern, code):
+                errors.append(
+                    f"{relative} uses {name}; LOOP has one transient message, "
+                    "LoopToast (decision 0130)"
+                )
+        # One copy path: haptic, and no second confirmation on Android 13+.
+        if relative != COPY_OWNER and re.search(r"\bClipboard\.setData\s*\(", code):
+            errors.append(
+                f"{relative} writes the clipboard directly; use LoopCopy.text "
+                "(decision 0130)"
+            )
+        # Rule 10: a tappable region shows that it was pressed.
+        if relative == PRESSABLE_OWNER:
+            continue
+        bare = bare_tap_gesture_detectors(raw)
+        allowed = PRESS_FEEDBACK_DEBT.get(relative, 0)
+        if len(bare) > allowed:
+            errors.append(
+                f"{relative}:{bare[-1]} has a GestureDetector(onTap:) with no "
+                "pressed state; use LoopPressable or an InkWell (decision 0130, "
+                f"{len(bare)} found, {allowed} allowed)"
+            )
+
+    # Rule 9: shared controls are measured against the tap target guidelines.
+    test_path = root / PRESS_HAPTICS_TEST_PATH
+    if not test_path.is_file():
+        errors.append(f"missing {PRESS_HAPTICS_TEST_PATH} (decision 0130)")
+    else:
+        text = strip_dart_comments(read_text(test_path))
+        for fragment in (
+            "meetsGuideline(loopAndroidTapTargetGuideline)",
+            "meetsGuideline(iOSTapTargetGuideline)",
+            "meetsGuideline(labeledTapTargetGuideline)",
+        ):
+            if fragment not in text:
+                errors.append(
+                    f"{PRESS_HAPTICS_TEST_PATH} must assert `{fragment}` "
+                    "(decision 0130)"
+                )
+    errors.extend(check_behavior_test_evidence(root, PRESS_HAPTICS_TEST_MARKERS))
+    return errors
+
+
 def validate(root: Path = ROOT) -> list[str]:
     errors = check_required_files(root)
     profile, profile_errors = load_profile(root)
@@ -14712,6 +14930,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_records(root))
     errors.extend(check_launch_icon_contract(root))
     errors.extend(check_topbar_action_glyph_contract(root))
+    errors.extend(check_press_haptics_contract(root))
     errors.extend(check_money_forms_native_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
@@ -14741,6 +14960,7 @@ def main() -> int:
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
         "plate-free launch icon, glyph-only top-bar actions, "
+        "one haptics owner, pressed states, Chinese system controls, one toast, "
         "native money forms with one sheet surface and no hero on tool pages, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "

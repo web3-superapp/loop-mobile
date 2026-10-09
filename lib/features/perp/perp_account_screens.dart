@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/perp/perp_widgets.dart';
 import 'package:loop_mobile/features/perp/private/perp_private_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// D8 — Hyperliquid margin account projection.
 class PerpAccountScreen extends ConsumerWidget {
@@ -686,8 +687,7 @@ class _PerpAccountLiveState extends ConsumerState<_PerpAccountLive>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    LoopToast.show(context, message: message);
   }
 }
 

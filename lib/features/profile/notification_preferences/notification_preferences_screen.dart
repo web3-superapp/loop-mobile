@@ -82,11 +82,21 @@ class _NotificationPreferencesScreenState
   Widget _pushDeviceNotice() {
     return ValueListenableBuilder<LoopPushRegistrationDiagnostics>(
       valueListenable: ref.watch(loopPushRegistrationDiagnosticsProvider),
-      builder: (context, diagnostics, _) => _pushDeviceCopy(diagnostics.gate),
+      builder: (context, diagnostics, _) => _pushDeviceCopy(
+        diagnostics.gate,
+        onOptIn: () => unawaited(
+          ref
+              .read(loopPushRegistrationCoordinatorProvider)
+              .requestPermissionFromOwner(),
+        ),
+      ),
     );
   }
 
-  static Widget _pushDeviceCopy(LoopPushRegistrationGate gate) {
+  static Widget _pushDeviceCopy(
+    LoopPushRegistrationGate gate, {
+    required VoidCallback onOptIn,
+  }) {
     const key = ValueKey<String>('notification-preferences-push-device');
     switch (gate) {
       // Nothing has been attempted yet in this run, which is a moment rather
@@ -114,7 +124,23 @@ class _NotificationPreferencesScreenState
         return const LoopNotice(
           key: key,
           title: '还没有向这台设备请求通知权限',
-          body: '进入社区后会请求一次。',
+          body: '账号进入 LOOP 之后，可以在这里开启。',
+        );
+      // Decision 0130 (audit 2026-10-09 M15): LOOP explains first and the
+      // owner asks; the system dialog only follows the press.
+      case LoopPushRegistrationGate.awaitingOptIn:
+        return LoopNotice(
+          key: const ValueKey<String>('notification-preferences-push-opt-in'),
+          title: '开启推送通知',
+          body: '新消息、价格提醒和安全事件会推送到这台设备。点开启后，系统会询问一次。',
+          trailing: LoopButton(
+            key: const ValueKey<String>(
+              'notification-preferences-push-opt-in-button',
+            ),
+            label: '开启',
+            primary: true,
+            onPressed: onOptIn,
+          ),
         );
       case LoopPushRegistrationGate.noPlatform:
       case LoopPushRegistrationGate.tokenSourceDisabled:

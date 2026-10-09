@@ -879,7 +879,34 @@ void main() {
       );
 
       expect(find.textContaining('还没有向这台设备请求通知权限'), findsOneWidget);
-      expect(find.textContaining('进入社区后会请求一次。'), findsOneWidget);
+      expect(find.textContaining('账号进入 LOOP 之后，可以在这里开启。'), findsOneWidget);
+    });
+
+    testWidgets('an account in Community is offered the opt-in card first', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+        pushDiagnostics: _pushDiagnostics(
+          LoopPushRegistrationGate.awaitingOptIn,
+        ),
+      );
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('notification-preferences-push-opt-in'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('开启推送通知'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('notification-preferences-push-opt-in-button'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a refused permission names the one step that changes it', (

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
@@ -45,6 +44,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 
 // ---------------------------------------------------------------------------
 // Shared identity presentation
@@ -744,9 +744,7 @@ class _CopyInviteCodeButton extends StatelessWidget {
       icon: 'copy',
       label: '复制邀请码',
       onPressed: () async {
-        await Clipboard.setData(ClipboardData(text: code));
-        if (!context.mounted) return;
-        LoopToast.show(context, message: '邀请码已复制', kind: LoopToastKind.ok);
+        await LoopCopy.text(context, code, message: '邀请码已复制');
       },
     );
   }
