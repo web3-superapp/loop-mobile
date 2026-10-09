@@ -277,3 +277,41 @@ the flash returns. The number is injectable precisely so a device run can
 retune it. Confirming the native ordering and the correction latency on both
 platforms needs a device run with the network cut at cold start; until then the
 acceptance record should keep 冷启动网络抖动 as device-unverified.
+
+## Revision 2026-10-09 (decision 0124)
+
+The text above is unchanged; this section records where decision 0124 now
+departs from it.
+
+- **§1 table, row "Privy answered `Unauthenticated`".** It still means
+  `signedOut` — except when the session is still undecided (`restoring`,
+  `restoreUnavailable`) and the device's last transport reading
+  (`loopDeviceTransportProvider`, `connectivity_plus` `checkConnectivity`)
+  reported **no transport at all**. That answer now leads to a fourth
+  undecided mode, `awaitingNetwork`: the launch frame with
+  「网络不可用，正在等待连接」 and an optional 「换个账号登录」. A reading of
+  "has a transport" or an unreadable radio (`null`) leaves the row exactly as
+  written.
+- **"Alternatives rejected", first bullet** ("Treat `Unauthenticated` as
+  undecided when the radio reports no transport"). The owner has overruled
+  it: the 2026-10-09 device evidence (S121c 06a / 06b) shows Privy answering
+  `Unauthenticated` offline and `Authenticated` once the network returned, so
+  the offline answer is not Privy deciding. The radio reading is still never
+  evidence that a service is reachable; it is only used to *withhold* a
+  sign-out, never to cause one.
+- **§5.** Unchanged. The 4000 ms cold-start grace is still offered once and
+  still holds the first answer; the transport is read when that hold starts.
+  `awaitingNetwork` neither reads nor spends that grace: it leaves on the
+  network-recovery signal (`recheckAfterNetwork`, decision 0123) and only when
+  the radio reports a transport. The first `Unauthenticated` heard after the
+  network returns is held for the same injectable duration once per network
+  episode, then Privy is asked again and its answer taken.
+- **Sign-out semantics after login are unchanged.** `authenticated`,
+  `authenticatedUnverified`, `preview` and `signingOut` take a sign-out answer
+  immediately whatever the radio says, so a credential revoked mid-session
+  still reaches the form at once.
+- **"Open risk".** The case it describes (Privy reporting `Unauthenticated`
+  rather than throwing when it cannot reach its backend) is now covered when
+  the device reports no transport. It remains open when the device has a
+  transport but Privy's backend is unreachable (captive portal, DNS failure):
+  that answer still reaches the form after §5's window.

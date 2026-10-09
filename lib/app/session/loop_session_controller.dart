@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 enum LoopSessionMode {
@@ -12,6 +13,13 @@ enum LoopSessionMode {
   /// The session is undecided: LOOP has no sign-out answer and must never
   /// show the credential form from here (decision 0064).
   restoreUnavailable,
+
+  /// A cold start heard `Unauthenticated` from Privy while the device reported
+  /// no transport at all. With no network Privy cannot have validated
+  /// anything, so the answer is not taken as a sign-out: the session waits for
+  /// the network and asks Privy again (decision 0124). Undecided, like the
+  /// two states above.
+  awaitingNetwork,
   signingOut,
   signedOut,
   preview,
@@ -37,6 +45,9 @@ class LoopSessionState {
         errorMessage: errorMessage,
       );
 
+  const LoopSessionState.awaitingNetwork()
+    : this(mode: LoopSessionMode.awaitingNetwork);
+
   const LoopSessionState.signingOut() : this(mode: LoopSessionMode.signingOut);
 
   const LoopSessionState.signedOut({String? errorMessage})
@@ -56,11 +67,16 @@ class LoopSessionState {
 
   bool get isPreview => mode == LoopSessionMode.preview;
 
-  /// The session is still undecided: Privy has not answered yet, or the
-  /// answer could not be obtained. Neither variant is a sign-out.
+  /// The session is still undecided: Privy has not answered yet, the answer
+  /// could not be obtained, or it was given with no network to back it
+  /// (decision 0124). None of these is a sign-out.
   bool get isRestoring =>
       mode == LoopSessionMode.restoring ||
-      mode == LoopSessionMode.restoreUnavailable;
+      mode == LoopSessionMode.restoreUnavailable ||
+      mode == LoopSessionMode.awaitingNetwork;
+
+  /// The undecided state that waits for the device to report a network.
+  bool get isAwaitingNetwork => mode == LoopSessionMode.awaitingNetwork;
 
   /// The undecided state that owes the owner an explanation and a retry.
   bool get isRestoreUnavailable => mode == LoopSessionMode.restoreUnavailable;
@@ -130,6 +146,19 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   /// answer is taken at face value again.
   var _unauthenticatedGraceSpent = false;
 
+  /// The device transport as last read (decision 0124): `false` only when the
+  /// radio reported no transport at all; `null` when it was never read or
+  /// could not be answered, which changes nothing.
+  bool? _transport;
+  Future<bool?>? _transportProbe;
+
+  /// After the network returns, Privy's first `Unauthenticated` may still be
+  /// the answer it formed offline: its own network monitor re-validates the
+  /// stored session on its own schedule. That first answer is held once per
+  /// network episode before it is allowed to reach the form.
+  Timer? _networkSettle;
+  var _networkSettleSpent = false;
+
   @override
   LoopSessionState build() {
     final gateway = ref.watch(privyAuthGatewayProvider);
@@ -139,6 +168,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // session reaches any other state - including the undecided third one -
     // it is retired, so no timer outlives the wait it was measuring.
     listenSelf((previous, next) {
+      if (next.mode != LoopSessionMode.awaitingNetwork) _cancelNetworkSettle();
       if (next.mode == LoopSessionMode.restoring) return;
       _cancelRestoreDeadline();
       _cancelUnauthenticatedGrace();
@@ -147,6 +177,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
       _subscription?.cancel();
       _cancelRestoreDeadline();
       _cancelUnauthenticatedGrace();
+      _cancelNetworkSettle();
     });
     Future<void>.microtask(() => _startRestore(gateway));
     return const LoopSessionState.restoring();
@@ -162,6 +193,9 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // A retry is not a cold start. The owner pressed 重试 and is owed Privy's
     // answer as it stands, so the grace window is not offered a second time.
     _unauthenticatedGraceSpent = true;
+    // The retry takes Privy's answer as it stands, so the radio is read now:
+    // an `Unauthenticated` heard with no transport still waits (0124).
+    unawaited(_probeTransport());
     state = const LoopSessionState.restoring();
     return _startRestore(ref.read(privyAuthGatewayProvider));
   }
@@ -181,11 +215,30 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   /// and an automatic [retryRestore] spends the cold-start grace, so a
   /// premature `Unauthenticated` from Privy would sign the owner out — an
   /// emulator run reproduced exactly that false sign-out (decision 0123).
+  ///
+  /// [LoopSessionMode.awaitingNetwork] is asked again here (decision 0124).
+  /// It is gated on the device transport, not on the cold-start grace, which
+  /// it neither reads nor spends: while the radio reports no transport
+  /// nothing is asked; once it reports one, Privy's `authenticated` enters the
+  /// product and its `unauthenticated` — held once, see [_networkSettle] —
+  /// reaches the credential form.
   Future<void> recheckAfterNetwork() async {
-    if (state.mode != LoopSessionMode.authenticatedUnverified) return;
+    final mode = state.mode;
+    if (mode != LoopSessionMode.authenticatedUnverified &&
+        mode != LoopSessionMode.awaitingNetwork) {
+      return;
+    }
+    // The held answer will ask again by itself when its window closes; an
+    // earlier recovery tick must not cut that window short.
+    if (mode == LoopSessionMode.awaitingNetwork && _networkSettle != null) {
+      return;
+    }
     final active = _recheckOperation;
     if (active != null) return active;
-    final operation = _recheck(ref.read(privyAuthGatewayProvider));
+    final gateway = ref.read(privyAuthGatewayProvider);
+    final operation = mode == LoopSessionMode.awaitingNetwork
+        ? _recheckAwaitingNetwork(gateway)
+        : _recheck(gateway);
     _recheckOperation = operation;
     try {
       await operation;
@@ -210,6 +263,112 @@ class LoopSessionController extends Notifier<LoopSessionState> {
       return;
     }
     _receiveSnapshot(snapshot);
+  }
+
+  Future<void> _recheckAwaitingNetwork(PrivyAuthGateway gateway) async {
+    final transport = await _probeTransport();
+    if (!ref.mounted || !state.isAwaitingNetwork) return;
+    // Still no transport: there is nothing Privy could have checked.
+    if (transport == false) return;
+    PrivySessionSnapshot snapshot;
+    String? message;
+    try {
+      snapshot = await gateway.restoreSession();
+    } on PrivyGatewayException catch (error) {
+      if (error.kind != PrivyFailureKind.authentication) return;
+      snapshot = const PrivySessionSnapshot(PrivySessionKind.unauthenticated);
+      message = error.userMessage;
+    } catch (_) {
+      return;
+    }
+    if (!ref.mounted || !state.isAwaitingNetwork) return;
+    switch (snapshot.kind) {
+      case PrivySessionKind.notReady:
+        return;
+      case PrivySessionKind.authenticated:
+      case PrivySessionKind.authenticatedUnverified:
+        _receiveSnapshot(snapshot);
+        return;
+      case PrivySessionKind.unauthenticated:
+        if (!_networkSettleSpent) {
+          _networkSettleSpent = true;
+          _networkSettle = Timer(
+            ref.read(loopSessionUnauthenticatedGraceProvider),
+            _networkSettleExpired,
+          );
+          return;
+        }
+        state = LoopSessionState.signedOut(errorMessage: message);
+    }
+  }
+
+  void _networkSettleExpired() {
+    _networkSettle = null;
+    if (!ref.mounted || !state.isAwaitingNetwork) return;
+    unawaited(recheckAfterNetwork());
+  }
+
+  void _cancelNetworkSettle() {
+    _networkSettle?.cancel();
+    _networkSettle = null;
+  }
+
+  /// Reads the device transport once, single-flight. A reading of "no
+  /// transport" opens a new network episode, so the next `Unauthenticated`
+  /// heard after the network returns is held again.
+  Future<bool?> _probeTransport() {
+    final active = _transportProbe;
+    if (active != null) return active;
+    final LoopDeviceTransport reader;
+    try {
+      reader = ref.read(loopDeviceTransportProvider);
+    } catch (_) {
+      return Future<bool?>.value();
+    }
+    late final Future<bool?> probe;
+    probe = () async {
+      bool? reading;
+      try {
+        reading = await reader.hasTransport();
+      } catch (_) {
+        reading = null;
+      }
+      if (identical(_transportProbe, probe)) _transportProbe = null;
+      if (ref.mounted) {
+        _transport = reading;
+        if (reading == false) _networkSettleSpent = false;
+      }
+      return reading;
+    }();
+    _transportProbe = probe;
+    return probe;
+  }
+
+  /// Leaves the network wait for the credential form, at the owner's request.
+  ///
+  /// Nothing is revoked: Privy is not asked to log out (it may be unreachable)
+  /// and no barrier is raised, so if Privy later confirms the stored session
+  /// the owner is routed into the product exactly as from the form.
+  void useAnotherAccount() {
+    if (!state.isAwaitingNetwork) return;
+    state = const LoopSessionState.signedOut();
+  }
+
+  /// Publishes a Privy sign-out answer.
+  ///
+  /// Decision 0124: while the session is still undecided — the cold start, its
+  /// undecided frame, a 重试 — an answer heard with the device reporting no
+  /// transport is not a sign-out, and the session waits for the network
+  /// instead. With a transport, or with no reading at all, the answer is
+  /// published exactly as before.
+  void _publishSignOut({String? errorMessage}) {
+    if (state.isRestoring && _transport == false) {
+      if (!state.isAwaitingNetwork) {
+        state = const LoopSessionState.awaitingNetwork();
+      }
+      return;
+    }
+    state = LoopSessionState.signedOut(errorMessage: errorMessage);
   }
 
   Future<void> _startRestore(PrivyAuthGateway gateway) {
@@ -280,6 +439,8 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     if (_unauthenticatedGraceSpent) return false;
     _unauthenticatedGraceSpent = true;
     _heldSignOutMessage = errorMessage;
+    // The window is also the time the radio has to answer (decision 0124).
+    unawaited(_probeTransport());
     _unauthenticatedGrace = Timer(
       ref.read(loopSessionUnauthenticatedGraceProvider),
       _unauthenticatedGraceExpired,
@@ -302,7 +463,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // case belongs to the 12-second deadline and its branded frame, never to
     // the credential form.
     if (_restoreOperation != null) return;
-    state = LoopSessionState.signedOut(errorMessage: message);
+    _publishSignOut(errorMessage: message);
   }
 
   Future<void> _restore(PrivyAuthGateway gateway, int generation) async {
@@ -335,7 +496,10 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // one is already working on; unlike a snapshot, it carries no new fact.
     if (!ref.mounted ||
         generation != _restoreGeneration ||
-        !state.isRestoring) {
+        !state.isRestoring ||
+        // The network wait asks Privy itself once the radio is back; a late
+        // failure from the cold start adds nothing to that.
+        state.isAwaitingNetwork) {
       return;
     }
     // Only an explicit authentication answer signs the owner out. Network and
@@ -349,7 +513,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // stream can publish, only surfaced as an exception. It waits out the same
     // window before it is allowed to become the credential form.
     if (_holdPrematureSignOut(errorMessage: message)) return;
-    state = LoopSessionState.signedOut(errorMessage: message);
+    _publishSignOut(errorMessage: message);
   }
 
   void _receiveSnapshot(PrivySessionSnapshot snapshot) {
@@ -361,15 +525,21 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // Decision 0064 §5: a cold start may be told "unauthenticated" before Privy
     // has finished restoring. Hold that answer for the grace window; an
     // `authenticated` arriving inside it cancels the wait and wins.
-    if (snapshot.kind == PrivySessionKind.unauthenticated &&
-        _holdPrematureSignOut()) {
+    if (snapshot.kind == PrivySessionKind.unauthenticated) {
+      // Decision 0124: the network wait is settled by its own recheck once
+      // the radio is back, never by a stream event heard meanwhile.
+      if (state.isAwaitingNetwork) return;
+      if (_holdPrematureSignOut()) return;
+      _publishSignOut();
       return;
     }
     state = switch (snapshot.kind) {
       // `notReady` is Privy still deciding; it must not drop the explanation
       // and the retry the undecided state is already showing.
       PrivySessionKind.notReady =>
-        state.isRestoreUnavailable ? state : const LoopSessionState.restoring(),
+        state.isRestoreUnavailable || state.isAwaitingNetwork
+            ? state
+            : const LoopSessionState.restoring(),
       PrivySessionKind.unauthenticated => const LoopSessionState.signedOut(),
       PrivySessionKind.authenticatedUnverified => const LoopSessionState(
         mode: LoopSessionMode.authenticatedUnverified,
