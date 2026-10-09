@@ -135,7 +135,7 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
     if (match == null) {
       throw const PrivySigningException('privy_wallet_mismatch');
     }
-    // privy_flutter 0.10.1 selects no chain: `EmbeddedEthereumWalletProvider`
+    // privy_flutter 0.11.0 selects no chain: `EmbeddedEthereumWalletProvider`
     // has `request` and nothing else. The native SDKs broadcast through the
     // Privy wallet API with `caip2 = eip155:<transaction.chainId>`, so the
     // payload's own `chainId` — already proven equal to the intent's — is

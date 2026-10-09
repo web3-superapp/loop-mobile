@@ -16,7 +16,7 @@ Review date: 2026-09-03. Versions are locked by `pubspec.yaml` and `pubspec.lock
 | flutter_lints | 6.0.0 | BSD-3-Clause-style Flutter license | Development lint rules |
 | flutter_riverpod | 3.4.2 | MIT | State management |
 | go_router | 17.5.0 | BSD-3-Clause-style Flutter license | Navigation |
-| privy_flutter | 0.10.1 | MIT | Identity and embedded wallets |
+| privy_flutter | 0.11.0 | MIT | Identity and embedded wallets |
 | reown_appkit | 1.8.4 | Reown Community License Agreement | Ephemeral external EVM connection and `personal_sign` transport for Privy SIWE credentials only |
 | shared_preferences | 2.5.5 | BSD-3-Clause | Non-sensitive device-local display preference |
 | stream_chat_flutter | 10.3.0 | Stream Source Code License Agreement | Chat SDK and UI |

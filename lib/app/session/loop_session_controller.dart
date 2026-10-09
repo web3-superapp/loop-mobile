@@ -113,7 +113,7 @@ final loopSessionRestoreWindowProvider = Provider<Duration>(
 /// is allowed to reach the credential form. Overridable so tests can shorten
 /// it.
 ///
-/// privy_flutter 0.10.1 restores a session in two steps, and the first step is
+/// privy_flutter 0.11.0 restores a session in two steps, and the first step is
 /// not the answer: `AuthStateManager.authStateStream` is a
 /// `BehaviorSubject.seeded(NotReady())` fed by the native EventChannel, and the
 /// native side may publish `Unauthenticated` before it has finished reading the

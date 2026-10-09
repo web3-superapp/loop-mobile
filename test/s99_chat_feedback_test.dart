@@ -280,9 +280,20 @@ void main() {
           );
           expect(strip, findsOneWidget);
           expect(tester.getSize(strip).height, greaterThan(0));
-          expect(list.top, body.top);
+          // Decision 0134: while the room reports unread messages the
+          // unread pill has its own strip at the top of the body, and the
+          // list starts below it instead of under the pill.
+          final band = find.byKey(
+            const ValueKey<String>('loop-unread-pill-band'),
+          );
+          final bandHeight = unread ? tester.getSize(band).height : 0.0;
+          if (!unread) expect(band, findsNothing);
+          expect(list.top, closeTo(body.top + bandHeight, 0.5));
           expect(list.bottom, composer.top);
-          expect(list.height, closeTo(body.height - composer.height, 0.5));
+          expect(
+            list.height,
+            closeTo(body.height - bandHeight - composer.height, 0.5),
+          );
           expect(composer.bottom, closeTo(844 - 300, 0.5));
 
           // The newest message is visible and directly above the strip.

@@ -327,7 +327,7 @@ void main() {
           transaction: serverTransaction(chainId: 56, to: usd1),
         );
 
-        // No chain-selection call exists in privy_flutter 0.10.1, and none is
+        // No chain-selection call exists in privy_flutter 0.11.0, and none is
         // made: the only traffic is the two broadcasts.
         expect(calls.map((call) => call.method), <String>[
           'ethSendRpcRequest',

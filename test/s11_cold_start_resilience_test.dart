@@ -719,7 +719,7 @@ void main() {
     });
   });
 
-  group('S11 · privy_flutter 0.10.1 failure mapping', () {
+  group('S11 · privy_flutter 0.11.0 failure mapping', () {
     test('transport messages map to network', () {
       for (final message in const <String>[
         'Error in getAuthState: The Internet connection appears to be offline.',
