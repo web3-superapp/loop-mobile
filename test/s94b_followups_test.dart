@@ -474,12 +474,26 @@ void main() {
       },
     );
 
-    test('the other steps keep the 400 ms bound', () async {
+    test('locating the directory gets its own 2 s bound (S123f)', () async {
+      // A 600 ms platform-channel reply used to lose the whole run's
+      // snapshots; it now sits inside the locate bound.
       final root = await Directory.systemTemp.createTemp('s94b-locate');
       addTearDown(() => root.delete(recursive: true));
       final store = await FileLoopSnapshotStore.openPersistent(
         locate: () => Future<Directory>.delayed(
           const Duration(milliseconds: 600),
+          () => root,
+        ),
+      );
+      expect(store, isA<FileLoopSnapshotStore>());
+    });
+
+    test('the other steps keep the 400 ms bound', () async {
+      final root = await Directory.systemTemp.createTemp('s94b-locate');
+      addTearDown(() => root.delete(recursive: true));
+      final store = await FileLoopSnapshotStore.openPersistent(
+        locate: () => Future<Directory>.delayed(
+          const Duration(milliseconds: 2500),
           () => root,
         ),
       );

@@ -272,15 +272,23 @@ final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
   /// gets [createTimeout] (decision 0101, S94b): on a first launch it is the
   /// one step that really touches the file system, and it is the step that
   /// decides whether the store persists at all.
+  ///
+  /// Locating the directory is a platform-channel round trip, answered by the
+  /// platform thread that is also registering plugins during a cold start; on
+  /// a loaded device that reply measured over 400 ms (S123f emulator run,
+  /// 2026-10-10) and the whole run then lost every snapshot. It gets its own
+  /// [locateTimeout]: a later first frame costs less than a cold start with
+  /// nothing cached.
   static Future<LoopSnapshotStore> openPersistent({
     Future<Directory> Function() locate = getApplicationSupportDirectory,
     Future<void> Function(Directory directory) createDirectory =
         _createDirectory,
     Duration timeout = const Duration(milliseconds: 400),
     Duration createTimeout = const Duration(milliseconds: 1000),
+    Duration locateTimeout = const Duration(milliseconds: 2000),
   }) async {
     try {
-      final directory = await locate().timeout(timeout);
+      final directory = await locate().timeout(locateTimeout);
       await createDirectory(directory).timeout(createTimeout);
       final probe = File(
         '${directory.path}${Platform.pathSeparator}$fileName.probe',

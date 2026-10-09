@@ -84,8 +84,27 @@ void main() {
         const Duration(seconds: 5),
         () => Directory.systemTemp,
       ),
-      timeout: const Duration(milliseconds: 20),
+      locateTimeout: const Duration(milliseconds: 20),
     );
     expect(store, isNot(isA<FileLoopSnapshotStore>()));
   });
+
+  test(
+    'a slow locator inside its own bound still opens the file store',
+    () async {
+      final support = Directory.systemTemp.createTempSync('loop-s88b-slow-');
+      addTearDown(() => support.deleteSync(recursive: true));
+      final store = await FileLoopSnapshotStore.openPersistent(
+        // Slower than the per-step bound, faster than the locate bound: the
+        // platform channel answers late on a loaded cold start (S123f).
+        locate: () => Future<Directory>.delayed(
+          const Duration(milliseconds: 60),
+          () => support,
+        ),
+        timeout: const Duration(milliseconds: 20),
+        locateTimeout: const Duration(milliseconds: 500),
+      );
+      expect(store, isA<FileLoopSnapshotStore>());
+    },
+  );
 }
