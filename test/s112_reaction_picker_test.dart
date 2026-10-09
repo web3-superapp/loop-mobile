@@ -34,6 +34,30 @@ class _Connected implements LoopStreamConnection {
 class _LocalClient extends StreamChatClient {
   _LocalClient() : super('key', logLevel: Level.OFF);
 
+  /// Reactions this client was asked to add or withdraw, as `id:type`.
+  final List<String> sent = <String>[];
+  final List<String> deleted = <String>[];
+
+  @override
+  Future<SendReactionResponse> sendReaction(
+    String messageId,
+    Reaction reaction, {
+    bool skipPush = false,
+    bool enforceUnique = false,
+  }) async {
+    sent.add('$messageId:${reaction.type}');
+    return SendReactionResponse();
+  }
+
+  @override
+  Future<EmptyResponse> deleteReaction(
+    String messageId,
+    String reactionType,
+  ) async {
+    deleted.add('$messageId:$reactionType');
+    return EmptyResponse();
+  }
+
   @override
   Future<EmptyResponse> markChannelRead(
     String channelId,
@@ -359,6 +383,73 @@ void main() {
         find.descendant(of: capsule, matching: find.text('1')),
       );
       expect(count.style?.fontSize, 12);
+      await room.dispose(tester);
+    });
+
+    testWidgets('a tap on the own capsule withdraws the reaction', (
+      tester,
+    ) async {
+      final room = _Group(reacted: true, ownReaction: 'like');
+      await room.pump(tester, config: loopStreamChatConfiguration);
+
+      final target = find.byKey(
+        const ValueKey<String>('loop-reaction-capsule-target-like'),
+      );
+      // 44 to touch, 24 to see.
+      expect(tester.getSize(target).height, LoopReactionCapsule.targetHeight);
+      final pill = find
+          .descendant(
+            of: find.byKey(
+              const ValueKey<String>('loop-reaction-capsule-like'),
+            ),
+            matching: find.byType(Container),
+          )
+          .first;
+      expect(tester.getSize(pill).height, LoopReactionCapsule.pillHeight);
+
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      expect(room.client.deleted, <String>['m2:like']);
+      expect(room.client.sent, isEmpty);
+      expect(find.byType(ReactionDetailSheet), findsNothing);
+      await room.dispose(tester);
+    });
+
+    testWidgets('a tap on another member\'s capsule adds the same reaction', (
+      tester,
+    ) async {
+      final room = _Group(reacted: true, reactedOn: 1);
+      await room.pump(tester, config: loopStreamChatConfiguration);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-reaction-capsule-target-like')),
+      );
+      await tester.pumpAndSettle();
+      expect(room.client.sent, <String>['m1:like']);
+      expect(room.client.deleted, isEmpty);
+      // The channel's own state now carries it: the capsule counts two and
+      // lights up as the reader's.
+      final capsule = find.byKey(
+        const ValueKey<String>('loop-reaction-capsule-like'),
+      );
+      expect(
+        find.descendant(of: capsule, matching: find.text('2')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<LoopIcon>(
+              find.descendant(
+                of: capsule,
+                matching: find.byKey(
+                  const ValueKey<String>('loop-reaction-glyph-like'),
+                ),
+              ),
+            )
+            .color,
+        LoopColors.lime,
+      );
+      expect(find.byType(ReactionDetailSheet), findsNothing);
       await room.dispose(tester);
     });
 

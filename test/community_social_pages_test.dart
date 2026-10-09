@@ -250,7 +250,7 @@ void main() {
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('开发基线'), findsOneWidget);
+      expect(find.text(miningBaselineLabel), findsOneWidget);
       // A member row is one person across every asset: no community weight
       // and no head count could explain it, so neither is on the row.
       expect(
@@ -293,7 +293,7 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('230.5'), findsOneWidget);
-      expect(find.text('开发基线'), findsNothing);
+      expect(find.text(miningBaselineLabel), findsNothing);
     });
 
     testWidgets('an unavailable reading is still never a zero', (tester) async {

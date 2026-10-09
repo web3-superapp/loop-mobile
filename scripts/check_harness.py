@@ -10106,7 +10106,10 @@ COPY_INTERNAL_VOCABULARY = (
     (re.compile(r"口径|观测|投影|聚合"), "internal vocabulary"),
     # Decision 0121 (device report 2026-10-09 · 4): a development build's
     # honesty is told in the reader's words or kept in a source line's ⓘ.
-    (re.compile(r"仅开发环境|还没有接入|还开不了"), "development-build wording"),
+    (
+        re.compile(r"仅开发环境|还没有接入|还开不了|开发基线|开发验证"),
+        "development-build wording",
+    ),
 )
 
 # Diagnostics are written for engineers, never rendered on a surface.

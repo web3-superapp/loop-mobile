@@ -334,10 +334,7 @@ class LoopStreamMessageRow extends StatelessWidget {
   Widget build(BuildContext context) => LoopOwnReactionScope(
     // Decision 0121: the capsules under the bubble light the reader's own
     // reaction, and Stream's reactions props do not carry the message.
-    types: <String>{
-      for (final reaction in message.ownReactions ?? const <Reaction>[])
-        reaction.type,
-    },
+    message: message,
     child: Builder(builder: _buildRow),
   );
 

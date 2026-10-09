@@ -82,6 +82,18 @@ S121a-mobile 实施。基线 `integration/v2` c5de8aa。不新增依赖、`pubsp
   共享 `LoopRecordRow` / `LoopRecordGroup` 未改。
 - 交易面板 25 / 50 / 75 / 100% 改为一行四个描边小胶囊 `_FillChip`（32 高、44 触控、12 tabular、不留选中态）。
 
+### 7. 主代理裁定（2026-10-09 追加）
+
+- **挖矿公式基线**：`miningBaselineLabel` 由「开发基线」改为「当前算力公式」，所有引用处（挖矿各页、社区 / 钱包 /
+  行情挖矿钩子）随之变化；挖矿首页英雄区与「不做本地估算」卡不再有基线专用句；公式行副标「当前算力公式」、右侧
+  「已生效」；规则页的基线横幅改为来源行（`mining-rules-baseline-notice`）。基线含义 `miningBaselineDetail`
+  进来源行 ⓘ：`miningProvenanceDetail(snapshot, formula:)` 与 `MiningSnapshotProvenanceLine(formula:)`；没有快照
+  但公式是基线时，来源行写「当前算力公式 · 来源 LOOP 挖矿规则」。「开发基线」「开发验证」加入禁词。
+- **反应胶囊可点**：点自己的反应撤回、点别人的反应以本人身份加同一反应（`loopToggleReaction`，与 Stream 自己的
+  `_selectReaction` 同语义，遵守 `enforceUniqueReactions` 与 `send-reaction` 能力）。私聊行拿到的是显示副本，所以
+  按 id 从 `channel.state.messages` 取频道自己的那条再写，避免把显示副本写回状态。胶囊触控 44、视觉 24 不变：
+  列间距 -6、换行间距 -14 把多出的 10 收回，胶囊仍在气泡下 4。Stream 的详情弹层仍关着。
+
 ## 偏离表
 
 | 设计 | 实际 | 原因 |
@@ -90,10 +102,9 @@ S121a-mobile 实施。基线 `integration/v2` c5de8aa。不新增依赖、`pubsp
 | §3.5 图表空态在 `lib/features/market/token_screen.dart` | 「成交还太少，画不出走势」在 `lib/features/meme/meme_token_screen.dart`；`token_screen.dart` 的「这个区间没有成交 / 空桶不会补 0」未动（`s8_five_state_pages_test` 锁定，且不在本单文案清单） | 文件位置事实 |
 | 「内容并入该页 LoopProvenanceLine 的 ⓘ 详情」 | 挖矿四页原本没有来源行，新增 `MiningSnapshotProvenanceLine`（来源 + 观察时间 + ⓘ）放在原横幅位置 | 无处可并 |
 | §2 文件边界不含 `intel_rank_board.dart` | 删除了其中 `MiningDemoHoldingsNotice(...)` 一行（组件已删，不删编译不过）；ⓘ 详情接入留 S121b | 编译 |
-| 反应胶囊点按 | 胶囊不可点（标签） | LOOP 消息项本就屏蔽详情弹层；24px 不满足 44px 触控 |
 | 「大额交易二次验证 · 不可用」 | 副标「超过阈值时再验一次身份 · 即将推出」，右侧不再写「不可用」，A11 的「不可用」计数 3 → 2 | 按设计原文；harness 证据同步 |
 | 安全页卡片「去描边」只作用于本页 | 用私有 `_SecurityCard` / `_SecurityRow`，共享行组件不动 | `lib/widgets` 属 S121b 边界；全站行样式要统一时由 S121b / 主代理决定 |
-| 「开发基线 / 开发验证」 | 挖矿公式 baseline 的文案未改 | 不在本单禁词清单；需主代理裁定是否同样降级 |
+| 胶囊 44 触控区 | 触控区向上与气泡底边重叠 6px（仅胶囊宽度内） | 不加大气泡下方留白 |
 
 ## Consequences
 

@@ -224,7 +224,16 @@ enum MiningFormulaScope {
 /// The label a development-baseline figure always carries, wherever it is
 /// printed. The version string itself is a backend identifier and stays
 /// inside 详情.
-const String miningBaselineLabel = '开发基线';
+///
+/// Decision 0121 (coordinator ruling 2026-10-09): the reader is told which
+/// formula the figure comes from in their words; what "baseline" means is in
+/// the ⓘ of the page's source line ([miningBaselineDetail]).
+const String miningBaselineLabel = '当前算力公式';
+
+/// What a source line's ⓘ says about a baseline formula (decision 0121).
+const String miningBaselineDetail =
+    '当前算力公式是试运行版本：每个资产的权重都定为 1，当日产量是占位预算，奖励代币还没有确定。'
+    '算出来的数字不是收益，也不构成承诺。';
 
 /// The estimated daily output. The available branch carries the budget it was
 /// divided out of, the budget's own status and the version that declared it,

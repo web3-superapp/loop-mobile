@@ -45,10 +45,10 @@ class MiningFormulaBlock extends StatelessWidget {
           key: const ValueKey<String>('mining-formula-row'),
           title: '挖矿公式',
           subtitle: scope.isBaseline
-              ? '开发基线已生效，数字只用于开发验证。'
+              ? miningBaselineLabel
               : '已生效 · ${launchTimestampLabel(effectiveAt)}',
-          trailing: scope.isBaseline ? miningBaselineLabel : '已生效',
-          semanticLabel: scope.isBaseline ? '挖矿公式为开发基线' : '挖矿公式已生效',
+          trailing: '已生效',
+          semanticLabel: '挖矿公式已生效',
         ),
         '已生效的公式版本',
       ),
@@ -214,10 +214,21 @@ class MiningStaleNotice extends StatelessWidget {
 /// snapshot, and this answers `null` there.
 ///
 /// S121b's 情报算力榜 hands this to its own `LoopProvenanceLine.detail`.
-String? miningProvenanceDetail(MiningSnapshotRef? snapshot) =>
-    miningSnapshotIncludesDemonstrationHoldings(snapshot)
-    ? miningDemoHoldingsDetail
-    : null;
+///
+/// With [formula], a baseline formula adds [miningBaselineDetail] too
+/// (coordinator ruling 2026-10-09).
+String? miningProvenanceDetail(
+  MiningSnapshotRef? snapshot, {
+  MiningFormulaGate? formula,
+}) {
+  final lines = <String>[
+    if (formula case MiningFormulaEffective(:final scope) when scope.isBaseline)
+      miningBaselineDetail,
+    if (miningSnapshotIncludesDemonstrationHoldings(snapshot))
+      miningDemoHoldingsDetail,
+  ];
+  return lines.isEmpty ? null : lines.join('\n');
+}
 
 /// The sentence [miningProvenanceDetail] answers for a demonstration snapshot.
 const String miningDemoHoldingsDetail = '这次算力里含演示持仓：它们不在链上，没有人真的持有，数字只用来体验。';
@@ -230,22 +241,39 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
     required this.slug,
     required this.snapshot,
     super.key,
+    this.formula,
   });
 
   final String slug;
   final MiningSnapshotRef? snapshot;
 
+  /// The formula the figures were computed under, when the page has it.
+  final MiningFormulaGate? formula;
+
   @override
   Widget build(BuildContext context) {
     final source = snapshot;
-    if (source is! MiningSnapshotComputed) return const SizedBox.shrink();
+    final detail = miningProvenanceDetail(source, formula: formula);
+    if (source is! MiningSnapshotComputed) {
+      // No snapshot to date, but a baseline formula still has its ⓘ.
+      if (detail == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: LoopProvenanceLine(
+          key: ValueKey<String>('mining-provenance-$slug'),
+          prefix: miningBaselineLabel,
+          sources: const <String>['LOOP 挖矿规则'],
+          detail: detail,
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: LoopProvenanceLine(
         key: ValueKey<String>('mining-provenance-$slug'),
         sources: const <String>['LOOP 算力快照'],
         observedAt: source.computedAt,
-        detail: miningProvenanceDetail(source),
+        detail: detail,
       ),
     );
   }

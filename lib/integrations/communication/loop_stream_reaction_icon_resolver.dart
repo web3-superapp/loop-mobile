@@ -9,6 +9,10 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart'
         ReactionIconResolver,
         StreamChatConfiguration,
         StreamEmojiContent,
+        ChannelCapabilityCheck,
+        Message,
+        Reaction,
+        StreamChannel,
         StreamIntrinsicBoundedCrossAxis,
         StreamIntrinsicColumn,
         StreamMessageAlignment,
@@ -189,9 +193,9 @@ class LoopStreamReactionBar extends StatelessWidget {
 /// the device they read as misplaced (report 2026-10-09 · 7). LOOP's are
 /// laid out the same way in a group and in a direct message: the bubble,
 /// then one row of capsules starting at the bubble's own leading edge — the
-/// left edge of an incoming bubble and of an outgoing one alike. The
-/// capsules are labels; `onReactionPressed` is not wired, because LOOP's
-/// message items leave the detail sheet shut anyway.
+/// left edge of an incoming bubble and of an outgoing one alike. A tap on a
+/// capsule toggles the reaction through [loopToggleReaction];
+/// `onReactionPressed` stays unwired, so the detail sheet stays shut.
 Widget loopStreamReactionsBuilder(
   BuildContext context,
   StreamReactionsProps props,
@@ -206,10 +210,13 @@ class LoopStreamReactions extends StatelessWidget {
   Widget build(BuildContext context) {
     final child = props.child;
     if (props.items.isEmpty) return child ?? const SizedBox.shrink();
+    // Each capsule is a 44 target around a 24 pill; the run spacing and the
+    // column spacing take the 10 above and below back, so the pills sit
+    // 4 under the bubble and 6 apart as before.
     final strip = Wrap(
       key: const ValueKey<String>('loop-reaction-strip'),
       spacing: 6,
-      runSpacing: 6,
+      runSpacing: -14,
       children: <Widget>[
         for (final item in props.items) LoopReactionCapsule(item: item),
       ],
@@ -217,7 +224,7 @@ class LoopStreamReactions extends StatelessWidget {
     if (child == null) return strip;
     final alignment = StreamMessageLayout.messageAlignmentOf(context);
     return StreamIntrinsicColumn(
-      spacing: 4,
+      spacing: -6,
       crossAxisAlignment: switch (alignment) {
         StreamMessageAlignment.start => CrossAxisAlignment.start,
         StreamMessageAlignment.end => CrossAxisAlignment.end,
@@ -237,35 +244,85 @@ class LoopStreamReactions extends StatelessWidget {
 /// capsule can light the reader's own reaction (decision 0121). Outside a
 /// row nothing is lit.
 class LoopOwnReactionScope extends InheritedWidget {
-  const LoopOwnReactionScope({
-    required this.types,
-    required super.child,
-    super.key,
-  });
+  LoopOwnReactionScope({required this.message, required super.child, super.key})
+    : types = <String>{
+        for (final reaction in message.ownReactions ?? const <Reaction>[])
+          reaction.type,
+      };
 
+  /// The message the row renders. A direct message's row is handed a
+  /// display copy; a toggle re-reads the channel's own copy by its id.
+  final Message message;
+
+  /// The reaction types the reader has put on [message].
   final Set<String> types;
 
+  static LoopOwnReactionScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LoopOwnReactionScope>();
+
   static Set<String> of(BuildContext context) =>
-      context
-          .dependOnInheritedWidgetOfExactType<LoopOwnReactionScope>()
-          ?.types ??
-      const <String>{};
+      maybeOf(context)?.types ?? const <String>{};
 
   @override
   bool updateShouldNotify(LoopOwnReactionScope oldWidget) =>
-      !setEquals(types, oldWidget.types);
+      message.id != oldWidget.message.id || !setEquals(types, oldWidget.types);
+}
+
+/// Toggles [type] on the message a capsule sits under, the way Stream's own
+/// item toggles one from the bar (coordinator ruling 2026-10-09): the
+/// reader's own reaction is withdrawn, anybody else's is added as the
+/// reader's. Nothing happens outside a LOOP row, without a channel, without
+/// the `send-reaction` capability, or when the channel no longer holds the
+/// message.
+Future<void> loopToggleReaction(BuildContext context, String type) async {
+  final scope = LoopOwnReactionScope.maybeOf(context);
+  final channel = StreamChannel.maybeOf(context)?.channel;
+  if (scope == null || channel == null || !channel.canSendReaction) return;
+  final id = scope.message.id;
+  Message? message;
+  for (final candidate in channel.state?.messages ?? const <Message>[]) {
+    if (candidate.id == id) message = candidate;
+  }
+  if (message == null) return;
+  final own = <Reaction>[...?message.ownReactions];
+  Reaction? mine;
+  for (final reaction in own) {
+    if (reaction.type == type) mine = reaction;
+  }
+  final enforceUnique = StreamChatConfiguration.of(context)
+      .enforceUniqueReactions;
+  try {
+    if (mine != null) {
+      await channel.deleteReaction(message, mine);
+    } else {
+      await channel.sendReaction(
+        message,
+        Reaction(type: type),
+        enforceUnique: enforceUnique,
+      );
+    }
+  } catch (_) {
+    // Stream rolls its optimistic state back on failure; the capsule
+    // follows the channel's state and says nothing of its own.
+  }
 }
 
 /// One 「glyph + count」 capsule under a bubble (OKX reference, S121 §1.1.1):
 /// a 16px glyph and a 12px count on a dark grey pill; the reader's own
 /// reaction has a Lime edge and a Lime glyph.
 ///
-/// It is a label, not a control: LOOP keeps Stream's reaction detail sheet
-/// shut in groups and in direct messages alike (decision 0117), so a tap on
-/// a capsule has nothing to open, and a 24px capsule is no touch target.
-/// Reacting is done from the long-press bar.
+/// A tap toggles the reaction (coordinator ruling 2026-10-09): the reader's
+/// own is withdrawn, anybody else's is added as the reader's. The pill is 24
+/// tall inside a 44 touch target; Stream's detail sheet stays shut
+/// (decision 0117).
 class LoopReactionCapsule extends StatelessWidget {
   const LoopReactionCapsule({required this.item, super.key});
+
+  /// LOOP's 44px touch floor; the pill inside stays 24.
+  static const double targetHeight = 44;
+
+  /// The pill's own height.
+  static const double pillHeight = 24;
 
   final StreamReactionsItem item;
 
@@ -275,7 +332,7 @@ class LoopReactionCapsule extends StatelessWidget {
     final count = item.count ?? 1;
     final own = LoopOwnReactionScope.of(context).contains(type);
     final capsule = Container(
-      height: 24,
+      height: pillHeight,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: LoopColors.elevated,
@@ -303,10 +360,20 @@ class LoopReactionCapsule extends StatelessWidget {
     );
     return Semantics(
       key: ValueKey<String>('loop-reaction-capsule-$type'),
+      button: true,
       selected: own,
       label: '${loopReactionLabel(type)} $count',
+      hint: own ? '取消回应' : '回应${loopReactionLabel(type)}',
       excludeSemantics: true,
-      child: capsule,
+      child: GestureDetector(
+        key: ValueKey<String>('loop-reaction-capsule-target-$type'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => loopToggleReaction(context, type),
+        child: SizedBox(
+          height: LoopReactionCapsule.targetHeight,
+          child: Center(widthFactor: 1, child: capsule),
+        ),
+      ),
     );
   }
 }
