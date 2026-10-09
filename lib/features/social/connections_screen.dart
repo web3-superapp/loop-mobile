@@ -11,8 +11,11 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -62,16 +65,6 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       title: '关注与粉丝',
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
-      folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'SOCIAL CONNECTIONS',
-        heading: counts == null
-            ? communityMissingHeading
-            : '${counts.following} 关注 · ${counts.followers} 粉丝',
-        caption: '公开关系可见，钱包地址始终隐藏。关注是单向的，不需要对方同意。',
-        stamp: counts == null ? null : 'SOCIAL',
-      ),
       filters: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: SingleChildScrollView(
@@ -82,6 +75,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                 padding: const EdgeInsets.only(right: 8),
                 child: LoopSeg(
                   key: const ValueKey<String>('connections-seg-following'),
+                  quiet: true,
                   label: counts == null ? '关注' : '关注 ${counts.following}',
                   selected: state.direction == ConnectionDirection.following,
                   onSelected: () => unawaited(
@@ -91,6 +85,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               ),
               LoopSeg(
                 key: const ValueKey<String>('connections-seg-followers'),
+                quiet: true,
                 label: counts == null ? '粉丝' : '粉丝 ${counts.followers}',
                 selected: state.direction == ConnectionDirection.followers,
                 onSelected: () => unawaited(
@@ -126,6 +121,14 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   ? '还没有关注任何人'
                   : '还没有粉丝',
               emptyReason: '被你屏蔽的账号不会出现在这里。',
+              empty: LoopEmptyState(
+                key: const ValueKey<String>('community-state-empty'),
+                illustration: LoopIllustration.friends,
+                title: state.direction == ConnectionDirection.following
+                    ? '还没有关注任何人'
+                    : '还没有粉丝',
+                message: '被你屏蔽的账号不会出现在这里。',
+              ),
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
@@ -138,18 +141,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                 body: communityFailureReason(state.failureKind),
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               ),
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                for (var index = 0; index < state.items.length; index += 1)
-                  _connectionRow(
-                    state.items[index],
-                    index,
-                    state.items.length,
-                    state,
-                    controller,
-                  ),
-              ],
-            ),
+            for (final entry in state.items)
+              _connectionRow(entry, state, controller),
             if (state.canLoadMore)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -160,21 +153,14 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   onPressed: () => unawaited(controller.loadMore()),
                 ),
               ),
-            if (state.items.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 14),
-              // The reason comes from the server's own per-row projection.
-              CommunityMiningPowerCard(
-                label: '行内算力',
-                fact: state.items.first.miningPower,
+            // One switch, one name: the privacy centre calls it 可被发现.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              child: Text(
+                '在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。',
+                key: const ValueKey<String>('connections-discoverable-notice'),
+                style: LoopTypography.caption(11, color: LoopColors.text3),
               ),
-            ],
-            const LoopNotice(
-              key: ValueKey<String>('connections-discoverable-notice'),
-              icon: 'info',
-              title: '想被别人找到？',
-              // One switch, one name: the privacy centre calls it 可被发现.
-              body: '默认关闭。在"隐私中心 · 可被发现"里打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。',
-              margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
             ),
           ],
         ],
@@ -182,33 +168,40 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     );
   }
 
-  LoopRecordRow _connectionRow(
+  /// One OKX row (decision 0127): the face at 40 in a 56 row, the name over
+  /// the LOOP ID, and 关注 / 已关注 as the capsule on the right.
+  Widget _connectionRow(
     ConnectionEntry entry,
-    int index,
-    int length,
     ConnectionsState state,
     ConnectionsController controller,
   ) {
     final target = entry.profile.publicProfileId;
-    return LoopRecordRow(
+    final following = entry.viewerFollows;
+    return LoopPersonRow(
       key: ValueKey<String>('connection-row-${target ?? entry.profile.loopId}'),
-      // `.row-ico.mono`: the prototype heads every connection row with a
-      // monogram tile, and the App's rows had no leading element at all
-      // (audit 2026-09-21 §J.10, §D #7).
-      leading: LoopRowIcon(monogram: loopMonogram(entry.profile.displayName)),
+      height: 56,
+      leading: LoopProfileAvatar(
+        avatarRef: entry.profile.avatarRef,
+        alias: entry.profile.displayName,
+        size: 40,
+      ),
       title: entry.profile.displayName,
       subtitle: entry.profile.loopId,
-      // The relationship is a state, not a figure.
-      trailingBadge: LoopBadge(
-        entry.viewerFollows ? '已关注' : '未关注',
-        kind: entry.viewerFollows ? LoopBadgeKind.up : LoopBadgeKind.mute,
+      trailing: LoopPillAction(
+        key: ValueKey<String>(
+          'connection-follow-${target ?? entry.profile.loopId}',
+        ),
+        label: following ? '已关注' : '关注',
+        primary: !following,
+        onPressed: state.busy || target == null
+            ? null
+            : () => unawaited(_toggleFollow(entry, target, controller)),
       ),
-      position: communityRowPosition(index, length),
       onTap: state.busy || target == null
           ? null
           : () => unawaited(_openRow(entry, target, controller)),
       semanticLabel:
-          '${entry.profile.displayName}，${entry.viewerFollows ? '已关注' : '未关注'}',
+          '${entry.profile.displayName}，${following ? '已关注' : '未关注'}',
     );
   }
 
@@ -264,6 +257,15 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       widget.onOpenConversation?.call(entry.profile);
       return;
     }
+    await _toggleFollow(entry, target, controller);
+  }
+
+  Future<void> _toggleFollow(
+    ConnectionEntry entry,
+    String target,
+    ConnectionsController controller,
+  ) async {
+    final following = entry.viewerFollows;
     final confirmed = await confirmCommunityAction(
       context,
       title: following ? '取消关注？' : '关注这个账号？',

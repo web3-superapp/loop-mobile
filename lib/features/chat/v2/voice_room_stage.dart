@@ -16,25 +16,39 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
-/// The room page after DeBox (decision 0115, S108–S110 §5): the host on a
-/// stage, the speakers in a four-wide grid, the listeners in a six-wide grid,
-/// and the controls in a bar fixed at the bottom of the screen.
+/// The room page after DeBox (decision 0115, S108–S110 §5), restyled in
+/// decision 0127: the host at 88 on a stage, the speakers at 56 in a
+/// four-wide grid, the listeners at 44 in a five-wide grid, and the controls
+/// as 56 round keys in a bar fixed at the bottom of the screen.
 ///
 /// Everything here draws what the page hands it. Who holds which part is
 /// LOOP's roster; who is heard right now is this device's own call.
 
 /// Listener faces the room page draws before it hands the rest to
 /// `/chat/voice/full`.
-const int voiceRoomListenerGridLimit = 18;
+const int voiceRoomListenerGridLimit = 15;
 
 /// Speakers per grid row.
 const int voiceRoomSpeakerColumns = 4;
 
 /// Listeners per grid row.
-const int voiceRoomListenerColumns = 6;
+const int voiceRoomListenerColumns = 5;
+
+/// The host's face on the stage (decision 0127).
+const double voiceRoomHostAvatar = 88;
+
+/// A speaker's face on the grid (decision 0127).
+const double voiceRoomSpeakerAvatar = 56;
+
+/// A listener's face on the grid (decision 0127).
+const double voiceRoomListenerAvatar = 44;
 
 /// The longest title a host may give a room, in code points (S109b-api).
 const int voiceRoomTitleMaxCodePoints = 40;
@@ -113,11 +127,16 @@ class VoiceRoomHostStage extends StatelessWidget {
     required this.mic,
     super.key,
     this.avatarRef,
+    this.info,
   });
 
   final String name;
   final String? avatarRef;
   final VoiceRoomMicState mic;
+
+  /// The room's (i) control, at the stage's top right (decision 0127): the
+  /// bar keeps one icon, 分享.
+  final Widget? info;
 
   @override
   Widget build(BuildContext context) {
@@ -131,52 +150,64 @@ class VoiceRoomHostStage extends StatelessWidget {
     return Semantics(
       container: true,
       label: '主持人 $name${caption == null ? '' : '，$caption'}',
-      excludeSemantics: true,
-      child: Padding(
-        key: const ValueKey<String>('voiceroom-host'),
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            VoiceRoomSpeakingRing(
-              size: 72,
-              speaking: mic.speaking,
-              child: LoopProfileAvatar(
-                avatarRef: avatarRef,
-                alias: name,
-                size: 72,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              name,
-              key: const ValueKey<String>('voiceroom-host-name'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopTypography.title(16),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                // A host this page cannot name is already called 主持人;
-                // the badge would only say it twice.
-                if (name != '主持人')
-                  const LoopBadge('主持人', kind: LoopBadgeKind.up),
-                if (caption != null) ...<Widget>[
-                  if (name != '主持人') const SizedBox(width: 8),
-                  Text(
-                    caption,
-                    style: LoopTypography.caption(
-                      12,
-                      color: mic.speaking ? LoopColors.lime : LoopColors.text2,
+      child: Stack(
+        children: <Widget>[
+          Padding(
+            key: const ValueKey<String>('voiceroom-host'),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  VoiceRoomSpeakingRing(
+                    size: voiceRoomHostAvatar,
+                    speaking: mic.speaking,
+                    child: LoopProfileAvatar(
+                      avatarRef: avatarRef,
+                      alias: name,
+                      size: voiceRoomHostAvatar,
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    name,
+                    key: const ValueKey<String>('voiceroom-host-name'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.title(17),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      // A host this page cannot name is already called
+                      // 主持人; the mark would only say it twice.
+                      if (name != '主持人')
+                        const LoopTag(
+                          '主持',
+                          key: ValueKey<String>('voiceroom-host-tag'),
+                          lime: true,
+                        ),
+                      if (caption != null) ...<Widget>[
+                        if (name != '主持人') const SizedBox(width: 8),
+                        Text(
+                          caption,
+                          style: LoopTypography.caption(
+                            12,
+                            color: mic.speaking
+                                ? LoopColors.lime
+                                : LoopColors.text2,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
-              ],
+              ),
             ),
-          ],
-        ),
+          ),
+          if (info != null) Positioned(top: 4, right: 8, child: info!),
+        ],
       ),
     );
   }
@@ -284,8 +315,8 @@ class _MemberTile extends StatelessWidget {
                   right: ring - 4,
                   bottom: ring - 4,
                   child: Container(
-                    width: 18,
-                    height: 18,
+                    width: 20,
+                    height: 20,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -296,7 +327,7 @@ class _MemberTile extends StatelessWidget {
                     ),
                     child: LoopIcon(
                       markIcon,
-                      size: 10,
+                      size: 11,
                       color: markIcon == 'voice-off'
                           ? LoopColors.text2
                           : LoopColors.ink,
@@ -305,14 +336,14 @@ class _MemberTile extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: LoopTypography.caption(
-              11,
+              12,
               color: speaking ? LoopColors.lime : LoopColors.text2,
             ),
           ),
@@ -358,7 +389,7 @@ class _GridRows extends StatelessWidget {
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
           spacing: gap,
-          runSpacing: 12,
+          runSpacing: 16,
           children: <Widget>[
             for (var index = 0; index < count; index += 1) cell(index, width),
           ],
@@ -368,7 +399,7 @@ class _GridRows extends StatelessWidget {
   );
 }
 
-/// The speakers: four to a row, a 48 face, the name, and the microphone.
+/// The speakers: four to a row, a 56 face, the name, and the microphone.
 ///
 /// The faces are LOOP's speaker roster — the parts LOOP granted, host
 /// excluded (decision 0052). Whether each microphone is open and who is
@@ -398,10 +429,7 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
       type: LoopSkeletonType.list,
       rows: 1,
     ),
-    CommunityViewPhase.empty => const _QuietLine(
-      key: ValueKey<String>('voiceroom-speakers-empty'),
-      text: '还没有人上麦',
-    ),
+    CommunityViewPhase.empty => const _SpeakersEmpty(),
     CommunityViewPhase.offline => LoopOfflineState(
       key: const ValueKey<String>('voiceroom-speakers-offline'),
       pausedActions: const <String>['查看发言人'],
@@ -426,12 +454,7 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
       onRetry: onRetry,
     ),
     CommunityViewPhase.ready =>
-      roster.items.isEmpty
-          ? const _QuietLine(
-              key: ValueKey<String>('voiceroom-speakers-empty'),
-              text: '还没有人上麦',
-            )
-          : _speakerRows(),
+      roster.items.isEmpty ? const _SpeakersEmpty() : _speakerRows(),
   };
 
   Widget _speakerRows() {
@@ -454,7 +477,7 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
           ),
           name: voiceRoomRosterName(member),
           avatarRef: member.avatarRef,
-          avatarSize: 48,
+          avatarSize: voiceRoomSpeakerAvatar,
           width: width,
           mic: voiceRoomMemberMicState(
             member,
@@ -470,7 +493,7 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
   }
 }
 
-/// The listeners: six to a row, a 40 face and the name, a hand on whoever
+/// The listeners: five to a row, a 44 face and the name, a hand on whoever
 /// raised one, and after [voiceRoomListenerGridLimit] faces a 「+N」 that
 /// opens the whole list.
 class VoiceRoomListenerGrid extends StatelessWidget {
@@ -505,7 +528,7 @@ class VoiceRoomListenerGrid extends StatelessWidget {
     if (everyone <= voiceRoomListenerGridLimit) {
       return (faces: rows, more: null);
     }
-    // The last cell of the eighteen becomes the count, so the grid stays three
+    // The last cell of the fifteen becomes the count, so the grid stays three
     // rows tall however large the room is.
     const faces = voiceRoomListenerGridLimit - 1;
     final shown = rows < faces ? rows : faces;
@@ -549,9 +572,11 @@ class VoiceRoomListenerGrid extends StatelessWidget {
   Widget _ready() {
     final items = roster.items;
     if (items.isEmpty && total <= 0) {
-      return const _QuietLine(
+      return const LoopEmptyState(
         key: ValueKey<String>('voiceroom-listeners-empty'),
-        text: '还没有听众',
+        illustration: LoopIllustration.holders,
+        title: '还没有听众',
+        compact: true,
       );
     }
     if (items.isEmpty) {
@@ -596,7 +621,7 @@ class VoiceRoomListenerGrid extends StatelessWidget {
           ),
           name: voiceRoomRosterName(member),
           avatarRef: member.avatarRef,
-          avatarSize: 40,
+          avatarSize: voiceRoomListenerAvatar,
           width: width,
           handRaised: member.handRaised,
           onTap: member.commands.isEmpty || open == null
@@ -622,7 +647,7 @@ class _MoreTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 40.0;
+    const size = voiceRoomListenerAvatar;
     final outer = size + (VoiceRoomSpeakingRing.width + 2) * 2;
     return Semantics(
       button: onTap != null,
@@ -671,17 +696,17 @@ class _MoreTile extends StatelessWidget {
   }
 }
 
-/// One quiet line where a grid would be: an empty grid is a fact about the
-/// room, not a failure, and it does not need a block of its own.
-class _QuietLine extends StatelessWidget {
-  const _QuietLine({required this.text, super.key});
-
-  final String text;
+/// An empty speaker grid (decision 0127): the voice-room line drawing at the
+/// compact size, centred where the grid would be.
+class _SpeakersEmpty extends StatelessWidget {
+  const _SpeakersEmpty();
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-    child: Text(text, style: LoopTypography.caption(12)),
+  Widget build(BuildContext context) => const LoopEmptyState(
+    key: ValueKey<String>('voiceroom-speakers-empty'),
+    illustration: LoopIllustration.voiceRoom,
+    title: '还没有人上麦',
+    compact: true,
   );
 }
 
@@ -823,16 +848,13 @@ class VoiceRoomControlBar extends StatelessWidget {
     final bottom = MediaQuery.paddingOf(context).bottom;
     return DecoratedBox(
       key: const ValueKey<String>('voiceroom-control-bar'),
-      decoration: const BoxDecoration(
-        color: LoopColors.ink,
-        border: Border(top: BorderSide(color: LoopColors.line)),
-      ),
+      decoration: const BoxDecoration(color: LoopColors.ink),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           LoopSpacing.page,
-          8,
+          10,
           LoopSpacing.page,
-          8 + bottom,
+          10 + bottom,
         ),
         child: content,
       ),
@@ -873,7 +895,9 @@ class _MicrophoneItem extends StatelessWidget {
   );
 }
 
-/// One slot of the bar: a glyph over a word, at least 56 tall.
+/// One slot of the bar (decision 0127): a 56 round key with the word under
+/// it. The leaving key is the fall colour; a toggled state (an open
+/// microphone, a raised hand) wears the Lime disc.
 class _BarItem extends StatelessWidget {
   const _BarItem({
     required this.icon,
@@ -895,73 +919,15 @@ class _BarItem extends StatelessWidget {
   final String? badge;
 
   @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    final color = !enabled
-        ? LoopColors.text3
-        : danger
-        ? LoopColors.danger
-        : active
-        ? LoopColors.lime
-        : LoopColors.chalk;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: badge == null ? label : '$label，$badge 人举手',
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56, minWidth: 44),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: <Widget>[
-                    LoopIcon(icon, size: 22, color: color),
-                    if (badge != null)
-                      Positioned(
-                        right: -12,
-                        top: -6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          constraints: const BoxConstraints(minWidth: 16),
-                          height: 16,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: LoopColors.lime,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            badge!,
-                            style: LoopTypography.figure(
-                              11,
-                              color: LoopColors.ink,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.label(12, color: color),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LoopRoundKey(
+    icon: icon,
+    label: label,
+    tone: danger ? LoopRoundKeyTone.fall : LoopRoundKeyTone.quiet,
+    active: active,
+    badge: badge,
+    semanticLabel: badge == null ? label : '$label，$badge 人举手',
+    onPressed: onPressed,
+  );
 }
 
 /// The (i) sheet: the room's facts and every note about the provider that

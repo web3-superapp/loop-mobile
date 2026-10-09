@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
@@ -25,6 +26,26 @@ const _requestId = '11111111-1111-4111-8111-111111111111';
 FriendProfileRef _profileRef(String value) => FriendProfileRef.fromWire(value);
 
 void main() {
+  testWidgets('创建群组 (decision 0127): no English eyebrow, OKX pick rows, '
+      'one Lime button', (tester) async {
+    await _pumpPage(
+      tester,
+      const CreateFriendGroupPage(),
+      gateway: MemoryFriendGateway(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('NEW GROUP'), findsNothing);
+    expect(find.textContaining('NEW GROUP'), findsNothing);
+    expect(find.byType(Checkbox), findsNothing);
+    expect(find.byType(Divider), findsNothing);
+    final submit = find.byKey(
+      const ValueKey<String>('friend-group-create-submit'),
+    );
+    await tester.ensureVisible(submit);
+    expect(tester.widget<LoopWideButton>(submit).label, '创建群组');
+    expect(tester.getSize(submit).height, 52);
+  });
+
   // This file mounts pages through its own `pumpWidget`, so it arms the
   // ground probe itself; the page harnesses arm it for everybody else.
   loopWatchGround();
@@ -870,7 +891,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<FilledButton>(
+            .widget<LoopWideButton>(
               find.byKey(const ValueKey<String>('friend-group-create-submit')),
             )
             .onPressed,

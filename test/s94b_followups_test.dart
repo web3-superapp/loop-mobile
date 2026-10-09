@@ -23,7 +23,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
-import 'support/s5_page_harness.dart' show FakeMarketReadGateway, S5Answer;
+import 'support/s5_page_harness.dart' show FakeMarketReadGateway;
 
 // ---------------------------------------------------------------------------
 // Token logo seams
@@ -362,8 +362,8 @@ void main() {
   // 2. Community detail · the bound asset's 1H line is actually read
   // -------------------------------------------------------------------------
   group('community bound asset line', () {
-    testWidgets('arriving from the tab asks for the 1H candles beside the '
-        'record read', (tester) async {
+    testWidgets('arriving from the tab asks for the quote beside the record '
+        'read, and no candles', (tester) async {
       const assetKey = 'eip155:56:0x00000000000000000000000000000000000000a0';
       final gateway = _HeldRecordGateway(
         home: _homeListing(testCommunity(boundAssetKey: assetKey)),
@@ -389,13 +389,13 @@ void main() {
       expect(gateway.recordReads, 1);
       expect(gateway.record.isCompleted, isFalse);
       expect(market.assetReads, <String>[assetKey]);
-      expect(market.candleReads, <(String, LoopCandleInterval)>[
-        (assetKey, LoopCandleInterval.oneHour),
-      ]);
+      // Decision 0127: the bound token is one quote row with no line, so the
+      // record asks for no series.
+      expect(market.candleReads, isEmpty);
     });
 
-    testWidgets('a deep link reads the line once the record names the asset, '
-        'and draws it', (tester) async {
+    testWidgets('a deep link reads the quote once the record names the '
+        'asset, and draws one row', (tester) async {
       final market = FakeMarketReadGateway();
       await pumpCommunityPage(
         tester,
@@ -413,47 +413,13 @@ void main() {
       final card = find.byKey(const ValueKey<String>('community-bound-asset'));
       await scrollToCommunitySection(tester, card);
       await tester.pumpAndSettle();
-      // One 1H read: the card's own and the sparkline's are one flight.
-      expect(market.intervals, <LoopCandleInterval>[
-        LoopCandleInterval.oneHour,
-      ]);
+      expect(card, findsOneWidget);
+      expect(market.intervals, isEmpty);
       expect(
         find.byKey(const ValueKey<String>('community-bound-asset-chart-line')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.textContaining('1H K 线读取中'), findsNothing);
-      expect(find.textContaining('根收盘价'), findsOneWidget);
-    });
-
-    testWidgets('an unreadable line states the reason, never loading forever', (
-      tester,
-    ) async {
-      final market = FakeMarketReadGateway(
-        candles: S5Answer<MarketCandleSeries>(
-          failure: LoopChainFailureKind.unavailable,
-        ),
-      );
-      await pumpCommunityPage(
-        tester,
-        const CommunityProfileScreen(communityId: testCommunityId),
-        community: FakeCommunityGateway(
-          detail: testDetail(
-            community: testCommunity(boundAssetKey: s5WbnbAssetId),
-          ),
-        ),
-        overrides: <Override>[
-          marketReadGatewayProvider.overrideWithValue(market),
-        ],
-      );
-      final card = find.byKey(const ValueKey<String>('community-bound-asset'));
-      await scrollToCommunitySection(tester, card);
-      await tester.pumpAndSettle();
-      expect(market.intervals, isNotEmpty);
-      expect(find.textContaining('1H K 线读取中'), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('community-bound-asset-chart-note')),
-        findsOneWidget,
-      );
     });
   });
 

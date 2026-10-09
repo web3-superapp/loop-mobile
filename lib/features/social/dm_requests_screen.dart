@@ -10,23 +10,14 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-
-/// `#scr-dm-requests`'s `.folio-stamp`: `1 NEW`.
-///
-/// It names what it counts. A bare digit in the corner of the hero was drawn
-/// as a ringed circle and read as a badge with no unit (audit 2026-09-20 ·
-/// B.4). A read that has not landed still counts nothing, so it gets no stamp
-/// rather than a zero it has not proved.
-String? messageRequestsStamp(CommunityViewPhase phase, int count) =>
-    switch (phase) {
-      CommunityViewPhase.ready => '$count NEW',
-      CommunityViewPhase.empty => '0 NEW',
-      _ => null,
-    };
 
 /// `dm-requests` · accept, ignore or report a stranger request.
 ///
@@ -65,28 +56,13 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
       title: '陌生人请求',
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
-      folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.chalk,
-        archetype: LoopFolioArchetype.listing,
-        kicker: 'MESSAGE REQUESTS',
-        // A read that came back with nothing counted nothing: zero requests
-        // is a figure, and 暂无数值 claimed the page had no figure at all.
-        heading: switch (state.phase) {
-          CommunityViewPhase.ready => '${state.items.length} 个请求待决定',
-          CommunityViewPhase.empty => '0 个待处理',
-          _ => communityMissingHeading,
-        },
-        // The one sentence this page owes a reader before they decide, and
-        // the sentences it used to owe them in a fourth card at the bottom:
-        // one explanation per page is the ceiling (audit 2026-09-20 · D-5).
-        caption: '接受后建立联系；忽略后 24 小时内不再提醒；举报等于拒绝并屏蔽。',
-        // `.folio-stamp` is a pill that names what it counts — `1 NEW` — not a
-        // bare digit in a circle (audit 2026-09-20 · B.4).
-        stamp: messageRequestsStamp(state.phase, state.items.length),
-        // A Chalk hero has no `::after` ring in the prototype; only
-        // `.folio-primary.folio-state` does.
-        ring: false,
-      ),
+      // Decision 0127: the count in the bar's grey line; the hero card and
+      // its English eyebrow are gone.
+      subtitle: switch (state.phase) {
+        CommunityViewPhase.ready => '${state.items.length} 个待处理',
+        CommunityViewPhase.empty => '0 个待处理',
+        _ => null,
+      },
       block: communityCapabilityBlocks(mode, capability)
           ? CommunityCapabilityPageBlock(
               key: const ValueKey<String>('dm-requests-capability-unavailable'),
@@ -110,6 +86,12 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
               failureKind: state.failureKind,
               emptyMessage: '没有待处理的请求',
               emptyReason: '被你屏蔽的账号不会出现在这里。',
+              empty: const LoopEmptyState(
+                key: ValueKey<String>('community-state-empty'),
+                illustration: LoopIllustration.friends,
+                title: '没有待处理的请求',
+                message: '被你屏蔽的账号不会出现在这里。',
+              ),
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
@@ -123,7 +105,7 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               ),
             for (final entry in state.items)
-              _RequestCard(
+              _RequestRow(
                 key: ValueKey<String>('dm-request-${entry.messageRequestId}'),
                 entry: entry,
                 busy: state.busy,
@@ -192,8 +174,11 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
   }
 }
 
-class _RequestCard extends StatelessWidget {
-  const _RequestCard({
+/// One request (decision 0127): the sender's face at 40, the name over the
+/// LOOP ID, and 「接受」 as the Lime capsule on the right. 忽略 and 举报 are in
+/// the sheet the row opens.
+class _RequestRow extends StatelessWidget {
+  const _RequestRow({
     required this.entry,
     required this.busy,
     required this.onDecide,
@@ -206,64 +191,69 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: ValueKey<String>('dm-request-row-${entry.messageRequestId}'),
-              // `.row-ico`: the prototype's request row opens with the
-              // sender's tile, so the name has a face beside it before the
-              // three decisions under it.
-              leading: LoopInitialsAvatar(
-                label: entry.profile.displayName,
-                size: 44,
-                shape: BoxShape.rectangle,
-                radius: 15,
-              ),
-              title: entry.profile.displayName,
-              subtitle: entry.profile.loopId,
-              trailing: '待处理',
-            ),
-          ],
+    final id = entry.messageRequestId;
+    return LoopPersonRow(
+      key: ValueKey<String>('dm-request-row-$id'),
+      height: 64,
+      leading: LoopProfileAvatar(
+        avatarRef: entry.profile.avatarRef,
+        alias: entry.profile.displayName,
+        size: 40,
+      ),
+      title: entry.profile.displayName,
+      subtitle: entry.profile.loopId,
+      trailing: LoopPillAction(
+        key: ValueKey<String>('dm-request-accept-$id'),
+        label: '接受',
+        onPressed: busy ? null : () => onDecide(MessageRequestDecision.accept),
+      ),
+      onTap: busy ? null : () => unawaited(_openMore(context)),
+    );
+  }
+
+  Future<void> _openMore(BuildContext context) async {
+    final choice = await showLoopSheet<MessageRequestDecision>(
+      context,
+      barrierLabel: '关闭请求操作',
+      builder: (sheetContext) => Padding(
+        key: ValueKey<String>(
+          'dm-request-actions-sheet-${entry.messageRequestId}',
         ),
-        CommunityUnavailableCard(label: '消息正文', fact: entry.preview),
-        const SizedBox(height: 10),
-        CommunityUnavailableCard(label: 'AI 巡查标记', fact: entry.aiModeration),
-        LoopButtonPair(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            LoopButton(
-              key: ValueKey<String>(
-                'dm-request-accept-${entry.messageRequestId}',
-              ),
-              label: '接受',
-              primary: true,
-              onPressed: busy
-                  ? null
-                  : () => onDecide(MessageRequestDecision.accept),
-            ),
+            LoopLabel(entry.profile.displayName),
             LoopButton(
               key: ValueKey<String>(
                 'dm-request-ignore-${entry.messageRequestId}',
               ),
               label: '忽略',
-              onPressed: busy
-                  ? null
-                  : () => onDecide(MessageRequestDecision.ignore),
+              block: true,
+              onPressed: () =>
+                  Navigator.of(sheetContext).pop(MessageRequestDecision.ignore),
             ),
+            const SizedBox(height: 8),
             LoopButton(
               key: ValueKey<String>(
                 'dm-request-report-${entry.messageRequestId}',
               ),
-              label: '举报',
-              onPressed: busy
-                  ? null
-                  : () => onDecide(MessageRequestDecision.report),
+              label: '举报并屏蔽',
+              block: true,
+              onPressed: () =>
+                  Navigator.of(sheetContext).pop(MessageRequestDecision.report),
+            ),
+            const SizedBox(height: 8),
+            LoopButton(
+              label: '取消',
+              block: true,
+              onPressed: () => Navigator.of(sheetContext).pop(),
             ),
           ],
         ),
-      ],
+      ),
     );
+    if (choice != null) onDecide(choice);
   }
 }

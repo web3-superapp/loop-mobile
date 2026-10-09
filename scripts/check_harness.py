@@ -14456,6 +14456,9 @@ ILLUSTRATION_NAMES = (
     "search",
     "watchlist",
     "rank",
+    # Decision 0127: the member directory and the friend lists.
+    "members",
+    "friends",
 )
 # Lime for the main stroke, Chalk (at the text3 weight) for the secondary
 # one, and the two medal colours. Nothing else may be painted.
@@ -14468,7 +14471,7 @@ MEDAL_COLOUR_ALLOWLIST: dict[str, str] = {
 
 
 def check_illustrations(root: Path) -> list[str]:
-    """Eight line illustrations, registered, and drawn to one specification."""
+    """The line illustrations, registered, and drawn to one specification."""
 
     errors: list[str] = []
     folder = root / "assets/illustrations"

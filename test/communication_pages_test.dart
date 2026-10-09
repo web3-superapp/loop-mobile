@@ -1085,7 +1085,7 @@ void main() {
       expect(find.textContaining('UTC'), findsNothing);
       // Decision 0115: the top bar states the room's own total, host inside
       // it (46 = 1 + 3 + 42), and the split is in (i).
-      expect(find.text('46 在听'), findsOneWidget);
+      expect(find.textContaining('46 在听 · '), findsOneWidget);
       expect(find.text('听众 42'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
       await tester.pumpAndSettle();
@@ -1229,7 +1229,7 @@ void main() {
       );
       expect(find.text('0'), findsNothing);
       // LOOP's own record of the room is a different reading and stays.
-      expect(find.text('46 在听'), findsOneWidget);
+      expect(find.textContaining('46 在听 · '), findsOneWidget);
     });
 
     testWidgets(
@@ -1313,7 +1313,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('0'), findsNothing);
-      expect(find.text('46 在听'), findsOneWidget);
+      expect(find.textContaining('46 在听 · '), findsOneWidget);
     });
 
     testWidgets('a join reads the room again so the count is not lost', (
@@ -1353,7 +1353,7 @@ void main() {
       );
       // The answer to the join is what the page states: the room read that
       // followed it carries the counts.
-      expect(find.text('46 在听'), findsOneWidget);
+      expect(find.textContaining('46 在听 · '), findsOneWidget);
     });
 
     testWidgets('an unprovisioned room says why it cannot be joined', (
@@ -1659,7 +1659,7 @@ void main() {
         audioRoomCallFactory: media,
       );
 
-      expect(find.text('1 在听'), findsOneWidget);
+      expect(find.textContaining('1 在听 · '), findsOneWidget);
 
       voice.loadSnapshot = testVoiceRoomSnapshot(
         role: VoiceRoomRole.host,
@@ -1669,7 +1669,7 @@ void main() {
       media.handles.single.emitSignal(AudioRoomRoomSignal.participants);
       await tester.pumpAndSettle();
 
-      expect(find.text('2 在听'), findsOneWidget);
+      expect(find.textContaining('2 在听 · '), findsOneWidget);
     });
 
     testWidgets('a page that is gone, or behind, reads nothing', (
@@ -1729,7 +1729,7 @@ void main() {
         voiceRoom: voice,
       );
 
-      expect(find.text('1 在听'), findsOneWidget);
+      expect(find.textContaining('1 在听 · '), findsOneWidget);
 
       voice.loadSnapshot = testVoiceRoomSnapshot(
         role: VoiceRoomRole.host,
@@ -1739,7 +1739,7 @@ void main() {
       await tester.pump(const Duration(seconds: 15));
       await tester.pumpAndSettle();
 
-      expect(find.text('2 在听'), findsOneWidget);
+      expect(find.textContaining('2 在听 · '), findsOneWidget);
     });
 
     testWidgets('the queue names its rows the way the roster does', (

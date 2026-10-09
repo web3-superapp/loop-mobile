@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_progress_fill.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
@@ -1652,6 +1653,9 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
 
   @override
   Widget build(BuildContext context) {
+    // Decision 0127: the logo at 72 on top, then four equal 52 fields, then
+    // one page-wide Lime button. The rules the server enforces are in each
+    // field's hint and in its error; the form carries no paragraph of them.
     return Padding(
       key: const ValueKey<String>('community-apply-sheet'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -1660,116 +1664,180 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
-            '申请入驻',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
+            '创建社区',
+            textAlign: TextAlign.center,
+            style: LoopTypography.heading(20, weight: FontWeight.w700),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '提交后社区状态为「审核中」，你是所有者。验证标记只能由运维核验后设置，'
-            '本表单不会带来任何 Mining 权重结论。',
-            style: LoopTypography.caption(12, color: LoopColors.muted),
+          const SizedBox(height: 16),
+          Center(
+            child: _ApplyLogoSlot(logoRef: _logoRef, name: _name.text),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
+          // The twelve published marks, picked by looking at them.
+          SizedBox(
+            height: 52,
+            child: ListView.separated(
+              key: const ValueKey<String>('community-apply-logo-strip'),
+              scrollDirection: Axis.horizontal,
+              itemCount: _logoRefs.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final reference = _logoRefs[index];
+                final selected = _logoRef == reference;
+                return Semantics(
+                  button: true,
+                  selected: selected,
+                  label: reference == null
+                      ? '不设置社区标识'
+                      : '社区标识 ${reference.split('-').last}',
+                  excludeSemantics: true,
+                  child: GestureDetector(
+                    key: ValueKey<String>(
+                      'community-apply-logo-${reference ?? 'none'}',
+                    ),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _logoRef = reference),
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selected
+                              ? LoopColors.lime
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: reference == null
+                          ? Container(
+                              width: 44,
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: LoopColors.card2,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const LoopIcon(
+                                'close',
+                                size: 16,
+                                color: LoopColors.text2,
+                              ),
+                            )
+                          : CommunityLogo(
+                              identity: 'community-apply-$reference',
+                              name: _name.text,
+                              logoRef: reference,
+                              size: 44,
+                              radius: 22,
+                            ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
           TextField(
             key: const ValueKey<String>('community-apply-name'),
             controller: _name,
-            decoration: InputDecoration(
-              labelText: '社区名称（1–40）',
-              errorText: _errorFor(CommunityApplicationField.name),
+            onChanged: (_) => setState(() {}),
+            decoration: loopFormFieldDecoration(
+              hint: '社区名称',
+              error: _errorFor(CommunityApplicationField.name),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextField(
             key: const ValueKey<String>('community-apply-slug'),
             controller: _slug,
-            decoration: InputDecoration(
-              labelText: '短链接（3–32，小写字母、数字与连字符）',
-              errorText: _errorFor(CommunityApplicationField.slug),
+            decoration: loopFormFieldDecoration(
+              hint: '短链接，小写字母、数字与连字符',
+              error: _errorFor(CommunityApplicationField.slug),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextField(
             key: const ValueKey<String>('community-apply-description'),
             controller: _description,
             maxLines: 2,
-            decoration: InputDecoration(
-              labelText: '简介（可留空，≤280）',
-              errorText: _errorFor(CommunityApplicationField.description),
+            minLines: 1,
+            decoration: loopFormFieldDecoration(
+              hint: '简介（选填）',
+              error: _errorFor(CommunityApplicationField.description),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              const Expanded(child: LoopLabel('社区标识（可留空）')),
-              // The chips are numbered, and a number is not a mark: the form
-              // shows the one that is selected so the choice is made by
-              // looking at it.
-              if (_logoRef != null)
-                CommunityLogo(
-                  key: ValueKey<String>(
-                    'community-apply-logo-preview-$_logoRef',
-                  ),
-                  identity: 'community-apply-preview',
-                  name: _name.text,
-                  logoRef: _logoRef,
-                  size: 36,
-                ),
-            ],
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: <Widget>[
-                for (final reference in _logoRefs)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: LoopSeg(
-                      key: ValueKey<String>(
-                        'community-apply-logo-${reference ?? 'none'}',
-                      ),
-                      label: reference == null
-                          ? '不设置'
-                          : reference.split('-').last,
-                      selected: _logoRef == reference,
-                      onSelected: () => setState(() => _logoRef = reference),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextField(
             key: const ValueKey<String>('community-apply-asset-key'),
             controller: _assetKey,
-            decoration: InputDecoration(
-              labelText: '绑定资产（可留空，eip155:<链>:0x…）',
-              errorText: _errorFor(CommunityApplicationField.boundAssetKey),
+            decoration: loopFormFieldDecoration(
+              hint: '绑定代币（选填）eip155:56:0x…',
+              error: _errorFor(CommunityApplicationField.boundAssetKey),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '绑定地址只做登记，暂时不会显示价格、市值或持有人。',
-            style: LoopTypography.caption(11, color: LoopColors.muted),
+            '提交后进入审核，你是所有者；验证标记由运维核验后设置。',
+            textAlign: TextAlign.center,
+            style: LoopTypography.caption(11, color: LoopColors.text3),
           ),
           const SizedBox(height: 16),
-          LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('community-apply-submit'),
-                label: '提交申请',
-                primary: true,
-                onPressed: _submit,
+          LoopWideButton(
+            key: const ValueKey<String>('community-apply-submit'),
+            label: '提交申请',
+            onPressed: _submit,
+          ),
+          const SizedBox(height: 4),
+          Center(
+            child: TextButton(
+              key: const ValueKey<String>('community-apply-cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                '取消',
+                style: LoopTypography.body(14, color: LoopColors.text2),
               ),
-              LoopButton(
-                key: const ValueKey<String>('community-apply-cancel'),
-                label: '取消',
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The 72 round logo slot at the top of the creation form (decision 0127):
+/// the chosen mark, or a dashed ring with a plus while none is chosen.
+class _ApplyLogoSlot extends StatelessWidget {
+  const _ApplyLogoSlot({required this.logoRef, required this.name});
+
+  final String? logoRef;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final reference = logoRef;
+    if (reference != null) {
+      return CommunityLogo(
+        key: ValueKey<String>('community-apply-logo-preview-$reference'),
+        identity: 'community-apply-preview',
+        name: name,
+        logoRef: reference,
+        size: 72,
+        radius: 36,
+      );
+    }
+    return Container(
+      key: const ValueKey<String>('community-apply-logo-empty'),
+      width: 72,
+      height: 72,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: LoopColors.card,
+        shape: BoxShape.circle,
+        border: Border.all(color: LoopColors.line2),
+      ),
+      child: const LoopIcon('plus', size: 24, color: LoopColors.text2),
     );
   }
 }

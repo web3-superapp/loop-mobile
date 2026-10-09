@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_round_key.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -720,7 +723,7 @@ void main() {
       await tester.tap(find.text('交易'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.byKey(const ValueKey<String>('user-profile-trades-end')),
+        find.text('卖出 BNB'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
@@ -731,6 +734,11 @@ void main() {
       );
       expect(find.text('买入 BNB'), findsOneWidget);
       expect(find.text('卖出 BNB'), findsOneWidget);
+      // The end of the list draws nothing (decision 0127).
+      expect(
+        find.byKey(const ValueKey<String>('user-profile-trades-end')),
+        findsNothing,
+      );
     });
 
     testWidgets('the 社区 section states the count and no list', (tester) async {
@@ -744,6 +752,92 @@ void main() {
       await tester.tap(find.text('社区').last);
       await tester.pumpAndSettle();
       expect(find.text('已加入 4 个社区'), findsOneWidget);
+    });
+  });
+
+  group('user-profile page · OKX header and round keys (decision 0127)', () {
+    testWidgets('a stranger: 72 face, 22 name, LOOP ID, four round keys', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        profiles: _Profiles(
+          record: _record(),
+          holdingsAnswer: LoopV2PublicProfileCodec.holdings(_holdingsWire()),
+        ),
+      );
+
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('user-profile-name')),
+            )
+            .style
+            ?.fontSize,
+        22,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('user-profile-loop-id')),
+        findsOneWidget,
+      );
+      final keys = find.descendant(
+        of: find.byKey(const ValueKey<String>('user-profile-keys')),
+        matching: find.byType(LoopRoundKey),
+      );
+      expect(keys, findsNWidgets(4));
+      for (final label in <String>['加好友', '私聊', '分享', '更多']) {
+        expect(
+          find.descendant(of: keys, matching: find.text(label)),
+          findsOneWidget,
+          reason: label,
+        );
+      }
+      // 关注 is the small capsule on the header's right.
+      expect(
+        tester
+            .widget<LoopPillAction>(
+              find.byKey(const ValueKey<String>('user-profile-follow')),
+            )
+            .label,
+        '关注',
+      );
+      // Holdings are OKX quote rows.
+      expect(find.byType(LoopQuoteRow), findsWidgets);
+      expect(find.textContaining('没有更多'), findsNothing);
+    });
+
+    testWidgets('a friend has three keys, the first one 聊天', (tester) async {
+      await _pump(
+        tester,
+        profiles: _Profiles(
+          record: _record(friendship: ProfileFriendship.friends),
+          holdingsAnswer: LoopV2PublicProfileCodec.holdings(_holdingsWire()),
+        ),
+      );
+      final keys = find.descendant(
+        of: find.byKey(const ValueKey<String>('user-profile-keys')),
+        matching: find.byType(LoopRoundKey),
+      );
+      expect(keys, findsNWidgets(3));
+      expect(
+        find.descendant(of: keys, matching: find.text('聊天')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('分享 opens the QR card directly', (tester) async {
+      await _pump(
+        tester,
+        profiles: _Profiles(
+          record: _record(),
+          holdingsAnswer: LoopV2PublicProfileCodec.holdings(_holdingsWire()),
+        ),
+      );
+      await _tap(tester, 'user-profile-share-card');
+      expect(
+        find.byKey(const ValueKey<String>('user-profile-more-sheet')),
+        findsNothing,
+      );
     });
   });
 

@@ -198,7 +198,11 @@ void main() {
         ),
       );
 
-      final folio = find.byType(LoopFolioPrimary);
+      // Decision 0127: the community row at the top of the list plays the
+      // hero's part; it scrolls away with the rows and comes back whole.
+      final folio = find.byKey(
+        const ValueKey<String>('community-members-owner-row'),
+      );
       expect(_onScreen(tester, folio), isTrue);
       await tester.scrollUntilVisible(
         find.text('member_30'),
@@ -217,7 +221,20 @@ void main() {
         isTrue,
       );
 
-      await loopStreamScrollToTop(tester);
+      tester
+          .state<ScrollableState>(
+            find
+                .descendant(
+                  of: find.byKey(
+                    const ValueKey<String>('community-members-list'),
+                  ),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          )
+          .position
+          .jumpTo(0);
+      await tester.pumpAndSettle();
       expect(_onScreen(tester, folio), isTrue);
     });
 

@@ -353,11 +353,10 @@ void main() {
       // that are allowed to summarise: the Token Card's metric cells, and the
       // new-pairs rows, whose trailing column is the same kind of slot and
       // whose sub-cent pools otherwise printed 「$0」. The community record
-      // carries the same Token Card, reading the same market fact into the
-      // same three cells, so it summarises on the same terms.
+      // no longer carries a Token Card (decision 0127: one quote row with
+      // the exact price), so it summarises nothing.
       const allowed = <String>{
         'lib/features/chain/chain_widgets.dart',
-        'lib/features/community/community_profile_screen.dart',
         // S78b: the new-pairs rows moved into `market_widgets.dart`, so the
         // page that lists them no longer summarises anything itself.
         // S78b: the 行情 row's price column, and only below a dollar. There

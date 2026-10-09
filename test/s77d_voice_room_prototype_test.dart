@@ -118,7 +118,7 @@ void main() {
         voiceRoom: _gateway(),
       );
 
-      expect(find.text('46 在听'), findsOneWidget);
+      expect(find.textContaining('46 在听 · '), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-host')),
         findsOneWidget,

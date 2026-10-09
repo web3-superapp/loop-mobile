@@ -146,7 +146,9 @@ enum LoopIllustration {
   holders('holders'),
   search('search'),
   watchlist('watchlist'),
-  rank('rank');
+  rank('rank'),
+  members('members'),
+  friends('friends');
 
   const LoopIllustration(this.fileName);
 

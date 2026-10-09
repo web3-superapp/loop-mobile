@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -15,8 +13,10 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_avatar_stack.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -174,34 +174,6 @@ class _CommunityMembersScreenState
           onPressed: () => _toggleSearch(controller),
         ),
       ],
-      folioCollapsed: typing,
-      folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.chalk,
-        archetype: LoopFolioArchetype.listing,
-        kicker: 'MEMBER DIRECTORY',
-        heading: searching ? '搜索成员' : _directoryHeading(state.filter, counts),
-        caption: searching
-            ? '这里只显示匹配到的成员。'
-            : _directoryCaption(state.filter, state.items.length),
-        // The figure repeats the heading's own count, so it is only
-        // stamped over the directory that heading counts.
-        stamp:
-            searching ||
-                counts == null ||
-                state.filter != CommunityMemberFilter.all
-            ? null
-            : '${counts.all}',
-        trailing: community == null
-            ? null
-            : CommunityLogo(
-                key: const ValueKey<String>('community-members-logo'),
-                identity: community.communityId,
-                name: community.name,
-                logoRef: community.logoRef,
-                size: 56,
-                radius: LoopRadius.controlValue,
-              ),
-      ),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -281,6 +253,7 @@ class _CommunityMembersScreenState
                     padding: const EdgeInsets.only(right: 8),
                     child: LoopSeg(
                       key: const ValueKey<String>('members-seg-online'),
+                      quiet: true,
                       label: '在线',
                       selected: false,
                       onSelected: null,
@@ -313,45 +286,26 @@ class _CommunityMembersScreenState
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '成员目录'),
-          if (!typing) ...<Widget>[
-            // The faces of the directory's first rows, stacked; a tap spreads
-            // them into a named row (decision 0092). The names are the
-            // directory's own display names, and the 「+N」 is the server's
-            // count less the faces drawn. It follows the same narrowing rule
-            // as the power card below: a filtered or searched page is not the
-            // directory the count stands for.
-            if (state.phase == CommunityViewPhase.ready &&
-                state.items.isNotEmpty &&
-                !searching &&
-                state.filter == CommunityMemberFilter.all)
-              _MemberPreview(items: state.items, total: counts?.all),
-            // `counts.online` is an unavailable fact by type: the directory
-            // read never observes presence, on any community, on every read.
-            // 「在线人数暂时读不到」 read as a read that had failed and could
-            // be retried here, while the community page next door states a
-            // real presence read. This page states what it is instead.
-            if (counts != null)
-              const LoopEmpty(
-                key: ValueKey<String>('community-members-online-not-observed'),
-                message: '在线人数',
-                reason: memberDirectoryPresenceNote,
-                margin: EdgeInsets.symmetric(horizontal: 16),
+          // Decision 0127: whose directory this is — the community's face and
+          // name in one row — instead of a hero card with an English eyebrow.
+          if (community != null && !typing)
+            LoopPersonRow(
+              key: const ValueKey<String>('community-members-owner-row'),
+              leading: CommunityLogo(
+                key: const ValueKey<String>('community-members-logo'),
+                identity: community.communityId,
+                name: community.name,
+                logoRef: community.logoRef,
+                size: 40,
+                radius: 12,
               ),
-            // The card reads the directory's first row. Under a role filter
-            // or a query that row is a different member on every keystroke,
-            // and the governance view carries no settled power at all — the
-            // card then printed 「这一项暂时读不到」 over a figure the page had
-            // simply stopped being about. A narrowed page does not carry it.
-            if (state.items.isNotEmpty &&
-                !searching &&
-                state.filter == CommunityMemberFilter.all) ...<Widget>[
-              const SizedBox(height: 10),
-              CommunityMiningPowerCard(
-                label: '成员算力',
-                fact: state.items.first.miningPower,
-              ),
-            ],
-          ],
+              title: community.name,
+              subtitle: searching
+                  ? '搜索成员'
+                  : counts == null
+                  ? null
+                  : _directoryHeading(state.filter, counts),
+            ),
           if (id == null)
             const LoopEmpty(
               key: ValueKey<String>('community-members-missing-id'),
@@ -368,6 +322,14 @@ class _CommunityMembersScreenState
                   ? '别名要从开头对上才算匹配，换个开头再试。'
                   : _emptyFilterReason(state.filter),
               permissionTitle: '没有权限查看成员目录',
+              empty: LoopEmptyState(
+                key: const ValueKey<String>('community-state-empty'),
+                illustration: LoopIllustration.members,
+                title: searching ? '没有匹配的成员' : '这个筛选下没有成员',
+                message: searching
+                    ? '别名要从开头对上才算匹配，换个开头再试。'
+                    : _emptyFilterReason(state.filter),
+              ),
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
@@ -393,17 +355,8 @@ class _CommunityMembersScreenState
               ),
             for (final group in _groups(state.items)) ...<Widget>[
               LoopLabel(group.$1),
-              LoopRecordGroup(
-                rows: <LoopRecordRow>[
-                  for (var index = 0; index < group.$2.length; index += 1)
-                    _memberRow(
-                      entry: group.$2[index],
-                      position: communityRowPosition(index, group.$2.length),
-                      state: state,
-                      controller: controller,
-                    ),
-                ],
-              ),
+              for (final entry in group.$2)
+                _memberRow(entry: entry, state: state, controller: controller),
             ],
             if (state.nextCursor != null)
               Padding(
@@ -416,25 +369,9 @@ class _CommunityMembersScreenState
                       ? null
                       : () => unawaited(controller.loadMore()),
                 ),
-              )
-            // The last page's control simply disappeared, and a list that
-            // ends in silence reads as one that stopped loading.
-            else if (state.items.isNotEmpty)
-              const LoopProvenanceFooter(
-                key: ValueKey<String>('community-members-end'),
-                text: '没有更多成员',
               ),
+            // The end of the directory draws nothing (decision 0127).
           ],
-          if (!typing)
-            const LoopNotice(
-              key: ValueKey<String>('community-members-rules'),
-              icon: 'info',
-              title: '三级权限',
-              body:
-                  'Owner / Admin / 成员。这里只显示你有权限做的操作；'
-                  '禁言只影响聊天，不影响治理权限。',
-              margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
-            ),
         ],
       ),
     );
@@ -450,6 +387,7 @@ class _CommunityMembersScreenState
       padding: const EdgeInsets.only(right: 8),
       child: LoopSeg(
         key: ValueKey<String>('members-seg-${filter.wireName}'),
+        quiet: true,
         label: label,
         selected: state.filter == filter,
         onSelected: () => unawaited(controller.selectFilter(filter)),
@@ -471,9 +409,11 @@ class _CommunityMembersScreenState
     return groups;
   }
 
-  LoopRecordRow _memberRow({
+  /// One OKX row (decision 0127): the face at 36, the name with the role
+  /// as a small mark, the LOOP ID under it, and 「管理」 on the right when the
+  /// server published a command for this row.
+  Widget _memberRow({
     required CommunityMemberEntry entry,
-    required LoopRowPosition position,
     required CommunityMembersState state,
     required CommunityMembersController controller,
   }) {
@@ -483,44 +423,53 @@ class _CommunityMembersScreenState
       CommunityMemberStatus.banned => '已封禁',
     };
     final identity = entry.profile.publicProfileId ?? entry.profile.loopId;
-    return LoopRecordRow(
+    final governs =
+        entry.status == CommunityMemberStatus.active &&
+        entry.role != CommunityRole.member;
+    // The viewer's own row is never navigable. A row the viewer may govern
+    // opens the shared public-profile sheet, which carries the commands the
+    // server allowed; any other row opens the member's page.
+    final VoidCallback? open = entry.isSelf || state.busy
+        ? null
+        : entry.actions.isEmpty &&
+              widget.onOpenProfile != null &&
+              entry.profile.publicProfileId != null
+        ? () => widget.onOpenProfile!(entry.profile.publicProfileId!)
+        : () => unawaited(_openMemberSheet(entry, controller));
+    return LoopPersonRow(
       key: ValueKey<String>('member-row-$identity'),
+      height: 60,
+      leading: LoopProfileAvatar(
+        avatarRef: entry.profile.avatarRef,
+        alias: entry.profile.displayName,
+        size: 36,
+      ),
       title: entry.isSelf
           ? '我 · ${entry.profile.displayName}'
           : entry.profile.displayName,
-      // The role and the status are a state, not a figure, so they ride in
-      // the badge and the subtitle keeps only the identity — except for a
-      // member with no alias, whose title already *is* that identity. Those
-      // rows read 「LOOP-HAG2GAFC / LOOP-HAG2GAFC」, the same string twice,
-      // beside rows that carried a name and an id. The row says when the
-      // member joined instead: it is the one other fact the directory holds
-      // about them.
+      // A member with no alias already carries the LOOP ID as the title, so
+      // the grey line says when the member joined instead of repeating it.
       subtitle: entry.profile.alias == null
           ? '加入于 ${communityObservedAtLabel(entry.joinedAt)}'
           : entry.profile.loopId,
-      trailingBadge: LoopBadge(
-        status,
-        key: ValueKey<String>('member-badge-$identity'),
-        kind: switch (entry.status) {
-          CommunityMemberStatus.active =>
-            entry.role == CommunityRole.member
-                ? LoopBadgeKind.mute
-                : LoopBadgeKind.mining,
-          CommunityMemberStatus.muted => LoopBadgeKind.mute,
-          CommunityMemberStatus.banned => LoopBadgeKind.down,
-        },
-      ),
-      position: position,
-      // The viewer's own row is never navigable. Every other row opens the
-      // shared public-profile sheet, which carries the governance commands
-      // the server has allowed for this viewer.
-      onTap: entry.isSelf || state.busy
+      tag:
+          entry.role == CommunityRole.member &&
+              entry.status == CommunityMemberStatus.active
           ? null
-          : entry.actions.isEmpty &&
-                widget.onOpenProfile != null &&
-                entry.profile.publicProfileId != null
-          ? () => widget.onOpenProfile!(entry.profile.publicProfileId!)
-          : () => unawaited(_openMemberSheet(entry, controller)),
+          : LoopTag(
+              status,
+              key: ValueKey<String>('member-badge-$identity'),
+              lime: governs,
+            ),
+      trailing: entry.actions.isEmpty || entry.isSelf
+          ? null
+          : LoopPillAction(
+              key: ValueKey<String>('member-manage-$identity'),
+              label: '管理',
+              primary: false,
+              onPressed: open,
+            ),
+      onTap: open,
       semanticLabel: '${entry.profile.displayName}，${entry.role.label}，$status',
     );
   }
@@ -604,43 +553,6 @@ class _CommunityMembersScreenState
   }
 }
 
-/// How many faces the member preview draws before its 「+N」.
-const int communityMemberPreviewFaces = 5;
-
-/// `community-members` · the directory's first faces, stacked.
-class _MemberPreview extends StatelessWidget {
-  const _MemberPreview({required this.items, required this.total});
-
-  final List<CommunityMemberEntry> items;
-  final int? total;
-
-  @override
-  Widget build(BuildContext context) {
-    final shown = items.take(communityMemberPreviewFaces).toList();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: LoopAvatarStack(
-        key: const ValueKey<String>('community-members-preview'),
-        semanticLabel: '成员预览',
-        // The count the server published for the whole directory; without it
-        // the stack draws no 「+N」 rather than a figure of its own.
-        total: total,
-        entries: <LoopAvatarStackEntry>[
-          for (final entry in shown)
-            LoopAvatarStackEntry(
-              label: entry.profile.displayName,
-              avatarBuilder: (size) => LoopProfileAvatar(
-                avatarRef: entry.profile.avatarRef,
-                alias: entry.profile.displayName,
-                size: size,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 /// The hero over the member directory.
 ///
 /// `counts` is the whole directory's: the server counts members by role and
@@ -661,16 +573,6 @@ String _directoryHeading(
     counts == null ? 'Admin 权限' : '${counts.admin} 名 Admin',
   CommunityMemberFilter.banned => '已封禁的成员',
 };
-
-String _directoryCaption(CommunityMemberFilter filter, int loaded) =>
-    switch (filter) {
-      CommunityMemberFilter.all => 'Owner / Admin / 成员 三级权限。',
-      CommunityMemberFilter.owner ||
-      CommunityMemberFilter.admin => '这里只显示这个角色下的成员。',
-      // The banned view is the one the server does not count.
-      CommunityMemberFilter.banned =>
-        '封禁是状态不是角色，这个筛选没有单独的人数读数，当前已载入 $loaded 人。',
-    };
 
 /// Why a filter came back with no rows. 已封禁 is a status the server keeps on
 /// a membership, not one of the three roles, and the empty state said 「这个角色
