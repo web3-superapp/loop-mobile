@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/cache/loop_recent_answers.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
@@ -74,6 +75,14 @@ Future<T> communityFirstRead<T>(
   }
 }
 
+/// Decision 0123: whether a community read that failed this way is asked
+/// again when the network comes back. Each carries no server answer.
+bool communityFailureMayRecoverWithNetwork(CommunityFailureKind? kind) =>
+    kind == CommunityFailureKind.offline ||
+    kind == CommunityFailureKind.timedOut ||
+    kind == CommunityFailureKind.unavailable ||
+    kind == CommunityFailureKind.unexpected;
+
 bool _mayBeATransientFirstRead(CommunityFailureKind kind) =>
     kind == CommunityFailureKind.offline ||
     kind == CommunityFailureKind.timedOut ||
@@ -110,8 +119,22 @@ final class CommunityHomeController
     _readAt = null;
     _restoredObservedAt = null;
     loopRetainRead(ref, onRevisit: _revisit);
+    ref.listen<int>(loopNetworkRecoveryTickProvider, (_, _) {
+      if (!ref.mounted || inFlight) return;
+      if (state.mode == CommunityGatewayMode.unavailable) return;
+      if (!communityFailureMayRecoverWithNetwork(state.failureKind)) return;
+      unawaited(reload());
+    });
     final initial = CommunityResourceState<CommunityHome>.initial(mode);
-    if (mode == CommunityGatewayMode.unavailable) return initial;
+    if (mode == CommunityGatewayMode.unavailable) {
+      return ref.watch(loopSessionAwaitingNetworkProvider)
+          ? CommunityResourceState<CommunityHome>(
+              mode: mode,
+              phase: CommunityViewPhase.offline,
+              failureKind: CommunityFailureKind.offline,
+            )
+          : initial;
+    }
     final restored = ref
         .read(loopSnapshotRestorerProvider)
         ?.restore(LoopSnapshotResource.communityHome);
@@ -283,7 +306,27 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
     _readAt = null;
     _membership = CommunityMembershipFilter.all;
     loopRetainRead(ref, onRevisit: _revisit);
-    return CommunityDiscoverState.initial(mode, membership: _membership);
+    ref.listen<int>(loopNetworkRecoveryTickProvider, (_, _) {
+      if (!ref.mounted || inFlight || state.loadingMore) return;
+      if (state.mode == CommunityGatewayMode.unavailable) return;
+      if (!communityFailureMayRecoverWithNetwork(state.failureKind)) return;
+      unawaited(reload());
+    });
+    final initial = CommunityDiscoverState.initial(
+      mode,
+      membership: _membership,
+    );
+    if (mode == CommunityGatewayMode.unavailable &&
+        ref.watch(loopSessionAwaitingNetworkProvider)) {
+      return CommunityDiscoverState(
+        mode: mode,
+        phase: CommunityViewPhase.offline,
+        sort: initial.sort,
+        membership: initial.membership,
+        failureKind: CommunityFailureKind.offline,
+      );
+    }
+    return initial;
   }
 
   void _revisit() {

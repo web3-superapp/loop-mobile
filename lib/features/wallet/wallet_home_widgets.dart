@@ -12,6 +12,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_environment_tag.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 // ---------------------------------------------------------------------------
@@ -687,8 +688,8 @@ Future<void> showWalletPowerSheet(
   );
 }
 
-/// One asset, unboxed: Logo 40 · SYMBOL over name · amount over ≈$x and the
-/// 24h move.
+/// One asset, unboxed: Logo 36 · SYMBOL over name · amount over ≈$x · the
+/// 24h move pill.
 ///
 /// A row whose chain read failed keeps its logo and ticker and says it was not
 /// read in one weak line — never `0`, never a dash.
@@ -709,13 +710,12 @@ class WalletAssetLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ink = LoopGround.inkOf(context);
-    final auxiliary = LoopGround.auxiliaryOf(context);
     final balance = row.balance;
     final logo = LoopTokenLogo(
       assetSymbol: row.symbol,
       logoUrl: row.logoUrl,
       fallbackMonogram: row.symbol,
-      size: 40,
+      size: 36,
     );
     final symbol = Text(
       row.symbol,
@@ -769,116 +769,74 @@ class WalletAssetLine extends StatelessWidget {
         ? walletMaskedFigure
         : loopFormatDecimal(available.displayBalance);
     final valuation = row.valuation;
-    final subtitle = <String>[
-      row.name,
+    // Derived-figure notes ride at the end of the grey line in small type
+    // (decision 0123): the name stays the line, the note never pushes the
+    // figures.
+    final marks = <String>[
       if (valuation is LoopValuationAvailable)
         ?loopFactQualityMarker(valuation.quality),
       if (row.pending case LoopPendingAvailable(value: final value)
           when value > Decimal.zero)
         '待确认 ${hidden ? walletMaskedFigure : loopFormatDecimal(value)}',
       if (row.crossCheck.isMisaligned) '数据源尚未对齐',
-    ].join(' · ');
+    ];
 
-    final List<InlineSpan> valueSpans;
+    final String valueText;
     final String valueLabel;
+    final Decimal? change;
     switch (valuation) {
       case LoopValuationAvailable(
         valueUsd: final value,
         change24hPct: final pct,
       ):
-        final usd = '≈${hidden ? walletMaskedFigure : loopFormatUsd(value)}';
-        valueSpans = <InlineSpan>[
-          TextSpan(text: usd),
-          if (pct != null) ...<InlineSpan>[
-            const TextSpan(text: ' · '),
-            TextSpan(
-              text: walletRowChangeText(pct),
-              style: TextStyle(color: LoopPriceMove.of(pct).color),
-            ),
-          ],
-        ];
+        valueText = '≈${hidden ? walletMaskedFigure : loopFormatUsd(value)}';
+        change = pct;
         valueLabel = pct == null
-            ? '估值 $usd'
-            : '估值 $usd，24h ${walletRowChangeText(pct)}';
+            ? '估值 $valueText'
+            : '估值 $valueText，24h ${walletRowChangeText(pct)}';
       case LoopValuationUnavailable():
-        valueSpans = const <InlineSpan>[TextSpan(text: '暂无估值')];
+        valueText = '暂无估值';
+        change = null;
         valueLabel = '暂无估值';
     }
 
-    return Semantics(
-      container: true,
-      button: onTap != null,
-      label: '${row.symbol}，余额 $amount，$valueLabel',
-      excludeSemantics: true,
-      child: GestureDetector(
-        key: ValueKey<String>('wallet-balance-${row.assetId}'),
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 64),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: LoopSpacing.page,
-              vertical: 10,
-            ),
-            child: Row(
-              children: <Widget>[
-                logo,
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      symbol,
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.captionSm.copyWith(color: auxiliary),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        amount,
-                        key: ValueKey<String>(
-                          'wallet-balance-amount-${row.assetId}',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.figure.copyWith(color: ink),
-                      ),
-                      const SizedBox(height: 2),
-                      Text.rich(
-                        TextSpan(children: valueSpans),
-                        key: ValueKey<String>(
-                          'wallet-balance-value-${row.assetId}',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.figureXs.copyWith(color: auxiliary),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    // The OKX asset row (decision 0123, S121 §1.1.1 rule 1): round logo 36,
+    // symbol 18 bold over the name 14 grey, amount 18 bold over the ≈ value 14 grey,
+    // and the 24h move in the fixed 96 × 44 pill at the right end.
+    return LoopQuoteRow(
+      key: ValueKey<String>('wallet-balance-${row.assetId}'),
+      leading: LoopTokenLogo(
+        assetSymbol: row.symbol,
+        logoUrl: row.logoUrl,
+        fallbackMonogram: row.symbol,
+        size: 36,
       ),
+      title: row.symbol,
+      // 「BNB / BNB」 says nothing twice: a name equal to the ticker gives
+      // its place to the note.
+      subtitle: row.name == row.symbol && marks.isNotEmpty ? null : row.name,
+      subtitleMark: marks.isEmpty ? null : marks.join(' · '),
+      subtitleMarkKey: ValueKey<String>('wallet-balance-mark-${row.assetId}'),
+      value: amount,
+      valueKey: ValueKey<String>('wallet-balance-amount-${row.assetId}'),
+      valueCaption: Text(
+        valueText,
+        key: ValueKey<String>('wallet-balance-value-${row.assetId}'),
+        style: LoopTypography.figure(14, color: LoopColors.text2),
+      ),
+      trailing: KeyedSubtree(
+        key: ValueKey<String>('wallet-balance-change-${row.assetId}'),
+        child: LoopChangePill(change: change),
+      ),
+      onTap: onTap,
+      semanticLabel: '${row.symbol}，余额 $amount，$valueLabel',
     );
   }
 }
 
-/// 「隐藏零余额资产」 — the switch under the list, with how many rows it folds.
+/// 「隐藏零余额资产」 — one line of text under the list that folds or shows
+/// the zero rows (decision 0123, OKX's text switch): folded it offers
+/// 「显示 N 项零余额资产」, open it offers 「隐藏零余额资产」.
 class WalletZeroBalanceToggle extends StatelessWidget {
   const WalletZeroBalanceToggle({
     required this.hideZero,
@@ -894,7 +852,7 @@ class WalletZeroBalanceToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final secondary = LoopGround.secondaryOf(context);
-    final auxiliary = LoopGround.auxiliaryOf(context);
+    final label = hideZero ? '显示 $zeroCount 项零余额资产' : '隐藏零余额资产';
     return Semantics(
       button: true,
       toggled: hideZero,
@@ -909,48 +867,24 @@ class WalletZeroBalanceToggle extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                _CheckMark(checked: hideZero),
-                const SizedBox(width: 8),
                 Text(
-                  '隐藏零余额资产',
-                  style: LoopType.caption.copyWith(color: secondary),
+                  label,
+                  key: const ValueKey<String>('wallet-zero-toggle-label'),
+                  style: LoopTypography.body(14, color: secondary),
                 ),
-                const Spacer(),
-                Text(
-                  '$zeroCount 项',
-                  style: LoopType.captionSm.copyWith(color: auxiliary),
+                const SizedBox(width: 4),
+                RotatedBox(
+                  // The chevron points the way the list will move.
+                  quarterTurns: hideZero ? 1 : 3,
+                  child: LoopIcon('chevron', size: 14, color: secondary),
                 ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _CheckMark extends StatelessWidget {
-  const _CheckMark({required this.checked});
-
-  final bool checked;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 16,
-      height: 16,
-      decoration: BoxDecoration(
-        color: checked ? LoopColors.lime : null,
-        borderRadius: BorderRadius.circular(4),
-        border: checked
-            ? null
-            : Border.all(color: LoopGround.edgeOf(context), width: 1.2),
-      ),
-      alignment: Alignment.center,
-      child: checked
-          ? const LoopIcon('check', size: 12, color: LoopColors.ink)
-          : null,
     );
   }
 }

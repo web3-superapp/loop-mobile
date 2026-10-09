@@ -283,6 +283,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             ? '还没有钱包'
             : walletId == null && directory.isReady
             ? '未选定钱包'
+            // Decision 0123: a read that never reached LOOP is the device
+            // being offline, not the figure being unavailable.
+            : directory.phase == LoopChainViewPhase.offline ||
+                  balancesState?.phase == LoopChainViewPhase.offline
+            ? '离线'
             : '暂不可用',
         address: directory.value?.active?.truncatedAddress,
         environmentTag: ref.watch(loopEnvironmentTagProvider),

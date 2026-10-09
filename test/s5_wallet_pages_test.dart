@@ -58,8 +58,8 @@ void main() {
     testWidgets('the assets are unboxed rows: amount over value and 24h', (
       tester,
     ) async {
-      // Decision 0119: no wrapping card; the row is Logo 40 · SYMBOL over
-      // name · amount over ≈\$x and the 24h move in rise / fall.
+      // Decision 0119 / 0123: no wrapping card; the row is Logo 36 · SYMBOL
+      // over name · amount over ≈\$x · the 24h move pill in rise / fall.
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -85,9 +85,16 @@ void main() {
           const ValueKey<String>('wallet-balance-value-$s5NativeAssetId'),
         ),
       );
-      expect(value.textSpan!.toPlainText(), '≈\$5,231.73 · ▲5%');
-      final change = (value.textSpan! as TextSpan).children!.last as TextSpan;
-      expect(change.style!.color, LoopColors.rise);
+      // Decision 0123: ≈\$ is the grey line, the 24h move is the pill.
+      expect(value.data, '≈\$5,231.73');
+      final pill = find.descendant(
+        of: find.byKey(
+          const ValueKey<String>('wallet-balance-change-$s5NativeAssetId'),
+        ),
+        matching: find.text('+5.00%'),
+      );
+      expect(pill, findsOneWidget);
+      expect(tester.widget<Text>(pill).style!.color, LoopColors.rise);
     });
 
     testWidgets('the gas reserve comes from the server, never a constant', (

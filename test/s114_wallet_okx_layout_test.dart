@@ -450,7 +450,7 @@ void main() {
       expect(key('wallet-balance-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-balance-$s5WbnbAssetId'), findsNothing);
       expect(key('wallet-zero-toggle'), findsOneWidget);
-      expect(find.text('1 项'), findsOneWidget);
+      expect(find.text('显示 1 项零余额资产'), findsOneWidget);
 
       await tester.tap(key('wallet-zero-toggle'));
       await tester.pumpAndSettle();
@@ -458,9 +458,14 @@ void main() {
       final value = tester.widget<Text>(
         key('wallet-balance-value-$s5WbnbAssetId'),
       );
-      expect(value.textSpan!.toPlainText(), '≈\$0 · ▼2.5%');
-      final move = (value.textSpan! as TextSpan).children!.last as TextSpan;
-      expect(move.style!.color, LoopColors.fall);
+      expect(value.data, '≈\$0');
+      final move = find.descendant(
+        of: key('wallet-balance-change-$s5WbnbAssetId'),
+        matching: find.text('-2.50%'),
+      );
+      expect(tester.widget<Text>(move).style!.color, LoopColors.fall);
+      // Open, the switch offers to fold them again.
+      expect(find.text('隐藏零余额资产'), findsOneWidget);
     });
 
     testWidgets('an unread row is never folded as zero', (tester) async {

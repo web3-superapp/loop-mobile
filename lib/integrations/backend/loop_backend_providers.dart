@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/network/loop_dio_factory.dart';
+import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
@@ -35,5 +36,16 @@ final class _PrivyLoopBackendAccessTokenSource
   final PrivyAuthGateway _gateway;
 
   @override
-  Future<String> loadAccessToken() => _gateway.getCurrentAccessToken();
+  Future<String> loadAccessToken() async {
+    try {
+      return await _gateway.getCurrentAccessToken();
+    } on PrivyGatewayException catch (error) {
+      // Decision 0123: Privy could not be reached to refresh the token. The
+      // session is offline, not signed out and not refused.
+      if (error.kind == PrivyFailureKind.network) {
+        throw const LoopBackendFailure(LoopBackendFailureKind.connection);
+      }
+      rethrow;
+    }
+  }
 }

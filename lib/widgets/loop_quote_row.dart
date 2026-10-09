@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -102,6 +104,8 @@ class LoopQuoteRow extends StatelessWidget {
     super.key,
     this.titleTrailing,
     this.subtitle,
+    this.subtitleMark,
+    this.subtitleMarkKey,
     this.value,
     this.valueKey,
     this.valueCaption,
@@ -118,6 +122,11 @@ class LoopQuoteRow extends StatelessWidget {
   /// A small mark right after the title (a ticker capsule).
   final Widget? titleTrailing;
   final String? subtitle;
+
+  /// A derived-figure note at the end of the grey line, in small weak type
+  /// (「以 WBNB 计价」, 「待确认 0.1」). On a narrow row both parts give way.
+  final String? subtitleMark;
+  final Key? subtitleMarkKey;
   final String? value;
   final Key? valueKey;
   final Widget? valueCaption;
@@ -133,52 +142,84 @@ class LoopQuoteRow extends StatelessWidget {
       height: height,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-        child: Row(
-          children: <Widget>[
-            leading,
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Flexible(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                          style: LoopTypography.title(18),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            children: <Widget>[
+              leading,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                            style: LoopTypography.title(18),
+                          ),
                         ),
-                      ),
-                      if (titleTrailing != null) ...<Widget>[
-                        const SizedBox(width: 6),
-                        titleTrailing!,
+                        if (titleTrailing != null) ...<Widget>[
+                          const SizedBox(width: 6),
+                          titleTrailing!,
+                        ],
                       ],
-                    ],
-                  ),
-                  if (subtitle != null) ...<Widget>[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      style: LoopTypography.body(14, color: LoopColors.text2),
                     ),
+                    if (subtitle != null || subtitleMark != null) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: <Widget>[
+                          if (subtitle != null)
+                            Flexible(
+                              child: Text(
+                                subtitle!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                style: LoopTypography.body(
+                                  14,
+                                  color: LoopColors.text2,
+                                ),
+                              ),
+                            ),
+                          if (subtitleMark != null) ...<Widget>[
+                            if (subtitle != null) const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                subtitleMark!,
+                                key: subtitleMarkKey,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                style: LoopTypography.caption(
+                                  11,
+                                  color: LoopColors.text3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (value != null || valueCaption != null) ...<Widget>[
-              const SizedBox(width: 10),
-              // Shares the room with the left column on a narrow screen, so
-              // the trailing block never overflows (a 320pt phone).
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 140),
+              if (value != null || valueCaption != null) ...<Widget>[
+                const SizedBox(width: 10),
+                // As wide as its figures and no wider (decision 0123): the
+                // left column takes the rest, so every row's pill ends on the
+                // same right edge. The cap shrinks on a narrow screen so the
+                // block never overflows (a 320pt phone).
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: math.min(140, constraints.maxWidth * 0.36),
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -216,13 +257,13 @@ class LoopQuoteRow extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
+              ],
+              if (trailing != null) ...<Widget>[
+                const SizedBox(width: 12),
+                trailing!,
+              ],
             ],
-            if (trailing != null) ...<Widget>[
-              const SizedBox(width: 12),
-              trailing!,
-            ],
-          ],
+          ),
         ),
       ),
     );

@@ -221,9 +221,11 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
                   child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
                 ),
             ] else
-              const LoopProvenanceFooter(
+              // Decision 0123 (S121 §1.1.1 rule 10): a list that really
+              // ended draws nothing; only room under the last row.
+              const SizedBox(
                 key: ValueKey<String>('square-voice-room-end'),
-                text: '没有更多语音房',
+                height: 12,
               ),
             if (state.observedAt case final DateTime observedAt)
               LoopProvenanceFooter(

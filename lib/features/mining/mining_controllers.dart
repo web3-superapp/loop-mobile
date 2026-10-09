@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
@@ -42,7 +43,35 @@ abstract base class MiningReadController<T>
     ref.onDispose(nextGeneration);
     _readAt = null;
     if (retainsAnswer) loopRetainRead(ref, onRevisit: _revisit);
+    // Decision 0123: a read that failed on the network asks again once the
+    // network is back; a session waiting for the network reads as offline.
+    ref.listen<int>(
+      loopNetworkRecoveryTickProvider,
+      (_, _) => _recoverAfterNetwork(),
+    );
+    final awaitingNetwork = ref.watch(loopSessionAwaitingNetworkProvider);
+    if (mode == LaunchGatewayMode.unavailable && awaitingNetwork) {
+      return LaunchResourceState<T>(
+        mode: mode,
+        phase: LaunchViewPhase.offline,
+        failureKind: LaunchFailureKind.offline,
+      );
+    }
     return LaunchResourceState<T>.initial(mode);
+  }
+
+  void _recoverAfterNetwork() {
+    if (!ref.mounted || inFlight) return;
+    if (state.mode == LaunchGatewayMode.unavailable) return;
+    switch (state.failureKind) {
+      case LaunchFailureKind.offline ||
+          LaunchFailureKind.timedOut ||
+          LaunchFailureKind.unavailable ||
+          LaunchFailureKind.unexpected:
+        unawaited(reload());
+      default:
+        return;
+    }
   }
 
   void _revisit() {

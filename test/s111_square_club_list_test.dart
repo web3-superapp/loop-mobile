@@ -476,8 +476,8 @@ void main() {
       });
     }
 
-    testWidgets('the last page ends in 没有更多社区; a next page is read on '
-        'scroll', (tester) async {
+    testWidgets('the last page ends on space, not 没有更多社区 (decision 0123); '
+        'a next page is read on scroll', (tester) async {
       final gateway = FakeCommunityGateway(
         directoryPage: _page(<CommunitySummary>[_row()], nextCursor: 'abc.def'),
       )..readDelay = const Duration(milliseconds: 50);
@@ -496,7 +496,7 @@ void main() {
         find.byKey(const ValueKey<String>('square-community-end')),
         findsOneWidget,
       );
-      expect(find.text('没有更多社区'), findsOneWidget);
+      expect(find.text('没有更多社区'), findsNothing);
       await _drain(tester);
     });
   });

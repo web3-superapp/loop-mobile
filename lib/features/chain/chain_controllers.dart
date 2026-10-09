@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -86,8 +87,27 @@ abstract base class LoopChainReadController<T>
     _readAt = null;
     _restoredObservedAt = null;
     if (retainsAnswer) loopRetainRead(ref, onRevisit: _revisit);
+    // Decision 0123: the network came back (or the App returned), so a block
+    // that failed asks again on its own. A block that has its answer, or is
+    // already asking, ignores the tick.
+    ref.listen<int>(
+      loopNetworkRecoveryTickProvider,
+      (_, _) => _recoverAfterNetwork(),
+    );
+    // A session Privy cannot confirm until the network returns has no
+    // adapter yet. That is the device being offline, not LOOP closing the
+    // block, and the block says so.
+    final awaitingNetwork = ref.watch(loopSessionAwaitingNetworkProvider);
     final initial = LoopChainResourceState<T>.initial(mode);
-    if (mode == LoopChainGatewayMode.unavailable) return initial;
+    if (mode == LoopChainGatewayMode.unavailable) {
+      return awaitingNetwork
+          ? LoopChainResourceState<T>(
+              mode: mode,
+              phase: LoopChainViewPhase.offline,
+              failureKind: LoopChainFailureKind.offline,
+            )
+          : initial;
+    }
     final resource = snapshotResource;
     if (resource == null) return initial;
     final restored = ref.read(loopSnapshotRestorerProvider)?.restore(resource);
@@ -105,6 +125,23 @@ abstract base class LoopChainReadController<T>
       value: value,
     );
   }
+
+  void _recoverAfterNetwork() {
+    if (!ref.mounted || inFlight) return;
+    if (state.mode == LoopChainGatewayMode.unavailable) return;
+    final kind = state.failureKind;
+    if (kind == null || !loopChainFailureMayRecoverWithNetwork(kind)) return;
+    unawaited(reload());
+  }
+
+  /// The kind a failure is shown as. While the session waits for the network
+  /// the absent adapter's `unavailable` is the device being offline.
+  LoopChainFailureKind _presented(LoopChainFailureKind kind) =>
+      kind == LoopChainFailureKind.unavailable &&
+          state.mode == LoopChainGatewayMode.unavailable &&
+          ref.read(loopSessionAwaitingNetworkProvider)
+      ? LoopChainFailureKind.offline
+      : kind;
 
   void _revisit() {
     // A block that has not been asked for yet is loaded by its page.
@@ -161,7 +198,7 @@ abstract base class LoopChainReadController<T>
           reattempted = true;
           continue;
         }
-        state = state.failed(error.kind);
+        state = state.failed(_presented(error.kind));
         return;
       } catch (_) {
         if (!isCurrent(generation)) return;
@@ -183,6 +220,18 @@ abstract base class LoopChainReadController<T>
       kind == LoopChainFailureKind.unexpected ||
       kind == LoopChainFailureKind.readFailed;
 }
+
+/// Whether a block that failed this way may succeed once the network is back
+/// (decision 0123). Each of these carries no server answer: the request never
+/// arrived, timed out, broke mid-way, or found no adapter. A refusal, a
+/// conflict or a permission answer is the server's and is never re-asked on a
+/// radio event.
+bool loopChainFailureMayRecoverWithNetwork(LoopChainFailureKind kind) =>
+    kind == LoopChainFailureKind.offline ||
+    kind == LoopChainFailureKind.timedOut ||
+    kind == LoopChainFailureKind.unavailable ||
+    kind == LoopChainFailureKind.readFailed ||
+    kind == LoopChainFailureKind.unexpected;
 
 /// `networks` · `GET /v2/chain/status`.
 final class ChainStatusController

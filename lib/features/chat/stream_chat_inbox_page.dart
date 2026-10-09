@@ -35,6 +35,17 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
+/// The 「发起」 button and the margin above it: 56 + 32 (decision 0123).
+const double chatInboxFabClearance = 88;
+
+/// The room under the last conversation row. The list already ends at the
+/// page's bottom inset, and the button stands [LoopLayout.tabPageBottomReserve]
+/// above that inset, so the last row ends 32 above the button and is never
+/// under it (measured on the emulator: with 88 alone the last row sat under
+/// the button).
+const double chatInboxListBottomPadding =
+    LoopLayout.tabPageBottomReserve + chatInboxFabClearance;
+
 /// Creates LOOP's official, bounded Stream channel-list controller.
 ///
 /// Stream owns channel ordering, pagination, unread state, presence, and local
@@ -793,7 +804,14 @@ class _StreamChannelListBodyState
             key: const ValueKey<String>('stream-chat-channel-list'),
             child: StreamChannelListView(
               controller: controller,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              // Decision 0123: the last row ends above the 「发起」 button
+              // (56 + its 32 margin), never under it.
+              padding: const EdgeInsets.fromLTRB(
+                0,
+                8,
+                0,
+                chatInboxListBottomPadding,
+              ),
               // The filter hides rows rather than re-querying: Stream cannot
               // filter channels by an ID prefix, and one shared list keeps the
               // order, unread state and pagination of every row in one place.
@@ -801,14 +819,11 @@ class _StreamChannelListBodyState
                   widget.filter.includes(channels[index].cid)
                   ? loopStreamChannelListIdentityItem(defaultItem)
                   : const SizedBox.shrink(),
+              // OKX's conversation list has no hairlines (decision 0123).
+              // Rows are told apart by the tile's own vertical padding — about
+              // 38 between two avatars; an extra 12 made the list loose.
               separatorBuilder: (context, channels, index) =>
-                  widget.filter.includes(channels[index].cid)
-                  ? defaultChannelListViewSeparatorBuilder(
-                      context,
-                      channels,
-                      index,
-                    )
-                  : const SizedBox.shrink(),
+                  const SizedBox.shrink(),
               emptyBuilder: (context) => SingleChildScrollView(
                 child: LoopEmptyState(
                   key: const ValueKey<String>('stream-chat-empty'),

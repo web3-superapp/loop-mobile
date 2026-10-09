@@ -39,6 +39,7 @@ import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The three tabs under the chart, in the reference's order.
@@ -542,14 +543,17 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
         LoopRecordGroup(
           key: const ValueKey<String>('meme-about-links'),
           rows: <LoopRecordRow>[
-            for (final (label, url) in <(String, String?)>[
-              ('X', links.twitter),
-              ('Telegram', links.telegram),
-              ('官网', links.website),
+            // Decision 0123: every link row has its mark, from the icons
+            // the set already has (no brand marks are drawn).
+            for (final (label, url, icon) in <(String, String?, String)>[
+              ('X', links.twitter, 'link'),
+              ('Telegram', links.telegram, 'link'),
+              ('官网', links.website, 'globe'),
             ])
               if (url != null)
                 LoopRecordRow(
                   key: ValueKey<String>('meme-about-link-$label'),
+                  leading: LoopRowIcon(icon: icon),
                   title: label,
                   subtitle: url,
                   trailingCaption: '复制',
@@ -621,6 +625,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('meme-about-dex'),
+                leading: const LoopRowIcon(icon: 'chart'),
                 title: '外盘行情',
                 subtitle: '毕业后的价格与 K 线',
                 onTap: () => _open(
@@ -635,6 +640,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('meme-about-explorer'),
+              leading: const LoopRowIcon(icon: 'link'),
               title: '区块浏览器',
               subtitle: url,
               trailingCaption: '复制',

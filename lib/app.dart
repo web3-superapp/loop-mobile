@@ -243,9 +243,20 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     // once the account has landed, alongside Community's, instead of after
     // the owner opens the tab. Each only when its page's gates are open.
     ref.listenManual(loopBootWarmupProvider, (previous, next) {});
+    // Decision 0123: a session Privy restored with no network reads as
+    // offline everywhere until Privy confirms it.
+    ref.listenManual<bool>(
+      loopSessionProvider.select(
+        (session) => session.mode == LoopSessionMode.authenticatedUnverified,
+      ),
+      (previous, next) =>
+          ref.read(loopSessionAwaitingNetworkProvider.notifier).set(next),
+      fireImmediately: true,
+    );
     _lifecycleListener = AppLifecycleListener(
       onResume: () {
         metaObserver.observe(LoopV2MetaObservationTrigger.appResumed);
+        _recoverAfterNetwork();
         // The owner may have added or removed a screen lock while LOOP was
         // away, and the lock's window is measured from the moment it left.
         final lock = ref.read(loopAppLockProvider.notifier);
@@ -273,6 +284,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
           metaObserver.observe(
             LoopV2MetaObservationTrigger.connectivityRestored,
           );
+          _recoverAfterNetwork();
           // C-30 (3): the SDK reconnects a connection it once had. One that
           // never opened — the device was offline when the session was
           // accepted — has nothing to resume, and the owner would stay
@@ -575,6 +587,20 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     scheduleMicrotask(() {
       if (mounted) unawaited(router.push<void>(target));
     });
+  }
+
+  /// Decision 0123: the network may be back. The session asks Privy again
+  /// if it is still waiting, a signed-in session re-establishes its LOOP
+  /// bootstrap if that failed on the network, and every block that failed
+  /// on the network re-reads (they listen to the tick).
+  void _recoverAfterNetwork() {
+    if (!mounted) return;
+    unawaited(ref.read(loopSessionProvider.notifier).recheckAfterNetwork());
+    final bootstrap = ref.read(loopBootstrapSessionProvider);
+    if (bootstrap != null && bootstrap.identity == null) {
+      unawaited(bootstrap.authorize());
+    }
+    ref.read(loopNetworkRecoveryTickProvider.notifier).bump();
   }
 
   @override

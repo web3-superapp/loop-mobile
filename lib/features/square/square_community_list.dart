@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
@@ -208,9 +207,11 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
               child: LoopSkeleton(type: LoopSkeletonType.record, rows: 2),
             ),
         ] else if (state.items.isNotEmpty)
-          const LoopProvenanceFooter(
+          // Decision 0123 (S121 §1.1.1 rule 10): a list that really
+          // ended draws nothing; only room under the last row.
+          const SizedBox(
             key: ValueKey<String>('square-community-end'),
-            text: '没有更多社区',
+            height: 12,
           ),
       ],
     ];
