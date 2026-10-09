@@ -160,9 +160,17 @@ final class OnboardingCommunitiesController
     extends Notifier<OnboardingCommunitiesState> {
   var _generation = 0;
 
+  /// A read is in the air. The page asks for `load()` on every build while
+  /// the phase is `loading`, and `reload()` itself publishes a `loading`
+  /// state, so without this flag each rebuild cancelled the previous read and
+  /// started another (device report 2026-10-09: 1,566 requests in 20 minutes,
+  /// a skeleton that never settled).
+  var _reading = false;
+
   @override
   OnboardingCommunitiesState build() {
     _generation += 1;
+    _reading = false;
     ref.onDispose(() => _generation += 1);
     final mode = ref.watch(recommendedCommunitiesGatewayProvider).mode;
     final closed = mode == CommunityGatewayMode.unavailable;
@@ -178,7 +186,8 @@ final class OnboardingCommunitiesController
   bool _current(int generation) => ref.mounted && generation == _generation;
 
   Future<void> load() {
-    if (state.items.isNotEmpty ||
+    if (_reading ||
+        state.items.isNotEmpty ||
         state.phase != CommunityViewPhase.loading ||
         state.mode == CommunityGatewayMode.unavailable) {
       return Future<void>.value();
@@ -189,6 +198,7 @@ final class OnboardingCommunitiesController
   Future<void> reload() async {
     if (state.mode == CommunityGatewayMode.unavailable) return;
     final generation = ++_generation;
+    _reading = true;
     state = OnboardingCommunitiesState(
       mode: state.mode,
       phase: CommunityViewPhase.loading,
@@ -198,6 +208,7 @@ final class OnboardingCommunitiesController
           .read(recommendedCommunitiesGatewayProvider)
           .load();
       if (!_current(generation)) return;
+      _reading = false;
       final ids = <String>{for (final item in answer.items) item.communityId};
       state = state.copyWith(
         phase: answer.items.isEmpty
@@ -214,12 +225,14 @@ final class OnboardingCommunitiesController
       if (answer.items.isEmpty) unawaited(loadMore());
     } on CommunityGatewayException catch (error) {
       if (!_current(generation)) return;
+      _reading = false;
       state = state.copyWith(
         phase: communityPhaseForFailure(error.kind),
         failureKind: error.kind,
       );
     } catch (_) {
       if (!_current(generation)) return;
+      _reading = false;
       state = state.copyWith(
         phase: CommunityViewPhase.error,
         failureKind: CommunityFailureKind.unexpected,
