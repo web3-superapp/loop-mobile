@@ -7,6 +7,8 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart'
+    show confirmCommunityAction;
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
@@ -221,20 +223,62 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
     ),
   );
 
-  void _back() {
+  /// Whether 返回 on this step leaves the flow rather than going one step
+  /// back: the first step, or the confirm step of a resumed draft.
+  bool get _backLeaves =>
+      _step == MemeCreateStep.profile ||
+      (widget.draftId != null && _step == MemeCreateStep.confirm);
+
+  /// What leaving the first step would throw away.
+  bool get _hasUnsavedInput =>
+      _step == MemeCreateStep.profile &&
+      (_imageMediaId != null ||
+          <TextEditingController>[
+            _name,
+            _symbol,
+            _description,
+            _twitter,
+            _telegram,
+            _website,
+            _firstBuy,
+          ].any((controller) => controller.text.trim().isNotEmpty));
+
+  bool get _submissionHolds {
     final submission = ref.read(
       memeSubmissionControllerProvider(MemeCreateScreen.submissionScope),
     );
-    if (submission.busy || submission.locked) return;
-    if (_step == MemeCreateStep.profile ||
-        (widget.draftId != null && _step == MemeCreateStep.confirm)) {
-      widget.onBack?.call();
+    return submission.busy || submission.locked;
+  }
+
+  /// One 返回 for the top bar and the system (decision 0128, S123 M1): one
+  /// step back on 2 and 3; on 1, leave — after 「放弃创建？」 when something
+  /// was typed. A submission in flight holds the page.
+  Future<void> _back() async {
+    if (_submissionHolds) return;
+    if (!_backLeaves) {
+      setState(() {
+        _step = MemeCreateStep.values[_step.index - 1];
+        _showErrors = false;
+      });
       return;
     }
-    setState(() {
-      _step = MemeCreateStep.values[_step.index - 1];
-      _showErrors = false;
-    });
+    if (_hasUnsavedInput) {
+      final abandon = await confirmCommunityAction(
+        context,
+        title: '放弃创建？',
+        body: '已填写的内容不会保存。',
+        confirmLabel: '放弃',
+        cancelLabel: '继续编辑',
+        sheetKey: 'meme-create-abandon-sheet',
+      );
+      if (!abandon || !mounted) return;
+    }
+    final onBack = widget.onBack;
+    if (onBack != null) {
+      onBack();
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _next() async {
@@ -423,11 +467,14 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
     }
 
     final draft = _draft;
-    return LoopFocusPage(
+    // The system back (Android key, predictive back, iOS edge swipe) is the
+    // same 返回 as the top bar's: it may leave at once only from an empty
+    // first step.
+    final page = LoopFocusPage(
       key: const ValueKey<String>('meme-create-screen'),
       archetype: LoopPageArchetype.action,
       title: '创建代币',
-      onBack: _back,
+      onBack: () => unawaited(_back()),
       keyboardAccessory: true,
       block: blocked
           ? LoopPageBlock(
@@ -448,6 +495,18 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
                 : _confirmStep(draft, wallet, submission, capability),
         },
       ],
+    );
+    return PopScope(
+      canPop:
+          _backLeaves &&
+          !_hasUnsavedInput &&
+          !submission.busy &&
+          !submission.locked,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        unawaited(_back());
+      },
+      child: page,
     );
   }
 

@@ -12,6 +12,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/shell/loop_orientation.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
@@ -100,20 +101,14 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
   void initState() {
     super.initState();
     // `chart-full` is the token chart turned sideways (decision 0118).
-    unawaited(
-      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]),
-    );
+    unawaited(SystemChrome.setPreferredOrientations(loopChartOrientations));
   }
 
   @override
   void dispose() {
-    // Back to whatever the application declares.
-    unawaited(
-      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]),
-    );
+    // Back to the App's portrait lock (decision 0128), not to "any": an
+    // empty list would let every other page turn sideways again.
+    unawaited(loopLockPortrait());
     super.dispose();
   }
 
