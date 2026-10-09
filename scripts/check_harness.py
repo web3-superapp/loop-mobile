@@ -15252,7 +15252,17 @@ PRESS_HAPTICS_CALL_SITES = {
         "LoopHaptics.error()",
     ),
     "lib/widgets/loop_pressable.dart": ("LoopHaptics.medium()",),
-    "lib/features/market/loop_market_chart.dart": ("LoopHaptics.medium()",),
+    # Decision 0135: the crosshair ticks a selection as it steps a bucket.
+    "lib/features/market/loop_market_chart.dart": (
+        "LoopHaptics.medium()",
+        "LoopHaptics.selection()",
+    ),
+    # Decision 0135: the docked unread pill's two buttons press with a light
+    # touch.
+    "lib/integrations/communication/stream_unread_pill_band.dart": (
+        "LoopPressable(",
+        "haptic: LoopHaptic.light",
+    ),
 }
 
 PRESS_HAPTICS_OWNER = "lib/core/haptics/loop_haptics.dart"

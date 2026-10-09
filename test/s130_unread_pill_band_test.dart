@@ -18,11 +18,14 @@ void main() {
     final harness = _PillHarness(unread: 4);
     await harness.pump(tester);
 
-    // One pill: LOOP's band. Stream's own overlay is off.
-    expect(find.byType(UnreadIndicatorButton), findsOneWidget);
+    // One pill: LOOP's band (decision 0135 draws it itself). Stream's own
+    // overlay is off.
+    expect(find.byType(UnreadIndicatorButton), findsNothing);
+    expect(find.byType(StreamJumpToUnreadButton), findsNothing);
+    expect(find.byType(LoopUnreadJumpPill), findsOneWidget);
     expect(find.text('4 条未读'), findsOneWidget);
 
-    final pill = tester.getRect(find.byType(StreamJumpToUnreadButton));
+    final pill = tester.getRect(find.byType(LoopUnreadJumpPill));
     final list = tester.getRect(find.byType(StreamMessageListView));
     expect(list.top, greaterThanOrEqualTo(pill.bottom));
 
@@ -49,7 +52,7 @@ void main() {
     harness.markReadOnServer();
     await tester.pumpAndSettle();
 
-    expect(find.byType(StreamJumpToUnreadButton), findsNothing);
+    expect(find.byType(LoopUnreadJumpPill), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('loop-unread-pill-band')),
       findsNothing,
@@ -63,7 +66,7 @@ void main() {
     final harness = _PillHarness(unread: 0);
     await harness.pump(tester);
 
-    expect(find.byType(StreamJumpToUnreadButton), findsNothing);
+    expect(find.byType(LoopUnreadJumpPill), findsNothing);
     expect(tester.getRect(find.byType(StreamMessageListView)).top, 0);
 
     await harness.dispose(tester);
@@ -75,8 +78,9 @@ void main() {
 
     // The test channel has no read events, so `markRead` is refused. The
     // dismiss button is the pill's trailing square.
-    final pill = tester.getRect(find.byType(StreamJumpToUnreadButton));
-    await tester.tapAt(pill.centerRight - const Offset(20, 0));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('loop-unread-pill-dismiss')),
+    );
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);

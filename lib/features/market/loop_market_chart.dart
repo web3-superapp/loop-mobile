@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
+import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
+import 'package:loop_mobile/features/market/loop_chart_gestures.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 
@@ -455,7 +457,51 @@ class LoopMarketChartState extends State<LoopMarketChart> {
   void _crosshairAt(double dx) {
     final geometry = _geometry(Size(_width, widget.height));
     final index = geometry.indexAt(dx + widget.edgeGuard);
-    if (index != _crosshair) setState(() => _crosshair = index);
+    if (index == _crosshair) return;
+    // Decision 0135: the crosshair stepping onto another bucket is a choice
+    // among peers moving; its first appearance is the pick-up (medium).
+    if (_crosshair != null) LoopHaptics.selection();
+    setState(() => _crosshair = index);
+  }
+
+  void _onLongPressStart(LongPressStartDetails details) {
+    // Decision 0130: the crosshair appearing is a pick-up.
+    LoopHaptics.medium();
+    _crosshairAt(details.localPosition.dx);
+  }
+
+  void _onLongPressMove(LongPressMoveUpdateDetails details) =>
+      _crosshairAt(details.localPosition.dx);
+
+  void _onLongPressEnd(LongPressEndDetails _) => _clearCrosshair();
+
+  void _clearCrosshair() => setState(() => _crosshair = null);
+
+  Map<Type, GestureRecognizerFactory> _gestures() {
+    final scale =
+        GestureRecognizerFactoryWithHandlers<LoopChartScaleGestureRecognizer>(
+          () => LoopChartScaleGestureRecognizer(debugOwner: this),
+          (recognizer) {
+            recognizer
+              ..onStart = _onScaleStart
+              ..onUpdate = _onScaleUpdate;
+          },
+        );
+    final longPress =
+        GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+          () => LongPressGestureRecognizer(debugOwner: this),
+          (recognizer) {
+            recognizer
+              ..onLongPressStart = _onLongPressStart
+              ..onLongPressMoveUpdate = _onLongPressMove
+              ..onLongPressEnd = _onLongPressEnd
+              ..onLongPressCancel = _clearCrosshair;
+          },
+        );
+    return <Type, GestureRecognizerFactory>{
+      LoopChartScaleGestureRecognizer: scale,
+      LongPressGestureRecognizer: longPress,
+    };
   }
 
   @override
@@ -531,20 +577,13 @@ class LoopMarketChartState extends State<LoopMarketChart> {
                   top: 0,
                   right: 0,
                   bottom: 0,
-                  child: GestureDetector(
+                  // One recognizer set for the inline and the full-screen
+                  // chart: horizontal travel pans, two fingers pinch,
+                  // vertical travel is left to the page (decision 0135).
+                  child: RawGestureDetector(
                     key: const ValueKey<String>('loop-market-chart-gestures'),
                     behavior: HitTestBehavior.opaque,
-                    onScaleStart: _onScaleStart,
-                    onScaleUpdate: _onScaleUpdate,
-                    onLongPressStart: (details) {
-                      // Decision 0130: the crosshair appearing is a pick-up.
-                      LoopHaptics.medium();
-                      _crosshairAt(details.localPosition.dx);
-                    },
-                    onLongPressMoveUpdate: (details) =>
-                        _crosshairAt(details.localPosition.dx),
-                    onLongPressEnd: (_) => setState(() => _crosshair = null),
-                    onLongPressCancel: () => setState(() => _crosshair = null),
+                    gestures: _gestures(),
                   ),
                 ),
               ],
