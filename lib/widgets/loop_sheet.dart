@@ -10,7 +10,12 @@ Future<T?> showLoopSheet<T>(
   required WidgetBuilder builder,
   String barrierLabel = '关闭弹层',
   bool isDismissible = true,
-  bool useRootNavigator = false,
+
+  /// Decision 0128 (B3): every sheet goes on the root navigator, over the
+  /// floating tab bar. A sheet opened from a tab page used to land on the
+  /// branch navigator, under the bar, and its last row could not be tapped.
+  /// Passing `false` is refused by the harness.
+  bool useRootNavigator = true,
 
   /// Whether a downward drag closes the sheet. Defaults to [isDismissible].
   /// A drag closes the route directly, past any `PopScope` inside the sheet,
@@ -21,10 +26,10 @@ Future<T?> showLoopSheet<T>(
   final reduceMotion = MediaQuery.disableAnimationsOf(context);
   final result = await showModalBottomSheet<T>(
     context: context,
-    // A sheet opened from a tab page is pushed on the shell's own navigator
-    // by default, which the floating tab bar is painted over: the last row
-    // of a tall sheet sat under it (S106b). The root navigator lays the
-    // sheet over the bar instead.
+    // A sheet opened from a tab page would be pushed on the tab's own
+    // navigator, which the floating tab bar is painted over: the last row
+    // of a tall sheet sat under it (S106b, S123 B3). The root navigator lays
+    // the sheet and its veil over the bar instead.
     useRootNavigator: useRootNavigator,
     useSafeArea: true,
     isScrollControlled: true,

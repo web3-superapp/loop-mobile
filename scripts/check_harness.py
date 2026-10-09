@@ -6417,8 +6417,12 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                         "C3 application route must not recover identity from "
                         f"navigation extras or a default asset: `{forbidden}`"
                     )
-            shell_start = source.find("      ShellRoute(")
-            shell_end = source.find("      ..._accountRoutes,", shell_start)
+            # Decision 0128: the shell is a StatefulShellRoute; its tab
+            # branches end where the root routes begin, at `/home`.
+            shell_start = source.find("      StatefulShellRoute.indexedStack(")
+            shell_end = source.find(
+                "      GoRoute(path: '/home', redirect:", shell_start
+            )
             if shell_start < route_start < shell_end:
                 errors.append(
                     "C3 must remain a root full-screen route outside the five-destination Shell"
@@ -8730,7 +8734,8 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
     if app_path.is_file():
         source = strip_dart_comments(read_text(app_path))
         compact_source = re.sub(r"\s+", " ", source).strip()
-        shell_start = compact_source.find("ShellRoute(")
+        # Decision 0128: the tabs are branches of one indexed stack.
+        shell_start = compact_source.find("StatefulShellRoute.indexedStack(")
         first_root_after_shell = re.search(
             r"GoRoute\s*\(\s*path\s*:\s*'/home'",
             compact_source[shell_start + 1 :] if shell_start >= 0 else "",
@@ -8741,7 +8746,10 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             else -1
         )
         if shell_start < 0 or shell_end < 0:
-            errors.append("lib/app.dart must retain an inspectable V2 ShellRoute")
+            errors.append(
+                "lib/app.dart must retain an inspectable V2 "
+                "StatefulShellRoute.indexedStack"
+            )
         else:
             shell = compact_source[shell_start:shell_end]
             for path in ("/chat", "/square", "/meme", "/intel", "/wallet"):
@@ -8933,6 +8941,129 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                     errors.append(
                         f"LoopRouteManifest tabSlugs must not retain `{retired}`"
                     )
+
+    return errors
+
+
+def check_navigation_shell_contract(root: Path) -> list[str]:
+    """S123a / decision 0128: the shell behaves like a native tab bar.
+
+    Audit S123 §五 rules 2, 3, 4, 5 and 13: tab routes are one
+    `StatefulShellRoute` with a scroll-retention test; back on a tab that is
+    not 聊天 returns to 聊天 (tested through `handlePopRoute`); a multi-step
+    page owns the system back; sheets open on the root navigator; the App is
+    locked to portrait from `main`.
+    """
+
+    errors: list[str] = []
+
+    def source_of(relative: str) -> str | None:
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing navigation shell file: {relative}")
+            return None
+        return strip_dart_comments(read_text(path))
+
+    app = source_of("lib/app.dart")
+    if app is not None:
+        if "StatefulShellRoute.indexedStack(" not in app:
+            errors.append(
+                "lib/app.dart: the five tabs must be branches of one "
+                "StatefulShellRoute.indexedStack"
+            )
+        if re.search(r"(?<![\w.])ShellRoute\s*\(", app):
+            errors.append(
+                "lib/app.dart: a plain ShellRoute rebuilds every tab on switch; "
+                "use StatefulShellRoute"
+            )
+
+    shell = source_of("lib/features/shell/loop_shell.dart")
+    if shell is not None:
+        compact = " ".join(shell.split())
+        for fragment, message in (
+            (
+                "goBranch(index, initialLocation: index == shell.currentIndex)",
+                "LoopShell must switch tabs with goBranch",
+            ),
+            ("canPop: selectedIndex == 0", "LoopShell back must return to 聊天"),
+            ("goBranch(0)", "LoopShell back must return to 聊天"),
+            (
+                "LoopShell.scrollToTop(",
+                "re-selecting the showing tab must scroll it to the top",
+            ),
+        ):
+            if fragment not in compact:
+                errors.append(f"lib/features/shell/loop_shell.dart: {message}")
+        if "context.go(LoopShell._destinations[index].path)" in compact and (
+            "if (shell == null)" not in compact
+        ):
+            errors.append("LoopShell must not switch tabs with context.go")
+
+    sheet = source_of("lib/widgets/loop_sheet.dart")
+    if sheet is not None and "bool useRootNavigator = true" not in sheet:
+        errors.append("showLoopSheet must default to the root navigator")
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in sorted(lib_root.rglob("*.dart")):
+            text = strip_dart_comments(read_text(path))
+            relative = path.relative_to(root).as_posix()
+            if re.search(r"useRootNavigator\s*:\s*false", text):
+                errors.append(
+                    f"{relative}: a sheet must not set useRootNavigator: false "
+                    "(the floating tab bar would cover it)"
+                )
+            if re.search(
+                r"setPreferredOrientations\(\s*const\s*<DeviceOrientation>\[\s*\]",
+                text,
+            ):
+                errors.append(
+                    f"{relative}: orientations must be restored to the portrait "
+                    "lock, not to every orientation"
+                )
+            if re.search(r"^\s*\w+\s+_step\s*=", text, flags=re.MULTILINE) and (
+                "PopScope(" not in text
+            ):
+                errors.append(
+                    f"{relative}: a multi-step page must own the system back "
+                    "with PopScope"
+                )
+
+    main = source_of("lib/main.dart")
+    if main is not None and "loopLockPortrait()" not in main:
+        errors.append("lib/main.dart must lock the App to portrait at start")
+    orientation = source_of("lib/features/shell/loop_orientation.dart")
+    if orientation is not None:
+        block = orientation[orientation.find("loopAppOrientations") :]
+        block = block[: block.find("];")]
+        if block.count("DeviceOrientation.") != 1 or (
+            "DeviceOrientation.portraitUp" not in block
+        ):
+            errors.append("loopAppOrientations must be exactly portraitUp")
+    chart = source_of("lib/features/market/market_secondary_screens.dart")
+    if chart is not None:
+        dispose_at = chart.find("void dispose()", chart.find("class _FullChartScreenState"))
+        if dispose_at < 0 or "loopLockPortrait()" not in chart[dispose_at : dispose_at + 400]:
+            errors.append(
+                "the full-screen chart must restore the portrait lock when left"
+            )
+
+    test = source_of("test/s123a_navigation_shell_test.dart")
+    if test is not None:
+        for fragment, message in (
+            ("StatefulShellRoute", "assert the App's StatefulShellRoute"),
+            (
+                "scroll 广场, switch to 钱包, come back: the offset holds",
+                "keep the tab scroll-retention test",
+            ),
+            ("handlePopRoute()", "drive the system back"),
+            ("'/chat'", "assert back on 广场 lands on /chat"),
+            ("meme-create-step-1", "assert 创建代币 step 2 back returns to step 1"),
+            ("loopLockPortrait()", "assert the portrait lock"),
+        ):
+            if fragment not in test:
+                errors.append(
+                    f"test/s123a_navigation_shell_test.dart must {message}"
+                )
 
     return errors
 
@@ -14584,6 +14715,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_token_card_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_v2_primary_navigation_contract(root))
+    errors.extend(check_navigation_shell_contract(root))
     errors.extend(check_v2_community_truth_contract(root))
     errors.extend(check_community_ai_contract(root))
     errors.extend(check_community_identity_contract(root))
