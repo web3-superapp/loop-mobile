@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -72,12 +73,32 @@ void main() {
   });
 
   testWidgets('shows Apple only for the iOS composition', (tester) async {
-    await _pump(tester, showApple: true);
+    await _pump(tester, showApple: true, appleLoginVisible: true);
 
     expect(
       find.byKey(const ValueKey('privy-apple-login-button')),
       findsOneWidget,
     );
+  });
+
+  testWidgets(
+    'hides Apple on iOS while the Privy Apple client is the old team',
+    (tester) async {
+      await _pump(tester, showApple: true, appleLoginVisible: false);
+
+      expect(
+        find.byKey(const ValueKey('privy-apple-login-button')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('privy-google-login-button')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  test('the Apple login switch ships off until Privy migrates the client', () {
+    expect(LoopFeatureSwitches.appleLoginVisible, isFalse);
   });
 
   testWidgets('disables wallet connection when Reown is not configured', (
@@ -214,6 +235,7 @@ VoidCallback? _pressed(WidgetTester tester, String key) {
 Future<void> _pump(
   WidgetTester tester, {
   required bool showApple,
+  bool appleLoginVisible = true,
   _CredentialGateway? credential,
   String reownProjectId = '26a5cc1adad234fcdf7762b8d2a2b28d',
   VoidCallback? onCodeSent,
@@ -236,6 +258,9 @@ Future<void> _pump(
           credential ?? _CredentialGateway(),
         ),
         isIosIdentityPlatformProvider.overrideWithValue(showApple),
+        loopFeatureSwitchesProvider.overrideWithValue(
+          LoopFeatureSwitchValues(appleLoginVisible: appleLoginVisible),
+        ),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

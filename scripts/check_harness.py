@@ -7029,9 +7029,12 @@ def check_native_matrix(root: Path) -> list[str]:
                 "local_auth_darwin",
                 "COCOAPODS: 1.",
             ),
+            # 2026-10-09 Apple team change (docs/13): iOS ships as
+            # com.cywd.loopapp under team L8UZT43W24; Android stays com.cywd.loop.
             "ios/Runner.xcodeproj/project.pbxproj": (
-                "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loop;",
-                "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loop.RunnerTests;",
+                "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loopapp;",
+                "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loopapp.RunnerTests;",
+                "DEVELOPMENT_TEAM = L8UZT43W24;",
             ),
             "ios/Runner/Info.plist": ("<string>Loop</string>", "<string>loop</string>"),
         },
