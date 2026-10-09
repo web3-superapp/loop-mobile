@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -72,7 +73,9 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     final previewEnabled = ref.watch(developmentPreviewEnabledProvider);
     final authState = ref.watch(emailAuthProvider);
     final controller = ref.read(emailAuthProvider.notifier);
-    final showApple = ref.watch(isIosIdentityPlatformProvider);
+    final showApple =
+        ref.watch(isIosIdentityPlatformProvider) &&
+        ref.watch(loopFeatureSwitchesProvider).appleLoginVisible;
 
     // `#scr-auth` carries no topbar: the brand mark, the welcome line and the
     // methods are the page. The title stays in the semantics of the head so

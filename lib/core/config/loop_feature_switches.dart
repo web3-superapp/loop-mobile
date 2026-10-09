@@ -21,6 +21,12 @@ abstract final class LoopFeatureSwitches {
   /// S107 §2：隐私页「匿名模式」开关 UI 下线（后端字段保留）；改 true 即恢复。
   static const bool anonymousModeVisible = false;
 
+  /// 2026-10-09 Apple 账号更换：Privy 的 Apple 登录仍绑定旧 Client ID
+  /// `com.cywd.loop` / 旧 Team ID，Privy 控制台不允许自行改；在 Privy 支持
+  /// 迁移到 `com.cywd.loopapp` / `L8UZT43W24` 之前，登录页不显示「使用 Apple
+  /// 继续」。改 true 即恢复。
+  static const bool appleLoginVisible = false;
+
   /// S113 · 决策 0118：行情里的「新币」「聪明钱」入口隐藏（它们把读者带出
   /// LOOP，且数据源未开放）；页面与路由保留，改 true 即恢复入口。
   static const bool outboundMarketListsVisible = false;
@@ -47,6 +53,7 @@ final class LoopFeatureSwitchValues {
         LoopFeatureSwitches.outboundMarketListsVisible,
     this.searchOutboundDomainsVisible =
         LoopFeatureSwitches.searchOutboundDomainsVisible,
+    this.appleLoginVisible = LoopFeatureSwitches.appleLoginVisible,
   });
 
   final bool idoLaunchVisible;
@@ -55,6 +62,7 @@ final class LoopFeatureSwitchValues {
   final bool anonymousModeVisible;
   final bool outboundMarketListsVisible;
   final bool searchOutboundDomainsVisible;
+  final bool appleLoginVisible;
 
   /// Whether a channel draws its members as their real Stream user (name,
   /// image, tap to the public profile) rather than as a channel-scoped name.
