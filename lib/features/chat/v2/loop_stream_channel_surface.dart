@@ -15,6 +15,7 @@ import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.da
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
 import 'package:loop_mobile/integrations/communication/stream_server_clock_source.dart';
+import 'package:loop_mobile/integrations/communication/stream_unread_pill_band.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_connection.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
@@ -715,15 +716,21 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
       children: <Widget>[
         if (widget.header != null) widget.header!,
         if (widget.banner != null) widget.banner!,
+        // Decision 0134: the unread pill sits in its own strip above the
+        // list instead of over the list's top row.
         Expanded(
-          child: StreamMessageListView(
-            key: const ValueKey<String>('loop-stream-message-list'),
-            builders: loopStreamMessageListViewBuilders(),
-            onEditMessageTap: _edit,
-            onReplyTap: _reply,
+          child: LoopStreamUnreadDockedList(
             scrollController: _listScroll,
-            itemPositionListener: _listPositions,
-            enableSafeArea: false,
+            list: StreamMessageListView(
+              key: const ValueKey<String>('loop-stream-message-list'),
+              builders: loopStreamMessageListViewBuilders(),
+              config: loopChannelListConfiguration(context),
+              onEditMessageTap: _edit,
+              onReplyTap: _reply,
+              scrollController: _listScroll,
+              itemPositionListener: _listPositions,
+              enableSafeArea: false,
+            ),
           ),
         ),
         if (widget.footer != null) widget.footer!,

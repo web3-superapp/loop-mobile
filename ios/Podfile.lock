@@ -156,8 +156,8 @@ PODS:
   - privy_flutter (0.0.1):
     - Factory (= 2.4.3)
     - Flutter
-    - PrivySDK (= 2.12.0)
-  - PrivySDK (2.12.0)
+    - PrivySDK (= 2.16.2)
+  - PrivySDK (2.16.2)
   - PromisesObjC (2.4.1)
   - record_ios (1.2.1):
     - Flutter
@@ -380,8 +380,8 @@ SPEC CHECKSUMS:
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   permission_handler_apple: ee2fe0fd04551b304eb002714ff067c371c822ed
   photo_manager: 3d7c9d321e7bfeb8630ddcbf02cd3f0ff82deaaf
-  privy_flutter: a5245a615cb520d934df4ed396b64adb69399f36
-  PrivySDK: bf76bedb35eac79180b4bd5714512514d7567b95
+  privy_flutter: 58bec372caf48259128188f8283d10debc5a73e9
+  PrivySDK: 16d402c35855bfd4521cd57b53ed1ca6f70c8c25
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   record_ios: 3b171007ae5de51221a3a76d2b379a7105ca98b5
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf

@@ -9,7 +9,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 const directSdkVersions = <String, String>{
   'firebase_core': '4.13.0',
   'firebase_messaging': '16.5.0',
-  'privy_flutter': '0.10.1',
+  'privy_flutter': '0.11.0',
   'stream_chat_flutter': '10.3.0',
   'stream_chat_persistence': '10.3.0',
   'stream_video_flutter': '1.4.3',

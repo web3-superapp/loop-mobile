@@ -112,13 +112,15 @@ const loopUndecidedSessionMessage = '暂时无法确认登录状态，请稍后�
 
 /// What Privy told us about a failure.
 ///
-/// privy_flutter 0.10.1 carries no error code across the platform channel:
-/// `PrivyException` has a single `message` field and
-/// `ExceptionConversion.convertToPrivyException` keeps a `PlatformException`
-/// code only for the four MFA cases. Classification is therefore a message
-/// mapping, documented in decision 0064, and it is deliberately biased to
-/// [network]: only an explicit authentication answer may be read as
-/// "signed out".
+/// privy_flutter 0.10.1 carried no error code across the platform channel:
+/// `PrivyException` had a single `message` field. 0.11.0 adds typed
+/// subclasses (`PrivyAuthException`, `PrivyWalletException`,
+/// `PrivyTimeoutException`) keyed on the native code, but its `flow`/`stage`
+/// still say nothing about whether the credential was rejected or the device
+/// was offline, and the native `message` is passed through unchanged.
+/// Classification therefore stays a message mapping, documented in decisions
+/// 0064 and 0134, and it is deliberately biased to [network]: only an explicit
+/// authentication answer may be read as "signed out".
 enum PrivyFailureKind {
   /// The device could not reach Privy. The session state stays undecided.
   network,
@@ -132,7 +134,7 @@ enum PrivyFailureKind {
   unknown,
 }
 
-/// Maps a privy_flutter 0.10.1 `PrivyException.message` onto a
+/// Maps a privy_flutter 0.11.0 `PrivyException.message` onto a
 /// [PrivyFailureKind]. Network markers are tested first: when a message
 /// mentions both a transport and a credential, the transport explains it and
 /// LOOP must not read it as a sign-out.
@@ -375,7 +377,7 @@ class PrivySdkAuthGateway
       config: PrivyConfig(
         appId: config.privyAppId,
         appClientId: config.privyAppClientId,
-        // Privy 0.10.1 may expose OTPs or access tokens at verbose levels.
+        // Privy 0.11.0 may expose OTPs or access tokens at verbose levels.
         logLevel: PrivyLogLevel.none,
       ),
     );

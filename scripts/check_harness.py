@@ -31,7 +31,7 @@ PINNED_DEPENDENCIES = {
     "flutter_svg": "2.3.0",
     "go_router": "17.5.0",
     "mobile_scanner": "7.4.2",
-    "privy_flutter": "0.10.1",
+    "privy_flutter": "0.11.0",
     "reown_appkit": "1.8.4",
     "share_plus": "12.0.2",
     "shared_preferences": "2.5.5",
@@ -11723,7 +11723,7 @@ S9_SIGNING_INTENT_MARKERS = (
     "chainIsPermitted",
     "launchPurchase",
 )
-# privy_flutter 0.10.1 exposes no chain-selection call; the payload's own
+# privy_flutter 0.11.0 exposes no chain-selection call; the payload's own
 # chainId selects the chain (decision 0090). The device signer therefore
 # admits the Launch slot for a Launch intent only, and only while chain/status
 # publishes it; every other kind stays failed closed off the primary chain.

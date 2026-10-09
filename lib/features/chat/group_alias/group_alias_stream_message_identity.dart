@@ -21,10 +21,12 @@ import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.da
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/integrations/communication/stream_unread_pill_band.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
+import 'package:stream_chat_flutter/scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Neutral sender label used when the current Stream member projection cannot
@@ -958,6 +960,7 @@ class _LoopStreamGroupChannelPageState
   late final FocusNode _focusNode = FocusNode();
   late final StreamMessageComposerController _composerController =
       StreamMessageComposerController();
+  final ItemScrollController _listScroll = ItemScrollController();
 
   @override
   void dispose() {
@@ -1013,13 +1016,20 @@ class _LoopStreamGroupChannelPageState
       bottom: composer,
       appBarSurfaceStyle: StreamChannelHeader.resolveSurfaceStyle(context),
       bottomSurfaceStyle: StreamMessageComposer.resolveSurfaceStyle(context),
-      body: StreamMessageListView(
-        builders: loopStreamMessageListViewBuilders(),
-        onEditMessageTap: _edit,
-        onReplyTap: _reply,
-        threadBuilder: (_, parentMessage) =>
-            _LoopStreamGroupThreadPage(parent: parentMessage!),
-        enableSafeArea: true,
+      // Decision 0134: the unread pill sits in its own strip above the list
+      // instead of over the list's top row.
+      body: LoopStreamUnreadDockedList(
+        scrollController: _listScroll,
+        list: StreamMessageListView(
+          builders: loopStreamMessageListViewBuilders(),
+          config: loopChannelListConfiguration(context),
+          scrollController: _listScroll,
+          onEditMessageTap: _edit,
+          onReplyTap: _reply,
+          threadBuilder: (_, parentMessage) =>
+              _LoopStreamGroupThreadPage(parent: parentMessage!),
+          enableSafeArea: true,
+        ),
       ),
     );
   }

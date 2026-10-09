@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.cywd.loop"
-        // Privy 0.10.1's published Android artifact declares 28 despite its docs saying 27.
+        // privy_flutter 0.11.0's published Android artifact declares minSdk 28 despite its docs saying 27.
         minSdk = 28
         targetSdk = 36
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
