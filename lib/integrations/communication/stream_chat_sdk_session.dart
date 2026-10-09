@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 import 'package:stream_chat_persistence/stream_chat_persistence.dart';
@@ -41,6 +43,12 @@ abstract interface class StreamChatClientPort {
     required Future<String> Function(String userId) tokenProvider,
   });
 
+  /// Opens this device's own copy of [identity]'s conversations before the
+  /// token and the websocket (decision 0132). It reads nothing from the
+  /// network; [connect] then finds the copy already open. A client without
+  /// local persistence does nothing.
+  Future<void> openLocalHistory(StreamChatIdentity identity);
+
   Future<void> disconnect({required bool flushLocalPersistence});
 
   Future<void> dispose();
@@ -77,6 +85,12 @@ final class StreamChatSdkClientPort implements StreamChatClientPort {
       ),
       tokenProvider,
     );
+  }
+
+  @override
+  Future<void> openLocalHistory(StreamChatIdentity identity) async {
+    if (client.chatPersistenceClient == null) return;
+    await client.openPersistenceConnection(User(id: identity.userId));
   }
 
   @override
@@ -152,6 +166,20 @@ final class StreamChatSdkSessionAuthorizer
 
   final StreamChatClientPort _client;
   final StreamChatSessionSource _source;
+
+  final ValueNotifier<String?> _localHistoryUserId = ValueNotifier<String?>(
+    null,
+  );
+
+  /// The server-derived Stream user whose conversations this device's own
+  /// copy is open for, while the token and the websocket are still on their
+  /// way (decision 0132). `null` before the identity is known, once the
+  /// principal changes, and after disposal.
+  ///
+  /// The inbox draws that copy while [authorize] runs, so a cold start opens
+  /// on the conversations the last run ended with instead of a skeleton. It
+  /// authorizes nothing: every action still waits for [authorize].
+  ValueListenable<String?> get localHistoryUserId => _localHistoryUserId;
 
   Future<void> _lifecycleTail = Future<void>.value();
   Future<StreamSessionAuthorization>? _authorization;
@@ -260,6 +288,24 @@ final class StreamChatSdkSessionAuthorizer
       }
     }
 
+    // Decision 0132: open this identity's own copy first, so the inbox can
+    // draw it while the token and the websocket are still on their way. A
+    // copy that does not open costs nothing: the connection below opens it.
+    try {
+      await _untilInvalidated(
+        _client.openLocalHistory(identity),
+        generation: generation,
+        invalidated: invalidated,
+      );
+      if (_isCurrent(generation)) {
+        _localHistoryUserId.value = identity.userId;
+      }
+    } catch (_) {
+      if (!_isCurrent(generation)) {
+        return StreamSessionAuthorization.unavailable;
+      }
+    }
+
     try {
       final rawConnection = _client.connect(
         identity: identity,
@@ -358,6 +404,7 @@ final class StreamChatSdkSessionAuthorizer
   Future<void> clearSession() => dispose();
 
   Future<bool> _disconnectConnectedUser() async {
+    _localHistoryUserId.value = null;
     if (_client.connectedUserId == null) return true;
     try {
       await _client.disconnect(flushLocalPersistence: false);
@@ -368,6 +415,7 @@ final class StreamChatSdkSessionAuthorizer
   }
 
   Future<void> _disconnectIgnoringFailure() async {
+    _localHistoryUserId.value = null;
     try {
       await _client.disconnect(flushLocalPersistence: false);
     } catch (_) {
@@ -397,6 +445,7 @@ final class StreamChatSdkSessionAuthorizer
 
   void _invalidateGeneration() {
     _generation += 1;
+    _localHistoryUserId.value = null;
     final invalidated = _generationInvalidated;
     _generationInvalidated = Completer<void>();
     if (!invalidated.isCompleted) invalidated.complete();

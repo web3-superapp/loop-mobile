@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/widgets/loop_media_image.dart';
 
 /// Replaces the remote image provider (before resizing). Tests only.
 @visibleForTesting
@@ -12,10 +13,12 @@ ImageProvider<Object> Function(String url)? debugLoopRemoteAvatarImageProvider;
 /// spinner and no layout shift: the slot is always [size] square.
 ///
 /// Decoded pictures are held by Flutter's own [ImageCache], keyed by the
-/// address. Avatar addresses are content-addressed and immutable
-/// (`/v2/media/{mediaId}.webp`), so a picture decoded once in a chat row is
-/// reused on the profile page and the member list for the rest of the run.
-/// There is no on-disk cache; that needs a dependency of its own.
+/// address alone: every slot decodes at [loopMediaDecodeSide], so a picture
+/// decoded once in a chat row is the same cache entry on the profile page and
+/// the member list, and is drawn there from the first frame (decision 0132).
+/// Avatar addresses are content-addressed and immutable
+/// (`/v2/media/{mediaId}.webp`), so the bytes are also kept on disk
+/// ([LoopMediaImage]) and a cold start draws the picture, not the monogram.
 class LoopRemoteAvatar extends StatelessWidget {
   const LoopRemoteAvatar({
     required this.url,
@@ -39,12 +42,11 @@ class LoopRemoteAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pixels = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
     final source =
-        debugLoopRemoteAvatarImageProvider?.call(url) ?? NetworkImage(url);
+        debugLoopRemoteAvatarImageProvider?.call(url) ?? LoopMediaImage(url);
     final image = Image(
       key: const ValueKey<String>('loop-remote-avatar-image'),
-      image: ResizeImage.resizeIfNeeded(pixels, pixels, source),
+      image: loopRemoteAvatarImage(source),
       width: size,
       height: size,
       fit: BoxFit.cover,
@@ -66,3 +68,12 @@ class LoopRemoteAvatar extends StatelessWidget {
     );
   }
 }
+
+/// The one decode every remote avatar slot shares (decision 0132).
+ImageProvider<Object> loopRemoteAvatarImage(ImageProvider<Object> source) =>
+    ResizeImage(
+      source,
+      width: loopMediaDecodeSide,
+      height: loopMediaDecodeSide,
+      policy: ResizeImagePolicy.fit,
+    );

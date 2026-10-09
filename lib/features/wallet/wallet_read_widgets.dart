@@ -567,3 +567,158 @@ class WalletCreationBlock extends ConsumerWidget {
     LoopToast.show(context, message: '钱包已创建', kind: LoopToastKind.ok);
   }
 }
+
+/// The `tx-history` tape while its first page is on its way (decision 0132).
+///
+/// Each placeholder is one [walletActivityRow] as it lands on the flat page:
+/// 56 tall, a 36 circle mark, a 16 title over a 13 second line, and the
+/// signed amount (16) over its time (11) at the end, with the chevron's room.
+/// The generic list skeleton it replaces had a 44 rounded square and no
+/// value column, so the whole tape jumped when the rows arrived (audit
+/// 2026-10-09 M12).
+class WalletActivitySkeleton extends StatelessWidget {
+  const WalletActivitySkeleton({super.key, this.rows = 6});
+
+  final int rows;
+
+  static const List<double> _titles = <double>[0.42, 0.5, 0.36, 0.46];
+  static const List<double> _subtitles = <double>[0.66, 0.58, 0.72, 0.62];
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: '列表加载中',
+      child: ExcludeSemantics(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (var index = 0; index < rows.clamp(1, 8); index++)
+              Container(
+                constraints: const BoxConstraints(minHeight: 56),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  8,
+                  LoopSpacing.page,
+                  8,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    const LoopSkeletonBlock(width: 36, height: 36, radius: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          LoopSkeletonLine(
+                            style: LoopTypography.title(16),
+                            widthFactor: _titles[index % 4],
+                          ),
+                          const SizedBox(height: 2),
+                          LoopSkeletonLine(
+                            style: LoopTypography.body(13),
+                            widthFactor: _subtitles[index % 4],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 64,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          LoopSkeletonLine(
+                            style: LoopTypography.figure(16),
+                            widthFactor: 1,
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: SizedBox(
+                              width: 40,
+                              child: LoopSkeletonLine(
+                                style: LoopTypography.figure(11),
+                                widthFactor: 1,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // The chevron's slot (6 + 16).
+                    const SizedBox(width: 22),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `receive` before any answer for this wallet exists on this device
+/// (decision 0132): the network chip, the 232 code plate, the address capsule
+/// and the two buttons, where they will stand. Only a first visit on a fresh
+/// install sees it — every later visit opens on the stored answer.
+class WalletReceiveSkeleton extends StatelessWidget {
+  const WalletReceiveSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: '收款地址加载中',
+      child: const ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Center(
+                child: LoopSkeletonBlock(
+                  width: 156,
+                  height: LoopTouch.minimum,
+                  radius: LoopTouch.minimum / 2,
+                ),
+              ),
+            ),
+            Center(
+              child: LoopSkeletonBlock(width: 232, height: 232, radius: 18),
+            ),
+            SizedBox(height: 20),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: LoopSkeletonBlock(height: 58, radius: 14),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 20, 16, 16),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: LoopSkeletonBlock(
+                      height: LoopTouch.primaryButton,
+                      radius: 16,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: LoopSkeletonBlock(
+                      height: LoopTouch.primaryButton,
+                      radius: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

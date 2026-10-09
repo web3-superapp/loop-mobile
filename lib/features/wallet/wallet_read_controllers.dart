@@ -192,6 +192,12 @@ final class WalletReceiveController
   @override
   LoopChainGatewayMode watchMode() => _walletMode(ref);
 
+  /// Decision 0132: a wallet's receive addresses do not change, so the page
+  /// opens on the last answer this device received — however old — and the
+  /// live read confirms it behind. No amount and no signature depends on it.
+  @override
+  String? get snapshotResource => LoopSnapshotResource.walletReceive(walletId);
+
   @override
   Future<LoopWalletReceive> fetch() =>
       ref.read(walletReadGatewayProvider).loadReceive(walletId);

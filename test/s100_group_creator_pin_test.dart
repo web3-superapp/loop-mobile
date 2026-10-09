@@ -257,7 +257,7 @@ void main() {
     test('the community screen keeps the role rule', () {
       expect(
         source('lib/features/chat/v2/community_chat_screen.dart'),
-        contains('mayPinMessages: detail.viewer.mayPinMessages'),
+        contains('mayPinMessages: detail?.viewer.mayPinMessages ?? false'),
       );
     });
   });

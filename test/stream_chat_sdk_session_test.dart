@@ -80,6 +80,72 @@ void main() {
     expect(client.receivedTokens, <String>['short-lived-stream-token']);
   });
 
+  test(
+    'the local copy opens for the server identity before the socket (0132)',
+    () async {
+      final connectGate = Completer<void>();
+      final connectStarted = Completer<void>();
+      final client = _FakeStreamChatClientPort(
+        connectGate: connectGate,
+        connectStarted: connectStarted,
+      );
+      final source = _MutableSessionSource(
+        identity: const StreamChatIdentity(userId: 'loop-user-42'),
+      );
+      final authorizer = StreamChatSdkSessionAuthorizer(
+        client: client,
+        source: source,
+      );
+      expect(authorizer.localHistoryUserId.value, isNull);
+      await authorizer.synchronizePrincipal('did:privy:test');
+
+      final result = authorizer.authorize();
+      await connectStarted.future;
+      // The token answered, the socket has not: the inbox may already draw
+      // this identity's own copy.
+      expect(client.localHistoryOpens, <String>['loop-user-42']);
+      expect(authorizer.localHistoryUserId.value, 'loop-user-42');
+      connectGate.complete();
+      expect(await result, StreamSessionAuthorization.authorized);
+
+      // Logging out closes the copy with the session.
+      await authorizer.synchronizePrincipal(null);
+      expect(authorizer.localHistoryUserId.value, isNull);
+    },
+  );
+
+  test('a local copy that does not open still connects (0132)', () async {
+    final client = _FakeStreamChatClientPort()..failLocalHistory = true;
+    final source = _MutableSessionSource(
+      identity: const StreamChatIdentity(userId: 'loop-user-42'),
+    );
+    final authorizer = StreamChatSdkSessionAuthorizer(
+      client: client,
+      source: source,
+    );
+    await authorizer.synchronizePrincipal('did:privy:test');
+
+    expect(await authorizer.authorize(), StreamSessionAuthorization.authorized);
+    expect(authorizer.localHistoryUserId.value, isNull);
+    expect(client.connectCalls, 1);
+  });
+
+  test('no server identity opens no local copy (0132)', () async {
+    final client = _FakeStreamChatClientPort();
+    final authorizer = StreamChatSdkSessionAuthorizer(
+      client: client,
+      source: _MutableSessionSource(),
+    );
+    await authorizer.synchronizePrincipal('did:privy:test');
+
+    expect(
+      await authorizer.authorize(),
+      StreamSessionAuthorization.unavailable,
+    );
+    expect(client.localHistoryOpens, isEmpty);
+    expect(authorizer.localHistoryUserId.value, isNull);
+  });
+
   test('concurrent authorization is single-flight', () async {
     final connectGate = Completer<void>();
     final connectStarted = Completer<void>();
@@ -510,6 +576,18 @@ class _FakeStreamChatClientPort implements StreamChatClientPort {
     final gate = connectGate;
     await gate?.future;
     connectedUserId = identity.userId;
+  }
+
+  /// Every identity whose local copy was opened, in order (decision 0132).
+  final List<String> localHistoryOpens = <String>[];
+
+  /// Fails the local-copy open when set.
+  bool failLocalHistory = false;
+
+  @override
+  Future<void> openLocalHistory(StreamChatIdentity identity) async {
+    localHistoryOpens.add(identity.userId);
+    if (failLocalHistory) throw StateError('no local copy');
   }
 
   @override

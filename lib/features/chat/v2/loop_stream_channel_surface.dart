@@ -253,7 +253,19 @@ class _LoopStreamMemberChannelBodyState
   late Future<Channel?> _channel;
   late LoopStreamConnection _connection;
   LoopOutgoingMessageOrder? _outgoingOrder;
+  Channel? _orderedChannel;
   StreamSubscription<Event>? _clockSource;
+
+  /// The channel this client already holds for [LoopStreamMemberChannelBody.cid]
+  /// with this account as a member — the one the inbox row was drawn from —
+  /// or `null`. While the membership query runs it is what the page shows
+  /// (decision 0132), so a conversation opens on its messages instead of a
+  /// skeleton; the query's answer is the same object, updated in place.
+  Channel? _cached;
+
+  /// Keeps the conversation (list position, composer) when the policy
+  /// wrapper above it appears or the answer replaces the cached channel.
+  final GlobalKey _bodyKey = GlobalKey(debugLabel: 'loop-channel-body');
 
   /// Whether a resume has already asked this body to reconnect and is still
   /// waiting for the answer. One resume buys one attempt; a failed attempt
@@ -268,6 +280,27 @@ class _LoopStreamMemberChannelBodyState
         widget.connection ?? LoopStreamClientConnection(widget.client);
     _clockSource = loopWatchStreamServerClock(widget.client);
     _channel = _start();
+  }
+
+  void _takeCached() {
+    final cached = loopStreamCachedMemberChannel(
+      client: widget.client,
+      cid: widget.cid,
+      userId: widget.userId,
+    );
+    _cached = cached;
+    if (cached != null) _orderOutgoing(cached);
+  }
+
+  /// Attached before the Stream widgets below subscribe to the same channel
+  /// state, so an out-of-order stamp is corrected in the same microtask
+  /// drain and no frame is painted with the message misplaced. One channel
+  /// object is ordered once, however many reads resolve to it.
+  void _orderOutgoing(Channel channel) {
+    if (identical(_orderedChannel, channel) && _outgoingOrder != null) return;
+    _outgoingOrder?.dispose();
+    _outgoingOrder = LoopOutgoingMessageOrder(channel: channel)..attach();
+    _orderedChannel = channel;
   }
 
   @override
@@ -312,6 +345,7 @@ class _LoopStreamMemberChannelBodyState
   void _reload() {
     _outgoingOrder?.dispose();
     _outgoingOrder = null;
+    _orderedChannel = null;
     _channel = _start();
   }
 
@@ -323,6 +357,7 @@ class _LoopStreamMemberChannelBodyState
   /// the 2026-09-19 device log shows. `ignore()` claims the failure without
   /// consuming it: the builder still receives it and still renders the block.
   Future<Channel?> _start() {
+    _takeCached();
     final pending = _load();
     pending.ignore();
     return pending;
@@ -346,10 +381,7 @@ class _LoopStreamMemberChannelBodyState
         channel.membership?.userId != widget.userId) {
       return null;
     }
-    // Attached here, before the Stream widgets below subscribe to the same
-    // channel state, so an out-of-order stamp is corrected in the same
-    // microtask drain and no frame is painted with the message misplaced.
-    _outgoingOrder = LoopOutgoingMessageOrder(channel: channel)..attach();
+    _orderOutgoing(channel);
     return channel;
   }
 
@@ -377,13 +409,21 @@ class _LoopStreamMemberChannelBodyState
     return FutureBuilder<Channel?>(
       future: _channel,
       builder: (context, snapshot) {
+        final cached = _cached;
         if (snapshot.connectionState != ConnectionState.done) {
+          // Decision 0132: the conversation this client already holds is
+          // drawn at once; the membership query confirms it behind.
+          if (cached != null) return _conversation(cached);
           return LoopStreamChannelStateBlock(
             key: ValueKey<String>('${widget.keyPrefix}-confirming'),
             message: '正在确认这个频道以及你的成员身份…',
             loading: true,
           );
         }
+        // A read that failed did not disprove anything: the messages already
+        // on screen stay, and Stream's own composer queues what is typed.
+        // Only an answer that names no membership closes the conversation.
+        if (snapshot.hasError && cached != null) return _conversation(cached);
         // The membership query is the same read: a query that never reached
         // Stream did not disprove membership, so it pauses rather than
         // claiming the account is not a member. Every other cause gets its
@@ -419,27 +459,75 @@ class _LoopStreamMemberChannelBodyState
             onRetry: () => setState(_reload),
           );
         }
-        final body = _LoopChannelBody(
-          composerHint: widget.composerHint,
-          header: widget.header,
-          banner: widget.banner,
-          footer: widget.footer,
-        );
-        return loopStreamChannelScope(
-          key: ValueKey<String>(widget.cid),
-          channel: snapshot.data!,
-          child: switch (widget.mayPinMessages ??
-              widget.mayPinMessagesFor?.call(snapshot.data!, widget.userId)) {
-            final bool mayPin => LoopChannelMessagePolicy(
-              mayPin: mayPin,
-              child: body,
-            ),
-            null => body,
-          },
-        );
+        return _conversation(snapshot.data!);
       },
     );
   }
+
+  Widget _conversation(Channel channel) {
+    final body = _LoopChannelBody(
+      key: _bodyKey,
+      composerHint: widget.composerHint,
+      header: widget.header,
+      banner: widget.banner,
+      footer: widget.footer,
+    );
+    return loopStreamChannelScope(
+      key: ValueKey<String>(widget.cid),
+      channel: channel,
+      child: switch (widget.mayPinMessages ??
+          widget.mayPinMessagesFor?.call(channel, widget.userId)) {
+        final bool mayPin => LoopChannelMessagePolicy(
+          mayPin: mayPin,
+          child: body,
+        ),
+        null => body,
+      },
+    );
+  }
+}
+
+/// Whether the authorized Stream session already holds [cid] with this
+/// account as a member (decision 0132): the page may then mount its surface
+/// before its own record answers, and the conversation opens on its messages.
+bool loopStreamHoldsMemberChannel(WidgetRef ref, String cid) {
+  final authorization = ref.watch(streamChatAuthorizationProvider).value;
+  if (authorization != StreamSessionAuthorization.authorized) return false;
+  final session = ref.watch(streamChatSdkSessionProvider);
+  final user = session?.client.state.currentUser;
+  if (session == null || user == null) return false;
+  return loopStreamCachedMemberChannel(
+        client: session.client,
+        cid: cid,
+        userId: user.id,
+      ) !=
+      null;
+}
+
+/// The channel [client] already holds for [cid] with [userId] as a member,
+/// or `null` (decision 0132).
+///
+/// Only a channel whose state is loaded and whose own membership — or, when
+/// Stream sent none, its loaded member slice — names [userId] qualifies: a
+/// channel object is never taken as proof of membership by itself. Nothing is
+/// read from the network or from disk here.
+@visibleForTesting
+Channel? loopStreamCachedMemberChannel({
+  required StreamChatClient client,
+  required String cid,
+  required String userId,
+}) {
+  final channel = client.state.channels[cid];
+  if (channel == null || channel.cid != cid) return null;
+  final state = channel.state;
+  if (state == null) return null;
+  final membership = channel.membership;
+  if (membership != null) {
+    return membership.userId == userId ? channel : null;
+  }
+  return state.members.any((member) => member.userId == userId)
+      ? channel
+      : null;
 }
 
 /// Exposes an already-loaded channel to the official Stream widgets without
@@ -476,6 +564,7 @@ Widget loopStreamChannelScope({
 class _LoopChannelBody extends StatefulWidget {
   const _LoopChannelBody({
     required this.composerHint,
+    super.key,
     required this.header,
     required this.banner,
     required this.footer,

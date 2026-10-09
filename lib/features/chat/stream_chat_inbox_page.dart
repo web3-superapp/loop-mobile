@@ -25,11 +25,13 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart'
     show confirmCommunityAction;
+import 'package:loop_mobile/features/profile/presentation/owner_face.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -56,32 +58,64 @@ const double chatInboxListBottomPadding =
 /// Stream owns channel ordering, pagination, unread state, presence, and local
 /// persistence. LOOP deliberately does not mirror these records into its
 /// preview conversation DTOs.
+///
+/// [initialChannels] — what the local list already drew (decision 0132) —
+/// becomes the first value, so the live list opens on those rows and its own
+/// initial load replaces them without a skeleton in between.
 @visibleForTesting
 StreamChannelListController createLoopStreamChannelListController({
   required StreamChatClient client,
   required String userId,
+  List<Channel>? initialChannels,
 }) {
   if (userId.isEmpty || userId != userId.trim()) {
     throw ArgumentError.value(userId, 'userId', 'must be non-empty');
   }
+  if (initialChannels != null && initialChannels.isNotEmpty) {
+    return StreamChannelListController.fromValue(
+      PagedValue<int, Channel>(items: initialChannels),
+      client: client,
+      filter: loopStreamInboxFilter(userId),
+      channelStateSort: loopStreamInboxSort,
+      presence: true,
+      limit: loopStreamInboxPageSize,
+      messageLimit: 25,
+      memberLimit: 30,
+    );
+  }
   return StreamChannelListController(
     client: client,
-    filter: Filter.and(<Filter>[
-      Filter.equal('type', 'messaging'),
-      Filter.in_('members', <Object>[userId]),
-    ]),
-    // A pinned conversation stands above the rest (decision 0129); within
-    // each part Stream keeps the newest message first.
-    channelStateSort: const <SortOption<ChannelState>>[
-      SortOption<ChannelState>.desc(ChannelSortKey.pinnedAt),
-      SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
-    ],
+    filter: loopStreamInboxFilter(userId),
+    channelStateSort: loopStreamInboxSort,
     presence: true,
-    limit: 20,
+    limit: loopStreamInboxPageSize,
     messageLimit: 25,
     memberLimit: 30,
   );
 }
+
+/// The inbox query: every messaging channel this account is a member of.
+Filter loopStreamInboxFilter(String userId) => Filter.and(<Filter>[
+  Filter.equal('type', 'messaging'),
+  Filter.in_('members', <Object>[userId]),
+]);
+
+/// A pinned conversation stands above the rest (decision 0129); within each
+/// part Stream keeps the newest message first.
+const List<SortOption<ChannelState>> loopStreamInboxSort =
+    <SortOption<ChannelState>>[
+      SortOption<ChannelState>.desc(ChannelSortKey.pinnedAt),
+      SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
+    ];
+
+/// One page of the inbox.
+const int loopStreamInboxPageSize = 20;
+
+/// The rows Stream's own first read asks for: its initial-page multiplier
+/// over [loopStreamInboxPageSize], capped at its backend limit of 30. The
+/// local read asks for the same, so it reads the very rows the live list
+/// will.
+const int loopStreamInboxFirstRead = 30;
 
 /// Exact server-side lookup used before a string-addressed channel route mounts
 /// official Stream UI. Unlike `client.channel(...).watch()`, a channel-list
@@ -218,43 +252,22 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
         message: '这个版本没有连接聊天服务，会话不会显示在这里。',
       );
     } else {
-      content = ref
-          .watch(streamChatAuthorizationProvider)
-          .when(
-            // Never keep an old authorized UI mounted while logout, account
-            // switch, or an explicit retry is revalidating the principal.
-            skipLoadingOnReload: false,
-            skipLoadingOnRefresh: false,
-            loading: () => const _StreamStatusCard(
-              key: ValueKey<String>('stream-chat-connecting'),
-              title: '正在连接会话',
-              message: '正在恢复这个账号的会话。',
-              icon: Icons.sync_rounded,
-            ),
-            error: (error, stackTrace) => _StreamUnavailableCard(
-              message: '会话没有恢复成功，这一页没有执行任何消息操作。',
-              onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
-            ),
-            data: (authorization) {
-              final session = ref.watch(streamChatSdkSessionProvider);
-              final currentUser = session?.client.state.currentUser;
-              if (authorization != StreamSessionAuthorization.authorized ||
-                  session == null ||
-                  currentUser == null) {
-                return _StreamUnavailableCard(
-                  message: '聊天服务还没有连接，稍后再试。',
-                  onRetry: () =>
-                      ref.invalidate(streamChatAuthorizationProvider),
-                );
-              }
-              return _StreamChannelListBody(
-                key: ValueKey<String>('stream-chat-list-${currentUser.id}'),
-                client: session.client,
-                userId: currentUser.id,
-                filter: _filter,
-              );
-            },
-          );
+      final authorization = ref.watch(streamChatAuthorizationProvider);
+      final session = ref.watch(streamChatSdkSessionProvider);
+      final localHistory = session?.authorizer.localHistoryUserId;
+      Widget body(String? localUserId) => _authorizedContent(
+        authorization: authorization,
+        session: session,
+        localUserId: localUserId,
+      );
+      // Decision 0132: while the token and the websocket are on their way
+      // the inbox draws this device's own copy of the conversations.
+      content = localHistory == null
+          ? body(null)
+          : ValueListenableBuilder<String?>(
+              valueListenable: localHistory,
+              builder: (context, localUserId, _) => body(localUserId),
+            );
     }
 
     final page = LoopStreamPage(
@@ -337,6 +350,138 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
   }
 }
 
+extension on _StreamChatInboxPageState {
+  Widget _authorizedContent({
+    required AsyncValue<StreamSessionAuthorization> authorization,
+    required StreamChatSdkSession? session,
+    required String? localUserId,
+  }) {
+    return authorization.when(
+      // Never keep an old authorized UI mounted while logout, account
+      // switch, or an explicit retry is revalidating the principal.
+      skipLoadingOnReload: false,
+      skipLoadingOnRefresh: false,
+      loading: () {
+        // Decision 0132: the identity is known and its own copy is open, so
+        // the list draws what this device already holds — the same list, by
+        // the same key, that the live one takes over once it connects.
+        if (session != null && localUserId != null) {
+          return _StreamChannelListBody(
+            key: ValueKey<String>('stream-chat-list-$localUserId'),
+            client: session.client,
+            userId: localUserId,
+            filter: _filter,
+            localOnly: true,
+          );
+        }
+        // Nothing on this device yet: rows in the shape they arrive in, not
+        // a card about connecting.
+        return const ChatInboxRowsSkeleton(
+          key: ValueKey<String>('stream-chat-connecting'),
+        );
+      },
+      error: (error, stackTrace) => _StreamUnavailableCard(
+        message: '会话没有恢复成功，这一页没有执行任何消息操作。',
+        onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
+      ),
+      data: (authorization) {
+        final currentUser = session?.client.state.currentUser;
+        if (authorization != StreamSessionAuthorization.authorized ||
+            session == null ||
+            currentUser == null) {
+          return _StreamUnavailableCard(
+            message: '聊天服务还没有连接，稍后再试。',
+            onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
+          );
+        }
+        return _StreamChannelListBody(
+          key: ValueKey<String>('stream-chat-list-${currentUser.id}'),
+          client: session.client,
+          userId: currentUser.id,
+          filter: _filter,
+        );
+      },
+    );
+  }
+}
+
+/// The inbox before anything is known about its conversations (decision
+/// 0132): conversation rows in the shape the list draws them — the tile's
+/// 4 + 12 insets, a 40 face, the name with the time at its end over the
+/// preview line — under the list's own padding, so nothing moves when the
+/// rows land. The list view loads in the same shape.
+class ChatInboxRowsSkeleton extends StatelessWidget {
+  const ChatInboxRowsSkeleton({super.key, this.rows = 7});
+
+  final int rows;
+
+  static const List<double> _titles = <double>[0.46, 0.34, 0.52, 0.4];
+  static const List<double> _previews = <double>[0.7, 0.56, 0.64, 0.5];
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: '会话加载中',
+      child: ExcludeSemantics(
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            0,
+            8,
+            0,
+            chatInboxListBottomPadding,
+          ),
+          child: Column(
+            children: <Widget>[
+              for (var index = 0; index < rows; index++)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: <Widget>[
+                      const LoopSkeletonBlock(
+                        width: 40,
+                        height: 40,
+                        radius: 12,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: LoopSkeletonLine(
+                                    style: LoopTypography.title(16),
+                                    widthFactor: _titles[index % 4],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const LoopSkeletonBlock(width: 40, height: 10),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            LoopSkeletonLine(
+                              style: LoopTypography.body(14),
+                              widthFactor: _previews[index % 4],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The search field across the head of 聊天; it opens 聊天搜索.
 class _ChatSearchEntry extends StatelessWidget {
   const _ChatSearchEntry();
@@ -374,8 +519,10 @@ class _ChatSearchEntry extends StatelessWidget {
 
 /// The owner's own face at the head of 聊天, the way into 我.
 ///
-/// It is read from the same profile resource 我 renders; before that read
-/// lands it is the monogram, never another account's picture.
+/// It is read from the same profile resource 我 renders. Before that read
+/// lands it is the face this account's last run stored (decision 0132) — the
+/// picture, not a monogram that turns into one — and with nothing stored the
+/// monogram, never another account's picture.
 class _ChatOwnerAvatar extends ConsumerWidget {
   const _ChatOwnerAvatar({required this.onPressed});
 
@@ -391,7 +538,7 @@ class _ChatOwnerAvatar extends ConsumerWidget {
         }
       });
     }
-    final values = state.resource?.values;
+    final face = ref.watch(ownerFaceProvider);
     return Semantics(
       button: true,
       label: '我',
@@ -404,8 +551,8 @@ class _ChatOwnerAvatar extends ConsumerWidget {
           dimension: LoopTouch.minimum,
           child: Center(
             child: LoopProfileAvatar(
-              avatarRef: values?.avatarRef,
-              alias: values?.alias,
+              avatarRef: face?.avatarRef,
+              alias: face?.alias,
               size: 40,
             ),
           ),
@@ -779,11 +926,17 @@ class _StreamChannelListBody extends ConsumerStatefulWidget {
     required this.userId,
     required this.filter,
     super.key,
+    this.localOnly = false,
   });
 
   final StreamChatClient client;
   final String userId;
   final ChatInboxFilter filter;
+
+  /// Draw only this device's own copy (decision 0132): the session is not
+  /// connected yet, so the rows open their conversations but offer no
+  /// action, and pulling does not re-read.
+  final bool localOnly;
 
   @override
   ConsumerState<_StreamChannelListBody> createState() =>
@@ -805,7 +958,31 @@ final loopStreamChannelListControllerProvider = Provider.autoDispose
       ({StreamChatClient client, String userId})
     >((ref, key) {
       loopRetainRead(ref, onRevisit: () {});
+      final seed = loopInboxLocalSeed(key.client, key.userId);
+      // A seed opens one live list; a later one reads for itself.
+      _inboxLocalSeeds[key.client] = null;
       final controller = createLoopStreamChannelListController(
+        client: key.client,
+        userId: key.userId,
+        initialChannels: seed,
+      );
+      ref.onDispose(controller.dispose);
+      return controller;
+    });
+
+/// The inbox drawn from this device's own copy while the session connects
+/// (decision 0132).
+///
+/// It reads Stream's local store with the very query the live list makes, and
+/// nothing else: no network read, no event subscription, no next page. What
+/// it read is handed to the live list as its first value, so the switch to
+/// the live list shows the same rows with no skeleton in between.
+final loopStreamLocalChannelListControllerProvider = Provider.autoDispose
+    .family<
+      StreamChannelListController,
+      ({StreamChatClient client, String userId})
+    >((ref, key) {
+      final controller = LoopLocalChannelListController(
         client: key.client,
         userId: key.userId,
       );
@@ -813,15 +990,77 @@ final loopStreamChannelListControllerProvider = Provider.autoDispose
       return controller;
     });
 
+final Expando<({String userId, List<Channel> channels})> _inboxLocalSeeds =
+    Expando<({String userId, List<Channel> channels})>('loop-inbox-seed');
+
+/// The rows the local list read for [userId] on [client], or `null`.
+@visibleForTesting
+List<Channel>? loopInboxLocalSeed(StreamChatClient client, String userId) {
+  final seed = _inboxLocalSeeds[client];
+  if (seed == null || seed.userId != userId) return null;
+  return seed.channels;
+}
+
+/// See [loopStreamLocalChannelListControllerProvider].
+@visibleForTesting
+final class LoopLocalChannelListController extends StreamChannelListController {
+  LoopLocalChannelListController({
+    required super.client,
+    required this.userId,
+    this.read,
+  }) : super(
+         filter: loopStreamInboxFilter(userId),
+         channelStateSort: loopStreamInboxSort,
+         presence: true,
+         limit: loopStreamInboxPageSize,
+         messageLimit: 25,
+         memberLimit: 30,
+       );
+
+  final String userId;
+
+  /// The local read. Defaults to Stream's own store; a test supplies its own.
+  final Future<List<Channel>> Function()? read;
+
+  @override
+  Future<void> doInitialLoad() async {
+    List<Channel> channels;
+    try {
+      channels =
+          await (read ??
+              () => client.queryChannelsOffline(
+                filter: filter,
+                channelStateSort: channelStateSort,
+                messageLimit: messageLimit,
+                paginationParams: const PaginationParams(
+                  limit: loopStreamInboxFirstRead,
+                ),
+              ))();
+    } catch (_) {
+      // No copy is no copy: the rows stay in their loading shape.
+      return;
+    }
+    // An empty copy is not "no conversations" — only the server may say
+    // that — so the list keeps its loading shape until it answers.
+    if (channels.isEmpty) return;
+    _inboxLocalSeeds[client] = (userId: userId, channels: channels);
+    value = PagedValue<int, Channel>(items: channels);
+  }
+
+  @override
+  Future<void> loadMore(int nextPageKey) async {}
+}
+
 class _StreamChannelListBodyState
     extends ConsumerState<_StreamChannelListBody> {
   @override
   Widget build(BuildContext context) {
+    final key = (client: widget.client, userId: widget.userId);
+    final localOnly = widget.localOnly;
     final controller = ref.watch(
-      loopStreamChannelListControllerProvider((
-        client: widget.client,
-        userId: widget.userId,
-      )),
+      localOnly
+          ? loopStreamLocalChannelListControllerProvider(key)
+          : loopStreamChannelListControllerProvider(key),
     );
     // Who each direct conversation is with, read once from LOOP's own index
     // (decision 0056). A failed or still-running read publishes the empty
@@ -858,7 +1097,9 @@ class _StreamChannelListBodyState
             // Pull to re-read the list (S123 M2). The rows stay on screen
             // while Stream answers: the refresh does not reset the value.
             child: loopRefreshable(
-              onRefresh: () => controller.refresh(resetValue: false),
+              onRefresh: localOnly
+                  ? () async {}
+                  : () => controller.refresh(resetValue: false),
               child: ChatInboxSwipeScope(
                 child: StreamChannelListView(
                   controller: controller,
@@ -882,8 +1123,10 @@ class _StreamChannelListBodyState
                     // conversation, and an open row closes on tap instead.
                     return ChatInboxSwipeRow(
                       key: ValueKey<String>('chat-inbox-row-${channel.cid}'),
-                      actions: () =>
-                          chatInboxRowActions(ChatInboxRowFacts.of(channel)),
+                      // Not connected yet: no action can be carried out.
+                      actions: () => localOnly
+                          ? const <ChatInboxRowAction>[]
+                          : chatInboxRowActions(ChatInboxRowFacts.of(channel)),
                       onAction: (action) =>
                           unawaited(_runAction(channel, action, controller)),
                       child: loopStreamChannelListIdentityItem(defaultItem),
@@ -894,6 +1137,11 @@ class _StreamChannelListBodyState
                   // 38 between two avatars; an extra 12 made the list loose.
                   separatorBuilder: (context, channels, index) =>
                       const SizedBox.shrink(),
+                  // Decision 0132: the same rows-shaped placeholder the
+                  // inbox draws while it connects.
+                  loadingBuilder: (context) => const ChatInboxRowsSkeleton(
+                    key: ValueKey<String>('stream-chat-list-loading'),
+                  ),
                   emptyBuilder: (context) => SingleChildScrollView(
                     child: LoopEmptyState(
                       key: const ValueKey<String>('stream-chat-empty'),
@@ -930,9 +1178,11 @@ class _StreamChannelListBodyState
                     ),
                   ),
                   onChannelTap: (channel) =>
-                      _openChannel(context, channel, directory),
-                  onChannelLongPress: (channel) =>
-                      unawaited(_openRowSheet(channel, controller)),
+                      _openChannel(context, channel, directory, faces),
+                  onChannelLongPress: localOnly
+                      ? null
+                      : (channel) =>
+                            unawaited(_openRowSheet(channel, controller)),
                 ),
               ),
             ),
@@ -996,17 +1246,33 @@ class _StreamChannelListBodyState
     BuildContext context,
     Channel channel,
     LoopDirectChannelDirectory directory,
+    Map<String, CommunityFace> faces,
   ) {
+    final cid = channel.cid;
+    final communityId = cid == null ? null : loopCommunityIdForChannelCid(cid);
     final destination = loopInboxChannelDestination(
-      cid: channel.cid,
+      cid: cid,
       directory: directory,
+      communityTitle: communityId == null
+          ? null
+          : inboxCommunityRowTitle(channel, faces[communityId]),
     );
     if (destination == null) return;
     unawaited(
-      context.push<void>(destination.location, extra: destination.target),
+      context.push<void>(
+        destination.location,
+        extra: destination.target ?? destination.heading,
+      ),
     );
   }
 }
+
+/// The name a community row carries into its room (decision 0132): the
+/// community's own name as this account read it, or nothing — the room then
+/// says what kind of room it is until its record answers.
+@visibleForTesting
+String? inboxCommunityRowTitle(Channel channel, CommunityFace? face) =>
+    face?.name;
 
 /// Whether a narrowed inbox has read every page and kept no row (S106b).
 ///
@@ -1084,13 +1350,33 @@ class ChatInboxFilterEmptyGate extends StatelessWidget {
 /// in the URL — a deep link must not be able to name a conversation — so a
 /// row LOOP cannot name opens through the plain CID link, exactly as before,
 /// and the page then stays neutral.
+///
+/// A community row opens its room directly, carrying the name the row was
+/// drawn with as [LoopChatRouteHeading] (decision 0132): the room's header
+/// then has it from its first frame. The `/chat/channel/` link would redirect
+/// there too, but a redirect drops typed navigation state.
 @visibleForTesting
-({String location, DirectMessageTarget? target})? loopInboxChannelDestination({
+({String location, DirectMessageTarget? target, LoopChatRouteHeading? heading})?
+loopInboxChannelDestination({
   required String? cid,
   required LoopDirectChannelDirectory directory,
+  String? communityTitle,
 }) {
   if (cid == null || parseLoopStreamChannelCid(cid) == null) return null;
   final encoded = Uri.encodeComponent(cid);
+  if (loopChatSurfaceForCid(cid) == LoopChatSurface.communityChat) {
+    final location = loopChatLocationForCid(cid);
+    if (location != null) {
+      final title = communityTitle?.trim();
+      return (
+        location: location,
+        target: null,
+        heading: title == null || title.isEmpty
+            ? null
+            : LoopChatRouteHeading(title: title),
+      );
+    }
+  }
   final peer = loopStreamChannelUsesGroupMessageAlias(cid)
       ? null
       : resolveLoopDirectRowIdentity(cid: cid, directory: directory).peer;
@@ -1102,9 +1388,10 @@ class ChatInboxFilterEmptyGate extends StatelessWidget {
         publicProfileId: publicProfileId,
         identity: peer,
       ),
+      heading: null,
     );
   }
-  return (location: '/chat/channel/$encoded', target: null);
+  return (location: '/chat/channel/$encoded', target: null, heading: null);
 }
 
 class _StreamChannelUnavailablePage extends StatelessWidget {
@@ -1160,27 +1447,6 @@ class _StreamUnavailableCard extends StatelessWidget {
                 label: const Text('重试'),
               ),
       ),
-    );
-  }
-}
-
-class _StreamStatusCard extends StatelessWidget {
-  const _StreamStatusCard({
-    required this.title,
-    required this.message,
-    required this.icon,
-    super.key,
-  });
-
-  final String title;
-  final String message;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: LoopStateCard(title: title, message: message, icon: icon),
     );
   }
 }

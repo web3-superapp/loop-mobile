@@ -390,66 +390,83 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'walletId',
-        'networks',
-        'contractVersion',
-      });
-      LoopV2ChainCodec.requireContractVersion(root);
-      if (root['walletId'] != target) LoopV2ChainCodec.invalid();
-
-      final networks = <LoopReceiveNetwork>[];
-      for (final raw in LoopV2ChainCodec.requireList(
-        root['networks'],
-        maximum: 8,
-      )) {
-        final map = LoopV2Contract.strictMap(raw, const <String>{
-          'chainId',
-          'name',
-          'address',
-          'uri',
-          'warningKey',
-        });
-        final address = LoopV2ChainCodec.requireString(
-          map,
-          'address',
-          pattern: LoopV2ChainCodec.addressPattern,
-          maxLength: 42,
-        );
-        final uri = LoopV2ChainCodec.requireString(
-          map,
-          'uri',
-          pattern: RegExp(r'^ethereum:0x[0-9a-f]{40}@[1-9][0-9]{0,9}$'),
-          maxLength: 80,
-        );
-        // The EIP-681 string must address the same wallet the row names.
-        if (!uri.startsWith('ethereum:$address@')) LoopV2ChainCodec.invalid();
-        networks.add(
-          LoopReceiveNetwork(
-            chainId: LoopV2ChainCodec.requireString(
-              map,
-              'chainId',
-              pattern: LoopV2ChainCodec.chainIdPattern,
-              maxLength: 32,
-            ),
-            name: LoopV2ChainCodec.requireText(map, 'name', maxLength: 64),
-            address: address,
-            uri: uri,
-            warningKey: LoopV2ChainCodec.requireText(
-              map,
-              'warningKey',
-              maxLength: 64,
-            ),
-          ),
-        );
-      }
-      return LoopWalletReceive(walletId: target, networks: networks);
+      final decoded = decodeReceive(response.data, walletId: target);
+      // Decision 0132: a wallet's receive addresses are the same every time
+      // they are read, so the answer is kept for the next first frame.
+      _snapshotTap?.call(
+        LoopSnapshotResource.walletReceive(target),
+        response.data,
+      );
+      return decoded;
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
         error,
         allowedCodes: LoopV2ModuleRequest.chainReadErrors,
       );
     }
+  }
+
+  /// The strict decoder of the receive read, shared by the live answer and by
+  /// a stored snapshot of it (decisions 0095, 0132).
+  static LoopWalletReceive decodeReceive(
+    Object? data, {
+    required String walletId,
+  }) {
+    final target = walletId;
+    final root = LoopV2Contract.strictMap(data, const <String>{
+      'walletId',
+      'networks',
+      'contractVersion',
+    });
+    LoopV2ChainCodec.requireContractVersion(root);
+    if (root['walletId'] != target) LoopV2ChainCodec.invalid();
+
+    final networks = <LoopReceiveNetwork>[];
+    for (final raw in LoopV2ChainCodec.requireList(
+      root['networks'],
+      maximum: 8,
+    )) {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'chainId',
+        'name',
+        'address',
+        'uri',
+        'warningKey',
+      });
+      final address = LoopV2ChainCodec.requireString(
+        map,
+        'address',
+        pattern: LoopV2ChainCodec.addressPattern,
+        maxLength: 42,
+      );
+      final uri = LoopV2ChainCodec.requireString(
+        map,
+        'uri',
+        pattern: RegExp(r'^ethereum:0x[0-9a-f]{40}@[1-9][0-9]{0,9}$'),
+        maxLength: 80,
+      );
+      // The EIP-681 string must address the same wallet the row names.
+      if (!uri.startsWith('ethereum:$address@')) LoopV2ChainCodec.invalid();
+      networks.add(
+        LoopReceiveNetwork(
+          chainId: LoopV2ChainCodec.requireString(
+            map,
+            'chainId',
+            pattern: LoopV2ChainCodec.chainIdPattern,
+            maxLength: 32,
+          ),
+          name: LoopV2ChainCodec.requireText(map, 'name', maxLength: 64),
+          address: address,
+          uri: uri,
+          warningKey: LoopV2ChainCodec.requireText(
+            map,
+            'warningKey',
+            maxLength: 64,
+          ),
+        ),
+      );
+    }
+    return LoopWalletReceive(walletId: target, networks: networks);
   }
 
   /// The strict decoder of the directory, shared by the live answer and by a

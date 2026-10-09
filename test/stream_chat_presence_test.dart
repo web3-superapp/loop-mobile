@@ -214,6 +214,9 @@ final class _FakeClientPort implements StreamChatClientPort {
   }
 
   @override
+  Future<void> openLocalHistory(StreamChatIdentity identity) async {}
+
+  @override
   Future<void> disconnect({required bool flushLocalPersistence}) async {
     connectedUserId = null;
   }

@@ -1160,6 +1160,8 @@ GoRouter _buildRouter(
         path: '/community/chat',
         builder: (context, state) => CommunityChatScreen(
           communityId: state.uri.queryParameters['id'],
+          // Decision 0132: the name the inbox row showed, as typed state.
+          heading: LoopChatRouteHeading.of(state.extra),
           onBack: () => _popOrHome(context),
           onOpenProfile: (communityId) => context.push(
             '/community/profile?id=${Uri.encodeQueryComponent(communityId)}',

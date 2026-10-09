@@ -14416,6 +14416,102 @@ def check_ia_cleanup_contract(root: Path) -> list[str]:
     return errors
 
 
+# Decision 0132 (audit 2026-10-09 §五 rule 20, M11 / M12 / m19): a page whose
+# answer this device already holds draws it in its first frame. Each entry is
+# the file, the fragments that keep the local answer in the first frame, and
+# the fragments that would put a placeholder back.
+FIRST_FRAME_CACHE_CONTRACT: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    # The conversation the client already holds opens on its messages; the
+    # membership query confirms it behind.
+    "lib/features/chat/v2/loop_stream_channel_surface.dart": (
+        (
+            "Channel? loopStreamCachedMemberChannel(",
+            "if (cached != null) return _conversation(cached);",
+            "key: _bodyKey,",
+        ),
+        (),
+    ),
+    # The room's header has a name from its first frame.
+    "lib/features/chat/v2/community_chat_screen.dart": (
+        (
+            "title: communityChatTitle(",
+            "heading?.title ??",
+            "loopStreamHoldsMemberChannel(ref, cid)",
+        ),
+        ("communityMissingName",),
+    ),
+    # A cold start draws this device's own copy of the inbox while the
+    # session connects, and hands it to the live list as its first value.
+    "lib/features/chat/stream_chat_inbox_page.dart": (
+        (
+            "session?.authorizer.localHistoryUserId",
+            "loopStreamLocalChannelListControllerProvider(key)",
+            "initialChannels: seed,",
+            "loadingBuilder: (context) => const ChatInboxRowsSkeleton(",
+        ),
+        ("正在连接会话",),
+    ),
+    "lib/integrations/communication/stream_chat_sdk_session.dart": (
+        ("_client.openLocalHistory(identity)",),
+        (),
+    ),
+    # 接收 opens on the stored addresses; its first-ever load and the tape's
+    # load are shaped like what they become.
+    "lib/features/wallet/wallet_read_controllers.dart": (
+        ("snapshotResource => LoopSnapshotResource.walletReceive(walletId);",),
+        (),
+    ),
+    "lib/features/wallet/wallet_read_screens.dart": (
+        (
+            "const WalletReceiveSkeleton(",
+            "const WalletActivitySkeleton(",
+        ),
+        (),
+    ),
+    # One decode per picture, and the owner's face before the profile lands.
+    "lib/widgets/loop_remote_avatar.dart": (
+        ("image: loopRemoteAvatarImage(source),", "LoopMediaImage(url)"),
+        ("resizeIfNeeded",),
+    ),
+    "lib/features/chat/stream_chat_inbox_page.dart#owner": (
+        ("ref.watch(ownerFaceProvider)",),
+        (),
+    ),
+}
+
+
+def check_first_frame_cache_contract(root: Path) -> list[str]:
+    """Decision 0132 (audit 2026-10-09 §五 rule 20).
+
+    A page whose answer this device already holds — a conversation the client
+    keeps, the inbox's own local copy, a wallet's receive addresses, the
+    owner's face — draws it in its first frame, and a page that has nothing
+    yet loads in the shape of what it becomes.
+    """
+
+    errors: list[str] = []
+    for entry, (required, forbidden) in FIRST_FRAME_CACHE_CONTRACT.items():
+        relative = entry.split("#", 1)[0]
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"{relative} is missing (decision 0132)")
+            continue
+        source = strip_dart_comments(read_text(path))
+        for fragment in required:
+            if fragment not in source:
+                errors.append(
+                    f"{relative} must keep `{fragment}` so its first frame "
+                    "draws what this device holds (decision 0132)"
+                )
+        for fragment in forbidden:
+            if fragment in source:
+                errors.append(
+                    f"{relative} must not draw `{fragment}`: a placeholder "
+                    "where a local answer exists (decision 0132)"
+                )
+    return errors
+
+
 def check_launch_icon_contract(root: Path) -> list[str]:
     """The adaptive foreground carries the mark only; any baked plate is cropped
     into an octagon by the launcher and Android 12+ splash circular masks."""
@@ -15414,6 +15510,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_press_haptics_contract(root))
     errors.extend(check_money_forms_native_contract(root))
     errors.extend(check_ia_cleanup_contract(root))
+    errors.extend(check_first_frame_cache_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -15446,6 +15543,7 @@ def main() -> int:
         "native money forms with one sheet surface and no hero on tool pages, "
         "confirmed sign-out, one entry per destination, stated values, "
         "a full-screen scanner, explanations behind (i), portrait iOS, "
+        "first frames drawn from what the device holds, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "channel-resolved chat names, recognised chat contract addresses, "

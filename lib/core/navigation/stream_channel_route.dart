@@ -113,3 +113,22 @@ String? loopChatLocationForCid(String cid) {
     null => null,
   };
 }
+
+/// What an in-app caller already shows for the conversation it opens: the
+/// name its row was drawn with (decision 0132).
+///
+/// It rides as typed navigation state so the opened page's header carries the
+/// name from its first frame instead of a placeholder that waits for the
+/// page's own read. It is never in the URL — a deep link cannot name a
+/// conversation — and the page's own read replaces it as soon as it lands.
+final class LoopChatRouteHeading {
+  const LoopChatRouteHeading({required this.title});
+
+  final String title;
+
+  /// [extra] as a heading, or `null` for anything else.
+  static LoopChatRouteHeading? of(Object? extra) =>
+      extra is LoopChatRouteHeading && extra.title.trim().isNotEmpty
+      ? extra
+      : null;
+}

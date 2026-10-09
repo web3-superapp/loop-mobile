@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -27,6 +29,7 @@ class CommunityChatScreen extends ConsumerStatefulWidget {
   const CommunityChatScreen({
     required this.communityId,
     super.key,
+    this.heading,
     this.onBack,
     this.onOpenProfile,
     this.onOpenVoiceRoom,
@@ -35,6 +38,10 @@ class CommunityChatScreen extends ConsumerStatefulWidget {
   });
 
   final String? communityId;
+
+  /// The name the caller's row showed (decision 0132): the header's title
+  /// until the community record answers.
+  final LoopChatRouteHeading? heading;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenProfile;
   final ValueChanged<String>? onOpenVoiceRoom;
@@ -72,6 +79,12 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     }
 
     final detail = state.value;
+    // Decision 0132: the room this client already holds is drawn before the
+    // community record answers; the record still decides whether it stays.
+    final cachedCid = detail == null && !blocked
+        ? _cachedChannelCid(id, state)
+        : null;
+    final searchCid = detail?.chat.channelCid ?? cachedCid;
     return LoopMessageSelectionHost(
       child: Scaffold(
         key: const ValueKey<String>('community-chat-screen'),
@@ -82,7 +95,17 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
             children: <Widget>[
               LoopSelectionAwareTopbar(
                 child: LoopTopbar(
-                  title: detail?.community.name ?? communityMissingName,
+                  // Decision 0132: never a placeholder. The record's name
+                  // when it has answered; before that the name the caller's
+                  // row showed, then the one this account already read for
+                  // the community, and only with neither the kind of room.
+                  title: communityChatTitle(
+                    detail: detail,
+                    heading: widget.heading,
+                    face: id == null
+                        ? null
+                        : ref.watch(communityFacesProvider)[id],
+                  ),
                   // `#scr-community-chat .topbar` puts the room's one presence
                   // fact on an 11px line *under* the name. A mono eyebrow above
                   // it reads as a section marker, which a conversation header is
@@ -107,8 +130,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                   // has no edge to be aimed at (audit 2026-09-20 · B.2).
                   framedTools: true,
                   actions: <Widget>[
-                    if (detail?.chat.channelCid
-                        case final String cid) ...<Widget>[
+                    if (searchCid case final String cid) ...<Widget>[
                       LoopIconButton(
                         key: const ValueKey<String>(
                           'community-chat-open-search',
@@ -147,7 +169,12 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                 ),
               ),
               Expanded(
-                child: _body(id: id, blocked: blocked, state: state),
+                child: _body(
+                  id: id,
+                  blocked: blocked,
+                  state: state,
+                  cachedCid: cachedCid,
+                ),
               ),
             ],
           ),
@@ -156,10 +183,24 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     );
   }
 
+  /// The official channel of [id] when this client already holds it with
+  /// this account as a member and the record has not answered yet — loading,
+  /// not failed. `null` otherwise.
+  String? _cachedChannelCid(
+    String? id,
+    CommunityResourceState<CommunityDetail> state,
+  ) {
+    if (id == null || state.phase != CommunityViewPhase.loading) return null;
+    final cid = loopCommunityChannelCid(id);
+    if (cid == null) return null;
+    return loopStreamHoldsMemberChannel(ref, cid) ? cid : null;
+  }
+
   Widget _body({
     required String? id,
     required bool blocked,
     required CommunityResourceState<CommunityDetail> state,
+    required String? cachedCid,
   }) {
     final controller = ref.read(communityChatControllerProvider.notifier);
     final capability = ref.watch(
@@ -182,6 +223,9 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       );
     }
     final detail = state.value;
+    if (detail == null && cachedCid != null) {
+      return _surface(cid: cachedCid, detail: null, mode: state.mode);
+    }
     if (detail == null) {
       return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -197,9 +241,6 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     }
 
     final chat = detail.chat;
-    final aiGate = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.communityAi),
-    );
     if (chat.isSyncing) {
       return _SyncingBlock(
         reasonCode: chat.reasonCode,
@@ -215,12 +256,29 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       );
     }
 
+    return _surface(cid: chat.channelCid!, detail: detail, mode: state.mode);
+  }
+
+  /// The one Stream surface this page mounts, before and after the record
+  /// answers: the same key and the same position, so the conversation drawn
+  /// from the client's own copy is the conversation that stays.
+  Widget _surface({
+    required String cid,
+    required CommunityDetail? detail,
+    required CommunityGatewayMode mode,
+  }) {
+    final chat = detail?.chat;
+    final aiGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.communityAi),
+    );
     return LoopStreamChannelSurface(
-      key: ValueKey<String>('community-chat-${chat.channelCid}'),
-      cid: chat.channelCid!,
+      key: ValueKey<String>('community-chat-$cid'),
+      cid: cid,
       keyPrefix: 'community-chat-channel',
       // Pinning is the owner's and the admins' (decision 0105 · 3).
-      mayPinMessages: detail.viewer.mayPinMessages,
+      // Before the record answers nobody pins: the permission is the
+      // record's to state.
+      mayPinMessages: detail?.viewer.mayPinMessages ?? false,
       // One half of the prototype's hint is real now: an address pasted into
       // a message opens a Token Card. The other half — "@AI 提问" — stays
       // out, because there is no Community AI to ask.
@@ -229,7 +287,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       // of this account's channel membership is the only fact available about
       // why, so its reason code supplies the sentence; without one the
       // surface states only what it observed.
-      unresolvedMessage: switch (chat.memberState) {
+      unresolvedMessage: switch (chat?.memberState) {
         CommunityChatMemberState.pending => communicationUnavailableReason(
           'COMMUNITY_CHANNEL_MEMBER_SYNCING',
         ),
@@ -247,7 +305,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          CommunityPreviewNotice(mode: state.mode, resource: '社区官方群'),
+          CommunityPreviewNotice(mode: mode, resource: '社区官方群'),
           LoopChatHeaderStrip(
             key: const ValueKey<String>('community-chat-header-strip'),
             // The one identity fact LOOP may state about the reader in this
@@ -256,7 +314,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
             // (decision 0112), so there is no persona to announce and the
             // line is not drawn; it returns with the switch.
             segments: communityChatHeaderSegments(
-              chat.viewerPersona,
+              chat?.viewerPersona,
               realIdentity: ref
                   .watch(loopFeatureSwitchesProvider)
                   .communityChatRealIdentity,
@@ -267,22 +325,23 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
           // prototype's `Q3 路线图已发布 · 项目方`. It appears only when this
           // community actually pinned something; an absent announcement earns
           // no strip of its own.
-          if (communityChatPinnedAnnouncement(detail.announcements)
-              case final CommunityAnnouncement pinned)
-            LoopChatHeaderFold(
-              collapsed: loopChatKeyboardIsUp(context),
-              child: LoopNotice(
-                key: const ValueKey<String>('community-chat-pinned'),
-                icon: 'pin',
-                body: pinned.byline == null
-                    ? pinned.title
-                    : '${pinned.title} · ${pinned.byline}',
-                margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          if (detail != null)
+            if (communityChatPinnedAnnouncement(detail.announcements)
+                case final CommunityAnnouncement pinned)
+              LoopChatHeaderFold(
+                collapsed: loopChatKeyboardIsUp(context),
+                child: LoopNotice(
+                  key: const ValueKey<String>('community-chat-pinned'),
+                  icon: 'pin',
+                  body: pinned.byline == null
+                      ? pinned.title
+                      : '${pinned.title} · ${pinned.byline}',
+                  margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                ),
               ),
-            ),
           // The prototype's last message in this room is the community's AI
           // answering. There is none, so the row states that instead.
-          if (!aiGate.isUsable)
+          if (detail != null && !aiGate.isUsable)
             LoopChatAiUnavailableBubble(
               key: const ValueKey<String>('community-chat-ai-unavailable'),
               name: '${detail.community.name} AI',
@@ -296,6 +355,26 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     );
   }
 }
+
+/// The header title of `community-chat` (decision 0132).
+///
+/// The community record's own name once it answered; before that the name
+/// the caller's row was drawn with, then the name this account already read
+/// for the community (the faces the inbox and the directory remember), and
+/// with none of them the kind of room — never a 「暂无名称」 placeholder that
+/// turns into the name a moment later.
+String communityChatTitle({
+  required CommunityDetail? detail,
+  required LoopChatRouteHeading? heading,
+  required CommunityFace? face,
+}) =>
+    detail?.community.name ??
+    heading?.title ??
+    face?.name ??
+    communityChatNeutralTitle;
+
+/// What the header says when no name is known yet.
+const String communityChatNeutralTitle = '社区群聊';
 
 /// The room's presence line, or `null` when the server stated none.
 ///

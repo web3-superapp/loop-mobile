@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
+import 'package:loop_mobile/features/profile/presentation/owner_face.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart'
     show LoopProfileAvatar;
@@ -466,7 +467,8 @@ class IntelRankMePill extends ConsumerWidget {
           }
         });
       }
-      final profile = state.resource?.values;
+      // Decision 0132: the same face 聊天's head draws, stored or live.
+      final profile = ref.watch(ownerFaceProvider);
       face = LoopProfileAvatar(
         avatarRef: profile?.avatarRef,
         alias: profile?.alias,

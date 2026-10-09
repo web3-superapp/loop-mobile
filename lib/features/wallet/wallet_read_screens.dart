@@ -1466,6 +1466,16 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         body: <Widget>[
           if (noWalletYet)
             const WalletCreationBlock(keyPrefix: 'receive')
+          // Decision 0132: with no answer for this wallet on this device yet,
+          // the page loads in its own shape — chip, code, address, buttons —
+          // so nothing moves when the addresses land. Every later visit
+          // opens on the stored answer and never shows this.
+          else if ((walletId == null || state == null || !state.isReady) &&
+              (state?.phase ?? LoopChainViewPhase.loading) ==
+                  LoopChainViewPhase.loading)
+            const WalletReceiveSkeleton(
+              key: ValueKey<String>('receive-state-loading'),
+            )
           else if (walletId == null || state == null || !state.isReady)
             LoopChainStateBlock(
               keyPrefix: 'receive',
@@ -2177,7 +2187,20 @@ class _TransactionHistoryScreenState
         sections: <Widget>[
           if (noWalletYet)
             const WalletCreationBlock(keyPrefix: 'tx-history')
-          else if (walletId == null || state == null || page == null)
+          // Decision 0132: the first page loads as the tape it becomes — the
+          // filter chips (they need no answer) over rows shaped like
+          // [walletActivityRow] — so nothing moves when it lands.
+          else if (page == null &&
+              (state?.phase ?? LoopChainViewPhase.loading) ==
+                  LoopChainViewPhase.loading) ...<Widget>[
+            _ActivitySegments(
+              selected: _segment,
+              onSelected: (index) => setState(() => _segment = index),
+            ),
+            const WalletActivitySkeleton(
+              key: ValueKey<String>('tx-history-state-loading'),
+            ),
+          ] else if (walletId == null || state == null || page == null)
             LoopChainStateBlock(
               keyPrefix: 'tx-history',
               phase: state?.phase ?? LoopChainViewPhase.loading,
@@ -2245,9 +2268,8 @@ class _TransactionHistoryScreenState
                 onLoadMore: () => unawaited(_loadMore(walletId)),
               ),
               if (_loadingMore)
-                const LoopSkeleton(
+                const WalletActivitySkeleton(
                   key: ValueKey<String>('tx-history-loading-more'),
-                  type: LoopSkeletonType.record,
                   rows: 1,
                 ),
             ] else if (page.items.isNotEmpty)
