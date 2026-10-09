@@ -1,54 +1,89 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
-/// One launchpad row is 72pt tall (S115–S118 §3).
-const double memeRowHeight = 72;
-
-/// The logo slot on a row: 44pt, corner radius 10.
+/// The logo slot on the token page header: 44pt, corner radius 10.
 const double memeLogoSize = 44;
+
+/// The round logo on a launchpad row (decision 0122, OKX rule 1).
+const double memeCardLogoSize = 36;
+
+/// A launchpad row's height: the OKX quote row (decision 0122).
+const double memeCardHeight = loopQuoteRowHeight;
+
+/// The monogram ground a token without a picture is given: the four quiet
+/// grounds of [communityLogoGrounds], never full or pale Lime. On the
+/// launchpad Lime belongs to the progress ring; a column of Lime tiles beside
+/// it would drown the one thing the card is for (decision 0122).
+CommunityLogoGround memeLogoGroundFor(String identity) {
+  final quiet = <CommunityLogoGround>[
+    for (final ground in communityLogoGrounds)
+      if (ground.id != 'lime' && ground.id != 'lime-pale') ground,
+  ];
+  return quiet[communityLogoHash(identity.trim()) % quiet.length];
+}
 
 /// A token's square picture, over a monogram tile that is on screen from the
 /// first frame.
+///
+/// With an [identity] the monogram takes the stable ground that identity is
+/// given (the same six grounds a community without a preset gets), so a list
+/// of tokens with no picture is not a column of identical grey tiles.
 class MemeLogo extends StatelessWidget {
   const MemeLogo({
     required this.symbol,
     super.key,
     this.imageUrl,
     this.size = memeLogoSize,
+    this.radius,
+    this.identity,
   });
 
   final String symbol;
   final String? imageUrl;
   final double size;
+  final double? radius;
+  final String? identity;
 
   @override
   Widget build(BuildContext context) {
     final letters = symbol.isEmpty
         ? '?'
         : symbol.substring(0, symbol.length < 2 ? symbol.length : 2);
-    final radius = size * 10 / memeLogoSize;
+    final corner = radius ?? size * 10 / memeLogoSize;
+    final ground = identity == null ? null : memeLogoGroundFor(identity!);
     final fallback = Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LoopColors.card2,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: LoopColors.line),
+        color: ground?.fill ?? LoopColors.card2,
+        borderRadius: BorderRadius.circular(corner),
+        border: ground == null ? Border.all(color: LoopColors.line) : null,
       ),
       child: Text(
         letters,
         maxLines: 1,
-        style: LoopType.label.copyWith(color: LoopColors.chalk),
+        style: ground == null
+            ? LoopType.label.copyWith(color: LoopColors.chalk)
+            : LoopTypography.figure(
+                size / 3.2,
+                weight: FontWeight.w700,
+                color: ground.ink,
+              ),
       ),
     );
     final url = imageUrl;
@@ -58,7 +93,7 @@ class MemeLogo extends StatelessWidget {
       fallback: fallback,
       size: size,
       shape: BoxShape.rectangle,
-      radius: radius,
+      radius: corner,
     );
   }
 }
@@ -156,10 +191,256 @@ class MemeChangeLabel extends StatelessWidget {
   }
 }
 
-/// One launchpad row: logo · 「名称 $SYMBOL」 over 「市值 · 持有」 · price
-/// over its one-hour move, and the curve's progress along the foot. No card.
-class MemeTokenRowTile extends StatelessWidget {
-  const MemeTokenRowTile({required this.row, super.key, this.onTap});
+/// The short percentage printed inside a progress ring: `0%`, `<0.1%`,
+/// `0.1%`…`9.9%`, then whole numbers up to `100%`. The exact figure stays in
+/// the ring's semantics and on the token page ([memeBpsLabel]).
+String memeRingLabel(int bps) {
+  final clamped = bps.clamp(0, 10000);
+  if (clamped == 0) return '0%';
+  if (clamped < 10) return '<0.1%';
+  if (clamped < 1000) {
+    final tenths = clamped ~/ 10;
+    final whole = tenths ~/ 10;
+    final fraction = tenths % 10;
+    return fraction == 0 ? '$whole%' : '$whole.$fraction%';
+  }
+  return '${clamped ~/ 100}%';
+}
+
+/// The curve's progress as a ring (decision 0122): a Lime arc over a faint
+/// track with the short percentage inside. A graduated token is a solid Lime
+/// disc with the graduation cap, and 「已毕业」 under it when [caption] is on.
+class MemeProgressRing extends StatelessWidget {
+  const MemeProgressRing({
+    required this.progressBps,
+    required this.graduated,
+    super.key,
+    this.size = 40,
+    this.caption = true,
+  });
+
+  final int progressBps;
+  final bool graduated;
+  final double size;
+  final bool caption;
+
+  @override
+  Widget build(BuildContext context) {
+    if (graduated) {
+      final disc = Container(
+        key: const ValueKey<String>('meme-ring-graduated'),
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        // A closed ring on Lime's soft ground: complete, without a solid
+        // Lime disc on every graduated card of the list.
+        decoration: BoxDecoration(
+          color: LoopColors.limeSoft,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: LoopColors.lime,
+            width: size >= 44 ? 4 : 3.5,
+          ),
+        ),
+        child: LoopIcon('graduate', size: size * 0.45, color: LoopColors.lime),
+      );
+      return Semantics(
+        label: '已毕业',
+        child: ExcludeSemantics(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              disc,
+              if (caption) ...<Widget>[
+                const SizedBox(height: 3),
+                Text(
+                  '已毕业',
+                  maxLines: 1,
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+    final fraction = memeProgressFraction(progressBps);
+    final duration = LoopMotion.of(context, LoopMotion.progressFill);
+    final stroke = size >= 44 ? 4.0 : 3.5;
+    return Semantics(
+      label: '内盘进度 ${memeBpsLabel(progressBps)}',
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: size,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: fraction),
+            duration: duration,
+            curve: LoopMotion.progressCurve,
+            builder: (context, value, child) => CustomPaint(
+              key: const ValueKey<String>('meme-progress-ring'),
+              painter: _MemeRingPainter(fraction: value, stroke: stroke),
+              child: child,
+            ),
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(stroke + 1),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    memeRingLabel(progressBps),
+                    maxLines: 1,
+                    style: LoopTypography.figure(
+                      size >= 44 ? 11 : 10,
+                      weight: FontWeight.w700,
+                      color: LoopColors.chalk,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MemeRingPainter extends CustomPainter {
+  const _MemeRingPainter({required this.fraction, required this.stroke});
+
+  final double fraction;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final arcRect = rect.deflate(stroke / 2);
+    final track = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..color = LoopColors.line;
+    canvas.drawArc(arcRect, 0, math.pi * 2, false, track);
+    final sweep = fraction.clamp(0.0, 1.0) * math.pi * 2;
+    if (sweep <= 0) return;
+    final arc = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = LoopColors.lime;
+    // A sliver under one degree still shows as a dot, so a token that has
+    // started its curve never reads as one that has not.
+    canvas.drawArc(
+      arcRect,
+      -math.pi / 2,
+      math.max(sweep, math.pi / 180),
+      false,
+      arc,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_MemeRingPainter old) =>
+      old.fraction != fraction || old.stroke != stroke;
+}
+
+/// What a card or a hero says aloud.
+String memeTokenSpokenLabel(MemeTokenRow row) {
+  final price = row.priceUsd1;
+  final cap = row.marketCapUsd1;
+  final change = row.change1hPct;
+  return <String>[
+    '${row.name} \$${row.symbol}',
+    if (price == null)
+      memeQuoteUnavailableText(row.quoteUnavailableReason)
+    else
+      memePriceLabel(price),
+    if (change != null) '1h ${marketMoveLabel(change)}' else '1h 涨跌未报告',
+    if (cap != null) '市值 ${memeCapLabel(cap)}',
+    '${row.holderCount} 持有',
+    if (row.isGraduated) '已毕业' else '内盘进度 ${memeBpsLabel(row.progressBps)}',
+  ].join('，');
+}
+
+/// The curve's progress in the quote row's fixed 96 × 44 slot (decision
+/// 0122): a pill whose Lime-soft fill runs to the progress, with the short
+/// percentage in Lime. A graduated token's pill is full and says 「已毕业」
+/// beside the cap.
+class MemeProgressPill extends StatelessWidget {
+  const MemeProgressPill({required this.row, super.key});
+
+  final MemeTokenRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = BorderRadius.all(Radius.circular(10));
+    final size = loopChangePillSize;
+    if (row.isGraduated) {
+      return Container(
+        key: const ValueKey<String>('meme-graduated-tag'),
+        width: size.width,
+        height: size.height,
+        decoration: const BoxDecoration(
+          color: LoopColors.limeSoft,
+          borderRadius: radius,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const LoopIcon('graduate', size: 16, color: LoopColors.lime),
+            const SizedBox(width: 4),
+            Text(
+              '已毕业',
+              style: LoopTypography.title(14, color: LoopColors.lime),
+            ),
+          ],
+        ),
+      );
+    }
+    final duration = LoopMotion.of(context, LoopMotion.progressFill);
+    return ClipRRect(
+      borderRadius: radius,
+      child: SizedBox(
+        width: size.width,
+        height: size.height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            const ColoredBox(color: LoopColors.card2),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(end: memeProgressFraction(row.progressBps)),
+              duration: duration,
+              curve: LoopMotion.progressCurve,
+              builder: (context, value, _) => FractionallySizedBox(
+                key: const ValueKey<String>('meme-progress-fill'),
+                alignment: Alignment.centerLeft,
+                widthFactor: value.clamp(0, 1),
+                child: const ColoredBox(color: LoopColors.limeSoft),
+              ),
+            ),
+            Center(
+              child: Text(
+                memeRingLabel(row.progressBps),
+                maxLines: 1,
+                style: LoopTypography.figure(
+                  16,
+                  weight: FontWeight.w700,
+                  color: LoopColors.lime,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One launchpad row in the OKX quote shape (decision 0122, S121 §1.1.1):
+/// logo · ticker over 市值 · price over its one-hour move · the progress
+/// pill in the fixed right slot. The name and the holder count are on the
+/// token page; the row says them aloud.
+class MemeTokenCard extends StatelessWidget {
+  const MemeTokenCard({required this.row, super.key, this.onTap});
 
   final MemeTokenRow row;
   final VoidCallback? onTap;
@@ -168,128 +449,123 @@ class MemeTokenRowTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final price = row.priceUsd1;
     final cap = row.marketCapUsd1;
-    final secondary = <String>[
-      if (cap != null) '市值 ${memeCapLabel(cap)}',
-      '${row.holderCount} 持有',
-    ].join(' · ');
-    final spoken = <String>[
-      '${row.name} \$${row.symbol}',
-      secondary,
-      if (price == null)
-        memeQuoteUnavailableText(row.quoteUnavailableReason)
-      else
-        memePriceLabel(price),
-      if (row.isGraduated) '已毕业' else '内盘进度 ${memeBpsLabel(row.progressBps)}',
-    ].join('，');
-    final body = SizedBox(
-      height: memeRowHeight,
-      child: Column(
-        children: <Widget>[
-          Expanded(
+    final change = row.change1hPct;
+    return LoopQuoteRow(
+      tapKey: ValueKey<String>('meme-row-${row.memeTokenId}'),
+      leading: MemeLogo(
+        symbol: row.symbol,
+        imageUrl: row.imageUrl,
+        identity: row.memeTokenId,
+        size: memeCardLogoSize,
+        radius: memeCardLogoSize / 2,
+      ),
+      title: row.symbol,
+      subtitle: cap == null ? row.name : '市值 ${memeCapLabel(cap)}',
+      value: price == null ? null : loopFoldedZerosPrice(memePriceLabel(price)),
+      valueKey: const ValueKey<String>('meme-row-price'),
+      valueCaption: price == null
+          ? Text(
+              memeQuoteUnavailableText(row.quoteUnavailableReason),
+              key: const ValueKey<String>('meme-row-price-unavailable'),
+              style: LoopType.caption.copyWith(color: LoopColors.text3),
+            )
+          : change == null
+          ? null
+          : Text(
+              '${loopSignedPercent(change)} 1h',
+              key: const ValueKey<String>('meme-change'),
+              style: LoopTypography.figure(
+                14,
+                weight: FontWeight.w600,
+                color: LoopPriceMove.of(change).color,
+              ),
+            ),
+      trailing: MemeProgressPill(row: row),
+      onTap: onTap,
+      semanticLabel: memeTokenSpokenLabel(row),
+    );
+  }
+}
+
+/// The 「快打满」 strip's card (decision 0122): 220 × 120, a 48 logo with
+/// the 44 ring beside it, then the name and 「$SYMBOL · 市值」.
+class MemeHeroCard extends StatelessWidget {
+  const MemeHeroCard({required this.row, super.key, this.onTap});
+
+  static const double width = 220;
+  static const double height = 120;
+
+  final MemeTokenRow row;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cap = row.marketCapUsd1;
+    final tap = onTap;
+    return Semantics(
+      button: tap != null,
+      label: memeTokenSpokenLabel(row),
+      excludeSemantics: true,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Material(
+          // OKX card: a flat grey face, no edge and no shadow.
+          color: LoopColors.card2,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: ValueKey<String>('meme-hero-${row.memeTokenId}'),
+            onTap: tap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-              child: Row(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  MemeLogo(symbol: row.symbol, imageUrl: row.imageUrl),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text.rich(
-                          TextSpan(
-                            children: <InlineSpan>[
-                              TextSpan(text: row.name, style: LoopType.titleLg),
-                              TextSpan(
-                                text: ' \$${row.symbol}',
-                                style: LoopType.caption.copyWith(
-                                  color: LoopColors.text2,
-                                ),
-                              ),
-                            ],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          secondary,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopType.caption.copyWith(
-                            color: LoopColors.text2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  if (price == null)
-                    Text(
-                      memeQuoteUnavailableText(row.quoteUnavailableReason),
-                      key: const ValueKey<String>('meme-row-price-unavailable'),
-                      style: LoopType.captionSm.copyWith(
-                        color: LoopColors.text3,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      MemeLogo(
+                        symbol: row.symbol,
+                        imageUrl: row.imageUrl,
+                        identity: row.memeTokenId,
+                        size: 48,
+                        radius: 12,
                       ),
-                    )
-                  else
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        Text(
-                          memePriceLabel(price),
-                          key: const ValueKey<String>('meme-row-price'),
-                          maxLines: 1,
-                          softWrap: false,
-                          style: LoopType.figure,
-                        ),
-                        const SizedBox(height: 3),
-                        if (row.isGraduated)
-                          Text(
-                            '外盘',
-                            style: LoopType.captionSm.copyWith(
-                              color: LoopColors.text3,
-                            ),
-                          )
-                        else
-                          MemeChangeLabel(change: row.change1hPct),
-                      ],
-                    ),
+                      const Spacer(),
+                      MemeProgressRing(
+                        progressBps: row.progressBps,
+                        graduated: row.isGraduated,
+                        size: 44,
+                        caption: false,
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    row.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: LoopType.title,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    <String>[
+                      '\$${row.symbol}',
+                      if (cap != null) '市值 ${memeCapLabel(cap)}',
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
                 ],
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              0,
-              LoopSpacing.page,
-              6,
-            ),
-            child: row.isGraduated
-                ? const Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(height: 14, child: MemeGraduatedTag()),
-                  )
-                : MemeProgressBar(progressBps: row.progressBps),
-          ),
-        ],
-      ),
-    );
-    final tap = onTap;
-    return Semantics(
-      button: tap != null,
-      label: spoken,
-      excludeSemantics: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          key: ValueKey<String>('meme-row-${row.memeTokenId}'),
-          onTap: tap,
-          highlightColor: LoopColors.card2,
-          child: body,
         ),
       ),
     );

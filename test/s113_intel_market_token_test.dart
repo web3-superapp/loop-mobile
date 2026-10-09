@@ -20,7 +20,6 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining/loop_v2_mining_api.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
@@ -490,7 +489,12 @@ void main() {
       expect(find.text('WBNB'), findsWidgets);
       expect(find.text('市值 \$1.6B'), findsOneWidget);
       expect(find.text('\$747.39'), findsOneWidget);
-      expect(find.text('▲ 2.50%'), findsOneWidget);
+      // Decision 0122: the move sits in the OKX pill, signed.
+      expect(find.text('+2.50%'), findsOneWidget);
+      expect(
+        find.descendant(of: row, matching: _key('loop-change-pill')),
+        findsOneWidget,
+      );
       // The unpriced row says why, inline, and prints no price.
       final unpriced = _key('market-asset-$s5UsdtAssetId');
       expect(
@@ -498,11 +502,12 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(
-          of: unpriced,
-          matching: find.byType(LoopInlineUnavailable),
-        ),
-        findsOneWidget,
+        find.descendant(of: unpriced, matching: _key('market-row-price')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: unpriced, matching: _key('loop-change-pill')),
+        findsNothing,
       );
       // The old chrome is gone.
       expect(_key('market-truth-notice'), findsNothing);
@@ -547,7 +552,8 @@ void main() {
       ]);
       expect(find.text('MEME2'), findsOneWidget);
       expect(_key('market-list-end'), findsOneWidget);
-      expect(find.text('没有更多'), findsOneWidget);
+      // OKX rule 10: a list that reached its end draws nothing more.
+      expect(find.text('没有更多'), findsNothing);
     });
 
     testWidgets('an empty 自选 sends the reader to 主流', (tester) async {
@@ -685,7 +691,9 @@ void main() {
       expect(_key('mining-rank-anonymity'), findsNothing);
       expect(_key('mining-rank-notice'), findsNothing);
       expect(_key('intel-rank-provenance'), findsOneWidget);
-      expect(find.text('没有更多'), findsOneWidget);
+      // OKX rule 10: the end of the board draws nothing more.
+      expect(_key('intel-rank-end'), findsOneWidget);
+      expect(find.text('没有更多'), findsNothing);
     });
 
     testWidgets('the user board reads on to its next page', (tester) async {
@@ -713,7 +721,7 @@ void main() {
       await tester.tap(find.text('用户'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('没有更多'),
+        _key('intel-rank-end'),
         400,
         scrollable: find.byType(Scrollable).last,
       );

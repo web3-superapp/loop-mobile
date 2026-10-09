@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
-import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -502,19 +501,18 @@ void main() {
       LoopColors.ink,
     ).map((probe) => probe.ground.toARGB32()).toSet();
 
-    // The light ground the Market page renders is its selected chip. The
-    // rows' solid change block left with decision 0118 (the move is now
-    // coloured text); the premise is the same — a light ground carrying Ink
-    // text.
-    testWidgets('the Market page renders a light chip ground', (tester) async {
+    // The light ground the Wallet page renders is its four round Lime keys
+    // (decision 0122). The Market page used to carry this premise on its
+    // selected chip, which is a dark-grey pill since the same decision.
+    testWidgets('the Wallet page renders a light key ground', (tester) async {
       await pumpS5Page(
         tester,
-        const MarketScreen(),
-        market: FakeMarketReadGateway(),
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(),
       );
 
       expect(
-        groundsOf(tester, find.byType(MarketScreen)),
+        groundsOf(tester, find.byType(WalletScreen)),
         contains(LoopColors.lime.toARGB32()),
       );
     });

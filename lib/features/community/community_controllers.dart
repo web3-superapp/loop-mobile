@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/cache/loop_read_retention.dart';
 import 'package:loop_mobile/core/cache/loop_recent_answers.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -162,6 +163,7 @@ final class CommunityHomeController
       _readAt = _now();
       _restoredObservedAt = null;
       state = state.ready(home);
+      ref.read(communityFacesProvider.notifier).rememberHome(home);
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;
       state = state.failed(error.kind);
@@ -500,6 +502,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         recommendation: page.recommendation,
         ordering: page.ordering,
       );
+      ref.read(communityFacesProvider.notifier).remember(page.items);
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;
       // An expired or foreign cursor is recoverable only from page one.

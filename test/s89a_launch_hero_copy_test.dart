@@ -258,6 +258,9 @@ void main() {
       );
       expect(find.textContaining('待排期 ·'), findsNothing);
 
+      // The chips scroll sideways; bring this one into view first.
+      await tester.ensureVisible(find.text('已结束 1'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('已结束 1'));
       await tester.pumpAndSettle();
       final endedRow = key('launch-row-$s7LaunchId');

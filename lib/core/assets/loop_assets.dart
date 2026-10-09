@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 
 abstract final class LoopAssetPaths {
   static const String icons = 'assets/icons';
+  static const String illustrations = 'assets/illustrations';
   static const String tokens = 'assets/tokens';
   static const String networks = 'assets/networks';
   static const String brand = 'assets/brand';
@@ -29,6 +30,7 @@ abstract final class LoopAssetPaths {
       'assets/communities/loop-community-atlas.webp';
 
   static String icon(String name) => '$icons/i-$name.svg';
+  static String illustration(String name) => '$illustrations/$name.svg';
   static String token(String file) => '$tokens/$file.svg';
   static String network(String file) => '$networks/$file.svg';
 }
@@ -127,6 +129,30 @@ abstract final class LoopIconNames {
   };
 
   static bool contains(String name) => all.contains(name);
+}
+
+/// The eight empty-state line illustrations (decision 0122).
+///
+/// Drawn for LOOP, not taken from the prototype: a 96 box, `fill="none"`,
+/// stroke 1.7 with round caps and joins, Lime for the main stroke and Chalk
+/// at 58% (`text3`) for the secondary one; `rank` alone also uses the brass
+/// and copper medal colours. No gradient, no filter, no text, no Emoji —
+/// `scripts/check_harness.py` reads every file.
+enum LoopIllustration {
+  voiceRoom('voice-room'),
+  chat('chat'),
+  launchpad('launchpad'),
+  chartEmpty('chart-empty'),
+  holders('holders'),
+  search('search'),
+  watchlist('watchlist'),
+  rank('rank');
+
+  const LoopIllustration(this.fileName);
+
+  final String fileName;
+
+  String get asset => LoopAssetPaths.illustration(fileName);
 }
 
 /// Token logos shipped with the prototype, keyed by upper-case symbol.

@@ -1717,11 +1717,22 @@ class LoopSeg extends StatelessWidget {
     super.key,
     this.onBlocked,
     this.block = false,
+    this.icon,
+    this.quiet = false,
   });
+
+  /// The OKX filter look (decision 0122): unselected is a plain word, the
+  /// selected chip a solid dark-grey pill with the label in Chalk. Lime stays
+  /// for primary buttons, round action keys, badges and progress.
+  final bool quiet;
 
   final String label;
   final bool selected;
   final VoidCallback? onSelected;
+
+  /// A 16px sprite glyph before the label (decision 0122), in the label's
+  /// own colour.
+  final String? icon;
 
   /// `.seg-block`: take the whole line the parent offers.
   ///
@@ -1747,14 +1758,21 @@ class LoopSeg extends StatelessWidget {
       label: label,
       enabled: onSelected != null,
       child: Material(
-        color: selected ? LoopColors.lime : LoopColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: selected ? LoopColors.lime : LoopColors.line),
-        ),
+        color: quiet
+            ? (selected ? LoopColors.line : Colors.transparent)
+            : (selected ? LoopColors.lime : LoopColors.card),
+        shape: quiet
+            ? const StadiumBorder()
+            : RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(
+                  color: selected ? LoopColors.lime : LoopColors.line,
+                ),
+              ),
         child: InkWell(
           onTap: onSelected ?? onBlocked,
-          borderRadius: BorderRadius.circular(14),
+          customBorder: quiet ? const StadiumBorder() : null,
+          borderRadius: quiet ? null : BorderRadius.circular(14),
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minWidth: LoopTouch.minimum,
@@ -1773,19 +1791,7 @@ class LoopSeg extends StatelessWidget {
               widthFactor: block ? null : 1,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: ExcludeSemantics(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    // `.seg{font-size:11px;font-weight:600}` / `.seg.on{700}`
-                    // — the selected chip is the only one that goes bold.
-                    style: LoopTypography.label(
-                      12,
-                      weight: selected ? FontWeight.w700 : FontWeight.w600,
-                      color: selected ? LoopColors.ink : LoopColors.text2,
-                    ),
-                  ),
-                ),
+                child: ExcludeSemantics(child: _segLabel()),
               ),
             ),
           ),
@@ -1793,20 +1799,54 @@ class LoopSeg extends StatelessWidget {
       ),
     );
   }
+
+  Widget _segLabel() {
+    final colour = quiet
+        ? (selected ? LoopColors.chalk : LoopColors.text2)
+        : (selected ? LoopColors.ink : LoopColors.text2);
+    final text = Text(
+      label,
+      maxLines: 1,
+      // `.seg{font-size:11px;font-weight:600}` / `.seg.on{700}`
+      // — the selected chip is the only one that goes bold.
+      style: LoopTypography.label(
+        quiet ? 14 : 12,
+        weight: selected ? FontWeight.w700 : FontWeight.w600,
+        color: colour,
+      ),
+    );
+    final glyph = icon;
+    if (glyph == null) return text;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        LoopIcon(glyph, size: 16, color: colour),
+        const SizedBox(width: 6),
+        text,
+      ],
+    );
+  }
 }
 
 /// `.segs`: horizontal, scrollable seg row with 7px gaps and 16px gutters.
+///
+/// Drawn in the quiet OKX look since decision 0122: words, and one solid
+/// dark-grey pill for the chosen filter.
 class LoopSegBar extends StatelessWidget {
   const LoopSegBar({
     required this.labels,
     required this.selectedIndex,
     required this.onSelected,
     super.key,
-  });
+    this.icons,
+  }) : assert(icons == null || icons.length == labels.length);
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+
+  /// One sprite glyph per label, or null for a chip without one.
+  final List<String?>? icons;
 
   @override
   Widget build(BuildContext context) {
@@ -1816,9 +1856,11 @@ class LoopSegBar extends StatelessWidget {
       child: Row(
         children: <Widget>[
           for (var index = 0; index < labels.length; index++) ...<Widget>[
-            if (index > 0) const SizedBox(width: 7),
+            if (index > 0) const SizedBox(width: 4),
             LoopSeg(
               label: labels[index],
+              icon: icons?[index],
+              quiet: true,
               selected: index == selectedIndex,
               onSelected: () => onSelected(index),
             ),

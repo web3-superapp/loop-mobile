@@ -255,7 +255,19 @@ void main() {
           pages: <LiveVoiceRoomPage>[_page(items: const <LiveVoiceRoom>[])],
         ),
       );
-      expect(find.text('现在没有正在直播的语音房'), findsOneWidget);
+      // Decision 0122: the centred voice-room illustration, its title and
+      // one step back to the communities.
+      expect(find.text('还没有人开播'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('loop-empty-illustration-voice-room'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('square-voice-room-browse')),
+        findsOneWidget,
+      );
     });
 
     for (final (kind, key) in <(CommunityFailureKind, String)>[
@@ -563,7 +575,16 @@ void main() {
         find.byKey(const ValueKey<String>('chat-inbox-filters')),
         findsOneWidget,
       );
-      expect(find.text('聊天'), findsOneWidget);
+      // Decision 0122: the OKX social head — the owner's face and one search
+      // field across the bar; 「发起」 is the round Lime key at the foot.
+      expect(
+        find.byKey(const ValueKey<String>('chat-search-entry')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('chat-create-menu')),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey<String>('chat-open-profile')));
       expect(profileOpened, 1);
 

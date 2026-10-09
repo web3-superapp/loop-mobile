@@ -212,8 +212,10 @@ class _SegmentTab extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 height: 3,
                 width: selected ? 18 : 0,
+                // Chalk, not Lime (decision 0122): Lime is kept for primary
+                // buttons, round action keys, badges and progress.
                 decoration: const BoxDecoration(
-                  color: LoopColors.lime,
+                  color: LoopColors.chalk,
                   borderRadius: BorderRadius.all(Radius.circular(2)),
                 ),
               ),

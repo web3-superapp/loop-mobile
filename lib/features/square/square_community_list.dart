@@ -16,7 +16,9 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -147,13 +149,16 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           ),
         )
       else if (state.phase == CommunityViewPhase.empty && joinedOnly)
-        LoopEmpty(
+        LoopEmptyState(
           key: const ValueKey<String>('square-community-joined-empty'),
-          icon: 'community',
-          message: '还没有加入社区',
+          illustration: LoopIllustration.holders,
+          title: '还没有加入社区',
+          message: '加入后，社区群聊会出现在聊天里',
           action: LoopButton(
             key: const ValueKey<String>('square-community-joined-empty-all'),
             label: '去看看全部',
+            icon: 'compass',
+            primary: true,
             onPressed: () => unawaited(
               controller.selectMembership(CommunityMembershipFilter.all),
             ),
@@ -408,6 +413,13 @@ class _SquareChips extends StatelessWidget {
     CommunityMembershipFilter.joined: '我加入的',
   };
 
+  /// Decision 0122: the two membership chips carry a glyph; the four
+  /// orders are two-to-four characters and stay words only.
+  static const _membershipIcons = <CommunityMembershipFilter, String>{
+    CommunityMembershipFilter.all: 'compass',
+    CommunityMembershipFilter.joined: 'check',
+  };
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -422,6 +434,8 @@ class _SquareChips extends StatelessWidget {
               child: LoopSeg(
                 key: ValueKey<String>('square-filter-${filter.wireName}'),
                 label: _membershipLabels[filter]!,
+                icon: _membershipIcons[filter],
+                quiet: true,
                 selected: filter == membership,
                 onSelected: () => onMembership(filter),
               ),
@@ -437,6 +451,7 @@ class _SquareChips extends StatelessWidget {
               padding: const EdgeInsets.only(right: 7),
               child: LoopSeg(
                 key: ValueKey<String>('square-sort-${segment.name}'),
+                quiet: true,
                 label: segment.label,
                 selected: segment == sort,
                 onSelected: () => onSort(segment),

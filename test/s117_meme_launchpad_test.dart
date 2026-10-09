@@ -362,10 +362,15 @@ void main() {
       await _pump(tester, MemeScreen(onNavigate: opened.add), meme: meme);
 
       expect(meme.listCalls.first, (MemeListTab.fresh, null));
-      expect(find.text(r'Frog $FROG', findRichText: true), findsOneWidget);
-      expect(find.text('市值 \$9,891 · 12 持有'), findsOneWidget);
+      // Decision 0122: the OKX row — ticker over 市值, price over its 1h
+      // move, the progress pill on the right.
+      expect(find.text('FROG'), findsOneWidget);
+      expect(find.text('市值 \$9,891'), findsOneWidget);
       expect(_key('meme-row-price'), findsOneWidget);
-      expect(find.text('▲ 76.89%'), findsOneWidget);
+      expect(find.text('+76.89% 1h'), findsOneWidget);
+      // The 「快打满」 strip shows the server's graduating list above it.
+      expect(_key('meme-graduating-strip'), findsOneWidget);
+      expect(_key('meme-hero-$memeTokenIdA'), findsOneWidget);
       expect(_key('meme-progress-fill'), findsOneWidget);
       expect(_key('meme-graduated-tag'), findsNothing);
       expect(_key('meme-list-provenance'), findsOneWidget);
@@ -375,9 +380,11 @@ void main() {
         (2, MemeListTab.graduating),
         (3, MemeListTab.graduated),
       ]) {
-        await tester.tap(find.text(MemeListTab.values[index].label));
+        // The chip, not the 「快打满」 strip's own heading.
+        await tester.tap(find.text(MemeListTab.values[index].label).first);
         await tester.pumpAndSettle();
-        expect(meme.listCalls.last, (tab, null));
+        // A tab the 「快打满」 strip already read is not asked again.
+        expect(meme.listCalls, contains((tab, null)));
       }
       // 已毕业 replaces the progress bar with its tag, and an unpriced
       // graduated token says why.
@@ -402,7 +409,8 @@ void main() {
       );
       final opened = <String>[];
       await _pump(tester, MemeScreen(onNavigate: opened.add), meme: meme);
-      expect(find.text('还没有代币，来创建第一个'), findsOneWidget);
+      expect(find.text('还没有代币'), findsOneWidget);
+      expect(_key('loop-empty-illustration-launchpad'), findsOneWidget);
       await tester.tap(_key('meme-empty-create'));
       expect(opened.single, '/meme/create');
       await _drain(tester);
@@ -485,11 +493,20 @@ void main() {
         ),
       );
       await _pump(tester, const MemeScreen(), meme: meme);
-      expect(meme.listCalls, <(MemeListTab, String?)>[
-        (MemeListTab.fresh, null),
-        (MemeListTab.fresh, 'page.two'),
-      ]);
-      expect(find.text(r'Toad $TOAD', findRichText: true), findsOneWidget);
+      // The 「快打满」 strip reads its own list once (decision 0122); the
+      // chip's list reads on page by page.
+      expect(
+        meme.listCalls.where((call) => call.$1 == MemeListTab.fresh),
+        <(MemeListTab, String?)>[
+          (MemeListTab.fresh, null),
+          (MemeListTab.fresh, 'page.two'),
+        ],
+      );
+      expect(
+        meme.listCalls.where((call) => call.$1 == MemeListTab.graduating),
+        <(MemeListTab, String?)>[(MemeListTab.graduating, null)],
+      );
+      expect(find.text('TOAD'), findsOneWidget);
       expect(_key('meme-list-end'), findsOneWidget);
       await _drain(tester);
     });

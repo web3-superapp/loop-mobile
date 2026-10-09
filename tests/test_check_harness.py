@@ -7377,6 +7377,41 @@ class HarnessTests(unittest.TestCase):
             )
         )
 
+    def test_illustrations_reject_a_gradient_and_a_foreign_colour(self) -> None:
+        """Decision 0122: the empty-state art is flat line art in four colours."""
+
+        self.assertEqual(check_harness.check_illustrations(REPOSITORY_ROOT), [])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in (
+                "pubspec.yaml",
+                "lib/core/assets/loop_assets.dart",
+                "lib/widgets/loop_empty_state.dart",
+                *(f"assets/illustrations/{name}.svg" for name in check_harness.ILLUSTRATION_NAMES),
+            ):
+                destination = root / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text(
+                    (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+            chat = root / "assets/illustrations/chat.svg"
+            chat.write_text(
+                chat.read_text(encoding="utf-8").replace(
+                    "</svg>",
+                    '<linearGradient id="g"/><path stroke="#FF0000" d="M0 0h1"/></svg>',
+                ),
+                encoding="utf-8",
+            )
+            (root / "lib/features").mkdir(parents=True)
+            (root / "lib/features/x.dart").write_text(
+                "final c = LoopColors.brass;\n", encoding="utf-8"
+            )
+            errors = check_harness.check_illustrations(root)
+        self.assertTrue(any("gradient" in error for error in errors), errors)
+        self.assertTrue(any("#FF0000" in error for error in errors), errors)
+        self.assertTrue(any("medal colour" in error for error in errors), errors)
+
     def test_generic_chat_inbox_cannot_reintroduce_an_audio_room_entry(self) -> None:
         """Step 4 made every room a community resource with a server locator."""
 
@@ -7384,16 +7419,18 @@ class HarnessTests(unittest.TestCase):
             root = Path(temporary)
             relative = Path("lib/features/chat/stream_chat_inbox_page.dart")
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            # Decision 0122 moved 「发起」 to a floating key; the bar's
+            # action slot is where an entry would be smuggled back in.
             mutated = source.replace(
-                "actions: const <Widget>[ChatCreateMenuButton()],",
-                "actions: <Widget>[\n"
-                "          TextButton(\n"
-                "            key: const ValueKey<String>('stream-audio-room-entry'),\n"
-                "            onPressed: () => unawaited(context.push<void>('/chat/voice')),\n"
-                "            child: const Text('Audio Room'),\n"
-                "          ),\n"
-                "          const ChatCreateMenuButton(),\n"
-                "        ],",
+                "titleField: const _ChatSearchEntry(),",
+                "titleField: const _ChatSearchEntry(),\n"
+                "      actions: <Widget>[\n"
+                "        TextButton(\n"
+                "          key: const ValueKey<String>('stream-audio-room-entry'),\n"
+                "          onPressed: () => unawaited(context.push<void>('/chat/voice')),\n"
+                "          child: const Text('Audio Room'),\n"
+                "        ),\n"
+                "      ],",
             )
             self.assertNotEqual(source, mutated)
             destination = root / relative

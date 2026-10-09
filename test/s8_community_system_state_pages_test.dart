@@ -93,10 +93,10 @@ void main() {
         );
 
         expect(
-          find.byKey(const ValueKey<String>('community-state-empty')),
+          find.byKey(const ValueKey<String>('search-empty')),
           findsOneWidget,
         );
-        expect(find.text('没有匹配的结果'), findsOneWidget);
+        expect(find.text('没有找到匹配的结果'), findsOneWidget);
         expect(
           find.byKey(const ValueKey<String>('community-state-error')),
           findsNothing,

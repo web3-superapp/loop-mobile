@@ -57,6 +57,8 @@ flutter:
     - assets/people/
     - assets/communities/
     - assets/icons/
+    # Empty-state line illustrations (decision 0122), drawn for LOOP.
+    - assets/illustrations/
   # The proportional voice is the platform's own UI sans (SF Pro on Apple,
   # Roboto on Android) and is not bundled; decision 0080 dropped Sora with it.
   # IBM Plex Mono stays for addresses, hashes and code — the one fixed-width

@@ -19,6 +19,8 @@ import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -222,6 +224,17 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               emptyReason: searchQueryIsSubmittable(state.query)
                   ? '这个分类下没有结果。'
                   : '搜索按开头匹配，只显示允许被搜到的账号与已验证的社区。',
+              // Decision 0122: the centred search illustration, not a strip.
+              empty: LoopEmptyState(
+                key: const ValueKey<String>('search-empty'),
+                illustration: LoopIllustration.search,
+                title: searchQueryIsSubmittable(state.query)
+                    ? '没有找到匹配的结果'
+                    : '搜索资产、社区与用户',
+                message: searchQueryIsSubmittable(state.query)
+                    ? '换个关键词，或切换上面的分类试试'
+                    : '输入至少 $searchMinimumRunes 个字符开始搜索',
+              ),
               onRetry: () => unawaited(controller.submit(state.query)),
             )
           else ...<Widget>[

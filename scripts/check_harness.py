@@ -9133,7 +9133,7 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
         {
             "lib/features/chat/stream_chat_inbox_page.dart": (
                 "class StreamChatInboxPage extends ConsumerStatefulWidget",
-                "ChatCreateMenuButton()",
+                "ChatCreateMenuButton(",
             ),
             "lib/features/chat/voice_room_page.dart": (
                 "gateway.mode == CommunicationMode.production",
@@ -12802,7 +12802,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "SocialPrivacyMode get mode => SocialPrivacyMode.preview",
             ),
             "lib/features/chat/stream_chat_inbox_page.dart": (
-                "ChatCreateMenuButton()",
+                "ChatCreateMenuButton(",
                 "class StreamGroupAliasChannelRoutePage extends ConsumerWidget",
                 "GroupAliasStreamChannelId.fromCid(cid)",
                 "class _ExistingMemberGroupAliasPage extends StatefulWidget",
@@ -13331,10 +13331,14 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "resolveLoopGroupConversationLabel(",
                 # S58c: as above — the group cell's tile is the reviewed group
                 # label's initials on `--card2`, never a provider avatar and
-                # never the scheme's primary as a solid disc.
-                "avatar: LoopInitialsAvatar(",
+                # never the scheme's primary as a solid disc. Decision 0122:
+                # a community's official channel draws the community's own
+                # `CommunityLogo`, keyed by the id its CID carries.
+                "LoopInitialsAvatar(",
                 "label: label,",
                 "'loop-group-channel-neutral-avatar'",
+                "loopCommunityIdForChannelCid(cid)",
+                "CommunityLogo(",
                 "StreamMessagePreviewText(",
             )
         ):
@@ -14439,6 +14443,107 @@ def check_gitnexusignore(root: Path) -> list[str]:
     return errors
 
 
+# ---------------------------------------------------------------------------
+# Empty-state illustrations and medal colours (decision 0122)
+# ---------------------------------------------------------------------------
+
+ILLUSTRATION_NAMES = (
+    "voice-room",
+    "chat",
+    "launchpad",
+    "chart-empty",
+    "holders",
+    "search",
+    "watchlist",
+    "rank",
+)
+# Lime for the main stroke, Chalk (at the text3 weight) for the secondary
+# one, and the two medal colours. Nothing else may be painted.
+ILLUSTRATION_COLOURS = frozenset({"#B8FF20", "#F3F5EF", "#D9B36A", "#B87B5A"})
+# Brass and copper are medal and illustration colours only.
+MEDAL_COLOUR_ALLOWLIST: dict[str, str] = {
+    "lib/core/theme/loop_theme.dart": "the palette",
+    "lib/features/intel/intel_rank_board.dart": "the podium medals",
+}
+
+
+def check_illustrations(root: Path) -> list[str]:
+    """Eight line illustrations, registered, and drawn to one specification."""
+
+    errors: list[str] = []
+    folder = root / "assets/illustrations"
+    pubspec_path = root / "pubspec.yaml"
+    if pubspec_path.is_file() and "- assets/illustrations/" not in read_text(
+        pubspec_path
+    ):
+        errors.append("pubspec.yaml must register assets/illustrations/")
+    registry_path = root / "lib/core/assets/loop_assets.dart"
+    registry = read_text(registry_path) if registry_path.is_file() else ""
+    if "enum LoopIllustration" not in registry:
+        errors.append("lib/core/assets/loop_assets.dart must declare LoopIllustration")
+    for name in ILLUSTRATION_NAMES:
+        path = folder / f"{name}.svg"
+        if not path.is_file():
+            errors.append(f"assets/illustrations/{name}.svg is missing")
+            continue
+        if f"('{name}')" not in registry:
+            errors.append(f"LoopIllustration does not register `{name}`")
+        svg = read_text(path)
+        if 'viewBox="0 0 96 96"' not in svg:
+            errors.append(f"assets/illustrations/{name}.svg must use a 96 box")
+        if 'stroke-width="1.7"' not in svg:
+            errors.append(f"assets/illustrations/{name}.svg must stroke at 1.7")
+        lowered = svg.lower()
+        for forbidden in (
+            "gradient",
+            "<filter",
+            "<text",
+            "<image",
+            "<style",
+            "shadow",
+        ):
+            if forbidden in lowered:
+                errors.append(
+                    f"assets/illustrations/{name}.svg draws `{forbidden}`; "
+                    "illustrations are flat line art"
+                )
+        if NO_EMOJI_PATTERN.search(svg):
+            errors.append(f"assets/illustrations/{name}.svg carries an Emoji")
+        for colour in re.findall(r'(?:stroke|fill)="(#[0-9A-Fa-f]{6})"', svg):
+            if colour.upper() not in ILLUSTRATION_COLOURS:
+                errors.append(
+                    f"assets/illustrations/{name}.svg paints {colour}; only "
+                    "Lime, Chalk and the two medal colours are allowed"
+                )
+    if folder.is_dir():
+        for path in sorted(folder.glob("*.svg")):
+            if path.stem not in ILLUSTRATION_NAMES:
+                errors.append(
+                    f"assets/illustrations/{path.name} is not one of the "
+                    "registered illustrations"
+                )
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in sorted(lib_root.rglob("*.dart")):
+            relative = path.relative_to(root).as_posix()
+            if relative in MEDAL_COLOUR_ALLOWLIST:
+                continue
+            if re.search(
+                r"LoopColors\.(?:brass|copper)\b",
+                strip_dart_comments(read_text(path)),
+            ):
+                errors.append(
+                    f"{relative} paints a medal colour (brass / copper); they "
+                    "are for podium medals and illustrations only (decision 0122)"
+                )
+    widget_path = root / "lib/widgets/loop_empty_state.dart"
+    if not widget_path.is_file() or "class LoopEmptyState" not in read_text(
+        widget_path
+    ):
+        errors.append("lib/widgets/loop_empty_state.dart must define LoopEmptyState")
+    return errors
+
+
 def validate(root: Path = ROOT) -> list[str]:
     errors = check_required_files(root)
     profile, profile_errors = load_profile(root)
@@ -14498,6 +14603,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_typography_band_contract(root))
     errors.extend(check_price_move_colour_contract(root))
     errors.extend(check_no_emoji(root))
+    errors.extend(check_illustrations(root))
     errors.extend(check_light_ground_contract(root))
     errors.extend(check_page_mount_theme_contract(root))
     errors.extend(check_ground_probe_armed(root))
@@ -14529,7 +14635,7 @@ def main() -> int:
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography on the platform sans with bundled Noto Sans SC, "
-        "rise / fall price colours, no Emoji, "
+        "rise / fall price colours, no Emoji, flat line illustrations, "
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
         "plate-free launch icon, glyph-only top-bar actions, "

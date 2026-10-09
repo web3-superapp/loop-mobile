@@ -65,6 +65,14 @@ enum MemeListTab {
   final String wireName;
   final String label;
 
+  /// The chip's sprite glyph (decision 0122).
+  String get icon => switch (this) {
+    MemeListTab.fresh => 'launch',
+    MemeListTab.hot => 'chart',
+    MemeListTab.graduating => 'target',
+    MemeListTab.graduated => 'graduate',
+  };
+
   static MemeListTab? tryParse(String value) {
     for (final tab in values) {
       if (tab.wireName == value) return tab;
