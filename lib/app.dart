@@ -73,6 +73,8 @@ import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
 import 'package:loop_mobile/features/meme/meme_create_screen.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
+// S135 (decision 0138): MEME v2 project side.
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
@@ -1627,6 +1629,14 @@ GoRouter _buildRouter(
       ),
       ..._launchRoutes,
       ..._memeRoutes,
+      // S135 (decision 0138): the five MEME v2 project-side pages. Until S136
+      // mounts the user-side instance page, an activated project opens the
+      // MEME tab.
+      ...launch2CreatorRoutes(
+        popOrHome: _popOrHome,
+        openInstance: (context, instanceId) =>
+            context.go(LoopRouteManifest.pathFor('meme')),
+      ),
       ..._miningRoutes,
       ..._pendingManifestRoutes,
       // Illegal locations are recorded and land on 聊天.

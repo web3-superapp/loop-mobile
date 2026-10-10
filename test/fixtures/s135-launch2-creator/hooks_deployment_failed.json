@@ -1,0 +1,75 @@
+{
+  "_handwritten": "Handwritten from loop-api docs/frontend-v2-hooks-launch-api.md (S125/S132, decision 0108/0112/0117) and openapi/loop-api.v2.json on 2026-10-10; no Development capture exists for this route yet. Replace with a capture from preflight-reads.mts once S137 runs it.",
+  "route": "GET /v2/launch/projects/3fa85f64-5717-4562-b3fc-2c963f66afa6/hooks-deployments/00000000-0000-4000-8000-000000000011",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "jobId": "00000000-0000-4000-8000-000000000011",
+    "projectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "configVersion": 1,
+    "chainId": 97,
+    "factoryAddress": "0xffffffffffffffffffffffffffffffffffffffff",
+    "status": "failed",
+    "memeAddress": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa6666",
+    "hookAddress": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb20cc",
+    "txHash": null,
+    "confirmations": null,
+    "activationTxHash": null,
+    "addresses": {
+      "predicted": {
+        "meme": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa6666",
+        "hook": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb20cc"
+      },
+      "deployed": null
+    },
+    "failure": {
+      "code": "HOOKS_SIGNATURE_EXPIRED",
+      "retryable": false
+    },
+    "attemptCount": 1,
+    "events": [
+      {
+        "sequence": 1,
+        "fromStatus": null,
+        "toStatus": "awaiting_executor",
+        "kind": "created",
+        "txHash": null,
+        "blockNumber": null,
+        "blockHash": null,
+        "confirmations": null,
+        "errorCode": null,
+        "createdAt": "2026-10-09T00:00:00.000Z"
+      },
+      {
+        "sequence": 2,
+        "fromStatus": "awaiting_executor",
+        "toStatus": "claimed",
+        "kind": "claimed",
+        "txHash": null,
+        "blockNumber": null,
+        "blockHash": null,
+        "confirmations": null,
+        "errorCode": null,
+        "createdAt": "2026-10-09T00:00:00.000Z"
+      },
+      {
+        "sequence": 3,
+        "fromStatus": "claimed",
+        "toStatus": "failed",
+        "kind": "failed",
+        "txHash": null,
+        "blockNumber": null,
+        "blockHash": null,
+        "confirmations": null,
+        "errorCode": "HOOKS_SIGNATURE_EXPIRED",
+        "createdAt": "2026-10-09T00:00:00.000Z"
+      }
+    ],
+    "createdAt": "2026-10-09T00:00:00.000Z",
+    "updatedAt": "2026-10-09T00:05:00.000Z"
+  }
+}
