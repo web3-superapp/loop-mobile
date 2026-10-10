@@ -22,7 +22,18 @@ abstract interface class CommunityGateway {
 
   Future<CommunityDetail> loadCommunity(String communityId);
 
-  Future<CommunityDetail> join(String communityId);
+  /// Joins one community. [notifications] `muted` asks the server to mute
+  /// the official channel once it has added the reader to it (loop-api
+  /// decision 0115); the client does not mute it itself.
+  Future<CommunityDetail> join(
+    String communityId, {
+    CommunityNotificationPreference notifications,
+  });
+
+  /// The reader's membership and whether the server finished putting it into
+  /// the chat channel (and, for a muted join, muting it). One cheap read,
+  /// safe to poll for a few seconds after a join.
+  Future<CommunityMembershipSync> loadMembershipSync(String communityId);
 
   Future<CommunityDetail> leave(String communityId);
 
@@ -101,7 +112,15 @@ final class UnavailableCommunityGateway implements CommunityGateway {
   Future<CommunityDetail> loadCommunity(String communityId) => _unavailable();
 
   @override
-  Future<CommunityDetail> join(String communityId) => _unavailable();
+  Future<CommunityDetail> join(
+    String communityId, {
+    CommunityNotificationPreference notifications =
+        CommunityNotificationPreference.standard,
+  }) => _unavailable();
+
+  @override
+  Future<CommunityMembershipSync> loadMembershipSync(String communityId) =>
+      _unavailable();
 
   @override
   Future<CommunityDetail> leave(String communityId) => _unavailable();

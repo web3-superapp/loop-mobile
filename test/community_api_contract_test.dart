@@ -918,6 +918,110 @@ void main() {
       expect(_header(captured!, 'idempotency-key'), idempotencyKey);
     });
 
+    test('a default join sends no body; a muted join sends exactly '
+        '{"notifications":"muted"} (loop-api decision 0115)', () async {
+      final captured = <RequestOptions>[];
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          captured.add(options);
+          handler.resolve(_response(options, detailBody()));
+        }),
+      );
+
+      await api.join(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        idempotencyKey: idempotencyKey,
+        communityId: communityId,
+      );
+      await api.join(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        idempotencyKey: idempotencyKey,
+        communityId: communityId,
+        notifications: CommunityNotificationPreference.muted,
+      );
+
+      expect(captured[0].data, isNull);
+      expect(captured[0].contentType, isNull);
+      expect(captured[1].uri.path, '/v2/communities/$communityId/join');
+      expect(captured[1].data, <String, Object?>{'notifications': 'muted'});
+      expect(captured[1].contentType, Headers.jsonContentType);
+    });
+
+    group('GET /v2/communities/{id}/membership (loop-api decision 0115)', () {
+      Map<String, Object?> membershipBody() => <String, Object?>{
+        'communityId': communityId,
+        'membership': <String, Object?>{
+          'role': 'member',
+          'status': 'active',
+          'joinedAt': '2026-10-10T01:00:00.000Z',
+        },
+        'notifications': 'muted',
+        'channelSynced': true,
+        'contractVersion': '2.0',
+      };
+
+      test('is a plain read and decodes the whole shape', () async {
+        RequestOptions? captured;
+        final api = DioLoopV2CommunityApi(
+          _dio((options, handler) {
+            captured = options;
+            handler.resolve(_response(options, membershipBody()));
+          }),
+        );
+        final sync = await api.getMembership(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        );
+        expect(captured?.method, 'GET');
+        expect(captured?.uri.path, '/v2/communities/$communityId/membership');
+        expect(_header(captured!, 'idempotency-key'), isNull);
+        expect(sync.membership?.role, CommunityRole.member);
+        expect(sync.notifications, CommunityNotificationPreference.muted);
+        expect(sync.channelSynced, isTrue);
+      });
+
+      test('reads a server without the two new fields as not synced', () {
+        final sync = LoopV2CommunityMembershipSyncCodec.decode(
+          membershipBody()
+            ..remove('notifications')
+            ..remove('channelSynced'),
+          communityId: communityId,
+        );
+        expect(sync.notifications, isNull);
+        expect(sync.channelSynced, isFalse);
+        final none = LoopV2CommunityMembershipSyncCodec.decode(
+          membershipBody()
+            ..['membership'] = null
+            ..['notifications'] = null
+            ..['channelSynced'] = false,
+          communityId: communityId,
+        );
+        expect(none.membership, isNull);
+      });
+
+      test('refuses an unknown key, another community, a bad value', () {
+        for (final body in <Map<String, Object?>>[
+          membershipBody()..['extra'] = 1,
+          membershipBody()
+            ..['communityId'] = 'ffffffff-5717-4562-b3fc-2c963f66afa6',
+          membershipBody()..['notifications'] = 'silent',
+          membershipBody()..['channelSynced'] = 'yes',
+          membershipBody()..remove('contractVersion'),
+        ]) {
+          expect(
+            () => LoopV2CommunityMembershipSyncCodec.decode(
+              body,
+              communityId: communityId,
+            ),
+            throwsA(isA<LoopBackendFailure>()),
+          );
+        }
+      });
+    });
+
     test('a non-UUIDv4 idempotency key never leaves the device', () async {
       var dispatched = false;
       final api = DioLoopV2CommunityApi(

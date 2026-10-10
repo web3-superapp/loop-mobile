@@ -473,7 +473,16 @@ final class _RecordingCommunityApi implements LoopV2CommunityApi {
     required String clientVersion,
     required String idempotencyKey,
     required String communityId,
+    CommunityNotificationPreference notifications =
+        CommunityNotificationPreference.standard,
   }) => _write(idempotencyKey, detail);
+
+  @override
+  Future<CommunityMembershipSync> getMembership({
+    required String accessToken,
+    required String clientVersion,
+    required String communityId,
+  }) => _read<CommunityMembershipSync>(null);
 
   @override
   Future<CommunityDetail> leave({

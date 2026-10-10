@@ -111,15 +111,35 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
   );
 
   @override
-  Future<CommunityDetail> join(String communityId) => _write(
-    'join:$communityId',
+  Future<CommunityDetail> join(
+    String communityId, {
+    CommunityNotificationPreference notifications =
+        CommunityNotificationPreference.standard,
+  }) => _write(
+    // The server binds `muted` into the idempotency digest, so a muted join
+    // is a different logical operation and never shares a key with a plain
+    // one (loop-api decision 0115).
+    notifications == CommunityNotificationPreference.muted
+        ? 'join:$communityId:muted'
+        : 'join:$communityId',
     (accessToken, key) => _api.join(
       accessToken: accessToken,
       clientVersion: _clientVersion,
       idempotencyKey: key,
       communityId: communityId,
+      notifications: notifications,
     ),
   );
+
+  @override
+  Future<CommunityMembershipSync> loadMembershipSync(String communityId) =>
+      _read(
+        (accessToken) => _api.getMembership(
+          accessToken: accessToken,
+          clientVersion: _clientVersion,
+          communityId: communityId,
+        ),
+      );
 
   @override
   Future<CommunityDetail> leave(String communityId) => _write(

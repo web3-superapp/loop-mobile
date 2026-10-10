@@ -462,6 +462,43 @@ final class CommunityMembership {
   final DateTime joinedAt;
 }
 
+/// The official-channel notification preference a join asks for
+/// (loop-api decision 0115, S135). `muted` is applied by the server after it
+/// has added the member to the Stream channel; the app never races it.
+enum CommunityNotificationPreference {
+  standard('default'),
+  muted('muted');
+
+  const CommunityNotificationPreference(this.wireName);
+
+  final String wireName;
+
+  static CommunityNotificationPreference? tryParse(String value) {
+    for (final preference in values) {
+      if (preference.wireName == value) return preference;
+    }
+    return null;
+  }
+}
+
+/// `GET /v2/communities/{id}/membership` (loop-api decision 0115).
+///
+/// [channelSynced] is true once the server added the reader to the Stream
+/// channel and, for a muted join, confirmed the mute. A server that predates
+/// the two fields reads as `notifications: null, channelSynced: false`.
+@immutable
+final class CommunityMembershipSync {
+  const CommunityMembershipSync({
+    required this.membership,
+    required this.notifications,
+    required this.channelSynced,
+  });
+
+  final CommunityMembership? membership;
+  final CommunityNotificationPreference? notifications;
+  final bool channelSynced;
+}
+
 /// One governance command the server published for a member row.
 ///
 /// `wireName` is the server's `items[].actions` value, which is the name of
