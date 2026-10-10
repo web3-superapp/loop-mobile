@@ -278,13 +278,15 @@ final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
   /// a loaded device that reply measured over 400 ms (S123f emulator run,
   /// 2026-10-10) and the whole run then lost every snapshot. It gets its own
   /// [locateTimeout]: a later first frame costs less than a cold start with
-  /// nothing cached.
+  /// nothing cached. The file steps got the same treatment on 2026-10-10: a
+  /// loaded emulator took over 400 ms to probe-write and the run again lost
+  /// every snapshot, so each step is bounded at 1.5 s.
   static Future<LoopSnapshotStore> openPersistent({
     Future<Directory> Function() locate = getApplicationSupportDirectory,
     Future<void> Function(Directory directory) createDirectory =
         _createDirectory,
-    Duration timeout = const Duration(milliseconds: 400),
-    Duration createTimeout = const Duration(milliseconds: 1000),
+    Duration timeout = const Duration(milliseconds: 1500),
+    Duration createTimeout = const Duration(milliseconds: 1500),
     Duration locateTimeout = const Duration(milliseconds: 2000),
   }) async {
     try {
@@ -317,7 +319,7 @@ final class FileLoopSnapshotStore extends MemoryLoopSnapshotStore {
   /// Bounded: a slow disk never holds the first frame.
   static Future<FileLoopSnapshotStore> open({
     required Directory directory,
-    Duration timeout = const Duration(milliseconds: 400),
+    Duration timeout = const Duration(milliseconds: 1500),
   }) async {
     final file = File('${directory.path}${Platform.pathSeparator}$fileName');
     var initial = const <LoopSnapshotRecord>[];

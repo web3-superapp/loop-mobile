@@ -488,7 +488,7 @@ void main() {
       expect(store, isA<FileLoopSnapshotStore>());
     });
 
-    test('the other steps keep the 400 ms bound', () async {
+    test('the other steps keep the 1.5 s bound', () async {
       final root = await Directory.systemTemp.createTemp('s94b-locate');
       addTearDown(() => root.delete(recursive: true));
       final store = await FileLoopSnapshotStore.openPersistent(
