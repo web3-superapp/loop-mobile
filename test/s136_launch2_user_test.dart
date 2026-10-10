@@ -1227,4 +1227,162 @@ void main() {
       'INTENT_EXPIRED',
     );
   });
+
+  // -------------------------------------------------------------------------
+  // S142 · decision 0142: the terminal stage `closed_no_holders`
+  // (loop-api decision 0120, `snapshot.closure`).
+  // -------------------------------------------------------------------------
+  group('S142 · closed_no_holders', () {
+    Object? decode(Map<String, Object?> json) =>
+        LoopV2Launch2Codec.detail(json, mediaUrl: (_) => null);
+    Map<String, Object?> snapshotOf(Map<String, Object?> json) =>
+        (json['instance']! as Map<String, Object?>)['snapshot']!
+            as Map<String, Object?>;
+
+    test('the closure is read; it and the stage arrive together', () {
+      final detail = l2Detail(stage: 'closed_no_holders', cutoffBlock: '1234');
+      expect(detail.stage, Launch2Stage.closedNoHolders);
+      expect(detail.stage.terminal, isTrue);
+      expect(detail.stage.tradable, isFalse);
+      expect(detail.row.nextChangeAt, isNull);
+      expect(detail.snapshot.closure?.cutoffBlock, BigInt.from(1234));
+      expect(
+        detail.snapshot.closure?.closedAt,
+        DateTime.utc(2027, 1, 23, 7, 2),
+      );
+      expect(detail.snapshot.publication, isNull);
+
+      // `closure` is a required key (null outside the closed stage).
+      final missing = l2DetailJson();
+      snapshotOf(missing).remove('closure');
+      expect(() => decode(missing), throwsA(isA<LoopBackendFailure>()));
+      // The closed stage without its closure.
+      final bare = l2DetailJson(stage: 'closed_no_holders');
+      snapshotOf(bare)['closure'] = null;
+      expect(() => decode(bare), throwsA(isA<LoopBackendFailure>()));
+      // A closure under a stage that is not closed (or held).
+      final stray = l2DetailJson(stage: 'nft_sale');
+      snapshotOf(stray)['closure'] = <String, Object?>{
+        'reason': 'no_holders',
+        'cutoffBlock': '1',
+        'closedAt': '2027-01-23T07:02:00.000Z',
+      };
+      expect(() => decode(stray), throwsA(isA<LoopBackendFailure>()));
+      // An unknown reason, and a terminal stage that still counts down.
+      final reason = l2DetailJson(stage: 'closed_no_holders');
+      (snapshotOf(reason)['closure']! as Map<String, Object?>)['reason'] =
+          'refunded';
+      expect(() => decode(reason), throwsA(isA<LoopBackendFailure>()));
+      final ticking = l2DetailJson(stage: 'closed_no_holders');
+      (ticking['instance']! as Map<String, Object?>)['nextChangeAt'] =
+          '2027-01-24T07:00:00.000Z';
+      expect(() => decode(ticking), throwsA(isA<LoopBackendFailure>()));
+    });
+
+    testWidgets('the page: 无人认购，已关闭, grey, the cutoff block and the '
+        'closing time, no bar, no panel, no polling', (tester) async {
+      final gateway = _FakeLaunch2(
+        details: <_Answer<Launch2InstanceDetail>>[
+          _Answer<Launch2InstanceDetail>.value(
+            l2Detail(stage: 'closed_no_holders', cutoffBlock: '1234'),
+          ),
+        ],
+      );
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: gateway,
+      );
+      expect(_key('launch2-stage-closed_no_holders'), findsOneWidget);
+      expect(find.text('已关闭'), findsOneWidget);
+      expect(find.text('无人认购，已关闭'), findsWidgets);
+      expect(_key('launch2-closed-no-holders'), findsOneWidget);
+      expect(find.text('#1,234'), findsOneWidget);
+      expect(find.text('关闭时间'), findsOneWidget);
+      expect(_key('launch2-countdown'), findsNothing);
+      expect(_key('launch2-buy-nft'), findsNothing);
+      expect(_key('launch2-trade-amount'), findsNothing);
+      expect(_key('launch2-go-swap'), findsNothing);
+      // Terminal: the page does not keep re-reading it.
+      final reads = gateway.detailReads;
+      await tester.pump(const Duration(hours: 2));
+      expect(gateway.detailReads, reads);
+      await _drain(tester);
+    });
+
+    testWidgets('the v2 list sinks closed rows below every other row; the '
+        'row is grey and says 无人认购，已关闭', (tester) async {
+      const closedId = '1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c5d';
+      final launch2 = _FakeLaunch2(
+        list: (stage, cursor) => _Answer<Launch2InstancePage>.value(
+          l2Page(<Map<String, Object?>>[
+            l2RowJson(instanceId: closedId, stage: 'closed_no_holders'),
+            l2RowJson(instanceId: l2InstanceA, stage: 'nft_sale'),
+            l2RowJson(
+              instanceId: l2InstanceB,
+              stage: 'graduated',
+              noNextChange: true,
+            ),
+          ]),
+        ),
+      );
+      await _pump(
+        tester,
+        Launch2ListSegment(scope: Launch2ListScope.all, onNavigate: (_) {}),
+        launch2: launch2,
+      );
+      final closedTop = tester.getTopLeft(_key('launch2-row-$closedId')).dy;
+      expect(
+        tester.getTopLeft(_key('launch2-row-$l2InstanceA')).dy,
+        lessThan(closedTop),
+      );
+      expect(
+        tester.getTopLeft(_key('launch2-row-$l2InstanceB')).dy,
+        lessThan(closedTop),
+      );
+      expect(_key('launch2-row-closed'), findsOneWidget);
+      expect(_key('launch2-stage-pill-closed_no_holders'), findsOneWidget);
+      expect(
+        launch2ListOrder(
+          l2Page(<Map<String, Object?>>[
+            l2RowJson(instanceId: closedId, stage: 'closed_no_holders'),
+            l2RowJson(instanceId: l2InstanceA, stage: 'public'),
+          ]).items,
+        ).map((row) => row.instanceId),
+        <String>[l2InstanceA, closedId],
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('a quote answering 409 LAUNCH2_STAGE_MISMATCH stays one line '
+        'in the panel and re-reads the detail; no error page', (tester) async {
+      final gateway = _FakeLaunch2(
+        details: <_Answer<Launch2InstanceDetail>>[
+          _Answer<Launch2InstanceDetail>.value(l2Detail(stage: 'public')),
+        ],
+        quotes: <_Answer<Launch2Quote>>[
+          const _Answer<Launch2Quote>.fail(
+            LoopChainFailureKind.versionConflict,
+            reasonCode: 'LAUNCH2_STAGE_MISMATCH',
+          ),
+        ],
+      );
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: gateway,
+      );
+      final reads = gateway.detailReads;
+      await tester.enterText(_key('launch2-trade-amount'), '50');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(gateway.quoteCalls, hasLength(1));
+      expect(gateway.detailReads, greaterThan(reads));
+      expect(_key('launch2-trade-quote-failed'), findsOneWidget);
+      expect(find.textContaining('当前阶段不能交易，已重新读取项目状态'), findsOneWidget);
+      expect(_key('launch2-instance-state-error'), findsNothing);
+      expect(_key('launch2-stage-public'), findsOneWidget);
+      await _drain(tester);
+    });
+  });
 }

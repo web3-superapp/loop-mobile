@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart'
@@ -128,6 +129,10 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   bool _prefilled = false;
   LaunchProject? _existing;
   Launch2HooksDraft? _existingDraft;
+
+  /// The server's sale lead (`hooks-config.minSaleLeadSeconds`), once read:
+  /// from the project being edited, or from the save's own read.
+  Duration? _minSaleLead;
 
   List<TextEditingController> get _controllers => <TextEditingController>[
     _name,
@@ -300,6 +305,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             narrative: description.isEmpty ? null : description,
             officialLinks: links,
           ),
+          now: _now,
           config: Launch2ConfigInput(
             name: name,
             ticker: ticker,
@@ -310,7 +316,6 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             buybackRecipient: _recipient.text.trim(),
           ),
           existing: _existing,
-          existingDraft: _existingDraft,
         );
     if (id != null && mounted) widget.onSubmitted?.call(id);
   }
@@ -350,12 +355,26 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     }
   }
 
-  DateTime _earliest() => _now
-      .add(Launch2Template.contractMinimumSaleLead)
-      .add(const Duration(minutes: 1));
+  Duration? get _knownLead =>
+      ref.read(launch2SaveControllerProvider(_scope)).minSaleLead ??
+      _minSaleLead;
+
+  /// Now + the server's lead, rounded up to the minute (decision 0142). A
+  /// project not created yet has no config to read: the contract floor.
+  DateTime _earliest() => launch2EarliestSaleStart(
+    _now,
+    _knownLead ?? Launch2Template.contractMinimumSaleLead,
+  );
+
+  static String _leadLabel(Duration lead) {
+    final minutes = (lead.inSeconds + 59) ~/ 60;
+    if (minutes % 60 == 0) return '${minutes ~/ 60} 小时';
+    return '$minutes 分钟';
+  }
 
   Future<void> _pickSaleStart() async {
     final earliest = _earliest();
+    final lead = _knownLead;
     final initial =
         _saleStart ??
         _now
@@ -387,7 +406,11 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              '最早可选时间由平台决定，太早会被退回。',
+              lead == null
+                  ? '最早可选时间由平台决定，太早会被退回。'
+                  : '平台要求至少提前 ${_leadLabel(lead)}开售，最早 '
+                        '${loopLocalTimestampLabel(earliest)}。',
+              key: const ValueKey<String>('launch2-sale-start-hint'),
               style: LoopType.captionSm.copyWith(color: LoopColors.text3),
             ),
           ),
@@ -419,6 +442,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     final draft = value.draft;
     _existing = project;
     _existingDraft = draft;
+    _minSaleLead = value.config.minSaleLead;
     _silenced = true;
     _name.text = draft?.name ?? project.name;
     _ticker.text = draft?.ticker ?? project.ticker;
@@ -713,6 +737,16 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         economics: draft?.economics ?? Launch2Template.v1,
         fromServer: draft != null,
       ),
+      if (save.earliestSaleStart case final DateTime earliest)
+        LoopNotice(
+          key: const ValueKey<String>('launch2-create-sale-too-early'),
+          icon: 'warn',
+          tone: LoopNoticeTone.warn,
+          body:
+              '开售时间太早：平台要求至少提前 '
+              '${_leadLabel(save.minSaleLead ?? Duration.zero)}，'
+              '最早 ${loopLocalTimestampLabel(earliest)}，请重新选择。',
+        ),
       if (failure != null)
         LoopNotice(
           key: ValueKey<String>(

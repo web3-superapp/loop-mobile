@@ -133,7 +133,7 @@ class Launch2ListSegment extends ConsumerWidget {
     final cursor = page.nextCursor;
     return <Widget>[
       const SizedBox(height: 2),
-      for (final row in page.items)
+      for (final row in launch2ListOrder(page.items))
         Launch2InstanceTile(
           key: ValueKey<String>('launch2-tile-${row.instanceId}'),
           row: row,
@@ -173,4 +173,22 @@ class Launch2ListSegment extends ConsumerWidget {
       ),
     ];
   }
+}
+
+/// The order a v2 list draws its rows in (decision 0142): the server's own
+/// order (newest activation first), except that `closed_no_holders` rows —
+/// terminal, never tradable — sink below every other row read so far, in
+/// their own server order. The 「已毕业」 list is `stage=graduated` and never
+/// holds one. A later page's live rows therefore land above the closed ones
+/// already on screen.
+List<Launch2InstanceRow> launch2ListOrder(List<Launch2InstanceRow> rows) {
+  if (!rows.any((row) => row.stage == Launch2Stage.closedNoHolders)) {
+    return rows;
+  }
+  return <Launch2InstanceRow>[
+    for (final row in rows)
+      if (row.stage != Launch2Stage.closedNoHolders) row,
+    for (final row in rows)
+      if (row.stage == Launch2Stage.closedNoHolders) row,
+  ];
 }

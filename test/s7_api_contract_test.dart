@@ -351,6 +351,7 @@ Map<String, Object?> _links() => <String, Object?>{
 Map<String, Object?> _project({
   String reviewStatus = 'draft',
   Object? version = 1,
+  String kind = 'ido',
 }) => <String, Object?>{
   'projectId': _projectId,
   'name': 'MoonCat',
@@ -358,6 +359,7 @@ Map<String, Object?> _project({
   'narrative': null,
   'officialLinks': _links(),
   'materialVersion': 1,
+  'kind': kind,
   'reviewStatus': reviewStatus,
   'reviewReasonCode': null,
   'reviewReasonText': null,
@@ -775,6 +777,86 @@ void main() {
         });
       },
     );
+
+    // S142 · decision 0142 (loop-api 0120): the catalogue `kind`.
+    test('a MEME v2 create carries kind launch2; the edit never does', () {
+      const draft = LaunchProjectDraft(
+        name: 'MoonCat',
+        ticker: 'MCAT',
+        narrative: null,
+        officialLinks: LaunchOfficialLinks(),
+        kind: LaunchProjectKind.launch2,
+      );
+      expect(draft.toCreateRequestJson()['kind'], 'launch2');
+      expect(draft.toRequestJson().containsKey('kind'), isFalse);
+      const classic = LaunchProjectDraft(
+        name: 'MoonCat',
+        ticker: 'MCAT',
+        narrative: null,
+        officialLinks: LaunchOfficialLinks(),
+      );
+      expect(classic.toCreateRequestJson(), classic.toRequestJson());
+    });
+
+    test('kind is a required project key and filters the list', () async {
+      final adapter = _RecordingAdapter(
+        statusCode: 200,
+        body: <String, Object?>{
+          'items': <Object?>[_project(kind: 'launch2')],
+          'nextCursor': null,
+          'contractVersion': '2.0',
+        },
+      );
+      final page = await DioLoopV2LaunchApi(_dio(adapter)).listProjects(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        kind: LaunchProjectKind.launch2,
+      );
+      expect(adapter.seen!.queryParameters, <String, Object?>{
+        'kind': 'launch2',
+      });
+      expect(page.items.single.kind, LaunchProjectKind.launch2);
+
+      // The unfiltered (classic) list sends no kind.
+      final all = _RecordingAdapter(
+        statusCode: 200,
+        body: <String, Object?>{
+          'items': <Object?>[_project()],
+          'nextCursor': null,
+          'contractVersion': '2.0',
+        },
+      );
+      final classic = await DioLoopV2LaunchApi(_dio(all))
+          .listProjects(accessToken: _token, clientVersion: _clientVersion);
+      expect(all.seen!.queryParameters, isEmpty);
+      expect(classic.items.single.kind, LaunchProjectKind.ido);
+
+      Future<Object?> list(Object? item, {LaunchProjectKind? kind}) =>
+          DioLoopV2LaunchApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: <String, Object?>{
+                  'items': <Object?>[item],
+                  'nextCursor': null,
+                  'contractVersion': '2.0',
+                },
+              ),
+            ),
+          ).listProjects(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            kind: kind,
+          );
+      // A launch2 list that answers an ido row, a missing kind, an unknown
+      // kind: all invalid.
+      await expectLater(
+        list(_project(), kind: LaunchProjectKind.launch2),
+        throwsA(anything),
+      );
+      await expectLater(list(_project()..remove('kind')), throwsA(anything));
+      await expectLater(list(_project(kind: 'meme')), throwsA(anything));
+    });
 
     test('the CAS edit sends no idempotency key', () async {
       final adapter = _RecordingAdapter(

@@ -82,67 +82,13 @@ final launch2CreatorPollingProvider = Provider<Launch2CreatorPolling>(
   (ref) => const Launch2CreatorPolling(),
 );
 
-// -- What this run knows beyond the server's reads --------------------------
-
-/// The deployment jobs this device submitted in this run, and the projects
-/// whose submit answered `HOOKS_CONFIG_NOT_APPROVED`.
-///
-/// The server publishes no job list for a project, so a job is known only to
-/// the run that submitted it (decision 0138 records the gap). Nothing here is
-/// persisted; a different account starts empty.
-@immutable
-final class Launch2CreatorMemory {
-  const Launch2CreatorMemory({
-    this.jobs = const <String, Launch2DeploymentJob>{},
-    this.awaitingApproval = const <String>{},
-  });
-
-  final Map<String, Launch2DeploymentJob> jobs;
-  final Set<String> awaitingApproval;
-}
-
-final class Launch2CreatorMemoryController
-    extends Notifier<Launch2CreatorMemory> {
-  @override
-  Launch2CreatorMemory build() {
-    ref.watch(loopAccountScopeProvider);
-    return const Launch2CreatorMemory();
-  }
-
-  void recordJob(Launch2DeploymentJob job) {
-    state = Launch2CreatorMemory(
-      jobs: <String, Launch2DeploymentJob>{...state.jobs, job.projectId: job},
-      awaitingApproval: <String>{...state.awaitingApproval}
-        ..remove(job.projectId),
-    );
-  }
-
-  void markAwaitingApproval(String projectId) {
-    state = Launch2CreatorMemory(
-      jobs: state.jobs,
-      awaitingApproval: <String>{...state.awaitingApproval, projectId},
-    );
-  }
-
-  /// A new configuration was saved: the old job and the old refusal no longer
-  /// describe it.
-  void forget(String projectId) {
-    state = Launch2CreatorMemory(
-      jobs: <String, Launch2DeploymentJob>{...state.jobs}..remove(projectId),
-      awaitingApproval: <String>{...state.awaitingApproval}..remove(projectId),
-    );
-  }
-}
-
-final launch2CreatorMemoryProvider =
-    NotifierProvider<Launch2CreatorMemoryController, Launch2CreatorMemory>(
-      Launch2CreatorMemoryController.new,
-    );
-
 // -- 我的项目 -----------------------------------------------------------------
 
-/// `launch2-projects` · the owner's catalogue projects, each with its Hooks
-/// draft (`GET /v2/launch/projects` + `GET …/hooks-config` per row).
+/// `launch2-projects` · the owner's MEME v2 catalogue projects
+/// (`GET /v2/launch/projects?kind=launch2`, decision 0142), each with its
+/// `hooks-config` read (draft, approval, newest task, lead) and — for an
+/// activated one — the instance the read model lists, so a tap can land
+/// straight on the right page.
 final class Launch2CreatorListController
     extends LoopChainReadController<Launch2CreatorPage> {
   bool _appendFailed = false;
@@ -157,20 +103,28 @@ final class Launch2CreatorListController
 
   Future<Launch2CreatorPage> _page(String? cursor) async {
     final page = await _launch(
-      () => ref.read(launchGatewayProvider).listProjects(cursor: cursor),
+      () => ref
+          .read(launchGatewayProvider)
+          .listProjects(cursor: cursor, kind: LaunchProjectKind.launch2),
     );
     final creator = ref.read(launch2CreatorGatewayProvider);
-    final drafts = await Future.wait<Launch2HooksDraft?>(
-      <Future<Launch2HooksDraft?>>[
-        for (final project in page.items) creator.loadConfig(project.projectId),
+    final rows = await Future.wait<Launch2CreatorProject>(
+      <Future<Launch2CreatorProject>>[
+        for (final project in page.items) _row(creator, project),
       ],
     );
-    return Launch2CreatorPage(
-      rows: <Launch2CreatorRow>[
-        for (var i = 0; i < page.items.length; i += 1)
-          Launch2CreatorRow(project: page.items[i], draft: drafts[i]),
-      ],
-      nextCursor: page.nextCursor,
+    return Launch2CreatorPage(rows: rows, nextCursor: page.nextCursor);
+  }
+
+  static Future<Launch2CreatorProject> _row(
+    Launch2CreatorGateway creator,
+    LaunchProject project,
+  ) async {
+    final config = await creator.loadConfig(project.projectId);
+    return Launch2CreatorProject(
+      project: project,
+      config: config,
+      instance: await _instanceOf(creator, project.projectId, config),
     );
   }
 
@@ -210,9 +164,25 @@ final launch2CreatorListControllerProvider =
 
 // -- One project --------------------------------------------------------------
 
-/// `launch2-project` · one project: the catalogue record, its Hooks draft,
-/// the job this run submitted (re-read), and — once approved — whether the
-/// read model already lists its instance.
+/// The instance an activated project became, best effort: the list being
+/// unreadable does not make the project unreadable.
+Future<Launch2InstanceRef?> _instanceOf(
+  Launch2CreatorGateway creator,
+  String projectId,
+  Launch2HooksConfig config,
+) async {
+  if (config.currentJob?.status != Launch2JobStatus.activated) return null;
+  try {
+    return await creator.findInstance(projectId);
+  } on LoopChainException {
+    return null;
+  }
+}
+
+/// `launch2-project` · one project: the catalogue record and its
+/// `hooks-config` read, which since loop-api decision 0120 carries the
+/// approval and the newest task, so a cold start resumes where the owner
+/// left off; once activated, the instance the read model lists.
 final class Launch2ProjectController
     extends LoopChainReadController<Launch2CreatorProject> {
   Launch2ProjectController(this.projectId);
@@ -223,25 +193,7 @@ final class Launch2ProjectController
   bool get retainsAnswer => false;
 
   @override
-  LoopChainGatewayMode watchMode() {
-    // A job recorded elsewhere (the signing page) changes this page.
-    ref.listen<Launch2CreatorMemory>(launch2CreatorMemoryProvider, (_, _) {
-      final value = state.value;
-      if (value != null) state = state.ready(_withMemory(value));
-    });
-    return _mode(ref);
-  }
-
-  Launch2CreatorProject _withMemory(Launch2CreatorProject value) {
-    final memory = ref.read(launch2CreatorMemoryProvider);
-    return Launch2CreatorProject(
-      project: value.project,
-      draft: value.draft,
-      job: memory.jobs[projectId] ?? value.job,
-      instance: value.instance,
-      configAwaitingApproval: memory.awaitingApproval.contains(projectId),
-    );
-  }
+  LoopChainGatewayMode watchMode() => _mode(ref);
 
   @override
   Future<Launch2CreatorProject> fetch() async {
@@ -251,37 +203,11 @@ final class Launch2ProjectController
       creator.loadConfig(projectId),
     ]);
     final project = results[0]! as LaunchProject;
-    final draft = results[1] as Launch2HooksDraft?;
-    final memory = ref.read(launch2CreatorMemoryProvider);
-    var job = memory.jobs[projectId];
-    if (job != null) {
-      job = await creator.loadDeployment(
-        projectId: projectId,
-        jobId: job.jobId,
-      );
-      ref.read(launch2CreatorMemoryProvider.notifier).recordJob(job);
-    }
-    Launch2InstanceRef? instance;
-    if (project.reviewStatus == LaunchReviewStatus.approved &&
-        draft != null &&
-        (job == null || job.status == Launch2JobStatus.activated)) {
-      // Best effort: a project activated in an earlier run is found here.
-      // The list being unreadable does not make the project unreadable.
-      try {
-        instance = await creator.findInstance(projectId);
-      } on LoopChainException {
-        instance = null;
-      }
-    }
+    final config = results[1]! as Launch2HooksConfig;
     return Launch2CreatorProject(
       project: project,
-      draft: draft,
-      job: job,
-      instance: instance,
-      configAwaitingApproval: ref
-          .read(launch2CreatorMemoryProvider)
-          .awaitingApproval
-          .contains(projectId),
+      config: config,
+      instance: await _instanceOf(creator, projectId, config),
     );
   }
 }
@@ -306,6 +232,8 @@ final class Launch2SaveState {
     this.stage,
     this.projectId,
     this.failure,
+    this.minSaleLead,
+    this.earliestSaleStart,
   });
 
   final Launch2SavePhase phase;
@@ -317,6 +245,13 @@ final class Launch2SaveState {
   /// than creating a second one.
   final String? projectId;
   final LoopChainException? failure;
+
+  /// The server's sale lead, once a `hooks-config` read gave it.
+  final Duration? minSaleLead;
+
+  /// Set when the save stopped before writing because the chosen sale start
+  /// is earlier than this (the server's lead read just now).
+  final DateTime? earliestSaleStart;
 
   bool get busy => phase == Launch2SavePhase.saving;
 }
@@ -339,29 +274,45 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
     return Launch2SaveState(projectId: scope == 'new' ? null : scope);
   }
 
-  /// Runs the remaining steps. [existing] is the project being edited, with
-  /// its current draft; `null` for a new project.
+  /// Runs the remaining steps. [existing] is the project being edited;
+  /// `null` for a new project, which is created as `kind: launch2`
+  /// (decision 0142). [now] is the page's clock: before writing the draft the
+  /// controller reads `hooks-config` (the current version for the CAS and
+  /// the server's sale lead) and stops, without writing, when the chosen
+  /// start is already earlier than now + lead.
   Future<String?> save({
     required LaunchProjectDraft project,
     required Launch2ConfigInput config,
+    required DateTime now,
     LaunchProject? existing,
-    Launch2HooksDraft? existingDraft,
   }) async {
     if (state.busy) return null;
     final launch = ref.read(launchGatewayProvider);
     final creator = ref.read(launch2CreatorGatewayProvider);
     var projectId = state.projectId;
+    var lead = state.minSaleLead;
     var stage = Launch2SaveStage.project;
     state = Launch2SaveState(
       phase: Launch2SavePhase.saving,
       stage: stage,
       projectId: projectId,
+      minSaleLead: lead,
     );
     try {
       final editable = existing == null || existing.reviewStatus.isEditable;
       if (!_projectSaved) {
         if (projectId == null) {
-          final created = await _launch(() => launch.createProject(project));
+          final created = await _launch(
+            () => launch.createProject(
+              LaunchProjectDraft(
+                name: project.name,
+                ticker: project.ticker,
+                narrative: project.narrative,
+                officialLinks: project.officialLinks,
+                kind: LaunchProjectKind.launch2,
+              ),
+            ),
+          );
           projectId = created.projectId;
         } else if (existing != null && editable) {
           final version = existing.version;
@@ -384,9 +335,23 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         phase: Launch2SavePhase.saving,
         stage: stage,
         projectId: id,
+        minSaleLead: lead,
       );
       if (!_configSaved) {
-        var expected = existingDraft?.version ?? 0;
+        final current = await creator.loadConfig(id);
+        lead = current.minSaleLead;
+        final earliest = launch2EarliestSaleStart(now, lead);
+        if (config.nftSaleStart.isBefore(earliest)) {
+          state = Launch2SaveState(
+            phase: Launch2SavePhase.failed,
+            stage: stage,
+            projectId: id,
+            minSaleLead: lead,
+            earliestSaleStart: earliest,
+          );
+          return null;
+        }
+        var expected = current.draft?.version ?? 0;
         try {
           await creator.saveConfig(
             projectId: id,
@@ -394,10 +359,10 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
             input: config,
           );
         } on LoopChainException catch (error) {
-          // Another version landed since this page read it: read the latest
-          // and save once more over it, never in a loop.
+          // Another version landed since the read: read the latest and save
+          // once more over it, never in a loop.
           if (error.kind != LoopChainFailureKind.versionConflict) rethrow;
-          expected = (await creator.loadConfig(id))?.version ?? 0;
+          expected = (await creator.loadConfig(id)).draft?.version ?? 0;
           await creator.saveConfig(
             projectId: id,
             expectedVersion: expected,
@@ -405,7 +370,6 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
           );
         }
         _configSaved = true;
-        ref.read(launch2CreatorMemoryProvider.notifier).forget(id);
       }
       if (editable) {
         stage = Launch2SaveStage.submit;
@@ -413,6 +377,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
           phase: Launch2SavePhase.saving,
           stage: stage,
           projectId: id,
+          minSaleLead: lead,
         );
         await _launch(() => launch.submitProject(id));
       }
@@ -420,6 +385,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         phase: Launch2SavePhase.done,
         stage: stage,
         projectId: id,
+        minSaleLead: lead,
       );
       return id;
     } on LoopChainException catch (error) {
@@ -428,6 +394,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         stage: stage,
         projectId: projectId,
         failure: error,
+        minSaleLead: lead,
       );
       return null;
     } catch (_) {
@@ -436,6 +403,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         stage: stage,
         projectId: projectId,
         failure: const LoopChainException(LoopChainFailureKind.unexpected),
+        minSaleLead: lead,
       );
       return null;
     }
@@ -604,7 +572,6 @@ final class Launch2SignController extends Notifier<Launch2SignState> {
             signature: signature,
           );
       if (!ref.mounted) return job;
-      ref.read(launch2CreatorMemoryProvider.notifier).recordJob(job);
       state = state.copyWith(phase: Launch2SignPhase.submitted, job: job);
       return job;
     } on LoopChainException catch (error) {
@@ -614,12 +581,6 @@ final class Launch2SignController extends Notifier<Launch2SignState> {
         // and sign again with a new key (§5).
         await load(walletId, afterConflict: true);
         return null;
-      }
-      if (error.kind == LoopChainFailureKind.permissionDenied &&
-          error.reasonCode == 'HOOKS_CONFIG_NOT_APPROVED') {
-        ref
-            .read(launch2CreatorMemoryProvider.notifier)
-            .markAwaitingApproval(projectId);
       }
       state = state.copyWith(phase: Launch2SignPhase.failed, failure: error);
       return null;
@@ -665,10 +626,7 @@ final class Launch2DeploymentController
     final job = await ref
         .read(launch2CreatorGatewayProvider)
         .loadDeployment(projectId: key.projectId, jobId: key.jobId);
-    if (ref.mounted) {
-      ref.read(launch2CreatorMemoryProvider.notifier).recordJob(job);
-      _schedule(job);
-    }
+    if (ref.mounted) _schedule(job);
     return job;
   }
 

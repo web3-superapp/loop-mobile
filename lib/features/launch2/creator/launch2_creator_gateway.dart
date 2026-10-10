@@ -12,8 +12,9 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart
 abstract interface class Launch2CreatorGateway {
   LoopChainGatewayMode get mode;
 
-  /// The latest Hooks draft, or `null` when none was saved.
-  Future<Launch2HooksDraft?> loadConfig(String projectId);
+  /// The latest Hooks draft (or none), its approval, the project's newest
+  /// deployment task and the server's sale lead (loop-api decision 0120).
+  Future<Launch2HooksConfig> loadConfig(String projectId);
 
   /// Appends one draft version under [expectedVersion] (`0` for the first).
   Future<Launch2HooksDraft> saveConfig({
@@ -58,7 +59,7 @@ final class UnavailableLaunch2CreatorGateway implements Launch2CreatorGateway {
   );
 
   @override
-  Future<Launch2HooksDraft?> loadConfig(String projectId) => _unavailable();
+  Future<Launch2HooksConfig> loadConfig(String projectId) => _unavailable();
 
   @override
   Future<Launch2HooksDraft> saveConfig({

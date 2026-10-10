@@ -130,6 +130,8 @@ abstract final class LoopV2Launch2Codec {
     'earlyRoundEndsAt',
     'memberCount',
     'signers',
+    // Decision 0120: required, `null` unless the sale closed with no holder.
+    'closure',
   };
 
   static const graduationKeys = <String>{
@@ -435,6 +437,13 @@ abstract final class LoopV2Launch2Codec {
       pattern: tickerPattern,
       maxLength: 12,
     );
+    final stageValue = stage(map, 'stage');
+    final nextChangeAt = LoopV2ChainCodec.optionalTimestamp(
+      map,
+      'nextChangeAt',
+    );
+    // A terminal stage has nothing to count down to (decision 0120).
+    if (stageValue.terminal && nextChangeAt != null) invalid();
     return Launch2InstanceRow(
       instanceId: uuid(map, 'instanceId'),
       projectId: uuid(map, 'projectId'),
@@ -444,8 +453,8 @@ abstract final class LoopV2Launch2Codec {
       ticker: ticker,
       logoUrl: logoUrl(map, 'logoUrl', mediaUrl: mediaUrl),
       memeAddress: address(map, 'memeAddress'),
-      stage: stage(map, 'stage'),
-      nextChangeAt: LoopV2ChainCodec.optionalTimestamp(map, 'nextChangeAt'),
+      stage: stageValue,
+      nextChangeAt: nextChangeAt,
       holdReason: hold,
       activatedAt: LoopV2ChainCodec.optionalTimestamp(map, 'activatedAt'),
       nftSale: _nftSale(map['nftSale']),
@@ -556,6 +565,20 @@ abstract final class LoopV2Launch2Codec {
     );
   }
 
+  static Launch2SnapshotClosure? _closure(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'reason',
+      'cutoffBlock',
+      'closedAt',
+    });
+    if (map['reason'] != 'no_holders') invalid();
+    return Launch2SnapshotClosure(
+      cutoffBlock: integer(map, 'cutoffBlock'),
+      closedAt: LoopV2ChainCodec.requireTimestamp(map, 'closedAt'),
+    );
+  }
+
   static Launch2Snapshot _snapshot(Object? raw) {
     final map = LoopV2Contract.strictMapWithOptional(
       raw,
@@ -595,6 +618,7 @@ abstract final class LoopV2Launch2Codec {
       ),
       memberCount: LoopV2ChainCodec.optionalInt(map, 'memberCount', minimum: 0),
       publication: _publication(map['publication']),
+      closure: _closure(map['closure']),
     );
   }
 
@@ -741,6 +765,14 @@ abstract final class LoopV2Launch2Codec {
     );
     final graduation = _graduation(map['graduation']);
     final rowValue = _rowFrom(map, mediaUrl: mediaUrl);
+    final snapshot = _snapshot(map['snapshot']);
+    // Decision 0120: the closed stage always names its closure; a closure
+    // shows under no other stage than that one or an integrity hold.
+    final closed = rowValue.stage == Launch2Stage.closedNoHolders;
+    if (closed != (snapshot.closure != null) &&
+        !(rowValue.stage == Launch2Stage.paused && snapshot.closure != null)) {
+      invalid();
+    }
     return Launch2InstanceDetail(
       row: rowValue,
       viewerIsProjectOwner: LoopV2ChainCodec.requireBool(
@@ -753,7 +785,7 @@ abstract final class LoopV2Launch2Codec {
       buybackRecipient: address(map, 'buybackRecipient'),
       template: _template(map['template']),
       contracts: _contracts(map['contracts']),
-      snapshot: _snapshot(map['snapshot']),
+      snapshot: snapshot,
       graduation: graduation,
       buyback: _buybackSummary(map['buyback']),
       recentTrades: List<Launch2Trade>.unmodifiable(<Launch2Trade>[

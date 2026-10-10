@@ -118,7 +118,7 @@ final class DioLoopV2Launch2CreatorApi {
     }
   }
 
-  Future<Launch2HooksDraft?> getConfig({
+  Future<Launch2HooksConfig> getConfig({
     required String accessToken,
     required String clientVersion,
     required String projectId,
@@ -295,7 +295,7 @@ final class DioLoopV2Launch2CreatorGateway implements Launch2CreatorGateway {
       kind == LoopChainFailureKind.unexpected;
 
   @override
-  Future<Launch2HooksDraft?> loadConfig(String projectId) => _read(
+  Future<Launch2HooksConfig> loadConfig(String projectId) => _read(
     (accessToken) => _api.getConfig(
       accessToken: accessToken,
       clientVersion: _clientVersion,

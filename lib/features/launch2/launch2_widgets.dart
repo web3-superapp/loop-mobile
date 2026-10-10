@@ -171,6 +171,7 @@ String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
       Launch2Stage.nftSale =>
         'NFT 已售 ${row.nftSale.soldCount}${left == null ? '' : '，剩余 $left'}',
       Launch2Stage.snapshotPending => 'NFT 已售 ${row.nftSale.soldCount}',
+      Launch2Stage.closedNoHolders => launch2ClosedNoHoldersText,
       Launch2Stage.priority || Launch2Stage.public =>
         '内盘进度 ${launch2BpsLabel(row.curve.soldBps)}，'
             '当前价 ${launch2PriceLabel(row.curve.priceUsd1)}',
@@ -250,6 +251,15 @@ class Launch2InstanceTile extends ConsumerWidget {
       Launch2Stage.snapshotPending => (
         'NFT 已售 ${row.nftSale.soldCount}',
         Text('名单生成中', style: LoopTypography.body(14, color: LoopColors.text2)),
+      ),
+      // Grey like every waiting stage; no figure, nothing counts down.
+      Launch2Stage.closedNoHolders => (
+        null,
+        Text(
+          launch2ClosedNoHoldersText,
+          key: const ValueKey<String>('launch2-row-closed'),
+          style: LoopTypography.body(14, color: LoopColors.text2),
+        ),
       ),
       Launch2Stage.priority || Launch2Stage.public => (
         launch2BpsLabel(row.curve.soldBps),

@@ -21,9 +21,10 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// `launch2-projects` · 我的项目 (archetype `index`, layout `stream`).
 ///
-/// Every catalogue project the account owns, each with the state its Hooks
-/// draft and review put it in. A row opens the project's status page; the
-/// top bar's ＋ starts a new one.
+/// Every MEME v2 catalogue project the account owns (`kind=launch2`), each
+/// with the state its review, Hooks draft, approval and newest task put it
+/// in. A row resumes the flow on the page that state belongs to (decision
+/// 0142); the top bar's ＋ starts a new one.
 class Launch2ProjectsScreen extends ConsumerWidget {
   const Launch2ProjectsScreen({super.key, this.onBack, this.onNavigate});
 
@@ -34,7 +35,6 @@ class Launch2ProjectsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = launch2CreatorListControllerProvider;
     final state = ref.watch(provider);
-    final memory = ref.watch(launch2CreatorMemoryProvider);
     if (state.phase == LoopChainViewPhase.loading && state.value == null) {
       scheduleMicrotask(() => unawaited(ref.read(provider.notifier).load()));
     }
@@ -85,19 +85,12 @@ class Launch2ProjectsScreen extends ConsumerWidget {
             );
           }
           final row = page.rows[index];
-          final status = launch2CreatorStatusOf(
-            reviewStatus: row.project.reviewStatus,
-            hasDraft: row.draft != null,
-            job: memory.jobs[row.project.projectId],
-            configAwaitingApproval: memory.awaitingApproval.contains(
-              row.project.projectId,
-            ),
-          );
           return _ProjectRow(
             row: row,
-            status: status,
+            status: row.status,
+            // Straight to where the owner left off (decision 0142).
             onTap: () => onNavigate?.call(
-              Launch2CreatorRoute.project(row.project.projectId),
+              Launch2CreatorRoute.resume(row.projectId, row.resume),
             ),
           );
         },

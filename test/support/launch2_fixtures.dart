@@ -1,5 +1,7 @@
 // Contract-shaped `launch2` payloads (loop-api decision 0114 / 0117 / 0118,
-// `docs/frontend-v2-launch2-api.md`), hand-written for client decision 0139.
+// `docs/frontend-v2-launch2-api.md`), hand-written for client decision 0139;
+// `snapshot.closure` and `closed_no_holders` from loop-api 0120 (decision
+// 0142, loop-api integration/v2 548066c).
 // Every builder answers the exact published key set so the strict codec is
 // exercised by every widget test that uses them.
 
@@ -49,7 +51,7 @@ Map<String, Object?> l2RowJson({
   'logoUrl': null,
   'memeAddress': l2Meme,
   'stage': stage,
-  'nextChangeAt': noNextChange
+  'nextChangeAt': noNextChange || stage == 'closed_no_holders'
       ? null
       : _iso(nextChangeAt ?? l2Now.add(const Duration(days: 2, hours: 3))),
   'holdReason': holdReason,
@@ -210,6 +212,14 @@ Map<String, Object?> l2DetailJson({
             ? <String>['0xcccccccccccccccccccccccccccccccccccccccc']
             : null,
         if (!omitPublication) 'publication': publication,
+        // loop-api decision 0120: required; set only for the closed stage.
+        'closure': stage == 'closed_no_holders'
+            ? <String, Object?>{
+                'reason': 'no_holders',
+                'cutoffBlock': cutoffBlock ?? '1234',
+                'closedAt': '2027-01-23T07:02:00.000Z',
+              }
+            : null,
       },
       'graduation': stage == 'graduated'
           ? <String, Object?>{

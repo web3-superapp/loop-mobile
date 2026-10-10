@@ -13,8 +13,7 @@ import 'package:privy_flutter/privy_flutter.dart';
 /// One `eth_signTypedData_v4` through the embedded wallet whose address the
 /// server bound the request to. It signs, it never broadcasts: the platform
 /// executor deploys with the signature later. The typed data reaches the
-/// wallet as the server sent it, with one canonical addition — see
-/// [launch2TypedDataJson].
+/// wallet exactly as the server sent it — see [launch2TypedDataJson].
 final class PrivyLaunch2TypedDataSigner implements Launch2TypedDataSigner {
   const PrivyLaunch2TypedDataSigner(this._user);
 
@@ -87,47 +86,21 @@ final class PrivyLaunch2TypedDataSigner implements Launch2TypedDataSigner {
   }
 }
 
-/// The `eth_signTypedData_v4` parameter.
+/// The `eth_signTypedData_v4` parameter: the server's typed data, as sent.
 ///
-/// The server's `types` names `LaunchRequest` only. EIP-712 defines the
-/// domain type by the domain's own fields, and viem / ethers derive it the
-/// same way, but some signers hash an absent `EIP712Domain` as an empty
-/// struct — a different domain separator and a signature the Factory would
-/// refuse. So when `EIP712Domain` is absent it is added, listing exactly the
-/// domain fields present, in the order EIP-712 fixes (`name`, `version`,
-/// `chainId`, `verifyingContract`, `salt`). The hash of the typed data does
-/// not change; no other key is touched.
+/// Since loop-api decision 0120 `types` lists the standard `EIP712Domain`
+/// itself, so nothing is added or reordered here (decision 0142 retires the
+/// 0138 patch). A payload without it never reaches this point — the codec
+/// refuses it — and is refused here again rather than completed, because
+/// some signers hash an absent domain type as an empty struct.
 String launch2TypedDataJson(Map<String, Object?> typedData) {
   final types = typedData['types'];
   final domain = typedData['domain'];
-  if (types is! Map || domain is! Map) {
+  if (types is! Map || domain is! Map || types['EIP712Domain'] is! List) {
     throw const PrivySigningException('privy_payload_unencodable');
   }
-  final payload = Map<String, Object?>.of(typedData);
-  if (!types.containsKey('EIP712Domain')) {
-    const order = <(String, String)>[
-      ('name', 'string'),
-      ('version', 'string'),
-      ('chainId', 'uint256'),
-      ('verifyingContract', 'address'),
-      ('salt', 'bytes32'),
-    ];
-    for (final key in domain.keys) {
-      if (!order.any((field) => field.$1 == key)) {
-        throw const PrivySigningException('privy_payload_unencodable');
-      }
-    }
-    payload['types'] = <String, Object?>{
-      'EIP712Domain': <Map<String, String>>[
-        for (final (name, type) in order)
-          if (domain.containsKey(name))
-            <String, String>{'name': name, 'type': type},
-      ],
-      ...types.cast<String, Object?>(),
-    };
-  }
   try {
-    return jsonEncode(payload);
+    return jsonEncode(typedData);
   } on JsonUnsupportedObjectError {
     throw const PrivySigningException('privy_payload_unencodable');
   }

@@ -18,17 +18,25 @@ String launch2StageLabel(Launch2Stage stage) => switch (stage) {
   Launch2Stage.upcoming => '即将开售',
   Launch2Stage.nftSale => 'NFT 发售中',
   Launch2Stage.snapshotPending => '名单生成中',
+  Launch2Stage.closedNoHolders => '已关闭',
   Launch2Stage.priority => '提前购',
   Launch2Stage.public => '公开内盘',
   Launch2Stage.graduated => '已毕业',
   Launch2Stage.paused => '已暂停',
 };
 
+/// `409 DATA_STALE` for a stage that takes no order (contract §3.3).
+const String launch2StageMismatchCode = 'LAUNCH2_STAGE_MISMATCH';
+
+/// The one sentence for `closed_no_holders` (decision 0142).
+const String launch2ClosedNoHoldersText = '无人认购，已关闭';
+
 /// The second half of the stage bar (contract §2 「App」 column).
 String launch2StageCaption(Launch2Stage stage) => switch (stage) {
   Launch2Stage.upcoming => '开售倒计时',
   Launch2Stage.nftSale => '剩余',
   Launch2Stage.snapshotPending => '名单发布后开始 1 小时提前购',
+  Launch2Stage.closedNoHolders => launch2ClosedNoHoldersText,
   Launch2Stage.priority => '持有人优先 · 剩余',
   Launch2Stage.public => '人人可买，卖满即毕业',
   Launch2Stage.graduated => '官方池交易中',
@@ -146,7 +154,7 @@ String launch2BuybackBlockedText(String? reasonCode) => switch (reasonCode) {
 /// line says what did not happen.
 String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_INSTANCE_NOT_FOUND' => '项目不存在',
-  'LAUNCH2_STAGE_MISMATCH' => '当前阶段已变化，请刷新',
+  launch2StageMismatchCode => '当前阶段不能交易，已重新读取项目状态',
   'LAUNCH2_SELL_NOT_OPEN' => '提前购阶段只能买入，公开内盘开始后可卖出',
   'LAUNCH2_SOLD_OUT' => '内盘已卖满',
   'LAUNCH2_QUOTA_EXHAUSTED' => '已用完单地址累计 5,000,000 枚额度',

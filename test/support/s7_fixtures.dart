@@ -227,6 +227,7 @@ LaunchProject s7Project({
   String? reviewReasonText,
   String? launchId,
   DateTime? submittedAt,
+  LaunchProjectKind kind = LaunchProjectKind.ido,
 }) => LaunchProject(
   projectId: projectId,
   name: 'MoonCat',
@@ -234,6 +235,7 @@ LaunchProject s7Project({
   narrative: '有故事、有传播、可持续运营的 MEME。',
   officialLinks: const LaunchOfficialLinks(website: 'https://mooncat.example'),
   materialVersion: version,
+  kind: kind,
   reviewStatus: reviewStatus,
   reviewReasonCode: reviewReasonCode,
   // The contract pairs the two: a code always arrives with the server's own
@@ -264,6 +266,7 @@ LaunchProject s7ForeignProject() => LaunchProject(
   narrative: null,
   officialLinks: const LaunchOfficialLinks(),
   materialVersion: 3,
+  kind: LaunchProjectKind.ido,
   reviewStatus: LaunchReviewStatus.approved,
   reviewReasonCode: null,
   reviewReasonText: null,

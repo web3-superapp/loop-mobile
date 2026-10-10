@@ -57,11 +57,15 @@ abstract interface class LoopV2LaunchApi {
     required String clientVersion,
   });
 
+  /// [kind] narrows the list to one product (decision 0120); `null` sends no
+  /// filter (the server's `all`). A cursor is bound to the kind it was read
+  /// with, so a next page repeats it.
   Future<LaunchProjectPage> listProjects({
     required String accessToken,
     required String clientVersion,
     String? status,
     String? cursor,
+    LaunchProjectKind? kind,
   });
 
   Future<LaunchProject> getProject({
@@ -287,6 +291,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     'narrative',
     'officialLinks',
     'materialVersion',
+    'kind',
     'reviewStatus',
     'reviewReasonCode',
     'reviewReasonText',
@@ -347,6 +352,13 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       narrative: LoopV2S7Codec.optionalText(map, 'narrative'),
       officialLinks: _officialLinks(map['officialLinks']),
       materialVersion: LoopV2S7Codec.requirePositiveInt(map, 'materialVersion'),
+      // Decision 0120: required on every owner and non-owner projection.
+      kind: LaunchProjectKind.tryParse(
+        LoopV2S7Codec.requireEnum(map, 'kind', const <String>{
+          'ido',
+          'launch2',
+        }),
+      )!,
       reviewStatus: review,
       reviewReasonCode: reasonCode,
       reviewReasonText: reasonText,
@@ -1042,12 +1054,14 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     required String clientVersion,
     String? status,
     String? cursor,
+    LaunchProjectKind? kind,
   }) async {
     try {
       final response = await _dio.get<Object?>(
         projectsPath,
         queryParameters: <String, Object?>{
           'status': ?status,
+          'kind': ?kind?.wireName,
           'cursor': ?cursor,
         },
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
@@ -1067,6 +1081,8 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       )) {
         final project = _project(entry);
         if (!seen.add(project.projectId)) LoopV2S7Codec.invalid();
+        // A filtered list answers that product only.
+        if (kind != null && project.kind != kind) LoopV2S7Codec.invalid();
         items.add(project);
       }
       return LaunchProjectPage(
@@ -1261,7 +1277,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     try {
       final response = await _dio.post<Object?>(
         projectsPath,
-        data: draft.toRequestJson(),
+        data: draft.toCreateRequestJson(),
         options: LoopV2ModuleRequest.writeOptions(
           accessToken,
           clientVersion,

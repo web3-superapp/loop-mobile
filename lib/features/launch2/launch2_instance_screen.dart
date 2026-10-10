@@ -122,7 +122,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   }
 
   void _armPoll(String id, Launch2InstanceDetail detail) {
-    if (_poll != null) return;
+    // A terminal stage never moves again: nothing to poll for.
+    if (_poll != null || detail.stage.terminal) return;
     final polling = ref.read(launch2PollingProvider);
     final fast = detail.stage.tradable || _pending != null;
     _poll = Timer(fast ? polling.tradingInterval : polling.detailInterval, () {
@@ -232,6 +233,18 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         _preparingNft = false;
         _actionFailure = launch2FailureText(failure);
       });
+      // The stage moved under the page (the sale ended, possibly closed
+      // with no holder): one line here and a fresh read, never an error
+      // page (decision 0142).
+      if (failure.reasonCode == launch2StageMismatchCode) {
+        unawaited(
+          ref
+              .read(
+                launch2InstanceControllerProvider(detail.instanceId).notifier,
+              )
+              .reload(),
+        );
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -355,6 +368,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         );
       case Launch2Stage.upcoming:
       case Launch2Stage.snapshotPending:
+      case Launch2Stage.closedNoHolders:
       case Launch2Stage.priority:
       case Launch2Stage.public:
       case Launch2Stage.paused:
@@ -478,6 +492,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         ],
       ),
     ],
+    Launch2Stage.closedNoHolders => <Widget>[_ClosedBlock(detail: detail)],
     Launch2Stage.priority || Launch2Stage.public => <Widget>[
       _CurveBlock(detail: detail),
       Launch2TradePanel(
@@ -486,6 +501,13 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
         locked: _pending?.locked ?? false,
         onPrepared: (intent) => _sign(detail, intent),
+        onStageMoved: () => unawaited(
+          ref
+              .read(
+                launch2InstanceControllerProvider(detail.instanceId).notifier,
+              )
+              .reload(),
+        ),
       ),
       _RecentTrades(detail: detail),
     ],
@@ -599,6 +621,48 @@ class _Identity extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// `closed_no_holders` (decision 0142): the sentence, the cutoff block and
+/// the closing time, all grey and inert — nothing here can be traded and
+/// nothing will open later.
+class _ClosedBlock extends StatelessWidget {
+  const _ClosedBlock({required this.detail});
+
+  final Launch2InstanceDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final closure = detail.snapshot.closure;
+    return Launch2Greyed(
+      key: const ValueKey<String>('launch2-closed-no-holders'),
+      greyed: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopEmptyState(
+            illustration: LoopIllustration.holders,
+            title: launch2ClosedNoHoldersText,
+            message: 'NFT 发售结束时没有人认购，名单无法生成，提前购和公开内盘不会开始。',
+            compact: true,
+          ),
+          _Figures(
+            keyName: 'launch2-closed-figures',
+            rows: <(String, String)>[
+              ('NFT 已售', '${detail.row.nftSale.soldCount} 枚'),
+              if (closure != null) ...<(String, String)>[
+                (
+                  '截止块',
+                  '#${loopGroupedFigure(closure.cutoffBlock.toString())}',
+                ),
+                ('关闭时间', loopDateTimeLabel(closure.closedAt)),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// The stage and its countdown, the page's one moving figure.

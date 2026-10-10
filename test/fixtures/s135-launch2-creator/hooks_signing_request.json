@@ -1,5 +1,5 @@
 {
-  "_handwritten": "Handwritten from loop-api docs/frontend-v2-hooks-launch-api.md (S125/S132, decision 0108/0112/0117) and openapi/loop-api.v2.json on 2026-10-10; no Development capture exists for this route yet. Replace with a capture from preflight-reads.mts once S137 runs it.",
+  "_handwritten": "Handwritten from loop-api docs/frontend-v2-hooks-launch-api.md (S125/S132/S142, decision 0108/0112/0117/0120) and openapi/loop-api.v2.json at loop-api integration/v2 548066c on 2026-10-10; the Development API was not on 548066c yet, so there is no capture of the S142 fields. Replace with a capture from preflight-reads.mts once Development runs 548066c.",
   "route": "GET /v2/launch/projects/3fa85f64-5717-4562-b3fc-2c963f66afa6/hooks-config/signing-request?walletId=00000000-0000-4000-8000-000000000099",
   "status": 200,
   "headers": {
@@ -28,6 +28,24 @@
         "verifyingContract": "0xffffffffffffffffffffffffffffffffffffffff"
       },
       "types": {
+        "EIP712Domain": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256"
+          },
+          {
+            "name": "verifyingContract",
+            "type": "address"
+          }
+        ],
         "LaunchRequest": [
           {
             "name": "configHash",
