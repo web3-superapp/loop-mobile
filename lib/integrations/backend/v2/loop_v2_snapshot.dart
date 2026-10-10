@@ -5,6 +5,7 @@ import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_mining_rewards_api.dart'; // S138
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
 
 /// One signed-in account's view of the snapshot store (decision 0095).
@@ -91,6 +92,9 @@ final class LoopV2SnapshotSession implements LoopSnapshotRestorer {
         return DioLoopV2LaunchApi.decodeOverview(body);
       case LoopSnapshotResource.ownerFace:
         return LoopOwnerFace.decode(body);
+      // S138: the hourly mining rewards.
+      case LoopSnapshotResource.miningRewards:
+        return DioLoopV2MiningRewardsApi.decodeRewards(body);
     }
     final receiveWalletId = LoopSnapshotResource.receiveWalletIdOf(resource);
     if (receiveWalletId != null) {

@@ -77,6 +77,8 @@ import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart'; // S138
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_screen.dart'; // S138
 import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
@@ -1729,6 +1731,19 @@ final List<RouteBase> _launchRoutes = <RouteBase>[
 ];
 
 /// A canonical CAIP asset id carried to the Swap page, or `null`.
+/// S138: 「去兑换」 from a claim the wallet cannot pay gas for. Only the pair is
+/// carried; the swap page quotes nothing until the owner asks.
+String _miningClaimSwapLocation(MiningSuggestedSwap? swap) {
+  final query = <String, String>{
+    'from': ?swap?.fromAssetId,
+    'to': ?swap?.toAssetId,
+  };
+  return Uri(
+    path: LoopRouteManifest.pathFor('swap'),
+    queryParameters: query.isEmpty ? null : query,
+  ).toString();
+}
+
 String? _swapPrefill(Uri uri, String key) {
   final value = uri.queryParameters[key];
   if (value == null) return null;
@@ -1799,10 +1814,15 @@ final List<RouteBase> _miningRoutes = <RouteBase>[
           context.push(LoopRouteManifest.pathFor('mining-rules')),
     ),
   ),
+  // S138 (decision 0140): the hourly two-track rewards page replaces the
+  // daily one here; `MiningRewardsScreen` stays in its file, unmounted.
   GoRoute(
     path: '/mining/rewards',
-    builder: (context, state) =>
-        MiningRewardsScreen(onBack: () => _popOrHome(context)),
+    builder: (context, state) => MiningRewardsHourlyScreen(
+      onBack: () => _popOrHome(context),
+      onOpenSwap: (swap) => context.push(_miningClaimSwapLocation(swap)),
+      onOpenReceive: () => context.push(LoopRouteManifest.pathFor('receive')),
+    ),
   ),
   GoRoute(
     path: '/mining/rank',

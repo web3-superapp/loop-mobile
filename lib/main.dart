@@ -29,6 +29,7 @@ import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart'; // S138
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
@@ -66,6 +67,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_mining_rewards_api.dart'; // S138
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
@@ -300,6 +302,10 @@ Future<void> main() async {
         ),
         miningGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MiningGatewayProvider),
+        ),
+        // S138 (decision 0140): the hourly rewards and the claim.
+        miningRewardsGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2MiningRewardsGatewayProvider),
         ),
         referralGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2ReferralGatewayProvider),
