@@ -256,7 +256,11 @@ class _MiningRewardsHourlyScreenState
         updating: state.refreshing,
         primary: view == null || progress == null
             ? null
-            : MiningMinuteHero(progress: progress, epoch: view.lastEpoch),
+            : MiningMinuteHero(
+                progress: progress,
+                epoch: view.lastEpoch,
+                awaitingReason: miningAwaitingReason(view),
+              ),
         block: view == null && state.phase != LoopChainViewPhase.loading
             ? Center(
                 child: LoopChainStateBlock(
@@ -344,19 +348,39 @@ class _MiningRewardsHourlyScreenState
 // 分钟增长 · the page's one large figure
 // ---------------------------------------------------------------------------
 
-/// zh-CN for `hourly.reasonCode` while the settlement store is unavailable
-/// (contract §3.1, §7).
+/// zh-CN for why the page has no settled figures (contract §3.1, §3.4, §7).
+/// Three causes are told apart: the settlement store is down, no approved
+/// parameter version is in force, or the rules are in force but no hour has
+/// settled yet (decision 0143).
 String miningDisplayReasonText(String? reasonCode) => switch (reasonCode) {
-  'MINING_PARAMETERS_PENDING' => '挖矿参数尚未审批生效，暂时没有结算。',
+  'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂时没有结算。',
   'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，下面的数字可能不是最新的。',
+  'MINING_NOTHING_SETTLED' => '挖矿规则已生效，首个小时结算后开始展示并可领取。',
   _ => '结算数据暂时读不到，下面的数字可能不是最新的。',
 };
 
+/// Why nothing has settled yet: `hourly.reasonCode` when the server names
+/// one (`MINING_PARAMETERS_PENDING`), otherwise `MINING_NOTHING_SETTLED` from
+/// the claim gate (loop-api decision 0123), otherwise none.
+String? miningAwaitingReason(MiningRewardsView view) =>
+    view.display.reasonCode ??
+    (view.claim.reasonCode == 'MINING_NOTHING_SETTLED'
+        ? 'MINING_NOTHING_SETTLED'
+        : null);
+
 class MiningMinuteHero extends StatelessWidget {
-  const MiningMinuteHero({required this.progress, this.epoch, super.key});
+  const MiningMinuteHero({
+    required this.progress,
+    this.epoch,
+    this.awaitingReason,
+    super.key,
+  });
 
   final MiningMinuteProgress progress;
   final MiningRewardEpoch? epoch;
+
+  /// [miningAwaitingReason]; read only while awaiting the first settlement.
+  final String? awaitingReason;
 
   @override
   Widget build(BuildContext context) {
@@ -387,7 +411,10 @@ class MiningMinuteHero extends StatelessWidget {
             Text('首个小时结算后开始展示奖励', style: LoopType.headingSm),
             const SizedBox(height: 6),
             Text(
-              '每个整点结算上一小时，下一小时按分钟展示。',
+              awaitingReason == null
+                  ? '每个整点结算上一小时，下一小时按分钟展示。'
+                  : miningDisplayReasonText(awaitingReason),
+              key: const ValueKey<String>('mining-minute-awaiting-reason'),
               style: LoopType.bodySm.copyWith(color: LoopColors.text2),
             ),
           ],
@@ -662,19 +689,30 @@ String? miningClaimPhaseText(MiningClaimState state) {
   };
 }
 
-/// zh-CN for `hourly.claim.reasonCode` while `executable` is false
-/// (contract §7). The claimable balance is shown as it is either way.
-String miningClaimUnavailableText(String? reasonCode) => switch (reasonCode) {
-  'MINING_CLAIM_CONTRACT_NOT_CONFIGURED' => '领取合约尚未配置，暂不能领取',
-  'MINING_CLAIM_CHAIN_NOT_CONFIGURED' => '领取所在的链尚未配置，暂不能领取',
-  'MINING_CLAIM_SIGNER_NOT_CONFIGURED' => '领取凭证签发尚未配置，暂不能领取',
-  'MINING_CLAIM_WRITES_DISABLED' => '链上写入暂时关闭，暂不能领取',
-  'MINING_CLAIM_MAINNET_CLOSED' => '主网领取尚未开放',
-  'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，暂不能领取',
-  'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂不能领取',
-  'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，暂不能领取',
-  _ => '领取暂不可用',
-};
+/// zh-CN for `hourly.claim.reasonCode` while `executable` is false, in the
+/// contract's order (§3.4, loop-api decision 0123; decision 0143). The
+/// claimable balance is shown as it is either way. [minimum] is
+/// `parameters.minimumClaimRaw`, named by the below-minimum line.
+String miningClaimUnavailableText(String? reasonCode, {BigInt? minimum}) =>
+    switch (reasonCode) {
+      'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，暂不能领取',
+      'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂不能领取',
+      'MINING_NOTHING_SETTLED' => '首个小时结算后可领取',
+      'MINING_CLAIM_NOTHING_TO_CLAIM' => '暂无可领取',
+      'MINING_CLAIM_BELOW_MINIMUM' =>
+        minimum != null && minimum > BigInt.zero
+            ? '满 ${miningLoopFigure(minimum)} LOOP 可领取'
+            : '可领取数量未达到最低领取数量',
+      'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取',
+      'MINING_CLAIM_CONTRACT_NOT_CONFIGURED' => '领取合约尚未配置，暂不能领取',
+      'MINING_CLAIM_CHAIN_NOT_CONFIGURED' => '领取所在的链尚未配置，暂不能领取',
+      'MINING_CLAIM_SIGNER_NOT_CONFIGURED' => '领取凭证签发尚未配置，暂不能领取',
+      'MINING_CLAIM_WRITES_DISABLED' => '链上写入暂时关闭，暂不能领取',
+      'MINING_CLAIM_MAINNET_CLOSED' => '主网领取尚未开放',
+      'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，暂不能领取',
+      'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂不能领取',
+      _ => '领取暂不可用',
+    };
 
 String miningClaimPrepareFailureText(LoopChainException? failure) {
   final reason = failure?.reasonCode;
@@ -751,9 +789,14 @@ class MiningClaimPanel extends StatelessWidget {
   String? get _disabledReason {
     if (restored) return '正在读取最新的可领取数量';
     if (claim.busy || claim.locked) return null;
-    if (view.claim.status.inFlight) return '上一笔领取还在处理中';
+    if (view.claim.status.inFlight) {
+      return miningClaimUnavailableText('MINING_CLAIM_IN_FLIGHT');
+    }
     if (!view.claim.executable) {
-      return miningClaimUnavailableText(view.claim.reasonCode);
+      return miningClaimUnavailableText(
+        view.claim.reasonCode,
+        minimum: view.minimumClaim,
+      );
     }
     if (view.claimable <= BigInt.zero) return '现在没有可领取的 LOOP';
     final minimum = view.minimumClaim;
@@ -1106,7 +1149,7 @@ class MiningNftTrackCard extends StatelessWidget {
 
 /// zh-CN for `tracks.asset.excludedAssets[].reasonCode`.
 String miningExcludedReasonText(String reasonCode) => switch (reasonCode) {
-  'MINING_ASSET_GRADUATED_UNREADABLE' => '已毕业，外盘余额与价格暂读不到',
+  'MINING_ASSET_GRADUATED_UNREADABLE' => '已毕业，外盘持有数量暂读不到',
   _ => reasonCode,
 };
 
@@ -1175,6 +1218,16 @@ class MiningAssetTrackCard extends StatelessWidget {
             reason: miningExcludedReasonText(item.reasonCode),
           ),
         const Divider(height: 10, thickness: 1, color: LoopColors.line),
+        // Decision 0123 (loop-api): asset power is the hour's average holding
+        // quantity times the approved mining weight; no price enters it.
+        Padding(
+          key: const ValueKey<String>('mining-asset-basis'),
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            '按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重',
+            style: LoopType.captionSm,
+          ),
+        ),
         _FactRow(label: '本人算力', value: miningPowerFigure(asset.ownPower)),
         _FactRow(label: '邀请算力', value: miningPowerFigure(asset.invitePower)),
         _FactRow(label: '总算力', value: miningPowerFigure(asset.totalPower)),

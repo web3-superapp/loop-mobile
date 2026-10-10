@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/crypto/loop_keccak.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
@@ -17,6 +18,7 @@ import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart'
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_screen.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_signing.dart';
+import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
@@ -63,6 +65,7 @@ Map<String, Object?> _hourlyJson({
   bool referral = true,
   Map<String, Object?>? latestClaim,
   bool executable = true,
+  String claimReason = 'MINING_CLAIM_WRITES_DISABLED',
   String claimable = '120',
   bool excluded = false,
   String? displayedRaw,
@@ -179,7 +182,7 @@ Map<String, Object?> _hourlyJson({
         : null,
     'claim': <String, Object?>{
       'executable': executable,
-      'reasonCode': executable ? null : 'MINING_CLAIM_WRITES_DISABLED',
+      'reasonCode': executable ? null : claimReason,
       'latest': latestClaim,
     },
   },
@@ -207,42 +210,59 @@ Map<String, Object?> _claimJson({
   'updatedAt': '2026-10-10T11:20:31.000Z',
 };
 
+/// The contract's digest (§5.2, loop-api decision 0123), written out the way
+/// the server's own test builds it: `{"k":v,...}` with keys sorted by code
+/// unit, each key and value JSON-encoded on its own, no whitespace, then
+/// `0x` + keccak-256 of the UTF-8 bytes. Independent of the codec's
+/// `localDigest`, so a drift in either shows up here.
+String _contractDigest(Map<String, Object?> transaction) {
+  final keys = transaction.keys.toList()..sort();
+  final canonical =
+      '{${keys.map((key) => '${jsonEncode(key)}:${jsonEncode(transaction[key])}').join(',')}}';
+  final bytes = loopKeccak256(utf8.encode(canonical));
+  return '0x${bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join()}';
+}
+
 Map<String, Object?> _preparedJson({
   String from = _walletAddress,
   String deadline = '2026-10-10T11:30:30.000Z',
-}) => <String, Object?>{
-  'claim': <String, Object?>{
-    ..._claimJson(status: 'claimable', tx: null, amount: '120'),
-    'deadline': deadline,
-  },
-  'intent': <String, Object?>{
-    'calldata': <String, Object?>{
-      'to': _contract,
-      'data': '0xabcdef',
-      'value': '0',
+}) {
+  final transaction = <String, Object?>{
+    'chainId': 97,
+    'to': _contract,
+    'data': '0xabcdef',
+    'from': from,
+    'value': '0x0',
+    'gas': '0x5208',
+    'nonce': '0x1',
+    'type': 'eip1559',
+    'maxFeePerGas': '0x1',
+    'maxPriorityFeePerGas': '0x1',
+    'gasPrice': null,
+  };
+  return <String, Object?>{
+    'claim': <String, Object?>{
+      ..._claimJson(status: 'claimable', tx: null, amount: '120'),
+      'deadline': deadline,
     },
-    'unsignedTransaction': <String, Object?>{
-      'chainId': 97,
-      'to': _contract,
-      'data': '0xabcdef',
-      'from': from,
-      'value': '0x0',
-      'gas': '0x5208',
-      'nonce': '0x1',
-      'type': 'eip1559',
-      'maxFeePerGas': '0x1',
-      'maxPriorityFeePerGas': '0x1',
-      'gasPrice': null,
+    'intent': <String, Object?>{
+      'calldata': <String, Object?>{
+        'to': _contract,
+        'data': '0xabcdef',
+        'value': '0',
+      },
+      'unsignedTransaction': transaction,
+      'payloadDigest': _contractDigest(transaction),
+      'signing': <String, Object?>{
+        'mode': 'device_eth_send_transaction',
+        'allowed': true,
+        'reasonCode': null,
+      },
     },
-    'signing': <String, Object?>{
-      'mode': 'device_eth_send_transaction',
-      'allowed': true,
-      'reasonCode': null,
-    },
-  },
-  'decimals': 18,
-  'contractVersion': '2.0',
-};
+    'decimals': 18,
+    'contractVersion': '2.0',
+  };
+}
 
 MiningRewardsView _view([Map<String, Object?>? json]) =>
     LoopV2MiningRewardsCodec.rewards(json ?? _hourlyJson());
@@ -715,12 +735,15 @@ void main() {
       expect(intent.claimId, _claimId);
       expect(intent.amount, BigInt.parse(_loop(120)));
       expect(intent.payloadMatchesReview, isTrue);
-      // No server digest in the contract: the local keccak binds the two.
+      // The server's digest, recomputed on the device (decision 0143).
       expect(
         intent.payloadDigest,
-        LoopV2MiningRewardsCodec.localDigest(intent.transaction.wire),
+        '0x${LoopV2MiningRewardsCodec.localDigest(intent.transaction.wire)}',
       );
-      expect(intent.payloadDigest, hasLength(64));
+      expect(intent.payloadDigest, _contractDigest(intent.transaction.wire));
+      expect(intent.localPayloadDigest, intent.payloadDigest);
+      expect(intent.digestMatches, isTrue);
+      expect(intent.payloadDigest, hasLength(66));
       final other = _preparedJson();
       ((other['intent']! as Map<String, Object?>)['calldata']!
               as Map<String, Object?>)['data'] =
@@ -731,43 +754,162 @@ void main() {
       );
     });
 
-    test(
-      'prepare: no digest key, all eleven transaction keys, fee by type',
-      () {
-        final digest = _preparedJson();
-        (digest['intent']! as Map<String, Object?>)['payloadDigest'] = 'a' * 64;
+    test('prepare: payloadDigest is required and must be the device\'s', () {
+      Map<String, Object?> intentOf(Map<String, Object?> json) =>
+          json['intent']! as Map<String, Object?>;
+      // Missing: the 0141 shape is now an invalid payload.
+      final missing = _preparedJson();
+      intentOf(missing).remove('payloadDigest');
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(missing),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      // Well-formed but naming another object: refused, nothing to sign.
+      final other = _preparedJson();
+      intentOf(other)['payloadDigest'] = '0x${'a' * 64}';
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(other),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      // The transaction changed after the server hashed it.
+      final drifted = _preparedJson();
+      (intentOf(drifted)['unsignedTransaction']!
+              as Map<String, Object?>)['gas'] =
+          '0x5209';
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(drifted),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      // Malformed: no prefix, upper case, wrong length, not a string.
+      final right = intentOf(_preparedJson())['payloadDigest']! as String;
+      for (final bad in <Object?>[
+        right.substring(2),
+        '0x${right.substring(2).toUpperCase()}',
+        '${right}0',
+        null,
+        42,
+      ]) {
+        final json = _preparedJson();
+        intentOf(json)['payloadDigest'] = bad;
         expect(
-          () => LoopV2MiningRewardsCodec.prepared(digest),
+          () => LoopV2MiningRewardsCodec.prepared(json),
           throwsA(isA<LoopBackendFailure>()),
+          reason: '$bad',
         );
-        Map<String, Object?> tx(Map<String, Object?> json) =>
-            (json['intent']! as Map<String, Object?>)['unsignedTransaction']!
-                as Map<String, Object?>;
-        final missing = _preparedJson();
-        tx(missing).remove('gasPrice');
-        expect(
-          () => LoopV2MiningRewardsCodec.prepared(missing),
-          throwsA(isA<LoopBackendFailure>()),
-        );
-        final extra = _preparedJson();
-        tx(extra)['accessList'] = <Object?>[];
-        expect(
-          () => LoopV2MiningRewardsCodec.prepared(extra),
-          throwsA(isA<LoopBackendFailure>()),
-        );
-        final mixed = _preparedJson();
-        tx(mixed)['gasPrice'] = '0x1';
-        expect(
-          () => LoopV2MiningRewardsCodec.prepared(mixed),
-          throwsA(isA<LoopBackendFailure>()),
-        );
-        final noEnvelope = _preparedJson()..remove('decimals');
-        expect(
-          () => LoopV2MiningRewardsCodec.prepared(noEnvelope),
-          throwsA(isA<LoopBackendFailure>()),
-        );
-      },
-    );
+      }
+      // A fifth intent key is still refused.
+      final extra = _preparedJson();
+      intentOf(extra)['reviewSha256'] = 'a' * 64;
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(extra),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('canonical digest: sorted keys, numeric chainId, nulls kept', () {
+      // The fixture's digest was produced by viem keccak256 on the server's
+      // canonical form; both the codec and the independent builder agree.
+      final body = _fixture('prepare_201')['body']! as Map<String, Object?>;
+      final intent = body['intent']! as Map<String, Object?>;
+      final transaction =
+          intent['unsignedTransaction']! as Map<String, Object?>;
+      const viem =
+          '0x398f74e0ce056d7112714d1e5b9116e14d72269f3edb25647c036ab10dbc8f44';
+      expect(intent['payloadDigest'], viem);
+      expect(_contractDigest(transaction), viem);
+      expect('0x${LoopV2MiningRewardsCodec.localDigest(transaction)}', viem);
+      // Key order on the wire does not matter; the chainId's JSON type does.
+      final reversed = <String, Object?>{
+        for (final key in transaction.keys.toList().reversed)
+          key: transaction[key],
+      };
+      expect('0x${LoopV2MiningRewardsCodec.localDigest(reversed)}', viem);
+      expect(
+        '0x${LoopV2MiningRewardsCodec.localDigest(<String, Object?>{...transaction, 'chainId': '97'})}',
+        isNot(viem),
+      );
+      expect(
+        '0x${LoopV2MiningRewardsCodec.localDigest(<String, Object?>{...transaction}..remove('maxFeePerGas'))}',
+        isNot(viem),
+      );
+    });
+
+    test('signer refuses a claim whose two digests differ', () async {
+      final good = LoopV2MiningRewardsCodec.prepared(_preparedJson());
+      final forged = MiningClaimIntent(
+        claimId: good.claimId,
+        walletId: good.walletId,
+        chainId: good.chainId,
+        contractAddress: good.contractAddress,
+        amount: good.amount,
+        cumulativeAmount: good.cumulativeAmount,
+        deadline: good.deadline,
+        createdAt: good.createdAt,
+        transaction: good.transaction,
+        payloadDigest: '0x${'a' * 64}',
+        localPayloadDigest: good.localPayloadDigest,
+        signingAllowed: true,
+        payloadMatchesReview: true,
+      );
+      expect(forged.digestMatches, isFalse);
+      expect(
+        MiningClaimSigner.refusalBeforeWallet(
+          forged,
+          fromAddress: _walletAddress,
+          now: _now,
+        ),
+        'REVIEW_PAYLOAD_MISMATCH',
+      );
+      final wallet = _RecordingWallet();
+      final gateway = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[_Answer.value(_view())],
+      );
+      final outcome = await MiningClaimSigner(
+        wallet: wallet,
+        gateway: gateway,
+      ).sign(forged, fromAddress: _walletAddress, now: _now);
+      expect(outcome.status, MoneySignStatus.refused);
+      expect(outcome.reasonCode, 'REVIEW_PAYLOAD_MISMATCH');
+      expect(wallet.handed, isEmpty);
+      expect(gateway.reportCalls, isEmpty);
+      expect(
+        MiningClaimSigner.refusalBeforeWallet(
+          good,
+          fromAddress: _walletAddress,
+          now: _now,
+        ),
+        isNull,
+      );
+    });
+
+    test('prepare: all eleven transaction keys, fee by type', () {
+      Map<String, Object?> tx(Map<String, Object?> json) =>
+          (json['intent']! as Map<String, Object?>)['unsignedTransaction']!
+              as Map<String, Object?>;
+      final missing = _preparedJson();
+      tx(missing).remove('gasPrice');
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(missing),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      final extra = _preparedJson();
+      tx(extra)['accessList'] = <Object?>[];
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(extra),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      final mixed = _preparedJson();
+      tx(mixed)['gasPrice'] = '0x1';
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(mixed),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      final noEnvelope = _preparedJson()..remove('decimals');
+      expect(
+        () => LoopV2MiningRewardsCodec.prepared(noEnvelope),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
 
     test('gas refusals: INSUFFICIENT_BALANCE + detailsSafe.reasonCode', () {
       final swap = LoopV2MiningRewardsCodec.gasRefusal(
@@ -829,7 +971,7 @@ void main() {
           .whereType<File>()
           .map((file) => file.uri.pathSegments.last)
           .toList();
-      expect(names, hasLength(10));
+      expect(names, hasLength(12));
       for (final name in names) {
         final record = _fixture(name.replaceAll('.json', ''));
         expect(
@@ -882,6 +1024,27 @@ void main() {
       expect(view.claim.reasonCode, 'MINING_SETTLEMENT_UNAVAILABLE');
     });
 
+    test('0123: approved rules, nothing settled yet', () async {
+      final view = await _replay('rewards_nothing_settled')
+          .getRewards(accessToken: 't', clientVersion: '1.0.0');
+      expect(view.display.state, MiningDisplayState.awaitingFirstSettlement);
+      expect(view.display.reasonCode, isNull);
+      expect(view.claim.executable, isFalse);
+      expect(view.claim.reasonCode, 'MINING_NOTHING_SETTLED');
+      expect(view.claimable, BigInt.zero);
+      expect(view.minimumClaim, BigInt.parse(_loop(1)));
+      expect(miningAwaitingReason(view), 'MINING_NOTHING_SETTLED');
+    });
+
+    test('0123: a claim in flight closes the gate', () async {
+      final view = await _replay('rewards_in_flight')
+          .getRewards(accessToken: 't', clientVersion: '1.0.0');
+      expect(view.claim.executable, isFalse);
+      expect(view.claim.reasonCode, 'MINING_CLAIM_IN_FLIGHT');
+      expect(view.claim.status, MiningClaimStatus.confirming);
+      expect(view.claimable, BigInt.parse(_loop(120)));
+    });
+
     test('claims page, prepare and report', () async {
       final page = await _replay('claims_page')
           .getClaims(accessToken: 't', clientVersion: '1.0.0');
@@ -899,6 +1062,11 @@ void main() {
       );
       final intent = (prepared as MiningClaimPrepared).intent;
       expect(intent.payloadMatchesReview, isTrue);
+      expect(
+        intent.payloadDigest,
+        '0x398f74e0ce056d7112714d1e5b9116e14d72269f3edb25647c036ab10dbc8f44',
+      );
+      expect(intent.digestMatches, isTrue);
       expect(intent.transaction.wire['type'], 'legacy');
       expect(intent.chainId, loopLaunchTestnetChainId);
       final reported = await _replay('report_200_submitting').postReport(
@@ -1008,7 +1176,11 @@ void main() {
       expect(find.text('0.75'), findsWidgets);
       await _scrollTo(tester, _key('mining-asset-excluded-$_graduated'));
       expect(_key('mining-asset-$_asset'), findsOneWidget);
-      expect(find.text('已退出（已毕业，外盘余额与价格暂读不到）'), findsOneWidget);
+      expect(find.text('已退出（已毕业，外盘持有数量暂读不到）'), findsOneWidget);
+      // Decision 0123: the asset track is weighted by quantity, never value.
+      expect(find.text('按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重'), findsOneWidget);
+      expect(find.textContaining('估值'), findsNothing);
+      expect(find.textContaining('价格'), findsNothing);
       await _scrollTo(tester, _key('mining-invite-total'));
       expect(_key('mining-invite-level-5'), findsOneWidget);
       expect(find.text('10%'), findsOneWidget);
@@ -1055,6 +1227,143 @@ void main() {
       expect(find.text('链上写入暂时关闭，暂不能领取'), findsOneWidget);
       // The balance is still shown.
       expect(find.text('120.0000 LOOP'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('0123 claim gate: each reason in the contract order', (
+      tester,
+    ) async {
+      const expected = <String, String>{
+        'MINING_SETTLEMENT_UNAVAILABLE': '结算服务暂时不可用，暂不能领取',
+        'MINING_PARAMETERS_PENDING': '挖矿规则待生效，暂不能领取',
+        'MINING_NOTHING_SETTLED': '首个小时结算后可领取',
+        'MINING_CLAIM_NOTHING_TO_CLAIM': '暂无可领取',
+        'MINING_CLAIM_BELOW_MINIMUM': '满 1.0000 LOOP 可领取',
+        'MINING_CLAIM_IN_FLIGHT': '上一笔领取还在处理中，完成后再领取',
+        'MINING_CLAIM_MAINNET_CLOSED': '主网领取尚未开放',
+        'MINING_CLAIM_CONTRACT_NOT_CONFIGURED': '领取合约尚未配置，暂不能领取',
+      };
+      for (final MapEntry(key: reason, value: text) in expected.entries) {
+        final rewards = _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[
+            _Answer.value(
+              _view(_hourlyJson(executable: false, claimReason: reason)),
+            ),
+          ],
+        );
+        await _pump(tester, rewards: rewards);
+        expect(
+          tester.widget<Text>(_key('mining-claim-disabled')).data,
+          text,
+          reason: reason,
+        );
+        expect(
+          tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
+          isNull,
+          reason: reason,
+        );
+        // The balance is still shown.
+        expect(find.text('120.0000 LOOP'), findsOneWidget, reason: reason);
+        await _drain(tester);
+      }
+      // Without a minimum the below-minimum line still says why.
+      expect(
+        miningClaimUnavailableText('MINING_CLAIM_BELOW_MINIMUM'),
+        '可领取数量未达到最低领取数量',
+      );
+      expect(miningClaimUnavailableText('SOMETHING_NEW'), '领取暂不可用');
+    });
+
+    testWidgets('0123 nothing settled: hero and claim both say so', (
+      tester,
+    ) async {
+      final rewards = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(
+            LoopV2MiningRewardsCodec.rewards(
+              _fixture('rewards_nothing_settled')['body'],
+            ),
+          ),
+        ],
+      );
+      await _pump(tester, rewards: rewards);
+      expect(_key('mining-minute-awaiting'), findsOneWidget);
+      expect(
+        tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
+        '挖矿规则已生效，首个小时结算后开始展示并可领取。',
+      );
+      expect(
+        tester.widget<Text>(_key('mining-claim-disabled')).data,
+        '首个小时结算后可领取',
+      );
+      expect(
+        tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
+        isNull,
+      );
+      expect(_key('mining-rewards-unavailable'), findsNothing);
+      await _drain(tester);
+
+      // No approved rules: the captured Development answer.
+      final pending = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(
+            LoopV2MiningRewardsCodec.rewards(
+              _fixture('rewards_awaiting_captured')['body'],
+            ),
+          ),
+        ],
+      );
+      await _pump(tester, rewards: pending);
+      expect(
+        tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
+        '挖矿规则待生效，暂时没有结算。',
+      );
+      await _drain(tester);
+
+      // The store is down: the inline notice names that cause.
+      final down = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(
+            LoopV2MiningRewardsCodec.rewards(
+              _fixture('rewards_unavailable')['body'],
+            ),
+          ),
+        ],
+      );
+      await _pump(tester, rewards: down);
+      expect(_key('mining-rewards-unavailable'), findsOneWidget);
+      expect(find.textContaining('结算服务暂时不可用，下面的数字可能不是最新的。'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('0123 in flight: progress shown, no new claim', (tester) async {
+      final rewards = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(
+            LoopV2MiningRewardsCodec.rewards(
+              _fixture('rewards_in_flight')['body'],
+            ),
+          ),
+        ],
+        // The chain has not answered yet: the claim stays where it is.
+        reportAnswers: const <_Answer<MiningClaimRecord>>[_Answer.pending()],
+      );
+      await _pump(tester, rewards: rewards, settle: false);
+      for (var i = 0; i < 3; i += 1) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(_key('mining-claim-status-confirming'), findsOneWidget);
+      expect(
+        tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
+        isNull,
+      );
+      expect(find.text('已上链，正在等待确认。不要重复领取。'), findsOneWidget);
+      // The same claim is followed; nothing new is prepared.
+      expect(rewards.prepareCalls, isEmpty);
+      expect(
+        rewards.reportCalls.first.$2,
+        '0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
+      );
       await _drain(tester);
     });
 

@@ -1,0 +1,112 @@
+{
+  "_handwritten": "Handwritten from loop-api docs/frontend-v2-mining-rewards-api.md (§3.3, §3.4, §5.2, §7) and openapi/loop-api.v2.json at S147-api 536e74f (Decision 0123) on 2026-10-10. Development has not been upgraded to 0123 yet, so no capture exists. Shape follows hourly-rewards-service.ts hourlyBlock(): an approved version is in force but latestSettledEpoch() is null, so lastHour/display/tracks are null, hourly.reasonCode is null (it is MINING_PARAMETERS_PENDING only when there is no version either), referral carries five zero levels from the version's ratios, and claim.reasonCode is MINING_NOTHING_SETTLED.",
+  "route": "GET /v2/mining/rewards",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "9b2e4c1a-5d3f-4e6a-8b7c-1d2e3f4a5b6c",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "claimable": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "claimExecutable": false,
+    "estimatedToday": {
+      "status": "unavailable",
+      "reasonCode": "MINING_NETWORK_POWER_ZERO"
+    },
+    "accumulated": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "ledger": [],
+    "source": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "hourly": {
+      "serverTime": "2026-10-10T11:20:00.000Z",
+      "decimals": 18,
+      "displayState": "awaiting_first_settlement",
+      "reasonCode": null,
+      "totals": {
+        "settledRaw": "0",
+        "claimedRaw": "0",
+        "claimableRaw": "0"
+      },
+      "lastHour": null,
+      "display": null,
+      "tracks": null,
+      "referral": {
+        "levels": [
+          {
+            "level": 1,
+            "ratioBps": 1000,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          },
+          {
+            "level": 2,
+            "ratioBps": 500,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          },
+          {
+            "level": 3,
+            "ratioBps": 300,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          },
+          {
+            "level": 4,
+            "ratioBps": 200,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          },
+          {
+            "level": 5,
+            "ratioBps": 100,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          }
+        ]
+      },
+      "parameters": {
+        "versionId": "77777777-7777-4777-8777-777777777777",
+        "configVersion": "miningHourlyV1",
+        "effectiveFrom": "2026-10-10T00:00:00.000Z",
+        "referralRatiosBps": [
+          1000,
+          500,
+          300,
+          200,
+          100
+        ],
+        "minimumClaimRaw": "1000000000000000000"
+      },
+      "claim": {
+        "executable": false,
+        "reasonCode": "MINING_NOTHING_SETTLED",
+        "latest": null
+      }
+    },
+    "contractVersion": "2.0"
+  }
+}
