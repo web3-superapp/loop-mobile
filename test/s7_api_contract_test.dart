@@ -498,9 +498,13 @@ Map<String, Object?> _errorBody(String code, String category) =>
 void main() {
   group('capability ids', () {
     test('the enum mirrors the frozen contract set and order', () {
-      // Decision 0120 appends `meme` (loop-api decision 0101).
-      expect(LoopV2CapabilityId.values, hasLength(32));
-      expect(LoopV2CapabilityId.values.last, LoopV2CapabilityId.meme);
+      // Decision 0120 appends `meme` (loop-api decision 0101), decision 0137
+      // appends `launch2` after it (loop-api decision 0114).
+      expect(LoopV2CapabilityId.values, hasLength(33));
+      expect(LoopV2CapabilityId.values.sublist(31), <LoopV2CapabilityId>[
+        LoopV2CapabilityId.meme,
+        LoopV2CapabilityId.launch2,
+      ]);
       // The three S7 ids sit between `sendApprovals` and `priceAlerts`.
       final names = LoopV2CapabilityId.values
           .map((id) => id.wireName)

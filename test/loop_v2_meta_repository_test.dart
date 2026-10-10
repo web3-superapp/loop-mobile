@@ -466,8 +466,22 @@ void main() {
   test(
     'capabilities reject missing, duplicate, and unknown capability IDs',
     () async {
+      // A required id (anything but the omissible `launch2`) is missing.
       final missing = _capabilities();
-      (missing['capabilities']! as List<Object?>).removeLast();
+      (missing['capabilities']! as List<Object?>).removeAt(0);
+
+      // `launch2` is omissible but no other id is: a 32-id list that drops
+      // `meme` and keeps `launch2` is still drift.
+      final missingMeme = _capabilities();
+      (missingMeme['capabilities']! as List<Object?>).removeWhere(
+        (item) => (item! as Map<String, Object?>)['capabilityId'] == 'meme',
+      );
+
+      // Two short of the full set is drift even if one of them is `launch2`.
+      final missingTwo = _capabilities();
+      (missingTwo['capabilities']! as List<Object?>)
+        ..removeLast()
+        ..removeAt(0);
 
       final duplicate = _capabilities();
       final duplicateItems = duplicate['capabilities']! as List<Object?>;
@@ -482,7 +496,13 @@ void main() {
         'capabilityId': 'futureCapability',
       };
 
-      for (final value in <Map<String, Object?>>[missing, duplicate, unknown]) {
+      for (final value in <Map<String, Object?>>[
+        missing,
+        missingMeme,
+        missingTwo,
+        duplicate,
+        unknown,
+      ]) {
         await expectLater(
           _resolvingRepository(value).getCapabilities(),
           throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
@@ -490,6 +510,102 @@ void main() {
       }
     },
   );
+
+  group('launch2 capability (decision 0137)', () {
+    Map<String, Object?> launch2Row(Map<String, Object?> value) =>
+        (value['capabilities']! as List<Object?>)
+            .cast<Map<String, Object?>>()
+            .singleWhere((item) => item['capabilityId'] == 'launch2');
+
+    test('a 33-id list reads launch2 as the backend publishes it', () async {
+      final value = _capabilities();
+      launch2Row(value)
+        ..['availability'] = 'unavailable'
+        ..['reasonCode'] = 'LAUNCH2_FACTORY_NOT_CONFIGURED'
+        ..['evidence'] = <String, Object?>{
+          'status': 'pending',
+          'reasonCode': 'LAUNCH2_FACTORY_NOT_CONFIGURED',
+        };
+      final capabilities = await _resolvingRepository(value).getCapabilities();
+      expect(capabilities.capabilities, hasLength(33));
+      final launch2 = capabilities[LoopV2CapabilityId.launch2];
+      expect(launch2.availability, LoopV2CapabilityAvailability.unavailable);
+      expect(launch2.reasonCode, 'LAUNCH2_FACTORY_NOT_CONFIGURED');
+      expect(launch2.evidence.status, LoopV2CapabilityEvidenceStatus.pending);
+
+      final available = _capabilities();
+      launch2Row(available)
+        ..['availability'] = 'available'
+        ..['reasonCode'] = null
+        ..['evidence'] = <String, Object?>{
+          'status': 'pending',
+          'reasonCode': 'LAUNCH2_TESTNET_EVIDENCE_PENDING',
+        };
+      final read = await _resolvingRepository(available).getCapabilities();
+      expect(
+        read[LoopV2CapabilityId.launch2].availability,
+        LoopV2CapabilityAvailability.available,
+      );
+      expect(
+        read[LoopV2CapabilityId.launch2].evidence.reasonCode,
+        'LAUNCH2_TESTNET_EVIDENCE_PENDING',
+      );
+    });
+
+    test('a 32-id list from a backend before loop-api 0114 reads launch2 as '
+        'deferred', () async {
+      final value = _capabilities();
+      (value['capabilities']! as List<Object?>).removeWhere(
+        (item) => (item! as Map<String, Object?>)['capabilityId'] == 'launch2',
+      );
+      expect(value['capabilities']! as List<Object?>, hasLength(32));
+
+      final capabilities = await _resolvingRepository(value).getCapabilities();
+      expect(capabilities.capabilities, hasLength(33));
+      expect(
+        capabilities.capabilities.map((capability) => capability.id),
+        LoopV2CapabilityId.values,
+      );
+      final launch2 = capabilities[LoopV2CapabilityId.launch2];
+      expect(launch2.availability, LoopV2CapabilityAvailability.deferred);
+      expect(
+        launch2.reasonCode,
+        DioLoopV2MetaRepository.launch2AbsentReasonCode,
+      );
+      expect(
+        launch2.evidence.status,
+        LoopV2CapabilityEvidenceStatus.notApplicable,
+      );
+      expect(launch2.evidence.reasonCode, isNull);
+      // The other 32 rows read exactly as published.
+      expect(
+        capabilities[LoopV2CapabilityId.meme].availability,
+        LoopV2CapabilityAvailability.deferred,
+      );
+    });
+
+    test(
+      'launch2 refuses the evidence keys of launch and voiceRooms',
+      () async {
+        for (final extra in <Map<String, Object?>>[
+          <String, Object?>{'launchChainId': 'eip155:97'},
+          <String, Object?>{'reference': 'ops-ticket-1'},
+          <String, Object?>{'launchContractVersion': '1.0.0'},
+        ]) {
+          final value = _capabilities();
+          launch2Row(value)['evidence'] = <String, Object?>{
+            'status': 'pending',
+            'reasonCode': 'LAUNCH2_TESTNET_EVIDENCE_PENDING',
+            ...extra,
+          };
+          await expectLater(
+            _resolvingRepository(value).getCapabilities(),
+            throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+          );
+        }
+      },
+    );
+  });
 
   test(
     'V2 metadata error requires exact code and request correlation',
