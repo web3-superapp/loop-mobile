@@ -30,7 +30,7 @@ import UIKit
   // is still decided in Dart by `SystemChrome.setPreferredOrientations`:
   // portrait from before the first frame (`loopLockPortrait`), landscape only
   // while `chart-full` is open.
-  func application(
+  override func application(
     _ application: UIApplication,
     supportedInterfaceOrientationsFor window: UIWindow?
   ) -> UIInterfaceOrientationMask {
