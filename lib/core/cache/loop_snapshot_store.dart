@@ -25,6 +25,12 @@ abstract final class LoopSnapshotResource {
   /// The owner's alias and avatar reference (decision 0132). Display only.
   static const String ownerFace = 'profile.face';
 
+  // S138 (decision 0140): the hourly mining rewards — totals and the minute
+  // display. Stable: the minute figure is derived from the hour it names and
+  // the server clock, so an older copy still draws a true statement about
+  // that hour; the Claim button never acts on a restored copy.
+  static const String miningRewards = 'mining.rewards';
+
   static const String _walletBalancesPrefix = 'wallet.balances.';
   static const String _walletReceivePrefix = 'wallet.receive.';
 
@@ -55,6 +61,7 @@ abstract final class LoopSnapshotResource {
       resource == communityHome ||
       resource == launchOverview ||
       resource == ownerFace ||
+      resource == miningRewards || // S138
       (walletIdOf(resource)?.isNotEmpty ?? false) ||
       (receiveWalletIdOf(resource)?.isNotEmpty ?? false);
 
@@ -65,6 +72,7 @@ abstract final class LoopSnapshotResource {
   /// the live read behind it replaces it the moment it lands.
   static bool isStable(String resource) =>
       resource == ownerFace ||
+      resource == miningRewards || // S138
       (receiveWalletIdOf(resource)?.isNotEmpty ?? false);
 }
 
