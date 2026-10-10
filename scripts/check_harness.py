@@ -8184,7 +8184,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 105-route manifest."""
+    """Keep the Dart route table equal to the frozen 106-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8200,8 +8200,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for module in manifest.get("modules", {}).values()
         for item in module
     ]
-    if manifest.get("count") != 105 or len(expected_slugs) != 105:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 105 routes")
+    # S136 · decision 0139: `launch2-instance` makes 106.
+    if manifest.get("count") != 106 or len(expected_slugs) != 106:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 106 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "chat":
@@ -8235,7 +8236,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 105 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 106 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -15524,6 +15525,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_money_forms_native_contract(root))
     errors.extend(check_ia_cleanup_contract(root))
     errors.extend(check_first_frame_cache_contract(root))
+    errors.extend(check_launch2_user_contract(root))  # S136
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -15531,6 +15533,90 @@ def validate(root: Path = ROOT) -> list[str]:
         errors.extend(check_secret_paths(visible))
     errors.extend(check_gitignore(root))
     errors.extend(check_gitnexusignore(root))
+    return errors
+
+
+
+# S136 · decision 0139: the MEME v2 user pages. Each surface is drawn only
+# behind the build switch and the server's `launch2` capability, the port
+# fails closed until `lib/main.dart` mounts the adapter, and every write goes
+# through the one signing exit.
+LAUNCH2_PORT = (
+    "lib/features/launch2/launch2_gateway.dart",
+    "launch2GatewayProvider",
+    "Launch2Gateway",
+    "UnavailableLaunch2Gateway",
+)
+LAUNCH2_CONTROLLERS = "lib/features/launch2/launch2_controllers.dart"
+LAUNCH2_GATED_SURFACES = (
+    # (file, the gate it must read)
+    ("lib/features/launch2/launch2_list.dart", "launch2ReadsBlocked(ref)"),
+    ("lib/features/launch2/launch2_instance_screen.dart", "launch2ReadsBlocked(ref)"),
+    ("lib/features/launch2/launch2_wallet_rows.dart", "launch2SurfaceVisible(ref)"),
+    ("lib/features/meme/meme_screen.dart", "launch2SurfaceVisible(ref)"),
+)
+LAUNCH2_SIGNING_OWNER = "lib/features/launch2/launch2_signing.dart"
+
+
+def check_launch2_user_contract(root: Path) -> list[str]:
+    """Decision 0139 (S136): MEME v2 surfaces are gated, fail closed and sign
+    through one exit."""
+
+    errors: list[str] = []
+    relative, provider, port, unavailable = LAUNCH2_PORT
+    path = root / relative
+    if not path.is_file():
+        return errors
+    source = strip_dart_comments(read_text(path))
+    default_pattern = re.compile(
+        rf"final\s+{re.escape(provider)}\s*=\s*Provider<{re.escape(port)}>\s*"
+        rf"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+{re.escape(unavailable)}\s*"
+        r"\(\s*\)\s*,?\s*\)\s*;",
+        re.DOTALL,
+    )
+    if default_pattern.search(source) is None:
+        errors.append(
+            f"{provider} must default directly to const {unavailable}(); MEME v2 "
+            "is unavailable until lib/main.dart mounts its adapter (decision 0139)"
+        )
+    main_path = root / "lib/main.dart"
+    if main_path.is_file() and (
+        "launch2GatewayProvider.overrideWith(" not in strip_dart_comments(read_text(main_path))
+    ):
+        errors.append("lib/main.dart must mount the launch2 adapter (decision 0139)")
+    controllers = root / LAUNCH2_CONTROLLERS
+    if controllers.is_file():
+        text = strip_dart_comments(read_text(controllers))
+        visible = re.search(
+            r"bool\s+launch2SurfaceVisible\s*\(.*?\n\}", text, re.DOTALL
+        )
+        if visible is None or "launch2Visible" not in visible.group(0) or (
+            "LoopV2CapabilityId.launch2" not in visible.group(0)
+        ):
+            errors.append(
+                f"{LAUNCH2_CONTROLLERS} launch2SurfaceVisible must read both the "
+                "`launch2Visible` switch and the `launch2` capability (decision 0139)"
+            )
+    for surface, gate in LAUNCH2_GATED_SURFACES:
+        surface_path = root / surface
+        if not surface_path.is_file():
+            errors.append(f"missing MEME v2 surface: {surface}")
+            continue
+        if gate not in strip_dart_comments(read_text(surface_path)):
+            errors.append(
+                f"{surface} must read `{gate}` before drawing MEME v2 (decision 0139)"
+            )
+    features = root / "lib" / "features" / "launch2"
+    for dart in sorted(features.rglob("*.dart")) if features.is_dir() else []:
+        rel = dart.relative_to(root).as_posix()
+        if rel.startswith("lib/features/launch2/creator/") or rel == LAUNCH2_SIGNING_OWNER:
+            continue
+        text = strip_dart_comments(read_text(dart))
+        if ".handoff(" in text or "SigningIntent.backendCanonical(" in text:
+            errors.append(
+                f"{rel} reaches the wallet directly; MEME v2 signs only through "
+                f"{LAUNCH2_SIGNING_OWNER} (decision 0139)"
+            )
     return errors
 
 
@@ -15560,6 +15646,7 @@ def main() -> int:
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "channel-resolved chat names, recognised chat contract addresses, "
+        "gated MEME v2 user pages, "  # S136
         "and secret rules are consistent."
     )
     return 0

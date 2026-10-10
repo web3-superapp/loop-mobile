@@ -1,0 +1,325 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_quote_row.dart';
+
+/// A countdown to a server time (`nextChangeAt`), read against the one
+/// [launch2ClockProvider].
+///
+/// Only this text rebuilds every second; the row or the page around it does
+/// not. When the time passes it calls [onElapsed] once — the page re-reads
+/// the server, it never moves the stage itself — and holds at `00:00`.
+class Launch2Countdown extends ConsumerStatefulWidget {
+  const Launch2Countdown({
+    required this.target,
+    super.key,
+    this.style,
+    this.prefix = '',
+    this.onElapsed,
+  });
+
+  final DateTime target;
+  final TextStyle? style;
+  final String prefix;
+  final VoidCallback? onElapsed;
+
+  @override
+  ConsumerState<Launch2Countdown> createState() => _Launch2CountdownState();
+}
+
+class _Launch2CountdownState extends ConsumerState<Launch2Countdown> {
+  Timer? _ticker;
+  bool _elapsedReported = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _arm();
+  }
+
+  @override
+  void didUpdateWidget(Launch2Countdown old) {
+    super.didUpdateWidget(old);
+    if (old.target != widget.target) {
+      _elapsedReported = false;
+      _arm();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  Duration get _remaining =>
+      widget.target.difference(ref.read(launch2ClockProvider)());
+
+  void _arm() {
+    _ticker?.cancel();
+    _ticker = null;
+    if (_remaining.isNegative || _remaining == Duration.zero) return;
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final left = _remaining;
+      if (left.isNegative || left == Duration.zero) {
+        _ticker?.cancel();
+        _ticker = null;
+        _report();
+      }
+      setState(() {});
+    });
+  }
+
+  void _report() {
+    if (_elapsedReported) return;
+    _elapsedReported = true;
+    widget.onElapsed?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = launch2CountdownText(_remaining);
+    final style =
+        widget.style ??
+        LoopTypography.figure(14, weight: FontWeight.w600, height: 1.2);
+    return Text(
+      '${widget.prefix}$text',
+      key: const ValueKey<String>('launch2-countdown'),
+      maxLines: 1,
+      softWrap: false,
+      style: style.copyWith(
+        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+      ),
+    );
+  }
+}
+
+/// The stage in the quote row's fixed 96 × 44 slot. Lime only marks the two
+/// stages that take orders and the graduated one; every waiting stage sits on
+/// the card ground in grey (S121 §1.1.1 rule 3).
+class Launch2StagePill extends StatelessWidget {
+  const Launch2StagePill({required this.stage, super.key});
+
+  final Launch2Stage stage;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = loopChangePillSize;
+    final lit =
+        stage == Launch2Stage.priority ||
+        stage == Launch2Stage.public ||
+        stage == Launch2Stage.graduated;
+    final paused = stage == Launch2Stage.paused;
+    return Container(
+      key: ValueKey<String>('launch2-stage-pill-${stage.wireName}'),
+      width: size.width,
+      height: size.height,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: lit ? LoopColors.limeSoft : LoopColors.card2,
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (stage == Launch2Stage.graduated) ...<Widget>[
+            const LoopIcon('graduate', size: 16, color: LoopColors.lime),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                launch2StageLabel(stage),
+                maxLines: 1,
+                style: LoopTypography.title(
+                  14,
+                  color: lit
+                      ? LoopColors.lime
+                      : paused
+                      ? LoopColors.warning
+                      : LoopColors.text2,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// What a v2 list row says aloud.
+String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
+  final next = row.nextChangeAt;
+  final left = next == null ? null : launch2CountdownText(next.difference(now));
+  return <String>[
+    '${row.name} \$${row.ticker}',
+    launch2StageLabel(row.stage),
+    switch (row.stage) {
+      Launch2Stage.upcoming => left == null ? '开售时间待定' : '距开售 $left',
+      Launch2Stage.nftSale =>
+        'NFT 已售 ${row.nftSale.soldCount}${left == null ? '' : '，剩余 $left'}',
+      Launch2Stage.snapshotPending => 'NFT 已售 ${row.nftSale.soldCount}',
+      Launch2Stage.priority || Launch2Stage.public =>
+        '内盘进度 ${launch2BpsLabel(row.curve.soldBps)}，'
+            '当前价 ${launch2PriceLabel(row.curve.priceUsd1)}',
+      Launch2Stage.graduated => '毕业价 ${launch2PriceLabel(row.curve.priceUsd1)}',
+      Launch2Stage.paused => launch2HoldReasonText(row.holdReason),
+    },
+  ].join('，');
+}
+
+/// One v2 row in the OKX quote shape (S121 §1.1.1): logo 36 · ticker over
+/// name · two stage lines on the right · the stage pill in the fixed slot.
+///
+/// The right two lines follow the stage: 开售倒计时 while upcoming, NFT 已售
+/// and the sale's countdown, the curve's progress and price while it trades,
+/// 已毕业 and the last curve price once graduated. Only the countdown text
+/// redraws every second.
+class Launch2InstanceTile extends ConsumerWidget {
+  const Launch2InstanceTile({
+    required this.row,
+    super.key,
+    this.onTap,
+    this.onElapsed,
+  });
+
+  final Launch2InstanceRow row;
+  final VoidCallback? onTap;
+
+  /// The row's countdown reached zero: the list re-reads the server.
+  final VoidCallback? onElapsed;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.read(launch2ClockProvider)();
+    final next = row.nextChangeAt;
+    final figure = LoopTypography.figure(
+      18,
+      weight: FontWeight.w700,
+      color: LoopGround.inkOf(context),
+    );
+    Widget countdown(String prefix) => next == null
+        ? Text(
+            '$prefix待定',
+            style: LoopTypography.body(14, color: LoopColors.text2),
+          )
+        : Launch2Countdown(
+            target: next,
+            prefix: prefix,
+            onElapsed: onElapsed,
+            style: LoopTypography.body(14, color: LoopColors.text2),
+          );
+    final (String? value, Widget caption) = switch (row.stage) {
+      Launch2Stage.upcoming => (
+        null,
+        next == null
+            ? countdown('开售 ')
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Launch2Countdown(
+                    target: next,
+                    onElapsed: onElapsed,
+                    style: figure,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '后开售',
+                    style: LoopTypography.body(14, color: LoopColors.text2),
+                  ),
+                ],
+              ),
+      ),
+      Launch2Stage.nftSale => (
+        'NFT 已售 ${row.nftSale.soldCount}',
+        countdown('剩 '),
+      ),
+      Launch2Stage.snapshotPending => (
+        'NFT 已售 ${row.nftSale.soldCount}',
+        Text('名单生成中', style: LoopTypography.body(14, color: LoopColors.text2)),
+      ),
+      Launch2Stage.priority || Launch2Stage.public => (
+        launch2BpsLabel(row.curve.soldBps),
+        Text(
+          launch2PriceLabel(row.curve.priceUsd1),
+          key: const ValueKey<String>('launch2-row-price'),
+          style: LoopTypography.body(14, color: LoopColors.text2),
+        ),
+      ),
+      Launch2Stage.graduated => (
+        '已毕业',
+        Text(
+          '毕业价 ${launch2PriceLabel(row.curve.priceUsd1)}',
+          key: const ValueKey<String>('launch2-row-price'),
+          style: LoopTypography.body(14, color: LoopColors.text2),
+        ),
+      ),
+      Launch2Stage.paused => (
+        '已暂停',
+        Text('平台核对中', style: LoopTypography.body(14, color: LoopColors.text2)),
+      ),
+    };
+    return LoopQuoteRow(
+      tapKey: ValueKey<String>('launch2-row-${row.instanceId}'),
+      leading: MemeLogo(
+        symbol: row.ticker,
+        imageUrl: row.logoUrl,
+        identity: row.instanceId,
+        size: memeCardLogoSize,
+        radius: memeCardLogoSize / 2,
+      ),
+      title: row.ticker,
+      subtitle: row.name,
+      value: value,
+      valueKey: ValueKey<String>('launch2-row-value-${row.instanceId}'),
+      valueCaption: caption,
+      trailing: Launch2StagePill(stage: row.stage),
+      onTap: onTap,
+      semanticLabel: launch2RowSpokenLabel(row, now),
+    );
+  }
+}
+
+/// The luminance-preserving greyscale every greyed MEME v2 block is drawn
+/// through (Rec. 709 weights).
+const List<double> _greyscale = <double>[
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0, 0, 0, 1, 0, //
+];
+
+/// A block that is shown but not usable: drained of colour (Lime included)
+/// and deaf to touches, its text left at full contrast so the reader still
+/// reads what opens later. Fading it instead pushed the grey copy below the
+/// legibility floor.
+class Launch2Greyed extends StatelessWidget {
+  const Launch2Greyed({required this.greyed, required this.child, super.key});
+
+  final bool greyed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!greyed) return child;
+    return IgnorePointer(
+      child: ColorFiltered(
+        colorFilter: const ColorFilter.matrix(_greyscale),
+        child: child,
+      ),
+    );
+  }
+}

@@ -27,6 +27,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart'; // S136
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_image_share.dart';
@@ -411,6 +412,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             hidden: hidden,
             hideZero: hideZero,
           ),
+          // S136 · decision 0139: MEME v2 holdings and NFTs, one row each,
+          // read from `me/positions`. Nothing is drawn unless the switch is
+          // on and the server publishes `launch2` as available.
+          Launch2WalletRows(onOpen: _open, hidden: hidden),
           // Decision 0038: the Launch chain block exists only when the
           // backend published one. Its balance is a testnet figure and is
           // never added to the assets above or to the net worth.

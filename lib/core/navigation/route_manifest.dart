@@ -1,4 +1,4 @@
-/// The 105-route product manifest.
+/// The 106-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -7,7 +7,8 @@
 /// `square`, `meme` and `intel` and re-froze the manifest; decision 0112
 /// (S109a, same day) added `user-profile` and `onboarding-communities`;
 /// decision 0113 (S109b, same day) added `scan` and `community-manage`;
-/// decision 0120 (S117) added the four MEME curve launchpad routes.
+/// decision 0120 (S117) added the four MEME curve launchpad routes;
+/// decision 0139 (S136) added the MEME v2 project page.
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -110,7 +111,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      'a856fab14b49e5b0ee7fb2c1ae42c646f1bbe4a813692ba848b2d2e3ccb34d5e';
+      '1d0bc32bf1beb94327847fbf0ea7b12342e9fdb41ec1c52c68793c54a83cd68b';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -612,7 +613,7 @@ abstract final class LoopRouteManifest {
       status: LoopRouteStatus.implemented,
       tab: true,
     ),
-    // 4-launch · Launch (16)
+    // 4-launch · Launch (17)
     LoopRouteEntry(
       slug: 'launch',
       path: '/launch',
@@ -758,6 +759,17 @@ abstract final class LoopRouteManifest {
       module: LoopRouteModule.launch,
       title: 'MEME 动态',
       prototypeOrder: 111,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S136 (decision 0139): the MEME v2 project page, one page for every
+    // stage of an instance.
+    LoopRouteEntry(
+      slug: 'launch2-instance',
+      path: '/launch2/instance',
+      module: LoopRouteModule.launch,
+      title: 'MEME v2 项目',
+      prototypeOrder: 112,
       step: 7,
       status: LoopRouteStatus.implemented,
     ),

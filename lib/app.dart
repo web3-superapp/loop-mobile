@@ -75,6 +75,8 @@ import 'package:loop_mobile/features/meme/meme_create_screen.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart'; // S136
+import 'package:loop_mobile/features/launch2/launch2_routes.dart'; // S136
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
@@ -1627,6 +1629,7 @@ GoRouter _buildRouter(
       ),
       ..._launchRoutes,
       ..._memeRoutes,
+      ..._launch2Routes, // S136
       ..._miningRoutes,
       ..._pendingManifestRoutes,
       // Illegal locations are recorded and land on 聊天.
@@ -1775,6 +1778,21 @@ final List<RouteBase> _memeRoutes = <RouteBase>[
     builder: (context, state) => MemeTokenListScreen(
       memeTokenId: MemeRoute.idOf(state.uri),
       holders: false,
+      onBack: () => _popOrHome(context),
+      onNavigate: (location) => context.push(location),
+    ),
+  ),
+];
+
+// S136 · decision 0139: the MEME v2 project page. An instance is addressed
+// by the server's `instanceId` in the `id` query parameter; a missing or
+// malformed one fails closed on the page.
+final List<RouteBase> _launch2Routes = <RouteBase>[
+  GoRoute(
+    path: Launch2Route.instancePath,
+    builder: (context, state) => Launch2InstanceScreen(
+      key: ValueKey<String>('launch2-instance-${state.uri.query}'),
+      instanceId: Launch2Route.idOf(state.uri),
       onBack: () => _popOrHome(context),
       onNavigate: (location) => context.push(location),
     ),

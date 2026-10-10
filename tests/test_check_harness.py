@@ -1268,7 +1268,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_route_manifest_contract(root)
 
         self.assertTrue(
-            any("105 manifest slugs in manifest order" in error for error in result),
+            any("106 manifest slugs in manifest order" in error for error in result),  # S136
             msg=f"expected manifest slug drift guard: {result}",
         )
 
@@ -10226,3 +10226,94 @@ class FirstFrameCacheContractTests(unittest.TestCase):
                 Path(temporary)
             )
         self.assertTrue(any("is missing" in error for error in result), result)
+
+
+# S136 · decision 0139: the MEME v2 user pages stay gated and fail closed.
+class Launch2UserContractTests(unittest.TestCase):
+    FILES = (
+        "lib/main.dart",
+        "lib/features/launch2/launch2_gateway.dart",
+        "lib/features/launch2/launch2_controllers.dart",
+        "lib/features/launch2/launch2_list.dart",
+        "lib/features/launch2/launch2_instance_screen.dart",
+        "lib/features/launch2/launch2_wallet_rows.dart",
+        "lib/features/launch2/launch2_signing.dart",
+        "lib/features/launch2/launch2_trade_panel.dart",
+        "lib/features/meme/meme_screen.dart",
+    )
+
+    def _copy(self, root: Path) -> None:
+        for relative in self.FILES:
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(REPOSITORY_ROOT / relative, target)
+
+    def _mutate(self, root: Path, relative: str, old: str, new: str) -> None:
+        path = root / relative
+        source = path.read_text(encoding="utf-8")
+        mutated = source.replace(old, new, 1)
+        self.assertNotEqual(source, mutated, f"{old!r} not in {relative}")
+        path.write_text(mutated, encoding="utf-8")
+
+    def test_accepts_repository(self) -> None:
+        self.assertEqual([], check_harness.check_launch2_user_contract(REPOSITORY_ROOT))
+
+    def test_rejects_ungated_meme_tab(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy(root)
+            self._mutate(
+                root,
+                "lib/features/meme/meme_screen.dart",
+                "if (launch2SurfaceVisible(ref))",
+                "if (true)",
+            )
+            result = check_harness.check_launch2_user_contract(root)
+        self.assertTrue(any("meme_screen.dart" in error for error in result), result)
+
+    def test_rejects_switch_only_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy(root)
+            self._mutate(
+                root,
+                "lib/features/launch2/launch2_controllers.dart",
+                "capability.isAvailable;",
+                "true;",
+            )
+            self._mutate(
+                root,
+                "lib/features/launch2/launch2_controllers.dart",
+                "  final capability = ref.watch(\n    loopCapabilityProvider(LoopV2CapabilityId.launch2),\n  );\n  final mode = ref.watch(launch2GatewayProvider.select((g) => g.mode));\n  return mode",
+                "  final mode = ref.watch(launch2GatewayProvider.select((g) => g.mode));\n  return mode",
+            )
+            result = check_harness.check_launch2_user_contract(root)
+        self.assertTrue(
+            any("launch2SurfaceVisible must read" in error for error in result), result
+        )
+
+    def test_rejects_live_default_port(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy(root)
+            self._mutate(
+                root,
+                "lib/features/launch2/launch2_gateway.dart",
+                "(ref) => const UnavailableLaunch2Gateway(),",
+                "(ref) => throw UnimplementedError(),",
+            )
+            result = check_harness.check_launch2_user_contract(root)
+        self.assertTrue(any("must default directly" in error for error in result), result)
+
+    def test_rejects_wallet_handoff_outside_the_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy(root)
+            path = root / "lib/features/launch2/launch2_trade_panel.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nvoid _x(dynamic w) => w.handoff(null);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_launch2_user_contract(root)
+        self.assertTrue(any("reaches the wallet directly" in error for error in result), result)

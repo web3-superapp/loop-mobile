@@ -27,6 +27,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
+import 'package:loop_mobile/features/launch2/launch2_gateway.dart'; // S136
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
@@ -66,6 +67,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_api.dart'; // S136
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
@@ -297,6 +299,12 @@ Future<void> main() async {
         // its Dio client, client metadata and authenticated session all exist.
         memeGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MemeGatewayProvider),
+        ),
+        // S136 (decision 0139): MEME v2. Fail-closed until its Dio client,
+        // client metadata and authenticated session all exist; every surface
+        // still reads the `launch2` capability.
+        launch2GatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2Launch2GatewayProvider),
         ),
         miningGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MiningGatewayProvider),

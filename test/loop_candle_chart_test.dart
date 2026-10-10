@@ -376,6 +376,10 @@ void main() {
         // the holder / trade rows' token column — summary slots of the same
         // kind. Quotes and signing facts use the exact `memeTokenFigure`.
         'lib/features/meme/meme_format.dart',
+        // S136 · decision 0139: MEME v2's summary slots (the template's
+        // 「8 亿」, a trade row's token column) — the same kind. Quotes,
+        // quota and signing facts use the exact `launch2MemeFigure`.
+        'lib/features/launch2/launch2_format.dart',
       };
       final callers = <String>{};
       for (final file in Directory('lib').listSync(recursive: true)) {
