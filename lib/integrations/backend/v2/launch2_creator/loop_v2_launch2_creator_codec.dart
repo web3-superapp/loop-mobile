@@ -74,19 +74,73 @@ abstract final class LoopV2Launch2CreatorCodec {
     'buybackMinIntervalSeconds',
   };
 
-  /// `GET …/hooks-config`: `{draft: <draft>|null, contractVersion}`.
-  static Launch2HooksDraft? configEnvelope(
+  /// `GET …/hooks-config` (loop-api decision 0120): `draft`, `approval`,
+  /// `latestDeployment` and `minSaleLeadSeconds` are all required keys;
+  /// `approval` and `latestDeployment` may be `null`. Without a draft there is
+  /// no approval; an approval always names the draft's own version.
+  static Launch2HooksConfig configEnvelope(
     Object? raw, {
     required String projectId,
   }) {
     final root = LoopV2Contract.strictMap(raw, const <String>{
       'draft',
+      'approval',
+      'latestDeployment',
+      'minSaleLeadSeconds',
       'contractVersion',
     });
     LoopV2ChainCodec.requireContractVersion(root);
     final draftRaw = root['draft'];
-    if (draftRaw == null) return null;
-    return draft(draftRaw, projectId: projectId);
+    final parsed = draftRaw == null
+        ? null
+        : draft(draftRaw, projectId: projectId);
+    final approvalRaw = root['approval'];
+    Launch2HooksApproval? approval;
+    if (approvalRaw != null) {
+      if (parsed == null) invalid();
+      final map = LoopV2Contract.strictMap(approvalRaw, const <String>{
+        'configVersion',
+        'status',
+        'approvedAt',
+      });
+      final version = LoopV2ChainCodec.requireInt(
+        map,
+        'configVersion',
+        minimum: 1,
+        maximum: 2147483647,
+      );
+      if (version != parsed.version) invalid();
+      final status = Launch2ApprovalStatus.tryParse(map['status']);
+      if (status == null) invalid();
+      final approvedAt = LoopV2ChainCodec.optionalTimestamp(map, 'approvedAt');
+      // Approved and its time arrive together.
+      if ((status == Launch2ApprovalStatus.approved) != (approvedAt != null)) {
+        invalid();
+      }
+      approval = Launch2HooksApproval(
+        configVersion: version,
+        status: status,
+        approvedAt: approvedAt,
+      );
+    } else if (parsed != null) {
+      // A draft always has an approval state, even if only awaiting.
+      invalid();
+    }
+    final jobRaw = root['latestDeployment'];
+    final lead = LoopV2ChainCodec.requireInt(
+      root,
+      'minSaleLeadSeconds',
+      minimum: 4200,
+      maximum: 2592000,
+    );
+    return Launch2HooksConfig(
+      draft: parsed,
+      approval: approval,
+      latestDeployment: jobRaw == null
+          ? null
+          : job(jobRaw, projectId: projectId),
+      minSaleLead: Duration(seconds: lead),
+    );
   }
 
   /// One draft (`PUT` answers it bare).
@@ -259,6 +313,14 @@ abstract final class LoopV2Launch2CreatorCodec {
     'templateHash',
   ];
 
+  /// `types.EIP712Domain`, field by field (loop-api decision 0120).
+  static const List<(String, String)> eip712Domain = <(String, String)>[
+    ('name', 'string'),
+    ('version', 'string'),
+    ('chainId', 'uint256'),
+    ('verifyingContract', 'address'),
+  ];
+
   static Launch2SigningRequest signingRequest(Object? raw) {
     final root = LoopV2Contract.strictMap(raw, signingKeys);
     final requestRaw = LoopV2Contract.strictMap(root['request'], requestKeys);
@@ -361,6 +423,28 @@ abstract final class LoopV2Launch2CreatorCodec {
     if (typedData['primaryType'] != 'LaunchRequest') invalid();
     final types = typedData['types'];
     if (types is! Map) invalid();
+    // Decision 0120: the standard domain type is listed explicitly so the
+    // object can go to `eth_signTypedData_v4` as is. It must be exactly the
+    // four fields of the domain, in EIP-712's order; anything else would
+    // hash a different domain separator than the Factory's.
+    if (types.length != 2 ||
+        !types.containsKey('EIP712Domain') ||
+        !types.containsKey('LaunchRequest')) {
+      invalid();
+    }
+    final domainType = types['EIP712Domain'];
+    if (domainType is! List || domainType.length != eip712Domain.length) {
+      invalid();
+    }
+    for (var i = 0; i < eip712Domain.length; i += 1) {
+      final field = domainType[i];
+      if (field is! Map ||
+          field.length != 2 ||
+          field['name'] != eip712Domain[i].$1 ||
+          field['type'] != eip712Domain[i].$2) {
+        invalid();
+      }
+    }
     final fields = types['LaunchRequest'];
     if (fields is! List) invalid();
     final names = <String>[
@@ -646,6 +730,7 @@ abstract final class LoopV2Launch2CreatorCodec {
     'upcoming',
     'nft_sale',
     'snapshot_pending',
+    'closed_no_holders',
     'priority',
     'public',
     'graduated',

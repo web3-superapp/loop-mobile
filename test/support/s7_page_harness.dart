@@ -193,8 +193,11 @@ final class FakeLaunchGateway implements LaunchGateway {
   Future<LaunchEconomy> loadEconomy() => economy.resolve();
 
   @override
-  Future<LaunchProjectPage> listProjects({String? status, String? cursor}) =>
-      projects.resolve();
+  Future<LaunchProjectPage> listProjects({
+    String? status,
+    String? cursor,
+    LaunchProjectKind? kind,
+  }) => projects.resolve();
 
   @override
   Future<LaunchProject> loadProject(String projectId) =>

@@ -17,6 +17,10 @@ enum Launch2Stage {
   upcoming('upcoming'),
   nftSale('nft_sale'),
   snapshotPending('snapshot_pending'),
+
+  /// The NFT sale ended with no holder (loop-api decision 0120). Terminal:
+  /// no list can be published, so neither round ever opens.
+  closedNoHolders('closed_no_holders'),
   priority('priority'),
   public('public'),
   graduated('graduated'),
@@ -35,6 +39,9 @@ enum Launch2Stage {
 
   /// The curve takes orders in these two stages and nowhere else.
   bool get tradable => this == priority || this == public;
+
+  /// No later stage follows (the server's `nextChangeAt` is `null` for good).
+  bool get terminal => this == closedNoHolders;
 }
 
 /// Why a whole instance is held (`holdReason`).
@@ -287,6 +294,20 @@ final class Launch2SnapshotPublication {
   final int memberCount;
 }
 
+/// Why a sale was closed without a list (`snapshot.closure`, loop-api
+/// decision 0120). Today the only reason is `no_holders`.
+@immutable
+final class Launch2SnapshotClosure {
+  const Launch2SnapshotClosure({
+    required this.cutoffBlock,
+    required this.closedAt,
+  });
+
+  /// The confirmed cutoff block at which the NFT had no holder.
+  final BigInt cutoffBlock;
+  final DateTime closedAt;
+}
+
 @immutable
 final class Launch2Snapshot {
   const Launch2Snapshot({
@@ -298,6 +319,7 @@ final class Launch2Snapshot {
     this.earlyRoundEndsAt,
     this.memberCount,
     this.publication,
+    this.closure,
   });
 
   final bool published;
@@ -311,6 +333,9 @@ final class Launch2Snapshot {
   /// The latest publication attempt; `null` until the publisher started one
   /// or from a server before loop-api decision 0118.
   final Launch2SnapshotPublication? publication;
+
+  /// Non-null exactly when the stage is `closed_no_holders`.
+  final Launch2SnapshotClosure? closure;
 }
 
 /// Set once the instance graduated. A v4 pool has an id, not an address.

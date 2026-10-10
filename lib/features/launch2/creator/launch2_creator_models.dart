@@ -153,14 +153,24 @@ abstract final class Launch2Template {
 
   /// The contract's own floor for the sale lead: the activation buffer
   /// (3,600 s) plus the executor margin (600 s). The server's configured lead
-  /// is at least this and usually far more (production 86,400 s); it is not
-  /// published, so the page offers nothing earlier than this floor and lets
-  /// the server's `400` decide the rest (decision 0138).
+  /// (`hooks-config.minSaleLeadSeconds`, loop-api decision 0120) is never
+  /// below it. A project that does not exist yet has no config to read, so
+  /// its picker starts from this floor and the save reads the real lead
+  /// before it writes the draft (decision 0142).
   static const Duration contractMinimumSaleLead = Duration(seconds: 4200);
 
   /// What the picker proposes first: two days out, comfortably past every
   /// configured lead.
   static const Duration suggestedSaleLead = Duration(days: 2);
+}
+
+/// The earliest sale start the picker offers: [now] plus the server's
+/// [lead], rounded up to the next whole minute (decision 0142). The server's
+/// `400` on save stays the final word.
+DateTime launch2EarliestSaleStart(DateTime now, Duration lead) {
+  final at = now.toUtc().add(lead);
+  final floor = DateTime.utc(at.year, at.month, at.day, at.hour, at.minute);
+  return floor == at ? floor : floor.add(const Duration(minutes: 1));
 }
 
 /// One saved Hooks draft (`GET`/`PUT …/hooks-config`).
@@ -204,6 +214,82 @@ final class Launch2HooksDraft {
     nftSaleStartAt.toInt() * 1000,
     isUtc: true,
   );
+}
+
+/// The platform's approval of the latest draft (`hooks-config.approval`,
+/// loop-api decision 0120). There is no reject state in the review model.
+enum Launch2ApprovalStatus {
+  awaitingApproval('awaiting_approval'),
+  approved('approved');
+
+  const Launch2ApprovalStatus(this.wireName);
+
+  final String wireName;
+
+  static Launch2ApprovalStatus? tryParse(Object? value) {
+    for (final status in values) {
+      if (status.wireName == value) return status;
+    }
+    return null;
+  }
+}
+
+@immutable
+final class Launch2HooksApproval {
+  const Launch2HooksApproval({
+    required this.configVersion,
+    required this.status,
+    required this.approvedAt,
+  });
+
+  /// Always the draft's own version: a newer save is awaiting approval again.
+  final int configVersion;
+  final Launch2ApprovalStatus status;
+
+  /// `null` until approved.
+  final DateTime? approvedAt;
+
+  bool get approved => status == Launch2ApprovalStatus.approved;
+}
+
+/// Everything `GET …/hooks-config` answers (loop-api decision 0120): the
+/// draft, its approval, the project's newest deployment task and the
+/// server's sale lead. Together they say where the owner left off.
+@immutable
+final class Launch2HooksConfig {
+  const Launch2HooksConfig({
+    required this.draft,
+    required this.approval,
+    required this.latestDeployment,
+    required this.minSaleLead,
+  });
+
+  /// `null` when no draft was saved yet (and then [approval] is `null` too).
+  final Launch2HooksDraft? draft;
+  final Launch2HooksApproval? approval;
+
+  /// The newest task of any config version and any status; `null` when none.
+  final Launch2DeploymentJob? latestDeployment;
+
+  /// `HOOKS_LAUNCH_MIN_SALE_LEAD_SECONDS`: a save accepts a sale start at
+  /// least this far after the server's now.
+  final Duration minSaleLead;
+
+  /// The task that still describes the project. A cancelled task never does;
+  /// a finally failed task of an older version does not once a newer draft
+  /// was saved (the owner changed the configuration to fix it).
+  Launch2DeploymentJob? get currentJob {
+    final job = latestDeployment;
+    if (job == null || job.status == Launch2JobStatus.cancelled) return null;
+    final version = draft?.version;
+    if (job.status == Launch2JobStatus.failed &&
+        job.failure?.retryable != true &&
+        version != null &&
+        version > job.configVersion) {
+      return null;
+    }
+    return job;
+  }
 }
 
 /// What the owner typed for one Hooks draft (`PUT …/hooks-config` `config`).
@@ -432,64 +518,68 @@ final class Launch2InstanceRef {
 final class Launch2CreatorProject {
   const Launch2CreatorProject({
     required this.project,
-    required this.draft,
-    this.job,
+    required this.config,
     this.instance,
-    this.configAwaitingApproval = false,
   });
 
   final LaunchProject project;
 
-  /// `null` when no Hooks draft was saved yet.
-  final Launch2HooksDraft? draft;
-
-  /// The deployment job this device submitted during this run, when there is
-  /// one. The server publishes no job list (decision 0138), so a job from an
-  /// earlier run is not known here.
-  final Launch2DeploymentJob? job;
+  /// The Hooks draft, its approval, the newest task and the sale lead.
+  final Launch2HooksConfig config;
 
   /// The activated instance the read model lists for this project, when it
   /// lists one.
   final Launch2InstanceRef? instance;
 
-  /// The submit answered `403 HOOKS_CONFIG_NOT_APPROVED`: the platform has
-  /// not approved the latest configuration yet.
-  final bool configAwaitingApproval;
-
   String get projectId => project.projectId;
 
-  Launch2CreatorStatus get status => instance != null
-      ? Launch2CreatorStatus.active
-      : launch2CreatorStatusOf(
-          reviewStatus: project.reviewStatus,
-          hasDraft: draft != null,
-          job: job,
-          configAwaitingApproval: configAwaitingApproval,
-        );
+  /// `null` when no Hooks draft was saved yet.
+  Launch2HooksDraft? get draft => config.draft;
+
+  Launch2HooksApproval? get approval => config.approval;
+
+  /// The task that still describes the project ([Launch2HooksConfig.currentJob]).
+  Launch2DeploymentJob? get job => config.currentJob;
+
+  Launch2CreatorStatus get status => launch2CreatorStatusOf(
+    reviewStatus: project.reviewStatus,
+    config: config,
+    instanceListed: instance != null,
+  );
+
+  Launch2CreatorResume get resume => launch2CreatorResumeOf(
+    status: status,
+    projectId: projectId,
+    job: job,
+    instance: instance,
+  );
 }
 
-/// Projects the three server facts onto the ten design states.
+/// Projects the server facts onto the ten design states (decision 0142;
+/// 0138 §2 before `hooks-config` carried approval and the newest task).
 ///
-/// | fact                                        | state              |
-/// | ------------------------------------------- | ------------------ |
-/// | job `activated`                             | active             |
-/// | job `verified`                              | verified           |
-/// | job `confirmed`                             | deployed           |
-/// | job queued / claimed / broadcast / reorged  | deploying          |
-/// | job `failed`, retryable                     | deploying (重试中) |
-/// | job `failed`, final                         | deploy_failed      |
-/// | review `draft`, or approved without config  | draft              |
-/// | review `submitted` / `in_review`            | awaiting_approval  |
-/// | approved, config refused as not approved    | awaiting_approval  |
-/// | review `returned` / `rejected`              | rejected           |
-/// | review `approved` (no job, or cancelled)    | approved           |
+/// | fact                                              | state             |
+/// | ------------------------------------------------- | ----------------- |
+/// | the read model lists the instance                 | active            |
+/// | current task `activated`                          | active            |
+/// | current task `verified`                           | verified          |
+/// | current task `confirmed`                          | deployed          |
+/// | current task queued / claimed / broadcast / reorg | deploying         |
+/// | current task `failed`, retryable                  | deploying (重试中) |
+/// | current task `failed`, final                      | deploy_failed     |
+/// | catalogue review `returned` / `rejected`          | rejected          |
+/// | no Hooks draft                                    | draft             |
+/// | `approval.status = approved`                      | approved          |
+/// | catalogue review `draft` (never submitted)        | draft             |
+/// | otherwise (`awaiting_approval`)                   | awaiting_approval |
 Launch2CreatorStatus launch2CreatorStatusOf({
   required LaunchReviewStatus reviewStatus,
-  required bool hasDraft,
-  required Launch2DeploymentJob? job,
-  bool configAwaitingApproval = false,
+  required Launch2HooksConfig config,
+  bool instanceListed = false,
 }) {
-  if (job != null && job.status != Launch2JobStatus.cancelled) {
+  if (instanceListed) return Launch2CreatorStatus.active;
+  final job = config.currentJob;
+  if (job != null) {
     return switch (job.status) {
       Launch2JobStatus.activated => Launch2CreatorStatus.active,
       Launch2JobStatus.verified => Launch2CreatorStatus.verified,
@@ -501,31 +591,111 @@ Launch2CreatorStatus launch2CreatorStatusOf({
       _ => Launch2CreatorStatus.deploying,
     };
   }
-  return switch (reviewStatus) {
-    LaunchReviewStatus.draft => Launch2CreatorStatus.draft,
-    LaunchReviewStatus.submitted ||
-    LaunchReviewStatus.inReview => Launch2CreatorStatus.awaitingApproval,
-    LaunchReviewStatus.returned ||
-    LaunchReviewStatus.rejected => Launch2CreatorStatus.rejected,
-    LaunchReviewStatus.approved =>
-      !hasDraft
-          ? Launch2CreatorStatus.draft
-          : configAwaitingApproval
-          ? Launch2CreatorStatus.awaitingApproval
-          : Launch2CreatorStatus.approved,
-  };
+  if (reviewStatus == LaunchReviewStatus.returned ||
+      reviewStatus == LaunchReviewStatus.rejected) {
+    return Launch2CreatorStatus.rejected;
+  }
+  if (config.draft == null) return Launch2CreatorStatus.draft;
+  if (config.approval?.approved == true) return Launch2CreatorStatus.approved;
+  if (reviewStatus == LaunchReviewStatus.draft) {
+    return Launch2CreatorStatus.draft;
+  }
+  return Launch2CreatorStatus.awaitingApproval;
 }
 
-/// One row of 我的项目.
+/// Where 我的项目 sends the owner for one project (decision 0142).
+enum Launch2ResumeTarget {
+  /// 资料 / 配置页: nothing submitted yet.
+  edit,
+
+  /// 项目状态页: 审核中 / 已批准 / 审核意见, or activated while the read
+  /// model has not listed the instance yet.
+  status,
+
+  /// 签名部署页: approved, no task.
+  sign,
+
+  /// 部署进度页: a task exists and is not activated.
+  deployment,
+
+  /// 用户侧项目页 (with 「你是项目方」).
+  instance,
+}
+
 @immutable
-final class Launch2CreatorRow {
-  const Launch2CreatorRow({required this.project, required this.draft});
+final class Launch2CreatorResume {
+  const Launch2CreatorResume(this.target, {this.jobId, this.instanceId});
 
-  final LaunchProject project;
+  final Launch2ResumeTarget target;
 
-  /// `null` when no Hooks draft exists yet.
-  final Launch2HooksDraft? draft;
+  /// Set for [Launch2ResumeTarget.deployment].
+  final String? jobId;
+
+  /// Set for [Launch2ResumeTarget.instance].
+  final String? instanceId;
+
+  @override
+  bool operator ==(Object other) =>
+      other is Launch2CreatorResume &&
+      other.target == target &&
+      other.jobId == jobId &&
+      other.instanceId == instanceId;
+
+  @override
+  int get hashCode => Object.hash(target, jobId, instanceId);
+
+  @override
+  String toString() => 'Launch2CreatorResume($target, $jobId, $instanceId)';
 }
+
+/// The resume decision table (decision 0142 §1).
+///
+/// | status                                   | page                       |
+/// | ---------------------------------------- | -------------------------- |
+/// | draft (no draft, or never submitted)     | 资料 / 配置页               |
+/// | awaiting_approval, rejected              | 项目状态页（等审核 / 意见） |
+/// | approved                                 | 签名部署页                  |
+/// | deploying / deployed / verified / failed | 部署进度页（该任务）        |
+/// | active, instance listed                  | 用户侧项目页                |
+/// | active, instance not listed yet          | 项目状态页                  |
+Launch2CreatorResume launch2CreatorResumeOf({
+  required Launch2CreatorStatus status,
+  required String projectId,
+  required Launch2DeploymentJob? job,
+  required Launch2InstanceRef? instance,
+}) {
+  switch (status) {
+    case Launch2CreatorStatus.draft:
+      return const Launch2CreatorResume(Launch2ResumeTarget.edit);
+    case Launch2CreatorStatus.awaitingApproval:
+    case Launch2CreatorStatus.rejected:
+      return const Launch2CreatorResume(Launch2ResumeTarget.status);
+    case Launch2CreatorStatus.approved:
+    case Launch2CreatorStatus.signing:
+      return const Launch2CreatorResume(Launch2ResumeTarget.sign);
+    case Launch2CreatorStatus.deploying:
+    case Launch2CreatorStatus.deployed:
+    case Launch2CreatorStatus.verified:
+    case Launch2CreatorStatus.deployFailed:
+      return job == null
+          ? const Launch2CreatorResume(Launch2ResumeTarget.status)
+          : Launch2CreatorResume(
+              Launch2ResumeTarget.deployment,
+              jobId: job.jobId,
+            );
+    case Launch2CreatorStatus.active:
+      return instance == null
+          ? const Launch2CreatorResume(Launch2ResumeTarget.status)
+          : Launch2CreatorResume(
+              Launch2ResumeTarget.instance,
+              instanceId: instance.instanceId,
+            );
+  }
+}
+
+/// One row of 我的项目: the same three reads as the status page, so the row's
+/// state and where a tap lands agree with it.
+typedef Launch2CreatorRow = Launch2CreatorProject;
 
 /// One page of 我的项目.
 @immutable

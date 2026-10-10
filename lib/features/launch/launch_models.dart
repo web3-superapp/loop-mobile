@@ -195,6 +195,27 @@ enum LaunchReviewStatus {
   }
 }
 
+/// The catalogue project's product (loop-api decision 0120, `project.kind`).
+///
+/// `ido` is the original Launch application; `launch2` is a MEME v2 project
+/// (created with `kind: launch2`, or marked so by its first Hooks draft). The
+/// server never turns a `launch2` project back into `ido`.
+enum LaunchProjectKind {
+  ido('ido'),
+  launch2('launch2');
+
+  const LaunchProjectKind(this.wireName);
+
+  final String wireName;
+
+  static LaunchProjectKind? tryParse(String value) {
+    for (final kind in values) {
+      if (kind.wireName == value) return kind;
+    }
+    return null;
+  }
+}
+
 String launchReviewStatusLabel(LaunchReviewStatus status) => switch (status) {
   LaunchReviewStatus.draft => '草稿',
   LaunchReviewStatus.submitted => '审核中',
@@ -271,6 +292,7 @@ final class LaunchProject {
     required this.narrative,
     required this.officialLinks,
     required this.materialVersion,
+    required this.kind,
     required this.reviewStatus,
     required this.reviewReasonCode,
     required this.reviewReasonText,
@@ -291,6 +313,9 @@ final class LaunchProject {
   final String? narrative;
   final LaunchOfficialLinks officialLinks;
   final int materialVersion;
+
+  /// Which product the project belongs to (decision 0120).
+  final LaunchProjectKind kind;
   final LaunchReviewStatus reviewStatus;
 
   /// The machine-readable review reason. It is a contract identifier for
@@ -343,6 +368,7 @@ final class LaunchProjectDraft {
     required this.ticker,
     required this.narrative,
     required this.officialLinks,
+    this.kind,
   });
 
   static final RegExp tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
@@ -352,6 +378,12 @@ final class LaunchProjectDraft {
   final String ticker;
   final String? narrative;
   final LaunchOfficialLinks officialLinks;
+
+  /// The product a new project is created as. `null` sends no `kind` (the
+  /// server reads it as `ido`, and the classic path's idempotency digest stays
+  /// byte-identical to before decision 0120). Only the create body carries
+  /// it: `PUT` refuses the key.
+  final LaunchProjectKind? kind;
 
   /// The first field the local shape check rejects, or `null`.
   LaunchDraftField? get invalidField {
@@ -383,6 +415,12 @@ final class LaunchProjectDraft {
     'ticker': ticker,
     'narrative': narrative,
     'officialLinks': officialLinks.toRequestJson(),
+  };
+
+  /// The `POST` body: the edit body plus `kind` when one was chosen.
+  Map<String, Object?> toCreateRequestJson() => <String, Object?>{
+    ...toRequestJson(),
+    if (kind case final LaunchProjectKind chosen) 'kind': chosen.wireName,
   };
 }
 

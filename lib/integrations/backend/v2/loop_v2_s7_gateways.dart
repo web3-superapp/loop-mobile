@@ -180,15 +180,19 @@ final class DioLoopV2LaunchGateway
   );
 
   @override
-  Future<LaunchProjectPage> listProjects({String? status, String? cursor}) =>
-      read(
-        (accessToken) => _api.listProjects(
-          accessToken: accessToken,
-          clientVersion: clientVersion,
-          status: status,
-          cursor: cursor,
-        ),
-      );
+  Future<LaunchProjectPage> listProjects({
+    String? status,
+    String? cursor,
+    LaunchProjectKind? kind,
+  }) => read(
+    (accessToken) => _api.listProjects(
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      status: status,
+      cursor: cursor,
+      kind: kind,
+    ),
+  );
 
   @override
   Future<LaunchProject> loadProject(String projectId) => read(
@@ -221,7 +225,7 @@ final class DioLoopV2LaunchGateway
     // changed field — including a link the name and ticker do not mention —
     // is a new logical operation and gets a fresh key.
     return idempotent(
-      'launch:create:${jsonEncode(draft.toRequestJson())}',
+      'launch:create:${jsonEncode(draft.toCreateRequestJson())}',
       (accessToken, key) => _api.createProject(
         accessToken: accessToken,
         clientVersion: clientVersion,

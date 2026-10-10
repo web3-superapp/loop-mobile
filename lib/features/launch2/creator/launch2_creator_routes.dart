@@ -1,10 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_create_screen.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_deployment_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_project_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_projects_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_sign_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 
 /// The five project-side routes of MEME v2 (S135, decision 0138; manifest
 /// 105 → 110).
@@ -47,6 +49,18 @@ abstract final class Launch2CreatorRoute {
 
   static String deployment(String projectId, String jobId) =>
       _with(deploymentPath, <String, String>{'id': projectId, 'job': jobId});
+
+  /// Where 我的项目 sends the owner for [resume] (decision 0142).
+  static String resume(String projectId, Launch2CreatorResume resume) =>
+      switch (resume.target) {
+        Launch2ResumeTarget.edit => edit(projectId),
+        Launch2ResumeTarget.status => project(projectId),
+        Launch2ResumeTarget.sign => sign(projectId),
+        Launch2ResumeTarget.deployment => deployment(projectId, resume.jobId!),
+        Launch2ResumeTarget.instance => Launch2Route.instance(
+          resume.instanceId!,
+        ),
+      };
 }
 
 /// The route table `lib/app.dart` mounts. [popOrHome] is the App's own back.

@@ -40,9 +40,15 @@ class Launch2TradePanel extends ConsumerStatefulWidget {
     required this.onPrepared,
     super.key,
     this.locked = false,
+    this.onStageMoved,
   });
 
   final Launch2InstanceDetail detail;
+
+  /// A quote or prepare answered `409 LAUNCH2_STAGE_MISMATCH`: the stage on
+  /// screen is stale (contract §3.3 — "treat it as not open yet and keep
+  /// polling the detail"). The page re-reads; the panel keeps one quiet line.
+  final VoidCallback? onStageMoved;
 
   /// The active wallet the quote and the intent are for; `null` disables the
   /// panel with the reason.
@@ -184,6 +190,9 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
         _quoteFailure = failure;
         _quoting = false;
       });
+      if (failure.reasonCode == launch2StageMismatchCode) {
+        widget.onStageMoved?.call();
+      }
     } catch (_) {
       if (!mounted || request != _request) return;
       setState(() {
@@ -223,6 +232,9 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           _quoteFailure = failure;
           _quoting = false;
         });
+        if (failure.reasonCode == launch2StageMismatchCode) {
+          widget.onStageMoved?.call();
+        }
         return;
       }
       if (!mounted || quote == null) return;
@@ -310,6 +322,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
         return;
       }
       setState(() => _prepareFailure = failure);
+      if (reason == launch2StageMismatchCode) widget.onStageMoved?.call();
     } catch (_) {
       if (!mounted) return;
       setState(() {

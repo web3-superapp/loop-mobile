@@ -21,7 +21,13 @@ abstract interface class LaunchGateway {
 
   Future<LaunchEconomy> loadEconomy();
 
-  Future<LaunchProjectPage> listProjects({String? status, String? cursor});
+  /// [kind] narrows the list to one product (loop-api decision 0120);
+  /// `null` lists every project the account owns.
+  Future<LaunchProjectPage> listProjects({
+    String? status,
+    String? cursor,
+    LaunchProjectKind? kind,
+  });
 
   Future<LaunchProject> loadProject(String projectId);
 
@@ -111,8 +117,11 @@ final class UnavailableLaunchGateway implements LaunchGateway {
   Future<LaunchEconomy> loadEconomy() => _unavailable();
 
   @override
-  Future<LaunchProjectPage> listProjects({String? status, String? cursor}) =>
-      _unavailable();
+  Future<LaunchProjectPage> listProjects({
+    String? status,
+    String? cursor,
+    LaunchProjectKind? kind,
+  }) => _unavailable();
 
   @override
   Future<LaunchProject> loadProject(String projectId) => _unavailable();

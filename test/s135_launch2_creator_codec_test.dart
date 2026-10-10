@@ -153,7 +153,7 @@ void main() {
       final draft = LoopV2Launch2CreatorCodec.configEnvelope(
         _body('hooks_config_draft'),
         projectId: _projectId,
-      )!;
+      ).draft!;
       expect(draft.version, 1);
       expect(draft.ticker, 'MCAT');
       expect(draft.nftSaleStartAt, BigInt.from(1792000000));
@@ -181,7 +181,7 @@ void main() {
         LoopV2Launch2CreatorCodec.configEnvelope(
           _body('hooks_config_empty'),
           projectId: _projectId,
-        ),
+        ).draft,
         isNull,
       );
     });
@@ -281,28 +281,16 @@ void main() {
       );
     });
 
-    test('the wallet parameter adds only the EIP-712 domain type', () {
+    test('the wallet parameter is the server typed data, unchanged', () {
+      // Decision 0142 (loop-api 0120): `types` lists EIP712Domain itself, so
+      // nothing is added; the JSON is the server's own object.
       final request = LoopV2Launch2CreatorCodec.signingRequest(
         _body('hooks_signing_request'),
       );
-      final json = jsonDecode(
-        launch2TypedDataJson(request.typedData),
-      ) as Map<String, Object?>;
-      final types = json['types']! as Map<String, Object?>;
-      expect(types['EIP712Domain'], <Object?>[
-        <String, Object?>{'name': 'name', 'type': 'string'},
-        <String, Object?>{'name': 'version', 'type': 'string'},
-        <String, Object?>{'name': 'chainId', 'type': 'uint256'},
-        <String, Object?>{'name': 'verifyingContract', 'type': 'address'},
-      ]);
-      expect(
-        types['LaunchRequest'],
-        request.typedData['types'] is Map
-            ? (request.typedData['types']! as Map)['LaunchRequest']
-            : null,
-      );
-      expect(json['message'], request.typedData['message']);
-      expect(json['domain'], request.typedData['domain']);
+      final sent =
+          (_body('hooks_signing_request')!
+              as Map<String, Object?>)['typedData'];
+      expect(launch2TypedDataJson(request.typedData), jsonEncode(sent));
     });
   });
 
@@ -379,47 +367,45 @@ void main() {
   });
 
   group('status projection', () {
-    Launch2DeploymentJob job(String name) =>
-        LoopV2Launch2CreatorCodec.job(_body(name), projectId: _projectId);
+    Launch2HooksConfig config(String name) =>
+        LoopV2Launch2CreatorCodec.configEnvelope(
+          _body(name),
+          projectId: _projectId,
+        );
 
-    test('the ten design states come from the three server facts', () {
-      Launch2CreatorStatus of(
-        LaunchReviewStatus review, {
-        bool draft = true,
-        Launch2DeploymentJob? job,
-        bool notApproved = false,
-      }) => launch2CreatorStatusOf(
-        reviewStatus: review,
-        hasDraft: draft,
-        job: job,
-        configAwaitingApproval: notApproved,
-      );
-      expect(of(LaunchReviewStatus.draft), Launch2CreatorStatus.draft);
+    test('the ten design states come from the server facts', () {
+      Launch2CreatorStatus of(LaunchReviewStatus review, String name) =>
+          launch2CreatorStatusOf(reviewStatus: review, config: config(name));
       expect(
-        of(LaunchReviewStatus.inReview),
-        Launch2CreatorStatus.awaitingApproval,
-      );
-      expect(of(LaunchReviewStatus.returned), Launch2CreatorStatus.rejected);
-      expect(of(LaunchReviewStatus.rejected), Launch2CreatorStatus.rejected);
-      expect(of(LaunchReviewStatus.approved), Launch2CreatorStatus.approved);
-      expect(
-        of(LaunchReviewStatus.approved, draft: false),
+        of(LaunchReviewStatus.draft, 'hooks_config_empty'),
         Launch2CreatorStatus.draft,
       );
       expect(
-        of(LaunchReviewStatus.approved, notApproved: true),
+        of(LaunchReviewStatus.draft, 'hooks_config_draft'),
+        Launch2CreatorStatus.draft,
+      );
+      expect(
+        of(LaunchReviewStatus.inReview, 'hooks_config_draft'),
         Launch2CreatorStatus.awaitingApproval,
       );
       expect(
-        of(LaunchReviewStatus.approved, job: job('hooks_deployment_created')),
+        of(LaunchReviewStatus.approved, 'hooks_config_draft'),
+        Launch2CreatorStatus.awaitingApproval,
+      );
+      expect(
+        of(LaunchReviewStatus.returned, 'hooks_config_draft'),
+        Launch2CreatorStatus.rejected,
+      );
+      expect(
+        of(LaunchReviewStatus.approved, 'hooks_config_approved'),
+        Launch2CreatorStatus.approved,
+      );
+      expect(
+        of(LaunchReviewStatus.approved, 'hooks_config_deploying'),
         Launch2CreatorStatus.deploying,
       );
       expect(
-        of(LaunchReviewStatus.approved, job: job('hooks_deployment_failed')),
-        Launch2CreatorStatus.deployFailed,
-      );
-      expect(
-        of(LaunchReviewStatus.approved, job: job('hooks_deployment_activated')),
+        of(LaunchReviewStatus.approved, 'hooks_config_activated'),
         Launch2CreatorStatus.active,
       );
     });

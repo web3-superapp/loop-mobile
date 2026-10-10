@@ -48,10 +48,13 @@ Object? _body(String name) => (jsonDecode(
   File('test/fixtures/s135-launch2-creator/$name.json').readAsStringSync(),
 ) as Map<String, Object?>)['body'];
 
-Launch2HooksDraft _draft() => LoopV2Launch2CreatorCodec.configEnvelope(
-  _body('hooks_config_draft'),
-  projectId: _projectId,
-)!;
+Launch2HooksConfig _config(String name) =>
+    LoopV2Launch2CreatorCodec.configEnvelope(
+      _body(name),
+      projectId: _projectId,
+    );
+
+Launch2HooksDraft _draft() => _config('hooks_config_draft').draft!;
 
 Launch2SigningRequest _request() =>
     LoopV2Launch2CreatorCodec.signingRequest(_body('hooks_signing_request'));
@@ -90,7 +93,7 @@ T _pick<T>(List<T> answers, int index) =>
 
 final class _FakeCreator implements Launch2CreatorGateway {
   _FakeCreator({
-    this.configs = const <_A<Launch2HooksDraft?>>[],
+    this.configs = const <_A<Launch2HooksConfig>>[],
     this.saves = const <_A<Launch2HooksDraft>>[],
     this.requests = const <_A<Launch2SigningRequest>>[],
     this.submits = const <_A<Launch2DeploymentJob>>[],
@@ -98,7 +101,7 @@ final class _FakeCreator implements Launch2CreatorGateway {
     this.instances = const <_A<Launch2InstanceRef?>>[],
   });
 
-  final List<_A<Launch2HooksDraft?>> configs;
+  final List<_A<Launch2HooksConfig>> configs;
   final List<_A<Launch2HooksDraft>> saves;
   final List<_A<Launch2SigningRequest>> requests;
   final List<_A<Launch2DeploymentJob>> submits;
@@ -121,10 +124,10 @@ final class _FakeCreator implements Launch2CreatorGateway {
   LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
 
   @override
-  Future<Launch2HooksDraft?> loadConfig(String projectId) {
+  Future<Launch2HooksConfig> loadConfig(String projectId) {
     final index = configReads++;
     return configs.isEmpty
-        ? Future<Launch2HooksDraft?>.value()
+        ? Future<Launch2HooksConfig>.value(_config('hooks_config_empty'))
         : _pick(configs, index).resolve();
   }
 
@@ -203,9 +206,15 @@ final class _FakeLaunch implements LaunchGateway {
   final List<LaunchProjectDraft> created = <LaunchProjectDraft>[];
   final List<(int, LaunchProjectDraft)> updated = <(int, LaunchProjectDraft)>[];
   final List<String> submitted = <String>[];
+  final List<LaunchProjectKind?> listedKinds = <LaunchProjectKind?>[];
 
   @override
-  Future<LaunchProjectPage> listProjects({String? status, String? cursor}) {
+  Future<LaunchProjectPage> listProjects({
+    String? status,
+    String? cursor,
+    LaunchProjectKind? kind,
+  }) {
+    listedKinds.add(kind);
     if (pagePending) return Completer<LaunchProjectPage>().future;
     final failure = pageFailure;
     if (failure != null) {
@@ -599,8 +608,9 @@ void main() {
       tester,
     ) async {
       final creator = _FakeCreator(
-        configs: <_A<Launch2HooksDraft?>>[
-          _A<Launch2HooksDraft?>.value(_draft()),
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_empty')),
+          _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
         ],
         saves: <_A<Launch2HooksDraft>>[
           const _A<Launch2HooksDraft>.fail(
@@ -629,14 +639,15 @@ void main() {
         ),
       );
       final creator = _FakeCreator(
-        configs: <_A<Launch2HooksDraft?>>[
-          _A<Launch2HooksDraft?>.value(_draft()),
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
         ],
         saves: <_A<Launch2HooksDraft>>[_A<Launch2HooksDraft>.value(_draft())],
       );
       await _pump(
         tester,
-        const Launch2CreateScreen(projectId: _projectId),
+        // The saved sale start is checked against the server's lead.
+        Launch2CreateScreen(projectId: _projectId, clock: _beforeDeadline),
         launch: launch,
         creator: creator,
       );
@@ -681,9 +692,9 @@ void main() {
         ]),
       );
       final creator = _FakeCreator(
-        configs: <_A<Launch2HooksDraft?>>[
-          _A<Launch2HooksDraft?>.value(_draft()),
-          const _A<Launch2HooksDraft?>.value(null),
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_approved')),
+          _A<Launch2HooksConfig>.value(_config('hooks_config_empty')),
         ],
       );
       final opened = <String>[];
@@ -693,11 +704,16 @@ void main() {
         launch: launch,
         creator: creator,
       );
+      // Only MEME v2 projects are listed (decision 0142).
+      expect(launch.listedKinds, <LaunchProjectKind?>[
+        LaunchProjectKind.launch2,
+      ]);
       expect(_key('launch2-status-approved'), findsOneWidget);
       expect(_key('launch2-status-rejected'), findsOneWidget);
       expect(find.text('请补充社区链接。'), findsOneWidget);
+      // An approved project resumes on the signing page.
       await tester.tap(_key('launch2-project-row-$_projectId'));
-      expect(opened.single, Launch2CreatorRoute.project(_projectId));
+      expect(opened.single, Launch2CreatorRoute.sign(_projectId));
       await tester.tap(_key('launch2-projects-create'));
       expect(opened.last, Launch2CreatorRoute.createPath);
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
@@ -769,8 +785,8 @@ void main() {
           ),
         ),
         creator: _FakeCreator(
-          configs: <_A<Launch2HooksDraft?>>[
-            _A<Launch2HooksDraft?>.value(_draft()),
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
           ],
         ),
       );
@@ -792,8 +808,8 @@ void main() {
           ),
         ),
         creator: _FakeCreator(
-          configs: <_A<Launch2HooksDraft?>>[
-            _A<Launch2HooksDraft?>.value(_draft()),
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
           ],
         ),
       );
@@ -815,8 +831,8 @@ void main() {
         tester,
         Launch2ProjectScreen(projectId: _projectId, onNavigate: opened.add),
         creator: _FakeCreator(
-          configs: <_A<Launch2HooksDraft?>>[
-            _A<Launch2HooksDraft?>.value(_draft()),
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_approved')),
           ],
         ),
       );
@@ -836,8 +852,8 @@ void main() {
           onOpenInstance: instances.add,
         ),
         creator: _FakeCreator(
-          configs: <_A<Launch2HooksDraft?>>[
-            _A<Launch2HooksDraft?>.value(_draft()),
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_activated')),
           ],
           instances: <_A<Launch2InstanceRef?>>[
             const _A<Launch2InstanceRef?>.value(
@@ -880,8 +896,8 @@ void main() {
         tester,
         const Launch2ProjectScreen(projectId: _projectId),
         creator: _FakeCreator(
-          configs: <_A<Launch2HooksDraft?>>[
-            const _A<Launch2HooksDraft?>.pending(),
+          configs: <_A<Launch2HooksConfig>>[
+            const _A<Launch2HooksConfig>.pending(),
           ],
         ),
         settle: false,
@@ -1215,6 +1231,203 @@ void main() {
         );
         await _drain(tester);
       }
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // S142 · decision 0142: the project side resumes from `hooks-config`
+  // (approval, newest task, sale lead) and creates `kind: launch2`.
+  // -------------------------------------------------------------------------
+  group('S142 · resume', () {
+    Launch2HooksConfig configWith(
+      String name,
+      void Function(Map<String, Object?> body) edit,
+    ) {
+      final body = jsonDecode(jsonEncode(_body(name))) as Map<String, Object?>;
+      edit(body);
+      return LoopV2Launch2CreatorCodec.configEnvelope(
+        body,
+        projectId: _projectId,
+      );
+    }
+
+    testWidgets('我的项目 lands each row on the page its state belongs to', (
+      tester,
+    ) async {
+      const ids = <String>[
+        '4fa85f64-5717-4562-b3fc-2c963f66afa1',
+        '4fa85f64-5717-4562-b3fc-2c963f66afa2',
+        '4fa85f64-5717-4562-b3fc-2c963f66afa3',
+        '4fa85f64-5717-4562-b3fc-2c963f66afa4',
+      ];
+      final launch = _FakeLaunch(
+        page: _page(<LaunchProject>[
+          for (final id in ids)
+            s7Project(
+              projectId: id,
+              reviewStatus: LaunchReviewStatus.approved,
+              kind: LaunchProjectKind.launch2,
+            ),
+        ]),
+      );
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_empty')),
+          _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
+          _A<Launch2HooksConfig>.value(_config('hooks_config_deploying')),
+          _A<Launch2HooksConfig>.value(_config('hooks_config_activated')),
+        ],
+        instances: <_A<Launch2InstanceRef?>>[
+          const _A<Launch2InstanceRef?>.value(
+            Launch2InstanceRef(
+              instanceId: _instanceId,
+              projectId: _projectId,
+              stage: 'upcoming',
+            ),
+          ),
+        ],
+      );
+      final opened = <String>[];
+      await _pump(
+        tester,
+        Launch2ProjectsScreen(onNavigate: opened.add),
+        launch: launch,
+        creator: creator,
+      );
+      expect(_key('launch2-status-draft'), findsOneWidget);
+      expect(_key('launch2-status-awaiting_approval'), findsOneWidget);
+      expect(_key('launch2-status-deploying'), findsOneWidget);
+      expect(_key('launch2-status-active'), findsOneWidget);
+      // Only the activated row looks for its instance.
+      expect(creator.instanceReads, 1);
+      for (final id in ids) {
+        await tester.tap(_key('launch2-project-row-$id'));
+      }
+      expect(opened, <String>[
+        Launch2CreatorRoute.edit(ids[0]),
+        Launch2CreatorRoute.project(ids[1]),
+        Launch2CreatorRoute.deployment(ids[2], _jobId),
+        '/launch2/instance?id=$_instanceId',
+      ]);
+    });
+
+    testWidgets('等审核页 says 审核中, then 已批准 with its time', (tester) async {
+      await _pump(
+        tester,
+        const Launch2ProjectScreen(projectId: _projectId),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
+          ],
+        ),
+      );
+      expect(_key('launch2-status-awaiting_approval'), findsOneWidget);
+      expect(find.text('审核中'), findsWidgets);
+      expect(_key('launch2-project-sign'), findsNothing);
+      await _drain(tester);
+
+      await _pump(
+        tester,
+        const Launch2ProjectScreen(projectId: _projectId),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_approved')),
+          ],
+        ),
+      );
+      expect(_key('launch2-project-next-sign'), findsOneWidget);
+      expect(find.text('已批准'), findsOneWidget);
+      expect(find.textContaining('批准。用钱包签名后'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a new project is created as kind launch2', (tester) async {
+      final launch = _FakeLaunch();
+      final creator = _FakeCreator(
+        saves: <_A<Launch2HooksDraft>>[_A<Launch2HooksDraft>.value(_draft())],
+      );
+      await _pump(
+        tester,
+        const Launch2CreateScreen(),
+        launch: launch,
+        creator: creator,
+      );
+      await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('launch2-create-name'), 'MoonCat');
+      await tester.enterText(_key('launch2-create-ticker'), 'MCAT');
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-sale-start'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-sale-start-confirm'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(launch.created.single.kind, LaunchProjectKind.launch2);
+      expect(launch.created.single.toCreateRequestJson()['kind'], 'launch2');
+      // The save read the config (version and lead) before writing.
+      expect(creator.configReads, 1);
+      expect(creator.saveVersions, <int>[0]);
+      await _drain(tester);
+    });
+
+    testWidgets('the picker starts at now + the server lead; a start the '
+        'lead has overtaken stops before any write', (tester) async {
+      // The project being edited answers a 30-day lead; the saved start
+      // (1792000000) is twelve days after this clock.
+      final lead = configWith('hooks_config_draft', (body) {
+        body['minSaleLeadSeconds'] = 2592000;
+      });
+      final launch = _FakeLaunch(
+        project: s7Project(
+          projectId: _projectId,
+          reviewStatus: LaunchReviewStatus.returned,
+          version: 3,
+          reviewReasonCode: 'materials_incomplete',
+        ),
+      );
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[_A<Launch2HooksConfig>.value(lead)],
+        saves: <_A<Launch2HooksDraft>>[_A<Launch2HooksDraft>.value(_draft())],
+      );
+      await _pump(
+        tester,
+        Launch2CreateScreen(projectId: _projectId, clock: _beforeDeadline),
+        launch: launch,
+        creator: creator,
+      );
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-sale-too-early'), findsOneWidget);
+      expect(find.textContaining('平台要求至少提前 720 小时'), findsOneWidget);
+      expect(creator.saveVersions, isEmpty);
+      expect(launch.submitted, isEmpty);
+
+      // The picker offers nothing earlier than now + lead.
+      await tester.tap(_key('launch2-create-sale-start'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('平台要求至少提前 720 小时开售'), findsOneWidget);
+      await tester.tap(_key('launch2-sale-start-confirm'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(creator.saveVersions, <int>[1]);
+      final start = creator.saved.single.nftSaleStart;
+      expect(
+        start.isBefore(
+          launch2EarliestSaleStart(_beforeDeadline(), const Duration(days: 30)),
+        ),
+        isFalse,
+      );
+      expect(launch.submitted, <String>[_projectId]);
+      await _drain(tester);
     });
   });
 }

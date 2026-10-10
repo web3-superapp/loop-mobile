@@ -184,17 +184,18 @@ class Launch2ProjectScreen extends ConsumerWidget {
           ),
         ];
       case Launch2CreatorStatus.awaitingApproval:
+        // 等审核页 (decision 0142): only 审核中 / 已批准 exist; the review
+        // model has no reject state for the launch configuration.
         final submitted = project.submittedAt;
         return <Widget>[
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-review'),
             icon: 'clock',
-            title: value.configAwaitingApproval ? '配置等待平台审批' : '平台审核中',
-            body: value.configAwaitingApproval
-                ? '资料已通过，发射配置还在等审批。审批通过后回来签名。'
-                : submitted == null
-                ? '审核结果会显示在这里，下拉可刷新。'
-                : '${loopLocalTimestampLabel(submitted)} 提交，审核结果会显示在这里。',
+            title: '审核中',
+            body: submitted == null
+                ? '平台审核发射配置，结果会显示在这里，下拉可刷新。'
+                : '${loopLocalTimestampLabel(submitted)} 提交，'
+                      '结果会显示在这里，下拉可刷新。',
           ),
         ];
       case Launch2CreatorStatus.rejected:
@@ -223,11 +224,16 @@ class Launch2ProjectScreen extends ConsumerWidget {
         ];
       case Launch2CreatorStatus.approved:
       case Launch2CreatorStatus.signing:
+        final approvedAt = value.approval?.approvedAt;
         return <Widget>[
-          const LoopNotice(
-            key: ValueKey<String>('launch2-project-next-sign'),
+          LoopNotice(
+            key: const ValueKey<String>('launch2-project-next-sign'),
             icon: 'check',
-            body: '已通过审核。用钱包签名后，平台会部署并激活。',
+            title: '已批准',
+            body: approvedAt == null
+                ? '用钱包签名后，平台会部署并激活。'
+                : '${loopLocalTimestampLabel(approvedAt)} 批准。'
+                      '用钱包签名后，平台会部署并激活。',
           ),
           _action(
             'launch2-project-sign',
