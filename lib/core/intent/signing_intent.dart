@@ -25,7 +25,22 @@ enum IntentKind {
   /// (decision 0089). It is the approve half of a Launch purchase and the only
   /// approval that may leave the primary chain.
   launchApproval,
+
+  /// `LoopRewardClaim.claim(...)` with a server-signed voucher: the hourly
+  /// mining reward claim (decision 0141). The claim contract is deployed on
+  /// the Launch slot, so this kind is admitted there too; it never carries a
+  /// purchase, an approval or a transfer.
+  miningClaim,
 }
+
+/// The kinds that may be signed on the published Launch slot as well as the
+/// primary chain (decisions 0062, 0089, 0141). Every other kind is locked to
+/// the primary chain.
+const Set<IntentKind> launchSlotIntentKinds = <IntentKind>{
+  IntentKind.launchPurchase,
+  IntentKind.launchApproval,
+  IntentKind.miningClaim,
+};
 
 enum IntentOrigin { localPreview, backendCanonical }
 
@@ -296,17 +311,17 @@ final class SigningIntent {
 
   /// Whether [chainId] is one this kind of intent may ever be signed on.
   ///
-  /// Only [IntentKind.launchPurchase] and its USD1 approval
-  /// ([IntentKind.launchApproval], decision 0089) may leave the primary
-  /// chain, and only for the single published Launch slot. Send, a wallet
+  /// Only [launchSlotIntentKinds] — [IntentKind.launchPurchase], its USD1
+  /// approval ([IntentKind.launchApproval], decision 0089) and the mining
+  /// reward claim ([IntentKind.miningClaim], decision 0141) — may leave the
+  /// primary chain, and only for the single published Launch slot. Send, a wallet
   /// approval, revoke and swap are locked to the primary chain: a wallet
   /// intent that arrived carrying the testnet is refused here, before any
   /// wallet is opened.
   bool get chainIsPermitted {
     if (!loopKnownChainIds.contains(chainId)) return false;
     if (chainId == loopPrimaryChainId) return true;
-    return kind == IntentKind.launchPurchase ||
-        kind == IntentKind.launchApproval;
+    return launchSlotIntentKinds.contains(kind);
   }
 
   /// True when the owner must be told this signature happens on the Launch

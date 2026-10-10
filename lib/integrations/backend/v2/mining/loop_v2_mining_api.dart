@@ -22,11 +22,6 @@ abstract interface class LoopV2MiningApi {
     required String clientVersion,
   });
 
-  Future<MiningRewards> getRewards({
-    required String accessToken,
-    required String clientVersion,
-  });
-
   /// One page of one board. A [cursor] continues the board it came from and
   /// is sent alone: the page size travels inside it (decision 0100).
   Future<MiningRank> getRank({
@@ -53,7 +48,6 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
 
   static const summaryPath = '/v2/mining/summary';
   static const assetsPath = '/v2/mining/assets';
-  static const rewardsPath = '/v2/mining/rewards';
   static const rankPath = '/v2/mining/rank';
 
   /// `avatar:<ref>` as the profile resource stores it (decision 0100).
@@ -1049,48 +1043,6 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         source: source,
         referencePrice: _referencePrice(root['referencePrice']),
         formula: _formulaGate(root['formula']),
-      );
-    } on DioException catch (error) {
-      _rethrowRead(error);
-    }
-  }
-
-  @override
-  Future<MiningRewards> getRewards({
-    required String accessToken,
-    required String clientVersion,
-  }) async {
-    try {
-      final response = await _dio.get<Object?>(
-        rewardsPath,
-        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
-      );
-      LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'claimable',
-        'claimExecutable',
-        'estimatedToday',
-        'accumulated',
-        'ledger',
-        'source',
-        'contractVersion',
-      });
-      LoopV2S7Codec.requireContractVersion(root);
-      LoopV2S7Codec.requireEmptyList(root['ledger']);
-      return MiningRewards(
-        claimable: LoopV2S7Codec.unavailable(root['claimable']),
-        // Pinned false: there is no reward authority to claim against.
-        claimExecutable: LoopV2S7Codec.requireExactBool(
-          root,
-          'claimExecutable',
-          false,
-        ),
-        // The same block the summary publishes, from the same source: under
-        // an effective version it is a figure, and it carries the budget it
-        // was divided out of.
-        estimatedToday: _dailyOutput(root['estimatedToday']),
-        accumulated: LoopV2S7Codec.unavailable(root['accumulated']),
-        source: LoopV2S7Codec.unavailable(root['source']),
       );
     } on DioException catch (error) {
       _rethrowRead(error);

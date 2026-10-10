@@ -554,47 +554,6 @@ MiningAssets s7MiningSettledAssets({
   referencePrice: const MiningReferencePriceSettled(s7PriceVersion),
 );
 
-MiningRewards s7MiningRewards({
-  LaunchUnavailable? claimable,
-  MiningDailyOutput? estimatedToday,
-  LaunchUnavailable? accumulated,
-  LaunchUnavailable? source,
-}) => MiningRewards(
-  claimable: claimable ?? const LaunchUnavailable(s7RewardPending),
-  claimExecutable: false,
-  estimatedToday:
-      estimatedToday ?? const MiningDailyOutputUnavailable(s7FormulaPending),
-  accumulated: accumulated ?? const LaunchUnavailable(s7FormulaPending),
-  source: source ?? const LaunchUnavailable(s7FormulaPending),
-);
-
-/// Rewards under the development baseline, as the Development lane answers
-/// them: the share is settled and carries its placeholder budget, while the
-/// claim and the ledger stay closed by the reward authority.
-MiningRewards s7BaselineMiningRewards() => s7MiningRewards(
-  estimatedToday: const MiningDailyOutputEstimate(
-    value: '1000000',
-    budget: '1000000',
-    unitKey: 'mining.rules.dailyOutput.unit.loopTokenPending',
-    budgetStatus: 'development_placeholder',
-    formulaVersion: s7BaselineVersion,
-    scope: MiningFormulaScope.developmentBaseline,
-  ),
-  accumulated: const LaunchUnavailable(s7RewardPending),
-  source: const LaunchUnavailable(s7RewardPending),
-);
-
-/// Rewards as the Development deployment answers them once a settlement has
-/// happened: the share is defined (the network power is what is zero), and the
-/// claim is closed by the reward authority, not by a missing settlement.
-MiningRewards s7SettledMiningRewards() => s7MiningRewards(
-  estimatedToday: const MiningDailyOutputUnavailable(
-    'MINING_NETWORK_POWER_ZERO',
-  ),
-  accumulated: const LaunchUnavailable(s7RewardPending),
-  source: const LaunchUnavailable(s7RewardPending),
-);
-
 MiningRank s7MiningRank({
   MiningRankScope scope = MiningRankScope.communities,
   MiningRanking? ranking,

@@ -106,27 +106,6 @@ void main() {
       );
     });
 
-    testWidgets('奖励与领取 puts the claim above the records', (tester) async {
-      await pumpS7Page(
-        tester,
-        const MiningRewardsScreen(),
-        mining: FakeMiningGateway(
-          rewards: S7Answer<MiningRewards>(value: s7BaselineMiningRewards()),
-        ),
-        size: _tall,
-      );
-
-      expect(_labels(tester), <String>['领取记录']);
-      for (final key in <String>[
-        'mining-rewards-cadence',
-        'mining-rewards-readings',
-        'mining-rewards-claim',
-        'mining-rewards-ledger',
-      ]) {
-        expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
-      }
-    });
-
     testWidgets('算力排行榜 keeps the board under the scope switch', (tester) async {
       await pumpS7Page(
         tester,

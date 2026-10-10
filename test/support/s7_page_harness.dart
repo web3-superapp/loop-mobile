@@ -325,14 +325,12 @@ final class FakeMiningGateway implements MiningGateway {
   FakeMiningGateway({
     S7Answer<MiningSummary>? summary,
     S7Answer<MiningAssets>? assets,
-    S7Answer<MiningRewards>? rewards,
     S7Answer<MiningRank>? rank,
     S7Answer<MiningCommunity>? community,
     S7Answer<MiningRules>? rules,
     this.mode = LaunchGatewayMode.production,
   }) : summary = summary ?? S7Answer<MiningSummary>(value: s7MiningSummary()),
        assets = assets ?? S7Answer<MiningAssets>(value: s7MiningAssets()),
-       rewards = rewards ?? S7Answer<MiningRewards>(value: s7MiningRewards()),
        rank = rank ?? S7Answer<MiningRank>(value: s7MiningRank()),
        community =
            community ?? S7Answer<MiningCommunity>(value: s7MiningCommunity()),
@@ -340,7 +338,6 @@ final class FakeMiningGateway implements MiningGateway {
 
   final S7Answer<MiningSummary> summary;
   final S7Answer<MiningAssets> assets;
-  final S7Answer<MiningRewards> rewards;
   final S7Answer<MiningRank> rank;
   final S7Answer<MiningCommunity> community;
   final S7Answer<MiningRules> rules;
@@ -356,9 +353,6 @@ final class FakeMiningGateway implements MiningGateway {
 
   @override
   Future<MiningAssets> loadAssets() => assets.resolve();
-
-  @override
-  Future<MiningRewards> loadRewards() => rewards.resolve();
 
   @override
   Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor}) {

@@ -1,0 +1,52 @@
+{
+  "_captured": "Captured 2026-10-10 from the Development database through loop-api integration/v2 0ac6a5b buildApp() + app.inject (preflight-reads.mts style, Privy verifier substituted), identity qa-privy2. Dev has no settled epoch and no approved parameter version yet; headers trimmed to the three the client checks.",
+  "route": "GET /v2/mining/rewards",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "3913fbb8-9f0c-4c2a-92d4-66af70db6b48",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "claimable": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "claimExecutable": false,
+    "estimatedToday": {
+      "status": "unavailable",
+      "reasonCode": "MINING_NETWORK_POWER_ZERO"
+    },
+    "accumulated": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "ledger": [],
+    "source": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "hourly": {
+      "serverTime": "2026-10-10T11:27:14.475Z",
+      "decimals": 18,
+      "displayState": "awaiting_first_settlement",
+      "reasonCode": "MINING_PARAMETERS_PENDING",
+      "totals": {
+        "settledRaw": "0",
+        "claimedRaw": "0",
+        "claimableRaw": "0"
+      },
+      "lastHour": null,
+      "display": null,
+      "tracks": null,
+      "referral": null,
+      "parameters": null,
+      "claim": {
+        "executable": true,
+        "reasonCode": null,
+        "latest": null
+      }
+    },
+    "contractVersion": "2.0"
+  }
+}

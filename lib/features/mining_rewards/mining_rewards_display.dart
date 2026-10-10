@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 
-// S138 · the minute display (requirer §6.2, decision 0140).
+// S138 · the minute display (requirer §6.2, decisions 0140, 0141; loop-api
+// `frontend-v2-mining-rewards-api.md` §3.2).
 //
 // The previous hour's reward is shown growing over the following hour, one
 // step per completed minute. The figure is a function of three facts — the
@@ -16,7 +17,7 @@ enum MiningMinutePhase {
   awaitingFirstSettlement,
 
   /// Inside the display hour: [MiningMinuteProgress.shown] grows each minute.
-  showing,
+  displaying,
 
   /// The display hour is over and the next hour has not been settled: 「结算中」,
   /// with the whole previous hour shown.
@@ -56,16 +57,15 @@ final class MiningMinuteProgress {
   final DateTime? windowEnd;
 }
 
-/// The figure after [completedMinutes] of the window.
-///
-/// Each completed minute adds `total ÷ 60` (in LOOP's smallest unit, floored),
-/// and the 60th minute lands on [total] exactly: the remainder of the division
-/// is added in the last minute, so the hour's display sums to the hour's real
-/// reward.
+/// The figure after [completedMinutes] of the window — the contract's
+/// `displayedRaw(m) = m >= 60 ? total : floor(total × m / 60)` (§3.2), in
+/// LOOP's smallest unit. The 60th minute lands on [total] exactly, so the
+/// hour's display ends on the hour's real reward, and the figure equals the
+/// server's own `displayedRaw` at every minute.
 BigInt miningMinuteShown(BigInt total, int completedMinutes) {
   if (completedMinutes <= 0 || total <= BigInt.zero) return BigInt.zero;
   if (completedMinutes >= 60) return total;
-  return (total ~/ BigInt.from(60)) * BigInt.from(completedMinutes);
+  return total * BigInt.from(completedMinutes) ~/ BigInt.from(60);
 }
 
 /// The server's clock now, from the instant it named and the device instant
@@ -107,15 +107,20 @@ MiningMinuteProgress miningMinuteProgress(
       total: BigInt.zero,
     );
   }
-  final windowStart = (display.windowStart ?? epoch.epochEnd).toUtc();
-  final windowEnd = windowStart.add(const Duration(hours: 1));
-  final total = epoch.totalReward;
-  final elapsed = serverNow.toUtc().difference(windowStart);
+  final window = display.window;
+  final windowStart = (window?.windowStart ?? epoch.epochEnd).toUtc();
+  final windowEnd =
+      (window?.windowEnd ?? windowStart.add(const Duration(hours: 1))).toUtc();
+  final total = window?.total ?? epoch.totalReward;
+  final now = serverNow.toUtc();
+  final elapsed = now.difference(windowStart);
   final minutes = elapsed.isNegative
       ? 0
       : (elapsed.inSeconds ~/ 60).clamp(0, 60);
   // The server already saw the window close, or the clock says it has.
-  if (display.state == MiningDisplayState.settling || minutes >= 60) {
+  if (display.state == MiningDisplayState.settling ||
+      minutes >= 60 ||
+      !now.isBefore(windowEnd)) {
     return MiningMinuteProgress(
       phase: MiningMinutePhase.settling,
       completedMinutes: 60,
@@ -125,10 +130,15 @@ MiningMinuteProgress miningMinuteProgress(
       windowEnd: windowEnd,
     );
   }
+  // The server's own figure while it is still the minute it computed it for;
+  // the same formula for every later minute.
+  final shown = window != null && window.completedMinutes == minutes
+      ? window.displayed
+      : miningMinuteShown(total, minutes);
   return MiningMinuteProgress(
-    phase: MiningMinutePhase.showing,
+    phase: MiningMinutePhase.displaying,
     completedMinutes: minutes,
-    shown: miningMinuteShown(total, minutes),
+    shown: shown,
     total: total,
     nextUpdateAt: windowStart.add(Duration(minutes: minutes + 1)),
     windowStart: windowStart,

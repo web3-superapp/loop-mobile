@@ -213,7 +213,8 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
 ///
 /// | kind                               | primary | published Launch slot | other |
 /// | ---------------------------------- | ------- | --------------------- | ----- |
-/// | launchApproval, launchPurchase     | sign    | sign                  | refuse |
+/// | launchApproval, launchPurchase,    | sign    | sign                  | refuse |
+/// | miningClaim                        |         |                       |        |
 /// | transfer, approval, swap, perpOrder | sign    | refuse                | refuse |
 ///
 /// "Published Launch slot" is [launchChainId] when it is non-null and not the
@@ -238,8 +239,9 @@ String? privyChainRefusal({
     return 'privy_chain_mismatch';
   }
   if (chainId == loopPrimaryChainId) return null;
-  final isLaunchKind =
-      kind == IntentKind.launchApproval || kind == IntentKind.launchPurchase;
+  // `launchSlotIntentKinds`: launchPurchase, launchApproval, miningClaim
+  // (decisions 0089, 0141).
+  final isLaunchKind = launchSlotIntentKinds.contains(kind);
   if (isLaunchKind && launchChainId != null && launchChainId == chainId) {
     return null;
   }
