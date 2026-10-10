@@ -23,6 +23,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/meta/loop_v2_about_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining/loop_v2_mining_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_mining_rewards_api.dart'; // S138a
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_notifications_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/profile/loop_v2_profile_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/referral/loop_v2_referral_api.dart';
@@ -764,11 +765,13 @@ List<_Case> _cases() => <_Case>[
         DioLoopV2MiningApi(d)
             .getAssets(accessToken: _token, clientVersion: _clientVersion),
   ),
+  // S138a (decision 0141): the daily decoder was retired; the route is read by
+  // the hourly rewards transport.
   _Case(
     'v2_mining_rewards',
-    'mining/loop_v2_mining_api.dart#getRewards',
+    'mining_rewards/loop_v2_mining_rewards_api.dart#getRewards',
     (d, ids) =>
-        DioLoopV2MiningApi(d)
+        DioLoopV2MiningRewardsApi(d)
             .getRewards(accessToken: _token, clientVersion: _clientVersion),
   ),
   for (final entry in <String, MiningRankScope>{

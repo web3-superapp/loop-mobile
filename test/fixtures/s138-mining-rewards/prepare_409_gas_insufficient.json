@@ -1,0 +1,27 @@
+{
+  "_handwritten": "Handwritten from loop-api docs/frontend-v2-mining-rewards-api.md (§3, §5, §5.5, §6) and openapi/loop-api.v2.json at integration/v2 0ac6a5b on 2026-10-10. Development has no settled epoch or claim yet, so no capture of this shape exists. Replace with a capture once dev settles an hour.",
+  "route": "POST /v2/mining/claim/prepare",
+  "status": 409,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "6ba7b812-9dad-41d1-80b4-00c04fd430c8",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "code": "INSUFFICIENT_BALANCE",
+    "category": "conflict",
+    "retryable": false,
+    "userMessageKey": "errors.balance.insufficient",
+    "correlationId": "6ba7b812-9dad-41d1-80b4-00c04fd430c8",
+    "detailsSafe": {
+      "reasonCode": "CLAIM_GAS_INSUFFICIENT",
+      "requiredNativeAmount": "0.0012",
+      "suggestedSwapFromSymbol": "USDT",
+      "suggestedSwapFromAssetId": "eip155:97:0x9999999999999999999999999999999999999999",
+      "suggestedSwapToSymbol": "BNB",
+      "suggestedSwapToAssetId": "eip155:97:native",
+      "suggestedSwapToAmount": "0.0018"
+    },
+    "providerReferenceSafe": null
+  }
+}

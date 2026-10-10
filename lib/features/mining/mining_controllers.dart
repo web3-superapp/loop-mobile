@@ -137,18 +137,6 @@ final miningAssetsControllerProvider =
       LaunchResourceState<MiningAssets>
     >(MiningAssetsController.new);
 
-final class MiningRewardsController
-    extends MiningReadController<MiningRewards> {
-  @override
-  Future<MiningRewards> fetch(MiningGateway gateway) => gateway.loadRewards();
-}
-
-final miningRewardsControllerProvider =
-    NotifierProvider.autoDispose<
-      MiningRewardsController,
-      LaunchResourceState<MiningRewards>
-    >(MiningRewardsController.new);
-
 final class MiningRulesController extends MiningReadController<MiningRules> {
   @override
   Future<MiningRules> fetch(MiningGateway gateway) => gateway.loadRules();

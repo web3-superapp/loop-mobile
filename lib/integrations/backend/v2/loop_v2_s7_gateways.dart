@@ -395,12 +395,6 @@ final class DioLoopV2MiningGateway
   );
 
   @override
-  Future<MiningRewards> loadRewards() => read(
-    (accessToken) =>
-        _api.getRewards(accessToken: accessToken, clientVersion: clientVersion),
-  );
-
-  @override
   Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor}) => read(
     (accessToken) => _api.getRank(
       accessToken: accessToken,

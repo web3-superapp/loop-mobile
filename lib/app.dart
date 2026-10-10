@@ -1845,8 +1845,8 @@ final List<RouteBase> _miningRoutes = <RouteBase>[
           context.push(LoopRouteManifest.pathFor('mining-rules')),
     ),
   ),
-  // S138 (decision 0140): the hourly two-track rewards page replaces the
-  // daily one here; `MiningRewardsScreen` stays in its file, unmounted.
+  // S138 (decision 0140): the hourly two-track rewards page. The retired
+  // daily `MiningRewardsScreen` was deleted with its decoder (decision 0141).
   GoRoute(
     path: '/mining/rewards',
     builder: (context, state) => MiningRewardsHourlyScreen(

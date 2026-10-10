@@ -523,29 +523,6 @@ String miningPricePoolLabel(String pairAddress) =>
 String miningAssetTitle({required String? symbol, required String assetId}) =>
     symbol ?? miningAssetLabel(assetId);
 
-@immutable
-final class MiningRewards {
-  const MiningRewards({
-    required this.claimable,
-    required this.claimExecutable,
-    required this.estimatedToday,
-    required this.accumulated,
-    required this.source,
-  });
-
-  final LaunchUnavailable claimable;
-
-  /// Always `false`. The claim control renders disabled with the server's own
-  /// reason; the page never opens a signing sheet.
-  final bool claimExecutable;
-
-  /// The same block the summary reads: a figure under an effective version,
-  /// the server's own reason without one.
-  final MiningDailyOutput estimatedToday;
-  final LaunchUnavailable accumulated;
-  final LaunchUnavailable source;
-}
-
 enum MiningRankScope {
   users('users'),
   communities('communities'),

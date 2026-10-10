@@ -26,7 +26,7 @@ import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
 // ---------------------------------------------------------------------------
-// S138 · `mining-rewards` · 挖矿奖励 (decision 0140)
+// S138 · `mining-rewards` · 挖矿奖励 (decisions 0140, 0141)
 // ---------------------------------------------------------------------------
 //
 // Archetype `record`, layout `dashboard`. Six modules in the requirer's order
@@ -281,7 +281,7 @@ class _MiningRewardsHourlyScreenState
                 if (view.display.state == MiningDisplayState.unavailable)
                   LoopInlineUnavailable(
                     key: const ValueKey<String>('mining-rewards-unavailable'),
-                    message: '结算数据暂时读不到，下面的数字可能不是最新的。',
+                    message: miningDisplayReasonText(view.display.reasonCode),
                     onRetry: () => unawaited(controller.reload()),
                   ),
                 const LoopLabel('奖励汇总'),
@@ -344,6 +344,14 @@ class _MiningRewardsHourlyScreenState
 // 分钟增长 · the page's one large figure
 // ---------------------------------------------------------------------------
 
+/// zh-CN for `hourly.reasonCode` while the settlement store is unavailable
+/// (contract §3.1, §7).
+String miningDisplayReasonText(String? reasonCode) => switch (reasonCode) {
+  'MINING_PARAMETERS_PENDING' => '挖矿参数尚未审批生效，暂时没有结算。',
+  'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，下面的数字可能不是最新的。',
+  _ => '结算数据暂时读不到，下面的数字可能不是最新的。',
+};
+
 class MiningMinuteHero extends StatelessWidget {
   const MiningMinuteHero({required this.progress, this.epoch, super.key});
 
@@ -394,13 +402,13 @@ class MiningMinuteHero extends StatelessWidget {
             Text('暂时读不到结算结果', style: LoopType.headingSm),
           ],
         );
-      case MiningMinutePhase.showing:
+      case MiningMinutePhase.displaying:
       case MiningMinutePhase.settling:
         final settling = progress.phase == MiningMinutePhase.settling;
         final figure = miningLoopFigure(progress.shown);
         return Column(
           key: ValueKey<String>(
-            settling ? 'mining-minute-settling' : 'mining-minute-showing',
+            settling ? 'mining-minute-settling' : 'mining-minute-displaying',
           ),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -654,6 +662,20 @@ String? miningClaimPhaseText(MiningClaimState state) {
   };
 }
 
+/// zh-CN for `hourly.claim.reasonCode` while `executable` is false
+/// (contract §7). The claimable balance is shown as it is either way.
+String miningClaimUnavailableText(String? reasonCode) => switch (reasonCode) {
+  'MINING_CLAIM_CONTRACT_NOT_CONFIGURED' => '领取合约尚未配置，暂不能领取',
+  'MINING_CLAIM_CHAIN_NOT_CONFIGURED' => '领取所在的链尚未配置，暂不能领取',
+  'MINING_CLAIM_SIGNER_NOT_CONFIGURED' => '领取凭证签发尚未配置，暂不能领取',
+  'MINING_CLAIM_WRITES_DISABLED' => '链上写入暂时关闭，暂不能领取',
+  'MINING_CLAIM_MAINNET_CLOSED' => '主网领取尚未开放',
+  'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，暂不能领取',
+  'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂不能领取',
+  'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，暂不能领取',
+  _ => '领取暂不可用',
+};
+
 String miningClaimPrepareFailureText(LoopChainException? failure) {
   final reason = failure?.reasonCode;
   return switch (reason) {
@@ -662,6 +684,8 @@ String miningClaimPrepareFailureText(LoopChainException? failure) {
     'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取。',
     'MINING_CLAIM_SIMULATION_REVERTED' => '试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。',
     'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，余额不变。',
+    'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂时不能领取，余额不变。',
+    'MINING_CLAIM_EXPIRED' => '领取凭证已过期，没有提交任何交易。请重新领取。',
     'MINING_CLAIM_WALLET_NOT_EMBEDDED' => '只能领取到 LOOP 内置钱包。',
     _ => switch (failure?.kind) {
       LoopChainFailureKind.offline ||
@@ -728,7 +752,9 @@ class MiningClaimPanel extends StatelessWidget {
     if (restored) return '正在读取最新的可领取数量';
     if (claim.busy || claim.locked) return null;
     if (view.claim.status.inFlight) return '上一笔领取还在处理中';
-    if (!view.claim.executable) return '领取暂不可用';
+    if (!view.claim.executable) {
+      return miningClaimUnavailableText(view.claim.reasonCode);
+    }
     if (view.claimable <= BigInt.zero) return '现在没有可领取的 LOOP';
     final minimum = view.minimumClaim;
     if (minimum != null && view.claimable < minimum) {
@@ -842,6 +868,15 @@ class MiningClaimPanel extends StatelessWidget {
                 Text(
                   disabled,
                   key: const ValueKey<String>('mining-claim-disabled'),
+                  style: LoopType.captionSm,
+                ),
+              ],
+              if (view.minimumClaim case final BigInt minimum
+                  when minimum > BigInt.zero) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(
+                  '最低领取 ${miningLoopFigure(minimum)} LOOP',
+                  key: const ValueKey<String>('mining-claim-minimum'),
                   style: LoopType.captionSm,
                 ),
               ],
@@ -1069,6 +1104,40 @@ class MiningNftTrackCard extends StatelessWidget {
   }
 }
 
+/// zh-CN for `tracks.asset.excludedAssets[].reasonCode`.
+String miningExcludedReasonText(String reasonCode) => switch (reasonCode) {
+  'MINING_ASSET_GRADUATED_UNREADABLE' => '已毕业，外盘余额与价格暂读不到',
+  _ => reasonCode,
+};
+
+class _ExcludedRow extends StatelessWidget {
+  const _ExcludedRow({required this.label, required this.reason, super.key});
+
+  final String label;
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(label, style: LoopType.body.copyWith(color: LoopColors.text2)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '已退出（$reason）',
+              textAlign: TextAlign.right,
+              style: LoopType.captionSm,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class MiningAssetTrackCard extends StatelessWidget {
   const MiningAssetTrackCard({required this.track, super.key});
 
@@ -1094,11 +1163,17 @@ class MiningAssetTrackCard extends StatelessWidget {
           for (final item in asset.assets)
             _FactRow(
               key: ValueKey<String>('mining-asset-${item.assetId}'),
-              label: item.balance == null
-                  ? item.label
-                  : '${item.label} · ${item.balance}',
+              label: item.label,
               value: miningPowerFigure(item.power),
             ),
+        // An asset that left the pool is named with the reason, never
+        // silently dropped (contract §3.3, loop-api decision 0116 §5).
+        for (final item in asset.excluded)
+          _ExcludedRow(
+            key: ValueKey<String>('mining-asset-excluded-${item.assetId}'),
+            label: item.label,
+            reason: miningExcludedReasonText(item.reasonCode),
+          ),
         const Divider(height: 10, thickness: 1, color: LoopColors.line),
         _FactRow(label: '本人算力', value: miningPowerFigure(asset.ownPower)),
         _FactRow(label: '邀请算力', value: miningPowerFigure(asset.invitePower)),

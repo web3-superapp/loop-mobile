@@ -1,0 +1,16 @@
+{
+  "_captured": "Captured 2026-10-10 from the Development database through loop-api integration/v2 0ac6a5b buildApp() + app.inject (preflight-reads.mts style, Privy verifier substituted), identity qa-privy2. Dev has no settled epoch and no approved parameter version yet; headers trimmed to the three the client checks.",
+  "route": "GET /v2/mining/claims",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "180ddfc3-a954-48e6-9260-0aa5bcd1b6be",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "items": [],
+    "nextCursor": null,
+    "decimals": 18,
+    "contractVersion": "2.0"
+  }
+}

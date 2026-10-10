@@ -11726,6 +11726,19 @@ S9_SIGNING_INTENT_MARKERS = (
     "IntentKind.launchPurchase",
     "chainIsPermitted",
     "launchPurchase",
+    # Decision 0141: the mining reward claim has its own kind, admitted on the
+    # Launch slot through the one set both exits read.
+    "miningClaim,",
+    "return launchSlotIntentKinds.contains(kind);",
+)
+# The exact kinds that may leave the primary chain (decisions 0089, 0141).
+# A fourth kind in the set is a new off-primary signing path and needs its own
+# decision, so the set is compared whole rather than searched for members.
+S9_LAUNCH_SLOT_KINDS = frozenset(
+    {"IntentKind.launchPurchase", "IntentKind.launchApproval", "IntentKind.miningClaim"}
+)
+S9_LAUNCH_SLOT_SET_PATTERN = re.compile(
+    r"const Set<IntentKind> launchSlotIntentKinds = <IntentKind>\{([^}]*)\};"
 )
 # privy_flutter 0.11.0 exposes no chain-selection call; the payload's own
 # chainId selects the chain (decision 0090). The device signer therefore
@@ -11736,7 +11749,7 @@ S9_DEVICE_SIGNER_MARKERS = (
     "privy_chain_switch_unsupported",
     "privy_chain_mismatch",
     "String? privyChainRefusal(",
-    "kind == IntentKind.launchApproval || kind == IntentKind.launchPurchase",
+    "final isLaunchKind = launchSlotIntentKinds.contains(kind);",
     "launchChainId != null && launchChainId == chainId",
 )
 # Money intents are locked to the primary chain by the transport itself.
@@ -11832,6 +11845,22 @@ def check_s9_dual_chain_contract(root: Path) -> list[str]:
                     f"{S9_SIGNING_INTENT_PATH} must declare `{marker}`; only a "
                     "Launch intent may ever be signed off the primary chain"
                 )
+        launch_slot = S9_LAUNCH_SLOT_SET_PATTERN.search(source)
+        kinds = (
+            frozenset(
+                entry.strip()
+                for entry in launch_slot.group(1).split(",")
+                if entry.strip()
+            )
+            if launch_slot
+            else frozenset()
+        )
+        if kinds != S9_LAUNCH_SLOT_KINDS:
+            errors.append(
+                f"{S9_SIGNING_INTENT_PATH} must admit exactly "
+                f"{sorted(S9_LAUNCH_SLOT_KINDS)} in `launchSlotIntentKinds`; "
+                f"found {sorted(kinds)} (decisions 0089, 0141)"
+            )
 
     # 5. The device signer fails closed on a chain it cannot select.
     signer_path = root / S9_DEVICE_SIGNER_PATH

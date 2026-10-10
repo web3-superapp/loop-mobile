@@ -269,30 +269,6 @@ final List<_StateCase> _cases = <_StateCase>[
         '读成功时一定有一条总算力口径和一条出处，'
         '「计入/排除为空」由 source 说明是没有结算还是这次没有计入，不是页面的空态。',
   ),
-  // mining-rewards
-  _StateCase(
-    slug: 'mining-rewards',
-    page: const MiningRewardsScreen(),
-    ports: ({LaunchFailureKind? failure, bool pending = false}) => _miningPorts(
-      FakeMiningGateway(
-        rewards: S7Answer<MiningRewards>(
-          value: failure == null && !pending ? s7MiningRewards() : null,
-          failure: failure,
-          pending: pending,
-        ),
-      ),
-    ),
-    readyKey: 'mining-rewards-ledger',
-    alsoUnreadKeys: <String>['mining-rewards-claim'],
-    // While the read is in flight the folio says it is reading. 「暂无数值」 is
-    // a conclusion about an answer, and no answer has arrived; the skeleton
-    // frame is pinned in s7_mining_pages_test.dart instead.
-    showsMissingHeading: false,
-    emptyContract:
-        'MiningRewards 是四个必填的 LaunchUnavailable 加一个 claimExecutable'
-        '（mining_models.dart:96-113）：读成功时四条口径都在，'
-        '「账本为空」由 source 说明，不会让页面变成空态。',
-  ),
   // mining-rank
   _StateCase(
     slug: 'mining-rank',

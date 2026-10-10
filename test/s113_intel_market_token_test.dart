@@ -165,9 +165,6 @@ final class _PagedMining implements MiningGateway {
   Future<MiningAssets> loadAssets() => _inner.loadAssets();
 
   @override
-  Future<MiningRewards> loadRewards() => _inner.loadRewards();
-
-  @override
   Future<MiningCommunity> loadCommunity(String communityId) =>
       _inner.loadCommunity(communityId);
 

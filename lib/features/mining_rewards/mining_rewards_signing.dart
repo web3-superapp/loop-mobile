@@ -14,7 +14,7 @@ import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
 // ---------------------------------------------------------------------------
-// S138 · the claim through the one signing exit (decision 0140)
+// S138 · the claim through the one signing exit (decisions 0140, 0141)
 // ---------------------------------------------------------------------------
 //
 // A claim is one server-prepared transaction: `LoopRewardClaim.claim(...)`
@@ -25,11 +25,12 @@ import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 // never a result: the result is the claim's own status, read until it is
 // `succeeded`, `failed` or `expired`.
 //
-// The claim contract is deployed on the Launch slot's BSC testnet first, and
-// the wallet boundary admits only the Launch-slot kinds off the primary chain
-// (decision 0089), so the claim travels under `launchPurchase` exactly as the
-// MEME curve does (decision 0120). A dedicated kind is a core change left to
-// the reviewer of this decision.
+// The claim contract is deployed on the Launch slot's BSC testnet first. The
+// claim travels under its own kind, `IntentKind.miningClaim`, which the
+// signing intent and the Privy device signer admit on the published Launch
+// slot alongside the two Launch kinds (`launchSlotIntentKinds`, decision
+// 0141). The contract publishes no payload digest for a claim, so the codec's
+// keccak of the verbatim transaction binds the sheet to the wallet.
 
 /// How one trip through the signing exit ended.
 @immutable
@@ -105,7 +106,7 @@ final class MiningClaimSigner {
     revision: intent.claimId,
     payloadDigest: intent.payloadDigest,
     title: '确认领取',
-    kind: IntentKind.launchPurchase,
+    kind: IntentKind.miningClaim,
     chainId: intent.chainId,
     payload: DeviceTransactionPayload(
       fromAddress: fromAddress,

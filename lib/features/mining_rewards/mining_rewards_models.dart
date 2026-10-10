@@ -2,7 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 
 // ---------------------------------------------------------------------------
-// S138 · 挖矿奖励 (decision 0140)
+// S138 · 挖矿奖励 (decisions 0140, 0141)
 // ---------------------------------------------------------------------------
 //
 // The view model of `/mining/rewards`: two tracks settled every hour, the
@@ -23,7 +23,7 @@ enum MiningDisplayState {
   awaitingFirstSettlement('awaiting_first_settlement'),
 
   /// Inside the hour after the last settled one.
-  showing('showing'),
+  displaying('displaying'),
 
   /// The display hour is over and the next hour is not settled yet.
   settling('settling'),
@@ -35,14 +35,12 @@ enum MiningDisplayState {
 
   final String wireName;
 
-  /// Both spellings the two contract drafts use for the running display.
-  static MiningDisplayState? tryParse(String value) => switch (value) {
-    'awaiting_first_settlement' => awaitingFirstSettlement,
-    'showing' || 'displaying' => showing,
-    'settling' => settling,
-    'unavailable' => unavailable,
-    _ => null,
-  };
+  static MiningDisplayState? tryParse(String value) {
+    for (final state in values) {
+      if (state.wireName == value) return state;
+    }
+    return null;
+  }
 }
 
 /// The state of one claim, as the server reports it. The five the requirer
@@ -92,29 +90,56 @@ final class MiningRewardEpoch {
   final BigInt assetReward;
 }
 
-/// What the server published about the minute display. The page derives the
-/// figure on screen from these and the server clock; the server's own
-/// [minutesElapsed] is only what it computed at `serverTime`.
+/// `hourly.display`: the server's own reading of the display window at
+/// `serverTime` (contract §3.2). [completedMinutes] and [displayed] are what
+/// the server computed then; the page uses them as they are while the minute
+/// is the same, and derives `floor(total × m / 60)` only for later minutes.
 @immutable
-final class MiningMinuteDisplay {
-  const MiningMinuteDisplay({
-    required this.state,
-    required this.minutesElapsed,
-    required this.minuteIncrement,
+final class MiningDisplayWindow {
+  const MiningDisplayWindow({
+    required this.total,
+    required this.perMinute,
+    required this.completedMinutes,
+    required this.displayed,
     this.windowStart,
+    this.windowEnd,
     this.nextUpdateAt,
-    this.reasonCode,
   });
 
-  final MiningDisplayState state;
-  final int minutesElapsed;
-  final BigInt minuteIncrement;
+  /// The settled hour's whole reward (`totalRaw`).
+  final BigInt total;
+
+  /// `floor(total / 60)`, as published. Informative only: the figure is
+  /// `floor(total × m / 60)`, not `perMinute × m`.
+  final BigInt perMinute;
+
+  /// 0..60 at `serverTime`.
+  final int completedMinutes;
+
+  /// `displayedRaw` at `serverTime`.
+  final BigInt displayed;
 
   /// The first instant of the display hour (the settled hour's end). `null`
   /// lets the page fall back to the epoch's own end.
   final DateTime? windowStart;
+  final DateTime? windowEnd;
   final DateTime? nextUpdateAt;
+}
+
+/// `hourly.displayState`, its reason and the display window.
+@immutable
+final class MiningMinuteDisplay {
+  const MiningMinuteDisplay({
+    required this.state,
+    this.reasonCode,
+    this.window,
+  });
+
+  final MiningDisplayState state;
+
+  /// `MINING_SETTLEMENT_UNAVAILABLE`, `MINING_PARAMETERS_PENDING`.
   final String? reasonCode;
+  final MiningDisplayWindow? window;
 }
 
 /// NFT track. The real NFT count and the weighted power are two facts and are
@@ -136,32 +161,47 @@ final class MiningNftTrack {
   final BigInt reward;
 }
 
-/// One admitted Meme asset the account held during the hour.
+/// `0x1234…abcd` for a CAIP-19 asset id: the contract names no symbol and no
+/// precision, so the address is all the page can say.
+String miningRewardsAssetLabel(String assetId) {
+  final address = assetId.substring(assetId.lastIndexOf(':') + 1);
+  if (address.length < 12) return address;
+  return '${address.substring(0, 6)}…${address.substring(address.length - 4)}';
+}
+
+/// One admitted Meme asset the account held at the end of the hour.
 @immutable
 final class MiningTrackAsset {
   const MiningTrackAsset({
     required this.assetId,
     required this.power,
-    this.symbol,
-    this.balance,
+    required this.balanceAtEnd,
   });
 
   /// CAIP-19 `eip155:<chain>:0x…`.
   final String assetId;
-  final String? symbol;
-
-  /// Whole-token decimal string when the server published one.
-  final String? balance;
   final Decimal power;
 
-  /// `0x1234…abcd` for an asset the server did not name.
-  String get label {
-    final named = symbol;
-    if (named != null && named.isNotEmpty) return '\$$named';
-    final address = assetId.substring(assetId.lastIndexOf(':') + 1);
-    if (address.length < 12) return address;
-    return '${address.substring(0, 6)}…${address.substring(address.length - 4)}';
-  }
+  /// `balanceAtEndRaw`: the token's smallest unit. Its precision is not
+  /// published, so it is never rendered as a whole-token figure.
+  final BigInt balanceAtEnd;
+
+  String get label => miningRewardsAssetLabel(assetId);
+}
+
+/// An asset that left the asset pool for the hour
+/// (`tracks.asset.excludedAssets`), e.g. `MINING_ASSET_GRADUATED_UNREADABLE`.
+@immutable
+final class MiningRewardsExcludedAsset {
+  const MiningRewardsExcludedAsset({
+    required this.assetId,
+    required this.reasonCode,
+  });
+
+  final String assetId;
+  final String reasonCode;
+
+  String get label => miningRewardsAssetLabel(assetId);
 }
 
 /// Meme coin asset track.
@@ -173,9 +213,13 @@ final class MiningAssetTrack {
     required this.invitePower,
     required this.totalPower,
     required this.reward,
+    this.excluded = const <MiningRewardsExcludedAsset>[],
   });
 
   final List<MiningTrackAsset> assets;
+
+  /// Assets that counted for nothing this hour, with the server's reason.
+  final List<MiningRewardsExcludedAsset> excluded;
   final Decimal ownPower;
   final Decimal invitePower;
   final Decimal totalPower;
@@ -256,9 +300,9 @@ final class MiningClaimTx {
 final class MiningClaimSummary {
   const MiningClaimSummary({
     required this.status,
+    required this.executable,
     this.lastTx,
     this.claimId,
-    this.executable = true,
     this.reasonCode,
     this.amount,
     this.failureReasonCode,
@@ -270,9 +314,8 @@ final class MiningClaimSummary {
   /// The claim [status] describes, when the server named it.
   final String? claimId;
 
-  /// The server allows a new claim at all (wallet writes open, contract
-  /// configured). A drafted contract without the flag reads as allowed and
-  /// leaves the decision to `claim/prepare`.
+  /// `hourly.claim.executable`: the server allows a new claim at all
+  /// (contract, chain, signer configured, writes open).
   final bool executable;
   final String? reasonCode;
   final BigInt? amount;
@@ -309,7 +352,9 @@ final class MiningRewardsView {
   final MiningClaimSummary claim;
   final DateTime serverTime;
 
-  /// Below this the server refuses a claim (1 LOOP by default).
+  /// `parameters.minimumClaimRaw`: below this the server refuses a claim
+  /// (`MINING_CLAIM_BELOW_MINIMUM`). `null` while no parameter version is
+  /// approved.
   final BigInt? minimumClaim;
 }
 
@@ -368,7 +413,8 @@ final class MiningSuggestedSwap {
   final String? fromSymbol;
   final String? toSymbol;
 
-  /// Whole-unit decimal string of what to receive (or pay), as published.
+  /// `suggestedSwapToAmount`: whole-unit decimal string of the BNB to
+  /// receive (shortfall plus 50%), as published.
   final String? amount;
 }
 
@@ -421,8 +467,9 @@ final class MiningClaimIntent {
   final DateTime createdAt;
   final MiningClaimTransaction transaction;
 
-  /// The server's digest when it sent one; otherwise the codec's keccak of
-  /// the verbatim transaction. It binds the sheet to the wallet payload.
+  /// The contract publishes no digest for a claim (decision 0141): this is
+  /// the codec's keccak-256 of the verbatim transaction. It binds the sheet
+  /// to the wallet payload until the server sends its own.
   final String payloadDigest;
   final bool signingAllowed;
   final String? signingReasonCode;

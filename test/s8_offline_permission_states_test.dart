@@ -180,13 +180,6 @@ final List<_S7Case> _s7Cases = <_S7Case>[
     ),
   ),
   _S7Case(
-    slug: 'mining-rewards',
-    page: const MiningRewardsScreen(),
-    ports: (failure) => _miningOnly(
-      FakeMiningGateway(rewards: S7Answer<MiningRewards>(failure: failure)),
-    ),
-  ),
-  _S7Case(
     slug: 'mining-community',
     page: const MiningCommunityScreen(communityId: s7CommunityId),
     ports: (failure) => _miningOnly(

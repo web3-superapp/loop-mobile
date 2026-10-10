@@ -7,26 +7,21 @@ import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
-/// Strict decoders for the S138 hourly mining rewards (decision 0140).
+/// Strict decoders for the S138 hourly mining rewards (decisions 0140, 0141).
 ///
-/// Two drafts of the same contract exist while `frontend-v2-mining-rewards-
-/// api.md` is being written, and both decode into one view model:
+/// The contract is loop-api `docs/frontend-v2-mining-rewards-api.md` with
+/// `openapi/loop-api.v2.json` (loop-api decision 0116): `GET
+/// /v2/mining/rewards` carries an `hourly` object next to the legacy daily
+/// keys, every LOOP amount is a raw integer string (`*Raw`, 18 decimals), and
+/// every power a decimal string. Only the `hourly` block is decoded; the
+/// legacy keys are accepted and not read.
 ///
-/// * the **hourly block** — `GET /v2/mining/rewards` carrying an `hourly`
-///   object next to the legacy keys (loop-api decision 0116 draft); amounts
-///   are raw integer strings (`*Raw`, 18 decimals);
-/// * the **flat draft** of the S138 work order — `settledTotal`, `display`,
-///   `nft`, `asset`, `invites`, `claim`, `serverTime` at the root; amounts are
-///   whole-LOOP decimal strings with up to 18 decimals.
-///
-/// Every object is read through [LoopV2Contract.strictMap] or
-/// [LoopV2Contract.strictMapWithOptional]: an unknown key is an invalid
-/// payload, and a key listed as optional may be absent without failing.
+/// Every object is read through [LoopV2Contract.strictMap]: an unknown or a
+/// missing key is an invalid payload. The only optional keys are the legacy
+/// root keys of the rewards resource, which the contract keeps "unchanged"
+/// for the retired daily page and may drop.
 abstract final class LoopV2MiningRewardsCodec {
   static final RegExp rawPattern = RegExp(r'^(0|[1-9][0-9]{0,77})$');
-  static final RegExp loopDecimalPattern = RegExp(
-    r'^(0|[1-9][0-9]{0,59})(\.[0-9]{1,18})?$',
-  );
   static final RegExp powerPattern = RegExp(
     r'^(0|[1-9][0-9]{0,77})(\.[0-9]{1,18})?$',
   );
@@ -36,14 +31,13 @@ abstract final class LoopV2MiningRewardsCodec {
   static final RegExp quantityPattern = RegExp(
     r'^0x(0|[1-9a-f][0-9a-f]{0,63})$',
   );
-  static final RegExp digestPattern = RegExp(r'^(0x)?[0-9a-f]{64}$');
   static final RegExp memeAssetIdPattern = RegExp(
     r'^eip155:[1-9][0-9]{0,9}:0x[0-9a-f]{40}$',
   );
   static final RegExp symbolPattern = RegExp(r'^[A-Za-z0-9._-]{1,24}$');
 
-  /// The legacy keys the rewards resource keeps next to `hourly`. They belong
-  /// to the retired daily page and are not decoded here.
+  /// The legacy daily keys the rewards resource keeps next to `hourly`
+  /// (contract §3). They belong to the retired daily page and are not read.
   static const legacyRootKeys = <String>{
     'claimable',
     'claimExecutable',
@@ -51,7 +45,6 @@ abstract final class LoopV2MiningRewardsCodec {
     'accumulated',
     'ledger',
     'source',
-    'contractVersion',
   };
 
   static const hourlyKeys = <String>{
@@ -68,6 +61,8 @@ abstract final class LoopV2MiningRewardsCodec {
     'claim',
   };
 
+  /// One claim, as `claim.latest`, `claims.items[]`, `prepare.claim` and
+  /// `report.claim` all spell it (contract §5).
   static const claimKeys = <String>{
     'claimId',
     'walletId',
@@ -86,33 +81,16 @@ abstract final class LoopV2MiningRewardsCodec {
     'updatedAt',
   };
 
-  static const flatRootKeys = <String>{
-    'settledTotal',
-    'claimedTotal',
-    'claimable',
-    'lastEpoch',
-    'display',
-    'nft',
-    'asset',
-    'invites',
-    'claim',
-    'serverTime',
-  };
-
-  static const flatRootOptionalKeys = <String>{
-    'contractVersion',
-    'decimals',
-    'minimumClaim',
-  };
-
-  static const transactionRequiredKeys = <String>{
+  /// `intent.unsignedTransaction` as loop-api `unsignedTransactionFor` builds
+  /// it: all eleven keys, the three fee keys `null` when the fee type does not
+  /// use them. It goes to the wallet verbatim, so an unreviewed key is
+  /// refused rather than passed on.
+  static const transactionKeys = <String>{
     'chainId',
     'to',
     'data',
-    'from',
-  };
-  static const transactionOptionalKeys = <String>{
     'value',
+    'from',
     'gas',
     'nonce',
     'type',
@@ -127,7 +105,8 @@ abstract final class LoopV2MiningRewardsCodec {
   // scalars
   // -------------------------------------------------------------------------
 
-  static BigInt raw(Map<String, Object?> map, String key) => BigInt.parse(
+  /// A `*Raw` amount: an integer in the token's smallest unit.
+  static BigInt amountRaw(Map<String, Object?> map, String key) => BigInt.parse(
     LoopV2ChainCodec.requireString(
       map,
       key,
@@ -135,21 +114,6 @@ abstract final class LoopV2MiningRewardsCodec {
       maxLength: 78,
     ),
   );
-
-  /// A whole-LOOP decimal string (`"60"`, `"0.0166"`) in the smallest unit.
-  static BigInt loop(Map<String, Object?> map, String key) {
-    final text = LoopV2ChainCodec.requireString(
-      map,
-      key,
-      pattern: loopDecimalPattern,
-      maxLength: 80,
-    );
-    final dot = text.indexOf('.');
-    final whole = dot < 0 ? text : text.substring(0, dot);
-    final fraction = dot < 0 ? '' : text.substring(dot + 1);
-    return BigInt.parse(whole) * miningLoopUnit +
-        BigInt.parse(fraction.padRight(miningLoopDecimals, '0'));
-  }
 
   static Decimal power(Map<String, Object?> map, String key) => Decimal.parse(
     LoopV2ChainCodec.requireString(
@@ -159,24 +123,6 @@ abstract final class LoopV2MiningRewardsCodec {
       maxLength: 120,
     ),
   );
-
-  static int count(Map<String, Object?> map, String key) {
-    final value = map[key];
-    if (value is int && value >= 0) return value;
-    if (value is String && rawPattern.hasMatch(value) && value.length <= 15) {
-      return int.parse(value);
-    }
-    invalid();
-  }
-
-  static BigInt bigCount(Map<String, Object?> map, String key) {
-    final value = map[key];
-    if (value is int && value >= 0) return BigInt.from(value);
-    if (value is String) return raw(map, key);
-    invalid();
-  }
-
-  static Object? _nullable(Map<String, Object?> map, String key) => map[key];
 
   static String _hash(Map<String, Object?> map, String key) =>
       LoopV2ChainCodec.requireString(
@@ -202,23 +148,30 @@ abstract final class LoopV2MiningRewardsCodec {
         maxLength: 36,
       );
 
+  static String _memeAssetId(Map<String, Object?> map, String key) =>
+      LoopV2ChainCodec.requireString(
+        map,
+        key,
+        pattern: memeAssetIdPattern,
+        maxLength: 80,
+      );
+
+  /// `decimals: 18` and `contractVersion: "2.0"`, both required.
+  static void _envelope(Map<String, Object?> root) {
+    LoopV2ChainCodec.requireContractVersion(root);
+    if (root['decimals'] != miningLoopDecimals) invalid();
+  }
+
   // -------------------------------------------------------------------------
   // GET /v2/mining/rewards
   // -------------------------------------------------------------------------
 
-  /// Decodes either draft. The `hourly` key decides which one arrived.
   static MiningRewardsView rewards(Object? raw) {
-    if (raw is Map && raw.containsKey('hourly')) return _hourlyRoot(raw);
-    return _flatRoot(raw);
-  }
-
-  static MiningRewardsView _hourlyRoot(Object? raw) {
     final root = LoopV2Contract.strictMapWithOptional(raw, const <String>{
       'hourly',
+      'contractVersion',
     }, legacyRootKeys);
-    if (root.containsKey('contractVersion')) {
-      LoopV2ChainCodec.requireContractVersion(root);
-    }
+    LoopV2ChainCodec.requireContractVersion(root);
     final map = LoopV2Contract.strictMap(root['hourly'], hourlyKeys);
     if (map['decimals'] != miningLoopDecimals) invalid();
     final rawState = map['displayState'];
@@ -229,7 +182,7 @@ abstract final class LoopV2MiningRewardsCodec {
     final reasonCode = LoopV2ChainCodec.optionalReasonCode(map, 'reasonCode');
     final serverTime = LoopV2ChainCodec.requireTimestamp(map, 'serverTime');
 
-    final totalsRaw = _nullable(map, 'totals');
+    final totalsRaw = map['totals'];
     BigInt settled = BigInt.zero;
     BigInt claimed = BigInt.zero;
     BigInt claimable = BigInt.zero;
@@ -239,16 +192,17 @@ abstract final class LoopV2MiningRewardsCodec {
         'claimedRaw',
         'claimableRaw',
       });
-      settled = LoopV2MiningRewardsCodec.raw(totals, 'settledRaw');
-      claimed = LoopV2MiningRewardsCodec.raw(totals, 'claimedRaw');
-      claimable = LoopV2MiningRewardsCodec.raw(totals, 'claimableRaw');
+      settled = amountRaw(totals, 'settledRaw');
+      claimed = amountRaw(totals, 'claimedRaw');
+      claimable = amountRaw(totals, 'claimableRaw');
     } else if (displayState != MiningDisplayState.unavailable) {
-      // Totals are the ledger; only an unavailable store may withhold them.
+      // Totals are the ledger; only an unavailable store may withhold them
+      // (contract §3.1).
       invalid();
     }
 
     MiningRewardEpoch? epoch;
-    final lastHourRaw = _nullable(map, 'lastHour');
+    final lastHourRaw = map['lastHour'];
     if (lastHourRaw != null) {
       final hour = LoopV2Contract.strictMap(lastHourRaw, const <String>{
         'epochId',
@@ -264,18 +218,15 @@ abstract final class LoopV2MiningRewardsCodec {
       epoch = MiningRewardEpoch(
         epochStart: LoopV2ChainCodec.requireTimestamp(hour, 'hourStart'),
         epochEnd: LoopV2ChainCodec.requireTimestamp(hour, 'hourEnd'),
-        nftReward: LoopV2MiningRewardsCodec.raw(hour, 'nftRewardRaw'),
-        assetReward: LoopV2MiningRewardsCodec.raw(hour, 'assetRewardRaw'),
-        totalReward: LoopV2MiningRewardsCodec.raw(hour, 'totalRewardRaw'),
+        nftReward: amountRaw(hour, 'nftRewardRaw'),
+        assetReward: amountRaw(hour, 'assetRewardRaw'),
+        totalReward: amountRaw(hour, 'totalRewardRaw'),
       );
       if (!epoch.epochEnd.isAfter(epoch.epochStart)) invalid();
     }
 
-    var minutes = 0;
-    var increment = BigInt.zero;
-    DateTime? windowStart;
-    DateTime? nextUpdateAt;
-    final displayRaw = _nullable(map, 'display');
+    MiningDisplayWindow? window;
+    final displayRaw = map['display'];
     if (displayRaw != null) {
       final display = LoopV2Contract.strictMap(displayRaw, const <String>{
         'windowStart',
@@ -286,173 +237,61 @@ abstract final class LoopV2MiningRewardsCodec {
         'displayedRaw',
         'nextUpdateAt',
       });
-      windowStart = LoopV2ChainCodec.optionalTimestamp(display, 'windowStart');
-      LoopV2ChainCodec.optionalTimestamp(display, 'windowEnd');
-      LoopV2MiningRewardsCodec.raw(display, 'totalRaw');
-      LoopV2MiningRewardsCodec.raw(display, 'displayedRaw');
-      increment = LoopV2MiningRewardsCodec.raw(display, 'perMinuteRaw');
-      minutes = LoopV2ChainCodec.requireInt(
-        display,
-        'completedMinutes',
-        maximum: 60,
-      );
-      nextUpdateAt = LoopV2ChainCodec.optionalTimestamp(
-        display,
-        'nextUpdateAt',
+      final total = amountRaw(display, 'totalRaw');
+      final displayed = amountRaw(display, 'displayedRaw');
+      if (displayed > total) invalid();
+      window = MiningDisplayWindow(
+        windowStart: LoopV2ChainCodec.optionalTimestamp(display, 'windowStart'),
+        windowEnd: LoopV2ChainCodec.optionalTimestamp(display, 'windowEnd'),
+        total: total,
+        perMinute: amountRaw(display, 'perMinuteRaw'),
+        completedMinutes: LoopV2ChainCodec.requireInt(
+          display,
+          'completedMinutes',
+          maximum: 60,
+        ),
+        displayed: displayed,
+        nextUpdateAt: LoopV2ChainCodec.optionalTimestamp(
+          display,
+          'nextUpdateAt',
+        ),
       );
     }
-    if (displayState == MiningDisplayState.showing && epoch == null) invalid();
+    if (displayState == MiningDisplayState.displaying && epoch == null) {
+      invalid();
+    }
 
     MiningNftTrack? nft;
     MiningAssetTrack? asset;
-    final tracksRaw = _nullable(map, 'tracks');
+    final tracksRaw = map['tracks'];
     if (tracksRaw != null) {
       final tracks = LoopV2Contract.strictMap(tracksRaw, const <String>{
         'nft',
         'asset',
       });
-      final n = LoopV2Contract.strictMap(tracks['nft'], const <String>{
-        'realNftCount',
-        'selfPower',
-        'referralPower',
-        'totalPower',
-        'networkPower',
-        'budgetRaw',
-        'rewardRaw',
-        'holdings',
-      });
-      for (final entry in LoopV2ChainCodec.requireList(n['holdings'])) {
-        final row = LoopV2Contract.strictMap(entry, const <String>{
-          'instanceId',
-          'communityId',
-          'countAtEnd',
-          'power',
-        });
-        _id(row, 'instanceId');
-        if (row['communityId'] != null) _id(row, 'communityId');
-        LoopV2MiningRewardsCodec.raw(row, 'countAtEnd');
-        power(row, 'power');
-      }
-      power(n, 'networkPower');
-      LoopV2MiningRewardsCodec.raw(n, 'budgetRaw');
-      nft = MiningNftTrack(
-        realCount: LoopV2MiningRewardsCodec.raw(n, 'realNftCount'),
-        ownPower: power(n, 'selfPower'),
-        invitePower: power(n, 'referralPower'),
-        totalPower: power(n, 'totalPower'),
-        reward: LoopV2MiningRewardsCodec.raw(n, 'rewardRaw'),
-      );
-      final a = LoopV2Contract.strictMap(tracks['asset'], const <String>{
-        'selfPower',
-        'referralPower',
-        'totalPower',
-        'networkPower',
-        'budgetRaw',
-        'rewardRaw',
-        'holdings',
-        'excludedAssets',
-      });
-      final assets = <MiningTrackAsset>[];
-      final seen = <String>{};
-      for (final entry in LoopV2ChainCodec.requireList(a['holdings'])) {
-        final row = LoopV2Contract.strictMap(entry, const <String>{
-          'assetId',
-          'balanceAtEndRaw',
-          'power',
-        });
-        final assetId = LoopV2ChainCodec.requireString(
-          row,
-          'assetId',
-          pattern: memeAssetIdPattern,
-          maxLength: 80,
-        );
-        if (!seen.add(assetId)) invalid();
-        LoopV2MiningRewardsCodec.raw(row, 'balanceAtEndRaw');
-        assets.add(
-          MiningTrackAsset(assetId: assetId, power: power(row, 'power')),
-        );
-      }
-      for (final entry in LoopV2ChainCodec.requireList(a['excludedAssets'])) {
-        final row = LoopV2Contract.strictMap(entry, const <String>{
-          'assetId',
-          'reasonCode',
-        });
-        LoopV2ChainCodec.requireString(
-          row,
-          'assetId',
-          pattern: memeAssetIdPattern,
-          maxLength: 80,
-        );
-        LoopV2ChainCodec.requireReasonCode(row, 'reasonCode');
-      }
-      power(a, 'networkPower');
-      LoopV2MiningRewardsCodec.raw(a, 'budgetRaw');
-      asset = MiningAssetTrack(
-        assets: List<MiningTrackAsset>.unmodifiable(assets),
-        ownPower: power(a, 'selfPower'),
-        invitePower: power(a, 'referralPower'),
-        totalPower: power(a, 'totalPower'),
-        reward: LoopV2MiningRewardsCodec.raw(a, 'rewardRaw'),
-      );
+      nft = _nftTrack(tracks['nft']);
+      asset = _assetTrack(tracks['asset']);
     }
 
     MiningInvites? invites;
-    final referralRaw = _nullable(map, 'referral');
+    final referralRaw = map['referral'];
     if (referralRaw != null) {
       final referral = LoopV2Contract.strictMap(referralRaw, const <String>{
         'levels',
       });
-      final levels = <MiningInviteLevel>[];
-      for (final entry in LoopV2ChainCodec.requireList(
+      final entries = LoopV2ChainCodec.requireList(
         referral['levels'],
         maximum: 5,
-      )) {
-        final row = LoopV2Contract.strictMap(entry, const <String>{
-          'level',
-          'ratioBps',
-          'effectiveMembers',
-          'nftPower',
-          'assetPower',
-          'totalPower',
-          'nftUnitsByCommunity',
-        });
-        for (final unit in LoopV2ChainCodec.requireList(
-          row['nftUnitsByCommunity'],
-        )) {
-          final u = LoopV2Contract.strictMap(unit, const <String>{
-            'communityId',
-            'units',
-          });
-          if (u['communityId'] != null) _id(u, 'communityId');
-          power(u, 'units');
-        }
-        power(row, 'totalPower');
-        final bps = LoopV2ChainCodec.requireInt(
-          row,
-          'ratioBps',
-          maximum: 10000,
-        );
-        levels.add(
-          MiningInviteLevel(
-            level: LoopV2ChainCodec.requireInt(
-              row,
-              'level',
-              minimum: 1,
-              maximum: 5,
-            ),
-            ratePercent: (Decimal.fromInt(bps) / Decimal.fromInt(100))
-                .toDecimal(),
-            activeMembers: LoopV2ChainCodec.requireInt(row, 'effectiveMembers'),
-            nftPower: power(row, 'nftPower'),
-            assetPower: power(row, 'assetPower'),
-          ),
-        );
-      }
-      invites = _invites(levels);
+      );
+      // L1–L5, always five (contract §3).
+      if (entries.length != 5) invalid();
+      invites = _invites(<MiningInviteLevel>[
+        for (final entry in entries) _level(entry),
+      ]);
     }
 
     BigInt? minimumClaim;
-    final parametersRaw = _nullable(map, 'parameters');
+    final parametersRaw = map['parameters'];
     if (parametersRaw != null) {
       final parameters = LoopV2Contract.strictMap(parametersRaw, const <String>{
         'versionId',
@@ -472,10 +311,7 @@ abstract final class LoopV2MiningRewardsCodec {
           ratios.any((value) => value is! int || value < 0 || value > 10000)) {
         invalid();
       }
-      minimumClaim = LoopV2MiningRewardsCodec.raw(
-        parameters,
-        'minimumClaimRaw',
-      );
+      minimumClaim = amountRaw(parameters, 'minimumClaimRaw');
     }
 
     final claimMap = LoopV2Contract.strictMap(map['claim'], const <String>{
@@ -503,11 +339,8 @@ abstract final class LoopV2MiningRewardsCodec {
       lastEpoch: epoch,
       display: MiningMinuteDisplay(
         state: displayState,
-        minutesElapsed: minutes,
-        minuteIncrement: increment,
-        windowStart: windowStart,
-        nextUpdateAt: nextUpdateAt,
         reasonCode: reasonCode,
+        window: window,
       ),
       nft: nft,
       asset: asset,
@@ -518,10 +351,129 @@ abstract final class LoopV2MiningRewardsCodec {
     );
   }
 
-  static MiningInvites _invites(
-    List<MiningInviteLevel> levels, {
-    MiningInviteTotal? total,
-  }) {
+  static MiningNftTrack _nftTrack(Object? raw) {
+    final n = LoopV2Contract.strictMap(raw, const <String>{
+      'realNftCount',
+      'selfPower',
+      'referralPower',
+      'totalPower',
+      'networkPower',
+      'budgetRaw',
+      'rewardRaw',
+      'holdings',
+    });
+    for (final entry in LoopV2ChainCodec.requireList(n['holdings'])) {
+      final row = LoopV2Contract.strictMap(entry, const <String>{
+        'instanceId',
+        'communityId',
+        'countAtEnd',
+        'power',
+      });
+      _id(row, 'instanceId');
+      if (row['communityId'] != null) _id(row, 'communityId');
+      amountRaw(row, 'countAtEnd');
+      power(row, 'power');
+    }
+    power(n, 'networkPower');
+    amountRaw(n, 'budgetRaw');
+    return MiningNftTrack(
+      realCount: amountRaw(n, 'realNftCount'),
+      ownPower: power(n, 'selfPower'),
+      invitePower: power(n, 'referralPower'),
+      totalPower: power(n, 'totalPower'),
+      reward: amountRaw(n, 'rewardRaw'),
+    );
+  }
+
+  static MiningAssetTrack _assetTrack(Object? raw) {
+    final a = LoopV2Contract.strictMap(raw, const <String>{
+      'selfPower',
+      'referralPower',
+      'totalPower',
+      'networkPower',
+      'budgetRaw',
+      'rewardRaw',
+      'holdings',
+      'excludedAssets',
+    });
+    final assets = <MiningTrackAsset>[];
+    final seen = <String>{};
+    for (final entry in LoopV2ChainCodec.requireList(a['holdings'])) {
+      final row = LoopV2Contract.strictMap(entry, const <String>{
+        'assetId',
+        'balanceAtEndRaw',
+        'power',
+      });
+      final assetId = _memeAssetId(row, 'assetId');
+      if (!seen.add(assetId)) invalid();
+      assets.add(
+        MiningTrackAsset(
+          assetId: assetId,
+          power: power(row, 'power'),
+          balanceAtEnd: amountRaw(row, 'balanceAtEndRaw'),
+        ),
+      );
+    }
+    final excluded = <MiningRewardsExcludedAsset>[];
+    final seenExcluded = <String>{};
+    for (final entry in LoopV2ChainCodec.requireList(a['excludedAssets'])) {
+      final row = LoopV2Contract.strictMap(entry, const <String>{
+        'assetId',
+        'reasonCode',
+      });
+      final assetId = _memeAssetId(row, 'assetId');
+      if (!seenExcluded.add(assetId)) invalid();
+      excluded.add(
+        MiningRewardsExcludedAsset(
+          assetId: assetId,
+          reasonCode: LoopV2ChainCodec.requireReasonCode(row, 'reasonCode'),
+        ),
+      );
+    }
+    power(a, 'networkPower');
+    amountRaw(a, 'budgetRaw');
+    return MiningAssetTrack(
+      assets: List<MiningTrackAsset>.unmodifiable(assets),
+      excluded: List<MiningRewardsExcludedAsset>.unmodifiable(excluded),
+      ownPower: power(a, 'selfPower'),
+      invitePower: power(a, 'referralPower'),
+      totalPower: power(a, 'totalPower'),
+      reward: amountRaw(a, 'rewardRaw'),
+    );
+  }
+
+  static MiningInviteLevel _level(Object? entry) {
+    final row = LoopV2Contract.strictMap(entry, const <String>{
+      'level',
+      'ratioBps',
+      'effectiveMembers',
+      'nftPower',
+      'assetPower',
+      'totalPower',
+      'nftUnitsByCommunity',
+    });
+    for (final unit in LoopV2ChainCodec.requireList(
+      row['nftUnitsByCommunity'],
+    )) {
+      final u = LoopV2Contract.strictMap(unit, const <String>{
+        'communityId',
+        'units',
+      });
+      if (u['communityId'] != null) _id(u, 'communityId');
+      power(u, 'units');
+    }
+    power(row, 'totalPower');
+    final bps = LoopV2ChainCodec.requireInt(row, 'ratioBps', maximum: 10000);
+    return MiningInviteLevel(
+      level: LoopV2ChainCodec.requireInt(row, 'level', minimum: 1, maximum: 5),
+      ratePercent: (Decimal.fromInt(bps) / Decimal.fromInt(100)).toDecimal(),
+      activeMembers: LoopV2ChainCodec.requireInt(row, 'effectiveMembers'),
+      nftPower: power(row, 'nftPower'),
+      assetPower: power(row, 'assetPower'),
+    );
+  }
+
+  static MiningInvites _invites(List<MiningInviteLevel> levels) {
     // Five levels, each once, in order.
     final seen = <int>{};
     for (final level in levels) {
@@ -539,270 +491,11 @@ abstract final class LoopV2MiningRewardsCodec {
     }
     return MiningInvites(
       levels: List<MiningInviteLevel>.unmodifiable(ordered),
-      total:
-          total ??
-          MiningInviteTotal(
-            activeMembers: members,
-            nftPower: nftPower,
-            assetPower: assetPower,
-          ),
-    );
-  }
-
-  static MiningRewardsView _flatRoot(Object? raw) {
-    final root = LoopV2Contract.strictMapWithOptional(
-      raw,
-      flatRootKeys,
-      flatRootOptionalKeys,
-    );
-    if (root.containsKey('contractVersion')) {
-      LoopV2ChainCodec.requireContractVersion(root);
-    }
-    if (root.containsKey('decimals') &&
-        root['decimals'] != miningLoopDecimals) {
-      invalid();
-    }
-
-    MiningRewardEpoch? epoch;
-    if (root['lastEpoch'] != null) {
-      final e = LoopV2Contract.strictMapWithOptional(
-        root['lastEpoch'],
-        const <String>{
-          'epochStart',
-          'epochEnd',
-          'totalReward',
-          'nftReward',
-          'assetReward',
-        },
-        const <String>{'epochId', 'settledAt'},
-      );
-      epoch = MiningRewardEpoch(
-        epochStart: LoopV2ChainCodec.requireTimestamp(e, 'epochStart'),
-        epochEnd: LoopV2ChainCodec.requireTimestamp(e, 'epochEnd'),
-        totalReward: loop(e, 'totalReward'),
-        nftReward: loop(e, 'nftReward'),
-        assetReward: loop(e, 'assetReward'),
-      );
-      if (!epoch.epochEnd.isAfter(epoch.epochStart)) invalid();
-    }
-
-    final d = LoopV2Contract.strictMapWithOptional(
-      root['display'],
-      const <String>{
-        'state',
-        'minutesElapsed',
-        'minuteIncrement',
-        'nextUpdateAt',
-      },
-      const <String>{'windowStart', 'reasonCode'},
-    );
-    final rawState = d['state'];
-    final state = rawState is String
-        ? MiningDisplayState.tryParse(rawState)
-        : null;
-    if (state == null) invalid();
-    if (state == MiningDisplayState.showing && epoch == null) invalid();
-
-    MiningNftTrack? nft;
-    if (root['nft'] != null) {
-      final n = LoopV2Contract.strictMap(root['nft'], const <String>{
-        'realCount',
-        'ownPower',
-        'invitePower',
-        'totalPower',
-        'reward',
-      });
-      nft = MiningNftTrack(
-        realCount: bigCount(n, 'realCount'),
-        ownPower: power(n, 'ownPower'),
-        invitePower: power(n, 'invitePower'),
-        totalPower: power(n, 'totalPower'),
-        reward: loop(n, 'reward'),
-      );
-    }
-
-    MiningAssetTrack? asset;
-    if (root['asset'] != null) {
-      final a = LoopV2Contract.strictMap(root['asset'], const <String>{
-        'assets',
-        'ownPower',
-        'invitePower',
-        'totalPower',
-        'reward',
-      });
-      final assets = <MiningTrackAsset>[];
-      final seen = <String>{};
-      for (final entry in LoopV2ChainCodec.requireList(a['assets'])) {
-        final row = LoopV2Contract.strictMapWithOptional(
-          entry,
-          const <String>{'assetId', 'power'},
-          const <String>{'symbol', 'amount'},
-        );
-        final assetId = LoopV2ChainCodec.requireString(
-          row,
-          'assetId',
-          pattern: memeAssetIdPattern,
-          maxLength: 80,
-        );
-        if (!seen.add(assetId)) invalid();
-        assets.add(
-          MiningTrackAsset(
-            assetId: assetId,
-            power: power(row, 'power'),
-            symbol: LoopV2ChainCodec.optionalString(
-              row,
-              'symbol',
-              pattern: symbolPattern,
-              maxLength: 24,
-            ),
-            balance: LoopV2ChainCodec.optionalString(
-              row,
-              'amount',
-              pattern: powerPattern,
-              maxLength: 120,
-            ),
-          ),
-        );
-      }
-      asset = MiningAssetTrack(
-        assets: List<MiningTrackAsset>.unmodifiable(assets),
-        ownPower: power(a, 'ownPower'),
-        invitePower: power(a, 'invitePower'),
-        totalPower: power(a, 'totalPower'),
-        reward: loop(a, 'reward'),
-      );
-    }
-
-    MiningInvites? invites;
-    if (root['invites'] != null) {
-      final i = LoopV2Contract.strictMap(root['invites'], const <String>{
-        'levels',
-        'total',
-      });
-      final levels = <MiningInviteLevel>[
-        for (final entry in LoopV2ChainCodec.requireList(
-          i['levels'],
-          maximum: 5,
-        ))
-          _flatLevel(entry),
-      ];
-      MiningInviteTotal? total;
-      if (i['total'] != null) {
-        final t = LoopV2Contract.strictMapWithOptional(
-          i['total'],
-          const <String>{'nftPower', 'assetPower'},
-          const <String>{'activeMembers', 'totalPower'},
-        );
-        if (t.containsKey('totalPower')) power(t, 'totalPower');
-        total = MiningInviteTotal(
-          activeMembers: t.containsKey('activeMembers')
-              ? count(t, 'activeMembers')
-              : levels.fold<int>(0, (sum, l) => sum + l.activeMembers),
-          nftPower: power(t, 'nftPower'),
-          assetPower: power(t, 'assetPower'),
-        );
-      }
-      invites = _invites(levels, total: total);
-    }
-
-    final c = LoopV2Contract.strictMapWithOptional(
-      root['claim'],
-      const <String>{'status', 'lastTx'},
-      const <String>{'claimId', 'executable', 'reasonCode', 'amount'},
-    );
-    final rawStatus = c['status'];
-    final status = rawStatus is String
-        ? MiningClaimStatus.tryParse(rawStatus)
-        : null;
-    if (status == null) invalid();
-
-    return MiningRewardsView(
-      settledTotal: loop(root, 'settledTotal'),
-      claimedTotal: loop(root, 'claimedTotal'),
-      claimable: loop(root, 'claimable'),
-      lastEpoch: epoch,
-      display: MiningMinuteDisplay(
-        state: state,
-        minutesElapsed: LoopV2ChainCodec.requireInt(
-          d,
-          'minutesElapsed',
-          maximum: 60,
-        ),
-        minuteIncrement: loop(d, 'minuteIncrement'),
-        windowStart: LoopV2ChainCodec.optionalTimestamp(d, 'windowStart'),
-        nextUpdateAt: LoopV2ChainCodec.optionalTimestamp(d, 'nextUpdateAt'),
-        reasonCode: LoopV2ChainCodec.optionalReasonCode(d, 'reasonCode'),
+      total: MiningInviteTotal(
+        activeMembers: members,
+        nftPower: nftPower,
+        assetPower: assetPower,
       ),
-      nft: nft,
-      asset: asset,
-      invites: invites,
-      claim: MiningClaimSummary(
-        status: status,
-        lastTx: _flatTx(c['lastTx']),
-        claimId: c['claimId'] == null ? null : _id(c, 'claimId'),
-        executable: c.containsKey('executable')
-            ? LoopV2ChainCodec.requireBool(c, 'executable')
-            : true,
-        reasonCode: LoopV2ChainCodec.optionalReasonCode(c, 'reasonCode'),
-        amount: c['amount'] == null ? null : loop(c, 'amount'),
-      ),
-      serverTime: LoopV2ChainCodec.requireTimestamp(root, 'serverTime'),
-      minimumClaim: root['minimumClaim'] == null
-          ? null
-          : loop(root, 'minimumClaim'),
-    );
-  }
-
-  static MiningInviteLevel _flatLevel(Object? entry) {
-    final row = LoopV2Contract.strictMapWithOptional(
-      entry,
-      const <String>{
-        'level',
-        'ratePercent',
-        'activeMembers',
-        'nftPower',
-        'assetPower',
-      },
-      const <String>{'totalPower'},
-    );
-    if (row.containsKey('totalPower')) power(row, 'totalPower');
-    final rate = row['ratePercent'];
-    final Decimal ratePercent;
-    if (rate is int && rate >= 0 && rate <= 100) {
-      ratePercent = Decimal.fromInt(rate);
-    } else if (rate is String && powerPattern.hasMatch(rate)) {
-      ratePercent = Decimal.parse(rate);
-      if (ratePercent > Decimal.fromInt(100)) invalid();
-    } else {
-      invalid();
-    }
-    return MiningInviteLevel(
-      level: LoopV2ChainCodec.requireInt(row, 'level', minimum: 1, maximum: 5),
-      ratePercent: ratePercent,
-      activeMembers: count(row, 'activeMembers'),
-      nftPower: power(row, 'nftPower'),
-      assetPower: power(row, 'assetPower'),
-    );
-  }
-
-  static MiningClaimTx? _flatTx(Object? raw) {
-    if (raw == null) return null;
-    if (raw is String) {
-      if (!hashPattern.hasMatch(raw)) invalid();
-      return MiningClaimTx(txHash: raw);
-    }
-    final t = LoopV2Contract.strictMapWithOptional(
-      raw,
-      const <String>{'txHash'},
-      const <String>{'chainId', 'amount', 'at'},
-    );
-    return MiningClaimTx(
-      txHash: _hash(t, 'txHash'),
-      chainId: t['chainId'] == null
-          ? null
-          : LoopV2ChainCodec.requireKnownChainId(t, 'chainId'),
-      amount: t['amount'] == null ? null : loop(t, 'amount'),
-      at: LoopV2ChainCodec.optionalTimestamp(t, 'at'),
     );
   }
 
@@ -810,58 +503,35 @@ abstract final class LoopV2MiningRewardsCodec {
   // claims
   // -------------------------------------------------------------------------
 
-  /// One claim: the hourly-block schema (`amountRaw`), or the flat draft
-  /// (`amount` in whole LOOP).
+  /// One claim object (contract §5.2).
   static MiningClaimRecord claimRecord(Object? raw) {
-    if (raw is Map && raw.containsKey('amountRaw')) {
-      final map = LoopV2Contract.strictMap(raw, claimKeys);
-      final status = MiningClaimStatus.tryParse('${map['status']}');
-      if (status == null || status == MiningClaimStatus.none) invalid();
-      final chainId = LoopV2ChainCodec.requireKnownChainId(map, 'chainId');
-      final reference = map['chainReference'];
-      if (reference != null && reference != loopChainReference(chainId)) {
-        invalid();
-      }
-      _id(map, 'walletId');
-      _address(map, 'contractAddress');
-      LoopV2MiningRewardsCodec.raw(map, 'cumulativeAmountRaw');
-      LoopV2MiningRewardsCodec.raw(map, 'nonce');
-      LoopV2ChainCodec.requireTimestamp(map, 'deadline');
-      LoopV2ChainCodec.requireTimestamp(map, 'updatedAt');
-      if (map['blockNumber'] != null) {
-        LoopV2MiningRewardsCodec.raw(map, 'blockNumber');
-      }
-      return MiningClaimRecord(
-        claimId: _id(map, 'claimId'),
-        status: status,
-        amount: LoopV2MiningRewardsCodec.raw(map, 'amountRaw'),
-        createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
-        txHash: map['transactionHash'] == null
-            ? null
-            : _hash(map, 'transactionHash'),
-        chainId: chainId,
-        failureReasonCode: LoopV2ChainCodec.optionalReasonCode(
-          map,
-          'failureReasonCode',
-        ),
-      );
-    }
-    final map = LoopV2Contract.strictMapWithOptional(
-      raw,
-      const <String>{'claimId', 'status', 'amount', 'createdAt'},
-      const <String>{'txHash', 'chainId', 'failureReasonCode', 'updatedAt'},
-    );
-    final status = MiningClaimStatus.tryParse('${map['status']}');
+    final map = LoopV2Contract.strictMap(raw, claimKeys);
+    final rawStatus = map['status'];
+    final status = rawStatus is String
+        ? MiningClaimStatus.tryParse(rawStatus)
+        : null;
     if (status == null || status == MiningClaimStatus.none) invalid();
+    final chainId = LoopV2ChainCodec.requireKnownChainId(map, 'chainId');
+    final reference = map['chainReference'];
+    if (reference != null && reference != loopChainReference(chainId)) {
+      invalid();
+    }
+    _id(map, 'walletId');
+    _address(map, 'contractAddress');
+    amountRaw(map, 'cumulativeAmountRaw');
+    amountRaw(map, 'nonce');
+    LoopV2ChainCodec.requireTimestamp(map, 'deadline');
+    LoopV2ChainCodec.requireTimestamp(map, 'updatedAt');
+    if (map['blockNumber'] != null) amountRaw(map, 'blockNumber');
     return MiningClaimRecord(
       claimId: _id(map, 'claimId'),
       status: status,
-      amount: loop(map, 'amount'),
+      amount: amountRaw(map, 'amountRaw'),
       createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
-      txHash: map['txHash'] == null ? null : _hash(map, 'txHash'),
-      chainId: map['chainId'] == null
+      txHash: map['transactionHash'] == null
           ? null
-          : LoopV2ChainCodec.requireKnownChainId(map, 'chainId'),
+          : _hash(map, 'transactionHash'),
+      chainId: chainId,
       failureReasonCode: LoopV2ChainCodec.optionalReasonCode(
         map,
         'failureReasonCode',
@@ -869,24 +539,20 @@ abstract final class LoopV2MiningRewardsCodec {
     );
   }
 
+  /// `GET /v2/mining/claims` (contract §5.4): newest first, 20 a page.
   static MiningClaimPage claims(Object? raw) {
-    final root = LoopV2Contract.strictMapWithOptional(
-      raw,
-      const <String>{'items', 'nextCursor'},
-      const <String>{'decimals', 'contractVersion'},
-    );
-    if (root.containsKey('contractVersion')) {
-      LoopV2ChainCodec.requireContractVersion(root);
-    }
-    if (root.containsKey('decimals') &&
-        root['decimals'] != miningLoopDecimals) {
-      invalid();
-    }
+    final root = LoopV2Contract.strictMap(raw, const <String>{
+      'items',
+      'nextCursor',
+      'decimals',
+      'contractVersion',
+    });
+    _envelope(root);
     final items = <MiningClaimRecord>[];
     final seen = <String>{};
     for (final entry in LoopV2ChainCodec.requireList(
       root['items'],
-      maximum: 50,
+      maximum: 20,
     )) {
       final record = claimRecord(entry);
       if (!seen.add(record.claimId)) invalid();
@@ -898,16 +564,14 @@ abstract final class LoopV2MiningRewardsCodec {
     );
   }
 
-  /// `claim/report` → the claim as the server now reads it.
+  /// `claim/report` → the claim as the server now reads it (contract §5.3).
   static MiningClaimRecord reported(Object? raw) {
-    final root = LoopV2Contract.strictMapWithOptional(
-      raw,
-      const <String>{'claim'},
-      const <String>{'decimals', 'contractVersion'},
-    );
-    if (root.containsKey('contractVersion')) {
-      LoopV2ChainCodec.requireContractVersion(root);
-    }
+    final root = LoopV2Contract.strictMap(raw, const <String>{
+      'claim',
+      'decimals',
+      'contractVersion',
+    });
+    _envelope(root);
     return claimRecord(root['claim']);
   }
 
@@ -915,29 +579,27 @@ abstract final class LoopV2MiningRewardsCodec {
   // claim/prepare
   // -------------------------------------------------------------------------
 
+  /// `claim/prepare` 201 (contract §5.2). The contract publishes no
+  /// `payloadDigest`; the sheet and the wallet are bound by [localDigest]
+  /// (decision 0141).
   static MiningClaimIntent prepared(Object? raw) {
-    final root = LoopV2Contract.strictMapWithOptional(
-      raw,
-      const <String>{'claim', 'intent'},
-      const <String>{'decimals', 'contractVersion'},
-    );
-    if (root.containsKey('contractVersion')) {
-      LoopV2ChainCodec.requireContractVersion(root);
-    }
-    if (root.containsKey('decimals') &&
-        root['decimals'] != miningLoopDecimals) {
-      invalid();
-    }
+    final root = LoopV2Contract.strictMap(raw, const <String>{
+      'claim',
+      'intent',
+      'decimals',
+      'contractVersion',
+    });
+    _envelope(root);
     final claimRaw = root['claim'];
     final claim = LoopV2Contract.strictMap(claimRaw, claimKeys);
     final record = claimRecord(claimRaw);
     final chainId = record.chainId!;
     final contractAddress = _address(claim, 'contractAddress');
-    final intent = LoopV2Contract.strictMapWithOptional(
-      root['intent'],
-      const <String>{'calldata', 'unsignedTransaction', 'signing'},
-      const <String>{'payloadDigest'},
-    );
+    final intent = LoopV2Contract.strictMap(root['intent'], const <String>{
+      'calldata',
+      'unsignedTransaction',
+      'signing',
+    });
     final calldata = LoopV2Contract.strictMap(
       intent['calldata'],
       const <String>{'to', 'data', 'value'},
@@ -957,14 +619,6 @@ abstract final class LoopV2MiningRewardsCodec {
       'reasonCode',
     });
     if (signing['mode'] != 'device_eth_send_transaction') invalid();
-    final digest = intent['payloadDigest'] == null
-        ? localDigest(transaction.wire)
-        : LoopV2ChainCodec.requireString(
-            intent,
-            'payloadDigest',
-            pattern: digestPattern,
-            maxLength: 66,
-          );
     final matches =
         transaction.to == contractAddress &&
         calldataTo == contractAddress &&
@@ -976,14 +630,11 @@ abstract final class LoopV2MiningRewardsCodec {
       chainId: chainId,
       contractAddress: contractAddress,
       amount: record.amount,
-      cumulativeAmount: LoopV2MiningRewardsCodec.raw(
-        claim,
-        'cumulativeAmountRaw',
-      ),
+      cumulativeAmount: amountRaw(claim, 'cumulativeAmountRaw'),
       deadline: LoopV2ChainCodec.requireTimestamp(claim, 'deadline'),
       createdAt: record.createdAt,
       transaction: transaction,
-      payloadDigest: digest,
+      payloadDigest: localDigest(transaction.wire),
       signingAllowed: LoopV2ChainCodec.requireBool(signing, 'allowed'),
       signingReasonCode: LoopV2ChainCodec.optionalReasonCode(
         signing,
@@ -994,17 +645,12 @@ abstract final class LoopV2MiningRewardsCodec {
   }
 
   static MiningClaimTransaction _transaction(Object? raw) {
-    final map = LoopV2Contract.strictMapWithOptional(
-      raw,
-      transactionRequiredKeys,
-      transactionOptionalKeys,
-    );
+    final map = LoopV2Contract.strictMap(raw, transactionKeys);
     final chainId = map['chainId'];
     if (chainId != 56 && chainId != 97) invalid();
-    final value = map['value'];
-    if (value != null && value != '0x0' && value != '0') invalid();
+    if (map['value'] != '0x0') invalid();
     final type = map['type'];
-    if (type != null && type != 'eip1559' && type != 'legacy') invalid();
+    if (type != 'eip1559' && type != 'legacy') invalid();
     for (final key in const <String>[
       'gas',
       'nonce',
@@ -1018,6 +664,21 @@ abstract final class LoopV2MiningRewardsCodec {
         pattern: quantityPattern,
         maxLength: 66,
       );
+    }
+    // The fee keys follow the fee type: the other type's keys are null.
+    final eip1559 = type == 'eip1559';
+    if (map['gas'] == null || map['nonce'] == null) invalid();
+    if (eip1559 &&
+        (map['maxFeePerGas'] == null ||
+            map['maxPriorityFeePerGas'] == null ||
+            map['gasPrice'] != null)) {
+      invalid();
+    }
+    if (!eip1559 &&
+        (map['gasPrice'] == null ||
+            map['maxFeePerGas'] != null ||
+            map['maxPriorityFeePerGas'] != null)) {
+      invalid();
     }
     return MiningClaimTransaction(
       chainReference: chainId! as int,
@@ -1033,9 +694,9 @@ abstract final class LoopV2MiningRewardsCodec {
     );
   }
 
-  /// keccak-256 over the transaction's canonical JSON (keys sorted). Used
-  /// only when the server sent no digest of its own, so the sheet and the
-  /// wallet are still bound to one object.
+  /// keccak-256 over the transaction's canonical JSON (keys sorted). The
+  /// claim contract carries no server digest (decision 0141), so this binds
+  /// the sheet and the wallet to one object until the server sends one.
   static String localDigest(Map<String, Object?> wire) {
     final keys = wire.keys.toList()..sort();
     final canonical = jsonEncode(<String, Object?>{
@@ -1050,67 +711,47 @@ abstract final class LoopV2MiningRewardsCodec {
   }
 
   // -------------------------------------------------------------------------
-  // claim/prepare refusals that are about gas
+  // claim/prepare refusals that are about gas (contract §5.5)
   // -------------------------------------------------------------------------
 
+  static const insufficientBalanceCode = 'INSUFFICIENT_BALANCE';
   static const gasInsufficientCode = 'CLAIM_GAS_INSUFFICIENT';
   static const noGasSourceCode = 'CLAIM_NO_GAS_SOURCE';
 
-  /// Reads a `409` body for the two gas refusals. Returns `null` for anything
-  /// else, which then goes through the ordinary envelope check.
-  ///
-  /// The reason is accepted as the envelope `code` (S138 draft) or as
-  /// `detailsSafe.reasonCode` under `INSUFFICIENT_BALANCE` (loop-api 0116
-  /// draft). The swap suggestion is accepted nested (`suggestedSwap`) or as
-  /// the flat `suggestedSwap…` slots.
+  /// Reads a `409` body for the two gas refusals: `code:
+  /// INSUFFICIENT_BALANCE` with `detailsSafe.reasonCode` naming one of them,
+  /// the swap suggestion in the flat `detailsSafe.suggestedSwap…` slots.
+  /// Returns `null` for anything else (`MINING_CLAIM_NOTHING_TO_CLAIM`,
+  /// `MINING_CLAIM_BELOW_MINIMUM`, …), which then goes through the ordinary
+  /// envelope check.
   static ({String reason, MiningSuggestedSwap? swap, String? requiredNative})?
   gasRefusal(Object? body) {
-    if (body is! Map) return null;
+    if (body is! Map || body['code'] != insufficientBalanceCode) return null;
     final details = body['detailsSafe'];
-    final detailMap = details is Map ? details : const <Object?, Object?>{};
-    final code = body['code'];
-    final detailReason = detailMap['reasonCode'];
-    String? reason;
-    for (final candidate in <Object?>[code, detailReason]) {
-      if (candidate == gasInsufficientCode || candidate == noGasSourceCode) {
-        reason = candidate! as String;
-      }
+    if (details is! Map) return null;
+    final reason = details['reasonCode'];
+    if (reason != gasInsufficientCode && reason != noGasSourceCode) {
+      return null;
     }
-    if (reason == null) return null;
     String? text(Object? value, RegExp pattern, int max) =>
         value is String && value.length <= max && pattern.hasMatch(value)
         ? value
         : null;
     final asset = LoopV2ChainCodec.assetIdPattern;
     MiningSuggestedSwap? swap;
-    final nested = detailMap['suggestedSwap'] ?? body['suggestedSwap'];
-    if (nested is Map) {
+    if (reason == gasInsufficientCode) {
       swap = MiningSuggestedSwap(
-        fromAssetId: text(nested['fromAssetId'], asset, 80),
-        toAssetId: text(nested['toAssetId'], asset, 80),
-        fromSymbol: text(nested['fromSymbol'], symbolPattern, 24),
-        toSymbol: text(nested['toSymbol'], symbolPattern, 24),
-        amount: text(nested['amount'], powerPattern, 80),
-      );
-    } else if (detailMap.keys.any(
-      (key) => key is String && key.startsWith('suggestedSwap'),
-    )) {
-      swap = MiningSuggestedSwap(
-        fromAssetId: text(detailMap['suggestedSwapFromAssetId'], asset, 80),
-        toAssetId: text(detailMap['suggestedSwapToAssetId'], asset, 80),
-        fromSymbol: text(
-          detailMap['suggestedSwapFromSymbol'],
-          symbolPattern,
-          24,
-        ),
-        toSymbol: text(detailMap['suggestedSwapToSymbol'], symbolPattern, 24),
-        amount: text(detailMap['suggestedSwapToAmount'], powerPattern, 80),
+        fromAssetId: text(details['suggestedSwapFromAssetId'], asset, 80),
+        toAssetId: text(details['suggestedSwapToAssetId'], asset, 80),
+        fromSymbol: text(details['suggestedSwapFromSymbol'], symbolPattern, 24),
+        toSymbol: text(details['suggestedSwapToSymbol'], symbolPattern, 24),
+        amount: text(details['suggestedSwapToAmount'], powerPattern, 80),
       );
     }
     return (
-      reason: reason,
+      reason: reason! as String,
       swap: swap,
-      requiredNative: text(detailMap['requiredNativeAmount'], powerPattern, 80),
+      requiredNative: text(details['requiredNativeAmount'], powerPattern, 80),
     );
   }
 }

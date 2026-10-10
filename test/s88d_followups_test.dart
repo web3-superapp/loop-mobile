@@ -360,9 +360,6 @@ final class _CountingMining implements MiningGateway {
   }
 
   @override
-  Future<MiningRewards> loadRewards() => _inner.loadRewards();
-
-  @override
   Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor}) =>
       _inner.loadRank(scope, cursor: cursor);
 

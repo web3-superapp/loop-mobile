@@ -12,7 +12,7 @@ import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 
-// S138 · 挖矿奖励 controllers (decision 0140).
+// S138 · 挖矿奖励 controllers (decisions 0140, 0141).
 
 /// `GET /v2/mining/rewards`. It opens on the stored answer of an earlier run
 /// (decision 0095 / 0132) so the summary and the minute display have figures
@@ -481,6 +481,15 @@ final class MiningClaimController extends Notifier<MiningClaimState> {
     unawaited(ref.read(miningClaimsControllerProvider.notifier).reload());
   }
 
+  /// Follows one claim until it settles.
+  ///
+  /// While a reported hash is waiting (`submitting` / `confirming`), the
+  /// same hash is reported again each interval under a new idempotency key
+  /// (contract §5.3): the report reads the receipt and answers the claim's
+  /// new status. Without a hash, or while the attempt is locked after a
+  /// report that did not land, the claim is read from `hourly.claim.latest`
+  /// instead — nothing is reported on the page's own initiative then, the
+  /// owner chooses 「重新上报」.
   Future<void> _poll(int generation) async {
     final polling = ref.read(miningClaimPollingProvider);
     final claimId = _claimId;
@@ -490,6 +499,27 @@ final class MiningClaimController extends Notifier<MiningClaimState> {
     _timer = Timer(polling.interval, completer.complete);
     await completer.future;
     if (generation != _generation || !ref.mounted) return;
+    final hash = state.txHash;
+    if (state.phase == MiningClaimPhase.waiting && hash != null) {
+      try {
+        final record = await ref
+            .read(miningRewardsGatewayProvider)
+            .reportClaim(claimId: claimId, txHash: hash);
+        if (generation != _generation || !ref.mounted) return;
+        if (record.status.isTerminal) {
+          state = state.copyWith(record: record);
+          _settle(record.status);
+          return;
+        }
+        state = state.copyWith(record: record, attempts: state.attempts + 1);
+      } catch (_) {
+        if (generation != _generation || !ref.mounted) return;
+        // A report that did not land does not end the wait.
+        state = state.copyWith(attempts: state.attempts + 1);
+      }
+      _continue(generation, polling);
+      return;
+    }
     try {
       final view = await ref.read(miningRewardsGatewayProvider).loadRewards();
       if (generation != _generation || !ref.mounted) return;
@@ -518,6 +548,10 @@ final class MiningClaimController extends Notifier<MiningClaimState> {
       // An unreadable answer does not end the wait.
       state = state.copyWith(attempts: state.attempts + 1);
     }
+    _continue(generation, polling);
+  }
+
+  void _continue(int generation, MiningClaimPolling polling) {
     if (state.attempts >= polling.maxAttempts) {
       if (state.phase == MiningClaimPhase.waiting) {
         state = state.copyWith(phase: MiningClaimPhase.pollTimedOut);

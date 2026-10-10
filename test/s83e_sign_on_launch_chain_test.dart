@@ -48,10 +48,16 @@ void main() {
   };
 
   group('the admission matrix (kind x chain)', () {
+    // Decision 0141: the mining reward claim is the third Launch-slot kind.
     const launchKinds = <IntentKind>{
       IntentKind.launchApproval,
       IntentKind.launchPurchase,
+      IntentKind.miningClaim,
     };
+
+    test('the matrix is the one set both exits read', () {
+      expect(launchSlotIntentKinds, launchKinds);
+    });
 
     String? admit(
       IntentKind kind,

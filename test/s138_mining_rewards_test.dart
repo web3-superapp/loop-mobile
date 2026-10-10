@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:decimal/decimal.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
@@ -12,12 +16,16 @@ import 'package:loop_mobile/features/mining_rewards/mining_rewards_display.dart'
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_screen.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_signing.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
+import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_mining_rewards_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_mining_rewards_codec.dart';
+import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -25,7 +33,8 @@ import 'support/s7_page_harness.dart';
 
 // ---------------------------------------------------------------------------
 // S138 · 挖矿奖励: hourly two-track rewards, minute display, five invite
-// levels, claim (decision 0140)
+// levels, claim (decision 0140), aligned with the loop-api contract
+// `frontend-v2-mining-rewards-api.md` (decision 0141)
 // ---------------------------------------------------------------------------
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
@@ -37,12 +46,14 @@ const String _epochId = 'b1b2c3d4-1111-4222-8333-444455556666';
 const String _versionId = 'c1b2c3d4-1111-4222-8333-444455556666';
 const String _contract = '0x00000000000000000000000000000000000000c1';
 const String _asset = 'eip155:97:0x00000000000000000000000000000000000000a5';
+const String _graduated =
+    'eip155:97:0x00000000000000000000000000000000000000b6';
 const String _hash =
     '0x3000000000000000000000000000000000000000000000000000000000000003';
 
 String _loop(int whole) => whole == 0 ? '0' : '$whole${'0' * 18}';
 
-/// The hourly block as loop-api decision 0116 drafts it.
+/// `GET /v2/mining/rewards` as the contract publishes it (§3).
 Map<String, Object?> _hourlyJson({
   String displayState = 'displaying',
   String serverTime = '2026-10-10T11:20:30.000Z',
@@ -53,6 +64,9 @@ Map<String, Object?> _hourlyJson({
   Map<String, Object?>? latestClaim,
   bool executable = true,
   String claimable = '120',
+  bool excluded = false,
+  String? displayedRaw,
+  bool parameters = true,
 }) => <String, Object?>{
   'claimable': <String, Object?>{
     'status': 'unavailable',
@@ -92,7 +106,7 @@ Map<String, Object?> _hourlyJson({
             'totalRaw': _loop(totalLoop),
             'perMinuteRaw': _loop(totalLoop ~/ 60),
             'completedMinutes': 20,
-            'displayedRaw': _loop(20),
+            'displayedRaw': displayedRaw ?? _loop(20),
             'nextUpdateAt': '2026-10-10T11:21:00.000Z',
           }
         : null,
@@ -122,7 +136,13 @@ Map<String, Object?> _hourlyJson({
                   'power': '1200.5',
                 },
               ],
-              'excludedAssets': <Object?>[],
+              'excludedAssets': <Object?>[
+                if (excluded)
+                  <String, Object?>{
+                    'assetId': _graduated,
+                    'reasonCode': 'MINING_ASSET_GRADUATED_UNREADABLE',
+                  },
+              ],
             },
           }
         : null,
@@ -148,13 +168,15 @@ Map<String, Object?> _hourlyJson({
             ],
           }
         : null,
-    'parameters': <String, Object?>{
-      'versionId': _versionId,
-      'configVersion': 'mining.v1',
-      'effectiveFrom': '2026-10-01T00:00:00.000Z',
-      'referralRatiosBps': <Object?>[1000, 500, 300, 200, 100],
-      'minimumClaimRaw': _loop(1),
-    },
+    'parameters': parameters
+        ? <String, Object?>{
+            'versionId': _versionId,
+            'configVersion': 'miningHourlyV1',
+            'effectiveFrom': '2026-10-01T00:00:00.000Z',
+            'referralRatiosBps': <Object?>[1000, 500, 300, 200, 100],
+            'minimumClaimRaw': _loop(1),
+          }
+        : null,
     'claim': <String, Object?>{
       'executable': executable,
       'reasonCode': executable ? null : 'MINING_CLAIM_WRITES_DISABLED',
@@ -210,6 +232,7 @@ Map<String, Object?> _preparedJson({
       'type': 'eip1559',
       'maxFeePerGas': '0x1',
       'maxPriorityFeePerGas': '0x1',
+      'gasPrice': null,
     },
     'signing': <String, Object?>{
       'mode': 'device_eth_send_transaction',
@@ -219,57 +242,6 @@ Map<String, Object?> _preparedJson({
   },
   'decimals': 18,
   'contractVersion': '2.0',
-};
-
-/// The S138 work order's flat draft, with every optional key omitted.
-Map<String, Object?> _flatJson() => <String, Object?>{
-  'settledTotal': '200',
-  'claimedTotal': '80',
-  'claimable': '120',
-  'lastEpoch': <String, Object?>{
-    'epochStart': '2026-10-10T10:00:00Z',
-    'epochEnd': '2026-10-10T11:00:00Z',
-    'totalReward': '60',
-    'nftReward': '40',
-    'assetReward': '20',
-  },
-  'display': <String, Object?>{
-    'state': 'showing',
-    'minutesElapsed': 20,
-    'minuteIncrement': '1',
-    'nextUpdateAt': '2026-10-10T11:21:00Z',
-  },
-  'nft': <String, Object?>{
-    'realCount': 2,
-    'ownPower': '3.5',
-    'invitePower': '0.5',
-    'totalPower': '4',
-    'reward': '40',
-  },
-  'asset': <String, Object?>{
-    'assets': <Object?>[
-      <String, Object?>{'assetId': _asset, 'power': '10'},
-    ],
-    'ownPower': '10',
-    'invitePower': '0',
-    'totalPower': '10',
-    'reward': '20',
-  },
-  'invites': <String, Object?>{
-    'levels': <Object?>[
-      for (var level = 1; level <= 5; level += 1)
-        <String, Object?>{
-          'level': level,
-          'ratePercent': <int>[10, 5, 3, 2, 1][level - 1],
-          'activeMembers': 1,
-          'nftPower': '0.1',
-          'assetPower': '1',
-        },
-    ],
-    'total': <String, Object?>{'nftPower': '0.5', 'assetPower': '5'},
-  },
-  'claim': <String, Object?>{'status': 'none', 'lastTx': null},
-  'serverTime': '2026-10-10T11:20:30Z',
 };
 
 MiningRewardsView _view([Map<String, Object?>? json]) =>
@@ -303,14 +275,16 @@ final class _FakeRewards implements MiningRewardsGateway {
     required this.rewards,
     this.claims,
     this.prepareAnswer,
-    this.reportAnswer,
+    this.reportAnswers = const <_Answer<MiningClaimRecord>>[],
   });
 
   /// The reads in order; the last one repeats.
   final List<_Answer<MiningRewardsView>> rewards;
   _Answer<MiningClaimPage>? claims;
   _Answer<MiningClaimPrepareResult>? prepareAnswer;
-  _Answer<MiningClaimRecord>? reportAnswer;
+
+  /// The reports in order; the last one repeats.
+  final List<_Answer<MiningClaimRecord>> reportAnswers;
 
   int rewardReads = 0;
   final List<String> prepareCalls = <String>[];
@@ -350,11 +324,16 @@ final class _FakeRewards implements MiningRewardsGateway {
     required String claimId,
     required String txHash,
   }) {
+    final index = reportCalls.length;
     reportCalls.add((claimId, txHash));
-    return (reportAnswer ??
-            const _Answer<MiningClaimRecord>.fail(
-              LoopChainFailureKind.unavailable,
-            ))
+    if (reportAnswers.isEmpty) {
+      return const _Answer<MiningClaimRecord>.fail(
+        LoopChainFailureKind.unavailable,
+      ).resolve();
+    }
+    return reportAnswers[index < reportAnswers.length
+            ? index
+            : reportAnswers.length - 1]
         .resolve();
   }
 }
@@ -455,19 +434,63 @@ Future<void> _drain(WidgetTester tester) async {
 Future<void> _scrollTo(WidgetTester tester, Finder finder) => tester
     .scrollUntilVisible(finder, 240, scrollable: find.byType(Scrollable).first);
 
+/// One preflight sample under `test/fixtures/s138-mining-rewards/`.
+Map<String, Object?> _fixture(String name) => jsonDecode(
+  File('test/fixtures/s138-mining-rewards/$name.json').readAsStringSync(),
+) as Map<String, Object?>;
+
+/// Replays one sample, headers and status included, through Dio.
+final class _ReplayAdapter implements HttpClientAdapter {
+  _ReplayAdapter(this.record);
+
+  final Map<String, Object?> record;
+  RequestOptions? last;
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    last = options;
+    final headers = <String, List<String>>{
+      for (final entry in (record['headers']! as Map<String, Object?>).entries)
+        entry.key: <String>['${entry.value}'],
+    };
+    return ResponseBody.fromString(
+      jsonEncode(record['body']),
+      record['status']! as int,
+      headers: headers,
+    );
+  }
+}
+
+DioLoopV2MiningRewardsApi _replay(String name) {
+  final dio = Dio(BaseOptions(baseUrl: 'https://api-dev.example'));
+  dio.httpClientAdapter = _ReplayAdapter(_fixture(name));
+  return DioLoopV2MiningRewardsApi(dio);
+}
+
+const String _fixtureWalletId = 'd64786bb-408d-415d-8a69-6277d56c921b';
+
 void main() {
   setUp(() => _now = DateTime.utc(2026, 10, 10, 11, 20, 30));
 
-  group('minute display derivation', () {
+  group('minute display derivation (contract §3.2)', () {
     final total = BigInt.parse(_loop(60));
 
-    test('one sixtieth per completed minute, the remainder on the 60th', () {
+    test('floor(total × m / 60), the 60th minute is the whole hour', () {
       expect(miningMinuteShown(total, 0), BigInt.zero);
       expect(miningMinuteShown(total, 20), BigInt.parse(_loop(20)));
-      // 100 units do not divide by 60: each minute adds 1, minute 60 lands on
-      // the whole hour.
+      // 100 units do not divide by 60: floor(100 × 59 / 60) = 98, and minute
+      // 60 lands on the whole hour.
       final odd = BigInt.from(100);
-      expect(miningMinuteShown(odd, 59), BigInt.from(59));
+      expect(miningMinuteShown(odd, 1), BigInt.one);
+      expect(miningMinuteShown(odd, 30), BigInt.from(50));
+      expect(miningMinuteShown(odd, 59), BigInt.from(98));
       expect(miningMinuteShown(odd, 60), odd);
       expect(miningMinuteShown(odd, 75), odd);
     });
@@ -478,7 +501,7 @@ void main() {
         view,
         serverNow: DateTime.utc(2026, 10, 10, 11, 20, 30),
       );
-      expect(at.phase, MiningMinutePhase.showing);
+      expect(at.phase, MiningMinutePhase.displaying);
       expect(at.completedMinutes, 20);
       expect(at.shown, BigInt.parse(_loop(20)));
       expect(at.nextUpdateAt, DateTime.utc(2026, 10, 10, 11, 21));
@@ -494,6 +517,41 @@ void main() {
       );
       expect(last.completedMinutes, 59);
       expect(last.shown, BigInt.parse(_loop(59)));
+    });
+
+    test('the server displayedRaw wins for its own minute only', () {
+      // A total that does not divide by 60 in whole LOOP: the two agree, and
+      // the server's figure is used as it is for minute 20.
+      final odd = _view(
+        _hourlyJson(totalLoop: 61, displayedRaw: '20333333333333333333'),
+      );
+      final at20 = miningMinuteProgress(
+        odd,
+        serverNow: DateTime.utc(2026, 10, 10, 11, 20, 10),
+      );
+      expect(at20.shown, BigInt.parse('20333333333333333333'));
+      expect(
+        at20.shown,
+        miningMinuteShown(BigInt.parse(_loop(61)), 20),
+        reason: 'the client formula is the server formula',
+      );
+      // A server figure that disagrees is still the server's for its minute;
+      // the next minute is the formula's.
+      final skewed = _view(_hourlyJson(displayedRaw: _loop(19)));
+      expect(
+        miningMinuteProgress(
+          skewed,
+          serverNow: DateTime.utc(2026, 10, 10, 11, 20, 30),
+        ).shown,
+        BigInt.parse(_loop(19)),
+      );
+      expect(
+        miningMinuteProgress(
+          skewed,
+          serverNow: DateTime.utc(2026, 10, 10, 11, 21, 0),
+        ).shown,
+        BigInt.parse(_loop(21)),
+      );
     });
 
     test('the server clock follows device durations, not its wall clock', () {
@@ -528,7 +586,7 @@ void main() {
       expect(progress.shown, BigInt.zero);
     });
 
-    test('settling: the server says so, or the window has closed', () {
+    test('settling: the server says so, or windowEnd has passed', () {
       final settling = _view(_hourlyJson(displayState: 'settling'));
       final a = miningMinuteProgress(
         settling,
@@ -536,27 +594,36 @@ void main() {
       );
       expect(a.phase, MiningMinutePhase.settling);
       expect(a.shown, BigInt.parse(_loop(60)));
-      final showing = _view();
+      final displaying = _view();
       final b = miningMinuteProgress(
-        showing,
-        serverNow: DateTime.utc(2026, 10, 10, 12, 0, 1),
+        displaying,
+        serverNow: DateTime.utc(2026, 10, 10, 12, 0, 0),
       );
       expect(b.phase, MiningMinutePhase.settling);
+      expect(b.shown, BigInt.parse(_loop(60)));
       expect(b.nextUpdateAt, isNull);
     });
   });
 
-  group('codec', () {
-    test('hourly block decodes into the six modules', () {
-      final view = _view();
+  group('codec (contract §3, §5)', () {
+    test('the hourly block decodes into the six modules', () {
+      final view = _view(_hourlyJson(excluded: true));
       expect(view.settledTotal, BigInt.parse(_loop(200)));
       expect(view.claimedTotal, BigInt.parse(_loop(80)));
       expect(view.claimable, BigInt.parse(_loop(120)));
       expect(view.lastEpoch!.totalReward, BigInt.parse(_loop(60)));
-      expect(view.display.state, MiningDisplayState.showing);
+      expect(view.display.state, MiningDisplayState.displaying);
+      expect(view.display.window!.displayed, BigInt.parse(_loop(20)));
+      expect(view.display.window!.windowEnd, DateTime.utc(2026, 10, 10, 12));
       expect(view.nft!.realCount, BigInt.zero);
       expect(view.nft!.invitePower, Decimal.parse('0.75'));
       expect(view.asset!.assets.single.assetId, _asset);
+      expect(view.asset!.assets.single.balanceAtEnd, BigInt.parse(_loop(1000)));
+      expect(view.asset!.excluded.single.assetId, _graduated);
+      expect(
+        view.asset!.excluded.single.reasonCode,
+        'MINING_ASSET_GRADUATED_UNREADABLE',
+      );
       expect(
         view.invites!.levels.map((l) => l.ratePercent.toString()),
         <String>['10', '5', '3', '2', '1'],
@@ -564,48 +631,71 @@ void main() {
       expect(view.invites!.total.activeMembers, 15);
       expect(view.invites!.total.assetPower, Decimal.fromInt(35));
       expect(view.claim.status, MiningClaimStatus.none);
-      expect(view.minimumClaim, BigInt.parse(_loop(1)));
-    });
-
-    test('flat draft decodes with every optional key absent', () {
-      final view = _view(_flatJson());
-      expect(view.claimable, BigInt.parse(_loop(120)));
-      expect(view.display.minuteIncrement, BigInt.parse(_loop(1)));
-      expect(view.nft!.realCount, BigInt.two);
-      expect(view.invites!.total.activeMembers, 5);
       expect(view.claim.executable, isTrue);
-      expect(view.claim.lastTx, isNull);
-      expect(view.minimumClaim, isNull);
-    });
-
-    test('flat draft accepts its optional keys when sent', () {
-      final json = _flatJson()
-        ..['contractVersion'] = '2.0'
-        ..['minimumClaim'] = '1'
-        ..['claim'] = <String, Object?>{
-          'status': 'succeeded',
-          'lastTx': <String, Object?>{'txHash': _hash, 'chainId': 'eip155:97'},
-          'executable': false,
-          'claimId': _claimId,
-        };
-      final view = _view(json);
-      expect(view.claim.status, MiningClaimStatus.succeeded);
-      expect(
-        view.claim.lastTx!.explorerUrl,
-        'https://testnet.bscscan.com/tx/$_hash',
-      );
-      expect(view.claim.executable, isFalse);
       expect(view.minimumClaim, BigInt.parse(_loop(1)));
     });
 
-    test('an unknown key or a bad amount is an invalid payload', () {
-      final extra = _flatJson()..['surprise'] = 1;
+    test('the legacy daily keys may be absent; hourly is required', () {
+      final json = _hourlyJson();
+      for (final key in LoopV2MiningRewardsCodec.legacyRootKeys) {
+        json.remove(key);
+      }
+      expect(_view(json).claimable, BigInt.parse(_loop(120)));
+      final noHourly = _hourlyJson()..remove('hourly');
+      expect(() => _view(noHourly), throwsA(isA<LoopBackendFailure>()));
+      final noVersion = _hourlyJson()..remove('contractVersion');
+      expect(() => _view(noVersion), throwsA(isA<LoopBackendFailure>()));
+    });
+
+    test('the retired flat draft is no longer read', () {
+      expect(
+        () => _view(<String, Object?>{
+          'settledTotal': '200',
+          'claimedTotal': '80',
+          'claimable': '120',
+          'lastEpoch': null,
+          'display': <String, Object?>{
+            'state': 'showing',
+            'minutesElapsed': 0,
+            'minuteIncrement': '0',
+            'nextUpdateAt': null,
+          },
+          'nft': null,
+          'asset': null,
+          'invites': null,
+          'claim': <String, Object?>{'status': 'none', 'lastTx': null},
+          'serverTime': '2026-10-10T11:20:30Z',
+        }),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      final showing = _hourlyJson();
+      (showing['hourly']! as Map<String, Object?>)['displayState'] = 'showing';
+      expect(() => _view(showing), throwsA(isA<LoopBackendFailure>()));
+    });
+
+    test('an unknown key, a missing key or a bad amount is invalid', () {
+      final extra = _hourlyJson();
+      (extra['hourly']! as Map<String, Object?>)['surprise'] = 1;
       expect(() => _view(extra), throwsA(isA<LoopBackendFailure>()));
-      final bad = _flatJson()..['claimable'] = '1.0000000000000000001';
-      expect(() => _view(bad), throwsA(isA<LoopBackendFailure>()));
-      final hourly = _hourlyJson();
-      (hourly['hourly']! as Map<String, Object?>)['decimals'] = 6;
-      expect(() => _view(hourly), throwsA(isA<LoopBackendFailure>()));
+      final missing = _hourlyJson();
+      ((missing['hourly']! as Map<String, Object?>)['display']!
+              as Map<String, Object?>)
+          .remove('displayedRaw');
+      expect(() => _view(missing), throwsA(isA<LoopBackendFailure>()));
+      final decimals = _hourlyJson();
+      (decimals['hourly']! as Map<String, Object?>)['decimals'] = 6;
+      expect(() => _view(decimals), throwsA(isA<LoopBackendFailure>()));
+      final fraction = _hourlyJson();
+      ((fraction['hourly']! as Map<String, Object?>)['totals']!
+              as Map<String, Object?>)['claimableRaw'] =
+          '1.5';
+      expect(() => _view(fraction), throwsA(isA<LoopBackendFailure>()));
+      final fourLevels = _hourlyJson();
+      (((fourLevels['hourly']! as Map<String, Object?>)['referral']!
+                  as Map<String, Object?>)['levels']!
+              as List<Object?>)
+          .removeLast();
+      expect(() => _view(fourLevels), throwsA(isA<LoopBackendFailure>()));
     });
 
     test('snapshot restore runs the live decoder', () {
@@ -625,6 +715,11 @@ void main() {
       expect(intent.claimId, _claimId);
       expect(intent.amount, BigInt.parse(_loop(120)));
       expect(intent.payloadMatchesReview, isTrue);
+      // No server digest in the contract: the local keccak binds the two.
+      expect(
+        intent.payloadDigest,
+        LoopV2MiningRewardsCodec.localDigest(intent.transaction.wire),
+      );
       expect(intent.payloadDigest, hasLength(64));
       final other = _preparedJson();
       ((other['intent']! as Map<String, Object?>)['calldata']!
@@ -636,47 +731,84 @@ void main() {
       );
     });
 
-    test('gas refusals: envelope code or detailsSafe, nested or flat', () {
-      final flat = LoopV2MiningRewardsCodec.gasRefusal(<String, Object?>{
-        'code': 'INSUFFICIENT_BALANCE',
-        'detailsSafe': <String, Object?>{
-          'reasonCode': 'CLAIM_GAS_INSUFFICIENT',
-          'requiredNativeAmount': '0.0004',
-          'suggestedSwapFromSymbol': 'USDT',
-          'suggestedSwapFromAssetId':
-              'eip155:56:0x55d398326f99059ff775485246999027b3197955',
-          'suggestedSwapToSymbol': 'BNB',
-          'suggestedSwapToAssetId': 'eip155:56:native',
-          'suggestedSwapToAmount': '0.0005',
-        },
-      });
-      expect(flat!.reason, 'CLAIM_GAS_INSUFFICIENT');
-      expect(flat.swap!.toAssetId, 'eip155:56:native');
-      expect(flat.requiredNative, '0.0004');
-      final nested = LoopV2MiningRewardsCodec.gasRefusal(<String, Object?>{
-        'code': 'CLAIM_GAS_INSUFFICIENT',
-        'detailsSafe': <String, Object?>{
-          'suggestedSwap': <String, Object?>{
-            'fromAssetId':
-                'eip155:56:0x55d398326f99059ff775485246999027b3197955',
-            'toAssetId': 'eip155:56:native',
-          },
-        },
-      });
-      expect(nested!.swap!.fromAssetId, startsWith('eip155:56:0x55d3'));
-      final none = LoopV2MiningRewardsCodec.gasRefusal(<String, Object?>{
-        'code': 'CLAIM_NO_GAS_SOURCE',
-      });
+    test(
+      'prepare: no digest key, all eleven transaction keys, fee by type',
+      () {
+        final digest = _preparedJson();
+        (digest['intent']! as Map<String, Object?>)['payloadDigest'] = 'a' * 64;
+        expect(
+          () => LoopV2MiningRewardsCodec.prepared(digest),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+        Map<String, Object?> tx(Map<String, Object?> json) =>
+            (json['intent']! as Map<String, Object?>)['unsignedTransaction']!
+                as Map<String, Object?>;
+        final missing = _preparedJson();
+        tx(missing).remove('gasPrice');
+        expect(
+          () => LoopV2MiningRewardsCodec.prepared(missing),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+        final extra = _preparedJson();
+        tx(extra)['accessList'] = <Object?>[];
+        expect(
+          () => LoopV2MiningRewardsCodec.prepared(extra),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+        final mixed = _preparedJson();
+        tx(mixed)['gasPrice'] = '0x1';
+        expect(
+          () => LoopV2MiningRewardsCodec.prepared(mixed),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+        final noEnvelope = _preparedJson()..remove('decimals');
+        expect(
+          () => LoopV2MiningRewardsCodec.prepared(noEnvelope),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+      },
+    );
+
+    test('gas refusals: INSUFFICIENT_BALANCE + detailsSafe.reasonCode', () {
+      final swap = LoopV2MiningRewardsCodec.gasRefusal(
+        _fixture('prepare_409_gas_insufficient')['body'],
+      );
+      expect(swap!.reason, 'CLAIM_GAS_INSUFFICIENT');
+      expect(swap.swap!.fromSymbol, 'USDT');
+      expect(swap.swap!.toAssetId, 'eip155:97:native');
+      expect(swap.swap!.amount, '0.0018');
+      expect(swap.requiredNative, '0.0012');
+      final none = LoopV2MiningRewardsCodec.gasRefusal(
+        _fixture('prepare_409_no_gas_source')['body'],
+      );
       expect(none!.reason, 'CLAIM_NO_GAS_SOURCE');
+      expect(none.swap, isNull);
+      expect(none.requiredNative, '0.0012');
+      // Another INSUFFICIENT_BALANCE reason is an ordinary refusal.
+      expect(
+        LoopV2MiningRewardsCodec.gasRefusal(
+          _fixture('prepare_409_below_minimum')['body'],
+        ),
+        isNull,
+      );
+      // The retired drafts: the reason as the envelope code, or nested.
       expect(
         LoopV2MiningRewardsCodec.gasRefusal(<String, Object?>{
-          'code': 'INSUFFICIENT_BALANCE',
+          'code': 'CLAIM_GAS_INSUFFICIENT',
           'detailsSafe': <String, Object?>{
-            'reasonCode': 'MINING_CLAIM_NOTHING_TO_CLAIM',
+            'reasonCode': 'CLAIM_GAS_INSUFFICIENT',
           },
         }),
         isNull,
       );
+      final nested = LoopV2MiningRewardsCodec.gasRefusal(<String, Object?>{
+        'code': 'INSUFFICIENT_BALANCE',
+        'detailsSafe': <String, Object?>{
+          'reasonCode': 'CLAIM_GAS_INSUFFICIENT',
+          'suggestedSwap': <String, Object?>{'toAssetId': 'eip155:97:native'},
+        },
+      });
+      expect(nested!.swap!.toAssetId, isNull);
     });
 
     test('figures: 4 decimals, truncated, grouped', () {
@@ -689,15 +821,173 @@ void main() {
     });
   });
 
+  group('preflight samples (test/fixtures/s138-mining-rewards)', () {
+    test('every sample says where it came from', () {
+      final directory = Directory('test/fixtures/s138-mining-rewards');
+      final names = directory
+          .listSync()
+          .whereType<File>()
+          .map((file) => file.uri.pathSegments.last)
+          .toList();
+      expect(names, hasLength(10));
+      for (final name in names) {
+        final record = _fixture(name.replaceAll('.json', ''));
+        expect(
+          record.containsKey('_captured') || record.containsKey('_handwritten'),
+          isTrue,
+          reason: name,
+        );
+      }
+    });
+
+    test('Development capture: awaiting the first settlement', () async {
+      final view = await _replay('rewards_awaiting_captured')
+          .getRewards(accessToken: 't', clientVersion: '1.0.0');
+      expect(view.display.state, MiningDisplayState.awaitingFirstSettlement);
+      expect(view.display.reasonCode, 'MINING_PARAMETERS_PENDING');
+      expect(view.claimable, BigInt.zero);
+      expect(view.minimumClaim, isNull);
+      final page = await _replay('claims_empty_captured')
+          .getClaims(accessToken: 't', clientVersion: '1.0.0');
+      expect(page.items, isEmpty);
+      expect(page.nextCursor, isNull);
+    });
+
+    test('displaying, with an excluded graduated asset', () async {
+      final view = await _replay('rewards_displaying')
+          .getRewards(accessToken: 't', clientVersion: '1.0.0');
+      expect(view.display.state, MiningDisplayState.displaying);
+      expect(view.nft!.realCount, BigInt.from(5));
+      expect(
+        view.asset!.excluded.single.reasonCode,
+        'MINING_ASSET_GRADUATED_UNREADABLE',
+      );
+      expect(view.claim.status, MiningClaimStatus.succeeded);
+      expect(view.claim.lastTx!.explorerUrl, startsWith('https://testnet.'));
+      expect(
+        miningMinuteProgress(
+          view,
+          serverNow: DateTime.utc(2026, 10, 10, 11, 20),
+        ).shown,
+        BigInt.parse(_loop(20)),
+      );
+    });
+
+    test('unavailable: totals and tracks withheld', () async {
+      final view = await _replay('rewards_unavailable')
+          .getRewards(accessToken: 't', clientVersion: '1.0.0');
+      expect(view.display.state, MiningDisplayState.unavailable);
+      expect(view.nft, isNull);
+      expect(view.claim.executable, isFalse);
+      expect(view.claim.reasonCode, 'MINING_SETTLEMENT_UNAVAILABLE');
+    });
+
+    test('claims page, prepare and report', () async {
+      final page = await _replay('claims_page')
+          .getClaims(accessToken: 't', clientVersion: '1.0.0');
+      expect(page.items.map((item) => item.status), <MiningClaimStatus>[
+        MiningClaimStatus.failed,
+        MiningClaimStatus.succeeded,
+      ]);
+      expect(page.items.first.failureReasonCode, 'MINING_CLAIM_REVERTED');
+      expect(page.nextCursor, isNotNull);
+      final prepared = await _replay('prepare_201').postPrepare(
+        accessToken: 't',
+        clientVersion: '1.0.0',
+        idempotencyKey: '0f8fad5b-d9cb-469f-a165-70867728950e',
+        walletId: _fixtureWalletId,
+      );
+      final intent = (prepared as MiningClaimPrepared).intent;
+      expect(intent.payloadMatchesReview, isTrue);
+      expect(intent.transaction.wire['type'], 'legacy');
+      expect(intent.chainId, loopLaunchTestnetChainId);
+      final reported = await _replay('report_200_submitting').postReport(
+        accessToken: 't',
+        clientVersion: '1.0.0',
+        idempotencyKey: '0f8fad5b-d9cb-469f-a165-70867728950f',
+        claimId: intent.claimId,
+        txHash: '0x${'ef' * 32}',
+      );
+      expect(reported.status, MiningClaimStatus.submitting);
+    });
+
+    test('prepare 409: two gas refusals, one ordinary refusal', () async {
+      final swap = await _replay('prepare_409_gas_insufficient').postPrepare(
+        accessToken: 't',
+        clientVersion: '1.0.0',
+        idempotencyKey: '0f8fad5b-d9cb-469f-a165-70867728950e',
+        walletId: _fixtureWalletId,
+      );
+      expect(swap, isA<MiningClaimGasInsufficient>());
+      expect((swap as MiningClaimGasInsufficient).swap!.toSymbol, 'BNB');
+      final none = await _replay('prepare_409_no_gas_source').postPrepare(
+        accessToken: 't',
+        clientVersion: '1.0.0',
+        idempotencyKey: '0f8fad5b-d9cb-469f-a165-70867728950e',
+        walletId: _fixtureWalletId,
+      );
+      expect(none, isA<MiningClaimNoGasSource>());
+      await expectLater(
+        _replay('prepare_409_below_minimum').postPrepare(
+          accessToken: 't',
+          clientVersion: '1.0.0',
+          idempotencyKey: '0f8fad5b-d9cb-469f-a165-70867728950e',
+          walletId: _fixtureWalletId,
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.code,
+            'code',
+            'INSUFFICIENT_BALANCE',
+          ),
+        ),
+      );
+    });
+  });
+
+  group('signing kind (decision 0141)', () {
+    test('a claim is a miningClaim, admitted on the published slot only', () {
+      final intent = LoopV2MiningRewardsCodec.prepared(_preparedJson());
+      final signing = MiningClaimSigner.signingIntent(
+        intent,
+        fromAddress: _walletAddress,
+      );
+      expect(signing.kind, IntentKind.miningClaim);
+      expect(signing.chainIsPermitted, isTrue);
+      expect(launchSlotIntentKinds, contains(IntentKind.miningClaim));
+      final transaction = intent.transaction.wire;
+      expect(
+        privyChainRefusal(
+          kind: IntentKind.miningClaim,
+          chainId: loopLaunchTestnetChainId,
+          launchChainId: loopLaunchTestnetChainId,
+          transaction: transaction,
+        ),
+        isNull,
+      );
+      expect(
+        privyChainRefusal(
+          kind: IntentKind.miningClaim,
+          chainId: loopLaunchTestnetChainId,
+          launchChainId: null,
+          transaction: transaction,
+        ),
+        'privy_chain_switch_unsupported',
+      );
+    });
+  });
+
   group('page', () {
     loopWatchGround();
 
     testWidgets('six modules render from the answer', (tester) async {
       final rewards = _FakeRewards(
-        rewards: <_Answer<MiningRewardsView>>[_Answer.value(_view())],
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(_view(_hourlyJson(excluded: true))),
+        ],
       );
       await _pump(tester, rewards: rewards);
-      expect(_key('mining-minute-showing'), findsOneWidget);
+      expect(_key('mining-minute-displaying'), findsOneWidget);
       expect(_key('mining-minute-figure-20.0000'), findsOneWidget);
       expect(find.text('上一小时 60.0000 LOOP'), findsOneWidget);
       expect(_key('mining-summary-settled'), findsOneWidget);
@@ -705,6 +995,7 @@ void main() {
       expect(find.text('80.0000'), findsOneWidget);
       expect(_key('mining-claim-amount'), findsOneWidget);
       expect(find.text('120.0000 LOOP'), findsOneWidget);
+      expect(find.text('最低领取 1.0000 LOOP'), findsOneWidget);
       await _scrollTo(tester, _key('mining-nft-track'));
       // No real NFT, but invite power: the two are separate rows.
       expect(
@@ -715,14 +1006,55 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('0.75'), findsWidgets);
-      await _scrollTo(tester, _key('mining-asset-track'));
+      await _scrollTo(tester, _key('mining-asset-excluded-$_graduated'));
       expect(_key('mining-asset-$_asset'), findsOneWidget);
+      expect(find.text('已退出（已毕业，外盘余额与价格暂读不到）'), findsOneWidget);
       await _scrollTo(tester, _key('mining-invite-total'));
       expect(_key('mining-invite-level-5'), findsOneWidget);
       expect(find.text('10%'), findsOneWidget);
       expect(find.text('1%'), findsOneWidget);
       await _scrollTo(tester, _key('mining-claims-empty'));
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await _drain(tester);
+    });
+
+    testWidgets('below the minimum and a closed claim say why', (tester) async {
+      final below = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(
+            _view(
+              _hourlyJson()..update(
+                'hourly',
+                (hourly) => <String, Object?>{
+                  ...hourly! as Map<String, Object?>,
+                  'totals': <String, Object?>{
+                    'settledRaw': '500000000000000000',
+                    'claimedRaw': '0',
+                    'claimableRaw': '500000000000000000',
+                  },
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+      await _pump(tester, rewards: below);
+      expect(find.text('满 1.0000 LOOP 可领取'), findsOneWidget);
+      expect(
+        tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
+        isNull,
+      );
+      await _drain(tester);
+
+      final closed = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(_view(_hourlyJson(executable: false))),
+        ],
+      );
+      await _pump(tester, rewards: closed);
+      expect(find.text('链上写入暂时关闭，暂不能领取'), findsOneWidget);
+      // The balance is still shown.
+      expect(find.text('120.0000 LOOP'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -806,6 +1138,25 @@ void main() {
       expect(_key('mining-minute-figure-60.0000'), findsOneWidget);
       // It asks again at once instead of waiting a whole interval.
       expect(settling.rewardReads, greaterThanOrEqualTo(2));
+      await _drain(tester);
+    });
+
+    testWidgets('settlement unavailable carries the server reason', (
+      tester,
+    ) async {
+      final rewards = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(
+            LoopV2MiningRewardsCodec.rewards(
+              _fixture('rewards_unavailable')['body'],
+            ),
+          ),
+        ],
+      );
+      await _pump(tester, rewards: rewards);
+      expect(_key('mining-minute-unavailable'), findsOneWidget);
+      expect(_key('mining-rewards-unavailable'), findsOneWidget);
+      expect(find.text('结算服务暂时不可用，下面的数字可能不是最新的。'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -908,6 +1259,35 @@ void main() {
       }
     });
 
+    testWidgets('a claim in flight elsewhere is followed by re-reporting it', (
+      tester,
+    ) async {
+      final rewards = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(
+            _view(_hourlyJson(latestClaim: _claimJson(status: 'confirming'))),
+          ),
+        ],
+        reportAnswers: <_Answer<MiningClaimRecord>>[
+          _Answer.value(
+            LoopV2MiningRewardsCodec.claimRecord(
+              _claimJson(status: 'succeeded'),
+            ),
+          ),
+        ],
+      );
+      await _pump(tester, rewards: rewards, settle: false);
+      for (var i = 0; i < 5; i += 1) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      await tester.pumpAndSettle();
+      // The same hash, reported again (contract §5.3), never a new prepare.
+      expect(rewards.reportCalls.first, (_claimId, _hash));
+      expect(rewards.prepareCalls, isEmpty);
+      expect(_key('mining-claim-status-succeeded'), findsOneWidget);
+      await _drain(tester);
+    });
+
     testWidgets('claim: prepare, confirm wallet and amount, report, succeed', (
       tester,
     ) async {
@@ -916,17 +1296,28 @@ void main() {
       final rewards = _FakeRewards(
         rewards: <_Answer<MiningRewardsView>>[
           _Answer.value(_view()),
-          _Answer.value(_view()),
           _Answer.value(
             _view(_hourlyJson(latestClaim: _claimJson(amount: '120'))),
           ),
         ],
         prepareAnswer: _Answer.value(MiningClaimPrepared(prepared)),
-        reportAnswer: _Answer.value(
-          LoopV2MiningRewardsCodec.claimRecord(
-            _claimJson(status: 'submitting', amount: '120'),
+        reportAnswers: <_Answer<MiningClaimRecord>>[
+          _Answer.value(
+            LoopV2MiningRewardsCodec.claimRecord(
+              _claimJson(status: 'submitting', amount: '120'),
+            ),
           ),
-        ),
+          _Answer.value(
+            LoopV2MiningRewardsCodec.claimRecord(
+              _claimJson(status: 'confirming', amount: '120'),
+            ),
+          ),
+          _Answer.value(
+            LoopV2MiningRewardsCodec.claimRecord(
+              _claimJson(status: 'succeeded', amount: '120'),
+            ),
+          ),
+        ],
       );
       await _pump(tester, rewards: rewards, wallet: wallet);
       await tester.tap(_key('mining-claim-button'));
@@ -942,18 +1333,23 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(wallet.handed.single.payloadDigest, prepared.payloadDigest);
+      expect(wallet.handed.single.kind, IntentKind.miningClaim);
       expect(rewards.reportCalls.single, (_claimId, _hash));
       await tester.tap(
         find.text('关闭').hitTestable().first,
         warnIfMissed: false,
       );
       await tester.pumpAndSettle();
-      // The page closed the sheet with the outcome; the claim was read
-      // until it settled.
+      // The page closed the sheet with the outcome; the same hash was
+      // reported again until the claim settled.
       for (var i = 0; i < 5; i += 1) {
         await tester.pump(const Duration(milliseconds: 20));
       }
       await tester.pumpAndSettle();
+      expect(rewards.reportCalls, hasLength(3));
+      expect(rewards.reportCalls.toSet(), <(String, String)>{
+        (_claimId, _hash),
+      });
       expect(_key('mining-claim-status-succeeded'), findsOneWidget);
       expect(find.text('领取成功，LOOP 已到账。'), findsOneWidget);
       await _drain(tester);
@@ -1041,7 +1437,9 @@ void main() {
       final rewards = _FakeRewards(
         rewards: <_Answer<MiningRewardsView>>[_Answer.value(_view())],
         prepareAnswer: _Answer.value(MiningClaimPrepared(prepared)),
-        reportAnswer: const _Answer.fail(LoopChainFailureKind.offline),
+        reportAnswers: const <_Answer<MiningClaimRecord>>[
+          _Answer.fail(LoopChainFailureKind.offline),
+        ],
       );
       await _pump(tester, rewards: rewards, wallet: wallet);
       await tester.tap(_key('mining-claim-button'));
@@ -1056,6 +1454,9 @@ void main() {
       expect(_key('mining-claim-retry-report'), findsOneWidget);
       expect(_key('mining-claim-button'), findsNothing);
       expect(wallet.handed, hasLength(1));
+      // Locked: the page does not report on its own; only the owner's
+      // 「重新上报」 does.
+      expect(rewards.reportCalls, hasLength(1));
       await _drain(tester);
     });
   });

@@ -113,9 +113,6 @@ final class _RecordedMiningGateway implements MiningGateway {
   }
 
   @override
-  Future<MiningRewards> loadRewards() => _closed();
-
-  @override
   Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor}) =>
       _closed();
 
