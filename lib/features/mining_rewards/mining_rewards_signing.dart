@@ -29,8 +29,10 @@ import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 // claim travels under its own kind, `IntentKind.miningClaim`, which the
 // signing intent and the Privy device signer admit on the published Launch
 // slot alongside the two Launch kinds (`launchSlotIntentKinds`, decision
-// 0141). The contract publishes no payload digest for a claim, so the codec's
-// keccak of the verbatim transaction binds the sheet to the wallet.
+// 0141). The server's `payloadDigest` (loop-api decision 0123) travels with
+// the intent only after the codec has recomputed it from the verbatim
+// transaction; the signer refuses again if the two ever differ (decision
+// 0143).
 
 /// How one trip through the signing exit ended.
 @immutable
@@ -130,7 +132,9 @@ final class MiningClaimSigner {
       }
       return 'INTENT_EXPIRED';
     }
-    if (!intent.payloadMatchesReview) return 'REVIEW_PAYLOAD_MISMATCH';
+    if (!intent.payloadMatchesReview || !intent.digestMatches) {
+      return 'REVIEW_PAYLOAD_MISMATCH';
+    }
     if (fromAddress == null) return 'MINING_CLAIM_WALLET_UNKNOWN';
     if (intent.transaction.from != fromAddress.toLowerCase()) {
       return 'MINING_CLAIM_WALLET_MISMATCH';

@@ -579,9 +579,10 @@ abstract final class LoopV2MiningRewardsCodec {
   // claim/prepare
   // -------------------------------------------------------------------------
 
-  /// `claim/prepare` 201 (contract §5.2). The contract publishes no
-  /// `payloadDigest`; the sheet and the wallet are bound by [localDigest]
-  /// (decision 0141).
+  /// `claim/prepare` 201 (contract §5.2). `intent.payloadDigest` is required
+  /// (loop-api decision 0123) and must equal `0x` + [localDigest] of the very
+  /// `unsignedTransaction` handed to the wallet; any other value is an
+  /// invalid payload and nothing is signed (decision 0143).
   static MiningClaimIntent prepared(Object? raw) {
     final root = LoopV2Contract.strictMap(raw, const <String>{
       'claim',
@@ -598,6 +599,7 @@ abstract final class LoopV2MiningRewardsCodec {
     final intent = LoopV2Contract.strictMap(root['intent'], const <String>{
       'calldata',
       'unsignedTransaction',
+      'payloadDigest',
       'signing',
     });
     final calldata = LoopV2Contract.strictMap(
@@ -613,6 +615,16 @@ abstract final class LoopV2MiningRewardsCodec {
     );
     if (calldata['value'] != '0') invalid();
     final transaction = _transaction(intent['unsignedTransaction']);
+    final serverDigest = LoopV2ChainCodec.requireString(
+      intent,
+      'payloadDigest',
+      pattern: payloadDigestPattern,
+      maxLength: 66,
+    );
+    final ownDigest = '0x${localDigest(transaction.wire)}';
+    // The server's digest and this device's must name the same object, or
+    // the sheet could show one transaction while the wallet signs another.
+    if (serverDigest != ownDigest) invalid();
     final signing = LoopV2Contract.strictMap(intent['signing'], const <String>{
       'mode',
       'allowed',
@@ -634,7 +646,8 @@ abstract final class LoopV2MiningRewardsCodec {
       deadline: LoopV2ChainCodec.requireTimestamp(claim, 'deadline'),
       createdAt: record.createdAt,
       transaction: transaction,
-      payloadDigest: localDigest(transaction.wire),
+      payloadDigest: serverDigest,
+      localPayloadDigest: ownDigest,
       signingAllowed: LoopV2ChainCodec.requireBool(signing, 'allowed'),
       signingReasonCode: LoopV2ChainCodec.optionalReasonCode(
         signing,
@@ -694,9 +707,12 @@ abstract final class LoopV2MiningRewardsCodec {
     );
   }
 
-  /// keccak-256 over the transaction's canonical JSON (keys sorted). The
-  /// claim contract carries no server digest (decision 0141), so this binds
-  /// the sheet and the wallet to one object until the server sends one.
+  /// `intent.payloadDigest`: `0x` + 64 lowercase hex (keccak-256).
+  static final RegExp payloadDigestPattern = RegExp(r'^0x[0-9a-f]{64}$');
+
+  /// keccak-256 over the transaction's canonical JSON: keys sorted by code
+  /// unit, no whitespace, `chainId` a JSON number, `null` kept (contract
+  /// §5.2). Hex without the `0x`; the server's `payloadDigest` is `0x` + this.
   static String localDigest(Map<String, Object?> wire) {
     final keys = wire.keys.toList()..sort();
     final canonical = jsonEncode(<String, Object?>{

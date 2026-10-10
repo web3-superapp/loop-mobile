@@ -450,6 +450,7 @@ final class MiningClaimIntent {
     required this.createdAt,
     required this.transaction,
     required this.payloadDigest,
+    required this.localPayloadDigest,
     required this.signingAllowed,
     required this.payloadMatchesReview,
     this.signingReasonCode,
@@ -467,10 +468,17 @@ final class MiningClaimIntent {
   final DateTime createdAt;
   final MiningClaimTransaction transaction;
 
-  /// The contract publishes no digest for a claim (decision 0141): this is
-  /// the codec's keccak-256 of the verbatim transaction. It binds the sheet
-  /// to the wallet payload until the server sends its own.
+  /// The server's `intent.payloadDigest` (`0x` + keccak-256 of the canonical
+  /// transaction JSON, loop-api decision 0123).
   final String payloadDigest;
+
+  /// The same digest as this device computed it from [transaction]. The codec
+  /// refuses a prepare whose two digests differ; the signer checks again
+  /// (decision 0143).
+  final String localPayloadDigest;
+
+  /// The server's digest and the device's name the same transaction.
+  bool get digestMatches => payloadDigest == localPayloadDigest;
   final bool signingAllowed;
   final String? signingReasonCode;
 

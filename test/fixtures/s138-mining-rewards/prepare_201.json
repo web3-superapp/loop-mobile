@@ -1,5 +1,5 @@
 {
-  "_handwritten": "Handwritten from loop-api docs/frontend-v2-mining-rewards-api.md (§3, §5, §5.5, §6) and openapi/loop-api.v2.json at integration/v2 0ac6a5b on 2026-10-10. Development has no settled epoch or claim yet, so no capture of this shape exists. Replace with a capture once dev settles an hour.",
+  "_handwritten": "Handwritten from loop-api docs/frontend-v2-mining-rewards-api.md (§3.3, §3.4, §5.2, §7) and openapi/loop-api.v2.json at S147-api 536e74f (Decision 0123) on 2026-10-10. Development has not been upgraded to 0123 yet, so no capture exists. intent.payloadDigest was computed with viem keccak256 over the canonical JSON of intent.unsignedTransaction (keys sorted, no whitespace), the same function the server uses (miningClaimPayloadDigest); test/s138_mining_rewards_test.dart recomputes it. Replace with a capture once dev runs 0123 and settles an hour.",
   "route": "POST /v2/mining/claim/prepare",
   "status": 201,
   "headers": {
@@ -44,6 +44,7 @@
         "maxPriorityFeePerGas": null,
         "gasPrice": "0x2540be400"
       },
+      "payloadDigest": "0x398f74e0ce056d7112714d1e5b9116e14d72269f3edb25647c036ab10dbc8f44",
       "signing": {
         "mode": "device_eth_send_transaction",
         "allowed": true,
