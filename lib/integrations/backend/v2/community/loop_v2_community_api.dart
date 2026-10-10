@@ -51,10 +51,20 @@ abstract interface class LoopV2CommunityApi {
     required Map<String, Object?> body,
   });
 
+  /// `notifications: muted` sends `{"notifications":"muted"}`; the default
+  /// sends no body at all, byte-for-byte the request it always was.
   Future<CommunityDetail> join({
     required String accessToken,
     required String clientVersion,
     required String idempotencyKey,
+    required String communityId,
+    CommunityNotificationPreference notifications,
+  });
+
+  /// `GET /v2/communities/{id}/membership` (loop-api decision 0115).
+  Future<CommunityMembershipSync> getMembership({
+    required String accessToken,
+    required String clientVersion,
     required String communityId,
   });
 
@@ -464,19 +474,51 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
     required String clientVersion,
     required String idempotencyKey,
     required String communityId,
+    CommunityNotificationPreference notifications =
+        CommunityNotificationPreference.standard,
   }) {
     final id = _requireId(communityId);
+    final muted = notifications == CommunityNotificationPreference.muted;
     return _detailRequest(
       () => _dio.post<Object?>(
         '$communitiesPath/$id/join',
+        data: muted
+            ? <String, Object?>{'notifications': notifications.wireName}
+            : null,
         options: LoopV2ModuleRequest.writeOptions(
           accessToken,
           clientVersion,
           idempotencyKey,
+          hasBody: muted,
         ),
       ),
       allowedCodes: LoopV2ModuleRequest.writeErrors,
     );
+  }
+
+  @override
+  Future<CommunityMembershipSync> getMembership({
+    required String accessToken,
+    required String clientVersion,
+    required String communityId,
+  }) async {
+    final id = _requireId(communityId);
+    try {
+      final response = await _dio.get<Object?>(
+        '$communitiesPath/$id/membership',
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      return LoopV2CommunityMembershipSyncCodec.decode(
+        response.data,
+        communityId: id,
+      );
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.readErrors,
+      );
+    }
   }
 
   @override
@@ -748,4 +790,52 @@ CommunityFailureKind communityFailureKindForV2(
       _ => CommunityFailureKind.unexpected,
     },
   };
+}
+
+/// Decodes `GET /v2/communities/{id}/membership` (loop-api decision 0115).
+///
+/// `notifications` and `channelSynced` are read as optional: a response
+/// without them is a server that does not apply the preference, which reads
+/// as "not synced" rather than a broken payload. Every other key is strict.
+abstract final class LoopV2CommunityMembershipSyncCodec {
+  static CommunityMembershipSync decode(
+    Object? raw, {
+    required String communityId,
+  }) {
+    final root = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'communityId', 'membership', 'contractVersion'},
+      const <String>{'notifications', 'channelSynced'},
+    );
+    LoopV2ProjectionCodec.requireContractVersion(root);
+    final echoed = root['communityId'];
+    if (echoed is! String ||
+        echoed.toLowerCase() != communityId.toLowerCase()) {
+      LoopV2ProjectionCodec.invalid();
+    }
+    final rawMembership = root['membership'];
+    final rawNotifications = root['notifications'];
+    final CommunityNotificationPreference? notifications;
+    if (rawNotifications == null) {
+      notifications = null;
+    } else if (rawNotifications is String) {
+      notifications = CommunityNotificationPreference.tryParse(
+        rawNotifications,
+      );
+      if (notifications == null) LoopV2ProjectionCodec.invalid();
+    } else {
+      LoopV2ProjectionCodec.invalid();
+    }
+    final rawSynced = root['channelSynced'];
+    if (rawSynced != null && rawSynced is! bool) {
+      LoopV2ProjectionCodec.invalid();
+    }
+    return CommunityMembershipSync(
+      membership: rawMembership == null
+          ? null
+          : LoopV2ProjectionCodec.membership(rawMembership),
+      notifications: notifications,
+      channelSynced: rawSynced == true,
+    );
+  }
 }

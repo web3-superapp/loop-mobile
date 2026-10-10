@@ -433,9 +433,50 @@ final class FakeCommunityGateway implements CommunityGateway {
   @override
   Future<CommunityDetail> loadCommunity(String communityId) => _read(detail);
 
+  /// The preference each join carried, in order (loop-api decision 0115).
+  final List<CommunityNotificationPreference> joinNotifications =
+      <CommunityNotificationPreference>[];
+
+  /// How many `loadMembershipSync` reads of one community answer
+  /// `channelSynced: false` before it answers true. 0 = synced at once.
+  int membershipReadsBeforeSynced = 0;
+
+  /// Set to make every `loadMembershipSync` fail.
+  CommunityFailureKind? membershipReadFailure;
+
+  /// Every `loadMembershipSync` call, by community.
+  final List<String> membershipReads = <String>[];
+
   @override
-  Future<CommunityDetail> join(String communityId) =>
-      _write('join:$communityId', detail);
+  Future<CommunityDetail> join(
+    String communityId, {
+    CommunityNotificationPreference notifications =
+        CommunityNotificationPreference.standard,
+  }) {
+    joinNotifications.add(notifications);
+    return _write('join:$communityId', detail);
+  }
+
+  @override
+  Future<CommunityMembershipSync> loadMembershipSync(String communityId) {
+    membershipReads.add(communityId);
+    final failure = membershipReadFailure;
+    if (failure != null) {
+      return Future<CommunityMembershipSync>.error(
+        CommunityGatewayException(failure),
+      );
+    }
+    final reads = membershipReads.where((id) => id == communityId).length;
+    return Future<CommunityMembershipSync>.value(
+      CommunityMembershipSync(
+        membership: detail?.viewer.membership,
+        notifications: joinNotifications.isEmpty
+            ? null
+            : joinNotifications.last,
+        channelSynced: reads > membershipReadsBeforeSynced,
+      ),
+    );
+  }
 
   @override
   Future<CommunityDetail> leave(String communityId) =>

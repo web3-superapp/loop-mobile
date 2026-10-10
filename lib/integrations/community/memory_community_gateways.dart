@@ -107,6 +107,8 @@ final class MemoryCommunityGateway implements CommunityGateway {
   MemoryCommunityGateway();
 
   final Set<String> _joined = <String>{'3fa85f64-5717-4562-b3fc-2c963f66afa6'};
+  final Map<String, CommunityNotificationPreference> _notifications =
+      <String, CommunityNotificationPreference>{};
 
   @override
   CommunityGatewayMode get mode => CommunityGatewayMode.preview;
@@ -346,10 +348,29 @@ final class MemoryCommunityGateway implements CommunityGateway {
       _detail(_byId(communityId));
 
   @override
-  Future<CommunityDetail> join(String communityId) async {
+  Future<CommunityDetail> join(
+    String communityId, {
+    CommunityNotificationPreference notifications =
+        CommunityNotificationPreference.standard,
+  }) async {
     final community = _byId(communityId);
-    _joined.add(communityId);
+    if (_joined.add(communityId)) _notifications[communityId] = notifications;
     return _detail(community);
+  }
+
+  /// The preview has no channel lane: a joined community is synced at once.
+  @override
+  Future<CommunityMembershipSync> loadMembershipSync(String communityId) async {
+    final detail = _detail(_byId(communityId));
+    final joined = detail.viewer.membership != null;
+    return CommunityMembershipSync(
+      membership: detail.viewer.membership,
+      notifications: joined
+          ? (_notifications[communityId] ??
+                CommunityNotificationPreference.standard)
+          : null,
+      channelSynced: joined,
+    );
   }
 
   @override

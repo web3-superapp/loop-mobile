@@ -63,15 +63,12 @@ final class _Recommended implements RecommendedCommunitiesGateway {
   }
 }
 
+/// Records every client-side mute; since decision 0136 a join makes none.
 final class _Muter implements CommunityChannelMuter {
-  _Muter({this.fails = false});
-
-  final bool fails;
   final List<String> muted = <String>[];
 
   @override
   Future<void> mute(String channelCid) async {
-    if (fails) throw StateError('stream_unavailable');
     muted.add(channelCid);
   }
 }
@@ -110,6 +107,24 @@ Future<void> _pump(
     communityChannelMuterProvider.overrideWithValue(muter ?? _Muter()),
   ],
 );
+
+FakeCommunityGateway _gateway({CommunityFailureKind? writeFailure}) =>
+    FakeCommunityGateway(
+      directoryPage: const CommunityDirectoryPage(
+        items: <CommunitySummary>[],
+        nextCursor: null,
+        recommendation: CommunityRecommendation(
+          recommendationId: 'rec-1',
+          ruleVersion: 'v1',
+        ),
+        ordering: CommunityOrderingApplied(
+          sort: CommunityDirectorySort.members,
+          basis: CommunityStoredBasis(),
+        ),
+      ),
+      detail: testDetail(chat: testChatAvailable),
+      writeFailure: writeFailure,
+    );
 
 void main() {
   loopWatchGround();
@@ -250,24 +265,9 @@ void main() {
       expect(find.text('加入 5 个社区并进入'), findsOneWidget);
     });
 
-    testWidgets('进入 LOOP joins each ticked one and mutes its chat', (
-      tester,
-    ) async {
-      final community = FakeCommunityGateway(
-        directoryPage: const CommunityDirectoryPage(
-          items: <CommunitySummary>[],
-          nextCursor: null,
-          recommendation: CommunityRecommendation(
-            recommendationId: 'rec-1',
-            ruleVersion: 'v1',
-          ),
-          ordering: CommunityOrderingApplied(
-            sort: CommunityDirectorySort.members,
-            basis: CommunityStoredBasis(),
-          ),
-        ),
-        detail: testDetail(chat: testChatAvailable),
-      );
+    testWidgets('进入 LOOP joins each ticked one with notifications: muted '
+        'and never mutes on the client (decision 0136)', (tester) async {
+      final community = _gateway()..membershipReadsBeforeSynced = 1;
       final muter = _Muter();
       var done = 0;
       await _pump(
@@ -285,7 +285,8 @@ void main() {
       await tester.tap(
         find.byKey(const ValueKey<String>('onboarding-communities-enter')),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
       expect(
         community.commands.where((command) => command.startsWith('join:')),
@@ -296,7 +297,110 @@ void main() {
           'join:${_cid(5)}',
         ],
       );
-      expect(muter.muted, hasLength(4));
+      expect(
+        community.joinNotifications,
+        List<CommunityNotificationPreference>.filled(
+          4,
+          CommunityNotificationPreference.muted,
+        ),
+      );
+      // The app no longer races the server's channel sync.
+      expect(muter.muted, isEmpty);
+      // Joined; the server has not confirmed the mute yet.
+      expect(find.text('已加入 · 免打扰生效中'), findsNWidgets(4));
+      expect(find.text('进入 LOOP'), findsOneWidget);
+      expect(done, 0);
+
+      // First poll: not yet synced.
+      await tester.pump(onboardingMuteSyncInterval);
+      await tester.pump();
+      expect(find.text('已加入 · 免打扰生效中'), findsNWidgets(4));
+      expect(done, 0);
+
+      // Second poll: synced and muted; the page goes on by itself.
+      await tester.pump(onboardingMuteSyncInterval);
+      await tester.pumpAndSettle();
+      expect(find.text('已加入 · 已免打扰'), findsNWidgets(4));
+      expect(find.text('已加入 · 免打扰生效中'), findsNothing);
+      expect(community.membershipReads, hasLength(8));
+      expect(done, 1);
+    });
+
+    testWidgets('a mute the server has not confirmed in ~10 s keeps 生效中 '
+        'and the page goes on anyway', (tester) async {
+      final community = _gateway()..membershipReadsBeforeSynced = 1000;
+      var done = 0;
+      await _pump(
+        tester,
+        recommended: _Recommended(answer: answer()),
+        community: community,
+        onDone: () => done += 1,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('onboarding-communities-enter')),
+      );
+      for (var round = 0; round < onboardingMuteSyncRounds; round += 1) {
+        await tester.pump(onboardingMuteSyncInterval);
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('已加入 · 免打扰生效中'), findsNWidgets(5));
+      expect(
+        community.membershipReads,
+        hasLength(5 * onboardingMuteSyncRounds),
+      );
+      expect(done, 1);
+    });
+
+    testWidgets('the reader can leave while the mutes settle, once', (
+      tester,
+    ) async {
+      final community = _gateway()..membershipReadsBeforeSynced = 1000;
+      var done = 0;
+      await _pump(
+        tester,
+        recommended: _Recommended(answer: answer()),
+        community: community,
+        onDone: () => done += 1,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('onboarding-communities-enter')),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('onboarding-communities-enter')),
+      );
+      await tester.pump();
+      expect(done, 1);
+      // The wait still ends on its own; it does not leave a second time.
+      for (var round = 0; round < onboardingMuteSyncRounds; round += 1) {
+        await tester.pump(onboardingMuteSyncInterval);
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(done, 1);
+    });
+
+    testWidgets('a server without the membership read ends the wait at once', (
+      tester,
+    ) async {
+      final community = _gateway()
+        ..membershipReadFailure = CommunityFailureKind.notFound;
+      var done = 0;
+      await _pump(
+        tester,
+        recommended: _Recommended(answer: answer()),
+        community: community,
+        onDone: () => done += 1,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('onboarding-communities-enter')),
+      );
+      await tester.pump(onboardingMuteSyncInterval);
+      await tester.pumpAndSettle();
+      expect(community.membershipReads, hasLength(5));
+      expect(find.text('已加入 · 免打扰生效中'), findsNWidgets(5));
       expect(done, 1);
     });
 
@@ -344,24 +448,6 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(done, 1);
-    });
-
-    testWidgets('a join whose mute failed says it is joined but not muted', (
-      tester,
-    ) async {
-      var done = 0;
-      await _pump(
-        tester,
-        recommended: _Recommended(answer: answer()),
-        muter: _Muter(fails: true),
-        onDone: () => done += 1,
-      );
-      await tester.tap(
-        find.byKey(const ValueKey<String>('onboarding-communities-enter')),
-      );
-      await tester.pumpAndSettle();
-      expect(done, 0);
-      expect(find.textContaining('免打扰没有设置成功'), findsNWidgets(5));
     });
 
     testWidgets('跳过 joins nothing', (tester) async {

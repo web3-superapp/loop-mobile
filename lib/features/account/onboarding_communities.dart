@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -60,7 +59,10 @@ final recommendedCommunitiesGatewayProvider =
 /// Turns a community's chat off for this account (Stream `mute()`).
 ///
 /// A port, because the client that can mute is the Stream SDK session, and a
-/// page test has none.
+/// page test has none. Since S135 (decision 0136) it is the manual mute of a
+/// channel the reader is already in; a join never calls it — the join asks
+/// the server to mute (`notifications: muted`), because right after a join
+/// the reader is not yet a channel member and Stream refuses the mute.
 abstract interface class CommunityChannelMuter {
   Future<void> mute(String channelCid);
 }
@@ -78,7 +80,22 @@ final communityChannelMuterProvider = Provider<CommunityChannelMuter>(
 );
 
 /// What happened to one ticked community when the reader pressed 进入 LOOP.
-enum OnboardingJoinResult { joined, joinedNotMuted, failed }
+enum OnboardingJoinResult {
+  /// Joined, and the server confirmed the chat is muted.
+  joined,
+
+  /// Joined; the server mutes the chat as soon as it has put the reader into
+  /// it (decision 0136). Not a failure.
+  joinedMutePending,
+  failed;
+
+  bool get isJoined => this != failed;
+}
+
+/// How often, and how many times, the page asks whether the server finished
+/// muting the chats it just joined (decision 0136): about ten seconds.
+const onboardingMuteSyncInterval = Duration(seconds: 1);
+const onboardingMuteSyncRounds = 10;
 
 @immutable
 final class OnboardingCommunitiesState {
@@ -94,6 +111,7 @@ final class OnboardingCommunitiesState {
     this.loadingMore = false,
     this.appendFailed = false,
     this.submitting = false,
+    this.settling = false,
     this.results = const <String, OnboardingJoinResult>{},
     this.failureReasons = const <String, String>{},
   });
@@ -112,12 +130,16 @@ final class OnboardingCommunitiesState {
   final bool appendFailed;
   final bool submitting;
 
+  /// Joins are done; the page is waiting (at most ~10 s) for the server to
+  /// confirm the mutes. The reader may leave at any time.
+  final bool settling;
+
   /// Filled in by [OnboardingCommunitiesController.enter], one per ticked row.
   final Map<String, OnboardingJoinResult> results;
   final Map<String, String> failureReasons;
 
   bool get hasFailures =>
-      results.values.any((result) => result != OnboardingJoinResult.joined);
+      results.values.any((result) => result == OnboardingJoinResult.failed);
 
   bool get canLoadMore => !directoryEnded && !loadingMore && !appendFailed;
 
@@ -134,6 +156,7 @@ final class OnboardingCommunitiesState {
     bool? loadingMore,
     bool? appendFailed,
     bool? submitting,
+    bool? settling,
     Map<String, OnboardingJoinResult>? results,
     Map<String, String>? failureReasons,
   }) => OnboardingCommunitiesState(
@@ -150,14 +173,15 @@ final class OnboardingCommunitiesState {
     loadingMore: loadingMore ?? this.loadingMore,
     appendFailed: appendFailed ?? this.appendFailed,
     submitting: submitting ?? this.submitting,
+    settling: settling ?? this.settling,
     results: results ?? this.results,
     failureReasons: failureReasons ?? this.failureReasons,
   );
 }
 
 /// Reads the recommendation, then the directory behind it, and joins what the
-/// reader ticked — every chat muted, one community at a time, a failure on
-/// one never stopping the next.
+/// reader ticked — every join asking the server to mute the chat, one
+/// community at a time, a failure on one never stopping the next.
 final class OnboardingCommunitiesController
     extends Notifier<OnboardingCommunitiesState> {
   var _generation = 0;
@@ -293,56 +317,38 @@ final class OnboardingCommunitiesController
     state = state.copyWith(selected: next);
   }
 
-  /// Joins every ticked community in list order and mutes its chat.
+  /// Joins every ticked community in list order, each with
+  /// `notifications: muted` (decision 0136). The server mutes the chat once
+  /// it has added the reader to it; the page does not touch Stream.
   ///
-  /// Returns true when every one of them joined and muted, so the page can
-  /// go straight on; otherwise the page stays and says, row by row, what did
-  /// not happen.
+  /// Returns true when every one of them joined, so the page can go on;
+  /// otherwise the page stays and says, row by row, what did not happen.
   Future<bool> enter() async {
     if (state.submitting) return false;
     final targets = <String>[
       for (final item in state.items)
         if (state.selected.contains(item.communityId) &&
-            state.results[item.communityId] != OnboardingJoinResult.joined)
+            !(state.results[item.communityId]?.isJoined ?? false))
           item.communityId,
     ];
     state = state.copyWith(submitting: true);
     final results = Map<String, OnboardingJoinResult>.of(state.results);
     final reasons = Map<String, String>.of(state.failureReasons);
     final communities = ref.read(communityGatewayProvider);
-    final muter = ref.read(communityChannelMuterProvider);
     for (final id in targets) {
-      CommunityDetail detail;
       try {
-        detail = await communities.join(id);
+        await communities.join(
+          id,
+          notifications: CommunityNotificationPreference.muted,
+        );
+        results[id] = OnboardingJoinResult.joinedMutePending;
+        reasons.remove(id);
       } on CommunityGatewayException catch (error) {
         results[id] = OnboardingJoinResult.failed;
         reasons[id] = communityFailureReason(error.kind);
-        if (!ref.mounted) return false;
-        state = state.copyWith(
-          results: Map.of(results),
-          failureReasons: Map.of(reasons),
-        );
-        continue;
       } catch (_) {
         results[id] = OnboardingJoinResult.failed;
         reasons[id] = communityFailureReason(CommunityFailureKind.unexpected);
-        if (!ref.mounted) return false;
-        state = state.copyWith(
-          results: Map.of(results),
-          failureReasons: Map.of(reasons),
-        );
-        continue;
-      }
-      final cid = detail.chat.channelCid ?? loopCommunityChannelCid(id);
-      try {
-        if (cid == null) throw StateError('no_channel');
-        await muter.mute(cid);
-        results[id] = OnboardingJoinResult.joined;
-        reasons.remove(id);
-      } catch (_) {
-        results[id] = OnboardingJoinResult.joinedNotMuted;
-        reasons[id] = '已加入，但免打扰没有设置成功，可以在会话里手动设置。';
       }
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -353,6 +359,61 @@ final class OnboardingCommunitiesController
     if (!ref.mounted) return false;
     state = state.copyWith(submitting: false);
     return !state.hasFailures;
+  }
+
+  /// Asks the server, about once a second for at most
+  /// [onboardingMuteSyncRounds] rounds, whether the chats just joined are
+  /// in place and muted, and turns each row to 已免打扰 when they are. A row
+  /// the server has not confirmed in time keeps 免打扰生效中: the server still
+  /// mutes it, the page just stops waiting. A read that fails ends the wait
+  /// for that row (an older server without the read answers 404).
+  Future<void> settleMutes() async {
+    var pending = <String>[
+      for (final entry in state.results.entries)
+        if (entry.value == OnboardingJoinResult.joinedMutePending) entry.key,
+    ];
+    if (pending.isEmpty || state.settling) return;
+    final generation = _generation;
+    final gateway = ref.read(communityGatewayProvider);
+    state = state.copyWith(settling: true);
+    for (
+      var round = 0;
+      round < onboardingMuteSyncRounds && pending.isNotEmpty;
+      round += 1
+    ) {
+      await Future<void>.delayed(onboardingMuteSyncInterval);
+      if (!_current(generation)) return;
+      final answers = await Future.wait<bool?>(<Future<bool?>>[
+        for (final id in pending) _channelSynced(gateway, id),
+      ]);
+      if (!_current(generation)) return;
+      final results = Map<String, OnboardingJoinResult>.of(state.results);
+      final still = <String>[];
+      for (var index = 0; index < pending.length; index += 1) {
+        final answer = answers[index];
+        if (answer == true) {
+          results[pending[index]] = OnboardingJoinResult.joined;
+        } else if (answer == false) {
+          still.add(pending[index]);
+        }
+      }
+      pending = still;
+      state = state.copyWith(results: results);
+    }
+    if (!_current(generation)) return;
+    state = state.copyWith(settling: false);
+  }
+
+  /// `true` / `false` from the server; `null` when the read failed.
+  static Future<bool?> _channelSynced(
+    CommunityGateway gateway,
+    String communityId,
+  ) async {
+    try {
+      return (await gateway.loadMembershipSync(communityId)).channelSynced;
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -381,15 +442,35 @@ class OnboardingCommunitiesScreen extends ConsumerStatefulWidget {
 
 class _OnboardingCommunitiesScreenState
     extends ConsumerState<OnboardingCommunitiesScreen> {
+  var _left = false;
+
+  /// Leaves for 聊天 exactly once, whichever of 跳过, the button, or the end
+  /// of the mute wait gets there first.
+  void _leave() {
+    if (_left) return;
+    _left = true;
+    widget.onDone();
+  }
+
   Future<void> _enter(OnboardingCommunitiesController controller) async {
     final state = ref.read(onboardingCommunitiesControllerProvider);
     if (state.selected.isEmpty) {
-      widget.onDone();
+      _leave();
       return;
     }
     final clean = await controller.enter();
     if (!mounted) return;
-    if (clean) widget.onDone();
+    if (!clean) {
+      // The page stays to say what failed; the joined rows still turn to
+      // 已免打扰 as the server confirms them.
+      unawaited(controller.settleMutes());
+      return;
+    }
+    // Decision 0136: wait (about ten seconds at most, skippable) for the
+    // server to confirm the mutes, so the rows can say so, then go on.
+    await controller.settleMutes();
+    if (!mounted) return;
+    _leave();
   }
 
   @override
@@ -406,6 +487,8 @@ class _OnboardingCommunitiesScreenState
     final count = state.selected.length;
     final enterLabel = state.submitting
         ? '正在加入…'
+        : state.settling && !state.hasFailures
+        ? '进入 LOOP'
         : state.hasFailures
         ? '继续进入 LOOP'
         : count == 0
@@ -425,7 +508,7 @@ class _OnboardingCommunitiesScreenState
             key: const ValueKey<String>('onboarding-communities-skip'),
             icon: 'close',
             label: '跳过',
-            onPressed: state.submitting ? null : widget.onDone,
+            onPressed: state.submitting ? null : _leave,
           ),
         ],
         footnote: Padding(
@@ -441,14 +524,14 @@ class _OnboardingCommunitiesScreenState
                 block: true,
                 onPressed: state.submitting
                     ? null
-                    : state.hasFailures
-                    ? widget.onDone
+                    : state.hasFailures || state.settling
+                    ? _leave
                     : () => unawaited(_enter(controller)),
               ),
               const SizedBox(height: 6),
               TextButton(
                 key: const ValueKey<String>('onboarding-communities-skip-text'),
-                onPressed: state.submitting ? null : widget.onDone,
+                onPressed: state.submitting ? null : _leave,
                 child: Text(
                   '跳过',
                   style: LoopTypography.label(14, color: LoopColors.muted),
@@ -555,24 +638,24 @@ class _OnboardingCommunitiesScreenState
       title: community.name,
       subtitle: switch (result) {
         OnboardingJoinResult.joined => '已加入 · 已免打扰',
-        OnboardingJoinResult.joinedNotMuted ||
+        OnboardingJoinResult.joinedMutePending => '已加入 · 免打扰生效中',
         OnboardingJoinResult.failed => reason ?? '没有加入成功',
         null => members,
       },
       subtitleMaxLines: 1,
       trailingBadge: _OnboardingTick(
         key: ValueKey<String>('onboarding-community-badge-$id'),
-        state: result == OnboardingJoinResult.joined
+        state: result?.isJoined ?? false
             ? '已加入'
             : selected
             ? '已选'
             : '未选',
-        on: selected || result == OnboardingJoinResult.joined,
+        on: selected || (result?.isJoined ?? false),
       ),
       selected: selected,
       chevron: false,
       position: position,
-      onTap: state.submitting || result == OnboardingJoinResult.joined
+      onTap: state.submitting || (result?.isJoined ?? false)
           ? null
           : () => controller.toggle(id),
       semanticLabel: '${community.name}，$members，${selected ? '已选' : '未选'}',
