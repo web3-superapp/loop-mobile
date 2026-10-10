@@ -34,6 +34,11 @@ abstract final class LoopFeatureSwitches {
   /// 目录，用户 2026-10-09：「不能搜就别放」）；枚举与探测逻辑保留，改 true
   /// 即恢复两个 chips。
   static const bool searchOutboundDomainsVisible = false;
+
+  /// S134 · 决策 0137：App 只认识 `launch2` 能力位（loop-api 决策 0114），
+  /// 本批没有 MEME v2 页面，任何入口都不画；页面落地后改 true 并按能力位
+  /// `available` 决定是否显示。
+  static const bool launch2Visible = false;
 }
 
 /// The switch values one build runs with.
@@ -53,6 +58,7 @@ final class LoopFeatureSwitchValues {
     this.searchOutboundDomainsVisible =
         LoopFeatureSwitches.searchOutboundDomainsVisible,
     this.appleLoginVisible = LoopFeatureSwitches.appleLoginVisible,
+    this.launch2Visible = LoopFeatureSwitches.launch2Visible,
   });
 
   final bool idoLaunchVisible;
@@ -62,6 +68,7 @@ final class LoopFeatureSwitchValues {
   final bool outboundMarketListsVisible;
   final bool searchOutboundDomainsVisible;
   final bool appleLoginVisible;
+  final bool launch2Visible;
 
   /// Whether a channel draws its members as their real Stream user (name,
   /// image, tap to the public profile) rather than as a channel-scoped name.

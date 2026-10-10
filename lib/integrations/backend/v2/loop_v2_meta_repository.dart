@@ -193,8 +193,12 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     });
     _validateBaseline(root);
     final rawCapabilities = root['capabilities'];
+    // Every id is required except the omissible ones (decision 0137), so the
+    // list holds either the full set or the full set minus some of those.
     if (rawCapabilities is! List ||
-        rawCapabilities.length != LoopV2CapabilityId.values.length) {
+        rawCapabilities.length > LoopV2CapabilityId.values.length ||
+        rawCapabilities.length <
+            LoopV2CapabilityId.values.length - omissibleCapabilities.length) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
 
@@ -207,9 +211,12 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       }
       capabilities.add(capability);
     }
-    if (seen.length != LoopV2CapabilityId.values.length ||
-        !seen.containsAll(LoopV2CapabilityId.values)) {
-      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    for (final id in LoopV2CapabilityId.values) {
+      if (seen.contains(id)) continue;
+      if (!omissibleCapabilities.contains(id)) {
+        throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+      }
+      capabilities.add(_absentCapability(id));
     }
 
     return LoopV2Capabilities(
@@ -217,6 +224,37 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       configVersion: root['configVersion']! as String,
       effectiveAt: _utcDateTime(root['effectiveAt']),
       capabilities: capabilities,
+    );
+  }
+
+  /// Ids a backend may leave out of `/v2/meta/capabilities` (decision 0137).
+  ///
+  /// `launch2` was added by loop-api decision 0114. Until every backend a
+  /// shipped build can face (Development, Staging, TestFlight's) has deployed
+  /// it, a 32-id list without `launch2` is the older contract, not drift. An
+  /// absent `launch2` reads as `deferred` — module off — which is exactly
+  /// what that backend means. Every other id stays strictly required.
+  static const omissibleCapabilities = <LoopV2CapabilityId>{
+    LoopV2CapabilityId.launch2,
+  };
+
+  /// The reason code on a capability the backend did not publish. It is the
+  /// client's own (no backend emits it), so a log can tell the filled-in row
+  /// from the server's `LAUNCH2_MODULE_NOT_ENABLED`.
+  static const launch2AbsentReasonCode = 'LAUNCH2_CAPABILITY_ABSENT';
+
+  /// The row an omitted capability reads as: `deferred` with no provider
+  /// precondition, the same shape loop-api's `deferredCapability` emits.
+  LoopV2Capability _absentCapability(LoopV2CapabilityId id) {
+    assert(omissibleCapabilities.contains(id), '$id is not omissible');
+    return LoopV2Capability(
+      id: id,
+      availability: LoopV2CapabilityAvailability.deferred,
+      reasonCode: launch2AbsentReasonCode,
+      evidence: const LoopV2CapabilityEvidence(
+        status: LoopV2CapabilityEvidenceStatus.notApplicable,
+        reasonCode: null,
+      ),
     );
   }
 
@@ -367,6 +405,9 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       // evidence reads `confirmed`.
       // `launchContractVersion` belongs to `launch` alone and only while its
       // evidence reads `confirmed` (loop-api decision 0083).
+      // `launch2` carries none of the three (loop-api decision 0114): its
+      // evidence is `notApplicable` while deferred and `pending` with a reason
+      // otherwise, so the rules below already refuse any of them there.
       const <String>{'launchChainId', 'reference', 'launchContractVersion'},
     );
     final id = _enumValue(

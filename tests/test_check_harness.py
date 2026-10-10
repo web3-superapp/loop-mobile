@@ -5915,12 +5915,17 @@ class HarnessTests(unittest.TestCase):
     def test_current_s7_surfaces_pass_their_guard(self) -> None:
         self.assertEqual(check_harness.check_s7_truth_contract(REPOSITORY_ROOT), [])
 
-    def test_capability_enum_must_hold_the_contracts_thirty_two_ids(self) -> None:
+    def test_capability_enum_must_hold_the_contracts_thirty_three_ids(self) -> None:
         relative = str(check_harness.S5_CAPABILITY_META_PATH)
         source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
         mutations = (
-            # A thirty-third id the contract never listed.
-            ("  meme('meme');", "  meme('meme'),\n  perpTrading('perpTrading');"),
+            # A thirty-fourth id the contract never listed.
+            (
+                "  launch2('launch2');",
+                "  launch2('launch2'),\n  perpTrading('perpTrading');",
+            ),
+            # `launch2` dropped: omissible on the wire, never in the enum.
+            ("  launch2('launch2');", "  ;"),
             # A dropped id.
             ("  marketRead('marketRead'),\n", ""),
             # A renamed wire value.
@@ -5941,11 +5946,11 @@ class HarnessTests(unittest.TestCase):
 
                 self.assertTrue(
                     any(
-                        "LoopV2CapabilityId must list exactly the contract's 32 ids"
+                        "LoopV2CapabilityId must list exactly the contract's 33 ids"
                         in error
                         for error in result
                     ),
-                    msg=f"expected 32-capability guard: {result}",
+                    msg=f"expected 33-capability guard: {result}",
                 )
 
     def test_swap_entry_point_must_be_gated_on_swappable_alone(self) -> None:
