@@ -1,4 +1,4 @@
-/// The 110-route product manifest.
+/// The 111-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -9,6 +9,7 @@
 /// decision 0113 (S109b, same day) added `scan` and `community-manage`;
 /// decision 0120 (S117) added the four MEME curve launchpad routes;
 /// decision 0138 (S135) added the five MEME v2 project-side routes.
+/// decision 0139 (S136) added the MEME v2 project page.
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -111,7 +112,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      '87efe7a2c07f4e9b0f4e3b6565989fa9928942803acc5ec3c5a95e433a497e7f';
+      'ea6520e4821c4513b555888780c432c9e6522859a00cd5aba1a2c5c200d394b3';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -613,7 +614,7 @@ abstract final class LoopRouteManifest {
       status: LoopRouteStatus.implemented,
       tab: true,
     ),
-    // 4-launch · Launch (16)
+    // 4-launch · Launch (17)
     LoopRouteEntry(
       slug: 'launch',
       path: '/launch',
@@ -806,6 +807,17 @@ abstract final class LoopRouteManifest {
       module: LoopRouteModule.launch,
       title: '部署进度',
       prototypeOrder: 124,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S136 (decision 0139): the MEME v2 project page, one page for every
+    // stage of an instance.
+    LoopRouteEntry(
+      slug: 'launch2-instance',
+      path: '/launch2/instance',
+      module: LoopRouteModule.launch,
+      title: 'MEME v2 项目',
+      prototypeOrder: 112,
       step: 7,
       status: LoopRouteStatus.implemented,
     ),

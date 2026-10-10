@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:decimal/decimal.dart'; // S136
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_models.dart'; // S136
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
@@ -15,6 +17,7 @@ import 'package:loop_mobile/integrations/backend/v2/chain/loop_v2_chain_api.dart
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_api.dart'; // S136
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_repository.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
@@ -152,6 +155,9 @@ final class _Ids {
   String get launchId => _seg(2);
   String get pathId => _seg(2);
   String get launchProjectId => _seg(3);
+
+  // S136 · decision 0139: `/v2/launch2/instances/{instanceId}/…`.
+  String get launch2InstanceId => _seg(3);
   String get spender {
     final path = route.split('?').first.split('/');
     return Uri.decodeComponent(path[path.length - 1]);
@@ -840,6 +846,104 @@ List<_Case> _cases() => <_Case>[
         DioLoopV2WatchlistApi(d)
             .getWatchlist(accessToken: _token, clientVersion: _clientVersion),
   ),
+  // ---- S136 · decision 0139: MEME v2 (hand-written to the contract, see
+  // the capture README; replaced by a real capture once dev serves it) ----
+  for (final slug in const <String>[
+    'v2_launch2_instances_limit_30',
+    'v2_launch2_instances_empty',
+    'v2_launch2_error_unavailable',
+  ])
+    _Case(
+      slug,
+      'launch2/loop_v2_launch2_api.dart#listInstances',
+      (d, ids) => _launch2(d).listInstances(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        stage: ids.route.contains('stage=graduated')
+            ? Launch2Stage.graduated
+            : null,
+      ),
+    ),
+  for (final slug in const <String>[
+    'v2_launch2_instance_nft_sale',
+    'v2_launch2_instance_priority',
+    'v2_launch2_instance_graduated',
+  ])
+    _Case(
+      slug,
+      'launch2/loop_v2_launch2_api.dart#getInstance',
+      (d, ids) => _launch2(d).getInstance(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        instanceId: ids.launch2InstanceId,
+      ),
+    ),
+  for (final slug in const <String>[
+    'v2_launch2_quote_buy_max_quota',
+    'v2_launch2_quote_buy_exceeds_max',
+  ])
+    _Case(
+      slug,
+      'launch2/loop_v2_launch2_api.dart#getQuote',
+      (d, ids) => _launch2(d).getQuote(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        instanceId: ids.launch2InstanceId,
+        side: Launch2Side.buy,
+        amount: Decimal.parse(
+          Uri.splitQueryString(ids.route.split('?').last)['amount']!,
+        ),
+        walletId: ids.walletId,
+      ),
+    ),
+  _Case(
+    'v2_launch2_nft_prepare',
+    'launch2/loop_v2_launch2_api.dart#postNftPrepare',
+    (d, ids) => _launch2(d).postNftPrepare(
+      accessToken: _token,
+      clientVersion: _clientVersion,
+      idempotencyKey: '11111111-2222-4333-8444-555555555555',
+      instanceId: ids.launch2InstanceId,
+      walletId: 'd64786bb-408d-415d-8a69-6277d56c921b',
+    ),
+  ),
+  for (final slug in const <String>[
+    'v2_launch2_trade_prepare_buy',
+    'v2_launch2_error_quote_expired',
+    'v2_launch2_error_price_moved',
+    'v2_launch2_error_not_in_snapshot',
+  ])
+    _Case(
+      slug,
+      'launch2/loop_v2_launch2_api.dart#postTradePrepare',
+      (d, ids) => _launch2(d).postTradePrepare(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        idempotencyKey: '11111111-2222-4333-8444-555555555555',
+        instanceId: ids.launch2InstanceId,
+        walletId: 'd64786bb-408d-415d-8a69-6277d56c921b',
+        side: Launch2Side.buy,
+        amount: Decimal.fromInt(50),
+        minOut: Decimal.parse('1113750.495'),
+        deadline: DateTime.utc(2027, 1, 23, 7, 6),
+      ),
+    ),
+  _Case(
+    'v2_launch2_buybacks',
+    'launch2/loop_v2_launch2_api.dart#getBuybacks',
+    (d, ids) => _launch2(d).getBuybacks(
+      accessToken: _token,
+      clientVersion: _clientVersion,
+      instanceId: ids.launch2InstanceId,
+    ),
+  ),
+  _Case(
+    'v2_launch2_me_positions',
+    'launch2/loop_v2_launch2_api.dart#getPositions',
+    (d, ids) =>
+        _launch2(d)
+            .getPositions(accessToken: _token, clientVersion: _clientVersion),
+  ),
   _Case(
     'v2_support_tickets_limit_5',
     'support/loop_v2_support_api.dart#listTickets',
@@ -848,6 +952,10 @@ List<_Case> _cases() => <_Case>[
             .listTickets(accessToken: _token, clientVersion: _clientVersion),
   ),
 ];
+
+// S136 · decision 0139.
+DioLoopV2Launch2Api _launch2(Dio dio) =>
+    DioLoopV2Launch2Api(dio, mediaUrl: (_) => null);
 
 void main() {
   final root = Directory(_captureRoot);

@@ -77,6 +77,8 @@ import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart'; // S136
+import 'package:loop_mobile/features/launch2/launch2_routes.dart'; // S136
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart'; // S138
@@ -1631,14 +1633,18 @@ GoRouter _buildRouter(
       ),
       ..._launchRoutes,
       ..._memeRoutes,
-      // S135 (decision 0138): the five MEME v2 project-side pages. Until S136
-      // mounts the user-side instance page, an activated project opens the
-      // MEME tab.
+      // S135 (decision 0138): the five MEME v2 project-side pages; an
+      // activated project opens the S136 instance page (decision 0139).
       ...launch2CreatorRoutes(
         popOrHome: _popOrHome,
-        openInstance: (context, instanceId) =>
-            context.go(LoopRouteManifest.pathFor('meme')),
+        openInstance: (context, instanceId) => context.push(
+          Uri(
+            path: LoopRouteManifest.pathFor('launch2-instance'),
+            queryParameters: <String, String>{'id': instanceId},
+          ).toString(),
+        ),
       ),
+      ..._launch2Routes, // S136
       ..._miningRoutes,
       ..._pendingManifestRoutes,
       // Illegal locations are recorded and land on 聊天.
@@ -1800,6 +1806,21 @@ final List<RouteBase> _memeRoutes = <RouteBase>[
     builder: (context, state) => MemeTokenListScreen(
       memeTokenId: MemeRoute.idOf(state.uri),
       holders: false,
+      onBack: () => _popOrHome(context),
+      onNavigate: (location) => context.push(location),
+    ),
+  ),
+];
+
+// S136 · decision 0139: the MEME v2 project page. An instance is addressed
+// by the server's `instanceId` in the `id` query parameter; a missing or
+// malformed one fails closed on the page.
+final List<RouteBase> _launch2Routes = <RouteBase>[
+  GoRoute(
+    path: Launch2Route.instancePath,
+    builder: (context, state) => Launch2InstanceScreen(
+      key: ValueKey<String>('launch2-instance-${state.uri.query}'),
+      instanceId: Launch2Route.idOf(state.uri),
       onBack: () => _popOrHome(context),
       onNavigate: (location) => context.push(location),
     ),

@@ -56,6 +56,10 @@ abstract final class LoopMotion {
   static const Duration contentFadeIn = Duration(milliseconds: 180);
   static const Curve contentFadeCurve = Curves.easeOutCubic;
 
+  // S136 · decision 0139: a MEME v2 project page swaps its stage content in
+  // place with one short fade (S134–S137 §4, 「阶段切换用一次 150 ms 淡入」).
+  static const Duration stageSwitch = Duration(milliseconds: 150);
+
   /// The freshness line at the top of a page (「数据来自 N 秒前，正在更新」)
   /// fading in over a restored snapshot and out once the new answer landed.
   static const Duration freshnessFade = Duration(milliseconds: 220);

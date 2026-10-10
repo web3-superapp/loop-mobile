@@ -3,10 +3,16 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "87efe7a2c07f4e9b0f4e3b6565989fa9928942803acc5ec3c5a95e433a497e7f",
+  "sha256": "ea6520e4821c4513b555888780c432c9e6522859a00cd5aba1a2c5c200d394b3",
   "defaultRoute": "chat",
-  "tabs": ["chat", "square", "meme", "intel", "wallet"],
-  "count": 110,
+  "tabs": [
+    "chat",
+    "square",
+    "meme",
+    "intel",
+    "wallet"
+  ],
+  "count": 111,
   "modules": {
     "0-global-account": [
       {
@@ -324,6 +330,11 @@
         "slug": "launch2-project-deployment",
         "tab": false,
         "prototypeOrder": 124
+      },
+      {
+        "slug": "launch2-instance",
+        "tab": false,
+        "prototypeOrder": 112
       }
     ],
     "5-mining": [

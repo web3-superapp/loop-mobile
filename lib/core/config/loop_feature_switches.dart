@@ -38,7 +38,9 @@ abstract final class LoopFeatureSwitches {
   /// S134 · 决策 0137：App 只认识 `launch2` 能力位（loop-api 决策 0114），
   /// 本批没有 MEME v2 页面，任何入口都不画；页面落地后改 true 并按能力位
   /// `available` 决定是否显示。
-  static const bool launch2Visible = false;
+  // S136 · 决策 0139：用户侧页面已落地，开关打开；入口仍只在能力位
+  // `launch2 == available` 时出现（MEME Tab 的 v2 分段、钱包两行）。
+  static const bool launch2Visible = true;
 }
 
 /// The switch values one build runs with.

@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart'; // S136
+import 'package:loop_mobile/features/launch2/launch2_list.dart'; // S136
+import 'package:loop_mobile/features/launch2/launch2_models.dart'; // S136
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_launchpad.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
@@ -38,6 +41,11 @@ class MemeScreen extends ConsumerWidget {
 
   static const segments = <String>['发射台', '行情'];
 
+  /// S136 · decision 0139: the three segments while MEME v2 is shown —
+  /// v2 instances, the S117 curve launchpad as 「经典」, graduated v2
+  /// instances. The `meme` market category stays on 行情 (`/market`).
+  static const v2Segments = <String>['v2 发射', '经典', '已毕业'];
+
   /// The index of the IDO segment while the switch is on.
   static const int idoSegment = 2;
 
@@ -45,6 +53,9 @@ class MemeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final switches = ref.watch(loopFeatureSwitchesProvider);
     final ido = switches.idoLaunchVisible;
+    // S136 · decision 0139: drawn only with the build switch on and the
+    // server's `launch2` capability available; otherwise exactly as before.
+    if (launch2SurfaceVisible(ref)) return _v2(context, ref, ido: ido);
     void open(String location) {
       final navigate = onNavigate;
       if (navigate != null) {
@@ -105,6 +116,87 @@ class MemeScreen extends ConsumerWidget {
           onOpenApply: onOpenApply,
         ),
         _ => MemeMarketSegment(onNavigate: open),
+      },
+    );
+  }
+
+  // S136 · decision 0139: 「v2 发射 / 经典 / 已毕业」, IDO fourth when its
+  // switch is on.
+  Widget _v2(BuildContext context, WidgetRef ref, {required bool ido}) {
+    void open(String location) {
+      final navigate = onNavigate;
+      if (navigate != null) {
+        navigate(location);
+        return;
+      }
+      context.push(location);
+    }
+
+    void select(int index) =>
+        ref.read(loopTabSegmentMemoryProvider.notifier).select('meme', index);
+    final idoIndex = v2Segments.length;
+    return LoopSegmentedTabPage(
+      key: const ValueKey<String>('meme-screen'),
+      tabKey: 'meme',
+      title: 'MEME',
+      segments: <String>[...v2Segments, if (ido) 'IDO'],
+      actionsBuilder: (context, index) => index == idoIndex && ido
+          ? <Widget>[
+              Consumer(
+                builder: (context, ref, _) {
+                  final actions = launchTopbarActions(
+                    overview: ref.watch(launchOverviewControllerProvider).value,
+                    onOpenStake: onOpenStake,
+                    onOpenRules: onOpenRules,
+                  );
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      for (var i = 0; i < actions.length; i += 1) ...<Widget>[
+                        if (i > 0) const SizedBox(width: 6),
+                        actions[i],
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ]
+          : const <Widget>[],
+      updating: (ref, index) => switch (index) {
+        0 => ref.watch(
+          launch2ListControllerProvider(Launch2ListScope.all)
+              .select((state) => state.refreshing),
+        ),
+        1 => ref.watch(
+          memeListControllerProvider(MemeListTab.fresh)
+              .select((state) => state.refreshing),
+        ),
+        2 => ref.watch(
+          launch2ListControllerProvider(Launch2ListScope.graduated)
+              .select((state) => state.refreshing),
+        ),
+        _ => false,
+      },
+      builder: (context, index) => switch (index) {
+        0 => Launch2ListSegment(
+          scope: Launch2ListScope.all,
+          onNavigate: open,
+          onEmptyAction: () => select(1),
+        ),
+        1 => MemeLaunchpadSegment(onNavigate: open),
+        _ when ido && index == idoIndex => LaunchScreen(
+          embedded: true,
+          onOpenLaunch: onOpenLaunch,
+          onOpenStake: onOpenStake,
+          onOpenRules: onOpenRules,
+          onOpenEconomy: onOpenEconomy,
+          onOpenApply: onOpenApply,
+        ),
+        _ => Launch2ListSegment(
+          scope: Launch2ListScope.graduated,
+          onNavigate: open,
+          onEmptyAction: () => select(0),
+        ),
       },
     );
   }
