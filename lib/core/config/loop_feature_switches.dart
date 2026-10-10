@@ -21,11 +21,10 @@ abstract final class LoopFeatureSwitches {
   /// S107 §2：隐私页「匿名模式」开关 UI 下线（后端字段保留）；改 true 即恢复。
   static const bool anonymousModeVisible = false;
 
-  /// 2026-10-09 Apple 账号更换：Privy 的 Apple 登录仍绑定旧 Client ID
-  /// `com.cywd.loop` / 旧 Team ID，Privy 控制台不允许自行改；在 Privy 支持
-  /// 迁移到 `com.cywd.loopapp` / `L8UZT43W24` 之前，登录页不显示「使用 Apple
-  /// 继续」。改 true 即恢复。
-  static const bool appleLoginVisible = false;
+  /// 2026-10-10 切换到新的 Privy app（docs/14），Apple 登录已绑定新团队
+  /// `com.cywd.loopapp` / `L8UZT43W24`，登录页显示「使用 Apple 继续」。
+  /// 若 Apple 登录再次不可用，改 false 即隐藏。
+  static const bool appleLoginVisible = true;
 
   /// S113 · 决策 0118：行情里的「新币」「聪明钱」入口隐藏（它们把读者带出
   /// LOOP，且数据源未开放）；页面与路由保留，改 true 即恢复入口。

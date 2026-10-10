@@ -4920,8 +4920,8 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
         Path("config/debug.json"): {
             "LOOP_BUILD_MODE": "debug",
             "LOOP_CLIENT_VERSION": "0.1.0+1",
-            "PRIVY_APP_ID": "cmt2t8k4n00780cjsxjqk0dkq",
-            "PRIVY_APP_CLIENT_ID": "client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd",
+            "PRIVY_APP_ID": "cmv1ry4jb000t0fidio51bl28",
+            "PRIVY_APP_CLIENT_ID": "client-WY6efP6Z6NDa6McZc6ciFnnKMNCgNKhCxKPo4g5p1E68q",
             "REOWN_PROJECT_ID": "26a5cc1adad234fcdf7762b8d2a2b28d",
             "STREAM_API_KEY": "qpwjdy8zjbdu",
             "LOOP_BACKEND_BASE_URL": "https://api-dev.quant-dinger.cc",
@@ -8046,7 +8046,7 @@ def check_product_contract(root: Path) -> list[str]:
                 "const String.fromEnvironment('LOOP_BACKEND_BASE_URL')",
             ),
             "config/debug.json": (
-                "cmt2t8k4n00780cjsxjqk0dkq",
+                "cmv1ry4jb000t0fidio51bl28",
                 "qpwjdy8zjbdu",
                 "https://api-dev.quant-dinger.cc",
             ),

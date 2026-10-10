@@ -97,8 +97,8 @@ void main() {
     },
   );
 
-  test('the Apple login switch ships off until Privy migrates the client', () {
-    expect(LoopFeatureSwitches.appleLoginVisible, isFalse);
+  test('the Apple login switch ships on since the new Privy app (docs/14)', () {
+    expect(LoopFeatureSwitches.appleLoginVisible, isTrue);
   });
 
   testWidgets('disables wallet connection when Reown is not configured', (
