@@ -1,4 +1,4 @@
-/// The 105-route product manifest.
+/// The 110-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -7,7 +7,8 @@
 /// `square`, `meme` and `intel` and re-froze the manifest; decision 0112
 /// (S109a, same day) added `user-profile` and `onboarding-communities`;
 /// decision 0113 (S109b, same day) added `scan` and `community-manage`;
-/// decision 0120 (S117) added the four MEME curve launchpad routes.
+/// decision 0120 (S117) added the four MEME curve launchpad routes;
+/// decision 0138 (S135) added the five MEME v2 project-side routes.
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -110,7 +111,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      'a856fab14b49e5b0ee7fb2c1ae42c646f1bbe4a813692ba848b2d2e3ccb34d5e';
+      '87efe7a2c07f4e9b0f4e3b6565989fa9928942803acc5ec3c5a95e433a497e7f';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -758,6 +759,53 @@ abstract final class LoopRouteManifest {
       module: LoopRouteModule.launch,
       title: 'MEME 动态',
       prototypeOrder: 111,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S135 (decision 0138): the MEME v2 project side — 资料 → 审核 →
+    // 签名 → 部署 → 激活.
+    LoopRouteEntry(
+      slug: 'launch2-create',
+      path: '/launch2/create',
+      module: LoopRouteModule.launch,
+      title: '发起 v2 发射',
+      prototypeOrder: 120,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'launch2-projects',
+      path: '/launch2/projects/mine',
+      module: LoopRouteModule.launch,
+      title: '我的项目',
+      prototypeOrder: 121,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'launch2-project',
+      path: '/launch2/project',
+      module: LoopRouteModule.launch,
+      title: '项目状态',
+      prototypeOrder: 122,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'launch2-project-sign',
+      path: '/launch2/project/sign',
+      module: LoopRouteModule.launch,
+      title: '签名部署',
+      prototypeOrder: 123,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'launch2-project-deployment',
+      path: '/launch2/project/deployment',
+      module: LoopRouteModule.launch,
+      title: '部署进度',
+      prototypeOrder: 124,
       step: 7,
       status: LoopRouteStatus.implemented,
     ),

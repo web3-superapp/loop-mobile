@@ -68,6 +68,10 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_mining_rewards_api.dart'; // S138
+// S135 (decision 0138): MEME v2 project side.
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2_creator/loop_v2_launch2_creator_api.dart';
+import 'package:loop_mobile/integrations/privy/privy_typed_data_signer.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
@@ -299,6 +303,14 @@ Future<void> main() async {
         // its Dio client, client metadata and authenticated session all exist.
         memeGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MemeGatewayProvider),
+        ),
+        // S135 (decision 0138): the MEME v2 project side — the Hooks routes
+        // and the EIP-712 signer. Both fail closed until their inputs exist.
+        launch2CreatorGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2Launch2CreatorGatewayProvider),
+        ),
+        launch2TypedDataSignerProvider.overrideWith(
+          (ref) => ref.watch(privyLaunch2TypedDataSignerProvider),
         ),
         miningGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MiningGatewayProvider),

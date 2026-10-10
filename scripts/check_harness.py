@@ -8184,7 +8184,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 105-route manifest."""
+    """Keep the Dart route table equal to the frozen 110-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8200,8 +8200,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for module in manifest.get("modules", {}).values()
         for item in module
     ]
-    if manifest.get("count") != 105 or len(expected_slugs) != 105:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 105 routes")
+    # S135 (decision 0138): 105 → 110, the MEME v2 project side.
+    if manifest.get("count") != 110 or len(expected_slugs) != 110:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 110 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "chat":
@@ -8235,7 +8236,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 105 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 110 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
