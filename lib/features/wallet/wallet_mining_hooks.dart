@@ -109,7 +109,8 @@ class WalletHoldingsPowerHint extends ConsumerWidget {
     return LoopPowerHint(
       key: const ValueKey<String>('wallet-power-hint'),
       state: producing ? LoopPowerHintState.active : LoopPowerHintState.pending,
-      text: '钱包持仓正在产生算力',
+      // 「正在产生」 only while it is; at zero the strip states the rule.
+      text: producing ? '钱包持仓正在产生算力' : '钱包持仓按权重产生算力',
       figure: <String>[
         '$power 算力',
         '今日预估 $daily LOOP',
