@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -643,18 +644,30 @@ class Launch2PoolSwapLink extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerLeft,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page - 8),
-      child: TextButton(
+  Widget build(BuildContext context) => Padding(
+    // Decision 0149: on the gutter like every other line of the page, at
+    // caption size with a chevron — a way out, not a heading.
+    padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+    child: Semantics(
+      button: true,
+      label: '也可以在钱包兑换里交易',
+      excludeSemantics: true,
+      child: LoopPressable(
         key: const ValueKey<String>('launch2-go-swap'),
-        onPressed: onOpen,
-        style: TextButton.styleFrom(
-          foregroundColor: LoopColors.text2,
-          minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
+        onTap: onOpen,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          child: Row(
+            children: <Widget>[
+              Text(
+                '也可以在钱包兑换里交易',
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              ),
+              const SizedBox(width: 2),
+              const LoopIcon('chevron', size: 14, color: LoopColors.text3),
+            ],
+          ),
         ),
-        child: const Text('也可以在钱包兑换里交易'),
       ),
     ),
   );
