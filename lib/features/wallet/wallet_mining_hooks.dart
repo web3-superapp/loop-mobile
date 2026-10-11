@@ -113,7 +113,8 @@ class WalletHoldingsPowerHint extends ConsumerWidget {
       text: producing ? '钱包持仓正在产生算力' : '钱包持仓按权重产生算力',
       figure: <String>[
         '$power 算力',
-        '今日预估 $daily LOOP',
+        // Decision 0149: 「今日预估 — LOOP」 read as a broken figure.
+        daily == loopFigureDash ? '今日预估暂无' : '今日预估 $daily LOOP',
         if (baseline) miningBaselineLabel,
       ].join(' · '),
       onTap: onOpenMining,
