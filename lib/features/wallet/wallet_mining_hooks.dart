@@ -99,11 +99,16 @@ class WalletHoldingsPowerHint extends ConsumerWidget {
       MiningDailyOutputUnavailable() || null => loopFigureDash,
     };
     final baseline = summary != null && miningGateIsBaseline(summary.formula);
+    // Decision 0149: Lime marks power that is being produced. An unsigned
+    // decimal string of only zeros ("0", "0.000") is none, and reads in the
+    // quiet card like an unread figure.
+    final producing = switch (summary?.power) {
+      MiningFigureValue(value: final value) => RegExp(r'[1-9]').hasMatch(value),
+      MiningFigureUnavailable() || null => false,
+    };
     return LoopPowerHint(
       key: const ValueKey<String>('wallet-power-hint'),
-      state: power == loopFigureDash
-          ? LoopPowerHintState.pending
-          : LoopPowerHintState.active,
+      state: producing ? LoopPowerHintState.active : LoopPowerHintState.pending,
       text: '钱包持仓正在产生算力',
       figure: <String>[
         '$power 算力',
