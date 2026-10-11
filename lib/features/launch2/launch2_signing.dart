@@ -617,13 +617,18 @@ class Launch2SignStepStrip extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: lit ? LoopColors.lime : LoopColors.card,
+                  color: lit
+                      ? LoopColors.lime
+                      : next
+                      ? LoopColors.card2
+                      : LoopColors.card,
                   border: Border.all(
                     color: warn
                         ? LoopColors.warning
                         : next
                         ? LoopColors.chalk
                         : LoopColors.line,
+                    width: next ? 1.5 : 1,
                   ),
                 ),
                 child: Text(
@@ -653,7 +658,10 @@ class Launch2SignStepStrip extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _status(status),
+                      // Decision 0149: the caption agrees with the ring.
+                      next && status == Launch2StepStatus.waiting
+                          ? '下一步，待签名'
+                          : _status(status),
                       style: LoopType.caption.copyWith(
                         color: warn
                             ? LoopColors.warning
