@@ -335,7 +335,8 @@ void main() {
       final boost = find.text('邀请关系加成');
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);
-      expect(find.textContaining('当前加成 $launchMissingFigure'), findsOneWidget);
+      expect(find.textContaining('你的加成在邀请页查看'), findsOneWidget);
+      expect(find.textContaining('当前加成 $launchMissingFigure'), findsNothing);
       expect(find.textContaining('算力、产量、排行与邀请加成都暂时不可用'), findsNothing);
     });
 

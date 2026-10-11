@@ -425,8 +425,11 @@ class _ReferralCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
+                        // Decision 0149: the boost is never read on this
+                        // page, so it says where it is instead of printing a
+                        // dash before a full stop (「当前加成 —。」).
                         '一级至五级关系按服务端公布的比例增加算力，'
-                        '当前加成 $launchMissingFigure。',
+                        '你的加成在邀请页查看。',
                         style: LoopTypography.caption(
                           11,
                           color: LoopColors.text2,
