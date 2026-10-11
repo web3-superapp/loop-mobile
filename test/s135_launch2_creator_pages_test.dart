@@ -41,6 +41,7 @@ const String _walletId = '00000000-0000-4000-8000-000000000099';
 const String _jobId = '00000000-0000-4000-8000-000000000011';
 const String _owner = '0x7777777777777777777777777777777777777777';
 const String _instanceId = '8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d';
+const String _fixedRecipient = '0x28816c4c4792467390c90e5b426f198570e29307';
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
 
@@ -557,7 +558,8 @@ void main() {
       final input = creator.saved.single;
       expect(input.ticker, 'MCAT');
       expect(input.links, <String>['https://x.com/mooncat']);
-      expect(input.buybackRecipient, Launch2Template.defaultBuybackRecipient);
+      // The server's fixed recipient read just before the save (0144).
+      expect(input.buybackRecipient, _fixedRecipient);
       expect(input.logoAssetUrl, startsWith('https://'));
       // The picker never offers less than the contract's floor.
       expect(
@@ -1427,6 +1429,311 @@ void main() {
         isFalse,
       );
       expect(launch.submitted, <String>[_projectId]);
+      await _drain(tester);
+    });
+  });
+
+  group('S145 · rulings (decision 0144)', () {
+    final rejectedAt = DateTime.utc(2026, 10, 10, 8);
+
+    testWidgets('a rejected launch configuration shows reason, note and '
+        'time, and resubmits through the edit form', (tester) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        Launch2ProjectScreen(projectId: _projectId, onNavigate: opened.add),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_rejected')),
+          ],
+        ),
+      );
+      expect(_key('launch2-status-rejected'), findsOneWidget);
+      expect(_key('launch2-milestones-rejected'), findsOneWidget);
+      expect(_key('launch2-rejection-other'), findsOneWidget);
+      expect(find.text('审核未通过：其他原因'), findsOneWidget);
+      expect(find.textContaining('审核意见：Logo 与官网不一致，请替换后重提'), findsOneWidget);
+      expect(find.textContaining('发射配置未通过审核'), findsOneWidget);
+      expect(_key('launch2-project-sign'), findsNothing);
+      await tester.tap(_key('launch2-project-resubmit'));
+      expect(opened.single, Launch2CreatorRoute.edit(_projectId));
+      await _drain(tester);
+    });
+
+    testWidgets('rejected project material is editable and resubmits; the '
+        'reason reads in the owner\'s words', (tester) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        Launch2ProjectScreen(projectId: _projectId, onNavigate: opened.add),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.rejected,
+            reviewReasonCode: 'name_or_ticker_conflict',
+            reviewReasonText: '项目名称或代币符号与已有项目冲突，修改后可以重新提交审核。',
+            rejection: LaunchRejection(
+              reason: LaunchRejectionReason.nameOrTickerConflict,
+              note: null,
+              at: rejectedAt,
+            ),
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
+          ],
+        ),
+      );
+      expect(find.text('审核未通过：名称或代码与已有项目冲突'), findsOneWidget);
+      expect(find.textContaining('项目资料未通过审核'), findsOneWidget);
+      expect(find.textContaining('审核意见'), findsNothing);
+      // No more 「重新发起」: the same project is edited and resubmitted.
+      expect(_key('launch2-project-restart'), findsNothing);
+      await tester.tap(_key('launch2-project-resubmit'));
+      expect(opened.single, Launch2CreatorRoute.edit(_projectId));
+      await _drain(tester);
+    });
+
+    testWidgets('editing a rejected project puts and resubmits it with the '
+        'fixed recipient', (tester) async {
+      final launch = _FakeLaunch(
+        project: s7Project(
+          projectId: _projectId,
+          reviewStatus: LaunchReviewStatus.rejected,
+          version: 4,
+          reviewReasonCode: 'incomplete_materials',
+          rejection: LaunchRejection(
+            reason: LaunchRejectionReason.incompleteMaterials,
+            note: '请补充官网',
+            at: rejectedAt,
+          ),
+        ),
+      );
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
+        ],
+        saves: <_A<Launch2HooksDraft>>[_A<Launch2HooksDraft>.value(_draft())],
+      );
+      await _pump(
+        tester,
+        Launch2CreateScreen(projectId: _projectId, clock: _beforeDeadline),
+        launch: launch,
+        creator: creator,
+      );
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      // Read only: shown, never an input.
+      expect(_key('launch2-fixed-recipient'), findsOneWidget);
+      expect(find.text(_fixedRecipient), findsOneWidget);
+      expect(find.text('平台固定'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch2-fixed-recipient'),
+          matching: find.byType(TextField),
+        ),
+        findsNothing,
+      );
+      expect(_key('launch2-create-recipient-address'), findsNothing);
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(launch.updated.single.$1, 4);
+      expect(creator.saved.single.buybackRecipient, _fixedRecipient);
+      expect(launch.submitted, <String>[_projectId]);
+      await _drain(tester);
+    });
+
+    testWidgets('a rejected configuration on an approved project saves a new '
+        'version only', (tester) async {
+      final launch = _FakeLaunch();
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_rejected')),
+        ],
+        saves: <_A<Launch2HooksDraft>>[_A<Launch2HooksDraft>.value(_draft())],
+      );
+      await _pump(
+        tester,
+        Launch2CreateScreen(projectId: _projectId, clock: _beforeDeadline),
+        launch: launch,
+        creator: creator,
+      );
+      for (var i = 0; i < 3; i += 1) {
+        await tester.tap(_key('launch2-create-next'));
+        await tester.pumpAndSettle();
+      }
+      // expectedVersion = the rejected version: the save resubmits it.
+      expect(creator.saveVersions, <int>[1]);
+      expect(launch.updated, isEmpty);
+      expect(launch.submitted, isEmpty);
+      await _drain(tester);
+    });
+
+    testWidgets('no fixed recipient configured: the save stops before the '
+        'draft and says so', (tester) async {
+      Launch2HooksConfig unconfigured(String name) {
+        final body =
+            jsonDecode(jsonEncode(_body(name))) as Map<String, Object?>;
+        body['fixedBuybackRecipient'] = null;
+        return LoopV2Launch2CreatorCodec.configEnvelope(
+          body,
+          projectId: _projectId,
+        );
+      }
+
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(unconfigured('hooks_config_draft')),
+        ],
+        saves: <_A<Launch2HooksDraft>>[_A<Launch2HooksDraft>.value(_draft())],
+      );
+      final launch = _FakeLaunch(
+        project: s7Project(
+          projectId: _projectId,
+          reviewStatus: LaunchReviewStatus.returned,
+          reviewReasonCode: 'materials_incomplete',
+        ),
+      );
+      await _pump(
+        tester,
+        Launch2CreateScreen(projectId: _projectId, clock: _beforeDeadline),
+        launch: launch,
+        creator: creator,
+      );
+      for (var i = 0; i < 2; i += 1) {
+        await tester.tap(_key('launch2-create-next'));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('暂未配置'), findsOneWidget);
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(creator.saved, isEmpty);
+      expect(launch.submitted, isEmpty);
+      expect(_key('launch2-create-failed-config'), findsOneWidget);
+      expect(find.textContaining('平台回购收币地址暂未配置'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('422 HOOKS_BUYBACK_RECIPIENT_FIXED on save is said plainly', (
+      tester,
+    ) async {
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
+        ],
+        saves: <_A<Launch2HooksDraft>>[
+          const _A<Launch2HooksDraft>.fail(
+            LoopChainFailureKind.validationFailed,
+            reason: launch2RecipientFixedCode,
+          ),
+        ],
+      );
+      await _pump(
+        tester,
+        Launch2CreateScreen(projectId: _projectId, clock: _beforeDeadline),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.returned,
+            reviewReasonCode: 'materials_incomplete',
+          ),
+        ),
+        creator: creator,
+      );
+      for (var i = 0; i < 3; i += 1) {
+        await tester.tap(_key('launch2-create-next'));
+        await tester.pumpAndSettle();
+      }
+      expect(find.textContaining('回购收币地址必须是平台固定地址'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('an approved version naming another recipient cannot be '
+        'signed: the status page sends the owner to edit', (tester) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        Launch2ProjectScreen(projectId: _projectId, onNavigate: opened.add),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(
+              _config('hooks_config_recipient_outdated'),
+            ),
+          ],
+        ),
+      );
+      expect(_key('launch2-project-next-recipient-outdated'), findsOneWidget);
+      expect(_key('launch2-project-sign'), findsNothing);
+      await tester.tap(_key('launch2-project-update-recipient'));
+      expect(opened.single, Launch2CreatorRoute.edit(_projectId));
+      await _drain(tester);
+    });
+
+    testWidgets('signing-request 422 offers 修改资料', (tester) async {
+      final edits = <String>[];
+      await _pump(
+        tester,
+        Launch2SignScreen(
+          projectId: _projectId,
+          clock: _beforeDeadline,
+          onEdit: edits.add,
+        ),
+        creator: _FakeCreator(
+          requests: <_A<Launch2SigningRequest>>[
+            const _A<Launch2SigningRequest>.fail(
+              LoopChainFailureKind.validationFailed,
+              reason: launch2RecipientFixedCode,
+            ),
+          ],
+        ),
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.textContaining('回购收币地址必须是平台固定地址'), findsOneWidget);
+      expect(_key('launch2-sign-retry'), findsNothing);
+      await tester.tap(_key('launch2-sign-edit'));
+      expect(edits.single, _projectId);
+      await _drain(tester);
+    });
+
+    testWidgets('我的项目 rows name the rejection and the outdated recipient', (
+      tester,
+    ) async {
+      const second = '4fa85f64-5717-4562-b3fc-2c963f66afa2';
+      final opened = <String>[];
+      await _pump(
+        tester,
+        Launch2ProjectsScreen(onNavigate: opened.add),
+        launch: _FakeLaunch(
+          page: _page(<LaunchProject>[
+            s7Project(
+              projectId: _projectId,
+              reviewStatus: LaunchReviewStatus.approved,
+              kind: LaunchProjectKind.launch2,
+            ),
+            s7Project(
+              projectId: second,
+              reviewStatus: LaunchReviewStatus.approved,
+              kind: LaunchProjectKind.launch2,
+            ),
+          ]),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_rejected')),
+            _A<Launch2HooksConfig>.value(
+              _config('hooks_config_recipient_outdated'),
+            ),
+          ],
+        ),
+      );
+      expect(find.text('审核未通过：其他原因'), findsOneWidget);
+      expect(find.text('回购收币地址需要更新'), findsOneWidget);
+      await tester.tap(_key('launch2-project-row-$second'));
+      expect(opened.single, Launch2CreatorRoute.project(second));
       await _drain(tester);
     });
   });

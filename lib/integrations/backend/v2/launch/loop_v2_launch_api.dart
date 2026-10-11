@@ -306,8 +306,40 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     'configVersion',
   };
 
+  /// Decision 0122 (client 0144): optional in the schema, always present for
+  /// the owner; a server before 0122 omits it.
+  static const _projectOptionalKeys = <String>{'rejection'};
+
+  static const _rejectionKeys = <String>{'reasonCode', 'note', 'at'};
+
+  /// `{reasonCode, note, at}` (loop-api decision 0122). `note` is 1–500
+  /// characters and always present for `other`.
+  static LaunchRejection? rejection(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, _rejectionKeys);
+    final reason = LaunchRejectionReason.tryParse(map['reasonCode']);
+    if (reason == null) LoopV2S7Codec.invalid();
+    final note = map['note'];
+    if (note != null &&
+        (note is! String || note.trim().isEmpty || note.length > 500)) {
+      LoopV2S7Codec.invalid();
+    }
+    if (reason == LaunchRejectionReason.other && note == null) {
+      LoopV2S7Codec.invalid();
+    }
+    return LaunchRejection(
+      reason: reason,
+      note: note as String?,
+      at: LoopV2S7Codec.requireTimestamp(map, 'at'),
+    );
+  }
+
   static LaunchProject _project(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, _projectKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      _projectKeys,
+      _projectOptionalKeys,
+    );
     final review = LaunchReviewStatus.tryParse(
       LoopV2S7Codec.requireEnum(map, 'reviewStatus', const <String>{
         'draft',
@@ -335,6 +367,11 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       maxLength: 256,
     );
     if ((reasonCode == null) != (reasonText == null)) LoopV2S7Codec.invalid();
+    final rejected = rejection(map['rejection']);
+    // A rejection is shown only while the project is rejected.
+    if (rejected != null && review != LaunchReviewStatus.rejected) {
+      LoopV2S7Codec.invalid();
+    }
     final kybMap = LoopV2Contract.strictMap(map['kyb'], const <String>{
       'status',
       'state',
@@ -384,6 +421,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         'configVersion',
         const <String>{'launchCatalogV1'},
       ),
+      rejection: rejected,
     );
   }
 

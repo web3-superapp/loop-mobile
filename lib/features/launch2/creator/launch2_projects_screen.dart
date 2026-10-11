@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_controllers.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
@@ -130,7 +131,12 @@ class _ProjectRow extends StatelessWidget {
   String get _subtitle {
     final draft = row.draft;
     return switch (status) {
-      Launch2CreatorStatus.rejected => row.project.reviewReasonText ?? '审核未通过',
+      Launch2CreatorStatus.rejected => switch (row.rejection) {
+        final LaunchRejection rejection => launch2RejectionTitle(rejection),
+        null => row.project.reviewReasonText ?? '审核未通过',
+      },
+      Launch2CreatorStatus.approved when row.config.recipientOutdated =>
+        '回购收币地址需要更新',
       Launch2CreatorStatus.draft when draft == null => '还没有发射配置',
       _ when draft != null =>
         '开售 ${loopLocalTimestampLabel(draft.nftSaleStart)}',

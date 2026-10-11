@@ -108,32 +108,48 @@ Map<String, Object?> l2ViewerJson({
   },
 };
 
-Map<String, Object?> l2BuybackRecordJson() => <String, Object?>{
-  'buybackId': 'bb-1',
-  'outcome': 'executed',
-  'reasonCode': null,
-  'usd1Spent': '100',
-  'memeDelivered': '150000',
-  'minMemeOut': '148500',
-  'referencePriceUsd1': '0.00066',
-  'spotPriceUsd1': '0.00066',
-  'executedAt': '2027-01-24T08:00:00.000Z',
-  'transactionHash': l2Hash,
-  'blockNumber': '1400',
+/// [legacy]: a v2-generation (price-protected) execution; otherwise a v3 one,
+/// whose three protection figures are `null` (loop-api decision 0122).
+Map<String, Object?> l2BuybackRecordJson({bool legacy = true}) =>
+    <String, Object?>{
+      'buybackId': 'bb-1',
+      'outcome': 'executed',
+      'reasonCode': null,
+      'usd1Spent': '100',
+      'memeDelivered': '150000',
+      'minMemeOut': legacy ? '148500' : null,
+      'referencePriceUsd1': legacy ? '0.00066' : null,
+      'spotPriceUsd1': legacy ? '0.00066' : null,
+      'executedAt': '2027-01-24T08:00:00.000Z',
+      'transactionHash': l2Hash,
+      'blockNumber': '1400',
+    };
+
+/// The keeper's newest attempt (loop-api decision 0121); `null` = never.
+Map<String, Object?> l2KeeperJson() => <String, Object?>{
+  'lastAttemptAt': '2027-01-24T08:00:15.000Z',
+  'lastResult': 'rejected',
+  'reasonCode': 'LAUNCH2_BUYBACK_PRINCIPAL_INSUFFICIENT',
+  'nextEligibleAt': '2027-01-24T08:00:45.000Z',
 };
 
-Map<String, Object?> l2BuybackSummaryJson({bool latest = false}) =>
-    <String, Object?>{
-      'recipient': '0x28816c4c4792467390c90e5b426f198570e29307',
-      'paused': false,
-      'executedCount': latest ? '1' : '0',
-      'totalUsd1': latest ? '100' : '0',
-      'totalMeme': latest ? '150000' : '0',
-      'lastExecutedAt': latest ? '2027-01-24T08:00:00.000Z' : null,
-      'escrowRecordedUsd1': '200',
-      'escrowAvailableUsd1': latest ? '100' : '200',
-      'latest': latest ? l2BuybackRecordJson() : null,
-    };
+Map<String, Object?> l2BuybackSummaryJson({
+  bool latest = false,
+  bool legacy = true,
+  Map<String, Object?>? keeper,
+}) => <String, Object?>{
+  'recipient': '0x28816c4c4792467390c90e5b426f198570e29307',
+  'paused': false,
+  'executedCount': latest ? '1' : '0',
+  'totalUsd1': latest ? '100' : '0',
+  'totalMeme': latest ? '150000' : '0',
+  'lastExecutedAt': latest ? '2027-01-24T08:00:00.000Z' : null,
+  'escrowRecordedUsd1': '200',
+  'escrowAvailableUsd1': latest ? '100' : '200',
+  'latest': latest ? l2BuybackRecordJson(legacy: legacy) : null,
+  // loop-api decision 0121: optional in the schema, always answered.
+  'keeper': keeper,
+};
 
 Map<String, Object?> l2DetailJson({
   String instanceId = l2InstanceA,
@@ -148,9 +164,15 @@ Map<String, Object?> l2DetailJson({
   bool omitPublication = true,
   List<Map<String, Object?>> trades = const <Map<String, Object?>>[],
   int soldBps = 0,
+  bool openedWithoutHolders = false,
+  Map<String, Object?>? keeper,
 }) {
+  // loop-api decision 0122: a v3 sale with no NFT minted opens the public
+  // round without a list.
+  final opened = openedWithoutHolders;
   final published =
-      stage == 'priority' || stage == 'public' || stage == 'graduated';
+      !opened &&
+      (stage == 'priority' || stage == 'public' || stage == 'graduated');
   return <String, Object?>{
     'instance': <String, Object?>{
       ...l2RowJson(
@@ -199,14 +221,22 @@ Map<String, Object?> l2DetailJson({
         'buybackExecutor': '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       },
       'snapshot': <String, Object?>{
-        'status': published ? 'published' : 'pending',
+        'status': opened
+            ? 'opened_without_holders'
+            : published
+            ? 'published'
+            : 'pending',
         'verification': published ? 'verified' : null,
         'root': published ? l2Hash : null,
         'dataHash': published ? l2Hash : null,
         'cutoffBlockNumber': cutoffBlock ?? (published ? '1234' : null),
         'cutoffBlockHash': published ? l2Hash : null,
         'publishedAt': published ? '2027-01-23T07:05:00.000Z' : null,
-        'earlyRoundEndsAt': published ? '2027-01-23T08:05:00.000Z' : null,
+        'earlyRoundEndsAt': opened
+            ? '2027-01-23T07:01:00.000Z'
+            : published
+            ? '2027-01-23T08:05:00.000Z'
+            : null,
         'memberCount': published ? 160 : null,
         'signers': published
             ? <String>['0xcccccccccccccccccccccccccccccccccccccccc']
@@ -218,6 +248,14 @@ Map<String, Object?> l2DetailJson({
                 'reason': 'no_holders',
                 'cutoffBlock': cutoffBlock ?? '1234',
                 'closedAt': '2027-01-23T07:02:00.000Z',
+              }
+            : null,
+        // loop-api decision 0122: optional in the schema, always answered.
+        'openedWithoutHolders': opened
+            ? <String, Object?>{
+                'openedAt': '2027-01-23T07:01:00.000Z',
+                'blockNumber': '1240',
+                'transactionHash': l2Hash,
               }
             : null,
       },
@@ -232,7 +270,10 @@ Map<String, Object?> l2DetailJson({
               'transactionHash': l2Hash,
             }
           : null,
-      'buyback': l2BuybackSummaryJson(latest: stage == 'graduated'),
+      'buyback': l2BuybackSummaryJson(
+        latest: stage == 'graduated',
+        keeper: keeper,
+      ),
       'recentTrades': trades,
       'viewer': noViewer ? null : (viewer ?? l2ViewerJson()),
       'projectedAt': _iso(l2Now),
@@ -408,11 +449,12 @@ Map<String, Object?> l2IntentJson({
 }
 
 Map<String, Object?> l2BuybacksJson({
-  String? blocked = 'BUYBACK_PROTECTION_BLOCKED',
+  String? blocked = 'BUYBACK_PRINCIPAL_INSUFFICIENT',
   bool liveUnavailable = false,
+  bool legacy = true,
 }) => <String, Object?>{
   'instanceId': l2InstanceA,
-  'summary': l2BuybackSummaryJson(latest: true),
+  'summary': l2BuybackSummaryJson(latest: true, legacy: legacy),
   'live': liveUnavailable
       ? null
       : <String, Object?>{
@@ -427,7 +469,7 @@ Map<String, Object?> l2BuybacksJson({
   'liveUnavailable': liveUnavailable
       ? <String, Object?>{'reasonCode': 'LAUNCH2_CHAIN_READ_FAILED'}
       : null,
-  'buybacks': <Object?>[l2BuybackRecordJson()],
+  'buybacks': <Object?>[l2BuybackRecordJson(legacy: legacy)],
   'nextCursor': null,
   'contractVersion': '2.0',
 };
@@ -477,8 +519,12 @@ Launch2InstanceDetail l2Detail({
   bool noNextChange = false,
   String? cutoffBlock,
   List<Map<String, Object?>> trades = const <Map<String, Object?>>[],
+  bool openedWithoutHolders = false,
+  Map<String, Object?>? keeper,
 }) => LoopV2Launch2Codec.detail(
   l2DetailJson(
+    openedWithoutHolders: openedWithoutHolders,
+    keeper: keeper,
     stage: stage,
     viewer: viewer,
     noViewer: noViewer,
@@ -516,9 +562,10 @@ Launch2Intent l2Intent({String kind = 'nft_mint', bool approval = true}) =>
     LoopV2Launch2Codec.intent(l2IntentJson(kind: kind, approval: approval));
 
 Launch2BuybackPage l2Buybacks({
-  String? blocked = 'BUYBACK_PROTECTION_BLOCKED',
+  String? blocked = 'BUYBACK_PRINCIPAL_INSUFFICIENT',
+  bool legacy = true,
 }) => LoopV2Launch2Codec.buybacks(
-  l2BuybacksJson(blocked: blocked),
+  l2BuybacksJson(blocked: blocked, legacy: legacy),
   instanceId: l2InstanceA,
 );
 

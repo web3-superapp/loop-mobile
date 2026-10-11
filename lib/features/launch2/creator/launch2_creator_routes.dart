@@ -37,7 +37,8 @@ abstract final class Launch2CreatorRoute {
   static String _with(String path, Map<String, String> query) =>
       Uri(path: path, queryParameters: query).toString();
 
-  /// The edit form for a draft or returned project.
+  /// The edit form for a draft, returned or rejected project, or a rejected
+  /// launch configuration (decision 0144).
   static String edit(String projectId) =>
       _with(createPath, <String, String>{'project': projectId});
 
@@ -106,6 +107,8 @@ List<RouteBase> launch2CreatorRoutes({
       onSubmitted: (projectId, jobId) => context.pushReplacement(
         Launch2CreatorRoute.deployment(projectId, jobId),
       ),
+      onEdit: (projectId) =>
+          context.pushReplacement(Launch2CreatorRoute.edit(projectId)),
     ),
   ),
   GoRoute(

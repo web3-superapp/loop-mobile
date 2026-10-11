@@ -46,12 +46,17 @@ class Launch2SignScreen extends ConsumerStatefulWidget {
     super.key,
     this.onBack,
     this.onSubmitted,
+    this.onEdit,
     this.clock,
   });
 
   final String? projectId;
   final VoidCallback? onBack;
   final void Function(String projectId, String jobId)? onSubmitted;
+
+  /// Opens the edit form: the answer to `422 HOOKS_BUYBACK_RECIPIENT_FIXED`
+  /// (decision 0144), a version that names another recipient.
+  final void Function(String projectId)? onEdit;
   final DateTime Function()? clock;
 
   @override
@@ -201,6 +206,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
         ),
       ];
     }
+    final recipient = failure.reasonCode == launch2RecipientFixedCode;
     final blocked =
         failure.kind == LoopChainFailureKind.permissionDenied ||
         failure.kind == LoopChainFailureKind.notFound;
@@ -210,7 +216,9 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
         icon: 'warn',
         tone: LoopNoticeTone.warn,
         body: launch2FailureText(failure),
-        trailing: blocked
+        trailing: recipient
+            ? _editButton(projectId)
+            : blocked
             ? null
             : LoopButton(
                 key: const ValueKey<String>('launch2-sign-retry'),
@@ -219,6 +227,16 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
               ),
       ),
     ];
+  }
+
+  Widget? _editButton(String projectId) {
+    final onEdit = widget.onEdit;
+    if (onEdit == null) return null;
+    return LoopButton(
+      key: const ValueKey<String>('launch2-sign-edit'),
+      label: '修改资料',
+      onPressed: () => onEdit(projectId),
+    );
   }
 
   List<Widget> _ready(
@@ -311,6 +329,9 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
           icon: 'warn',
           tone: LoopNoticeTone.warn,
           body: launch2FailureText(failure),
+          trailing: failure.reasonCode == launch2RecipientFixedCode
+              ? _editButton(projectId)
+              : null,
         ),
       Padding(
         padding: const EdgeInsets.fromLTRB(

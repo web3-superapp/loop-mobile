@@ -28,8 +28,13 @@ String launch2StageLabel(Launch2Stage stage) => switch (stage) {
 /// `409 DATA_STALE` for a stage that takes no order (contract §3.3).
 const String launch2StageMismatchCode = 'LAUNCH2_STAGE_MISMATCH';
 
-/// The one sentence for `closed_no_holders` (decision 0142).
+/// The one sentence for `closed_no_holders` (decision 0142). Only instances
+/// of a v2-generation Factory can still reach it (loop-api decision 0122).
 const String launch2ClosedNoHoldersText = '无人认购，已关闭';
+
+/// A v3 sale that ended with no NFT minted opened the public round directly
+/// (`snapshot.status = opened_without_holders`, decision 0144).
+const String launch2OpenedWithoutHoldersText = '无 NFT 持有人，已直接开放公开内盘';
 
 /// The second half of the stage bar (contract §2 「App」 column).
 String launch2StageCaption(Launch2Stage stage) => switch (stage) {
@@ -139,14 +144,18 @@ String launch2LimitedByText(Launch2LimitedBy limitedBy) => switch (limitedBy) {
   Launch2LimitedBy.closed => '当前阶段不可交易',
 };
 
-/// The buyback's `nextOrderBlockedReason` in zh-CN; `null` reads as ready.
+/// The buyback's `nextOrderBlockedReason` in zh-CN; `null` reads as ready
+/// (loop-api decision 0122 redefined the set: the v3 executor has no price
+/// protection, `BUYBACK_LEGACY_PRICE_PROTECTION` is v2 instances only).
 String launch2BuybackBlockedText(String? reasonCode) => switch (reasonCode) {
   null => '下一笔可以执行',
   'BUYBACK_PAUSED' => '回购已暂停',
   'BUYBACK_NOT_GRADUATED' => '毕业后才开始回购',
   'BUYBACK_NO_BUDGET' => '托管余额不足一笔',
-  'BUYBACK_PROTECTION_BLOCKED' => '价格保护生效，暂不执行',
-  'BUYBACK_PRICE_SOURCE_UNAVAILABLE' => '参考价暂时读不到，暂不执行',
+  'BUYBACK_TOO_SOON' => '距上一笔不到 10 秒，稍后执行',
+  'BUYBACK_PRINCIPAL_INSUFFICIENT' => '官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%',
+  'BUYBACK_QUOTE_UNAVAILABLE' => '合约报价暂时读不到，暂不执行',
+  'BUYBACK_LEGACY_PRICE_PROTECTION' => '旧版合约价格保护生效，暂不执行',
   _ => '暂不执行',
 };
 

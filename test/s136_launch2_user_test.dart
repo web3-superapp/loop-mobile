@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
@@ -320,7 +321,7 @@ void main() {
       expect(intent.approval!.spender, l2Nft);
       expect(
         l2Buybacks().live!.nextOrderBlockedReason,
-        'BUYBACK_PROTECTION_BLOCKED',
+        'BUYBACK_PRINCIPAL_INSUFFICIENT',
       );
       expect(l2Positions().items.single.nftHeld, 1);
     });
@@ -755,7 +756,7 @@ void main() {
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch2-buyback-next'));
       expect(find.text('100 USD1'), findsWidgets);
-      expect(find.text('价格保护生效，暂不执行'), findsOneWidget);
+      expect(find.text('官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%'), findsOneWidget);
       expect(find.textContaining('100 USD1 · 1 笔'), findsOneWidget);
       await tester.tap(_key('launch2-buyback-info'));
       await tester.pumpAndSettle();
@@ -1382,6 +1383,179 @@ void main() {
       expect(find.textContaining('当前阶段不能交易，已重新读取项目状态'), findsOneWidget);
       expect(_key('launch2-instance-state-error'), findsNothing);
       expect(_key('launch2-stage-public'), findsOneWidget);
+      await _drain(tester);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // S145 · decision 0144 (loop-api decision 0122): a v3 sale with no NFT
+  // holder opens the public round; the buyback has no price protection.
+  // -------------------------------------------------------------------------
+  group('S145 · opened without holders, v3 buyback', () {
+    Object? decode(Map<String, Object?> json) =>
+        LoopV2Launch2Codec.detail(json, mediaUrl: (_) => null);
+    Map<String, Object?> snapshotOf(Map<String, Object?> json) =>
+        (json['instance']! as Map<String, Object?>)['snapshot']!
+            as Map<String, Object?>;
+    Matcher invalid() => throwsA(isA<LoopBackendFailure>());
+
+    test('the opening is read; it and its status arrive together', () {
+      final detail = l2Detail(stage: 'public', openedWithoutHolders: true);
+      final opened = detail.snapshot.openedWithoutHolders!;
+      expect(opened.openedAt, DateTime.utc(2027, 1, 23, 7, 1));
+      expect(opened.blockNumber, BigInt.from(1240));
+      expect(opened.transactionHash, l2Hash);
+      expect(detail.snapshot.published, isFalse);
+      expect(detail.snapshot.root, isNull);
+      expect(detail.snapshot.publication, isNull);
+      expect(detail.snapshot.closure, isNull);
+      expect(detail.snapshot.earlyRoundEndsAt, opened.openedAt);
+      expect(detail.stage.tradable, isTrue);
+      // A graduated instance keeps its opening record.
+      expect(
+        l2Detail(
+          stage: 'graduated',
+          openedWithoutHolders: true,
+        ).snapshot.openedWithoutHolders,
+        isNotNull,
+      );
+      // An ordinary instance answers the key as null.
+      expect(l2Detail(stage: 'public').snapshot.openedWithoutHolders, isNull);
+
+      // A server before 0122 omits the key.
+      final old = l2DetailJson(stage: 'public');
+      snapshotOf(old).remove('openedWithoutHolders');
+      expect(
+        (decode(old)! as Launch2InstanceDetail).snapshot.openedWithoutHolders,
+        isNull,
+      );
+      // The status without its record, and the record without its status.
+      final bare = l2DetailJson(stage: 'public', openedWithoutHolders: true);
+      snapshotOf(bare)['openedWithoutHolders'] = null;
+      expect(() => decode(bare), invalid());
+      final stray = l2DetailJson(stage: 'public', openedWithoutHolders: true);
+      snapshotOf(stray)['status'] = 'pending';
+      expect(() => decode(stray), invalid());
+      // An opening with a list root, or before the sale ended.
+      final rooted = l2DetailJson(stage: 'public', openedWithoutHolders: true);
+      snapshotOf(rooted)['root'] = l2Hash;
+      expect(() => decode(rooted), invalid());
+      final early = l2DetailJson(stage: 'nft_sale', openedWithoutHolders: true);
+      expect(() => decode(early), invalid());
+      final unknown = l2DetailJson(stage: 'public');
+      snapshotOf(unknown)['status'] = 'closed';
+      expect(() => decode(unknown), invalid());
+    });
+
+    test('a v3 buyback has no protection figures; v2 has all three', () {
+      final v3 = l2Buybacks(legacy: false);
+      expect(v3.buybacks.single.minMemeOut, isNull);
+      expect(v3.buybacks.single.referencePriceUsd1, isNull);
+      expect(v3.buybacks.single.spotPriceUsd1, isNull);
+      expect(v3.summary.latest?.minMemeOut, isNull);
+      final v2 = l2Buybacks();
+      expect(v2.buybacks.single.minMemeOut, Decimal.parse('148500'));
+      expect(v2.buybacks.single.spotPriceUsd1, Decimal.parse('0.00066'));
+
+      final mixed = l2BuybacksJson(legacy: false);
+      (mixed['buybacks']! as List<Object?>)[0] = <String, Object?>{
+        ...l2BuybackRecordJson(legacy: false),
+        'minMemeOut': '1',
+      };
+      expect(
+        () => LoopV2Launch2Codec.buybacks(mixed, instanceId: l2InstanceA),
+        invalid(),
+      );
+    });
+
+    test('the keeper attempt is read; an unknown result is invalid', () {
+      final detail = l2Detail(stage: 'graduated', keeper: l2KeeperJson());
+      final keeper = detail.buyback.keeper!;
+      expect(keeper.lastResult, Launch2KeeperResult.rejected);
+      expect(keeper.reasonCode, 'LAUNCH2_BUYBACK_PRINCIPAL_INSUFFICIENT');
+      expect(keeper.nextEligibleAt, DateTime.utc(2027, 1, 24, 8, 0, 45));
+      expect(l2Detail(stage: 'graduated').buyback.keeper, isNull);
+      final bad = l2DetailJson(
+        stage: 'graduated',
+        keeper: <String, Object?>{...l2KeeperJson(), 'lastResult': 'skipped'},
+      );
+      expect(() => decode(bad), invalid());
+    });
+
+    test('every redefined blocked reason has its words; the retired ones '
+        'are gone', () {
+      for (final code in <String>[
+        'BUYBACK_PAUSED',
+        'BUYBACK_NOT_GRADUATED',
+        'BUYBACK_NO_BUDGET',
+        'BUYBACK_TOO_SOON',
+        'BUYBACK_PRINCIPAL_INSUFFICIENT',
+        'BUYBACK_QUOTE_UNAVAILABLE',
+        'BUYBACK_LEGACY_PRICE_PROTECTION',
+      ]) {
+        expect(launch2BuybackBlockedText(code), isNot('暂不执行'), reason: code);
+      }
+      expect(launch2BuybackBlockedText('BUYBACK_PROTECTION_BLOCKED'), '暂不执行');
+      expect(
+        launch2BuybackBlockedText('BUYBACK_PRICE_SOURCE_UNAVAILABLE'),
+        '暂不执行',
+      );
+      // Every stage on the wire has a label and a caption.
+      for (final stage in Launch2Stage.values) {
+        expect(launch2StageLabel(stage), isNotEmpty);
+        expect(launch2StageCaption(stage), isNotEmpty);
+      }
+    });
+
+    testWidgets('the public page says the round opened without holders and '
+        'trades as usual', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(
+              l2Detail(stage: 'public', openedWithoutHolders: true),
+            ),
+          ],
+        ),
+      );
+      expect(_key('launch2-stage-public'), findsOneWidget);
+      expect(_key('launch2-opened-without-holders'), findsOneWidget);
+      expect(find.textContaining('无 NFT 持有人，已直接开放公开内盘'), findsOneWidget);
+      expect(_key('launch2-trade-amount'), findsOneWidget);
+      expect(find.textContaining('名单'), findsNothing);
+      await _drain(tester);
+
+      // An ordinary public round says nothing of the sort.
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(l2Detail(stage: 'public')),
+          ],
+        ),
+      );
+      expect(_key('launch2-opened-without-holders'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('the legacy closed page names the old contract', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(
+              l2Detail(stage: 'closed_no_holders', cutoffBlock: '1234'),
+            ),
+          ],
+        ),
+      );
+      expect(find.textContaining('旧版合约'), findsOneWidget);
       await _drain(tester);
     });
   });

@@ -219,7 +219,7 @@ final launch2ProjectControllerProvider = NotifierProvider.autoDispose
       String
     >(Launch2ProjectController.new);
 
-// -- 资料页：create, or edit a returned / draft project ----------------------
+// -- 资料页：create, or edit a draft / returned / rejected project ------------
 
 enum Launch2SaveStage { project, config, submit }
 
@@ -234,6 +234,7 @@ final class Launch2SaveState {
     this.failure,
     this.minSaleLead,
     this.earliestSaleStart,
+    this.fixedBuybackRecipient,
   });
 
   final Launch2SavePhase phase;
@@ -252,6 +253,10 @@ final class Launch2SaveState {
   /// Set when the save stopped before writing because the chosen sale start
   /// is earlier than this (the server's lead read just now).
   final DateTime? earliestSaleStart;
+
+  /// The platform's fixed buyback recipient, once a `hooks-config` read gave
+  /// it (loop-api decision 0122): the form shows it read-only.
+  final String? fixedBuybackRecipient;
 
   bool get busy => phase == Launch2SavePhase.saving;
 }
@@ -291,12 +296,14 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
     final creator = ref.read(launch2CreatorGatewayProvider);
     var projectId = state.projectId;
     var lead = state.minSaleLead;
+    var recipient = state.fixedBuybackRecipient;
     var stage = Launch2SaveStage.project;
     state = Launch2SaveState(
       phase: Launch2SavePhase.saving,
       stage: stage,
       projectId: projectId,
       minSaleLead: lead,
+      fixedBuybackRecipient: recipient,
     );
     try {
       final editable = existing == null || existing.reviewStatus.isEditable;
@@ -336,10 +343,12 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         stage: stage,
         projectId: id,
         minSaleLead: lead,
+        fixedBuybackRecipient: recipient,
       );
       if (!_configSaved) {
         final current = await creator.loadConfig(id);
         lead = current.minSaleLead;
+        recipient = current.fixedBuybackRecipient;
         final earliest = launch2EarliestSaleStart(now, lead);
         if (config.nftSaleStart.isBefore(earliest)) {
           state = Launch2SaveState(
@@ -348,15 +357,26 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
             projectId: id,
             minSaleLead: lead,
             earliestSaleStart: earliest,
+            fixedBuybackRecipient: recipient,
           );
           return null;
         }
+        // Decision 0144: the recipient is the platform's, never typed. The
+        // draft always carries the address the server just named; without
+        // one nothing is written (the server would answer 503).
+        if (recipient == null) {
+          throw const LoopChainException(
+            LoopChainFailureKind.unavailable,
+            reasonCode: launch2RecipientUnavailableCode,
+          );
+        }
+        final input = config.withBuybackRecipient(recipient);
         var expected = current.draft?.version ?? 0;
         try {
           await creator.saveConfig(
             projectId: id,
             expectedVersion: expected,
-            input: config,
+            input: input,
           );
         } on LoopChainException catch (error) {
           // Another version landed since the read: read the latest and save
@@ -366,7 +386,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
           await creator.saveConfig(
             projectId: id,
             expectedVersion: expected,
-            input: config,
+            input: input,
           );
         }
         _configSaved = true;
@@ -378,6 +398,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
           stage: stage,
           projectId: id,
           minSaleLead: lead,
+          fixedBuybackRecipient: recipient,
         );
         await _launch(() => launch.submitProject(id));
       }
@@ -386,6 +407,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         stage: stage,
         projectId: id,
         minSaleLead: lead,
+        fixedBuybackRecipient: recipient,
       );
       return id;
     } on LoopChainException catch (error) {
@@ -395,6 +417,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         projectId: projectId,
         failure: error,
         minSaleLead: lead,
+        fixedBuybackRecipient: recipient,
       );
       return null;
     } catch (_) {
@@ -404,6 +427,7 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         projectId: projectId,
         failure: const LoopChainException(LoopChainFailureKind.unexpected),
         minSaleLead: lead,
+        fixedBuybackRecipient: recipient,
       );
       return null;
     }

@@ -33,19 +33,9 @@ debugLaunch2CropOverride;
 const List<String> launch2CreateSteps = <String>['资料', '社区', '发售'];
 
 /// The fields the form checks before the server does.
-enum Launch2Field {
-  name,
-  ticker,
-  description,
-  x,
-  telegram,
-  website,
-  discord,
-  recipient,
-}
+enum Launch2Field { name, ticker, description, x, telegram, website, discord }
 
 final RegExp _tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
-final RegExp _addressPattern = RegExp(r'^0x[0-9a-fA-F]{40}$');
 
 /// Why one field is refused, or `null` (hooks-config §3 and the catalogue
 /// project's own limits; the stricter of the two).
@@ -73,8 +63,6 @@ String? launch2FieldError(Launch2Field field, String raw) {
           value.length > 512) {
         return '只支持 https:// 开头的链接';
       }
-    case Launch2Field.recipient:
-      if (!_addressPattern.hasMatch(value)) return '请输入 0x 开头的 40 位地址';
   }
   return null;
 }
@@ -82,10 +70,12 @@ String? launch2FieldError(Launch2Field field, String raw) {
 /// `launch2-create` · 发起 v2 发射 (archetype `action`, layout `focus`).
 ///
 /// Three steps: ① picture, name, ticker, description; ② the community links;
-/// ③ the NFT sale start, the buyback recipient and the fixed template, read
-/// only. 「提交审核」 creates (or edits) the catalogue project, saves the Hooks
-/// draft and submits the project for review. With [projectId] the page edits
-/// a draft or returned project and starts from what the server holds.
+/// ③ the NFT sale start, then the buyback recipient and the fixed template,
+/// both read only (the recipient is the platform's fixed address, decision
+/// 0144). 「提交审核」 creates (or edits) the catalogue project, saves the
+/// Hooks draft and submits the project for review. With [projectId] the page
+/// edits a draft, returned or rejected project (or a rejected launch
+/// configuration) and starts from what the server holds.
 class Launch2CreateScreen extends ConsumerStatefulWidget {
   const Launch2CreateScreen({
     super.key,
@@ -113,9 +103,6 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   final _telegram = TextEditingController();
   final _website = TextEditingController();
   final _discord = TextEditingController();
-  final _recipient = TextEditingController(
-    text: Launch2Template.defaultBuybackRecipient,
-  );
 
   int _step = 0;
   bool _showErrors = false;
@@ -134,6 +121,11 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   /// from the project being edited, or from the save's own read.
   Duration? _minSaleLead;
 
+  /// The platform's fixed recipient from the project being edited
+  /// (`hooks-config.fixedBuybackRecipient`); `null` until a config was read.
+  String? _fixedRecipient;
+  bool _fixedRecipientRead = false;
+
   List<TextEditingController> get _controllers => <TextEditingController>[
     _name,
     _ticker,
@@ -142,7 +134,6 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     _telegram,
     _website,
     _discord,
-    _recipient,
   ];
 
   DateTime get _now => (widget.clock ?? DateTime.now)();
@@ -185,7 +176,6 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     Launch2Field.telegram => _telegram,
     Launch2Field.website => _website,
     Launch2Field.discord => _discord,
-    Launch2Field.recipient => _recipient,
   };
 
   String? _error(Launch2Field field) =>
@@ -203,7 +193,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       Launch2Field.website,
       Launch2Field.discord,
     ],
-    <Launch2Field>[Launch2Field.recipient],
+    <Launch2Field>[],
   ];
 
   bool _stepValid(int step) {
@@ -313,7 +303,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             description: description,
             links: <String>[for (final (_, url) in links.entries) url],
             nftSaleStart: start,
-            buybackRecipient: _recipient.text.trim(),
+            // Shown read only; the controller sends the address the server
+            // names just before the save (decision 0144).
+            buybackRecipient: _shownRecipient ?? '',
           ),
           existing: _existing,
         );
@@ -443,6 +435,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     _existing = project;
     _existingDraft = draft;
     _minSaleLead = value.config.minSaleLead;
+    _fixedRecipient = value.config.fixedBuybackRecipient;
+    _fixedRecipientRead = true;
     _silenced = true;
     _name.text = draft?.name ?? project.name;
     _ticker.text = draft?.ticker ?? project.ticker;
@@ -454,7 +448,6 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     if (draft != null) {
       _logoUrl = draft.logoAssetUrl;
       _saleStart = draft.nftSaleStart;
-      _recipient.text = draft.buybackRecipient;
     }
     _silenced = false;
   }
@@ -687,6 +680,15 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     ),
   ];
 
+  /// The address the form shows: the server's, once any `hooks-config` read
+  /// named it; before a project exists, the requirer's fixed address.
+  String? get _shownRecipient {
+    final save = ref.read(launch2SaveControllerProvider(_scope));
+    if (save.fixedBuybackRecipient case final String fixed) return fixed;
+    if (_fixedRecipientRead) return _fixedRecipient;
+    return Launch2Template.defaultBuybackRecipient;
+  }
+
   List<Widget> _saleStep(Launch2SaveState save) {
     final start = _saleStart;
     final failure = save.failure;
@@ -716,21 +718,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           body: '请先选择 NFT 开售时间。',
         ),
       const LoopLabel('回购收币地址'),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-        child: TextField(
-          key: const ValueKey<String>('launch2-create-recipient-address'),
-          controller: _recipient,
-          autocorrect: false,
-          enableSuggestions: false,
-          enabled: !save.busy,
-          style: LoopType.code,
-          decoration: InputDecoration(
-            helperText: '默认是平台给出的地址，可以改；部署后不能再改。',
-            errorText: _error(Launch2Field.recipient),
-          ),
-        ),
-      ),
+      Launch2FixedRecipient(address: _shownRecipient),
       const SizedBox(height: 16),
       const LoopLabel('发射模板'),
       Launch2TemplateCard(
