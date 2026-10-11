@@ -771,7 +771,7 @@ void main() {
           detail: detail,
           holding: launch2PoolHoldingOf(quote: _buyQuote()),
         ).holdingLine,
-        r'持有 250,000 $FROG · 可卖 250,000 $FROG',
+        r'持有 250,000 $FROG',
       );
     });
 
@@ -956,7 +956,7 @@ void main() {
       });
       expect(_key('launch2-pool-quote'), findsOneWidget);
       expect(find.text(r'145,530 $FROG'), findsOneWidget);
-      expect(find.text(r'持有 250,000 $FROG · 可卖 250,000 $FROG'), findsOneWidget);
+      expect(find.text(r'持有 250,000 $FROG'), findsOneWidget);
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
