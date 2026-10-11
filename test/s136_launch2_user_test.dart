@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
@@ -165,6 +166,26 @@ final class _FakeLaunch2 implements Launch2Gateway {
   @override
   Future<Launch2Positions> loadPositions() =>
       positions?.resolve() ?? _unavailable();
+
+  @override
+  Future<Launch2PoolQuote> poolQuote({
+    required String instanceId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+    required String walletId,
+  }) => _unavailable();
+
+  @override
+  Future<Launch2PoolPrepared> preparePoolTrade({
+    required String instanceId,
+    required String walletId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+  }) => _unavailable();
 }
 
 final class _RecordingWallet implements WalletSigningGateway {

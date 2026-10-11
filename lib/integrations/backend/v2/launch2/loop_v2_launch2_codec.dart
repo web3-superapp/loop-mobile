@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
@@ -66,6 +67,9 @@ abstract final class LoopV2Launch2Codec {
     'viewer',
     'projectedAt',
   };
+
+  /// Keys a server may omit: `pool` (loop-api S146, decision 0145).
+  static const detailOptionalKeys = <String>{'pool'};
 
   static const nftSaleKeys = <String>{
     'priceUsd1',
@@ -758,7 +762,12 @@ abstract final class LoopV2Launch2Codec {
       'contractVersion',
     });
     LoopV2ChainCodec.requireContractVersion(root);
-    final map = LoopV2Contract.strictMap(root['instance'], detailKeys);
+    // Decision 0145: `pool` (loop-api S146) is optional in the schema.
+    final map = LoopV2Contract.strictMapWithOptional(
+      root['instance'],
+      detailKeys,
+      detailOptionalKeys,
+    );
     final trades = LoopV2ChainCodec.requireList(
       map['recentTrades'],
       maximum: 100,
@@ -793,6 +802,7 @@ abstract final class LoopV2Launch2Codec {
       ]),
       viewer: _viewer(map['viewer']),
       projectedAt: LoopV2ChainCodec.requireTimestamp(map, 'projectedAt'),
+      pool: LoopV2Launch2PoolCodec.summary(map['pool']),
     );
   }
 
@@ -970,9 +980,31 @@ abstract final class LoopV2Launch2Codec {
       'contractVersion',
     });
     LoopV2ChainCodec.requireContractVersion(root);
-    final map = LoopV2Contract.strictMap(root['launch2Intent'], intentKeys);
+    return intentBody(root['launch2Intent']);
+  }
+
+  /// One `launch2Intent` object. [venue] and [taxBps] are what the route it
+  /// came from says (decision 0145): the pool prepare answers the same
+  /// object next to its quote.
+  static Launch2Intent intentBody(
+    Object? raw, {
+    Launch2Venue venue = Launch2Venue.curve,
+    int? taxBps,
+    Decimal? taxMeme,
+  }) {
+    final map = LoopV2Contract.strictMap(raw, intentKeys);
     final rawKind = map['kind'];
-    final kind = rawKind is String ? Launch2IntentKind.tryParse(rawKind) : null;
+    // The pool route answers `pool_buy` / `pool_sell` (loop-api S146) and
+    // no other kind; the curve routes never answer those two.
+    final kind = switch ((venue, rawKind)) {
+      (Launch2Venue.officialPool, 'pool_buy') => Launch2IntentKind.buy,
+      (Launch2Venue.officialPool, 'pool_sell') => Launch2IntentKind.sell,
+      (Launch2Venue.officialPool, _) => null,
+      (Launch2Venue.curve, final String value) => Launch2IntentKind.tryParse(
+        value,
+      ),
+      (Launch2Venue.curve, _) => null,
+    };
     final state = map['state'];
     if (kind == null || (state != 'prepared' && state != 'expired')) invalid();
     final chain = chainId(map, 'chainId');
@@ -1074,6 +1106,9 @@ abstract final class LoopV2Launch2Codec {
       signingAllowed: LoopV2ChainCodec.requireBool(signing, 'allowed'),
       signingReasonCode: reasonCode(signing, 'reasonCode'),
       payloadMatchesReview: mainMatches && approvalMatches,
+      venue: venue,
+      taxBps: taxBps,
+      taxMeme: taxMeme,
     );
   }
 

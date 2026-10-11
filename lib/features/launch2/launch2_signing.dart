@@ -61,8 +61,28 @@ String launch2IntentNoun(Launch2IntentKind kind) => switch (kind) {
   Launch2IntentKind.sell => '卖出',
 };
 
-String launch2IntentTitle(Launch2IntentKind kind) =>
-    '确认${launch2IntentNoun(kind)}';
+String launch2IntentTitle(
+  Launch2IntentKind kind, {
+  Launch2Venue venue = Launch2Venue.curve,
+}) => venue == Launch2Venue.officialPool
+    ? '确认外盘${launch2IntentNoun(kind)}'
+    : '确认${launch2IntentNoun(kind)}';
+
+/// Whom an approval lets spend: the curve, the NFT or the pool's router.
+String _spenderNoun(Launch2Intent intent) =>
+    intent.venue == Launch2Venue.officialPool
+    ? '官方池路由'
+    : intent.kind == Launch2IntentKind.nftMint
+    ? 'NFT 合约'
+    : '曲线合约';
+
+/// The tax line's label: the intent's own rate, else the curve's 10%.
+String _taxLabel(Launch2Intent intent) {
+  final bps = intent.taxBps ?? 1000;
+  return intent.venue == Launch2Venue.officialPool
+      ? '外盘税 ${launch2BpsLabel(bps)}'
+      : '税 ${launch2BpsLabel(bps)}';
+}
 
 /// The reviewed facts. The sheet renders exactly these, read from the same
 /// object whose transactions the wallet gets.
@@ -77,8 +97,14 @@ List<IntentField> launch2IntentFields(
       label: '操作',
       value: switch (intent.kind) {
         Launch2IntentKind.nftMint => '购买 $meme 项目 NFT（每个地址 1 枚）',
-        Launch2IntentKind.buy => '买入 $meme',
-        Launch2IntentKind.sell => '卖出 $meme',
+        Launch2IntentKind.buy =>
+          intent.venue == Launch2Venue.officialPool
+              ? '在官方池买入 $meme'
+              : '买入 $meme',
+        Launch2IntentKind.sell =>
+          intent.venue == Launch2Venue.officialPool
+              ? '在官方池卖出 $meme'
+              : '卖出 $meme',
       },
     ),
     switch (intent.kind) {
@@ -87,7 +113,7 @@ List<IntentField> launch2IntentFields(
         value: launch2Usd1Label(intent.amountIn),
       ),
       Launch2IntentKind.buy => IntentField(
-        label: '最多支付（含税）',
+        label: intent.venue == Launch2Venue.officialPool ? '最多支付' : '最多支付（含税）',
         value: launch2Usd1Label(intent.amountIn, maxFractionDigits: 4),
       ),
       Launch2IntentKind.sell => IntentField(
@@ -117,17 +143,19 @@ List<IntentField> launch2IntentFields(
     ],
     if (intent.kind != Launch2IntentKind.nftMint)
       IntentField(
-        label: '税 10%',
-        value: launch2Usd1Label(intent.taxUsd1, maxFractionDigits: 4),
+        label: _taxLabel(intent),
+        value: intent.taxMeme != null
+            ? launch2MemeLabel(intent.taxMeme!, ticker)
+            : launch2Usd1Label(intent.taxUsd1, maxFractionDigits: 4),
       ),
     if (approval != null)
       IntentField(
         label: '先授权',
         value: intent.kind == Launch2IntentKind.sell
-            ? '${launch2MemeLabel(approval.amount, ticker)} 给曲线合约'
+            ? '${launch2MemeLabel(approval.amount, ticker)} 给${_spenderNoun(intent)}'
             : intent.kind == Launch2IntentKind.nftMint
-            ? '${launch2Usd1Label(approval.amount)} 给 NFT 合约'
-            : '${launch2Usd1Label(approval.amount, maxFractionDigits: 4)} 给曲线合约',
+            ? '${launch2Usd1Label(approval.amount)} 给${_spenderNoun(intent)}'
+            : '${launch2Usd1Label(approval.amount, maxFractionDigits: 4)} 给${_spenderNoun(intent)}',
       ),
     IntentField(
       label: '模拟结果',
@@ -143,7 +171,7 @@ List<IntentField> launch2IntentFields(
       value: loopGroupedFigure(intent.snapshotBlockNumber.toString()),
     ),
     IntentField(
-      label: '合约',
+      label: intent.venue == Launch2Venue.officialPool ? '路由' : '合约',
       value: launch2ShortAddress(intent.contractAddress),
     ),
     IntentField(label: '网络', value: loopChainName(intent.chainId)),
@@ -182,6 +210,10 @@ String launch2BroadcastText(
   return '已广播（${launch2ShortAddress(hash)}）。广播不代表已成交，'
       '链上确认后这里会更新。';
 }
+
+/// Where a two-transaction trip through the exit is (approval, then the
+/// trade): the sheet draws it as a two-step strip.
+enum Launch2SignStep { approving, signingMain }
 
 /// The one path from a MEME v2 intent to the wallet.
 final class Launch2IntentSigner {
@@ -238,7 +270,7 @@ final class Launch2IntentSigner {
     intent,
     revision: intent.intentId,
     kind: IntentKind.launchPurchase,
-    title: launch2IntentTitle(intent.kind),
+    title: launch2IntentTitle(intent.kind, venue: intent.venue),
     transaction: intent.unsignedTransaction,
     fromAddress: fromAddress,
     ticker: ticker,
@@ -273,6 +305,7 @@ final class Launch2IntentSigner {
     required String? fromAddress,
     required String ticker,
     required DateTime now,
+    void Function(Launch2SignStep step)? onStep,
   }) async {
     final refusal = refusalBeforeWallet(
       intent,
@@ -301,6 +334,7 @@ final class Launch2IntentSigner {
     }
     String? approvalHash;
     if (approval != null) {
+      onStep?.call(Launch2SignStep.approving);
       final handoff = await wallet.handoff(approval, now: now);
       if (!handoff.accepted || handoff.value == null) {
         return Launch2SignOutcome(
@@ -312,6 +346,7 @@ final class Launch2IntentSigner {
       }
       approvalHash = handoff.value;
     }
+    onStep?.call(Launch2SignStep.signingMain);
     final handoff = await wallet.handoff(main, now: now);
     if (!handoff.accepted || handoff.value == null) {
       return Launch2SignOutcome(
@@ -395,6 +430,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
   String? _reason;
   Launch2SignOutcome? _outcome;
   bool _submitted = false;
+  Launch2SignStep? _step;
 
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
 
@@ -429,6 +465,9 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
       fromAddress: widget.fromAddress,
       ticker: widget.ticker,
       now: _now,
+      onStep: (step) {
+        if (mounted) setState(() => _step = step);
+      },
     );
     widget.latch?.txHash = outcome.txHash;
     if (!mounted) return;
@@ -453,25 +492,171 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
   @override
   Widget build(BuildContext context) {
     final fields = launch2IntentFields(widget.intent, ticker: widget.ticker);
+    final sheet = LoopSignSheet(
+      key: const ValueKey<String>('launch2-sign-sheet'),
+      state: _state,
+      title: launch2IntentTitle(widget.intent.kind, venue: widget.intent.venue),
+      networkBadge: loopIsTestnetChainId(widget.intent.chainId)
+          ? loopTestnetBadgeLabel
+          : null,
+      facts: <LoopSignFact>[
+        for (final IntentField field in fields)
+          LoopSignFact(field.label, field.value),
+      ],
+      reason: _reason,
+      onConfirm: _submitted ? null : _confirm,
+      onCancel: () => Navigator.of(context).pop(_outcome),
+    );
     return PopScope(
       canPop: _state != LoopSignSheetState.signing,
-      child: LoopSignSheet(
-        key: const ValueKey<String>('launch2-sign-sheet'),
-        state: _state,
-        title: launch2IntentTitle(widget.intent.kind),
-        networkBadge: loopIsTestnetChainId(widget.intent.chainId)
-            ? loopTestnetBadgeLabel
-            : null,
-        facts: <LoopSignFact>[
-          for (final IntentField field in fields)
-            LoopSignFact(field.label, field.value),
-        ],
-        reason: _reason,
-        onConfirm: _submitted ? null : _confirm,
-        onCancel: () => Navigator.of(context).pop(_outcome),
+      child: widget.intent.approval == null
+          ? sheet
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Launch2SignStepStrip(
+                  noun: launch2IntentNoun(widget.intent.kind),
+                  approval: _approvalStatus,
+                  main: _mainStatus,
+                ),
+                sheet,
+              ],
+            ),
+    );
+  }
+
+  Launch2StepStatus get _approvalStatus {
+    final outcome = _outcome;
+    if (outcome != null) {
+      return outcome.approvalTxHash != null
+          ? Launch2StepStatus.done
+          : outcome.status == MoneySignStatus.locked
+          ? Launch2StepStatus.unknown
+          : Launch2StepStatus.failed;
+    }
+    return switch (_step) {
+      null => Launch2StepStatus.waiting,
+      Launch2SignStep.approving => Launch2StepStatus.active,
+      Launch2SignStep.signingMain => Launch2StepStatus.done,
+    };
+  }
+
+  Launch2StepStatus get _mainStatus {
+    final outcome = _outcome;
+    if (outcome != null) {
+      if (outcome.txHash != null) return Launch2StepStatus.done;
+      if (outcome.approvalTxHash == null) return Launch2StepStatus.waiting;
+      return outcome.status == MoneySignStatus.locked
+          ? Launch2StepStatus.unknown
+          : Launch2StepStatus.failed;
+    }
+    return _step == Launch2SignStep.signingMain
+        ? Launch2StepStatus.active
+        : Launch2StepStatus.waiting;
+  }
+}
+
+/// One step of the two-step strip.
+enum Launch2StepStatus { waiting, active, done, failed, unknown }
+
+/// 「1 授权 → 2 买入」 above the signing sheet when an intent carries an
+/// approval: which wallet prompt is open and which already broadcast.
+class Launch2SignStepStrip extends StatelessWidget {
+  const Launch2SignStepStrip({
+    required this.noun,
+    required this.approval,
+    required this.main,
+    super.key,
+  });
+
+  final String noun;
+  final Launch2StepStatus approval;
+  final Launch2StepStatus main;
+
+  static String _status(Launch2StepStatus status) => switch (status) {
+    Launch2StepStatus.waiting => '待签名',
+    Launch2StepStatus.active => '请在钱包确认',
+    Launch2StepStatus.done => '已广播',
+    Launch2StepStatus.failed => '未完成',
+    Launch2StepStatus.unknown => '结果未知',
+  };
+
+  Widget _step(String index, String label, Launch2StepStatus status) {
+    final lit =
+        status == Launch2StepStatus.active || status == Launch2StepStatus.done;
+    final warn =
+        status == Launch2StepStatus.failed ||
+        status == Launch2StepStatus.unknown;
+    return Expanded(
+      child: Semantics(
+        label: '第 $index 步 $label，${_status(status)}',
+        excludeSemantics: true,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: lit ? LoopColors.lime : LoopColors.card,
+                  border: Border.all(
+                    color: warn ? LoopColors.warning : LoopColors.line,
+                  ),
+                ),
+                child: Text(
+                  index,
+                  style: LoopTypography.label(
+                    12,
+                    weight: FontWeight.w700,
+                    color: lit ? LoopColors.ink : LoopColors.text2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(label, style: LoopTypography.title(14)),
+                    Text(
+                      _status(status),
+                      style: LoopType.caption.copyWith(
+                        color: warn ? LoopColors.warning : LoopColors.text2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    key: const ValueKey<String>('launch2-sign-steps'),
+    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+    child: Row(
+      children: <Widget>[
+        KeyedSubtree(
+          key: ValueKey<String>('launch2-sign-step-approval-${approval.name}'),
+          child: _step('1', '授权', approval),
+        ),
+        const SizedBox(width: 8),
+        KeyedSubtree(
+          key: ValueKey<String>('launch2-sign-step-main-${main.name}'),
+          child: _step('2', noun, main),
+        ),
+      ],
+    ),
+  );
 }
 
 /// The sentence the NFT purchase must state in full (规格 §3, contract §3.4).

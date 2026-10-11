@@ -21,6 +21,9 @@ const String l2Usd1 = '0x17d554fd27345940e21d1d7328d038bd4049ce2b';
 const String l2Hook = '0x3333333333333333333333333333333333333333';
 const String l2Hash =
     '0x5d1c000000000000000000000000000000000000000000000000000000000001';
+
+/// The official pool's router (loop-api S146 fixtures).
+const String l2Router = '0xdddddddddddddddddddddddddddddddddddd0124';
 const String l2PoolId =
     '0x9f00000000000000000000000000000000000000000000000000000000000099';
 
@@ -148,6 +151,8 @@ Map<String, Object?> l2DetailJson({
   bool omitPublication = true,
   List<Map<String, Object?>> trades = const <Map<String, Object?>>[],
   int soldBps = 0,
+  Map<String, Object?>? pool,
+  bool includePool = false,
 }) {
   final published =
       stage == 'priority' || stage == 'public' || stage == 'graduated';
@@ -236,10 +241,32 @@ Map<String, Object?> l2DetailJson({
       'recentTrades': trades,
       'viewer': noViewer ? null : (viewer ?? l2ViewerJson()),
       'projectedAt': _iso(l2Now),
+      // Decision 0145 (loop-api S146): optional in the schema.
+      if (includePool || pool != null) 'pool': pool,
     },
     'contractVersion': '2.0',
   };
 }
+
+/// The detail's `pool` object (loop-api S146).
+Map<String, Object?> l2PoolSummaryJson({
+  String? router = l2Router,
+  String tradeCount = '12',
+  String? lastPrice = '0.00068',
+}) => <String, Object?>{
+  'poolId': l2PoolId,
+  'router': router,
+  'tradeCount': tradeCount,
+  'buyCount': '8',
+  'sellCount': '4',
+  'buyVolumeUsd1': '1200',
+  'sellVolumeUsd1': '300.5',
+  'volume24hUsd1': '1500.5',
+  'taxUsd1': '6.01',
+  'taxMeme': '35000',
+  'lastPriceUsd1': lastPrice,
+  'lastTradeAt': lastPrice == null ? null : '2027-01-20T06:58:00.000Z',
+};
 
 Map<String, Object?> l2TradeJson() => <String, Object?>{
   'tradeId': 't-1',
@@ -477,6 +504,7 @@ Launch2InstanceDetail l2Detail({
   bool noNextChange = false,
   String? cutoffBlock,
   List<Map<String, Object?>> trades = const <Map<String, Object?>>[],
+  Map<String, Object?>? pool,
 }) => LoopV2Launch2Codec.detail(
   l2DetailJson(
     stage: stage,
@@ -487,6 +515,7 @@ Launch2InstanceDetail l2Detail({
     noNextChange: noNextChange,
     cutoffBlock: cutoffBlock,
     trades: trades,
+    pool: pool,
   ),
   mediaUrl: _noMedia,
 );

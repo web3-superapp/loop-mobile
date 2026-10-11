@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_trade_panel.dart';
@@ -42,7 +43,8 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// - `nft_sale` — 100 USD1, 我的持有 0/1, 已售 and 「购买 NFT」.
 /// - `snapshot_pending` — the line illustration and the cutoff block.
 /// - `priority` / `public` — the curve, the trade panel, the latest trades.
-/// - `graduated` — the official pool behind (i), 「去外盘交易」, the buyback.
+/// - `graduated` — the official pool behind (i), its figures, the in-page
+///   外盘 buy / sell panel (decision 0145), the buyback.
 /// - `paused` — the whole page greyed with the server's reason.
 class Launch2InstanceScreen extends ConsumerStatefulWidget {
   const Launch2InstanceScreen({
@@ -70,9 +72,11 @@ final class _Pending {
     required this.text,
     required this.locked,
     required this.baseline,
+    this.venue = Launch2Venue.curve,
   });
 
   final Launch2IntentKind kind;
+  final Launch2Venue venue;
   final String text;
 
   /// A broadcast is settling: no second signature until the lane shows it.
@@ -82,9 +86,16 @@ final class _Pending {
   final String baseline;
 }
 
-String _viewerSignature(Launch2Viewer? viewer) => viewer == null
-    ? '-'
-    : '${viewer.nftHeld}:${viewer.curve.bought}:${viewer.curve.sold}';
+/// What moves when our own write lands: the viewer's curve figures, and
+/// after graduation the official pool's indexed swap count (decision 0145 —
+/// the read model has no per-wallet pool figure).
+String _viewerSignature(Launch2InstanceDetail detail) {
+  final viewer = detail.viewer;
+  final curve = viewer == null
+      ? '-'
+      : '${viewer.nftHeld}:${viewer.curve.bought}:${viewer.curve.sold}';
+  return '$curve|${detail.pool?.tradeCount ?? '-'}';
+}
 
 class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   Timer? _poll;
@@ -138,13 +149,17 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   void _settle(Launch2InstanceDetail detail) {
     final pending = _pending;
     if (pending == null) return;
-    if (_viewerSignature(detail.viewer) != pending.baseline) {
+    if (_viewerSignature(detail) != pending.baseline) {
+      final noun = launch2IntentNoun(pending.kind);
       setState(() {
         _pending = _Pending(
           kind: pending.kind,
-          text: '${launch2IntentNoun(pending.kind)}已在链上确认。',
+          venue: pending.venue,
+          text: pending.venue == Launch2Venue.officialPool
+              ? '官方池已记录新成交，你的外盘$noun应已确认；数量以钱包余额为准。'
+              : '$noun已在链上确认。',
           locked: false,
-          baseline: _viewerSignature(detail.viewer),
+          baseline: _viewerSignature(detail),
         );
         _settleReads = 0;
       });
@@ -155,6 +170,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       setState(() {
         _pending = _Pending(
           kind: pending.kind,
+          venue: pending.venue,
           text:
               '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；'
               '不要重复${launch2IntentNoun(pending.kind)}。',
@@ -183,13 +199,14 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       _settleReads = 0;
       _pending = _Pending(
         kind: intent.kind,
+        venue: intent.venue,
         text: outcome.broadcast
             ? launch2BroadcastText(outcome, intent.kind)
             : outcome.approvalTxHash != null
             ? '授权已广播，$noun没有签名。可以重新发起。'
             : launch2SignReasonText(outcome.reasonCode),
         locked: outcome.broadcast,
-        baseline: _viewerSignature(detail.viewer),
+        baseline: _viewerSignature(detail),
       );
     });
     if (outcome.broadcast) {
@@ -297,7 +314,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       _armPoll(instanceId, detail);
       // The wallet that signs is read before anything is offered, so the
       // signing exit can compare it with the transaction's `from`.
-      if (detail.stage == Launch2Stage.nftSale || detail.stage.tradable) {
+      if (detail.stage == Launch2Stage.nftSale ||
+          detail.stage.tradable ||
+          detail.stage == Launch2Stage.graduated) {
         memeActiveWallet(ref);
       }
     }
@@ -352,20 +371,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           ),
         );
       case Launch2Stage.graduated:
-        return _BarShell(
-          child: LoopButton(
-            key: const ValueKey<String>('launch2-go-swap'),
-            label: '去外盘交易',
-            primary: true,
-            block: true,
-            onPressed: () => _open(
-              Launch2Route.swap(
-                chainId: detail.row.chainId,
-                memeAddress: detail.row.memeAddress,
-              ),
-            ),
-          ),
-        );
+        // Decision 0145: trading moved into the page (外盘交易 panel); the
+        // wallet Swap stays one secondary link under it.
+        return null;
       case Launch2Stage.upcoming:
       case Launch2Stage.snapshotPending:
       case Launch2Stage.closedNoHolders:
@@ -513,6 +521,22 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ],
     Launch2Stage.graduated => <Widget>[
       _GraduatedBlock(detail: detail),
+      Launch2PoolStats(detail: detail),
+      Launch2PoolTradePanel(
+        key: ValueKey<String>('launch2-pool-panel-${detail.instanceId}'),
+        detail: detail,
+        walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
+        locked: _pending?.locked ?? false,
+        onPrepared: (intent) => _sign(detail, intent),
+      ),
+      Launch2PoolSwapLink(
+        onOpen: () => _open(
+          Launch2Route.swap(
+            chainId: detail.row.chainId,
+            memeAddress: detail.row.memeAddress,
+          ),
+        ),
+      ),
       _BuybackPanel(detail: detail),
     ],
     Launch2Stage.paused => <Widget>[_TemplateCard(detail: detail)],
