@@ -316,6 +316,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           key: const ValueKey<String>('launch2-pool-side'),
           labels: const <String>['买入', '卖出'],
           selectedIndex: _side == Launch2Side.buy ? 0 : 1,
+          padding: EdgeInsets.zero,
           onSelected: (index) =>
               _setSide(index == 0 ? Launch2Side.buy : Launch2Side.sell),
         ),

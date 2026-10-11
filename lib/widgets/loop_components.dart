@@ -2112,6 +2112,7 @@ class LoopSegBar extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.icons,
+    this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 14),
   }) : assert(icons == null || icons.length == labels.length);
 
   final List<String> labels;
@@ -2121,11 +2122,17 @@ class LoopSegBar extends StatelessWidget {
   /// One sprite glyph per label, or null for a chip without one.
   final List<String?>? icons;
 
+  /// The bar's own inset. The default is the page gutter; a bar inside a
+  /// block that already sits on the gutter (a trade panel) passes no
+  /// horizontal inset, or its first pill lands 16 further in than every
+  /// other control of the block (decision 0149).
+  final EdgeInsets padding;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: padding,
       child: Row(
         children: <Widget>[
           for (var index = 0; index < labels.length; index++) ...<Widget>[

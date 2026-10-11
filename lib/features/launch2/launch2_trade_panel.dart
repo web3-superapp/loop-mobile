@@ -372,6 +372,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           LoopSegBar(
             key: const ValueKey<String>('launch2-trade-side'),
             labels: const <String>['买入', '卖出'],
+            padding: const EdgeInsets.only(bottom: 14),
             selectedIndex: _side == Launch2Side.buy ? 0 : 1,
             onSelected: (index) {
               final next = index == 0 ? Launch2Side.buy : Launch2Side.sell;
