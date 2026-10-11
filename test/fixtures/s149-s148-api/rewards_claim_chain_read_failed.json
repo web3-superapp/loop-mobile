@@ -1,0 +1,188 @@
+{
+  "_handwritten": "Handwritten on 2026-10-11 for client Decision 0147 from loop-api S148-api ba6aa45 (Decision 0125): openapi/loop-api.v2.json and docs/frontend-v2-mining-rewards-api.md §8.2: gate 8, read after the first seven pass; claim {executable: false, reasonCode: MINING_CLAIM_CHAIN_READ_FAILED}. Body otherwise as s138-mining-rewards/rewards_displaying.json. Development is not on 0125 yet, so no capture exists; replace with a capture once it is.",
+  "route": "GET /v2/mining/rewards",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "11111111-2222-4333-8444-555555555555",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "claimable": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "claimExecutable": false,
+    "estimatedToday": {
+      "status": "unavailable",
+      "reasonCode": "MINING_NETWORK_POWER_ZERO"
+    },
+    "accumulated": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "ledger": [],
+    "source": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "hourly": {
+      "serverTime": "2026-10-10T11:20:00.000Z",
+      "decimals": 18,
+      "displayState": "displaying",
+      "reasonCode": null,
+      "totals": {
+        "settledRaw": "120000000000000000000",
+        "claimedRaw": "60000000000000000000",
+        "claimableRaw": "60000000000000000000"
+      },
+      "lastHour": {
+        "epochId": "22222222-2222-4222-8222-222222222222",
+        "hourStart": "2026-10-10T10:00:00.000Z",
+        "hourEnd": "2026-10-10T11:00:00.000Z",
+        "settledAt": "2026-10-10T11:02:00.000Z",
+        "nftRewardRaw": "60000000000000000000",
+        "assetRewardRaw": "0",
+        "totalRewardRaw": "60000000000000000000"
+      },
+      "display": {
+        "windowStart": "2026-10-10T11:00:00.000Z",
+        "windowEnd": "2026-10-10T12:00:00.000Z",
+        "totalRaw": "60000000000000000000",
+        "perMinuteRaw": "1000000000000000000",
+        "completedMinutes": 20,
+        "displayedRaw": "20000000000000000000",
+        "nextUpdateAt": "2026-10-10T11:21:00.000Z"
+      },
+      "tracks": {
+        "nft": {
+          "realNftCount": "5",
+          "selfPower": "10",
+          "referralPower": "0",
+          "totalPower": "10",
+          "networkPower": "10",
+          "budgetRaw": "20833333333333333333333",
+          "rewardRaw": "60000000000000000000",
+          "holdings": [
+            {
+              "instanceId": "55555555-5555-4555-8555-555555555555",
+              "communityId": "66666666-6666-4666-8666-666666666666",
+              "countAtEnd": "5",
+              "power": "10"
+            }
+          ]
+        },
+        "asset": {
+          "selfPower": "12.5",
+          "referralPower": "0",
+          "totalPower": "12.5",
+          "networkPower": "0",
+          "budgetRaw": "20833333333333333333333",
+          "rewardRaw": "0",
+          "holdings": [
+            {
+              "assetId": "eip155:97:0x6666666666666666666666666666666666666666",
+              "balanceAtEndRaw": "1000000000000000000000",
+              "power": "12.5"
+            }
+          ],
+          "excludedAssets": [
+            {
+              "assetId": "eip155:97:0x7777777777777777777777777777777777777777",
+              "reasonCode": "MINING_ASSET_GRADUATED_UNREADABLE"
+            }
+          ]
+        }
+      },
+      "referral": {
+        "levels": [
+          {
+            "level": 1,
+            "ratioBps": 1000,
+            "effectiveMembers": 1,
+            "nftPower": "1",
+            "assetPower": "0",
+            "totalPower": "1",
+            "nftUnitsByCommunity": [
+              {
+                "communityId": "66666666-6666-4666-8666-666666666666",
+                "units": "0.5"
+              }
+            ]
+          },
+          {
+            "level": 2,
+            "ratioBps": 500,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          },
+          {
+            "level": 3,
+            "ratioBps": 300,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          },
+          {
+            "level": 4,
+            "ratioBps": 200,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          },
+          {
+            "level": 5,
+            "ratioBps": 100,
+            "effectiveMembers": 0,
+            "nftPower": "0",
+            "assetPower": "0",
+            "totalPower": "0",
+            "nftUnitsByCommunity": []
+          }
+        ]
+      },
+      "parameters": {
+        "versionId": "77777777-7777-4777-8777-777777777777",
+        "configVersion": "miningHourlyV1",
+        "effectiveFrom": "2026-10-10T00:00:00.000Z",
+        "referralRatiosBps": [
+          1000,
+          500,
+          300,
+          200,
+          100
+        ],
+        "minimumClaimRaw": "1000000000000000000"
+      },
+      "claim": {
+        "executable": false,
+        "reasonCode": "MINING_CLAIM_CHAIN_READ_FAILED",
+        "latest": {
+          "claimId": "33333333-3333-4333-8333-333333333333",
+          "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+          "status": "succeeded",
+          "chainId": "eip155:97",
+          "chainReference": 97,
+          "contractAddress": "0x5555555555555555555555555555555555555555",
+          "cumulativeAmountRaw": "60000000000000000000",
+          "amountRaw": "60000000000000000000",
+          "nonce": "0",
+          "deadline": "2026-10-10T09:40:00.000Z",
+          "transactionHash": "0xabababababababababababababababababababababababababababababababab",
+          "blockNumber": "51234567",
+          "failureReasonCode": null,
+          "createdAt": "2026-10-10T09:30:00.000Z",
+          "updatedAt": "2026-10-10T09:31:12.000Z"
+        }
+      }
+    },
+    "contractVersion": "2.0"
+  }
+}

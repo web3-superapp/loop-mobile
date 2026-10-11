@@ -946,6 +946,20 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     );
   }
 
+  /// Decision 0147 (loop-api 0125): `assetPowerBasis` is required in the
+  /// schema from 0125 on, but a server before it does not send the key, so
+  /// the client accepts its absence (`null`) rather than refusing the whole
+  /// summary while the two ship in either order. A present value must be
+  /// `quantity`; any other value is an invalid payload.
+  static const _assetPowerBasisKeys = <String>{'assetPowerBasis'};
+
+  static MiningAssetPowerBasis? _assetPowerBasis(Map<String, Object?> root) {
+    if (!root.containsKey('assetPowerBasis')) return null;
+    final basis = MiningAssetPowerBasis.tryParse(root['assetPowerBasis']);
+    if (basis == null) LoopV2S7Codec.invalid();
+    return basis;
+  }
+
   @override
   Future<MiningSummary> getSummary({
     required String accessToken,
@@ -957,17 +971,21 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'power',
-        'networkPower',
-        'estimatedToday',
-        'accumulated',
-        'claimable',
-        'referralBoost',
-        'formula',
-        'snapshot',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'power',
+          'networkPower',
+          'estimatedToday',
+          'accumulated',
+          'claimable',
+          'referralBoost',
+          'formula',
+          'snapshot',
+          'contractVersion',
+        },
+        _assetPowerBasisKeys,
+      );
       LoopV2S7Codec.requireContractVersion(root);
       return MiningSummary(
         power: _figure(root['power']),
@@ -980,6 +998,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         referralBoost: LoopV2S7Codec.unavailable(root['referralBoost']),
         formula: _formulaGate(root['formula']),
         snapshot: _snapshot(root['snapshot']),
+        assetPowerBasis: _assetPowerBasis(root),
       );
     } on DioException catch (error) {
       _rethrowRead(error);
@@ -997,15 +1016,19 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'totalPower',
-        'included',
-        'excluded',
-        'source',
-        'referencePrice',
-        'formula',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'totalPower',
+          'included',
+          'excluded',
+          'source',
+          'referencePrice',
+          'formula',
+          'contractVersion',
+        },
+        _assetPowerBasisKeys,
+      );
       LoopV2S7Codec.requireContractVersion(root);
       final source = _snapshot(root['source']);
       final included = <MiningAssetRow>[];
@@ -1043,6 +1066,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         source: source,
         referencePrice: _referencePrice(root['referencePrice']),
         formula: _formulaGate(root['formula']),
+        assetPowerBasis: _assetPowerBasis(root),
       );
     } on DioException catch (error) {
       _rethrowRead(error);

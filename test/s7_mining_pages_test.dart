@@ -1748,7 +1748,8 @@ void main() {
 
       expect(find.text('待批准'), findsWidgets);
       expect(find.textContaining('MININGFORMULAV1-DRAFT'), findsNothing);
-      expect(find.text('算力 = 持有量 × 参考价 × 权重'), findsWidgets);
+      expect(find.text('算力 = 持有量 × 权重'), findsWidgets);
+      expect(find.text('算力 = 持有量 × 参考价 × 权重'), findsNothing);
       expect(find.textContaining('每日产出 = 我的算力 ÷ 全网算力'), findsOneWidget);
     });
 
@@ -1773,27 +1774,33 @@ void main() {
       expect(find.textContaining('0.1×'), findsNothing);
     });
 
-    testWidgets('the three price guards are listed by rule key', (
+    testWidgets('deprecated price guards are parsed but not shown', (
       tester,
     ) async {
+      // Decision 0147 (loop-api 0125): power is holding × weight, so the
+      // still-published `priceGuardRules` is no part of the formula.
       await pumpS7Page(
         tester,
         const MiningRulesScreen(),
         mining: FakeMiningGateway(),
       );
 
+      expect(find.text('Reference Price Guard'), findsNothing);
       for (final key in <String>[
         'mining.rules.priceGuard.twap',
         'mining.rules.priceGuard.multiPeriodMultiSource',
         'mining.rules.priceGuard.liquidityCap',
       ]) {
-        final row = find.byKey(
-          ValueKey<String>(
-            'mining-rules-pending-miningFormulaV1-draft-guard-$key',
+        expect(
+          find.byKey(
+            ValueKey<String>(
+              'mining-rules-pending-miningFormulaV1-draft-guard-$key',
+            ),
           ),
+          findsNothing,
+          reason: key,
         );
-        await scrollToS7Section(tester, row);
-        expect(row, findsOneWidget, reason: key);
+        expect(find.text(miningRuleKeyText(key)), findsNothing, reason: key);
       }
     });
 

@@ -308,7 +308,10 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
 
   /// Decision 0122 (client 0144): optional in the schema, always present for
   /// the owner; a server before 0122 omits it.
-  static const _projectOptionalKeys = <String>{'rejection'};
+  ///
+  /// Decision 0125 (client 0147): `communityId` is present only when the
+  /// project names a community; its absence means none.
+  static const _projectOptionalKeys = <String>{'rejection', 'communityId'};
 
   static const _rejectionKeys = <String>{'reasonCode', 'note', 'at'};
 
@@ -332,6 +335,13 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       note: note as String?,
       at: LoopV2S7Codec.requireTimestamp(map, 'at'),
     );
+  }
+
+  /// A present `communityId` is a UUID; `null` is not a value the schema
+  /// gives it (absence says none), so it is refused like any other mismatch.
+  static String? _communityId(Map<String, Object?> map) {
+    if (!map.containsKey('communityId')) return null;
+    return LoopV2S7Codec.requireId(map, 'communityId');
   }
 
   static LaunchProject _project(Object? raw) {
@@ -422,6 +432,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         const <String>{'launchCatalogV1'},
       ),
       rejection: rejected,
+      communityId: _communityId(map),
     );
   }
 

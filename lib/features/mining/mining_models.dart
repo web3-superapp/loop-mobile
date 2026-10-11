@@ -316,6 +316,25 @@ bool miningGateIsBaseline(MiningFormulaGate gate) => switch (gate) {
   MiningFormulaPending() => false,
 };
 
+/// What one asset's power multiplies (loop-api decision 0125, client 0147).
+/// `quantity`: power = holding × weight; the reference price is published as
+/// an observation and never multiplies the power. `null` on a model read
+/// from a server before 0125, which does not send the key.
+enum MiningAssetPowerBasis {
+  quantity('quantity');
+
+  const MiningAssetPowerBasis(this.wireName);
+
+  final String wireName;
+
+  static MiningAssetPowerBasis? tryParse(Object? value) {
+    for (final basis in values) {
+      if (basis.wireName == value) return basis;
+    }
+    return null;
+  }
+}
+
 @immutable
 final class MiningSummary {
   const MiningSummary({
@@ -327,6 +346,7 @@ final class MiningSummary {
     required this.referralBoost,
     required this.formula,
     required this.snapshot,
+    this.assetPowerBasis,
   });
 
   final MiningFigure power;
@@ -339,6 +359,9 @@ final class MiningSummary {
   final LaunchUnavailable referralBoost;
   final MiningFormulaGate formula;
   final MiningSnapshotRef snapshot;
+
+  /// [MiningAssetPowerBasis]; `null` from a server before decision 0125.
+  final MiningAssetPowerBasis? assetPowerBasis;
 }
 
 /// Where one row's reference price came from. `proxied` means the formula
@@ -480,6 +503,7 @@ final class MiningAssets {
     required this.source,
     required this.referencePrice,
     required this.formula,
+    this.assetPowerBasis,
   });
 
   final MiningFigure totalPower;
@@ -492,6 +516,9 @@ final class MiningAssets {
   /// stamps its own figures from this and never reads the version string for
   /// meaning.
   final MiningFormulaGate formula;
+
+  /// [MiningAssetPowerBasis]; `null` from a server before decision 0125.
+  final MiningAssetPowerBasis? assetPowerBasis;
 
   /// True while no settlement produced these lists. An empty list under a
   /// settlement is a different sentence from an empty list without one.
@@ -1090,6 +1117,10 @@ final class MiningFormulaVersion {
   /// Null while the version declares no budget at all.
   final MiningFormulaDailyOutput? dailyOutput;
   final MiningWeightRange weightRange;
+
+  /// Deprecated by loop-api decision 0125: still published and still parsed,
+  /// but power is holding × weight, so the rules page no longer shows these
+  /// as part of the formula (decision 0147).
   final List<MiningPriceGuardRule> priceGuardRules;
   final MiningFormulaStatus referralBoostStatus;
 }
@@ -1148,6 +1179,10 @@ final class MiningRules {
 /// zh-CN copy for one server-owned rule key. An unknown key keeps a neutral
 /// sentence: the client never invents a formula, a ratio or a guard.
 String miningRuleKeyText(String key) => switch (key) {
+  // Decision 0147 (loop-api 0125): the formula the server publishes now.
+  'mining.rules.formula.holdingTimesWeight' => '算力 = 持有量 × 权重',
+  // The key a server before 0125 publishes; kept so that server's own
+  // formula is still stated as it computes it.
   'mining.rules.formula.holdingTimesReferencePriceTimesWeight' =>
     '算力 = 持有量 × 参考价 × 权重',
   'mining.rules.dailyOutput.shareOfNetworkPower' => '每日产出 = 我的算力 ÷ 全网算力 × 当日产量',

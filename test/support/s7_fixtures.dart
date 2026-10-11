@@ -743,7 +743,7 @@ MiningFormulaVersion s7DraftFormula({
   scope: MiningFormulaScope.product,
   effectiveAt: null,
   approvedAt: null,
-  expressionKey: 'mining.rules.formula.holdingTimesReferencePriceTimesWeight',
+  expressionKey: 'mining.rules.formula.holdingTimesWeight',
   dailyOutputKey: 'mining.rules.dailyOutput.shareOfNetworkPower',
   assetWeights: const <String, String>{},
   dailyOutput: null,
@@ -787,7 +787,7 @@ MiningFormulaVersion s7BaselineFormulaVersion() => MiningFormulaVersion(
   scope: MiningFormulaScope.developmentBaseline,
   effectiveAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
   approvedAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
-  expressionKey: 'mining.rules.formula.holdingTimesReferencePriceTimesWeight',
+  expressionKey: 'mining.rules.formula.holdingTimesWeight',
   dailyOutputKey: 'mining.rules.dailyOutput.shareOfNetworkPower',
   assetWeights: const <String, String>{
     s7NativeAssetId: '1',

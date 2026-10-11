@@ -184,11 +184,12 @@ void main() {
           '已批准的版本',
           'Weight Range',
           'Review Factors',
-          'Reference Price Guard',
           '待批准的版本',
           '邀请关系规则',
         ]),
       );
+      // Decision 0147: the deprecated price guards are not shown.
+      expect(_labels(tester), isNot(contains('Reference Price Guard')));
       expect(find.byType(LoopChalkCard), findsWidgets);
     });
   });

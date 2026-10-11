@@ -1399,7 +1399,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                 key: ValueKey<String>('mining-rules-notice'),
                 icon: 'shield',
                 title: '草案不是生效规则',
-                body: '待批准的版本不会参与任何计算。权重区间与价格保护阈值只有规则条目，没有数值；批准之后才会公布。',
+                body: '待批准的版本不会参与任何计算。权重区间只有规则条目，没有数值；批准之后才会公布。',
                 margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
               ),
             const SizedBox(height: 20),
@@ -1594,38 +1594,9 @@ class _FormulaVersionBlock extends StatelessWidget {
             ],
           ),
         ),
-        if (version.priceGuardRules.isNotEmpty) ...<Widget>[
-          const LoopLabel('Reference Price Guard'),
-          LoopRecordGroup(
-            key: ValueKey<String>('$keyPrefix-guards'),
-            rows: <LoopRecordRow>[
-              for (
-                var index = 0;
-                index < version.priceGuardRules.length;
-                index += 1
-              )
-                LoopRecordRow(
-                  key: ValueKey<String>(
-                    '$keyPrefix-guard-'
-                    '${version.priceGuardRules[index].ruleKey}',
-                  ),
-                  leading: LoopRowIcon(
-                    monogram: (index + 1).toString().padLeft(2, '0'),
-                  ),
-                  title: miningRuleKeyText(
-                    version.priceGuardRules[index].ruleKey,
-                  ),
-                  subtitle: miningFormulaStatusLabel(
-                    version.priceGuardRules[index].status,
-                  ),
-                  position: launchRowPosition(
-                    index,
-                    version.priceGuardRules.length,
-                  ),
-                ),
-            ],
-          ),
-        ],
+        // Decision 0147 (loop-api 0125): power no longer multiplies a
+        // reference price, so `priceGuardRules` — still published, marked
+        // deprecated — is parsed and not shown as part of the formula.
       ],
     );
   }

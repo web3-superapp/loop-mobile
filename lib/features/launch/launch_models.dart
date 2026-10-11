@@ -363,6 +363,7 @@ final class LaunchProject {
     required this.updatedAt,
     required this.configVersion,
     this.rejection,
+    this.communityId,
   });
 
   final String projectId;
@@ -406,6 +407,11 @@ final class LaunchProject {
   /// made by the operator script before 0122.
   final LaunchRejection? rejection;
 
+  /// The community the MEME binds to once deployed (loop-api decision 0125,
+  /// client 0147). Present only when the project names one, in the owner and
+  /// the public projection alike; `null` means none.
+  final String? communityId;
+
   /// Only the owner's projection carries a version, and only an editable state
   /// accepts a `PUT`.
   bool get canEdit => version != null && reviewStatus.isEditable;
@@ -432,6 +438,7 @@ final class LaunchProjectDraft {
     required this.narrative,
     required this.officialLinks,
     this.kind,
+    this.community = const LaunchDraftCommunity.keep(),
   });
 
   static final RegExp tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
@@ -447,6 +454,12 @@ final class LaunchProjectDraft {
   /// byte-identical to before decision 0120). Only the create body carries
   /// it: `PUT` refuses the key.
   final LaunchProjectKind? kind;
+
+  /// What the body says about the bound community (loop-api decision 0125,
+  /// client 0147). The default sends no `communityId`: a create binds none
+  /// and keeps its idempotency digest byte-identical to before, an edit
+  /// keeps the stored value.
+  final LaunchDraftCommunity community;
 
   /// The first field the local shape check rejects, or `null`.
   LaunchDraftField? get invalidField {
@@ -470,6 +483,10 @@ final class LaunchProjectDraft {
         return LaunchDraftField.officialLinks;
       }
     }
+    final named = community.communityId;
+    if (named != null && !LaunchDraftCommunity.idPattern.hasMatch(named)) {
+      return LaunchDraftField.community;
+    }
     return null;
   }
 
@@ -478,6 +495,7 @@ final class LaunchProjectDraft {
     'ticker': ticker,
     'narrative': narrative,
     'officialLinks': officialLinks.toRequestJson(),
+    ...community.toRequestJson(),
   };
 
   /// The `POST` body: the edit body plus `kind` when one was chosen.
@@ -487,13 +505,51 @@ final class LaunchProjectDraft {
   };
 }
 
-enum LaunchDraftField { name, ticker, narrative, officialLinks }
+/// The `communityId` member of a create or edit body (loop-api decision
+/// 0125). Three meanings: absent ([LaunchDraftCommunity.keep] — none on
+/// create, unchanged on edit), a named community ([LaunchDraftCommunity.bind]),
+/// and `null` ([LaunchDraftCommunity.clear] — none on create, cleared on
+/// edit). Only the community's current owner may name it; anyone else gets
+/// `422 VALIDATION_FAILED` / `LAUNCH_COMMUNITY_NOT_OWNED`.
+@immutable
+final class LaunchDraftCommunity {
+  const LaunchDraftCommunity.keep() : communityId = null, _clears = false;
+  const LaunchDraftCommunity.bind(String this.communityId) : _clears = false;
+  const LaunchDraftCommunity.clear() : communityId = null, _clears = true;
+
+  static final RegExp idPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+  );
+
+  final String? communityId;
+  final bool _clears;
+
+  bool get isKeep => communityId == null && !_clears;
+  bool get isClear => _clears;
+
+  Map<String, Object?> toRequestJson() => <String, Object?>{
+    if (communityId case final String id) 'communityId': id,
+    if (_clears) 'communityId': null,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is LaunchDraftCommunity &&
+      other.communityId == communityId &&
+      other._clears == _clears;
+
+  @override
+  int get hashCode => Object.hash(communityId, _clears);
+}
+
+enum LaunchDraftField { name, ticker, narrative, officialLinks, community }
 
 String launchDraftFieldReason(LaunchDraftField field) => switch (field) {
   LaunchDraftField.name => '项目名称需要 1–80 个字符。',
   LaunchDraftField.ticker => 'Ticker 只能是 2–12 位大写字母或数字。',
   LaunchDraftField.narrative => '叙事最多 2000 个字符；留空表示不提交这一项。',
   LaunchDraftField.officialLinks => '官方链接必须是 https:// 开头且不超过 512 个字符。',
+  LaunchDraftField.community => '关联社区的标识无效，请重新选择。',
 };
 
 // ---------------------------------------------------------------------------

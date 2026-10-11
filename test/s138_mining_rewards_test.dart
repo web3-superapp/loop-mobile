@@ -1290,7 +1290,7 @@ void main() {
       expect(_key('mining-minute-awaiting'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
-        '挖矿规则已生效，首个小时结算后开始展示并可领取。',
+        '挖矿规则已生效，你的首个有算力的小时结算后开始展示并可领取。',
       );
       expect(
         tester.widget<Text>(_key('mining-claim-disabled')).data,
@@ -1767,6 +1767,117 @@ void main() {
       // 「重新上报」 does.
       expect(rewards.reportCalls, hasLength(1));
       await _drain(tester);
+    });
+  });
+
+  // Decision 0147: loop-api S148 (Decision 0125) §8, samples under
+  // test/fixtures/s149-s148-api/.
+  group('S148 values (0125 §8)', () {
+    Map<String, Object?> s148(String name) => jsonDecode(
+      File('test/fixtures/s149-s148-api/$name.json').readAsStringSync(),
+    ) as Map<String, Object?>;
+
+    MiningRewardsView parse(String name) =>
+        LoopV2MiningRewardsCodec.rewards(s148(name)['body']);
+
+    test('§8.1 awaiting the first own hour parses with null blocks', () {
+      final view = parse('rewards_awaiting_first_own_hour');
+      expect(view.display.state, MiningDisplayState.awaitingFirstSettlement);
+      expect(view.display.reasonCode, isNull);
+      expect(view.display.window, isNull);
+      expect(view.lastEpoch, isNull);
+      expect(view.nft, isNull);
+      expect(view.asset, isNull);
+      expect(view.settledTotal, BigInt.zero);
+      expect(view.claimable, BigInt.zero);
+      expect(view.invites, isNotNull);
+      expect(view.claim.executable, isFalse);
+      expect(view.claim.reasonCode, 'MINING_NOTHING_SETTLED');
+      expect(miningAwaitingReason(view), 'MINING_NOTHING_SETTLED');
+    });
+
+    testWidgets('§8.1 the page waits for the first own hour', (tester) async {
+      final rewards = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(parse('rewards_awaiting_first_own_hour')),
+        ],
+      );
+      await _pump(tester, rewards: rewards);
+      expect(tester.takeException(), isNull);
+      expect(_key('mining-minute-awaiting'), findsOneWidget);
+      expect(find.text('首个小时结算后开始展示奖励'), findsOneWidget);
+      expect(
+        tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
+        '挖矿规则已生效，你的首个有算力的小时结算后开始展示并可领取。',
+      );
+      expect(
+        tester.widget<Text>(_key('mining-claim-disabled')).data,
+        '首个小时结算后可领取',
+      );
+      expect(
+        tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
+        isNull,
+      );
+      expect(_key('mining-rewards-unavailable'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('§8.2 a paused or unreadable contract closes the claim', (
+      tester,
+    ) async {
+      for (final (name, code, line) in <(String, String, String)>[
+        (
+          'rewards_claim_contract_paused',
+          'MINING_CLAIM_CONTRACT_PAUSED',
+          '领取合约已暂停，暂不能领取',
+        ),
+        (
+          'rewards_claim_chain_read_failed',
+          'MINING_CLAIM_CHAIN_READ_FAILED',
+          '领取合约暂时读不到，暂不能领取',
+        ),
+      ]) {
+        final view = parse(name);
+        expect(view.claim.executable, isFalse, reason: name);
+        expect(view.claim.reasonCode, code, reason: name);
+        expect(miningClaimUnavailableText(code), line);
+        final rewards = _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[_Answer.value(view)],
+        );
+        await _pump(tester, rewards: rewards);
+        expect(
+          tester.widget<Text>(_key('mining-claim-disabled')).data,
+          line,
+          reason: name,
+        );
+        expect(
+          tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
+          isNull,
+          reason: name,
+        );
+        await _drain(tester);
+      }
+    });
+
+    test('§8.2 prepare refusals keep their own copy', () {
+      expect(
+        miningClaimPrepareFailureText(
+          const LoopChainException(
+            LoopChainFailureKind.unavailable,
+            reasonCode: 'MINING_CLAIM_CHAIN_READ_FAILED',
+          ),
+        ),
+        '领取合约暂时读不到，没有生成领取凭证，余额不变。',
+      );
+      expect(
+        miningClaimPrepareFailureText(
+          const LoopChainException(
+            LoopChainFailureKind.validationFailed,
+            reasonCode: 'MINING_CLAIM_CONTRACT_PAUSED',
+          ),
+        ),
+        '领取合约已暂停，余额不变。',
+      );
     });
   });
 }

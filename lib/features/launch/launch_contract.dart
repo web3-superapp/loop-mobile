@@ -190,6 +190,8 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH_POOL_EVIDENCE_UNAVAILABLE' => '还读不到流动性池信息，毕业步骤保持待触发。',
   'LAUNCH_ECONOMY_CONTRACT_PENDING' => '总量、发行与生态税要等合约上线，这里只显示 LOOP 能核对的数量。',
   'LAUNCH_RUNTIME_UNAVAILABLE' => 'Launch 暂时不可用，稍后再试。',
+  // launch · project ↔ community binding (loop-api decision 0125, client 0147)
+  'LAUNCH_COMMUNITY_NOT_OWNED' => '只能关联你担任群主的社区；这个社区不存在、已被驳回，或你已不是群主。资料没有保存。',
   'TIER_MODE_PENDING' => '这次发射的资格规则还没有配置。资格不依赖质押。',
   'STAKING_CONTRACT_PENDING' => '质押还没有开放，这一页暂时不能操作。',
   'KYB_PROVIDER_NOT_SELECTED' => '开放后会在这里显示审核状态。',

@@ -355,7 +355,10 @@ class _MiningRewardsHourlyScreenState
 String miningDisplayReasonText(String? reasonCode) => switch (reasonCode) {
   'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂时没有结算。',
   'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，下面的数字可能不是最新的。',
-  'MINING_NOTHING_SETTLED' => '挖矿规则已生效，首个小时结算后开始展示并可领取。',
+  // Loop-api 0125 (client 0147): judged on the caller's own hours — no hour
+  // with power or reward has settled for this account yet, whatever the
+  // network has settled.
+  'MINING_NOTHING_SETTLED' => '挖矿规则已生效，你的首个有算力的小时结算后开始展示并可领取。',
   _ => '结算数据暂时读不到，下面的数字可能不是最新的。',
 };
 
@@ -709,7 +712,10 @@ String miningClaimUnavailableText(String? reasonCode, {BigInt? minimum}) =>
       'MINING_CLAIM_SIGNER_NOT_CONFIGURED' => '领取凭证签发尚未配置，暂不能领取',
       'MINING_CLAIM_WRITES_DISABLED' => '链上写入暂时关闭，暂不能领取',
       'MINING_CLAIM_MAINNET_CLOSED' => '主网领取尚未开放',
+      // Loop-api 0125 §8.2: read from the chain only once the first seven
+      // gates pass (decision 0147).
       'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，暂不能领取',
+      'MINING_CLAIM_CHAIN_READ_FAILED' => '领取合约暂时读不到，暂不能领取',
       'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂不能领取',
       _ => '领取暂不可用',
     };
@@ -722,6 +728,7 @@ String miningClaimPrepareFailureText(LoopChainException? failure) {
     'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取。',
     'MINING_CLAIM_SIMULATION_REVERTED' => '试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。',
     'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，余额不变。',
+    'MINING_CLAIM_CHAIN_READ_FAILED' => '领取合约暂时读不到，没有生成领取凭证，余额不变。',
     'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂时不能领取，余额不变。',
     'MINING_CLAIM_EXPIRED' => '领取凭证已过期，没有提交任何交易。请重新领取。',
     'MINING_CLAIM_WALLET_NOT_EMBEDDED' => '只能领取到 LOOP 内置钱包。',

@@ -1,0 +1,47 @@
+{
+  "_handwritten": "Handwritten on 2026-10-11 for client Decision 0147 from loop-api S148-api ba6aa45 (Decision 0125): openapi/loop-api.v2.json and docs/frontend-v2-mining-api.md §S148: the unavailable form carries assetPowerBasis too. Development is not on 0125 yet, so no capture exists; replace with a capture once it is.",
+  "route": "GET /v2/mining/summary",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "11111111-2222-4333-8444-555555555555",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "power": {
+      "status": "unavailable",
+      "reasonCode": "MINING_FORMULA_BASELINE_PENDING"
+    },
+    "networkPower": {
+      "status": "unavailable",
+      "reasonCode": "MINING_FORMULA_BASELINE_PENDING"
+    },
+    "estimatedToday": {
+      "status": "unavailable",
+      "reasonCode": "MINING_FORMULA_BASELINE_PENDING"
+    },
+    "accumulated": {
+      "status": "unavailable",
+      "reasonCode": "MINING_FORMULA_BASELINE_PENDING"
+    },
+    "claimable": {
+      "status": "unavailable",
+      "reasonCode": "REWARD_AUTHORITY_PENDING"
+    },
+    "referralBoost": {
+      "status": "unavailable",
+      "reasonCode": "MINING_REFERRAL_BOOST_PENDING"
+    },
+    "formula": {
+      "status": "unavailable",
+      "reasonCode": "MINING_FORMULA_BASELINE_PENDING",
+      "pendingVersion": "miningFormulaV1-draft"
+    },
+    "snapshot": {
+      "status": "unavailable",
+      "reasonCode": "MINING_SNAPSHOT_NOT_AVAILABLE"
+    },
+    "assetPowerBasis": "quantity",
+    "contractVersion": "2.0"
+  }
+}

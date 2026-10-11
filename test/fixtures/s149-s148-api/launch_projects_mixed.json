@@ -1,0 +1,83 @@
+{
+  "_handwritten": "Handwritten on 2026-10-11 for client Decision 0147 from loop-api S148-api ba6aa45 (Decision 0125): openapi/loop-api.v2.json and docs/frontend-v2-launch-api.md §S148: one project names a community, the other has no communityId key. Development is not on 0125 yet, so no capture exists; replace with a capture once it is.",
+  "route": "GET /v2/launch/projects",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "11111111-2222-4333-8444-555555555555",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "items": [
+      {
+        "projectId": "17f6a9b2-2f22-4c11-9f3a-1a2b3c4d5e6f",
+        "name": "Frog",
+        "ticker": "FROG",
+        "narrative": null,
+        "officialLinks": {
+          "website": null,
+          "x": null,
+          "telegram": null,
+          "discord": null
+        },
+        "materialVersion": 1,
+        "kind": "launch2",
+        "reviewStatus": "draft",
+        "reviewReasonCode": null,
+        "reviewReasonText": null,
+        "kyb": {
+          "status": "unavailable",
+          "state": "unavailable",
+          "reasonCode": "KYB_PROVIDER_NOT_SELECTED"
+        },
+        "attachments": {
+          "status": "unavailable",
+          "reasonCode": "ATTACHMENT_STORAGE_NOT_SELECTED"
+        },
+        "submittedAt": null,
+        "reviewedAt": null,
+        "launchId": null,
+        "version": 1,
+        "createdAt": "2026-10-10T01:00:00.000Z",
+        "updatedAt": "2026-10-10T01:00:00.000Z",
+        "configVersion": "launchCatalogV1",
+        "communityId": "5b0c9d18-6a44-4f39-b0d2-9e8f7a6b5c4d"
+      },
+      {
+        "projectId": "9c1d6e2a-7c3b-4a55-8d21-0f1e2d3c4b5a",
+        "name": "Frog",
+        "ticker": "FROG",
+        "narrative": null,
+        "officialLinks": {
+          "website": null,
+          "x": null,
+          "telegram": null,
+          "discord": null
+        },
+        "materialVersion": 1,
+        "kind": "ido",
+        "reviewStatus": "draft",
+        "reviewReasonCode": null,
+        "reviewReasonText": null,
+        "kyb": {
+          "status": "unavailable",
+          "state": "unavailable",
+          "reasonCode": "KYB_PROVIDER_NOT_SELECTED"
+        },
+        "attachments": {
+          "status": "unavailable",
+          "reasonCode": "ATTACHMENT_STORAGE_NOT_SELECTED"
+        },
+        "submittedAt": null,
+        "reviewedAt": null,
+        "launchId": null,
+        "version": 1,
+        "createdAt": "2026-10-10T01:00:00.000Z",
+        "updatedAt": "2026-10-10T01:00:00.000Z",
+        "configVersion": "launchCatalogV1"
+      }
+    ],
+    "nextCursor": null,
+    "contractVersion": "2.0"
+  }
+}
