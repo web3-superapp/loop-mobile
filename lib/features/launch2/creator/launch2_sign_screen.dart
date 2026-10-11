@@ -206,7 +206,8 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
         ),
       ];
     }
-    final recipient = failure.reasonCode == launch2RecipientFixedCode;
+    // Decision 0150: a used config version is answered by saving again too.
+    final recipient = launch2FailureNeedsResave(failure.reasonCode);
     final blocked =
         failure.kind == LoopChainFailureKind.permissionDenied ||
         failure.kind == LoopChainFailureKind.notFound;
@@ -329,7 +330,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
           icon: 'warn',
           tone: LoopNoticeTone.warn,
           body: launch2FailureText(failure),
-          trailing: failure.reasonCode == launch2RecipientFixedCode
+          trailing: launch2FailureNeedsResave(failure.reasonCode)
               ? _editButton(projectId)
               : null,
         ),

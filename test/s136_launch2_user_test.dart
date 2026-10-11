@@ -283,6 +283,7 @@ Future<void> _pump(
   _Clock? clock,
   bool settle = true,
   List<Override> overrides = const <Override>[],
+  Size size = const Size(390, 2600),
 }) {
   final time = clock ?? _Clock();
   return pumpS7Page(
@@ -290,6 +291,7 @@ Future<void> _pump(
     page,
     meta: meta ?? _meta(),
     settle: settle,
+    size: size,
     wallet: FakeWalletDirectory(
       activeWalletId: l2WalletId,
       wallets: <LoopWalletAccount>[_wallet()],
@@ -1774,12 +1776,12 @@ void main() {
       // Decision 0148: the live read and the keeper both hold for the same
       // reason — one line naming both sources, no second row.
       await _scrollTo(tester, _key('launch2-buyback-held'));
+      // Decision 0150: the reason, then sources and time on their own line.
       expect(
-        find.textContaining(
-          '下一笔暂缓：官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%（链上读数、自动回购）',
-        ),
+        find.text('下一笔暂缓：官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%'),
         findsOneWidget,
       );
+      expect(find.textContaining('来源：链上读数 · 自动回购'), findsOneWidget);
       expect(_key('launch2-buyback-keeper'), findsNothing);
       expect(_key('launch2-buyback-next'), findsNothing);
       await _drain(tester);
@@ -1864,6 +1866,45 @@ void main() {
       navigator.pop();
       await tester.pumpAndSettle();
       expect(launch2.listCalls, hasLength(2));
+      await _drain(tester);
+    });
+
+    testWidgets('at 360 wide the merged hold keeps its retry time: reason '
+        'first, sources and time below (decision 0150)', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        size: const Size(360, 2600),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(
+              l2Detail(stage: 'graduated', noNextChange: true),
+            ),
+          ],
+          buybacks: _Answer<Launch2BuybackPage>.value(
+            l2Buybacks(
+              blocked: 'BUYBACK_LEGACY_PRICE_PROTECTION',
+              keeper: l2KeeperJson(
+                reasonCode: 'LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION',
+              ),
+            ),
+          ),
+        ),
+      );
+      await _scrollTo(tester, _key('launch2-buyback-held'));
+      expect(find.text('下一笔暂缓：旧版合约价格保护生效'), findsOneWidget);
+      final detail = tester.widget<Text>(_key('launch2-buyback-held-detail'));
+      expect(detail.data, matches(RegExp(r'^来源：链上读数 · 自动回购 · \d\d:\d\d 后再试$')));
+      expect(detail.maxLines, isNull);
+      for (final key in <String>[
+        'launch2-buyback-held-reason',
+        'launch2-buyback-held-detail',
+      ]) {
+        final paragraph = tester.renderObject<RenderParagraph>(_key(key));
+        expect(paragraph.didExceedMaxLines, isFalse);
+        expect(tester.getSize(_key(key)).height, lessThan(20));
+      }
+      expect(tester.takeException(), isNull);
       await _drain(tester);
     });
 

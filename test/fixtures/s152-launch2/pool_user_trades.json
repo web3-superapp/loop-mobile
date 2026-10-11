@@ -1,0 +1,20 @@
+{
+  "_handwritten": "Handwritten from loop-api S151-api (Decision 0127) at integration/v2 66b04fa (2026-10-11): docs/frontend-v2-launch2-api.md §3.10 and the instance.pool schema in openapi/loop-api.v2.json; no Development capture exists yet. Three of the five buys (100 USD1 each) are buybacks, as in the §3.10 example scaled to three.",
+  "pool": {
+    "poolId": "0x67ff00000000000000000000000000000000000000000000000000000000882d",
+    "router": "0xcb022501a427154501adce5b6dc8f16674ae8f5d",
+    "tradeCount": "6",
+    "buyCount": "5",
+    "sellCount": "1",
+    "buyVolumeUsd1": "350",
+    "sellVolumeUsd1": "40",
+    "volume24hUsd1": "390",
+    "taxUsd1": "0.8",
+    "taxMeme": "4800",
+    "lastPriceUsd1": "0.000625",
+    "lastTradeAt": "2027-01-15T07:59:30.000Z",
+    "userTradeCount": "3",
+    "userBuyVolumeUsd1": "50",
+    "userSellVolumeUsd1": "40"
+  }
+}

@@ -24,6 +24,15 @@ abstract final class LoopV2Launch2PoolCodec {
     'lastTradeAt',
   };
 
+  /// loop-api S151 (decision 0127): the market-only totals, without the
+  /// instance's buyback swaps. Optional as a group (client decision 0150):
+  /// all absent = a server before S151; some absent = invalid.
+  static const userSummaryKeys = <String>{
+    'userTradeCount',
+    'userBuyVolumeUsd1',
+    'userSellVolumeUsd1',
+  };
+
   static const quoteKeys = <String>{
     'instanceId',
     'walletId',
@@ -70,17 +79,40 @@ abstract final class LoopV2Launch2PoolCodec {
   /// S146, which omits the key).
   static Launch2PoolSummary? summary(Object? raw) {
     if (raw == null) return null;
-    final map = LoopV2Contract.strictMap(raw, summaryKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      summaryKeys,
+      userSummaryKeys,
+    );
+    final present = userSummaryKeys.where(map.containsKey).length;
+    if (present != 0 && present != userSummaryKeys.length) _invalid();
+    final tradeCount = LoopV2Launch2Codec.integer(map, 'tradeCount');
+    final buyVolume = LoopV2Launch2Codec.amount(map, 'buyVolumeUsd1');
+    final sellVolume = LoopV2Launch2Codec.amount(map, 'sellVolumeUsd1');
+    final userTradeCount = present == 0
+        ? null
+        : LoopV2Launch2Codec.integer(map, 'userTradeCount');
+    final userBuyVolume = present == 0
+        ? null
+        : LoopV2Launch2Codec.amount(map, 'userBuyVolumeUsd1');
+    final userSellVolume = present == 0
+        ? null
+        : LoopV2Launch2Codec.amount(map, 'userSellVolumeUsd1');
+    if ((userTradeCount != null && userTradeCount > tradeCount) ||
+        (userBuyVolume != null && userBuyVolume > buyVolume) ||
+        (userSellVolume != null && userSellVolume > sellVolume)) {
+      _invalid();
+    }
     return Launch2PoolSummary(
       poolId: LoopV2Launch2Codec.hash(map, 'poolId'),
       router: map['router'] == null
           ? null
           : LoopV2Launch2Codec.anyCaseAddress(map, 'router'),
-      tradeCount: LoopV2Launch2Codec.integer(map, 'tradeCount'),
+      tradeCount: tradeCount,
       buyCount: LoopV2Launch2Codec.integer(map, 'buyCount'),
       sellCount: LoopV2Launch2Codec.integer(map, 'sellCount'),
-      buyVolumeUsd1: LoopV2Launch2Codec.amount(map, 'buyVolumeUsd1'),
-      sellVolumeUsd1: LoopV2Launch2Codec.amount(map, 'sellVolumeUsd1'),
+      buyVolumeUsd1: buyVolume,
+      sellVolumeUsd1: sellVolume,
       volume24hUsd1: LoopV2Launch2Codec.amount(map, 'volume24hUsd1'),
       taxUsd1: LoopV2Launch2Codec.amount(map, 'taxUsd1'),
       taxMeme: LoopV2Launch2Codec.amount(map, 'taxMeme'),
@@ -88,6 +120,9 @@ abstract final class LoopV2Launch2PoolCodec {
           ? null
           : LoopV2Launch2Codec.amount(map, 'lastPriceUsd1'),
       lastTradeAt: LoopV2ChainCodec.optionalTimestamp(map, 'lastTradeAt'),
+      userTradeCount: userTradeCount,
+      userBuyVolumeUsd1: userBuyVolume,
+      userSellVolumeUsd1: userSellVolume,
     );
   }
 

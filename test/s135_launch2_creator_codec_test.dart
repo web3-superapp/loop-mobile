@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
@@ -782,6 +783,41 @@ void main() {
               )
               .having((e) => e.reasonCode, 'reason', launch2RecipientFixedCode),
         ),
+      );
+    });
+  });
+
+  group('S151 · decision 0150', () {
+    test('signing-request 422 HOOKS_CONFIG_VERSION_USED keeps its reason; '
+        '503 HOOKS_LAUNCH_FACTORY_UNAVAILABLE has its sentence', () async {
+      final record = jsonDecode(
+        File('test/fixtures/s152-launch2/error_config_version_used.json')
+            .readAsStringSync(),
+      ) as Map<String, Object?>;
+      final script = _Script(<Object>[record]);
+      LoopChainException? caught;
+      try {
+        await _gateway(script)
+            .loadSigningRequest(projectId: _projectId, walletId: _walletId);
+      } on LoopChainException catch (error) {
+        caught = error;
+      }
+      expect(caught, isNotNull);
+      expect(caught!.kind, LoopChainFailureKind.validationFailed);
+      expect(caught.reasonCode, launch2ConfigVersionUsedCode);
+      expect(script.sent.single.path, endsWith('/signing-request'));
+      expect(launch2FailureText(caught), '这一版配置的版本号已被你钱包的另一个项目用过，请修改资料重新保存一版。');
+      expect(launch2FailureNeedsResave(launch2ConfigVersionUsedCode), isTrue);
+      expect(launch2FailureNeedsResave(launch2RecipientFixedCode), isTrue);
+      expect(launch2FailureNeedsResave('HOOKS_SIGNATURE_EXPIRED'), isFalse);
+      expect(
+        launch2FailureText(
+          const LoopChainException(
+            LoopChainFailureKind.unavailable,
+            reasonCode: 'HOOKS_LAUNCH_FACTORY_UNAVAILABLE',
+          ),
+        ),
+        '发射工厂暂时不可用（或正在计算地址），稍后再试。',
       );
     });
   });

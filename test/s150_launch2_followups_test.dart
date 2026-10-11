@@ -676,32 +676,41 @@ void main() {
       ).summary,
     )!;
 
-    test('the same reason from both sources says it once', () {
-      expect(
-        launch2BuybackHeldLine(
-          liveBlockedReason: 'BUYBACK_LEGACY_PRICE_PROTECTION',
-          keeper: keeper('LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION'),
-        ),
-        startsWith('下一笔暂缓：旧版合约价格保护生效（链上读数、自动回购） · '),
-      );
-      expect(
-        launch2BuybackHeldLine(
-          liveBlockedReason: 'BUYBACK_NO_BUDGET',
-          keeper: keeper('LAUNCH2_BUYBACK_NO_BUDGET', next: null),
-        ),
-        '下一笔暂缓：托管余额不足一笔（链上读数、自动回购）',
-      );
+    test('the same reason from both sources says it once, sources and '
+        'time on the second line (decision 0150)', () {
+      final legacy = launch2BuybackHeldLine(
+        liveBlockedReason: 'BUYBACK_LEGACY_PRICE_PROTECTION',
+        keeper: keeper('LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION'),
+      )!;
+      expect(legacy.reason, '下一笔暂缓：旧版合约价格保护生效');
+      expect(legacy.detail, startsWith('来源：链上读数 · 自动回购 · '));
+      expect(legacy.detail, endsWith(' 后再试'));
+      final budget = launch2BuybackHeldLine(
+        liveBlockedReason: 'BUYBACK_NO_BUDGET',
+        keeper: keeper('LAUNCH2_BUYBACK_NO_BUDGET', next: null),
+      )!;
+      expect(budget.reason, '下一笔暂缓：托管余额不足一笔');
+      expect(budget.detail, '来源：链上读数 · 自动回购');
     });
 
     test('different reasons are both named; a ready read or a running '
         'keeper is no merge', () {
+      final both = launch2BuybackHeldLine(
+        liveBlockedReason: 'BUYBACK_PRINCIPAL_INSUFFICIENT',
+        keeper: keeper('LAUNCH2_BUYBACK_GAS_PRICE_ABOVE_CAP', next: null),
+      )!;
+      expect(
+        both.reason,
+        '下一笔暂缓：官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%（链上读数）；'
+        '链上手续费过高（自动回购）',
+      );
+      expect(both.detail, isNull);
       expect(
         launch2BuybackHeldLine(
           liveBlockedReason: 'BUYBACK_PRINCIPAL_INSUFFICIENT',
-          keeper: keeper('LAUNCH2_BUYBACK_GAS_PRICE_ABOVE_CAP', next: null),
-        ),
-        '下一笔暂缓：官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%（链上读数）；'
-        '链上手续费过高（自动回购）',
+          keeper: keeper('LAUNCH2_BUYBACK_GAS_PRICE_ABOVE_CAP'),
+        )!.detail,
+        endsWith(' 后再试'),
       );
       expect(
         launch2BuybackHeldLine(

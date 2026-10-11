@@ -61,6 +61,8 @@ String launch2FailureText(LoopChainException failure) {
     case launch2RecipientFixedCode:
       return '回购收币地址必须是平台固定地址。这一版配置用的是其他地址，'
           '请修改资料重新保存一版（需要重新审核）。';
+    case launch2ConfigVersionUsedCode:
+      return '这一版配置的版本号已被你钱包的另一个项目用过，请修改资料重新保存一版。';
     case launch2RecipientUnavailableCode:
       return '平台回购收币地址暂未配置，暂时不能保存或签名，稍后再试。';
   }

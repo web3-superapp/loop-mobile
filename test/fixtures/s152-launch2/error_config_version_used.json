@@ -1,0 +1,21 @@
+{
+  "_handwritten": "Handwritten from loop-api S151-api (Decision 0127) at integration/v2 66b04fa (2026-10-11): docs/frontend-v2-hooks-launch-api.md §13 and decision 0127 §4; no Development capture exists yet.",
+  "route": "GET /v2/launch/projects/3fa85f64-5717-4562-b3fc-2c963f66afa6/hooks-config/signing-request?walletId=d64786bb-408d-415d-8a69-6277d56c921b",
+  "status": 422,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "code": "VALIDATION_FAILED",
+    "category": "validation",
+    "retryable": false,
+    "userMessageKey": "errors.launch.hooks",
+    "correlationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "detailsSafe": {
+      "reasonCode": "HOOKS_CONFIG_VERSION_USED"
+    },
+    "providerReferenceSafe": null
+  }
+}

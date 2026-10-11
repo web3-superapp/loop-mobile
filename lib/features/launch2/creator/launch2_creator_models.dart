@@ -171,6 +171,16 @@ abstract final class Launch2Template {
 /// configuration names another recipient than the platform's fixed one.
 const String launch2RecipientFixedCode = 'HOOKS_BUYBACK_RECIPIENT_FIXED';
 
+/// `422 HOOKS_CONFIG_VERSION_USED` (loop-api decision 0127, client decision
+/// 0150): signing preparation only — this wallet already deployed a project
+/// with this config version. The owner saves the config again.
+const String launch2ConfigVersionUsedCode = 'HOOKS_CONFIG_VERSION_USED';
+
+/// The refusals the owner answers by editing and saving a new version.
+bool launch2FailureNeedsResave(String? reasonCode) =>
+    reasonCode == launch2RecipientFixedCode ||
+    reasonCode == launch2ConfigVersionUsedCode;
+
 /// `503 HOOKS_BUYBACK_RECIPIENT_UNAVAILABLE`: the platform has not configured
 /// its fixed recipient; nothing can be saved, signed or submitted.
 const String launch2RecipientUnavailableCode =

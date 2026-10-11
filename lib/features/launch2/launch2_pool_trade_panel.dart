@@ -653,14 +653,37 @@ class Launch2PoolStats extends StatelessWidget {
           label: '外盘最新价',
           value: price == null ? '还没有成交' : launch2PriceLabel(price),
         ),
-        LoopKeyValue(
-          key: const ValueKey<String>('launch2-pool-trade-count'),
-          label: '外盘成交',
-          value:
-              '${loopGroupedFigure(pool.tradeCount.toString())} 笔 · '
-              '买 ${loopGroupedFigure(pool.buyCount.toString())} / '
-              '卖 ${loopGroupedFigure(pool.sellCount.toString())}',
-        ),
+        // Decision 0150 (loop-api S151): market trades lead, buybacks are
+        // named apart. The server gives no user buy / sell counts, so the
+        // split is the user USD1 volumes. A server before S151 keeps the
+        // pool-wide line.
+        if (pool.userTradeCount case final BigInt user) ...<Widget>[
+          LoopKeyValue(
+            key: const ValueKey<String>('launch2-pool-trade-count'),
+            label: '外盘成交',
+            value: <String>[
+              '${loopGroupedFigure(user.toString())} 笔用户成交',
+              if (pool.buybackTradeCount case final BigInt buybacks
+                  when buybacks > BigInt.zero)
+                '另有回购 ${loopGroupedFigure(buybacks.toString())} 笔',
+            ].join(' · '),
+          ),
+          LoopKeyValue(
+            key: const ValueKey<String>('launch2-pool-user-volume'),
+            label: '用户买入 / 卖出',
+            value:
+                '${loopFormatDecimal(pool.userBuyVolumeUsd1 ?? Decimal.zero, maxFractionDigits: 2)} / '
+                '${launch2Usd1Label(pool.userSellVolumeUsd1 ?? Decimal.zero)}',
+          ),
+        ] else
+          LoopKeyValue(
+            key: const ValueKey<String>('launch2-pool-trade-count'),
+            label: '外盘成交',
+            value:
+                '${loopGroupedFigure(pool.tradeCount.toString())} 笔 · '
+                '买 ${loopGroupedFigure(pool.buyCount.toString())} / '
+                '卖 ${loopGroupedFigure(pool.sellCount.toString())}',
+          ),
         LoopKeyValue(
           key: const ValueKey<String>('launch2-pool-volume'),
           label: '24 小时成交额',

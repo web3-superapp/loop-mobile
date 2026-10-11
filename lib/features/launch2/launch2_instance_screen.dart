@@ -24,6 +24,7 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -1257,6 +1258,69 @@ class _GraduatedBlock extends StatelessWidget {
 /// 回购面板 (contract §3.6): escrow, the running total, the latest order and
 /// why the next one would not go through now. Refused attempts are not
 /// listed — they revert without a log.
+/// Decision 0150: the merged hold on two lines — the reason (wraps, never
+/// cut) and 「来源 · 时间」 — styled as [LoopInlineUnavailable], which is one
+/// line only and cut the retry time off at 360 wide.
+class _BuybackHeldRow extends StatelessWidget {
+  const _BuybackHeldRow({required this.line, super.key});
+
+  final Launch2BuybackHeldLine line;
+
+  @override
+  Widget build(BuildContext context) {
+    final auxiliary = LoopGround.auxiliaryOf(context);
+    final style = LoopType.captionSm.copyWith(color: auxiliary);
+    final detail = line.detail;
+    return Semantics(
+      container: true,
+      label: line.text.replaceAll('\n', '，'),
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: LoopInlineUnavailable.height - 24,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: LoopIcon('clock', size: 15, color: auxiliary),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      line.reason,
+                      key: const ValueKey<String>(
+                        'launch2-buyback-held-reason',
+                      ),
+                      style: style,
+                    ),
+                    if (detail != null) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Text(
+                        detail,
+                        key: const ValueKey<String>(
+                          'launch2-buyback-held-detail',
+                        ),
+                        style: style,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BuybackPanel extends ConsumerWidget {
   const _BuybackPanel({required this.detail});
 
@@ -1338,10 +1402,9 @@ class _BuybackPanel extends ConsumerWidget {
                     '${latest.executed ? '成交' : launch2BuybackBlockedText(latest.reasonCode)}',
         ),
         if (held != null)
-          LoopInlineUnavailable(
+          _BuybackHeldRow(
             key: const ValueKey<String>('launch2-buyback-held'),
-            icon: 'clock',
-            message: held,
+            line: held,
           )
         else if (page != null && live != null)
           LoopKeyValue(

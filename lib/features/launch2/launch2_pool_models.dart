@@ -65,6 +65,9 @@ final class Launch2PoolSummary {
     this.router,
     this.lastPriceUsd1,
     this.lastTradeAt,
+    this.userTradeCount,
+    this.userBuyVolumeUsd1,
+    this.userSellVolumeUsd1,
   });
 
   final String poolId;
@@ -86,6 +89,20 @@ final class Launch2PoolSummary {
   /// The pool price after the latest indexed swap; `null` before the first.
   final Decimal? lastPriceUsd1;
   final DateTime? lastTradeAt;
+
+  /// loop-api S151 (decision 0127, client decision 0150): the same totals
+  /// without the swaps the instance's buyback adapter / executor sent, i.e.
+  /// market trades only. All three `null` = a server before S151.
+  final BigInt? userTradeCount;
+  final Decimal? userBuyVolumeUsd1;
+  final Decimal? userSellVolumeUsd1;
+
+  /// Buyback swaps indexed in the pool (`tradeCount - userTradeCount`);
+  /// `null` from a server before S151.
+  BigInt? get buybackTradeCount {
+    final user = userTradeCount;
+    return user == null ? null : tradeCount - user;
+  }
 }
 
 /// `GET /v2/launch2/instances/{id}/pool/quote`.

@@ -246,12 +246,30 @@ String? _buybackHoldKind(String? code) {
   };
 }
 
+/// The merged hold of the buyback card (decisions 0148 / 0150): the reason
+/// on the first line, where it came from and the keeper's retry time on the
+/// second, so a 360-wide screen never cuts the time off.
+@immutable
+final class Launch2BuybackHeldLine {
+  const Launch2BuybackHeldLine({required this.reason, this.detail});
+
+  /// 「下一笔暂缓：<原因>」 — may wrap, never truncated.
+  final String reason;
+
+  /// 「来源：链上读数 · 自动回购 · HH:mm 后再试」, or the retry time alone
+  /// when the two sources name different reasons (each is tagged inline).
+  final String? detail;
+
+  String get text => <String>[reason, ?detail].join('\n');
+}
+
 /// Decision 0148: when the live read says the next order is held
 /// ([liveBlockedReason]) and the keeper's last attempt was held too, the
-/// buyback card says it once — 「下一笔暂缓：<原因>（来源）」, with the keeper's
-/// retry time — instead of two rows from two sources. `null` when either
-/// is not held (each keeps its own row).
-String? launch2BuybackHeldLine({
+/// buyback card says it once instead of two rows from two sources.
+/// Decision 0150: two lines — the reason, then 「来源：链上读数 · 自动回购」
+/// with the keeper's retry time. `null` when either is not held (each keeps
+/// its own row).
+Launch2BuybackHeldLine? launch2BuybackHeldLine({
   required String? liveBlockedReason,
   required Launch2KeeperLine? keeper,
 }) {
@@ -266,10 +284,16 @@ String? launch2BuybackHeldLine({
   final same =
       _buybackHoldKind(liveBlockedReason) ==
       _buybackHoldKind(keeper.reasonCode);
-  final reasons = same
-      ? '$live（链上读数、自动回购）'
-      : '$live（链上读数）；${keeper.reason}（自动回购）';
-  return <String>['下一笔暂缓：$reasons', ?retry].join(' · ');
+  if (same) {
+    return Launch2BuybackHeldLine(
+      reason: '下一笔暂缓：$live',
+      detail: <String>['来源：链上读数 · 自动回购', ?retry].join(' · '),
+    );
+  }
+  return Launch2BuybackHeldLine(
+    reason: '下一笔暂缓：$live（链上读数）；${keeper.reason}（自动回购）',
+    detail: retry,
+  );
 }
 
 /// Why the keeper's simulation was refused (`lastResult: rejected`), per

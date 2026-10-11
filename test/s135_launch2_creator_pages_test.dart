@@ -1699,6 +1699,35 @@ void main() {
       await _drain(tester);
     });
 
+    testWidgets('signing-request 422 HOOKS_CONFIG_VERSION_USED says so and '
+        'offers 修改资料 (decision 0150)', (tester) async {
+      final edits = <String>[];
+      await _pump(
+        tester,
+        Launch2SignScreen(
+          projectId: _projectId,
+          clock: _beforeDeadline,
+          onEdit: edits.add,
+        ),
+        creator: _FakeCreator(
+          requests: <_A<Launch2SigningRequest>>[
+            const _A<Launch2SigningRequest>.fail(
+              LoopChainFailureKind.validationFailed,
+              reason: launch2ConfigVersionUsedCode,
+            ),
+          ],
+        ),
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('这一版配置的版本号已被你钱包的另一个项目用过，请修改资料重新保存一版。'), findsOneWidget);
+      expect(find.textContaining('HOOKS_'), findsNothing);
+      expect(_key('launch2-sign-retry'), findsNothing);
+      await tester.tap(_key('launch2-sign-edit'));
+      expect(edits.single, _projectId);
+      await _drain(tester);
+    });
+
     testWidgets('我的项目 rows name the rejection and the outdated recipient', (
       tester,
     ) async {
