@@ -238,7 +238,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 /// with.
 LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
   final caption = switch (assets?.totalPower) {
-    MiningFigureValue() => '每个资产的贡献、排除状态与数据来源分别列明。',
+    MiningFigureValue() => '逐个资产列出贡献、排除状态与来源。',
     MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
       reasonCode,
     ),
