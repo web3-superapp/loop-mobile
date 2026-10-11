@@ -507,9 +507,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         const LoopNotice(
           key: ValueKey<String>('launch2-opened-without-holders'),
           icon: 'info',
-          // Decision 0149: two characters shorter so 「卖。」 is not left alone
-          // on a second line at 360–412 dp.
-          body: '$launch2OpenedWithoutHoldersText：没有提前购，人人可买卖。',
+          // Decision 0149: one line at 360–412 dp (「卖。」 was left alone on a
+          // second line); 「人人可买」 is already the stage bar's line.
+          body: '$launch2OpenedWithoutHoldersText，跳过提前购。',
         ),
       _CurveBlock(detail: detail),
       Launch2TradePanel(
