@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_screen.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -207,4 +208,18 @@ void main() {
     );
     expect(colourOf('卖出'), LoopColors.chalk);
   });
+
+  testWidgets(
+    'create preview: an empty ticker shows the upload glyph, not 「?」',
+    (tester) async {
+      await _pump(tester, const MemeLogo(symbol: '', size: 72));
+      expect(find.text('?'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('meme-logo-empty')),
+        findsOneWidget,
+      );
+      await _pump(tester, const MemeLogo(symbol: 'FROG', size: 72));
+      expect(find.text('FR'), findsOneWidget);
+    },
+  );
 }
