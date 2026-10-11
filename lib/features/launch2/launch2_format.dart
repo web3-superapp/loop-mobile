@@ -36,7 +36,7 @@ const String launch2ClosedNoHoldersText = '无人认购，已关闭';
 
 /// A v3 sale that ended with no NFT minted opened the public round directly
 /// (`snapshot.status = opened_without_holders`, decision 0144).
-const String launch2OpenedWithoutHoldersText = '无 NFT 持有人，已直接开放公开内盘';
+const String launch2OpenedWithoutHoldersText = '无 NFT 持有人，直接开放公开内盘';
 
 /// The second half of the stage bar (contract §2 「App」 column).
 String launch2StageCaption(Launch2Stage stage) => switch (stage) {
