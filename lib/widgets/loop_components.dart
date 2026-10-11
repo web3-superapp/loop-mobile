@@ -2572,21 +2572,33 @@ class LoopPowerHint extends StatelessWidget {
         children: <Widget>[
           LoopIcon('mine', size: 17, color: accent),
           const SizedBox(width: 10),
+          // Decision 0149: the sentence over its figures, not one run-on
+          // line — inline, 「… 今日预估 — LOOP · 当前算力公式」 broke inside a
+          // label (「当前算 / 力公式」). Same words, same order for a reader.
           Expanded(
-            child: Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(text: text),
-                  if (figure != null)
-                    TextSpan(
-                      text: ' $figure',
-                      style: LoopTypography.figure(11, color: accent),
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  text,
+                  style: LoopTypography.caption(11, color: foreground),
+                ),
+                if (figure != null) ...<Widget>[
+                  const SizedBox(height: 3),
+                  Text(
+                    figure!,
+                    style: LoopTypography.figure(11, color: accent),
+                  ),
                 ],
-              ),
-              style: LoopTypography.caption(11, color: foreground),
+              ],
             ),
           ),
+          // A strip that opens a page says so (decision 0149).
+          if (onTap != null) ...<Widget>[
+            const SizedBox(width: 8),
+            LoopIcon('chevron', size: 14, color: accent),
+          ],
         ],
       ),
     );
