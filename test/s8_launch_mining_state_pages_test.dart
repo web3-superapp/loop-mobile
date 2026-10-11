@@ -254,8 +254,9 @@ final List<_StateCase> _cases = <_StateCase>[
     ),
     // 我的总算力 is the composite strip's reading and is part of the page's
     // shape, so it is on screen — as an em dash — before anything is read.
-    // The conclusion this page draws is the priced list itself.
-    readyKey: 'mining-assets-price-notice',
+    // The conclusion this page draws is the weighted list itself; decision
+    // 0146 removed the price notice, so the formula block marks readiness.
+    readyKey: 'mining-formula-row',
     alsoUnreadKeys: <String>[
       'mining-assets-empty-notice',
       'mining-assets-included',
@@ -265,7 +266,7 @@ final List<_StateCase> _cases = <_StateCase>[
     // frame is pinned in s7_mining_pages_test.dart instead.
     showsMissingHeading: false,
     emptyContract:
-        'MiningAssets 是一条必填的总算力 + 两个列表 + 必填的 source 与参考价：'
+        'MiningAssets 是一条必填的总算力 + 两个列表 + 必填的 source（参考价仍解析，0146 起不展示）：'
         '读成功时一定有一条总算力口径和一条出处，'
         '「计入/排除为空」由 source 说明是没有结算还是这次没有计入，不是页面的空态。',
   ),

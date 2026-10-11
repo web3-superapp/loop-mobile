@@ -95,7 +95,7 @@ void main() {
         // Decision 0126: the page's own words.
         '计入的资产',
         '未计入的资产',
-        '参考价',
+        // Decision 0146: quantity basis, the 参考价 section is gone.
         '公式版本',
         '算力快照',
       ]);
@@ -169,10 +169,11 @@ void main() {
         size: _tall,
       );
 
-      // The topbar says 挖矿规则 and the hero says 权重与价格保护, the way the
-      // prototype has them.
+      // The topbar says 挖矿规则 and the hero names the rule; decision 0146
+      // retitled it 权重与算力规则 (quantity basis, no price).
       expect(find.text('挖矿规则'), findsOneWidget);
-      expect(find.text('权重与价格保护'), findsOneWidget);
+      expect(find.text('权重与算力规则'), findsOneWidget);
+      expect(find.text('权重与价格保护'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('mining-rules-daily-output')),
         findsOneWidget,

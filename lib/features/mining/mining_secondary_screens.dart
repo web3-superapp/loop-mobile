@@ -181,7 +181,6 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                     miningCompositionRow(
                       assets.included[index],
                       launchRowPosition(index, assets.included.length),
-                      symbols: _assetSymbols(assets),
                     ),
                 ],
               ),
@@ -210,32 +209,12 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                   ],
                 ),
             ],
-            const LoopLabel('参考价'),
-            _ReferencePriceBlock(referencePrice: assets.referencePrice),
             const LoopLabel('公式版本'),
             MiningFormulaBlock(formula: assets.formula),
             const LoopLabel(miningSnapshotSectionLabel),
             _AssetsSourceBlock(
               source: assets.source,
               symbols: _assetSymbols(assets),
-            ),
-            LoopNotice(
-              key: const ValueKey<String>('mining-assets-price-notice'),
-              icon: 'shield',
-              title: '参考价不是瞬时成交价',
-              body: switch ((
-                assets.included.any((row) => row.isProxiedPrice),
-                assets.included.any((row) => row.isDerivedPrice),
-              )) {
-                (true, _) =>
-                  '参考价由多个渠道的价格计算得出。有的资产没有自己的交易对，'
-                      '用的是另一个已登记代币的价格，这里已经逐行标出。',
-                (false, true) =>
-                  '参考价由多个渠道的价格计算得出。有的资产只出现在别的代币的报价对里，'
-                      '价格由那个报价对推导得出，并且必须落在公式版本声明的区间内，这里已经逐行标出。',
-                (false, false) => '参考价由多个渠道的价格计算得出，不是某一笔成交的价格。',
-              },
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
             const SizedBox(height: 20),
           ],
@@ -248,7 +227,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 /// The hero.
 ///
 /// The prototype heads this page with the expression itself — `持有量 ×
-/// 参考价 × 权重` — because the page *is* that expression, asset by asset;
+/// 权重` since decision 0146 (quantity basis, no price) — because the page *is* that expression, asset by asset;
 /// the total it produces is the reading welded under the card. The App used
 /// to print the total here and the formula nowhere, which left the heading
 /// saying 暂无数值 over a page whose subject is how a number is made (visual
@@ -353,52 +332,6 @@ class _AssetsSourceBlock extends StatelessWidget {
             ),
           ],
         ),
-    };
-  }
-}
-
-/// The price version every row was priced against. The version string is a
-/// backend identifier and stays inside the collapsed 详情.
-class _ReferencePriceBlock extends StatelessWidget {
-  const _ReferencePriceBlock({required this.referencePrice});
-
-  final MiningReferencePrice referencePrice;
-
-  @override
-  Widget build(BuildContext context) {
-    return switch (referencePrice) {
-      MiningReferencePriceUnavailable(:final reasonCode) =>
-        LaunchUnavailableCard(
-          label: '挖矿参考价',
-          fact: LaunchUnavailable(reasonCode),
-        ),
-      MiningReferencePriceSettled(:final priceVersion) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const LoopRecordGroup(
-            key: ValueKey<String>('mining-assets-price'),
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: ValueKey<String>('mining-assets-price-row'),
-                title: '挖矿参考价',
-                subtitle: '这一批价格用于上面每一行',
-              ),
-            ],
-          ),
-          LoopDisclosure(
-            key: const ValueKey<String>('mining-assets-price-details'),
-            summary: '详情',
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-              child: Text(
-                '参考价版本 $priceVersion',
-                key: const ValueKey<String>('mining-assets-price-version'),
-                style: LoopTypography.caption(11, color: LoopColors.text3),
-              ),
-            ),
-          ),
-        ],
-      ),
     };
   }
 }
@@ -1299,8 +1232,9 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         onRefresh: controller.reload,
         updating: state.refreshing,
         archetype: LoopPageArchetype.record,
-        // The prototype's topbar says 挖矿规则 and its hero says 权重与价格保护;
-        // the App had the two the other way round (visual audit §I.7).
+        // The prototype's topbar says 挖矿规则 and its hero names the rule
+        // (visual audit §I.7). Decision 0146: the asset track is weighted by
+        // quantity, so the hero is 权重与算力规则, not 权重与价格保护.
         title: '挖矿规则',
         onBack: widget.onBack,
         primary: MiningCompositePrimary(
@@ -1313,7 +1247,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             // said both that the rule was pending and that it was approved. The
             // sentence now follows whether a version has been approved, and the
             // big line shows the rule in force when there is one.
-            heading: '权重与价格保护',
+            heading: '权重与算力规则',
             caption: switch ((approved, draft)) {
               (null, null) => '还没有已批准的公式，也没有待批准的草案。',
               (null, _) => '还没有已批准的公式。下面这条是等待批准的草案。',

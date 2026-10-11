@@ -174,24 +174,15 @@ void main() {
         expect(row, findsOneWidget, reason: asset.assetId);
         expect(
           find.textContaining(
-            '${asset.holding} × \$${asset.referencePriceUsd} × '
-            '${asset.weight}×',
+            // Decision 0146: quantity × weight, no price.
+            '${asset.holding} × ${asset.weight}×',
           ),
           findsWidgets,
           reason: asset.assetId,
         );
       }
-      // Decision 0044: a coin priced through a declared proxy says whose
-      // price it is.
-      for (final asset in assets.included) {
-        final proxy = asset.referencePriceProxyAssetId;
-        if (proxy == null) continue;
-        expect(
-          find.textContaining('代理价，来自'),
-          findsWidgets,
-          reason: asset.assetId,
-        );
-      }
+      // Decision 0146: no row prints a price any more, proxied or not.
+      expect(find.textContaining('代理价，来自'), findsNothing);
 
       // Decision 0057: when a later run did not finish, the page keeps the
       // last complete snapshot and dates it; when nothing overtook it, the
