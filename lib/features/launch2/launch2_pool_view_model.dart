@@ -143,7 +143,7 @@ String launch2PoolFailureText(LoopChainException failure) {
 
 /// The two labels the mode toggle offers for a side.
 (String exactIn, String exactOut) launch2PoolModeLabels(Launch2Side side) =>
-    side == Launch2Side.buy ? ('按支付', '按买入数量') : ('按卖出数量', '按到手');
+    side == Launch2Side.buy ? ('按支付', '按买入数量') : ('按卖出数量', '按到手金额');
 
 String _usd1(Decimal value) => launch2Usd1Label(value, maxFractionDigits: 4);
 
@@ -277,9 +277,13 @@ Launch2PoolTradeView launch2PoolTradeView({
   // leaves the curve figure said as what it is until the first quote.
   final curveNet = detail.viewer?.curve.net;
   final server = detail.viewer?.holding;
+  // Decision 0149: 「可卖」 is a sell-side figure; the buy side says what is
+  // held, once, without repeating the long ticker twice.
   final String? holdingLine = holding != null
-      ? '持有 ${launch2MemeLabel(holding.balance, ticker)} · '
-            '可卖 ${launch2MemeLabel(holding.sellableOrBalance, ticker)}'
+      ? side == Launch2Side.buy
+            ? '持有 ${launch2MemeLabel(holding.balance, ticker)}'
+            : '持有 ${launch2MemeLabel(holding.balance, ticker)} · '
+                  '可卖 ${launch2MemeLabel(holding.sellableOrBalance, ticker)}'
       : server != null && server.status == Launch2BalanceStatus.unavailable
       ? '钱包余额暂时读不到 · 报价后显示'
       : curveNet != null && curveNet > Decimal.zero

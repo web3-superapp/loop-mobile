@@ -185,6 +185,17 @@ String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
 /// Sora caps and digits advance about 0.62 em).
 const double launch2TickerMinWidth = 92;
 
+/// The project page's section heading (官方池 / 回购 / 发射规则 and the
+/// two trade panels): one size for every section of the page (decision 0149;
+/// the panels were 18 / 600 between 20 / 700 neighbours).
+TextStyle get launch2PanelHeadingStyle =>
+    LoopTypography.title(20, weight: FontWeight.w700);
+
+/// Distance above a trade panel's heading: a section's break from the
+/// figures before it (decision 0149; was 4, the readings ran into the
+/// heading).
+const double launch2PanelTopGap = 24;
+
 /// One v2 row in the OKX quote shape (S121 §1.1.1): logo 36 · ticker over
 /// name · two stage lines on the right · the stage pill in the fixed slot.
 ///

@@ -2112,6 +2112,7 @@ class LoopSegBar extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.icons,
+    this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 14),
   }) : assert(icons == null || icons.length == labels.length);
 
   final List<String> labels;
@@ -2121,11 +2122,17 @@ class LoopSegBar extends StatelessWidget {
   /// One sprite glyph per label, or null for a chip without one.
   final List<String?>? icons;
 
+  /// The bar's own inset. The default is the page gutter; a bar inside a
+  /// block that already sits on the gutter (a trade panel) passes no
+  /// horizontal inset, or its first pill lands 16 further in than every
+  /// other control of the block (decision 0149).
+  final EdgeInsets padding;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: padding,
       child: Row(
         children: <Widget>[
           for (var index = 0; index < labels.length; index++) ...<Widget>[
@@ -2330,6 +2337,9 @@ class LoopKeyValue extends StatelessWidget {
     super.key,
     this.valueUp,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    this.labelFlex = 1,
+    this.valueFlex = 1,
+    this.valueAlign = TextAlign.right,
   });
 
   final String label;
@@ -2339,6 +2349,18 @@ class LoopKeyValue extends StatelessWidget {
   final bool? valueUp;
   final EdgeInsets padding;
 
+  /// Share of the row the label column takes against [valueFlex]. The
+  /// default halves the row; a fact table whose values are sentences (the
+  /// signing exit) gives the value column more room so 「2,000 $T 给官方池路由」
+  /// stays on one line (decision 0149).
+  final int labelFlex;
+  final int valueFlex;
+
+  /// Alignment of a value that wraps. A table column reads start-aligned:
+  /// a right-aligned second line under a start-placed first line was the
+  /// 「先授权 …」 orphan in the sell sheet (decision 0149).
+  final TextAlign valueAlign;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -2347,6 +2369,7 @@ class LoopKeyValue extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
+            flex: labelFlex,
             child: Text(
               label,
               style: LoopTypography.caption(11, color: LoopColors.text2),
@@ -2354,9 +2377,10 @@ class LoopKeyValue extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Flexible(
+            flex: valueFlex,
             child: Text(
               value,
-              textAlign: TextAlign.right,
+              textAlign: valueAlign,
               style: LoopTypography.figure(
                 11,
                 weight: FontWeight.w500,
@@ -2548,21 +2572,33 @@ class LoopPowerHint extends StatelessWidget {
         children: <Widget>[
           LoopIcon('mine', size: 17, color: accent),
           const SizedBox(width: 10),
+          // Decision 0149: the sentence over its figures, not one run-on
+          // line — inline, 「… 今日预估 — LOOP · 当前算力公式」 broke inside a
+          // label (「当前算 / 力公式」). Same words, same order for a reader.
           Expanded(
-            child: Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(text: text),
-                  if (figure != null)
-                    TextSpan(
-                      text: ' $figure',
-                      style: LoopTypography.figure(11, color: accent),
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  text,
+                  style: LoopTypography.caption(11, color: foreground),
+                ),
+                if (figure != null) ...<Widget>[
+                  const SizedBox(height: 3),
+                  Text(
+                    figure!,
+                    style: LoopTypography.figure(11, color: accent),
+                  ),
                 ],
-              ),
-              style: LoopTypography.caption(11, color: foreground),
+              ],
             ),
           ),
+          // A strip that opens a page says so (decision 0149).
+          if (onTap != null) ...<Widget>[
+            const SizedBox(width: 8),
+            LoopIcon('chevron', size: 14, color: accent),
+          ],
         ],
       ),
     );
@@ -3065,6 +3101,10 @@ class _LoopRecordSkeletonRows extends StatelessWidget {
   }
 }
 
+/// The trailing block of a price-row placeholder: the 96 × 44 pill of the
+/// loaded `LoopQuoteRow` (`loopChangePillSize`).
+const Size loopSkeletonPillSize = Size(96, 44);
+
 /// `LoopSkeletonType.priceRow`: rows of a fixed height — the dense price list, whose rows are a
 /// constant [rowHeight] tall whatever they hold.
 class _LoopFixedSkeletonRows extends StatelessWidget {
@@ -3089,12 +3129,13 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           for (var index = 0; index < count; index++)
+            // Decision 0149: the placeholder has the loaded row's shape —
+            // no hairline (OKX rows are separated by height, 0122), two
+            // lines on the right and the 96 × 44 trailing pill — so the list
+            // does not change its grammar when the answer lands.
             Container(
               height: rowHeight,
               padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: LoopColors.line)),
-              ),
               child: Row(
                 children: <Widget>[
                   LoopSkeletonBlock(
@@ -3102,25 +3143,37 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
                     height: leadingSize,
                     radius: leadingSize / 2,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         LoopSkeletonBlock(
-                          height: 12,
+                          height: 14,
                           widthFactor: _nameWidths[index % 4],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         const LoopSkeletonBlock(height: 10, widthFactor: 0.58),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const LoopSkeletonBlock(width: 60, height: 12),
-                  const SizedBox(width: 10),
-                  const LoopSkeletonBlock(width: 48, height: 22),
+                  const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      LoopSkeletonBlock(width: 64, height: 14),
+                      SizedBox(height: 8),
+                      LoopSkeletonBlock(width: 40, height: 10),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  LoopSkeletonBlock(
+                    width: loopSkeletonPillSize.width,
+                    height: loopSkeletonPillSize.height,
+                    radius: 10,
+                  ),
                 ],
               ),
             ),

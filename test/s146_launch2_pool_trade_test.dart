@@ -792,7 +792,7 @@ void main() {
           detail: detail,
           holding: launch2PoolHoldingOf(quote: _buyQuote()),
         ).holdingLine,
-        r'持有 250,000 $FROG · 可卖 250,000 $FROG',
+        r'持有 250,000 $FROG',
       );
     });
 
@@ -979,7 +979,7 @@ void main() {
       });
       expect(_key('launch2-pool-quote'), findsOneWidget);
       expect(find.text(r'145,530 $FROG'), findsOneWidget);
-      expect(find.text(r'持有 250,000 $FROG · 可卖 250,000 $FROG'), findsOneWidget);
+      expect(find.text(r'持有 250,000 $FROG'), findsOneWidget);
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
@@ -1194,10 +1194,8 @@ void main() {
       final gateway = _FakePool(details: <Launch2InstanceDetail>[held()]);
       await openAt(tester, gateway);
       await _scrollTo(tester, _key('launch2-pool-holding'));
-      expect(
-        find.text(r'持有 7,333.18 $FROG · 可卖 7,333.18 $FROG'),
-        findsOneWidget,
-      );
+      // Decision 0149: the buy side says what is held, once.
+      expect(find.text(r'持有 7,333.18 $FROG'), findsOneWidget);
       expect(gateway.quoteCalls, isEmpty);
       // MAX on a sell fills the server's balance, still before any quote.
       await tester.tap(find.text('卖出'));

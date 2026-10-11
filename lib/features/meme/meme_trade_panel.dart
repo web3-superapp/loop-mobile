@@ -288,6 +288,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
               LoopSegBar(
                 key: const ValueKey<String>('meme-trade-side'),
                 labels: const <String>['买入', '卖出'],
+                padding: const EdgeInsets.only(bottom: 14),
                 selectedIndex: _side == MemeTradeSide.buy ? 0 : 1,
                 onSelected: (index) {
                   _selectSide(

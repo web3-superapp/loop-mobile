@@ -335,7 +335,8 @@ void main() {
       final boost = find.text('邀请关系加成');
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);
-      expect(find.textContaining('当前加成 $launchMissingFigure'), findsOneWidget);
+      expect(find.textContaining('你的加成在邀请页查看'), findsOneWidget);
+      expect(find.textContaining('当前加成 $launchMissingFigure'), findsNothing);
       expect(find.textContaining('算力、产量、排行与邀请加成都暂时不可用'), findsNothing);
     });
 
@@ -409,7 +410,7 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      expect(find.textContaining('0 × 0.8×'), findsOneWidget);
+      expect(find.textContaining('0 × 权重 0.8'), findsOneWidget);
       expect(find.textContaining(r'$2.26'), findsNothing);
     });
 
@@ -766,7 +767,7 @@ void main() {
       expect(row, findsOneWidget);
       // Decision 0146: quantity × weight, in the order the formula multiplies
       // them; every figure is the server's own decimal and no price is shown.
-      expect(find.textContaining('12.5 × 0.8×'), findsOneWidget);
+      expect(find.textContaining('12.5 × 权重 0.8'), findsOneWidget);
       expect(find.textContaining(r'$2.26'), findsNothing);
       expect(miningPowerFormulaHeading, '持有量 × 权重');
       expect(find.text('22.6'), findsOneWidget);
@@ -2318,7 +2319,7 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(find.textContaining('推导价'), findsNothing);
-      expect(find.textContaining('2.99 × 1.5×'), findsOneWidget);
+      expect(find.textContaining('2.99 × 权重 1.5'), findsOneWidget);
       // The full address is the identity and stays in the model.
       expect(
         find.textContaining('0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae'),

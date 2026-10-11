@@ -175,7 +175,7 @@ void main() {
         expect(
           find.textContaining(
             // Decision 0146: quantity × weight, no price.
-            '${asset.holding} × ${asset.weight}×',
+            '${asset.holding} × 权重 ${asset.weight}',
           ),
           findsWidgets,
           reason: asset.assetId,

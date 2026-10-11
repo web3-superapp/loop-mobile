@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -349,10 +350,19 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           key: const ValueKey<String>('launch2-pool-side'),
           labels: const <String>['买入', '卖出'],
           selectedIndex: _side == Launch2Side.buy ? 0 : 1,
+          padding: EdgeInsets.zero,
           onSelected: (index) =>
               _setSide(index == 0 ? Launch2Side.buy : Launch2Side.sell),
         ),
-        const SizedBox(height: 8),
+        // Decision 0149: the amount basis is a setting under the side, named
+        // like 滑点上限 below — not a second bar of the same pills.
+        const SizedBox(height: 12),
+        Text(
+          '输入方式',
+          key: const ValueKey<String>('launch2-pool-mode-caption'),
+          style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+        ),
+        const SizedBox(height: 6),
         Row(
           children: <Widget>[
             LoopSeg(
@@ -539,9 +549,11 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
     );
     return Padding(
       key: const ValueKey<String>('launch2-pool-panel'),
+      // Decision 0149: a page section like 官方池 / 回购 — the same 20 / 700
+      // heading and a section's distance from the pool figures above it.
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        4,
+        launch2PanelTopGap,
         LoopSpacing.page,
         12,
       ),
@@ -550,7 +562,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text('外盘交易', style: LoopTypography.title(18)),
+              Text('外盘交易', style: launch2PanelHeadingStyle),
               const SizedBox(width: 8),
               const LoopBadge('官方池', kind: LoopBadgeKind.launch),
               const Spacer(),
@@ -673,18 +685,30 @@ class Launch2PoolSwapLink extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerLeft,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page - 8),
-      child: TextButton(
+  Widget build(BuildContext context) => Padding(
+    // Decision 0149: on the gutter like every other line of the page, at
+    // caption size with a chevron — a way out, not a heading.
+    padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+    child: Semantics(
+      button: true,
+      label: '也可以在钱包兑换里交易',
+      excludeSemantics: true,
+      child: LoopPressable(
         key: const ValueKey<String>('launch2-go-swap'),
-        onPressed: onOpen,
-        style: TextButton.styleFrom(
-          foregroundColor: LoopColors.text2,
-          minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
+        onTap: onOpen,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          child: Row(
+            children: <Widget>[
+              Text(
+                '也可以在钱包兑换里交易',
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              ),
+              const SizedBox(width: 2),
+              const LoopIcon('chevron', size: 14, color: LoopColors.text3),
+            ],
+          ),
         ),
-        child: const Text('也可以在钱包兑换里交易'),
       ),
     ),
   );

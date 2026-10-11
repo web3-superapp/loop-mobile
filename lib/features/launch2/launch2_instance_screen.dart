@@ -528,7 +528,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         const LoopNotice(
           key: ValueKey<String>('launch2-opened-without-holders'),
           icon: 'info',
-          body: '$launch2OpenedWithoutHoldersText，没有提前购，人人可买可卖。',
+          // Decision 0149: one line at 360–412 dp (「卖。」 was left alone on a
+          // second line); 「人人可买」 is already the stage bar's line.
+          body: '$launch2OpenedWithoutHoldersText，跳过提前购。',
         ),
       _CurveBlock(detail: detail),
       Launch2TradePanel(
@@ -830,7 +832,7 @@ class _SectionHeading extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 4, 4),
     child: Row(
       children: <Widget>[
-        Text(title, style: LoopTypography.title(20, weight: FontWeight.w700)),
+        Text(title, style: launch2PanelHeadingStyle),
         const Spacer(),
         if (trailing case final String text)
           Padding(

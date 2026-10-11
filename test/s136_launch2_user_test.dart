@@ -1556,7 +1556,7 @@ void main() {
       );
       expect(_key('launch2-stage-public'), findsOneWidget);
       expect(_key('launch2-opened-without-holders'), findsOneWidget);
-      expect(find.textContaining('无 NFT 持有人，已直接开放公开内盘'), findsOneWidget);
+      expect(find.textContaining('无 NFT 持有人，直接开放公开内盘'), findsOneWidget);
       expect(_key('launch2-trade-amount'), findsOneWidget);
       expect(find.textContaining('名单'), findsNothing);
       await _drain(tester);

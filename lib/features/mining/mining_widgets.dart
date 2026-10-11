@@ -825,7 +825,9 @@ LoopRecordRow miningCompositionRow(
 /// `持有量 × 权重` for one asset row (decision 0146): quantity times weight,
 /// no price.
 String miningCompositionExpression(MiningAssetRow row) =>
-    '${row.holding} × ${row.weight}×';
+    // Decision 0149: 「0 × 0.9×」 read as a dangling second ×; the weight
+    // is named instead, in the same order as the heading 持有量 × 权重.
+    '${row.holding} × 权重 ${row.weight}';
 
 /// The reasons behind the em dashes a mining primary prints.
 ///

@@ -263,7 +263,7 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      expect(find.textContaining('10 × 0.8×'), findsOneWidget);
+      expect(find.textContaining('10 × 权重 0.8'), findsOneWidget);
       expect(find.textContaining(r'$2.26'), findsNothing);
     });
   });

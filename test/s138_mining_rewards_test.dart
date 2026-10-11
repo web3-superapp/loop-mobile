@@ -1236,7 +1236,7 @@ void main() {
       const expected = <String, String>{
         'MINING_SETTLEMENT_UNAVAILABLE': '结算服务暂时不可用，暂不能领取',
         'MINING_PARAMETERS_PENDING': '挖矿规则待生效，暂不能领取',
-        'MINING_NOTHING_SETTLED': '首个小时结算后可领取',
+        'MINING_NOTHING_SETTLED': '有算力的小时结算后可领取',
         'MINING_CLAIM_NOTHING_TO_CLAIM': '暂无可领取',
         'MINING_CLAIM_BELOW_MINIMUM': '满 1.0000 LOOP 可领取',
         'MINING_CLAIM_IN_FLIGHT': '上一笔领取还在处理中，完成后再领取',
@@ -1290,11 +1290,11 @@ void main() {
       expect(_key('mining-minute-awaiting'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
-        '挖矿规则已生效，你的首个有算力的小时结算后开始展示并可领取。',
+        '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
       );
       expect(
         tester.widget<Text>(_key('mining-claim-disabled')).data,
-        '首个小时结算后可领取',
+        '有算力的小时结算后可领取',
       );
       expect(
         tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
@@ -1805,14 +1805,14 @@ void main() {
       await _pump(tester, rewards: rewards);
       expect(tester.takeException(), isNull);
       expect(_key('mining-minute-awaiting'), findsOneWidget);
-      expect(find.text('首个小时结算后开始展示奖励'), findsOneWidget);
+      expect(find.text('你有算力的小时还没有结算'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
-        '挖矿规则已生效，你的首个有算力的小时结算后开始展示并可领取。',
+        '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
       );
       expect(
         tester.widget<Text>(_key('mining-claim-disabled')).data,
-        '首个小时结算后可领取',
+        '有算力的小时结算后可领取',
       );
       expect(
         tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,

@@ -107,8 +107,10 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             if (assets != null && miningGateIsBaseline(assets.formula))
               Padding(
                 padding: const EdgeInsets.only(top: 6),
+                // Decision 0149: a caption under a figure says what the
+                // figure is (「当前算力公式」 alone read like a stray link).
                 child: Text(
-                  miningBaselineLabel,
+                  '按$miningBaselineLabel计算',
                   key: const ValueKey<String>('mining-assets-total-baseline'),
                   style: LoopTypography.caption(11, color: LoopColors.text2),
                 ),
@@ -238,7 +240,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 /// with.
 LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
   final caption = switch (assets?.totalPower) {
-    MiningFigureValue() => '每个资产的贡献、排除状态与数据来源分别列明。',
+    MiningFigureValue() => '逐个资产列出贡献、排除状态与来源。',
     MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
       reasonCode,
     ),

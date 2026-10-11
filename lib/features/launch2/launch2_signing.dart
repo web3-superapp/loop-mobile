@@ -828,7 +828,22 @@ class Launch2SignStepStrip extends StatelessWidget {
     Launch2StepStatus.unknown => '结果未知',
   };
 
-  Widget _step(String index, String label, Launch2StepStatus status) {
+  /// The step the next wallet prompt is for, while nothing is open yet
+  /// (decision 0149): before, both steps read 「待签名」 in the same grey and
+  /// the strip did not say which one 「确认签名」 starts.
+  bool get _approvalNext =>
+      approval == Launch2StepStatus.waiting &&
+      main == Launch2StepStatus.waiting;
+  bool get _mainNext =>
+      approval == Launch2StepStatus.done && main == Launch2StepStatus.waiting;
+
+  Widget _step(
+    String index,
+    String label,
+    Launch2StepStatus status, {
+    required bool next,
+  }) {
+    final later = status == Launch2StepStatus.waiting && !next;
     final lit =
         status == Launch2StepStatus.active ||
         status == Launch2StepStatus.refreshing ||
@@ -850,9 +865,18 @@ class Launch2SignStepStrip extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: lit ? LoopColors.lime : LoopColors.card,
+                  color: lit
+                      ? LoopColors.lime
+                      : next
+                      ? LoopColors.card2
+                      : LoopColors.card,
                   border: Border.all(
-                    color: warn ? LoopColors.warning : LoopColors.line,
+                    color: warn
+                        ? LoopColors.warning
+                        : next
+                        ? LoopColors.chalk
+                        : LoopColors.line,
+                    width: next ? 1.5 : 1,
                   ),
                 ),
                 child: Text(
@@ -860,7 +884,11 @@ class Launch2SignStepStrip extends StatelessWidget {
                   style: LoopTypography.label(
                     12,
                     weight: FontWeight.w700,
-                    color: lit ? LoopColors.ink : LoopColors.text2,
+                    color: lit
+                        ? LoopColors.ink
+                        : next
+                        ? LoopColors.chalk
+                        : LoopColors.text2,
                   ),
                 ),
               ),
@@ -870,11 +898,24 @@ class Launch2SignStepStrip extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(label, style: LoopTypography.title(14)),
                     Text(
-                      _status(status),
+                      label,
+                      style: LoopTypography.title(
+                        14,
+                        color: later ? LoopColors.text2 : LoopColors.chalk,
+                      ),
+                    ),
+                    Text(
+                      // Decision 0149: the caption agrees with the ring.
+                      next && status == Launch2StepStatus.waiting
+                          ? '下一步，待签名'
+                          : _status(status),
                       style: LoopType.caption.copyWith(
-                        color: warn ? LoopColors.warning : LoopColors.text2,
+                        color: warn
+                            ? LoopColors.warning
+                            : later
+                            ? LoopColors.text3
+                            : LoopColors.text2,
                       ),
                     ),
                   ],
@@ -895,12 +936,12 @@ class Launch2SignStepStrip extends StatelessWidget {
       children: <Widget>[
         KeyedSubtree(
           key: ValueKey<String>('launch2-sign-step-approval-${approval.name}'),
-          child: _step('1', '授权', approval),
+          child: _step('1', '授权', approval, next: _approvalNext),
         ),
         const SizedBox(width: 8),
         KeyedSubtree(
           key: ValueKey<String>('launch2-sign-step-main-${main.name}'),
-          child: _step('2', noun, main),
+          child: _step('2', noun, main, next: _mainNext),
         ),
       ],
     ),
