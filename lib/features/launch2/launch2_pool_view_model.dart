@@ -143,7 +143,7 @@ String launch2PoolFailureText(LoopChainException failure) {
 
 /// The two labels the mode toggle offers for a side.
 (String exactIn, String exactOut) launch2PoolModeLabels(Launch2Side side) =>
-    side == Launch2Side.buy ? ('按支付', '按买入数量') : ('按卖出数量', '按到手');
+    side == Launch2Side.buy ? ('按支付', '按买入数量') : ('按卖出数量', '按到手金额');
 
 String _usd1(Decimal value) => launch2Usd1Label(value, maxFractionDigits: 4);
 
