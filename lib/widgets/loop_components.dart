@@ -2330,6 +2330,9 @@ class LoopKeyValue extends StatelessWidget {
     super.key,
     this.valueUp,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    this.labelFlex = 1,
+    this.valueFlex = 1,
+    this.valueAlign = TextAlign.right,
   });
 
   final String label;
@@ -2339,6 +2342,18 @@ class LoopKeyValue extends StatelessWidget {
   final bool? valueUp;
   final EdgeInsets padding;
 
+  /// Share of the row the label column takes against [valueFlex]. The
+  /// default halves the row; a fact table whose values are sentences (the
+  /// signing exit) gives the value column more room so 「2,000 $T 给官方池路由」
+  /// stays on one line (decision 0149).
+  final int labelFlex;
+  final int valueFlex;
+
+  /// Alignment of a value that wraps. A table column reads start-aligned:
+  /// a right-aligned second line under a start-placed first line was the
+  /// 「先授权 …」 orphan in the sell sheet (decision 0149).
+  final TextAlign valueAlign;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -2347,6 +2362,7 @@ class LoopKeyValue extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
+            flex: labelFlex,
             child: Text(
               label,
               style: LoopTypography.caption(11, color: LoopColors.text2),
@@ -2354,9 +2370,10 @@ class LoopKeyValue extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Flexible(
+            flex: valueFlex,
             child: Text(
               value,
-              textAlign: TextAlign.right,
+              textAlign: valueAlign,
               style: LoopTypography.figure(
                 11,
                 weight: FontWeight.w500,

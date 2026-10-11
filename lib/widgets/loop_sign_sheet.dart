@@ -171,6 +171,9 @@ class LoopSignSheet extends StatelessWidget {
                           value: fact.value,
                           valueUp: fact.down ? false : null,
                           padding: const EdgeInsets.symmetric(vertical: 7),
+                          labelFlex: 2,
+                          valueFlex: 3,
+                          valueAlign: TextAlign.start,
                         ),
                       if (reason != null) ...<Widget>[
                         const SizedBox(height: 8),
