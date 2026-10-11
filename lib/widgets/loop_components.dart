@@ -3082,6 +3082,10 @@ class _LoopRecordSkeletonRows extends StatelessWidget {
   }
 }
 
+/// The trailing block of a price-row placeholder: the 96 × 44 pill of the
+/// loaded `LoopQuoteRow` (`loopChangePillSize`).
+const Size loopSkeletonPillSize = Size(96, 44);
+
 /// `LoopSkeletonType.priceRow`: rows of a fixed height — the dense price list, whose rows are a
 /// constant [rowHeight] tall whatever they hold.
 class _LoopFixedSkeletonRows extends StatelessWidget {
@@ -3106,12 +3110,13 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           for (var index = 0; index < count; index++)
+            // Decision 0149: the placeholder has the loaded row's shape —
+            // no hairline (OKX rows are separated by height, 0122), two
+            // lines on the right and the 96 × 44 trailing pill — so the list
+            // does not change its grammar when the answer lands.
             Container(
               height: rowHeight,
               padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: LoopColors.line)),
-              ),
               child: Row(
                 children: <Widget>[
                   LoopSkeletonBlock(
@@ -3119,25 +3124,37 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
                     height: leadingSize,
                     radius: leadingSize / 2,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         LoopSkeletonBlock(
-                          height: 12,
+                          height: 14,
                           widthFactor: _nameWidths[index % 4],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         const LoopSkeletonBlock(height: 10, widthFactor: 0.58),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const LoopSkeletonBlock(width: 60, height: 12),
-                  const SizedBox(width: 10),
-                  const LoopSkeletonBlock(width: 48, height: 22),
+                  const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      LoopSkeletonBlock(width: 64, height: 14),
+                      SizedBox(height: 8),
+                      LoopSkeletonBlock(width: 40, height: 10),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  LoopSkeletonBlock(
+                    width: loopSkeletonPillSize.width,
+                    height: loopSkeletonPillSize.height,
+                    radius: 10,
+                  ),
                 ],
               ),
             ),
