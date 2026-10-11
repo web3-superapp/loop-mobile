@@ -200,6 +200,19 @@ abstract final class LoopV2Launch2Codec {
 
   static const viewerKeys = <String>{'walletId', 'nft', 'snapshot', 'curve'};
 
+  /// Decision 0148 (loop-api S150): the wallet's balances and own pool
+  /// trades, on the viewer and on every position. Optional as a group — an
+  /// older server sends none — but one present means all present.
+  static const walletHoldingKeys = <String>{
+    'memeBalance',
+    'usd1Balance',
+    'balanceStatus',
+    'balanceReasonCode',
+    'balanceBlockNumber',
+    'poolTradeCount',
+    'lastPoolTradeAt',
+  };
+
   static const quoteKeys = <String>{
     'instanceId',
     'walletId',
@@ -811,9 +824,47 @@ abstract final class LoopV2Launch2Codec {
     );
   }
 
+  /// The holding group of a viewer or a position (decision 0148), `null`
+  /// when the server sent none of its keys.
+  static Launch2WalletHolding? walletHolding(Map<String, Object?> map) {
+    final present = walletHoldingKeys.where(map.containsKey).length;
+    if (present == 0) return null;
+    if (present != walletHoldingKeys.length) invalid();
+    final statusText = map['balanceStatus'];
+    final status = statusText is String
+        ? Launch2BalanceStatus.tryParse(statusText)
+        : null;
+    if (status == null) invalid();
+    final meme = map['memeBalance'] == null ? null : amount(map, 'memeBalance');
+    final usd1 = map['usd1Balance'] == null ? null : amount(map, 'usd1Balance');
+    final block = optionalInteger(map, 'balanceBlockNumber');
+    final reason = reasonCode(map, 'balanceReasonCode');
+    // Read means both balances at one block; anything else carries none.
+    final read = status == Launch2BalanceStatus.available;
+    if (read != (meme != null) || read != (usd1 != null)) invalid();
+    if (read && block == null) invalid();
+    if (read && reason != null) invalid();
+    return Launch2WalletHolding(
+      status: status,
+      memeBalance: meme,
+      usd1Balance: usd1,
+      reasonCode: reason,
+      blockNumber: block,
+      poolTradeCount: integer(map, 'poolTradeCount'),
+      lastPoolTradeAt: LoopV2ChainCodec.optionalTimestamp(
+        map,
+        'lastPoolTradeAt',
+      ),
+    );
+  }
+
   static Launch2Viewer? _viewer(Object? raw) {
     if (raw == null) return null;
-    final map = LoopV2Contract.strictMap(raw, viewerKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      viewerKeys,
+      walletHoldingKeys,
+    );
     final nft = _nftHolding(map['nft']);
     final snapshot = LoopV2Contract.strictMap(map['snapshot'], const <String>{
       'member',
@@ -826,6 +877,7 @@ abstract final class LoopV2Launch2Codec {
       snapshotMember: LoopV2ChainCodec.requireBool(snapshot, 'member'),
       eligibleNow: LoopV2ChainCodec.requireBool(snapshot, 'eligibleNow'),
       curve: curvePosition(map['curve']),
+      holding: walletHolding(map),
     );
   }
 
@@ -1279,7 +1331,11 @@ abstract final class LoopV2Launch2Codec {
     Object? raw, {
     required String? Function(String mediaId) mediaUrl,
   }) {
-    final map = LoopV2Contract.strictMap(raw, positionKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      positionKeys,
+      walletHoldingKeys,
+    );
     final nft = _nftHolding(map['nft']);
     return Launch2Position(
       instanceId: uuid(map, 'instanceId'),
@@ -1294,6 +1350,7 @@ abstract final class LoopV2Launch2Codec {
       snapshotMember: LoopV2ChainCodec.requireBool(map, 'snapshotMember'),
       curve: curvePosition(map['curve']),
       lastActivityAt: LoopV2ChainCodec.optionalTimestamp(map, 'lastActivityAt'),
+      holding: walletHolding(map),
     );
   }
 }

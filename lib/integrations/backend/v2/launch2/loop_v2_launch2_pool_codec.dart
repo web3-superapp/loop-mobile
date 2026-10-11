@@ -246,4 +246,104 @@ abstract final class LoopV2Launch2PoolCodec {
     }
     return Launch2PoolPrepared(intent: intent, quote: quote);
   }
+
+  // -------------------------------------------------------------------------
+  // the wallet's own pool trades (decision 0148, loop-api S150)
+  // -------------------------------------------------------------------------
+
+  static const tradesKeys = <String>{
+    'instanceId',
+    'walletId',
+    'poolTradeCount',
+    'lastPoolTradeAt',
+    'trades',
+    'contractVersion',
+  };
+
+  static const tradeKeys = <String>{
+    'poolTradeId',
+    'side',
+    'inputToken',
+    'outputToken',
+    'amountIn',
+    'amountOut',
+    'usd1Amount',
+    'memeAmount',
+    'taxAmount',
+    'taxToken',
+    'priceUsd1',
+    'recipientAddress',
+    'tradedAt',
+    'transactionHash',
+    'logIndex',
+    'blockNumber',
+  };
+
+  /// `GET …/pool/trades`: must be for the instance and wallet asked about.
+  static Launch2PoolTrades trades(
+    Object? raw, {
+    required String instanceId,
+    required String walletId,
+  }) {
+    final root = LoopV2Contract.strictMap(raw, tradesKeys);
+    LoopV2ChainCodec.requireContractVersion(root);
+    if (LoopV2Launch2Codec.uuid(root, 'instanceId') != instanceId ||
+        LoopV2Launch2Codec.uuid(root, 'walletId') != walletId) {
+      _invalid();
+    }
+    final items = LoopV2ChainCodec.requireList(root['trades'], maximum: 50);
+    return Launch2PoolTrades(
+      instanceId: instanceId,
+      walletId: walletId,
+      poolTradeCount: LoopV2Launch2Codec.integer(root, 'poolTradeCount'),
+      lastPoolTradeAt: LoopV2ChainCodec.optionalTimestamp(
+        root,
+        'lastPoolTradeAt',
+      ),
+      trades: List<Launch2PoolTrade>.unmodifiable(<Launch2PoolTrade>[
+        for (final item in items) _trade(item),
+      ]),
+    );
+  }
+
+  static Launch2PoolTrade _trade(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, tradeKeys);
+    final sideText = map['side'];
+    final side = switch (sideText) {
+      'buy' => Launch2Side.buy,
+      'sell' => Launch2Side.sell,
+      _ => _invalid(),
+    };
+    final buy = side == Launch2Side.buy;
+    // A buy is USD1 → MEME and is taxed in MEME; a sell the other way.
+    if (map['inputToken'] != (buy ? 'usd1' : 'meme') ||
+        map['outputToken'] != (buy ? 'meme' : 'usd1')) {
+      _invalid();
+    }
+    final taxText = map['taxToken'];
+    final taxToken = taxText is String
+        ? Launch2PoolTaxToken.tryParse(taxText)
+        : null;
+    if (taxToken == null ||
+        taxToken !=
+            (buy ? Launch2PoolTaxToken.meme : Launch2PoolTaxToken.usd1)) {
+      _invalid();
+    }
+    LoopV2Launch2Codec.anyCaseAddress(map, 'recipientAddress');
+    LoopV2ChainCodec.requireInt(map, 'logIndex');
+    return Launch2PoolTrade(
+      poolTradeId: LoopV2Launch2Codec.uuid(map, 'poolTradeId'),
+      side: side,
+      amountIn: LoopV2Launch2Codec.amount(map, 'amountIn'),
+      amountOut: LoopV2Launch2Codec.amount(map, 'amountOut'),
+      usd1Amount: LoopV2Launch2Codec.amount(map, 'usd1Amount'),
+      memeAmount: LoopV2Launch2Codec.amount(map, 'memeAmount'),
+      taxAmount: LoopV2Launch2Codec.amount(map, 'taxAmount'),
+      taxToken: taxToken,
+      priceUsd1: LoopV2Launch2Codec.amount(map, 'priceUsd1'),
+      tradedAt: LoopV2ChainCodec.requireTimestamp(map, 'tradedAt'),
+      transactionHash: LoopV2Launch2Codec.hash(map, 'transactionHash'),
+      blockNumber: LoopV2Launch2Codec.integer(map, 'blockNumber'),
+    );
+  }
 }

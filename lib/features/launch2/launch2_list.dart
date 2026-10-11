@@ -37,7 +37,12 @@ String launch2CapabilityText(LoopCapabilityProjection capability) {
 /// reader scrolls, pulled to re-read. An empty list is a line illustration,
 /// a title and the one next step; a closed capability is one inline line,
 /// never an empty list. The list ends on space, never on 「没有更多」.
-class Launch2ListSegment extends ConsumerWidget {
+///
+/// Decision 0148: while the list is on screen (its route is the top one and
+/// its tab is active) the first page is re-read every 60 s, and once more the
+/// moment the reader comes back from a project page; both keep the rows
+/// already scrolled to. A pull still starts the list over.
+class Launch2ListSegment extends ConsumerStatefulWidget {
   const Launch2ListSegment({
     required this.scope,
     required this.onNavigate,
@@ -51,10 +56,77 @@ class Launch2ListSegment extends ConsumerWidget {
   /// The empty list's one next step (another segment of the MEME Tab).
   final VoidCallback? onEmptyAction;
 
+  @override
+  ConsumerState<Launch2ListSegment> createState() => _Launch2ListSegmentState();
+}
+
+class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
+  Timer? _poll;
+  bool _visible = false;
+
+  /// Something hid the list (a project page, another tab) since it was last
+  /// on screen: coming back re-reads at once.
+  bool _hidden = false;
+
+  Launch2ListScope get scope => widget.scope;
+
   String get _keyBase => 'launch2-list-${scope.name}';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final visible =
+        (ModalRoute.isCurrentOf(context) ?? true) &&
+        TickerMode.valuesOf(context).enabled;
+    if (visible == _visible) return;
+    _visible = visible;
+    if (!visible) {
+      _hidden = true;
+      _stopPolling();
+      return;
+    }
+    if (_hidden) {
+      _hidden = false;
+      scheduleMicrotask(_refresh);
+    }
+    _armPoll();
+  }
+
+  @override
+  void dispose() {
+    _stopPolling();
+    super.dispose();
+  }
+
+  void _stopPolling() {
+    _poll?.cancel();
+    _poll = null;
+  }
+
+  void _armPoll() {
+    _stopPolling();
+    final interval = ref.read(launch2PollingProvider).listInterval;
+    _poll = Timer.periodic(interval, (_) => _refresh());
+  }
+
+  void _refresh() {
+    if (!mounted || !_visible || launch2ReadsBlocked(ref)) return;
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) return;
+    final provider = launch2ListControllerProvider(scope);
+    final state = ref.read(provider);
+    // Nothing read yet (the first read is the page's own) or a read already
+    // running: the tick has nothing to add.
+    if (state.value == null || state.busy || state.refreshing) return;
+    unawaited(ref.read(provider.notifier).refresh());
+  }
+
+  void _openInstance(String instanceId) {
+    widget.onNavigate(Launch2Route.instance(instanceId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final capability = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.launch2),
     );
@@ -119,13 +191,13 @@ class Launch2ListSegment extends ConsumerWidget {
           illustration: LoopIllustration.launchpad,
           title: graduated ? '还没有毕业的 v2 项目' : '还没有 v2 项目',
           message: graduated ? '内盘卖满后自动建官方池，会出现在这里' : 'NFT 预售开始后会出现在这里',
-          action: onEmptyAction == null
+          action: widget.onEmptyAction == null
               ? null
               : LoopButton(
                   key: ValueKey<String>('$_keyBase-empty-action'),
                   label: graduated ? '看正在发射的' : '看经典发射',
                   primary: true,
-                  onPressed: onEmptyAction,
+                  onPressed: widget.onEmptyAction,
                 ),
         ),
       ];
@@ -137,7 +209,7 @@ class Launch2ListSegment extends ConsumerWidget {
         Launch2InstanceTile(
           key: ValueKey<String>('launch2-tile-${row.instanceId}'),
           row: row,
-          onTap: () => onNavigate(Launch2Route.instance(row.instanceId)),
+          onTap: () => _openInstance(row.instanceId),
           // A row whose stage time passed: the server says what it is now.
           onElapsed: () => unawaited(controller.reload()),
         ),
@@ -169,6 +241,7 @@ class Launch2ListSegment extends ConsumerWidget {
         observedAt: controller.valueObservedAt,
         detail:
             '阶段与倒计时由服务端按链上时间给出，到点后重新读取；'
+            '列表在屏幕上时每分钟刷新一次；'
             '内盘进度按已售 / 8 亿计，价格以 USD1 计。',
       ),
     ];

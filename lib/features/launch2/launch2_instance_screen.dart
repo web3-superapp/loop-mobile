@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_trade_panel.dart';
@@ -87,15 +88,26 @@ final class _Pending {
 }
 
 /// What moves when our own write lands: the viewer's curve figures, and
-/// after graduation the official pool's indexed swap count (decision 0145 —
-/// the read model has no per-wallet pool figure).
+/// after graduation the wallet's own attributed pool trades (decision 0148:
+/// `viewer.poolTradeCount` / `lastPoolTradeAt`, loop-api S150). A server
+/// without them leaves the pool's whole swap count (decision 0145), a
+/// signal any swap moves.
 String _viewerSignature(Launch2InstanceDetail detail) {
   final viewer = detail.viewer;
   final curve = viewer == null
       ? '-'
       : '${viewer.nftHeld}:${viewer.curve.bought}:${viewer.curve.sold}';
-  return '$curve|${detail.pool?.tradeCount ?? '-'}';
+  final own = viewer?.holding;
+  if (own != null) {
+    return '$curve|own:${own.poolTradeCount}:'
+        '${own.lastPoolTradeAt?.toIso8601String() ?? '-'}';
+  }
+  return '$curve|pool:${detail.pool?.tradeCount ?? '-'}';
 }
+
+/// Whether [detail] carries the wallet's own pool count (decision 0148).
+bool _ownPoolSignal(Launch2InstanceDetail detail) =>
+    detail.viewer?.holding != null;
 
 class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   Timer? _poll;
@@ -155,9 +167,11 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         _pending = _Pending(
           kind: pending.kind,
           venue: pending.venue,
-          text: pending.venue == Launch2Venue.officialPool
-              ? '官方池已记录新成交，你的外盘$noun应已确认；数量以钱包余额为准。'
-              : '$noun已在链上确认。',
+          text: pending.venue != Launch2Venue.officialPool
+              ? '$noun已在链上确认。'
+              : _ownPoolSignal(detail)
+              ? '你的外盘$noun已在链上确认。'
+              : '官方池已记录新成交，你的外盘$noun应已确认；数量以钱包余额为准。',
           locked: false,
           baseline: _viewerSignature(detail),
         );
@@ -183,7 +197,11 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
 
   /// Hands one prepared intent to the signing exit and records what it
   /// answered.
-  Future<void> _sign(Launch2InstanceDetail detail, Launch2Intent intent) async {
+  Future<void> _sign(
+    Launch2InstanceDetail detail,
+    Launch2Intent intent, {
+    Launch2IntentRefresher? refresh,
+  }) async {
     final wallet = memeReadActiveWallet(ref);
     final outcome = await showLaunch2SignSheet(
       context,
@@ -192,6 +210,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       fromAddress: wallet.address,
       ticker: detail.row.ticker,
       clock: ref.read(launch2ClockProvider),
+      refresh: refresh,
     );
     if (!mounted || outcome == null) return;
     final noun = launch2IntentNoun(intent.kind);
@@ -202,6 +221,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         venue: intent.venue,
         text: outcome.broadcast
             ? launch2BroadcastText(outcome, intent.kind)
+            : launch2StoppedAtRefresh(outcome)
+            ? launch2RefreshReasonText(outcome, noun)
             : outcome.approvalTxHash != null
             ? '授权已广播，$noun没有签名。可以重新发起。'
             : launch2SignReasonText(outcome.reasonCode),
@@ -534,7 +555,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         detail: detail,
         walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
         locked: _pending?.locked ?? false,
-        onPrepared: (intent) => _sign(detail, intent),
+        onPrepared: (intent, refresh) =>
+            _sign(detail, intent, refresh: refresh),
+      ),
+      _MyPoolTrades(
+        detail: detail,
+        walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
       ),
       Launch2PoolSwapLink(
         onOpen: () => _open(
@@ -791,10 +817,13 @@ class _Figures extends StatelessWidget {
 }
 
 class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title, this.info});
+  const _SectionHeading({required this.title, this.info, this.trailing});
 
   final String title;
   final Widget? info;
+
+  /// A quiet figure at the end of the heading.
+  final String? trailing;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -803,6 +832,14 @@ class _SectionHeading extends StatelessWidget {
       children: <Widget>[
         Text(title, style: LoopTypography.title(20, weight: FontWeight.w700)),
         const Spacer(),
+        if (trailing case final String text)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Text(
+              text,
+              style: LoopType.caption.copyWith(color: LoopColors.text2),
+            ),
+          ),
         ?info,
       ],
     ),
@@ -1062,6 +1099,87 @@ class _RecentTrades extends StatelessWidget {
   }
 }
 
+/// 我的外盘成交 (decision 0148): the wallet's own last five official-pool
+/// trades, read only once the viewer says it has any
+/// (`viewer.poolTradeCount`, loop-api S150) and again whenever that count
+/// moves. A failed read is one quiet line; nothing is drawn before the
+/// first trade or from a server without the count.
+class _MyPoolTrades extends ConsumerWidget {
+  const _MyPoolTrades({required this.detail, required this.walletId});
+
+  final Launch2InstanceDetail detail;
+  final String? walletId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = detail.viewer?.holding?.poolTradeCount;
+    final wallet = walletId;
+    if (count == null || count == BigInt.zero || wallet == null) {
+      return const SizedBox.shrink();
+    }
+    final provider = launch2PoolTradesControllerProvider((
+      instanceId: detail.instanceId,
+      walletId: wallet,
+      count: count,
+    ));
+    final state = ref.watch(provider);
+    launch2LoadOnce(ref, state, () => ref.read(provider.notifier).load());
+    final page = state.value;
+    final ticker = detail.row.ticker;
+    return Column(
+      key: const ValueKey<String>('launch2-my-pool-trades'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _SectionHeading(
+          title: '我的外盘成交',
+          trailing: '共 ${loopGroupedFigure(count.toString())} 笔',
+        ),
+        if (page == null)
+          state.phase == LoopChainViewPhase.loading
+              ? const LoopSkeleton(
+                  key: ValueKey<String>('launch2-my-pool-trades-loading'),
+                  type: LoopSkeletonType.list,
+                  rows: 2,
+                )
+              : LoopInlineUnavailable(
+                  key: const ValueKey<String>('launch2-my-pool-trades-failed'),
+                  message:
+                      '我的外盘成交暂时读不到 · '
+                      '${loopChainFailureReason(state.failureKind)}',
+                  onRetry: () =>
+                      unawaited(ref.read(provider.notifier).reload()),
+                )
+        else if (page.trades.isEmpty)
+          const LoopInlineUnavailable(
+            key: ValueKey<String>('launch2-my-pool-trades-empty'),
+            icon: 'info',
+            message: '成交还在同步，稍后刷新',
+          )
+        else
+          for (final trade in page.trades.take(launch2PoolTradesShown))
+            LoopKeyValue(
+              key: ValueKey<String>(
+                'launch2-my-pool-trade-${trade.poolTradeId}',
+              ),
+              label:
+                  '${trade.side == Launch2Side.buy ? '买入' : '卖出'} · '
+                  '${loopDateTimeLabel(trade.tradedAt)}',
+              value: launch2PoolTradeFigure(trade, ticker),
+              valueUp: trade.side == Launch2Side.buy,
+            ),
+        if (page != null)
+          LoopProvenanceLine(
+            key: const ValueKey<String>('launch2-my-pool-trades-provenance'),
+            sources: const <String>['LOOP 链上索引'],
+            observedAt: ref.read(provider.notifier).valueObservedAt,
+            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
+            detail: '只含经官方池路由成交的记录，最近 $launch2PoolTradesShown 笔；数量已扣 2% 外盘税。',
+          ),
+      ],
+    );
+  }
+}
+
 class _GraduatedBlock extends StatelessWidget {
   const _GraduatedBlock({required this.detail});
 
@@ -1151,6 +1269,14 @@ class _BuybackPanel extends ConsumerWidget {
     final summary = page?.summary ?? detail.buyback;
     final live = page?.live;
     final latest = summary.latest;
+    final keeper = launch2KeeperLine(summary);
+    // Decision 0148: both sources held → one line naming them.
+    final held = page == null || live == null
+        ? null
+        : launch2BuybackHeldLine(
+            liveBlockedReason: live.nextOrderBlockedReason,
+            keeper: keeper,
+          );
     return Column(
       key: const ValueKey<String>('launch2-buyback'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1209,7 +1335,13 @@ class _BuybackPanel extends ConsumerWidget {
                     '${launch2Usd1Label(latest.usd1Spent)} · '
                     '${latest.executed ? '成交' : launch2BuybackBlockedText(latest.reasonCode)}',
         ),
-        if (page != null && live != null)
+        if (held != null)
+          LoopInlineUnavailable(
+            key: const ValueKey<String>('launch2-buyback-held'),
+            icon: 'clock',
+            message: held,
+          )
+        else if (page != null && live != null)
           LoopKeyValue(
             key: const ValueKey<String>('launch2-buyback-next'),
             label: '下一笔',
@@ -1229,7 +1361,7 @@ class _BuybackPanel extends ConsumerWidget {
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           ),
         // Decision 0146: the keeper's state, one line.
-        if (launch2KeeperLine(summary) case final Launch2KeeperLine keeper)
+        if (keeper != null && held == null)
           LoopInlineUnavailable(
             key: const ValueKey<String>('launch2-buyback-keeper'),
             icon: keeper.held ? 'clock' : 'refresh',

@@ -217,6 +217,23 @@ final class Launch2InstancePage {
       nextCursor: next.nextCursor,
     );
   }
+
+  /// A fresh first page [head] over the rows read so far (decision 0148):
+  /// the head's rows first, in its order, then every deeper row it does not
+  /// repeat, with this page's cursor. A head that is the whole list (no
+  /// cursor) replaces everything.
+  Launch2InstancePage refreshHead(Launch2InstancePage head) {
+    if (head.nextCursor == null) return head;
+    final seen = <String>{for (final row in head.items) row.instanceId};
+    return Launch2InstancePage(
+      items: List<Launch2InstanceRow>.unmodifiable(<Launch2InstanceRow>[
+        ...head.items,
+        for (final row in items)
+          if (seen.add(row.instanceId)) row,
+      ]),
+      nextCursor: nextCursor,
+    );
+  }
 }
 
 /// The fixed platform template (read-only, contract §3.2).
@@ -515,6 +532,65 @@ final class Launch2Trade {
   final BigInt blockNumber;
 }
 
+/// Whether [Launch2WalletHolding]'s balances were read (loop-api S150).
+enum Launch2BalanceStatus {
+  /// Both balances read at one block.
+  available('available'),
+
+  /// Curve phase: no balances; the curve block is the position.
+  notGraduated('not_graduated'),
+
+  /// The chain read failed or the launch slot is not configured.
+  unavailable('unavailable');
+
+  const Launch2BalanceStatus(this.wireName);
+
+  final String wireName;
+
+  static Launch2BalanceStatus? tryParse(String value) => switch (value) {
+    'available' => available,
+    'not_graduated' => notGraduated,
+    'unavailable' => unavailable,
+    _ => null,
+  };
+}
+
+/// The wallet's own figures after graduation (decision 0148, loop-api
+/// S150): its live MEME / USD1 balances at one block and its own
+/// official-pool trades, attributed through the router. Carried by the
+/// detail's `viewer` and by every `me/positions` row; `null` when the
+/// server predates them.
+@immutable
+final class Launch2WalletHolding {
+  const Launch2WalletHolding({
+    required this.status,
+    required this.poolTradeCount,
+    this.memeBalance,
+    this.usd1Balance,
+    this.reasonCode,
+    this.blockNumber,
+    this.lastPoolTradeAt,
+  });
+
+  final Launch2BalanceStatus status;
+
+  /// `balanceOf(wallet)` of the MEME at [blockNumber]; `null` unless
+  /// [status] is available.
+  final Decimal? memeBalance;
+  final Decimal? usd1Balance;
+
+  /// Why the balances are unavailable.
+  final String? reasonCode;
+  final BigInt? blockNumber;
+
+  /// The wallet's attributed official-pool trades — the confirmation
+  /// signal after a pool trade, not the pool's own count.
+  final BigInt poolTradeCount;
+  final DateTime? lastPoolTradeAt;
+
+  bool get balancesRead => status == Launch2BalanceStatus.available;
+}
+
 /// A wallet's curve figures; both rounds share the cumulative buy cap and
 /// selling does not restore it.
 @immutable
@@ -550,6 +626,7 @@ final class Launch2Viewer {
     required this.eligibleNow,
     required this.curve,
     this.mintedTokenId,
+    this.holding,
   });
 
   final String walletId;
@@ -558,6 +635,10 @@ final class Launch2Viewer {
   final bool snapshotMember;
   final bool eligibleNow;
   final Launch2CurvePosition curve;
+
+  /// Decision 0148: balances and own pool trades; `null` from an older
+  /// server.
+  final Launch2WalletHolding? holding;
 }
 
 /// `GET /v2/launch2/instances/{id}`.
@@ -885,6 +966,7 @@ final class Launch2Position {
     this.logoUrl,
     this.mintedTokenId,
     this.lastActivityAt,
+    this.holding,
   });
 
   final String instanceId;
@@ -899,6 +981,10 @@ final class Launch2Position {
   final bool snapshotMember;
   final Launch2CurvePosition curve;
   final DateTime? lastActivityAt;
+
+  /// Decision 0148: balances and own pool trades; `null` from an older
+  /// server.
+  final Launch2WalletHolding? holding;
 }
 
 @immutable

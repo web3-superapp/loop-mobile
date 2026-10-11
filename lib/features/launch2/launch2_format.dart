@@ -166,12 +166,23 @@ String launch2BuybackBlockedText(String? reasonCode) => switch (reasonCode) {
 /// running or held, in one sentence.
 @immutable
 final class Launch2KeeperLine {
-  const Launch2KeeperLine({required this.text, required this.held});
+  const Launch2KeeperLine({
+    required this.text,
+    required this.held,
+    this.reason,
+    this.reasonCode,
+    this.nextEligibleAt,
+  });
 
   final String text;
 
   /// 「回购暂缓」: the keeper has a blocking reason. Otherwise it is running.
   final bool held;
+
+  /// A held keeper's reason alone (no 「回购暂缓：」, no time).
+  final String? reason;
+  final String? reasonCode;
+  final DateTime? nextEligibleAt;
 }
 
 /// Decision 0146 (coordinator ruling): `null` — the keeper never looked at
@@ -211,11 +222,54 @@ Launch2KeeperLine? launch2KeeperLine(Launch2BuybackSummary summary) {
   final next = keeper.nextEligibleAt;
   return Launch2KeeperLine(
     held: true,
+    reason: reason,
+    reasonCode: code,
+    nextEligibleAt: next,
     text: <String>[
       '回购暂缓：$reason',
       if (next != null) '${loopClockLabel(next)} 后再试',
     ].join(' · '),
   );
+}
+
+/// One kind of hold, whichever source names it: the live read's
+/// `BUYBACK_*` and the keeper's `LAUNCH2_BUYBACK_*`, the three legacy price
+/// codes as one.
+String? _buybackHoldKind(String? code) {
+  if (code == null) return null;
+  final bare = code.startsWith('LAUNCH2_') ? code.substring(8) : code;
+  return switch (bare) {
+    'BUYBACK_REFERENCE_UNAVAILABLE' ||
+    'BUYBACK_SPOT_OUTSIDE_PROTECTION' ||
+    'BUYBACK_OUTPUT_BELOW_PROTECTION' => 'BUYBACK_LEGACY_PRICE_PROTECTION',
+    _ => bare,
+  };
+}
+
+/// Decision 0148: when the live read says the next order is held
+/// ([liveBlockedReason]) and the keeper's last attempt was held too, the
+/// buyback card says it once — 「下一笔暂缓：<原因>（来源）」, with the keeper's
+/// retry time — instead of two rows from two sources. `null` when either
+/// is not held (each keeps its own row).
+String? launch2BuybackHeldLine({
+  required String? liveBlockedReason,
+  required Launch2KeeperLine? keeper,
+}) {
+  if (liveBlockedReason == null || keeper == null || !keeper.held) {
+    return null;
+  }
+  final live = launch2BuybackBlockedText(liveBlockedReason)
+      .replaceAll('，暂不执行', '')
+      .replaceAll('，稍后执行', '');
+  final next = keeper.nextEligibleAt;
+  final retry = next == null ? null : '${loopClockLabel(next)} 后再试';
+  final same =
+      _buybackHoldKind(liveBlockedReason) ==
+      _buybackHoldKind(keeper.reasonCode);
+  final reasons = same
+      ? '$live（链上读数、自动回购）'
+      : '$live（链上读数）；${keeper.reason}（自动回购）';
+  return <String>['下一笔暂缓：$reasons', ?retry].join(' · ');
 }
 
 /// Why the keeper's simulation was refused (`lastResult: rejected`), per

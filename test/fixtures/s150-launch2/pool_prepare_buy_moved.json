@@ -1,0 +1,111 @@
+{
+  "_handwritten": "Handwritten from loop-api S150-api (Decision 0126, openapi/loop-api.v2.json at fada8be, 2026-10-11): the prepare after an approval is in a block — approval null, the router call is nonce N, deadline / expiresAt = prepare time + LAUNCH2_POOL_TRADE_DEADLINE_SECONDS (180 s). No Development capture exists yet. Variant: the price moved, minOut below the reviewed intent's.",
+  "route": "POST /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/pool/trade/prepare",
+  "status": 201,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "launch2Intent": {
+      "intentId": "6c1f9d3b-8a4e-4f2c-8b7d-3e9a5f1c2b59",
+      "kind": "pool_buy",
+      "state": "prepared",
+      "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+      "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+      "chainId": "eip155:97",
+      "chainReference": 97,
+      "contractAddress": "0xdddddddddddddddddddddddddddddddddddd0124",
+      "amountIn": "100",
+      "expectedOut": "140000",
+      "minOut": "138600",
+      "taxUsd1": "0",
+      "refundUsd1": "0",
+      "deadline": "2027-01-20T07:03:45.000Z",
+      "expiresAt": "2027-01-20T07:03:45.000Z",
+      "createdAt": "2027-01-20T07:00:45.000Z",
+      "calldata": {
+        "to": "0xdddddddddddddddddddddddddddddddddddd0124",
+        "data": "0x3c1d5df0",
+        "value": "0"
+      },
+      "unsignedTransaction": {
+        "chainId": 97,
+        "to": "0xdddddddddddddddddddddddddddddddddddd0124",
+        "data": "0x3c1d5df0",
+        "value": "0x0",
+        "from": "0x000000000000000000000000000000000000000a",
+        "gas": "0x493e0",
+        "nonce": "0x9",
+        "type": "legacy",
+        "gasPrice": "0x3b9aca00",
+        "maxFeePerGas": null,
+        "maxPriorityFeePerGas": null
+      },
+      "approval": null,
+      "payloadDigest": "0f00000000000000000000000000000000000000000000000000000000000150",
+      "snapshotBlockNumber": "1515",
+      "snapshotBlockHash": "0x5d1c000000000000000000000000000000000000000000000000000000000001",
+      "simulation": {
+        "status": "passed",
+        "reasonCode": null
+      },
+      "policy": {
+        "configVersion": "bscWriteCanaryV1",
+        "canaryMaxUsd": "1000",
+        "valueUsd": "100",
+        "priceSource": "usd1_par"
+      },
+      "signing": {
+        "mode": "device_eth_send_transaction",
+        "allowed": true,
+        "reasonCode": null
+      }
+    },
+    "quote": {
+      "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+      "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+      "venue": "official_pool",
+      "side": "buy",
+      "mode": "exactIn",
+      "stage": "graduated",
+      "requestedAmount": "100",
+      "amountIn": "100",
+      "maxIn": "100",
+      "expectedOut": "140000",
+      "minOut": "138600",
+      "slippageBps": 100,
+      "taxBps": 200,
+      "taxAmount": "2857.142857",
+      "taxToken": "meme",
+      "taxUsd1": "0",
+      "priceBeforeUsd1": "0.00066",
+      "averagePriceUsd1": "0.00068027",
+      "balance": {
+        "usd1": "500",
+        "meme": "250000"
+      },
+      "exceedsBalance": false,
+      "router": "0xdddddddddddddddddddddddddddddddddddd0124",
+      "poolId": "0x9f00000000000000000000000000000000000000000000000000000000000099",
+      "poolKey": {
+        "currency0": "0x17d554fd27345940e21d1d7328d038bd4049ce2b",
+        "currency1": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa6666",
+        "fee": 2500,
+        "tickSpacing": 60,
+        "hooks": "0x3333333333333333333333333333333333333333"
+      },
+      "zeroForOne": true,
+      "deadline": "2027-01-20T07:03:45.000Z",
+      "expiresAt": "2027-01-20T07:03:45.000Z",
+      "quotedAt": "2027-01-20T07:00:45.000Z",
+      "quotedAtBlock": "1515",
+      "basis": {
+        "blockNumber": "1515",
+        "blockHash": "0x5d1c000000000000000000000000000000000000000000000000000000000001"
+      }
+    },
+    "contractVersion": "2.0"
+  }
+}

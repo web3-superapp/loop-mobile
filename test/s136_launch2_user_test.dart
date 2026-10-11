@@ -191,6 +191,13 @@ final class _FakeLaunch2 implements Launch2Gateway {
     required Decimal amount,
     required int slippageBps,
   }) => _unavailable();
+
+  @override
+  Future<Launch2PoolTrades> loadPoolTrades({
+    required String instanceId,
+    required String walletId,
+    int limit = launch2PoolTradesShown,
+  }) => _unavailable();
 }
 
 final class _RecordingWallet implements WalletSigningGateway {
@@ -1764,8 +1771,217 @@ void main() {
           ),
         ),
       );
+      // Decision 0148: the live read and the keeper both hold for the same
+      // reason — one line naming both sources, no second row.
+      await _scrollTo(tester, _key('launch2-buyback-held'));
+      expect(
+        find.textContaining(
+          '下一笔暂缓：官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%（链上读数、自动回购）',
+        ),
+        findsOneWidget,
+      );
+      expect(_key('launch2-buyback-keeper'), findsNothing);
+      expect(_key('launch2-buyback-next'), findsNothing);
+      await _drain(tester);
+    });
+  });
+
+  group('0148 · list refresh, buyback hold, wallet balance', () {
+    _FakeLaunch2 listGateway() => _FakeLaunch2(
+      list: (stage, cursor) => _Answer<Launch2InstancePage>.value(
+        l2Page(<Map<String, Object?>>[l2RowJson(stage: 'nft_sale')]),
+      ),
+    );
+
+    testWidgets('on screen the list re-reads every 60 s; hidden it does '
+        'not, and coming back re-reads at once', (tester) async {
+      final launch2 = listGateway();
+      final visible = ValueNotifier<bool>(true);
+      await _pump(
+        tester,
+        ValueListenableBuilder<bool>(
+          valueListenable: visible,
+          builder: (context, on, child) =>
+              TickerMode(enabled: on, child: child!),
+          child: Launch2ListSegment(
+            scope: Launch2ListScope.all,
+            onNavigate: (_) {},
+          ),
+        ),
+        launch2: launch2,
+      );
+      expect(launch2.listCalls, hasLength(1));
+      await tester.pump(const Duration(seconds: 59));
+      expect(launch2.listCalls, hasLength(1));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(launch2.listCalls, hasLength(2));
+      // The provenance line moved with the read.
+      expect(_key('launch2-list-all-provenance'), findsOneWidget);
+
+      // Another tab (TickerMode off): no reads, however long.
+      visible.value = false;
+      await tester.pump();
+      await tester.pump(const Duration(minutes: 5));
+      expect(launch2.listCalls, hasLength(2));
+
+      // Back on screen: one read at once, then the 60 s cadence again.
+      visible.value = true;
+      await tester.pump();
+      await tester.pump();
+      expect(launch2.listCalls, hasLength(3));
+      await tester.pump(const Duration(seconds: 60));
+      await tester.pump();
+      expect(launch2.listCalls, hasLength(4));
+      await _drain(tester);
+    });
+
+    testWidgets('returning from a project page re-reads the list at once', (
+      tester,
+    ) async {
+      final launch2 = listGateway();
+      await _pump(
+        tester,
+        Launch2ListSegment(scope: Launch2ListScope.all, onNavigate: (_) {}),
+        launch2: launch2,
+      );
+      expect(launch2.listCalls, hasLength(1));
+      final navigator = tester.state<NavigatorState>(
+        find.byType(Navigator).last,
+      );
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('project')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('project'), findsOneWidget);
+      // Covered by the project page: the 60 s tick reads nothing.
+      await tester.pump(const Duration(minutes: 2));
+      expect(launch2.listCalls, hasLength(1));
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(launch2.listCalls, hasLength(2));
+      await _drain(tester);
+    });
+
+    testWidgets('the live read and the keeper holding for different reasons '
+        'say both, with their sources, in one line', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(
+              l2Detail(stage: 'graduated', noNextChange: true),
+            ),
+          ],
+          buybacks: _Answer<Launch2BuybackPage>.value(
+            l2Buybacks(
+              blocked: 'BUYBACK_LEGACY_PRICE_PROTECTION',
+              keeper: l2KeeperJson(reasonCode: 'LAUNCH2_BUYBACK_NO_BUDGET'),
+            ),
+          ),
+        ),
+      );
+      await _scrollTo(tester, _key('launch2-buyback-held'));
+      expect(
+        find.textContaining('下一笔暂缓：旧版合约价格保护生效（链上读数）；托管余额不足一笔（自动回购）'),
+        findsOneWidget,
+      );
+      expect(_key('launch2-buyback-keeper'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('a live read that is ready keeps its row and the keeper '
+        'its own', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(
+              l2Detail(stage: 'graduated', noNextChange: true),
+            ),
+          ],
+          buybacks: _Answer<Launch2BuybackPage>.value(
+            l2Buybacks(blocked: null, keeper: l2KeeperJson()),
+          ),
+        ),
+      );
       await _scrollTo(tester, _key('launch2-buyback-keeper'));
-      expect(find.textContaining('回购暂缓：官方池本金保护'), findsOneWidget);
+      expect(_key('launch2-buyback-next'), findsOneWidget);
+      expect(_key('launch2-buyback-held'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('a graduated position with a read balance is a 钱包余额 row; '
+        'an unread one keeps the curve row', (tester) async {
+      await _pump(
+        tester,
+        Scaffold(
+          body: ListView(
+            children: <Widget>[
+              Launch2WalletRows(onOpen: (_) {}, hidden: false),
+            ],
+          ),
+        ),
+        launch2: _FakeLaunch2(
+          positions: _Answer<Launch2Positions>.value(
+            l2Positions(stage: 'graduated', holding: l2HoldingJson()),
+          ),
+        ),
+      );
+      expect(_key('launch2-wallet-meme-$l2InstanceA'), findsOneWidget);
+      expect(find.text('钱包余额'), findsOneWidget);
+      expect(find.text('7,333.18'), findsOneWidget);
+      expect(find.text('v2 内盘持仓'), findsNothing);
+      await _drain(tester);
+
+      await _pump(
+        tester,
+        Scaffold(
+          body: ListView(
+            children: <Widget>[
+              Launch2WalletRows(onOpen: (_) {}, hidden: false),
+            ],
+          ),
+        ),
+        launch2: _FakeLaunch2(
+          positions: _Answer<Launch2Positions>.value(
+            l2Positions(
+              stage: 'graduated',
+              holding: l2HoldingJson(status: 'unavailable'),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('v2 内盘持仓'), findsOneWidget);
+      expect(find.text('1,125,000.5'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a zero balance draws no token row', (tester) async {
+      await _pump(
+        tester,
+        Scaffold(
+          body: ListView(
+            children: <Widget>[Launch2WalletRows(onOpen: (_) {}, hidden: true)],
+          ),
+        ),
+        launch2: _FakeLaunch2(
+          positions: _Answer<Launch2Positions>.value(
+            l2Positions(
+              stage: 'graduated',
+              holding: l2HoldingJson(meme: '0'),
+            ),
+          ),
+        ),
+      );
+      expect(_key('launch2-wallet-meme-$l2InstanceA'), findsNothing);
+      expect(_key('launch2-wallet-nft-$l2InstanceA'), findsOneWidget);
       await _drain(tester);
     });
   });

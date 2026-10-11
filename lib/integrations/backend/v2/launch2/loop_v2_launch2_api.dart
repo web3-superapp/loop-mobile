@@ -423,6 +423,34 @@ final class DioLoopV2Launch2Api {
     );
     return LoopV2Launch2Codec.positions(data, mediaUrl: mediaUrl);
   }
+
+  /// Decision 0148 (loop-api S150): the wallet's own pool trades.
+  Future<Launch2PoolTrades> getPoolTrades({
+    required String accessToken,
+    required String clientVersion,
+    required String instanceId,
+    required String walletId,
+    required int limit,
+  }) async {
+    if (limit < 1 || limit > 50) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    final data = await _get(
+      '$instancesPath/${_id(instanceId)}/pool/trades',
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      errors: poolQuoteErrors,
+      query: <String, Object?>{
+        'walletId': _id(walletId),
+        'limit': limit.toString(),
+      },
+    );
+    return LoopV2Launch2PoolCodec.trades(
+      data,
+      instanceId: instanceId,
+      walletId: walletId,
+    );
+  }
 }
 
 /// The authenticated `launch2` adapter behind [Launch2Gateway].
@@ -634,6 +662,21 @@ final class DioLoopV2Launch2Gateway implements Launch2Gateway {
     (accessToken) => _api.getPositions(
       accessToken: accessToken,
       clientVersion: _clientVersion,
+    ),
+  );
+
+  @override
+  Future<Launch2PoolTrades> loadPoolTrades({
+    required String instanceId,
+    required String walletId,
+    int limit = launch2PoolTradesShown,
+  }) => _read(
+    (accessToken) => _api.getPoolTrades(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      instanceId: instanceId,
+      walletId: walletId,
+      limit: limit,
     ),
   );
 }

@@ -186,3 +186,63 @@ final class Launch2PoolPrepared {
   final Launch2Intent intent;
   final Launch2PoolQuote quote;
 }
+
+/// One of the wallet's own official-pool swaps, attributed through the
+/// router's `Swap(payer)` (decision 0148, loop-api S150
+/// `GET …/pool/trades`). Swaps that did not go through the router (the
+/// buyback, other routers) are never in it.
+@immutable
+final class Launch2PoolTrade {
+  const Launch2PoolTrade({
+    required this.poolTradeId,
+    required this.side,
+    required this.amountIn,
+    required this.amountOut,
+    required this.usd1Amount,
+    required this.memeAmount,
+    required this.taxAmount,
+    required this.taxToken,
+    required this.priceUsd1,
+    required this.tradedAt,
+    required this.transactionHash,
+    required this.blockNumber,
+  });
+
+  final String poolTradeId;
+  final Launch2Side side;
+
+  /// What went in and came out through the router (net of the tax): USD1
+  /// in / MEME out for a buy, MEME in / USD1 out for a sell.
+  final Decimal amountIn;
+  final Decimal amountOut;
+
+  /// The pool side, the output gross of the tax.
+  final Decimal usd1Amount;
+  final Decimal memeAmount;
+  final Decimal taxAmount;
+  final Launch2PoolTaxToken taxToken;
+
+  /// The pool price after the swap.
+  final Decimal priceUsd1;
+  final DateTime tradedAt;
+  final String transactionHash;
+  final BigInt blockNumber;
+}
+
+/// `GET /v2/launch2/instances/{id}/pool/trades?walletId=` (newest first).
+@immutable
+final class Launch2PoolTrades {
+  const Launch2PoolTrades({
+    required this.instanceId,
+    required this.walletId,
+    required this.poolTradeCount,
+    required this.trades,
+    this.lastPoolTradeAt,
+  });
+
+  final String instanceId;
+  final String walletId;
+  final BigInt poolTradeCount;
+  final DateTime? lastPoolTradeAt;
+  final List<Launch2PoolTrade> trades;
+}

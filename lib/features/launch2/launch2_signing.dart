@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
@@ -42,6 +43,8 @@ final class Launch2SignOutcome {
     required this.reasonCode,
     this.txHash,
     this.approvalTxHash,
+    this.refreshed,
+    this.refreshFailure,
   });
 
   /// [MoneySignStatus.submitted] once the wallet broadcast the main
@@ -50,6 +53,13 @@ final class Launch2SignOutcome {
   final String reasonCode;
   final String? txHash;
   final String? approvalTxHash;
+
+  /// The intent the trade was signed from when the exit refreshed it after
+  /// the approval (decision 0148); `null` when the reviewed one was signed.
+  final Launch2Intent? refreshed;
+
+  /// The read that failed while refreshing after the approval.
+  final LoopChainException? refreshFailure;
 
   bool get broadcast =>
       status == MoneySignStatus.submitted || status == MoneySignStatus.locked;
@@ -75,6 +85,12 @@ String _spenderNoun(Launch2Intent intent) =>
     : intent.kind == Launch2IntentKind.nftMint
     ? 'NFT 合约'
     : '曲线合约';
+
+/// The address row: the router or the contract, and when the intent carries
+/// an approval, that it is also the spender.
+String _addressLabel(Launch2Intent intent) => intent.approval == null
+    ? (intent.venue == Launch2Venue.officialPool ? '路由' : '合约')
+    : '授权给${_spenderNoun(intent)}';
 
 /// The tax line's label: the intent's own rate, else the curve's 10%.
 String _taxLabel(Launch2Intent intent) {
@@ -148,14 +164,16 @@ List<IntentField> launch2IntentFields(
             ? launch2MemeLabel(intent.taxMeme!, ticker)
             : launch2Usd1Label(intent.taxUsd1, maxFractionDigits: 4),
       ),
+    // Decision 0148: the amount alone; whom it lets spend is the address
+    // row's own label (路由 / 合约), so the line never wraps right-aligned.
     if (approval != null)
       IntentField(
         label: '先授权',
         value: intent.kind == Launch2IntentKind.sell
-            ? '${launch2MemeLabel(approval.amount, ticker)} 给${_spenderNoun(intent)}'
+            ? launch2MemeLabel(approval.amount, ticker)
             : intent.kind == Launch2IntentKind.nftMint
-            ? '${launch2Usd1Label(approval.amount)} 给${_spenderNoun(intent)}'
-            : '${launch2Usd1Label(approval.amount, maxFractionDigits: 4)} 给${_spenderNoun(intent)}',
+            ? launch2Usd1Label(approval.amount)
+            : launch2Usd1Label(approval.amount, maxFractionDigits: 4),
       ),
     IntentField(
       label: '模拟结果',
@@ -171,7 +189,7 @@ List<IntentField> launch2IntentFields(
       value: loopGroupedFigure(intent.snapshotBlockNumber.toString()),
     ),
     IntentField(
-      label: intent.venue == Launch2Venue.officialPool ? '路由' : '合约',
+      label: _addressLabel(intent),
       value: launch2ShortAddress(intent.contractAddress),
     ),
     IntentField(label: '网络', value: loopChainName(intent.chainId)),
@@ -193,6 +211,55 @@ String launch2SignReasonText(String reasonCode) => switch (reasonCode) {
   _ => '钱包没有完成签名，没有提交任何交易。',
 };
 
+/// Why the trade after a broadcast approval was not signed when the exit
+/// tried to refresh an expiring quote (decision 0148). The approval stands;
+/// the next attempt needs only the trade.
+String launch2RefreshReasonText(Launch2SignOutcome outcome, String noun) {
+  final failure = outcome.refreshFailure;
+  final why = switch (outcome.reasonCode) {
+    launch2RefreshApprovalPendingCode => '授权还在链上确认',
+    launch2RefreshOutOfRangeCode => '最新报价超出了你确认的范围',
+    launch2RefreshFailedCode =>
+      failure == null
+          ? '没有取到新报价'
+          : '没有取到新报价（${launch2PoolFailureText(failure)}）',
+    _ => '新的交易内容没有通过核对',
+  };
+  return '授权已广播。原报价即将到期，刷新时$why，$noun没有签名，'
+      '没有提交$noun交易。稍后重新发起，授权足够时只需签一次。';
+}
+
+/// Whether [outcome] stopped at the refresh between the two signatures.
+bool launch2StoppedAtRefresh(Launch2SignOutcome outcome) =>
+    outcome.approvalTxHash != null &&
+    outcome.txHash == null &&
+    outcome.status != MoneySignStatus.locked &&
+    (outcome.reasonCode == launch2RefreshApprovalPendingCode ||
+        outcome.reasonCode == launch2RefreshOutOfRangeCode ||
+        outcome.reasonCode == launch2RefreshFailedCode ||
+        outcome.status == MoneySignStatus.refused);
+
+/// The intent's main transaction can no longer be built from the approval's
+/// quote: the trade-only intent still asks for an approval after the retries.
+const String launch2RefreshApprovalPendingCode =
+    'LAUNCH2_REFRESH_APPROVAL_PENDING';
+
+/// The refreshed intent is worse than the one reviewed: it pays more, or
+/// accepts less, than the sheet showed.
+const String launch2RefreshOutOfRangeCode = 'LAUNCH2_REFRESH_OUT_OF_RANGE';
+
+/// The re-quote or the re-prepare failed.
+const String launch2RefreshFailedCode = 'LAUNCH2_REFRESH_FAILED';
+
+/// How close to its expiry an intent may be signed after an approval
+/// (decision 0148): below this the exit refreshes it first.
+const Duration launch2RefreshMargin = Duration(seconds: 20);
+
+/// A fresh intent for the same trade: re-quote, then re-prepare. Supplied
+/// by the panel that prepared the original (the official pool, decision
+/// 0148).
+typedef Launch2IntentRefresher = Future<Launch2Intent> Function();
+
 /// The one sentence after a broadcast. A broadcast is never a result.
 String launch2BroadcastText(
   Launch2SignOutcome outcome,
@@ -213,13 +280,22 @@ String launch2BroadcastText(
 
 /// Where a two-transaction trip through the exit is (approval, then the
 /// trade): the sheet draws it as a two-step strip.
-enum Launch2SignStep { approving, signingMain }
+enum Launch2SignStep { approving, refreshing, signingMain }
 
 /// The one path from a MEME v2 intent to the wallet.
 final class Launch2IntentSigner {
-  const Launch2IntentSigner({required this.wallet});
+  const Launch2IntentSigner({
+    required this.wallet,
+    this.refreshAttempts = 4,
+    this.refreshRetryDelay = const Duration(seconds: 3),
+  });
 
   final WalletSigningGateway wallet;
+
+  /// How many re-prepares the exit asks for while the fresh intent still
+  /// carries an approval (the broadcast approval is not yet in a block).
+  final int refreshAttempts;
+  final Duration refreshRetryDelay;
 
   static SigningIntent _signingIntent(
     Launch2Intent intent, {
@@ -300,12 +376,111 @@ final class Launch2IntentSigner {
     return null;
   }
 
+  /// Why [fresh] may not replace [reviewed] for the trade after an
+  /// approval, or `null` when it may (decision 0148): same trade, same
+  /// wallet, no approval of its own, signable now, and never worse than
+  /// what the sheet showed — it pays at most [reviewed]'s `amountIn` and
+  /// accepts at least its `minOut`.
+  static String? refreshRefusal(
+    Launch2Intent reviewed,
+    Launch2Intent fresh, {
+    required String fromAddress,
+    required DateTime now,
+  }) {
+    if (fresh.kind != reviewed.kind ||
+        fresh.venue != reviewed.venue ||
+        fresh.instanceId != reviewed.instanceId ||
+        fresh.walletId != reviewed.walletId ||
+        fresh.chainId != reviewed.chainId ||
+        fresh.contractAddress.toLowerCase() !=
+            reviewed.contractAddress.toLowerCase()) {
+      return 'REVIEW_PAYLOAD_MISMATCH';
+    }
+    if (fresh.approval != null) return launch2RefreshApprovalPendingCode;
+    final refusal = refusalBeforeWallet(
+      fresh,
+      fromAddress: fromAddress,
+      now: now,
+    );
+    if (refusal != null) return refusal;
+    if (fresh.amountIn > reviewed.amountIn || fresh.minOut < reviewed.minOut) {
+      return launch2RefreshOutOfRangeCode;
+    }
+    return null;
+  }
+
+  /// Asks [refresh] for the trade-only intent, again while the approval is
+  /// not yet visible to the server.
+  Future<Launch2SignOutcome?> _refreshed(
+    Launch2Intent reviewed, {
+    required Launch2IntentRefresher refresh,
+    required String fromAddress,
+    required DateTime Function() clock,
+    required String approvalHash,
+    required void Function(Launch2Intent fresh) accept,
+  }) async {
+    for (var attempt = 1; ; attempt += 1) {
+      final Launch2Intent fresh;
+      try {
+        fresh = await refresh();
+      } on LoopChainException catch (failure) {
+        return Launch2SignOutcome(
+          status: MoneySignStatus.walletRejected,
+          reasonCode: launch2RefreshFailedCode,
+          approvalTxHash: approvalHash,
+          refreshFailure: failure,
+        );
+      } catch (_) {
+        return Launch2SignOutcome(
+          status: MoneySignStatus.walletRejected,
+          reasonCode: launch2RefreshFailedCode,
+          approvalTxHash: approvalHash,
+          refreshFailure: const LoopChainException(
+            LoopChainFailureKind.unexpected,
+          ),
+        );
+      }
+      final refusal = refreshRefusal(
+        reviewed,
+        fresh,
+        fromAddress: fromAddress,
+        now: clock(),
+      );
+      if (refusal == launch2RefreshApprovalPendingCode &&
+          attempt < refreshAttempts) {
+        await Future<void>.delayed(refreshRetryDelay);
+        continue;
+      }
+      if (refusal != null) {
+        return Launch2SignOutcome(
+          status: MoneySignStatus.refused,
+          reasonCode: refusal,
+          approvalTxHash: approvalHash,
+        );
+      }
+      accept(fresh);
+      return null;
+    }
+  }
+
+  /// Signs [intent]: its approval first when it carries one, then the
+  /// trade.
+  ///
+  /// Decision 0148: when [refresh] is given and, once the approval is
+  /// broadcast, the intent has less than [launch2RefreshMargin] left on
+  /// [clock], the trade is signed from a fresh intent instead (re-quote and
+  /// re-prepare; [onRefreshed] tells the sheet). A refresh that fails, still
+  /// needs an approval after the retries, or is worse than the reviewed
+  /// intent stops before the second wallet prompt.
   Future<Launch2SignOutcome> sign(
     Launch2Intent intent, {
     required String? fromAddress,
     required String ticker,
     required DateTime now,
     void Function(Launch2SignStep step)? onStep,
+    DateTime Function()? clock,
+    Launch2IntentRefresher? refresh,
+    void Function(Launch2Intent fresh)? onRefreshed,
   }) async {
     final refusal = refusalBeforeWallet(
       intent,
@@ -346,8 +521,37 @@ final class Launch2IntentSigner {
       }
       approvalHash = handoff.value;
     }
+    var signed = main;
+    Launch2Intent? fresh;
+    final at = clock ?? () => now;
+    if (approvalHash != null &&
+        refresh != null &&
+        intent.expiresAt.difference(at()) < launch2RefreshMargin) {
+      onStep?.call(Launch2SignStep.refreshing);
+      final stopped = await _refreshed(
+        intent,
+        refresh: refresh,
+        fromAddress: from,
+        clock: at,
+        approvalHash: approvalHash,
+        accept: (next) => fresh = next,
+      );
+      if (stopped != null) return stopped;
+      signed = mainSigningIntent(fresh!, fromAddress: from, ticker: ticker);
+      if (!signed.chainIsPermitted) {
+        return Launch2SignOutcome(
+          status: MoneySignStatus.refused,
+          reasonCode: 'INTENT_CHAIN_NOT_PERMITTED',
+          approvalTxHash: approvalHash,
+        );
+      }
+      onRefreshed?.call(fresh!);
+    }
     onStep?.call(Launch2SignStep.signingMain);
-    final handoff = await wallet.handoff(main, now: now);
+    final handoff = await wallet.handoff(
+      signed,
+      now: clock == null ? now : at(),
+    );
     if (!handoff.accepted || handoff.value == null) {
       return Launch2SignOutcome(
         status: handoff.code == 'wallet_outcome_unknown'
@@ -355,6 +559,7 @@ final class Launch2IntentSigner {
             : MoneySignStatus.walletRejected,
         reasonCode: handoff.code,
         approvalTxHash: approvalHash,
+        refreshed: fresh,
       );
     }
     return Launch2SignOutcome(
@@ -362,6 +567,7 @@ final class Launch2IntentSigner {
       reasonCode: 'BROADCAST',
       txHash: handoff.value,
       approvalTxHash: approvalHash,
+      refreshed: fresh,
     );
   }
 }
@@ -380,6 +586,7 @@ Future<Launch2SignOutcome?> showLaunch2SignSheet(
   required String? fromAddress,
   required String ticker,
   DateTime Function()? clock,
+  Launch2IntentRefresher? refresh,
 }) async {
   final latch = MoneySignLatch();
   final outcome = await showLoopSheet<Launch2SignOutcome>(
@@ -392,6 +599,7 @@ Future<Launch2SignOutcome?> showLaunch2SignSheet(
       ticker: ticker,
       clock: clock,
       latch: latch,
+      refresh: refresh,
     ),
   );
   if (outcome != null) return outcome;
@@ -412,6 +620,7 @@ class Launch2SignSheet extends StatefulWidget {
     super.key,
     this.clock,
     this.latch,
+    this.refresh,
   });
 
   final Launch2Intent intent;
@@ -420,6 +629,10 @@ class Launch2SignSheet extends StatefulWidget {
   final String ticker;
   final DateTime Function()? clock;
   final MoneySignLatch? latch;
+
+  /// Re-quotes and re-prepares the same trade when the approval took the
+  /// quote too close to its expiry (decision 0148).
+  final Launch2IntentRefresher? refresh;
 
   @override
   State<Launch2SignSheet> createState() => _Launch2SignSheetState();
@@ -431,6 +644,11 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
   Launch2SignOutcome? _outcome;
   bool _submitted = false;
   Launch2SignStep? _step;
+
+  /// The intent the facts are read from: the reviewed one, or the fresh one
+  /// the trade is signed from after a refresh.
+  late Launch2Intent _intent = widget.intent;
+  bool _refreshed = false;
 
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
 
@@ -465,8 +683,17 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
       fromAddress: widget.fromAddress,
       ticker: widget.ticker,
       now: _now,
+      clock: () => _now,
+      refresh: widget.refresh,
       onStep: (step) {
         if (mounted) setState(() => _step = step);
+      },
+      onRefreshed: (fresh) {
+        if (!mounted) return;
+        setState(() {
+          _intent = fresh;
+          _refreshed = true;
+        });
       },
     );
     widget.latch?.txHash = outcome.txHash;
@@ -479,7 +706,9 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
       } else {
         _state = LoopSignSheetState.simulationFailed;
         final noun = launch2IntentNoun(widget.intent.kind);
-        _reason = outcome.approvalTxHash != null
+        _reason = launch2StoppedAtRefresh(outcome)
+            ? launch2RefreshReasonText(outcome, noun)
+            : outcome.approvalTxHash != null
             ? '授权已广播，$noun没有签名，没有提交$noun交易。可以关闭后重新发起。'
             : launch2SignReasonText(outcome.reasonCode);
         // A broadcast approval makes this intent's nonce plan stale: the
@@ -491,7 +720,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final fields = launch2IntentFields(widget.intent, ticker: widget.ticker);
+    final fields = launch2IntentFields(_intent, ticker: widget.ticker);
     final sheet = LoopSignSheet(
       key: const ValueKey<String>('launch2-sign-sheet'),
       state: _state,
@@ -520,6 +749,15 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
                   approval: _approvalStatus,
                   main: _mainStatus,
                 ),
+                if (_refreshed)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Text(
+                      launch2RefreshedText,
+                      key: const ValueKey<String>('launch2-sign-refreshed'),
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
+                    ),
+                  ),
                 sheet,
               ],
             ),
@@ -538,6 +776,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
     return switch (_step) {
       null => Launch2StepStatus.waiting,
       Launch2SignStep.approving => Launch2StepStatus.active,
+      Launch2SignStep.refreshing ||
       Launch2SignStep.signingMain => Launch2StepStatus.done,
     };
   }
@@ -551,14 +790,20 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
           ? Launch2StepStatus.unknown
           : Launch2StepStatus.failed;
     }
-    return _step == Launch2SignStep.signingMain
-        ? Launch2StepStatus.active
-        : Launch2StepStatus.waiting;
+    return switch (_step) {
+      Launch2SignStep.signingMain => Launch2StepStatus.active,
+      Launch2SignStep.refreshing => Launch2StepStatus.refreshing,
+      _ => Launch2StepStatus.waiting,
+    };
   }
 }
 
 /// One step of the two-step strip.
-enum Launch2StepStatus { waiting, active, done, failed, unknown }
+enum Launch2StepStatus { waiting, active, refreshing, done, failed, unknown }
+
+/// The one line the sheet shows once the trade is signed from a fresh
+/// intent (decision 0148).
+const String launch2RefreshedText = '已刷新报价：原报价即将到期，已按最新区块重新报价，金额在你确认的范围内';
 
 /// 「1 授权 → 2 买入」 above the signing sheet when an intent carries an
 /// approval: which wallet prompt is open and which already broadcast.
@@ -577,6 +822,7 @@ class Launch2SignStepStrip extends StatelessWidget {
   static String _status(Launch2StepStatus status) => switch (status) {
     Launch2StepStatus.waiting => '待签名',
     Launch2StepStatus.active => '请在钱包确认',
+    Launch2StepStatus.refreshing => '正在刷新报价',
     Launch2StepStatus.done => '已广播',
     Launch2StepStatus.failed => '未完成',
     Launch2StepStatus.unknown => '结果未知',
@@ -584,7 +830,9 @@ class Launch2SignStepStrip extends StatelessWidget {
 
   Widget _step(String index, String label, Launch2StepStatus status) {
     final lit =
-        status == Launch2StepStatus.active || status == Launch2StepStatus.done;
+        status == Launch2StepStatus.active ||
+        status == Launch2StepStatus.refreshing ||
+        status == Launch2StepStatus.done;
     final warn =
         status == Launch2StepStatus.failed ||
         status == Launch2StepStatus.unknown;

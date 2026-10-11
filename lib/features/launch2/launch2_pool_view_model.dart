@@ -181,12 +181,17 @@ List<Launch2PoolLine> launch2PoolQuoteLines(
   ];
 }
 
-/// What the reader holds, from the freshest source: the quote's balances at
-/// its block, else the position the account read.
+/// What the reader holds (decision 0148): the server's own read of the
+/// wallet's MEME balance ([server], the detail's `viewer`) first, so the
+/// line is there before any quote; the last quote's balance at its block
+/// when the server has none; else the position the caller passed.
 Launch2PoolHolding? launch2PoolHoldingOf({
+  Launch2WalletHolding? server,
   Launch2PoolQuote? quote,
   Launch2PoolHolding? position,
 }) {
+  final balance = server?.memeBalance;
+  if (balance != null) return Launch2PoolHolding(balance: balance);
   if (quote != null) return Launch2PoolHolding(balance: quote.balanceMeme);
   return position;
 }
@@ -267,12 +272,16 @@ Launch2PoolTradeView launch2PoolTradeView({
       !preparing &&
       quote.expectedOut > Decimal.zero &&
       quote.amountIn > Decimal.zero;
-  // Neither the detail nor `me/positions` carries a wallet balance (loop-api
-  // S146): before the first quote the curve figure is said as what it is.
+  // Decision 0148: the viewer carries the wallet balance (loop-api S150).
+  // A server that read none says so; an older server (no holding group)
+  // leaves the curve figure said as what it is until the first quote.
   final curveNet = detail.viewer?.curve.net;
+  final server = detail.viewer?.holding;
   final String? holdingLine = holding != null
       ? '持有 ${launch2MemeLabel(holding.balance, ticker)} · '
             '可卖 ${launch2MemeLabel(holding.sellableOrBalance, ticker)}'
+      : server != null && server.status == Launch2BalanceStatus.unavailable
+      ? '钱包余额暂时读不到 · 报价后显示'
       : curveNet != null && curveNet > Decimal.zero
       ? '内盘净买入 ${launch2MemeLabel(curveNet, ticker)} · 钱包余额报价后显示'
       : null;
@@ -318,3 +327,12 @@ int? launch2PoolSlippageFromInput(String text) {
   if (bps <= 0 || bps > 5000) return null;
   return bps;
 }
+
+/// One of the wallet's own pool trades in a line (decision 0148): what came
+/// out for what went in, both net of the 2% pool tax.
+String launch2PoolTradeFigure(Launch2PoolTrade trade, String ticker) =>
+    trade.side == Launch2Side.buy
+    ? '${launch2MemeLabel(trade.amountOut, ticker)} · '
+          '付 ${_usd1(trade.amountIn)}'
+    : '${launch2MemeLabel(trade.amountIn, ticker)} · '
+          '得 ${_usd1(trade.amountOut)}';

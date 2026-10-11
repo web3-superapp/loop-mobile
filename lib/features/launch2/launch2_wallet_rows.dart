@@ -18,6 +18,11 @@ import 'package:loop_mobile/widgets/loop_quote_row.dart';
 /// in the wallet changes: no heading, no total, no net-worth share — the
 /// curve figure is curve bought − sold, not a wallet balance.
 ///
+/// Decision 0148: once the server reads the wallet's MEME balance (a
+/// graduated instance, `memeBalance`), the token row is that balance —
+/// 「钱包余额」 — instead of the curve figure; a balance it could not read
+/// keeps the curve row as it was.
+///
 /// While the read runs, or when the account holds nothing, nothing is drawn;
 /// a failed read is one weak line with a retry.
 class Launch2WalletRows extends ConsumerWidget {
@@ -59,7 +64,16 @@ class Launch2WalletRows extends ConsumerWidget {
     }
     final rows = <Widget>[
       for (final position in value.items) ...<Widget>[
-        if (position.curve.net > Decimal.zero)
+        if (position.holding?.memeBalance case final Decimal balance) ...[
+          if (balance > Decimal.zero)
+            _row(
+              key: 'launch2-wallet-meme-${position.instanceId}',
+              position: position,
+              title: position.ticker,
+              subtitle: '钱包余额',
+              value: hidden ? '****' : launch2MemeFigure(balance),
+            ),
+        ] else if (position.curve.net > Decimal.zero)
           _row(
             key: 'launch2-wallet-meme-${position.instanceId}',
             position: position,

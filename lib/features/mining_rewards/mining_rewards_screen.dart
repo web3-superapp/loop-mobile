@@ -1154,10 +1154,15 @@ class MiningNftTrackCard extends StatelessWidget {
   }
 }
 
-/// zh-CN for `tracks.asset.excludedAssets[].reasonCode`.
+/// zh-CN for `tracks.asset.excludedAssets[].reasonCode`. Decision 0148
+/// (loop-api S150 / 0126): quantity-basis hours name a balance still being
+/// synced, never a price; the unreadable code is left for replayed
+/// pre-0123 hours. A code without a line is 「暂不计入」, never the code.
 String miningExcludedReasonText(String reasonCode) => switch (reasonCode) {
+  'MINING_ASSET_GRADUATED_BALANCE_PENDING' => '已毕业，外盘持有数量还在同步',
   'MINING_ASSET_GRADUATED_UNREADABLE' => '已毕业，外盘持有数量暂读不到',
-  _ => reasonCode,
+  'MINING_ASSET_WEIGHT_NOT_CONFIGURED' => '还没有配置挖矿权重',
+  _ => '暂不计入',
 };
 
 class _ExcludedRow extends StatelessWidget {

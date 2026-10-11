@@ -68,7 +68,17 @@ abstract interface class Launch2Gateway {
     required Decimal amount,
     required int slippageBps,
   });
+
+  /// Decision 0148: the wallet's own official-pool trades, newest first.
+  Future<Launch2PoolTrades> loadPoolTrades({
+    required String instanceId,
+    required String walletId,
+    int limit = launch2PoolTradesShown,
+  });
 }
+
+/// How many of the wallet's own pool trades the project page shows.
+const int launch2PoolTradesShown = 5;
 
 /// Production default: every call fails closed with `unavailable`. No fixture
 /// ever replaces a missing MEME v2 fact.
@@ -140,6 +150,13 @@ final class UnavailableLaunch2Gateway implements Launch2Gateway {
     required Launch2PoolMode mode,
     required Decimal amount,
     required int slippageBps,
+  }) => _unavailable();
+
+  @override
+  Future<Launch2PoolTrades> loadPoolTrades({
+    required String instanceId,
+    required String walletId,
+    int limit = launch2PoolTradesShown,
   }) => _unavailable();
 }
 

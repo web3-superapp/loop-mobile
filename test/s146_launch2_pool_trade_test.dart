@@ -276,9 +276,29 @@ final class _FakePool implements Launch2Gateway {
 
   @override
   Future<Launch2Positions> loadPositions() => _unavailable();
+
+  /// Decision 0148: the wallet's own pool trades.
+  _Answer<Launch2PoolTrades>? poolTrades;
+  int poolTradeReads = 0;
+
+  @override
+  Future<Launch2PoolTrades> loadPoolTrades({
+    required String instanceId,
+    required String walletId,
+    int limit = launch2PoolTradesShown,
+  }) {
+    poolTradeReads += 1;
+    return poolTrades?.resolve() ?? _unavailable();
+  }
 }
 
 final class _RecordingWallet implements WalletSigningGateway {
+  _RecordingWallet({this.onHandoff});
+
+  /// Runs before each answer (decision 0148: a slow approval moves the
+  /// clock).
+  final void Function(SigningIntent intent)? onHandoff;
+
   final List<SigningIntent> handed = <SigningIntent>[];
 
   @override
@@ -294,6 +314,7 @@ final class _RecordingWallet implements WalletSigningGateway {
     required DateTime now,
   }) async {
     handed.add(intent);
+    onHandoff?.call(intent);
     final refusal = walletHandoffRefusal(intent, now: now);
     if (refusal != null) return WalletHandoffResult.rejected(refusal);
     return const WalletHandoffResult(
@@ -848,8 +869,10 @@ void main() {
       // A pool buy is taxed in MEME, taken from what it receives.
       expect(byLabel['外盘税 2%'], r'3,000 $FROG');
       expect(byLabel['最多支付'], '100 USD1');
-      expect(byLabel['先授权'], endsWith('给官方池路由'));
-      expect(byLabel['路由'], isNotNull);
+      // Decision 0148: the amount alone; the spender is the address row.
+      expect(byLabel['先授权'], '100 USD1');
+      expect(byLabel['授权给官方池路由'], isNotNull);
+      expect(byLabel.containsKey('路由'), isFalse);
       expect(byLabel.containsKey('税 10%'), isFalse);
       expect(launch2IntentTitle(intent.kind, venue: intent.venue), '确认外盘买入');
     });
@@ -1098,6 +1121,313 @@ void main() {
         'slippageBps': 75,
       });
       expect(find.text('最多卖出'), findsOneWidget);
+      await _drain(tester);
+    });
+  });
+
+  group('0148 · S150 follow-ups on the graduated page', () {
+    Map<String, Object?> s150(String name) => jsonDecode(
+      File('test/fixtures/s150-launch2/$name.json').readAsStringSync(),
+    ) as Map<String, Object?>;
+
+    Launch2PoolPrepared s150Prepared(String name) =>
+        LoopV2Launch2PoolCodec.prepared(
+          s150(name)['body'],
+          instanceId: l2InstanceA,
+          side: Launch2Side.buy,
+          mode: Launch2PoolMode.exactIn,
+          walletId: l2WalletId,
+        );
+
+    Launch2InstanceDetail held({
+      Map<String, Object?>? holding,
+      Map<String, Object?>? pool,
+    }) => l2Detail(
+      stage: 'graduated',
+      noNextChange: true,
+      viewer: l2ViewerJson(holding: holding ?? l2HoldingJson()),
+      pool: pool ?? l2PoolSummaryJson(),
+    );
+
+    /// The page's clock, moved by a slow approval.
+    DateTime now = l2Now;
+
+    Future<void> openAt(
+      WidgetTester tester,
+      _FakePool gateway, {
+      _RecordingWallet? wallet,
+    }) => pumpS7Page(
+      tester,
+      const Launch2InstanceScreen(instanceId: l2InstanceA),
+      meta: _meta(),
+      wallet: FakeWalletDirectory(
+        activeWalletId: l2WalletId,
+        wallets: <LoopWalletAccount>[_wallet()],
+      ),
+      overrides: <Override>[
+        launch2GatewayProvider.overrideWithValue(gateway),
+        launch2ClockProvider.overrideWithValue(() => now),
+        launch2PollingProvider.overrideWithValue(
+          const Launch2Polling(
+            detailInterval: Duration(hours: 1),
+            tradingInterval: Duration(hours: 1),
+          ),
+        ),
+        launch2IntentSignerProvider.overrideWith(
+          (ref) => Launch2IntentSigner(
+            wallet: ref.watch(walletSigningGatewayProvider),
+            refreshRetryDelay: Duration.zero,
+          ),
+        ),
+        loopFeatureSwitchesProvider.overrideWithValue(
+          const LoopFeatureSwitchValues(launch2Visible: true),
+        ),
+        if (wallet != null)
+          walletSigningGatewayProvider.overrideWithValue(wallet),
+      ],
+    );
+
+    setUp(() => now = l2Now);
+
+    testWidgets('the server balance is there before any quote; the quote '
+        'balance is only the fallback', (tester) async {
+      final gateway = _FakePool(details: <Launch2InstanceDetail>[held()]);
+      await openAt(tester, gateway);
+      await _scrollTo(tester, _key('launch2-pool-holding'));
+      expect(
+        find.text(r'持有 7,333.18 $FROG · 可卖 7,333.18 $FROG'),
+        findsOneWidget,
+      );
+      expect(gateway.quoteCalls, isEmpty);
+      // MAX on a sell fills the server's balance, still before any quote.
+      await tester.tap(find.text('卖出'));
+      await tester.pumpAndSettle();
+      await _scrollTo(tester, _key('launch2-pool-max'));
+      await tester.tap(_key('launch2-pool-max'));
+      await tester.pump();
+      expect(find.text('7333.18'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a balance the server could not read says so before the '
+        'quote', (tester) async {
+      await openAt(
+        tester,
+        _FakePool(
+          details: <Launch2InstanceDetail>[
+            held(
+              holding: l2HoldingJson(status: 'unavailable', count: '0'),
+            ),
+          ],
+        ),
+      );
+      await _scrollTo(tester, _key('launch2-pool-holding'));
+      expect(find.text('钱包余额暂时读不到 · 报价后显示'), findsOneWidget);
+      // No own trade yet: no 我的外盘成交 section, nothing read.
+      expect(_key('launch2-my-pool-trades'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('an approval that outlasts the quote: the exit re-quotes, '
+        're-prepares and signs the trade-only intent, saying 已刷新报价', (
+      tester,
+    ) async {
+      final wallet = _RecordingWallet(
+        onHandoff: (intent) {
+          // The approval prompt took 45 s: 15 s left on the intent.
+          if (intent.kind == IntentKind.launchApproval) {
+            now = l2Now.add(const Duration(seconds: 45));
+          }
+        },
+      );
+      final gateway = _FakePool(
+        details: <Launch2InstanceDetail>[held()],
+        quotes: <_Answer<Launch2PoolQuote>>[
+          _Answer<Launch2PoolQuote>.value(_buyQuote()),
+        ],
+        prepares: <_Answer<Launch2PoolPrepared>>[
+          _Answer<Launch2PoolPrepared>.value(_buyPrepared()),
+          _Answer<Launch2PoolPrepared>.value(
+            s150Prepared('pool_prepare_buy_ready'),
+          ),
+        ],
+      );
+      await openAt(tester, gateway, wallet: wallet);
+      await _type(tester, '100');
+      await _scrollTo(tester, _key('launch2-pool-confirm'));
+      await tester.tap(_key('launch2-pool-confirm'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      // Quote once for the panel, once for the refresh; prepare twice with
+      // the same trade.
+      expect(gateway.quoteCalls, hasLength(2));
+      expect(gateway.prepareCalls, hasLength(2));
+      expect(gateway.prepareCalls.last, gateway.prepareCalls.first);
+      expect(wallet.handed.map((i) => i.kind).toList(), <IntentKind>[
+        IntentKind.launchApproval,
+        IntentKind.launchPurchase,
+      ]);
+      // The trade signed is the fresh intent's, not the reviewed one's.
+      expect(
+        wallet.handed.last.revision,
+        '5b0e8c2a-7f3d-4e1b-9a6c-2d8f4e0b1a48',
+      );
+      expect(_key('launch2-sign-refreshed'), findsOneWidget);
+      expect(find.textContaining('已刷新报价'), findsOneWidget);
+      expect(_key('launch2-sign-step-main-done'), findsOneWidget);
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('广播不代表已成交'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a refresh worse than the reviewed intent stops at step 2 '
+        'with the reason; the trade is not signed', (tester) async {
+      final wallet = _RecordingWallet(
+        onHandoff: (intent) {
+          if (intent.kind == IntentKind.launchApproval) {
+            now = l2Now.add(const Duration(seconds: 45));
+          }
+        },
+      );
+      final gateway = _FakePool(
+        details: <Launch2InstanceDetail>[held()],
+        quotes: <_Answer<Launch2PoolQuote>>[
+          _Answer<Launch2PoolQuote>.value(_buyQuote()),
+        ],
+        prepares: <_Answer<Launch2PoolPrepared>>[
+          _Answer<Launch2PoolPrepared>.value(_buyPrepared()),
+          _Answer<Launch2PoolPrepared>.value(
+            s150Prepared('pool_prepare_buy_moved'),
+          ),
+        ],
+      );
+      await openAt(tester, gateway, wallet: wallet);
+      await _type(tester, '100');
+      await _scrollTo(tester, _key('launch2-pool-confirm'));
+      await tester.tap(_key('launch2-pool-confirm'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      expect(wallet.handed.map((i) => i.kind).toList(), <IntentKind>[
+        IntentKind.launchApproval,
+      ]);
+      expect(_key('launch2-sign-step-approval-done'), findsOneWidget);
+      expect(_key('launch2-sign-step-main-failed'), findsOneWidget);
+      expect(find.textContaining('最新报价超出了你确认的范围'), findsOneWidget);
+      await tester.tap(find.text('取消'));
+      await tester.pumpAndSettle();
+      // The page says the same; nothing was broadcast, so nothing is locked.
+      expect(_key('launch2-pending'), findsOneWidget);
+      expect(find.textContaining('最新报价超出了你确认的范围'), findsOneWidget);
+      expect(find.textContaining('广播不代表已成交'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('a refresh that keeps asking for an approval, or fails, stops '
+        'at step 2 in Chinese', (tester) async {
+      final wallet = _RecordingWallet(
+        onHandoff: (intent) {
+          if (intent.kind == IntentKind.launchApproval) {
+            now = l2Now.add(const Duration(seconds: 50));
+          }
+        },
+      );
+      final gateway = _FakePool(
+        details: <Launch2InstanceDetail>[held()],
+        quotes: <_Answer<Launch2PoolQuote>>[
+          _Answer<Launch2PoolQuote>.value(_buyQuote()),
+        ],
+        prepares: <_Answer<Launch2PoolPrepared>>[
+          _Answer<Launch2PoolPrepared>.value(_buyPrepared()),
+        ],
+      );
+      await openAt(tester, gateway, wallet: wallet);
+      await _type(tester, '100');
+      await _scrollTo(tester, _key('launch2-pool-confirm'));
+      await tester.tap(_key('launch2-pool-confirm'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      // The first prepare, then four refreshes that still carry approvals.
+      expect(gateway.prepareCalls, hasLength(5));
+      expect(wallet.handed, hasLength(1));
+      expect(find.textContaining('授权还在链上确认'), findsOneWidget);
+      expect(_key('launch2-sign-step-main-failed'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('the wallet\'s own count moving settles the broadcast in a '
+        'definite sentence; the pool count alone does not', (tester) async {
+      final wallet = _RecordingWallet();
+      final gateway = _FakePool(
+        details: <Launch2InstanceDetail>[
+          held(holding: l2HoldingJson(count: '0')),
+          // Someone else's swap: the pool moved, ours did not.
+          held(
+            holding: l2HoldingJson(count: '0'),
+            pool: l2PoolSummaryJson(tradeCount: '13'),
+          ),
+          held(
+            holding: l2HoldingJson(
+              count: '1',
+              lastTradeAt: l2Now.add(const Duration(seconds: 6)),
+            ),
+            pool: l2PoolSummaryJson(tradeCount: '14'),
+          ),
+        ],
+        quotes: <_Answer<Launch2PoolQuote>>[
+          _Answer<Launch2PoolQuote>.value(_buyQuote()),
+        ],
+        prepares: <_Answer<Launch2PoolPrepared>>[
+          _Answer<Launch2PoolPrepared>.value(_buyPrepared()),
+        ],
+      );
+      gateway.poolTrades = _Answer<Launch2PoolTrades>.value(
+        LoopV2Launch2PoolCodec.trades(
+          s150('pool_trades')['body'],
+          instanceId: l2InstanceA,
+          walletId: l2WalletId,
+        ),
+      );
+      await openAt(tester, gateway, wallet: wallet);
+      await _type(tester, '100');
+      await _scrollTo(tester, _key('launch2-pool-confirm'));
+      await tester.tap(_key('launch2-pool-confirm'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      // The re-read after the broadcast: only the pool moved.
+      expect(gateway.detailReads, 2);
+      expect(find.textContaining('广播不代表已成交'), findsOneWidget);
+      expect(find.textContaining('官方池已记录新成交'), findsNothing);
+      // The next poll: our own count moved.
+      await tester.pump(const Duration(hours: 1));
+      await tester.pumpAndSettle();
+      expect(gateway.detailReads, 3);
+      expect(find.text('你的外盘买入已在链上确认。'), findsOneWidget);
+      // 我的外盘成交 appears with the wallet's own trades.
+      await _scrollTo(tester, _key('launch2-my-pool-trades'));
+      expect(gateway.poolTradeReads, 1);
+      expect(find.text('共 1 笔'), findsOneWidget);
+      expect(find.text(r'2,000 $FROG · 得 1.3032 USD1'), findsOneWidget);
+      expect(find.text(r'7,333.18 $FROG · 付 5 USD1'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('我的外盘成交: a failed read is one line with a retry', (
+      tester,
+    ) async {
+      final gateway = _FakePool(details: <Launch2InstanceDetail>[held()]);
+      gateway.poolTrades = const _Answer<Launch2PoolTrades>.fail(
+        LoopChainFailureKind.offline,
+      );
+      await openAt(tester, gateway);
+      await _scrollTo(tester, _key('launch2-my-pool-trades-failed'));
+      expect(find.textContaining('我的外盘成交暂时读不到'), findsOneWidget);
       await _drain(tester);
     });
   });

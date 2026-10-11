@@ -86,13 +86,44 @@ Map<String, Object?> l2PageJson(
   'contractVersion': '2.0',
 };
 
+/// Decision 0148 (loop-api S150-api Decision 0126, OpenAPI at fada8be,
+/// handwritten): the wallet's balances and own pool trades on a
+/// viewer or a position. [status] `available` carries both balances at
+/// [block]; anything else none.
+Map<String, Object?> l2HoldingJson({
+  String status = 'available',
+  String? meme = '7333.18',
+  String? usd1 = '195',
+  String? reason,
+  String? block = '1530',
+  String count = '1',
+  DateTime? lastTradeAt,
+}) {
+  final read = status == 'available';
+  return <String, Object?>{
+    'memeBalance': read ? meme : null,
+    'usd1Balance': read ? usd1 : null,
+    'balanceStatus': status,
+    'balanceReasonCode':
+        reason ??
+        (status == 'unavailable' ? 'LAUNCH2_CHAIN_READ_FAILED' : null),
+    'balanceBlockNumber': read ? block : null,
+    'poolTradeCount': count,
+    'lastPoolTradeAt': count == '0'
+        ? null
+        : _iso(lastTradeAt ?? DateTime.utc(2027, 1, 20, 6, 50)),
+  };
+}
+
 Map<String, Object?> l2ViewerJson({
   int held = 0,
   bool member = false,
   bool eligibleNow = false,
   String bought = '0',
   String net = '0',
+  Map<String, Object?>? holding,
 }) => <String, Object?>{
+  ...?holding,
   'walletId': l2WalletId,
   'nft': <String, Object?>{
     'mintedTokenId': held > 0 ? '1' : null,
@@ -508,15 +539,19 @@ Map<String, Object?> l2BuybacksJson({
   'contractVersion': '2.0',
 };
 
-Map<String, Object?> l2PositionsJson() => <String, Object?>{
+Map<String, Object?> l2PositionsJson({
+  String stage = 'priority',
+  Map<String, Object?>? holding,
+}) => <String, Object?>{
   'positions': <Object?>[
     <String, Object?>{
+      ...?holding,
       'instanceId': l2InstanceA,
       'name': 'Frog Launch',
       'ticker': 'FROG',
       'logoUrl': null,
       'memeAddress': l2Meme,
-      'stage': 'priority',
+      'stage': stage,
       'walletId': l2WalletId,
       'nft': <String, Object?>{'mintedTokenId': '1', 'held': 1},
       'snapshotMember': true,
@@ -606,5 +641,10 @@ Launch2BuybackPage l2Buybacks({
   instanceId: l2InstanceA,
 );
 
-Launch2Positions l2Positions() =>
-    LoopV2Launch2Codec.positions(l2PositionsJson(), mediaUrl: _noMedia);
+Launch2Positions l2Positions({
+  String stage = 'priority',
+  Map<String, Object?>? holding,
+}) => LoopV2Launch2Codec.positions(
+  l2PositionsJson(stage: stage, holding: holding),
+  mediaUrl: _noMedia,
+);

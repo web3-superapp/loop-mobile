@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
+import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -43,7 +44,14 @@ class Launch2PoolTradePanel extends ConsumerStatefulWidget {
 
   /// What the reader holds of the token, when known; MAX on a sell fills it.
   final Launch2PoolHolding? holding;
-  final Future<void> Function(Launch2Intent intent) onPrepared;
+
+  /// Hands the intent to the signing exit with the way to rebuild it when
+  /// the approval outlasts its quote (decision 0148).
+  final Future<void> Function(
+    Launch2Intent intent,
+    Launch2IntentRefresher refresh,
+  )
+  onPrepared;
 
   /// A broadcast of ours is still settling: no second signature.
   final bool locked;
@@ -118,8 +126,10 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
     holding: _holding,
   );
 
-  /// The quote's balance once there is one, else the account's position.
+  /// The server's balance first, the quote's as the fallback (decision
+  /// 0148), else what the page passed.
   Launch2PoolHolding? get _holding => launch2PoolHoldingOf(
+    server: _detail.viewer?.holding,
     quote: _quote ?? _lastQuote,
     position: widget.holding,
   );
@@ -272,7 +282,30 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           );
       if (!mounted) return;
       setState(() => _preparing = false);
-      await widget.onPrepared(prepared.intent);
+      final gateway = ref.read(launch2GatewayProvider);
+      // Decision 0148: the same trade, asked again — quote, then prepare —
+      // with nothing read from the panel's fields, which may have moved on.
+      Future<Launch2Intent> refresh() async {
+        await gateway.poolQuote(
+          instanceId: quote.instanceId,
+          side: quote.side,
+          mode: quote.mode,
+          amount: quote.requestedAmount,
+          slippageBps: quote.slippageBps,
+          walletId: walletId,
+        );
+        final again = await gateway.preparePoolTrade(
+          instanceId: quote.instanceId,
+          walletId: walletId,
+          side: quote.side,
+          mode: quote.mode,
+          amount: quote.requestedAmount,
+          slippageBps: quote.slippageBps,
+        );
+        return again.intent;
+      }
+
+      await widget.onPrepared(prepared.intent, refresh);
       if (!mounted) return;
       _amount.text = '';
     } on LoopChainException catch (failure) {

@@ -1,0 +1,55 @@
+{
+  "_handwritten": "Handwritten from loop-api S150-api (Decision 0126) launch2PoolTradesResourceSchema in openapi/loop-api.v2.json at fada8be (2026-10-11); the amounts follow the 2026-10-11 emulator run (buy 5 USD1 → 7,333.18 net, sell 2,000 → 1.3032 net). No Development capture exists yet.",
+  "route": "GET /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/pool/trades?walletId=d64786bb-408d-415d-8a69-6277d56c921b&limit=5",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+    "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+    "poolTradeCount": "2",
+    "lastPoolTradeAt": "2027-01-20T07:06:00.000Z",
+    "trades": [
+      {
+        "poolTradeId": "a1b2c3d4-0e1f-4a2b-8c3d-4e5f6a7b8c9d",
+        "side": "sell",
+        "inputToken": "meme",
+        "outputToken": "usd1",
+        "amountIn": "2000",
+        "amountOut": "1.3032",
+        "usd1Amount": "1.32975",
+        "memeAmount": "2000",
+        "taxAmount": "0.026595",
+        "taxToken": "usd1",
+        "priceUsd1": "0.0006648",
+        "recipientAddress": "0x000000000000000000000000000000000000000a",
+        "tradedAt": "2027-01-20T07:06:00.000Z",
+        "transactionHash": "0x79dc000000000000000000000000000000000000000000000000000000000920",
+        "logIndex": 3,
+        "blockNumber": "1560"
+      },
+      {
+        "poolTradeId": "b2c3d4e5-1f2a-4b3c-9d4e-5f6a7b8c9d0e",
+        "side": "buy",
+        "inputToken": "usd1",
+        "outputToken": "meme",
+        "amountIn": "5",
+        "amountOut": "7333.18",
+        "usd1Amount": "5",
+        "memeAmount": "7482.838",
+        "taxAmount": "149.657",
+        "taxToken": "meme",
+        "priceUsd1": "0.0006666",
+        "recipientAddress": "0x000000000000000000000000000000000000000a",
+        "tradedAt": "2027-01-20T07:02:00.000Z",
+        "transactionHash": "0xcb45000000000000000000000000000000000000000000000000000000001a5c",
+        "logIndex": 5,
+        "blockNumber": "1520"
+      }
+    ],
+    "contractVersion": "2.0"
+  }
+}
