@@ -1133,7 +1133,7 @@ Widget _trackPending(String key) => Padding(
   child: Text(
     // Decision 0149: the hero names whose hour (「你有算力的小时」); the
     // track lines no longer repeat 「首个小时」 under it.
-    '结算后显示',
+    '有算力的小时结算后显示',
     style: LoopType.bodySm.copyWith(color: LoopColors.text2),
   ),
 );
