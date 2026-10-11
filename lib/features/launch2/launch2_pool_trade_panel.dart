@@ -321,7 +321,15 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           onSelected: (index) =>
               _setSide(index == 0 ? Launch2Side.buy : Launch2Side.sell),
         ),
-        const SizedBox(height: 8),
+        // Decision 0149: the amount basis is a setting under the side, named
+        // like 滑点上限 below — not a second bar of the same pills.
+        const SizedBox(height: 12),
+        Text(
+          '输入方式',
+          key: const ValueKey<String>('launch2-pool-mode-caption'),
+          style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+        ),
+        const SizedBox(height: 6),
         Row(
           children: <Widget>[
             LoopSeg(
