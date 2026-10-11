@@ -604,7 +604,8 @@ class MiningRewardsSummary extends StatelessWidget {
               key: const ValueKey<String>('mining-summary-claimable'),
               label: '当前可领取',
               value: miningLoopFigure(view.claimable),
-              accent: true,
+              // Decision 0149: Lime marks something to take; 0.0000 is not.
+              accent: view.claimable > BigInt.zero,
             ),
           ),
         ],
