@@ -801,7 +801,7 @@ class _SectionHeading extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 4, 4),
     child: Row(
       children: <Widget>[
-        Text(title, style: LoopTypography.title(20, weight: FontWeight.w700)),
+        Text(title, style: launch2PanelHeadingStyle),
         const Spacer(),
         ?info,
       ],

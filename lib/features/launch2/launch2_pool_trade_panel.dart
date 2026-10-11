@@ -507,9 +507,11 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
     );
     return Padding(
       key: const ValueKey<String>('launch2-pool-panel'),
+      // Decision 0149: a page section like 官方池 / 回购 — the same 20 / 700
+      // heading and a section's distance from the pool figures above it.
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        4,
+        launch2PanelTopGap,
         LoopSpacing.page,
         12,
       ),
@@ -518,7 +520,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text('外盘交易', style: LoopTypography.title(18)),
+              Text('外盘交易', style: launch2PanelHeadingStyle),
               const SizedBox(width: 8),
               const LoopBadge('官方池', kind: LoopBadgeKind.launch),
               const Spacer(),

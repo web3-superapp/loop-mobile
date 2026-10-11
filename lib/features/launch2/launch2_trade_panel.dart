@@ -455,7 +455,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
       key: const ValueKey<String>('launch2-trade-panel'),
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        4,
+        launch2PanelTopGap,
         LoopSpacing.page,
         12,
       ),
@@ -464,7 +464,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text(_priority ? '提前购' : '公开内盘', style: LoopTypography.title(18)),
+              Text(_priority ? '提前购' : '公开内盘', style: launch2PanelHeadingStyle),
               const SizedBox(width: 8),
               if (_priority)
                 LoopBadge(
