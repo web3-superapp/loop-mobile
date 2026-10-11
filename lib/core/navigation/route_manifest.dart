@@ -871,7 +871,7 @@ abstract final class LoopRouteManifest {
       slug: 'mining-rules',
       path: '/mining/rules',
       module: LoopRouteModule.mining,
-      title: '权重与价格保护',
+      title: '权重与算力规则',
       prototypeOrder: 51,
       step: 7,
       status: LoopRouteStatus.implemented,

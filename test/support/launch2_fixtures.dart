@@ -129,11 +129,17 @@ Map<String, Object?> l2BuybackRecordJson({bool legacy = true}) =>
     };
 
 /// The keeper's newest attempt (loop-api decision 0121); `null` = never.
-Map<String, Object?> l2KeeperJson() => <String, Object?>{
+/// Decision 0146: [lastResult] / [reasonCode] / [nextEligibleAt] vary it
+/// for the keeper line (running, held, failed).
+Map<String, Object?> l2KeeperJson({
+  String lastResult = 'rejected',
+  String? reasonCode = 'LAUNCH2_BUYBACK_PRINCIPAL_INSUFFICIENT',
+  String? nextEligibleAt = '2027-01-24T08:00:45.000Z',
+}) => <String, Object?>{
   'lastAttemptAt': '2027-01-24T08:00:15.000Z',
-  'lastResult': 'rejected',
-  'reasonCode': 'LAUNCH2_BUYBACK_PRINCIPAL_INSUFFICIENT',
-  'nextEligibleAt': '2027-01-24T08:00:45.000Z',
+  'lastResult': lastResult,
+  'reasonCode': reasonCode,
+  'nextEligibleAt': nextEligibleAt,
 };
 
 Map<String, Object?> l2BuybackSummaryJson({
@@ -479,9 +485,10 @@ Map<String, Object?> l2BuybacksJson({
   String? blocked = 'BUYBACK_PRINCIPAL_INSUFFICIENT',
   bool liveUnavailable = false,
   bool legacy = true,
+  Map<String, Object?>? keeper,
 }) => <String, Object?>{
   'instanceId': l2InstanceA,
-  'summary': l2BuybackSummaryJson(latest: true, legacy: legacy),
+  'summary': l2BuybackSummaryJson(latest: true, legacy: legacy, keeper: keeper),
   'live': liveUnavailable
       ? null
       : <String, Object?>{
@@ -593,8 +600,9 @@ Launch2Intent l2Intent({String kind = 'nft_mint', bool approval = true}) =>
 Launch2BuybackPage l2Buybacks({
   String? blocked = 'BUYBACK_PRINCIPAL_INSUFFICIENT',
   bool legacy = true,
+  Map<String, Object?>? keeper,
 }) => LoopV2Launch2Codec.buybacks(
-  l2BuybacksJson(blocked: blocked, legacy: legacy),
+  l2BuybacksJson(blocked: blocked, legacy: legacy, keeper: keeper),
   instanceId: l2InstanceA,
 );
 

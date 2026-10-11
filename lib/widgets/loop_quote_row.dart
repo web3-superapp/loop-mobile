@@ -114,6 +114,7 @@ class LoopQuoteRow extends StatelessWidget {
     this.semanticLabel,
     this.tapKey,
     this.height = loopQuoteRowHeight,
+    this.titleMinWidth,
   });
 
   final Widget leading;
@@ -135,6 +136,37 @@ class LoopQuoteRow extends StatelessWidget {
   final String? semanticLabel;
   final Key? tapKey;
   final double height;
+
+  /// The width the title keeps however wide the figures are (decision 0146):
+  /// the figure column gives way — a figure scales down, a caption ends in an
+  /// ellipsis — before the ticker does. `null` keeps the 140 / 36 % cap only.
+  final double? titleMinWidth;
+
+  /// The figure column's cap: 140 or 36 % of the row, and — with
+  /// [titleMinWidth] — no wider than what is left once the leading slot
+  /// ([leadingWidth]), the title's minimum, the gaps and the trailing slot
+  /// ([trailingWidth]) are paid for.
+  double _valueMaxWidth(double rowWidth) {
+    final cap = math.min(140, rowWidth * 0.36).toDouble();
+    final minimum = titleMinWidth;
+    if (minimum == null) return cap;
+    final left =
+        rowWidth -
+        leadingWidth -
+        12 -
+        minimum -
+        10 -
+        (trailing == null ? 0 : trailingWidth + 12);
+    return math.max(56, math.min(cap, left));
+  }
+
+  /// The leading slot's width, as [titleMinWidth] budgets it (the 36 logo
+  /// every quote list draws).
+  static const double leadingWidth = 36;
+
+  /// The trailing slot's width, as [titleMinWidth] budgets it: the fixed
+  /// change-pill slot.
+  static double get trailingWidth => loopChangePillSize.width;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +250,7 @@ class LoopQuoteRow extends StatelessWidget {
                 // block never overflows (a 320pt phone).
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: math.min(140, constraints.maxWidth * 0.36),
+                    maxWidth: _valueMaxWidth(constraints.maxWidth),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

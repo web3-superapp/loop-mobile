@@ -181,12 +181,16 @@ String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
   ].join('，');
 }
 
+/// Eight ticker characters at the quote row's 18 px Sora title (decision 0146;
+/// Sora caps and digits advance about 0.62 em).
+const double launch2TickerMinWidth = 92;
+
 /// One v2 row in the OKX quote shape (S121 §1.1.1): logo 36 · ticker over
 /// name · two stage lines on the right · the stage pill in the fixed slot.
 ///
 /// The right two lines follow the stage: 开售倒计时 while upcoming, NFT 已售
 /// and the sale's countdown, the curve's progress and price while it trades,
-/// 已毕业 and the last curve price once graduated. Only the countdown text
+/// the last curve price over 毕业价 once graduated. Only the countdown text
 /// redraws every second.
 class Launch2InstanceTile extends ConsumerWidget {
   const Launch2InstanceTile({
@@ -269,10 +273,13 @@ class Launch2InstanceTile extends ConsumerWidget {
           style: LoopTypography.body(14, color: LoopColors.text2),
         ),
       ),
+      // Decision 0146: the pill already says 已毕业, so the figure column
+      // carries the graduation price over its caption and gives way to the
+      // ticker (titleMinWidth below).
       Launch2Stage.graduated => (
-        '已毕业',
+        launch2PriceLabel(row.curve.priceUsd1),
         Text(
-          '毕业价 ${launch2PriceLabel(row.curve.priceUsd1)}',
+          '毕业价',
           key: const ValueKey<String>('launch2-row-price'),
           style: LoopTypography.body(14, color: LoopColors.text2),
         ),
@@ -297,6 +304,11 @@ class Launch2InstanceTile extends ConsumerWidget {
       valueKey: ValueKey<String>('launch2-row-value-${row.instanceId}'),
       valueCaption: caption,
       trailing: Launch2StagePill(stage: row.stage),
+      // Decision 0146: a graduated row keeps eight ticker characters; the
+      // other stages are drawn as before.
+      titleMinWidth: row.stage == Launch2Stage.graduated
+          ? launch2TickerMinWidth
+          : null,
       onTap: onTap,
       semanticLabel: launch2RowSpokenLabel(row, now),
     );

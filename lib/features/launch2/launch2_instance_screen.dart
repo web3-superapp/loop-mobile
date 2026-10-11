@@ -1228,6 +1228,13 @@ class _BuybackPanel extends ConsumerWidget {
             message: '回购明细暂时读不到 · ${loopChainFailureReason(state.failureKind)}',
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           ),
+        // Decision 0146: the keeper's state, one line.
+        if (launch2KeeperLine(summary) case final Launch2KeeperLine keeper)
+          LoopInlineUnavailable(
+            key: const ValueKey<String>('launch2-buyback-keeper'),
+            icon: keeper.held ? 'clock' : 'refresh',
+            message: keeper.text,
+          ),
         if (summary.paused)
           const LoopInlineUnavailable(
             key: ValueKey<String>('launch2-buyback-paused'),

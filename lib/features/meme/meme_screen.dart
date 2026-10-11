@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_entry.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart'; // S136
 import 'package:loop_mobile/features/launch2/launch2_list.dart'; // S136
 import 'package:loop_mobile/features/launch2/launch2_models.dart'; // S136
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_launchpad.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 
 /// `meme` · MEME (decision 0110; MEME curve launchpad, decision 0120).
@@ -159,6 +161,15 @@ class MemeScreen extends ConsumerWidget {
                     ],
                   );
                 },
+              ),
+            ]
+          // S148 · decision 0146: 「我的项目」 + 「发起」 on the two v2
+          // lists; 经典 keeps its own 「创建代币」 line.
+          : index == 0 || index == 2
+          ? <Widget>[
+              Launch2CreatorActions(
+                onNavigate: open,
+                classicCreatePath: MemeRoute.createPath,
               ),
             ]
           : const <Widget>[],

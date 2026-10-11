@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
@@ -18,6 +20,7 @@ import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
+import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -25,6 +28,7 @@ import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_code
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
@@ -541,9 +545,11 @@ void main() {
       expect(find.text('NFT 已售 42'), findsOneWidget);
       expect(find.text('剩 2天 03:00:00'), findsOneWidget);
       expect(find.text('33.27%'), findsOneWidget);
-      expect(find.text('\$0.0₄4167'), findsOneWidget);
+      // The priority row's price caption and, since decision 0146, the
+      // graduated row's figure (over 毕业价) print the same curve price.
+      expect(find.text('\$0.0₄4167'), findsNWidgets(2));
       expect(find.text('已毕业'), findsWidgets);
-      expect(find.textContaining('毕业价'), findsOneWidget);
+      expect(find.text('毕业价'), findsOneWidget);
       expect(_key('launch2-list-all-provenance'), findsOneWidget);
 
       clock.now = l2Now.add(const Duration(seconds: 1));
@@ -1578,6 +1584,227 @@ void main() {
       );
       expect(find.textContaining('旧版合约'), findsOneWidget);
       await _drain(tester);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // S148 · decision 0146
+  // -------------------------------------------------------------------------
+
+  group('0146 · MEME v2 face: 发起 / 我的项目', () {
+    Future<void> pumpMeme(
+      WidgetTester tester,
+      List<String> opened, {
+      LoopV2MetaSnapshot? meta,
+    }) => _pump(
+      tester,
+      MemeScreen(onNavigate: opened.add),
+      launch2: _FakeLaunch2(
+        list: (stage, cursor) => _Answer<Launch2InstancePage>.value(
+          l2Page(<Map<String, Object?>>[l2RowJson()]),
+        ),
+      ),
+      meta: meta,
+    );
+
+    testWidgets('v2 发射 carries 我的项目 and 发起; 发起 chooses v2 or 经典', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      await pumpMeme(tester, opened);
+      expect(_key('launch2-creator-actions'), findsOneWidget);
+      await tester.tap(_key('launch2-my-projects-action'));
+      expect(opened.last, Launch2CreatorRoute.minePath);
+
+      await tester.tap(_key('launch2-create-action'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-chooser'), findsOneWidget);
+      expect(find.text('v2 发射'), findsWidgets);
+      expect(find.text('经典发射'), findsOneWidget);
+      await tester.tap(_key('launch2-create-chooser-v2'));
+      await tester.pumpAndSettle();
+      expect(opened.last, Launch2CreatorRoute.createPath);
+
+      await tester.tap(_key('launch2-create-action'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-chooser-classic'));
+      await tester.pumpAndSettle();
+      expect(opened.last, MemeRoute.createPath);
+      await _drain(tester);
+    });
+
+    testWidgets('已毕业 carries the entry; 经典 keeps only its own line', (
+      tester,
+    ) async {
+      await pumpMeme(tester, <String>[]);
+      await tester.tap(_key('meme-segment-2'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-creator-actions'), findsOneWidget);
+      await tester.tap(_key('meme-segment-1'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-creator-actions'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('launch2 not available: no v2 face, no entry', (tester) async {
+      await pumpMeme(
+        tester,
+        <String>[],
+        meta: _meta(launch2: LoopV2CapabilityAvailability.deferred),
+      );
+      expect(_key('launch2-creator-actions'), findsNothing);
+      expect(_key('launch2-create-action'), findsNothing);
+      await _drain(tester);
+    });
+  });
+
+  group('0146 · keeper line', () {
+    Launch2BuybackSummary summary({
+      Map<String, Object?>? keeper,
+      bool latest = true,
+      bool paused = false,
+    }) => LoopV2Launch2Codec.buybacks(<String, Object?>{
+      ...l2BuybacksJson(keeper: keeper),
+      'summary': <String, Object?>{
+        ...l2BuybackSummaryJson(latest: latest, keeper: keeper),
+        'paused': paused,
+      },
+    }, instanceId: l2InstanceA).summary;
+
+    test('no keeper or a paused buyback: no line', () {
+      expect(launch2KeeperLine(summary()), isNull);
+      expect(
+        launch2KeeperLine(summary(keeper: l2KeeperJson(), paused: true)),
+        isNull,
+      );
+    });
+
+    test('rejected with a blocking reason: 回购暂缓：<原因> · next try', () {
+      final line = launch2KeeperLine(summary(keeper: l2KeeperJson()))!;
+      expect(line.held, isTrue);
+      expect(line.text, startsWith('回购暂缓：官方池本金保护，本金不足 10,000 USD1 或单笔超过 1%'));
+      expect(line.text, endsWith('后再试'));
+    });
+
+    test('every refusal and failure code reads as Chinese', () {
+      const refusals = <String, String>{
+        'LAUNCH2_BUYBACK_NO_BUDGET': '托管余额不足一笔',
+        'LAUNCH2_BUYBACK_PAUSED': '合约回购已暂停',
+        'LAUNCH2_BUYBACK_NOT_GRADUATED': '项目还没有毕业',
+        'LAUNCH2_BUYBACK_NOT_KEEPER': '回购执行账户未就绪，平台处理中',
+        'LAUNCH2_BUYBACK_ESCROW_MISMATCH': '托管记录与链上不一致，平台核对中',
+        'LAUNCH2_BUYBACK_NO_OUTPUT': '成交到账为 0，平台处理中',
+        'LAUNCH2_BUYBACK_REFERENCE_UNAVAILABLE': '旧版合约价格保护生效',
+        'LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION': '旧版合约价格保护生效',
+        'LAUNCH2_BUYBACK_OUTPUT_BELOW_PROTECTION': '旧版合约价格保护生效',
+        'LAUNCH2_BUYBACK_CONTRACT_REVERTED': '合约拒绝执行，平台处理中',
+        'LAUNCH2_BUYBACK_SOMETHING_NEW': '暂不执行',
+      };
+      for (final entry in refusals.entries) {
+        final line = launch2KeeperLine(
+          summary(
+            keeper: l2KeeperJson(reasonCode: entry.key, nextEligibleAt: null),
+          ),
+        )!;
+        expect(line.held, isTrue, reason: entry.key);
+        expect(line.text, '回购暂缓：${entry.value}', reason: entry.key);
+        expect(line.text, isNot(contains('LAUNCH2_')), reason: entry.key);
+      }
+      final failed = launch2KeeperLine(
+        summary(
+          keeper: l2KeeperJson(
+            lastResult: 'failed',
+            reasonCode: 'LAUNCH2_BUYBACK_TX_DROPPED',
+            nextEligibleAt: null,
+          ),
+        ),
+      )!;
+      expect(failed.text, '回购暂缓：上一笔没有执行，稍后重试');
+      expect(
+        launch2KeeperFailureText('LAUNCH2_BUYBACK_KEEPER_INSUFFICIENT_FUNDS'),
+        '执行账户手续费不足，平台处理中',
+      );
+    });
+
+    test('confirmed, in flight or only the 10 s spacing: running', () {
+      final last = loopDateTimeLabel(DateTime.utc(2027, 1, 24, 8));
+      for (final keeper in <Map<String, Object?>>[
+        l2KeeperJson(lastResult: 'confirmed', reasonCode: null),
+        l2KeeperJson(reasonCode: 'LAUNCH2_BUYBACK_TOO_SOON'),
+      ]) {
+        final line = launch2KeeperLine(summary(keeper: keeper))!;
+        expect(line.held, isFalse);
+        expect(line.text, '自动回购运行中 · 上次 $last');
+      }
+      final inFlight = launch2KeeperLine(
+        summary(
+          keeper: l2KeeperJson(
+            lastResult: 'broadcast',
+            reasonCode: null,
+            nextEligibleAt: null,
+          ),
+          latest: false,
+        ),
+      )!;
+      expect(inFlight.text, '自动回购运行中 · 一笔正在上链');
+    });
+
+    testWidgets('the buyback panel draws the keeper line', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(
+              l2Detail(stage: 'graduated', noNextChange: true),
+            ),
+          ],
+          buybacks: _Answer<Launch2BuybackPage>.value(
+            l2Buybacks(keeper: l2KeeperJson()),
+          ),
+        ),
+      );
+      await _scrollTo(tester, _key('launch2-buyback-keeper'));
+      expect(find.textContaining('回购暂缓：官方池本金保护'), findsOneWidget);
+      await _drain(tester);
+    });
+  });
+
+  group('0146 · graduated row keeps the ticker', () {
+    testWidgets('a graduated row leaves the ticker eight characters at 360', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        Scaffold(
+          body: Column(
+            children: <Widget>[
+              Launch2InstanceTile(
+                row: l2Page(<Map<String, Object?>>[
+                  l2RowJson(
+                    stage: 'graduated',
+                    noNextChange: true,
+                    ticker: 'S13777AB',
+                    price: '0.0006666666',
+                  ),
+                ]).items.single,
+              ),
+            ],
+          ),
+        ),
+        meta: _meta(),
+        size: const Size(360, 800),
+        overrides: <Override>[
+          launch2ClockProvider.overrideWithValue(() => l2Now),
+        ],
+      );
+      final title = tester.renderObject<RenderParagraph>(find.text('S13777AB'));
+      expect(
+        title.constraints.maxWidth,
+        greaterThanOrEqualTo(launch2TickerMinWidth),
+      );
+      expect(find.text('毕业价'), findsOneWidget);
+      expect(find.text('已毕业'), findsOneWidget); // the pill only
     });
   });
 }

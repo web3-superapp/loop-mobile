@@ -785,35 +785,20 @@ class MiningDetailRule extends StatelessWidget {
 /// The prototype's `mining-asset` row: the token, the multiplication that
 /// produced its power, and the power itself.
 ///
-/// `持有量 × 参考价 × 权重` is the module's whole claim, and the App used to
-/// print it as three labelled key-value fragments so the expression never
-/// appeared (visual audit §I.1). The row now writes it the way the prototype
-/// does; the labelled reading stays in the semantic label, where a screen
-/// reader needs the words rather than the operators.
+/// Decision 0146 (loop-api 0123, client 0143): the asset track is weighted
+/// by quantity — `持有量 × 权重`, no price. The row writes the expression the
+/// way the prototype does; the labelled reading stays in the semantic label,
+/// where a screen reader needs the words rather than the operators. The
+/// reference price the legacy snapshot still carries is no longer printed.
 LoopRecordRow miningCompositionRow(
   MiningAssetRow row,
   LoopRowPosition position, {
-  Map<String, String> symbols = const <String, String>{},
   String keyPrefix = 'mining-assets-row',
 }) {
   final label = miningAssetTitle(symbol: row.symbol, assetId: row.assetId);
-  final proxy = row.referencePriceProxyAssetId;
-  final proxyLabel = proxy == null
-      ? ''
-      : miningAssetTitle(symbol: symbols[proxy], assetId: proxy);
-  final pool = row.referencePricePairAddress;
-  // Three ways a price can have been read, and the row says which one it was:
-  // the asset's own pair, another token's (Decision 0044), or one pool
-  // divided out and checked against the declared band (Decision 0059).
-  final priceNote = proxy != null
-      ? '代理价，来自 $proxyLabel'
-      : row.isDerivedPrice && pool != null
-      ? '推导价，来源池 ${miningPricePoolLabel(pool)}'
-      : null;
   // A named row still says which asset it is: the id is the identity, the
   // symbol is only how the registry writes it.
   final identity = row.symbol == null ? null : miningAssetLabel(row.assetId);
-  final second = <String>[?identity, ?priceNote].join(' · ');
   return LoopRecordRow(
     key: ValueKey<String>('$keyPrefix-${row.assetId}'),
     leading: LoopTokenLogo(
@@ -823,25 +808,24 @@ LoopRecordRow miningCompositionRow(
       semanticLabel: label,
     ),
     title: label,
-    subtitle: <String>[
-      '${row.holding} × \$${row.referencePriceUsd} × ${row.weight}×',
-      if (second.isNotEmpty) second,
-    ].join('\n'),
+    subtitle: <String>[miningCompositionExpression(row), ?identity].join('\n'),
     subtitleMaxLines: 2,
     trailing: row.power,
     trailingCaption: '算力',
     semanticLabel: <String>[
       label,
       '持有 ${row.holding}',
-      '参考价 ${row.referencePriceUsd} 美元',
       '权重 ${row.weight}',
       '算力 ${row.power}',
-      if (proxy != null) '参考价来自另一个代币的代理价',
-      if (proxy == null && row.isDerivedPrice) '参考价由一个报价对推导得出',
     ].join('，'),
     position: position,
   );
 }
+
+/// `持有量 × 权重` for one asset row (decision 0146): quantity times weight,
+/// no price.
+String miningCompositionExpression(MiningAssetRow row) =>
+    '${row.holding} × ${row.weight}×';
 
 /// The reasons behind the em dashes a mining primary prints.
 ///

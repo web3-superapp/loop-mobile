@@ -383,6 +383,34 @@ void main() {
       await tester.tap(line);
       await tester.pumpAndSettle();
       expect(find.textContaining(miningBaselineDetail), findsOneWidget);
+      // Decision 0146: the drawer states the quantity basis, no price.
+      expect(find.textContaining('持有数量 × 挖矿权重'), findsOneWidget);
+      expect(find.textContaining('参考价'), findsNothing);
+    });
+
+    testWidgets('POWER COMPOSITION writes quantity × weight (0146)', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningSettledAssets(
+              included: <MiningAssetRow>[
+                s7MiningAssetRow(holding: '0', power: '0'),
+              ],
+            ),
+          ),
+        ),
+      );
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-row-$s7CakeAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      expect(find.textContaining('0 × 0.8×'), findsOneWidget);
+      expect(find.textContaining(r'$2.26'), findsNothing);
     });
 
     testWidgets('the effective version stays inside the 详情', (tester) async {
@@ -689,7 +717,7 @@ void main() {
       expect(opened, isTrue);
     });
 
-    testWidgets('the reference price carries the server reason', (
+    testWidgets('decision 0146: the page prints no reference price', (
       tester,
     ) async {
       await pumpS7Page(
@@ -698,14 +726,23 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      final price = find.byKey(
-        const ValueKey<String>('launch-unavailable-挖矿参考价'),
+      // The asset track is weighted by quantity (loop-api 0123): the
+      // reference price the snapshot still carries is parsed, not shown.
+      expect(
+        find.byKey(const ValueKey<String>('launch-unavailable-挖矿参考价')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, price);
-      expect(price, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-price')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-price-notice')),
+        findsNothing,
+      );
     });
 
-    testWidgets('a settled row prints its holding, price and weight', (
+    testWidgets('a settled row prints its holding and weight, no price', (
       tester,
     ) async {
       await pumpS7Page(
@@ -727,9 +764,11 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      // The three inputs are the prototype's expression, in the order the
-      // formula multiplies them, and every figure is the server's own decimal.
-      expect(find.textContaining(r'12.5 × $2.26 × 0.8×'), findsOneWidget);
+      // Decision 0146: quantity × weight, in the order the formula multiplies
+      // them; every figure is the server's own decimal and no price is shown.
+      expect(find.textContaining('12.5 × 0.8×'), findsOneWidget);
+      expect(find.textContaining(r'$2.26'), findsNothing);
+      expect(miningPowerFormulaHeading, '持有量 × 权重');
       expect(find.text('22.6'), findsOneWidget);
       expect(find.text('算力'), findsWidgets);
       // The list is no longer empty, so the contract notice is gone.
@@ -739,7 +778,7 @@ void main() {
       );
     });
 
-    testWidgets('the native coin row says its price is a proxy', (
+    testWidgets('the native coin row no longer prints a proxy price', (
       tester,
     ) async {
       await pumpS7Page(
@@ -755,9 +794,8 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      // The row names the asset the price came from instead of presenting it
-      // as the coin's own, and names it the way the registry does.
-      expect(find.textContaining('代理价，来自 WBNB'), findsOneWidget);
+      // Decision 0146: no price, so no proxy note either.
+      expect(find.textContaining('代理价'), findsNothing);
       // The proxy's address stays on the proxy's own row; the note no longer
       // asks the reader to match two addresses by eye.
       expect(find.textContaining('0xbb4c'), findsOneWidget);
@@ -844,7 +882,9 @@ void main() {
       expect(find.textContaining('MINING_PRICE'), findsNothing);
     });
 
-    testWidgets('the price version stays inside the 详情', (tester) async {
+    testWidgets('the price version is not on the page (decision 0146)', (
+      tester,
+    ) async {
       await pumpS7Page(
         tester,
         const MiningAssetsScreen(),
@@ -854,20 +894,10 @@ void main() {
       );
 
       expect(find.textContaining(s7PriceVersion), findsNothing);
-      final details = find.byKey(
-        const ValueKey<String>('mining-assets-price-details'),
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-price-details')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, details);
-      await tester.tap(
-        find.descendant(
-          of: details,
-          matching: find.byKey(
-            const ValueKey<String>('loop-disclosure-summary'),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.textContaining(s7PriceVersion), findsOneWidget);
     });
 
     testWidgets('a settlement with no rows is not the contract empty', (
@@ -2244,7 +2274,7 @@ void main() {
       );
     });
 
-    testWidgets('a derived price names the pool it was read from', (
+    testWidgets('a derived-price row prints no price or pool (0146)', (
       tester,
     ) async {
       await pumpS7Page(
@@ -2280,7 +2310,8 @@ void main() {
         ValueKey<String>('mining-assets-row-$s7UsdtAssetId'),
       );
       await scrollToS7Section(tester, row);
-      expect(find.textContaining('推导价，来源池 0x16b9…0dae'), findsOneWidget);
+      expect(find.textContaining('推导价'), findsNothing);
+      expect(find.textContaining('2.99 × 1.5×'), findsOneWidget);
       // The full address is the identity and stays in the model.
       expect(
         find.textContaining('0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae'),

@@ -1,9 +1,11 @@
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
 // ---------------------------------------------------------------------------
@@ -157,6 +159,92 @@ String launch2BuybackBlockedText(String? reasonCode) => switch (reasonCode) {
   'BUYBACK_QUOTE_UNAVAILABLE' => '合约报价暂时读不到，暂不执行',
   'BUYBACK_LEGACY_PRICE_PROTECTION' => '旧版合约价格保护生效，暂不执行',
   _ => '暂不执行',
+};
+
+/// The keeper line of the buyback panel (decision 0146): whether the
+/// server-side buyback keeper (`buyback.keeper`, loop-api decision 0121) is
+/// running or held, in one sentence.
+@immutable
+final class Launch2KeeperLine {
+  const Launch2KeeperLine({required this.text, required this.held});
+
+  final String text;
+
+  /// 「回购暂缓」: the keeper has a blocking reason. Otherwise it is running.
+  final bool held;
+}
+
+/// Decision 0146 (coordinator ruling): `null` — the keeper never looked at
+/// this instance (contract §5: show the ledger only) or the buyback is
+/// paused (the panel already says 回购已暂停). A `rejected` / `failed`
+/// attempt is 「回购暂缓：<原因>」; `pending` / `broadcast` / `confirmed`, and a
+/// `rejected` that is only the 10 s spacing, are 「自动回购运行中 · 上次 <时间>」
+/// where the time is the ledger's last execution.
+Launch2KeeperLine? launch2KeeperLine(Launch2BuybackSummary summary) {
+  final keeper = summary.keeper;
+  if (keeper == null || summary.paused) return null;
+  final code = keeper.reasonCode;
+  final running = switch (keeper.lastResult) {
+    Launch2KeeperResult.pending ||
+    Launch2KeeperResult.broadcast ||
+    Launch2KeeperResult.confirmed => true,
+    Launch2KeeperResult.rejected => code == 'LAUNCH2_BUYBACK_TOO_SOON',
+    Launch2KeeperResult.failed => false,
+  };
+  if (running) {
+    final last = summary.lastExecutedAt;
+    final inFlight =
+        keeper.lastResult == Launch2KeeperResult.pending ||
+        keeper.lastResult == Launch2KeeperResult.broadcast;
+    return Launch2KeeperLine(
+      held: false,
+      text: <String>[
+        '自动回购运行中',
+        if (inFlight) '一笔正在上链',
+        if (last != null) '上次 ${loopDateTimeLabel(last)}',
+      ].join(' · '),
+    );
+  }
+  final reason = keeper.lastResult == Launch2KeeperResult.failed
+      ? launch2KeeperFailureText(code)
+      : launch2KeeperRefusalText(code);
+  final next = keeper.nextEligibleAt;
+  return Launch2KeeperLine(
+    held: true,
+    text: <String>[
+      '回购暂缓：$reason',
+      if (next != null) '${loopClockLabel(next)} 后再试',
+    ].join(' · '),
+  );
+}
+
+/// Why the keeper's simulation was refused (`lastResult: rejected`), per
+/// the frontend contract §3.2 (loop-api decisions 0121 / 0122).
+String launch2KeeperRefusalText(String? reasonCode) => switch (reasonCode) {
+  'LAUNCH2_BUYBACK_PRINCIPAL_INSUFFICIENT' =>
+    '官方池本金保护，本金不足 10,000 USD1 或单笔超过 1%',
+  'LAUNCH2_BUYBACK_NO_BUDGET' => '托管余额不足一笔',
+  'LAUNCH2_BUYBACK_PAUSED' => '合约回购已暂停',
+  'LAUNCH2_BUYBACK_NOT_GRADUATED' => '项目还没有毕业',
+  'LAUNCH2_BUYBACK_NOT_KEEPER' ||
+  'LAUNCH2_BUYBACK_KEEPER_NOT_AUTHORIZED' ||
+  'LAUNCH2_BUYBACK_KEEPER_CHAIN_MISMATCH' => '回购执行账户未就绪，平台处理中',
+  'LAUNCH2_BUYBACK_ESCROW_MISMATCH' => '托管记录与链上不一致，平台核对中',
+  'LAUNCH2_BUYBACK_NO_OUTPUT' => '成交到账为 0，平台处理中',
+  'LAUNCH2_BUYBACK_REFERENCE_UNAVAILABLE' ||
+  'LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION' ||
+  'LAUNCH2_BUYBACK_OUTPUT_BELOW_PROTECTION' => '旧版合约价格保护生效',
+  'LAUNCH2_BUYBACK_GAS_PRICE_ABOVE_CAP' => '链上手续费过高',
+  'LAUNCH2_BUYBACK_CONTRACT_REVERTED' => '合约拒绝执行，平台处理中',
+  _ => '暂不执行',
+};
+
+/// Why a prepared or sent buyback did not execute (`lastResult: failed`).
+String launch2KeeperFailureText(String? reasonCode) => switch (reasonCode) {
+  'LAUNCH2_BUYBACK_PAUSED' => '合约回购已暂停',
+  'LAUNCH2_BUYBACK_KEEPER_INSUFFICIENT_FUNDS' => '执行账户手续费不足，平台处理中',
+  'LAUNCH2_BUYBACK_GAS_ABOVE_CAP' => '链上手续费过高，稍后重试',
+  _ => '上一笔没有执行，稍后重试',
 };
 
 /// zh-CN for the server's own `launch2` refusal rules (contract §4). Every

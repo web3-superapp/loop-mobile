@@ -361,7 +361,7 @@ class _CompositionBlock extends ConsumerWidget {
         failureKind: failureKind,
         rows: 2,
         emptyMessage: '没有读到算力构成',
-        emptyReason: '每个资产的持有量、参考价与权重读到之后显示在这里。',
+        emptyReason: '每个资产的持有量与权重读到之后显示在这里。',
         onRetry: () => unawaited(
           ref.read(miningAssetsControllerProvider.notifier).reload(),
         ),
