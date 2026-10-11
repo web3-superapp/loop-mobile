@@ -1,4 +1,5 @@
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
@@ -78,18 +79,37 @@ abstract final class LoopV2Launch2CreatorCodec {
   /// `latestDeployment` and `minSaleLeadSeconds` are all required keys;
   /// `approval` and `latestDeployment` may be `null`. Without a draft there is
   /// no approval; an approval always names the draft's own version.
+  ///
+  /// Decision 0122 (client 0144) adds `buybackRecipientFixed` (always `true`)
+  /// and `fixedBuybackRecipient` (lower-case address or `null`) to the
+  /// envelope and `rejection` to the approval. All three are optional in the
+  /// schema and always present in answers; a server before 0122 omits them,
+  /// which reads as "no fixed recipient known" and "no rejection".
   static Launch2HooksConfig configEnvelope(
     Object? raw, {
     required String projectId,
   }) {
-    final root = LoopV2Contract.strictMap(raw, const <String>{
-      'draft',
-      'approval',
-      'latestDeployment',
-      'minSaleLeadSeconds',
-      'contractVersion',
-    });
+    final root = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{
+        'draft',
+        'approval',
+        'latestDeployment',
+        'minSaleLeadSeconds',
+        'contractVersion',
+      },
+      const <String>{'buybackRecipientFixed', 'fixedBuybackRecipient'},
+    );
     LoopV2ChainCodec.requireContractVersion(root);
+    if (root.containsKey('buybackRecipientFixed') &&
+        root['buybackRecipientFixed'] != true) {
+      invalid();
+    }
+    final fixedRecipient = LoopV2ChainCodec.optionalString(
+      root,
+      'fixedBuybackRecipient',
+      pattern: _address,
+    );
     final draftRaw = root['draft'];
     final parsed = draftRaw == null
         ? null
@@ -98,11 +118,11 @@ abstract final class LoopV2Launch2CreatorCodec {
     Launch2HooksApproval? approval;
     if (approvalRaw != null) {
       if (parsed == null) invalid();
-      final map = LoopV2Contract.strictMap(approvalRaw, const <String>{
-        'configVersion',
-        'status',
-        'approvedAt',
-      });
+      final map = LoopV2Contract.strictMapWithOptional(
+        approvalRaw,
+        const <String>{'configVersion', 'status', 'approvedAt'},
+        const <String>{'rejection'},
+      );
       final version = LoopV2ChainCodec.requireInt(
         map,
         'configVersion',
@@ -117,10 +137,16 @@ abstract final class LoopV2Launch2CreatorCodec {
       if ((status == Launch2ApprovalStatus.approved) != (approvedAt != null)) {
         invalid();
       }
+      final rejection = DioLoopV2LaunchApi.rejection(map['rejection']);
+      // Rejected and its rejection arrive together (decision 0122).
+      if ((status == Launch2ApprovalStatus.rejected) != (rejection != null)) {
+        invalid();
+      }
       approval = Launch2HooksApproval(
         configVersion: version,
         status: status,
         approvedAt: approvedAt,
+        rejection: rejection,
       );
     } else if (parsed != null) {
       // A draft always has an approval state, even if only awaiting.
@@ -140,6 +166,7 @@ abstract final class LoopV2Launch2CreatorCodec {
           ? null
           : job(jobRaw, projectId: projectId),
       minSaleLead: Duration(seconds: lead),
+      fixedBuybackRecipient: fixedRecipient,
     );
   }
 

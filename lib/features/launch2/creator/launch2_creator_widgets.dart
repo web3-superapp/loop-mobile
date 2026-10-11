@@ -4,6 +4,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -57,6 +58,11 @@ String launch2FailureText(LoopChainException failure) {
       return '配置还在等平台审批，审批通过后再签名。';
     case 'HOOKS_SIGNATURE_EXPIRED':
       return '签名请求已过期，续期后重新签名。';
+    case launch2RecipientFixedCode:
+      return '回购收币地址必须是平台固定地址。这一版配置用的是其他地址，'
+          '请修改资料重新保存一版（需要重新审核）。';
+    case launch2RecipientUnavailableCode:
+      return '平台回购收币地址暂未配置，暂时不能保存或签名，稍后再试。';
   }
   return switch (failure.kind) {
     LoopChainFailureKind.invalidData =>
@@ -357,3 +363,105 @@ String launch2SaleStartLabel(DateTime start, DateTime now) {
   if (delta.inHours >= 1) return '$local（${delta.inHours} 小时后）';
   return '$local（${delta.inMinutes} 分钟后）';
 }
+
+/// The platform's fixed buyback recipient, read only (decision 0144,
+/// requirer answer 9). The owner never types or changes it.
+class Launch2FixedRecipient extends StatelessWidget {
+  const Launch2FixedRecipient({required this.address, super.key});
+
+  /// `null` when the platform has not configured it.
+  final String? address;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = address;
+    return Padding(
+      key: const ValueKey<String>('launch2-fixed-recipient'),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        4,
+      ),
+      child: Semantics(
+        label: value == null ? '回购收币地址暂未配置' : '回购收币地址 $value，平台固定，不可修改',
+        excludeSemantics: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(
+              constraints: const BoxConstraints(minHeight: 44),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: const BoxDecoration(
+                color: LoopColors.card,
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      value ?? '暂未配置',
+                      key: const ValueKey<String>(
+                        'launch2-fixed-recipient-address',
+                      ),
+                      style: LoopType.code.copyWith(
+                        color: value == null
+                            ? LoopColors.text3
+                            : LoopColors.chalk,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const LoopBadge('平台固定'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value == null
+                  ? '平台还没有配置回购收币地址，暂时不能提交。'
+                  : '回购买到的代币转入这个地址。地址由平台固定，不能修改。',
+              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A reviewer rejection (decision 0144): the reason in the owner's words,
+/// the reviewer's own note verbatim, and when.
+class Launch2RejectionNotice extends StatelessWidget {
+  const Launch2RejectionNotice({
+    required this.rejection,
+    super.key,
+    this.configuration = false,
+  });
+
+  final LaunchRejection rejection;
+
+  /// The launch configuration was rejected rather than the project material.
+  final bool configuration;
+
+  @override
+  Widget build(BuildContext context) {
+    final note = rejection.note;
+    return LoopNotice(
+      key: ValueKey<String>('launch2-rejection-${rejection.reason.wireName}'),
+      icon: 'warn',
+      tone: LoopNoticeTone.warn,
+      title: launch2RejectionTitle(rejection),
+      body: <String>[
+        if (note != null) '审核意见：$note',
+        '${loopLocalTimestampLabel(rejection.at)} '
+            '${configuration ? '发射配置' : '项目资料'}未通过审核，'
+            '修改后可以重新提交。',
+      ].join('\n'),
+    );
+  }
+}
+
+/// 「审核未通过：材料不完整」.
+String launch2RejectionTitle(LaunchRejection rejection) =>
+    '审核未通过：${rejection.reason.label}';

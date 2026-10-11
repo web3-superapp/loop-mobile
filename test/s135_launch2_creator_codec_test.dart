@@ -16,6 +16,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/privy/privy_typed_data_signer.dart';
 
+import 'support/s7_fixtures.dart';
+
 // ---------------------------------------------------------------------------
 // S135 · MEME v2 project side: codecs and transport (client decision 0138)
 // ---------------------------------------------------------------------------
@@ -582,4 +584,215 @@ void main() {
       expect(record['_handwritten'], isA<String>(), reason: file.path);
     }
   });
+
+  // -------------------------------------------------------------------------
+  // S145 · client decision 0144 (loop-api decision 0122)
+  // -------------------------------------------------------------------------
+  group('S145 · rejection and fixed recipient', () {
+    Launch2HooksConfig decode(Object? raw) =>
+        LoopV2Launch2CreatorCodec.configEnvelope(raw, projectId: _projectId);
+    Matcher invalid() => throwsA(isA<LoopBackendFailure>());
+
+    test('the fixed recipient is read; true is the only flag value', () {
+      final config = decode(_body('hooks_config_draft'));
+      expect(
+        config.fixedBuybackRecipient,
+        '0x28816c4c4792467390c90e5b426f198570e29307',
+      );
+      expect(config.recipientOutdated, isFalse);
+      final outdated = decode(_body('hooks_config_recipient_outdated'));
+      expect(outdated.recipientOutdated, isTrue);
+
+      final unset = _copy(_body('hooks_config_draft'))
+        ..['fixedBuybackRecipient'] = null;
+      expect(decode(unset).fixedBuybackRecipient, isNull);
+      expect(decode(unset).recipientOutdated, isFalse);
+      // A server before 0122 omits both keys.
+      final old = _copy(_body('hooks_config_draft'))
+        ..remove('fixedBuybackRecipient')
+        ..remove('buybackRecipientFixed');
+      expect(decode(old).fixedBuybackRecipient, isNull);
+
+      final notFixed = _copy(_body('hooks_config_draft'))
+        ..['buybackRecipientFixed'] = false;
+      expect(() => decode(notFixed), invalid());
+      final mixedCase = _copy(_body('hooks_config_draft'))
+        ..['fixedBuybackRecipient'] =
+            '0x28816c4C4792467390C90e5B426F198570E29307';
+      expect(() => decode(mixedCase), invalid());
+    });
+
+    test('a rejected approval carries its rejection, and only it does', () {
+      final config = decode(_body('hooks_config_rejected'));
+      final approval = config.approval!;
+      expect(approval.status, Launch2ApprovalStatus.rejected);
+      expect(approval.rejected, isTrue);
+      expect(approval.approved, isFalse);
+      expect(approval.rejection?.reason, LaunchRejectionReason.other);
+      expect(approval.rejection?.note, 'Logo 与官网不一致，请替换后重提');
+      expect(approval.rejection?.at, DateTime.utc(2026, 10, 10, 8));
+
+      Map<String, Object?> approvalOf(Map<String, Object?> body) =>
+          body['approval']! as Map<String, Object?>;
+      final bare = _copy(_body('hooks_config_rejected'));
+      approvalOf(bare)['rejection'] = null;
+      expect(() => decode(bare), invalid());
+      final stray = _copy(_body('hooks_config_draft'));
+      approvalOf(stray)['rejection'] = approvalOf(
+        _copy(_body('hooks_config_rejected')),
+      )['rejection'];
+      expect(() => decode(stray), invalid());
+      final noNote = _copy(_body('hooks_config_rejected'));
+      (approvalOf(noNote)['rejection']! as Map<String, Object?>)['note'] = null;
+      expect(() => decode(noNote), invalid());
+      final unknown = _copy(_body('hooks_config_rejected'));
+      (approvalOf(unknown)['rejection']!
+              as Map<String, Object?>)['reasonCode'] =
+          'spam';
+      expect(() => decode(unknown), invalid());
+    });
+
+    test('status, rejection and resume follow the new facts', () {
+      final rejected = Launch2CreatorProject(
+        project: _launchProject(LaunchReviewStatus.approved),
+        config: decode(_body('hooks_config_rejected')),
+      );
+      expect(rejected.status, Launch2CreatorStatus.rejected);
+      expect(rejected.rejection?.reason, LaunchRejectionReason.other);
+      expect(
+        rejected.resume,
+        const Launch2CreatorResume(Launch2ResumeTarget.status),
+      );
+
+      // The catalogue rejection wins over the configuration's.
+      final catalogue = Launch2CreatorProject(
+        project: _launchProject(
+          LaunchReviewStatus.rejected,
+          rejection: LaunchRejection(
+            reason: LaunchRejectionReason.incompleteMaterials,
+            note: null,
+            at: DateTime.utc(2026, 10, 11),
+          ),
+        ),
+        config: decode(_body('hooks_config_rejected')),
+      );
+      expect(catalogue.status, Launch2CreatorStatus.rejected);
+      expect(
+        catalogue.rejection?.reason,
+        LaunchRejectionReason.incompleteMaterials,
+      );
+      // Returned has its sentence only.
+      final returned = Launch2CreatorProject(
+        project: _launchProject(LaunchReviewStatus.returned),
+        config: decode(_body('hooks_config_rejected')),
+      );
+      expect(returned.rejection, isNull);
+
+      // A resubmitted (awaiting) version is no longer rejected.
+      final awaiting = Launch2CreatorProject(
+        project: _launchProject(LaunchReviewStatus.approved),
+        config: decode(_body('hooks_config_draft')),
+      );
+      expect(awaiting.status, Launch2CreatorStatus.awaitingApproval);
+      expect(awaiting.rejection, isNull);
+
+      // Approved with another recipient: the status page, not signing.
+      final outdated = Launch2CreatorProject(
+        project: _launchProject(LaunchReviewStatus.approved),
+        config: decode(_body('hooks_config_recipient_outdated')),
+      );
+      expect(outdated.status, Launch2CreatorStatus.approved);
+      expect(
+        outdated.resume,
+        const Launch2CreatorResume(Launch2ResumeTarget.status),
+      );
+      final current = Launch2CreatorProject(
+        project: _launchProject(LaunchReviewStatus.approved),
+        config: decode(_body('hooks_config_approved')),
+      );
+      expect(
+        current.resume,
+        const Launch2CreatorResume(Launch2ResumeTarget.sign),
+      );
+    });
+
+    test('the input takes the server recipient unchanged', () {
+      final input = _input().withBuybackRecipient(
+        '0x28816c4c4792467390c90e5b426f198570e29307',
+      );
+      expect(
+        input.buybackRecipient,
+        '0x28816c4c4792467390c90e5b426f198570e29307',
+      );
+      expect(input.name, _input().name);
+      expect(input.nftSaleStartAt, _input().nftSaleStartAt);
+    });
+
+    test('422 HOOKS_BUYBACK_RECIPIENT_FIXED and 503 '
+        'HOOKS_BUYBACK_RECIPIENT_UNAVAILABLE keep the server rule', () async {
+      Future<LoopChainException> refusal(String name) async {
+        try {
+          await _gateway(_Script(<Object>[_record(name)])).saveConfig(
+            projectId: _projectId,
+            expectedVersion: 1,
+            input: _input(),
+          );
+        } on LoopChainException catch (error) {
+          return error;
+        }
+        fail('expected a refusal for $name');
+      }
+
+      final fixed = await refusal('error_recipient_fixed');
+      expect(fixed.kind, LoopChainFailureKind.validationFailed);
+      expect(fixed.reasonCode, launch2RecipientFixedCode);
+      final unset = await refusal('error_recipient_unavailable');
+      expect(unset.kind, LoopChainFailureKind.unavailable);
+      expect(unset.reasonCode, launch2RecipientUnavailableCode);
+
+      // The signing request and the submission take the 422 as well.
+      final signing = _Script(<Object>[_record('error_recipient_fixed')]);
+      await expectLater(
+        _gateway(signing)
+            .loadSigningRequest(projectId: _projectId, walletId: _walletId),
+        throwsA(
+          isA<LoopChainException>().having(
+            (e) => e.reasonCode,
+            'reason',
+            launch2RecipientFixedCode,
+          ),
+        ),
+      );
+      final submit = _Script(<Object>[_record('error_recipient_fixed')]);
+      await expectLater(
+        _gateway(submit).submitDeployment(
+          projectId: _projectId,
+          walletId: _walletId,
+          request: LoopV2Launch2CreatorCodec.signingRequest(
+            _body('hooks_signing_request'),
+          ),
+          signature: _signature,
+        ),
+        throwsA(
+          isA<LoopChainException>()
+              .having(
+                (e) => e.kind,
+                'kind',
+                LoopChainFailureKind.validationFailed,
+              )
+              .having((e) => e.reasonCode, 'reason', launch2RecipientFixedCode),
+        ),
+      );
+    });
+  });
 }
+
+LaunchProject _launchProject(
+  LaunchReviewStatus status, {
+  LaunchRejection? rejection,
+}) => s7Project(
+  projectId: _projectId,
+  reviewStatus: status,
+  kind: LaunchProjectKind.launch2,
+  rejection: rejection,
+);

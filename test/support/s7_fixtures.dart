@@ -228,6 +228,7 @@ LaunchProject s7Project({
   String? launchId,
   DateTime? submittedAt,
   LaunchProjectKind kind = LaunchProjectKind.ido,
+  LaunchRejection? rejection,
 }) => LaunchProject(
   projectId: projectId,
   name: 'MoonCat',
@@ -256,6 +257,7 @@ LaunchProject s7Project({
   createdAt: DateTime.utc(2026, 9, 8, 1),
   updatedAt: DateTime.utc(2026, 9, 8, 2),
   configVersion: 'launchCatalogV1',
+  rejection: rejection,
 );
 
 /// A non-owner projection: the review trail and the CAS version are `null`.

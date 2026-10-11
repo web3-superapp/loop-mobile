@@ -860,7 +860,9 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
               ),
               LoopButton(
                 key: const ValueKey<String>('launch-apply-submit'),
-                label: selected?.reviewStatus == LaunchReviewStatus.returned
+                label:
+                    selected?.reviewStatus == LaunchReviewStatus.returned ||
+                        selected?.reviewStatus == LaunchReviewStatus.rejected
                     ? '重新提交'
                     : '提交审核',
                 onPressed: selected == null || !selected.canSubmit || state.busy

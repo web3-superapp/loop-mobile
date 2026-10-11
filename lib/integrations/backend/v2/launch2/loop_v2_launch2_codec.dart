@@ -539,8 +539,27 @@ abstract final class LoopV2Launch2Codec {
   }
 
   /// loop-api decision 0118 added `publication` to the snapshot; a server
-  /// from before it omits the key, which reads as no attempt yet.
-  static const snapshotOptionalKeys = <String>{'publication'};
+  /// from before it omits the key, which reads as no attempt yet. Decision
+  /// 0122 added `openedWithoutHolders` the same way (optional in the schema,
+  /// always present in answers).
+  static const snapshotOptionalKeys = <String>{
+    'publication',
+    'openedWithoutHolders',
+  };
+
+  static Launch2OpenedWithoutHolders? _openedWithoutHolders(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'openedAt',
+      'blockNumber',
+      'transactionHash',
+    });
+    return Launch2OpenedWithoutHolders(
+      openedAt: LoopV2ChainCodec.requireTimestamp(map, 'openedAt'),
+      blockNumber: integer(map, 'blockNumber'),
+      transactionHash: hash(map, 'transactionHash'),
+    );
+  }
 
   static const publicationKeys = <String>{
     'status',
@@ -586,7 +605,21 @@ abstract final class LoopV2Launch2Codec {
       snapshotOptionalKeys,
     );
     final status = map['status'];
-    if (status != 'pending' && status != 'published') invalid();
+    if (status != 'pending' &&
+        status != 'published' &&
+        status != 'opened_without_holders') {
+      invalid();
+    }
+    final opened = _openedWithoutHolders(map['openedWithoutHolders']);
+    // Decision 0122: the opening status and its record arrive together, and
+    // an opening has no list, no publication and no closure.
+    if ((status == 'opened_without_holders') != (opened != null)) invalid();
+    if (opened != null &&
+        (map['root'] != null ||
+            map['publication'] != null ||
+            map['closure'] != null)) {
+      invalid();
+    }
     final rawVerification = map['verification'];
     final verification = switch (rawVerification) {
       null => null,
@@ -619,6 +652,7 @@ abstract final class LoopV2Launch2Codec {
       memberCount: LoopV2ChainCodec.optionalInt(map, 'memberCount', minimum: 0),
       publication: _publication(map['publication']),
       closure: _closure(map['closure']),
+      openedWithoutHolders: opened,
     );
   }
 
@@ -641,10 +675,24 @@ abstract final class LoopV2Launch2Codec {
     );
   }
 
+  static Decimal? _optionalAmount(Map<String, Object?> map, String key) =>
+      map[key] == null ? null : amount(map, key);
+
   static Launch2BuybackRecord _buybackRecord(Object? raw) {
     final map = LoopV2Contract.strictMap(raw, buybackRecordKeys);
     final outcome = map['outcome'];
     if (outcome != 'executed' && outcome != 'rejected') invalid();
+    final protection = (
+      _optionalAmount(map, 'minMemeOut'),
+      _optionalAmount(map, 'referencePriceUsd1'),
+      _optionalAmount(map, 'spotPriceUsd1'),
+    );
+    final set = <bool>[
+      protection.$1 != null,
+      protection.$2 != null,
+      protection.$3 != null,
+    ];
+    if (set.toSet().length != 1) invalid();
     return Launch2BuybackRecord(
       buybackId: LoopV2ChainCodec.requireString(
         map,
@@ -656,17 +704,45 @@ abstract final class LoopV2Launch2Codec {
       reasonCode: reasonCode(map, 'reasonCode'),
       usd1Spent: amount(map, 'usd1Spent'),
       memeDelivered: amount(map, 'memeDelivered'),
-      minMemeOut: amount(map, 'minMemeOut'),
-      referencePriceUsd1: amount(map, 'referencePriceUsd1'),
-      spotPriceUsd1: amount(map, 'spotPriceUsd1'),
+      // Decision 0122: a v3 execution has no price protection; the three
+      // figures are all set (v2) or all null (v3).
+      minMemeOut: protection.$1,
+      referencePriceUsd1: protection.$2,
+      spotPriceUsd1: protection.$3,
       executedAt: LoopV2ChainCodec.requireTimestamp(map, 'executedAt'),
       transactionHash: hash(map, 'transactionHash'),
       blockNumber: integer(map, 'blockNumber'),
     );
   }
 
+  /// loop-api decision 0121: optional in the schema, always present in
+  /// answers.
+  static const buybackSummaryOptionalKeys = <String>{'keeper'};
+
+  static Launch2BuybackKeeper? _keeper(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'lastAttemptAt',
+      'lastResult',
+      'reasonCode',
+      'nextEligibleAt',
+    });
+    final result = Launch2KeeperResult.tryParse(map['lastResult']);
+    if (result == null) invalid();
+    return Launch2BuybackKeeper(
+      lastAttemptAt: LoopV2ChainCodec.requireTimestamp(map, 'lastAttemptAt'),
+      lastResult: result,
+      reasonCode: reasonCode(map, 'reasonCode'),
+      nextEligibleAt: LoopV2ChainCodec.optionalTimestamp(map, 'nextEligibleAt'),
+    );
+  }
+
   static Launch2BuybackSummary _buybackSummary(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, buybackSummaryKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      buybackSummaryKeys,
+      buybackSummaryOptionalKeys,
+    );
     return Launch2BuybackSummary(
       recipient: address(map, 'recipient'),
       paused: LoopV2ChainCodec.requireBool(map, 'paused'),
@@ -677,6 +753,7 @@ abstract final class LoopV2Launch2Codec {
       escrowRecordedUsd1: amount(map, 'escrowRecordedUsd1'),
       escrowAvailableUsd1: amount(map, 'escrowAvailableUsd1'),
       latest: map['latest'] == null ? null : _buybackRecord(map['latest']),
+      keeper: _keeper(map['keeper']),
     );
   }
 
@@ -771,6 +848,14 @@ abstract final class LoopV2Launch2Codec {
     final closed = rowValue.stage == Launch2Stage.closedNoHolders;
     if (closed != (snapshot.closure != null) &&
         !(rowValue.stage == Launch2Stage.paused && snapshot.closure != null)) {
+      invalid();
+    }
+    // Decision 0122: an opening without holders is the public round, which
+    // can then graduate or be held; it never precedes the sale's end.
+    if (snapshot.openedWithoutHolders != null &&
+        rowValue.stage != Launch2Stage.public &&
+        rowValue.stage != Launch2Stage.graduated &&
+        rowValue.stage != Launch2Stage.paused) {
       invalid();
     }
     return Launch2InstanceDetail(

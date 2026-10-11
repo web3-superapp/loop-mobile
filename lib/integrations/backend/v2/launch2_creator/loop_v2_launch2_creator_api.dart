@@ -48,13 +48,21 @@ final class DioLoopV2Launch2CreatorApi {
     },
   };
 
-  /// `PUT hooks-config` (§3, §7).
+  /// `GET …/signing-request`: the reads plus `422 VALIDATION_FAILED`
+  /// (`HOOKS_BUYBACK_RECIPIENT_FIXED`, loop-api decision 0122).
+  static final signingErrors = <int, Set<String>>{
+    ...readErrors,
+    422: const <String>{'VALIDATION_FAILED'},
+  };
+
+  /// `PUT hooks-config` (§3, §7; `422` since decision 0122).
   static const saveErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
     403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
+    422: <String>{'VALIDATION_FAILED'},
     429: <String>{'RATE_LIMITED'},
     500: <String>{'INTERNAL_ERROR'},
     503: <String>{
@@ -64,7 +72,7 @@ final class DioLoopV2Launch2CreatorApi {
     },
   };
 
-  /// `POST hooks-deployments` (§5, §7).
+  /// `POST hooks-deployments` (§5, §7; `422` since decision 0122).
   static const submitErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
@@ -75,6 +83,7 @@ final class DioLoopV2Launch2CreatorApi {
       'IDEMPOTENCY_CONFLICT',
       'VERSION_CONFLICT',
     },
+    422: <String>{'VALIDATION_FAILED'},
     429: <String>{'RATE_LIMITED'},
     500: <String>{'INTERNAL_ERROR'},
     503: <String>{
@@ -104,6 +113,7 @@ final class DioLoopV2Launch2CreatorApi {
     required String accessToken,
     required String clientVersion,
     Map<String, Object?>? query,
+    Map<int, Set<String>> errors = readErrors,
   }) async {
     try {
       final response = await _dio.get<Object?>(
@@ -114,7 +124,7 @@ final class DioLoopV2Launch2CreatorApi {
       LoopV2Contract.validateSuccess(response, statusCode: 200);
       return response.data;
     } on DioException catch (error) {
-      throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
+      throw LoopV2Contract.mapDioFailure(error, allowedCodes: errors);
     }
   }
 
@@ -174,6 +184,7 @@ final class DioLoopV2Launch2CreatorApi {
       accessToken: accessToken,
       clientVersion: clientVersion,
       query: <String, Object?>{'walletId': _id(walletId)},
+      errors: signingErrors,
     );
     return LoopV2Launch2CreatorCodec.signingRequest(data);
   }

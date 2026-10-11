@@ -1,5 +1,5 @@
 {
-  "_handwritten": "Handwritten from loop-api docs/frontend-v2-hooks-launch-api.md (S125/S132/S142, decision 0108/0112/0117/0120) and openapi/loop-api.v2.json at loop-api integration/v2 548066c on 2026-10-10; the Development API was not on 548066c yet, so there is no capture of the S142 fields. Replace with a capture from preflight-reads.mts once Development runs 548066c.",
+  "_handwritten": "Handwritten from loop-api docs/frontend-v2-hooks-launch-api.md (S125/S132/S142, decision 0108/0112/0117/0120) and openapi/loop-api.v2.json at loop-api integration/v2 548066c on 2026-10-10; the Development API was not on 548066c yet, so there is no capture of the S142 fields. Replace with a capture from preflight-reads.mts once Development runs 548066c. S145 (client decision 0144): buybackRecipientFixed / fixedBuybackRecipient / approval.rejection added by hand from loop-api 0122 (integration/v2 37c7321).",
   "route": "GET /v2/launch/projects/3fa85f64-5717-4562-b3fc-2c963f66afa6/hooks-config",
   "status": 200,
   "headers": {
@@ -50,7 +50,8 @@
     "approval": {
       "configVersion": 1,
       "status": "approved",
-      "approvedAt": "2026-10-10T01:00:00.000Z"
+      "approvedAt": "2026-10-10T01:00:00.000Z",
+      "rejection": null
     },
     "latestDeployment": {
       "jobId": "00000000-0000-4000-8000-000000000011",
@@ -91,6 +92,8 @@
       "updatedAt": "2026-10-09T00:05:00.000Z"
     },
     "minSaleLeadSeconds": 4200,
+    "buybackRecipientFixed": true,
+    "fixedBuybackRecipient": "0x28816c4c4792467390c90e5b426f198570e29307",
     "contractVersion": "2.0"
   }
 }

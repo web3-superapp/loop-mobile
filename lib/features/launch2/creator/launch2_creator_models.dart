@@ -147,7 +147,10 @@ abstract final class Launch2Template {
     buybackMinIntervalSeconds: 10,
   );
 
-  /// The address the requirer's plan names as the default buyback recipient.
+  /// The platform's fixed buyback recipient as the requirer named it
+  /// (answer 9). A project that does not exist yet has no `hooks-config` to
+  /// read, so the form shows this one; every save sends the server's own
+  /// `fixedBuybackRecipient` read just before it (decision 0144).
   static const String defaultBuybackRecipient =
       '0x28816c4C4792467390C90e5B426F198570E29307';
 
@@ -163,6 +166,15 @@ abstract final class Launch2Template {
   /// configured lead.
   static const Duration suggestedSaleLead = Duration(days: 2);
 }
+
+/// `422 HOOKS_BUYBACK_RECIPIENT_FIXED` (loop-api decision 0122): the
+/// configuration names another recipient than the platform's fixed one.
+const String launch2RecipientFixedCode = 'HOOKS_BUYBACK_RECIPIENT_FIXED';
+
+/// `503 HOOKS_BUYBACK_RECIPIENT_UNAVAILABLE`: the platform has not configured
+/// its fixed recipient; nothing can be saved, signed or submitted.
+const String launch2RecipientUnavailableCode =
+    'HOOKS_BUYBACK_RECIPIENT_UNAVAILABLE';
 
 /// The earliest sale start the picker offers: [now] plus the server's
 /// [lead], rounded up to the next whole minute (decision 0142). The server's
@@ -217,10 +229,14 @@ final class Launch2HooksDraft {
 }
 
 /// The platform's approval of the latest draft (`hooks-config.approval`,
-/// loop-api decision 0120). There is no reject state in the review model.
+/// loop-api decision 0120; `rejected` since 0122).
 enum Launch2ApprovalStatus {
   awaitingApproval('awaiting_approval'),
-  approved('approved');
+  approved('approved'),
+
+  /// A reviewer rejected this version (see [Launch2HooksApproval.rejection]);
+  /// saving a new version resubmits it as awaiting approval.
+  rejected('rejected');
 
   const Launch2ApprovalStatus(this.wireName);
 
@@ -240,6 +256,7 @@ final class Launch2HooksApproval {
     required this.configVersion,
     required this.status,
     required this.approvedAt,
+    this.rejection,
   });
 
   /// Always the draft's own version: a newer save is awaiting approval again.
@@ -249,7 +266,12 @@ final class Launch2HooksApproval {
   /// `null` until approved.
   final DateTime? approvedAt;
 
+  /// Non-null exactly when [status] is rejected (loop-api decision 0122).
+  final LaunchRejection? rejection;
+
   bool get approved => status == Launch2ApprovalStatus.approved;
+
+  bool get rejected => status == Launch2ApprovalStatus.rejected;
 }
 
 /// Everything `GET …/hooks-config` answers (loop-api decision 0120): the
@@ -262,6 +284,7 @@ final class Launch2HooksConfig {
     required this.approval,
     required this.latestDeployment,
     required this.minSaleLead,
+    this.fixedBuybackRecipient,
   });
 
   /// `null` when no draft was saved yet (and then [approval] is `null` too).
@@ -274,6 +297,23 @@ final class Launch2HooksConfig {
   /// `HOOKS_LAUNCH_MIN_SALE_LEAD_SECONDS`: a save accepts a sale start at
   /// least this far after the server's now.
   final Duration minSaleLead;
+
+  /// `LAUNCH2_BUYBACK_RECIPIENT` in lower case (loop-api decision 0122): the
+  /// one recipient a save, a signing request and a submission accept. The
+  /// owner never types it. `null` = the platform has not configured it, and
+  /// every save is refused (`503 HOOKS_BUYBACK_RECIPIENT_UNAVAILABLE`).
+  final String? fixedBuybackRecipient;
+
+  /// The saved draft names another recipient than the fixed one (a version
+  /// saved before decision 0122): it can no longer be signed or submitted;
+  /// the owner saves a new version, which needs approval again.
+  bool get recipientOutdated {
+    final fixed = fixedBuybackRecipient;
+    final saved = draft?.buybackRecipient;
+    return fixed != null &&
+        saved != null &&
+        saved.toLowerCase() != fixed.toLowerCase();
+  }
 
   /// The task that still describes the project. A cancelled task never does;
   /// a finally failed task of an older version does not once a newer draft
@@ -312,6 +352,18 @@ final class Launch2ConfigInput {
   final List<String> links;
   final DateTime nftSaleStart;
   final String buybackRecipient;
+
+  /// The same input naming [recipient] (the platform's fixed address).
+  Launch2ConfigInput withBuybackRecipient(String recipient) =>
+      Launch2ConfigInput(
+        name: name,
+        ticker: ticker,
+        logoAssetUrl: logoAssetUrl,
+        description: description,
+        links: links,
+        nftSaleStart: nftSaleStart,
+        buybackRecipient: recipient,
+      );
 
   /// Unix seconds as the decimal string the contract wants.
   String get nftSaleStartAt =>
@@ -552,7 +604,21 @@ final class Launch2CreatorProject {
     projectId: projectId,
     job: job,
     instance: instance,
+    recipientOutdated: config.recipientOutdated,
   );
+
+  /// The rejection the owner answers now (decision 0144): the catalogue
+  /// project's while it is rejected, otherwise the launch configuration's.
+  /// `null` for a returned project (it has its reason sentence only) and for
+  /// a rejection made before loop-api decision 0122.
+  LaunchRejection? get rejection {
+    if (project.reviewStatus == LaunchReviewStatus.rejected) {
+      return project.rejection;
+    }
+    if (project.reviewStatus == LaunchReviewStatus.returned) return null;
+    final approval = config.approval;
+    return approval != null && approval.rejected ? approval.rejection : null;
+  }
 }
 
 /// Projects the server facts onto the ten design states (decision 0142;
@@ -570,6 +636,7 @@ final class Launch2CreatorProject {
 /// | catalogue review `returned` / `rejected`          | rejected          |
 /// | no Hooks draft                                    | draft             |
 /// | `approval.status = approved`                      | approved          |
+/// | `approval.status = rejected` (0122, client 0144)  | rejected          |
 /// | catalogue review `draft` (never submitted)        | draft             |
 /// | otherwise (`awaiting_approval`)                   | awaiting_approval |
 Launch2CreatorStatus launch2CreatorStatusOf({
@@ -597,6 +664,7 @@ Launch2CreatorStatus launch2CreatorStatusOf({
   }
   if (config.draft == null) return Launch2CreatorStatus.draft;
   if (config.approval?.approved == true) return Launch2CreatorStatus.approved;
+  if (config.approval?.rejected == true) return Launch2CreatorStatus.rejected;
   if (reviewStatus == LaunchReviewStatus.draft) {
     return Launch2CreatorStatus.draft;
   }
@@ -655,6 +723,7 @@ final class Launch2CreatorResume {
 /// | draft (no draft, or never submitted)     | 资料 / 配置页               |
 /// | awaiting_approval, rejected              | 项目状态页（等审核 / 意见） |
 /// | approved                                 | 签名部署页                  |
+/// | approved, recipient outdated (0144)      | 项目状态页（改资料重存）    |
 /// | deploying / deployed / verified / failed | 部署进度页（该任务）        |
 /// | active, instance listed                  | 用户侧项目页                |
 /// | active, instance not listed yet          | 项目状态页                  |
@@ -663,6 +732,7 @@ Launch2CreatorResume launch2CreatorResumeOf({
   required String projectId,
   required Launch2DeploymentJob? job,
   required Launch2InstanceRef? instance,
+  bool recipientOutdated = false,
 }) {
   switch (status) {
     case Launch2CreatorStatus.draft:
@@ -672,7 +742,11 @@ Launch2CreatorResume launch2CreatorResumeOf({
       return const Launch2CreatorResume(Launch2ResumeTarget.status);
     case Launch2CreatorStatus.approved:
     case Launch2CreatorStatus.signing:
-      return const Launch2CreatorResume(Launch2ResumeTarget.sign);
+      // An approved version with another recipient can never be signed
+      // (loop-api decision 0122): the status page says why and how to fix it.
+      return recipientOutdated
+          ? const Launch2CreatorResume(Launch2ResumeTarget.status)
+          : const Launch2CreatorResume(Launch2ResumeTarget.sign);
     case Launch2CreatorStatus.deploying:
     case Launch2CreatorStatus.deployed:
     case Launch2CreatorStatus.verified:

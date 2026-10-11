@@ -182,10 +182,13 @@ enum LaunchReviewStatus {
 
   final String wireName;
 
-  /// Only these two states accept an edit or a submit; every other state is
-  /// read-only and the server answers `409 DATA_STALE`.
+  /// Only these three states accept an edit or a submit; every other state
+  /// is read-only and the server answers `409 DATA_STALE`. `rejected` became
+  /// editable with loop-api decision 0122 (client decision 0144).
   bool get isEditable =>
-      this == LaunchReviewStatus.draft || this == LaunchReviewStatus.returned;
+      this == LaunchReviewStatus.draft ||
+      this == LaunchReviewStatus.returned ||
+      this == LaunchReviewStatus.rejected;
 
   static LaunchReviewStatus? tryParse(String value) {
     for (final status in values) {
@@ -233,8 +236,62 @@ String launchReviewStatusHint(LaunchReviewStatus status) => switch (status) {
   LaunchReviewStatus.inReview => '审核进行中，此期间资料只读。',
   LaunchReviewStatus.returned => '已退回，可以按退回原因修改后重新提交。',
   LaunchReviewStatus.approved => '已通过并进入目录；资料转为只读。',
-  LaunchReviewStatus.rejected => '未通过，且不可重新提交这份申请。',
+  LaunchReviewStatus.rejected => '未通过，可以按审核意见修改后重新提交。',
 };
+
+/// The reviewer's reason for a rejection (loop-api decision 0122, requirer
+/// answer 7). The same five codes serve the catalogue project
+/// (`project.rejection`) and the MEME v2 launch configuration
+/// (`hooks-config.approval.rejection`).
+enum LaunchRejectionReason {
+  incompleteMaterials('incomplete_materials', '材料不完整'),
+  nameOrTickerConflict('name_or_ticker_conflict', '名称或代码与已有项目冲突'),
+  buybackRecipientInvalid('buyback_recipient_invalid', '回购收币地址不符合要求'),
+  communityBindingMismatch('community_binding_mismatch', '绑定的社区与项目不一致'),
+  other('other', '其他原因');
+
+  const LaunchRejectionReason(this.wireName, this.label);
+
+  final String wireName;
+
+  /// The reason in the applicant's words. The five codes are a closed set,
+  /// so the client names them itself.
+  final String label;
+
+  static LaunchRejectionReason? tryParse(Object? value) {
+    for (final reason in values) {
+      if (reason.wireName == value) return reason;
+    }
+    return null;
+  }
+}
+
+/// One reviewer rejection: why, the reviewer's own note to the applicant
+/// (always present for [LaunchRejectionReason.other]) and when.
+@immutable
+final class LaunchRejection {
+  const LaunchRejection({
+    required this.reason,
+    required this.note,
+    required this.at,
+  });
+
+  final LaunchRejectionReason reason;
+
+  /// Rendered verbatim (1–500 characters).
+  final String? note;
+  final DateTime at;
+
+  @override
+  bool operator ==(Object other) =>
+      other is LaunchRejection &&
+      other.reason == reason &&
+      other.note == note &&
+      other.at == at;
+
+  @override
+  int get hashCode => Object.hash(reason, note, at);
+}
 
 @immutable
 final class LaunchOfficialLinks {
@@ -305,6 +362,7 @@ final class LaunchProject {
     required this.createdAt,
     required this.updatedAt,
     required this.configVersion,
+    this.rejection,
   });
 
   final String projectId;
@@ -342,6 +400,11 @@ final class LaunchProject {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String configVersion;
+
+  /// The reviewer's rejection while [reviewStatus] is `rejected` (loop-api
+  /// decision 0122); `null` otherwise, for a non-owner, and for a rejection
+  /// made by the operator script before 0122.
+  final LaunchRejection? rejection;
 
   /// Only the owner's projection carries a version, and only an editable state
   /// accepts a `PUT`.

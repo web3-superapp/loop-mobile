@@ -858,6 +858,93 @@ void main() {
       await expectLater(list(_project(kind: 'meme')), throwsA(anything));
     });
 
+    // S145 · decision 0144 (loop-api 0122): the reviewer rejection.
+    test(
+      'a rejected project carries its rejection; rejected is editable',
+      () async {
+        Future<LaunchProjectPage> list(Map<String, Object?> item) =>
+            DioLoopV2LaunchApi(
+              _dio(
+                _RecordingAdapter(
+                  statusCode: 200,
+                  body: <String, Object?>{
+                    'items': <Object?>[item],
+                    'nextCursor': null,
+                    'contractVersion': '2.0',
+                  },
+                ),
+              ),
+            ).listProjects(accessToken: _token, clientVersion: _clientVersion);
+        Map<String, Object?> rejected(Object? rejection) =>
+            _project(reviewStatus: 'rejected')..['rejection'] = rejection;
+        final page = await list(
+          rejected(<String, Object?>{
+            'reasonCode': 'other',
+            'note': 'Logo 与官网不一致，请替换后重提',
+            'at': '2026-10-10T08:00:00.000Z',
+          }),
+        );
+        final project = page.items.single;
+        expect(project.rejection?.reason, LaunchRejectionReason.other);
+        expect(project.rejection?.note, 'Logo 与官网不一致，请替换后重提');
+        expect(project.rejection?.at, DateTime.utc(2026, 10, 10, 8));
+        expect(project.canEdit, isTrue);
+        expect(LaunchReviewStatus.rejected.isEditable, isTrue);
+        expect(
+          launchReviewStatusHint(LaunchReviewStatus.rejected),
+          contains('重新提交'),
+        );
+        // Every code has its own words.
+        expect(
+          LaunchRejectionReason.values.map((reason) => reason.label).toSet(),
+          hasLength(5),
+        );
+        // A script rejection before 0122 has none; a server before 0122 omits
+        // the key.
+        expect((await list(rejected(null))).items.single.rejection, isNull);
+        expect(
+          (await list(_project(reviewStatus: 'rejected')))
+              .items
+              .single
+              .rejection,
+          isNull,
+        );
+        // An unknown reason, `other` without a note, a blank note, an extra
+        // key, and a rejection on a project that is not rejected: all invalid.
+        for (final bad in <Map<String, Object?>>[
+          rejected(<String, Object?>{
+            'reasonCode': 'spam',
+            'note': null,
+            'at': '2026-10-10T08:00:00.000Z',
+          }),
+          rejected(<String, Object?>{
+            'reasonCode': 'other',
+            'note': null,
+            'at': '2026-10-10T08:00:00.000Z',
+          }),
+          rejected(<String, Object?>{
+            'reasonCode': 'incomplete_materials',
+            'note': '   ',
+            'at': '2026-10-10T08:00:00.000Z',
+          }),
+          rejected(<String, Object?>{
+            'reasonCode': 'incomplete_materials',
+            'note': null,
+            'at': '2026-10-10T08:00:00.000Z',
+            'by': 'reviewer',
+          }),
+          _project(reviewStatus: 'returned')
+            ..['rejection'] = <String, Object?>{
+              'reasonCode': 'incomplete_materials',
+              'note': null,
+              'at': '2026-10-10T08:00:00.000Z',
+            },
+        ]) {
+          await expectLater(list(bad), throwsA(anything));
+        }
+      },
+    );
+
     test('the CAS edit sends no idempotency key', () async {
       final adapter = _RecordingAdapter(
         statusCode: 200,

@@ -494,6 +494,13 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ],
     Launch2Stage.closedNoHolders => <Widget>[_ClosedBlock(detail: detail)],
     Launch2Stage.priority || Launch2Stage.public => <Widget>[
+      if (detail.stage == Launch2Stage.public &&
+          detail.snapshot.openedWithoutHolders != null)
+        const LoopNotice(
+          key: ValueKey<String>('launch2-opened-without-holders'),
+          icon: 'info',
+          body: '$launch2OpenedWithoutHoldersText，没有提前购，人人可买可卖。',
+        ),
       _CurveBlock(detail: detail),
       Launch2TradePanel(
         key: ValueKey<String>('launch2-panel-${detail.instanceId}'),
@@ -643,7 +650,9 @@ class _ClosedBlock extends StatelessWidget {
           const LoopEmptyState(
             illustration: LoopIllustration.holders,
             title: launch2ClosedNoHoldersText,
-            message: 'NFT 发售结束时没有人认购，名单无法生成，提前购和公开内盘不会开始。',
+            message:
+                'NFT 发售结束时没有人认购。这个项目使用旧版合约，'
+                '名单无法生成，提前购和公开内盘不会开始。',
             compact: true,
           ),
           _Figures(
@@ -1145,7 +1154,8 @@ class _BuybackPanel extends ConsumerWidget {
                     body:
                         '每笔 ${launch2Usd1Label(detail.template.buybackOrderUsd1)}，'
                         '两笔间隔至少 ${detail.template.buybackMinIntervalSeconds} 秒；'
-                        '价格保护生效时不执行，被拒的尝试不留记录。',
+                        '官方池 USD1 本金不足 10,000 或单笔超过本金 1% 时不执行，'
+                        '被拒的尝试不留记录。',
                   ),
                   LoopInfoNote(title: '收币地址', body: summary.recipient),
                 ],

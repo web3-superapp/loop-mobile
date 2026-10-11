@@ -18,8 +18,11 @@ enum Launch2Stage {
   nftSale('nft_sale'),
   snapshotPending('snapshot_pending'),
 
-  /// The NFT sale ended with no holder (loop-api decision 0120). Terminal:
-  /// no list can be published, so neither round ever opens.
+  /// The NFT sale ended with no holder on a v2-generation Factory (loop-api
+  /// decision 0120; deprecated by 0122, legacy instances only). Terminal: no
+  /// list can be published, so neither round ever opens. A v3 instance with
+  /// no holder opens the public round instead
+  /// ([Launch2Snapshot.openedWithoutHolders]).
   closedNoHolders('closed_no_holders'),
   priority('priority'),
   public('public'),
@@ -295,7 +298,8 @@ final class Launch2SnapshotPublication {
 }
 
 /// Why a sale was closed without a list (`snapshot.closure`, loop-api
-/// decision 0120). Today the only reason is `no_holders`.
+/// decision 0120; deprecated by 0122, legacy instances only). Today the only
+/// reason is `no_holders`.
 @immutable
 final class Launch2SnapshotClosure {
   const Launch2SnapshotClosure({
@@ -306,6 +310,22 @@ final class Launch2SnapshotClosure {
   /// The confirmed cutoff block at which the NFT had no holder.
   final BigInt cutoffBlock;
   final DateTime closedAt;
+}
+
+/// The public round opened with no NFT holder (`snapshot.openedWithoutHolders`,
+/// loop-api decision 0122, requirer answer 10): a v3 Factory sale that ended
+/// with nothing minted goes straight to `public`, with no early round.
+@immutable
+final class Launch2OpenedWithoutHolders {
+  const Launch2OpenedWithoutHolders({
+    required this.openedAt,
+    required this.blockNumber,
+    required this.transactionHash,
+  });
+
+  final DateTime openedAt;
+  final BigInt blockNumber;
+  final String transactionHash;
 }
 
 @immutable
@@ -320,8 +340,10 @@ final class Launch2Snapshot {
     this.memberCount,
     this.publication,
     this.closure,
+    this.openedWithoutHolders,
   });
 
+  /// `snapshot.status = published`.
   final bool published;
   final Launch2SnapshotVerification? verification;
   final String? root;
@@ -336,6 +358,9 @@ final class Launch2Snapshot {
 
   /// Non-null exactly when the stage is `closed_no_holders`.
   final Launch2SnapshotClosure? closure;
+
+  /// Non-null exactly when `snapshot.status = opened_without_holders`.
+  final Launch2OpenedWithoutHolders? openedWithoutHolders;
 }
 
 /// Set once the instance graduated. A v4 pool has an id, not an address.
@@ -367,13 +392,13 @@ final class Launch2BuybackRecord {
     required this.executed,
     required this.usd1Spent,
     required this.memeDelivered,
-    required this.minMemeOut,
-    required this.referencePriceUsd1,
-    required this.spotPriceUsd1,
     required this.executedAt,
     required this.transactionHash,
     required this.blockNumber,
     this.reasonCode,
+    this.minMemeOut,
+    this.referencePriceUsd1,
+    this.spotPriceUsd1,
   });
 
   final String buybackId;
@@ -383,12 +408,53 @@ final class Launch2BuybackRecord {
   final String? reasonCode;
   final Decimal usd1Spent;
   final Decimal memeDelivered;
-  final Decimal minMemeOut;
-  final Decimal referencePriceUsd1;
-  final Decimal spotPriceUsd1;
+
+  /// The v2 (price-protected) executor's figures; all three `null` for a v3
+  /// execution, which has no price protection (loop-api decision 0122).
+  final Decimal? minMemeOut;
+  final Decimal? referencePriceUsd1;
+  final Decimal? spotPriceUsd1;
   final DateTime executedAt;
   final String transactionHash;
   final BigInt blockNumber;
+}
+
+/// The server-side keeper's newest attempt (`buyback.keeper`, loop-api
+/// decision 0121). Advisory: the ledger stays the source of truth.
+enum Launch2KeeperResult {
+  rejected('rejected'),
+  pending('pending'),
+  broadcast('broadcast'),
+  confirmed('confirmed'),
+  failed('failed');
+
+  const Launch2KeeperResult(this.wireName);
+
+  final String wireName;
+
+  static Launch2KeeperResult? tryParse(Object? value) {
+    for (final result in values) {
+      if (result.wireName == value) return result;
+    }
+    return null;
+  }
+}
+
+@immutable
+final class Launch2BuybackKeeper {
+  const Launch2BuybackKeeper({
+    required this.lastAttemptAt,
+    required this.lastResult,
+    this.reasonCode,
+    this.nextEligibleAt,
+  });
+
+  final DateTime lastAttemptAt;
+  final Launch2KeeperResult lastResult;
+  final String? reasonCode;
+
+  /// The earliest next try; `null` while a transaction is in flight.
+  final DateTime? nextEligibleAt;
 }
 
 @immutable
@@ -403,6 +469,7 @@ final class Launch2BuybackSummary {
     required this.escrowAvailableUsd1,
     this.lastExecutedAt,
     this.latest,
+    this.keeper,
   });
 
   final String recipient;
@@ -414,6 +481,10 @@ final class Launch2BuybackSummary {
   final Decimal escrowRecordedUsd1;
   final Decimal escrowAvailableUsd1;
   final Launch2BuybackRecord? latest;
+
+  /// `null` before the keeper ever looked at this instance, or from a server
+  /// before loop-api decision 0121.
+  final Launch2BuybackKeeper? keeper;
 }
 
 @immutable

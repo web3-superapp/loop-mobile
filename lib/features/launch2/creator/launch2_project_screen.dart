@@ -184,8 +184,8 @@ class Launch2ProjectScreen extends ConsumerWidget {
           ),
         ];
       case Launch2CreatorStatus.awaitingApproval:
-        // 等审核页 (decision 0142): only 审核中 / 已批准 exist; the review
-        // model has no reject state for the launch configuration.
+        // 等审核页 (decision 0142). A rejection shows under `rejected`
+        // (decision 0144); a resubmitted version is awaiting again.
         final submitted = project.submittedAt;
         return <Widget>[
           LoopNotice(
@@ -199,32 +199,59 @@ class Launch2ProjectScreen extends ConsumerWidget {
           ),
         ];
       case Launch2CreatorStatus.rejected:
-        final returned = project.reviewStatus == LaunchReviewStatus.returned;
+        // Returned, rejected material and a rejected launch configuration
+        // are all edited and resubmitted (loop-api decision 0122).
+        final rejection = value.rejection;
+        final catalogue =
+            project.reviewStatus == LaunchReviewStatus.rejected ||
+            project.reviewStatus == LaunchReviewStatus.returned;
         return <Widget>[
-          LoopNotice(
-            key: const ValueKey<String>('launch2-project-next-rejected'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '审核意见',
-            // The server's own sentence, rendered verbatim (decision 0041).
-            body: project.reviewReasonText ?? '这次审核没有通过。',
-          ),
-          if (returned)
-            _action(
-              'launch2-project-resubmit',
-              '修改后重新提交',
-              () => _go(Launch2CreatorRoute.edit(id)),
+          if (rejection != null)
+            KeyedSubtree(
+              key: const ValueKey<String>('launch2-project-next-rejected'),
+              child: Launch2RejectionNotice(
+                rejection: rejection,
+                configuration: !catalogue,
+              ),
             )
           else
-            _action(
-              'launch2-project-restart',
-              '重新发起',
-              () => _go(Launch2CreatorRoute.createPath),
+            LoopNotice(
+              key: const ValueKey<String>('launch2-project-next-rejected'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '审核意见',
+              // The server's own sentence, rendered verbatim (decision 0041).
+              body: project.reviewReasonText ?? '这次审核没有通过，修改后可以重新提交。',
             ),
+          _action(
+            'launch2-project-resubmit',
+            '修改后重新提交',
+            () => _go(Launch2CreatorRoute.edit(id)),
+          ),
         ];
       case Launch2CreatorStatus.approved:
       case Launch2CreatorStatus.signing:
         final approvedAt = value.approval?.approvedAt;
+        if (value.config.recipientOutdated) {
+          // An approved version with another recipient can never be signed
+          // (loop-api decision 0122, ruling 2): save a new version.
+          return <Widget>[
+            const LoopNotice(
+              key: ValueKey<String>('launch2-project-next-recipient-outdated'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '回购收币地址需要更新',
+              body:
+                  '这一版配置的回购收币地址不是平台固定地址，不能签名部署。'
+                  '修改资料重新保存一版后需要重新审核。',
+            ),
+            _action(
+              'launch2-project-update-recipient',
+              '修改资料',
+              () => _go(Launch2CreatorRoute.edit(id)),
+            ),
+          ];
+        }
         return <Widget>[
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-sign'),

@@ -1,0 +1,66 @@
+{
+  "_handwritten": "Handwritten from loop-api docs/frontend-v2-hooks-launch-api.md §11–§12 and openapi/loop-api.v2.json at loop-api integration/v2 37c7321 (decision 0122) on 2026-10-11 for client decision 0144; no Development capture of a rejection exists yet. Replace with a capture from preflight-reads.mts once a reviewer rejects a dev project.",
+  "route": "GET /v2/launch/projects/3fa85f64-5717-4562-b3fc-2c963f66afa6/hooks-config",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "draft": {
+      "projectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "version": 1,
+      "templateVersion": "hooks_launch_v1",
+      "config": {
+        "templateVersion": "hooks_launch_v1",
+        "templateHash": "0x4444444444444444444444444444444444444444444444444444444444444444",
+        "name": "MoonCat",
+        "ticker": "MCAT",
+        "logoAssetUrl": "https://api-dev.example/v2/media/2b1f8c3e-1d2a-4b5c-8d9e-0f1a2b3c4d5e.webp",
+        "description": "A launch project",
+        "links": [
+          "https://mooncat.example/"
+        ],
+        "nftSaleStartAt": "1792000000",
+        "buybackRecipient": "0x28816c4c4792467390c90e5b426f198570e29307",
+        "fixedEconomics": {
+          "chainId": "56",
+          "memeTotalSupplyRaw": "1000000000000000000000000000",
+          "curveSaleSupplyRaw": "800000000000000000000000000",
+          "initialLiquiditySupplyRaw": "200000000000000000000000000",
+          "graduationReserveUsd1Raw": "133333332000000000000000",
+          "nftPriceUsd1Raw": "100000000000000000000",
+          "nftSaleDurationSeconds": 604800,
+          "earlyRoundDurationSeconds": 3600,
+          "perAddressLifetimeBuyCapRaw": "5000000000000000000000000",
+          "curveBuyTaxBps": 1000,
+          "curveSellTaxBps": 1000,
+          "officialPoolBuyTaxBps": 200,
+          "officialPoolSellTaxBps": 200,
+          "lpFee": 2500,
+          "tickSpacing": 60,
+          "buybackOrderUsd1Raw": "100000000000000000000",
+          "buybackMinIntervalSeconds": 10
+        },
+        "configHash": "0x7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "updatedAt": "2026-10-09T00:00:00.000Z"
+    },
+    "approval": {
+      "configVersion": 1,
+      "status": "rejected",
+      "approvedAt": null,
+      "rejection": {
+        "reasonCode": "other",
+        "note": "Logo 与官网不一致，请替换后重提",
+        "at": "2026-10-10T08:00:00.000Z"
+      }
+    },
+    "latestDeployment": null,
+    "minSaleLeadSeconds": 4200,
+    "buybackRecipientFixed": true,
+    "fixedBuybackRecipient": "0x28816c4c4792467390c90e5b426f198570e29307",
+    "contractVersion": "2.0"
+  }
+}
