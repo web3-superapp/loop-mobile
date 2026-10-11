@@ -358,9 +358,19 @@ String miningDisplayReasonText(String? reasonCode) => switch (reasonCode) {
   // Loop-api 0125 (client 0147): judged on the caller's own hours — no hour
   // with power or reward has settled for this account yet, whatever the
   // network has settled.
-  'MINING_NOTHING_SETTLED' => '挖矿规则已生效，你的首个有算力的小时结算后开始展示并可领取。',
+  // Decision 0149: the hero's title now says the state (「你有算力的小时还没有
+  // 结算」), so this line no longer repeats it — it says what happens next.
+  'MINING_NOTHING_SETTLED' => '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
   _ => '结算数据暂时读不到，下面的数字可能不是最新的。',
 };
+
+/// The awaiting hero's title (decision 0149). Judged on the caller's own
+/// hours (loop-api 0125 / client 0147) it is the account's state, not the
+/// network's: the network may have settled many hours already.
+String miningAwaitingTitle(String? awaitingReason) =>
+    awaitingReason == 'MINING_NOTHING_SETTLED'
+    ? '你有算力的小时还没有结算'
+    : '首个小时结算后开始展示奖励';
 
 /// Why nothing has settled yet: `hourly.reasonCode` when the server names
 /// one (`MINING_PARAMETERS_PENDING`), otherwise `MINING_NOTHING_SETTLED` from
@@ -411,7 +421,11 @@ class MiningMinuteHero extends StatelessWidget {
           children: <Widget>[
             Text('分钟增长', style: LoopType.captionSm),
             const SizedBox(height: 10),
-            Text('首个小时结算后开始展示奖励', style: LoopType.headingSm),
+            Text(
+              miningAwaitingTitle(awaitingReason),
+              key: const ValueKey<String>('mining-minute-awaiting-title'),
+              style: LoopType.headingSm,
+            ),
             const SizedBox(height: 6),
             Text(
               awaitingReason == null
@@ -700,7 +714,7 @@ String miningClaimUnavailableText(String? reasonCode, {BigInt? minimum}) =>
     switch (reasonCode) {
       'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，暂不能领取',
       'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂不能领取',
-      'MINING_NOTHING_SETTLED' => '首个小时结算后可领取',
+      'MINING_NOTHING_SETTLED' => '有算力的小时结算后可领取',
       'MINING_CLAIM_NOTHING_TO_CLAIM' => '暂无可领取',
       'MINING_CLAIM_BELOW_MINIMUM' =>
         minimum != null && minimum > BigInt.zero
