@@ -1,0 +1,21 @@
+{
+  "_handwritten": "Handwritten from loop-api S146 (feat/S146-pool-trade, Decision 0124) src/routes/v2/launch2-schemas.ts launch2PoolQuoteSchema / launch2PoolIntentResourceSchema and the route descriptions on 2026-10-11; no Development capture exists yet. Replace with a capture once the route is deployed.",
+  "route": "GET /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/pool/quote",
+  "status": 503,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "code": "CAPABILITY_UNAVAILABLE",
+    "category": "availability",
+    "retryable": true,
+    "userMessageKey": "errors.launch2.pool",
+    "correlationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "detailsSafe": {
+      "reasonCode": "POOL_ROUTER_NOT_CONFIGURED"
+    },
+    "providerReferenceSafe": null
+  }
+}

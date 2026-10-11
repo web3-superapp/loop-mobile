@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 
 // ---------------------------------------------------------------------------
 // MEME v2 (`launch2`) read and intent models (client decision 0139,
@@ -577,6 +578,7 @@ final class Launch2InstanceDetail {
     required this.projectedAt,
     this.graduation,
     this.viewer,
+    this.pool,
   });
 
   final Launch2InstanceRow row;
@@ -596,6 +598,10 @@ final class Launch2InstanceDetail {
   final List<Launch2Trade> recentTrades;
   final Launch2Viewer? viewer;
   final DateTime projectedAt;
+
+  /// The official pool's indexed figures (decision 0145); `null` before
+  /// graduation or from a server before S146.
+  final Launch2PoolSummary? pool;
 
   String get instanceId => row.instanceId;
   Launch2Stage get stage => row.stage;
@@ -687,6 +693,24 @@ enum Launch2IntentKind {
   }
 }
 
+/// Where a buy or a sell executes (decision 0145): the bonding curve before
+/// graduation, the official pool's router after it.
+enum Launch2Venue {
+  curve('curve'),
+  officialPool('official_pool');
+
+  const Launch2Venue(this.wireName);
+
+  final String wireName;
+
+  static Launch2Venue? tryParse(String value) {
+    for (final venue in values) {
+      if (venue.wireName == value) return venue;
+    }
+    return null;
+  }
+}
+
 /// The server's unsigned transaction. The wallet gets [wire] verbatim.
 @immutable
 final class Launch2UnsignedTransaction {
@@ -750,10 +774,24 @@ final class Launch2Intent {
     this.approval,
     this.simulationReasonCode,
     this.signingReasonCode,
+    this.venue = Launch2Venue.curve,
+    this.taxBps,
+    this.taxMeme,
   });
 
   final String intentId;
   final Launch2IntentKind kind;
+
+  /// The curve, or the official pool's router (decision 0145).
+  final Launch2Venue venue;
+
+  /// The tax the trade pays, when the intent's own quote names it; the
+  /// curve's is the template's 10%.
+  final int? taxBps;
+
+  /// An official-pool buy pays its tax in MEME (taken from the output), not
+  /// in USD1; the pool prepare's quote names it.
+  final Decimal? taxMeme;
   final bool expired;
   final String instanceId;
   final String walletId;

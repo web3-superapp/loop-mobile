@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_command_keyring.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
@@ -77,6 +79,50 @@ final class DioLoopV2Launch2Api {
     },
   };
 
+  /// The pool quote (decision 0145, loop-api S146 OpenAPI): a stage that is
+  /// not `graduated` and a simulation that reverted are `422`.
+  static const poolQuoteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'DATA_STALE',
+      'VERSION_CONFLICT',
+    },
+    422: <String>{'VALIDATION_FAILED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
+  /// The pool prepare (loop-api S146 OpenAPI).
+  static const poolWriteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'DATA_STALE',
+      'IDEMPOTENCY_CONFLICT',
+      'INSUFFICIENT_BALANCE',
+      'QUOTE_EXPIRED',
+      'VERSION_CONFLICT',
+    },
+    422: <String>{'VALIDATION_FAILED'},
+    429: <String>{'RATE_LIMITED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
   final Dio _dio;
 
   /// Turns a media id into the address this build loads it from.
@@ -124,6 +170,7 @@ final class DioLoopV2Launch2Api {
     required String idempotencyKey,
     required Map<String, Object?> body,
     LoopV2WriteOrigin? origin,
+    Map<int, Set<String>> errors = writeErrors,
   }) async {
     try {
       final response = await _dio.post<Object?>(
@@ -140,7 +187,7 @@ final class DioLoopV2Launch2Api {
       LoopV2Contract.validateSuccess(response, statusCode: 201);
       return response.data;
     } on DioException catch (error) {
-      throw LoopV2Contract.mapDioFailure(error, allowedCodes: writeErrors);
+      throw LoopV2Contract.mapDioFailure(error, allowedCodes: errors);
     }
   }
 
@@ -274,6 +321,81 @@ final class DioLoopV2Launch2Api {
       LoopV2Launch2Codec.invalid();
     }
     return intent;
+  }
+
+  Future<Launch2PoolQuote> getPoolQuote({
+    required String accessToken,
+    required String clientVersion,
+    required String instanceId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+    required String walletId,
+  }) async {
+    final data = await _get(
+      '$instancesPath/${_id(instanceId)}/pool/quote',
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      errors: poolQuoteErrors,
+      query: <String, Object?>{
+        'side': side.wireName,
+        'mode': mode.wireName,
+        'amount': _amount(amount),
+        'walletId': _id(walletId),
+        'slippageBps': _slippage(slippageBps).toString(),
+      },
+    );
+    return LoopV2Launch2PoolCodec.quote(
+      data,
+      instanceId: instanceId,
+      side: side,
+      mode: mode,
+      walletId: walletId,
+    );
+  }
+
+  Future<Launch2PoolPrepared> postPoolTradePrepare({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String instanceId,
+    required String walletId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+    LoopV2WriteOrigin? origin,
+  }) async {
+    final data = await _post(
+      '$instancesPath/${_id(instanceId)}/pool/trade/prepare',
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      idempotencyKey: idempotencyKey,
+      origin: origin,
+      errors: poolWriteErrors,
+      body: <String, Object?>{
+        'walletId': _id(walletId),
+        'side': side.wireName,
+        'mode': mode.wireName,
+        'amount': _amount(amount),
+        'slippageBps': _slippage(slippageBps),
+      },
+    );
+    return LoopV2Launch2PoolCodec.prepared(
+      data,
+      instanceId: instanceId,
+      side: side,
+      mode: mode,
+      walletId: walletId,
+    );
+  }
+
+  static int _slippage(int bps) {
+    if (bps < 0 || bps > 5000) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    return bps;
   }
 
   Future<Launch2BuybackPage> getBuybacks({
@@ -444,6 +566,55 @@ final class DioLoopV2Launch2Gateway implements Launch2Gateway {
         amount: amount,
         minOut: minOut,
         deadline: deadline,
+        origin: origin,
+      ),
+    );
+  }
+
+  @override
+  Future<Launch2PoolQuote> poolQuote({
+    required String instanceId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+    required String walletId,
+  }) => _read(
+    (accessToken) => _api.getPoolQuote(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      instanceId: instanceId,
+      side: side,
+      mode: mode,
+      amount: amount,
+      slippageBps: slippageBps,
+      walletId: walletId,
+    ),
+  );
+
+  @override
+  Future<Launch2PoolPrepared> preparePoolTrade({
+    required String instanceId,
+    required String walletId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+  }) async {
+    final origin = await _origin();
+    return _write(
+      'launch2:pool:$instanceId:$walletId:${side.wireName}:${mode.wireName}:'
+      '$amount:$slippageBps',
+      (accessToken, key) => _api.postPoolTradePrepare(
+        accessToken: accessToken,
+        clientVersion: _clientVersion,
+        idempotencyKey: key,
+        instanceId: instanceId,
+        walletId: walletId,
+        side: side,
+        mode: mode,
+        amount: amount,
+        slippageBps: slippageBps,
         origin: origin,
       ),
     );
