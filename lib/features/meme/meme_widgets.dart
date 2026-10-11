@@ -61,7 +61,7 @@ class MemeLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final letters = symbol.isEmpty
-        ? '?'
+        ? ''
         : symbol.substring(0, symbol.length < 2 ? symbol.length : 2);
     final corner = radius ?? size * 10 / memeLogoSize;
     final ground = identity == null ? null : memeLogoGroundFor(identity!);
@@ -74,17 +74,26 @@ class MemeLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(corner),
         border: ground == null ? Border.all(color: LoopColors.line) : null,
       ),
-      child: Text(
-        letters,
-        maxLines: 1,
-        style: ground == null
-            ? LoopType.label.copyWith(color: LoopColors.chalk)
-            : LoopTypography.figure(
-                size / 3.2,
-                weight: FontWeight.w700,
-                color: ground.ink,
-              ),
-      ),
+      // Decision 0149: before a ticker is typed (the create pages' preview)
+      // the slot shows the upload glyph, not a 「?」 that read as an error.
+      child: symbol.isEmpty
+          ? LoopIcon(
+              'camera',
+              key: const ValueKey<String>('meme-logo-empty'),
+              size: size / 3,
+              color: LoopColors.text3,
+            )
+          : Text(
+              letters,
+              maxLines: 1,
+              style: ground == null
+                  ? LoopType.label.copyWith(color: LoopColors.chalk)
+                  : LoopTypography.figure(
+                      size / 3.2,
+                      weight: FontWeight.w700,
+                      color: ground.ink,
+                    ),
+            ),
     );
     final url = imageUrl;
     if (url == null) return fallback;
