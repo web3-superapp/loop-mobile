@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -113,7 +114,10 @@ bool _ownPoolSignal(Launch2InstanceDetail detail) =>
 class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   Timer? _poll;
   _Pending? _pending;
-  String? _actionFailure;
+
+  /// Our own last action's refusal (decision 0153): said in the body and
+  /// right above the button that started it.
+  Launch2ActionFailure? _actionFailure;
   bool _preparingNft = false;
   int _settleReads = 0;
 
@@ -252,7 +256,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     final wallet = memeReadActiveWallet(ref);
     final walletId = wallet.walletId ?? detail.viewer?.walletId;
     if (walletId == null) {
-      setState(() => _actionFailure = '还没有可用的钱包，激活钱包后再购买');
+      setState(
+        () => _actionFailure = const Launch2ActionFailure('还没有可用的钱包，激活钱包后再购买'),
+      );
       return;
     }
     setState(() {
@@ -270,7 +276,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       if (!mounted) return;
       setState(() {
         _preparingNft = false;
-        _actionFailure = launch2FailureText(failure);
+        _actionFailure = launch2ActionFailure(
+          failure,
+          usd1Balance: _readUsd1(detail),
+        );
       });
       // The stage moved under the page (the sale ended, possibly closed
       // with no holder): one line here and a fresh read, never an error
@@ -288,11 +297,30 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       if (!mounted) return;
       setState(() {
         _preparingNft = false;
-        _actionFailure = loopChainFailureReason(
-          LoopChainFailureKind.unexpected,
+        _actionFailure = Launch2ActionFailure(
+          loopChainFailureReason(LoopChainFailureKind.unexpected),
         );
       });
     }
+  }
+
+  /// The wallet's USD1 when the server read it at a block (after
+  /// graduation, decision 0148); `null` otherwise — never a guess.
+  static Decimal? _readUsd1(Launch2InstanceDetail detail) {
+    final holding = detail.viewer?.holding;
+    return holding != null && holding.balancesRead ? holding.usd1Balance : null;
+  }
+
+  /// 「去充值」: the wallet's own receive page (`receive`), for the active
+  /// wallet when it has a canonical id.
+  void _openTopUp(Launch2InstanceDetail detail) {
+    final walletId =
+        memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId;
+    _open(
+      walletId != null && WalletRoute.isCanonical(walletId)
+          ? WalletRoute.receive(walletId)
+          : WalletRoute.receivePath,
+    );
   }
 
   @override
@@ -379,7 +407,16 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       case Launch2Stage.nftSale:
         final held = (detail.viewer?.nftHeld ?? 0) > 0;
         final busy = _preparingNft || (_pending?.locked ?? false);
+        final failure = held || _preparingNft ? null : _actionFailure;
         return _BarShell(
+          failure: failure == null
+              ? null
+              : Launch2ActionFailureLine(
+                  key: const ValueKey<String>('launch2-bar-failure'),
+                  message: failure.text,
+                  topUpKey: const ValueKey<String>('launch2-bar-topup'),
+                  onTopUp: failure.topUp ? () => _openTopUp(detail) : null,
+                ),
           child: LoopButton(
             key: const ValueKey<String>('launch2-buy-nft'),
             label: held
@@ -441,11 +478,11 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           icon: pending.locked ? 'clock' : 'info',
           body: pending.text,
         ),
-      if (_actionFailure case final String failure)
+      if (_actionFailure case final Launch2ActionFailure failure)
         LoopInlineUnavailable(
           key: const ValueKey<String>('launch2-action-failed'),
           icon: 'warn',
-          message: failure,
+          message: failure.text,
         ),
       AnimatedSwitcher(
         duration: LoopMotion.of(context, LoopMotion.stageSwitch),
@@ -540,6 +577,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
         locked: _pending?.locked ?? false,
         onPrepared: (intent) => _sign(detail, intent),
+        onTopUp: () => _openTopUp(detail),
         onStageMoved: () => unawaited(
           ref
               .read(
@@ -560,6 +598,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         locked: _pending?.locked ?? false,
         onPrepared: (intent, refresh) =>
             _sign(detail, intent, refresh: refresh),
+        onTopUp: () => _openTopUp(detail),
       ),
       _MyPoolTrades(
         detail: detail,
@@ -587,9 +626,13 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
 }
 
 class _BarShell extends StatelessWidget {
-  const _BarShell({required this.child});
+  const _BarShell({required this.child, this.failure});
 
   final Widget child;
+
+  /// The last refusal of [child]'s action, directly above it, so it shows
+  /// wherever the page is scrolled (decision 0153).
+  final Widget? failure;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -601,7 +644,17 @@ class _BarShell extends StatelessWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-        child: child,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (failure case final Widget line) ...<Widget>[
+              line,
+              const SizedBox(height: 8),
+            ],
+            child,
+          ],
+        ),
       ),
     ),
   );

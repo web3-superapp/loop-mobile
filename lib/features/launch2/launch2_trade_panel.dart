@@ -41,7 +41,12 @@ class Launch2TradePanel extends ConsumerStatefulWidget {
     super.key,
     this.locked = false,
     this.onStageMoved,
+    this.onTopUp,
   });
+
+  /// 「去充值」 under a balance refusal (decision 0153): the wallet's receive
+  /// page. `null` shows no link.
+  final VoidCallback? onTopUp;
 
   final Launch2InstanceDetail detail;
 
@@ -76,6 +81,9 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
   bool _preparing = false;
   String? _notice;
   LoopChainException? _prepareFailure;
+
+  /// What the refused prepare asked to spend, for the shortfall line.
+  Decimal? _preparedAmount;
 
   /// Set while the field holds the server's MAX, so a re-quote does not
   /// clear the line that explains it.
@@ -280,6 +288,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
     setState(() {
       _preparing = true;
       _prepareFailure = null;
+      _preparedAmount = quote.amountIn;
       _notice = null;
     });
     try {
@@ -426,13 +435,13 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
         if (_prepareFailure case final LoopChainException failure
             when failure.reasonCode != 'LAUNCH2_NOT_IN_SNAPSHOT' &&
                 failure.reasonCode != 'LAUNCH2_SNAPSHOT_UNVERIFIED')
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              launch2FailureText(failure),
-              key: const ValueKey<String>('launch2-trade-prepare-failed'),
-              style: LoopType.caption.copyWith(color: LoopColors.warning),
+          _PrepareFailureLine(
+            failure: launch2ActionFailure(
+              failure,
+              requested: _preparedAmount,
+              ticker: _ticker,
             ),
+            onTopUp: widget.onTopUp,
           ),
         const SizedBox(height: 14),
         KeyedSubtree(
@@ -703,4 +712,21 @@ class _QuoteLines extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The refused prepare, right above 「确认买入 / 卖出」 (decision 0153).
+class _PrepareFailureLine extends StatelessWidget {
+  const _PrepareFailureLine({required this.failure, this.onTopUp});
+
+  final Launch2ActionFailure failure;
+  final VoidCallback? onTopUp;
+
+  @override
+  Widget build(BuildContext context) => Launch2ActionFailureLine(
+    key: const ValueKey<String>('launch2-trade-prepare-failed'),
+    padding: const EdgeInsets.only(top: 6),
+    message: failure.text,
+    topUpKey: const ValueKey<String>('launch2-trade-topup'),
+    onTopUp: failure.topUp ? onTopUp : null,
+  );
 }

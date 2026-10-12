@@ -25,6 +25,7 @@ import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
@@ -45,19 +46,36 @@ const String _txHash =
 
 /// One scripted answer: a value, a failure, or a read that never answers.
 final class _Answer<T> {
-  const _Answer.value(T this.value) : failure = null, pending = false;
+  const _Answer.value(T this.value)
+    : failure = null,
+      pending = false,
+      exception = null;
   const _Answer.fail(LoopChainFailureKind kind, {String? reasonCode})
     : value = null,
       failure = (kind, reasonCode),
+      pending = false,
+      exception = null;
+  const _Answer.pending()
+    : value = null,
+      failure = null,
+      pending = true,
+      exception = null;
+
+  /// A refusal carrying the server's figures (decision 0153).
+  const _Answer.error(LoopChainException this.exception)
+    : value = null,
+      failure = null,
       pending = false;
-  const _Answer.pending() : value = null, failure = null, pending = true;
 
   final T? value;
   final (LoopChainFailureKind, String?)? failure;
   final bool pending;
+  final LoopChainException? exception;
 
   Future<T> resolve() {
     if (pending) return Completer<T>().future;
+    final thrown = exception;
+    if (thrown != null) return Future<T>.error(thrown);
     final f = failure;
     if (f != null) {
       return Future<T>.error(LoopChainException(f.$1, reasonCode: f.$2));
@@ -986,7 +1004,8 @@ void main() {
       await tester.tap(_key('launch2-nft-confirm-button'));
       await tester.pumpAndSettle();
       expect(_key('launch2-action-failed'), findsOneWidget);
-      expect(find.textContaining('tBNB 手续费不足'), findsOneWidget);
+      // Decision 0153: the body line and the line above the button.
+      expect(find.textContaining('tBNB 手续费不足'), findsNWidgets(2));
       expect(wallet.handed, isEmpty);
       await _drain(tester);
     });
@@ -1186,6 +1205,289 @@ void main() {
       expect(_key('launch2-trade-notice'), findsNothing);
       expect(_key('launch2-trade-prepare-failed'), findsNothing);
       await _drain(tester);
+    });
+  });
+
+  group('0153 · a failed action is said at its button', () {
+    Finder liveRegionIn(Finder scope) => find.descendant(
+      of: scope,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics && (widget.properties.liveRegion ?? false),
+      ),
+    );
+
+    Future<void> confirmNft(WidgetTester tester) async {
+      await tester.tap(_key('launch2-buy-nft'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('USD1 short on the NFT: the figure above the button, a live '
+        'region, 去充值 opens receive; a later success clears it', (tester) async {
+      final wallet = _RecordingWallet();
+      final opened = <String>[];
+      final gateway = _FakeLaunch2(
+        details: <_Answer<Launch2InstanceDetail>>[
+          _Answer<Launch2InstanceDetail>.value(l2Detail()),
+        ],
+        nftAnswer: const _Answer<Launch2Intent>.error(
+          LoopChainException(
+            LoopChainFailureKind.insufficientBalance,
+            reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+            requiredUsd1: '100',
+          ),
+        ),
+      );
+      // A phone-sized viewport, scrolled to the bottom: the body line is
+      // out of view, the bar's line is not.
+      await _pump(
+        tester,
+        Launch2InstanceScreen(instanceId: l2InstanceA, onNavigate: opened.add),
+        launch2: gateway,
+        wallet: wallet,
+        size: const Size(360, 640),
+      );
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -2000));
+      await tester.pumpAndSettle();
+      await confirmNft(tester);
+      final bar = _key('launch2-bar-failure');
+      expect(bar, findsOneWidget);
+      expect(
+        find.descendant(of: bar, matching: find.text('USD1 余额不足：需要 100 USD1')),
+        findsOneWidget,
+      );
+      final line = tester.getRect(bar);
+      final button = tester.getRect(_key('launch2-buy-nft'));
+      expect(line.bottom, lessThanOrEqualTo(button.top));
+      expect(button.top - line.bottom, lessThan(20));
+      expect(line.top, greaterThanOrEqualTo(0));
+      expect(button.bottom, lessThanOrEqualTo(640));
+      expect(liveRegionIn(bar), findsOneWidget);
+      expect(_key('launch2-action-failed'), findsOneWidget);
+      expect(find.text('购买 NFT'), findsOneWidget);
+      expect(wallet.handed, isEmpty);
+
+      await tester.tap(_key('launch2-bar-topup'));
+      await tester.pumpAndSettle();
+      expect(opened, <String>['/wallet/receive?walletId=$l2WalletId']);
+
+      gateway.nftAnswer = _Answer<Launch2Intent>.value(l2Intent());
+      await confirmNft(tester);
+      expect(_key('launch2-sign-sheet'), findsOneWidget);
+      expect(_key('launch2-bar-failure'), findsNothing);
+      expect(_key('launch2-action-failed'), findsNothing);
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-bar-failure'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('tBNB short: says it is the fee, offers 去充值', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(l2Detail()),
+          ],
+          nftAnswer: const _Answer<Launch2Intent>.fail(
+            LoopChainFailureKind.insufficientBalance,
+            reasonCode: 'LAUNCH2_GAS_INSUFFICIENT',
+          ),
+        ),
+        wallet: _RecordingWallet(),
+      );
+      await confirmNft(tester);
+      final bar = _key('launch2-bar-failure');
+      expect(
+        find.descendant(of: bar, matching: find.text(launch2GasShortText)),
+        findsOneWidget,
+      );
+      expect(_key('launch2-bar-topup'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a refusal that is not about balance has no 去充值', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(l2Detail()),
+          ],
+          nftAnswer: const _Answer<Launch2Intent>.fail(
+            LoopChainFailureKind.versionConflict,
+            reasonCode: 'LAUNCH2_NFT_ALREADY_MINTED',
+          ),
+        ),
+        wallet: _RecordingWallet(),
+      );
+      await confirmNft(tester);
+      expect(_key('launch2-bar-failure'), findsOneWidget);
+      expect(_key('launch2-bar-topup'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('curve buy short: the line above 确认买入 with both figures', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      final gateway = _FakeLaunch2(
+        details: <_Answer<Launch2InstanceDetail>>[
+          _Answer<Launch2InstanceDetail>.value(
+            l2Detail(
+              stage: 'priority',
+              viewer: l2ViewerJson(member: true, eligibleNow: true),
+            ),
+          ),
+        ],
+        quotes: <_Answer<Launch2Quote>>[_Answer<Launch2Quote>.value(l2Quote())],
+        tradeAnswers: <_Answer<Launch2Intent>>[
+          const _Answer<Launch2Intent>.error(
+            LoopChainException(
+              LoopChainFailureKind.insufficientBalance,
+              reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+              maxAmountIn: '30',
+            ),
+          ),
+          _Answer<Launch2Intent>.value(l2Intent()),
+        ],
+      );
+      await _pump(
+        tester,
+        Launch2InstanceScreen(instanceId: l2InstanceA, onNavigate: opened.add),
+        launch2: gateway,
+        wallet: _RecordingWallet(),
+      );
+      await tester.enterText(_key('launch2-trade-amount'), '50');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-trade-confirm'));
+      await tester.pumpAndSettle();
+      final line = _key('launch2-trade-prepare-failed');
+      expect(
+        find.descendant(
+          of: line,
+          matching: find.text('USD1 余额不足：需要 50 USD1，最多可付 30 USD1'),
+        ),
+        findsOneWidget,
+      );
+      expect(liveRegionIn(line), findsOneWidget);
+      expect(
+        tester.getRect(line).bottom,
+        lessThanOrEqualTo(tester.getRect(_key('launch2-trade-confirm')).top),
+      );
+      await tester.tap(_key('launch2-trade-topup'));
+      await tester.pumpAndSettle();
+      expect(opened, <String>['/wallet/receive?walletId=$l2WalletId']);
+
+      await tester.tap(_key('launch2-trade-confirm'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-sign-sheet'), findsOneWidget);
+      expect(_key('launch2-trade-prepare-failed'), findsNothing);
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      await _drain(tester);
+    });
+
+    test('the copy carries what it was given and invents nothing', () {
+      const nft = LoopChainException(
+        LoopChainFailureKind.insufficientBalance,
+        reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+        requiredUsd1: '100',
+      );
+      expect(
+        launch2ActionFailure(nft, usd1Balance: Decimal.zero),
+        const Launch2ActionFailure(
+          'USD1 余额不足：需要 100 USD1，当前 0 USD1',
+          topUp: true,
+        ),
+      );
+      expect(launch2ActionFailure(nft).text, 'USD1 余额不足：需要 100 USD1');
+      expect(
+        launch2ActionFailure(
+          const LoopChainException(
+            LoopChainFailureKind.insufficientBalance,
+            reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+          ),
+        ),
+        const Launch2ActionFailure('USD1 余额不足', topUp: true),
+      );
+      expect(
+        launch2ActionFailure(
+          const LoopChainException(
+            LoopChainFailureKind.insufficientBalance,
+            reasonCode: 'LAUNCH2_MEME_BALANCE_INSUFFICIENT',
+            requiredAmountIn: '12',
+            maxAmountIn: '5',
+          ),
+          maxIsBalance: true,
+          ticker: 'PEPE',
+        ),
+        const Launch2ActionFailure(r'卖出数量超过持有：需要 12 $PEPE，当前持有 5 $PEPE'),
+      );
+      expect(
+        launch2ActionFailure(
+          const LoopChainException(LoopChainFailureKind.insufficientBalance),
+        ).topUp,
+        isTrue,
+      );
+      expect(
+        launch2ActionFailure(
+          const LoopChainException(
+            LoopChainFailureKind.validationFailed,
+            reasonCode: 'LAUNCH2_AMOUNT_INVALID',
+          ),
+        ),
+        const Launch2ActionFailure('金额不正确'),
+      );
+    });
+
+    test('detailsSafe carries the balance figures; a bad one is dropped, '
+        'never the refusal', () {
+      final details = LoopFailureDetails.tryRead(<String, Object?>{
+        'reasonCode': 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+        'requiredUsd1': '100',
+        'requiredAmountIn': '100.5',
+        'maxAmountIn': '0',
+      })!;
+      final failure = loopChainExceptionForV2(
+        LoopBackendFailure(
+          LoopBackendFailureKind.unexpected,
+          statusCode: 409,
+          code: 'INSUFFICIENT_BALANCE',
+          detailsSafe: details,
+        ),
+        write: true,
+      );
+      expect(failure.kind, LoopChainFailureKind.insufficientBalance);
+      expect(failure.reasonCode, 'LAUNCH2_USD1_BALANCE_INSUFFICIENT');
+      expect(failure.requiredUsd1, '100');
+      expect(failure.requiredAmountIn, '100.5');
+      expect(failure.maxAmountIn, '0');
+      final junk = LoopFailureDetails.tryRead(<String, Object?>{
+        'reasonCode': 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+        'requiredUsd1': 100,
+        'maxAmountIn': '-1',
+      })!;
+      expect(junk.reasonCode, 'LAUNCH2_USD1_BALANCE_INSUFFICIENT');
+      expect(junk.requiredUsd1, isNull);
+      expect(junk.maxAmountIn, isNull);
+      expect(
+        LoopFailureDetails.tryRead(<String, Object?>{'requiredUsd1': '100'})
+            ?.requiredUsd1,
+        '100',
+      );
     });
   });
 

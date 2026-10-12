@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
 /// A countdown to a server time (`nextChangeAt`), read against the one
@@ -352,6 +353,101 @@ class Launch2Greyed extends StatelessWidget {
       child: ColorFiltered(
         colorFilter: const ColorFilter.matrix(_greyscale),
         child: child,
+      ),
+    );
+  }
+}
+
+/// One failed action, right above the button that started it (client
+/// decision 0153): the reason with its figures, wrapping instead of
+/// truncating, and 「去充值」 under a balance refusal.
+///
+/// It is a live region, so a screen reader says it the moment it appears —
+/// the button under it went back to its label and would say nothing.
+class Launch2ActionFailureLine extends StatelessWidget {
+  const Launch2ActionFailureLine({
+    required this.message,
+    super.key,
+    this.onTopUp,
+    this.topUpKey = const ValueKey<String>('launch2-topup'),
+    this.padding = EdgeInsets.zero,
+  });
+
+  final String message;
+
+  /// Opens the wallet's receive page. `null` shows no link.
+  final VoidCallback? onTopUp;
+  final Key topUpKey;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final topUp = onTopUp;
+    return Padding(
+      padding: padding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Semantics(
+            liveRegion: true,
+            container: true,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: LoopIcon('warn', size: 15, color: LoopColors.warning),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: LoopType.caption.copyWith(color: LoopColors.warning),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (topUp != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Semantics(
+                button: true,
+                label: '去充值',
+                excludeSemantics: true,
+                child: LoopPressable(
+                  key: topUpKey,
+                  onTap: topUp,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: LoopTouch.minimum,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 23, right: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            '去充值',
+                            style: LoopType.caption.copyWith(
+                              color: LoopColors.text2,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const LoopIcon(
+                            'chevron',
+                            size: 14,
+                            color: LoopColors.text3,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

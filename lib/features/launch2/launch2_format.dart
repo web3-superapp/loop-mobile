@@ -373,6 +373,99 @@ String launch2FailureText(LoopChainException failure) {
   return loopChainFailureReason(failure.kind);
 }
 
+/// One failed action, said next to the button that started it (client
+/// decision 0153).
+@immutable
+final class Launch2ActionFailure {
+  const Launch2ActionFailure(this.text, {this.topUp = false});
+
+  final String text;
+
+  /// A balance refusal (USD1 or tBNB): the line offers 「去充值」.
+  final bool topUp;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Launch2ActionFailure &&
+          other.text == text &&
+          other.topUp == topUp;
+
+  @override
+  int get hashCode => Object.hash(text, topUp);
+}
+
+/// zh-CN for the tBNB gas refusal at the button: names the token and the
+/// fee, the server sends no figure for it.
+const String launch2GasShortText = 'tBNB 手续费不足：钱包里的 tBNB 不够付这笔的网络手续费，充值后再试';
+
+Decimal? _detailFigure(String? raw) =>
+    raw == null ? null : Decimal.tryParse(raw);
+
+/// The line for one failed prepare, with the figures the refusal carried.
+///
+/// `LAUNCH2_USD1_BALANCE_INSUFFICIENT` says what the action needs — the
+/// server's `requiredUsd1` (NFT) or `requiredAmountIn` (official pool),
+/// else [requested], what this request asked to spend — and what the
+/// wallet has: `maxAmountIn` when [maxIsBalance] (the official pool sends
+/// its balance there), else a balance the page has read ([usd1Balance]).
+/// On the curve `maxAmountIn` is the balance-limited maximum and is said as
+/// 「最多可付」. A refusal without figures still gets its sentence; nothing
+/// is invented.
+///
+/// [fallback] words every other refusal (the curve's or the pool's own
+/// catalogue).
+Launch2ActionFailure launch2ActionFailure(
+  LoopChainException failure, {
+  String Function(LoopChainException failure) fallback = launch2FailureText,
+  Decimal? requested,
+  Decimal? usd1Balance,
+  bool maxIsBalance = false,
+  String ticker = '',
+}) {
+  final reason = failure.reasonCode;
+  final required =
+      _detailFigure(failure.requiredUsd1) ??
+      _detailFigure(failure.requiredAmountIn) ??
+      requested;
+  final max = _detailFigure(failure.maxAmountIn);
+  switch (reason) {
+    case 'LAUNCH2_USD1_BALANCE_INSUFFICIENT':
+      String usd1(Decimal value) =>
+          launch2Usd1Label(value, maxFractionDigits: 4);
+      final current = maxIsBalance ? max : usd1Balance;
+      final parts = <String>[
+        if (required != null) '需要 ${usd1(required)}',
+        if (current != null)
+          '当前 ${usd1(current)}'
+        else if (max != null)
+          '最多可付 ${usd1(max)}',
+      ];
+      return Launch2ActionFailure(
+        parts.isEmpty ? fallback(failure) : 'USD1 余额不足：${parts.join('，')}',
+        topUp: true,
+      );
+    case 'LAUNCH2_MEME_BALANCE_INSUFFICIENT':
+      String meme(Decimal value) => launch2MemeLabel(value, ticker);
+      final parts = <String>[
+        if (required != null) '需要 ${meme(required)}',
+        if (max != null)
+          maxIsBalance ? '当前持有 ${meme(max)}' : '最多可卖 ${meme(max)}',
+      ];
+      return Launch2ActionFailure(
+        parts.isEmpty ? fallback(failure) : '卖出数量超过持有：${parts.join('，')}',
+      );
+    case 'LAUNCH2_GAS_INSUFFICIENT':
+      return const Launch2ActionFailure(launch2GasShortText, topUp: true);
+  }
+  return Launch2ActionFailure(
+    fallback(failure),
+    topUp:
+        reason == null &&
+        failure.kind == LoopChainFailureKind.insufficientBalance,
+  );
+}
+
 /// 名单生成中's title, by the publication attempt (loop-api decision 0118
 /// display rule). The priority hour opens only with the stage itself.
 String launch2SnapshotPendingTitle(Launch2Snapshot snapshot) =>

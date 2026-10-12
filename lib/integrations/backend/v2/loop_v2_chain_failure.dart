@@ -92,6 +92,9 @@ LoopChainException loopChainExceptionForV2(
     ceilingUsd: details?.ceilingUsd,
     spentUsd: details?.spentUsd,
     remainingUsd: details?.remainingUsd,
+    requiredUsd1: details?.requiredUsd1,
+    requiredAmountIn: details?.requiredAmountIn,
+    maxAmountIn: details?.maxAmountIn,
   );
 }
 

@@ -11,6 +11,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
@@ -151,15 +152,24 @@ Matcher _failure(int status, String code, String reasonCode) =>
 
 /// One scripted answer: a value or a failure.
 final class _Answer<T> {
-  const _Answer.value(T this.value) : failure = null;
+  const _Answer.value(T this.value) : failure = null, exception = null;
   const _Answer.fail(LoopChainFailureKind kind, {String? reasonCode})
     : value = null,
-      failure = (kind, reasonCode);
+      failure = (kind, reasonCode),
+      exception = null;
+
+  /// A refusal carrying the server's figures (decision 0153).
+  const _Answer.error(LoopChainException this.exception)
+    : value = null,
+      failure = null;
 
   final T? value;
   final (LoopChainFailureKind, String?)? failure;
+  final LoopChainException? exception;
 
   Future<T> resolve() {
+    final thrown = exception;
+    if (thrown != null) return Future<T>.error(thrown);
     final f = failure;
     if (f != null) {
       return Future<T>.error(LoopChainException(f.$1, reasonCode: f.$2));
@@ -1087,6 +1097,67 @@ void main() {
       expect(_key('launch2-sign-sheet'), findsNothing);
       await _type(tester, '99');
       expect(_key('launch2-pool-quote-failed'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('0153 · USD1 short: required and balance above the confirm '
+        'button, a live region, 去充值; tBNB short says the fee', (tester) async {
+      final gateway = _FakePool(
+        details: <Launch2InstanceDetail>[_graduated()],
+        quotes: <_Answer<Launch2PoolQuote>>[
+          _Answer<Launch2PoolQuote>.value(_buyQuote()),
+        ],
+        prepares: <_Answer<Launch2PoolPrepared>>[
+          const _Answer<Launch2PoolPrepared>.error(
+            LoopChainException(
+              LoopChainFailureKind.insufficientBalance,
+              reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+              requiredAmountIn: '100.5',
+              maxAmountIn: '20',
+            ),
+          ),
+          const _Answer<Launch2PoolPrepared>.fail(
+            LoopChainFailureKind.insufficientBalance,
+            reasonCode: 'LAUNCH2_GAS_INSUFFICIENT',
+          ),
+        ],
+      );
+      await _open(tester, gateway);
+      await _type(tester, '100');
+      await _scrollTo(tester, _key('launch2-pool-confirm'));
+      await tester.tap(_key('launch2-pool-confirm'));
+      await tester.pumpAndSettle();
+      final line = _key('launch2-pool-prepare-failed');
+      expect(
+        find.descendant(
+          of: line,
+          matching: find.text('USD1 余额不足：需要 100.5 USD1，当前 20 USD1'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: line,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && (widget.properties.liveRegion ?? false),
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(_key('launch2-pool-topup'), findsOneWidget);
+      expect(
+        tester.getRect(line).bottom,
+        lessThanOrEqualTo(tester.getRect(_key('launch2-pool-confirm')).top),
+      );
+      await tester.tap(_key('launch2-pool-confirm'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: line, matching: find.text(launch2GasShortText)),
+        findsOneWidget,
+      );
+      expect(_key('launch2-pool-topup'), findsOneWidget);
+      expect(_key('launch2-sign-sheet'), findsNothing);
       await _drain(tester);
     });
 
