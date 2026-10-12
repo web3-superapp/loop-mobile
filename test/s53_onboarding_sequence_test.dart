@@ -698,9 +698,15 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-recovery-unavailable')),
         findsOneWidget,
       );
-      // Passkey and 恢复密码. 自动恢复 is not among them, and 社交恢复 /
-      // 导出私钥 are behind the disclosure the prototype folds them into.
-      expect(find.text('不可用'), findsNWidgets(2));
+      // Passkey only (decision 0151 took 恢复密码 off the page). 自动恢复 is
+      // not among them, and 社交恢复 / 导出私钥 are behind the disclosure the
+      // prototype folds them into.
+      expect(find.text('不可用'), findsNWidgets(1));
+      expect(
+        find.byKey(const ValueKey<String>('recovery-password')),
+        findsNothing,
+      );
+      expect(find.textContaining('恢复密码'), findsNothing);
       // F2: nothing to enrol is not a reason to trap the owner on the step.
       expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
       expect(_enabled(tester, 'wallet-recovery-later'), isTrue);
@@ -739,7 +745,7 @@ void main() {
         const AccountSurfaceScreen.fromId('wallet-recovery'),
       );
 
-      for (final method in <String>['passkey', 'password']) {
+      for (final method in <String>['passkey']) {
         final row = tester.widget<LoopRecordRow>(
           find.byKey(ValueKey<String>('recovery-$method')),
         );
@@ -754,14 +760,6 @@ void main() {
             )
             .subtitle,
         contains(walletRecoveryPasskeyPending),
-      );
-      expect(
-        tester
-            .widget<LoopRecordRow>(
-              find.byKey(const ValueKey<String>('recovery-password')),
-            )
-            .subtitle,
-        contains(walletRecoveryProviderPending),
       );
       // The old sentences named the integration's internals at the owner.
       expect(find.textContaining('尚未确认'), findsNothing);
