@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 
 enum SigningAuthority { loopBackend, privyWallet }
@@ -107,6 +108,7 @@ final class SigningIntent {
     this.chainId = loopPrimaryChainId,
     this.payloadDigest,
     this.payload,
+    this.stepUpUsd1,
   }) : fields = List<IntentField>.unmodifiable(fields);
 
   /// The only constructor that may produce a wallet-bound intent.
@@ -126,6 +128,7 @@ final class SigningIntent {
     required DateTime observedAt,
     required DateTime expiresAt,
     required List<IntentField> fields,
+    Decimal? stepUpUsd1,
   }) {
     return SigningIntent._(
       revision: revision,
@@ -140,6 +143,7 @@ final class SigningIntent {
       chainId: chainId,
       payloadDigest: payloadDigest,
       payload: payload,
+      stepUpUsd1: stepUpUsd1,
     );
   }
 
@@ -295,6 +299,12 @@ final class SigningIntent {
   /// The verbatim object handed to the wallet. Non-null exactly for a
   /// backend-canonical intent.
   final SigningPayload? payload;
+
+  /// What this operation is worth in USD1, exact, when the feature that built
+  /// it can say (decision 0152). It is read by the large-amount step-up at the
+  /// signing exit and nowhere else: it is not part of the payload, it is not
+  /// shown as a fact, and `null` means "not known" — never zero.
+  final Decimal? stepUpUsd1;
 
   /// Hyperliquid account mutations are relayed by LOOP's backend. The mobile
   /// app must never send those intents to an embedded-wallet signing API.

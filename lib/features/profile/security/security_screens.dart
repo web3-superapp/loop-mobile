@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/security/security_controllers.dart';
 import 'package:loop_mobile/features/profile/security/security_gateway.dart';
 import 'package:loop_mobile/features/profile/security/security_models.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -171,6 +172,11 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
               capabilities: methods.value!,
               onNavigate: widget.onNavigate,
             ),
+          // Decision 0152: the large-amount step-up is this device's and this
+          // account's own rule. It reads no security resource, so it stays
+          // whatever the two reads above answered.
+          const LoopLabel('交易验证'),
+          const LoopStepUpSettingRow(),
           const LoopLabel('设备'),
           if (!summary.isReady)
             LoopChainStateBlock(

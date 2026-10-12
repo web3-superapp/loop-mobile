@@ -49,11 +49,11 @@ void main() {
       expect(find.textContaining('stored by the app'), findsNothing);
       expect(find.textContaining('PIN'), findsNothing);
       // A declared Privy capability is never reported as an enabled
-      // protection, and with no device lock composed the one row that can be
-      // on says 不可用 like MFA; 大额交易二次验证 says it is coming.
+      // protection, and with no device lock composed the rows that can be
+      // on say 不可用 like MFA: 应用锁 and 大额交易二次验证 (decision 0152).
       expect(find.text('可用'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(2));
-      expect(find.textContaining('即将推出'), findsOneWidget);
+      expect(find.text('不可用'), findsNWidgets(3));
+      expect(find.textContaining('即将推出'), findsNothing);
 
       await _tap(
         tester,
@@ -159,10 +159,10 @@ void main() {
       findsNothing,
     );
     expect(find.text('可用'), findsNothing);
-    // 应用锁 and MFA. In a widget test the device answers that it can
-    // authenticate nobody, so even the one protection that can be on is
-    // offered as unavailable; 大额交易二次验证 says it is coming.
-    expect(find.text('不可用'), findsNWidgets(2));
+    // 应用锁, 大额交易二次验证 and MFA. In a widget test the device answers
+    // that it can authenticate nobody, so even the protections that can be
+    // on are offered as unavailable (decision 0152).
+    expect(find.text('不可用'), findsNWidgets(3));
     expect(find.text('已开启'), findsNothing);
     expect(find.byType(Switch), findsNothing);
   });

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
@@ -8,9 +9,11 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
-import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
@@ -42,6 +45,22 @@ final class LaunchSignOutcome {
       status == MoneySignStatus.locked ||
       status == MoneySignStatus.reportRefused ||
       status == MoneySignStatus.submitted;
+}
+
+/// What one Launch intent is worth in USD1, for the large-amount step-up
+/// (decision 0152): what a purchase pays, what a refund returns. A claim
+/// moves project tokens LOOP has no USD1 price for, so it is `null`.
+Decimal? launchIntentStepUpUsd1(LaunchPurchaseIntent intent) {
+  Decimal? usd1(String? raw) {
+    final atomic = raw == null ? null : BigInt.tryParse(raw);
+    return atomic == null ? null : loopStepUpUsd1FromAtomic(atomic);
+  }
+
+  return switch (intent.kind) {
+    LaunchIntentKind.buy => usd1(intent.usd1Amount),
+    LaunchIntentKind.claimRefund => usd1(intent.refundableUsd1),
+    LaunchIntentKind.claim => null,
+  };
 }
 
 /// The Launch purchase through the one signing exit (decisions 0088, 0089).
@@ -84,6 +103,7 @@ final class LaunchPurchaseSigner {
       observedAt: intent.createdAt,
       expiresAt: intent.expiresAt,
       fields: launchIntentFields(intent, ticker: ticker),
+      stepUpUsd1: launchIntentStepUpUsd1(intent),
     );
   }
 
@@ -217,7 +237,7 @@ final class LaunchPurchaseSigner {
 
 final launchPurchaseSignerProvider = Provider<LaunchPurchaseSigner>(
   (ref) => LaunchPurchaseSigner(
-    wallet: ref.watch(walletSigningGatewayProvider),
+    wallet: ref.watch(loopGuardedWalletSigningGatewayProvider),
     gateway: ref.watch(launchGatewayProvider),
   ),
 );
@@ -351,6 +371,9 @@ List<IntentField> launchPurchaseFields(
 /// zh-CN for a wallet or exit refusal code. Every line states what did not
 /// happen; none of them claims a result.
 String launchSignReasonText(String reasonCode) => switch (reasonCode) {
+  // Decision 0152: the large-amount step-up stopped before the wallet.
+  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
+  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
   'INTENT_EXPIRED' => '这份认购已过期，没有提交任何交易。请重新获取报价。',
   'REVIEW_PAYLOAD_MISMATCH' => '交易内容与复核内容不一致，已拒绝签名，没有提交任何交易。',
   'LAUNCH_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔认购的支付钱包，没有提交任何交易。',
@@ -495,7 +518,8 @@ class LaunchSignSheet extends StatefulWidget {
   State<LaunchSignSheet> createState() => _LaunchSignSheetState();
 }
 
-class _LaunchSignSheetState extends State<LaunchSignSheet> {
+class _LaunchSignSheetState extends State<LaunchSignSheet>
+    with LoopStepUpSheetMixin<LaunchSignSheet> {
   LoopSignSheetState _state = LoopSignSheetState.pending;
   String? _reason;
   LaunchSignOutcome? _outcome;
@@ -506,12 +530,20 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
   LaunchPurchaseIntent get _intent => widget.prepared.intent;
 
   @override
+  WalletSigningGateway get stepUpWallet => widget.signer.wallet;
+
+  @override
+  Decimal? get stepUpUsd1 => launchIntentStepUpUsd1(_intent);
+
+  @override
   void initState() {
     super.initState();
     final refusal = _preflight();
     if (refusal != null) {
       _state = LoopSignSheetState.simulationFailed;
       _reason = launchSignReasonTextFor(_intent.kind, refusal);
+    } else {
+      planStepUp();
     }
   }
 
@@ -529,6 +561,17 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
       _state = LoopSignSheetState.signing;
       _reason = null;
     });
+    // Decision 0152: the large-amount step-up runs before the wallet.
+    final stopped = await runStepUp();
+    if (!mounted) return;
+    if (stopped != null) {
+      setState(() {
+        _state = LoopSignSheetState.pending;
+        _reason = loopStepUpReasonText(stopped);
+        _submitted = false;
+      });
+      return;
+    }
     widget.latch?.enteredSigning = true;
     final outcome = await widget.signer.sign(
       _intent,
@@ -560,20 +603,29 @@ class _LaunchSignSheetState extends State<LaunchSignSheet> {
     final fields = launchIntentFields(_intent, ticker: widget.ticker);
     return PopScope(
       canPop: _state != LoopSignSheetState.signing,
-      child: LoopSignSheet(
-        key: const ValueKey<String>('launch-sign-sheet'),
-        state: _state,
-        title: launchIntentTitle(_intent.kind),
-        networkBadge: loopIsTestnetChainId(_intent.chainId)
-            ? loopTestnetBadgeLabel
-            : null,
-        facts: <LoopSignFact>[
-          for (final IntentField field in fields)
-            LoopSignFact(field.label, field.value),
-        ],
-        reason: _reason,
-        onConfirm: _confirm,
-        onCancel: () => Navigator.of(context).pop(_outcome),
+      child: withStepUpStrip(
+        signLabel: launchIntentNoun(_intent.kind),
+        signStatus: stepUpSignStatus(
+          _state,
+          locked:
+              _outcome != null && _outcome!.status != MoneySignStatus.submitted,
+        ),
+        LoopSignSheet(
+          key: const ValueKey<String>('launch-sign-sheet'),
+          state: _state,
+          signingTitle: stepUpSigningTitle,
+          title: launchIntentTitle(_intent.kind),
+          networkBadge: loopIsTestnetChainId(_intent.chainId)
+              ? loopTestnetBadgeLabel
+              : null,
+          facts: <LoopSignFact>[
+            for (final IntentField field in fields)
+              LoopSignFact(field.label, field.value),
+          ],
+          reason: _reason,
+          onConfirm: _confirm,
+          onCancel: () => Navigator.of(context).pop(_outcome),
+        ),
       ),
     );
   }

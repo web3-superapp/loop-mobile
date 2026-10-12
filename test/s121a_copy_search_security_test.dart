@@ -156,7 +156,9 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-大额交易二次验证')),
       );
-      expect(row.subtitle, '超过阈值时再验一次身份 · 即将推出');
+      // Decision 0152: a real rule now; this tree composed no device
+      // authentication, so it says so instead of offering a switch.
+      expect(row.subtitle, '超过 1,000 USD1 时再验一次身份 · 这次运行没有可用的设备验证');
       expect(row.onTap, isNull);
 
       final fallback = tester.widget<Text>(

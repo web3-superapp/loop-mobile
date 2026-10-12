@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
@@ -8,9 +9,11 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
-import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -18,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sign_steps.dart';
 
 // ---------------------------------------------------------------------------
 // The MEME v2 signing exit (client decision 0139, contract §3.4–3.5)
@@ -199,6 +203,9 @@ List<IntentField> launch2IntentFields(
 /// zh-CN for a refusal before or at the wallet. Every line states that
 /// nothing was submitted.
 String launch2SignReasonText(String reasonCode) => switch (reasonCode) {
+  // Decision 0152: the large-amount step-up stopped before the wallet.
+  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
+  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
   'INTENT_EXPIRED' || 'LAUNCH2_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
   'LAUNCH2_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易。',
   'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
@@ -282,6 +289,14 @@ String launch2BroadcastText(
 /// trade): the sheet draws it as a two-step strip.
 enum Launch2SignStep { approving, refreshing, signingMain }
 
+/// What one MEME v2 intent is worth in USD1, for the large-amount step-up
+/// (decision 0152): the most a buy or an NFT purchase pays (`amountIn`, tax
+/// included), what a sell expects to receive (`expectedOut`).
+Decimal launch2IntentStepUpUsd1(Launch2Intent intent) => switch (intent.kind) {
+  Launch2IntentKind.sell => intent.expectedOut,
+  Launch2IntentKind.buy || Launch2IntentKind.nftMint => intent.amountIn,
+};
+
 /// The one path from a MEME v2 intent to the wallet.
 final class Launch2IntentSigner {
   const Launch2IntentSigner({
@@ -318,6 +333,7 @@ final class Launch2IntentSigner {
     observedAt: intent.createdAt,
     expiresAt: intent.expiresAt,
     fields: launch2IntentFields(intent, ticker: ticker),
+    stepUpUsd1: launch2IntentStepUpUsd1(intent),
   );
 
   static SigningIntent? approvalSigningIntent(
@@ -573,7 +589,9 @@ final class Launch2IntentSigner {
 }
 
 final launch2IntentSignerProvider = Provider<Launch2IntentSigner>(
-  (ref) => Launch2IntentSigner(wallet: ref.watch(walletSigningGatewayProvider)),
+  (ref) => Launch2IntentSigner(
+    wallet: ref.watch(loopGuardedWalletSigningGatewayProvider),
+  ),
 );
 
 /// Opens the signing exit for one prepared intent. `null` means the sheet
@@ -638,7 +656,8 @@ class Launch2SignSheet extends StatefulWidget {
   State<Launch2SignSheet> createState() => _Launch2SignSheetState();
 }
 
-class _Launch2SignSheetState extends State<Launch2SignSheet> {
+class _Launch2SignSheetState extends State<Launch2SignSheet>
+    with LoopStepUpSheetMixin<Launch2SignSheet> {
   LoopSignSheetState _state = LoopSignSheetState.pending;
   String? _reason;
   Launch2SignOutcome? _outcome;
@@ -651,6 +670,12 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
   bool _refreshed = false;
 
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
+
+  @override
+  WalletSigningGateway get stepUpWallet => widget.signer.wallet;
+
+  @override
+  Decimal? get stepUpUsd1 => launch2IntentStepUpUsd1(widget.intent);
 
   @override
   void initState() {
@@ -668,6 +693,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
           '会依次打开两次钱包：先授权，再${launch2IntentNoun(widget.intent.kind)}。'
           '授权金额只够这一笔。';
     }
+    if (refusal == null) planStepUp();
   }
 
   Future<void> _confirm() async {
@@ -677,6 +703,18 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
       _state = LoopSignSheetState.signing;
       _reason = null;
     });
+    // Decision 0152: the large-amount step-up runs before the first wallet
+    // prompt and covers the approval, the trade and a refreshed trade.
+    final stopped = await runStepUp();
+    if (!mounted) return;
+    if (stopped != null) {
+      setState(() {
+        _state = LoopSignSheetState.pending;
+        _reason = loopStepUpReasonText(stopped);
+        _submitted = false;
+      });
+      return;
+    }
     widget.latch?.enteredSigning = true;
     final outcome = await widget.signer.sign(
       widget.intent,
@@ -724,6 +762,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
     final sheet = LoopSignSheet(
       key: const ValueKey<String>('launch2-sign-sheet'),
       state: _state,
+      signingTitle: stepUpSigningTitle,
       title: launch2IntentTitle(widget.intent.kind, venue: widget.intent.venue),
       networkBadge: loopIsTestnetChainId(widget.intent.chainId)
           ? loopTestnetBadgeLabel
@@ -739,13 +778,21 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
     return PopScope(
       canPop: _state != LoopSignSheetState.signing,
       child: widget.intent.approval == null
-          ? sheet
+          ? withStepUpStrip(
+              sheet,
+              signLabel: launch2IntentNoun(widget.intent.kind),
+              signStatus: stepUpSignStatus(
+                _state,
+                locked: _outcome?.status == MoneySignStatus.locked,
+              ),
+            )
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Launch2SignStepStrip(
                   noun: launch2IntentNoun(widget.intent.kind),
+                  verify: stepUpStep,
                   approval: _approvalStatus,
                   main: _mainStatus,
                 ),
@@ -798,8 +845,8 @@ class _Launch2SignSheetState extends State<Launch2SignSheet> {
   }
 }
 
-/// One step of the two-step strip.
-enum Launch2StepStatus { waiting, active, refreshing, done, failed, unknown }
+/// One step of the two-step strip (decision 0152 made the strip shared).
+typedef Launch2StepStatus = LoopSignStepStatus;
 
 /// The one line the sheet shows once the trade is signed from a fresh
 /// intent (decision 0148).
@@ -807,17 +854,24 @@ const String launch2RefreshedText = '已刷新报价：原报价即将到期，�
 
 /// 「1 授权 → 2 买入」 above the signing sheet when an intent carries an
 /// approval: which wallet prompt is open and which already broadcast.
+///
+/// Decision 0152: when the large-amount step-up runs, [verify] puts
+/// 「验证身份」 in front of both.
 class Launch2SignStepStrip extends StatelessWidget {
   const Launch2SignStepStrip({
     required this.noun,
     required this.approval,
     required this.main,
     super.key,
+    this.verify,
   });
 
   final String noun;
   final Launch2StepStatus approval;
   final Launch2StepStatus main;
+
+  /// The step-up's own step, or `null` when it does not run.
+  final LoopStepUpStep? verify;
 
   static String _status(Launch2StepStatus status) => switch (status) {
     Launch2StepStatus.waiting => '待签名',
@@ -828,123 +882,24 @@ class Launch2SignStepStrip extends StatelessWidget {
     Launch2StepStatus.unknown => '结果未知',
   };
 
-  /// The step the next wallet prompt is for, while nothing is open yet
-  /// (decision 0149): before, both steps read 「待签名」 in the same grey and
-  /// the strip did not say which one 「确认签名」 starts.
-  bool get _approvalNext =>
-      approval == Launch2StepStatus.waiting &&
-      main == Launch2StepStatus.waiting;
-  bool get _mainNext =>
-      approval == Launch2StepStatus.done && main == Launch2StepStatus.waiting;
-
-  Widget _step(
-    String index,
-    String label,
-    Launch2StepStatus status, {
-    required bool next,
-  }) {
-    final later = status == Launch2StepStatus.waiting && !next;
-    final lit =
-        status == Launch2StepStatus.active ||
-        status == Launch2StepStatus.refreshing ||
-        status == Launch2StepStatus.done;
-    final warn =
-        status == Launch2StepStatus.failed ||
-        status == Launch2StepStatus.unknown;
-    return Expanded(
-      child: Semantics(
-        label: '第 $index 步 $label，${_status(status)}',
-        excludeSemantics: true,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 22,
-                height: 22,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: lit
-                      ? LoopColors.lime
-                      : next
-                      ? LoopColors.card2
-                      : LoopColors.card,
-                  border: Border.all(
-                    color: warn
-                        ? LoopColors.warning
-                        : next
-                        ? LoopColors.chalk
-                        : LoopColors.line,
-                    width: next ? 1.5 : 1,
-                  ),
-                ),
-                child: Text(
-                  index,
-                  style: LoopTypography.label(
-                    12,
-                    weight: FontWeight.w700,
-                    color: lit
-                        ? LoopColors.ink
-                        : next
-                        ? LoopColors.chalk
-                        : LoopColors.text2,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      label,
-                      style: LoopTypography.title(
-                        14,
-                        color: later ? LoopColors.text2 : LoopColors.chalk,
-                      ),
-                    ),
-                    Text(
-                      // Decision 0149: the caption agrees with the ring.
-                      next && status == Launch2StepStatus.waiting
-                          ? '下一步，待签名'
-                          : _status(status),
-                      style: LoopType.caption.copyWith(
-                        color: warn
-                            ? LoopColors.warning
-                            : later
-                            ? LoopColors.text3
-                            : LoopColors.text2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
-  Widget build(BuildContext context) => Padding(
-    key: const ValueKey<String>('launch2-sign-steps'),
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-    child: Row(
-      children: <Widget>[
-        KeyedSubtree(
-          key: ValueKey<String>('launch2-sign-step-approval-${approval.name}'),
-          child: _step('1', '授权', approval, next: _approvalNext),
-        ),
-        const SizedBox(width: 8),
-        KeyedSubtree(
-          key: ValueKey<String>('launch2-sign-step-main-${main.name}'),
-          child: _step('2', noun, main, next: _mainNext),
-        ),
-      ],
-    ),
+  Widget build(BuildContext context) => LoopSignStepStrip(
+    keyPrefix: 'launch2-sign',
+    steps: <LoopSignStep>[
+      if (verify != null) verify!.step,
+      LoopSignStep(
+        id: 'approval',
+        label: '授权',
+        status: approval,
+        caption: _status(approval),
+      ),
+      LoopSignStep(
+        id: 'main',
+        label: noun,
+        status: main,
+        caption: _status(main),
+      ),
+    ],
   );
 }
 

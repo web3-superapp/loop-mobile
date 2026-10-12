@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
@@ -7,8 +8,11 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
+import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
@@ -204,7 +208,8 @@ class MoneySignSheet extends StatefulWidget {
   State<MoneySignSheet> createState() => _MoneySignSheetState();
 }
 
-class _MoneySignSheetState extends State<MoneySignSheet> {
+class _MoneySignSheetState extends State<MoneySignSheet>
+    with LoopStepUpSheetMixin<MoneySignSheet> {
   LoopSignSheetState _state = LoopSignSheetState.pending;
   String? _reason;
   MoneySignOutcome? _outcome;
@@ -213,9 +218,16 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
 
   @override
+  WalletSigningGateway get stepUpWallet => widget.signer.wallet;
+
+  @override
+  Decimal? get stepUpUsd1 => moneyIntentStepUpUsd1(widget.intent);
+
+  @override
   void initState() {
     super.initState();
     _state = _initialState();
+    if (_state == LoopSignSheetState.pending) planStepUp();
   }
 
   /// The sheet only ever opens on a server intent, and `signing.reasonCode`
@@ -244,6 +256,18 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
       _state = LoopSignSheetState.signing;
       _reason = null;
     });
+    // Decision 0152: the large-amount step-up runs before the wallet. A
+    // cancelled or failed prompt opened nothing, so the confirmation stays.
+    final stopped = await runStepUp();
+    if (!mounted) return;
+    if (stopped != null) {
+      setState(() {
+        _state = LoopSignSheetState.pending;
+        _reason = loopStepUpReasonText(stopped);
+        _submitted = false;
+      });
+      return;
+    }
     // From here the wallet is open. The sheet cannot be dismissed and the
     // confirmation cannot be re-enabled by anything below.
     widget.latch?.enteredSigning = true;
@@ -276,7 +300,8 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
           _submitted = false;
         case MoneySignStatus.walletRejected:
           _state = LoopSignSheetState.simulationFailed;
-          _reason = '钱包没有完成签名，没有提交任何交易。';
+          _reason =
+              loopStepUpReasonText(outcome.reasonCode) ?? '钱包没有完成签名，没有提交任何交易。';
           _submitted = false;
       }
     });
@@ -290,31 +315,39 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
       // While the wallet is open there is no way out of this sheet: a back
       // gesture must not leave a signature in flight with nothing watching it.
       canPop: _state != LoopSignSheetState.signing,
-      child: LoopSignSheet(
-        key: const ValueKey<String>('money-sign-sheet'),
-        state: _state,
-        title: moneyActionTitle(widget.intent.kind),
-        // Decision 0038: the sheet names the chain whenever it is not the
-        // primary one. Money actions never are, so this is `null` in every
-        // delivered build — the sheet reads the intent rather than assuming.
-        networkBadge: loopIsTestnetChainId(widget.intent.chainId)
-            ? loopTestnetBadgeLabel
-            : null,
-        facts: <LoopSignFact>[
-          for (final IntentField field in fields)
-            LoopSignFact(
-              field.label,
-              field.value,
-              down:
-                  field.label == '模拟结果' &&
-                  widget.intent.simulation.status !=
-                      LoopSimulationStatus.passed,
-            ),
-        ],
-        reason: _reason,
-        onConfirm: _confirm,
-        onCancel: () => Navigator.of(context).pop(_outcome),
-        onAdjustPolicy: widget.onAdjustPolicy,
+      child: withStepUpStrip(
+        signLabel: '签名',
+        signStatus: stepUpSignStatus(
+          _state,
+          locked: _outcome?.isLocked ?? false,
+        ),
+        LoopSignSheet(
+          key: const ValueKey<String>('money-sign-sheet'),
+          state: _state,
+          signingTitle: stepUpSigningTitle,
+          title: moneyActionTitle(widget.intent.kind),
+          // Decision 0038: the sheet names the chain whenever it is not the
+          // primary one. Money actions never are, so this is `null` in every
+          // delivered build — the sheet reads the intent rather than assuming.
+          networkBadge: loopIsTestnetChainId(widget.intent.chainId)
+              ? loopTestnetBadgeLabel
+              : null,
+          facts: <LoopSignFact>[
+            for (final IntentField field in fields)
+              LoopSignFact(
+                field.label,
+                field.value,
+                down:
+                    field.label == '模拟结果' &&
+                    widget.intent.simulation.status !=
+                        LoopSimulationStatus.passed,
+              ),
+          ],
+          reason: _reason,
+          onConfirm: _confirm,
+          onCancel: () => Navigator.of(context).pop(_outcome),
+          onAdjustPolicy: widget.onAdjustPolicy,
+        ),
       ),
     );
   }

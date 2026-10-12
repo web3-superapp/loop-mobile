@@ -5,9 +5,10 @@ import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
-import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -72,6 +73,9 @@ List<IntentField> miningClaimFields(
 /// zh-CN for a refusal before or at the wallet. Every line says nothing was
 /// submitted and the balance stays.
 String miningClaimSignReasonText(String reasonCode) => switch (reasonCode) {
+  // Decision 0152: the large-amount step-up stopped before the wallet.
+  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
+  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
   'INTENT_EXPIRED' => '领取凭证已过期，没有提交任何交易，可领取余额不变。请重新领取。',
   'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
   'MINING_CLAIM_WALLET_UNKNOWN' => '找不到这笔领取的钱包，没有提交任何交易。',
@@ -214,7 +218,7 @@ final class MiningClaimSigner {
 
 final miningClaimSignerProvider = Provider<MiningClaimSigner>(
   (ref) => MiningClaimSigner(
-    wallet: ref.watch(walletSigningGatewayProvider),
+    wallet: ref.watch(loopGuardedWalletSigningGatewayProvider),
     gateway: ref.watch(miningRewardsGatewayProvider),
   ),
 );

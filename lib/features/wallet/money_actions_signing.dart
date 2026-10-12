@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -127,6 +128,7 @@ final class MoneyActionSigner {
       observedAt: intent.factsObservedAt,
       expiresAt: intent.expiresAt,
       fields: moneyActionFields(intent),
+      stepUpUsd1: moneyIntentStepUpUsd1(intent),
     );
   }
 
@@ -217,6 +219,43 @@ final class MoneyActionSigner {
         txHash: produced,
       );
     }
+  }
+}
+
+/// The symbol a wallet intent's USD1 carries.
+const String _usd1Symbol = 'USD1';
+
+/// What one wallet intent is worth in USD1, for the large-amount step-up
+/// (decision 0152), or `null` when it cannot be said.
+///
+/// - A USD1 send is its amount; a swap that pays or receives USD1 is that
+///   side's amount (the estimated output on the receive side).
+/// - Any other send, swap or approval is the server's own valuation of the
+///   intent at prepare, `policy.valueUsd` — the market price times the
+///   amount (for an approval, times `min(allowance, balance)`). USD is read
+///   as USD1 one for one.
+/// - A revoke moves nothing. An intent the server could not price is `null`
+///   and is not asked for: the gap is recorded in decision 0152.
+Decimal? moneyIntentStepUpUsd1(LoopWalletIntent intent) {
+  final review = intent.review;
+  final valued = intent.policy.exposureBasis == LoopExposureBasis.none
+      ? null
+      : intent.policy.valueUsd;
+  switch (intent.kind) {
+    case LoopIntentKind.send:
+      if (review.asset.symbol == _usd1Symbol) return review.amount.value;
+      return valued;
+    case LoopIntentKind.swap:
+      if (review.asset.symbol == _usd1Symbol) return review.amount.value;
+      final swap = review.swap;
+      if (swap != null && swap.destinationAsset.symbol == _usd1Symbol) {
+        return swap.quote.estimatedOutputAmount.value ?? valued;
+      }
+      return valued;
+    case LoopIntentKind.approve:
+      return valued;
+    case LoopIntentKind.revoke:
+      return null;
   }
 }
 

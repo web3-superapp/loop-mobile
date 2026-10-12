@@ -3557,9 +3557,9 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             # page's single keyed primary button.
             r"\b_tap\s*\(\s*tester\s*,\s*find\.byKey\s*\(\s*const\s+"
             r"ValueKey<String>\s*\(",
-            # Decision 0121: 应用锁 and MFA say 不可用; 大额交易二次验证
-            # says it is coming.
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*2\s*\)",
+            # Decision 0152: 应用锁, 大额交易二次验证 and MFA say 不可用
+            # (0121's 即将推出 is gone: the amount rule is real).
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
             r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
         ),
         "H5 states each protection method is off, with its reason": (
@@ -3576,9 +3576,9 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNothing",
             # Every reviewed A11 method stays unavailable in production: MFA,
-            # and the device lock a widget test has no device to open; the
-            # amount rule says it is coming (decision 0121).
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*2\s*\)",
+            # and the device lock and the amount rule a widget test has no
+            # device to open (decision 0152).
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
             r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
         ),
         "production LoopApp H5 fails closed with no adapter": (
@@ -3608,6 +3608,77 @@ APP_LOCK_TEST_MARKERS = {
         "a locked App is covered and offers one way through",
     ),
 }
+
+
+
+STEP_UP_SIGNER_PROVIDERS = (
+    "lib/features/meme/meme_signing.dart",
+    "lib/features/launch/launch_signing.dart",
+    "lib/features/launch2/launch2_signing.dart",
+    "lib/features/wallet/money_actions_controllers.dart",
+    "lib/features/mining_rewards/mining_rewards_signing.dart",
+)
+
+
+def check_step_up_store_contract(root: Path) -> list[str]:
+    """Decision 0152: the large-amount step-up sits in front of every signer.
+
+    Every feature signer reaches the wallet through the guarded exit, never
+    the raw one, and the step-up's store keeps the switch and the threshold
+    under one per-account key and nothing else.
+    """
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/security/step_up/step_up_controller.dart": (
+                "final class LoopStepUpWalletSigningGateway implements WalletSigningGateway",
+                "loopGuardedWalletSigningGatewayProvider",
+                "guard.verify(intent.stepUpUsd1)",
+                "WalletHandoffResult.rejected(refusal)",
+            ),
+            "lib/features/security/step_up/step_up_models.dart": (
+                "const int loopStepUpDefaultThresholdUsd1 = 1000;",
+                "const int loopStepUpMaxThresholdUsd1 = 1000000;",
+                "usd1 >= Decimal.fromInt(thresholdUsd1)",
+                "String encode() => '${enabled ? 1 : 0}:$thresholdUsd1';",
+            ),
+            "lib/features/chain/chain_contract.dart": ("stepUpCancelled,",),
+            "lib/core/intent/signing_intent.dart": ("final Decimal? stepUpUsd1;",),
+            str(STEP_UP_SECURE_STORE_OWNER): (
+                "loop.step_up.v1.",
+                "LoopV2OwnerPartition.fromPrincipal(principalKey)",
+                "settings.encode()",
+                "LoopStepUpSettings.tryDecode(",
+            ),
+            "lib/main.dart": ("loopStepUpSettingsStoreProvider.overrideWithValue(",),
+        },
+    )
+    for relative in STEP_UP_SIGNER_PROVIDERS:
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing step-up signer: {relative}")
+            continue
+        source = strip_dart_comments(read_text(path))
+        if "ref.watch(walletSigningGatewayProvider)" in source:
+            errors.append(
+                "a feature signer must reach the wallet through the step-up "
+                f"exit, not the raw one: {relative}"
+            )
+        if "ref.watch(loopGuardedWalletSigningGatewayProvider)" not in source:
+            errors.append(
+                f"a feature signer must use loopGuardedWalletSigningGatewayProvider: {relative}"
+            )
+    store_path = root / STEP_UP_SECURE_STORE_OWNER
+    if store_path.is_file():
+        store = strip_dart_comments(read_text(store_path))
+        for marker in ("pin", "Pin", "PIN", "passcode", "token", "Token"):
+            if marker in store:
+                errors.append(
+                    "the step-up store must not name a secret it never holds: "
+                    + marker
+                )
+    return errors
 
 
 def check_app_lock_contract(root: Path) -> list[str]:
@@ -3960,10 +4031,11 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             # Decision 0053 rebuilt A11 on the V2 design system in zh-CN.
             "lib/features/account/account_screens.dart": (
                 # Decision 0121: the engineering banner left; the page still
-                # offers no switch it cannot back and says the amount rule
-                # is coming rather than on.
+                # offers no switch it cannot back. Decision 0152: the amount
+                # rule is the device's own step-up row, which offers its
+                # switch only where the device can verify.
                 "security-setup-continue",
-                "securityLargeAmountSubtitle",
+                "LoopStepUpSettingRow(",
                 "security-biometric-fallback",
                 # F2: what a page says about a method it does not offer is
                 # said in the owner's words, and what it says about the one
@@ -5238,16 +5310,27 @@ ONBOARDING_PROGRESS_STORE_OWNER = Path(
 V2_SECURE_STORAGE_OWNER = Path(
     "lib/integrations/backend/v2/loop_v2_session_store.dart"
 )
-# The platform secure store has two owners and no more. The first keeps the
+STEP_UP_SECURE_STORE_OWNER = Path(
+    "lib/integrations/device/secure_storage_step_up_store.dart"
+)
+# The platform secure store has three owners and no more. The first keeps the
 # V2 session journal — device id, tokens, everything a stolen device could be
 # replayed with. The second keeps the application lock's single boolean and
 # nothing else: LOOP never sees a PIN or a biometric template, so there is no
 # secret there to leak, and `check_app_lock_contract` holds it to one of two
-# characters under one key. A third owner is a decision, not an edit.
+# characters under one key. The third (decision 0152) keeps the large-amount
+# step-up's switch and threshold per account, held by
+# `check_step_up_store_contract` to `[01]:<digits>` under one partitioned key.
+# A fourth owner is a decision, not an edit.
 SECURE_STORAGE_OWNERS = frozenset(
     {
         V2_SECURE_STORAGE_OWNER,
         Path("lib/integrations/device/secure_storage_app_lock_store.dart"),
+        # Decision 0152: the third owner keeps the large-amount step-up's
+        # switch and whole-USD1 threshold per account — `1:1000` under
+        # `loop.step_up.v1.<partition>` and nothing else
+        # (`check_step_up_store_contract`).
+        STEP_UP_SECURE_STORE_OWNER,
     }
 )
 # The activation journal (decision 0053) reuses the session store's secure
@@ -15494,6 +15577,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
     errors.extend(check_app_lock_contract(root))
+    errors.extend(check_step_up_store_contract(root))
     errors.extend(check_account_mfa_contract(root))
     errors.extend(check_local_display_preferences_contract(root))
     errors.extend(check_onboarding_sequence_contract(root))

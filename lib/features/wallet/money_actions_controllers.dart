@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
-import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 
 /// `approvals` · `GET /v2/approvals`.
 ///
@@ -81,6 +81,6 @@ final walletIntentControllerProvider = NotifierProvider.autoDispose
 final moneyActionSignerProvider = Provider<MoneyActionSigner>((ref) {
   return MoneyActionSigner(
     intents: ref.watch(walletIntentsGatewayProvider),
-    wallet: ref.watch(walletSigningGatewayProvider),
+    wallet: ref.watch(loopGuardedWalletSigningGatewayProvider),
   );
 });

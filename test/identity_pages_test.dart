@@ -375,7 +375,8 @@ void main() {
       // capability is never an enabled protection.
       expect(find.textContaining('已开启'), findsNothing);
       expect(find.text('可用'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(2));
+      // 应用锁, 大额交易二次验证 (decision 0152) and MFA.
+      expect(find.text('不可用'), findsNWidgets(3));
 
       await _tap(tester, 'security-setup-continue');
       expect(destinations, <String>['loop-id-setup']);

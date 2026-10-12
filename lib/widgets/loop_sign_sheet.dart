@@ -46,6 +46,7 @@ class LoopSignSheet extends StatelessWidget {
     this.onAdjustPolicy,
     this.confirmLabel = '确认签名',
     this.cancelLabel = '取消',
+    this.signingTitle = '正在签名并广播',
   });
 
   final LoopSignSheetState state;
@@ -73,6 +74,10 @@ class LoopSignSheet extends StatelessWidget {
   final VoidCallback? onAdjustPolicy;
   final String confirmLabel;
   final String cancelLabel;
+
+  /// What the busy body says. Decision 0152: 「正在验证身份」 while the
+  /// device's own prompt runs before the wallet opens.
+  final String signingTitle;
 
   bool get confirmEnabled =>
       state == LoopSignSheetState.pending && onConfirm != null;
@@ -132,7 +137,7 @@ class LoopSignSheet extends StatelessWidget {
               boxShadow: LoopDepth.liftCard,
             ),
             child: state == LoopSignSheetState.signing
-                ? _SigningBody(cancelLabel: cancelLabel)
+                ? _SigningBody(cancelLabel: cancelLabel, title: signingTitle)
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
@@ -258,9 +263,10 @@ class _SignOutcomeHapticsState extends State<_SignOutcomeHaptics> {
 }
 
 class _SigningBody extends StatelessWidget {
-  const _SigningBody({required this.cancelLabel});
+  const _SigningBody({required this.cancelLabel, required this.title});
 
   final String cancelLabel;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +287,7 @@ class _SigningBody extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          '正在签名并广播',
+          title,
           textAlign: TextAlign.center,
           style: LoopTypography.title(13, weight: FontWeight.w700),
         ),

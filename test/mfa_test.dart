@@ -258,7 +258,9 @@ void main() {
       expect(row.semanticLabel, contains('已开启'));
     });
 
-    testWidgets('大额交易二次验证 stays closed, and says it is coming', (tester) async {
+    testWidgets('大额交易二次验证 has no switch in a tree with no device check', (
+      tester,
+    ) async {
       await _pumpPhone(
         tester,
         const AccountSurfaceScreen.fromId('security-setup'),
@@ -267,9 +269,9 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-大额交易二次验证')),
       );
-      expect(row.trailing, isNull);
+      expect(row.trailing, '不可用');
       expect(row.onTap, isNull);
-      expect(row.subtitle, '超过阈值时再验一次身份 · 即将推出');
+      expect(row.subtitle, '超过 1,000 USD1 时再验一次身份 · 这次运行没有可用的设备验证');
     });
   });
 

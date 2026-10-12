@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -1400,9 +1401,6 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
 // security-setup · intro / focus
 // ---------------------------------------------------------------------------
 
-/// 大额交易二次验证's subtitle on `security-setup` (decision 0121).
-const String securityLargeAmountSubtitle = '超过阈值时再验一次身份 · 即将推出';
-
 /// The one 11px line under `security-setup`'s rows (decision 0121).
 const String securityBiometricFallbackLine = '设备不支持生物识别时，会改用系统锁屏密码验证。';
 
@@ -1465,17 +1463,13 @@ class SecuritySetupScreen extends StatelessWidget {
           const LoopLabel('交易验证'),
           // Prototype order: the amount rule first, the second factor after it.
           _SecurityCard(
-            rows: <LoopRecordRow>[
-              // The threshold is a rule nobody has written down yet, and this
-              // build has no on-chain write that could cross one. The row offers
-              // no switch; it says the protection is coming (decision 0121).
-              const LoopRecordRow(
-                key: ValueKey<String>('security-大额交易二次验证'),
-                title: '大额交易二次验证',
-                subtitle: securityLargeAmountSubtitle,
-                subtitleMaxLines: 2,
+            rows: <Widget>[
+              // Decision 0152: a real switch now. A signature worth at least
+              // the threshold in USD1 asks the device first; the row reads
+              // and writes its own per-account choice.
+              LoopStepUpSettingRow(
                 position: LoopRowPosition.first,
-                semanticLabel: '大额交易二次验证，即将推出',
+                rowBuilder: _SecurityRow.of,
               ),
               _mfaRow(),
             ],
@@ -1580,11 +1574,12 @@ class SecuritySetupScreen extends StatelessWidget {
 
 /// `security-setup`'s grouped rows on the OKX reference (S121 §1.1.1 · 5):
 /// one `card` face, radius 16, no edge and no shadow, a hairline between
-/// rows (decision 0121).
+/// rows (decision 0121). A row that is not a [LoopRecordRow] draws itself
+/// (decision 0152: the step-up row reads its own state).
 class _SecurityCard extends StatelessWidget {
   const _SecurityCard({required this.rows});
 
-  final List<LoopRecordRow> rows;
+  final List<Widget> rows;
 
   @override
   Widget build(BuildContext context) {
@@ -1608,7 +1603,10 @@ class _SecurityCard extends StatelessWidget {
                 endIndent: 16,
                 color: LoopColors.line,
               ),
-            _SecurityRow.of(rows[index]),
+            switch (rows[index]) {
+              final LoopRecordRow row => _SecurityRow.of(row),
+              final Widget other => other,
+            },
           ],
         ],
       ),
@@ -1634,6 +1632,7 @@ class _SecurityRow extends LoopRecordRow {
         semanticLabel: row.semanticLabel,
         selected: row.selected,
         position: row.position,
+        trailingBadge: row.trailingBadge,
       );
 
   @override
@@ -1672,6 +1671,11 @@ class _SecurityRow extends LoopRecordRow {
               trailing!,
               style: LoopType.body.copyWith(color: LoopColors.text3),
             ),
+          ],
+          // Decision 0152: a switch row (大额交易二次验证).
+          if (trailingBadge != null) ...<Widget>[
+            const SizedBox(width: 8),
+            trailingBadge!,
           ],
           if (onTap != null) ...<Widget>[
             const SizedBox(width: 4),

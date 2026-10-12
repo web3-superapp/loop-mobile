@@ -49,6 +49,11 @@ enum LoopChainFailureKind {
   /// up is not delivered, so the command can never succeed in this build.
   stepUpRequired,
 
+  /// The device's own step-up for a large amount (decision 0152) was
+  /// cancelled or did not pass. Nothing was signed and nothing was
+  /// submitted; the same operation may be confirmed again.
+  stepUpCancelled,
+
   /// Optimistic-concurrency rejection: reload and merge before retrying.
   versionConflict,
   bootstrapRequired,
@@ -276,6 +281,7 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
     '你所在的地区暂时不支持这个操作，没有发生任何变化。'
         '这与账号或资产无关，换一个也不会改变结果。',
   LoopChainFailureKind.stepUpRequired => '这一步需要二次验证，二次验证还没有开放，没有发生任何变化。',
+  LoopChainFailureKind.stepUpCancelled => '已取消，没有发生任何变化。',
   LoopChainFailureKind.notFound => '目标不存在、未登记，或对当前账号不可见。',
   LoopChainFailureKind.versionConflict => '数据已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。',
   LoopChainFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',

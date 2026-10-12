@@ -227,6 +227,7 @@ void main() {
       expect(_labels(tester), <String>[
         '验证',
         '恢复',
+        '交易验证',
         '设备',
         '授权盘点',
         '通知',

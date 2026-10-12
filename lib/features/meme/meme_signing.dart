@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
@@ -10,9 +11,11 @@ import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
+import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
-import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -148,6 +151,9 @@ List<IntentField> memeIntentFields(
 /// zh-CN for a refusal before or at the wallet. Every line states that
 /// nothing was submitted.
 String memeSignReasonText(String reasonCode) => switch (reasonCode) {
+  // Decision 0152: the large-amount step-up stopped before the wallet.
+  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
+  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
   'INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
   'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
   'MEME_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。',
@@ -197,6 +203,18 @@ String memeBroadcastText(MemeSignOutcome outcome, MemeIntentKind kind) {
   return '已广播（$short）。${memeReportReasonText(outcome.reasonCode)}';
 }
 
+/// What one MEME intent is worth in USD1, for the large-amount step-up
+/// (decision 0152): what a buy or a create's first buy pays, what a sell
+/// expects to receive. A create without a first buy moves no USD1 and is
+/// `null`.
+Decimal? memeIntentStepUpUsd1(MemeIntent intent) => switch (intent.kind) {
+  MemeIntentKind.sell => loopStepUpUsd1FromAtomic(intent.expectedOut),
+  MemeIntentKind.buy || MemeIntentKind.create =>
+    intent.usd1Amount > BigInt.zero
+        ? loopStepUpUsd1FromAtomic(intent.usd1Amount)
+        : null,
+};
+
 /// The one path from a MEME intent to the wallet.
 final class MemeIntentSigner {
   const MemeIntentSigner({required this.wallet, required this.gateway});
@@ -225,6 +243,7 @@ final class MemeIntentSigner {
     observedAt: intent.createdAt,
     expiresAt: intent.expiresAt,
     fields: memeIntentFields(intent, symbol: symbol),
+    stepUpUsd1: memeIntentStepUpUsd1(intent),
   );
 
   /// The approval half, or `null` when the intent carries none.
@@ -385,7 +404,7 @@ final class MemeIntentSigner {
 
 final memeIntentSignerProvider = Provider<MemeIntentSigner>(
   (ref) => MemeIntentSigner(
-    wallet: ref.watch(walletSigningGatewayProvider),
+    wallet: ref.watch(loopGuardedWalletSigningGatewayProvider),
     gateway: ref.watch(memeGatewayProvider),
   ),
 );
@@ -445,13 +464,20 @@ class MemeSignSheet extends StatefulWidget {
   State<MemeSignSheet> createState() => _MemeSignSheetState();
 }
 
-class _MemeSignSheetState extends State<MemeSignSheet> {
+class _MemeSignSheetState extends State<MemeSignSheet>
+    with LoopStepUpSheetMixin<MemeSignSheet> {
   LoopSignSheetState _state = LoopSignSheetState.pending;
   String? _reason;
   MemeSignOutcome? _outcome;
   bool _submitted = false;
 
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
+
+  @override
+  WalletSigningGateway get stepUpWallet => widget.signer.wallet;
+
+  @override
+  Decimal? get stepUpUsd1 => memeIntentStepUpUsd1(widget.intent);
 
   @override
   void initState() {
@@ -468,6 +494,7 @@ class _MemeSignSheetState extends State<MemeSignSheet> {
       _reason =
           '会依次打开两次钱包：先授权，再${memeIntentNoun(widget.intent.kind)}。授权金额只够这一笔。';
     }
+    if (refusal == null) planStepUp();
   }
 
   Future<void> _confirm() async {
@@ -477,6 +504,18 @@ class _MemeSignSheetState extends State<MemeSignSheet> {
       _state = LoopSignSheetState.signing;
       _reason = null;
     });
+    // Decision 0152: the large-amount step-up runs before the first wallet
+    // prompt and covers the approval and the trade.
+    final stopped = await runStepUp();
+    if (!mounted) return;
+    if (stopped != null) {
+      setState(() {
+        _state = LoopSignSheetState.pending;
+        _reason = loopStepUpReasonText(stopped);
+        _submitted = false;
+      });
+      return;
+    }
     widget.latch?.enteredSigning = true;
     final outcome = await widget.signer.sign(
       widget.intent,
@@ -513,20 +552,28 @@ class _MemeSignSheetState extends State<MemeSignSheet> {
     final fields = memeIntentFields(widget.intent, symbol: widget.symbol);
     return PopScope(
       canPop: _state != LoopSignSheetState.signing,
-      child: LoopSignSheet(
-        key: const ValueKey<String>('meme-sign-sheet'),
-        state: _state,
-        title: memeIntentTitle(widget.intent.kind),
-        networkBadge: loopIsTestnetChainId(widget.intent.chainId)
-            ? loopTestnetBadgeLabel
-            : null,
-        facts: <LoopSignFact>[
-          for (final IntentField field in fields)
-            LoopSignFact(field.label, field.value),
-        ],
-        reason: _reason,
-        onConfirm: _submitted ? null : _confirm,
-        onCancel: () => Navigator.of(context).pop(_outcome),
+      child: withStepUpStrip(
+        signLabel: memeIntentNoun(widget.intent.kind),
+        signStatus: stepUpSignStatus(
+          _state,
+          locked: _outcome != null && _outcome!.txHash == null,
+        ),
+        LoopSignSheet(
+          key: const ValueKey<String>('meme-sign-sheet'),
+          state: _state,
+          signingTitle: stepUpSigningTitle,
+          title: memeIntentTitle(widget.intent.kind),
+          networkBadge: loopIsTestnetChainId(widget.intent.chainId)
+              ? loopTestnetBadgeLabel
+              : null,
+          facts: <LoopSignFact>[
+            for (final IntentField field in fields)
+              LoopSignFact(field.label, field.value),
+          ],
+          reason: _reason,
+          onConfirm: _submitted ? null : _confirm,
+          onCancel: () => Navigator.of(context).pop(_outcome),
+        ),
       ),
     );
   }

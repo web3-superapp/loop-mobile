@@ -826,9 +826,10 @@ void main() {
         findsNothing,
       );
       expect(find.byType(Switch), findsNothing);
-      // Nothing is on: this tree composed no device lock at all.
+      // Nothing is on: this tree composed no device lock at all — 应用锁,
+      // 大额交易二次验证 (decision 0152) and MFA.
       expect(find.text('已开启'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(2));
+      expect(find.text('不可用'), findsNWidgets(3));
       expect(_enabled(tester, 'security-setup-continue'), isTrue);
     });
 
@@ -842,7 +843,7 @@ void main() {
 
       for (final reason in <String>[
         '还没有读到这台设备的锁屏能力',
-        '超过阈值时再验一次身份 · 即将推出',
+        '超过 1,000 USD1 时再验一次身份 · 这次运行没有可用的设备验证',
         '这次运行没有连上登录服务',
       ]) {
         expect(find.textContaining(reason), findsOneWidget);
