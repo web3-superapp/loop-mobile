@@ -160,7 +160,7 @@ String loopStepUpThresholdLabel(int threshold) {
 
 /// The row's subtitle.
 String loopStepUpSubtitle(int threshold) =>
-    '超过 ${loopStepUpThresholdLabel(threshold)} USD1 时再验一次身份';
+    '达到 ${loopStepUpThresholdLabel(threshold)} USD1 时再验一次身份';
 
 /// What one signing sheet will ask before the wallet opens.
 @immutable

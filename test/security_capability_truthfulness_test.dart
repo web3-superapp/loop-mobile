@@ -86,21 +86,32 @@ void main() {
     expect(devices.trailing, '2');
     expect(devices.subtitle, startsWith('2 个活跃会话'));
 
-    for (final id in LoopSecurityCapabilityId.values) {
+    // Decision 0151: the server still lists 恢复密码 and the response stays
+    // valid, but the center no longer shows it.
+    final shown = LoopSecurityCapabilityId.values
+        .where((id) => !loopHiddenSecurityCapabilities.contains(id))
+        .toList(growable: false);
+    expect(shown, hasLength(5));
+    for (final id in shown) {
       final row = find.byKey(
         ValueKey<String>('security-method-${id.wireName}'),
       );
       await scrollToS8Section(tester, row);
       expect(row, findsOneWidget, reason: id.wireName);
     }
-    // None of the six exists yet, so none of them is "off": a badge reading
+    expect(
+      find.byKey(const ValueKey<String>('security-method-recoveryPassword')),
+      findsNothing,
+    );
+    expect(find.text('恢复密码'), findsNothing);
+    // None of the five exists yet, so none of them is "off": a badge reading
     // 未开启 over a sentence reading 还没有开放 made LOOP's omission look like
     // the account's.
-    expect(find.text('还没有开放'), findsNWidgets(6));
+    expect(find.text('还没有开放'), findsNWidgets(5));
     expect(find.text('未开启'), findsNothing);
     // And the row says what the method would do, instead of repeating its own
     // title with 还没有开放 after it.
-    for (final id in LoopSecurityCapabilityId.values) {
+    for (final id in shown) {
       final row = find.byKey(
         ValueKey<String>('security-method-${id.wireName}'),
       );

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
@@ -431,8 +432,9 @@ final onboardingCommunitiesControllerProvider =
 class OnboardingCommunitiesScreen extends ConsumerStatefulWidget {
   const OnboardingCommunitiesScreen({required this.onDone, super.key});
 
-  /// Leaves for 聊天. Called by 跳过, and by 进入 LOOP once every join has
-  /// been answered.
+  /// Leaves for 聊天. Called by 跳过, by 继续进入 LOOP after a failed join,
+  /// and at the end of the 正在进入 LOOP page once every join succeeded
+  /// (decision 0151).
   final VoidCallback onDone;
 
   @override
@@ -443,6 +445,15 @@ class OnboardingCommunitiesScreen extends ConsumerStatefulWidget {
 class _OnboardingCommunitiesScreenState
     extends ConsumerState<OnboardingCommunitiesScreen> {
   var _left = false;
+
+  /// Every ticked community joined: the list gives way to the full-page
+  /// 正在进入 LOOP while the mutes settle, then the page leaves by itself
+  /// (decision 0151). Set in the same turn [OnboardingCommunitiesController.enter]
+  /// answers, so the list never draws a frame of the clean result.
+  var _entering = false;
+
+  /// The communities the entering page gathers in, fixed when it opens.
+  var _joined = const <CommunitySummary>[];
 
   /// Leaves for 聊天 exactly once, whichever of 跳过, the button, or the end
   /// of the mute wait gets there first.
@@ -466,9 +477,23 @@ class _OnboardingCommunitiesScreenState
       unawaited(controller.settleMutes());
       return;
     }
-    // Decision 0136: wait (about ten seconds at most, skippable) for the
-    // server to confirm the mutes, so the rows can say so, then go on.
-    await controller.settleMutes();
+    // Decision 0136 waits (about ten seconds at most) for the server to
+    // confirm the mutes. Decision 0151: that wait is the 正在进入 LOOP page,
+    // not the list with a renamed button; it offers no way out, ends by
+    // itself at the ceiling, and stays at least long enough for its
+    // gathering to play out, so it never just flashes.
+    final joined = ref.read(onboardingCommunitiesControllerProvider);
+    setState(() {
+      _entering = true;
+      _joined = <CommunitySummary>[
+        for (final item in joined.items)
+          if (joined.results[item.communityId]?.isJoined ?? false) item,
+      ];
+    });
+    await Future.wait<void>(<Future<void>>[
+      controller.settleMutes(),
+      Future<void>.delayed(onboardingEnteringMinimumStay),
+    ]);
     if (!mounted) return;
     _leave();
   }
@@ -484,11 +509,13 @@ class _OnboardingCommunitiesScreenState
         if (mounted) unawaited(controller.load());
       });
     }
+    if (_entering) return OnboardingCommunitiesEntering(communities: _joined);
     final count = state.selected.length;
+    // Decision 0151: the list is only ever on screen while submitting, after a
+    // failed join, or before the button is pressed; a clean result is the
+    // entering page above, so there is no 「进入 LOOP while settling」 label.
     final enterLabel = state.submitting
         ? '正在加入…'
-        : state.settling && !state.hasFailures
-        ? '进入 LOOP'
         : state.hasFailures
         ? '继续进入 LOOP'
         : count == 0
@@ -524,7 +551,7 @@ class _OnboardingCommunitiesScreenState
                 block: true,
                 onPressed: state.submitting
                     ? null
-                    : state.hasFailures || state.settling
+                    : state.hasFailures
                     ? _leave
                     : () => unawaited(_enter(controller)),
               ),
@@ -661,6 +688,389 @@ class _OnboardingCommunitiesScreenState
       semanticLabel: '${community.name}，$members，${selected ? '已选' : '未选'}',
     );
   }
+}
+
+/// The shortest the 正在进入 LOOP page stays, so the gathering, the ring
+/// (1.8–2.4 s) and the wordmark's arrival (from 2.0 s) all play out even when
+/// the server confirms every mute at once (decision 0151).
+const onboardingEnteringMinimumStay = Duration(milliseconds: 2600);
+
+/// How many joined communities the entering page gathers in.
+const onboardingEnteringLogoLimit = 5;
+
+/// `onboarding-communities` · state / focus: 正在进入 LOOP (decision 0151).
+///
+/// What the page becomes once every ticked community joined, for as long as
+/// [OnboardingCommunitiesController.settleMutes] waits on the server (about
+/// ten seconds at most, never less than [onboardingEnteringMinimumStay]).
+///
+/// The communities just joined circle the centre, spiral in and fade; a Lime
+/// point opens into a soft ring where they met, and the LOOP wordmark stays,
+/// breathing on a low Lime glow, until the page leaves. Only transforms and
+/// opacities move; nothing is laid out again while it plays. With reduced
+/// motion the page draws that last frame and holds still.
+///
+/// The ground and safe area are the launch page's (`SplashScreen`). Waiting
+/// is not a choice, so it offers no button and no way back.
+class OnboardingCommunitiesEntering extends StatefulWidget {
+  const OnboardingCommunitiesEntering({required this.communities, super.key});
+
+  /// The communities that joined, in list order; the first
+  /// [onboardingEnteringLogoLimit] are drawn.
+  final List<CommunitySummary> communities;
+
+  static const String title = '正在进入 LOOP';
+  static const String detail = '正在为你把刚加入的社区设为免打扰…';
+
+  /// Orbit until here, then gather (1.2 s – 1.8 s), then the ring (0.6 s).
+  static const Duration orbitEnd = Duration(milliseconds: 1200);
+  static const Duration gatherEnd = Duration(milliseconds: 1800);
+  static const Duration ringEnd = Duration(milliseconds: 2400);
+
+  /// One turn of the orbit.
+  static const Duration turn = Duration(milliseconds: 2400);
+
+  /// One full breath of the glow under the wordmark.
+  static const Duration breath = Duration(milliseconds: 1600);
+
+  static const double orbitRadius = 96;
+  static const double logoSize = 40;
+  static const double pointSize = 12;
+  static const double ringRadius = 72;
+
+  @override
+  State<OnboardingCommunitiesEntering> createState() =>
+      _OnboardingCommunitiesEnteringState();
+}
+
+class _OnboardingCommunitiesEnteringState
+    extends State<OnboardingCommunitiesEntering>
+    with TickerProviderStateMixin {
+  late final AnimationController _intro = AnimationController(
+    vsync: this,
+    duration: OnboardingCommunitiesEntering.ringEnd,
+  );
+  late final AnimationController _breath = AnimationController(
+    vsync: this,
+    duration: OnboardingCommunitiesEntering.breath ~/ 2,
+  );
+  var _still = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _intro.addStatusListener((status) {
+      if (status == AnimationStatus.completed && !_still) {
+        _breath.repeat(reverse: true);
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final still = MediaQuery.disableAnimationsOf(context);
+    if (still == _still && (_intro.isAnimating || _intro.isCompleted)) return;
+    _still = still;
+    if (still) {
+      _intro.stop();
+      _breath.stop();
+      _intro.value = 1;
+      _breath.value = 0.5;
+    } else if (!_intro.isCompleted) {
+      unawaited(_intro.forward());
+    } else if (!_breath.isAnimating) {
+      unawaited(_breath.repeat(reverse: true));
+    }
+  }
+
+  @override
+  void dispose() {
+    _intro.dispose();
+    _breath.dispose();
+    super.dispose();
+  }
+
+  /// [_intro] between [from] and [to] on the timeline, through [curve].
+  Animation<double> _phase(
+    Duration from,
+    Duration to, [
+    Curve curve = Curves.linear,
+  ]) {
+    final total = OnboardingCommunitiesEntering.ringEnd.inMicroseconds;
+    return CurvedAnimation(
+      parent: _intro,
+      curve: Interval(
+        from.inMicroseconds / total,
+        to.inMicroseconds / total,
+        curve: curve,
+      ),
+    );
+  }
+
+  late final Animation<double> _gather = _phase(
+    OnboardingCommunitiesEntering.orbitEnd,
+    OnboardingCommunitiesEntering.gatherEnd,
+    Curves.easeInCubic,
+  );
+  late final Animation<double> _pop = _phase(
+    const Duration(milliseconds: 1650),
+    OnboardingCommunitiesEntering.gatherEnd,
+    Curves.easeOutBack,
+  );
+  late final Animation<double> _ring = _phase(
+    OnboardingCommunitiesEntering.gatherEnd,
+    OnboardingCommunitiesEntering.ringEnd,
+    Curves.easeOutCubic,
+  );
+  late final Animation<double> _pointFade = _phase(
+    OnboardingCommunitiesEntering.gatherEnd,
+    const Duration(milliseconds: 2000),
+    Curves.easeOut,
+  );
+  late final Animation<double> _arrive = _phase(
+    const Duration(milliseconds: 2000),
+    OnboardingCommunitiesEntering.ringEnd,
+    Curves.easeOut,
+  );
+  late final Animation<double> _copy = _phase(
+    OnboardingCommunitiesEntering.gatherEnd,
+    const Duration(milliseconds: 2200),
+    Curves.easeOut,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final logos = widget.communities
+        .take(onboardingEnteringLogoLimit)
+        .toList(growable: false);
+    const stage =
+        OnboardingCommunitiesEntering.orbitRadius * 2 +
+        OnboardingCommunitiesEntering.logoSize +
+        16;
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        key: const ValueKey<String>('onboarding-communities-entering'),
+        body: SafeArea(
+          child: SizedBox.expand(
+            child: Column(
+              children: <Widget>[
+                const Spacer(),
+                SizedBox.square(
+                  dimension: stage,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      _glow(),
+                      _ringLayer(),
+                      _point(),
+                      for (var index = 0; index < logos.length; index += 1)
+                        _logo(logos[index], index, logos.length),
+                      _wordmark(),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FadeTransition(
+                  opacity: _copy,
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        children: <Widget>[
+                          Text(
+                            OnboardingCommunitiesEntering.title,
+                            key: const ValueKey<String>(
+                              'onboarding-entering-title',
+                            ),
+                            textAlign: TextAlign.center,
+                            style: LoopTypography.title(16),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            OnboardingCommunitiesEntering.detail,
+                            textAlign: TextAlign.center,
+                            style: LoopTypography.caption(
+                              12,
+                              color: LoopColors.text3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// One joined community: on the orbit, then spiralling in, shrinking to
+  /// 0.4 and fading out. Gone from the tree once gathered.
+  Widget _logo(CommunitySummary community, int index, int count) {
+    final key = ValueKey<String>(
+      'onboarding-entering-logo-${community.communityId}',
+    );
+    final tile = FadeTransition(
+      opacity: ReverseAnimation(_gather),
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 1, end: 0.4).animate(_gather),
+        child: CommunityLogo(
+          identity: community.communityId,
+          name: community.name,
+          logoRef: community.logoRef,
+          size: OnboardingCommunitiesEntering.logoSize,
+          radius: OnboardingCommunitiesEntering.logoSize / 2,
+        ),
+      ),
+    );
+    return AnimatedBuilder(
+      key: key,
+      animation: _intro,
+      child: tile,
+      builder: (context, child) {
+        final gather = _gather.value;
+        if (_gather.isCompleted || gather >= 1) {
+          return const SizedBox.shrink();
+        }
+        final elapsed =
+            _intro.value * OnboardingCommunitiesEntering.ringEnd.inMicroseconds;
+        final travel = OnboardingCommunitiesEntering.gatherEnd.inMicroseconds;
+        // easeInOut start: the orbit picks up speed, the spiral carries it.
+        final turns =
+            Curves.easeInOut.transform((elapsed / travel).clamp(0.0, 1.0)) *
+            travel /
+            OnboardingCommunitiesEntering.turn.inMicroseconds;
+        final angle =
+            -math.pi / 2 +
+            index * 2 * math.pi / count +
+            turns * 2 * math.pi +
+            gather * math.pi;
+        final radius = OnboardingCommunitiesEntering.orbitRadius * (1 - gather);
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * radius, math.sin(angle) * radius),
+          child: child,
+        );
+      },
+    );
+  }
+
+  /// Draws [child] only while [_intro] is inside [from]..[to], so nothing
+  /// stays painted at nothing before or after its moment.
+  Widget _during(Duration from, Duration to, Widget child) {
+    final total = OnboardingCommunitiesEntering.ringEnd.inMicroseconds;
+    final start = from.inMicroseconds / total;
+    final end = to.inMicroseconds / total;
+    return AnimatedBuilder(
+      animation: _intro,
+      child: child,
+      builder: (context, child) =>
+          !_still && _intro.value > start && _intro.value < end
+          ? child!
+          : const SizedBox.shrink(),
+    );
+  }
+
+  /// The Lime point where they meet: it pops in as the logos arrive, then
+  /// gives way to [_ringLayer].
+  Widget _point() => _during(
+    const Duration(milliseconds: 1650),
+    const Duration(milliseconds: 2000),
+    FadeTransition(
+      opacity: ReverseAnimation(_pointFade),
+      child: ScaleTransition(
+        scale: _pop,
+        child: const DecoratedBox(
+          decoration: BoxDecoration(
+            color: LoopColors.lime,
+            shape: BoxShape.circle,
+          ),
+          child: SizedBox.square(
+            dimension: OnboardingCommunitiesEntering.pointSize,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  /// The soft ring: radius 12 → 72, opacity 0.8 → 0, easeOutCubic, 600 ms.
+  Widget _ringLayer() {
+    const from =
+        OnboardingCommunitiesEntering.pointSize /
+        2 /
+        OnboardingCommunitiesEntering.ringRadius;
+    return _during(
+      OnboardingCommunitiesEntering.gatherEnd,
+      OnboardingCommunitiesEntering.ringEnd,
+      FadeTransition(
+        opacity: Tween<double>(begin: 0.8, end: 0).animate(_ring),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: from, end: 1).animate(_ring),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: <Color>[
+                  LoopColors.lime.withValues(alpha: 0.05),
+                  LoopColors.lime.withValues(alpha: 0.55),
+                  LoopColors.lime.withValues(alpha: 0),
+                ],
+                stops: const <double>[0.55, 0.85, 1],
+              ),
+            ),
+            child: const SizedBox.square(
+              dimension: OnboardingCommunitiesEntering.ringRadius * 2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The low Lime glow under the wordmark, breathing 0.35 ↔ 0.6 every
+  /// [OnboardingCommunitiesEntering.breath].
+  Widget _glow() => FadeTransition(
+    opacity: _arrive,
+    child: FadeTransition(
+      opacity: Tween<double>(
+        begin: 0.35,
+        end: 0.6,
+      ).animate(CurvedAnimation(parent: _breath, curve: Curves.easeInOut)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: <Color>[
+              LoopColors.lime.withValues(alpha: 0.45),
+              LoopColors.lime.withValues(alpha: 0),
+            ],
+          ),
+        ),
+        child: const SizedBox(width: 168, height: 168),
+      ),
+    ),
+  );
+
+  /// LOOP, after the ring.
+  Widget _wordmark() => FadeTransition(
+    opacity: _arrive,
+    child: ScaleTransition(
+      scale: Tween<double>(begin: 0.92, end: 1).animate(_arrive),
+      child: const LoopBrandMark(
+        key: ValueKey<String>('onboarding-entering-wordmark'),
+        kind: LoopBrandMarkKind.wordmark,
+        height: 40,
+        semanticLabel: 'LOOP',
+      ),
+    ),
+  );
 }
 
 /// The Lime tick circle of a chosen community (decision 0126): a filled Lime

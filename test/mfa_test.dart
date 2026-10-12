@@ -271,7 +271,7 @@ void main() {
       );
       expect(row.trailing, '不可用');
       expect(row.onTap, isNull);
-      expect(row.subtitle, '超过 1,000 USD1 时再验一次身份 · 这次运行没有可用的设备验证');
+      expect(row.subtitle, '达到 1,000 USD1 时再验一次身份 · 这次运行没有可用的设备验证');
     });
   });
 

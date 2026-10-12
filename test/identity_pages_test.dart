@@ -258,9 +258,11 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-recovery-unavailable')),
         findsOneWidget,
       );
-      // Passkey and 恢复密码; the two disclosure rows stay collapsed and
-      // 自动恢复 is not an option at all — it is already in force.
-      expect(find.text('不可用'), findsNWidgets(2));
+      // Passkey only (decision 0151 took 恢复密码 off the page); the two
+      // disclosure rows stay collapsed and 自动恢复 is not an option at all —
+      // it is already in force.
+      expect(find.text('不可用'), findsNWidgets(1));
+      expect(find.textContaining('恢复密码'), findsNothing);
       expect(find.text('可用'), findsNothing);
       expect(find.text('已选'), findsNothing);
       expect(find.text('已启用'), findsOneWidget);

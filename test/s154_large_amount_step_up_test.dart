@@ -177,7 +177,7 @@ void main() {
       const settings = LoopStepUpSettings();
       expect(settings.enabled, isTrue);
       expect(settings.thresholdUsd1, 1000);
-      expect(loopStepUpSubtitle(1000), '超过 1,000 USD1 时再验一次身份');
+      expect(loopStepUpSubtitle(1000), '达到 1,000 USD1 时再验一次身份');
     });
 
     test('accepts whole USD1 from 1 to 1,000,000 only', () {
@@ -597,7 +597,7 @@ void main() {
       final device = _Device();
       await pumpRow(tester, device: device);
 
-      expect(row(tester).subtitle, '超过 1,000 USD1 时再验一次身份');
+      expect(row(tester).subtitle, '达到 1,000 USD1 时再验一次身份');
       expect(find.textContaining('即将推出'), findsNothing);
       final toggle = tester.widget<Switch>(find.byType(Switch));
       expect(toggle.value, isTrue);
@@ -648,7 +648,7 @@ void main() {
       );
       expect(device.reasons.single, '验证身份以提高大额交易的验证金额');
       expect(store.values[_principal]?.thresholdUsd1, 5000);
-      expect(row(tester).subtitle, '超过 5,000 USD1 时再验一次身份');
+      expect(row(tester).subtitle, '达到 5,000 USD1 时再验一次身份');
     });
 
     testWidgets('a device with no screen lock offers no switch, and says why', (
@@ -665,7 +665,7 @@ void main() {
       expect(find.text('不可用'), findsOneWidget);
       expect(
         row(tester).subtitle,
-        '超过 1,000 USD1 时再验一次身份 · 这台设备还没有设置锁屏密码或生物识别，先在系统设置里加上',
+        '达到 1,000 USD1 时再验一次身份 · 这台设备还没有设置锁屏密码或生物识别，先在系统设置里加上',
       );
       expect(row(tester).onTap, isNull);
     });

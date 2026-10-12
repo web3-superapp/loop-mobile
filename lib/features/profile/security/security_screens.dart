@@ -229,6 +229,14 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
   }
 }
 
+/// Methods the server still lists but the center no longer shows.
+///
+/// Decision 0151 (owner ruling 2026-10-12): 恢复密码 is not offered by LOOP.
+/// `GET /v2/security/capabilities` still sends it and the codec still reads
+/// it, so a response that carries it stays valid; the page just leaves it out.
+const Set<LoopSecurityCapabilityId> loopHiddenSecurityCapabilities =
+    <LoopSecurityCapabilityId>{LoopSecurityCapabilityId.recoveryPassword};
+
 class _SecurityMethodGroup extends StatelessWidget {
   const _SecurityMethodGroup({
     required this.capabilities,
@@ -269,7 +277,9 @@ class _SecurityMethodGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = capabilities.items;
+    final items = capabilities.items
+        .where((item) => !loopHiddenSecurityCapabilities.contains(item.id))
+        .toList(growable: false);
     final verification = items
         .where((item) => _verification.contains(item.id))
         .toList(growable: false);

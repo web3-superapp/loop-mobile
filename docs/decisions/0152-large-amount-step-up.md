@@ -76,7 +76,7 @@ App 已有一套设备验证（应用锁：`LoopDeviceAuthenticator`，生物识
 ### 4. 页面
 
 - `security-setup` 「交易验证」卡第一行改为 `LoopStepUpSettingRow`：标题「大额交易二次验证」、副标题
-  「超过 N USD1 时再验一次身份」（N 千分位）、右侧开关；点行打开阈值抽屉（数字输入、预设 500 / 1,000 / 5,000、保存）。
+  「达到 N USD1 时再验一次身份」（N 千分位，主代理 2026-10-12 裁决：与「等于即触发」一致）、右侧开关；点行打开阈值抽屉（数字输入、预设 500 / 1,000 / 5,000、保存）。
   设备不可验证时：无开关、「不可用」、副标题追加应用锁同款原因（`loopAppLockFactorText`）。删除
   `securityLargeAmountSubtitle` 与「即将推出」语义标签。卡片 `_SecurityCard` 接受非 `LoopRecordRow` 子项，
   `_SecurityRow` 绘出 `trailingBadge`（开关）。没有 ProviderScope 的树（部分页面测试）显示同一行、无开关、
@@ -109,9 +109,9 @@ App 已有一套设备验证（应用锁：`LoopDeviceAuthenticator`，生物识
 - 生物识别 / 锁屏密码的真机行为、系统弹窗文案只能真机验证（记 unverified）。
 - 测试树默认 `UnavailableLoopDeviceAuthenticator`，规则不生效，既有签名测试行为不变。
 
-## 未决项（需主代理决策）
+## 主代理裁决（2026-10-12）与待办
 
-1. 挖矿领取与 Launch 领取没有 USD1 价格来源，按需求视为未达阈值；若要覆盖，需后端在意图里给出 USD 估值（如 `valueUsd`）。
-2. 钱包非 USD1 资产用服务端 `policy.valueUsd`（USD）按 1:1 当作 USD1；USD1 脱锚时有偏差。
-3. 安全存储第三个 owner 已在本决策登记；若主代理更倾向 SharedPreferences（与开户进度同法），只需替换 store 实现与 harness 登记。
-4. 副标题按需求写「超过 N USD1」，实际规则是「达到或超过」（等于即触发）；阈值抽屉写明「达到或超过」。
+1. 挖矿领取与 Launch 领取暂不触发：**待办**——后端在意图里给出 USD 估值（如 `valueUsd`）后，接入 `stepUpUsd1`。
+2. 钱包非 USD1 资产用服务端 `policy.valueUsd`（USD）按 1:1 当作 USD1：接受。
+3. 存储保持平台安全存储（第三个 secure storage owner，本决策登记）。
+4. 副标题改为「达到 N USD1 时再验一次身份」，与「等于即触发」一致；阈值抽屉保持「达到或超过」。

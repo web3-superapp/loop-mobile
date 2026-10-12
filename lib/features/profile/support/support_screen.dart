@@ -47,7 +47,7 @@ const List<(String, String)> _supportAnswers = <(String, String)>[
   ),
   (
     '换手机怎么恢复账户',
-    '账号身份由 Privy 保管。恢复密码、Passkey、自动恢复与社交恢复暂时都不可用，'
+    '账号身份由 Privy 保管。Passkey、自动恢复与社交恢复暂时都不可用，'
         '安全中心会显示每一项的具体原因。',
   ),
   (

@@ -3566,8 +3566,11 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\bawait\s+pumpS8Page\s*\(",
             r"\bsecurity\s*:\s*FakeSecurityGateway\s*\(",
             r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
-            r"\bfor\s*\(\s*final\s+id\s+in\s+LoopSecurityCapabilityId\.values\s*\)",
-            r"\bfindsNWidgets\s*\(\s*6\s*\)",
+            # Decision 0151: the center shows the five methods it does not
+            # hide; 恢复密码 is still read from the server and left out.
+            r"\bLoopSecurityCapabilityId\.values\s*\.where\s*\(\s*\(id\)\s*=>\s*!loopHiddenSecurityCapabilities\.contains\(id\)\s*,?\s*\)",
+            r"\bfor\s*\(\s*final\s+id\s+in\s+shown\s*\)",
+            r"\bfindsNWidgets\s*\(\s*5\s*\)",
             r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
         ),
         "production LoopApp A11 keeps every setup method unavailable": (
