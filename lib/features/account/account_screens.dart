@@ -1032,14 +1032,17 @@ class _WalletCreationRingPainter extends CustomPainter {
 
 /// One recovery method the page lists.
 ///
-/// [cloud] is not like the other two. It is how a Privy embedded wallet is
+/// Decision 0151 (owner ruling 2026-10-12): 恢复密码 is no longer one of
+/// them; the capability flag [PrivyWalletCapabilities.canUseRecoveryPassword]
+/// is still read, nothing on this page shows it.
+///
+/// [cloud] is not like the other one. It is how a Privy embedded wallet is
 /// recovered by default — the provider keeps the wallet reachable through the
 /// login method itself — so it is already in force for every account that has
-/// one. The other two are enrolments LOOP would have to perform, and the SDK
-/// in this build exposes no call that performs them.
+/// one. Passkey is an enrolment LOOP would have to perform, and the SDK
+/// in this build exposes no call that performs it.
 enum WalletRecoveryMethod {
   passkey('Passkey（推荐）', '用设备生物识别，跟随系统钥匙串同步', 'key'),
-  password('恢复密码', '自己设一个密码，忘了就找不回', 'lock'),
   cloud('自动恢复', '凭登录方式恢复，换设备后用同一邮箱登录即可', 'cloud');
 
   const WalletRecoveryMethod(this.title, this.detail, this.icon);
@@ -1143,16 +1146,11 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
           : _passkeyBound
           ? _RecoveryRowState.bound
           : _RecoveryRowState.selectable,
-    WalletRecoveryMethod.password =>
-      widget.capabilities.canUseRecoveryPassword
-          ? _RecoveryRowState.selectable
-          : _RecoveryRowState.unavailable,
   };
 
   String _reason(WalletRecoveryMethod method) => switch (method) {
     WalletRecoveryMethod.cloud => walletAutomaticRecoveryEvidence,
     WalletRecoveryMethod.passkey => walletRecoveryPasskeyPending,
-    WalletRecoveryMethod.password => walletRecoveryProviderPending,
   };
 
   /// What a bound passkey row says about itself, in the provider's terms.
