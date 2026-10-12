@@ -354,12 +354,17 @@ void main() {
       expect(find.byKey(_entering), findsOneWidget);
       expect(done, 0);
 
-      // Second poll: synced and muted; the page goes on by itself.
+      // Second poll: synced and muted. The page goes on by itself once its
+      // shortest stay is over.
       await tester.pump(onboardingMuteSyncInterval);
       await tester.pump();
       await tester.pump();
       expect(joined(), everyElement(OnboardingJoinResult.joined));
       expect(community.membershipReads, hasLength(8));
+      await tester.pump(
+        onboardingEnteringMinimumStay - onboardingMuteSyncInterval * 2,
+      );
+      await tester.pump();
       expect(done, 1);
     });
 
@@ -601,11 +606,16 @@ void main() {
         _state(tester).results.values,
         everyElement(OnboardingJoinResult.joinedMutePending),
       );
-      // Decision 0151: the wait is over, but the gathering plays out first.
+      // Decision 0151: the wait is over, but the gathering, the ring and the
+      // wordmark play out first: still here at 2.5 s, gone at 2.6 s.
+      expect(onboardingEnteringMinimumStay, const Duration(milliseconds: 2600));
       expect(done, 0);
       await tester.pump(
-        onboardingEnteringMinimumStay - onboardingMuteSyncInterval,
+        const Duration(milliseconds: 2500) - onboardingMuteSyncInterval,
       );
+      await tester.pump();
+      expect(done, 0);
+      await tester.pump(const Duration(milliseconds: 100));
       await tester.pump();
       expect(done, 1);
     });

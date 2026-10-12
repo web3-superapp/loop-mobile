@@ -690,9 +690,10 @@ class _OnboardingCommunitiesScreenState
   }
 }
 
-/// The shortest the 正在进入 LOOP page stays, so its gathering always plays
-/// out even when the server confirms every mute at once (decision 0151).
-const onboardingEnteringMinimumStay = Duration(milliseconds: 1800);
+/// The shortest the 正在进入 LOOP page stays, so the gathering, the ring
+/// (1.8–2.4 s) and the wordmark's arrival (from 2.0 s) all play out even when
+/// the server confirms every mute at once (decision 0151).
+const onboardingEnteringMinimumStay = Duration(milliseconds: 2600);
 
 /// How many joined communities the entering page gathers in.
 const onboardingEnteringLogoLimit = 5;

@@ -19,8 +19,8 @@ Accepted 2026-10-12。主代理下单（S153-mobile），基线 `integration/v2`
 
 1. **何时出现。** `controller.enter()` 返回 `clean == true` 的同一轮里 `setState(_entering = true)`，整页换成过渡页
    （key `onboarding-communities-entering`），列表页不会以「已全部加入」的状态再画一帧；随后
-   `Future.wait([settleMutes(), Future.delayed(1.8 s)])` 结束后 `_leave()`（`onDone` 只调一次）。
-   上限仍是 `settleMutes` 的约 10 s；下限 `onboardingEnteringMinimumStay = 1800 ms`，服务端立即确认也要把汇聚播完。
+   `Future.wait([settleMutes(), Future.delayed(2.6 s)])` 结束后 `_leave()`（`onDone` 只调一次）。
+   上限仍是 `settleMutes` 的约 10 s；下限 `onboardingEnteringMinimumStay = 2600 ms`（主代理 2026-10-12 由 1.8 s 调整），服务端立即确认也要把汇聚、光晕（1.8–2.4 s）与字标出现（2.0–2.4 s）播完再离开。
 2. **不变的路径。** `selected` 为空直接 `_leave()`；有任何失败（`!clean`）仍留在列表页逐行说明，按钮「继续进入 LOOP」，
    成功行照常后台轮询换字；「跳过」两处（右上角 close、主按钮下方文字）不变。
 3. **列表页按钮。** 删除 `settling && !hasFailures ? '进入 LOOP'` 分支（新流程下不可达）；`onPressed` 只看 `hasFailures`。
@@ -63,8 +63,8 @@ Accepted 2026-10-12。主代理下单（S153-mobile），基线 `integration/v2`
     10 轮上限到点 `onDone` 恰好一次、再等 5 s 仍是一次。
   - 新增「a clean result never draws on the list」：按下后到过渡页出现前的每一帧都是「正在加入…」，从不出现「进入 LOOP」。
   - 新增「nothing ticked leaves at once, without the entering page」。
-  - 新增「reduced motion draws the last frame and holds still」：字标透明度 1、无 logo、不请求帧、1.8 s 下限后离开。
-  - 「a server without the membership read ends the wait at once」：读失败 1 s 时还没离开，补满 1.8 s 后离开。
+  - 新增「reduced motion draws the last frame and holds still」：字标透明度 1、无 logo、不请求帧、2.6 s 下限后离开。
+  - 「a server without the membership read ends the wait at once」：读失败 1 s 时还没离开，2.5 s 仍在，2.6 s 离开。
   - 失败路径补断言：列表在、过渡页不在、「继续进入 LOOP」。
   - 过渡页的呼吸一直在跑，相关用例不再 `pumpAndSettle`，改用 `tester.pump` 推进。
 - `test/identity_pages_test.dart`、`test/s53_onboarding_sequence_test.dart`：`wallet-recovery` 「不可用」2 → 1，`recovery-password`
@@ -79,7 +79,7 @@ Accepted 2026-10-12。主代理下单（S153-mobile），基线 `integration/v2`
 
 ## Consequences
 
-- 全部加入成功后不再能在等待期间提前离开（0136 的「随时可点进入 LOOP」取消）；最长约 10 s、最短 1.8 s。
+- 全部加入成功后不再能在等待期间提前离开（0136 的「随时可点进入 LOOP」取消）；最长约 10 s、最短 2.6 s。
 - 过渡页的 logo 用列表已加载的 `logoRef`，不再发起额外请求。
 - 安全中心与开户第三步不再出现恢复密码；服务端若日后真的开放该能力，需要新决策才会再展示。
 
