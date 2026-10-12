@@ -86,6 +86,9 @@ final class LoopChainException implements Exception {
     this.ceilingUsd,
     this.spentUsd,
     this.remainingUsd,
+    this.requiredUsd1,
+    this.requiredAmountIn,
+    this.maxAmountIn,
   });
 
   final LoopChainFailureKind kind;
@@ -105,6 +108,14 @@ final class LoopChainException implements Exception {
   /// them, and a page may render them only when both arrived.
   final String? spentUsd;
   final String? remainingUsd;
+
+  /// A MEME v2 balance refusal's figures (decision 0153): what the action
+  /// needs (`requiredUsd1` for the NFT, `requiredAmountIn` for a pool
+  /// trade) and the most the wallet can spend (`maxAmountIn`). Exact
+  /// decimal strings, each optional.
+  final String? requiredUsd1;
+  final String? requiredAmountIn;
+  final String? maxAmountIn;
 
   bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;
 

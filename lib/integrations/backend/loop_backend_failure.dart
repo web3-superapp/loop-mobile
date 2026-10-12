@@ -26,6 +26,9 @@ final class LoopFailureDetails {
     this.spentUsd,
     this.remainingUsd,
     this.scope,
+    this.requiredUsd1,
+    this.requiredAmountIn,
+    this.maxAmountIn,
   });
 
   static final RegExp _reasonCodePattern = RegExp(r'^[A-Z][A-Z0-9_]{0,63}$');
@@ -56,6 +59,9 @@ final class LoopFailureDetails {
       spentUsd: scalar('spentUsd', _decimalPattern, 110),
       remainingUsd: scalar('remainingUsd', _decimalPattern, 110),
       scope: scalar('scope', _scopePattern, 32),
+      requiredUsd1: scalar('requiredUsd1', _decimalPattern, 110),
+      requiredAmountIn: scalar('requiredAmountIn', _decimalPattern, 110),
+      maxAmountIn: scalar('maxAmountIn', _decimalPattern, 110),
     );
     return details.isEmpty ? null : details;
   }
@@ -79,13 +85,26 @@ final class LoopFailureDetails {
   /// different waits, so they are two different sentences.
   final String? scope;
 
+  /// The MEME v2 balance refusals' own figures (loop-api launch2 prepare,
+  /// client decision 0153), human decimal strings. `requiredUsd1` is what
+  /// the NFT costs; `requiredAmountIn` is what an official-pool trade would
+  /// spend at most; `maxAmountIn` is the most the wallet can spend — on the
+  /// official pool its balance, on the curve the balance-limited maximum.
+  /// Each one is optional: a refusal without them is still a refusal.
+  final String? requiredUsd1;
+  final String? requiredAmountIn;
+  final String? maxAmountIn;
+
   bool get isEmpty =>
       reasonCode == null &&
       exposureUsd == null &&
       ceilingUsd == null &&
       spentUsd == null &&
       remainingUsd == null &&
-      scope == null;
+      scope == null &&
+      requiredUsd1 == null &&
+      requiredAmountIn == null &&
+      maxAmountIn == null;
 
   /// True only when both figures the ceiling rules compare are present.
   bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;

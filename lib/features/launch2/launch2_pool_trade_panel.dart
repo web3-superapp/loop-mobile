@@ -38,7 +38,12 @@ class Launch2PoolTradePanel extends ConsumerStatefulWidget {
     super.key,
     this.holding,
     this.locked = false,
+    this.onTopUp,
   });
+
+  /// 「去充值」 under a balance refusal (decision 0153): the wallet's receive
+  /// page. `null` shows no link.
+  final VoidCallback? onTopUp;
 
   final Launch2InstanceDetail detail;
   final String? walletId;
@@ -336,6 +341,28 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
     }
   }
 
+  /// The refused prepare, right above the confirm button (decision 0153).
+  /// The pool's `maxAmountIn` on a balance refusal is the wallet's balance.
+  Widget _poolFailureLine(LoopChainException failure) {
+    final holding = _detail.viewer?.holding;
+    final line = launch2ActionFailure(
+      failure,
+      fallback: launch2PoolFailureText,
+      maxIsBalance: true,
+      usd1Balance: holding != null && holding.balancesRead
+          ? holding.usd1Balance
+          : null,
+      ticker: _detail.row.ticker,
+    );
+    return Launch2ActionFailureLine(
+      key: const ValueKey<String>('launch2-pool-prepare-failed'),
+      padding: const EdgeInsets.only(top: 6),
+      message: line.text,
+      topUpKey: const ValueKey<String>('launch2-pool-topup'),
+      onTopUp: line.topUp ? widget.onTopUp : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final view = _view();
@@ -468,14 +495,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             ),
           ),
         if (_prepareFailure case final LoopChainException failure)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              launch2PoolFailureText(failure),
-              key: const ValueKey<String>('launch2-pool-prepare-failed'),
-              style: LoopType.caption.copyWith(color: LoopColors.warning),
-            ),
-          ),
+          _poolFailureLine(failure),
         const SizedBox(height: 12),
         Text(
           '滑点上限',
