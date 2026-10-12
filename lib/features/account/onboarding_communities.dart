@@ -1068,6 +1068,9 @@ class _OnboardingCommunitiesEnteringState
         kind: LoopBrandMarkKind.wordmark,
         height: 40,
         semanticLabel: 'LOOP',
+        // The WebP wordmark carries an opaque black plate that shows against
+        // the Lime glow; the SVG has a transparent ground.
+        vector: true,
       ),
     ),
   );

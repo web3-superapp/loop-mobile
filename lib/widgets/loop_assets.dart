@@ -716,11 +716,17 @@ class LoopBrandMark extends StatelessWidget {
     super.key,
     this.height = 28,
     this.semanticLabel,
+    this.vector = false,
   });
 
   final LoopBrandMarkKind kind;
   final double height;
   final String? semanticLabel;
+
+  /// Draw the flat SVG instead of the rendered WebP. The WebP is opaque
+  /// (lossy VP8, no alpha, black ground), so on anything but a black ground
+  /// it shows as a black plate; the SVG has a transparent ground.
+  final bool vector;
 
   @override
   Widget build(BuildContext context) {
@@ -736,21 +742,23 @@ class LoopBrandMark extends StatelessWidget {
         'LOOP',
       ),
     };
+    final vectorMark = SvgPicture.asset(
+      svg,
+      height: height,
+      semanticsLabel: semanticLabel ?? label,
+      errorBuilder: (context, error, stackTrace) => _MonogramFallback(
+        text: 'LO',
+        size: height,
+        shape: BoxShape.circle,
+        semanticLabel: semanticLabel ?? label,
+      ),
+    );
+    if (vector) return vectorMark;
     return Image.asset(
       webp,
       height: height,
       semanticLabel: semanticLabel ?? label,
-      errorBuilder: (context, error, stackTrace) => SvgPicture.asset(
-        svg,
-        height: height,
-        semanticsLabel: semanticLabel ?? label,
-        errorBuilder: (context, error, stackTrace) => _MonogramFallback(
-          text: 'LO',
-          size: height,
-          shape: BoxShape.circle,
-          semanticLabel: semanticLabel ?? label,
-        ),
-      ),
+      errorBuilder: (context, error, stackTrace) => vectorMark,
     );
   }
 }
