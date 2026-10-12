@@ -39,11 +39,16 @@ class Launch2PoolTradePanel extends ConsumerStatefulWidget {
     this.holding,
     this.locked = false,
     this.onTopUp,
+    this.onFaucet,
   });
 
   /// 「去充值」 under a balance refusal (decision 0153): the wallet's receive
   /// page. `null` shows no link.
   final VoidCallback? onTopUp;
+
+  /// Opens the testnet faucet sheet (decision 0154); `null` while the
+  /// server does not publish `testnetFaucet` as available.
+  final VoidCallback? onFaucet;
 
   final Launch2InstanceDetail detail;
   final String? walletId;
@@ -360,6 +365,8 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
       message: line.text,
       topUpKey: const ValueKey<String>('launch2-pool-topup'),
       onTopUp: line.topUp ? widget.onTopUp : null,
+      faucetKey: const ValueKey<String>('launch2-pool-faucet'),
+      onFaucet: line.topUp ? widget.onFaucet : null,
     );
   }
 

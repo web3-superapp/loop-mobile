@@ -517,7 +517,7 @@ void main() {
             .cast<Map<String, Object?>>()
             .singleWhere((item) => item['capabilityId'] == 'launch2');
 
-    test('a 33-id list reads launch2 as the backend publishes it', () async {
+    test('a 34-id list reads launch2 as the backend publishes it', () async {
       final value = _capabilities();
       launch2Row(value)
         ..['availability'] = 'unavailable'
@@ -527,7 +527,7 @@ void main() {
           'reasonCode': 'LAUNCH2_FACTORY_NOT_CONFIGURED',
         };
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(33));
+      expect(capabilities.capabilities, hasLength(34));
       final launch2 = capabilities[LoopV2CapabilityId.launch2];
       expect(launch2.availability, LoopV2CapabilityAvailability.unavailable);
       expect(launch2.reasonCode, 'LAUNCH2_FACTORY_NOT_CONFIGURED');
@@ -552,19 +552,19 @@ void main() {
       );
     });
 
-    test('a 32-id list from a backend before loop-api 0114 reads launch2 as '
+    test('a list from a backend before loop-api 0114 reads launch2 as '
         'deferred', () async {
       final value = _capabilities();
       (value['capabilities']! as List<Object?>).removeWhere(
         (item) => (item! as Map<String, Object?>)['capabilityId'] == 'launch2',
       );
-      expect(value['capabilities']! as List<Object?>, hasLength(32));
+      expect(value['capabilities']! as List<Object?>, hasLength(33));
 
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(33));
+      expect(capabilities.capabilities, hasLength(34));
       expect(
-        capabilities.capabilities.map((capability) => capability.id),
-        LoopV2CapabilityId.values,
+        capabilities.capabilities.map((capability) => capability.id).toSet(),
+        LoopV2CapabilityId.values.toSet(),
       );
       final launch2 = capabilities[LoopV2CapabilityId.launch2];
       expect(launch2.availability, LoopV2CapabilityAvailability.deferred);
@@ -577,7 +577,7 @@ void main() {
         LoopV2CapabilityEvidenceStatus.notApplicable,
       );
       expect(launch2.evidence.reasonCode, isNull);
-      // The other 32 rows read exactly as published.
+      // The other rows read exactly as published.
       expect(
         capabilities[LoopV2CapabilityId.meme].availability,
         LoopV2CapabilityAvailability.deferred,
@@ -605,6 +605,75 @@ void main() {
         }
       },
     );
+  });
+
+  group('testnetFaucet capability (decision 0154)', () {
+    Map<String, Object?> faucetRow(Map<String, Object?> value) =>
+        (value['capabilities']! as List<Object?>)
+            .cast<Map<String, Object?>>()
+            .singleWhere((item) => item['capabilityId'] == 'testnetFaucet');
+
+    test('reads testnetFaucet as the backend publishes it', () async {
+      final value = _capabilities();
+      faucetRow(value)
+        ..['availability'] = 'available'
+        ..['reasonCode'] = null
+        ..['evidence'] = <String, Object?>{
+          'status': 'notApplicable',
+          'reasonCode': null,
+        };
+      final read = await _resolvingRepository(value).getCapabilities();
+      expect(
+        read[LoopV2CapabilityId.testnetFaucet].availability,
+        LoopV2CapabilityAvailability.available,
+      );
+
+      final closed = _capabilities();
+      faucetRow(closed)
+        ..['availability'] = 'unavailable'
+        ..['reasonCode'] = 'TESTNET_FAUCET_WRONG_CHAIN';
+      final closedRead = await _resolvingRepository(closed).getCapabilities();
+      expect(
+        closedRead[LoopV2CapabilityId.testnetFaucet].reasonCode,
+        'TESTNET_FAUCET_WRONG_CHAIN',
+      );
+    });
+
+    test('a backend before S156 omits it and it reads unavailable', () async {
+      final value = _capabilities();
+      (value['capabilities']! as List<Object?>).removeWhere(
+        (item) =>
+            (item! as Map<String, Object?>)['capabilityId'] == 'testnetFaucet',
+      );
+      final read = await _resolvingRepository(value).getCapabilities();
+      expect(read.capabilities, hasLength(34));
+      final faucet = read[LoopV2CapabilityId.testnetFaucet];
+      expect(faucet.availability, LoopV2CapabilityAvailability.unavailable);
+      expect(
+        faucet.reasonCode,
+        DioLoopV2MetaRepository.testnetFaucetAbsentReasonCode,
+      );
+      expect(
+        faucet.evidence.status,
+        LoopV2CapabilityEvidenceStatus.notApplicable,
+      );
+
+      // Both omissible ids absent (a 32-id backend) still decodes.
+      final both = _capabilities();
+      (both['capabilities']! as List<Object?>).removeWhere((item) {
+        final id = (item! as Map<String, Object?>)['capabilityId'];
+        return id == 'testnetFaucet' || id == 'launch2';
+      });
+      final bothRead = await _resolvingRepository(both).getCapabilities();
+      expect(
+        bothRead[LoopV2CapabilityId.launch2].availability,
+        LoopV2CapabilityAvailability.deferred,
+      );
+      expect(
+        bothRead[LoopV2CapabilityId.testnetFaucet].availability,
+        LoopV2CapabilityAvailability.unavailable,
+      );
+    });
   });
 
   test(

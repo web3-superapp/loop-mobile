@@ -845,7 +845,7 @@ S5_PORT_DEFAULTS = (
     ),
 )
 S5_CAPABILITY_META_PATH = Path("lib/integrations/backend/v2/loop_v2_meta.dart")
-# The contract's 33 capability ids, in contract order. Steps 6 and 7 both read
+# The contract's 34 capability ids, in contract order. Steps 6 and 7 both read
 # the frozen contract, which carries the three step-8 ids `security`,
 # `settings` and `support` alongside the three S7 ids.
 S5_CAPABILITY_IDS = (
@@ -885,6 +885,9 @@ S5_CAPABILITY_IDS = (
     # Decision 0137 (loop-api decision 0114): MEME v2. The parser accepts a
     # backend that still omits it (read as deferred); the enum lists it.
     "launch2",
+    # Decision 0154 (loop-api S156): the testnet faucet. The parser accepts a
+    # backend that still omits it (read as unavailable); the enum lists it.
+    "testnetFaucet",
 )
 # The three S7 ports (decision 0058). Each production default is its own
 # `Unavailable…Gateway`, so Launch, Mining and Referral are unavailable until
@@ -11347,7 +11350,7 @@ def check_s5_truth_contract(root: Path) -> list[str]:
                 "S5 port is unavailable until lib/main.dart mounts its adapter"
             )
 
-    # 2. The capability enum follows the contract's 33 ids, in contract order.
+    # 2. The capability enum follows the contract's 34 ids, in contract order.
     meta_path = root / S5_CAPABILITY_META_PATH
     if meta_path.is_file():
         meta_source = strip_dart_comments(read_text(meta_path))

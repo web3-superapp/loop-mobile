@@ -25,6 +25,7 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -323,6 +324,31 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     );
   }
 
+  /// 「领取测试币」 (decision 0154): the faucet sheet for the active wallet,
+  /// offered only while the server publishes `testnetFaucet` as available and
+  /// the wallet has a canonical id. A grant re-reads this project too, so the
+  /// balance figures it shows follow.
+  VoidCallback? _faucetAction(Launch2InstanceDetail detail) {
+    if (!testnetFaucetVisible(ref)) return null;
+    final active = memeReadActiveWallet(ref);
+    final walletId = active.walletId ?? detail.viewer?.walletId;
+    if (walletId == null || !WalletRoute.isCanonical(walletId)) return null;
+    return () => unawaited(
+      showTestnetFaucetSheet(
+        context,
+        walletId: walletId,
+        address: active.address,
+        onGranted: () => unawaited(
+          ref
+              .read(
+                launch2InstanceControllerProvider(detail.instanceId).notifier,
+              )
+              .reload(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final id = widget.instanceId;
@@ -416,6 +442,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
                   message: failure.text,
                   topUpKey: const ValueKey<String>('launch2-bar-topup'),
                   onTopUp: failure.topUp ? () => _openTopUp(detail) : null,
+                  faucetKey: const ValueKey<String>('launch2-bar-faucet'),
+                  onFaucet: _faucetAction(detail),
                 ),
           child: LoopButton(
             key: const ValueKey<String>('launch2-buy-nft'),
@@ -578,6 +606,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         locked: _pending?.locked ?? false,
         onPrepared: (intent) => _sign(detail, intent),
         onTopUp: () => _openTopUp(detail),
+        onFaucet: _faucetAction(detail),
         onStageMoved: () => unawaited(
           ref
               .read(
@@ -599,6 +628,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         onPrepared: (intent, refresh) =>
             _sign(detail, intent, refresh: refresh),
         onTopUp: () => _openTopUp(detail),
+        onFaucet: _faucetAction(detail),
       ),
       _MyPoolTrades(
         detail: detail,

@@ -42,11 +42,16 @@ class Launch2TradePanel extends ConsumerStatefulWidget {
     this.locked = false,
     this.onStageMoved,
     this.onTopUp,
+    this.onFaucet,
   });
 
   /// 「去充值」 under a balance refusal (decision 0153): the wallet's receive
   /// page. `null` shows no link.
   final VoidCallback? onTopUp;
+
+  /// Opens the testnet faucet sheet (decision 0154); `null` while the
+  /// server does not publish `testnetFaucet` as available.
+  final VoidCallback? onFaucet;
 
   final Launch2InstanceDetail detail;
 
@@ -442,6 +447,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
               ticker: _ticker,
             ),
             onTopUp: widget.onTopUp,
+            onFaucet: widget.onFaucet,
           ),
         const SizedBox(height: 14),
         KeyedSubtree(
@@ -716,10 +722,15 @@ class _QuoteLines extends StatelessWidget {
 
 /// The refused prepare, right above 「确认买入 / 卖出」 (decision 0153).
 class _PrepareFailureLine extends StatelessWidget {
-  const _PrepareFailureLine({required this.failure, this.onTopUp});
+  const _PrepareFailureLine({
+    required this.failure,
+    this.onTopUp,
+    this.onFaucet,
+  });
 
   final Launch2ActionFailure failure;
   final VoidCallback? onTopUp;
+  final VoidCallback? onFaucet;
 
   @override
   Widget build(BuildContext context) => Launch2ActionFailureLine(
@@ -728,5 +739,7 @@ class _PrepareFailureLine extends StatelessWidget {
     message: failure.text,
     topUpKey: const ValueKey<String>('launch2-trade-topup'),
     onTopUp: failure.topUp ? onTopUp : null,
+    faucetKey: const ValueKey<String>('launch2-trade-faucet'),
+    onFaucet: failure.topUp ? onFaucet : null,
   );
 }

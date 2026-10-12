@@ -502,10 +502,12 @@ void main() {
     test('the enum mirrors the frozen contract set and order', () {
       // Decision 0120 appends `meme` (loop-api decision 0101), decision 0137
       // appends `launch2` after it (loop-api decision 0114).
-      expect(LoopV2CapabilityId.values, hasLength(33));
+      // Decision 0154 appends `testnetFaucet` (loop-api S156).
+      expect(LoopV2CapabilityId.values, hasLength(34));
       expect(LoopV2CapabilityId.values.sublist(31), <LoopV2CapabilityId>[
         LoopV2CapabilityId.meme,
         LoopV2CapabilityId.launch2,
+        LoopV2CapabilityId.testnetFaucet,
       ]);
       // The three S7 ids sit between `sendApprovals` and `priceAlerts`.
       final names = LoopV2CapabilityId.values

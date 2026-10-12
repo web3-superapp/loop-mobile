@@ -161,9 +161,13 @@ final class FakeWalletReadGateway implements WalletReadGateway {
     );
   }
 
+  int balanceReads = 0;
+
   @override
-  Future<LoopWalletBalances> loadBalances(String walletId) =>
-      balances.resolve();
+  Future<LoopWalletBalances> loadBalances(String walletId) {
+    balanceReads += 1;
+    return balances.resolve();
+  }
 
   @override
   Future<LoopWalletActivityPage> loadActivity(
@@ -598,6 +602,9 @@ LoopV2MetaSnapshot s5MetaSnapshot({
   // `pushNotifications` records that no real device has been seen receiving
   // anything yet, separately from whether the channel exists at all.
   bool pushEvidencePending = true,
+  // Decision 0154: the testnet faucet, closed unless a test opens it.
+  LoopV2CapabilityAvailability testnetFaucet =
+      LoopV2CapabilityAvailability.unavailable,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -639,6 +646,7 @@ LoopV2MetaSnapshot s5MetaSnapshot({
               LoopV2CapabilityId.sendApprovals => sendApprovals,
               LoopV2CapabilityId.privySwap => privySwap,
               LoopV2CapabilityId.pushNotifications => pushNotifications,
+              LoopV2CapabilityId.testnetFaucet => testnetFaucet,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {
@@ -678,6 +686,10 @@ LoopV2MetaSnapshot s5MetaSnapshot({
                 pushNotifications == LoopV2CapabilityAvailability.available
                     ? null
                     : 'PUSH_RUNTIME_DEFERRED',
+              LoopV2CapabilityId.testnetFaucet =>
+                testnetFaucet == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'TESTNET_FAUCET_DISABLED',
               _ => 'CAPABILITY_NOT_DELIVERED',
             },
             evidence:

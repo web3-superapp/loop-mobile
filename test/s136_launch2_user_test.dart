@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
+import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
@@ -34,6 +35,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
+import 'support/testnet_faucet_fakes.dart';
 
 // ---------------------------------------------------------------------------
 // S136 · MEME v2 user pages (client decision 0139)
@@ -246,6 +248,8 @@ final class _RecordingWallet implements WalletSigningGateway {
 
 LoopV2MetaSnapshot _meta({
   LoopV2CapabilityAvailability launch2 = LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability testnetFaucet =
+      LoopV2CapabilityAvailability.unavailable,
 }) {
   final base = s7MetaSnapshot();
   return LoopV2MetaSnapshot(
@@ -263,6 +267,19 @@ LoopV2MetaSnapshot _meta({
               reasonCode: launch2 == LoopV2CapabilityAvailability.available
                   ? null
                   : 'LAUNCH2_FACTORY_NOT_CONFIGURED',
+              evidence: const LoopV2CapabilityEvidence(
+                status: LoopV2CapabilityEvidenceStatus.notApplicable,
+                reasonCode: null,
+              ),
+            )
+          else if (capability.id == LoopV2CapabilityId.testnetFaucet)
+            LoopV2Capability(
+              id: LoopV2CapabilityId.testnetFaucet,
+              availability: testnetFaucet,
+              reasonCode:
+                  testnetFaucet == LoopV2CapabilityAvailability.available
+                  ? null
+                  : 'TESTNET_FAUCET_DISABLED',
               evidence: const LoopV2CapabilityEvidence(
                 status: LoopV2CapabilityEvidenceStatus.notApplicable,
                 reasonCode: null,
@@ -1397,6 +1414,182 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
+      await _drain(tester);
+    });
+
+    // Decision 0154: 「领取测试币」 next to 「去充值」, only while the server
+    // publishes `testnetFaucet` as available.
+    testWidgets('USD1 short with the faucet open: 领取测试币 opens the faucet '
+        'sheet; a grant re-reads the project', (tester) async {
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: l2WalletId),
+        claimResult: faucetGranted(
+          walletId: l2WalletId,
+          grantedAt: DateTime.now().toUtc(),
+        ),
+      );
+      final gateway = _FakeLaunch2(
+        details: <_Answer<Launch2InstanceDetail>>[
+          _Answer<Launch2InstanceDetail>.value(l2Detail()),
+        ],
+        nftAnswer: const _Answer<Launch2Intent>.error(
+          LoopChainException(
+            LoopChainFailureKind.insufficientBalance,
+            reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+            requiredUsd1: '100',
+          ),
+        ),
+      );
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: gateway,
+        wallet: _RecordingWallet(),
+        meta: _meta(testnetFaucet: LoopV2CapabilityAvailability.available),
+        overrides: <Override>[
+          testnetFaucetGatewayProvider.overrideWithValue(faucet),
+        ],
+      );
+      await confirmNft(tester);
+      expect(_key('launch2-bar-topup'), findsOneWidget);
+      expect(_key('launch2-bar-faucet'), findsOneWidget);
+      final reads = gateway.detailReads;
+      await tester.tap(_key('launch2-bar-faucet'));
+      await tester.pumpAndSettle();
+      expect(_key('testnet-faucet-sheet'), findsOneWidget);
+      expect(faucet.statusReads, <String>[l2WalletId]);
+      await tester.tap(_key('testnet-faucet-claim'));
+      await tester.pumpAndSettle();
+      expect(faucet.claims, <String>[l2WalletId]);
+      expect(_key('testnet-faucet-tx-tBNB'), findsOneWidget);
+      expect(gateway.detailReads, greaterThan(reads));
+      await _drain(tester);
+    });
+
+    testWidgets('tBNB short with the faucet open offers both links; a refusal '
+        'that is not about balance offers neither', (tester) async {
+      final gateway = _FakeLaunch2(
+        details: <_Answer<Launch2InstanceDetail>>[
+          _Answer<Launch2InstanceDetail>.value(l2Detail()),
+        ],
+        nftAnswer: const _Answer<Launch2Intent>.fail(
+          LoopChainFailureKind.insufficientBalance,
+          reasonCode: 'LAUNCH2_GAS_INSUFFICIENT',
+        ),
+      );
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: gateway,
+        wallet: _RecordingWallet(),
+        meta: _meta(testnetFaucet: LoopV2CapabilityAvailability.available),
+        overrides: <Override>[
+          testnetFaucetGatewayProvider.overrideWithValue(
+            FakeTestnetFaucetGateway(
+              status: faucetStatus(walletId: l2WalletId),
+            ),
+          ),
+        ],
+      );
+      await confirmNft(tester);
+      expect(_key('launch2-bar-topup'), findsOneWidget);
+      expect(_key('launch2-bar-faucet'), findsOneWidget);
+
+      gateway.nftAnswer = const _Answer<Launch2Intent>.fail(
+        LoopChainFailureKind.versionConflict,
+        reasonCode: 'LAUNCH2_NFT_ALREADY_MINTED',
+      );
+      await confirmNft(tester);
+      expect(_key('launch2-bar-failure'), findsOneWidget);
+      expect(_key('launch2-bar-topup'), findsNothing);
+      expect(_key('launch2-bar-faucet'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('USD1 short with the faucet closed: 去充值 only', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(l2Detail()),
+          ],
+          nftAnswer: const _Answer<Launch2Intent>.error(
+            LoopChainException(
+              LoopChainFailureKind.insufficientBalance,
+              reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+              requiredUsd1: '100',
+            ),
+          ),
+        ),
+        wallet: _RecordingWallet(),
+        overrides: <Override>[
+          // An adapter is mounted; the capability alone keeps it closed.
+          testnetFaucetGatewayProvider.overrideWithValue(
+            FakeTestnetFaucetGateway(
+              status: faucetStatus(walletId: l2WalletId),
+            ),
+          ),
+        ],
+      );
+      await confirmNft(tester);
+      expect(_key('launch2-bar-topup'), findsOneWidget);
+      expect(_key('launch2-bar-faucet'), findsNothing);
+      expect(find.text('领取测试币'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('curve buy short with the faucet open: 领取测试币 beside 去充值 '
+        'above 确认买入', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(
+          details: <_Answer<Launch2InstanceDetail>>[
+            _Answer<Launch2InstanceDetail>.value(
+              l2Detail(
+                stage: 'priority',
+                viewer: l2ViewerJson(member: true, eligibleNow: true),
+              ),
+            ),
+          ],
+          quotes: <_Answer<Launch2Quote>>[
+            _Answer<Launch2Quote>.value(l2Quote()),
+          ],
+          tradeAnswers: <_Answer<Launch2Intent>>[
+            const _Answer<Launch2Intent>.error(
+              LoopChainException(
+                LoopChainFailureKind.insufficientBalance,
+                reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+                maxAmountIn: '30',
+              ),
+            ),
+          ],
+        ),
+        wallet: _RecordingWallet(),
+        meta: _meta(testnetFaucet: LoopV2CapabilityAvailability.available),
+        overrides: <Override>[
+          testnetFaucetGatewayProvider.overrideWithValue(
+            FakeTestnetFaucetGateway(
+              status: faucetStatus(walletId: l2WalletId),
+            ),
+          ),
+        ],
+      );
+      await tester.enterText(_key('launch2-trade-amount'), '50');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-trade-confirm'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-trade-topup'), findsOneWidget);
+      expect(_key('launch2-trade-faucet'), findsOneWidget);
+      expect(
+        tester.getRect(_key('launch2-trade-faucet')).bottom,
+        lessThanOrEqualTo(tester.getRect(_key('launch2-trade-confirm')).top),
+      );
+      await tester.tap(_key('launch2-trade-faucet'));
+      await tester.pumpAndSettle();
+      expect(_key('testnet-faucet-sheet'), findsOneWidget);
       await _drain(tester);
     });
 

@@ -364,12 +364,18 @@ class Launch2Greyed extends StatelessWidget {
 ///
 /// It is a live region, so a screen reader says it the moment it appears —
 /// the button under it went back to its label and would say nothing.
+///
+/// Decision 0154: next to 「去充值」 a 「领取测试币」 link opens the testnet
+/// faucet sheet. The caller passes [onFaucet] only while the server publishes
+/// `testnetFaucet` as available; it is never drawn without 「去充值」.
 class Launch2ActionFailureLine extends StatelessWidget {
   const Launch2ActionFailureLine({
     required this.message,
     super.key,
     this.onTopUp,
     this.topUpKey = const ValueKey<String>('launch2-topup'),
+    this.onFaucet,
+    this.faucetKey = const ValueKey<String>('launch2-faucet'),
     this.padding = EdgeInsets.zero,
   });
 
@@ -378,11 +384,16 @@ class Launch2ActionFailureLine extends StatelessWidget {
   /// Opens the wallet's receive page. `null` shows no link.
   final VoidCallback? onTopUp;
   final Key topUpKey;
+
+  /// Opens the testnet faucet sheet. `null` shows no link.
+  final VoidCallback? onFaucet;
+  final Key faucetKey;
   final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
     final topUp = onTopUp;
+    final faucet = topUp == null ? null : onFaucet;
     return Padding(
       padding: padding,
       child: Column(
@@ -412,38 +423,18 @@ class Launch2ActionFailureLine extends StatelessWidget {
           if (topUp != null)
             Align(
               alignment: Alignment.centerLeft,
-              child: Semantics(
-                button: true,
-                label: '去充值',
-                excludeSemantics: true,
-                child: LoopPressable(
-                  key: topUpKey,
-                  onTap: topUp,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minHeight: LoopTouch.minimum,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 23, right: 8),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            '去充值',
-                            style: LoopType.caption.copyWith(
-                              color: LoopColors.text2,
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          const LoopIcon(
-                            'chevron',
-                            size: 14,
-                            color: LoopColors.text3,
-                          ),
-                        ],
+              child: Padding(
+                padding: const EdgeInsets.only(left: 23),
+                child: Wrap(
+                  children: <Widget>[
+                    _FailureLink(key: topUpKey, label: '去充值', onTap: topUp),
+                    if (faucet != null)
+                      _FailureLink(
+                        key: faucetKey,
+                        label: '领取测试币',
+                        onTap: faucet,
                       ),
-                    ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -451,4 +442,39 @@ class Launch2ActionFailureLine extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One secondary link under a failure line: label + chevron, 44 dp tall.
+class _FailureLink extends StatelessWidget {
+  const _FailureLink({required this.label, required this.onTap, super.key});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    child: LoopPressable(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                label,
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              ),
+              const SizedBox(width: 2),
+              const LoopIcon('chevron', size: 14, color: LoopColors.text3),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

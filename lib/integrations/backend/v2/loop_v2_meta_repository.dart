@@ -234,8 +234,13 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   /// it, a 32-id list without `launch2` is the older contract, not drift. An
   /// absent `launch2` reads as `deferred` — module off — which is exactly
   /// what that backend means. Every other id stays strictly required.
+  ///
+  /// `testnetFaucet` was added by loop-api S156 (client decision 0154). A
+  /// backend without it has no faucet: the absent row reads `unavailable`,
+  /// so its entry is never drawn.
   static const omissibleCapabilities = <LoopV2CapabilityId>{
     LoopV2CapabilityId.launch2,
+    LoopV2CapabilityId.testnetFaucet,
   };
 
   /// The reason code on a capability the backend did not publish. It is the
@@ -243,14 +248,24 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   /// from the server's `LAUNCH2_MODULE_NOT_ENABLED`.
   static const launch2AbsentReasonCode = 'LAUNCH2_CAPABILITY_ABSENT';
 
-  /// The row an omitted capability reads as: `deferred` with no provider
-  /// precondition, the same shape loop-api's `deferredCapability` emits.
+  /// The same, for an absent `testnetFaucet` (decision 0154).
+  static const testnetFaucetAbsentReasonCode =
+      'TESTNET_FAUCET_CAPABILITY_ABSENT';
+
+  /// The row an omitted capability reads as: `deferred` (`launch2`) or
+  /// `unavailable` (`testnetFaucet`) with no provider precondition, the same
+  /// shape loop-api emits for a module that is off.
   LoopV2Capability _absentCapability(LoopV2CapabilityId id) {
     assert(omissibleCapabilities.contains(id), '$id is not omissible');
+    final faucet = id == LoopV2CapabilityId.testnetFaucet;
     return LoopV2Capability(
       id: id,
-      availability: LoopV2CapabilityAvailability.deferred,
-      reasonCode: launch2AbsentReasonCode,
+      availability: faucet
+          ? LoopV2CapabilityAvailability.unavailable
+          : LoopV2CapabilityAvailability.deferred,
+      reasonCode: faucet
+          ? testnetFaucetAbsentReasonCode
+          : launch2AbsentReasonCode,
       evidence: const LoopV2CapabilityEvidence(
         status: LoopV2CapabilityEvidenceStatus.notApplicable,
         reasonCode: null,

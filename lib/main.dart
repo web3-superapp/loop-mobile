@@ -88,6 +88,8 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_ai_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gateway.dart';
+import 'package:loop_mobile/integrations/backend/v2/testnet_faucet/loop_v2_testnet_faucet_api.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -336,6 +338,12 @@ Future<void> main() async {
         ),
         referralGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2ReferralGatewayProvider),
+        ),
+        // S156 (decision 0154): the testnet faucet. Fail-closed until its
+        // Dio client, client metadata and authenticated session all exist;
+        // the wallet entry still reads the `testnetFaucet` capability.
+        testnetFaucetGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2TestnetFaucetGatewayProvider),
         ),
         // S8 security / settings / support. `about` is public and needs only a
         // backend origin; the other three also need an authenticated session.

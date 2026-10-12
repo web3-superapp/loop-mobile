@@ -202,13 +202,16 @@ final class LoopV2TermsGate {
 /// alerts modules; `referral` by the step-7 launch/mining/referral module; and
 /// `security`, `settings` and `support` by the step-8 decision 0037 module
 /// that steps 6 and 7 already read, `meme` by loop-api decision 0101, and
-/// `launch2` by loop-api decision 0114 (client decision 0137), for 33 ids in
-/// the exact order of `openapi/loop-api.v2.json`.
+/// `launch2` by loop-api decision 0114 (client decision 0137), and
+/// `testnetFaucet` by loop-api S156 (client decision 0154), for 34 ids in the
+/// exact order of `openapi/loop-api.v2.json`.
 /// The parser requires the exact set, so this list must track the frozen
-/// contract even for modules a given step does not consume. The one exception
-/// is [launch2]: a backend that predates loop-api decision 0114 publishes the
-/// 32 ids without it, and the parser fills it in as `deferred` (decision
-/// 0137, see `DioLoopV2MetaRepository.launch2AbsentReasonCode`).
+/// contract even for modules a given step does not consume. The two
+/// exceptions are [launch2]: a backend that predates loop-api decision 0114
+/// publishes the ids without it, and the parser fills it in as `deferred`
+/// (decision 0137, see `DioLoopV2MetaRepository.launch2AbsentReasonCode`);
+/// and [testnetFaucet]: a backend that predates loop-api S156 omits it, and
+/// the parser fills it in as `unavailable` (decision 0154).
 enum LoopV2CapabilityId {
   privyAuthentication('privyAuthentication'),
   accountSession('accountSession'),
@@ -245,7 +248,11 @@ enum LoopV2CapabilityId {
   meme('meme'),
   // MEME v2 (NFT sale → priority → public curve, loop-api decision 0114,
   // client decision 0137). Read only; no surface consumes it yet.
-  launch2('launch2');
+  launch2('launch2'),
+  // The testnet faucet (loop-api S156, client decision 0154). `available`
+  // only on a testnet deployment whose operator wallet is configured; a
+  // mainnet build never draws its entry.
+  testnetFaucet('testnetFaucet');
 
   const LoopV2CapabilityId(this.wireName);
 

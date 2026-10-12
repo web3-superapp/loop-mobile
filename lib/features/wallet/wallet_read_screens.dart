@@ -27,7 +27,9 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart'; // S136
+import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_image_share.dart';
@@ -252,6 +254,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final hidden = ref.watch(walletAmountsHiddenProvider);
     final hideZero = ref.watch(walletHideZeroBalancesProvider);
     final directoryEmpty = _directoryIsEmpty(directory);
+    final faucetVisible = testnetFaucetVisible(ref);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallet-screen'),
@@ -393,6 +396,28 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               ),
             ],
           ),
+          // Decision 0154: the testnet faucet, drawn only while the server
+          // publishes `testnetFaucet` as available. A mainnet backend never
+          // does, so there is not even a placeholder there.
+          if (faucetVisible)
+            TestnetFaucetEntry(
+              onTap: () => unawaited(
+                showTestnetFaucetSheet(
+                  context,
+                  walletId: walletId,
+                  address: directory.value?.active?.address,
+                  onGranted: () {
+                    if (ref.exists(launch2PositionsControllerProvider)) {
+                      unawaited(
+                        ref
+                            .read(launch2PositionsControllerProvider.notifier)
+                            .reload(),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
           WalletSectionHeading(
             title: '资产',
             trailing: WalletPowerTag(
