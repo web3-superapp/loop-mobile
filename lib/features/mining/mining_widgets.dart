@@ -496,11 +496,14 @@ class MiningSummaryHero extends StatelessWidget {
               Expanded(
                 child: _HeroAction(
                   key: const ValueKey<String>('mining-summary-hero-claim'),
-                  label: claimComingSoon ? miningClaimComingSoonLabel : '领取奖励',
+                  // Decision 0155: this button only opens 奖励与领取, where
+                  // the real claim button is greyed as Coming soon; keep the
+                  // way in, rename it so nobody reads it as the claim.
+                  label: claimComingSoon ? '查看奖励' : '领取奖励',
                   filled: true,
-                  onPressed: claimComingSoon ? null : onClaim,
+                  onPressed: onClaim,
                   semanticLabel: claimComingSoon
-                      ? '领取奖励，$miningClaimComingSoonLabel'
+                      ? '查看奖励，打开奖励与领取；领取 $miningClaimComingSoonLabel'
                       : claimSemanticLabel,
                 ),
               ),
@@ -517,7 +520,7 @@ class MiningSummaryHero extends StatelessWidget {
           if (claimComingSoon) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              miningClaimComingSoonNote,
+              '领取 $miningClaimComingSoonLabel · $miningClaimComingSoonNote',
               key: const ValueKey<String>('mining-summary-hero-coming-soon'),
               style: LoopTypography.caption(
                 12,

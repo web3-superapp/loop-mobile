@@ -2023,17 +2023,22 @@ void main() {
           ],
         );
 
-    testWidgets('the 我的挖矿 entry keeps its place and reads Coming soon', (
-      tester,
-    ) async {
+    testWidgets('the 我的挖矿 entry stays a way in and says the claim is '
+        'Coming soon', (tester) async {
       final rewards = notConfigured();
       await pumpMining(tester, rewards);
       expect(rewards.rewardReads, 1);
       final claim = _key('mining-summary-hero-claim');
       expect(claim, findsOneWidget);
+      // The entry is not the claim: it keeps opening 奖励与领取, where the
+      // real claim button is greyed (decision 0155, main-agent ruling).
+      expect(
+        find.descendant(of: claim, matching: find.text('查看奖励')),
+        findsOneWidget,
+      );
       expect(
         find.descendant(of: claim, matching: find.text('Coming soon')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         tester
@@ -2041,10 +2046,10 @@ void main() {
               find.descendant(of: claim, matching: find.byType(InkWell)),
             )
             .onTap,
-        isNull,
+        isNotNull,
       );
       final note = tester.widget<Text>(_key('mining-summary-hero-coming-soon'));
-      expect(note.data, 'LOOP 代币上线后开放领取，奖励已记在账上');
+      expect(note.data, '领取 Coming soon · LOOP 代币上线后开放领取，奖励已记在账上');
       expect(note.style?.fontSize, 12);
       expect(find.textContaining('尚未配置'), findsNothing);
       // The second action is not touched.
