@@ -56,6 +56,20 @@ Accepted 2026-10-12。用户 2026-10-12 裁决，主代理下单（S156-mobile�
 - 项目页 `_faucetAction`：`testnetFaucetVisible` 且当前钱包 id 规范才给回调；打开同一个抽屉，领取成功后重读该项目。
   key：底部栏 `launch2-bar-faucet`、曲线面板 `launch2-trade-faucet`、官方池面板 `launch2-pool-faucet`。
 
+### 5. 与 loop-api S156（8c1927a）对齐后的补充
+
+- `lastGrant.bnbTransactionHash` 必填，`usd1TransactionHash` 可为 null（部分到账 / 结果未知时 tUSD1 没铸出）；POST 201 两笔 hash 仍都必填。
+- 两个路由的允许错误表都加 `409 RESOURCE_CONFLICT` 与 `502 PROVIDER_UNREACHABLE`。
+- 新 reasonCode 中文：`USD1_NOT_CONFIGURED` / `RPC_NOT_CONFIGURED` / `RUNTIME_UNAVAILABLE`「测试币领取暂时不可用，稍后再试」；
+  `USD1_UNAVAILABLE`「tUSD1 合约暂时不可用，稍后再试」；`CHAIN_READ_FAILED`「链上读数暂时取不到，稍后再试」；`BUSY`「正在给别人发放，几秒后再试」；
+  502 `TRANSFER_FAILED`「这次没有发出，可以重试」（不计冷却，按钮保持可点，key 已释放，重试用新 key）。
+- `TESTNET_FAUCET_SUBMISSION_UNKNOWN`（503，带 `bnbTransactionHash` 与 `nextAvailableAt`）按部分到账处理，`unconfirmed`：
+  「tBNB 已发出但还没确认，tUSD1 这次没发；24 小时后可再领」。部分到账同样读 `detailsSafe.nextAvailableAt` 作为「下次可领」。
+- `409 RESOURCE_CONFLICT` + `TESTNET_FAUCET_IN_FLIGHT` → 值 `TestnetFaucetPending(inFlight)`：不报错，按钮保持「正在发放…」，
+  每 3 秒 GET 一次（最后一次在 20 秒），`lastGrant` 出现（且不同于打开抽屉时那条）即按成功 / 部分到账显示并刷新余额；仍没有则「结果稍后在这里查看」。
+- `503 REQUEST_TIMEOUT` → 值 `TestnetFaucetPending(timedOut)`：立即 GET 一次、3 秒后再一次；`lastGrant` 出现按成功显示，两次都没有则「发放还在进行，稍后再进来看」。
+- 轮询期间只读状态，从不再次领取。429 `detailsSafe` 形状 `{reasonCode, nextAvailableAt}` 与实现一致。
+
 ## 偏离
 
 - 「可打开 testnet.bscscan 链接」：App 没有组装外部浏览器启动器（`url_launcher` 不是直接依赖），沿用现有链接组件的做法——复制 BscScan 链接。
@@ -63,9 +77,9 @@ Accepted 2026-10-12。用户 2026-10-12 裁决，主代理下单（S156-mobile�
 
 ## Fixtures / 测试
 
-- `test/s156_testnet_faucet_test.dart`：codec 正例 / 缺键 / 多键 / 坏值；传输层 Idempotency-Key 与 body、GET query、429 冷却、502/503 partial、
+- `test/s156_testnet_faucet_test.dart`：loop-api 8c1927a 真实样例（GET 领取前 / 部分到账后、POST 201、partial detailsSafe 有无 tUSD1 hash）；codec 正例 / 缺键 / 多键 / 坏值；传输层 Idempotency-Key 与 body、GET query、429 冷却、502/503 partial、
   503 operator 不足与 403 非本人保持拒绝；钱包页能力位 unavailable 无入口、有能力位无适配器无入口、可用时入口位置、抽屉、进行中、两笔 hash、余额重读；
-  冷却置灰与时间；429 文案；partial 文案与 hash；operator / 非本人文案；读状态离线 / 无权限 / 重试；时间与 partial 文案单测。
+  冷却置灰与时间；429 文案；partial 文案与 hash；operator / 非本人文案；读状态离线 / 无权限 / 重试；409 进行中轮询成功与 20 秒提示；503 超时重读成功与两次都没有；结果未知文案；发放失败可重试；新 reasonCode 文案；时间与 partial 文案单测。
 - `test/s136_launch2_user_test.dart`：能力位可用时 NFT 底部栏 USD1 / tBNB 不足出现「领取测试币」并打开抽屉、领取后重读项目；非余额拒绝两个链接都无；
   能力位关闭时只有「去充值」；曲线面板链接在确认按钮上方。
 - `test/loop_v2_meta_repository_test.dart` / `test/s7_api_contract_test.dart`：34 个 id，`testnetFaucet` 可缺省读作 unavailable，两个可缺省 id 同时缺也能解析。
@@ -79,7 +93,5 @@ Accepted 2026-10-12。用户 2026-10-12 裁决，主代理下单（S156-mobile�
 
 ## 未决项
 
-1. partial 的 `detailsSafe` 键名任务单未写死，客户端按 `bnbTransactionHash` / `usd1TransactionHash`（与 `lastGrant` 同名）读取；后端若用别的名字需对齐。
-2. 502 时错误码假定为 `PROVIDER_UNREACHABLE`（loop-api 现有唯一 502 码）；若 S156 用别的码需加进写错误表。
-3. GET / POST 成功体未带 `contractVersion`，按任务单原样；若后端加了该键需同步键集合。
-4. tUSD1 余额在钱包 Tab 是否有展示行取决于钱包余额 / MEME v2 持仓接口，本批只负责触发刷新。
+1. partial 键名、502 码、成功体无 `contractVersion` 已由 loop-api S156 8c1927a 样例确认（样例进了 codec 正例测试）。
+2. tUSD1 余额在钱包 Tab 是否有展示行取决于钱包余额 / MEME v2 持仓接口，本批只负责触发刷新。

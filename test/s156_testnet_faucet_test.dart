@@ -133,6 +133,12 @@ void main() {
           'bnbTransactionHash': null,
           'usd1TransactionHash': null,
         }),
+        // tBNB is always recorded; only tUSD1 may be missing.
+        const MapEntry<String, Object?>('lastGrant', <String, Object?>{
+          'grantedAt': '2026-10-12T08:00:00.000Z',
+          'bnbTransactionHash': null,
+          'usd1TransactionHash': faucetUsd1Hash,
+        }),
       ]) {
         expect(
           () => LoopV2TestnetFaucetCodec.status(statusBody()..[key] = value),
@@ -146,6 +152,74 @@ void main() {
         ),
         invalid(),
       );
+    });
+  });
+
+  group('codec · loop-api S156 samples (8c1927a, app.inject)', () {
+    test('GET before the first grant', () {
+      final status = LoopV2TestnetFaucetCodec.status(
+        jsonDecode(
+          '{"walletId":"$s5WalletId",'
+          '"address":"0x8f3a2b1c4d5e6f708192a3b4c5d6e7f8091a2b3c",'
+          '"bnbAmount":"0.02","usd1Amount":"500","cooldownSeconds":86400,'
+          '"available":true,"nextAvailableAt":null,"lastGrant":null}',
+        ),
+      );
+      expect(status.available, isTrue);
+      expect(status.lastGrant, isNull);
+      expect(status.bnbAmount, Decimal.parse('0.02'));
+    });
+
+    test('GET after a partial grant: tUSD1 hash null', () {
+      final status = LoopV2TestnetFaucetCodec.status(
+        jsonDecode(
+          '{"walletId":"$s5WalletId",'
+          '"address":"0x8f3a2b1c4d5e6f708192a3b4c5d6e7f8091a2b3c",'
+          '"bnbAmount":"0.02","usd1Amount":"500","cooldownSeconds":86400,'
+          '"available":false,"nextAvailableAt":"2026-10-13T08:00:00.000Z",'
+          '"lastGrant":{"grantedAt":"2026-10-12T08:00:00.000Z",'
+          '"bnbTransactionHash":"$faucetBnbHash","usd1TransactionHash":null}}',
+        ),
+      );
+      expect(status.lastGrant!.bnbTransactionHash, faucetBnbHash);
+      expect(status.lastGrant!.usd1TransactionHash, isNull);
+    });
+
+    test('POST 201', () {
+      final granted = LoopV2TestnetFaucetCodec.granted(
+        jsonDecode(
+          '{"walletId":"$s5WalletId",'
+          '"address":"0x8f3a2b1c4d5e6f708192a3b4c5d6e7f8091a2b3c",'
+          '"bnb":{"amount":"0.02","transactionHash":"$faucetBnbHash"},'
+          '"usd1":{"amount":"500","transactionHash":"$faucetUsd1Hash"},'
+          '"grantedAt":"2026-10-12T08:00:00.000Z",'
+          '"nextAvailableAt":"2026-10-13T08:00:00.000Z"}',
+        ),
+      );
+      expect(granted.usd1.transactionHash, faucetUsd1Hash);
+    });
+
+    test('partial detailsSafe, with and without the tUSD1 hash', () {
+      final both = LoopV2TestnetFaucetCodec.partial(
+        jsonDecode(
+          '{"reasonCode":"TESTNET_FAUCET_PARTIAL",'
+          '"bnbTransactionHash":"$faucetBnbHash",'
+          '"usd1TransactionHash":"$faucetUsd1Hash",'
+          '"nextAvailableAt":"2026-10-13T08:00:00.000Z"}',
+        ),
+      );
+      expect(both.usd1TransactionHash, faucetUsd1Hash);
+      expect(both.nextAvailableAt, DateTime.utc(2026, 10, 13, 8));
+      final bnbOnly = LoopV2TestnetFaucetCodec.partial(
+        jsonDecode(
+          '{"reasonCode":"TESTNET_FAUCET_PARTIAL",'
+          '"bnbTransactionHash":"$faucetBnbHash",'
+          '"nextAvailableAt":"2026-10-13T08:00:00.000Z"}',
+        ),
+      );
+      expect(bnbOnly.bnbTransactionHash, faucetBnbHash);
+      expect(bnbOnly.usd1TransactionHash, isNull);
+      expect(bnbOnly.unconfirmed, isFalse);
     });
   });
 
@@ -285,6 +359,97 @@ void main() {
         expect(partial.usd1TransactionHash, isNull);
       }
     });
+
+    Future<TestnetFaucetClaimResult> claimWith(
+      int status,
+      String code,
+      String category,
+      Map<String, Object?> details,
+    ) => _api(_Adapter(status, _error(code, category, details))).postClaim(
+      accessToken: 'token',
+      clientVersion: s5ClientVersion,
+      idempotencyKey: s5RequestId,
+      walletId: s5WalletId,
+    );
+
+    test('503 submission unknown is a partial, unconfirmed, with its hash and '
+        'next time', () async {
+      final result = await claimWith(
+        503,
+        'CAPABILITY_UNAVAILABLE',
+        'availability',
+        <String, Object?>{
+          'reasonCode': 'TESTNET_FAUCET_SUBMISSION_UNKNOWN',
+          'bnbTransactionHash': faucetBnbHash,
+          'nextAvailableAt': '2026-10-13T08:00:00.000Z',
+        },
+      );
+      final partial = result as TestnetFaucetPartial;
+      expect(partial.unconfirmed, isTrue);
+      expect(partial.bnbTransactionHash, faucetBnbHash);
+      expect(partial.nextAvailableAt, DateTime.utc(2026, 10, 13, 8));
+    });
+
+    test('409 in flight and 503 request timeout are pending values', () async {
+      expect(
+        (await claimWith(
+          409,
+          'RESOURCE_CONFLICT',
+          'conflict',
+          <String, Object?>{'reasonCode': 'TESTNET_FAUCET_IN_FLIGHT'},
+        ) as TestnetFaucetPending).reason,
+        TestnetFaucetPendingReason.inFlight,
+      );
+      expect(
+        (await claimWith(
+          503,
+          'REQUEST_TIMEOUT',
+          'availability',
+          <String, Object?>{},
+        ) as TestnetFaucetPending).reason,
+        TestnetFaucetPendingReason.timedOut,
+      );
+    });
+
+    test('502 transfer failed stays a refusal with its reason', () async {
+      await expectLater(
+        claimWith(
+          502,
+          'PROVIDER_UNREACHABLE',
+          'availability',
+          <String, Object?>{'reasonCode': 'TESTNET_FAUCET_TRANSFER_FAILED'},
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.detailsSafe?.reasonCode,
+            'reasonCode',
+            'TESTNET_FAUCET_TRANSFER_FAILED',
+          ),
+        ),
+      );
+    });
+
+    test(
+      'the read admits 409 RESOURCE_CONFLICT and 502 PROVIDER_UNREACHABLE',
+      () {
+        expect(
+          DioLoopV2TestnetFaucetApi.readErrors[409],
+          contains('RESOURCE_CONFLICT'),
+        );
+        expect(
+          DioLoopV2TestnetFaucetApi.readErrors[502],
+          contains('PROVIDER_UNREACHABLE'),
+        );
+        expect(
+          DioLoopV2TestnetFaucetApi.writeErrors[409],
+          contains('RESOURCE_CONFLICT'),
+        );
+        expect(
+          DioLoopV2TestnetFaucetApi.writeErrors[502],
+          contains('PROVIDER_UNREACHABLE'),
+        );
+      },
+    );
 
     test('503 operator low and 403 not owned stay refusals with their '
         'reason', () async {
@@ -523,6 +688,161 @@ void main() {
       );
     });
 
+    testWidgets('409 in flight: 正在发放 stays, the status is read every 3 s '
+        'until the grant appears', (tester) async {
+      final wallet = FakeWalletReadGateway();
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: s5WalletId),
+        claimResult: const TestnetFaucetPending(
+          TestnetFaucetPendingReason.inFlight,
+        ),
+      );
+      await _openSheet(tester, faucet, wallet: wallet);
+      faucet.statusQueue.addAll(<TestnetFaucetStatus>[
+        faucetStatus(walletId: s5WalletId),
+        faucetStatusAfterGrant(
+          walletId: s5WalletId,
+          grantedAt: DateTime.now().toUtc(),
+        ),
+      ]);
+      final readsBefore = wallet.balanceReads;
+      await tester.tap(key('testnet-faucet-claim'));
+      await tester.pump();
+      expect(find.text(testnetFaucetBusyLabel), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      expect(faucet.statusReads, hasLength(2));
+      expect(find.text(testnetFaucetBusyLabel), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(faucet.statusReads, hasLength(3));
+      expect(faucet.claims, hasLength(1));
+      expect(key('testnet-faucet-granted'), findsOneWidget);
+      expect(key('testnet-faucet-tx-tUSD1'), findsOneWidget);
+      expect(wallet.balanceReads, greaterThan(readsBefore));
+    });
+
+    testWidgets('409 in flight for 20 s: 结果稍后在这里查看, no second claim', (
+      tester,
+    ) async {
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: s5WalletId),
+        claimResult: const TestnetFaucetPending(
+          TestnetFaucetPendingReason.inFlight,
+        ),
+      );
+      await _openSheet(tester, faucet);
+      await tester.tap(key('testnet-faucet-claim'));
+      await tester.pump();
+      for (var i = 0; i < 7; i++) {
+        await tester.pump(const Duration(seconds: 3));
+      }
+      await tester.pumpAndSettle();
+      expect(faucet.claims, hasLength(1));
+      // One read on opening, then six at 3 s and the last at 20 s.
+      expect(faucet.statusReads, hasLength(8));
+      expect(
+        tester.widget<Text>(key('testnet-faucet-pending')).data,
+        testnetFaucetInFlightLaterText,
+      );
+      expect(find.text(testnetFaucetBusyLabel), findsNothing);
+    });
+
+    testWidgets('503 request timeout: read again, the grant shows as success; '
+        'a partial read back says so', (tester) async {
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: s5WalletId),
+        claimResult: const TestnetFaucetPending(
+          TestnetFaucetPendingReason.timedOut,
+        ),
+      );
+      await _openSheet(tester, faucet);
+      faucet.statusQueue.add(
+        faucetStatusAfterGrant(
+          walletId: s5WalletId,
+          grantedAt: DateTime.now().toUtc(),
+          usd1Hash: null,
+        ),
+      );
+      await tester.tap(key('testnet-faucet-claim'));
+      await tester.pumpAndSettle();
+      expect(faucet.statusReads, hasLength(2));
+      expect(key('testnet-faucet-failure'), findsNothing);
+      expect(
+        tester.widget<Text>(key('testnet-faucet-partial')).data,
+        'tBNB 已到账，tUSD1 这次没成功，24 小时后可再领',
+      );
+    });
+
+    testWidgets('503 request timeout twice without a grant: 发放还在进行', (
+      tester,
+    ) async {
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: s5WalletId),
+        claimResult: const TestnetFaucetPending(
+          TestnetFaucetPendingReason.timedOut,
+        ),
+      );
+      await _openSheet(tester, faucet);
+      await tester.tap(key('testnet-faucet-claim'));
+      await tester.pump();
+      await tester.pump();
+      expect(faucet.statusReads, hasLength(2));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(faucet.statusReads, hasLength(3));
+      expect(faucet.claims, hasLength(1));
+      expect(
+        tester.widget<Text>(key('testnet-faucet-pending')).data,
+        testnetFaucetTimedOutLaterText,
+      );
+      expect(key('testnet-faucet-failure'), findsNothing);
+    });
+
+    testWidgets('submission unknown reads as an unconfirmed partial', (
+      tester,
+    ) async {
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: s5WalletId),
+        claimResult: TestnetFaucetPartial(
+          bnbTransactionHash: faucetBnbHash,
+          nextAvailableAt: DateTime.now().toUtc().add(const Duration(days: 1)),
+          unconfirmed: true,
+        ),
+      );
+      await _openSheet(tester, faucet);
+      await tester.tap(key('testnet-faucet-claim'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(key('testnet-faucet-partial')).data,
+        'tBNB 已发出但还没确认，tUSD1 这次没发；24 小时后可再领',
+      );
+      expect(key('testnet-faucet-tx-tBNB'), findsOneWidget);
+    });
+
+    testWidgets('transfer failed: 这次没有发出，可以重试, and the button stays on', (
+      tester,
+    ) async {
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: s5WalletId),
+        claimFailure: const LoopChainException(
+          LoopChainFailureKind.unexpected,
+          reasonCode: 'TESTNET_FAUCET_TRANSFER_FAILED',
+        ),
+      );
+      await _openSheet(tester, faucet);
+      await tester.tap(key('testnet-faucet-claim'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(key('testnet-faucet-failure')).data,
+        '这次没有发出，可以重试',
+      );
+      expect(
+        tester.widget<LoopButton>(key('testnet-faucet-claim')).onPressed,
+        isNotNull,
+      );
+    });
+
     testWidgets('the status read: offline and permission each say so, retry '
         'reads again', (tester) async {
       final faucet = FakeTestnetFaucetGateway(
@@ -565,6 +885,23 @@ void main() {
         );
       },
     );
+
+    test('every S156 reason code has its own sentence', () {
+      String text(String code) => testnetFaucetFailureText(
+        LoopChainException(LoopChainFailureKind.unavailable, reasonCode: code),
+      );
+      for (final code in <String>[
+        'TESTNET_FAUCET_USD1_NOT_CONFIGURED',
+        'TESTNET_FAUCET_RPC_NOT_CONFIGURED',
+        'TESTNET_FAUCET_RUNTIME_UNAVAILABLE',
+      ]) {
+        expect(text(code), '测试币领取暂时不可用，稍后再试');
+      }
+      expect(text('TESTNET_FAUCET_USD1_UNAVAILABLE'), 'tUSD1 合约暂时不可用，稍后再试');
+      expect(text('TESTNET_FAUCET_CHAIN_READ_FAILED'), '链上读数暂时取不到，稍后再试');
+      expect(text('TESTNET_FAUCET_BUSY'), '正在给别人发放，几秒后再试');
+      expect(text('TESTNET_FAUCET_TRANSFER_FAILED'), '这次没有发出，可以重试');
+    });
 
     test('a partial grant is said by what did arrive', () {
       expect(

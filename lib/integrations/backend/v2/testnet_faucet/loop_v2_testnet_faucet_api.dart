@@ -32,9 +32,10 @@ final class DioLoopV2TestnetFaucetApi {
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
     403: <String>{'PERMISSION_DENIED'},
     404: <String>{'NOT_FOUND'},
-    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED'},
+    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'RESOURCE_CONFLICT'},
     429: <String>{'RATE_LIMITED'},
     500: <String>{'INTERNAL_ERROR'},
+    502: <String>{'PROVIDER_UNREACHABLE'},
     503: <String>{
       'CAPABILITY_UNAVAILABLE',
       'PROVIDER_DISCONNECTED',
@@ -47,7 +48,11 @@ final class DioLoopV2TestnetFaucetApi {
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
     403: <String>{'PERMISSION_DENIED'},
     404: <String>{'NOT_FOUND'},
-    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'IDEMPOTENCY_CONFLICT'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'IDEMPOTENCY_CONFLICT',
+      'RESOURCE_CONFLICT',
+    },
     422: <String>{'VALIDATION_FAILED'},
     429: <String>{'RATE_LIMITED'},
     500: <String>{'INTERNAL_ERROR'},
@@ -130,9 +135,25 @@ final class DioLoopV2TestnetFaucetApi {
           ),
         );
       }
-      if (reasonCode == TestnetFaucetReason.partial &&
+      final serverAnswered = failure.code != null;
+      if (serverAnswered &&
+          (reasonCode == TestnetFaucetReason.partial ||
+              reasonCode == TestnetFaucetReason.submissionUnknown) &&
           (failure.statusCode == 502 || failure.statusCode == 503)) {
-        return LoopV2TestnetFaucetCodec.partial(detailsSafe);
+        return LoopV2TestnetFaucetCodec.partial(
+          detailsSafe,
+          unconfirmed: reasonCode == TestnetFaucetReason.submissionUnknown,
+        );
+      }
+      // The same claim is still being sent under this key.
+      if (failure.code == 'RESOURCE_CONFLICT' &&
+          reasonCode == TestnetFaucetReason.inFlight) {
+        return const TestnetFaucetPending(TestnetFaucetPendingReason.inFlight);
+      }
+      // LOOP stopped waiting after 15 s but still finishes and records the
+      // grant: the page reads the status again instead of failing.
+      if (failure.code == 'REQUEST_TIMEOUT') {
+        return const TestnetFaucetPending(TestnetFaucetPendingReason.timedOut);
       }
       throw failure;
     }

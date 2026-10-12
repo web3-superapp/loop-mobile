@@ -48,6 +48,8 @@ const String testnetFaucetEntrySubtitle =
 const String testnetFaucetBusyLabel = '正在发放…（约 30 秒）';
 const String testnetFaucetOperatorLowText = '测试币池暂时不足，请稍后再试';
 const String testnetFaucetNotOwnedText = '只能给当前登录的内置钱包领取';
+const String testnetFaucetInFlightLaterText = '结果稍后在这里查看';
+const String testnetFaucetTimedOutLaterText = '发放还在进行，稍后再进来看';
 
 /// 「HH:mm」 in the device's own time zone, with the day in front when it is
 /// not today.
@@ -66,6 +68,9 @@ String testnetFaucetNextLabel(DateTime next, {DateTime? now}) {
 
 /// The partial grant, said by what did arrive.
 String testnetFaucetPartialText(TestnetFaucetPartial partial) {
+  if (partial.unconfirmed) {
+    return 'tBNB 已发出但还没确认，tUSD1 这次没发；24 小时后可再领';
+  }
   final bnb = partial.bnbTransactionHash != null;
   final usd1 = partial.usd1TransactionHash != null;
   if (usd1 && !bnb) return 'tUSD1 已到账，tBNB 这次没成功，24 小时后可再领';
@@ -86,7 +91,18 @@ String testnetFaucetFailureText(LoopChainException failure) {
       return '当前网络不是测试网，不能领取测试币';
     case TestnetFaucetReason.operatorNotConfigured:
     case TestnetFaucetReason.capabilityAbsent:
+    case TestnetFaucetReason.usd1NotConfigured:
+    case TestnetFaucetReason.rpcNotConfigured:
+    case TestnetFaucetReason.runtimeUnavailable:
       return '测试币领取暂时不可用，稍后再试';
+    case TestnetFaucetReason.usd1Unavailable:
+      return 'tUSD1 合约暂时不可用，稍后再试';
+    case TestnetFaucetReason.chainReadFailed:
+      return '链上读数暂时取不到，稍后再试';
+    case TestnetFaucetReason.busy:
+      return '正在给别人发放，几秒后再试';
+    case TestnetFaucetReason.transferFailed:
+      return '这次没有发出，可以重试';
     case TestnetFaucetReason.cooldown:
       return '这个钱包 24 小时内已经领过，稍后再来';
   }
@@ -177,6 +193,9 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
   TestnetFaucetClaimResult? _result;
   LoopChainException? _claimFailure;
 
+  /// What a claim whose answer never came back in time says.
+  String? _pendingNote;
+
   @override
   void initState() {
     super.initState();
@@ -220,12 +239,17 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
       _claiming = true;
       _claimFailure = null;
       _result = null;
+      _pendingNote = null;
     });
     try {
       final result = await ref
           .read(testnetFaucetGatewayProvider)
           .claim(walletId: widget.walletId);
       if (!mounted) return;
+      if (result is TestnetFaucetPending) {
+        await _awaitGrant(result.reason);
+        return;
+      }
       setState(() {
         _result = result;
         _claiming = false;
@@ -250,6 +274,85 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
     }
   }
 
+  /// The claim was accepted and its answer is not in yet: the button stays
+  /// on 正在发放 and the status is read again until the grant appears. It
+  /// never claims a second time.
+  ///
+  /// In flight: every 3 s, the last read at 20 s. Timed out (LOOP finishes and records
+  /// the grant anyway): once now, once 3 s later.
+  Future<void> _awaitGrant(TestnetFaucetPendingReason reason) async {
+    final baseline = _status?.lastGrant?.grantedAt;
+    final delays = switch (reason) {
+      TestnetFaucetPendingReason.inFlight => const <int>[3, 3, 3, 3, 3, 3, 2],
+      TestnetFaucetPendingReason.timedOut => const <int>[0, 3],
+    };
+    TestnetFaucetStatus? latest;
+    for (final seconds in delays) {
+      if (seconds > 0) await Future<void>.delayed(Duration(seconds: seconds));
+      if (!mounted) return;
+      try {
+        latest = await ref
+            .read(testnetFaucetGatewayProvider)
+            .loadStatus(walletId: widget.walletId);
+      } on Object {
+        continue;
+      }
+      if (!mounted) return;
+      final grant = latest.lastGrant;
+      if (grant != null && grant.grantedAt != baseline) {
+        final status = latest;
+        setState(() {
+          _status = status;
+          _result = _resultOf(status, grant);
+          _claiming = false;
+        });
+        _refreshBalances();
+        return;
+      }
+    }
+    if (!mounted) return;
+    final status = latest;
+    setState(() {
+      if (status != null) _status = status;
+      _pendingNote = switch (reason) {
+        TestnetFaucetPendingReason.inFlight => testnetFaucetInFlightLaterText,
+        TestnetFaucetPendingReason.timedOut => testnetFaucetTimedOutLaterText,
+      };
+      _claiming = false;
+    });
+  }
+
+  /// A grant read back from the status, said the way the claim would have.
+  TestnetFaucetClaimResult _resultOf(
+    TestnetFaucetStatus status,
+    TestnetFaucetLastGrant grant,
+  ) {
+    final next =
+        status.nextAvailableAt ??
+        grant.grantedAt.add(Duration(seconds: status.cooldownSeconds));
+    final usd1 = grant.usd1TransactionHash;
+    if (usd1 == null) {
+      return TestnetFaucetPartial(
+        bnbTransactionHash: grant.bnbTransactionHash,
+        nextAvailableAt: next,
+      );
+    }
+    return TestnetFaucetGranted(
+      walletId: status.walletId,
+      address: status.address,
+      bnb: TestnetFaucetTransfer(
+        amount: status.bnbAmount,
+        transactionHash: grant.bnbTransactionHash,
+      ),
+      usd1: TestnetFaucetTransfer(
+        amount: status.usd1Amount,
+        transactionHash: usd1,
+      ),
+      grantedAt: grant.grantedAt,
+      nextAvailableAt: next,
+    );
+  }
+
   /// The grant changed the wallet: its balances are read again on the spot,
   /// and the opener refreshes whatever else it shows.
   void _refreshBalances() {
@@ -264,6 +367,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
   DateTime? get _nextAvailableAt => switch (_result) {
     TestnetFaucetGranted(:final nextAvailableAt) => nextAvailableAt,
     TestnetFaucetCoolingDown(:final nextAvailableAt) => nextAvailableAt,
+    TestnetFaucetPartial(:final nextAvailableAt?) => nextAvailableAt,
     _ => _status?.available == false ? _status?.nextAvailableAt : null,
   };
 
@@ -382,6 +486,8 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
               ? '这个钱包 24 小时内已经领过，稍后再来'
               : '这个钱包 24 小时内已经领过，下次可领 ${testnetFaucetNextLabel(next)}',
         ),
+      if (_pendingNote case final String note)
+        _line(key: 'testnet-faucet-pending', text: note),
       if (claimFailure != null)
         _line(
           key: 'testnet-faucet-failure',

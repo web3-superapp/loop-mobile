@@ -26,6 +26,26 @@ TestnetFaucetStatus faucetStatus({
   lastGrant: null,
 );
 
+/// A status read back after a grant landed.
+TestnetFaucetStatus faucetStatusAfterGrant({
+  required String walletId,
+  required DateTime grantedAt,
+  String? usd1Hash = faucetUsd1Hash,
+}) => TestnetFaucetStatus(
+  walletId: walletId,
+  address: '0xabcdefabcdefabcdefabcdefabcdefabcdef1234',
+  bnbAmount: Decimal.parse('0.02'),
+  usd1Amount: Decimal.parse('500'),
+  cooldownSeconds: 86400,
+  available: false,
+  nextAvailableAt: grantedAt.add(const Duration(days: 1)),
+  lastGrant: TestnetFaucetLastGrant(
+    grantedAt: grantedAt,
+    bnbTransactionHash: faucetBnbHash,
+    usd1TransactionHash: usd1Hash,
+  ),
+);
+
 TestnetFaucetGranted faucetGranted({
   required String walletId,
   required DateTime grantedAt,
@@ -60,6 +80,9 @@ final class FakeTestnetFaucetGateway implements TestnetFaucetGateway {
   LoopChainException? statusFailure;
   Completer<void>? claimGate;
 
+  /// Answers handed out before [status], one per read, in order.
+  final List<TestnetFaucetStatus> statusQueue = <TestnetFaucetStatus>[];
+
   final List<String> statusReads = <String>[];
   final List<String> claims = <String>[];
 
@@ -71,6 +94,7 @@ final class FakeTestnetFaucetGateway implements TestnetFaucetGateway {
     statusReads.add(walletId);
     final failure = statusFailure;
     if (failure != null) throw failure;
+    if (statusQueue.isNotEmpty) return statusQueue.removeAt(0);
     return status;
   }
 

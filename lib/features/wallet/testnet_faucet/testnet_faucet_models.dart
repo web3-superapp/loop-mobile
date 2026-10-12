@@ -20,9 +20,10 @@ final class TestnetFaucetLastGrant {
 
   final DateTime grantedAt;
 
-  /// Lower-case `0x` hashes. Either may be `null` when that half of the grant
-  /// never reached the chain (a partial grant).
-  final String? bnbTransactionHash;
+  /// Lower-case `0x` hashes. tBNB is always sent first, so its hash is
+  /// always there; tUSD1's is `null` when that half was never minted (a
+  /// partial grant, or one whose outcome is unknown).
+  final String bnbTransactionHash;
   final String? usd1TransactionHash;
 }
 
@@ -107,14 +108,43 @@ final class TestnetFaucetCoolingDown extends TestnetFaucetClaimResult {
 
 /// `TESTNET_FAUCET_PARTIAL`: one transfer went through and the other did
 /// not. The hashes are the ones the server reported as sent.
+///
+/// `TESTNET_FAUCET_SUBMISSION_UNKNOWN` is read the same way with
+/// [unconfirmed] set: tBNB went out but is not confirmed, tUSD1 was not
+/// sent.
 final class TestnetFaucetPartial extends TestnetFaucetClaimResult {
   const TestnetFaucetPartial({
     this.bnbTransactionHash,
     this.usd1TransactionHash,
+    this.nextAvailableAt,
+    this.unconfirmed = false,
   });
 
   final String? bnbTransactionHash;
   final String? usd1TransactionHash;
+
+  /// When the wallet can claim again, when the server said so.
+  final DateTime? nextAvailableAt;
+  final bool unconfirmed;
+}
+
+/// Why the claim's answer is not known yet.
+enum TestnetFaucetPendingReason {
+  /// `409 RESOURCE_CONFLICT` + `TESTNET_FAUCET_IN_FLIGHT`: the same claim is
+  /// still being sent.
+  inFlight,
+
+  /// `503 REQUEST_TIMEOUT`: LOOP stopped waiting, but finishes the grant and
+  /// records it.
+  timedOut,
+}
+
+/// The claim was accepted but its answer is not in yet. The page reads the
+/// status again until the grant appears; it never claims a second time.
+final class TestnetFaucetPending extends TestnetFaucetClaimResult {
+  const TestnetFaucetPending(this.reason);
+
+  final TestnetFaucetPendingReason reason;
 }
 
 /// The server's reason codes this surface turns into its own sentences.
@@ -126,6 +156,15 @@ abstract final class TestnetFaucetReason {
   static const walletNotOwned = 'TESTNET_FAUCET_WALLET_NOT_OWNED';
   static const cooldown = 'TESTNET_FAUCET_COOLDOWN';
   static const partial = 'TESTNET_FAUCET_PARTIAL';
+  static const usd1NotConfigured = 'TESTNET_FAUCET_USD1_NOT_CONFIGURED';
+  static const rpcNotConfigured = 'TESTNET_FAUCET_RPC_NOT_CONFIGURED';
+  static const runtimeUnavailable = 'TESTNET_FAUCET_RUNTIME_UNAVAILABLE';
+  static const usd1Unavailable = 'TESTNET_FAUCET_USD1_UNAVAILABLE';
+  static const chainReadFailed = 'TESTNET_FAUCET_CHAIN_READ_FAILED';
+  static const busy = 'TESTNET_FAUCET_BUSY';
+  static const submissionUnknown = 'TESTNET_FAUCET_SUBMISSION_UNKNOWN';
+  static const transferFailed = 'TESTNET_FAUCET_TRANSFER_FAILED';
+  static const inFlight = 'TESTNET_FAUCET_IN_FLIGHT';
 
   /// The client's own code for a capability document that does not list
   /// `testnetFaucet` at all (a backend from before loop-api S156). No

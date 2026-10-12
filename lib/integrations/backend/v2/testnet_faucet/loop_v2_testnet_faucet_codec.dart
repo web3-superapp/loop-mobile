@@ -123,14 +123,12 @@ abstract final class LoopV2TestnetFaucetCodec {
 
   static TestnetFaucetLastGrant _lastGrant(Object? raw) {
     final map = LoopV2Contract.strictMap(raw, lastGrantKeys);
-    final bnb = _optionalHash(map, 'bnbTransactionHash');
-    final usd1 = _optionalHash(map, 'usd1TransactionHash');
-    // A grant that sent nothing would not be remembered as a grant.
-    if (bnb == null && usd1 == null) invalid();
+    // tBNB is sent first and is always recorded; tUSD1 is `null` when it was
+    // never minted (a partial grant, or one whose outcome is unknown).
     return TestnetFaucetLastGrant(
       grantedAt: LoopV2ChainCodec.requireTimestamp(map, 'grantedAt'),
-      bnbTransactionHash: bnb,
-      usd1TransactionHash: usd1,
+      bnbTransactionHash: _hash(map, 'bnbTransactionHash'),
+      usd1TransactionHash: _optionalHash(map, 'usd1TransactionHash'),
     );
   }
 
@@ -171,9 +169,13 @@ abstract final class LoopV2TestnetFaucetCodec {
     return DateTime.tryParse(value)?.toUtc();
   }
 
-  /// The hashes a partial refusal reports as sent. Each one is optional and
-  /// an unreadable value is dropped, never guessed.
-  static TestnetFaucetPartial partial(Object? detailsSafe) {
+  /// The hashes a partial refusal reports as sent, and the next time. Each
+  /// one is optional and an unreadable value is dropped, never guessed.
+  /// [unconfirmed] marks `TESTNET_FAUCET_SUBMISSION_UNKNOWN`.
+  static TestnetFaucetPartial partial(
+    Object? detailsSafe, {
+    bool unconfirmed = false,
+  }) {
     String? hash(String key) {
       if (detailsSafe is! Map) return null;
       final value = detailsSafe[key];
@@ -184,6 +186,8 @@ abstract final class LoopV2TestnetFaucetCodec {
     return TestnetFaucetPartial(
       bnbTransactionHash: hash('bnbTransactionHash'),
       usd1TransactionHash: hash('usd1TransactionHash'),
+      nextAvailableAt: cooldownNextAvailableAt(detailsSafe),
+      unconfirmed: unconfirmed,
     );
   }
 }
