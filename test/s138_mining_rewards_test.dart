@@ -12,6 +12,8 @@ import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/crypto/loop_keccak.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_display.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart';
@@ -31,6 +33,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
 import 'support/loop_ground_probe.dart';
+import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
 // ---------------------------------------------------------------------------
@@ -1241,7 +1244,9 @@ void main() {
         'MINING_CLAIM_BELOW_MINIMUM': '满 1.0000 LOOP 可领取',
         'MINING_CLAIM_IN_FLIGHT': '上一笔领取还在处理中，完成后再领取',
         'MINING_CLAIM_MAINNET_CLOSED': '主网领取尚未开放',
-        'MINING_CLAIM_CONTRACT_NOT_CONFIGURED': '领取合约尚未配置，暂不能领取',
+        // MINING_CLAIM_CONTRACT_NOT_CONFIGURED reads Coming soon (0155).
+        'MINING_CLAIM_CHAIN_NOT_CONFIGURED': '领取所在的链尚未配置，暂不能领取',
+        'MINING_CLAIM_SIGNER_NOT_CONFIGURED': '领取凭证签发尚未配置，暂不能领取',
       };
       for (final MapEntry(key: reason, value: text) in expected.entries) {
         final rewards = _FakeRewards(
@@ -1878,6 +1883,208 @@ void main() {
         ),
         '领取合约已暂停，余额不变。',
       );
+    });
+  });
+
+  group('S159 · claim Coming soon (decision 0155)', () {
+    const reason = miningClaimContractNotConfiguredCode;
+
+    _FakeRewards notConfigured() => _FakeRewards(
+      rewards: <_Answer<MiningRewardsView>>[
+        _Answer.value(
+          _view(_hourlyJson(executable: false, claimReason: reason)),
+        ),
+      ],
+    );
+
+    testWidgets('the claim button is greyed, reads Coming soon, and says why '
+        'in one line', (tester) async {
+      await _pump(tester, rewards: notConfigured());
+
+      final button = tester.widget<LoopButton>(_key('mining-claim-button'));
+      expect(button.label, 'Coming soon');
+      expect(button.onPressed, isNull);
+      expect(
+        tester.widget<Text>(_key('mining-claim-coming-soon-note')).data,
+        'LOOP 代币上线后开放领取，奖励已记在账上',
+      );
+      expect(
+        tester
+            .widget<Text>(_key('mining-claim-coming-soon-note'))
+            .style
+            ?.fontSize,
+        12,
+      );
+      // The balance, the summary and the records are shown as they are.
+      expect(find.text('120.0000 LOOP'), findsOneWidget);
+      expect(_key('mining-summary-settled'), findsOneWidget);
+      expect(_key('mining-summary-claimable'), findsOneWidget);
+      // Nothing else speaks for this reason, anywhere on the page.
+      expect(_key('mining-claim-disabled'), findsNothing);
+      expect(_key('mining-claim-note'), findsNothing);
+      expect(find.textContaining('尚未配置'), findsNothing);
+      expect(find.textContaining('领取合约'), findsNothing);
+      expect(find.textContaining(reason), findsNothing);
+      await _scrollTo(tester, find.text('领取记录'));
+      expect(find.textContaining('尚未配置'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('other closed reasons keep their words and the 领取 label', (
+      tester,
+    ) async {
+      for (final other in <String>[
+        'MINING_CLAIM_CHAIN_NOT_CONFIGURED',
+        'MINING_CLAIM_WRITES_DISABLED',
+        'MINING_CLAIM_MAINNET_CLOSED',
+      ]) {
+        await _pump(
+          tester,
+          rewards: _FakeRewards(
+            rewards: <_Answer<MiningRewardsView>>[
+              _Answer.value(
+                _view(_hourlyJson(executable: false, claimReason: other)),
+              ),
+            ],
+          ),
+        );
+        final button = tester.widget<LoopButton>(_key('mining-claim-button'));
+        expect(button.label, '领取', reason: other);
+        expect(button.onPressed, isNull, reason: other);
+        expect(
+          tester.widget<Text>(_key('mining-claim-disabled')).data,
+          miningClaimUnavailableText(other),
+          reason: other,
+        );
+        expect(_key('mining-claim-coming-soon-note'), findsNothing);
+        expect(find.text('Coming soon'), findsNothing, reason: other);
+        await _drain(tester);
+      }
+    });
+
+    testWidgets('an executable claim is untouched', (tester) async {
+      await _pump(
+        tester,
+        rewards: _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[
+            _Answer.value(_view(_hourlyJson())),
+          ],
+        ),
+      );
+      final button = tester.widget<LoopButton>(_key('mining-claim-button'));
+      expect(button.label, '领取');
+      expect(button.onPressed, isNotNull);
+      expect(find.text('Coming soon'), findsNothing);
+      await _drain(tester);
+    });
+
+    test('no copy path names the configuration for this reason', () {
+      expect(miningClaimUnavailableText(reason), 'LOOP 代币上线后开放领取，奖励已记在账上');
+      expect(
+        miningClaimPrepareFailureText(
+          const LoopChainException(
+            LoopChainFailureKind.unavailable,
+            reasonCode: reason,
+          ),
+        ),
+        'LOOP 代币上线后开放领取，奖励已记在账上',
+      );
+      const closed = MiningClaimSummary(
+        status: MiningClaimStatus.none,
+        executable: false,
+        reasonCode: reason,
+      );
+      expect(closed.comingSoon, isTrue);
+      const open = MiningClaimSummary(
+        status: MiningClaimStatus.none,
+        executable: true,
+        reasonCode: reason,
+      );
+      expect(open.comingSoon, isFalse);
+      const other = MiningClaimSummary(
+        status: MiningClaimStatus.none,
+        executable: false,
+        reasonCode: 'MINING_CLAIM_WRITES_DISABLED',
+      );
+      expect(other.comingSoon, isFalse);
+    });
+
+    Future<void> pumpMining(WidgetTester tester, _FakeRewards rewards) =>
+        pumpS7Page(
+          tester,
+          MiningScreen(onOpenRewards: () {}),
+          mining: FakeMiningGateway(
+            summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+          ),
+          size: const Size(390, 4000),
+          overrides: <Override>[
+            miningRewardsGatewayProvider.overrideWithValue(rewards),
+            loopReadClockProvider.overrideWithValue(() => _now),
+          ],
+        );
+
+    testWidgets('the 我的挖矿 entry keeps its place and reads Coming soon', (
+      tester,
+    ) async {
+      final rewards = notConfigured();
+      await pumpMining(tester, rewards);
+      expect(rewards.rewardReads, 1);
+      final claim = _key('mining-summary-hero-claim');
+      expect(claim, findsOneWidget);
+      expect(
+        find.descendant(of: claim, matching: find.text('Coming soon')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<InkWell>(
+              find.descendant(of: claim, matching: find.byType(InkWell)),
+            )
+            .onTap,
+        isNull,
+      );
+      final note = tester.widget<Text>(_key('mining-summary-hero-coming-soon'));
+      expect(note.data, 'LOOP 代币上线后开放领取，奖励已记在账上');
+      expect(note.style?.fontSize, 12);
+      expect(find.textContaining('尚未配置'), findsNothing);
+      // The second action is not touched.
+      expect(_key('mining-summary-hero-assets'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('the 我的挖矿 entry opens 挖矿奖励 for any other answer', (
+      tester,
+    ) async {
+      await pumpMining(
+        tester,
+        _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[
+            _Answer.value(
+              _view(
+                _hourlyJson(
+                  executable: false,
+                  claimReason: 'MINING_CLAIM_WRITES_DISABLED',
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      final claim = _key('mining-summary-hero-claim');
+      expect(
+        find.descendant(of: claim, matching: find.text('领取奖励')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<InkWell>(
+              find.descendant(of: claim, matching: find.byType(InkWell)),
+            )
+            .onTap,
+        isNotNull,
+      );
+      expect(_key('mining-summary-hero-coming-soon'), findsNothing);
+      await _drain(tester);
     });
   });
 }

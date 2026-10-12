@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -305,6 +306,7 @@ class MiningSummaryHero extends StatelessWidget {
     this.onClaim,
     this.claimSemanticLabel,
     this.onOpenAssets,
+    this.claimComingSoon = false,
   });
 
   /// The power itself, or the words for its absence. Never a 44px dash.
@@ -329,6 +331,11 @@ class MiningSummaryHero extends StatelessWidget {
   final VoidCallback? onClaim;
   final String? claimSemanticLabel;
   final VoidCallback? onOpenAssets;
+
+  /// Decision 0155: the rewards resource says no claim contract is
+  /// configured (the LOOP token is not on chain yet). The claim button stays,
+  /// greyed, reads Coming soon, and carries one line under the actions.
+  final bool claimComingSoon;
 
   @override
   Widget build(BuildContext context) {
@@ -489,10 +496,12 @@ class MiningSummaryHero extends StatelessWidget {
               Expanded(
                 child: _HeroAction(
                   key: const ValueKey<String>('mining-summary-hero-claim'),
-                  label: '领取奖励',
+                  label: claimComingSoon ? miningClaimComingSoonLabel : '领取奖励',
                   filled: true,
-                  onPressed: onClaim,
-                  semanticLabel: claimSemanticLabel,
+                  onPressed: claimComingSoon ? null : onClaim,
+                  semanticLabel: claimComingSoon
+                      ? '领取奖励，$miningClaimComingSoonLabel'
+                      : claimSemanticLabel,
                 ),
               ),
               const SizedBox(width: 9),
@@ -505,6 +514,17 @@ class MiningSummaryHero extends StatelessWidget {
               ),
             ],
           ),
+          if (claimComingSoon) ...<Widget>[
+            const SizedBox(height: 8),
+            Text(
+              miningClaimComingSoonNote,
+              key: const ValueKey<String>('mining-summary-hero-coming-soon'),
+              style: LoopTypography.caption(
+                12,
+                color: ink.withValues(alpha: 0.67),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -587,9 +607,11 @@ class _HeroAction extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
+              // A filled button's edge is its fill: an Ink line on Ink
+              // painted nothing, so it is kept only for the 1px it holds.
               border: Border.all(
                 color: filled && enabled
-                    ? LoopColors.ink
+                    ? Colors.transparent
                     : LoopColors.ink.withValues(alpha: 0.22),
               ),
             ),

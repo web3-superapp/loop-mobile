@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -89,22 +90,66 @@ void main() {
     expect(store, isNot(isA<FileLoopSnapshotStore>()));
   });
 
-  test(
-    'a slow locator inside its own bound still opens the file store',
-    () async {
-      final support = Directory.systemTemp.createTempSync('loop-s88b-slow-');
-      addTearDown(() => support.deleteSync(recursive: true));
-      final store = await FileLoopSnapshotStore.openPersistent(
+  // The bounds are measured on the test's clock, not the host's: under
+  // `testWidgets` every Timer is fake, and the probe and the read go to an
+  // in-memory file that answers at once. A loaded host used to blow the 20 ms
+  // step bound on the real disk and drop to memory (2026-10-12).
+  testWidgets('a slow locator inside its own bound still opens the file '
+      'store', (tester) async {
+    LoopSnapshotStore? store;
+    Object? failure;
+    IOOverrides.runZoned(() {
+      FileLoopSnapshotStore.openPersistent(
         // Slower than the per-step bound, faster than the locate bound: the
         // platform channel answers late on a loaded cold start (S123f).
         locate: () => Future<Directory>.delayed(
           const Duration(milliseconds: 60),
-          () => support,
+          () => Directory('/loop-s88b-slow'),
         ),
+        createDirectory: (_) async {},
         timeout: const Duration(milliseconds: 20),
         locateTimeout: const Duration(milliseconds: 500),
+      ).then(
+        (value) => store = value,
+        onError: (Object error) {
+          failure = error;
+        },
       );
-      expect(store, isA<FileLoopSnapshotStore>());
-    },
-  );
+    }, createFile: _InstantFile.new);
+
+    // Past the per-step bound, still waiting on the locator.
+    await tester.pump(const Duration(milliseconds: 59));
+    expect(store, isNull);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(failure, isNull);
+    expect(store, isA<FileLoopSnapshotStore>());
+  });
+}
+
+/// A file that takes the probe and holds no snapshots, answering on the next
+/// microtask so only the fake clock decides the bounds.
+final class _InstantFile implements File {
+  _InstantFile(this.path);
+
+  @override
+  final String path;
+
+  @override
+  Future<File> writeAsString(
+    String contents, {
+    FileMode mode = FileMode.write,
+    Encoding encoding = utf8,
+    bool flush = false,
+  }) async => this;
+
+  @override
+  Future<FileSystemEntity> delete({bool recursive = false}) async => this;
+
+  @override
+  Future<bool> exists() async => false;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('${invocation.memberName} is not faked');
 }

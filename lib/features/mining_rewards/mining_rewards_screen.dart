@@ -702,7 +702,10 @@ String? miningClaimPhaseText(MiningClaimState state) {
     MiningClaimPhase.succeeded => '领取成功，LOOP 已到账。',
     MiningClaimPhase.failed =>
       '链上领取失败，可领取余额没有减少。'
-          '${state.record?.failureReasonCode == null ? '' : '（${state.record!.failureReasonCode}）'}',
+          '${switch (state.record?.failureReasonCode) {
+            null || miningClaimContractNotConfiguredCode => '',
+            final String code => '（$code）',
+          }}',
     MiningClaimPhase.expired => '领取凭证已过期，没有发放，可领取余额不变。可以重新领取。',
   };
 }
@@ -722,7 +725,9 @@ String miningClaimUnavailableText(String? reasonCode, {BigInt? minimum}) =>
             ? '满 ${miningLoopFigure(minimum)} LOOP 可领取'
             : '可领取数量未达到最低领取数量',
       'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取',
-      'MINING_CLAIM_CONTRACT_NOT_CONFIGURED' => '领取合约尚未配置，暂不能领取',
+      // Decision 0155: not an outage — the token is not on chain yet. The
+      // panel shows Coming soon for it; no wording about configuration.
+      miningClaimContractNotConfiguredCode => miningClaimComingSoonNote,
       'MINING_CLAIM_CHAIN_NOT_CONFIGURED' => '领取所在的链尚未配置，暂不能领取',
       'MINING_CLAIM_SIGNER_NOT_CONFIGURED' => '领取凭证签发尚未配置，暂不能领取',
       'MINING_CLAIM_WRITES_DISABLED' => '链上写入暂时关闭，暂不能领取',
@@ -741,6 +746,7 @@ String miningClaimPrepareFailureText(LoopChainException? failure) {
     'MINING_CLAIM_NOTHING_TO_CLAIM' => '现在没有可领取的 LOOP。',
     'MINING_CLAIM_BELOW_MINIMUM' => '可领取数量低于最低领取数量。',
     'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取。',
+    miningClaimContractNotConfiguredCode => miningClaimComingSoonNote,
     'MINING_CLAIM_SIMULATION_REVERTED' => '试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。',
     'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，余额不变。',
     'MINING_CLAIM_CHAIN_READ_FAILED' => '领取合约暂时读不到，没有生成领取凭证，余额不变。',
@@ -808,6 +814,15 @@ class MiningClaimPanel extends StatelessWidget {
     }
   }
 
+  /// Decision 0155: no claim contract yet. The button stays where it is,
+  /// greyed, and says Coming soon; the balance above it is shown as it is.
+  bool get _comingSoon =>
+      !restored &&
+      !claim.busy &&
+      !claim.locked &&
+      !view.claim.status.inFlight &&
+      view.claim.comingSoon;
+
   String? get _disabledReason {
     if (restored) return '正在读取最新的可领取数量';
     if (claim.busy || claim.locked) return null;
@@ -835,13 +850,17 @@ class MiningClaimPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = _status;
     final any = view.claimable > BigInt.zero;
+    final comingSoon = _comingSoon;
     final disabled = _disabledReason;
     final canClaim =
+        !comingSoon &&
         disabled == null &&
         !claim.busy &&
         !claim.locked &&
         claim.phase != MiningClaimPhase.prepared;
-    final note = miningClaimPhaseText(claim);
+    // Under Coming soon the button and its one line say everything; no
+    // phase note is added beside them (decision 0155).
+    final note = comingSoon ? null : miningClaimPhaseText(claim);
     final tx = switch (claim.record) {
       final MiningClaimRecord record
           when record.status == MiningClaimStatus.succeeded =>
@@ -912,7 +931,22 @@ class MiningClaimPanel extends StatelessWidget {
                   block: true,
                   onPressed: onResume,
                 )
-              else
+              else if (comingSoon) ...<Widget>[
+                const LoopButton(
+                  key: ValueKey<String>('mining-claim-button'),
+                  label: miningClaimComingSoonLabel,
+                  primary: true,
+                  block: true,
+                  onPressed: null,
+                  semanticLabel: '领取，$miningClaimComingSoonLabel',
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  miningClaimComingSoonNote,
+                  key: const ValueKey<String>('mining-claim-coming-soon-note'),
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                ),
+              ] else
                 LoopButton(
                   key: const ValueKey<String>('mining-claim-button'),
                   label: claim.busy || claim.locked ? '领取处理中' : '领取',
@@ -928,7 +962,9 @@ class MiningClaimPanel extends StatelessWidget {
                   key: const ValueKey<String>('mining-claim-note'),
                   style: LoopType.bodySm.copyWith(color: LoopColors.text2),
                 ),
-              ] else if (disabled != null && !claim.locked) ...<Widget>[
+              ] else if (disabled != null &&
+                  !claim.locked &&
+                  !comingSoon) ...<Widget>[
                 const SizedBox(height: 10),
                 Text(
                   disabled,

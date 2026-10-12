@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
@@ -11,6 +12,7 @@ import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -94,6 +96,22 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       });
     }
 
+    // Decision 0155: whether the claim is Coming soon is the rewards
+    // resource's to say (`hourly.claim.reasonCode`). It is the same provider
+    // 挖矿奖励 reads, so opening that page from here costs no second request.
+    // Until it answers, the button keeps opening 挖矿奖励 as before.
+    final rewardsState = ref.watch(miningRewardsViewControllerProvider);
+    if (!blocked && rewardsState.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(miningRewardsViewControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    final claimComingSoon = rewardsState.value?.claim.comingSoon ?? false;
+
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-screen'),
       onRefresh: controller.reload,
@@ -138,6 +156,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
               onClaim: widget.onOpenRewards,
               claimSemanticLabel: '领取奖励，打开奖励与领取',
               onOpenAssets: widget.onOpenAssets,
+              claimComingSoon: claimComingSoon,
             ),
       block: blocked
           ? LoopCapabilityPageBlock.of(

@@ -320,7 +320,25 @@ final class MiningClaimSummary {
   final String? reasonCode;
   final BigInt? amount;
   final String? failureReasonCode;
+
+  /// Decision 0155 (user, 2026-10-12): the LOOP token is not on chain yet and
+  /// rewards are kept on the server's books, so a server with no claim
+  /// contract configured means 「not yet」, not 「broken」. Only this one reason
+  /// reads as Coming soon; every other closed reason keeps its own words.
+  bool get comingSoon =>
+      !executable && reasonCode == miningClaimContractNotConfiguredCode;
 }
+
+/// `hourly.claim.reasonCode` while no claim contract is configured.
+const String miningClaimContractNotConfiguredCode =
+    'MINING_CLAIM_CONTRACT_NOT_CONFIGURED';
+
+/// The claim button's words under [MiningClaimSummary.comingSoon]. English by
+/// the user's own choice (decision 0155), the one exception to zh-CN copy.
+const String miningClaimComingSoonLabel = 'Coming soon';
+
+/// The 12px line under that button (decision 0155).
+const String miningClaimComingSoonNote = 'LOOP 代币上线后开放领取，奖励已记在账上';
 
 /// `GET /v2/mining/rewards`, decoded.
 @immutable
