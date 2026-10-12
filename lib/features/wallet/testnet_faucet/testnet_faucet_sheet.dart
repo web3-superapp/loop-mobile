@@ -43,8 +43,7 @@ bool testnetFaucetVisible(WidgetRef ref) {
 // ---------------------------------------------------------------------------
 
 const String testnetFaucetTitle = '领取测试币';
-const String testnetFaucetEntrySubtitle =
-    '测试网专用 · 领 tBNB 与 tUSD1 · 每 24 小时一次';
+const String testnetFaucetEntrySubtitle = '测试网专用 · 领 tBNB 与 tUSD1 · 每 24 小时一次';
 const String testnetFaucetBusyLabel = '正在发放…（约 30 秒）';
 const String testnetFaucetOperatorLowText = '测试币池暂时不足，请稍后再试';
 const String testnetFaucetNotOwnedText = '只能给当前登录的内置钱包领取';
