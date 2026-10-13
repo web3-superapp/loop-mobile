@@ -10,8 +10,14 @@ import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gatewa
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_models.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_command_keyring.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/testnet_faucet/loop_v2_testnet_faucet_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/testnet_faucet/loop_v2_testnet_faucet_codec.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -411,6 +417,81 @@ void main() {
       );
     });
 
+    // Decision 0158 · a pending answer keeps its Idempotency-Key.
+    test('a pending claim keeps its key and the retry replays it; a resolved '
+        'one lets it go', () async {
+      final adapter = _ScriptedAdapter(<(int, Map<String, Object?>)>[
+        (
+          409,
+          _error('RESOURCE_CONFLICT', 'conflict', <String, Object?>{
+            'reasonCode': 'TESTNET_FAUCET_IN_FLIGHT',
+          }),
+        ),
+        (503, _error('REQUEST_TIMEOUT', 'availability', <String, Object?>{})),
+        (201, grantBody()),
+        (201, grantBody()),
+      ]);
+      final keyring = LoopV2CommandKeyring();
+      final gateway = _gateway(adapter, keyring);
+
+      expect(
+        await gateway.claim(walletId: s5WalletId),
+        isA<TestnetFaucetPending>(),
+      );
+      final first = adapter.keys.single;
+      expect(keyring.peek('testnet:faucet:$s5WalletId'), first);
+
+      expect(
+        await gateway.claim(walletId: s5WalletId),
+        isA<TestnetFaucetPending>(),
+      );
+      expect(
+        await gateway.claim(walletId: s5WalletId),
+        isA<TestnetFaucetGranted>(),
+      );
+      // Three requests, one logical claim, one key.
+      expect(adapter.keys, <String?>[first, first, first]);
+      expect(keyring.peek('testnet:faucet:$s5WalletId'), isNull);
+
+      // The next claim is a new one.
+      await gateway.claim(walletId: s5WalletId);
+      expect(adapter.keys.last, isNot(first));
+    });
+
+    test(
+      'a status read that shows the cooldown lets a pending key go',
+      () async {
+        final adapter = _ScriptedAdapter(<(int, Map<String, Object?>)>[
+          (
+            409,
+            _error('RESOURCE_CONFLICT', 'conflict', <String, Object?>{
+              'reasonCode': 'TESTNET_FAUCET_IN_FLIGHT',
+            }),
+          ),
+          (200, statusBody()),
+          (
+            200,
+            statusBody()
+              ..['available'] = false
+              ..['nextAvailableAt'] = '2026-10-13T08:00:00.000Z',
+          ),
+        ]);
+        final keyring = LoopV2CommandKeyring();
+        final gateway = _gateway(adapter, keyring);
+        const signature = 'testnet:faucet:$s5WalletId';
+
+        await gateway.claim(walletId: s5WalletId);
+        final key = keyring.peek(signature);
+        expect(key, isNotNull);
+        // Still claimable: the grant is not recorded yet, the key stays.
+        await gateway.loadStatus(walletId: s5WalletId);
+        expect(keyring.peek(signature), key);
+        // Cooling: the grant is recorded, so the key is let go.
+        await gateway.loadStatus(walletId: s5WalletId);
+        expect(keyring.peek(signature), isNull);
+      },
+    );
+
     test('502 transfer failed stays a refusal with its reason', () async {
       await expectLater(
         claimWith(
@@ -635,6 +716,54 @@ void main() {
       expect(find.text('下次可领 $time'), findsOneWidget);
     });
 
+    // Decision 0158 · the period on the sheet is the server's cooldown.
+    testWidgets('a one-hour cooldown is said as one hour', (tester) async {
+      final next = DateTime.now().toUtc().add(const Duration(minutes: 30));
+      final faucet = FakeTestnetFaucetGateway(
+        status: faucetStatus(walletId: s5WalletId, cooldownSeconds: 3600),
+        claimResult: TestnetFaucetCoolingDown(nextAvailableAt: next),
+      );
+      await _openSheet(tester, faucet);
+      expect(
+        tester.widget<Text>(key('testnet-faucet-intro')).data,
+        contains('每个内置钱包每 1 小时可以领一次'),
+      );
+      await tester.tap(key('testnet-faucet-claim'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(key('testnet-faucet-cooldown')).data,
+        '这个钱包 1 小时内已经领过，下次可领 ${testnetFaucetNextLabel(next)}',
+      );
+      expect(find.textContaining('24 小时'), findsNothing);
+    });
+
+    // Decision 0158 · the server grants only to the embedded wallet.
+    testWidgets('an external active wallet has no faucet entry', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(
+          directory: S5Answer<LoopWalletDirectory>(
+            value: s5Directory(activeWalletId: s5OtherWalletId),
+          ),
+        ),
+        meta: s5MetaSnapshot(
+          testnetFaucet: LoopV2CapabilityAvailability.available,
+        ),
+        overrides: [
+          testnetFaucetGatewayProvider.overrideWithValue(
+            FakeTestnetFaucetGateway(
+              status: faucetStatus(walletId: s5OtherWalletId),
+            ),
+          ),
+        ],
+      );
+      expect(key('wallet-screen'), findsOneWidget);
+      expect(key('wallet-faucet-entry'), findsNothing);
+    });
+
     testWidgets('partial: tBNB arrived, tUSD1 did not; its hash is shown', (
       tester,
     ) async {
@@ -768,10 +897,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(faucet.statusReads, hasLength(2));
       expect(key('testnet-faucet-failure'), findsNothing);
+      // Decision 0158: a record read back proves the tBNB was sent, not
+      // that it arrived.
       expect(
         tester.widget<Text>(key('testnet-faucet-partial')).data,
-        'tBNB 已到账，tUSD1 这次没成功，24 小时后可再领',
+        'tBNB 已发出，tUSD1 这次没发；24 小时后可再领',
       );
+      expect(find.textContaining('已到账'), findsNothing);
     });
 
     testWidgets('503 request timeout twice without a grant: 发放还在进行', (
@@ -907,8 +1039,47 @@ void main() {
       expect(
         testnetFaucetPartialText(
           const TestnetFaucetPartial(usd1TransactionHash: faucetUsd1Hash),
+          cooldownSeconds: 86400,
         ),
         'tUSD1 已到账，tBNB 这次没成功，24 小时后可再领',
+      );
+      // Decision 0158: without the server's cooldown no period is named.
+      expect(
+        testnetFaucetPartialText(
+          const TestnetFaucetPartial(usd1TransactionHash: faucetUsd1Hash),
+        ),
+        'tUSD1 已到账，tBNB 这次没成功，稍后可再领',
+      );
+      expect(
+        testnetFaucetPartialText(
+          const TestnetFaucetPartial(
+            bnbTransactionHash: faucetBnbHash,
+            readBack: true,
+          ),
+          cooldownSeconds: 86400,
+        ),
+        'tBNB 已发出，tUSD1 这次没发；24 小时后可再领',
+      );
+    });
+
+    // Decision 0158 · the cooldown is the server's `cooldownSeconds`.
+    test('the cooldown period is read from the server', () {
+      expect(testnetFaucetCooldownText(86400), '24 小时');
+      expect(testnetFaucetCooldownText(3 * 86400), '3 天');
+      expect(testnetFaucetCooldownText(12 * 3600), '12 小时');
+      expect(testnetFaucetCooldownText(1800), '30 分钟');
+      expect(testnetFaucetCooldownText(45), '45 秒');
+      expect(testnetFaucetClaimedText(3600), '这个钱包 1 小时内已经领过');
+      expect(testnetFaucetClaimedText(null), '这个钱包最近已经领过');
+      expect(
+        testnetFaucetFailureText(
+          const LoopChainException(
+            LoopChainFailureKind.rateLimited,
+            reasonCode: 'TESTNET_FAUCET_COOLDOWN',
+          ),
+          cooldownSeconds: 12 * 3600,
+        ),
+        '这个钱包 12 小时内已经领过，稍后再来',
       );
     });
   });
@@ -978,4 +1149,78 @@ final class _Adapter implements HttpClientAdapter {
       },
     );
   }
+}
+
+/// Answers each request with the next scripted response and records the
+/// Idempotency-Key it carried.
+final class _ScriptedAdapter implements HttpClientAdapter {
+  _ScriptedAdapter(this.script);
+
+  final List<(int, Map<String, Object?>)> script;
+  final List<String?> keys = <String?>[];
+  var _next = 0;
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    if (options.method == 'POST') {
+      keys.add(options.headers['Idempotency-Key'] as String?);
+    }
+    final (status, body) = script[_next++];
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      status,
+      headers: <String, List<String>>{
+        'cache-control': <String>['no-store'],
+        'x-request-id': <String>[s5RequestId],
+        'content-type': <String>['application/json; charset=utf-8'],
+      },
+    );
+  }
+}
+
+DioLoopV2TestnetFaucetGateway _gateway(
+  _ScriptedAdapter adapter,
+  LoopV2CommandKeyring keyring,
+) {
+  final dio = Dio(BaseOptions(baseUrl: 'https://api-dev.example'));
+  dio.httpClientAdapter = adapter;
+  return DioLoopV2TestnetFaucetGateway(
+    api: DioLoopV2TestnetFaucetApi(dio),
+    clientMetadata: const LoopV2ClientMetadata(
+      clientVersion: s5ClientVersion,
+      platform: LoopV2Platform.android,
+    ),
+    session: LoopAuthenticatedSession(
+      principalKey: 'did:privy:owner-1',
+      bootstrapSession: LoopBootstrapSession(
+        principalKey: 'did:privy:owner-1',
+        accessTokens: _Tokens(),
+        repository: _Bootstrap(),
+      ),
+      accessTokens: _Tokens(),
+    ),
+    keyring: keyring,
+  );
+}
+
+final class _Tokens implements LoopBackendAccessTokenSource {
+  @override
+  Future<String> loadAccessToken() async => 'token';
+}
+
+final class _Bootstrap implements LoopBootstrapRepository {
+  @override
+  Future<LoopBootstrapIdentity> bootstrap({
+    required String accessToken,
+  }) async => const LoopBootstrapIdentity(
+    loopUserId: '6d12a86e-4134-47e6-9312-c5ef75a30f55',
+    streamUserId: 'loop_6d12a86e413447e69312c5ef75a30f55',
+  );
 }

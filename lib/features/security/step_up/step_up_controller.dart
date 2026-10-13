@@ -229,15 +229,25 @@ final class LoopStepUpController extends Notifier<LoopStepUpState>
     if (!ref.mounted) return const LoopStepUpPlan.none();
     final settings = state.settings;
     return LoopStepUpPlan(
-      required: state.isActive && settings.reaches(usd1),
+      required:
+          (state.isActive || _capabilityUnknown) && settings.reaches(usd1),
       thresholdUsd1: settings.thresholdUsd1,
     );
   }
+
+  /// The rule is on but the device's capability could not be read (decision
+  /// 0158). That is "not known", never "nothing to ask with": an amount that
+  /// reaches the threshold fails closed instead of opening the wallet unasked.
+  bool get _capabilityUnknown =>
+      state.settings.enabled &&
+      state.capability?.unavailableReason ==
+          LoopDeviceAuthUnavailableReason.unknown;
 
   @override
   Future<LoopStepUpVerdict> verify(Decimal? usd1) async {
     final plan = await this.plan(usd1);
     if (!plan.required || usd1 == null) return LoopStepUpVerdict.notRequired;
+    if (_capabilityUnknown) return LoopStepUpVerdict.failed;
     final now = ref.read(loopAppLockClockProvider)();
     final grant = _grant;
     if (grant != null &&

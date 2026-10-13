@@ -83,6 +83,7 @@ Future<void> _pump(
   VoidCallback? onDone,
   bool settle = true,
   bool reduceMotion = false,
+  List<Override> extra = const <Override>[],
 }) => pumpCommunityPage(
   tester,
   reduceMotion
@@ -115,8 +116,15 @@ Future<void> _pump(
   overrides: <Override>[
     recommendedCommunitiesGatewayProvider.overrideWithValue(recommended),
     communityChannelMuterProvider.overrideWithValue(muter ?? _Muter()),
+    ...extra,
   ],
 );
+
+/// A controller whose mute wait throws (decision 0158).
+final class _ThrowingSettle extends OnboardingCommunitiesController {
+  @override
+  Future<void> settleMutes() async => throw StateError('settle failed');
+}
 
 FakeCommunityGateway _gateway({CommunityFailureKind? writeFailure}) =>
     FakeCommunityGateway(
@@ -469,6 +477,33 @@ void main() {
       await _pumpThroughWait(tester);
       expect(done, 1);
       await tester.pump(const Duration(seconds: 5));
+      expect(done, 1);
+    });
+
+    testWidgets('a mute wait that throws still leaves, once (decision 0158)', (
+      tester,
+    ) async {
+      var done = 0;
+      await _pump(
+        tester,
+        recommended: _Recommended(answer: answer()),
+        community: _gateway(),
+        onDone: () => done += 1,
+        extra: <Override>[
+          onboardingCommunitiesControllerProvider.overrideWith(
+            _ThrowingSettle.new,
+          ),
+        ],
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('onboarding-communities-enter')),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(onboardingEnteringMinimumStay);
+      expect(tester.takeException(), isNull);
+      expect(done, 1);
+      await tester.pump(const Duration(seconds: 15));
       expect(done, 1);
     });
 

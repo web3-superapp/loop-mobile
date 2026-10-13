@@ -452,6 +452,28 @@ void main() {
       expect(gateway.created.single.body, '为什么我的币没有权重');
     });
 
+    testWidgets('the recovery answer says what the security center says '
+        '(decision 0158)', (tester) async {
+      await pumpS8Page(
+        tester,
+        SupportScreen(onNavigate: (_) {}),
+        support: FakeSupportGateway(),
+      );
+      const answer = ValueKey<String>('support-answer-换手机怎么恢复账户');
+      await tester.ensureVisible(find.byKey(answer));
+      await tester.tap(find.text('换手机怎么恢复账户'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          '账号身份由 Privy 保管。Passkey 与多因素验证可以在安全中心开启，'
+          '自动恢复是默认的恢复方式；社交恢复与导出私钥还没有开放。'
+          '安全中心会显示每一项的当前状态。',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('暂时都不可用'), findsNothing);
+    });
+
     testWidgets('the reply window keeps a space between its two words', (
       tester,
     ) async {

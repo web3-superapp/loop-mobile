@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/chain/loop_usd1_asset.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -30,6 +31,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/launch2_fixtures.dart';
 import 'support/meme_fixtures.dart';
+import 'support/s5_fixtures.dart';
 import 'support/s6_fixtures.dart';
 
 // ---------------------------------------------------------------------------
@@ -66,6 +68,13 @@ final class _Device implements LoopDeviceAuthenticator {
         : answers.removeAt(0);
     return LoopDeviceAuthResult(outcome);
   }
+}
+
+/// A device whose capability read throws (decision 0158).
+final class _ThrowingDevice extends _Device {
+  @override
+  Future<LoopDeviceAuthCapability> readCapability() async =>
+      throw StateError('local_auth failed');
 }
 
 /// The wallet behind the step-up: it records what reached it.
@@ -229,10 +238,79 @@ void main() {
     test('a USD1 send is its own amount', () {
       final body = s6IntentBody();
       final review = body['review']! as Map<String, Object?>;
-      review['asset'] = s6Asset(symbol: 'USD1');
+      review['asset'] = s6Asset(
+        assetId: loopPrimaryUsd1AssetId,
+        symbol: 'USD1',
+      );
       final send = LoopV2IntentCodec.intent(body);
       expect(moneyIntentStepUpUsd1(send), send.review.amount.value);
     });
+
+    // Decision 0158 · USD1 is its CAIP assetId, never its symbol.
+    test('a token that only calls itself USD1 is valued like any token', () {
+      final body = s6IntentBody();
+      final review = body['review']! as Map<String, Object?>;
+      review['asset'] = s6Asset(symbol: 'USD1');
+      final send = LoopV2IntentCodec.intent(body);
+      expect(moneyIntentStepUpUsd1(send), Decimal.parse('7.50014'));
+    });
+
+    Map<String, Object?> swapForUsd1({required String valueUsd}) {
+      final body = s6SwapIntentBody();
+      final review = body['review']! as Map<String, Object?>;
+      final swap = review['swap']! as Map<String, Object?>;
+      swap['destinationAsset'] = s6Asset(
+        assetId: loopPrimaryUsd1AssetId,
+        symbol: 'USD1',
+      );
+      (body['policy']! as Map<String, Object?>)['valueUsd'] = valueUsd;
+      return body;
+    }
+
+    test('a swap that receives USD1 is the larger of what it pays and the '
+        'USD1 it receives', () {
+      // A costly asset for a little USD1: what leaves the wallet counts.
+      final costly = LoopV2IntentCodec.intent(swapForUsd1(valueUsd: '5000'));
+      expect(
+        costly.review.swap!.quote.estimatedOutputAmount.value,
+        Decimal.parse('3.74'),
+      );
+      expect(moneyIntentStepUpUsd1(costly), Decimal.parse('5000'));
+      // A cheap valuation: the USD1 received counts.
+      final cheap = LoopV2IntentCodec.intent(swapForUsd1(valueUsd: '1'));
+      expect(moneyIntentStepUpUsd1(cheap), Decimal.parse('3.74'));
+    });
+
+    test('a swap for a token that only calls itself USD1 is its valuation', () {
+      final body = swapForUsd1(valueUsd: '5000');
+      final review = body['review']! as Map<String, Object?>;
+      (review['swap']! as Map<String, Object?>)['destinationAsset'] = s6Asset(
+        assetId: s5UsdtAssetId,
+        symbol: 'USD1',
+      );
+      (body['policy']! as Map<String, Object?>)['valueUsd'] = '2';
+      final swap = LoopV2IntentCodec.intent(body);
+      expect(moneyIntentStepUpUsd1(swap), Decimal.parse('2'));
+    });
+
+    test(
+      'a high-value asset swapped for a little USD1 asks the device',
+      () async {
+        final device = _Device();
+        final wallet = _Wallet();
+        final container = _container(device: device, wallet: wallet);
+        final exit = container.read(loopGuardedWalletSigningGatewayProvider);
+        final swap = LoopV2IntentCodec.intent(swapForUsd1(valueUsd: '5000'));
+
+        final result = await exit.handoff(
+          _intent(usd1: moneyIntentStepUpUsd1(swap)),
+          now: _now,
+        );
+
+        expect(result.accepted, isTrue);
+        expect(device.reasons.single, '验证身份以签名这笔大额交易');
+      },
+    );
 
     test('a send the server could not price has no amount', () {
       final body = s6IntentBody();
@@ -260,6 +338,68 @@ void main() {
       expect(result.accepted, isTrue);
       expect(device.reasons, isEmpty);
       expect(wallet.handed, hasLength(1));
+    });
+
+    // Decision 0158 · a capability that could not be read is not "no".
+    test('with the rule on and the capability unread, a large amount fails '
+        'closed and the wallet stays shut', () async {
+      final device = _Device(
+        capability: const LoopDeviceAuthCapability.unavailable(
+          LoopDeviceAuthUnavailableReason.unknown,
+        ),
+      );
+      final wallet = _Wallet();
+      final container = _container(device: device, wallet: wallet);
+      final exit = container.read(loopGuardedWalletSigningGatewayProvider);
+
+      final result = await exit.handoff(
+        _intent(usd1: Decimal.parse('1000')),
+        now: _now,
+      );
+
+      expect(result.accepted, isFalse);
+      expect(result.code, loopStepUpFailedCode);
+      expect(device.reasons, isEmpty);
+      expect(wallet.handed, isEmpty);
+
+      // Below the threshold nothing is asked and the wallet opens.
+      final small = await exit.handoff(
+        _intent(usd1: Decimal.parse('10')),
+        now: _now,
+      );
+      expect(small.accepted, isTrue);
+    });
+
+    test('a capability read that throws fails closed too', () async {
+      final wallet = _Wallet();
+      final container = _container(device: _ThrowingDevice(), wallet: wallet);
+      final guard = container.read(loopStepUpProvider.notifier);
+
+      expect(
+        await guard.verify(Decimal.parse('5000')),
+        LoopStepUpVerdict.failed,
+      );
+      expect((await guard.plan(Decimal.parse('5000'))).required, isTrue);
+    });
+
+    test('with the rule off an unread capability asks nothing', () async {
+      final device = _Device(
+        capability: const LoopDeviceAuthCapability.unavailable(
+          LoopDeviceAuthUnavailableReason.unknown,
+        ),
+      );
+      final store = InMemoryLoopStepUpSettingsStore();
+      await store.write(
+        _principal,
+        const LoopStepUpSettings(enabled: false, thresholdUsd1: 1000),
+      );
+      final container = _container(device: device, store: store);
+      final guard = container.read(loopStepUpProvider.notifier);
+
+      expect(
+        await guard.verify(Decimal.parse('5000')),
+        LoopStepUpVerdict.notRequired,
+      );
     });
 
     test('an intent with no amount is not asked for', () async {

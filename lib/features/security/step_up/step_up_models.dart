@@ -53,6 +53,10 @@ bool loopStepUpStopped(String? reasonCode) =>
 LoopChainFailureKind? loopStepUpFailureKind(String? reasonCode) =>
     loopStepUpStopped(reasonCode) ? LoopChainFailureKind.stepUpCancelled : null;
 
+/// What a step-up refusal says when an approval of the same operation had
+/// already been broadcast (decision 0158): something did change on chain.
+const String loopStepUpAfterApprovalText = '授权已发出，交易未发起。';
+
 /// The one sentence a signing sheet shows after a step-up refusal, or `null`
 /// when [reasonCode] is not one.
 String? loopStepUpReasonText(String? reasonCode) => switch (reasonCode) {

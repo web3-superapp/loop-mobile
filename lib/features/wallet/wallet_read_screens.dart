@@ -254,7 +254,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final hidden = ref.watch(walletAmountsHiddenProvider);
     final hideZero = ref.watch(walletHideZeroBalancesProvider);
     final directoryEmpty = _directoryIsEmpty(directory);
-    final faucetVisible = testnetFaucetVisible(ref);
+    // Decision 0158: the server grants only to the signed-in embedded wallet,
+    // so an external (or not yet read) active wallet gets no entry at all.
+    final faucetVisible =
+        testnetFaucetVisible(ref) &&
+        directory.value?.active?.kind == LoopWalletKind.embedded;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallet-screen'),

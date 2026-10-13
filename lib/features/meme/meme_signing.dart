@@ -150,22 +150,29 @@ List<IntentField> memeIntentFields(
 
 /// zh-CN for a refusal before or at the wallet. Every line states that
 /// nothing was submitted.
-String memeSignReasonText(String reasonCode) => switch (reasonCode) {
-  // Decision 0152: the large-amount step-up stopped before the wallet.
-  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
-  'INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
-  'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
-  'MEME_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。',
-  'MEME_WALLET_ADDRESS_MISMATCH' => '服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。',
-  'INTENT_CHAIN_NOT_PERMITTED' ||
-  'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
-  'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
-  'privy_wallet_mismatch' => '当前登录的钱包不是这笔交易的钱包，没有提交任何交易。',
-  'MEME_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易，请重新报价。',
-  'MEME_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
-  _ => '钱包没有完成签名，没有提交任何交易。',
-};
+///
+/// [approvalSent]: an approval of the same operation was already broadcast,
+/// so a step-up cancel or failure says the approval went out and the trade
+/// did not (decision 0158) instead of "nothing changed".
+String memeSignReasonText(String reasonCode, {bool approvalSent = false}) =>
+    switch (reasonCode) {
+      // Decision 0152: the large-amount step-up stopped before the wallet.
+      loopStepUpCancelledCode ||
+      loopStepUpFailedCode when approvalSent => loopStepUpAfterApprovalText,
+      loopStepUpCancelledCode => '已取消，没有发生任何变化。',
+      loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
+      'INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
+      'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
+      'MEME_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。',
+      'MEME_WALLET_ADDRESS_MISMATCH' => '服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。',
+      'INTENT_CHAIN_NOT_PERMITTED' ||
+      'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
+      'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
+      'privy_wallet_mismatch' => '当前登录的钱包不是这笔交易的钱包，没有提交任何交易。',
+      'MEME_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易，请重新报价。',
+      'MEME_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
+      _ => '钱包没有完成签名，没有提交任何交易。',
+    };
 
 /// zh-CN for a refused broadcast report. The wallet already broadcast, so
 /// none of these says nothing happened.
@@ -537,8 +544,10 @@ class _MemeSignSheetState extends State<MemeSignSheet>
         case MoneySignStatus.walletRejected:
           _state = LoopSignSheetState.simulationFailed;
           _reason = outcome.approvalTxHash != null
-              ? '授权已广播，${memeIntentNoun(widget.intent.kind)}没有签名，'
-                    '没有提交${memeIntentNoun(widget.intent.kind)}交易。可以关闭后重新发起。'
+              ? (loopStepUpStopped(outcome.reasonCode)
+                    ? memeSignReasonText(outcome.reasonCode, approvalSent: true)
+                    : '授权已广播，${memeIntentNoun(widget.intent.kind)}没有签名，'
+                          '没有提交${memeIntentNoun(widget.intent.kind)}交易。可以关闭后重新发起。')
               : memeSignReasonText(outcome.reasonCode);
           // An approval that went out makes this intent's nonce plan stale:
           // the page prepares a new one instead of re-opening this sheet.
@@ -853,7 +862,12 @@ String? memeSubmissionText(MemeSubmissionState state, MemeIntentKind kind) {
       state.failure == null ? null : memeFailureText(state.failure!),
     MemeSubmissionPhase.signRefused =>
       state.outcome?.approvalTxHash != null
-          ? '授权已广播，$noun没有签名。可以重新发起。'
+          ? (loopStepUpStopped(state.outcome!.reasonCode)
+                ? memeSignReasonText(
+                    state.outcome!.reasonCode,
+                    approvalSent: true,
+                  )
+                : '授权已广播，$noun没有签名。可以重新发起。')
           : memeSignReasonText(state.outcome?.reasonCode ?? ''),
     MemeSubmissionPhase.waiting =>
       '已广播，正在等待链上确认（已读取 ${state.attempts} 次）。不要重复$noun。',

@@ -118,6 +118,7 @@ final class TestnetFaucetPartial extends TestnetFaucetClaimResult {
     this.usd1TransactionHash,
     this.nextAvailableAt,
     this.unconfirmed = false,
+    this.readBack = false,
   });
 
   final String? bnbTransactionHash;
@@ -126,6 +127,11 @@ final class TestnetFaucetPartial extends TestnetFaucetClaimResult {
   /// When the wallet can claim again, when the server said so.
   final DateTime? nextAvailableAt;
   final bool unconfirmed;
+
+  /// Read back from the status after a pending claim (decision 0158): the
+  /// grant record carries the tBNB hash and none for tUSD1. That proves the
+  /// tBNB transfer was sent, never that it arrived.
+  final bool readBack;
 }
 
 /// Why the claim's answer is not known yet.

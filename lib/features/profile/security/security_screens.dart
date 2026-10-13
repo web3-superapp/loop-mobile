@@ -290,8 +290,14 @@ const Set<LoopSecurityCapabilityId> loopHiddenSecurityCapabilities =
 /// What an available method that the account has turned on is called.
 const _securityMethodOnLabel = '已开启';
 
-/// What a method that is in force for every account is called (自动恢复).
-const _securityMethodInForceLabel = '已启用';
+/// What 自动恢复 is called when the server says its flow is available.
+///
+/// Decision 0158 (review of 0156): available is the server's word for "this
+/// client's flow works", and 已开启 / 已启用 come only from the provider's
+/// answer on this device. Nothing on the device reads 自动恢复 back, so the
+/// row states that it is the default way, with its source, and never that it
+/// is switched on.
+const _securityMethodDefaultLabel = '默认方式';
 
 /// The 自动恢复 row's source line (decision 0156): the server's reference
 /// without its engineering tag (「S60a: 」), else the S60a sentence itself.
@@ -325,12 +331,9 @@ LoopRecordRow _availableMethodRow({
       title: id.label,
       subtitle: source,
       subtitleMaxLines: 3,
-      trailingBadge: const LoopBadge(
-        _securityMethodInForceLabel,
-        kind: LoopBadgeKind.up,
-      ),
+      trailingBadge: const LoopBadge(_securityMethodDefaultLabel),
       position: position,
-      semanticLabel: '${id.label}，$_securityMethodInForceLabel，$source',
+      semanticLabel: '${id.label}，$_securityMethodDefaultLabel，$source',
     );
   }
   final passkey = id == LoopSecurityCapabilityId.passkey;

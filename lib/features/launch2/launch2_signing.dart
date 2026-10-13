@@ -202,21 +202,29 @@ List<IntentField> launch2IntentFields(
 
 /// zh-CN for a refusal before or at the wallet. Every line states that
 /// nothing was submitted.
-String launch2SignReasonText(String reasonCode) => switch (reasonCode) {
-  // Decision 0152: the large-amount step-up stopped before the wallet.
-  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
-  'INTENT_EXPIRED' || 'LAUNCH2_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
-  'LAUNCH2_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易。',
-  'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
-  'LAUNCH2_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。',
-  'LAUNCH2_WALLET_ADDRESS_MISMATCH' => '服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。',
-  'INTENT_CHAIN_NOT_PERMITTED' ||
-  'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
-  'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
-  'privy_wallet_mismatch' => '当前登录的钱包不是这笔交易的钱包，没有提交任何交易。',
-  _ => '钱包没有完成签名，没有提交任何交易。',
-};
+///
+/// [approvalSent]: an approval of the same operation was already broadcast,
+/// so a step-up cancel or failure says the approval went out and the trade
+/// did not (decision 0158) instead of "nothing changed".
+String launch2SignReasonText(String reasonCode, {bool approvalSent = false}) =>
+    switch (reasonCode) {
+      // Decision 0152: the large-amount step-up stopped before the wallet.
+      loopStepUpCancelledCode ||
+      loopStepUpFailedCode when approvalSent => loopStepUpAfterApprovalText,
+      loopStepUpCancelledCode => '已取消，没有发生任何变化。',
+      loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
+      'INTENT_EXPIRED' || 'LAUNCH2_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
+      'LAUNCH2_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易。',
+      'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
+      'LAUNCH2_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。',
+      'LAUNCH2_WALLET_ADDRESS_MISMATCH' =>
+        '服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。',
+      'INTENT_CHAIN_NOT_PERMITTED' ||
+      'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
+      'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
+      'privy_wallet_mismatch' => '当前登录的钱包不是这笔交易的钱包，没有提交任何交易。',
+      _ => '钱包没有完成签名，没有提交任何交易。',
+    };
 
 /// Why the trade after a broadcast approval was not signed when the exit
 /// tried to refresh an expiring quote (decision 0148). The approval stands;
@@ -747,7 +755,12 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
         _reason = launch2StoppedAtRefresh(outcome)
             ? launch2RefreshReasonText(outcome, noun)
             : outcome.approvalTxHash != null
-            ? '授权已广播，$noun没有签名，没有提交$noun交易。可以关闭后重新发起。'
+            ? (loopStepUpStopped(outcome.reasonCode)
+                  ? launch2SignReasonText(
+                      outcome.reasonCode,
+                      approvalSent: true,
+                    )
+                  : '授权已广播，$noun没有签名，没有提交$noun交易。可以关闭后重新发起。')
             : launch2SignReasonText(outcome.reasonCode);
         // A broadcast approval makes this intent's nonce plan stale: the
         // page prepares a new one instead of re-opening this sheet.
