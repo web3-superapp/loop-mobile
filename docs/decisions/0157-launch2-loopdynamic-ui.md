@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted 2026-10-13。主代理下单（S168-mobile），基线 `integration/v2` 95030ef，分支 `feat/S168-loopdynamic-ui`。
+Accepted 2026-10-13。主代理下单（S168-mobile），基线 `integration/v2` 95030ef，分支 `feat/S168-loopdynamic-ui`。字段、错误码与「与 S166 草案的差异」各条已由决策 0159 按 loop-api 定稿契约修正。
 依据：`LOOP/docs/26-需求方loop_hook_v1评审-2026-10-13.md` §五 App 改动清单；loop-contracts S164 决策 0009（LoopHook 作为可选
 外盘 Hook 种类）；主代理下发的 loop-api S166 接口草案（开工与收尾时 S166 均未发布 `frontend-v2-launch2-api.md` 新节，
 其 worktree 里未提交的 `migrations/000076_launch2_loop_dynamic.ts` 作为字段形状的旁证，见「与草案的差异」）；主代理补充裁决

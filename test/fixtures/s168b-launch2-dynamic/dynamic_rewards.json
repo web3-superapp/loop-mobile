@@ -1,0 +1,65 @@
+{
+  "_handwritten": "来源：frontend-v2-launch2-api.md §3.12（loop-api Decision 0131 / S166）与 openapi/loop-api.v2.json 的同名 schema，手写于 2026-10-13（客户端决策 0159）；文档示例里的省略号已换成合法 id / 地址，数值按示例。待真实抓包替换。",
+  "route": "GET /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/dynamic-pool/rewards?walletId=d64786bb-408d-415d-8a69-6277d56c921b",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+    "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+    "hookKind": "loopDynamic",
+    "claimableUsd1": "10",
+    "claimedUsd1": "5",
+    "rounds": [
+      {
+        "roundId": "3",
+        "status": "open",
+        "weightUsd1": "25",
+        "totalBuyWeightUsd1": "100",
+        "allocationUsd1": null,
+        "claimableUsd1": "0",
+        "claimedUsd1": null,
+        "claimTransactionHash": null,
+        "claimedAt": null,
+        "startCandle": "5999990",
+        "endCandle": null,
+        "activatedAt": "2027-01-15T07:15:00.000Z",
+        "closedAt": null
+      },
+      {
+        "roundId": "2",
+        "status": "claimable",
+        "weightUsd1": "100",
+        "totalBuyWeightUsd1": "300",
+        "allocationUsd1": "30",
+        "claimableUsd1": "10",
+        "claimedUsd1": null,
+        "claimTransactionHash": null,
+        "claimedAt": null,
+        "startCandle": "100",
+        "endCandle": "104",
+        "activatedAt": "2027-01-10T03:00:00.000Z",
+        "closedAt": "2027-01-10T03:25:00.000Z"
+      },
+      {
+        "roundId": "1",
+        "status": "claimed",
+        "weightUsd1": "50",
+        "totalBuyWeightUsd1": "100",
+        "allocationUsd1": "10",
+        "claimableUsd1": "0",
+        "claimedUsd1": "5",
+        "claimTransactionHash": "0x2000000000000000000000000000000000000000000000000000000000000002",
+        "claimedAt": "2027-01-08T10:00:00.000Z",
+        "startCandle": "40",
+        "endCandle": "43",
+        "activatedAt": "2027-01-08T08:00:00.000Z",
+        "closedAt": "2027-01-08T08:20:00.000Z"
+      }
+    ],
+    "contractVersion": "2.0"
+  }
+}

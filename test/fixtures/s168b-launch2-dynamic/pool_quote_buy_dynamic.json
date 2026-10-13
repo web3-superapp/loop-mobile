@@ -1,0 +1,68 @@
+{
+  "_handwritten": "来源：frontend-v2-launch2-api.md §3.12（loop-api Decision 0131 / S166）与 openapi/loop-api.v2.json 的同名 schema，手写于 2026-10-13（客户端决策 0159）；文档示例里的省略号已换成合法 id / 地址，数值按示例。待真实抓包替换。",
+  "route": "GET /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/pool/quote?side=buy&mode=exactIn&amount=100&walletId=d64786bb-408d-415d-8a69-6277d56c921b&slippageBps=100",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "quote": {
+      "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+      "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+      "venue": "official_pool",
+      "side": "buy",
+      "mode": "exactIn",
+      "stage": "graduated",
+      "requestedAmount": "100",
+      "amountIn": "100",
+      "maxIn": "100",
+      "expectedOut": "156800",
+      "minOut": "155232",
+      "slippageBps": 100,
+      "taxBps": 200,
+      "taxAmount": "3200",
+      "taxToken": "meme",
+      "taxUsd1": "0",
+      "priceBeforeUsd1": "0.000625",
+      "averagePriceUsd1": "0.00063775",
+      "balance": {
+        "usd1": "500",
+        "meme": "250000"
+      },
+      "exceedsBalance": false,
+      "router": "0x7777777777777777777777777777777777777777",
+      "poolId": "0x9f00000000000000000000000000000000000000000000000000000000000099",
+      "poolKey": {
+        "currency0": "0x17d554fd27345940e21d1d7328d038bd4049ce2b",
+        "currency1": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa6666",
+        "fee": 2500,
+        "tickSpacing": 60,
+        "hooks": "0xcccccccccccccccccccccccccccccccccccc10c4"
+      },
+      "zeroForOne": true,
+      "deadline": "2027-01-20T07:01:00.000Z",
+      "expiresAt": "2027-01-20T07:01:00.000Z",
+      "quotedAt": "2027-01-20T07:00:00.000Z",
+      "quotedAtBlock": "6000",
+      "basis": {
+        "blockNumber": "6000",
+        "blockHash": "0x5d1c000000000000000000000000000000000000000000000000000000000001"
+      },
+      "dynamic": {
+        "hookKind": "loopDynamic",
+        "hook": "0xcccccccccccccccccccccccccccccccccccc10c4",
+        "priceTiming": "POST_SWAP",
+        "baseTaxBps": 200,
+        "baseTaxAmount": "3200",
+        "dynamicTaxBps": 0,
+        "dynamicTaxAmount": "0",
+        "armed": true,
+        "roundId": "3",
+        "rewardWeight": "100"
+      }
+    },
+    "contractVersion": "2.0"
+  }
+}

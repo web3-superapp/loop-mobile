@@ -1128,6 +1128,7 @@ abstract final class LoopV2Launch2Codec {
     Launch2Venue venue = Launch2Venue.curve,
     int? taxBps,
     Decimal? taxMeme,
+    int? dynamicTaxBps,
   }) {
     final map = LoopV2Contract.strictMap(raw, intentKeys);
     final rawKind = map['kind'];
@@ -1253,6 +1254,7 @@ abstract final class LoopV2Launch2Codec {
       venue: venue,
       taxBps: taxBps,
       taxMeme: taxMeme,
+      dynamicTaxBps: dynamicTaxBps,
     );
   }
 

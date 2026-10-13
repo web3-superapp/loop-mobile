@@ -1,0 +1,73 @@
+{
+  "_handwritten": "来源：frontend-v2-launch2-api.md §3.12（loop-api Decision 0131 / S166）与 openapi/loop-api.v2.json 的同名 schema，手写于 2026-10-13（客户端决策 0159）；文档示例里的省略号已换成合法 id / 地址，数值按示例。待真实抓包替换。",
+  "route": "POST /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/dynamic-pool/claim/prepare",
+  "status": 201,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "launch2Intent": {
+      "intentId": "dc41735e-f27e-438f-ab4f-9895eca03213",
+      "kind": "dynamic_claim",
+      "state": "prepared",
+      "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+      "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+      "chainId": "eip155:97",
+      "chainReference": 97,
+      "contractAddress": "0xcccccccccccccccccccccccccccccccccccc10c4",
+      "amountIn": "0",
+      "expectedOut": "10",
+      "minOut": "10",
+      "taxUsd1": "0",
+      "refundUsd1": "0",
+      "deadline": "2027-01-20T07:03:00.000Z",
+      "expiresAt": "2027-01-20T07:03:00.000Z",
+      "createdAt": "2027-01-20T07:00:00.000Z",
+      "calldata": {
+        "to": "0xcccccccccccccccccccccccccccccccccccc10c4",
+        "data": "0x379607f50000000000000000000000000000000000000000000000000000000000000002",
+        "value": "0"
+      },
+      "unsignedTransaction": {
+        "chainId": 97,
+        "to": "0xcccccccccccccccccccccccccccccccccccc10c4",
+        "data": "0x379607f50000000000000000000000000000000000000000000000000000000000000002",
+        "value": "0x0",
+        "from": "0x000000000000000000000000000000000000000a",
+        "gas": "0x30d40",
+        "nonce": "0x8",
+        "type": "legacy",
+        "gasPrice": "0x3b9aca00",
+        "maxFeePerGas": null,
+        "maxPriorityFeePerGas": null
+      },
+      "approval": null,
+      "payloadDigest": "0f00000000000000000000000000000000000000000000000000000000000131",
+      "snapshotBlockNumber": "6000",
+      "snapshotBlockHash": "0x5d1c000000000000000000000000000000000000000000000000000000000001",
+      "simulation": {
+        "status": "passed",
+        "reasonCode": null
+      },
+      "policy": {
+        "configVersion": "bscWriteCanaryV1",
+        "canaryMaxUsd": "1000",
+        "valueUsd": "10",
+        "priceSource": "usd1_par"
+      },
+      "signing": {
+        "mode": "device_eth_send_transaction",
+        "allowed": true,
+        "reasonCode": null
+      }
+    },
+    "claim": {
+      "roundId": "2",
+      "hook": "0xcccccccccccccccccccccccccccccccccccc10c4",
+      "claimableUsd1": "10"
+    },
+    "contractVersion": "2.0"
+  }
+}

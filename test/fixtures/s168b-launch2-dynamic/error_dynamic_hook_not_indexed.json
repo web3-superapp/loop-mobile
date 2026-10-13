@@ -1,0 +1,21 @@
+{
+  "_handwritten": "来源：frontend-v2-launch2-api.md §3.12（loop-api Decision 0131 / S166）与 openapi/loop-api.v2.json 的同名 schema，手写于 2026-10-13（客户端决策 0159）；文档示例里的省略号已换成合法 id / 地址，数值按示例。待真实抓包替换。",
+  "route": "GET /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/dynamic-pool",
+  "status": 503,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "code": "CAPABILITY_UNAVAILABLE",
+    "category": "availability",
+    "retryable": true,
+    "userMessageKey": "errors.launch2.dynamic",
+    "correlationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "detailsSafe": {
+      "reasonCode": "LAUNCH2_DYNAMIC_HOOK_NOT_INDEXED"
+    },
+    "providerReferenceSafe": null
+  }
+}

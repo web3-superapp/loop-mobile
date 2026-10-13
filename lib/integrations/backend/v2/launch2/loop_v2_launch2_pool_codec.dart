@@ -1,3 +1,5 @@
+import 'package:decimal/decimal.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
@@ -65,10 +67,22 @@ abstract final class LoopV2Launch2PoolCodec {
     'basis',
   };
 
-  /// Decision 0157 (loop-api S166): a LoopDynamic pool's quote adds these
-  /// two; each is optional and may be `null` (an OfficialTax pool sends
-  /// neither).
-  static const dynamicQuoteKeys = <String>{'dynamicTaxBps', 'rewardWeight'};
+  /// Decision 0159 (§3.12.2): a LoopDynamic pool's quote adds one optional
+  /// `dynamic` object; an OfficialTax quote has no such key.
+  static const dynamicQuoteKeys = <String>{'dynamic'};
+
+  static const dynamicKeys = <String>{
+    'hookKind',
+    'hook',
+    'priceTiming',
+    'baseTaxBps',
+    'baseTaxAmount',
+    'dynamicTaxBps',
+    'dynamicTaxAmount',
+    'armed',
+    'roundId',
+    'rewardWeight',
+  };
 
   static const poolKeyKeys = <String>{
     'currency0',
@@ -178,6 +192,16 @@ abstract final class LoopV2Launch2PoolCodec {
     for (final key in const <String>['currency0', 'currency1', 'hooks']) {
       LoopV2Launch2Codec.anyCaseAddress(poolKey, key);
     }
+    final taxBps = LoopV2Launch2Codec.bps(map, 'taxBps');
+    final loopDynamic = map.containsKey('dynamic')
+        ? _dynamicQuote(
+            map['dynamic'],
+            side: side,
+            mode: mode,
+            taxBps: taxBps,
+            hooks: LoopV2Launch2Codec.anyCaseAddress(poolKey, 'hooks'),
+          )
+        : null;
     LoopV2ChainCodec.requireInt(poolKey, 'fee', maximum: 1000000);
     LoopV2ChainCodec.requireInt(poolKey, 'tickSpacing', maximum: 32767);
     final basis = LoopV2Contract.strictMap(map['basis'], const <String>{
@@ -207,7 +231,7 @@ abstract final class LoopV2Launch2PoolCodec {
         'slippageBps',
         maximum: 5000,
       ),
-      taxBps: LoopV2Launch2Codec.bps(map, 'taxBps'),
+      taxBps: taxBps,
       taxAmount: LoopV2Launch2Codec.amount(map, 'taxAmount'),
       taxToken: taxToken,
       taxUsd1: LoopV2Launch2Codec.amount(map, 'taxUsd1'),
@@ -223,12 +247,50 @@ abstract final class LoopV2Launch2PoolCodec {
       expiresAt: LoopV2ChainCodec.requireTimestamp(map, 'expiresAt'),
       quotedAt: LoopV2ChainCodec.requireTimestamp(map, 'quotedAt'),
       quotedAtBlock: LoopV2Launch2Codec.integer(map, 'quotedAtBlock'),
-      dynamicTaxBps: map['dynamicTaxBps'] == null
-          ? null
-          : LoopV2Launch2Codec.bps(map, 'dynamicTaxBps'),
-      rewardWeight: map['rewardWeight'] == null
-          ? null
-          : LoopV2Launch2Codec.amount(map, 'rewardWeight'),
+      loopDynamic: loopDynamic,
+    );
+  }
+
+  /// `quote.dynamic`: exactIn only; its base rate is the quote's `taxBps`;
+  /// its Hook is the pool key's. A buy pays no dynamic tax, a sell earns no
+  /// weight.
+  static Launch2PoolDynamicQuote _dynamicQuote(
+    Object? raw, {
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required int taxBps,
+    required String hooks,
+  }) {
+    final map = LoopV2Contract.strictMap(raw, dynamicKeys);
+    final timingText = map['priceTiming'];
+    final timing = timingText is String
+        ? Launch2PriceTiming.tryParse(timingText)
+        : null;
+    final hook = LoopV2Launch2Codec.anyCaseAddress(map, 'hook');
+    final baseTaxBps = LoopV2Launch2Codec.bps(map, 'baseTaxBps');
+    final dynamicTaxBps = LoopV2Launch2Codec.bps(map, 'dynamicTaxBps');
+    final dynamicTaxAmount = LoopV2Launch2Codec.amount(map, 'dynamicTaxAmount');
+    final rewardWeight = LoopV2Launch2Codec.amount(map, 'rewardWeight');
+    if (map['hookKind'] != 'loopDynamic' ||
+        timing == null ||
+        mode != Launch2PoolMode.exactIn ||
+        hook != hooks ||
+        baseTaxBps != taxBps ||
+        (side == Launch2Side.buy &&
+            (dynamicTaxBps != 0 || dynamicTaxAmount != Decimal.zero)) ||
+        (side == Launch2Side.sell && rewardWeight != Decimal.zero)) {
+      _invalid();
+    }
+    return Launch2PoolDynamicQuote(
+      hook: hook,
+      priceTiming: timing,
+      baseTaxBps: baseTaxBps,
+      baseTaxAmount: LoopV2Launch2Codec.amount(map, 'baseTaxAmount'),
+      dynamicTaxBps: dynamicTaxBps,
+      dynamicTaxAmount: dynamicTaxAmount,
+      armed: LoopV2ChainCodec.requireBool(map, 'armed'),
+      roundId: LoopV2Launch2Codec.optionalInteger(map, 'roundId'),
+      rewardWeight: rewardWeight,
     );
   }
 
@@ -283,6 +345,9 @@ abstract final class LoopV2Launch2PoolCodec {
       taxBps: quote.taxBps,
       taxMeme: quote.taxToken == Launch2PoolTaxToken.meme
           ? quote.taxAmount
+          : null,
+      dynamicTaxBps: side == Launch2Side.sell
+          ? quote.loopDynamic?.dynamicTaxBps
           : null,
     );
     final kind = side == Launch2Side.buy

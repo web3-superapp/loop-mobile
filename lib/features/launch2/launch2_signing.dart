@@ -105,9 +105,14 @@ String _addressLabel(Launch2Intent intent) => intent.approval == null
       }
     : '授权给${_spenderNoun(intent)}';
 
-/// The tax line's label: the intent's own rate, else the curve's 10%.
+/// The tax line's label: the intent's own rate, else the curve's 10%. A
+/// LoopDynamic sell names both halves of what it pays (decision 0159).
 String _taxLabel(Launch2Intent intent) {
   final bps = intent.taxBps ?? 1000;
+  final dynamicBps = intent.dynamicTaxBps;
+  if (intent.venue == Launch2Venue.officialPool && dynamicBps != null) {
+    return '基础税 ${launch2BpsLabel(bps)} + 动态税 ${launch2BpsLabel(dynamicBps)}';
+  }
   return intent.venue == Launch2Venue.officialPool
       ? '外盘税 ${launch2BpsLabel(bps)}'
       : '税 ${launch2BpsLabel(bps)}';
@@ -290,6 +295,15 @@ const Duration launch2RefreshMargin = Duration(seconds: 20);
 /// by the panel that prepared the original (the official pool, decision
 /// 0148).
 typedef Launch2IntentRefresher = Future<Launch2Intent> Function();
+
+/// The project page's line when the approval went out and the trade was
+/// never signed (decision 0159): a step-up stop says it the way the three
+/// MEME / MEME v2 sheets do (`loopStepUpAfterApprovalText`, decision 0158);
+/// any other stop keeps the page's own sentence.
+String launch2ApprovalOnlyText(String reasonCode, String noun) =>
+    loopStepUpStopped(reasonCode)
+    ? launch2SignReasonText(reasonCode, approvalSent: true)
+    : '授权已广播，$noun没有签名。可以重新发起。';
 
 /// The one sentence after a broadcast. A broadcast is never a result.
 String launch2BroadcastText(

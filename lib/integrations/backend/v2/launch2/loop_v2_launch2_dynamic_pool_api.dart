@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
-import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -20,12 +19,13 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.da
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.dart';
 
 /// Strict V2 transport for the LoopDynamic routes of `launch2` (client
-/// decision 0157, loop-api S166 draft).
+/// decisions 0157 / 0159, loop-api `frontend-v2-launch2-api.md` §3.12).
 ///
-/// `dynamic-pool` is a separate route an older App never calls. Its `404`
-/// (an OfficialTax instance, or a server without the route) and a `503
-/// CAPABILITY_UNAVAILABLE` both answer [Launch2OfficialTaxPool]; nothing
-/// else does.
+/// `dynamic-pool` is a separate route an older App never calls. It answers
+/// every instance with its `hookKind` (decision 0159). A `404` is a server
+/// without the route (an older API) and stays OfficialTax; a `503` whose
+/// `reasonCode` is a LoopDynamic one only reaches a LoopDynamic instance and
+/// becomes [Launch2LoopDynamicUnavailable]; every other failure is thrown.
 final class DioLoopV2Launch2DynamicPoolApi {
   DioLoopV2Launch2DynamicPoolApi(this._dio);
 
@@ -33,9 +33,43 @@ final class DioLoopV2Launch2DynamicPoolApi {
 
   static const readErrors = DioLoopV2Launch2Api.readErrors;
 
-  /// The claim prepare and report: the pool prepare's catalogue (the round
-  /// refusals arrive as `409` / `422` with their `reasonCode`).
-  static const writeErrors = DioLoopV2Launch2Api.poolWriteErrors;
+  /// The claim prepare and report (§3.12.4–3.12.5): the pool prepare's
+  /// catalogue plus `409 RESOURCE_CONFLICT` (`LAUNCH2_DYNAMIC_ALREADY_CLAIMED`,
+  /// `LAUNCH2_DYNAMIC_CLAIM_TRANSACTION_CONFLICT`).
+  static const writeErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'DATA_STALE',
+      'IDEMPOTENCY_CONFLICT',
+      'INSUFFICIENT_BALANCE',
+      'QUOTE_EXPIRED',
+      'RESOURCE_CONFLICT',
+      'VERSION_CONFLICT',
+    },
+    422: <String>{'VALIDATION_FAILED'},
+    429: <String>{'RATE_LIMITED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
+  /// The `reasonCode`s only a LoopDynamic instance's `dynamic-pool` read can
+  /// answer with a `503` (§3.12.1 route description).
+  static const dynamicUnavailableReasons = <String>{
+    'LAUNCH2_DYNAMIC_ROUTER_NOT_CONFIGURED',
+    'LAUNCH2_DYNAMIC_ROUTER_CODE_MISMATCH',
+    'LAUNCH2_DYNAMIC_ROUTER_MANAGER_MISMATCH',
+    'LAUNCH2_DYNAMIC_HOOK_NOT_INDEXED',
+    'LAUNCH2_DYNAMIC_HOOK_MISMATCH',
+    'LAUNCH2_DYNAMIC_HOOK_NOT_INITIALIZED',
+  };
 
   static final RegExp _hashPattern = RegExp(r'^0x[0-9a-fA-F]{64}$');
 
@@ -48,8 +82,9 @@ final class DioLoopV2Launch2DynamicPoolApi {
     return value;
   }
 
+  /// Round ids start at 1 (`^[1-9][0-9]{0,30}$` on both bodies).
   static String _round(BigInt roundId) {
-    if (roundId.isNegative) {
+    if (roundId <= BigInt.zero) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
     }
     return roundId.toString();
@@ -62,10 +97,12 @@ final class DioLoopV2Launch2DynamicPoolApi {
     String path, {
     required String accessToken,
     required String clientVersion,
+    Map<String, Object?>? query,
   }) async {
     try {
       final response = await _dio.get<Object?>(
         path,
+        queryParameters: query,
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
@@ -115,12 +152,13 @@ final class DioLoopV2Launch2DynamicPoolApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      return Launch2LoopDynamicPool(
-        LoopV2Launch2DynamicPoolCodec.state(response.data),
+      return LoopV2Launch2DynamicPoolCodec.pool(
+        response.data,
+        instanceId: instanceId,
       );
     } on DioException catch (error) {
-      // An OfficialTax instance and a server before S166 both answer 404,
-      // whatever the body.
+      // A server before S166 has no such route: whatever the body, the
+      // instance can only be OfficialTax there.
       if (error.type == DioExceptionType.badResponse &&
           error.response?.statusCode == 404) {
         return const Launch2OfficialTaxPool();
@@ -129,9 +167,11 @@ final class DioLoopV2Launch2DynamicPoolApi {
         error,
         allowedCodes: readErrors,
       );
+      final reason = failure.detailsSafe?.reasonCode;
       if (failure.statusCode == 503 &&
-          failure.code == 'CAPABILITY_UNAVAILABLE') {
-        return const Launch2OfficialTaxPool();
+          reason != null &&
+          dynamicUnavailableReasons.contains(reason)) {
+        return Launch2LoopDynamicUnavailable(reason);
       }
       throw failure;
     }
@@ -141,16 +181,22 @@ final class DioLoopV2Launch2DynamicPoolApi {
     required String accessToken,
     required String clientVersion,
     required String instanceId,
+    required String walletId,
   }) async {
     final data = await _get(
       '${_base(instanceId)}/rewards',
       accessToken: accessToken,
       clientVersion: clientVersion,
+      query: <String, Object?>{'walletId': _id(walletId)},
     );
-    return LoopV2Launch2DynamicPoolCodec.rewards(data);
+    return LoopV2Launch2DynamicPoolCodec.rewards(
+      data,
+      instanceId: instanceId,
+      walletId: walletId,
+    );
   }
 
-  Future<Launch2Intent> postClaimPrepare({
+  Future<Launch2DynamicClaimPrepared> postClaimPrepare({
     required String accessToken,
     required String clientVersion,
     required String idempotencyKey,
@@ -171,10 +217,11 @@ final class DioLoopV2Launch2DynamicPoolApi {
         'roundId': _round(roundId),
       },
     );
-    return LoopV2Launch2DynamicPoolCodec.claimIntent(
+    return LoopV2Launch2DynamicPoolCodec.claimPrepared(
       data,
       instanceId: instanceId,
       walletId: walletId,
+      roundId: roundId,
     );
   }
 
@@ -199,14 +246,23 @@ final class DioLoopV2Launch2DynamicPoolApi {
       idempotencyKey: idempotencyKey,
       origin: origin,
       statusCode: 200,
+      // `walletId` / `roundId` are the optional echoes (§3.12.5): a mismatch
+      // is 404, so a report can never land on another wallet's round.
       body: <String, Object?>{
-        'walletId': _id(walletId),
-        'roundId': _round(roundId),
         'intentId': _id(intentId),
         'transactionHash': transactionHash.toLowerCase(),
+        'walletId': _id(walletId),
+        'roundId': _round(roundId),
       },
     );
-    return LoopV2Launch2DynamicPoolCodec.report(data, roundId: roundId);
+    return LoopV2Launch2DynamicPoolCodec.report(
+      data,
+      instanceId: instanceId,
+      walletId: walletId,
+      roundId: roundId,
+      intentId: intentId,
+      transactionHash: transactionHash,
+    );
   }
 }
 
@@ -278,16 +334,20 @@ final class DioLoopV2Launch2DynamicPoolGateway
   );
 
   @override
-  Future<Launch2DynamicRewards> loadRewards(String instanceId) => _read(
+  Future<Launch2DynamicRewards> loadRewards({
+    required String instanceId,
+    required String walletId,
+  }) => _read(
     (accessToken) => _api.getRewards(
       accessToken: accessToken,
       clientVersion: _clientVersion,
       instanceId: instanceId,
+      walletId: walletId,
     ),
   );
 
   @override
-  Future<Launch2Intent> prepareClaim({
+  Future<Launch2DynamicClaimPrepared> prepareClaim({
     required String instanceId,
     required String walletId,
     required BigInt roundId,

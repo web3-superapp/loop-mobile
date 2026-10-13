@@ -865,6 +865,7 @@ final class Launch2Intent {
     this.venue = Launch2Venue.curve,
     this.taxBps,
     this.taxMeme,
+    this.dynamicTaxBps,
   });
 
   final String intentId;
@@ -880,6 +881,11 @@ final class Launch2Intent {
   /// An official-pool buy pays its tax in MEME (taken from the output), not
   /// in USD1; the pool prepare's quote names it.
   final Decimal? taxMeme;
+
+  /// Decision 0159 · a LoopDynamic sell: the dynamic tax its quote priced on
+  /// top of [taxBps] (`quote.dynamic.dynamicTaxBps`); [taxUsd1] is then the
+  /// base and the dynamic tax together. `null` everywhere else.
+  final int? dynamicTaxBps;
   final bool expired;
   final String instanceId;
   final String walletId;

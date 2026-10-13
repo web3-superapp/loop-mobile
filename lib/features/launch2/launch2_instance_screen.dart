@@ -247,7 +247,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
             : launch2StoppedAtRefresh(outcome)
             ? launch2RefreshReasonText(outcome, noun)
             : outcome.approvalTxHash != null
-            ? '授权已广播，$noun没有签名。可以重新发起。'
+            ? launch2ApprovalOnlyText(outcome.reasonCode, noun)
             : launch2SignReasonText(outcome.reasonCode),
         locked: outcome.broadcast,
         baseline: _viewerSignature(detail),
@@ -579,16 +579,28 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     // Decision 0157: only a graduated pool has a Hook kind; the read is not
     // made for any other stage, and `null` (OfficialTax, unknown, absent
     // adapter) draws the S146 page unchanged.
-    final dynamicPool = detail.stage == Launch2Stage.graduated
-        ? launch2DynamicPoolOf(ref, detail.instanceId)
+    final kind = detail.stage == Launch2Stage.graduated
+        ? launch2PoolKindOf(ref, detail.instanceId)
         : null;
-    return _stageWidgets(detail, dynamicPool);
+    return _stageWidgets(
+      detail,
+      kind is Launch2LoopDynamicPool ? kind.state : null,
+      dynamicBlocked: switch (kind) {
+        // Decision 0159: a LoopDynamic Hook that cannot be read now never
+        // falls back to the OfficialTax panel.
+        Launch2LoopDynamicUnavailable(:final reasonCode) =>
+          launch2PoolReasonText(reasonCode),
+        Launch2LoopDynamicNotGraduated() => '外盘池子正在同步，请稍后再试',
+        _ => null,
+      },
+    );
   }
 
   List<Widget> _stageWidgets(
     Launch2InstanceDetail detail,
-    Launch2DynamicPoolState? dynamicPool,
-  ) => switch (detail.stage) {
+    Launch2DynamicPoolState? dynamicPool, {
+    String? dynamicBlocked,
+  }) => switch (detail.stage) {
     Launch2Stage.upcoming => <Widget>[
       _Figures(
         keyName: 'launch2-upcoming',
@@ -664,17 +676,30 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
               _open(Launch2Route.dynamicRewards(detail.instanceId)),
         ),
       Launch2PoolStats(detail: detail),
-      Launch2PoolTradePanel(
-        key: ValueKey<String>('launch2-pool-panel-${detail.instanceId}'),
-        detail: detail,
-        walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
-        locked: _pending?.locked ?? false,
-        onPrepared: (intent, refresh) =>
-            _sign(detail, intent, refresh: refresh),
-        onTopUp: () => _openTopUp(detail),
-        onFaucet: _faucetAction(detail),
-        dynamicPool: dynamicPool,
-      ),
+      if (dynamicBlocked != null)
+        Launch2DynamicUnavailableBlock(
+          reason: dynamicBlocked,
+          onRetry: () => unawaited(
+            ref
+                .read(
+                  launch2PoolKindControllerProvider(detail.instanceId).notifier,
+                )
+                .reload(),
+          ),
+        )
+      else
+        Launch2PoolTradePanel(
+          key: ValueKey<String>('launch2-pool-panel-${detail.instanceId}'),
+          detail: detail,
+          walletId:
+              memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
+          locked: _pending?.locked ?? false,
+          onPrepared: (intent, refresh) =>
+              _sign(detail, intent, refresh: refresh),
+          onTopUp: () => _openTopUp(detail),
+          onFaucet: _faucetAction(detail),
+          dynamicPool: dynamicPool,
+        ),
       _MyPoolTrades(
         detail: detail,
         walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
@@ -682,7 +707,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       // Decision 0157: a LoopDynamic Hook credits rewards only to buys it
       // can attribute; the wallet Swap may route elsewhere, so the link is
       // not offered there.
-      if (dynamicPool == null)
+      if (dynamicPool == null && dynamicBlocked == null)
         Launch2PoolSwapLink(
           onOpen: () => _open(
             Launch2Route.swap(

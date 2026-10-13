@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 
 // ---------------------------------------------------------------------------
@@ -106,6 +107,45 @@ final class Launch2PoolSummary {
 }
 
 /// `GET /v2/launch2/instances/{id}/pool/quote`.
+/// `quote.dynamic` of a LoopDynamic pool's quote (decision 0159, §3.12.2).
+@immutable
+final class Launch2PoolDynamicQuote {
+  const Launch2PoolDynamicQuote({
+    required this.hook,
+    required this.priceTiming,
+    required this.baseTaxBps,
+    required this.baseTaxAmount,
+    required this.dynamicTaxBps,
+    required this.dynamicTaxAmount,
+    required this.armed,
+    required this.rewardWeight,
+    this.roundId,
+  });
+
+  /// The pool's LoopDynamicHook (lower case).
+  final String hook;
+  final Launch2PriceTiming priceTiming;
+
+  /// Buy: 2% in MEME from the output; sell: 2% in USD1.
+  final int baseTaxBps;
+  final Decimal baseTaxAmount;
+
+  /// Sell: the dynamic fee in bps of the post-base output (after this trade
+  /// for `POST_SWAP`); buy: 0.
+  final int dynamicTaxBps;
+
+  /// Sell: the dynamic fee in USD1 this trade will pay; buy: 0.
+  final Decimal dynamicTaxAmount;
+
+  /// A round is armed when the swap runs.
+  final bool armed;
+  final BigInt? roundId;
+
+  /// Buy: the USD1 this buy credits to the round (= amountIn while armed,
+  /// else 0); sell: 0.
+  final Decimal rewardWeight;
+}
+
 @immutable
 final class Launch2PoolQuote {
   const Launch2PoolQuote({
@@ -135,8 +175,7 @@ final class Launch2PoolQuote {
     required this.expiresAt,
     required this.quotedAt,
     required this.quotedAtBlock,
-    this.dynamicTaxBps,
-    this.rewardWeight,
+    this.loopDynamic,
   });
 
   final String instanceId;
@@ -144,14 +183,10 @@ final class Launch2PoolQuote {
   final Launch2Side side;
   final Launch2PoolMode mode;
 
-  /// Decision 0157 · a LoopDynamic pool: the dynamic sell tax on top of
-  /// [taxBps] when the server could price it (a `POST_SWAP` Hook prices it
-  /// after the swap, so it may be absent). `null` from an OfficialTax pool.
-  final int? dynamicTaxBps;
-
-  /// Decision 0157 · a LoopDynamic buy: the USD1 weight this buy adds to the
-  /// running round. `null` from an OfficialTax pool or without a round.
-  final Decimal? rewardWeight;
+  /// Decision 0159 · `quote.dynamic` (§3.12.2): present only on a
+  /// LoopDynamic pool. Then [taxBps] is the base rate, [taxAmount] the base
+  /// and the dynamic tax together, and [expectedOut] already net of both.
+  final Launch2PoolDynamicQuote? loopDynamic;
 
   /// The typed amount; the prepare body carries it unchanged.
   final Decimal requestedAmount;

@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -20,27 +19,44 @@ const String launch2DynamicIdleText = '价格 5 分钟内跌超 10% 将开启动
 /// How a running round ends.
 const String launch2DynamicEndText = '出现一根收绿的 5 分钟 K 线即结束';
 
-/// A drop as a percentage (`20%`, `0%`), exact to two decimals.
-String launch2DropLabel(Decimal percent) =>
-    '${loopFormatDecimal(percent, maxFractionDigits: 2)}%';
-
-/// The round card's rows for one state, label first.
+/// The round card's rows for one state, label first (decision 0159:
+/// `currentDropBps`, `potUsd1`, `viewer.currentRoundWeightUsd1` and its
+/// share of `roundTotalBuyWeightUsd1`, `candleEndsAt`).
 List<(String key, String label, String value)> launch2DynamicRoundRows(
   Launch2DynamicPoolState state,
 ) {
-  final mine = state.myBuyWeight;
+  final viewer = state.viewer;
+  final share = state.viewerSharePercent;
+  final pot = (
+    'pot',
+    '奖金池',
+    launch2Usd1Label(state.potUsd1, maxFractionDigits: 4),
+  );
+  if (!state.armed) return <(String, String, String)>[pot];
   return <(String, String, String)>[
-    if (state.armed) ...<(String, String, String)>[
-      ('drop', '当前跌幅', launch2DropLabel(state.dropPercent)),
-      ('pot', '奖金池', launch2Usd1Label(state.pot, maxFractionDigits: 4)),
-      (
-        'my-weight',
-        '本轮我的权重',
-        mine == null ? '暂无' : launch2Usd1Label(mine, maxFractionDigits: 4),
-      ),
-      ('end', '结束条件', launch2DynamicEndText),
-    ] else
-      ('pot', '奖金池', launch2Usd1Label(state.pot, maxFractionDigits: 4)),
+    (
+      'drop',
+      '当前跌幅',
+      // A candle that ended without a trade since: the Hook reads 0 until
+      // the next swap, poke or claim closes it.
+      state.rollPending ? 'K 线已结束，待结算' : launch2BpsLabel(state.currentDropBps),
+    ),
+    pot,
+    (
+      'my-weight',
+      '本轮我的权重',
+      viewer == null
+          ? '暂无'
+          : share == null
+          ? launch2Usd1Label(
+              viewer.currentRoundWeightUsd1,
+              maxFractionDigits: 4,
+            )
+          : '${launch2Usd1Label(viewer.currentRoundWeightUsd1, maxFractionDigits: 4)}'
+                ' · 占 ${loopFormatDecimal(share, maxFractionDigits: 2)}%',
+    ),
+    ('candle-end', '本根 K 线结束', loopClockLabel(state.candleEndsAt)),
+    ('end', '结束条件', launch2DynamicEndText),
   ];
 }
 
@@ -140,6 +156,45 @@ class Launch2DynamicRoundCard extends StatelessWidget {
         observedAt: observedAt,
         padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 4),
         detail: '跌幅按 5 分钟 K 线计算；回购买入不计奖励权重。',
+      ),
+    ],
+  );
+}
+
+/// Decision 0159 · a LoopDynamic instance whose Hook cannot be read now (a
+/// `503` with a LoopDynamic `reasonCode`, or `not_graduated` on a page that
+/// already reads graduated). The pool panel is not offered: never the
+/// OfficialTax panel, never the old router (§3.12).
+class Launch2DynamicUnavailableBlock extends StatelessWidget {
+  const Launch2DynamicUnavailableBlock({
+    required this.reason,
+    required this.onRetry,
+    super.key,
+  });
+
+  /// What the server said, in zh-CN.
+  final String reason;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    key: const ValueKey<String>('launch2-dyn-unavailable'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      LoopNotice.structured(
+        title: '外盘暂不可用',
+        happened: reason,
+        impact: '这个项目的外盘交易与奖励暂时不能进行。',
+        next: '稍后点「重试」再读一次。',
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 8),
+        child: LoopButton(
+          key: const ValueKey<String>('launch2-dyn-unavailable-retry'),
+          label: '重试',
+          block: true,
+          onPressed: onRetry,
+        ),
       ),
     ],
   );

@@ -58,6 +58,9 @@ class _Launch2DynamicRewardsScreenState
   /// Rounds whose claim we broadcast: no second signature this visit.
   final Set<BigInt> _broadcast = <BigInt>{};
 
+  /// Rounds whose report came back `confirmed` (decision 0159).
+  final Set<BigInt> _confirmed = <BigInt>{};
+
   /// One refusal, said above the button of the round it came from.
   (BigInt, String)? _failure;
 
@@ -75,14 +78,20 @@ class _Launch2DynamicRewardsScreenState
     super.dispose();
   }
 
-  Future<void> _reload(String id) => Future.wait(<Future<void>>[
-    ref.read(launch2PoolKindControllerProvider(id).notifier).reload(),
-    ref.read(launch2DynamicRewardsControllerProvider(id).notifier).reload(),
-  ]);
+  Future<void> _reload(Launch2DynamicRewardsKey? key, String id) =>
+      Future.wait(<Future<void>>[
+        ref.read(launch2PoolKindControllerProvider(id).notifier).reload(),
+        if (key != null)
+          ref
+              .read(launch2DynamicRewardsControllerProvider(key).notifier)
+              .reload(),
+      ]);
+
+  static const String _confirmedText = '外盘奖励已领取，已在链上确认。';
 
   /// After a broadcast the rounds are read again until the claimed one
   /// shows it, then the page stops asking.
-  void _armSettle(String id) {
+  void _armSettle(Launch2DynamicRewardsKey id) {
     _poll?.cancel();
     if (!_pendingLocked) return;
     final interval = ref.read(launch2PollingProvider).tradingInterval;
@@ -96,14 +105,14 @@ class _Launch2DynamicRewardsScreenState
     });
   }
 
-  void _settle(String id, Launch2DynamicRewards rewards) {
+  void _settle(Launch2DynamicRewardsKey id, Launch2DynamicRewards rewards) {
     if (!_pendingLocked) return;
     final done = rewards.rounds.any(
       (round) => _broadcast.contains(round.roundId) && round.alreadyClaimed,
     );
     if (done) {
       setState(() {
-        _pending = '外盘奖励已领取，已在链上确认。';
+        _pending = _confirmedText;
         _pendingLocked = false;
       });
       return;
@@ -121,21 +130,18 @@ class _Launch2DynamicRewardsScreenState
   Future<void> _claim(
     Launch2InstanceDetail detail,
     Launch2DynamicPoolState pool,
+    Launch2DynamicRewardsKey key,
     Launch2DynamicRound round,
   ) async {
     final wallet = memeReadActiveWallet(ref);
-    final walletId = wallet.walletId ?? detail.viewer?.walletId;
-    if (walletId == null) {
-      setState(() => _failure = (round.roundId, '还没有可用的钱包，激活钱包后可领取'));
-      return;
-    }
+    final walletId = key.walletId;
     setState(() {
       _preparing = round.roundId;
       _failure = null;
     });
-    final Launch2Intent intent;
+    final Launch2DynamicClaimPrepared prepared;
     try {
-      intent = await ref
+      prepared = await ref
           .read(launch2DynamicPoolGatewayProvider)
           .prepareClaim(
             instanceId: detail.instanceId,
@@ -162,8 +168,10 @@ class _Launch2DynamicRewardsScreenState
     }
     if (!mounted) return;
     setState(() => _preparing = null);
-    // The claim goes to the project's own LoopHook and to nothing else.
-    if (intent.contractAddress.toLowerCase() != pool.hookAddress ||
+    final intent = prepared.intent;
+    // The claim goes to the project's own Hook and to nothing else.
+    if (intent.contractAddress.toLowerCase() != pool.hook ||
+        prepared.claim.hook != pool.hook ||
         intent.approval != null) {
       setState(
         () => _failure = (
@@ -190,10 +198,11 @@ class _Launch2DynamicRewardsScreenState
       return;
     }
     var text = launch2BroadcastText(outcome, intent.kind);
+    var confirmed = false;
     final hash = outcome.txHash;
     if (hash != null) {
       try {
-        await ref
+        final report = await ref
             .read(launch2DynamicPoolGatewayProvider)
             .reportClaim(
               instanceId: detail.instanceId,
@@ -202,6 +211,12 @@ class _Launch2DynamicRewardsScreenState
               intentId: intent.intentId,
               transactionHash: hash,
             );
+        // §3.12.5: `confirmed` is the indexed RewardClaimed; `submitted`
+        // reads as 「领取已提交」 until the rounds say claimed.
+        confirmed = report.confirmed;
+        text = confirmed
+            ? _confirmedText
+            : '领取已提交（${launch2ShortAddress(hash)}），正在等待链上确认。不要重复领取。';
       } catch (_) {
         text = '$text 上报没有成功，链上结果不受影响；不要重复领取。';
       }
@@ -209,16 +224,13 @@ class _Launch2DynamicRewardsScreenState
     if (!mounted) return;
     setState(() {
       _broadcast.add(round.roundId);
+      if (confirmed) _confirmed.add(round.roundId);
       _pending = text;
-      _pendingLocked = true;
+      _pendingLocked = !confirmed;
       _settleReads = 0;
     });
     unawaited(
-      ref
-          .read(
-            launch2DynamicRewardsControllerProvider(detail.instanceId).notifier,
-          )
-          .reload(),
+      ref.read(launch2DynamicRewardsControllerProvider(key).notifier).reload(),
     );
   }
 
@@ -267,26 +279,37 @@ class _Launch2DynamicRewardsScreenState
     }
     final kind = kindState?.value;
     final pool = kind is Launch2LoopDynamicPool ? kind.state : null;
-    final rewardsProvider = launch2DynamicRewardsControllerProvider(instanceId);
-    final rewardsState = pool == null ? null : ref.watch(rewardsProvider);
-    if (rewardsState != null) {
+    final detail = detailState?.value;
+    // `…/rewards` needs the wallet (§3.12.3): the active one, else the
+    // detail's viewer.
+    final walletId = blocked
+        ? null
+        : memeActiveWallet(ref).walletId ?? detail?.viewer?.walletId;
+    final rewardsKey = pool == null || walletId == null
+        ? null
+        : (instanceId: instanceId, walletId: walletId);
+    if (rewardsKey != null) {
+      final rewardsProvider = launch2DynamicRewardsControllerProvider(
+        rewardsKey,
+      );
       launch2LoadOnce(
         ref,
-        rewardsState,
+        ref.watch(rewardsProvider),
         () => ref.read(rewardsProvider.notifier).load(),
       );
+      ref.listen<LoopChainResourceState<Launch2DynamicRewards>>(
+        rewardsProvider,
+        (previous, next) {
+          final value = next.value;
+          if (value != null && !identical(previous?.value, value)) {
+            _settle(rewardsKey, value);
+          }
+        },
+      );
     }
-    ref.listen<LoopChainResourceState<Launch2DynamicRewards>>(rewardsProvider, (
-      previous,
-      next,
-    ) {
-      final value = next.value;
-      if (value != null && !identical(previous?.value, value)) {
-        _settle(instanceId, value);
-      }
-    });
-    final detail = detailState?.value;
-    if (detail != null) memeActiveWallet(ref);
+    final rewardsState = rewardsKey == null
+        ? null
+        : ref.watch(launch2DynamicRewardsControllerProvider(rewardsKey));
     return LoopDashboardPage(
       key: ValueKey<String>('launch2-dyn-rewards-$instanceId'),
       archetype: LoopPageArchetype.listing,
@@ -296,7 +319,9 @@ class _Launch2DynamicRewardsScreenState
       updating:
           (rewardsState?.refreshing ?? false) ||
           (kindState?.refreshing ?? false),
-      onRefresh: blocked || pool == null ? null : () => _reload(instanceId),
+      onRefresh: blocked || pool == null
+          ? null
+          : () => _reload(rewardsKey, instanceId),
       block: blocked
           ? LoopPageBlock(
               key: const ValueKey<String>('launch2-dyn-rewards-blocked'),
@@ -305,7 +330,8 @@ class _Launch2DynamicRewardsScreenState
             )
           : null,
       sections: <Widget>[
-        if (!blocked) ..._sections(instanceId, kindState, detail, pool),
+        if (!blocked)
+          ..._sections(instanceId, kindState, detail, pool, rewardsKey),
       ],
     );
   }
@@ -315,6 +341,7 @@ class _Launch2DynamicRewardsScreenState
     LoopChainResourceState<Launch2PoolKind>? kindState,
     Launch2InstanceDetail? detail,
     Launch2DynamicPoolState? pool,
+    Launch2DynamicRewardsKey? rewardsKey,
   ) {
     final kind = kindState?.value;
     // The adapter is absent or the server answered OfficialTax: there is
@@ -327,6 +354,22 @@ class _Launch2DynamicRewardsScreenState
           key: ValueKey<String>('launch2-dyn-rewards-none'),
           message: '这个项目没有外盘奖励',
           reason: '只有开启动态税的项目才有按轮次的外盘奖励。',
+        ),
+      ];
+    }
+    // Decision 0159: a LoopDynamic Hook that cannot be read now.
+    if (kind is Launch2LoopDynamicUnavailable ||
+        kind is Launch2LoopDynamicNotGraduated) {
+      return <Widget>[
+        Launch2DynamicUnavailableBlock(
+          reason: kind is Launch2LoopDynamicUnavailable
+              ? launch2PoolReasonText(kind.reasonCode)
+              : '外盘池子正在同步，请稍后再试',
+          onRetry: () => unawaited(
+            ref
+                .read(launch2PoolKindControllerProvider(instanceId).notifier)
+                .reload(),
+          ),
         ),
       ];
     }
@@ -344,7 +387,17 @@ class _Launch2DynamicRewardsScreenState
         ),
       ];
     }
-    final provider = launch2DynamicRewardsControllerProvider(instanceId);
+    if (rewardsKey == null) {
+      return const <Widget>[
+        LoopEmpty(
+          key: ValueKey<String>('launch2-dyn-rewards-no-wallet'),
+          icon: 'wallet',
+          message: '还没有可用的钱包',
+          reason: '外盘奖励按钱包记录，激活钱包后可查看与领取。',
+        ),
+      ];
+    }
+    final provider = launch2DynamicRewardsControllerProvider(rewardsKey);
     final state = ref.watch(provider);
     final rewards = state.value;
     final widgets = <Widget>[
@@ -387,17 +440,18 @@ class _Launch2DynamicRewardsScreenState
           preparing: _preparing == round.roundId,
           busy: _preparing != null,
           broadcast: _broadcast.contains(round.roundId),
+          confirmed: _confirmed.contains(round.roundId),
           failure: _failure != null && _failure!.$1 == round.roundId
               ? _failure!.$2
               : null,
-          onClaim: () => unawaited(_claim(detail, pool, round)),
+          onClaim: () => unawaited(_claim(detail, pool, rewardsKey, round)),
         ),
       LoopProvenanceLine(
         key: const ValueKey<String>('launch2-dyn-rewards-provenance'),
         sources: const <String>['LoopHook'],
         observedAt: ref.read(provider.notifier).valueObservedAt,
         padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
-        detail: '权重按发起账户的买入金额记（USD1）；回购买入不计。领取以链上确认为准。',
+        detail: '权重按钱包在本轮的买入金额记（USD1）；回购买入不计。领取以链上确认为准。',
       ),
     ];
   }
@@ -412,6 +466,7 @@ class _RoundRow extends StatelessWidget {
     required this.broadcast,
     required this.onClaim,
     super.key,
+    this.confirmed = false,
     this.failure,
   });
 
@@ -423,6 +478,9 @@ class _RoundRow extends StatelessWidget {
 
   /// We broadcast this round's claim this visit.
   final bool broadcast;
+
+  /// Its report came back `confirmed`.
+  final bool confirmed;
   final String? failure;
   final VoidCallback onClaim;
 
@@ -436,15 +494,15 @@ class _RoundRow extends StatelessWidget {
 
   String get _label => preparing
       ? '正在准备…'
-      : round.alreadyClaimed
+      : round.alreadyClaimed || confirmed
       ? '已领取'
       : broadcast
       ? '领取确认中…'
-      : !round.closed
-      ? '本轮结束后可领'
-      : round.claimable > Decimal.zero
-      ? '领取'
-      : '没有可领';
+      : switch (round.status) {
+          Launch2DynamicRoundStatus.open => '本轮结束后可领',
+          Launch2DynamicRoundStatus.noReward => '本轮无可领金额',
+          _ => round.canClaim ? '领取' : '没有可领',
+        };
 
   @override
   Widget build(BuildContext context) {
@@ -479,28 +537,26 @@ class _RoundRow extends StatelessWidget {
             key: ValueKey<String>('launch2-dyn-round-$id-weight'),
             label: '我的权重 / 总权重',
             value:
-                '${loopFormatDecimal(round.myWeight, maxFractionDigits: 4)} / '
-                '${usd1(round.totalWeight)}',
+                '${loopFormatDecimal(round.weightUsd1, maxFractionDigits: 4)} / '
+                '${usd1(round.totalBuyWeightUsd1)}',
           ),
           LoopKeyValue(
             key: ValueKey<String>('launch2-dyn-round-$id-allocation'),
             label: '本轮奖金',
-            value: round.allocation == null
+            value: round.allocationUsd1 == null
                 ? '本轮结束后结算'
-                : usd1(round.allocation!),
+                : usd1(round.allocationUsd1!),
           ),
           LoopKeyValue(
             key: ValueKey<String>('launch2-dyn-round-$id-claimable'),
             label: '可领',
-            value: usd1(round.claimable),
+            value: usd1(round.claimableUsd1),
           ),
           LoopKeyValue(
             key: ValueKey<String>('launch2-dyn-round-$id-claimed'),
             label: '已领',
-            value: round.claimedAmount != null
-                ? usd1(round.claimedAmount!)
-                : round.alreadyClaimed
-                ? '已领取'
+            value: round.claimedUsd1 != null
+                ? usd1(round.claimedUsd1!)
                 : usd1(Decimal.zero),
           ),
           if (failure case final String text)
@@ -514,9 +570,11 @@ class _RoundRow extends StatelessWidget {
             child: LoopButton(
               key: ValueKey<String>('launch2-dyn-claim-$id'),
               label: _label,
-              primary: round.canClaim && !broadcast,
+              primary: round.canClaim && !broadcast && !confirmed,
               block: true,
-              onPressed: round.canClaim && !broadcast && !busy ? onClaim : null,
+              onPressed: round.canClaim && !broadcast && !confirmed && !busy
+                  ? onClaim
+                  : null,
             ),
           ),
         ],

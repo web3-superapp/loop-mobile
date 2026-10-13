@@ -1,0 +1,58 @@
+{
+  "_handwritten": "来源：frontend-v2-launch2-api.md §3.12（loop-api Decision 0131 / S166）与 openapi/loop-api.v2.json 的同名 schema，手写于 2026-10-13（客户端决策 0159）；文档示例里的省略号已换成合法 id / 地址，数值按示例。待真实抓包替换。",
+  "route": "GET /v2/launch2/instances/8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d/dynamic-pool",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "dynamicPool": {
+      "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+      "hookKind": "loopDynamic",
+      "status": "active",
+      "hook": "0xcccccccccccccccccccccccccccccccccccc10c4",
+      "poolId": "0x9f00000000000000000000000000000000000000000000000000000000000099",
+      "router": "0x7777777777777777777777777777777777777777",
+      "routerRegistry": "0x4444444444444444444444444444444444444444",
+      "routingPolicy": "open",
+      "priceTiming": "POST_SWAP",
+      "buyTaxBps": 200,
+      "baseSellTaxBps": 200,
+      "excludeBuybackFromRewards": true,
+      "armed": true,
+      "currentRoundId": "3",
+      "candleId": "6000000",
+      "candleSeconds": 300,
+      "candleEndsAt": "2027-01-15T08:05:00.000Z",
+      "rollPending": false,
+      "currentDropWad": "0.3",
+      "currentDropBps": 3000,
+      "potUsd1": "45",
+      "carryUsd1": "40",
+      "roundExtraFeesUsd1": "5",
+      "roundTotalBuyWeightUsd1": "100",
+      "reservedRewardsUsd1": "10",
+      "priceUsd1": "0.000625",
+      "viewer": {
+        "walletId": "d64786bb-408d-415d-8a69-6277d56c921b",
+        "currentRoundWeightUsd1": "25"
+      },
+      "summary": {
+        "roundCount": 3,
+        "closedRoundCount": 2,
+        "allocatedUsd1": "30",
+        "claimedUsd1": "12",
+        "dynamicFeesUsd1": "70",
+        "baseSellFeesUsd1": "4",
+        "buyFeesMeme": "1000"
+      },
+      "basis": {
+        "blockNumber": "6000",
+        "blockHash": "0x5d1c000000000000000000000000000000000000000000000000000000000001"
+      }
+    },
+    "contractVersion": "2.0"
+  }
+}
