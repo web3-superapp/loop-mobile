@@ -47,8 +47,10 @@ const List<(String, String)> _supportAnswers = <(String, String)>[
   ),
   (
     '换手机怎么恢复账户',
-    '账号身份由 Privy 保管。Passkey、自动恢复与社交恢复暂时都不可用，'
-        '安全中心会显示每一项的具体原因。',
+    // Decision 0158: the same facts as the security center (decision 0156).
+    '账号身份由 Privy 保管。Passkey 与多因素验证可以在安全中心开启，'
+        '自动恢复是默认的恢复方式；社交恢复与导出私钥还没有开放。'
+        '安全中心会显示每一项的当前状态。',
   ),
   (
     '内盘买入为什么被拒绝',

@@ -43,7 +43,11 @@ bool testnetFaucetVisible(WidgetRef ref) {
 // ---------------------------------------------------------------------------
 
 const String testnetFaucetTitle = '领取测试币';
-const String testnetFaucetEntrySubtitle = '测试网专用 · 领 tBNB 与 tUSD1 · 每 24 小时一次';
+
+/// The wallet entry reads no status, so it names no period: the cooldown is
+/// the server's `cooldownSeconds` and is said only once it is read
+/// (decision 0158).
+const String testnetFaucetEntrySubtitle = '测试网专用 · 领 tBNB 与 tUSD1';
 const String testnetFaucetBusyLabel = '正在发放…（约 30 秒）';
 const String testnetFaucetOperatorLowText = '测试币池暂时不足，请稍后再试';
 const String testnetFaucetNotOwnedText = '只能给当前登录的内置钱包领取';
@@ -65,20 +69,55 @@ String testnetFaucetNextLabel(DateTime next, {DateTime? now}) {
   return '${local.month}月${local.day}日 $time';
 }
 
+/// The server's `cooldownSeconds` as a period: 「24 小时」, 「3 天」,
+/// 「30 分钟」. Whole days other than one are days, whole hours are hours,
+/// whole minutes are minutes, anything else is seconds.
+String testnetFaucetCooldownText(int seconds) {
+  if (seconds == 86400) return '24 小时';
+  if (seconds % 86400 == 0) return '${seconds ~/ 86400} 天';
+  if (seconds % 3600 == 0) return '${seconds ~/ 3600} 小时';
+  if (seconds % 60 == 0) return '${seconds ~/ 60} 分钟';
+  return '$seconds 秒';
+}
+
+/// 「24 小时后可再领」 from the server's cooldown, or 「稍后可再领」 while
+/// it is not read.
+String _againText(int? cooldownSeconds) => cooldownSeconds == null
+    ? '稍后可再领'
+    : '${testnetFaucetCooldownText(cooldownSeconds)}后可再领';
+
+/// 「这个钱包 24 小时内已经领过」 from the server's cooldown, or 「最近」 while
+/// it is not read.
+String testnetFaucetClaimedText(int? cooldownSeconds) => cooldownSeconds == null
+    ? '这个钱包最近已经领过'
+    : '这个钱包 ${testnetFaucetCooldownText(cooldownSeconds)}内已经领过';
+
 /// The partial grant, said by what did arrive.
-String testnetFaucetPartialText(TestnetFaucetPartial partial) {
+String testnetFaucetPartialText(
+  TestnetFaucetPartial partial, {
+  int? cooldownSeconds,
+}) {
+  final again = _againText(cooldownSeconds);
   if (partial.unconfirmed) {
-    return 'tBNB 已发出但还没确认，tUSD1 这次没发；24 小时后可再领';
+    return 'tBNB 已发出但还没确认，tUSD1 这次没发；$again';
   }
   final bnb = partial.bnbTransactionHash != null;
   final usd1 = partial.usd1TransactionHash != null;
-  if (usd1 && !bnb) return 'tUSD1 已到账，tBNB 这次没成功，24 小时后可再领';
-  if (!bnb && !usd1) return '这次只发出了一部分测试币，24 小时后可再领';
-  return 'tBNB 已到账，tUSD1 这次没成功，24 小时后可再领';
+  if (partial.readBack && bnb && !usd1) {
+    // A record read back proves the tBNB transfer was sent, not that it
+    // arrived (decision 0158).
+    return 'tBNB 已发出，tUSD1 这次没发；$again';
+  }
+  if (usd1 && !bnb) return 'tUSD1 已到账，tBNB 这次没成功，$again';
+  if (!bnb && !usd1) return '这次只发出了一部分测试币，$again';
+  return 'tBNB 已到账，tUSD1 这次没成功，$again';
 }
 
 /// One refusal or failure, in the owner's words.
-String testnetFaucetFailureText(LoopChainException failure) {
+String testnetFaucetFailureText(
+  LoopChainException failure, {
+  int? cooldownSeconds,
+}) {
   switch (failure.reasonCode) {
     case TestnetFaucetReason.operatorLow:
       return testnetFaucetOperatorLowText;
@@ -103,7 +142,7 @@ String testnetFaucetFailureText(LoopChainException failure) {
     case TestnetFaucetReason.transferFailed:
       return '这次没有发出，可以重试';
     case TestnetFaucetReason.cooldown:
-      return '这个钱包 24 小时内已经领过，稍后再来';
+      return '${testnetFaucetClaimedText(cooldownSeconds)}，稍后再来';
   }
   if (failure.kind == LoopChainFailureKind.permissionDenied) {
     return testnetFaucetNotOwnedText;
@@ -334,6 +373,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
       return TestnetFaucetPartial(
         bnbTransactionHash: grant.bnbTransactionHash,
         nextAvailableAt: next,
+        readBack: true,
       );
     }
     return TestnetFaucetGranted(
@@ -361,6 +401,9 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
     }
     widget.onGranted?.call();
   }
+
+  /// The server's cooldown, once the status is read (decision 0158).
+  int? get _cooldownSeconds => _status?.cooldownSeconds;
 
   /// When the wallet can claim again, from the freshest answer.
   DateTime? get _nextAvailableAt => switch (_result) {
@@ -399,11 +442,12 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               status == null
-                  ? '测试网专用。每个内置钱包每 24 小时可以领一次 tBNB 和 tUSD1，'
+                  ? '测试网专用。每个内置钱包可以定期领 tBNB 和 tUSD1，'
                         '用来在测试网上付手续费和试用买卖。测试币没有价值。'
                   : '测试网专用。这次会发 ${loopFormatDecimal(status.bnbAmount)} tBNB 和 '
                         '${loopFormatDecimal(status.usd1Amount)} tUSD1，'
-                        '每个内置钱包每 24 小时可以领一次。测试币没有价值。',
+                        '每个内置钱包每 ${testnetFaucetCooldownText(status.cooldownSeconds)}'
+                        '可以领一次。测试币没有价值。',
               key: const ValueKey<String>('testnet-faucet-intro'),
               style: LoopType.bodySm.copyWith(color: secondary),
             ),
@@ -456,7 +500,10 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
           icon: offline ? 'offline' : 'warn',
           tone: LoopNoticeTone.warn,
           title: '领取状态暂时读不到',
-          body: testnetFaucetFailureText(statusFailure),
+          body: testnetFaucetFailureText(
+            statusFailure,
+            cooldownSeconds: _cooldownSeconds,
+          ),
           margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         ),
         Padding(
@@ -482,15 +529,19 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
         _line(
           key: 'testnet-faucet-cooldown',
           text: next == null
-              ? '这个钱包 24 小时内已经领过，稍后再来'
-              : '这个钱包 24 小时内已经领过，下次可领 ${testnetFaucetNextLabel(next)}',
+              ? '${testnetFaucetClaimedText(_cooldownSeconds)}，稍后再来'
+              : '${testnetFaucetClaimedText(_cooldownSeconds)}，'
+                    '下次可领 ${testnetFaucetNextLabel(next)}',
         ),
       if (_pendingNote case final String note)
         _line(key: 'testnet-faucet-pending', text: note),
       if (claimFailure != null)
         _line(
           key: 'testnet-faucet-failure',
-          text: testnetFaucetFailureText(claimFailure),
+          text: testnetFaucetFailureText(
+            claimFailure,
+            cooldownSeconds: _cooldownSeconds,
+          ),
         ),
       const SizedBox(height: 8),
       Padding(
@@ -501,7 +552,9 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
               ? testnetFaucetBusyLabel
               : cooling
               ? (next == null
-                    ? '24 小时内已领过'
+                    ? (_cooldownSeconds == null
+                          ? '最近已领过'
+                          : '${testnetFaucetCooldownText(_cooldownSeconds!)}内已领过')
                     : '下次可领 ${testnetFaucetNextLabel(next)}')
               : '领取',
           primary: true,
@@ -557,7 +610,10 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
   List<Widget> _partial(TestnetFaucetPartial partial) => <Widget>[
     _line(
       key: 'testnet-faucet-partial',
-      text: testnetFaucetPartialText(partial),
+      text: testnetFaucetPartialText(
+        partial,
+        cooldownSeconds: _cooldownSeconds,
+      ),
     ),
     if (partial.bnbTransactionHash case final String hash)
       TestnetFaucetTxRow(label: 'tBNB', hash: hash),

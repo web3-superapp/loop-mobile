@@ -181,24 +181,38 @@ final class DioLoopV2TestnetFaucetGateway implements TestnetFaucetGateway {
   @override
   LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
 
+  static String _signature(String walletId) => 'testnet:faucet:$walletId';
+
+  /// A status read that shows the wallet cooling down means the server has
+  /// recorded a grant for it, so a claim key still held from a pending answer
+  /// has an outcome and is let go: the next claim, a day later, must not
+  /// replay that stored answer (decision 0158).
   @override
-  Future<TestnetFaucetStatus> loadStatus({required String walletId}) =>
-      executeChainRequest(
-        _session,
-        (accessToken) => _api.getStatus(
-          accessToken: accessToken,
-          clientVersion: _clientVersion,
-          walletId: walletId,
-        ),
-        write: false,
-      );
+  Future<TestnetFaucetStatus> loadStatus({required String walletId}) async {
+    final status = await executeChainRequest(
+      _session,
+      (accessToken) => _api.getStatus(
+        accessToken: accessToken,
+        clientVersion: _clientVersion,
+        walletId: walletId,
+      ),
+      write: false,
+    );
+    if (!status.available) _keyring.release(_signature(walletId));
+    return status;
+  }
 
   /// One key per logical claim; it is replayed only while that claim's
   /// outcome is unresolved, so a lost answer never sends a second grant.
+  ///
+  /// A [TestnetFaucetPending] answer (409 `TESTNET_FAUCET_IN_FLIGHT`, 503
+  /// `REQUEST_TIMEOUT`) is such an unresolved outcome: the key is kept and a
+  /// retry sends the same one, which the server answers with the stored
+  /// outcome of that one grant (decision 0158).
   @override
   Future<TestnetFaucetClaimResult> claim({required String walletId}) async {
     final origin = _originSource == null ? null : await _originSource.resolve();
-    final signature = 'testnet:faucet:$walletId';
+    final signature = _signature(walletId);
     final key = _keyring.reserve(signature);
     try {
       final result = await executeChainRequest(
@@ -212,7 +226,7 @@ final class DioLoopV2TestnetFaucetGateway implements TestnetFaucetGateway {
         ),
         write: true,
       );
-      _keyring.release(signature);
+      if (result is! TestnetFaucetPending) _keyring.release(signature);
       return result;
     } on LoopChainException catch (failure) {
       if (!loopChainOutcomeIsUnresolved(failure.kind)) {

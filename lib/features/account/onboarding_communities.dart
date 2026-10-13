@@ -183,7 +183,10 @@ final class OnboardingCommunitiesState {
 /// Reads the recommendation, then the directory behind it, and joins what the
 /// reader ticked — every join asking the server to mute the chat, one
 /// community at a time, a failure on one never stopping the next.
-final class OnboardingCommunitiesController
+///
+/// `base`, not `final` (decision 0158): a test substitutes a controller whose
+/// mute wait throws, to prove the entering page still leaves.
+base class OnboardingCommunitiesController
     extends Notifier<OnboardingCommunitiesState> {
   var _generation = 0;
 
@@ -490,12 +493,20 @@ class _OnboardingCommunitiesScreenState
           if (joined.results[item.communityId]?.isJoined ?? false) item,
       ];
     });
-    await Future.wait<void>(<Future<void>>[
-      controller.settleMutes(),
-      Future<void>.delayed(onboardingEnteringMinimumStay),
-    ]);
-    if (!mounted) return;
-    _leave();
+    // Decision 0158: the entering page offers no way out, so it must end
+    // even when settling the mutes throws; the error is not the owner's to
+    // resolve here and the page never strands them.
+    try {
+      await Future.wait<void>(<Future<void>>[
+        controller.settleMutes(),
+        Future<void>.delayed(onboardingEnteringMinimumStay),
+      ]);
+    } on Object {
+      // The rows that did not settle keep their own state on the community
+      // pages; leaving below is what matters here.
+    } finally {
+      if (mounted) _leave();
+    }
   }
 
   @override

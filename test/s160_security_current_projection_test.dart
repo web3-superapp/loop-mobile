@@ -177,8 +177,11 @@ void main() {
       expect(passkey.onTap, isNotNull);
 
       final recovery = rowOf(tester, 'autoRecovery');
-      expect(recovery.badgeText, '已启用');
+      // Decision 0158: available is not enrollment, so 自动恢复 is the
+      // neutral default way with its source, never 已启用.
+      expect(recovery.badgeText, '默认方式');
       expect(recovery.subtitle, walletAutomaticRecoveryEvidence);
+      expect(find.text('已启用'), findsNothing);
       expect(recovery.onTap, isNull);
 
       // The two methods that are still not open keep their badge.
@@ -262,7 +265,7 @@ void main() {
       expect(find.text('未开启'), findsNothing);
       expect(find.text('已开启'), findsOneWidget); // 安全事件通知 only.
       // 自动恢复 does not depend on the provider's answer.
-      expect(rowOf(tester, 'autoRecovery').badgeText, '已启用');
+      expect(rowOf(tester, 'autoRecovery').badgeText, '默认方式');
     });
 
     testWidgets('available, but this build has no passkey domain', (

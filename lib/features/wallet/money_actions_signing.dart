@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/chain/loop_usd1_asset.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -222,14 +223,18 @@ final class MoneyActionSigner {
   }
 }
 
-/// The symbol a wallet intent's USD1 carries.
-const String _usd1Symbol = 'USD1';
-
 /// What one wallet intent is worth in USD1, for the large-amount step-up
 /// (decision 0152), or `null` when it cannot be said.
 ///
-/// - A USD1 send is its amount; a swap that pays or receives USD1 is that
-///   side's amount (the estimated output on the receive side).
+/// USD1 is recognised by its canonical CAIP `assetId` alone
+/// ([loopIsUsd1AssetId]); a token that only calls itself `USD1` is valued
+/// like any other token (decision 0158).
+///
+/// - A USD1 send is its amount; a swap that pays USD1 is that amount.
+/// - A swap that receives USD1 is the larger of what it pays
+///   (`policy.valueUsd`) and the estimated USD1 it receives: a costly asset
+///   swapped for a little USD1 is as large as what leaves the wallet
+///   (decision 0158).
 /// - Any other send, swap or approval is the server's own valuation of the
 ///   intent at prepare, `policy.valueUsd` — the market price times the
 ///   amount (for an approval, times `min(allowance, balance)`). USD is read
@@ -243,13 +248,13 @@ Decimal? moneyIntentStepUpUsd1(LoopWalletIntent intent) {
       : intent.policy.valueUsd;
   switch (intent.kind) {
     case LoopIntentKind.send:
-      if (review.asset.symbol == _usd1Symbol) return review.amount.value;
+      if (loopIsUsd1AssetId(review.asset.assetId)) return review.amount.value;
       return valued;
     case LoopIntentKind.swap:
-      if (review.asset.symbol == _usd1Symbol) return review.amount.value;
+      if (loopIsUsd1AssetId(review.asset.assetId)) return review.amount.value;
       final swap = review.swap;
-      if (swap != null && swap.destinationAsset.symbol == _usd1Symbol) {
-        return swap.quote.estimatedOutputAmount.value ?? valued;
+      if (swap != null && loopIsUsd1AssetId(swap.destinationAsset.assetId)) {
+        return _larger(valued, swap.quote.estimatedOutputAmount.value);
       }
       return valued;
     case LoopIntentKind.approve:
@@ -257,6 +262,14 @@ Decimal? moneyIntentStepUpUsd1(LoopWalletIntent intent) {
     case LoopIntentKind.revoke:
       return null;
   }
+}
+
+/// The larger of two values that may each be unknown; `null` only when both
+/// are.
+Decimal? _larger(Decimal? a, Decimal? b) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return a >= b ? a : b;
 }
 
 /// Sheet title for one intent kind.
