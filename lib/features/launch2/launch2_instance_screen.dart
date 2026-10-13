@@ -12,6 +12,9 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
@@ -147,7 +150,21 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       ref.read(launch2InstanceControllerProvider(id).notifier).reload(),
       if (detail?.stage == Launch2Stage.graduated)
         ref.read(launch2BuybacksControllerProvider(id).notifier).reload(),
+      if (detail?.stage == Launch2Stage.graduated) _reloadPoolKind(id),
     ]);
+  }
+
+  /// Decision 0157: the round moves with every swap, so a LoopDynamic
+  /// instance (or one whose kind could not be read yet) is asked again with
+  /// the page. An OfficialTax answer is final and never asked again.
+  Future<void> _reloadPoolKind(String id) {
+    final provider = launch2PoolKindControllerProvider(id);
+    final state = ref.read(provider);
+    if (state.mode == LoopChainGatewayMode.unavailable ||
+        state.value is Launch2OfficialTaxPool) {
+      return Future<void>.value();
+    }
+    return ref.read(provider.notifier).reload();
   }
 
   void _armPoll(String id, Launch2InstanceDetail detail) {
@@ -383,7 +400,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       next,
     ) {
       final value = next.value;
-      if (value != null && !identical(previous?.value, value)) _settle(value);
+      if (value != null && !identical(previous?.value, value)) {
+        _settle(value);
+        if (previous?.value != null && value.stage == Launch2Stage.graduated) {
+          unawaited(_reloadPoolKind(instanceId));
+        }
+      }
     });
     final detail = state?.value;
     if (detail != null) {
@@ -553,8 +575,19 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ];
   }
 
-  List<Widget> _stageContent(
+  List<Widget> _stageContent(Launch2InstanceDetail detail) {
+    // Decision 0157: only a graduated pool has a Hook kind; the read is not
+    // made for any other stage, and `null` (OfficialTax, unknown, absent
+    // adapter) draws the S146 page unchanged.
+    final dynamicPool = detail.stage == Launch2Stage.graduated
+        ? launch2DynamicPoolOf(ref, detail.instanceId)
+        : null;
+    return _stageWidgets(detail, dynamicPool);
+  }
+
+  List<Widget> _stageWidgets(
     Launch2InstanceDetail detail,
+    Launch2DynamicPoolState? dynamicPool,
   ) => switch (detail.stage) {
     Launch2Stage.upcoming => <Widget>[
       _Figures(
@@ -619,6 +652,17 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ],
     Launch2Stage.graduated => <Widget>[
       _GraduatedBlock(detail: detail),
+      if (dynamicPool != null)
+        Launch2DynamicRoundCard(
+          state: dynamicPool,
+          observedAt: ref
+              .read(
+                launch2PoolKindControllerProvider(detail.instanceId).notifier,
+              )
+              .valueObservedAt,
+          onOpenRewards: () =>
+              _open(Launch2Route.dynamicRewards(detail.instanceId)),
+        ),
       Launch2PoolStats(detail: detail),
       Launch2PoolTradePanel(
         key: ValueKey<String>('launch2-pool-panel-${detail.instanceId}'),
@@ -629,19 +673,24 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
             _sign(detail, intent, refresh: refresh),
         onTopUp: () => _openTopUp(detail),
         onFaucet: _faucetAction(detail),
+        dynamicPool: dynamicPool,
       ),
       _MyPoolTrades(
         detail: detail,
         walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
       ),
-      Launch2PoolSwapLink(
-        onOpen: () => _open(
-          Launch2Route.swap(
-            chainId: detail.row.chainId,
-            memeAddress: detail.row.memeAddress,
+      // Decision 0157: a LoopDynamic Hook credits rewards only to buys it
+      // can attribute; the wallet Swap may route elsewhere, so the link is
+      // not offered there.
+      if (dynamicPool == null)
+        Launch2PoolSwapLink(
+          onOpen: () => _open(
+            Launch2Route.swap(
+              chainId: detail.row.chainId,
+              memeAddress: detail.row.memeAddress,
+            ),
           ),
         ),
-      ),
       _BuybackPanel(detail: detail),
     ],
     Launch2Stage.paused => <Widget>[_TemplateCard(detail: detail)],

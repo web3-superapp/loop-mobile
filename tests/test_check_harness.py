@@ -1268,7 +1268,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_route_manifest_contract(root)
 
         self.assertTrue(
-            any("111 manifest slugs in manifest order" in error for error in result),  # S135
+            any("112 manifest slugs in manifest order" in error for error in result),  # S168
             msg=f"expected manifest slug drift guard: {result}",
         )
 

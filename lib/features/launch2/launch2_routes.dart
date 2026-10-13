@@ -18,6 +18,15 @@ abstract final class Launch2Route {
     queryParameters: <String, String>{'id': instanceId},
   ).toString();
 
+  /// Decision 0157 · 外盘奖励: one LoopDynamic instance's reward rounds,
+  /// addressed by the same `id` query parameter.
+  static const String dynamicRewardsPath = '/launch2/dynamic-rewards';
+
+  static String dynamicRewards(String instanceId) => Uri(
+    path: dynamicRewardsPath,
+    queryParameters: <String, String>{'id': instanceId},
+  ).toString();
+
   /// The instance id in a route, or `null` when it is missing or malformed.
   static String? idOf(Uri uri) {
     final value = uri.queryParameters['id'];

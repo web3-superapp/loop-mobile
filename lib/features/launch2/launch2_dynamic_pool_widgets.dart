@@ -1,0 +1,146 @@
+import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
+
+// ---------------------------------------------------------------------------
+// 本轮状态 · the LoopDynamic round card (client decision 0157)
+// ---------------------------------------------------------------------------
+
+/// What arms a round, said while none is running.
+const String launch2DynamicIdleText = '价格 5 分钟内跌超 10% 将开启动态税与买入奖励';
+
+/// How a running round ends.
+const String launch2DynamicEndText = '出现一根收绿的 5 分钟 K 线即结束';
+
+/// A drop as a percentage (`20%`, `0%`), exact to two decimals.
+String launch2DropLabel(Decimal percent) =>
+    '${loopFormatDecimal(percent, maxFractionDigits: 2)}%';
+
+/// The round card's rows for one state, label first.
+List<(String key, String label, String value)> launch2DynamicRoundRows(
+  Launch2DynamicPoolState state,
+) {
+  final mine = state.myBuyWeight;
+  return <(String, String, String)>[
+    if (state.armed) ...<(String, String, String)>[
+      ('drop', '当前跌幅', launch2DropLabel(state.dropPercent)),
+      ('pot', '奖金池', launch2Usd1Label(state.pot, maxFractionDigits: 4)),
+      (
+        'my-weight',
+        '本轮我的权重',
+        mine == null ? '暂无' : launch2Usd1Label(mine, maxFractionDigits: 4),
+      ),
+      ('end', '结束条件', launch2DynamicEndText),
+    ] else
+      ('pot', '奖金池', launch2Usd1Label(state.pot, maxFractionDigits: 4)),
+  ];
+}
+
+/// 本轮状态: armed or not, the drop, the pot, how the round ends and the
+/// reader's weight; above the official pool's figures.
+class Launch2DynamicRoundCard extends StatelessWidget {
+  const Launch2DynamicRoundCard({
+    required this.state,
+    required this.onOpenRewards,
+    super.key,
+    this.observedAt,
+  });
+
+  final Launch2DynamicPoolState state;
+
+  /// 「我的奖励」: the instance's reward rounds.
+  final VoidCallback onOpenRewards;
+
+  /// When this device received [state].
+  final DateTime? observedAt;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    key: const ValueKey<String>('launch2-dyn-round'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 4, 4),
+        child: Row(
+          children: <Widget>[
+            Text('本轮状态', style: launch2PanelHeadingStyle),
+            const SizedBox(width: 8),
+            LoopBadge(
+              state.armed ? '已激活' : '未激活',
+              key: ValueKey<String>(
+                state.armed ? 'launch2-dyn-armed' : 'launch2-dyn-idle',
+              ),
+              kind: state.armed ? LoopBadgeKind.launch : LoopBadgeKind.mute,
+            ),
+            const Spacer(),
+            Semantics(
+              button: true,
+              label: '我的奖励',
+              excludeSemantics: true,
+              child: LoopPressable(
+                key: const ValueKey<String>('launch2-dyn-rewards-link'),
+                onTap: onOpenRewards,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: LoopTouch.minimum,
+                    minWidth: LoopTouch.minimum,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          '我的奖励',
+                          style: LoopType.caption.copyWith(
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const LoopIcon(
+                          'chevron',
+                          size: 14,
+                          color: LoopColors.text3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      if (!state.armed)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 4),
+          child: Text(
+            launch2DynamicIdleText,
+            key: const ValueKey<String>('launch2-dyn-idle-line'),
+            style: LoopType.caption.copyWith(color: LoopColors.text2),
+          ),
+        ),
+      for (final (key, label, value) in launch2DynamicRoundRows(state))
+        LoopKeyValue(
+          key: ValueKey<String>('launch2-dyn-$key'),
+          label: label,
+          value: value,
+        ),
+      LoopProvenanceLine(
+        key: const ValueKey<String>('launch2-dyn-provenance'),
+        sources: const <String>['LoopHook'],
+        observedAt: observedAt,
+        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 4),
+        detail: '跌幅按 5 分钟 K 线计算；回购买入不计奖励权重。',
+      ),
+    ],
+  );
+}

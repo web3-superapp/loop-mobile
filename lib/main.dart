@@ -28,6 +28,7 @@ import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart'; // S136
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_gateway.dart'; // S168
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart'; // S138
@@ -76,6 +77,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dar
 import 'package:loop_mobile/integrations/backend/v2/launch2_creator/loop_v2_launch2_creator_api.dart';
 import 'package:loop_mobile/integrations/privy/privy_typed_data_signer.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_api.dart'; // S136
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_dynamic_pool_api.dart'; // S168
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
@@ -328,6 +330,11 @@ Future<void> main() async {
         // still reads the `launch2` capability.
         launch2GatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2Launch2GatewayProvider),
+        ),
+        // S168 (decision 0157): the LoopDynamic Hook kind. Fail-closed until
+        // its inputs exist; a 404 / closed capability reads as OfficialTax.
+        launch2DynamicPoolGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2Launch2DynamicPoolGatewayProvider),
         ),
         miningGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MiningGatewayProvider),
