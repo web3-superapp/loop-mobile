@@ -177,8 +177,15 @@ abstract final class LoopV2Launch2CreatorCodec {
     if (id != projectId) invalid();
     final version = LoopV2ChainCodec.requireInt(map, 'version', minimum: 1);
     if (map['templateVersion'] != templateVersion) invalid();
-    final config = LoopV2Contract.strictMap(map['config'], configKeys);
+    // S172: `poolHookKind` is present only for a LoopDynamic template (0131/0132).
+    final config = LoopV2Contract.strictMapWithOptional(
+      map['config'],
+      configKeys,
+      const <String>{'poolHookKind'},
+    );
     if (config['templateVersion'] != templateVersion) invalid();
+    final poolHookKindRaw = config['poolHookKind'];
+    if (poolHookKindRaw != null && poolHookKindRaw != 'loopDynamic') invalid();
     final linksRaw = LoopV2ChainCodec.requireList(config['links'], maximum: 8);
     final links = <String>[for (final link in linksRaw) _httpsUrl(link)];
     final description = config['description'];
@@ -192,6 +199,7 @@ abstract final class LoopV2Launch2CreatorCodec {
         'templateHash',
         pattern: _bytes32,
       ),
+      poolHookKind: poolHookKindRaw as String?,
       name: LoopV2ChainCodec.requireString(
         config,
         'name',
@@ -228,8 +236,33 @@ abstract final class LoopV2Launch2CreatorCodec {
     );
   }
 
+  static const Set<String> loopDynamicKeys = <String>{
+    'router',
+    'buyFeePpm',
+    'baseSellFeePpm',
+    'baseFeeRecipient',
+    'priceTiming',
+    'routingPolicy',
+    'routerRegistryAdmin',
+    'excludeBuybackFromRewards',
+  };
+
   static Launch2FixedEconomics economics(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, economicsKeys);
+    // S172: a LoopDynamic template adds the Hook kind and its immutable
+    // parameters (0131/0132); an OfficialTax template omits both keys.
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      economicsKeys,
+      const <String>{'officialPoolHookKind', 'loopDynamic'},
+    );
+    final hookKindRaw = map['officialPoolHookKind'];
+    if (hookKindRaw != null &&
+        hookKindRaw != 'officialTax' &&
+        hookKindRaw != 'loopDynamic') {
+      invalid();
+    }
+    final loopDynamicRaw = map['loopDynamic'];
+    if ((hookKindRaw == 'loopDynamic') != (loopDynamicRaw != null)) invalid();
     BigInt amount(String key) =>
         BigInt.parse(LoopV2ChainCodec.requireString(map, key, pattern: _uint));
     int bps(String key) =>
@@ -270,6 +303,44 @@ abstract final class LoopV2Launch2CreatorCodec {
         map,
         'buybackMinIntervalSeconds',
       ),
+      officialPoolHookKind: hookKindRaw as String?,
+      loopDynamic: loopDynamicRaw == null ? null : _loopDynamic(loopDynamicRaw),
+    );
+  }
+
+  static Launch2LoopDynamicEconomics _loopDynamic(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, loopDynamicKeys);
+    final priceTiming = map['priceTiming'];
+    if (priceTiming != 'PRE_SWAP' && priceTiming != 'POST_SWAP') invalid();
+    final routingPolicy = map['routingPolicy'];
+    if (routingPolicy != 'LoopRouterOnly' && routingPolicy != 'Open') invalid();
+    final exclude = map['excludeBuybackFromRewards'];
+    if (exclude is! bool) invalid();
+    return Launch2LoopDynamicEconomics(
+      router: LoopV2ChainCodec.requireString(map, 'router', pattern: _address),
+      buyFeePpm: LoopV2ChainCodec.requireInt(
+        map,
+        'buyFeePpm',
+        maximum: 1000000,
+      ),
+      baseSellFeePpm: LoopV2ChainCodec.requireInt(
+        map,
+        'baseSellFeePpm',
+        maximum: 1000000,
+      ),
+      baseFeeRecipient: LoopV2ChainCodec.requireString(
+        map,
+        'baseFeeRecipient',
+        pattern: _address,
+      ),
+      priceTiming: priceTiming as String,
+      routingPolicy: routingPolicy as String,
+      routerRegistryAdmin: LoopV2ChainCodec.requireString(
+        map,
+        'routerRegistryAdmin',
+        pattern: _address,
+      ),
+      excludeBuybackFromRewards: exclude,
     );
   }
 

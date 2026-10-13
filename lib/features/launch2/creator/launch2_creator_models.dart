@@ -87,6 +87,8 @@ final class Launch2FixedEconomics {
     required this.tickSpacing,
     required this.buybackOrderUsd1Raw,
     required this.buybackMinIntervalSeconds,
+    this.officialPoolHookKind,
+    this.loopDynamic,
   });
 
   /// The template's own `chainId` (always `56`, part of the config hash). It
@@ -109,6 +111,12 @@ final class Launch2FixedEconomics {
   final int tickSpacing;
   final BigInt buybackOrderUsd1Raw;
   final int buybackMinIntervalSeconds;
+
+  /// `officialTax` / `loopDynamic`; null when the server predates the field.
+  final String? officialPoolHookKind;
+
+  /// Immutable LoopDynamic parameters; null for an OfficialTax template.
+  final Launch2LoopDynamicEconomics? loopDynamic;
 
   /// The per-address cap as basis points of the total supply.
   int? get perAddressCapBps => memeTotalSupplyRaw == BigInt.zero
@@ -203,6 +211,7 @@ final class Launch2HooksDraft {
     required this.version,
     required this.templateVersion,
     required this.templateHash,
+    this.poolHookKind,
     required this.name,
     required this.ticker,
     required this.logoAssetUrl,
@@ -219,6 +228,9 @@ final class Launch2HooksDraft {
   final int version;
   final String templateVersion;
   final String templateHash;
+
+  /// `loopDynamic` when the project was created on a LoopDynamic template; null for OfficialTax.
+  final String? poolHookKind;
   final String name;
   final String ticker;
   final String logoAssetUrl;
@@ -793,4 +805,28 @@ final class Launch2CreatorPage {
     rows: <Launch2CreatorRow>[...rows, ...next.rows],
     nextCursor: next.nextCursor,
   );
+}
+
+/// The LoopDynamic template's immutable Hook parameters (Decision 0131/0132),
+/// echoed inside `fixedEconomics.loopDynamic`.
+final class Launch2LoopDynamicEconomics {
+  const Launch2LoopDynamicEconomics({
+    required this.router,
+    required this.buyFeePpm,
+    required this.baseSellFeePpm,
+    required this.baseFeeRecipient,
+    required this.priceTiming,
+    required this.routingPolicy,
+    required this.routerRegistryAdmin,
+    required this.excludeBuybackFromRewards,
+  });
+
+  final String router;
+  final int buyFeePpm;
+  final int baseSellFeePpm;
+  final String baseFeeRecipient;
+  final String priceTiming;
+  final String routingPolicy;
+  final String routerRegistryAdmin;
+  final bool excludeBuybackFromRewards;
 }

@@ -237,6 +237,53 @@ void main() {
     });
   });
 
+  group('S172 · LoopDynamic template keys (loop-api 0131/0132)', () {
+    test('a LoopDynamic draft keeps the Hook kind and its parameters', () {
+      final draft = LoopV2Launch2CreatorCodec.configEnvelope(
+        _body('hooks_config_draft_loop_dynamic'),
+        projectId: _projectId,
+      ).draft!;
+      expect(draft.poolHookKind, 'loopDynamic');
+      expect(draft.economics.officialPoolHookKind, 'loopDynamic');
+      final dynamic = draft.economics.loopDynamic!;
+      expect(dynamic.router, '0x7d1577a63007620db1cbee3eab3572b9d148aefe');
+      expect(dynamic.buyFeePpm, 20000);
+      expect(dynamic.baseSellFeePpm, 20000);
+      expect(dynamic.priceTiming, 'POST_SWAP');
+      expect(dynamic.routingPolicy, 'Open');
+      expect(dynamic.excludeBuybackFromRewards, isTrue);
+    });
+
+    test('an OfficialTax draft has neither key', () {
+      final draft = LoopV2Launch2CreatorCodec.configEnvelope(
+        _body('hooks_config_draft'),
+        projectId: _projectId,
+      ).draft!;
+      expect(draft.poolHookKind, isNull);
+      expect(draft.economics.officialPoolHookKind, isNull);
+      expect(draft.economics.loopDynamic, isNull);
+    });
+
+    test('the Hook kind and the parameter block must agree', () {
+      final body = _body('hooks_config_draft_loop_dynamic') as Map;
+      final economics = Map<String, Object?>.from(
+        ((body['draft'] as Map)['config'] as Map)['fixedEconomics'] as Map,
+      );
+      economics.remove('loopDynamic');
+      expect(
+        () => LoopV2Launch2CreatorCodec.economics(economics),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      final unknownKind = Map<String, Object?>.from(
+        ((body['draft'] as Map)['config'] as Map)['fixedEconomics'] as Map,
+      )..['officialPoolHookKind'] = 'somethingElse';
+      expect(
+        () => LoopV2Launch2CreatorCodec.economics(unknownKind),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+  });
+
   group('signing-request codec', () {
     test('the request, the typed data and both predictions are read', () {
       final request = LoopV2Launch2CreatorCodec.signingRequest(
