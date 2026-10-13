@@ -760,7 +760,11 @@ final class Launch2Quote {
 enum Launch2IntentKind {
   nftMint('nft_mint'),
   buy('buy'),
-  sell('sell');
+  sell('sell'),
+
+  /// A LoopDynamic round's reward claim (decision 0157). Only the
+  /// `dynamic-pool/claim/prepare` route answers it.
+  rewardClaim('dynamic_claim');
 
   const Launch2IntentKind(this.wireName);
 
@@ -778,7 +782,10 @@ enum Launch2IntentKind {
 /// graduation, the official pool's router after it.
 enum Launch2Venue {
   curve('curve'),
-  officialPool('official_pool');
+  officialPool('official_pool'),
+
+  /// A LoopDynamic Hook's reward pot (decision 0157): a claim, not a trade.
+  loopDynamicRewards('loop_dynamic_rewards');
 
   const Launch2Venue(this.wireName);
 

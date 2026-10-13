@@ -1137,9 +1137,16 @@ abstract final class LoopV2Launch2Codec {
       (Launch2Venue.officialPool, 'pool_buy') => Launch2IntentKind.buy,
       (Launch2Venue.officialPool, 'pool_sell') => Launch2IntentKind.sell,
       (Launch2Venue.officialPool, _) => null,
-      (Launch2Venue.curve, final String value) => Launch2IntentKind.tryParse(
-        value,
-      ),
+      // Decision 0157: the claim route answers one kind, no other route
+      // answers it.
+      (Launch2Venue.loopDynamicRewards, 'dynamic_claim') =>
+        Launch2IntentKind.rewardClaim,
+      (Launch2Venue.loopDynamicRewards, _) => null,
+      (Launch2Venue.curve, final String value) =>
+        switch (Launch2IntentKind.tryParse(value)) {
+          Launch2IntentKind.rewardClaim => null,
+          final parsed => parsed,
+        },
       (Launch2Venue.curve, _) => null,
     };
     final state = map['state'];

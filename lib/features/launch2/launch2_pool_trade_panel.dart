@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
@@ -40,7 +41,14 @@ class Launch2PoolTradePanel extends ConsumerStatefulWidget {
     this.locked = false,
     this.onTopUp,
     this.onFaucet,
+    this.dynamicPool,
   });
+
+  /// Decision 0157: the pool's LoopHook state when the server said the
+  /// instance is LoopDynamic. `null` (OfficialTax) draws the S146 panel
+  /// unchanged; set, the panel is exactIn only, says the base and dynamic
+  /// tax, and what a buy adds to the round.
+  final Launch2DynamicPoolState? dynamicPool;
 
   /// 「去充值」 under a balance refusal (decision 0153): the wallet's receive
   /// page. `null` shows no link.
@@ -135,7 +143,22 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
     locked: widget.locked,
     quoteFailure: _quoteFailure,
     holding: _holding,
+    dynamicPool: widget.dynamicPool,
   );
+
+  @override
+  void didUpdateWidget(covariant Launch2PoolTradePanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Decision 0157: a LoopDynamic pool quotes exactIn only; an answer that
+    // arrives after the reader chose 「按买入数量」 resets the field.
+    if (widget.dynamicPool != null && _mode != Launch2PoolMode.exactIn) {
+      _mode = Launch2PoolMode.exactIn;
+      _amount.text = '';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _inputsChanged();
+      });
+    }
+  }
 
   /// The server's balance first, the quote's as the fallback (decision
   /// 0148), else what the page passed.
@@ -376,6 +399,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
     final greyed = view.blockedLine != null;
     final (inLabel, outLabel) = launch2PoolModeLabels(_side);
     final slippage = _slippage;
+    final dynamicPool = widget.dynamicPool;
     final controls = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -388,34 +412,39 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           onSelected: (index) =>
               _setSide(index == 0 ? Launch2Side.buy : Launch2Side.sell),
         ),
-        // Decision 0149: the amount basis is a setting under the side, named
-        // like 滑点上限 below — not a second bar of the same pills.
-        const SizedBox(height: 12),
-        Text(
-          '输入方式',
-          key: const ValueKey<String>('launch2-pool-mode-caption'),
-          style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: <Widget>[
-            LoopSeg(
-              key: const ValueKey<String>('launch2-pool-mode-exactIn'),
-              label: inLabel,
-              selected: _mode == Launch2PoolMode.exactIn,
-              quiet: true,
-              onSelected: () => _setMode(Launch2PoolMode.exactIn),
-            ),
-            const SizedBox(width: 6),
-            LoopSeg(
-              key: const ValueKey<String>('launch2-pool-mode-exactOut'),
-              label: outLabel,
-              selected: _mode == Launch2PoolMode.exactOut,
-              quiet: true,
-              onSelected: () => _setMode(Launch2PoolMode.exactOut),
-            ),
-          ],
-        ),
+        // Decision 0157: a LoopDynamic pool quotes what is paid only, so
+        // there is no basis to choose.
+        if (dynamicPool == null) ...<Widget>[
+          // Decision 0149: the amount basis is a setting under the side,
+          // named like 滑点上限 below — not a second bar of the same pills.
+          const SizedBox(height: 12),
+          Text(
+            '输入方式',
+            key: const ValueKey<String>('launch2-pool-mode-caption'),
+            style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: <Widget>[
+              LoopSeg(
+                key: const ValueKey<String>('launch2-pool-mode-exactIn'),
+                label: inLabel,
+                selected: _mode == Launch2PoolMode.exactIn,
+                quiet: true,
+                onSelected: () => _setMode(Launch2PoolMode.exactIn),
+              ),
+              const SizedBox(width: 6),
+              LoopSeg(
+                key: const ValueKey<String>('launch2-pool-mode-exactOut'),
+                label: outLabel,
+                selected: _mode == Launch2PoolMode.exactOut,
+                quiet: true,
+                onSelected: () => _setMode(Launch2PoolMode.exactOut),
+              ),
+            ],
+          ),
+        ] else
+          const SizedBox(height: 4),
         const SizedBox(height: 8),
         TextField(
           key: const ValueKey<String>('launch2-pool-amount'),
@@ -600,6 +629,17 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
               ),
             ],
           ),
+          // Decision 0157: rewards are credited to buys the LoopHook can
+          // attribute, which only the LOOP router guarantees.
+          if (dynamicPool != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '在 LOOP 里买入才保证记入奖励',
+                key: const ValueKey<String>('launch2-dyn-panel-note'),
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              ),
+            ),
           const SizedBox(height: 10),
           if (view.blockedLine case final String line)
             Padding(

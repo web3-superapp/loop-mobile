@@ -1,4 +1,4 @@
-/// The 111-route product manifest.
+/// The 112-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -112,7 +112,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      'ea6520e4821c4513b555888780c432c9e6522859a00cd5aba1a2c5c200d394b3';
+      '811d77de7f68357956144ce03fcf9976a7a975784d52aa6f049ac4bcbbfbe5ae';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -818,6 +818,16 @@ abstract final class LoopRouteManifest {
       module: LoopRouteModule.launch,
       title: 'MEME v2 项目',
       prototypeOrder: 112,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S168 (decision 0157): 外盘奖励 of one LoopDynamic instance.
+    LoopRouteEntry(
+      slug: 'launch2-dynamic-rewards',
+      path: '/launch2/dynamic-rewards',
+      module: LoopRouteModule.launch,
+      title: '外盘奖励',
+      prototypeOrder: 125,
       step: 7,
       status: LoopRouteStatus.implemented,
     ),

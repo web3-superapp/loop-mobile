@@ -65,6 +65,11 @@ abstract final class LoopV2Launch2PoolCodec {
     'basis',
   };
 
+  /// Decision 0157 (loop-api S166): a LoopDynamic pool's quote adds these
+  /// two; each is optional and may be `null` (an OfficialTax pool sends
+  /// neither).
+  static const dynamicQuoteKeys = <String>{'dynamicTaxBps', 'rewardWeight'};
+
   static const poolKeyKeys = <String>{
     'currency0',
     'currency1',
@@ -134,7 +139,11 @@ abstract final class LoopV2Launch2PoolCodec {
     required Launch2PoolMode mode,
     required String walletId,
   }) {
-    final map = LoopV2Contract.strictMap(raw, quoteKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      quoteKeys,
+      dynamicQuoteKeys,
+    );
     final rawSide = map['side'];
     final rawMode = map['mode'];
     final parsedSide = rawSide is String ? Launch2Side.tryParse(rawSide) : null;
@@ -214,6 +223,12 @@ abstract final class LoopV2Launch2PoolCodec {
       expiresAt: LoopV2ChainCodec.requireTimestamp(map, 'expiresAt'),
       quotedAt: LoopV2ChainCodec.requireTimestamp(map, 'quotedAt'),
       quotedAtBlock: LoopV2Launch2Codec.integer(map, 'quotedAtBlock'),
+      dynamicTaxBps: map['dynamicTaxBps'] == null
+          ? null
+          : LoopV2Launch2Codec.bps(map, 'dynamicTaxBps'),
+      rewardWeight: map['rewardWeight'] == null
+          ? null
+          : LoopV2Launch2Codec.amount(map, 'rewardWeight'),
     );
   }
 

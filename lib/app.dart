@@ -78,6 +78,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart'; // S136
+import 'package:loop_mobile/features/launch2/launch2_dynamic_rewards_screen.dart'; // S168
 import 'package:loop_mobile/features/launch2/launch2_routes.dart'; // S136
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
@@ -1823,6 +1824,16 @@ final List<RouteBase> _launch2Routes = <RouteBase>[
       instanceId: Launch2Route.idOf(state.uri),
       onBack: () => _popOrHome(context),
       onNavigate: (location) => context.push(location),
+    ),
+  ),
+  // S168 · decision 0157: 外盘奖励 of one LoopDynamic instance, addressed
+  // by the same `id` query parameter.
+  GoRoute(
+    path: Launch2Route.dynamicRewardsPath,
+    builder: (context, state) => Launch2DynamicRewardsScreen(
+      key: ValueKey<String>('launch2-dynamic-rewards-${state.uri.query}'),
+      instanceId: Launch2Route.idOf(state.uri),
+      onBack: () => _popOrHome(context),
     ),
   ),
 ];

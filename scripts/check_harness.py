@@ -8273,7 +8273,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 111-route manifest."""
+    """Keep the Dart route table equal to the frozen 112-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8290,8 +8290,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         for item in module
     ]
     # S135 (decision 0138): 105 → 111, the MEME v2 project side.
-    if manifest.get("count") != 111 or len(expected_slugs) != 111:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 111 routes")
+    # S168 (decision 0157): 111 → 112, 外盘奖励 of a LoopDynamic instance.
+    if manifest.get("count") != 112 or len(expected_slugs) != 112:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 112 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "chat":
@@ -8325,7 +8326,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 111 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 112 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -15673,6 +15674,19 @@ LAUNCH2_GATED_SURFACES = (
     ("lib/features/launch2/launch2_instance_screen.dart", "launch2ReadsBlocked(ref)"),
     ("lib/features/launch2/launch2_wallet_rows.dart", "launch2SurfaceVisible(ref)"),
     ("lib/features/meme/meme_screen.dart", "launch2SurfaceVisible(ref)"),
+    # S168 (decision 0157): 外盘奖励.
+    (
+        "lib/features/launch2/launch2_dynamic_rewards_screen.dart",
+        "launch2ReadsBlocked(ref)",
+    ),
+)
+# S168 (decision 0157): the LoopDynamic Hook kind has its own port, also
+# unavailable until lib/main.dart mounts its adapter.
+LAUNCH2_DYNAMIC_PORT = (
+    "lib/features/launch2/launch2_dynamic_pool_gateway.dart",
+    "launch2DynamicPoolGatewayProvider",
+    "Launch2DynamicPoolGateway",
+    "UnavailableLaunch2DynamicPoolGateway",
 )
 LAUNCH2_SIGNING_OWNER = "lib/features/launch2/launch2_signing.dart"
 
@@ -15686,23 +15700,31 @@ def check_launch2_user_contract(root: Path) -> list[str]:
     path = root / relative
     if not path.is_file():
         return errors
-    source = strip_dart_comments(read_text(path))
-    default_pattern = re.compile(
-        rf"final\s+{re.escape(provider)}\s*=\s*Provider<{re.escape(port)}>\s*"
-        rf"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+{re.escape(unavailable)}\s*"
-        r"\(\s*\)\s*,?\s*\)\s*;",
-        re.DOTALL,
-    )
-    if default_pattern.search(source) is None:
-        errors.append(
-            f"{provider} must default directly to const {unavailable}(); MEME v2 "
-            "is unavailable until lib/main.dart mounts its adapter (decision 0139)"
-        )
     main_path = root / "lib/main.dart"
-    if main_path.is_file() and (
-        "launch2GatewayProvider.overrideWith(" not in strip_dart_comments(read_text(main_path))
-    ):
-        errors.append("lib/main.dart must mount the launch2 adapter (decision 0139)")
+    main_source = (
+        strip_dart_comments(read_text(main_path)) if main_path.is_file() else None
+    )
+    for relative, provider, port, unavailable in (LAUNCH2_PORT, LAUNCH2_DYNAMIC_PORT):
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing MEME v2 port: {relative}")
+            continue
+        source = strip_dart_comments(read_text(path))
+        default_pattern = re.compile(
+            rf"final\s+{re.escape(provider)}\s*=\s*Provider<{re.escape(port)}>\s*"
+            rf"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+{re.escape(unavailable)}\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(source) is None:
+            errors.append(
+                f"{provider} must default directly to const {unavailable}(); MEME v2 "
+                "is unavailable until lib/main.dart mounts its adapter (decision 0139)"
+            )
+        if main_source is not None and f"{provider}.overrideWith(" not in main_source:
+            errors.append(
+                f"lib/main.dart must mount the {provider} adapter (decision 0139 / 0157)"
+            )
     controllers = root / LAUNCH2_CONTROLLERS
     if controllers.is_file():
         text = strip_dart_comments(read_text(controllers))

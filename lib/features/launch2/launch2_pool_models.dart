@@ -135,12 +135,23 @@ final class Launch2PoolQuote {
     required this.expiresAt,
     required this.quotedAt,
     required this.quotedAtBlock,
+    this.dynamicTaxBps,
+    this.rewardWeight,
   });
 
   final String instanceId;
   final String walletId;
   final Launch2Side side;
   final Launch2PoolMode mode;
+
+  /// Decision 0157 · a LoopDynamic pool: the dynamic sell tax on top of
+  /// [taxBps] when the server could price it (a `POST_SWAP` Hook prices it
+  /// after the swap, so it may be absent). `null` from an OfficialTax pool.
+  final int? dynamicTaxBps;
+
+  /// Decision 0157 · a LoopDynamic buy: the USD1 weight this buy adds to the
+  /// running round. `null` from an OfficialTax pool or without a round.
+  final Decimal? rewardWeight;
 
   /// The typed amount; the prepare body carries it unchanged.
   final Decimal requestedAmount;

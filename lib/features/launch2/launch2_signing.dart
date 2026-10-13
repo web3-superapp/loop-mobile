@@ -73,18 +73,23 @@ String launch2IntentNoun(Launch2IntentKind kind) => switch (kind) {
   Launch2IntentKind.nftMint => '购买 NFT',
   Launch2IntentKind.buy => '买入',
   Launch2IntentKind.sell => '卖出',
+  Launch2IntentKind.rewardClaim => '领取奖励',
 };
 
 String launch2IntentTitle(
   Launch2IntentKind kind, {
   Launch2Venue venue = Launch2Venue.curve,
-}) => venue == Launch2Venue.officialPool
-    ? '确认外盘${launch2IntentNoun(kind)}'
-    : '确认${launch2IntentNoun(kind)}';
+}) => switch (venue) {
+  Launch2Venue.officialPool => '确认外盘${launch2IntentNoun(kind)}',
+  Launch2Venue.loopDynamicRewards => '确认领取外盘奖励',
+  Launch2Venue.curve => '确认${launch2IntentNoun(kind)}',
+};
 
 /// Whom an approval lets spend: the curve, the NFT or the pool's router.
 String _spenderNoun(Launch2Intent intent) =>
-    intent.venue == Launch2Venue.officialPool
+    intent.venue == Launch2Venue.loopDynamicRewards
+    ? '奖励合约'
+    : intent.venue == Launch2Venue.officialPool
     ? '官方池路由'
     : intent.kind == Launch2IntentKind.nftMint
     ? 'NFT 合约'
@@ -93,7 +98,11 @@ String _spenderNoun(Launch2Intent intent) =>
 /// The address row: the router or the contract, and when the intent carries
 /// an approval, that it is also the spender.
 String _addressLabel(Launch2Intent intent) => intent.approval == null
-    ? (intent.venue == Launch2Venue.officialPool ? '路由' : '合约')
+    ? switch (intent.venue) {
+        Launch2Venue.officialPool => '路由',
+        Launch2Venue.loopDynamicRewards => '奖励合约',
+        Launch2Venue.curve => '合约',
+      }
     : '授权给${_spenderNoun(intent)}';
 
 /// The tax line's label: the intent's own rate, else the curve's 10%.
@@ -125,6 +134,7 @@ List<IntentField> launch2IntentFields(
           intent.venue == Launch2Venue.officialPool
               ? '在官方池卖出 $meme'
               : '卖出 $meme',
+        Launch2IntentKind.rewardClaim => '领取 $meme 外盘奖励',
       },
     ),
     switch (intent.kind) {
@@ -139,6 +149,11 @@ List<IntentField> launch2IntentFields(
       Launch2IntentKind.sell => IntentField(
         label: '卖出',
         value: launch2MemeLabel(intent.amountIn, ticker),
+      ),
+      // Decision 0157: what the claim pays out, the intent's own figure.
+      Launch2IntentKind.rewardClaim => IntentField(
+        label: '领取',
+        value: launch2Usd1Label(intent.expectedOut, maxFractionDigits: 4),
       ),
     },
     if (intent.kind == Launch2IntentKind.buy) ...<IntentField>[
@@ -161,7 +176,8 @@ List<IntentField> launch2IntentFields(
         value: launch2Usd1Label(intent.minOut, maxFractionDigits: 4),
       ),
     ],
-    if (intent.kind != Launch2IntentKind.nftMint)
+    if (intent.kind != Launch2IntentKind.nftMint &&
+        intent.kind != Launch2IntentKind.rewardClaim)
       IntentField(
         label: _taxLabel(intent),
         value: intent.taxMeme != null
@@ -293,7 +309,7 @@ enum Launch2SignStep { approving, refreshing, signingMain }
 /// (decision 0152): the most a buy or an NFT purchase pays (`amountIn`, tax
 /// included), what a sell expects to receive (`expectedOut`).
 Decimal launch2IntentStepUpUsd1(Launch2Intent intent) => switch (intent.kind) {
-  Launch2IntentKind.sell => intent.expectedOut,
+  Launch2IntentKind.sell || Launch2IntentKind.rewardClaim => intent.expectedOut,
   Launch2IntentKind.buy || Launch2IntentKind.nftMint => intent.amountIn,
 };
 

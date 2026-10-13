@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
@@ -106,9 +107,34 @@ final class Launch2PoolTradeView {
   final String? provenance;
 }
 
+/// Decision 0157 · zh-CN for the LoopDynamic refusals: the server's own
+/// `LAUNCH2_EXACT_OUT_UNSUPPORTED` and the LoopHook / LoopRouter reverts.
+/// The revert names arrive upper-snake (the reason-code pattern) and may
+/// carry a `LAUNCH2_` / `POOL_` / `HOOK_` prefix; the Solidity spelling is
+/// matched too. `null` for any other code.
+String? launch2DynamicReasonText(String? reasonCode) {
+  if (reasonCode == null) return null;
+  final code = reasonCode.replaceFirst(
+    RegExp(r'^(LAUNCH2_|POOL_|HOOK_|LOOP_HOOK_|LOOP_ROUTER_)'),
+    '',
+  );
+  return switch (code) {
+    'EXACT_OUT_UNSUPPORTED' => '这个项目只支持按支付金额买入',
+    'UNAUTHORIZED_ROUTER' || 'UnauthorizedRouter' => '这个交易入口不被该项目接受',
+    'UNSUPPORTED_SWAP' || 'UnsupportedSwap' => '这个项目不支持这种交易方式',
+    'BUSY' || 'Busy' => '池子正忙，几秒后再试',
+    'ROUND_NOT_CLOSED' || 'RoundNotClosed' => '本轮还没结束，结束后可领',
+    'ALREADY_CLAIMED' || 'AlreadyClaimed' => '这一轮已经领过',
+    _ => null,
+  };
+}
+
 /// zh-CN for the pool routes' own refusals (loop-api S146), then the
 /// curve's catalogue. Every line says nothing was traded.
-String launch2PoolReasonText(String? reasonCode) => switch (reasonCode) {
+String launch2PoolReasonText(String? reasonCode) =>
+    launch2DynamicReasonText(reasonCode) ?? _poolReasonText(reasonCode);
+
+String _poolReasonText(String? reasonCode) => switch (reasonCode) {
   'POOL_QUOTE_UNAVAILABLE' => '官方池试算没有通过，换个金额再试',
   'POOL_NOT_GRADUATED' => '项目还没有毕业，官方池尚未开放',
   'POOL_INSUFFICIENT_LIQUIDITY' => '官方池流动性不足，换个小一点的金额试试',
@@ -150,8 +176,12 @@ String _usd1(Decimal value) => launch2Usd1Label(value, maxFractionDigits: 4);
 /// The quote's lines, said the way the signing sheet says them.
 List<Launch2PoolLine> launch2PoolQuoteLines(
   Launch2PoolQuote quote,
-  String ticker,
-) {
+  String ticker, {
+  Launch2DynamicPoolState? dynamicPool,
+}) {
+  if (dynamicPool != null) {
+    return launch2DynamicQuoteLines(quote, ticker, dynamicPool);
+  }
   final buy = quote.side == Launch2Side.buy;
   String out(Decimal value) =>
       buy ? launch2MemeLabel(value, ticker) : _usd1(value);
@@ -176,6 +206,54 @@ List<Launch2PoolLine> launch2PoolQuoteLines(
           ? launch2MemeLabel(quote.taxAmount, ticker)
           : _usd1(quote.taxAmount),
     ),
+    Launch2PoolLine('price', '成交均价', launch2PriceLabel(quote.averagePriceUsd1)),
+    Launch2PoolLine('slippage', '滑点上限', launch2BpsLabel(quote.slippageBps)),
+  ];
+}
+
+/// Decision 0157 · a LoopDynamic quote (exactIn only): the base tax and,
+/// on a sell, the dynamic tax on one line; on a buy, the weight it adds to
+/// the running round.
+List<Launch2PoolLine> launch2DynamicQuoteLines(
+  Launch2PoolQuote quote,
+  String ticker,
+  Launch2DynamicPoolState dynamicPool,
+) {
+  final buy = quote.side == Launch2Side.buy;
+  String out(Decimal value) =>
+      buy ? launch2MemeLabel(value, ticker) : _usd1(value);
+  final base = '基础税 ${launch2BpsLabel(quote.taxBps)}';
+  final dynamicBps = quote.dynamicTaxBps;
+  final weight = quote.rewardWeight;
+  return <Launch2PoolLine>[
+    Launch2PoolLine('expected', buy ? '预计获得' : '预计到手', out(quote.expectedOut)),
+    Launch2PoolLine('min', buy ? '最少获得' : '最少到手', out(quote.minOut)),
+    if (buy)
+      // S165: a LoopDynamic buy pays the same 2% pool tax, out of the MEME
+      // it receives.
+      Launch2PoolLine(
+        'tax',
+        '外盘税 ${launch2BpsLabel(quote.taxBps)}（扣 MEME）',
+        launch2MemeLabel(quote.taxAmount, ticker),
+      )
+    else if (dynamicBps != null)
+      Launch2PoolLine(
+        'tax',
+        '$base + 当前动态税 ${launch2BpsLabel(dynamicBps)}（扣 USD1）',
+        _usd1(quote.taxAmount),
+      )
+    else
+      Launch2PoolLine('tax', '$base + 当前动态税（扣 USD1）', '成交后按跌幅计'),
+    if (buy)
+      Launch2PoolLine(
+        'reward-weight',
+        '本笔计入本轮奖励权重',
+        weight != null
+            ? _usd1(weight)
+            : dynamicPool.armed
+            ? '以成交为准'
+            : '本轮未开启',
+      ),
     Launch2PoolLine('price', '成交均价', launch2PriceLabel(quote.averagePriceUsd1)),
     Launch2PoolLine('slippage', '滑点上限', launch2BpsLabel(quote.slippageBps)),
   ];
@@ -215,6 +293,7 @@ Launch2PoolTradeView launch2PoolTradeView({
   required bool locked,
   LoopChainException? quoteFailure,
   Launch2PoolHolding? holding,
+  Launch2DynamicPoolState? dynamicPool,
 }) {
   final ticker = detail.row.ticker;
   final (label, suffix) = launch2PoolField(side, mode, ticker);
@@ -254,7 +333,7 @@ Launch2PoolTradeView launch2PoolTradeView({
       : '没有取到报价 · ${launch2PoolFailureText(quoteFailure)}';
   final lines = quote == null
       ? const <Launch2PoolLine>[]
-      : launch2PoolQuoteLines(quote, ticker);
+      : launch2PoolQuoteLines(quote, ticker, dynamicPool: dynamicPool);
   final String? placeholder = quote != null || failureLine != null
       ? null
       : overHolding ?? (quoting ? '正在向官方池报价…' : '输入金额后显示报价');
@@ -292,7 +371,9 @@ Launch2PoolTradeView launch2PoolTradeView({
   return Launch2PoolTradeView(
     fieldLabel: label,
     fieldSuffix: suffix,
-    taxLabel: '外盘税 ${launch2BpsLabel(taxBps)}',
+    taxLabel: dynamicPool == null
+        ? '外盘税 ${launch2BpsLabel(taxBps)}'
+        : '外盘税 ${launch2BpsLabel(taxBps)} + 卖出动态税',
     lines: lines,
     quotePlaceholder: placeholder,
     overHolding: overHolding != null,
@@ -315,6 +396,15 @@ Launch2PoolTradeView launch2PoolTradeView({
     holdingLine: holdingLine,
     provenance: quote == null
         ? null
+        : dynamicPool != null
+        ? '按区块 ${quote.quotedAtBlock} 的官方池计算，已扣 '
+              '${launch2BpsLabel(quote.taxBps)} ${quote.side == Launch2Side.buy ? '外盘税' : '基础税'}'
+              '${quote.side == Launch2Side.buy
+                  ? ''
+                  : quote.dynamicTaxBps == null
+                  ? '，动态税成交后按跌幅另扣'
+                  : '，动态税按当前跌幅计入'}'
+              '；到期自动重新报价。'
         : '按区块 ${quote.quotedAtBlock} 的官方池计算，已扣 '
               '${launch2BpsLabel(quote.taxBps)} 外盘税；到期自动重新报价。',
   );
