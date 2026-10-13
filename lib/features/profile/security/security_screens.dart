@@ -4,11 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/account/account_screens.dart'
+    show walletAutomaticRecoveryEvidence;
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/security/security_controllers.dart';
 import 'package:loop_mobile/features/profile/security/security_gateway.dart';
 import 'package:loop_mobile/features/profile/security/security_models.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
+import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -40,6 +46,9 @@ const _securityMethodDeferredLabel = '还没有开放';
 bool _securityMethodIsDeferred(String reasonCode) =>
     reasonCode.endsWith('_EVIDENCE_PENDING') ||
     reasonCode.endsWith('_NOT_DELIVERED') ||
+    // Decision 0156: the `current` projection's passkey without a published
+    // relying party. Nobody can turn it on until the server has one.
+    reasonCode == 'PASSKEY_RELYING_PARTY_NOT_CONFIGURED' ||
     reasonCode.endsWith('_DEFERRED');
 
 bool _securityBlocked(
@@ -48,9 +57,13 @@ bool _securityBlocked(
 ) => loopChainCapabilityBlocks(mode, capability);
 
 /// One `unavailable` security method row plus its "how to enable" note.
+///
+/// It takes the method's id and the server's own reason, so it can only ever
+/// be built for a method that has one (decision 0156: an available method
+/// has no reason and is drawn by `_availableMethodRow`).
 class _SecurityMethodRow extends LoopRecordRow {
   _SecurityMethodRow({
-    required LoopSecurityCapability capability,
+    required ({LoopSecurityCapabilityId id, String reasonCode}) capability,
     required LoopRowPosition position,
     VoidCallback? onTap,
   }) : this._(
@@ -64,7 +77,7 @@ class _SecurityMethodRow extends LoopRecordRow {
   /// row's title with 「还没有开放」 after it and the badge already carries
   /// that. A method that exists keeps the server's sentence.
   _SecurityMethodRow._({
-    required LoopSecurityCapability capability,
+    required ({LoopSecurityCapabilityId id, String reasonCode}) capability,
     required bool deferred,
     required super.position,
     super.onTap,
@@ -133,6 +146,34 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
       }
     }
     final resource = summary.value;
+    // Decision 0156: an available MFA / Passkey row says what the provider
+    // holds for this account, so the provider is asked once the server has
+    // said the method works. The all-pending projection asks nothing.
+    final mfa = ref.watch(loopMfaProvider);
+    final asksProvider =
+        methods.isReady &&
+        methods.value!.items.any(
+          (item) =>
+              item.isAvailable &&
+              item.id != LoopSecurityCapabilityId.autoRecovery,
+        );
+    if (asksProvider && mfa.phase == LoopMfaPhase.unknown) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(loopMfaProvider.notifier).load());
+      });
+    }
+    final notOpen = methods.isReady
+        ? methods.value!.items
+              .where(
+                (item) =>
+                    !item.isAvailable &&
+                    !loopHiddenSecurityCapabilities.contains(item.id),
+              )
+              .map((item) => item.id.label)
+              .toList(growable: false)
+        : null;
+    final anyAvailable =
+        methods.isReady && methods.value!.items.any((i) => i.isAvailable);
 
     // Decision 0126: flat sections. The Chalk posture card restated the
     // device count the 设备 row already carries, so it is gone.
@@ -171,6 +212,11 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
             _SecurityMethodGroup(
               capabilities: methods.value!,
               onNavigate: widget.onNavigate,
+              mfa: mfa,
+              onOpenMfa: () => unawaited(showLoopMfaSheet(context)),
+              onOpenPasskey: () => unawaited(showLoopPasskeySheet(context)),
+              onRetryMfa: () =>
+                  unawaited(ref.read(loopMfaProvider.notifier).load()),
             ),
           // Decision 0152: the large-amount step-up is this device's and this
           // account's own rule. It reads no security resource, so it stays
@@ -217,10 +263,14 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
               text: '观察于 ${loopRelativeTime(resource.observedAt)}',
             ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('security-scope-notice'),
+          LoopNotice(
+            key: const ValueKey<String>('security-scope-notice'),
             icon: 'shield',
-            body: '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。',
+            body: !anyAvailable
+                ? '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。'
+                : notOpen!.isEmpty
+                ? '这些保护由 Privy 提供。'
+                : '这些保护由 Privy 提供。${notOpen.join('、')}开放后会在这里显示。',
           ),
           const SizedBox(height: 12),
         ],
@@ -237,14 +287,149 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
 const Set<LoopSecurityCapabilityId> loopHiddenSecurityCapabilities =
     <LoopSecurityCapabilityId>{LoopSecurityCapabilityId.recoveryPassword};
 
+/// What an available method that the account has turned on is called.
+const _securityMethodOnLabel = '已开启';
+
+/// What a method that is in force for every account is called (自动恢复).
+const _securityMethodInForceLabel = '已启用';
+
+/// The 自动恢复 row's source line (decision 0156): the server's reference
+/// without its engineering tag (「S60a: 」), else the S60a sentence itself.
+String securityAutoRecoverySource(LoopSecurityCapability capability) {
+  final reference = (capability.evidenceReference ?? '')
+      .replaceFirst(RegExp(r'^[A-Za-z][A-Za-z0-9]*:\s*'), '')
+      .trim();
+  return reference.isEmpty ? walletAutomaticRecoveryEvidence : reference;
+}
+
+/// One method the `current` projection reports available (decision 0156).
+///
+/// Available is the server's word for "this client's flow works", never for
+/// "this account has it". 已开启 / 未开启 come from the provider's own answer
+/// on this device ([LoopMfaState]); before that answer the row says it is
+/// reading, and an unanswered provider is not 未开启.
+LoopRecordRow _availableMethodRow({
+  required LoopSecurityCapability capability,
+  required LoopMfaState mfa,
+  required LoopRowPosition position,
+  required VoidCallback onOpenMfa,
+  required VoidCallback onOpenPasskey,
+  required VoidCallback onRetry,
+}) {
+  final id = capability.id;
+  final key = ValueKey<String>('security-method-${id.wireName}');
+  if (id == LoopSecurityCapabilityId.autoRecovery) {
+    final source = securityAutoRecoverySource(capability);
+    return LoopRecordRow(
+      key: key,
+      title: id.label,
+      subtitle: source,
+      subtitleMaxLines: 3,
+      trailingBadge: const LoopBadge(
+        _securityMethodInForceLabel,
+        kind: LoopBadgeKind.up,
+      ),
+      position: position,
+      semanticLabel: '${id.label}，$_securityMethodInForceLabel，$source',
+    );
+  }
+  final passkey = id == LoopSecurityCapabilityId.passkey;
+  if (passkey && !mfa.canUsePasskey) {
+    // The server publishes the relying party, but this build carries no
+    // domain credential: the sheet could not create anything here.
+    final reason = loopMfaFailureText(
+      LoopMfaFailureKind.passkeyDomainUnconfigured,
+    );
+    return LoopRecordRow(
+      key: key,
+      title: id.label,
+      subtitle: reason,
+      subtitleMaxLines: 2,
+      trailingBadge: const LoopBadge('不可用'),
+      position: position,
+      semanticLabel: '${id.label}，不可用，$reason',
+    );
+  }
+  switch (mfa.phase) {
+    case LoopMfaPhase.unknown:
+    case LoopMfaPhase.reading:
+      return LoopRecordRow(
+        key: key,
+        title: id.label,
+        subtitle: id.description,
+        subtitleMaxLines: 2,
+        trailingBadge: const LoopBadge('读取中'),
+        position: position,
+        semanticLabel: '${id.label}，正在读取登录服务的回答',
+      );
+    case LoopMfaPhase.unavailable:
+      final reason = loopMfaFailureText(
+        mfa.failure ?? LoopMfaFailureKind.unavailable,
+      );
+      return LoopRecordRow(
+        key: key,
+        title: id.label,
+        subtitle: '$reason点按重试。',
+        subtitleMaxLines: 2,
+        trailingBadge: const LoopBadge('读不到'),
+        onTap: onRetry,
+        position: position,
+        semanticLabel: '${id.label}，读不到，$reason点按重试',
+      );
+    case LoopMfaPhase.known:
+      break;
+  }
+  final on = passkey ? mfa.hasPasskey : mfa.isEnrolled;
+  final String detail;
+  if (!on) {
+    detail = id.description;
+  } else if (passkey) {
+    final named = mfa.passkeys
+        .map((one) => one.label)
+        .whereType<String>()
+        .where((label) => label.trim().isNotEmpty)
+        .toList(growable: false);
+    detail = named.isEmpty ? '登录服务说这个账号已经有 Passkey' : named.join(' · ');
+  } else {
+    detail = mfa.enrollments.map((one) => one.kind.label).join(' · ');
+  }
+  final label = on ? _securityMethodOnLabel : _securityMethodOffLabel;
+  return LoopRecordRow(
+    key: key,
+    title: id.label,
+    subtitle: detail,
+    subtitleMaxLines: 2,
+    trailingBadge: LoopBadge(
+      label,
+      kind: on ? LoopBadgeKind.up : LoopBadgeKind.mute,
+    ),
+    onTap: mfa.isBusy ? null : (passkey ? onOpenPasskey : onOpenMfa),
+    position: position,
+    semanticLabel: on
+        ? '${id.label}，$label：$detail'
+        : '${id.label}，$label，点按开启',
+  );
+}
+
 class _SecurityMethodGroup extends StatelessWidget {
   const _SecurityMethodGroup({
     required this.capabilities,
     required this.onNavigate,
+    required this.mfa,
+    required this.onOpenMfa,
+    required this.onOpenPasskey,
+    required this.onRetryMfa,
   });
 
   final LoopSecurityCapabilities capabilities;
   final ValueChanged<String> onNavigate;
+
+  /// The provider's answer about this account's second factor and passkeys.
+  /// Read only by rows the server reports available.
+  final LoopMfaState mfa;
+  final VoidCallback onOpenMfa;
+  final VoidCallback onOpenPasskey;
+  final VoidCallback onRetryMfa;
 
   /// `验证` in the prototype: the two factors that guard a session.
   static const _verification = <LoopSecurityCapabilityId>{
@@ -252,28 +437,45 @@ class _SecurityMethodGroup extends StatelessWidget {
     LoopSecurityCapabilityId.passkey,
   };
 
-  List<LoopRecordRow> _rows(
-    List<LoopSecurityCapability> items,
-  ) => <LoopRecordRow>[
-    for (var index = 0; index < items.length; index += 1)
-      _SecurityMethodRow(
-        capability: items[index],
-        position: items.length == 1
-            ? LoopRowPosition.single
-            : index == 0
-            ? LoopRowPosition.first
-            : index == items.length - 1
-            ? LoopRowPosition.last
-            : LoopRowPosition.middle,
-        onTap: switch (items[index].id) {
-          LoopSecurityCapabilityId.socialRecovery => () => onNavigate(
-            'social-recovery',
+  List<LoopRecordRow> _rows(List<LoopSecurityCapability> items) {
+    LoopRowPosition positionOf(int index) => items.length == 1
+        ? LoopRowPosition.single
+        : index == 0
+        ? LoopRowPosition.first
+        : index == items.length - 1
+        ? LoopRowPosition.last
+        : LoopRowPosition.middle;
+    return <LoopRecordRow>[
+      for (var index = 0; index < items.length; index += 1)
+        if (items[index].isAvailable)
+          _availableMethodRow(
+            capability: items[index],
+            mfa: mfa,
+            position: positionOf(index),
+            onOpenMfa: onOpenMfa,
+            onOpenPasskey: onOpenPasskey,
+            onRetry: onRetryMfa,
+          )
+        else
+          _SecurityMethodRow(
+            capability: (
+              id: items[index].id,
+              reasonCode:
+                  items[index].reasonCode ?? items[index].evidenceReasonCode,
+            ),
+            position: positionOf(index),
+            onTap: switch (items[index].id) {
+              LoopSecurityCapabilityId.socialRecovery => () => onNavigate(
+                'social-recovery',
+              ),
+              LoopSecurityCapabilityId.keyExport => () => onNavigate(
+                'key-export',
+              ),
+              _ => null,
+            },
           ),
-          LoopSecurityCapabilityId.keyExport => () => onNavigate('key-export'),
-          _ => null,
-        },
-      ),
-  ];
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -286,6 +488,11 @@ class _SecurityMethodGroup extends StatelessWidget {
     final recovery = items
         .where((item) => !_verification.contains(item.id))
         .toList(growable: false);
+    // Decision 0156: the guide explains only what is still not open. An
+    // available method is explained by its own row.
+    final deferred = items
+        .where((item) => !item.isAvailable)
+        .toList(growable: false);
     return Column(
       children: <Widget>[
         if (verification.isNotEmpty) ...<Widget>[
@@ -296,36 +503,40 @@ class _SecurityMethodGroup extends StatelessWidget {
           const LoopLabel('恢复'),
           LoopRecordGroup(rows: _rows(recovery)),
         ],
-        LoopDisclosure(
-          key: const ValueKey<String>('security-methods-guide'),
-          summary: '这些保护怎么开启',
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                for (final item in items)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          item.id.label,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          item.id.description,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
+        if (deferred.isNotEmpty)
+          LoopDisclosure(
+            key: const ValueKey<String>('security-methods-guide'),
+            summary: '这些保护怎么开启',
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  for (final item in deferred)
+                    Padding(
+                      key: ValueKey<String>(
+                        'security-methods-guide-${item.id.wireName}',
+                      ),
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            item.id.label,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            item.id.description,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -866,7 +1077,8 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
           LoopUnavailableCard(
             key: const ValueKey<String>('key-export-unavailable'),
             label: '导出私钥当前不可用',
-            reasonCode: method.reasonCode,
+            // The codec admits no available form for this method.
+            reasonCode: method.reasonCode ?? method.evidenceReasonCode,
           ),
         const LoopLabel('这一步现在不会发生什么'),
         const LoopRecordGroup(
@@ -997,7 +1209,8 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
           LoopUnavailableCard(
             key: const ValueKey<String>('social-recovery-unavailable'),
             label: '社交恢复当前不可用',
-            reasonCode: method.reasonCode,
+            // The codec admits no available form for this method.
+            reasonCode: method.reasonCode ?? method.evidenceReasonCode,
           ),
         // The prototype's own shape for "no guardians yet": a label and an
         // empty frame, not a paragraph about why the list is missing

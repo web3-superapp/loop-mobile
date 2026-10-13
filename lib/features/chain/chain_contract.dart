@@ -89,6 +89,10 @@ final class LoopChainException implements Exception {
     this.requiredUsd1,
     this.requiredAmountIn,
     this.maxAmountIn,
+    this.balanceUsd1,
+    this.balanceMeme,
+    this.requiredBnb,
+    this.balanceBnb,
   });
 
   final LoopChainFailureKind kind;
@@ -116,6 +120,14 @@ final class LoopChainException implements Exception {
   final String? requiredUsd1;
   final String? requiredAmountIn;
   final String? maxAmountIn;
+
+  /// The balances a launch2 refusal compared (decision 0156): the wallet's
+  /// USD1 or MEME, and on a gas refusal the fee ceiling next to the native
+  /// balance. Exact decimal strings, each optional.
+  final String? balanceUsd1;
+  final String? balanceMeme;
+  final String? requiredBnb;
+  final String? balanceBnb;
 
   bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;
 

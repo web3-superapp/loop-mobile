@@ -29,6 +29,10 @@ final class LoopFailureDetails {
     this.requiredUsd1,
     this.requiredAmountIn,
     this.maxAmountIn,
+    this.balanceUsd1,
+    this.balanceMeme,
+    this.requiredBnb,
+    this.balanceBnb,
   });
 
   static final RegExp _reasonCodePattern = RegExp(r'^[A-Z][A-Z0-9_]{0,63}$');
@@ -62,6 +66,10 @@ final class LoopFailureDetails {
       requiredUsd1: scalar('requiredUsd1', _decimalPattern, 110),
       requiredAmountIn: scalar('requiredAmountIn', _decimalPattern, 110),
       maxAmountIn: scalar('maxAmountIn', _decimalPattern, 110),
+      balanceUsd1: scalar('balanceUsd1', _decimalPattern, 110),
+      balanceMeme: scalar('balanceMeme', _decimalPattern, 110),
+      requiredBnb: scalar('requiredBnb', _decimalPattern, 110),
+      balanceBnb: scalar('balanceBnb', _decimalPattern, 110),
     );
     return details.isEmpty ? null : details;
   }
@@ -95,6 +103,17 @@ final class LoopFailureDetails {
   final String? requiredAmountIn;
   final String? maxAmountIn;
 
+  /// The wallet's own balances a launch2 refusal compared (loop-api decision
+  /// 0129 §1, client decision 0156): USD1 on a USD1 shortfall, the MEME on a
+  /// sell beyond the holding, and on `LAUNCH2_GAS_INSUFFICIENT` the fee
+  /// ceiling (`requiredBnb`) next to the native balance (`balanceBnb`).
+  /// Whole-unit decimal strings, each optional; a malformed one drops only
+  /// itself.
+  final String? balanceUsd1;
+  final String? balanceMeme;
+  final String? requiredBnb;
+  final String? balanceBnb;
+
   bool get isEmpty =>
       reasonCode == null &&
       exposureUsd == null &&
@@ -104,7 +123,11 @@ final class LoopFailureDetails {
       scope == null &&
       requiredUsd1 == null &&
       requiredAmountIn == null &&
-      maxAmountIn == null;
+      maxAmountIn == null &&
+      balanceUsd1 == null &&
+      balanceMeme == null &&
+      requiredBnb == null &&
+      balanceBnb == null;
 
   /// True only when both figures the ceiling rules compare are present.
   bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;

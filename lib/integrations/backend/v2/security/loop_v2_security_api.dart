@@ -77,6 +77,21 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
 
   static const devicesPath = '/v2/devices';
   static const capabilitiesPath = '/v2/security/capabilities';
+
+  /// The opt-in projection that states what is in force today (loop-api
+  /// decision 0129 §4, client decision 0156). The default projection is the
+  /// all-pending document older installs still parse.
+  static const capabilitiesQuery = <String, String>{'projection': 'current'};
+
+  /// The methods this client has a flow for, and so the only ones the
+  /// `current` projection may report `available`. The other three have no
+  /// screen that could act on them; a document that says otherwise is not
+  /// the one this client was built against.
+  static const availableCapabilities = <LoopSecurityCapabilityId>{
+    LoopSecurityCapabilityId.mfa,
+    LoopSecurityCapabilityId.passkey,
+    LoopSecurityCapabilityId.autoRecovery,
+  };
   static const summaryPath = '/v2/security/summary';
   static const deviceListLimit = 100;
   static const recentSecurityEventLimit = 10;
@@ -218,6 +233,7 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
     try {
       final response = await _dio.get<Object?>(
         capabilitiesPath,
+        queryParameters: capabilitiesQuery,
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
@@ -250,33 +266,69 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
         if (id != LoopSecurityCapabilityId.values[index]) {
           LoopV2ChainCodec.invalid();
         }
-        if (map['status'] != 'unavailable') LoopV2ChainCodec.invalid();
-        final evidence = LoopV2Contract.strictMap(
-          map['evidence'],
-          const <String>{'status', 'reasonCode'},
+        final guideKey = LoopV2ChainCodec.requireString(
+          map,
+          'guideKey',
+          pattern: _guideKeyPattern,
+          maxLength: 96,
         );
-        // `/v2/security/capabilities` is its own document: all six Privy
-        // items are permanently `unavailable` with pending evidence, and the
-        // `confirmed` status decision 0068 added to `/v2/meta/capabilities`
-        // does not reach it. Widening this would claim a device-verified
-        // Privy feature that has none.
-        if (evidence['status'] != 'pending') LoopV2ChainCodec.invalid();
-        items.add(
-          LoopSecurityCapability(
-            id: id,
-            reasonCode: LoopV2ChainCodec.requireReasonCode(map, 'reasonCode'),
-            evidenceReasonCode: LoopV2ChainCodec.requireReasonCode(
-              evidence,
-              'reasonCode',
-            ),
-            guideKey: LoopV2ChainCodec.requireString(
-              map,
-              'guideKey',
-              pattern: _guideKeyPattern,
-              maxLength: 96,
-            ),
-          ),
-        );
+        switch (map['status']) {
+          case 'unavailable':
+            // The default projection's only shape, and the `current`
+            // projection's shape for a method that is not in force: a reason
+            // of its own and pending evidence with no reference.
+            final evidence = LoopV2Contract.strictMap(
+              map['evidence'],
+              const <String>{'status', 'reasonCode'},
+            );
+            if (evidence['status'] != 'pending') LoopV2ChainCodec.invalid();
+            items.add(
+              LoopSecurityCapability(
+                id: id,
+                reasonCode: LoopV2ChainCodec.requireReasonCode(
+                  map,
+                  'reasonCode',
+                ),
+                evidenceReasonCode: LoopV2ChainCodec.requireReasonCode(
+                  evidence,
+                  'reasonCode',
+                ),
+                guideKey: guideKey,
+              ),
+            );
+          case 'available':
+            // Decision 0156: the method works through this client's own
+            // Privy flow. It says nothing about this account having turned
+            // it on — that stays the provider's answer on the device. The
+            // reason is an explicit `null` and the evidence is confirmed
+            // with its source sentence.
+            if (!availableCapabilities.contains(id) ||
+                map['reasonCode'] != null) {
+              LoopV2ChainCodec.invalid();
+            }
+            final evidence = LoopV2Contract.strictMap(
+              map['evidence'],
+              const <String>{'status', 'reasonCode', 'reference'},
+            );
+            if (evidence['status'] != 'confirmed') LoopV2ChainCodec.invalid();
+            items.add(
+              LoopSecurityCapability.available(
+                id: id,
+                evidenceReasonCode: LoopV2ChainCodec.requireReasonCode(
+                  evidence,
+                  'reasonCode',
+                ),
+                evidenceReference: LoopV2ChainCodec.requireText(
+                  evidence,
+                  'reference',
+                  maxLength: 120,
+                ),
+                guideKey: guideKey,
+              ),
+            );
+          default:
+            LoopV2ChainCodec.invalid();
+        }
       }
       return LoopSecurityCapabilities(items: items);
     } on DioException catch (error) {

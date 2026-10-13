@@ -95,6 +95,10 @@ LoopChainException loopChainExceptionForV2(
     requiredUsd1: details?.requiredUsd1,
     requiredAmountIn: details?.requiredAmountIn,
     maxAmountIn: details?.maxAmountIn,
+    balanceUsd1: details?.balanceUsd1,
+    balanceMeme: details?.balanceMeme,
+    requiredBnb: details?.requiredBnb,
+    balanceBnb: details?.balanceBnb,
   );
 }
 

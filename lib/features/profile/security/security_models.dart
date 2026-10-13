@@ -217,7 +217,7 @@ final class LoopDeviceRevocation {
   final bool providerAccessTerminated;
 }
 
-/// The six permanently unavailable Privy security methods, in contract order.
+/// The six Privy security methods, in contract order.
 enum LoopSecurityCapabilityId {
   mfa('mfa', '多因素验证', '登录与敏感操作需要第二个因素。'),
   passkey('passkey', 'Passkey', '用设备生物识别代替密码。'),
@@ -240,21 +240,45 @@ enum LoopSecurityCapabilityId {
   }
 }
 
-/// One `unavailable` security method plus the localisation key of its
-/// "how to enable" explanation. There is no enabled variant in this step.
+/// One Privy security method plus the localisation key of its "how to
+/// enable" explanation.
+///
+/// Decision 0156: the `current` projection may report `mfa`, `passkey` and
+/// `autoRecovery` as available. Available means this client's own flow for
+/// the method works; it never means this account has turned it on — that is
+/// the provider's answer on the device (`LoopMfaState`).
 @immutable
 final class LoopSecurityCapability {
+  /// A method that is not in force, with the server's own reason.
   const LoopSecurityCapability({
     required this.id,
-    required this.reasonCode,
+    required String this.reasonCode,
     required this.evidenceReasonCode,
     required this.guideKey,
-  });
+  }) : evidenceReference = null;
+
+  /// A method the server confirms, with the source sentence of that
+  /// confirmation.
+  const LoopSecurityCapability.available({
+    required this.id,
+    required this.evidenceReasonCode,
+    required String this.evidenceReference,
+    required this.guideKey,
+  }) : reasonCode = null;
 
   final LoopSecurityCapabilityId id;
-  final String reasonCode;
+
+  /// The server's reason the method is unavailable; `null` exactly when it
+  /// is available.
+  final String? reasonCode;
   final String evidenceReasonCode;
+
+  /// Where the confirmation comes from (1–120 characters), present only on
+  /// an available method. It is a source line, never an action.
+  final String? evidenceReference;
   final String guideKey;
+
+  bool get isAvailable => reasonCode == null;
 }
 
 @immutable

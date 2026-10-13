@@ -1120,6 +1120,14 @@ void main() {
             LoopChainFailureKind.insufficientBalance,
             reasonCode: 'LAUNCH2_GAS_INSUFFICIENT',
           ),
+          const _Answer<Launch2PoolPrepared>.error(
+            LoopChainException(
+              LoopChainFailureKind.insufficientBalance,
+              reasonCode: 'LAUNCH2_GAS_INSUFFICIENT',
+              requiredBnb: '0.000412',
+              balanceBnb: '0.0001',
+            ),
+          ),
         ],
       );
       await _open(tester, gateway);
@@ -1154,6 +1162,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.descendant(of: line, matching: find.text(launch2GasShortText)),
+        findsOneWidget,
+      );
+      expect(_key('launch2-pool-topup'), findsOneWidget);
+      // Decision 0156: the same refusal with the server's figures.
+      await tester.tap(_key('launch2-pool-confirm'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: line,
+          matching: find.text(
+            'tBNB 手续费不足：这笔约需 0.000412 tBNB，钱包有 0.0001 tBNB，充值后再试',
+          ),
+        ),
         findsOneWidget,
       );
       expect(_key('launch2-pool-topup'), findsOneWidget);

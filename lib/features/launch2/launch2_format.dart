@@ -395,9 +395,25 @@ final class Launch2ActionFailure {
   int get hashCode => Object.hash(text, topUp);
 }
 
-/// zh-CN for the tBNB gas refusal at the button: names the token and the
-/// fee, the server sends no figure for it.
+/// zh-CN for the tBNB gas refusal at the button when the refusal carries no
+/// figure: names the token and the fee.
 const String launch2GasShortText = 'tBNB 手续费不足：钱包里的 tBNB 不够付这笔的网络手续费，充值后再试';
+
+/// The gas refusal's line with the server's figures (decision 0156): the
+/// fee ceiling the check compared and the wallet's tBNB. A missing figure
+/// leaves its clause out; with neither the figure-free sentence stays.
+String launch2GasFailureText(LoopChainException failure) {
+  final required = _detailFigure(failure.requiredBnb);
+  final balance = _detailFigure(failure.balanceBnb);
+  String bnb(Decimal value) =>
+      '${loopFormatDecimal(value, maxFractionDigits: 8)} tBNB';
+  if (required == null && balance == null) return launch2GasShortText;
+  final parts = <String>[
+    if (required != null) '这笔约需 ${bnb(required)}',
+    if (balance != null) '钱包有 ${bnb(balance)}',
+  ];
+  return 'tBNB 手续费不足：${parts.join('，')}，充值后再试';
+}
 
 Decimal? _detailFigure(String? raw) =>
     raw == null ? null : Decimal.tryParse(raw);
@@ -407,11 +423,14 @@ Decimal? _detailFigure(String? raw) =>
 /// `LAUNCH2_USD1_BALANCE_INSUFFICIENT` says what the action needs — the
 /// server's `requiredUsd1` (NFT) or `requiredAmountIn` (official pool),
 /// else [requested], what this request asked to spend — and what the
-/// wallet has: `maxAmountIn` when [maxIsBalance] (the official pool sends
-/// its balance there), else a balance the page has read ([usd1Balance]).
-/// On the curve `maxAmountIn` is the balance-limited maximum and is said as
-/// 「最多可付」. A refusal without figures still gets its sentence; nothing
-/// is invented.
+/// wallet has: the server's `balanceUsd1` first (decision 0156), else
+/// `maxAmountIn` when [maxIsBalance] (the official pool sends its balance
+/// there), else a balance the page has read ([usd1Balance]). On the curve
+/// `maxAmountIn` is the balance-limited maximum and is said as 「最多可付」.
+/// A MEME shortfall says the holding from `balanceMeme` the same way, and
+/// `LAUNCH2_GAS_INSUFFICIENT` names the fee ceiling (`requiredBnb`) and the
+/// wallet's tBNB (`balanceBnb`). A refusal without figures still gets its
+/// sentence; nothing is invented.
 ///
 /// [fallback] words every other refusal (the curve's or the pool's own
 /// catalogue).
@@ -433,7 +452,9 @@ Launch2ActionFailure launch2ActionFailure(
     case 'LAUNCH2_USD1_BALANCE_INSUFFICIENT':
       String usd1(Decimal value) =>
           launch2Usd1Label(value, maxFractionDigits: 4);
-      final current = maxIsBalance ? max : usd1Balance;
+      final current =
+          _detailFigure(failure.balanceUsd1) ??
+          (maxIsBalance ? max : usd1Balance);
       final parts = <String>[
         if (required != null) '需要 ${usd1(required)}',
         if (current != null)
@@ -447,16 +468,20 @@ Launch2ActionFailure launch2ActionFailure(
       );
     case 'LAUNCH2_MEME_BALANCE_INSUFFICIENT':
       String meme(Decimal value) => launch2MemeLabel(value, ticker);
+      final holding =
+          _detailFigure(failure.balanceMeme) ?? (maxIsBalance ? max : null);
       final parts = <String>[
         if (required != null) '需要 ${meme(required)}',
-        if (max != null)
-          maxIsBalance ? '当前持有 ${meme(max)}' : '最多可卖 ${meme(max)}',
+        if (holding != null)
+          '当前持有 ${meme(holding)}'
+        else if (max != null)
+          '最多可卖 ${meme(max)}',
       ];
       return Launch2ActionFailure(
         parts.isEmpty ? fallback(failure) : '卖出数量超过持有：${parts.join('，')}',
       );
     case 'LAUNCH2_GAS_INSUFFICIENT':
-      return const Launch2ActionFailure(launch2GasShortText, topUp: true);
+      return Launch2ActionFailure(launch2GasFailureText(failure), topUp: true);
   }
   return Launch2ActionFailure(
     fallback(failure),
