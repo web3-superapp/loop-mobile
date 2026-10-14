@@ -33,6 +33,8 @@ class LoopInlineUnavailable extends StatelessWidget {
     this.retrying = false,
     this.icon = 'warn',
     this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    this.detail,
+    this.maxLines = 1,
   });
 
   /// The minimum height of the line — one touch target.
@@ -49,9 +51,21 @@ class LoopInlineUnavailable extends StatelessWidget {
   final String icon;
   final EdgeInsets padding;
 
+  /// An optional second line under [message] (when it started, …).
+  final String? detail;
+
+  /// Lines [message] may take; one by default.
+  final int maxLines;
+
   @override
   Widget build(BuildContext context) {
     final auxiliary = LoopGround.auxiliaryOf(context);
+    final text = Text(
+      message,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: LoopType.captionSm.copyWith(color: auxiliary),
+    );
     final retry = onRetry;
     return Padding(
       padding: padding,
@@ -63,12 +77,26 @@ class LoopInlineUnavailable extends StatelessWidget {
             LoopIcon(icon, size: 15, color: auxiliary),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                message,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: LoopType.captionSm.copyWith(color: auxiliary),
-              ),
+              child: switch (detail) {
+                final String second => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      text,
+                      const SizedBox(height: 2),
+                      Text(
+                        second,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopType.captionSm.copyWith(color: auxiliary),
+                      ),
+                    ],
+                  ),
+                ),
+                null => text,
+              },
             ),
             if (retry != null || retrying)
               _InlineTextAction(

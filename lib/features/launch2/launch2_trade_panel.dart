@@ -283,7 +283,12 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
   Future<void> _confirm() async {
     final quote = _quote;
     final walletId = widget.walletId;
-    if (quote == null || walletId == null || _preparing) return;
+    if (quote == null ||
+        walletId == null ||
+        _preparing ||
+        _detail.tradingHold != null) {
+      return;
+    }
     final now = ref.read(launch2ClockProvider)();
     if (!quote.deadline.isAfter(now)) {
       _request += 1;
@@ -362,7 +367,11 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
     final listBlocked = _listBlocked;
     final notInList =
         listBlocked || _prepareFailure?.reasonCode == 'LAUNCH2_NOT_IN_SNAPSHOT';
+    // Decision 0161: the field stays live (the quote may say why), the
+    // confirm key does not.
+    final hold = _detail.tradingHold;
     final canConfirm =
+        hold == null &&
         !_disabled &&
         !notInList &&
         amount != null &&
@@ -464,6 +473,11 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
             onPressed: canConfirm ? () => unawaited(_confirm()) : null,
           ),
         ),
+        if (hold != null)
+          Launch2TradingHoldLine(
+            key: const ValueKey<String>('launch2-trade-hold'),
+            hold: hold,
+          ),
       ],
     );
     return Padding(

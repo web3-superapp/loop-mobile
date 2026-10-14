@@ -291,7 +291,12 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
   Future<void> _confirm() async {
     final quote = _quote;
     final walletId = widget.walletId;
-    if (quote == null || walletId == null || _preparing) return;
+    if (quote == null ||
+        walletId == null ||
+        _preparing ||
+        _detail.tradingHold != null) {
+      return;
+    }
     final now = ref.read(launch2ClockProvider)();
     if (!quote.expiresAt.isAfter(now)) {
       _request += 1;
@@ -396,6 +401,9 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
   @override
   Widget build(BuildContext context) {
     final view = _view();
+    // Decision 0161: quotes still run so the server's refusal can show;
+    // only the confirm key is closed.
+    final hold = _detail.tradingHold;
     final greyed = view.blockedLine != null;
     final (inLabel, outLabel) = launch2PoolModeLabels(_side);
     final slippage = _slippage;
@@ -598,9 +606,16 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             label: view.confirmLabel,
             primary: true,
             block: true,
-            onPressed: view.canConfirm ? () => unawaited(_confirm()) : null,
+            onPressed: view.canConfirm && hold == null
+                ? () => unawaited(_confirm())
+                : null,
           ),
         ),
+        if (hold != null)
+          Launch2TradingHoldLine(
+            key: const ValueKey<String>('launch2-pool-hold'),
+            hold: hold,
+          ),
       ],
     );
     return Padding(

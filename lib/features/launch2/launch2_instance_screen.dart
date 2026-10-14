@@ -454,10 +454,20 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     switch (detail.stage) {
       case Launch2Stage.nftSale:
         final held = (detail.viewer?.nftHeld ?? 0) > 0;
-        final busy = _preparingNft || (_pending?.locked ?? false);
-        final failure = held || _preparingNft ? null : _actionFailure;
+        final hold = detail.tradingHold;
+        final busy =
+            _preparingNft || (_pending?.locked ?? false) || hold != null;
+        final failure = held || _preparingNft || hold != null
+            ? null
+            : _actionFailure;
         return _BarShell(
-          failure: failure == null
+          failure: hold != null && !held
+              ? Launch2TradingHoldLine(
+                  key: const ValueKey<String>('launch2-bar-hold'),
+                  hold: hold,
+                  padding: EdgeInsets.zero,
+                )
+              : failure == null
               ? null
               : Launch2ActionFailureLine(
                   key: const ValueKey<String>('launch2-bar-failure'),
@@ -516,6 +526,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
               .reload(),
         ),
       ),
+      // Decision 0161: the chain guard's hold, above every trade panel.
+      if (detail.tradingHold case final Launch2TradingHold hold)
+        Launch2TradingHoldBanner(hold: hold),
       if (capability.evidencePending && !paused)
         const LoopInlineUnavailable(
           key: ValueKey<String>('launch2-evidence-pending'),

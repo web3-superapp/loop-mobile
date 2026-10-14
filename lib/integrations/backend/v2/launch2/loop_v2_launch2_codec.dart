@@ -69,7 +69,7 @@ abstract final class LoopV2Launch2Codec {
   };
 
   /// Keys a server may omit: `pool` (loop-api S146, decision 0145).
-  static const detailOptionalKeys = <String>{'pool'};
+  static const detailOptionalKeys = <String>{'pool', 'tradingHold'};
 
   static const nftSaleKeys = <String>{
     'priceUsd1',
@@ -940,7 +940,23 @@ abstract final class LoopV2Launch2Codec {
       viewer: _viewer(map['viewer']),
       projectedAt: LoopV2ChainCodec.requireTimestamp(map, 'projectedAt'),
       pool: LoopV2Launch2PoolCodec.summary(map['pool']),
+      tradingHold: tradingHold(map['tradingHold']),
     );
+  }
+
+  /// `instance.tradingHold` (decision 0161). Absent or `null` means no hold;
+  /// a value this build cannot read (unknown kind, not an object) is also
+  /// read as none rather than failing the whole page — the server still
+  /// refuses the writes with `LAUNCH2_USD1_PAUSED` / `LAUNCH2_ADDRESS_FROZEN`.
+  static Launch2TradingHold? tradingHold(Object? raw) {
+    if (raw is! Map) return null;
+    final kind = Launch2TradingHoldKind.tryParse(raw['kind']);
+    if (kind == null) return null;
+    final since = raw['since'];
+    final parsed = since is String && since.length <= 64
+        ? DateTime.tryParse(since)?.toUtc()
+        : null;
+    return Launch2TradingHold(kind: kind, since: parsed);
   }
 
   // -------------------------------------------------------------------------

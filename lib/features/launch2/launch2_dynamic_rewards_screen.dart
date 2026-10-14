@@ -431,14 +431,18 @@ class _Launch2DynamicRewardsScreenState
         ),
       ];
     }
+    // Decision 0161: a held instance claims nothing; without the detail the
+    // server's refusal code says the same.
+    final hold = detail.tradingHold;
     return <Widget>[
       ...widgets,
+      if (hold != null) Launch2TradingHoldBanner(hold: hold),
       for (final round in rewards.rounds)
         _RoundRow(
           key: ValueKey<String>('launch2-dyn-round-${round.roundId}'),
           round: round,
           preparing: _preparing == round.roundId,
-          busy: _preparing != null,
+          busy: _preparing != null || hold != null,
           broadcast: _broadcast.contains(round.roundId),
           confirmed: _confirmed.contains(round.roundId),
           failure: _failure != null && _failure!.$1 == round.roundId

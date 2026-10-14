@@ -642,6 +642,35 @@ final class Launch2Viewer {
 }
 
 /// `GET /v2/launch2/instances/{id}`.
+/// Why the chain guard holds trading (decision 0161).
+enum Launch2TradingHoldKind {
+  usd1Paused('usd1_paused'),
+  addressFrozen('address_frozen');
+
+  const Launch2TradingHoldKind(this.wireName);
+
+  final String wireName;
+
+  static Launch2TradingHoldKind? tryParse(Object? value) {
+    for (final kind in values) {
+      if (kind.wireName == value) return kind;
+    }
+    return null;
+  }
+}
+
+/// `tradingHold` on the instance detail (decision 0161).
+@immutable
+final class Launch2TradingHold {
+  const Launch2TradingHold({required this.kind, this.since});
+
+  final Launch2TradingHoldKind kind;
+
+  /// When the guard first saw it; `null` if the server's stamp is unreadable
+  /// (the hold itself still applies).
+  final DateTime? since;
+}
+
 @immutable
 final class Launch2InstanceDetail {
   const Launch2InstanceDetail({
@@ -660,6 +689,7 @@ final class Launch2InstanceDetail {
     this.graduation,
     this.viewer,
     this.pool,
+    this.tradingHold,
   });
 
   final Launch2InstanceRow row;
@@ -683,6 +713,12 @@ final class Launch2InstanceDetail {
   /// The official pool's indexed figures (decision 0145); `null` before
   /// graduation or from a server before S146.
   final Launch2PoolSummary? pool;
+
+  /// The chain guard's hold (decision 0161): USD1 is paused by its issuer
+  /// or our contract address is frozen by it, so every buy, sell, NFT mint
+  /// and claim would fail on chain. `null` when absent (older server),
+  /// `null` on the wire, or an unknown kind.
+  final Launch2TradingHold? tradingHold;
 
   String get instanceId => row.instanceId;
   Launch2Stage get stage => row.stage;

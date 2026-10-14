@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
@@ -356,6 +357,50 @@ class Launch2Greyed extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The chain guard's hold above the trade panels (decision 0161): USD1 is
+/// paused by its issuer or our contract address is frozen by it, so nothing
+/// that moves USD1 can succeed on chain. Two lines may be taken so the
+/// frozen sentence is never cut at 360 dp; the second says since when.
+class Launch2TradingHoldBanner extends StatelessWidget {
+  const Launch2TradingHoldBanner({
+    required this.hold,
+    super.key = const ValueKey<String>('launch2-trading-hold'),
+  });
+
+  final Launch2TradingHold hold;
+
+  @override
+  Widget build(BuildContext context) => LoopInlineUnavailable(
+    message: launch2TradingHoldText(hold.kind),
+    maxLines: 2,
+    detail: switch (hold.since) {
+      final DateTime since => launch2TradingHoldSinceText(since),
+      null => null,
+    },
+  );
+}
+
+/// The same sentence under a disabled confirm key (decision 0161).
+class Launch2TradingHoldLine extends StatelessWidget {
+  const Launch2TradingHoldLine({
+    required this.hold,
+    super.key,
+    this.padding = const EdgeInsets.only(top: 8),
+  });
+
+  final Launch2TradingHold hold;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: padding,
+    child: Text(
+      launch2TradingHoldText(hold.kind),
+      style: LoopType.caption.copyWith(color: LoopColors.text2),
+    ),
+  );
 }
 
 /// One failed action, right above the button that started it (client

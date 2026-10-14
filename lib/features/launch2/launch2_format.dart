@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -327,7 +328,32 @@ String launch2KeeperFailureText(String? reasonCode) => switch (reasonCode) {
 
 /// zh-CN for the server's own `launch2` refusal rules (contract §4). Every
 /// line says what did not happen.
+/// The chain guard's hold, in one sentence (decision 0161) — the banner,
+/// the panels' line and the refusal codes all say the same thing.
+const String launch2Usd1PausedText = 'USD1 已被发行方暂停，买卖和领取暂不可用';
+const String launch2AddressFrozenText = '本项目合约地址被 USD1 发行方限制，买卖和领取暂不可用';
+
+String launch2TradingHoldText(Launch2TradingHoldKind kind) => switch (kind) {
+  Launch2TradingHoldKind.usd1Paused => launch2Usd1PausedText,
+  Launch2TradingHoldKind.addressFrozen => launch2AddressFrozenText,
+};
+
+/// 「自 14:05 起」 today, 「自 2026-10-13 14:05 起」 on an earlier day.
+String launch2TradingHoldSinceText(DateTime since, {DateTime? now}) {
+  final local = since.toLocal();
+  final today = (now ?? DateTime.now()).toLocal();
+  final sameDay =
+      local.year == today.year &&
+      local.month == today.month &&
+      local.day == today.day;
+  return sameDay
+      ? '自 ${loopLocalClockLabel(since)} 起'
+      : '自 ${loopLocalTimestampLabel(since)} 起';
+}
+
 String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
+  'LAUNCH2_USD1_PAUSED' => launch2Usd1PausedText,
+  'LAUNCH2_ADDRESS_FROZEN' => launch2AddressFrozenText,
   'LAUNCH2_INSTANCE_NOT_FOUND' => '项目不存在',
   launch2StageMismatchCode => '当前阶段不能交易，已重新读取项目状态',
   'LAUNCH2_SELL_NOT_OPEN' => '提前购阶段只能买入，公开内盘开始后可卖出',
