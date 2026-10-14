@@ -2,26 +2,35 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
+import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 // ---------------------------------------------------------------------------
-// 发射台整页 · second phase (decision 0163, docs/32 §7)
+// 发射台 · the prototype's Launch Desk (decision 0164; data since 0163,
+// docs/32 §7)
 // ---------------------------------------------------------------------------
 //
-// The page moves because the data does: a tape of what just happened, the
-// hero, the stage counts, the list grouped by stage with a fuse under each
-// live row, and the platform's figures at the foot. Ink ground, Lime for
-// trading, Brass for the NFT — nothing else.
+// The frozen prototype's Launch page, part for part: one full-Lime ledger
+// card for the main event, the segment counts, a record card for its
+// progress, then `.label` groups of rows, the 战绩 stat grid and the curation
+// notice. Lime is the ledger card and the progress; nothing on this page is
+// Brass (the medal keeps it on its own page).
 
-// ---- §7.1 the live tape ----------------------------------------------------
+// ---- the live tape's words ---------------------------------------------
 
 /// 「刚刚」, 「N 分钟前」, then the local 「HH:mm」.
 String launch2RelativeTime(DateTime at, DateTime now) {
@@ -60,205 +69,7 @@ String launch2ActivityText(Launch2Activity item) {
 String launch2ActivityLine(Launch2Activity item, DateTime now) =>
     '${launch2RelativeTime(item.at, now)} ${launch2ActivityText(item)}';
 
-/// The mark before an item: Brass for the NFT, Lime for a buy, a graduation,
-/// a buyback, a new round and a claim, quiet for a sell.
-Color launch2ActivityMark(Launch2ActivityKind kind) => switch (kind) {
-  Launch2ActivityKind.nftMint => LoopColors.brass,
-  Launch2ActivityKind.curveSell => LoopColors.text3,
-  _ => LoopColors.lime,
-};
-
-/// 「战壕电报」 (docs/32 §7.1): one 32 dp line that drifts left at
-/// [speed] while nobody touches it, can be dragged, and resumes on release.
-/// Items that arrive later join the end of the queue — nothing on screen
-/// moves or flashes. With motion reduced it is a still, sideways-scrollable
-/// row of the newest three. Empty: nothing is drawn (the caller checks).
-class Launch2ActivityTape extends StatefulWidget {
-  const Launch2ActivityTape({
-    required this.items,
-    required this.now,
-    required this.onNavigate,
-    super.key = const ValueKey<String>('launch2-tape'),
-    this.speed = 40,
-  });
-
-  /// Newest first, as the server sends them.
-  final List<Launch2Activity> items;
-  final DateTime Function() now;
-  final void Function(String location) onNavigate;
-
-  /// dp per second.
-  final double speed;
-
-  static const double height = 32;
-
-  /// What the still tape shows.
-  static const int reducedCount = 3;
-
-  @override
-  State<Launch2ActivityTape> createState() => _Launch2ActivityTapeState();
-}
-
-class _Launch2ActivityTapeState extends State<Launch2ActivityTape>
-    with SingleTickerProviderStateMixin {
-  final ScrollController _scroll = ScrollController();
-  late final Ticker _ticker = createTicker(_tick);
-
-  /// Every item read so far, once each, in the order it joined.
-  final List<Launch2Activity> _queue = <Launch2Activity>[];
-  final Set<String> _seen = <String>{};
-
-  /// What the tape lays out: the queue repeated as the drift reaches its end.
-  /// Grows only at the end, so nothing already laid out moves.
-  final List<Launch2Activity> _sequence = <Launch2Activity>[];
-
-  Duration _last = Duration.zero;
-  bool _touching = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _absorb(widget.items);
-    _sequence.addAll(_queue);
-  }
-
-  @override
-  void didUpdateWidget(Launch2ActivityTape old) {
-    super.didUpdateWidget(old);
-    if (!identical(old.items, widget.items)) _absorb(widget.items);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final still = LoopMotion.reduced(context);
-    if (still && _ticker.isActive) _ticker.stop();
-    if (!still && !_ticker.isActive) {
-      _last = Duration.zero;
-      unawaited(_ticker.start());
-    }
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    _scroll.dispose();
-    super.dispose();
-  }
-
-  /// New items join the queue's end; one already queued is not repeated.
-  void _absorb(List<Launch2Activity> items) {
-    final fresh = <Launch2Activity>[
-      for (final item in items.reversed)
-        if (_seen.add(item.identity)) item,
-    ];
-    // The first answer keeps the server's newest-first order; later
-    // arrivals, oldest of them first, wait at the end.
-    if (_queue.isEmpty) {
-      _queue.addAll(fresh.reversed);
-    } else {
-      _queue.addAll(fresh);
-    }
-  }
-
-  void _tick(Duration elapsed) {
-    final dt = (elapsed - _last).inMicroseconds / 1e6;
-    _last = elapsed;
-    if (_touching || !_scroll.hasClients || dt <= 0 || dt > 0.5) return;
-    final position = _scroll.position;
-    final next = position.pixels + widget.speed * dt;
-    // Two screens from the end: lay out the queue once more behind it.
-    if (position.maxScrollExtent - next < position.viewportDimension * 2 &&
-        _sequence.length < 2000) {
-      setState(() => _sequence.addAll(_queue));
-    }
-    if (next <= position.maxScrollExtent) _scroll.jumpTo(next);
-  }
-
-  void _open(Launch2Activity item) =>
-      widget.onNavigate(Launch2Route.instance(item.instanceId));
-
-  @override
-  Widget build(BuildContext context) {
-    final still = LoopMotion.reduced(context);
-    final now = widget.now();
-    final items = still
-        ? _queue.take(Launch2ActivityTape.reducedCount).toList()
-        : _sequence;
-    return SizedBox(
-      height: Launch2ActivityTape.height,
-      child: Listener(
-        onPointerDown: (_) => _touching = true,
-        onPointerUp: (_) => _touching = false,
-        onPointerCancel: (_) => _touching = false,
-        child: ListView.builder(
-          key: ValueKey<String>(
-            still ? 'launch2-tape-still' : 'launch2-tape-drift',
-          ),
-          controller: still ? null : _scroll,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-          itemCount: items.length,
-          itemBuilder: (context, index) => _TapeItem(
-            key: ValueKey<String>('launch2-tape-item-$index'),
-            item: items[index],
-            now: now,
-            onTap: () => _open(items[index]),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TapeItem extends StatelessWidget {
-  const _TapeItem({
-    required this.item,
-    required this.now,
-    required this.onTap,
-    super.key,
-  });
-
-  final Launch2Activity item;
-  final DateTime now;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final line = launch2ActivityLine(item, now);
-    return Semantics(
-      button: true,
-      label: line,
-      excludeSemantics: true,
-      child: LoopPressable(
-        onTap: onTap,
-        scale: false,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 24),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                width: 3,
-                height: 12,
-                color: launch2ActivityMark(item.kind),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                line,
-                maxLines: 1,
-                softWrap: false,
-                style: LoopType.figureSm,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---- §7.3 / §7.4 the stage groups -----------------------------------------
+// ---- the stage groups ------------------------------------------------------
 
 /// The groups of the 「v2 发射」 list (docs/32 §7.4), in order.
 enum Launch2StageGroup {
@@ -296,111 +107,6 @@ List<(Launch2StageGroup, List<Launch2InstanceRow>)> launch2GroupRows(
       (group, members),
 ];
 
-/// The four counted groups of §7.3, with how many rows each holds now.
-List<(Launch2StageGroup, int)> launch2StageCounts(
-  List<Launch2InstanceRow> rows,
-) => <(Launch2StageGroup, int)>[
-  for (final group in const <Launch2StageGroup>[
-    Launch2StageGroup.minting,
-    Launch2StageGroup.priority,
-    Launch2StageGroup.curve,
-    Launch2StageGroup.upcoming,
-  ])
-    if (rows.where((row) => Launch2StageGroup.of(row.stage) == group).length
-        case final int count when count > 0)
-      (group, count),
-];
-
-/// A list row's fuse (§7.4): the NFT sale's time past, the curve's share
-/// sold; nothing for any other stage.
-double? launch2RowFuse(Launch2InstanceRow row, DateTime now) =>
-    switch (row.stage) {
-      Launch2Stage.nftSale ||
-      Launch2Stage.priority ||
-      Launch2Stage.public => launch2HeroFuse(row, now),
-      _ => null,
-    };
-
-/// A group's heading: the name in the title weight, its count in grey.
-class Launch2GroupHeading extends StatelessWidget {
-  const Launch2GroupHeading({
-    required this.group,
-    required this.count,
-    super.key,
-  });
-
-  final Launch2StageGroup group;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      LoopSpacing.group - 4,
-      LoopSpacing.page,
-      4,
-    ),
-    child: Semantics(
-      header: true,
-      label: '${group.title}，$count 个',
-      excludeSemantics: true,
-      child: Row(
-        children: <Widget>[
-          Flexible(
-            child: Text(
-              group.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopType.title,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            key: ValueKey<String>('launch2-group-count-${group.name}'),
-            style: LoopType.figure.copyWith(color: LoopColors.text3),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// §7.3: one pill per counted group that holds a row; a tap brings that
-/// group's heading into view. Nothing is drawn when every count is zero.
-class Launch2StageCountBar extends StatelessWidget {
-  const Launch2StageCountBar({
-    required this.counts,
-    required this.headingKeyOf,
-    super.key = const ValueKey<String>('launch2-stage-counts'),
-  });
-
-  final List<(Launch2StageGroup, int)> counts;
-  final GlobalKey Function(Launch2StageGroup group) headingKeyOf;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: LoopTouch.minimum,
-    child: ListView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      children: <Widget>[
-        for (final (group, count) in counts)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: _CountPill(
-              key: ValueKey<String>('launch2-stage-count-${group.name}'),
-              label: group.title,
-              count: count,
-              onTap: () =>
-                  unawaited(launch2RevealGroup(context, headingKeyOf(group))),
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
 /// Scrolls the page until [target] is built, then brings it to the top.
 /// The list is lazy, so a far heading may not exist yet: the page is moved a
 /// screen at a time until it does.
@@ -429,135 +135,741 @@ Future<void> launch2RevealGroup(BuildContext context, GlobalKey target) async {
   );
 }
 
-class _CountPill extends StatelessWidget {
-  const _CountPill({
-    required this.label,
-    required this.count,
-    required this.onTap,
-    super.key,
+// ---- the desk's segment counts ---------------------------------------------
+
+/// The four counts under the ledger card, each the groups it stands for.
+enum Launch2DeskSegment {
+  minting('铸造中', <Launch2StageGroup>[Launch2StageGroup.minting]),
+  curve('内盘', <Launch2StageGroup>[
+    Launch2StageGroup.priority,
+    Launch2StageGroup.curve,
+  ]),
+  upcoming('预告', <Launch2StageGroup>[Launch2StageGroup.upcoming]),
+  graduated('已毕业', <Launch2StageGroup>[Launch2StageGroup.graduated]);
+
+  const Launch2DeskSegment(this.title, this.groups);
+
+  final String title;
+  final List<Launch2StageGroup> groups;
+
+  static Launch2DeskSegment? of(Launch2Stage stage) {
+    final group = Launch2StageGroup.of(stage);
+    for (final segment in values) {
+      if (segment.groups.contains(group)) return segment;
+    }
+    return null;
+  }
+}
+
+/// How many projects each segment holds: the overview's platform figures
+/// when they were read, else the rows read so far. A zero is kept.
+List<(Launch2DeskSegment, int)> launch2DeskCounts(
+  List<Launch2InstanceRow> rows,
+  Launch2Stats? stats,
+) {
+  int counted(Launch2DeskSegment segment) => rows
+      .where((row) => segment.groups.contains(Launch2StageGroup.of(row.stage)))
+      .length;
+  return <(Launch2DeskSegment, int)>[
+    for (final segment in Launch2DeskSegment.values)
+      (
+        segment,
+        stats == null
+            ? counted(segment)
+            : switch (segment) {
+                Launch2DeskSegment.minting => stats.mintingCount,
+                Launch2DeskSegment.curve =>
+                  stats.priorityCount + stats.curveCount,
+                Launch2DeskSegment.upcoming => stats.upcomingCount,
+                Launch2DeskSegment.graduated => stats.graduatedTotal,
+              },
+      ),
+  ];
+}
+
+/// The rows the desk gives a record card: the main event, and a second one
+/// only when it is open now too (it mints or takes orders).
+List<Launch2InstanceRow> launch2DeskRecordRows(List<Launch2InstanceRow> hero) =>
+    <Launch2InstanceRow>[
+      if (hero.isNotEmpty) hero.first,
+      if (hero.length > 1 && launch2HeroLit(hero[1].stage)) hero[1],
+    ];
+
+/// `LAUNCH DESK · BSC TESTNET`, `· BSC` on the main network.
+String launch2DeskKicker(String? chainId) {
+  if (chainId == null) return 'LAUNCH DESK';
+  return loopIsTestnetChainId(chainId)
+      ? 'LAUNCH DESK · BSC TESTNET'
+      : 'LAUNCH DESK · BSC';
+}
+
+// ---- the desk's pages ---------------------------------------------------------
+
+/// One page of the desk's pager (decision 0164, user addendum 2026-10-14):
+/// a live or upcoming event, or — later — an operations campaign card.
+sealed class Launch2DeskPage {
+  const Launch2DeskPage();
+
+  /// Stable across re-reads, for the page's key.
+  String get id;
+}
+
+/// A row of [launch2HeroRows]: one page per event, in that order.
+final class Launch2DeskEventPage extends Launch2DeskPage {
+  const Launch2DeskEventPage(this.row);
+
+  final Launch2InstanceRow row;
+
+  @override
+  String get id => 'event-${row.instanceId}';
+}
+
+/// An operations campaign the back office configures. The model only: no
+/// read fills it yet, and [launch2DeskPages] adds one only when handed it.
+@immutable
+final class Launch2DeskCampaign {
+  const Launch2DeskCampaign({
+    required this.campaignId,
+    required this.title,
+    this.subtitle,
+    this.coverUrl,
+    this.startAt,
+    this.endAt,
+    this.link,
   });
 
-  final String label;
+  final String campaignId;
+  final String title;
+  final String? subtitle;
+  final String? coverUrl;
+  final DateTime? startAt;
+  final DateTime? endAt;
+
+  /// An in-app location the card opens; `null` opens nothing.
+  final String? link;
+}
+
+final class Launch2DeskCampaignPage extends Launch2DeskPage {
+  const Launch2DeskCampaignPage(this.campaign);
+
+  final Launch2DeskCampaign campaign;
+
+  @override
+  String get id => 'campaign-${campaign.campaignId}';
+}
+
+/// The desk's pages: one per event of [hero] (live first, then previews —
+/// [launch2HeroRows]' order), then the campaigns running at [now]. Empty:
+/// the desk draws its one empty page.
+List<Launch2DeskPage> launch2DeskPages(
+  List<Launch2InstanceRow> hero, {
+  List<Launch2DeskCampaign> campaigns = const <Launch2DeskCampaign>[],
+  DateTime? now,
+}) => <Launch2DeskPage>[
+  for (final row in hero) Launch2DeskEventPage(row),
+  for (final campaign in campaigns)
+    if (now == null ||
+        ((campaign.startAt == null || !now.isBefore(campaign.startAt!)) &&
+            (campaign.endAt == null || now.isBefore(campaign.endAt!))))
+      Launch2DeskCampaignPage(campaign),
+];
+
+/// The pager's fixed height at text scale 1: two heading lines and a
+/// four-line caption at 360 dp.
+const double launch2DeskHeight = 220;
+
+/// `.ledger-card.folio-primary` as a sideways pager: one full-Lime card per
+/// page, the page width the screen less the two 16 gutters, dots at the
+/// right end of the kicker line from two pages on. It never moves by itself. One page looks
+/// exactly like the card alone.
+class Launch2DeskPager extends StatefulWidget {
+  const Launch2DeskPager({
+    required this.pages,
+    required this.chainId,
+    required this.onNavigate,
+    super.key = const ValueKey<String>('launch2-desk'),
+    this.onElapsed,
+  });
+
+  final List<Launch2DeskPage> pages;
+  final String? chainId;
+  final void Function(String location) onNavigate;
+
+  /// A page's countdown reached zero: the list re-reads the server.
+  final VoidCallback? onElapsed;
+
+  @override
+  State<Launch2DeskPager> createState() => _Launch2DeskPagerState();
+}
+
+class _Launch2DeskPagerState extends State<Launch2DeskPager> {
+  final PageController _controller = PageController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _card(Launch2DeskPage? page, Widget? dots) => switch (page) {
+    null => Launch2DeskFolio(row: null, chainId: widget.chainId),
+    Launch2DeskEventPage(:final row) => Launch2DeskFolio(
+      key: ValueKey<String>('launch2-desk-page-${row.instanceId}'),
+      row: row,
+      chainId: widget.chainId,
+      dots: dots,
+      onTap: () => widget.onNavigate(launch2HeroLocation(row)),
+      onElapsed: widget.onElapsed,
+    ),
+    Launch2DeskCampaignPage(:final campaign) => Launch2DeskCampaignCard(
+      key: ValueKey<String>('launch2-desk-page-${page.id}'),
+      campaign: campaign,
+      dots: dots,
+      onTap: campaign.link == null
+          ? null
+          : () => widget.onNavigate(campaign.link!),
+    ),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = widget.pages;
+    final height = MediaQuery.textScalerOf(context).scale(launch2DeskHeight);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: LoopSpacing.group),
+      child: SizedBox(
+        height: height,
+        child: PageView.builder(
+          key: const ValueKey<String>('launch2-desk-pages'),
+          controller: _controller,
+          itemCount: pages.isEmpty ? 1 : pages.length,
+          itemBuilder: (context, index) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+            child: _card(
+              pages.isEmpty ? null : pages[index],
+              // The dots ride the kicker line of each card, on the card's
+              // own Lime ground; from two pages on.
+              pages.length >= 2
+                  ? _DeskDots(count: pages.length, current: index)
+                  : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeskDots extends StatelessWidget {
+  const _DeskDots({required this.count, required this.current});
+
   final int count;
-  final VoidCallback onTap;
+  final int current;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Row(
+      key: const ValueKey<String>('launch2-desk-dots'),
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (var i = 0; i < count; i++)
+          Container(
+            key: ValueKey<String>('launch2-desk-dot-$i'),
+            width: 6,
+            height: 6,
+            margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i == current
+                  ? LoopColors.ink
+                  : LoopColors.ink.withValues(alpha: 0.3),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+/// One ledger card of the pager: the event's ticker over its stage
+/// sentence, one caption of figures and the countdown in the stamp; with no
+/// event, the empty desk in the same card.
+class Launch2DeskFolio extends ConsumerWidget {
+  const Launch2DeskFolio({
+    required this.row,
+    required this.chainId,
+    super.key,
+    this.onTap,
+    this.onElapsed,
+    this.dots,
+  });
+
+  /// The pager's dots at the end of the kicker line.
+  final Widget? dots;
+
+  /// The event; `null` draws the empty desk.
+  final Launch2InstanceRow? row;
+  final String? chainId;
+  final VoidCallback? onTap;
+
+  /// The stamp's countdown reached zero: the list re-reads the server.
+  final VoidCallback? onElapsed;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final kicker = launch2DeskKicker(chainId);
+    final event = row;
+    if (event == null) {
+      return LoopFolioPrimary(
+        variant: LoopFolioVariant.lime,
+        archetype: LoopFolioArchetype.listing,
+        ring: false,
+        margin: EdgeInsets.zero,
+        kicker: kicker,
+        heading: '暂无进行中的发射',
+        caption: 'NFT 预售开始后会出现在这里',
+      );
+    }
+    Widget folio(String? stamp) => LoopFolioPrimary(
+      variant: LoopFolioVariant.lime,
+      archetype: LoopFolioArchetype.listing,
+      ring: false,
+      margin: EdgeInsets.zero,
+      kicker: kicker,
+      kickerTrailing: dots,
+      heading: '${launch2HeroTicker(event.ticker)}\n${launch2DeskStatus(event)}',
+      caption: launch2DeskCaption(event),
+      stamp: stamp,
+    );
+    final next = event.nextChangeAt;
+    final card = next == null || !launch2RecordCountsDown(event.stage)
+        ? folio(null)
+        : Launch2CountdownBuilder(
+            target: next,
+            onElapsed: onElapsed,
+            builder: (context, text) =>
+                folio('${launch2DeskStampPrefix(event.stage)}$text'),
+          );
+    return Semantics(
+      button: true,
+      label: launch2HeroSpokenLabel(event, ref.read(launch2ClockProvider)()),
+      excludeSemantics: true,
+      child: LoopPressable(onTap: onTap, scale: false, child: card),
+    );
+  }
+}
+
+/// The campaign page's stub: the same ledger card with the campaign's
+/// title and subtitle. The cover and the dates wait for the read that will
+/// fill the model.
+class Launch2DeskCampaignCard extends StatelessWidget {
+  const Launch2DeskCampaignCard({
+    required this.campaign,
+    super.key,
+    this.onTap,
+    this.dots,
+  });
+
+  final Launch2DeskCampaign campaign;
+  final VoidCallback? onTap;
+  final Widget? dots;
 
   @override
   Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: '$label $count 个',
+    button: onTap != null,
+    label: <String>[campaign.title, ?campaign.subtitle].join('，'),
     excludeSemantics: true,
-    child: Material(
-      color: LoopColors.card,
-      shape: const StadiumBorder(side: BorderSide(color: LoopColors.line)),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                label,
-                style: LoopType.body.copyWith(color: LoopColors.text2),
-              ),
-              const SizedBox(width: 6),
-              Text('$count', style: LoopType.figureMd),
-            ],
-          ),
-        ),
+    child: LoopPressable(
+      onTap: onTap,
+      scale: false,
+      child: LoopFolioPrimary(
+        variant: LoopFolioVariant.lime,
+        archetype: LoopFolioArchetype.listing,
+        ring: false,
+        margin: EdgeInsets.zero,
+        kicker: 'LAUNCH DESK · 活动',
+        kickerTrailing: dots,
+        heading: campaign.title,
+        caption: campaign.subtitle,
       ),
     ),
   );
 }
 
-// ---- §7.5 the figures --------------------------------------------------------
+// ---- the record card ---------------------------------------------------------
 
-/// 本周毕业 N（累计 M）· 累计回购 X USD1 · 铸造 N 枚 — one line of three.
-class Launch2StatsStrip extends StatelessWidget {
-  const Launch2StatsStrip({
-    required this.stats,
-    super.key = const ValueKey<String>('launch2-stats'),
+/// `.record-card` of one live row: the row icon, the ticker over its line,
+/// the countdown (or the share sold) on the right, the 6 px `.bar` and one
+/// foot line under it.
+class Launch2DeskRecordCard extends ConsumerWidget {
+  const Launch2DeskRecordCard({
+    required this.row,
+    required this.onTap,
+    super.key,
+    this.onElapsed,
   });
 
-  final Launch2Stats stats;
+  final Launch2InstanceRow row;
+  final VoidCallback onTap;
+  final VoidCallback? onElapsed;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      LoopSpacing.group,
-      LoopSpacing.page,
-      8,
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Expanded(
-          child: _Figure(
-            keyName: 'launch2-stats-graduated',
-            figure: '${stats.graduatedThisWeek}',
-            label: '本周毕业',
-            detail: '累计 ${stats.graduatedTotal}',
-          ),
-        ),
-        Expanded(
-          child: _Figure(
-            keyName: 'launch2-stats-buyback',
-            figure: launch2Usd1Label(stats.buybackUsd1Total),
-            label: '累计回购',
-          ),
-        ),
-        Expanded(
-          child: _Figure(
-            keyName: 'launch2-stats-minted',
-            figure: '${stats.nftMintedTotal} 枚',
-            label: '铸造',
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Figure extends StatelessWidget {
-  const _Figure({
-    required this.keyName,
-    required this.figure,
-    required this.label,
-    this.detail,
-  });
-
-  final String keyName;
-  final String figure;
-  final String label;
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    label: '$label $figure${detail == null ? '' : '，$detail'}',
-    excludeSemantics: true,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            figure,
-            key: ValueKey<String>(keyName),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.read(launch2ClockProvider)();
+    final id = row.instanceId;
+    final fraction = launch2HeroFuse(row, now);
+    final next = row.nextChangeAt;
+    final figureStyle = LoopTypography.figure(
+      16,
+      weight: FontWeight.w700,
+      color: LoopColors.lime,
+    );
+    final figure = !launch2RecordCountsDown(row.stage)
+        ? Text(
+            launch2BpsLabel(row.curve.soldBps),
             maxLines: 1,
-            style: LoopType.figureMd,
+            style: figureStyle,
+          )
+        : next == null
+        ? Text('待定', maxLines: 1, style: figureStyle)
+        : Launch2Countdown(
+            target: next,
+            onElapsed: onElapsed,
+            style: figureStyle,
+          );
+    final minting = row.stage == Launch2Stage.nftSale;
+    return Semantics(
+      button: true,
+      label: launch2HeroSpokenLabel(row, now),
+      excludeSemantics: true,
+      child: LoopRecordCard(
+        key: ValueKey<String>('launch2-desk-record-$id'),
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                if (minting)
+                  LoopMonoTile(
+                    label: _monogram(row.ticker),
+                    accent: true,
+                  )
+                else
+                  MemeLogo(
+                    symbol: row.ticker,
+                    imageUrl: row.logoUrl,
+                    identity: id,
+                    size: 44,
+                    radius: 15,
+                  ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        launch2HeroTicker(row.ticker),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopTypography.title(14, color: LoopColors.chalk),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        launch2RecordSubtitle(row),
+                        key: ValueKey<String>('launch2-desk-record-sub-$id'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopTypography.caption(
+                          11,
+                          color: LoopColors.text2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    KeyedSubtree(
+                      key: ValueKey<String>('launch2-desk-record-figure-$id'),
+                      child: figure,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      launch2RecordFigureCaption(row.stage),
+                      style: LoopTypography.caption(
+                        11,
+                        color: LoopColors.text3,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (fraction != null) ...<Widget>[
+              const SizedBox(height: 11),
+              LoopProgressBar(
+                key: ValueKey<String>('launch2-desk-bar-$id'),
+                value: fraction,
+                semanticLabel: launch2RecordFoot(row, now),
+              ),
+            ],
+            const SizedBox(height: 7),
+            Text(
+              launch2RecordFoot(row, now),
+              key: ValueKey<String>('launch2-desk-record-foot-$id'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.caption(11, color: LoopColors.text2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The `.row-ico` monogram: the ticker's first two characters.
+  static String _monogram(String ticker) =>
+      ticker.length <= 2 ? ticker : ticker.substring(0, 2);
+}
+
+// ---- the live tape -----------------------------------------------------------
+
+/// `.tape`: the newest [shown] items as still lines on the card ground, the
+/// time in Lime; 「全部」 opens it to [expanded]. Empty: nothing is drawn (the
+/// caller checks).
+class Launch2DeskTape extends StatefulWidget {
+  const Launch2DeskTape({
+    required this.items,
+    required this.now,
+    required this.onNavigate,
+    super.key = const ValueKey<String>('launch2-tape'),
+  });
+
+  /// Newest first, as the server sends them.
+  final List<Launch2Activity> items;
+  final DateTime Function() now;
+  final void Function(String location) onNavigate;
+
+  static const int shown = 3;
+  static const int expanded = 10;
+
+  @override
+  State<Launch2DeskTape> createState() => _Launch2DeskTapeState();
+}
+
+class _Launch2DeskTapeState extends State<Launch2DeskTape> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.items;
+    final more = items.length > Launch2DeskTape.shown;
+    final lines = items
+        .take(_open ? Launch2DeskTape.expanded : Launch2DeskTape.shown)
+        .toList(growable: false);
+    final now = widget.now();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            const Expanded(child: LoopLabel('实时')),
+            if (more)
+              Semantics(
+                button: true,
+                label: _open ? '收起实时动态' : '展开全部实时动态',
+                excludeSemantics: true,
+                child: LoopPressable(
+                  key: const ValueKey<String>('launch2-tape-more'),
+                  onTap: () => setState(() => _open = !_open),
+                  scale: false,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: LoopTouch.minimum,
+                      minHeight: LoopTouch.minimum,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        8,
+                        0,
+                        LoopSpacing.page,
+                        LoopSpacing.tight,
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        widthFactor: 1,
+                        heightFactor: 1,
+                        child: Text(
+                          _open ? '收起' : '全部',
+                          style: LoopMono.label.copyWith(
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        Container(
+          key: const ValueKey<String>('launch2-tape-card'),
+          margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+          decoration: BoxDecoration(
+            color: LoopColors.card,
+            borderRadius: LoopRadius.control,
+            border: Border.all(color: LoopColors.line),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              for (final (index, item) in lines.indexed)
+                _TapeLine(
+                  key: ValueKey<String>('launch2-tape-line-$index'),
+                  item: item,
+                  now: now,
+                  last: index == lines.length - 1,
+                  onTap: () => widget.onNavigate(
+                    Launch2Route.instance(item.instanceId),
+                  ),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          detail == null ? label : '$label · $detail',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: LoopType.captionSm,
-        ),
       ],
-    ),
-  );
+    );
+  }
 }
+
+class _TapeLine extends StatelessWidget {
+  const _TapeLine({
+    required this.item,
+    required this.now,
+    required this.last,
+    required this.onTap,
+    super.key,
+  });
+
+  final Launch2Activity item;
+  final DateTime now;
+  final bool last;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final time = launch2RelativeTime(item.at, now);
+    final text = launch2ActivityText(item);
+    final amount = item.amountUsd1;
+    final figure = amount == null ? null : launch2Usd1Label(amount);
+    // `.tape-line b`: the amount, when the sentence ends on one, in Chalk.
+    final split = figure != null && text.endsWith(' $figure');
+    final mono = LoopTypography.figure(
+      11,
+      weight: FontWeight.w400,
+      color: LoopColors.text2,
+    );
+    return Semantics(
+      button: true,
+      label: '$time $text',
+      excludeSemantics: true,
+      child: LoopPressable(
+        onTap: onTap,
+        scale: false,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            border: last
+                ? null
+                : const Border(bottom: BorderSide(color: LoopColors.line)),
+          ),
+          child: Row(
+            children: <Widget>[
+              Text(
+                time,
+                style: LoopTypography.figure(
+                  11,
+                  weight: FontWeight.w600,
+                  color: LoopColors.lime,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: <InlineSpan>[
+                      TextSpan(
+                        text: split
+                            ? text.substring(0, text.length - figure.length)
+                            : text,
+                      ),
+                      if (split)
+                        TextSpan(
+                          text: figure,
+                          style: LoopTypography.figure(
+                            11,
+                            weight: FontWeight.w600,
+                            color: LoopColors.chalk,
+                          ),
+                        ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: mono,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---- 战绩 ---------------------------------------------------------------------
+
+/// `.stat-grid.stat-grid-4`: 本周毕业 · 累计回购 · 勋章已铸 · 进行中.
+List<LoopStat> launch2DeskStats(Launch2Stats stats) => <LoopStat>[
+  LoopStat(
+    statKey: const ValueKey<String>('launch2-stats-graduated'),
+    value: '${stats.graduatedThisWeek}',
+    label: '本周毕业 · 累计 ${stats.graduatedTotal}',
+  ),
+  LoopStat(
+    statKey: const ValueKey<String>('launch2-stats-buyback'),
+    value: launch2Usd1Label(stats.buybackUsd1Total),
+    label: '累计回购',
+  ),
+  LoopStat(
+    statKey: const ValueKey<String>('launch2-stats-minted'),
+    value: '${stats.nftMintedTotal} 枚',
+    label: '勋章已铸',
+  ),
+  LoopStat(
+    statKey: const ValueKey<String>('launch2-stats-live'),
+    value: '${stats.liveCount}',
+    label: '进行中',
+  ),
+];
+
+/// The curation notice the prototype's Launch page ends on.
+const LoopNotice launch2CurationNotice = LoopNotice(
+  key: ValueKey<String>('launch2-curation-notice'),
+  icon: 'target',
+  title: '精品发射，不是每天几万个',
+  body:
+      'LOOP 只联合交易所、KOL、社区与 IP 孵化有故事、有传播、有持续运营的 MEME。'
+      '统一 10 亿总量，USD1 报价。',
+  margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
+);
+

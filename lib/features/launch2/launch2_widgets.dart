@@ -12,31 +12,33 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
-/// A countdown to a server time (`nextChangeAt`), read against the one
-/// [launch2ClockProvider].
+/// Rebuilds [builder] every second with the time left until [target], read
+/// against the one [launch2ClockProvider].
 ///
-/// Only this text rebuilds every second; the row or the page around it does
+/// Only what [builder] returns redraws; the row or the page around it does
 /// not. When the time passes it calls [onElapsed] once — the page re-reads
-/// the server, it never moves the stage itself — and holds at `00:00`.
-class Launch2Countdown extends ConsumerStatefulWidget {
-  const Launch2Countdown({
+/// the server, it never moves the stage itself — and holds at zero.
+class Launch2CountdownBuilder extends ConsumerStatefulWidget {
+  const Launch2CountdownBuilder({
     required this.target,
+    required this.builder,
     super.key,
-    this.style,
-    this.prefix = '',
     this.onElapsed,
   });
 
   final DateTime target;
-  final TextStyle? style;
-  final String prefix;
+
+  /// [text] is [launch2CountdownText] of the time left.
+  final Widget Function(BuildContext context, String text) builder;
   final VoidCallback? onElapsed;
 
   @override
-  ConsumerState<Launch2Countdown> createState() => _Launch2CountdownState();
+  ConsumerState<Launch2CountdownBuilder> createState() =>
+      _Launch2CountdownBuilderState();
 }
 
-class _Launch2CountdownState extends ConsumerState<Launch2Countdown> {
+class _Launch2CountdownBuilderState
+    extends ConsumerState<Launch2CountdownBuilder> {
   Timer? _ticker;
   bool _elapsedReported = false;
 
@@ -47,7 +49,7 @@ class _Launch2CountdownState extends ConsumerState<Launch2Countdown> {
   }
 
   @override
-  void didUpdateWidget(Launch2Countdown old) {
+  void didUpdateWidget(Launch2CountdownBuilder old) {
     super.didUpdateWidget(old);
     if (old.target != widget.target) {
       _elapsedReported = false;
@@ -87,18 +89,42 @@ class _Launch2CountdownState extends ConsumerState<Launch2Countdown> {
   }
 
   @override
+  Widget build(BuildContext context) =>
+      widget.builder(context, launch2CountdownText(_remaining));
+}
+
+/// A countdown to a server time (`nextChangeAt`) as one line of tabular
+/// figures ([Launch2CountdownBuilder]).
+class Launch2Countdown extends StatelessWidget {
+  const Launch2Countdown({
+    required this.target,
+    super.key,
+    this.style,
+    this.prefix = '',
+    this.onElapsed,
+  });
+
+  final DateTime target;
+  final TextStyle? style;
+  final String prefix;
+  final VoidCallback? onElapsed;
+
+  @override
   Widget build(BuildContext context) {
-    final text = launch2CountdownText(_remaining);
     final style =
-        widget.style ??
+        this.style ??
         LoopTypography.figure(14, weight: FontWeight.w600, height: 1.2);
-    return Text(
-      '${widget.prefix}$text',
-      key: const ValueKey<String>('launch2-countdown'),
-      maxLines: 1,
-      softWrap: false,
-      style: style.copyWith(
-        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+    return Launch2CountdownBuilder(
+      target: target,
+      onElapsed: onElapsed,
+      builder: (context, text) => Text(
+        '$prefix$text',
+        key: const ValueKey<String>('launch2-countdown'),
+        maxLines: 1,
+        softWrap: false,
+        style: style.copyWith(
+          fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+        ),
       ),
     );
   }
@@ -211,8 +237,6 @@ class Launch2InstanceTile extends ConsumerWidget {
     super.key,
     this.onTap,
     this.onElapsed,
-    this.fuse,
-    this.ringed = false,
   });
 
   final Launch2InstanceRow row;
@@ -220,13 +244,6 @@ class Launch2InstanceTile extends ConsumerWidget {
 
   /// The row's countdown reached zero: the list re-reads the server.
   final VoidCallback? onElapsed;
-
-  /// Decision 0163 §7.4: a 2 px Lime fuse along the row's foot at this
-  /// fraction (`null` draws none — the 已毕业 list and every other caller).
-  final double? fuse;
-
-  /// Decision 0163 §7.4: a 1.5 px Brass ring around the logo (NFT stage).
-  final bool ringed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -311,31 +328,15 @@ class Launch2InstanceTile extends ConsumerWidget {
         Text('平台核对中', style: LoopTypography.body(14, color: LoopColors.text2)),
       ),
     };
-    final logoSize = ringed ? memeCardLogoSize - 5 : memeCardLogoSize;
-    final logo = MemeLogo(
-      symbol: row.ticker,
-      imageUrl: row.logoUrl,
-      identity: row.instanceId,
-      size: logoSize,
-      radius: logoSize / 2,
-    );
-    final quote = LoopQuoteRow(
+    return LoopQuoteRow(
       tapKey: ValueKey<String>('launch2-row-${row.instanceId}'),
-      leading: !ringed
-          ? logo
-          : Container(
-              key: ValueKey<String>('launch2-row-ring-${row.instanceId}'),
-              width: memeCardLogoSize,
-              height: memeCardLogoSize,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.fromBorderSide(
-                  BorderSide(color: LoopColors.brass, width: 1.5),
-                ),
-              ),
-              child: logo,
-            ),
+      leading: MemeLogo(
+        symbol: row.ticker,
+        imageUrl: row.logoUrl,
+        identity: row.instanceId,
+        size: memeCardLogoSize,
+        radius: memeCardLogoSize / 2,
+      ),
       title: row.ticker,
       subtitle: row.name,
       value: value,
@@ -349,48 +350,6 @@ class Launch2InstanceTile extends ConsumerWidget {
           : null,
       onTap: onTap,
       semanticLabel: launch2RowSpokenLabel(row, now),
-    );
-    final fraction = fuse;
-    if (fraction == null) return quote;
-    return Stack(
-      children: <Widget>[
-        quote,
-        Positioned(
-          left: LoopSpacing.page,
-          right: LoopSpacing.page,
-          bottom: 0,
-          child: Launch2RowFuse(
-            key: ValueKey<String>('launch2-row-fuse-${row.instanceId}'),
-            fraction: fraction,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// The list row's fuse (decision 0163 §7.4): the hero's 2 px line, drawn at
-/// its value without any motion.
-class Launch2RowFuse extends StatelessWidget {
-  const Launch2RowFuse({required this.fraction, super.key});
-
-  final double fraction;
-
-  @override
-  Widget build(BuildContext context) {
-    final value = fraction.clamp(0.0, 1.0);
-    return SizedBox(
-      height: 2,
-      width: double.infinity,
-      child: ColoredBox(
-        color: LoopColors.card2,
-        child: FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: value,
-          heightFactor: 1,
-          child: const ColoredBox(color: LoopColors.lime),
-        ),
-      ),
     );
   }
 }

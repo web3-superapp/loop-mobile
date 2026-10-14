@@ -193,6 +193,7 @@ class MemeScreen extends ConsumerWidget {
           scope: Launch2ListScope.all,
           onNavigate: open,
           onEmptyAction: () => select(1),
+          onOpenGraduated: () => select(2),
         ),
         1 => MemeLaunchpadSegment(onNavigate: open),
         _ when ido && index == idoIndex => LaunchScreen(

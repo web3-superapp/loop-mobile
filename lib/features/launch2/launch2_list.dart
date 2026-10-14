@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -51,6 +52,7 @@ class Launch2ListSegment extends ConsumerStatefulWidget {
     required this.onNavigate,
     super.key,
     this.onEmptyAction,
+    this.onOpenGraduated,
   });
 
   final Launch2ListScope scope;
@@ -58,6 +60,10 @@ class Launch2ListSegment extends ConsumerStatefulWidget {
 
   /// The empty list's one next step (another segment of the MEME Tab).
   final VoidCallback? onEmptyAction;
+
+  /// The desk's 「已毕业」 count: the MEME Tab's 已毕业 segment (decision
+  /// 0164). `null` scrolls to the 已毕业 group instead.
+  final VoidCallback? onOpenGraduated;
 
   @override
   ConsumerState<Launch2ListSegment> createState() => _Launch2ListSegmentState();
@@ -140,13 +146,20 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     await controller.reload();
   }
 
-  /// One heading key per group, so the count pills can scroll to it.
+  /// One heading key per group and one per record card, so the desk's
+  /// segment counts can scroll to them.
   final Map<Launch2StageGroup, GlobalKey> _headingKeys =
       <Launch2StageGroup, GlobalKey>{};
+  final Map<String, GlobalKey> _recordKeys = <String, GlobalKey>{};
 
   GlobalKey _headingKey(Launch2StageGroup group) => _headingKeys.putIfAbsent(
     group,
     () => GlobalKey(debugLabel: 'launch2-group-${group.name}'),
+  );
+
+  GlobalKey _recordKey(String instanceId) => _recordKeys.putIfAbsent(
+    instanceId,
+    () => GlobalKey(debugLabel: 'launch2-record-$instanceId'),
   );
 
   void _openInstance(String instanceId) {
@@ -243,59 +256,19 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       ];
     }
     final cursor = page.nextCursor;
-    // Decision 0163: the hero over 「v2 发射」, picked from the rows already
-    // read; nothing over 「已毕业」 and nothing when no row qualifies.
-    final hero = scope == Launch2ListScope.all
-        ? launch2HeroRows(
-            page.items.take(launch2HeroFirstPageRows).toList(growable: false),
-          )
-        : const <Launch2InstanceRow>[];
     final all = scope == Launch2ListScope.all;
-    final now = ref.read(launch2ClockProvider)();
-    final counts = all
-        ? launch2StageCounts(page.items)
-        : const <(Launch2StageGroup, int)>[];
-    final activity = overview?.activity ?? const <Launch2Activity>[];
-    final stats = overview?.stats;
-    Widget tile(Launch2InstanceRow row, {bool live = false}) =>
-        Launch2InstanceTile(
-          key: ValueKey<String>('launch2-tile-${row.instanceId}'),
-          row: row,
-          onTap: () => _openInstance(row.instanceId),
-          // A row whose stage time passed: the server says what it is now.
-          onElapsed: () => unawaited(controller.reload()),
-          // Decision 0163 §7.4: the fuse and the NFT ring on 「v2 发射」 only.
-          fuse: live ? launch2RowFuse(row, now) : null,
-          ringed: live && row.stage == Launch2Stage.nftSale,
-        );
+    final stats = all ? overview?.stats : null;
+    // A row whose stage time passed: the server says what it is now.
+    void elapsed() => unawaited(controller.reload());
+    Widget tile(Launch2InstanceRow row) => Launch2InstanceTile(
+      key: ValueKey<String>('launch2-tile-${row.instanceId}'),
+      row: row,
+      onTap: () => _openInstance(row.instanceId),
+      onElapsed: elapsed,
+    );
     return <Widget>[
-      if (all && activity.isNotEmpty)
-        Launch2ActivityTape(
-          items: activity,
-          now: ref.read(launch2ClockProvider),
-          onNavigate: widget.onNavigate,
-        ),
-      if (hero.isNotEmpty)
-        Launch2HeroPager(
-          rows: hero,
-          onNavigate: widget.onNavigate,
-          onElapsed: () => unawaited(controller.reload()),
-        ),
-      if (counts.isNotEmpty)
-        Launch2StageCountBar(counts: counts, headingKeyOf: _headingKey),
-      const SizedBox(height: 2),
       if (all)
-        for (final (group, members) in launch2GroupRows(page.items)) ...[
-          KeyedSubtree(
-            key: ValueKey<String>('launch2-group-${group.name}'),
-            child: Launch2GroupHeading(
-              key: _headingKey(group),
-              group: group,
-              count: members.length,
-            ),
-          ),
-          for (final row in members) tile(row, live: true),
-        ]
+        ..._desk(page, overview, elapsed, tile)
       else
         for (final row in launch2ListOrder(page.items)) tile(row),
       if (controller.appendFailed && !state.busy)
@@ -320,7 +293,15 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           ),
       ] else
         MarketListEnd(key: ValueKey<String>('$_keyBase-end')),
-      if (all && stats != null) Launch2StatsStrip(stats: stats),
+      // 战绩: the overview's figures; none read, none drawn.
+      if (stats != null) ...<Widget>[
+        const LoopLabel('战绩'),
+        KeyedSubtree(
+          key: const ValueKey<String>('launch2-stats'),
+          child: LoopStatGrid(stats: launch2DeskStats(stats)),
+        ),
+      ],
+      if (all) launch2CurationNotice,
       LoopProvenanceLine(
         key: ValueKey<String>('$_keyBase-provenance'),
         sources: const <String>['LOOP 链上索引'],
@@ -332,7 +313,101 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       ),
     ];
   }
+  /// Decision 0164 · the prototype's Launch Desk over 「v2 发射」: the
+  /// ledger card, the segment counts, the record cards, the live tape and
+  /// the rows in their `.label` groups — the record cards' rows are not
+  /// drawn twice.
+  List<Widget> _desk(
+    Launch2InstancePage page,
+    Launch2Overview? overview,
+    VoidCallback onElapsed,
+    Widget Function(Launch2InstanceRow row) tile,
+  ) {
+    // Decision 0163: picked from the rows already read, never a request.
+    final hero = launch2HeroRows(
+      page.items.take(launch2HeroFirstPageRows).toList(growable: false),
+    );
+    final main = hero.isEmpty ? null : hero.first;
+    final records = launch2DeskRecordRows(hero);
+    final recordIds = <String>{for (final row in records) row.instanceId};
+    final groups = launch2GroupRows(<Launch2InstanceRow>[
+      for (final row in launch2ListOrder(page.items))
+        if (!recordIds.contains(row.instanceId)) row,
+    ]);
+    final drawn = <Launch2StageGroup>{for (final (group, _) in groups) group};
+    final counts = launch2DeskCounts(page.items, overview?.stats);
+    final activity = overview?.activity ?? const <Launch2Activity>[];
+
+    /// Where a count scrolls to: its first group heading on the page, else
+    /// the record card of a row of it.
+    GlobalKey? target(Launch2DeskSegment segment) {
+      for (final group in segment.groups) {
+        if (drawn.contains(group)) return _headingKey(group);
+      }
+      for (final row in records) {
+        if (segment.groups.contains(Launch2StageGroup.of(row.stage))) {
+          return _recordKey(row.instanceId);
+        }
+      }
+      return null;
+    }
+
+    final selected = main == null ? null : Launch2DeskSegment.of(main.stage);
+    return <Widget>[
+      Launch2DeskPager(
+        pages: launch2DeskPages(hero),
+        chainId: page.items.first.chainId,
+        onNavigate: widget.onNavigate,
+        onElapsed: onElapsed,
+      ),
+      Builder(
+        builder: (context) => LoopSegBar(
+          key: const ValueKey<String>('launch2-desk-segs'),
+          labels: <String>[
+            for (final (segment, count) in counts) '${segment.title} $count',
+          ],
+          dimmed: <bool>[for (final (_, count) in counts) count == 0],
+          selectedIndex: selected == null
+              ? -1
+              : Launch2DeskSegment.values.indexOf(selected),
+          onSelected: (index) {
+            final segment = Launch2DeskSegment.values[index];
+            final open = widget.onOpenGraduated;
+            if (segment == Launch2DeskSegment.graduated && open != null) {
+              open();
+              return;
+            }
+            final key = target(segment);
+            if (key != null) unawaited(launch2RevealGroup(context, key));
+          },
+        ),
+      ),
+      for (final row in records)
+        KeyedSubtree(
+          key: _recordKey(row.instanceId),
+          child: Launch2DeskRecordCard(
+            row: row,
+            onTap: () => widget.onNavigate(launch2HeroLocation(row)),
+            onElapsed: onElapsed,
+          ),
+        ),
+      if (activity.isNotEmpty)
+        Launch2DeskTape(
+          items: activity,
+          now: ref.read(launch2ClockProvider),
+          onNavigate: widget.onNavigate,
+        ),
+      for (final (group, members) in groups) ...<Widget>[
+        KeyedSubtree(
+          key: ValueKey<String>('launch2-group-${group.name}'),
+          child: LoopLabel(group.title, key: _headingKey(group)),
+        ),
+        for (final row in members) tile(row),
+      ],
+    ];
+  }
 }
+
 
 /// The order a v2 list draws its rows in (decision 0142): the server's own
 /// order (newest activation first), except that `closed_no_holders` rows —

@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -29,9 +30,10 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 // `launch2-nft` · 共识勋章 (decision 0163, docs/32 §4)
 // ---------------------------------------------------------------------------
 //
-// One instance's NFT as a page of its own: the medal, the stage line with
-// its countdown, what the medal does, the rules, what this wallet holds and
-// the one button. The page reads the project page's own instance read
+// One instance's NFT as a page of its own, in the prototype's parts
+// (decision 0164): a quiet ledger card with the stage and its countdown, the
+// medal under it, what the medal does and the rules as `.label` rows, what
+// this wallet holds as `.kv` and the one button. The page reads the project page's own instance read
 // (`launch2InstanceControllerProvider`), and its 「铸造」 is the project
 // page's own trip ([launch2MintNft]). Brass marks the NFT here and nowhere
 // else; Lime stays the trading accent.
@@ -48,7 +50,7 @@ enum Launch2NftAction {
   none,
 }
 
-/// The page's state line, button and medal for one instance read
+/// The page's ledger card, button and medal for one instance read
 /// (docs/32 §4.2).
 @immutable
 final class Launch2NftView {
@@ -60,17 +62,23 @@ final class Launch2NftView {
     required this.brassRing,
     required this.medalLabel,
     this.countdownTo,
+    this.stampPrefix = '剩 ',
     this.statusDetail,
   });
 
-  /// The state line; when [countdownTo] is set, the words before it.
+  /// The stage sentence, the first part of the ledger card's caption.
   final String status;
+
+  /// The ledger card's stamp counts down to this.
   final DateTime? countdownTo;
 
-  /// Lime: the stage takes orders or mints now. Chalk otherwise.
+  /// The words before the stamp's countdown.
+  final String stampPrefix;
+
+  /// Lime heading: the stage takes orders or mints now. Chalk otherwise.
   final bool statusLit;
 
-  /// The quiet line under it (「已铸 N 枚」, a hold reason).
+  /// The caption's figures after the sentence (「已铸 N 枚」, a hold reason).
   final String? statusDetail;
   final String buttonLabel;
   final Launch2NftAction action;
@@ -99,8 +107,9 @@ Launch2NftView launch2NftView(
   switch (row.stage) {
     case Launch2Stage.upcoming:
       return Launch2NftView(
-        status: next == null ? '开售时间待定' : '开售倒计时 ',
+        status: next == null ? '开售时间待定' : '开售倒计时',
         countdownTo: next,
+        stampPrefix: '距开售 ',
         statusLit: false,
         statusDetail:
             '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚 · '
@@ -112,7 +121,7 @@ Launch2NftView launch2NftView(
       );
     case Launch2Stage.nftSale:
       return Launch2NftView(
-        status: next == null ? 'NFT 铸造中' : 'NFT 铸造中 · 剩 ',
+        status: '铸造中',
         countdownTo: next,
         statusLit: true,
         statusDetail: minted,
@@ -139,7 +148,7 @@ Launch2NftView launch2NftView(
       );
     case Launch2Stage.priority:
       return Launch2NftView(
-        status: next == null ? '提前购进行中' : '提前购进行中 · 剩 ',
+        status: '提前购进行中',
         countdownTo: next,
         statusLit: true,
         statusDetail: minted,
@@ -489,16 +498,29 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
           icon: 'warn',
           message: failure.text,
         ),
-      _MedalHeader(detail: detail, view: view),
-      _StatusLines(
+      _NftFolio(
+        detail: detail,
         view: view,
         onElapsed: () => unawaited(_controller(detail.instanceId).reload()),
+      ),
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: LoopSpacing.tight),
+          child: Launch2NftMedal(
+            key: const ValueKey<String>('launch2-nft-medal'),
+            ticker: row.ticker,
+            logoUrl: row.logoUrl,
+            identity: row.instanceId,
+            bottomLabel: view.medalLabel,
+            brass: view.brassRing,
+          ),
+        ),
       ),
       if (summary != null)
         Padding(
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
-            LoopSpacing.group,
+            LoopSpacing.tight,
             LoopSpacing.page,
             0,
           ),
@@ -507,30 +529,45 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
             key: const ValueKey<String>('launch2-nft-summary'),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: LoopType.body.copyWith(color: LoopColors.text2),
+            style: LoopTypography.caption(12, color: LoopColors.text2),
           ),
         ),
-      _Bullets(
-        keyName: 'launch2-nft-benefits',
-        title: '这枚勋章能做什么',
-        lines: <String>[
-          '发售结束时持有，进入快照名单；名单发布后有 1 小时提前购内盘',
-          '铸造款进入本项目的托管合约，毕业后由平台按每笔 '
-              '${launch2Usd1Label(detail.template.buybackOrderUsd1)} 回购 MEME',
+      const LoopLabel('这枚勋章能做什么'),
+      LoopRecordGroup(
+        key: const ValueKey<String>('launch2-nft-benefits'),
+        rows: <LoopRecordRow>[
+          _entry(
+            'ticket',
+            '进快照名单',
+            '发售结束时持有，进入快照名单；名单发布后有 1 小时提前购内盘',
+          ),
+          _entry(
+            'droplet',
+            '托管与回购',
+            '铸造款进入本项目的托管合约，毕业后由平台按每笔 '
+                '${launch2Usd1Label(detail.template.buybackOrderUsd1)} 回购 MEME',
+          ),
         ],
       ),
-      _Bullets(
-        keyName: 'launch2-nft-rules',
-        title: '规则',
-        lines: <String>[
-          '每个地址终身只能铸 1 枚 · '
-              '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚',
-          '发售 ${launch2SaleDurationLabel(row.nftSale)}，'
-              '截止 ${loopDateTimeLabel(row.nftSale.endAt)}',
-          '$launch2NftRiskSentence。',
+      const LoopLabel('规则'),
+      LoopRecordGroup(
+        key: const ValueKey<String>('launch2-nft-rules'),
+        rows: <LoopRecordRow>[
+          _entry(
+            'user',
+            '每地址 1 枚',
+            '每个地址终身只能铸 1 枚 · '
+                '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚',
+          ),
+          _entry(
+            'clock',
+            '发售 ${launch2SaleDurationLabel(row.nftSale)}',
+            '截止 ${loopDateTimeLabel(row.nftSale.endAt)}',
+          ),
+          _entry('warn', '风险', '$launch2NftRiskSentence。'),
         ],
       ),
-      const SizedBox(height: 8),
+      const LoopLabel('我的勋章'),
       LoopKeyValue(
         key: const ValueKey<String>('launch2-nft-held'),
         label: '我的持有',
@@ -552,173 +589,56 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
   }
 }
 
-/// The medal and the ticker beside it.
-class _MedalHeader extends StatelessWidget {
-  const _MedalHeader({required this.detail, required this.view});
+/// One `.row` of the medal's facts: a glyph, the fact and its line.
+LoopRecordRow _entry(String icon, String title, String line) => LoopRecordRow(
+  leading: LoopRowIcon(icon: icon),
+  title: title,
+  subtitle: line,
+  subtitleMaxLines: 3,
+  chevron: false,
+);
+
+/// `.ledger-card.ledger-quiet.folio-primary`: CONSENSUS MEDAL, the ticker,
+/// the stage sentence with what was minted, and the countdown in the stamp.
+class _NftFolio extends StatelessWidget {
+  const _NftFolio({
+    required this.detail,
+    required this.view,
+    required this.onElapsed,
+  });
 
   final Launch2InstanceDetail detail;
-  final Launch2NftView view;
-
-  @override
-  Widget build(BuildContext context) {
-    final row = detail.row;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        12,
-        LoopSpacing.page,
-        LoopSpacing.group,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Launch2NftMedal(
-            key: const ValueKey<String>('launch2-nft-medal'),
-            ticker: row.ticker,
-            logoUrl: row.logoUrl,
-            identity: row.instanceId,
-            bottomLabel: view.medalLabel,
-            brass: view.brassRing,
-          ),
-          const SizedBox(width: 16),
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  launch2HeroTicker(row.ticker),
-                  key: const ValueKey<String>('launch2-nft-ticker'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.display,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  row.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.body.copyWith(color: LoopColors.text2),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusLines extends StatelessWidget {
-  const _StatusLines({required this.view, required this.onElapsed});
-
   final Launch2NftView view;
   final VoidCallback onElapsed;
 
   @override
   Widget build(BuildContext context) {
-    final color = view.statusLit ? LoopColors.lime : LoopColors.chalk;
-    final style = LoopType.titleLg.copyWith(color: color);
+    final row = detail.row;
+    final caption = <String>[view.status, ?view.statusDetail].join(' · ');
+    Widget folio(String? stamp) => LoopFolioPrimary(
+      key: const ValueKey<String>('launch2-nft-folio'),
+      archetype: LoopFolioArchetype.record,
+      ring: false,
+      headingTone: view.statusLit
+          ? LoopFolioHeadingTone.accent
+          : LoopFolioHeadingTone.neutral,
+      kicker: 'CONSENSUS MEDAL',
+      heading: launch2HeroTicker(row.ticker),
+      caption: caption,
+      stamp: stamp,
+    );
     final target = view.countdownTo;
-    final detail = view.statusDetail;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (target == null)
-            Text(
-              view.status,
-              key: const ValueKey<String>('launch2-nft-status'),
-              style: style,
-            )
-          else
-            Row(
-              key: const ValueKey<String>('launch2-nft-status'),
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Text(view.status, style: style),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Launch2Countdown(
-                      target: target,
-                      onElapsed: onElapsed,
-                      style: LoopType.figureLg.copyWith(color: color),
-                    ),
-                  ),
-                ),
-              ],
+    return KeyedSubtree(
+      key: const ValueKey<String>('launch2-nft-status'),
+      child: target == null
+          ? folio(null)
+          : Launch2CountdownBuilder(
+              target: target,
+              onElapsed: onElapsed,
+              builder: (context, text) => folio('${view.stampPrefix}$text'),
             ),
-          if (detail != null) ...<Widget>[
-            const SizedBox(height: 4),
-            Text(
-              detail,
-              key: const ValueKey<String>('launch2-nft-status-detail'),
-              style: LoopType.body.copyWith(color: LoopColors.text2),
-            ),
-          ],
-        ],
-      ),
     );
   }
-}
-
-class _Bullets extends StatelessWidget {
-  const _Bullets({
-    required this.keyName,
-    required this.title,
-    required this.lines,
-  });
-
-  final String keyName;
-  final String title;
-  final List<String> lines;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    key: ValueKey<String>(keyName),
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      LoopSpacing.group,
-      LoopSpacing.page,
-      0,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(title, style: LoopType.headingSm),
-        const SizedBox(height: 8),
-        for (final line in lines)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, right: 8),
-                  child: Container(
-                    width: 4,
-                    height: 4,
-                    decoration: const BoxDecoration(
-                      color: LoopColors.text3,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    line,
-                    style: LoopType.body.copyWith(color: LoopColors.text2),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    ),
-  );
 }
 
 /// 共识勋章 (docs/32 §4.1): a perfect circle — a 2 px outer ring (Brass, or

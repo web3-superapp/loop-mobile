@@ -531,7 +531,9 @@ void main() {
       expect(find.text('经典'), findsOneWidget);
       expect(find.text('已毕业'), findsWidgets);
       expect(launch2.listCalls.first, (null, null));
-      expect(_key('launch2-row-$l2InstanceA'), findsOneWidget);
+      // Decision 0164: the NFT sale is the desk's main event, drawn as its
+      // record card rather than repeated as a row.
+      expect(_key('launch2-desk-record-$l2InstanceA'), findsOneWidget);
 
       await tester.tap(_key('meme-segment-2'));
       await tester.pumpAndSettle();
@@ -578,9 +580,14 @@ void main() {
         ),
       );
       final opened = <String>[];
+      // The flat list (this fake answers every scope with the same page):
+      // on 「v2 发射」 the live rows are the desk's record cards (0164).
       await _pump(
         tester,
-        Launch2ListSegment(scope: Launch2ListScope.all, onNavigate: opened.add),
+        Launch2ListSegment(
+          scope: Launch2ListScope.graduated,
+          onNavigate: opened.add,
+        ),
         launch2: launch2,
         clock: clock,
       );
@@ -594,7 +601,7 @@ void main() {
       expect(find.text('\$0.0₄4167'), findsNWidgets(2));
       expect(find.text('已毕业'), findsWidgets);
       expect(find.text('毕业价'), findsOneWidget);
-      expect(_key('launch2-list-all-provenance'), findsOneWidget);
+      expect(_key('launch2-list-graduated-provenance'), findsOneWidget);
 
       clock.now = l2Now.add(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
@@ -651,7 +658,8 @@ void main() {
         launch2: launch2,
       );
       expect(launch2.listCalls, contains((null, 'abc.def')));
-      expect(_key('launch2-row-$l2InstanceB'), findsOneWidget);
+      // Both pages' rows are NFT sales: the desk's two record cards (0164).
+      expect(_key('launch2-desk-record-$l2InstanceB'), findsOneWidget);
       expect(find.text('没有更多'), findsNothing);
       await _drain(tester);
 
@@ -1865,8 +1873,9 @@ void main() {
         launch2: launch2,
       );
       final closedTop = tester.getTopLeft(_key('launch2-row-$closedId')).dy;
+      // The NFT sale is the desk's record card (0164).
       expect(
-        tester.getTopLeft(_key('launch2-row-$l2InstanceA')).dy,
+        tester.getTopLeft(_key('launch2-desk-record-$l2InstanceA')).dy,
         lessThan(closedTop),
       );
       expect(

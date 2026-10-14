@@ -1984,7 +1984,12 @@ class LoopSeg extends StatelessWidget {
     this.block = false,
     this.icon,
     this.quiet = false,
+    this.dimmed = false,
   });
+
+  /// The chip counts nothing now (a segment of zero, decision 0164): its
+  /// label is drawn in Text3 rather than Text2.
+  final bool dimmed;
 
   /// The OKX filter look (decision 0122): unselected is a plain word, the
   /// selected chip a solid dark-grey pill with the label in Chalk. Lime stays
@@ -2074,9 +2079,10 @@ class LoopSeg extends StatelessWidget {
   }
 
   Widget _segLabel() {
+    final idle = dimmed ? LoopColors.text3 : LoopColors.text2;
     final colour = quiet
-        ? (selected ? LoopColors.chalk : LoopColors.text2)
-        : (selected ? LoopColors.ink : LoopColors.text2);
+        ? (selected ? LoopColors.chalk : idle)
+        : (selected ? LoopColors.ink : idle);
     final text = Text(
       label,
       maxLines: 1,
@@ -2113,7 +2119,9 @@ class LoopSegBar extends StatelessWidget {
     super.key,
     this.icons,
     this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 14),
-  }) : assert(icons == null || icons.length == labels.length);
+    this.dimmed,
+  }) : assert(icons == null || icons.length == labels.length),
+       assert(dimmed == null || dimmed.length == labels.length);
 
   final List<String> labels;
   final int selectedIndex;
@@ -2121,6 +2129,10 @@ class LoopSegBar extends StatelessWidget {
 
   /// One sprite glyph per label, or null for a chip without one.
   final List<String?>? icons;
+
+  /// Per label: the chip counts nothing now and is drawn dimmed
+  /// ([LoopSeg.dimmed]); a tap on it still reaches [onSelected].
+  final List<bool>? dimmed;
 
   /// The bar's own inset. The default is the page gutter; a bar inside a
   /// block that already sits on the gutter (a trade panel) passes no
@@ -2141,6 +2153,7 @@ class LoopSegBar extends StatelessWidget {
               label: labels[index],
               icon: icons?[index],
               quiet: true,
+              dimmed: dimmed?[index] ?? false,
               selected: index == selectedIndex,
               onSelected: () => onSelected(index),
             ),

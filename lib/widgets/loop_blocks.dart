@@ -1307,8 +1307,12 @@ class LoopProgressBar extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: fraction == null
                 ? const SizedBox.shrink()
+                // `heightFactor: 1`: the track hands its child a loose
+                // height, and a childless box takes the smallest it is
+                // offered — the fill was laid out 0 px tall and never seen.
                 : FractionallySizedBox(
                     widthFactor: fraction.clamp(0, 1),
+                    heightFactor: 1,
                     child: ColoredBox(color: fillColor),
                   ),
           ),
