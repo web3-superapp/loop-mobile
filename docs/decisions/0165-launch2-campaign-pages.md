@@ -66,6 +66,12 @@ GET /v2/launch2/campaigns → { items: [{ campaignId, title, subtitle|null, cove
   全部缺省时像素不变（stamp 仍 right 14）。有 `aside` 时文字区右边距 = asideWidth + 10，stamp 落在文字区右下（right = 118），不压在封面上。
 - `loop_remote_avatar.dart` 新增 `loopRemoteImageSource(url)`（头像本身改用它，行为不变），让非头像图片也能用测试替身。
 
+## Consequences
+- 发射台账本分页从此有两类页：事件页（0164）与活动页（本决策），页序与 ≤5 的上限由 `launch2DeskPages` 一处决定；后台改活动不需要发版。
+- 活动接口不可用、返回坏数据或为空时，分页退回 0164 的纯事件页，列表其它块不受影响；没有新的失败面。
+- `url` 外链暂为复制链接，真正打开浏览器需要新增直接依赖与原生构建，另立决策（见 docs/34 第 23 题）。
+- `LoopFolioPrimary` 多了 `aside` 等可选参数，其它调用方像素不变；活动卡成为今后「封面 + 文字」账本卡的唯一写法。
+
 ## 与方案 A 参考图的差异
 - 参考图的印章 `剩 6D` 叠在封面右下；这里印章放在文字区右下，避免压图失读。文字为「剩 6 天」（中文，按 S184 任务定）。
 - 参考图没有按钮文字；按任务加 `ctaLabel` 小按钮于副标题下。
