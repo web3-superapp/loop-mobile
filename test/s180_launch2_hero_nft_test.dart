@@ -1,0 +1,960 @@
+// S180 · 发射台 Banner and 共识勋章 (client decision 0163, docs/32).
+//
+// The hero picks from the list rows already read; the NFT page reads the
+// project page's own instance read and mints through the project page's own
+// trip (`launch2MintNft`). The samples are the S136 fixtures; `summary` and
+// `links` (loop-api S180) are added by hand.
+import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
+import 'package:loop_mobile/features/launch2/launch2_hero.dart';
+import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_list.dart';
+import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_routes.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/privy/privy_provider.dart';
+import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+
+import 'support/launch2_fixtures.dart';
+import 'support/loop_ground_probe.dart';
+import 'support/s7_page_harness.dart';
+
+Finder _key(String value) => find.byKey(ValueKey<String>(value));
+
+const String _txHash =
+    '0x3000000000000000000000000000000000000000000000000000000000000003';
+
+/// Distinct instance ids for the hero rows (UUIDv4 shape).
+String _id(int n) => '8b9f3c1e-2d4a-4f6b-9c8d-${n.toString().padLeft(12, '0')}';
+
+String _iso(DateTime value) => value.toUtc().toIso8601String();
+
+/// One list row; [startIn] moves the NFT sale's start (and end) relative to
+/// the test clock.
+Map<String, Object?> _rowJson(
+  int n,
+  String stage, {
+  int soldBps = 0,
+  Duration? startIn,
+  Duration? nextIn,
+  String ticker = 'FROG',
+  String name = 'Frog Launch',
+}) {
+  final row = l2RowJson(
+    instanceId: _id(n),
+    stage: stage,
+    soldBps: soldBps,
+    ticker: ticker,
+    name: name,
+    nextChangeAt: nextIn == null ? null : l2Now.add(nextIn),
+    noNextChange: stage == 'public' || stage == 'graduated',
+  );
+  if (startIn != null) {
+    final start = l2Now.add(startIn);
+    row['nftSale'] = <String, Object?>{
+      ...(row['nftSale']! as Map<String, Object?>),
+      'startAt': _iso(start),
+      'endAt': _iso(start.add(const Duration(days: 7))),
+    };
+    if (stage == 'upcoming') row['nextChangeAt'] = _iso(start);
+  }
+  return row;
+}
+
+List<Launch2InstanceRow> _rows(List<Map<String, Object?>> rows) =>
+    l2Page(rows).items;
+
+/// A detail body with [mutate] applied to its `instance`.
+Launch2InstanceDetail _detail({
+  String stage = 'nft_sale',
+  Map<String, Object?>? viewer,
+  bool noViewer = false,
+  bool openedWithoutHolders = false,
+  Object? tradingHold,
+  String? summary,
+  String? tokenId,
+  String ticker = 'FROG',
+  String name = 'Frog Launch',
+}) {
+  final body = l2DetailJson(
+    stage: stage,
+    viewer: viewer,
+    noViewer: noViewer,
+    openedWithoutHolders: openedWithoutHolders,
+    noNextChange: stage == 'public' || stage == 'graduated',
+  );
+  final instance = body['instance']! as Map<String, Object?>;
+  instance['ticker'] = ticker;
+  instance['name'] = name;
+  if (tradingHold != null) instance['tradingHold'] = tradingHold;
+  if (summary != null) {
+    instance['summary'] = summary;
+    instance['links'] = <String>['https://x.com/frog'];
+  }
+  if (tokenId != null) {
+    final view = instance['viewer']! as Map<String, Object?>;
+    view['nft'] = <String, Object?>{'mintedTokenId': tokenId, 'held': 1};
+  }
+  return LoopV2Launch2Codec.detail(body, mediaUrl: (_) => null);
+}
+
+final class _Fake implements Launch2Gateway {
+  _Fake({this.page, List<Launch2InstanceDetail>? details, this.intent})
+    : details = details ?? <Launch2InstanceDetail>[];
+
+  final Launch2InstancePage? page;
+
+  /// The detail reads, in order; the last one repeats.
+  final List<Launch2InstanceDetail> details;
+  final Launch2Intent? intent;
+  int detailReads = 0;
+  int nftCalls = 0;
+
+  Future<Never> _unavailable() => Future<Never>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+
+  @override
+  LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
+
+  @override
+  Future<Launch2InstancePage> listInstances({
+    Launch2Stage? stage,
+    String? cursor,
+  }) => page == null ? _unavailable() : Future<Launch2InstancePage>.value(page);
+
+  @override
+  Future<Launch2InstanceDetail> loadInstance(String instanceId) {
+    if (details.isEmpty) return _unavailable();
+    final index = detailReads < details.length
+        ? detailReads
+        : details.length - 1;
+    detailReads += 1;
+    return Future<Launch2InstanceDetail>.value(details[index]);
+  }
+
+  @override
+  Future<Launch2Intent> prepareNftMint({
+    required String instanceId,
+    required String walletId,
+  }) {
+    nftCalls += 1;
+    final value = intent;
+    return value == null ? _unavailable() : Future<Launch2Intent>.value(value);
+  }
+
+  @override
+  Future<Launch2Quote> quote({
+    required String instanceId,
+    required Launch2Side side,
+    required Decimal amount,
+    required String walletId,
+  }) => _unavailable();
+
+  @override
+  Future<Launch2Intent> prepareTrade({
+    required String instanceId,
+    required String walletId,
+    required Launch2Side side,
+    required Decimal amount,
+    required Decimal minOut,
+    required DateTime deadline,
+  }) => _unavailable();
+
+  @override
+  Future<Launch2BuybackPage> loadBuybacks(String instanceId) =>
+      Future<Launch2BuybackPage>.value(l2Buybacks());
+
+  @override
+  Future<Launch2Positions> loadPositions() => _unavailable();
+
+  @override
+  Future<Launch2PoolQuote> poolQuote({
+    required String instanceId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+    required String walletId,
+  }) => _unavailable();
+
+  @override
+  Future<Launch2PoolPrepared> preparePoolTrade({
+    required String instanceId,
+    required String walletId,
+    required Launch2Side side,
+    required Launch2PoolMode mode,
+    required Decimal amount,
+    required int slippageBps,
+  }) => _unavailable();
+
+  @override
+  Future<Launch2PoolTrades> loadPoolTrades({
+    required String instanceId,
+    required String walletId,
+    int limit = launch2PoolTradesShown,
+  }) => _unavailable();
+}
+
+final class _RecordingWallet implements WalletSigningGateway {
+  final List<SigningIntent> handed = <SigningIntent>[];
+
+  @override
+  WalletGatewayAvailability get availability =>
+      WalletGatewayAvailability.available;
+
+  @override
+  String get label => 'test';
+
+  @override
+  Future<WalletHandoffResult> handoff(
+    SigningIntent intent, {
+    required DateTime now,
+  }) async {
+    handed.add(intent);
+    final refusal = walletHandoffRefusal(intent, now: now);
+    if (refusal != null) return WalletHandoffResult.rejected(refusal);
+    return const WalletHandoffResult(
+      accepted: true,
+      code: 'wallet_accepted',
+      value: _txHash,
+    );
+  }
+}
+
+LoopV2MetaSnapshot _meta() {
+  final base = s7MetaSnapshot();
+  return LoopV2MetaSnapshot(
+    clientPolicy: base.clientPolicy,
+    capabilities: LoopV2Capabilities(
+      contractVersion: '2.0',
+      configVersion: base.capabilities.configVersion,
+      effectiveAt: base.capabilities.effectiveAt,
+      capabilities: <LoopV2Capability>[
+        for (final capability in base.capabilities.capabilities)
+          if (capability.id == LoopV2CapabilityId.launch2)
+            const LoopV2Capability(
+              id: LoopV2CapabilityId.launch2,
+              availability: LoopV2CapabilityAvailability.available,
+              reasonCode: null,
+              evidence: LoopV2CapabilityEvidence(
+                status: LoopV2CapabilityEvidenceStatus.notApplicable,
+                reasonCode: null,
+              ),
+            )
+          else
+            capability,
+      ],
+    ),
+  );
+}
+
+LoopWalletAccount _wallet() => LoopWalletAccount(
+  walletId: l2WalletId,
+  address: l2WalletAddress,
+  kind: LoopWalletKind.embedded,
+  status: LoopWalletStatus.active,
+  isActive: true,
+  firstSeenAt: DateTime.utc(2026, 9),
+  lastSeenAt: DateTime.utc(2026, 10, 8),
+);
+
+Future<void> _pump(
+  WidgetTester tester,
+  Widget page,
+  _Fake gateway, {
+  _RecordingWallet? wallet,
+  bool noWallet = false,
+  Size size = const Size(390, 2600),
+}) => pumpS7Page(
+  tester,
+  page,
+  meta: _meta(),
+  size: size,
+  wallet: noWallet
+      ? FakeWalletDirectory()
+      : FakeWalletDirectory(
+          activeWalletId: l2WalletId,
+          wallets: <LoopWalletAccount>[_wallet()],
+        ),
+  overrides: <Override>[
+    launch2GatewayProvider.overrideWithValue(gateway),
+    launch2ClockProvider.overrideWithValue(() => l2Now),
+    launch2PollingProvider.overrideWithValue(
+      const Launch2Polling(
+        detailInterval: Duration(hours: 1),
+        tradingInterval: Duration(hours: 1),
+        listInterval: Duration(hours: 1),
+      ),
+    ),
+    loopFeatureSwitchesProvider.overrideWithValue(
+      const LoopFeatureSwitchValues(launch2Visible: true),
+    ),
+    if (wallet != null) walletSigningGatewayProvider.overrideWithValue(wallet),
+  ],
+);
+
+Future<void> _drain(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(hours: 2));
+}
+
+Widget _list(
+  List<String> opened, {
+  Launch2ListScope scope = Launch2ListScope.all,
+}) => Scaffold(
+  body: Launch2ListSegment(scope: scope, onNavigate: opened.add),
+);
+
+_Fake _listGateway(List<Map<String, Object?>> rows) =>
+    _Fake(page: l2Page(rows));
+
+LoopButton _button(WidgetTester tester) =>
+    tester.widget<LoopButton>(_key('launch2-nft-mint'));
+
+Launch2NftMedal _medal(WidgetTester tester) =>
+    tester.widget<Launch2NftMedal>(_key('launch2-nft-medal'));
+
+String _statusText(WidgetTester tester) => tester
+    .widgetList<Text>(
+      find.descendant(
+        of: _key('launch2-nft-status'),
+        matching: find.byType(Text),
+        matchRoot: true,
+      ),
+    )
+    .map((text) => text.data ?? '')
+    .join();
+
+void main() {
+  loopWatchGround();
+
+  group('hero · which rows and in what order', () {
+    test('activities first (NFT sale, early round, curve ≥ 70 %), previews '
+        'after them nearest first; everything else stays out', () {
+      final rows = _rows(<Map<String, Object?>>[
+        _rowJson(1, 'upcoming', startIn: const Duration(days: 3)),
+        _rowJson(2, 'public', soldBps: 8200),
+        _rowJson(3, 'graduated'),
+        _rowJson(4, 'priority', nextIn: const Duration(minutes: 40)),
+        _rowJson(5, 'public', soldBps: 6999),
+        _rowJson(6, 'nft_sale'),
+        _rowJson(7, 'upcoming', startIn: const Duration(hours: 5)),
+        _rowJson(8, 'snapshot_pending', nextIn: const Duration(hours: 1)),
+        _rowJson(9, 'public', soldBps: 7000),
+      ]);
+      expect(launch2HeroRows(rows).map((row) => row.instanceId), <String>[
+        _id(6),
+        _id(4),
+        _id(2),
+        _id(9),
+        _id(7),
+      ]);
+    });
+
+    test('at most five cards; NFT sales ending soonest lead', () {
+      final rows = _rows(<Map<String, Object?>>[
+        for (var i = 1; i <= 7; i++)
+          _rowJson(i, 'nft_sale', nextIn: Duration(hours: 10 - i)),
+      ]);
+      final hero = launch2HeroRows(rows);
+      expect(hero, hasLength(launch2HeroLimit));
+      expect(hero.first.instanceId, _id(7));
+      expect(hero.last.instanceId, _id(3));
+    });
+
+    test('previews alone still make a hero, nearest sale first', () {
+      final rows = _rows(<Map<String, Object?>>[
+        _rowJson(1, 'upcoming', startIn: const Duration(days: 2)),
+        _rowJson(2, 'upcoming', startIn: const Duration(hours: 2)),
+      ]);
+      expect(launch2HeroRows(rows).map((row) => row.instanceId), <String>[
+        _id(2),
+        _id(1),
+      ]);
+    });
+
+    testWidgets('no qualifying row: no hero, the list starts as before', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      final rows = <Map<String, Object?>>[
+        _rowJson(1, 'graduated'),
+        _rowJson(2, 'public', soldBps: 5000),
+        _rowJson(3, 'snapshot_pending', nextIn: const Duration(hours: 1)),
+      ];
+      await _pump(tester, _list(opened), _listGateway(rows));
+      expect(_key('launch2-hero'), findsNothing);
+      expect(_key('launch2-tile-${_id(1)}'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('the 已毕业 list draws no hero whatever it holds', (tester) async {
+      final opened = <String>[];
+      final rows = <Map<String, Object?>>[_rowJson(1, 'nft_sale')];
+      await _pump(
+        tester,
+        _list(opened, scope: Launch2ListScope.graduated),
+        _listGateway(rows),
+      );
+      expect(_key('launch2-hero'), findsNothing);
+      await _drain(tester);
+    });
+  });
+
+  group('hero · the three lines and the fuse per stage', () {
+    final rows = _rows(<Map<String, Object?>>[
+      _rowJson(1, 'upcoming', startIn: const Duration(days: 2, hours: 3)),
+      _rowJson(2, 'nft_sale'),
+      _rowJson(3, 'snapshot_pending', nextIn: const Duration(hours: 1)),
+      _rowJson(4, 'priority', soldBps: 3500),
+      _rowJson(5, 'public', soldBps: 8000),
+    ]);
+    Launch2InstanceRow at(int n) =>
+        rows.firstWhere((row) => row.instanceId == _id(n));
+
+    test('upcoming: chalk 开售倒计时, price and duration, no fuse', () {
+      final row = at(1);
+      expect(launch2HeroHeadline(row.stage, sprint: false), '开售倒计时');
+      expect(launch2HeroLit(row.stage), isFalse);
+      expect(launch2HeroDetail(row), '100 USD1 / 枚 · 发售 7 天');
+      expect(launch2HeroFuse(row, l2Now), isNull);
+      expect(launch2HeroLocation(row), Launch2Route.nft(_id(1)));
+    });
+
+    test('nft_sale: lime NFT 铸造中, minted and price, fuse = time past', () {
+      final row = at(2);
+      expect(launch2HeroHeadline(row.stage, sprint: false), 'NFT 铸造中');
+      expect(launch2HeroLit(row.stage), isTrue);
+      expect(launch2HeroDetail(row), '已铸 2 枚 · 100 USD1 / 枚');
+      // The sale runs 01-16 → 01-23; the clock is 01-20: 4 of 7 days.
+      expect(launch2HeroFuse(row, l2Now), closeTo(4 / 7, 1e-9));
+      expect(launch2HeroLocation(row), Launch2Route.nft(_id(2)));
+    });
+
+    test('snapshot_pending: 名单生成中, the early-round line, no fuse', () {
+      final row = at(3);
+      expect(launch2HeroHeadline(row.stage, sprint: false), '名单生成中');
+      expect(launch2HeroDetail(row), '名单发布后 1 小时提前购');
+      expect(launch2HeroFuse(row, l2Now), isNull);
+      expect(launch2HeroLocation(row), Launch2Route.instance(_id(3)));
+    });
+
+    test('priority: 白名单提前购, sold share and price, fuse = sold / 8 亿', () {
+      final row = at(4);
+      expect(launch2HeroHeadline(row.stage, sprint: false), '白名单提前购');
+      expect(launch2HeroDetail(row), startsWith('内盘已售 35% · '));
+      expect(launch2HeroDetail(row), endsWith(' USD1'));
+      expect(launch2HeroDetail(row), isNot(contains(r'$')));
+      expect(launch2HeroDetail(row), '内盘已售 35% · 0.0₄4167 USD1');
+      expect(launch2HeroFuse(row, l2Now), 0.35);
+      expect(launch2HeroLocation(row), Launch2Route.instance(_id(4)));
+    });
+
+    test('public ≥ 70 %: 内盘冲刺, price and 卖满自动毕业, fuse = 0.8', () {
+      final row = at(5);
+      expect(launch2HeroHeadline(row.stage, sprint: true), '内盘冲刺');
+      expect(launch2HeroDetail(row), endsWith(' USD1 · 卖满自动毕业'));
+      expect(launch2HeroFuse(row, l2Now), 0.8);
+    });
+
+    test('the spoken sentence names ticker, stage, time left and minted', () {
+      expect(
+        launch2HeroSpokenLabel(at(2), l2Now),
+        'FROG，NFT 铸造中，剩 2 天 3 小时，已铸 2 枚',
+      );
+      expect(launch2HeroTicker('ABCDEFGHIJ'), 'ABCDEFGH…');
+    });
+
+    testWidgets('drawn: the NFT card says its three lines, the fuse and the '
+        'Brass ring; the preview card has no fuse', (tester) async {
+      final opened = <String>[];
+      final json = <Map<String, Object?>>[
+        _rowJson(2, 'nft_sale'),
+        _rowJson(1, 'upcoming', startIn: const Duration(days: 2, hours: 3)),
+      ];
+      await _pump(tester, _list(opened), _listGateway(json));
+      expect(_key('launch2-hero'), findsOneWidget);
+      final id = _id(2);
+      expect(
+        tester.widget<Text>(_key('launch2-hero-headline-$id')).data,
+        'NFT 铸造中',
+      );
+      expect(
+        tester.widget<Text>(_key('launch2-hero-detail-$id')).data,
+        '已铸 2 枚 · 100 USD1 / 枚',
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-hero-figure-$id'),
+          matching: find.text('2天 03:00:00'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<Launch2HeroFuse>(_key('launch2-hero-fuse-$id')).fraction,
+        closeTo(4 / 7, 1e-9),
+      );
+      expect(_key('launch2-hero-ring-$id'), findsOneWidget);
+      expect(_key('launch2-hero-fuse-${_id(1)}'), findsNothing);
+      await _drain(tester);
+    });
+  });
+
+  group('hero · dots and taps', () {
+    testWidgets('one card: no dots', (tester) async {
+      final opened = <String>[];
+      final json = <Map<String, Object?>>[_rowJson(1, 'nft_sale')];
+      await _pump(tester, _list(opened), _listGateway(json));
+      expect(_key('launch2-hero'), findsOneWidget);
+      expect(_key('launch2-hero-dots'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('three cards: three dots; the first card opens the NFT page, '
+        'a swipe moves the dot and the early-round card opens the project', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      final json = <Map<String, Object?>>[
+        _rowJson(1, 'nft_sale'),
+        _rowJson(2, 'priority', nextIn: const Duration(minutes: 30)),
+        _rowJson(3, 'upcoming', startIn: const Duration(days: 1)),
+      ];
+      await _pump(tester, _list(opened), _listGateway(json));
+      expect(_key('launch2-hero-dots'), findsOneWidget);
+      for (var i = 0; i < 3; i++) {
+        expect(_key('launch2-hero-dot-$i'), findsOneWidget);
+      }
+      Color dot(int i) =>
+          (tester.widget<Container>(_key('launch2-hero-dot-$i')).decoration!
+                  as BoxDecoration)
+              .color!;
+      final active = dot(0);
+      expect(dot(1), isNot(active));
+
+      await tester.tap(_key('launch2-hero-page-${_id(1)}'));
+      await tester.pump();
+      expect(opened.last, '/launch2/nft?id=${_id(1)}');
+
+      await tester.drag(_key('launch2-hero'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      expect(dot(1), active);
+      expect(dot(0), isNot(active));
+      await tester.tap(_key('launch2-hero-page-${_id(2)}'));
+      await tester.pump();
+      expect(opened.last, '/launch2/instance?id=${_id(2)}');
+      await _drain(tester);
+    });
+  });
+
+  group('共识勋章 · the seven states', () {
+    testWidgets('upcoming: grey ring, 开售倒计时, 开售后可铸造 disabled', (tester) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[_detail(stage: 'upcoming')]),
+      );
+      expect(_key('launch2-nft-screen'), findsOneWidget);
+      expect(_statusText(tester), '开售倒计时 2天 03:00:00');
+      expect(_button(tester).label, '开售后可铸造');
+      expect(_button(tester).onPressed, isNull);
+      expect(_medal(tester).brass, isFalse);
+      expect(_medal(tester).bottomLabel, '共识勋章');
+      await _drain(tester);
+    });
+
+    testWidgets('nft_sale, not held: Brass ring, the countdown, minted, the '
+        'Brass mint button; summary above 这枚勋章能做什么', (tester) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[_detail(summary: '一只青蛙的共识实验')]),
+      );
+      expect(_statusText(tester), 'NFT 铸造中 · 剩 2天 03:00:00');
+      expect(
+        tester.widget<Text>(_key('launch2-nft-status-detail')).data,
+        '已铸 2 枚',
+      );
+      expect(_button(tester).label, '铸造 1 枚 · 100 USD1');
+      expect(_button(tester).onPressed, isNotNull);
+      expect(_button(tester).tone, LoopButtonTone.brass);
+      expect(_medal(tester).brass, isTrue);
+      expect(find.text('一只青蛙的共识实验'), findsOneWidget);
+      expect(
+        tester.getTopLeft(_key('launch2-nft-summary')).dy,
+        lessThan(tester.getTopLeft(find.text('这枚勋章能做什么')).dy),
+      );
+      expect(
+        tester.widget<LoopKeyValue>(_key('launch2-nft-held')).value,
+        '0 / 1',
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('nft_sale, held: #tokenId on the medal, 已持有 disabled', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[_detail(tokenId: '128')]),
+      );
+      expect(_medal(tester).bottomLabel, '#128');
+      expect(_button(tester).label, '已持有 · 每地址 1 枚');
+      expect(_button(tester).onPressed, isNull);
+      expect(
+        tester.widget<LoopKeyValue>(_key('launch2-nft-held')).value,
+        '#128 · 已在候选名单',
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('snapshot_pending: holder waits for the list, others see '
+        '铸造已结束', (tester) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(
+          details: <Launch2InstanceDetail>[
+            _detail(stage: 'snapshot_pending', tokenId: '5'),
+          ],
+        ),
+      );
+      expect(_statusText(tester), '铸造已结束 · 名单生成中');
+      expect(_button(tester).label, '等待名单发布');
+      expect(_button(tester).onPressed, isNull);
+      expect(_medal(tester).brass, isTrue);
+      await _drain(tester);
+
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(
+          details: <Launch2InstanceDetail>[_detail(stage: 'snapshot_pending')],
+        ),
+      );
+      expect(_button(tester).label, '铸造已结束');
+      expect(_button(tester).onPressed, isNull);
+      await _drain(tester);
+    });
+
+    testWidgets('priority / public / graduated: 去项目页交易 opens the project', (
+      tester,
+    ) async {
+      for (final (stage, status, opened) in <(String, String, bool)>[
+        ('priority', '提前购进行中 · 剩 2天 03:00:00', false),
+        ('public', '内盘已开放', false),
+        ('graduated', '已毕业', false),
+      ]) {
+        final navigated = <String>[];
+        await _pump(
+          tester,
+          Launch2NftScreen(instanceId: l2InstanceA, onNavigate: navigated.add),
+          _Fake(details: <Launch2InstanceDetail>[_detail(stage: stage)]),
+        );
+        expect(_statusText(tester), status, reason: stage);
+        expect(_button(tester).label, '去项目页交易', reason: stage);
+        expect(_medal(tester).brass, opened, reason: '$stage, not held');
+        await tester.tap(_key('launch2-nft-mint'));
+        await tester.pump();
+        expect(navigated, <String>[Launch2Route.instance(l2InstanceA)]);
+        await _drain(tester);
+      }
+    });
+
+    testWidgets('a public round opened without holders says so', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(
+          details: <Launch2InstanceDetail>[
+            _detail(stage: 'public', openedWithoutHolders: true),
+          ],
+        ),
+      );
+      expect(_statusText(tester), '发售结束时无人铸造，已直接进入公开轮');
+      await _drain(tester);
+    });
+
+    testWidgets('closed_no_holders: grey ring, closed for good, 去项目页', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(
+          details: <Launch2InstanceDetail>[_detail(stage: 'closed_no_holders')],
+        ),
+      );
+      expect(_statusText(tester), '发售结束时无人铸造，项目已关闭');
+      expect(_button(tester).label, '去项目页');
+      expect(_button(tester).onPressed, isNotNull);
+      expect(_medal(tester).brass, isFalse);
+      await _drain(tester);
+    });
+
+    testWidgets('no wallet: 激活钱包后可铸造, disabled', (tester) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[_detail(noViewer: true)]),
+        noWallet: true,
+      );
+      expect(_button(tester).label, '激活钱包后可铸造');
+      expect(_button(tester).onPressed, isNull);
+      expect(
+        tester.widget<LoopKeyValue>(_key('launch2-nft-held')).value,
+        '未激活钱包',
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('tradingHold: the 0161 banner, the line above the button, '
+        'the mint disabled', (tester) async {
+      final gateway = _Fake(
+        details: <Launch2InstanceDetail>[
+          _detail(
+            tradingHold: <String, Object?>{
+              'kind': 'usd1_paused',
+              'since': '2027-01-20T06:30:00.000Z',
+            },
+          ),
+        ],
+        intent: l2Intent(),
+      );
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        gateway,
+      );
+      expect(_key('launch2-trading-hold'), findsOneWidget);
+      expect(_key('launch2-nft-bar-hold'), findsOneWidget);
+      expect(_button(tester).label, '铸造 1 枚 · 100 USD1');
+      expect(_button(tester).onPressed, isNull);
+      await tester.tap(_key('launch2-nft-mint'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(gateway.nftCalls, 0);
+      await _drain(tester);
+    });
+
+    testWidgets('a malformed id fails closed without a read', (tester) async {
+      final gateway = _Fake();
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: 'not-an-id'),
+        gateway,
+      );
+      expect(_key('launch2-nft-invalid-identity'), findsOneWidget);
+      expect(gateway.detailReads, 0);
+      await _drain(tester);
+    });
+  });
+
+  group('共识勋章 · one mint', () {
+    testWidgets('confirm → prepare → sign; the re-read shows the mint: '
+        '#tokenId on the medal, 已持有, one toast', (tester) async {
+      final wallet = _RecordingWallet();
+      final gateway = _Fake(
+        details: <Launch2InstanceDetail>[
+          _detail(),
+          _detail(tokenId: '7'),
+        ],
+        intent: l2Intent(),
+      );
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        gateway,
+        wallet: wallet,
+      );
+      expect(_medal(tester).bottomLabel, '共识勋章');
+      await tester.tap(_key('launch2-nft-mint'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-nft-confirm'), findsOneWidget);
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+      expect(gateway.nftCalls, 1);
+      expect(_key('launch2-sign-sheet'), findsOneWidget);
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      expect(wallet.handed.map((intent) => intent.kind), <IntentKind>[
+        IntentKind.launchApproval,
+        IntentKind.launchPurchase,
+      ]);
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      expect(gateway.detailReads, greaterThanOrEqualTo(2));
+      expect(_medal(tester).bottomLabel, '#7');
+      expect(_button(tester).label, '已持有 · 每地址 1 枚');
+      expect(_button(tester).onPressed, isNull);
+      expect(find.text(launch2NftMintedToast), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await _drain(tester);
+    });
+
+    testWidgets('a refused prepare is said above the button, nothing signed', (
+      tester,
+    ) async {
+      final wallet = _RecordingWallet();
+      final gateway = _Fake(details: <Launch2InstanceDetail>[_detail()]);
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        gateway,
+        wallet: wallet,
+      );
+      await tester.tap(_key('launch2-nft-mint'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+      expect(gateway.nftCalls, 1);
+      expect(_key('launch2-nft-bar-failure'), findsOneWidget);
+      expect(_key('launch2-nft-action-failed'), findsOneWidget);
+      expect(wallet.handed, isEmpty);
+      await _drain(tester);
+    });
+  });
+
+  group('entries', () {
+    testWidgets('the project page keeps 购买 NFT and adds 铸造页', (tester) async {
+      final navigated = <String>[];
+      await _pump(
+        tester,
+        Launch2InstanceScreen(
+          instanceId: l2InstanceA,
+          onNavigate: navigated.add,
+        ),
+        _Fake(details: <Launch2InstanceDetail>[_detail()]),
+      );
+      expect(_key('launch2-buy-nft'), findsOneWidget);
+      expect(_key('launch2-nft-open'), findsOneWidget);
+      await tester.tap(_key('launch2-nft-open'));
+      await tester.pump();
+      expect(navigated, <String>['/launch2/nft?id=$l2InstanceA']);
+      await _drain(tester);
+    });
+
+    test('the route carries the instance id like the project page', () {
+      expect(Launch2Route.nftPath, '/launch2/nft');
+      expect(Launch2Route.nft(l2InstanceA), '/launch2/nft?id=$l2InstanceA');
+      expect(
+        Launch2Route.idOf(Uri.parse(Launch2Route.nft(l2InstanceA))),
+        l2InstanceA,
+      );
+    });
+
+    test('summary and links are optional on a row; junk reads as none', () {
+      final row = l2RowJson();
+      expect(l2Page(<Map<String, Object?>>[row]).items.single.summary, isNull);
+      final page = l2Page(<Map<String, Object?>>[
+        <String, Object?>{
+          ...row,
+          'summary': '  一只青蛙  ',
+          'links': <Object?>['https://x.com/frog', 'javascript:alert(1)', 7],
+        },
+      ]);
+      expect(page.items.single.summary, '一只青蛙');
+      expect(page.items.single.links, <String>['https://x.com/frog']);
+      final junk = l2Page(<Map<String, Object?>>[
+        <String, Object?>{...row, 'summary': 42, 'links': 'nope'},
+      ]);
+      expect(junk.items.single.summary, isNull);
+      expect(junk.items.single.links, isEmpty);
+    });
+  });
+
+  group('360 dp', () {
+    testWidgets('the hero with long tickers and names does not overflow', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      final json = <Map<String, Object?>>[
+        _rowJson(
+          1,
+          'upcoming',
+          startIn: const Duration(days: 12, hours: 3),
+          ticker: 'ABCDEFGHIJKL',
+          name: '一个名字很长很长很长的项目用来测试三百六十宽度',
+        ),
+        _rowJson(2, 'nft_sale', ticker: 'WXYZWXYZWXYZ'),
+        _rowJson(3, 'public', soldBps: 9999),
+      ];
+      tester.view.physicalSize = const Size(360, 800);
+      await _pump(
+        tester,
+        _list(opened),
+        _listGateway(json),
+        size: const Size(360, 800),
+      );
+      expect(tester.view.physicalSize, const Size(360, 800));
+      expect(_key('launch2-hero'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.widget<Text>(_key('launch2-hero-ticker-${_id(2)}')).data,
+        'WXYZWXYZ…',
+      );
+      // Activities lead: the NFT sale, the sprint, then the preview.
+      for (var i = 0; i < 2; i++) {
+        await tester.drag(_key('launch2-hero'), const Offset(-300, 0));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+      expect(
+        tester.widget<Text>(_key('launch2-hero-ticker-${_id(1)}')).data,
+        'ABCDEFGH…',
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('共识勋章 with a long ticker and name does not overflow', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(
+          details: <Launch2InstanceDetail>[
+            _detail(
+              ticker: 'ABCDEFGHIJKL',
+              name: '一个名字很长很长很长的项目用来测试三百六十宽度',
+              summary: '简介' * 30,
+              tokenId: '123456',
+            ),
+          ],
+        ),
+        size: const Size(360, 800),
+      );
+      expect(tester.view.physicalSize, const Size(360, 800));
+      expect(_key('launch2-nft-medal'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(
+        _key('launch2-nft-provenance'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await _drain(tester);
+    });
+  });
+}

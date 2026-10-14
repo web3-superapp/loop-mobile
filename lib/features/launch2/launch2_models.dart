@@ -175,6 +175,8 @@ final class Launch2InstanceRow {
     this.holdReason,
     this.activatedAt,
     this.graduatedAt,
+    this.summary,
+    this.links = const <String>[],
   });
 
   final String instanceId;
@@ -195,6 +197,14 @@ final class Launch2InstanceRow {
   final Launch2NftSale nftSale;
   final Launch2Curve curve;
   final DateTime? graduatedAt;
+
+  /// The project's introduction, its first 60 characters (loop-api S180,
+  /// decision 0163); `null` when the server sent none.
+  final String? summary;
+
+  /// The project's links (loop-api S180). Not drawn by the hero or the NFT
+  /// page; kept so a strict reader does not refuse the row.
+  final List<String> links;
 }
 
 @immutable

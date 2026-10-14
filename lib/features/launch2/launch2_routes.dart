@@ -27,6 +27,15 @@ abstract final class Launch2Route {
     queryParameters: <String, String>{'id': instanceId},
   ).toString();
 
+  /// Decision 0163 · 共识勋章: one instance's NFT mint page, addressed by the
+  /// same `id` query parameter.
+  static const String nftPath = '/launch2/nft';
+
+  static String nft(String instanceId) => Uri(
+    path: nftPath,
+    queryParameters: <String, String>{'id': instanceId},
+  ).toString();
+
   /// The instance id in a route, or `null` when it is missing or malformed.
   static String? idOf(Uri uri) {
     final value = uri.queryParameters['id'];

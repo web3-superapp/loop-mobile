@@ -51,6 +51,11 @@ abstract final class LoopV2Launch2Codec {
     'graduatedAt',
   };
 
+  /// Keys a row may carry or omit (loop-api S180, decision 0163): the
+  /// project summary and its links. Missing, `null` or unreadable values are
+  /// read as none — they are display extras, never a reason to refuse a row.
+  static const rowOptionalKeys = <String>{'summary', 'links'};
+
   static const detailKeys = <String>{
     ...rowKeys,
     'viewerIsProjectOwner',
@@ -69,7 +74,11 @@ abstract final class LoopV2Launch2Codec {
   };
 
   /// Keys a server may omit: `pool` (loop-api S146, decision 0145).
-  static const detailOptionalKeys = <String>{'pool', 'tradingHold'};
+  static const detailOptionalKeys = <String>{
+    'pool',
+    'tradingHold',
+    ...rowOptionalKeys,
+  };
 
   static const nftSaleKeys = <String>{
     'priceUsd1',
@@ -477,13 +486,41 @@ abstract final class LoopV2Launch2Codec {
       nftSale: _nftSale(map['nftSale']),
       curve: _curve(map['curve']),
       graduatedAt: LoopV2ChainCodec.optionalTimestamp(map, 'graduatedAt'),
+      summary: _summary(map['summary']),
+      links: _links(map['links']),
     );
+  }
+
+  /// The longest summary drawn; the server sends at most 60 characters.
+  static const int summaryMaxRunes = 120;
+
+  static String? _summary(Object? raw) {
+    if (raw is! String) return null;
+    final text = LoopV2ChainCodec.sanitizeProviderText(raw);
+    if (text.isEmpty || text.runes.length > summaryMaxRunes) return null;
+    return text;
+  }
+
+  /// Absolute `https` links only; anything else is dropped.
+  static List<String> _links(Object? raw) {
+    if (raw is! List) return const <String>[];
+    final links = <String>[
+      for (final item in raw.take(8))
+        if (item is String && item.length <= 2048)
+          if (Uri.tryParse(item) case final Uri uri
+              when uri.scheme == 'https' && uri.host.isNotEmpty)
+            item,
+    ];
+    return List<String>.unmodifiable(links);
   }
 
   static Launch2InstanceRow row(
     Object? raw, {
     required String? Function(String mediaId) mediaUrl,
-  }) => _rowFrom(LoopV2Contract.strictMap(raw, rowKeys), mediaUrl: mediaUrl);
+  }) => _rowFrom(
+    LoopV2Contract.strictMapWithOptional(raw, rowKeys, rowOptionalKeys),
+    mediaUrl: mediaUrl,
+  );
 
   /// `GET /v2/launch2/instances`.
   static Launch2InstancePage page(

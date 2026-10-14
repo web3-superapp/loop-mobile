@@ -3,7 +3,7 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "811d77de7f68357956144ce03fcf9976a7a975784d52aa6f049ac4bcbbfbe5ae",
+  "sha256": "e2895fb0c137401d22ab5ec9bbae2c1ab141ea52dda763a8f076172a1a492327",
   "defaultRoute": "chat",
   "tabs": [
     "chat",
@@ -12,7 +12,7 @@
     "intel",
     "wallet"
   ],
-  "count": 112,
+  "count": 113,
   "modules": {
     "0-global-account": [
       {
@@ -340,6 +340,11 @@
         "slug": "launch2-dynamic-rewards",
         "tab": false,
         "prototypeOrder": 125
+      },
+      {
+        "slug": "launch2-nft",
+        "tab": false,
+        "prototypeOrder": 126
       }
     ],
     "5-mining": [

@@ -19,6 +19,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_mint.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
@@ -236,19 +237,22 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       refresh: refresh,
     );
     if (!mounted || outcome == null) return;
-    final noun = launch2IntentNoun(intent.kind);
+    _record(detail, intent, outcome);
+  }
+
+  /// What the signing exit answered for [intent], held until the read model
+  /// shows it; a broadcast re-reads at once.
+  void _record(
+    Launch2InstanceDetail detail,
+    Launch2Intent intent,
+    Launch2SignOutcome outcome,
+  ) {
     setState(() {
       _settleReads = 0;
       _pending = _Pending(
         kind: intent.kind,
         venue: intent.venue,
-        text: outcome.broadcast
-            ? launch2BroadcastText(outcome, intent.kind)
-            : launch2StoppedAtRefresh(outcome)
-            ? launch2RefreshReasonText(outcome, noun)
-            : outcome.approvalTxHash != null
-            ? launch2ApprovalOnlyText(outcome.reasonCode, noun)
-            : launch2SignReasonText(outcome.reasonCode),
+        text: launch2OutcomeText(outcome, intent.kind),
         locked: outcome.broadcast,
         baseline: _viewerSignature(detail),
       );
@@ -264,69 +268,36 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     }
   }
 
+  /// 「购买 NFT」 (decision 0163: the trip is [launch2MintNft], shared with
+  /// 共识勋章).
   Future<void> _buyNft(Launch2InstanceDetail detail) async {
-    final confirmed = await showLaunch2NftConfirmSheet(
+    final result = await launch2MintNft(
       context,
-      ticker: detail.row.ticker,
-      priceLabel: launch2Usd1Label(detail.row.nftSale.priceUsd1),
+      ref,
+      detail,
+      onPreparing: () {
+        if (!mounted) return;
+        setState(() {
+          _preparingNft = true;
+          _actionFailure = null;
+        });
+      },
+      onPrepared: () {
+        if (mounted) setState(() => _preparingNft = false);
+      },
     );
-    if (!confirmed || !mounted) return;
-    final wallet = memeReadActiveWallet(ref);
-    final walletId = wallet.walletId ?? detail.viewer?.walletId;
-    if (walletId == null) {
-      setState(
-        () => _actionFailure = const Launch2ActionFailure('还没有可用的钱包，激活钱包后再购买'),
-      );
-      return;
+    if (!mounted) return;
+    switch (result) {
+      case Launch2NftMintCancelled():
+        return;
+      case Launch2NftMintRefused(:final failure):
+        setState(() {
+          _preparingNft = false;
+          _actionFailure = failure;
+        });
+      case Launch2NftMintSigned(:final intent, :final outcome):
+        _record(detail, intent, outcome);
     }
-    setState(() {
-      _preparingNft = true;
-      _actionFailure = null;
-    });
-    try {
-      final intent = await ref
-          .read(launch2GatewayProvider)
-          .prepareNftMint(instanceId: detail.instanceId, walletId: walletId);
-      if (!mounted) return;
-      setState(() => _preparingNft = false);
-      await _sign(detail, intent);
-    } on LoopChainException catch (failure) {
-      if (!mounted) return;
-      setState(() {
-        _preparingNft = false;
-        _actionFailure = launch2ActionFailure(
-          failure,
-          usd1Balance: _readUsd1(detail),
-        );
-      });
-      // The stage moved under the page (the sale ended, possibly closed
-      // with no holder): one line here and a fresh read, never an error
-      // page (decision 0142).
-      if (failure.reasonCode == launch2StageMismatchCode) {
-        unawaited(
-          ref
-              .read(
-                launch2InstanceControllerProvider(detail.instanceId).notifier,
-              )
-              .reload(),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _preparingNft = false;
-        _actionFailure = Launch2ActionFailure(
-          loopChainFailureReason(LoopChainFailureKind.unexpected),
-        );
-      });
-    }
-  }
-
-  /// The wallet's USD1 when the server read it at a block (after
-  /// graduation, decision 0148); `null` otherwise — never a guess.
-  static Decimal? _readUsd1(Launch2InstanceDetail detail) {
-    final holding = detail.viewer?.holding;
-    return holding != null && holding.balancesRead ? holding.usd1Balance : null;
   }
 
   /// 「去充值」: the wallet's own receive page (`receive`), for the active
@@ -460,7 +431,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         final failure = held || _preparingNft || hold != null
             ? null
             : _actionFailure;
-        return _BarShell(
+        return Launch2BarShell(
           failure: hold != null && !held
               ? Launch2TradingHoldLine(
                   key: const ValueKey<String>('launch2-bar-hold'),
@@ -620,12 +591,17 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         rows: <(String, String)>[
           ('开售时间', loopDateTimeLabel(detail.row.nftSale.startAt)),
           ('NFT 价格', launch2Usd1Label(detail.row.nftSale.priceUsd1)),
-          ('发售时长', _durationLabel(detail.row.nftSale)),
+          ('发售时长', launch2SaleDurationLabel(detail.row.nftSale)),
         ],
       ),
       _TemplateCard(detail: detail),
     ],
-    Launch2Stage.nftSale => <Widget>[_NftSaleBlock(detail: detail)],
+    Launch2Stage.nftSale => <Widget>[
+      _NftSaleBlock(
+        detail: detail,
+        onOpenMintPage: () => _open(Launch2Route.nft(detail.instanceId)),
+      ),
+    ],
     Launch2Stage.snapshotPending => <Widget>[
       LoopEmptyState(
         key: const ValueKey<String>('launch2-snapshot-pending'),
@@ -733,48 +709,6 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ],
     Launch2Stage.paused => <Widget>[_TemplateCard(detail: detail)],
   };
-
-  static String _durationLabel(Launch2NftSale sale) {
-    final hours = sale.endAt.difference(sale.startAt).inMinutes / 60;
-    if (hours >= 24 && hours % 24 == 0) return '${hours ~/ 24} 天';
-    if (hours == hours.roundToDouble()) return '${hours.toInt()} 小时';
-    return '${sale.endAt.difference(sale.startAt).inMinutes} 分钟';
-  }
-}
-
-class _BarShell extends StatelessWidget {
-  const _BarShell({required this.child, this.failure});
-
-  final Widget child;
-
-  /// The last refusal of [child]'s action, directly above it, so it shows
-  /// wherever the page is scrolled (decision 0153).
-  final Widget? failure;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
-      color: LoopColors.ink,
-      border: Border(top: BorderSide(color: LoopColors.line)),
-    ),
-    child: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            if (failure case final Widget line) ...<Widget>[
-              line,
-              const SizedBox(height: 8),
-            ],
-            child,
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 /// 「你是项目方」: one line, nothing else changes for the owner here.
@@ -1092,9 +1026,12 @@ class _TemplateCard extends StatelessWidget {
 }
 
 class _NftSaleBlock extends StatelessWidget {
-  const _NftSaleBlock({required this.detail});
+  const _NftSaleBlock({required this.detail, required this.onOpenMintPage});
 
   final Launch2InstanceDetail detail;
+
+  /// 「铸造页」 (decision 0163): 共识勋章 of this instance.
+  final VoidCallback onOpenMintPage;
 
   @override
   Widget build(BuildContext context) {
@@ -1109,10 +1046,18 @@ class _NftSaleBlock extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              Text(
-                launch2Usd1Label(sale.priceUsd1),
-                key: const ValueKey<String>('launch2-nft-price'),
-                style: LoopType.figureXl,
+              // Decision 0163: the price gives way to 「铸造页」 rather than
+              // pushing it off a narrow row.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    launch2Usd1Label(sale.priceUsd1),
+                    key: const ValueKey<String>('launch2-nft-price'),
+                    style: LoopType.figureXl,
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
               Padding(
@@ -1123,6 +1068,19 @@ class _NftSaleBlock extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              TextButton(
+                key: const ValueKey<String>('launch2-nft-open'),
+                onPressed: onOpenMintPage,
+                style: TextButton.styleFrom(
+                  foregroundColor: LoopColors.brass,
+                  minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: Text(
+                  '铸造页',
+                  style: LoopType.caption.copyWith(color: LoopColors.brass),
+                ),
+              ),
               LoopIconButton(
                 key: const ValueKey<String>('launch2-nft-info'),
                 icon: 'info',

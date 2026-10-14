@@ -8273,7 +8273,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 112-route manifest."""
+    """Keep the Dart route table equal to the frozen 113-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8291,8 +8291,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     ]
     # S135 (decision 0138): 105 → 111, the MEME v2 project side.
     # S168 (decision 0157): 111 → 112, 外盘奖励 of a LoopDynamic instance.
-    if manifest.get("count") != 112 or len(expected_slugs) != 112:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 112 routes")
+    # S180 (decision 0163): 112 → 113, 共识勋章 (the NFT mint page).
+    if manifest.get("count") != 113 or len(expected_slugs) != 113:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 113 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "chat":
@@ -8326,7 +8327,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 112 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 113 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -15266,6 +15267,13 @@ ILLUSTRATION_COLOURS = frozenset({"#B8FF20", "#F3F5EF", "#D9B36A", "#B87B5A"})
 MEDAL_COLOUR_ALLOWLIST: dict[str, str] = {
     "lib/core/theme/loop_theme.dart": "the palette",
     "lib/features/intel/intel_rank_board.dart": "the podium medals",
+    # Decision 0163 (docs/32 §2): Brass is the MEME v2 NFT accent — the
+    # medal ring, the held mark and the mint page's main button — and
+    # nothing else on these surfaces.
+    "lib/features/launch2/launch2_hero.dart": "the NFT sale's logo ring",
+    "lib/features/launch2/launch2_nft_screen.dart": "共识勋章",
+    "lib/features/launch2/launch2_instance_screen.dart": "the 铸造页 link",
+    "lib/widgets/loop_components.dart": "LoopButtonTone.brass",
 }
 
 
@@ -15677,6 +15685,11 @@ LAUNCH2_GATED_SURFACES = (
     # S168 (decision 0157): 外盘奖励.
     (
         "lib/features/launch2/launch2_dynamic_rewards_screen.dart",
+        "launch2ReadsBlocked(ref)",
+    ),
+    # S180 (decision 0163): 共识勋章.
+    (
+        "lib/features/launch2/launch2_nft_screen.dart",
         "launch2ReadsBlocked(ref)",
     ),
 )

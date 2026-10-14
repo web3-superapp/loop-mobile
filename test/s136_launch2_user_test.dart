@@ -1707,7 +1707,8 @@ void main() {
       expect(find.text('1,125,000.5'), findsOneWidget);
       expect(find.text('项目 NFT #1'), findsOneWidget);
       await tester.tap(_key('launch2-wallet-nft-$l2InstanceA'));
-      expect(opened.single, '/launch2/instance?id=$l2InstanceA');
+      // Decision 0163: the NFT row opens 共识勋章, not the project page.
+      expect(opened.single, '/launch2/nft?id=$l2InstanceA');
       await _drain(tester);
     });
 

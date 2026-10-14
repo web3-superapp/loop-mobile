@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
@@ -203,7 +204,20 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       ];
     }
     final cursor = page.nextCursor;
+    // Decision 0163: the hero over 「v2 发射」, picked from the rows already
+    // read; nothing over 「已毕业」 and nothing when no row qualifies.
+    final hero = scope == Launch2ListScope.all
+        ? launch2HeroRows(
+            page.items.take(launch2HeroFirstPageRows).toList(growable: false),
+          )
+        : const <Launch2InstanceRow>[];
     return <Widget>[
+      if (hero.isNotEmpty)
+        Launch2HeroPager(
+          rows: hero,
+          onNavigate: widget.onNavigate,
+          onElapsed: () => unawaited(controller.reload()),
+        ),
       const SizedBox(height: 2),
       for (final row in launch2ListOrder(page.items))
         Launch2InstanceTile(

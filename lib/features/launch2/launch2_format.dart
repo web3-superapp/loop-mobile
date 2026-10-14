@@ -536,3 +536,25 @@ String launch2SnapshotPendingMessage(Launch2Snapshot snapshot) {
   if (block == null) return '等待截止块确认，名单发布后开始 1 小时提前购';
   return '截止块 #${loopGroupedFigure(block.toString())}，名单发布后开始 1 小时提前购';
 }
+
+/// How long an NFT sale runs: 「7 天」, 「1 小时」 or 「90 分钟」.
+String launch2SaleDurationLabel(Launch2NftSale sale) {
+  final minutes = sale.endAt.difference(sale.startAt).inMinutes;
+  final hours = minutes / 60;
+  if (hours >= 24 && hours % 24 == 0) return '${hours ~/ 24} 天';
+  if (hours == hours.roundToDouble()) return '${hours.toInt()} 小时';
+  return '$minutes 分钟';
+}
+
+/// A countdown said aloud (decision 0163): 「2 天 3 小时」, 「2 小时 14 分」,
+/// 「14 分」, 「不到 1 分」.
+String launch2SpokenDuration(Duration remaining) {
+  final total = remaining.isNegative ? 0 : remaining.inMinutes;
+  final days = total ~/ 1440;
+  final hours = (total % 1440) ~/ 60;
+  final minutes = total % 60;
+  if (days > 0) return hours > 0 ? '$days 天 $hours 小时' : '$days 天';
+  if (hours > 0) return '$hours 小时 $minutes 分';
+  if (minutes > 0) return '$minutes 分';
+  return '不到 1 分';
+}

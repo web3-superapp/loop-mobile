@@ -90,6 +90,8 @@ class Launch2WalletRows extends ConsumerWidget {
                 ? '项目 NFT'
                 : '项目 NFT #${position.mintedTokenId}',
             value: hidden ? '****' : '× ${position.nftHeld}',
+            // Decision 0163: the NFT row opens 共识勋章.
+            location: Launch2Route.nft(position.instanceId),
           ),
       ],
     ];
@@ -108,6 +110,7 @@ class Launch2WalletRows extends ConsumerWidget {
     required String title,
     required String subtitle,
     required String value,
+    String? location,
   }) => LoopQuoteRow(
     tapKey: ValueKey<String>(key),
     leading: MemeLogo(
@@ -124,7 +127,7 @@ class Launch2WalletRows extends ConsumerWidget {
       launch2StageLabel(position.stage),
       style: LoopTypography.body(14, color: LoopColors.text2),
     ),
-    onTap: () => onOpen(Launch2Route.instance(position.instanceId)),
+    onTap: () => onOpen(location ?? Launch2Route.instance(position.instanceId)),
     semanticLabel:
         '$title，$subtitle，$value，${launch2StageLabel(position.stage)}',
   );

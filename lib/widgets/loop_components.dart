@@ -2158,6 +2158,16 @@ class LoopSegBar extends StatelessWidget {
 /// `.btn` (Card2 ground, Line2 border) and `.btn-primary` (Lime gradient with
 /// glow). 53px minimum height, disabled at 40% opacity with the exact
 /// disabled semantics.
+/// The fill a primary [LoopButton] is painted in (decision 0163).
+enum LoopButtonTone {
+  /// The trading accent: every primary button unless a page says otherwise.
+  lime,
+
+  /// The NFT accent (共识勋章): flat Brass with an Ink label, used only by the
+  /// NFT mint page's main button.
+  brass,
+}
+
 class LoopButton extends StatelessWidget {
   const LoopButton({
     required this.label,
@@ -2167,6 +2177,7 @@ class LoopButton extends StatelessWidget {
     this.block = false,
     this.icon,
     this.semanticLabel,
+    this.tone = LoopButtonTone.lime,
   }) : assert(
          label != '' || (icon != null && semanticLabel != null),
          'A button with no label must carry a glyph and a semantic label.',
@@ -2183,6 +2194,9 @@ class LoopButton extends StatelessWidget {
   /// What the button is, for assistive technology. It is required for a
   /// glyph-only button, whose [label] is empty.
   final String? semanticLabel;
+
+  /// A primary button's fill; a secondary button ignores it.
+  final LoopButtonTone tone;
 
   @override
   Widget build(BuildContext context) {
@@ -2207,9 +2221,12 @@ class LoopButton extends StatelessWidget {
     final foreground = paintPrimary
         ? LoopColors.ink
         : LoopGround.inkOf(context);
-    final decoration = wide
+    final brass = tone == LoopButtonTone.brass;
+    final decoration = wide || (paintPrimary && brass)
         ? BoxDecoration(
-            color: paintPrimary ? LoopColors.lime : LoopColors.card2,
+            color: paintPrimary
+                ? (brass ? LoopColors.brass : LoopColors.lime)
+                : LoopColors.card2,
             borderRadius: radius,
           )
         : paintPrimary

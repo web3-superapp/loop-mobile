@@ -523,3 +523,41 @@ class _FailureLink extends StatelessWidget {
     ),
   );
 }
+
+/// The bar pinned under a MEME v2 page's one action (project page
+/// 「购买 NFT」, 共识勋章 「铸造」): Ink with a hairline over it, the last refusal
+/// right above the button.
+class Launch2BarShell extends StatelessWidget {
+  const Launch2BarShell({required this.child, super.key, this.failure});
+
+  final Widget child;
+
+  /// The last refusal of [child]'s action, directly above it, so it shows
+  /// wherever the page is scrolled (decision 0153).
+  final Widget? failure;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: LoopColors.ink,
+      border: Border(top: BorderSide(color: LoopColors.line)),
+    ),
+    child: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (failure case final Widget line) ...<Widget>[
+              line,
+              const SizedBox(height: 8),
+            ],
+            child,
+          ],
+        ),
+      ),
+    ),
+  );
+}

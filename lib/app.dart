@@ -79,6 +79,7 @@ import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart'; // S136
 import 'package:loop_mobile/features/launch2/launch2_dynamic_rewards_screen.dart'; // S168
+import 'package:loop_mobile/features/launch2/launch2_nft_screen.dart'; // S180
 import 'package:loop_mobile/features/launch2/launch2_routes.dart'; // S136
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
@@ -1834,6 +1835,16 @@ final List<RouteBase> _launch2Routes = <RouteBase>[
       key: ValueKey<String>('launch2-dynamic-rewards-${state.uri.query}'),
       instanceId: Launch2Route.idOf(state.uri),
       onBack: () => _popOrHome(context),
+    ),
+  ),
+  // S180 · decision 0163: 共识勋章, the NFT mint page of one instance.
+  GoRoute(
+    path: Launch2Route.nftPath,
+    builder: (context, state) => Launch2NftScreen(
+      key: ValueKey<String>('launch2-nft-${state.uri.query}'),
+      instanceId: Launch2Route.idOf(state.uri),
+      onBack: () => _popOrHome(context),
+      onNavigate: (location) => context.push(location),
     ),
   ),
 ];

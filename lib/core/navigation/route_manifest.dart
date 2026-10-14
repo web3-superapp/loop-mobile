@@ -112,7 +112,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      '811d77de7f68357956144ce03fcf9976a7a975784d52aa6f049ac4bcbbfbe5ae';
+      'e2895fb0c137401d22ab5ec9bbae2c1ab141ea52dda763a8f076172a1a492327';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110).
   static const String defaultSlug = 'chat';
@@ -828,6 +828,16 @@ abstract final class LoopRouteManifest {
       module: LoopRouteModule.launch,
       title: '外盘奖励',
       prototypeOrder: 125,
+      step: 7,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S180 (decision 0163): 共识勋章, one instance's NFT mint page.
+    LoopRouteEntry(
+      slug: 'launch2-nft',
+      path: '/launch2/nft',
+      module: LoopRouteModule.launch,
+      title: '共识勋章',
+      prototypeOrder: 126,
       step: 7,
       status: LoopRouteStatus.implemented,
     ),
