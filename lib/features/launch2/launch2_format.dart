@@ -351,9 +351,47 @@ String launch2TradingHoldSinceText(DateTime since, {DateTime? now}) {
       : '自 ${loopLocalTimestampLabel(since)} 起';
 }
 
+// ---------------------------------------------------------------------------
+// The NFT money's exit paths (decision 0162)
+// ---------------------------------------------------------------------------
+
+/// 快照阶段 · `timeoutOpenState: waiting`.
+String launch2TimeoutWaitingText(DateTime at) =>
+    '快照未发布 · ${loopDateTimeLabel(at)} 后任何人可直接开盘';
+
+/// 快照阶段 · `timeoutOpenState: available`.
+const String launch2TimeoutAvailableText = '已到可开盘时间，等待开盘';
+
+/// 公开轮标题的附注 · `timeoutOpenState: opened_by_timeout`.
+const String launch2OpenedByTimeoutText = '超时开盘，无提前购';
+
+/// `refundState: waiting`, under the viewer's NFT.
+String launch2RefundWaitingText(DateTime opensAt) =>
+    '若 ${loopDateTimeLabel(opensAt)} 前未毕业，可按比例退回 NFT 款';
+
+/// `refundState: closed_graduated` while the viewer still has an NFT whose
+/// money was not taken back.
+const String launch2RefundClosedGraduatedText = '项目已毕业，NFT 款转入回购，不再退款';
+
+/// 钱包 · 资产's NFT row when one of its NFTs can be refunded now.
+const String launch2NftRefundTag = '可退款';
+
+/// One NFT row's state in the refund block.
+String launch2NftRefundStatusText(Launch2NftRefund refund) => refund.refunded
+    ? '已退'
+    : refund.claimable
+    ? '可退'
+    : '不可退';
+
 String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_USD1_PAUSED' => launch2Usd1PausedText,
   'LAUNCH2_ADDRESS_FROZEN' => launch2AddressFrozenText,
+  // Decision 0162: the NFT escrow refund. Each says what did not happen.
+  'LAUNCH2_REFUND_NOT_OPEN' => '退款还没有开放，没有发起退款',
+  'LAUNCH2_REFUND_ALREADY_CLAIMED' => '这枚 NFT 的款已经退过，没有重复退款',
+  'LAUNCH2_REFUND_NOT_OWNER' => '这枚 NFT 不在当前钱包里，没有发起退款',
+  'LAUNCH2_REFUND_GRADUATED' => '项目已毕业，NFT 款已转入回购，没有发起退款',
+  'LAUNCH2_EXIT_PATHS_UNSUPPORTED' => '这个项目的合约不支持退款，没有发起退款',
   'LAUNCH2_INSTANCE_NOT_FOUND' => '项目不存在',
   launch2StageMismatchCode => '当前阶段不能交易，已重新读取项目状态',
   'LAUNCH2_SELL_NOT_OPEN' => '提前购阶段只能买入，公开内盘开始后可卖出',

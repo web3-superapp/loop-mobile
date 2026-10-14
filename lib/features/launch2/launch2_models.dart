@@ -671,6 +671,94 @@ final class Launch2TradingHold {
   final DateTime? since;
 }
 
+/// Whether the public round may be opened by anyone because no snapshot was
+/// published in time (`exitPaths.timeoutOpenState`, decision 0162).
+enum Launch2TimeoutOpenState {
+  notApplicable('not_applicable'),
+  waiting('waiting'),
+  available('available'),
+  openedByTimeout('opened_by_timeout');
+
+  const Launch2TimeoutOpenState(this.wireName);
+
+  final String wireName;
+
+  static Launch2TimeoutOpenState? tryParse(Object? value) {
+    for (final state in values) {
+      if (state.wireName == value) return state;
+    }
+    return null;
+  }
+}
+
+/// Whether NFT holders may take back their escrowed NFT money because the
+/// project did not graduate in time (`exitPaths.refundState`, decision 0162).
+enum Launch2RefundState {
+  notApplicable('not_applicable'),
+  waiting('waiting'),
+  open('open'),
+  closedGraduated('closed_graduated');
+
+  const Launch2RefundState(this.wireName);
+
+  final String wireName;
+
+  static Launch2RefundState? tryParse(Object? value) {
+    for (final state in values) {
+      if (state.wireName == value) return state;
+    }
+    return null;
+  }
+}
+
+/// `exitPaths` on the instance detail (decision 0162): the contract's two
+/// ways out for the NFT money. `null` on the detail means the instance does
+/// not support them (an older Factory or an older server) and nothing
+/// changes on the page. An enum value this build does not know reads as
+/// [Launch2TimeoutOpenState.notApplicable] / [Launch2RefundState.notApplicable].
+@immutable
+final class Launch2ExitPaths {
+  const Launch2ExitPaths({
+    required this.snapshotTimeoutAt,
+    required this.timeoutOpenState,
+    required this.refundOpensAt,
+    required this.refundState,
+    required this.refundedCount,
+    required this.totalMinted,
+  });
+
+  final DateTime snapshotTimeoutAt;
+  final Launch2TimeoutOpenState timeoutOpenState;
+  final DateTime refundOpensAt;
+  final Launch2RefundState refundState;
+  final int refundedCount;
+  final int totalMinted;
+}
+
+/// One of the viewer's NFTs and its escrow refund (`viewerNftRefunds[]`,
+/// decision 0162).
+@immutable
+final class Launch2NftRefund {
+  const Launch2NftRefund({
+    required this.tokenId,
+    required this.refunded,
+    required this.claimable,
+    required this.amount,
+    required this.opensAt,
+  });
+
+  /// The NFT's token id, a decimal integer string.
+  final String tokenId;
+  final bool refunded;
+
+  /// The contract would refund it now.
+  final bool claimable;
+
+  /// What the refund pays (USD1).
+  final Decimal amount;
+  final DateTime opensAt;
+}
+
 @immutable
 final class Launch2InstanceDetail {
   const Launch2InstanceDetail({
@@ -690,6 +778,8 @@ final class Launch2InstanceDetail {
     this.viewer,
     this.pool,
     this.tradingHold,
+    this.exitPaths,
+    this.viewerNftRefunds,
   });
 
   final Launch2InstanceRow row;
@@ -719,6 +809,14 @@ final class Launch2InstanceDetail {
   /// and claim would fail on chain. `null` when absent (older server),
   /// `null` on the wire, or an unknown kind.
   final Launch2TradingHold? tradingHold;
+
+  /// The NFT money's exit paths (decision 0162); `null` when the instance
+  /// does not support them.
+  final Launch2ExitPaths? exitPaths;
+
+  /// The viewer's NFTs and their refunds (decision 0162); `null` without a
+  /// viewer, from an older server, or when unreadable.
+  final List<Launch2NftRefund>? viewerNftRefunds;
 
   String get instanceId => row.instanceId;
   Launch2Stage get stage => row.stage;
@@ -800,7 +898,11 @@ enum Launch2IntentKind {
 
   /// A LoopDynamic round's reward claim (decision 0157). Only the
   /// `dynamic-pool/claim/prepare` route answers it.
-  rewardClaim('dynamic_claim');
+  rewardClaim('dynamic_claim'),
+
+  /// An NFT's escrow refund (decision 0162). Only the `nft/refund/prepare`
+  /// route answers it.
+  nftRefund('nft_refund');
 
   const Launch2IntentKind(this.wireName);
 
@@ -821,7 +923,11 @@ enum Launch2Venue {
   officialPool('official_pool'),
 
   /// A LoopDynamic Hook's reward pot (decision 0157): a claim, not a trade.
-  loopDynamicRewards('loop_dynamic_rewards');
+  loopDynamicRewards('loop_dynamic_rewards'),
+
+  /// The NFT contract's escrow refund (decision 0162): money back, not a
+  /// trade.
+  nftEscrow('nft_escrow');
 
   const Launch2Venue(this.wireName);
 
@@ -956,6 +1062,15 @@ final class Launch2Intent {
       !expired && signingAllowed && expiresAt.isAfter(now);
 }
 
+/// What the server said about a reported refund broadcast (decision 0162).
+@immutable
+final class Launch2NftRefundReport {
+  const Launch2NftRefundReport({required this.confirmed});
+
+  /// The refund is already indexed; otherwise it was recorded as submitted.
+  final bool confirmed;
+}
+
 @immutable
 final class Launch2BuybackLive {
   const Launch2BuybackLive({
@@ -1016,6 +1131,7 @@ final class Launch2Position {
     this.mintedTokenId,
     this.lastActivityAt,
     this.holding,
+    this.nftRefundClaimable = false,
   });
 
   final String instanceId;
@@ -1034,6 +1150,10 @@ final class Launch2Position {
   /// Decision 0148: balances and own pool trades; `null` from an older
   /// server.
   final Launch2WalletHolding? holding;
+
+  /// Decision 0162: at least one of the row's NFTs can be refunded now
+  /// (the row's optional `viewerNftRefunds`); `false` when absent.
+  final bool nftRefundClaimable;
 }
 
 @immutable

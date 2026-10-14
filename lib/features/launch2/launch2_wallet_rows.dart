@@ -86,9 +86,10 @@ class Launch2WalletRows extends ConsumerWidget {
             key: 'launch2-wallet-nft-${position.instanceId}',
             position: position,
             title: '${position.ticker} NFT',
-            subtitle: position.mintedTokenId == null
-                ? '项目 NFT'
-                : '项目 NFT #${position.mintedTokenId}',
+            // Decision 0162: one tag when an NFT's money can be taken back.
+            subtitle:
+                '${position.mintedTokenId == null ? '项目 NFT' : '项目 NFT #${position.mintedTokenId}'}'
+                '${position.nftRefundClaimable ? ' · $launch2NftRefundTag' : ''}',
             value: hidden ? '****' : '× ${position.nftHeld}',
           ),
       ],

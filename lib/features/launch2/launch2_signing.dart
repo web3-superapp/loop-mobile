@@ -74,6 +74,7 @@ String launch2IntentNoun(Launch2IntentKind kind) => switch (kind) {
   Launch2IntentKind.buy => '买入',
   Launch2IntentKind.sell => '卖出',
   Launch2IntentKind.rewardClaim => '领取奖励',
+  Launch2IntentKind.nftRefund => '退回 NFT 款',
 };
 
 String launch2IntentTitle(
@@ -82,6 +83,8 @@ String launch2IntentTitle(
 }) => switch (venue) {
   Launch2Venue.officialPool => '确认外盘${launch2IntentNoun(kind)}',
   Launch2Venue.loopDynamicRewards => '确认领取外盘奖励',
+  // Decision 0162: the sheet's title is the action itself.
+  Launch2Venue.nftEscrow => '退回 NFT 款',
   Launch2Venue.curve => '确认${launch2IntentNoun(kind)}',
 };
 
@@ -89,6 +92,8 @@ String launch2IntentTitle(
 String _spenderNoun(Launch2Intent intent) =>
     intent.venue == Launch2Venue.loopDynamicRewards
     ? '奖励合约'
+    : intent.venue == Launch2Venue.nftEscrow
+    ? 'NFT 合约'
     : intent.venue == Launch2Venue.officialPool
     ? '官方池路由'
     : intent.kind == Launch2IntentKind.nftMint
@@ -101,6 +106,7 @@ String _addressLabel(Launch2Intent intent) => intent.approval == null
     ? switch (intent.venue) {
         Launch2Venue.officialPool => '路由',
         Launch2Venue.loopDynamicRewards => '奖励合约',
+        Launch2Venue.nftEscrow => 'NFT 合约',
         Launch2Venue.curve => '合约',
       }
     : '授权给${_spenderNoun(intent)}';
@@ -140,6 +146,7 @@ List<IntentField> launch2IntentFields(
               ? '在官方池卖出 $meme'
               : '卖出 $meme',
         Launch2IntentKind.rewardClaim => '领取 $meme 外盘奖励',
+        Launch2IntentKind.nftRefund => '退回 $meme 项目 NFT 款',
       },
     ),
     switch (intent.kind) {
@@ -158,6 +165,11 @@ List<IntentField> launch2IntentFields(
       // Decision 0157: what the claim pays out, the intent's own figure.
       Launch2IntentKind.rewardClaim => IntentField(
         label: '领取',
+        value: launch2Usd1Label(intent.expectedOut, maxFractionDigits: 4),
+      ),
+      // Decision 0162: what the refund pays back, the intent's own figure.
+      Launch2IntentKind.nftRefund => IntentField(
+        label: '退回',
         value: launch2Usd1Label(intent.expectedOut, maxFractionDigits: 4),
       ),
     },
@@ -182,7 +194,8 @@ List<IntentField> launch2IntentFields(
       ),
     ],
     if (intent.kind != Launch2IntentKind.nftMint &&
-        intent.kind != Launch2IntentKind.rewardClaim)
+        intent.kind != Launch2IntentKind.rewardClaim &&
+        intent.kind != Launch2IntentKind.nftRefund)
       IntentField(
         label: _taxLabel(intent),
         value: intent.taxMeme != null
@@ -331,7 +344,9 @@ enum Launch2SignStep { approving, refreshing, signingMain }
 /// (decision 0152): the most a buy or an NFT purchase pays (`amountIn`, tax
 /// included), what a sell expects to receive (`expectedOut`).
 Decimal launch2IntentStepUpUsd1(Launch2Intent intent) => switch (intent.kind) {
-  Launch2IntentKind.sell || Launch2IntentKind.rewardClaim => intent.expectedOut,
+  Launch2IntentKind.sell ||
+  Launch2IntentKind.rewardClaim ||
+  Launch2IntentKind.nftRefund => intent.expectedOut,
   Launch2IntentKind.buy || Launch2IntentKind.nftMint => intent.amountIn,
 };
 
@@ -1058,4 +1073,59 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
       ),
     ],
   );
+}
+
+/// The NFT refund confirmation (decision 0162), built from the purchase
+/// confirmation's parts: 「退回 NFT 款」, the NFT's number and what it pays
+/// back. `true` when they confirmed; nothing is asked of the server before.
+Future<bool> showLaunch2NftRefundConfirmSheet(
+  BuildContext context, {
+  required String ticker,
+  required String tokenId,
+  required String amountLabel,
+}) async {
+  final confirmed = await showLoopSheet<bool>(
+    context,
+    builder: (context) => Column(
+      key: const ValueKey<String>('launch2-refund-confirm'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('退回 NFT 款'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopKeyValue(
+                label: 'NFT',
+                value: '\$$ticker #$tokenId',
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+              LoopKeyValue(
+                label: '退回',
+                value: amountLabel,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '项目未按时毕业，NFT 款按比例退回到当前钱包。每枚 NFT 只能退一次。',
+                style: LoopTypography.body(14, color: LoopColors.text2),
+              ),
+              const SizedBox(height: 16),
+              LoopButton(
+                key: const ValueKey<String>('launch2-refund-confirm-button'),
+                label: '继续退款',
+                primary: true,
+                block: true,
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
 }

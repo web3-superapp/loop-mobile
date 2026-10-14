@@ -19,6 +19,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_refund_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
@@ -103,12 +104,18 @@ String _viewerSignature(Launch2InstanceDetail detail) {
   final curve = viewer == null
       ? '-'
       : '${viewer.nftHeld}:${viewer.curve.bought}:${viewer.curve.sold}';
+  // Decision 0162: an NFT refund lands as its row turning 已退.
+  final refunds = detail.viewerNftRefunds;
+  final refunded = refunds == null
+      ? ''
+      : '|refund:${[for (final refund in refunds)
+          if (refund.refunded) refund.tokenId].join(',')}';
   final own = viewer?.holding;
   if (own != null) {
-    return '$curve|own:${own.poolTradeCount}:'
+    return '$curve$refunded|own:${own.poolTradeCount}:'
         '${own.lastPoolTradeAt?.toIso8601String() ?? '-'}';
   }
-  return '$curve|pool:${detail.pool?.tradeCount ?? '-'}';
+  return '$curve$refunded|pool:${detail.pool?.tradeCount ?? '-'}';
 }
 
 /// Whether [detail] carries the wallet's own pool count (decision 0148).
@@ -124,6 +131,11 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   Launch2ActionFailure? _actionFailure;
   bool _preparingNft = false;
   int _settleReads = 0;
+
+  /// Decision 0162: the NFT whose refund is being prepared, and the last
+  /// refund refusal with the NFT it belongs to.
+  String? _refunding;
+  (String, String)? _refundFailure;
 
   /// How many re-reads a broadcast waits for before the page stops holding
   /// the next signature back.
@@ -322,6 +334,163 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     }
   }
 
+  /// Decision 0162: one NFT's escrow refund — the confirmation, the server's
+  /// `nft_refund` intent, the signing exit, the report, then a fresh read
+  /// so the row turns 已退.
+  Future<void> _refundNft(
+    Launch2InstanceDetail detail,
+    Launch2NftRefund refund,
+  ) async {
+    final confirmed = await showLaunch2NftRefundConfirmSheet(
+      context,
+      ticker: detail.row.ticker,
+      tokenId: refund.tokenId,
+      amountLabel: launch2Usd1Label(refund.amount, maxFractionDigits: 4),
+    );
+    if (!confirmed || !mounted) return;
+    final wallet = memeReadActiveWallet(ref);
+    final walletId = wallet.walletId ?? detail.viewer?.walletId;
+    if (walletId == null) {
+      setState(() => _refundFailure = (refund.tokenId, '还没有可用的钱包，激活钱包后再退款'));
+      return;
+    }
+    setState(() {
+      _refunding = refund.tokenId;
+      _refundFailure = null;
+    });
+    final gateway = ref.read(launch2NftRefundGatewayProvider);
+    final Launch2Intent intent;
+    try {
+      intent = await gateway.prepareRefund(
+        instanceId: detail.instanceId,
+        walletId: walletId,
+        tokenId: refund.tokenId,
+      );
+    } on LoopChainException catch (failure) {
+      if (!mounted) return;
+      setState(() {
+        _refunding = null;
+        _refundFailure = (refund.tokenId, launch2FailureText(failure));
+      });
+      // Refunded, graduated or closed under the page: read it again.
+      if (failure.reasonCode != null) {
+        unawaited(
+          ref
+              .read(
+                launch2InstanceControllerProvider(detail.instanceId).notifier,
+              )
+              .reload(),
+        );
+      }
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _refunding = null;
+        _refundFailure = (
+          refund.tokenId,
+          loopChainFailureReason(LoopChainFailureKind.unexpected),
+        );
+      });
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _refunding = null);
+    // A refund goes to this project's NFT contract and spends nothing.
+    final nft = detail.contracts['nft']?.toLowerCase();
+    if (intent.approval != null ||
+        (nft != null && intent.contractAddress.toLowerCase() != nft)) {
+      setState(
+        () => _refundFailure = (
+          refund.tokenId,
+          launch2SignReasonText('REVIEW_PAYLOAD_MISMATCH'),
+        ),
+      );
+      return;
+    }
+    final outcome = await showLaunch2SignSheet(
+      context,
+      intent: intent,
+      signer: ref.read(launch2IntentSignerProvider),
+      fromAddress: wallet.address,
+      ticker: detail.row.ticker,
+      clock: ref.read(launch2ClockProvider),
+    );
+    if (!mounted || outcome == null) return;
+    final baseline = _viewerSignature(detail);
+    if (!outcome.broadcast) {
+      setState(() {
+        _settleReads = 0;
+        _pending = _Pending(
+          kind: intent.kind,
+          venue: intent.venue,
+          text: launch2SignReasonText(outcome.reasonCode),
+          locked: false,
+          baseline: baseline,
+        );
+      });
+      return;
+    }
+    var text = launch2BroadcastText(outcome, intent.kind);
+    final hash = outcome.txHash;
+    if (hash != null) {
+      try {
+        final report = await gateway.reportRefund(
+          instanceId: detail.instanceId,
+          walletId: walletId,
+          tokenId: refund.tokenId,
+          intentId: intent.intentId,
+          transactionHash: hash,
+        );
+        text = report.confirmed
+            ? '退回 NFT 款已在链上确认。'
+            : '退款已提交（${launch2ShortAddress(hash)}），正在等待链上确认。不要重复退款。';
+      } catch (_) {
+        text = '$text 上报没有成功，链上结果不受影响；不要重复退款。';
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _settleReads = 0;
+      _pending = _Pending(
+        kind: intent.kind,
+        venue: intent.venue,
+        text: text,
+        locked: true,
+        baseline: baseline,
+      );
+    });
+    _poll?.cancel();
+    _poll = null;
+    unawaited(
+      ref
+          .read(launch2InstanceControllerProvider(detail.instanceId).notifier)
+          .reload(),
+    );
+  }
+
+  /// A refund refusal is dropped once the read model says the NFT is
+  /// refunded (another device, or the broadcast that just landed).
+  void _settleRefund(Launch2InstanceDetail detail) {
+    final failure = _refundFailure;
+    if (failure == null) return;
+    final refunds = detail.viewerNftRefunds ?? const <Launch2NftRefund>[];
+    if (refunds.any((r) => r.tokenId == failure.$1 && r.refunded)) {
+      setState(() => _refundFailure = null);
+    }
+  }
+
+  Widget _refundSection(Launch2InstanceDetail detail) => _NftRefundSection(
+    detail: detail,
+    refunding: _refunding,
+    failure: _refundFailure,
+    busy:
+        _refunding != null ||
+        (_pending?.locked ?? false) ||
+        detail.tradingHold != null,
+    onRefund: (refund) => unawaited(_refundNft(detail, refund)),
+  );
+
   /// The wallet's USD1 when the server read it at a block (after
   /// graduation, decision 0148); `null` otherwise — never a guess.
   static Decimal? _readUsd1(Launch2InstanceDetail detail) {
@@ -402,6 +571,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       final value = next.value;
       if (value != null && !identical(previous?.value, value)) {
         _settle(value);
+        _settleRefund(value);
         if (previous?.value != null && value.stage == Launch2Stage.graduated) {
           unawaited(_reloadPoolKind(instanceId));
         }
@@ -625,7 +795,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       ),
       _TemplateCard(detail: detail),
     ],
-    Launch2Stage.nftSale => <Widget>[_NftSaleBlock(detail: detail)],
+    Launch2Stage.nftSale => <Widget>[
+      _NftSaleBlock(detail: detail),
+      _refundSection(detail),
+    ],
     Launch2Stage.snapshotPending => <Widget>[
       LoopEmptyState(
         key: const ValueKey<String>('launch2-snapshot-pending'),
@@ -644,6 +817,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           ),
         ],
       ),
+      _refundSection(detail),
     ],
     Launch2Stage.closedNoHolders => <Widget>[_ClosedBlock(detail: detail)],
     Launch2Stage.priority || Launch2Stage.public => <Widget>[
@@ -657,6 +831,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           body: '$launch2OpenedWithoutHoldersText，跳过提前购。',
         ),
       _CurveBlock(detail: detail),
+      _refundSection(detail),
       Launch2TradePanel(
         key: ValueKey<String>('launch2-panel-${detail.instanceId}'),
         detail: detail,
@@ -677,6 +852,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ],
     Launch2Stage.graduated => <Widget>[
       _GraduatedBlock(detail: detail),
+      _refundSection(detail),
       if (dynamicPool != null)
         Launch2DynamicRoundCard(
           state: dynamicPool,
@@ -912,6 +1088,21 @@ class _StageBar extends StatelessWidget {
         stage == Launch2Stage.nftSale ||
         stage == Launch2Stage.priority ||
         stage == Launch2Stage.public;
+    // Decision 0162: the snapshot's timeout and a round it opened.
+    final exit = detail.exitPaths;
+    final timeoutLine = exit == null || stage != Launch2Stage.snapshotPending
+        ? null
+        : switch (exit.timeoutOpenState) {
+            Launch2TimeoutOpenState.waiting => launch2TimeoutWaitingText(
+              exit.snapshotTimeoutAt,
+            ),
+            Launch2TimeoutOpenState.available => launch2TimeoutAvailableText,
+            Launch2TimeoutOpenState.notApplicable ||
+            Launch2TimeoutOpenState.openedByTimeout => null,
+          };
+    final openedByTimeout =
+        stage == Launch2Stage.public &&
+        exit?.timeoutOpenState == Launch2TimeoutOpenState.openedByTimeout;
     return Padding(
       key: const ValueKey<String>('launch2-stage-bar'),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -940,11 +1131,40 @@ class _StageBar extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    launch2StageLabel(stage),
-                    key: const ValueKey<String>('launch2-stage-label'),
-                    style: LoopTypography.title(16),
-                  ),
+                  if (!openedByTimeout)
+                    Text(
+                      launch2StageLabel(stage),
+                      key: const ValueKey<String>('launch2-stage-label'),
+                      style: LoopTypography.title(16),
+                    )
+                  else
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            launch2StageLabel(stage),
+                            key: const ValueKey<String>('launch2-stage-label'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopTypography.title(16),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            launch2OpenedByTimeoutText,
+                            key: const ValueKey<String>(
+                              'launch2-exit-opened-by-timeout',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopType.caption.copyWith(
+                              color: LoopColors.text3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 2),
                   Text(
                     launch2StageCaption(stage),
@@ -952,6 +1172,15 @@ class _StageBar extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
+                  if (timeoutLine case final String line) ...<Widget>[
+                    const SizedBox(height: 2),
+                    Text(
+                      line,
+                      key: const ValueKey<String>('launch2-exit-timeout'),
+                      maxLines: 2,
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1163,6 +1392,174 @@ class _NftSaleBlock extends StatelessWidget {
         ),
         LoopKeyValue(label: '截止', value: loopDateTimeLabel(sale.endAt)),
       ],
+    );
+  }
+}
+
+/// Decision 0162 · the viewer's NFT money and its way back.
+///
+/// - `waiting` (and the viewer holds an NFT): one line under the NFT card.
+/// - `open`: 「退回 NFT 款」 with one row per NFT — number, amount, state
+///   (可退 / 已退 / 不可退) and 「退款」 on a refundable one.
+/// - `closed_graduated` (and an NFT was never refunded): one line.
+/// - `not_applicable`, no `exitPaths`, or nothing held: nothing.
+class _NftRefundSection extends StatelessWidget {
+  const _NftRefundSection({
+    required this.detail,
+    required this.busy,
+    required this.onRefund,
+    this.refunding,
+    this.failure,
+  });
+
+  final Launch2InstanceDetail detail;
+
+  /// Another refund is being prepared, a broadcast is settling, or the
+  /// chain guard holds USD1 (decision 0161).
+  final bool busy;
+  final String? refunding;
+  final (String, String)? failure;
+  final void Function(Launch2NftRefund refund) onRefund;
+
+  Widget _line(String key, String text) => Padding(
+    key: ValueKey<String>(key),
+    padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 8),
+    child: Text(
+      text,
+      style: LoopType.caption.copyWith(color: LoopColors.text2),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final exit = detail.exitPaths;
+    if (exit == null) return const SizedBox.shrink();
+    final refunds = detail.viewerNftRefunds ?? const <Launch2NftRefund>[];
+    final holds = (detail.viewer?.nftHeld ?? 0) > 0 || refunds.isNotEmpty;
+    switch (exit.refundState) {
+      case Launch2RefundState.notApplicable:
+        return const SizedBox.shrink();
+      case Launch2RefundState.waiting:
+        return holds
+            ? _line(
+                'launch2-refund-waiting',
+                launch2RefundWaitingText(exit.refundOpensAt),
+              )
+            : const SizedBox.shrink();
+      case Launch2RefundState.closedGraduated:
+        return refunds.any((refund) => !refund.refunded)
+            ? _line('launch2-refund-closed', launch2RefundClosedGraduatedText)
+            : const SizedBox.shrink();
+      case Launch2RefundState.open:
+        if (!holds) return const SizedBox.shrink();
+    }
+    final hold = detail.tradingHold;
+    return Column(
+      key: const ValueKey<String>('launch2-refund'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _SectionHeading(
+          title: '退回 NFT 款',
+          trailing: '已退 ${exit.refundedCount} / ${exit.totalMinted} 枚',
+        ),
+        _line('launch2-refund-open', '项目未按时毕业，NFT 款可按比例退回'),
+        if (refunds.isEmpty)
+          const LoopInlineUnavailable(
+            key: ValueKey<String>('launch2-refund-unread'),
+            message: '你的 NFT 退款信息暂时读不到',
+          ),
+        for (final refund in refunds)
+          _NftRefundRow(
+            key: ValueKey<String>('launch2-refund-row-${refund.tokenId}'),
+            refund: refund,
+            preparing: refunding == refund.tokenId,
+            busy: busy,
+            failure: failure != null && failure!.$1 == refund.tokenId
+                ? failure!.$2
+                : null,
+            onRefund: () => onRefund(refund),
+          ),
+        if (hold != null && refunds.any((r) => r.claimable && !r.refunded))
+          Launch2TradingHoldLine(
+            key: const ValueKey<String>('launch2-refund-hold'),
+            hold: hold,
+            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 8),
+          ),
+      ],
+    );
+  }
+}
+
+class _NftRefundRow extends StatelessWidget {
+  const _NftRefundRow({
+    required this.refund,
+    required this.preparing,
+    required this.busy,
+    required this.onRefund,
+    super.key,
+    this.failure,
+  });
+
+  final Launch2NftRefund refund;
+  final bool preparing;
+  final bool busy;
+  final String? failure;
+  final VoidCallback onRefund;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = refund.tokenId;
+    final status = launch2NftRefundStatusText(refund);
+    final can = refund.claimable && !refund.refunded;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'NFT #$id',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.title(15),
+                    ),
+                    Text(
+                      launch2Usd1Label(refund.amount, maxFractionDigits: 4),
+                      key: ValueKey<String>('launch2-refund-amount-$id'),
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
+                    ),
+                  ],
+                ),
+              ),
+              LoopBadge(
+                status,
+                key: ValueKey<String>('launch2-refund-status-$id'),
+                kind: can ? LoopBadgeKind.launch : LoopBadgeKind.mute,
+              ),
+              if (can) ...<Widget>[
+                const SizedBox(width: 10),
+                LoopButton(
+                  key: ValueKey<String>('launch2-refund-$id'),
+                  label: preparing ? '正在准备…' : '退款',
+                  primary: true,
+                  onPressed: busy ? null : onRefund,
+                ),
+              ],
+            ],
+          ),
+          if (failure case final String text)
+            Launch2ActionFailureLine(
+              key: ValueKey<String>('launch2-refund-failed-$id'),
+              padding: const EdgeInsets.only(top: 6),
+              message: text,
+            ),
+        ],
+      ),
     );
   }
 }

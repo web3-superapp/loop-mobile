@@ -69,7 +69,17 @@ abstract final class LoopV2Launch2Codec {
   };
 
   /// Keys a server may omit: `pool` (loop-api S146, decision 0145).
-  static const detailOptionalKeys = <String>{'pool', 'tradingHold'};
+  /// Decision 0161 adds `tradingHold`; decision 0162 adds `exitPaths` and
+  /// `viewerNftRefunds`.
+  static const detailOptionalKeys = <String>{
+    'pool',
+    'tradingHold',
+    'exitPaths',
+    'viewerNftRefunds',
+  };
+
+  /// Keys a `me/positions` row may add (decision 0162).
+  static const positionOptionalKeys = <String>{'viewerNftRefunds'};
 
   static const nftSaleKeys = <String>{
     'priceUsd1',
@@ -941,7 +951,73 @@ abstract final class LoopV2Launch2Codec {
       projectedAt: LoopV2ChainCodec.requireTimestamp(map, 'projectedAt'),
       pool: LoopV2Launch2PoolCodec.summary(map['pool']),
       tradingHold: tradingHold(map['tradingHold']),
+      exitPaths: exitPaths(map['exitPaths']),
+      viewerNftRefunds: nftRefunds(map['viewerNftRefunds']),
     );
+  }
+
+  /// `instance.exitPaths` (decision 0162). Absent, `null` or a value this
+  /// build cannot read means the instance does not support the exit paths
+  /// and the page stays as it was; the whole page never fails over it. An
+  /// unknown state reads as `not_applicable` for that path alone.
+  static Launch2ExitPaths? exitPaths(Object? raw) {
+    if (raw is! Map) return null;
+    try {
+      final map = <String, Object?>{
+        for (final entry in raw.entries)
+          if (entry.key is String) entry.key as String: entry.value,
+      };
+      return Launch2ExitPaths(
+        snapshotTimeoutAt: LoopV2ChainCodec.requireTimestamp(
+          map,
+          'snapshotTimeoutAt',
+        ),
+        timeoutOpenState:
+            Launch2TimeoutOpenState.tryParse(map['timeoutOpenState']) ??
+            Launch2TimeoutOpenState.notApplicable,
+        refundOpensAt: LoopV2ChainCodec.requireTimestamp(map, 'refundOpensAt'),
+        refundState:
+            Launch2RefundState.tryParse(map['refundState']) ??
+            Launch2RefundState.notApplicable,
+        refundedCount: LoopV2ChainCodec.requireInt(map, 'refundedCount'),
+        totalMinted: LoopV2ChainCodec.requireInt(map, 'totalMinted'),
+      );
+    } on Object {
+      return null;
+    }
+  }
+
+  /// `viewerNftRefunds` (decision 0162): `null` when absent, `null` or not a
+  /// list; an entry this build cannot read is left out.
+  static List<Launch2NftRefund>? nftRefunds(Object? raw) {
+    if (raw is! List || raw.length > 100) return null;
+    final refunds = <Launch2NftRefund>[];
+    for (final item in raw) {
+      final refund = _nftRefund(item);
+      if (refund != null) refunds.add(refund);
+    }
+    return List<Launch2NftRefund>.unmodifiable(refunds);
+  }
+
+  static Launch2NftRefund? _nftRefund(Object? raw) {
+    if (raw is! Map) return null;
+    try {
+      final map = <String, Object?>{
+        for (final entry in raw.entries)
+          if (entry.key is String) entry.key as String: entry.value,
+      };
+      final tokenId = map['tokenId'];
+      if (tokenId is! String || !integerPattern.hasMatch(tokenId)) return null;
+      return Launch2NftRefund(
+        tokenId: tokenId,
+        refunded: LoopV2ChainCodec.requireBool(map, 'refunded'),
+        claimable: LoopV2ChainCodec.requireBool(map, 'claimable'),
+        amount: amount(map, 'amount'),
+        opensAt: LoopV2ChainCodec.requireTimestamp(map, 'opensAt'),
+      );
+    } on Object {
+      return null;
+    }
   }
 
   /// `instance.tradingHold` (decision 0161). Absent or `null` means no hold;
@@ -1127,13 +1203,38 @@ abstract final class LoopV2Launch2Codec {
   }
 
   /// `POST …/nft/prepare` and `POST …/trade/prepare`.
-  static Launch2Intent intent(Object? raw) {
+  /// [venue] is [Launch2Venue.nftEscrow] for `POST …/nft/refund/prepare`
+  /// (decision 0162), the same envelope.
+  static Launch2Intent intent(
+    Object? raw, {
+    Launch2Venue venue = Launch2Venue.curve,
+  }) {
     final root = LoopV2Contract.strictMap(raw, const <String>{
       'launch2Intent',
       'contractVersion',
     });
     LoopV2ChainCodec.requireContractVersion(root);
-    return intentBody(root['launch2Intent']);
+    return intentBody(root['launch2Intent'], venue: venue);
+  }
+
+  /// `POST …/nft/refund/report` (decision 0162). The backend's body is not
+  /// pinned yet (待后端真实回包核对): only the envelope's `contractVersion`
+  /// and, when present, `nftRefundReport.status` / `intentId` are read.
+  static Launch2NftRefundReport nftRefundReport(
+    Object? raw, {
+    required String intentId,
+  }) {
+    if (raw is! Map) invalid();
+    final root = <String, Object?>{
+      for (final entry in raw.entries)
+        if (entry.key is String) entry.key as String: entry.value,
+    };
+    LoopV2ChainCodec.requireContractVersion(root);
+    final body = root['nftRefundReport'];
+    if (body is! Map) return const Launch2NftRefundReport(confirmed: false);
+    final echoed = body['intentId'];
+    if (echoed != null && echoed != intentId) invalid();
+    return Launch2NftRefundReport(confirmed: body['status'] == 'confirmed');
   }
 
   /// One `launch2Intent` object. [venue] and [taxBps] are what the route it
@@ -1159,9 +1260,12 @@ abstract final class LoopV2Launch2Codec {
       (Launch2Venue.loopDynamicRewards, 'dynamic_claim') =>
         Launch2IntentKind.rewardClaim,
       (Launch2Venue.loopDynamicRewards, _) => null,
+      // Decision 0162: only the refund route answers `nft_refund`.
+      (Launch2Venue.nftEscrow, 'nft_refund') => Launch2IntentKind.nftRefund,
+      (Launch2Venue.nftEscrow, _) => null,
       (Launch2Venue.curve, final String value) =>
         switch (Launch2IntentKind.tryParse(value)) {
-          Launch2IntentKind.rewardClaim => null,
+          Launch2IntentKind.rewardClaim || Launch2IntentKind.nftRefund => null,
           final parsed => parsed,
         },
       (Launch2Venue.curve, _) => null,
@@ -1359,9 +1463,10 @@ abstract final class LoopV2Launch2Codec {
     final map = LoopV2Contract.strictMapWithOptional(
       raw,
       positionKeys,
-      walletHoldingKeys,
+      <String>{...walletHoldingKeys, ...positionOptionalKeys},
     );
     final nft = _nftHolding(map['nft']);
+    final refunds = nftRefunds(map['viewerNftRefunds']);
     return Launch2Position(
       instanceId: uuid(map, 'instanceId'),
       name: LoopV2ChainCodec.providerText(map, 'name', maxLength: 64),
@@ -1376,6 +1481,9 @@ abstract final class LoopV2Launch2Codec {
       curve: curvePosition(map['curve']),
       lastActivityAt: LoopV2ChainCodec.optionalTimestamp(map, 'lastActivityAt'),
       holding: walletHolding(map),
+      nftRefundClaimable:
+          refunds?.any((refund) => refund.claimable && !refund.refunded) ??
+          false,
     );
   }
 }
