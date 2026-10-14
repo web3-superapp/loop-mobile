@@ -1,0 +1,25 @@
+{
+  "instanceId": "8cf88c44-adf8-4c3f-9de2-46a895af3d1d",
+  "walletId": "7dd2bf27-5c36-428d-95cb-54298d0fa974",
+  "hookKind": "loopDynamic",
+  "claimableUsd1": "0",
+  "claimedUsd1": "13.14340921477541523",
+  "rounds": [
+    {
+      "roundId": "1",
+      "status": "claimed",
+      "weightUsd1": "150",
+      "totalBuyWeightUsd1": "170",
+      "allocationUsd1": "14.895863776745470595",
+      "claimableUsd1": "0",
+      "claimedUsd1": "13.14340921477541523",
+      "claimTransactionHash": "0x060a3f321561571591d665674fe831a7de5b6aa9830488754f27e8b0a38d4003",
+      "claimedAt": "2026-10-13T21:25:51.000Z",
+      "startCandle": "5973087",
+      "endCandle": "5973088",
+      "activatedAt": "2026-10-13T21:15:16.000Z",
+      "closedAt": "2026-10-13T21:25:30.000Z"
+    }
+  ],
+  "contractVersion": "2.0"
+}

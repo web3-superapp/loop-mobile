@@ -1,0 +1,15 @@
+{
+  "dynamicClaimReport": {
+    "intentId": "7dff2656-55d0-44c0-91d4-b8b9e406bb00",
+    "instanceId": "8cf88c44-adf8-4c3f-9de2-46a895af3d1d",
+    "walletId": "7dd2bf27-5c36-428d-95cb-54298d0fa974",
+    "roundId": "1",
+    "transactionHash": "0x060a3f321561571591d665674fe831a7de5b6aa9830488754f27e8b0a38d4003",
+    "status": "confirmed",
+    "amountUsd1": "13.14340921477541523",
+    "claimedAt": "2026-10-13T21:25:51.000Z",
+    "blockNumber": "136621714",
+    "reportedAt": "2026-10-13T21:25:55.943Z"
+  },
+  "contractVersion": "2.0"
+}

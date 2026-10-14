@@ -1,0 +1,58 @@
+{
+  "quote": {
+    "instanceId": "8cf88c44-adf8-4c3f-9de2-46a895af3d1d",
+    "walletId": "7dd2bf27-5c36-428d-95cb-54298d0fa974",
+    "venue": "official_pool",
+    "side": "buy",
+    "mode": "exactIn",
+    "stage": "graduated",
+    "requestedAmount": "50",
+    "amountIn": "50",
+    "maxIn": "50",
+    "expectedOut": "85969.24735673859560641",
+    "minOut": "85109.554883171209650345",
+    "slippageBps": 100,
+    "taxBps": 200,
+    "taxAmount": "1754.4744358518080736",
+    "taxToken": "meme",
+    "taxUsd1": "0",
+    "priceBeforeUsd1": "0.000568316082343322",
+    "averagePriceUsd1": "0.00058160332371551",
+    "balance": {
+      "usd1": "176.272194803754233043",
+      "meme": "603853.839553644500262326"
+    },
+    "exceedsBalance": false,
+    "router": "0x7d1577a63007620db1cbee3eab3572b9d148aefe",
+    "poolId": "0x5c67b8c478d148f0cb8c4349e217ba0a83f5874d72f84644f5a833269fcffc2f",
+    "poolKey": {
+      "currency0": "0x3a1236e68ecf3225640367c84b6f50a51d0b0195",
+      "currency1": "0xf1e3b87b01417a7c6cb281b4a8179e9244ad6666",
+      "fee": 2500,
+      "tickSpacing": 60,
+      "hooks": "0x3257cf5512f52ca1ecf4addb062b341d80a810c4"
+    },
+    "zeroForOne": true,
+    "deadline": "2026-10-13T21:21:27.000Z",
+    "expiresAt": "2026-10-13T21:21:27.000Z",
+    "quotedAt": "2026-10-13T21:20:28.313Z",
+    "quotedAtBlock": "136620989",
+    "basis": {
+      "blockNumber": "136620989",
+      "blockHash": "0x2c03ded044fefce882fcd512ed761313c8bdc29beebc2e6020b62a204bfd0b48"
+    },
+    "dynamic": {
+      "hookKind": "loopDynamic",
+      "hook": "0x3257cf5512f52ca1ecf4addb062b341d80a810c4",
+      "priceTiming": "POST_SWAP",
+      "baseTaxBps": 200,
+      "baseTaxAmount": "1754.4744358518080736",
+      "dynamicTaxBps": 0,
+      "dynamicTaxAmount": "0",
+      "armed": true,
+      "roundId": "1",
+      "rewardWeight": "50"
+    }
+  },
+  "contractVersion": "2.0"
+}

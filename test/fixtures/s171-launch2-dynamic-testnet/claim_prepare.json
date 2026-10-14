@@ -1,0 +1,63 @@
+{
+  "launch2Intent": {
+    "intentId": "7dff2656-55d0-44c0-91d4-b8b9e406bb00",
+    "kind": "dynamic_claim",
+    "state": "prepared",
+    "instanceId": "8cf88c44-adf8-4c3f-9de2-46a895af3d1d",
+    "walletId": "7dd2bf27-5c36-428d-95cb-54298d0fa974",
+    "chainId": "eip155:97",
+    "chainReference": 97,
+    "contractAddress": "0x3257cf5512f52ca1ecf4addb062b341d80a810c4",
+    "amountIn": "0",
+    "expectedOut": "13.14340921477541523",
+    "minOut": "0",
+    "taxUsd1": "0",
+    "refundUsd1": "0",
+    "deadline": "2026-10-13T21:28:47.000Z",
+    "expiresAt": "2026-10-13T21:28:47.000Z",
+    "createdAt": "2026-10-13T21:25:49.511Z",
+    "calldata": {
+      "to": "0x3257cf5512f52ca1ecf4addb062b341d80a810c4",
+      "data": "0x379607f50000000000000000000000000000000000000000000000000000000000000001",
+      "value": "0"
+    },
+    "unsignedTransaction": {
+      "to": "0x3257cf5512f52ca1ecf4addb062b341d80a810c4",
+      "gas": "0x2705a",
+      "data": "0x379607f50000000000000000000000000000000000000000000000000000000000000001",
+      "from": "0x6dc500000000000000000000000000000000d30c",
+      "type": "eip1559",
+      "nonce": "0x1b",
+      "value": "0x0",
+      "chainId": 97,
+      "gasPrice": null,
+      "maxFeePerGas": "0x5f5e100",
+      "maxPriorityFeePerGas": "0x5f5e100"
+    },
+    "approval": null,
+    "payloadDigest": "1459c8e0103900322b6e692cb1d849ffefafe6841c3b975c33aadec755883c29",
+    "snapshotBlockNumber": "136621701",
+    "snapshotBlockHash": "0xe7b811d27fb6a8675a742e13acc957cf9b028900407620fcd5523c247403b05c",
+    "simulation": {
+      "status": "passed",
+      "reasonCode": null
+    },
+    "policy": {
+      "configVersion": "bscWriteCanaryV1",
+      "canaryMaxUsd": "120",
+      "valueUsd": "13.14340921477541523",
+      "priceSource": "usd1_par"
+    },
+    "signing": {
+      "mode": "device_eth_send_transaction",
+      "allowed": true,
+      "reasonCode": null
+    }
+  },
+  "claim": {
+    "roundId": "1",
+    "hook": "0x3257cf5512f52ca1ecf4addb062b341d80a810c4",
+    "claimableUsd1": "13.14340921477541523"
+  },
+  "contractVersion": "2.0"
+}
