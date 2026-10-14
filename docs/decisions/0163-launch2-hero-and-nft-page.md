@@ -118,3 +118,65 @@ NFT 阶段 brass 环、主角数字 figureXl、第三行 figureSm、2 px 引线�
   铸造页（长 ticker、长名称、长简介、6 位 tokenId、滚到底）无溢出。
 - `test/route_manifest_test.dart` 与 `tests/test_check_harness.py` 计数 112 → 113；S136 钱包 NFT 行目标改为铸造页。
 - 后端没有 `summary` 时行为与之前一致；列表无可展示行时与之前一像素不变。
+
+## 第二阶段（docs/32 §7，2026-10-14 追加）
+
+### 接口与数据层
+- `GET /v2/launch2/overview`（S181-api）：`{activity[], stats{…}, observedAt, contractVersion}`。新端口
+  `Launch2OverviewGateway`（`lib/features/launch2/launch2_overview.dart`，默认 `UnavailableLaunch2OverviewGateway`，
+  `lib/main.dart` 挂 `loopV2Launch2OverviewGatewayProvider`；harness 新增 `LAUNCH2_OVERVIEW_PORT` 同样要求默认 unavailable）。
+  适配器与编解码 `lib/integrations/backend/v2/launch2/loop_v2_launch2_overview_api.dart`，错误表复用 launch2 读接口。
+- 编解码按「增强数据」从宽：读不懂的单条丢弃（未知 kind、非 UUID、ticker 不合 `^[A-Z0-9]{2,12}$`、`at` 不可读），
+  `actor` 不是 0x 地址读作「有人」，`amountUsd1` 不可读读作无金额，`stats` 任一字段不可读整块为 null；只有根不是对象才算失败。
+  404 / 503 / 任何失败：实时流与战绩条都不渲染。
+- `Launch2OverviewController`（autoDispose，无自己的定时器）：列表 scope=all 首读时一起读；60 s 轮询、从项目页返回、下拉刷新
+  都由 `Launch2ListSegment` 一并 `reload`（§7.1「随列表轮询一起刷新」）。
+
+### §7.1 实时流 `Launch2ActivityTape`（`launch2_launchpad.dart`）
+- 位置：分段条之下、hero 之上（列表 rows 的第一项）；高 32；`figureSm` mono；每条之间 24；每条前一个 3×12 的标记
+  （铸造 brass、卖出 text3、其余 lime）。
+- 文案：「{相对时间} {0x1d2f…9b / 有人}买入 DOGE 20 USD1」「…卖出…」「有人铸造 DOGE 勋章」「DOGE 毕业了」
+  「平台回购 DOGE 100 USD1」「DOGE 外盘新一轮激活」「0x1d2f…9b 领取 DOGE 奖励 10.94 USD1」；相对时间
+  刚刚（< 1 分）/ N 分钟前（< 1 小时）/ 本地 HH:mm。
+- 运动：`Ticker` 每帧按 40 dp/s 推进；手指按下即停（可拖），抬起继续；`MediaQuery.disableAnimations`（`LoopMotion.reduced`）
+  时不起 ticker，改为静态横滑列表，只显示最新 3 条。新条目进入队列末尾，下一轮才出现，屏上已排好的条目不动、不闪；
+  空数组整行不渲染。点击一条进该项目页。
+
+### §7.2 引线首次出现动画
+- `Launch2HeroFuse(introduce:)`：pager 对每张卡只在第一次出现时传 `introduce: true`，600 ms easeOutCubic 从 0 画到实际值；
+  之后数据变化直接重画；减少动画时直接画。
+
+### §7.3 阶段计数条 `Launch2StageCountBar`
+- 铸造中 / 提前购 / 内盘 / 预告，数字来自已加载的行；为 0 的不画，全为 0 整条不画。胶囊为 card 底 + line 描边的 stadium，
+  数字 `figureMd` mono。点击滚到该组标题：列表是懒加载 sliver，远处标题可能尚未构建，所以先按一屏一屏 `jumpTo` 直到标题出现，
+  再 `Scrollable.ensureVisible`（减少动画时无动画）。
+
+### §7.4 分组列表
+- scope=all：铸造中 → 提前购 → 内盘 → 名单生成中 → 预告 → 已毕业 → 已暂停 / 无人铸造；组内保持服务端顺序；空组不画。
+  组标题 `LoopType.title` + 右侧 text3 mono 计数（key `launch2-group-{name}` / `launch2-group-count-{name}`）。
+- `Launch2InstanceTile` 新增可选 `fuse`（行底 2 px，左右留 16）与 `ringed`（logo 外 1.5 px brass 环）；只有 scope=all 传入：
+  nft_sale = 发售时间已过比例、priority / public = 已售 / 8 亿，其它不画；nft_sale 画环。已毕业列表不分组、不加引线与环
+  （仍用原 `launch2ListOrder`）。
+
+### §7.5 战绩条 `Launch2StatsStrip`
+- 列表末尾、来源行之前；三组 mono 数字 + 小标签：「3」本周毕业 · 累计 12 /「4,200.5 USD1」累计回购 /「318 枚」铸造；
+  数字 `FittedBox` 缩放保证 360 宽；`stats` 缺失不渲染。
+
+### 与 §7 的偏离
+1. 接口按协调方定稿用合并的 `GET /v2/launch2/overview`，不是 §7.1 / §7.5 分开的 `activity` / `stats`。
+2. `round_activated` 没有轮次字段，文案写「DOGE 外盘新一轮激活」，不写「第 N 轮」。
+3. 匿名主语与动词连写（「有人买入」），有地址时中间空格（「0x1d2f…9b 买入」）；地址显示前 6 后 2。
+4. §7.4 顺序里没有「已毕业」，而 scope=all 列表会含毕业项目：放在「预告」之后、「已暂停 / 无人铸造」之前。
+5. 实时流用一个只在末尾增长的序列实现循环（到距末尾两屏时追加一轮队列，上限 2000 条），以保证新条目「插队尾」时屏上不跳；
+   页面长时间停留时序列会缓慢增长。
+6. 计数条的滚动在懒加载列表上分两步（先逐屏跳到标题构建出来，再 ensureVisible），而不是单次 ensureVisible。
+7. 减少动画时实时流显示最新 3 条（§7.1 原文），协调方的「静态横滑列表」同时满足。
+8. 引线首次动画按卡计「首次出现」（翻到第二张时第二张也画一次），之后不再动画。
+
+### 第二阶段测试（同文件 `test/s180_launch2_hero_nft_test.dart`，新增 15 条，合计 46 条）
+七种 kind 文案（含匿名与有地址）、相对时间三档、overview 编解码容错；实时流以约 40 dp/s 漂移（1 s 内 30–50 dp）、按住不动、
+松手继续、点击进项目页；第二次读到的新条目不改变第一条；减少动画为静态 3 条且无 controller；无活动 / 无 overview 时无流无战绩；
+hero 引线 250 ms 时介于 0 与目标之间、650 ms 到目标，减少动画时立即到目标；分组顺序、组计数、组内服务端顺序、计数胶囊
+为 0 不画、行引线比例（nft_sale 4/7、public 0.25、upcoming / graduated 无）、nft_sale brass 环；只有毕业 / 关闭行时无计数条；
+点胶囊把远处「预告」标题滚进视口；已毕业列表无分组 / 计数 / 流 / 战绩；战绩条三组数字与位置在来源行之前；360 × 800 下
+流、hero、计数、分组、战绩无溢出。

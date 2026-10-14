@@ -9,6 +9,8 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
+import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
+import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
@@ -120,7 +122,32 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     // running: the tick has nothing to add.
     if (state.value == null || state.busy || state.refreshing) return;
     unawaited(ref.read(provider.notifier).refresh());
+    _refreshOverview();
   }
+
+  /// Decision 0163 §7.1: the overview rides the list's own refresh — the
+  /// 60 s poll, the return from a project page and the pull — and has no
+  /// timer of its own.
+  void _refreshOverview() {
+    if (scope != Launch2ListScope.all) return;
+    final overview = ref.read(launch2OverviewControllerProvider);
+    if (overview.busy || overview.refreshing) return;
+    unawaited(ref.read(launch2OverviewControllerProvider.notifier).reload());
+  }
+
+  Future<void> _pull(Launch2ListController controller) async {
+    _refreshOverview();
+    await controller.reload();
+  }
+
+  /// One heading key per group, so the count pills can scroll to it.
+  final Map<Launch2StageGroup, GlobalKey> _headingKeys =
+      <Launch2StageGroup, GlobalKey>{};
+
+  GlobalKey _headingKey(Launch2StageGroup group) => _headingKeys.putIfAbsent(
+    group,
+    () => GlobalKey(debugLabel: 'launch2-group-${group.name}'),
+  );
 
   void _openInstance(String instanceId) {
     widget.onNavigate(Launch2Route.instance(instanceId));
@@ -138,13 +165,24 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       launch2LoadOnce(ref, state, () => ref.read(provider.notifier).load());
     }
     final controller = ref.read(provider.notifier);
+    // Decision 0163 §7.1 / §7.5: the overview, read with the first page.
+    final overview = blocked || scope != Launch2ListScope.all
+        ? null
+        : ref.watch(launch2OverviewControllerProvider);
+    if (overview != null) {
+      launch2LoadOnce(
+        ref,
+        overview,
+        () => ref.read(launch2OverviewControllerProvider.notifier).load(),
+      );
+    }
     return LoopDashboardPage(
       key: ValueKey<String>(_keyBase),
       archetype: LoopPageArchetype.listing,
       title: scope == Launch2ListScope.all ? 'v2 发射' : '已毕业',
       embedded: true,
       tabPage: true,
-      onRefresh: blocked ? null : controller.reload,
+      onRefresh: blocked ? null : () => _pull(controller),
       sections: <Widget>[
         if (state == null)
           LoopInlineUnavailable(
@@ -152,7 +190,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
             message: 'MEME v2 暂时不可用 · ${launch2CapabilityText(capability)}',
           )
         else
-          ..._rows(state, controller),
+          ..._rows(state, controller, overview?.value),
       ],
     );
   }
@@ -160,6 +198,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
   List<Widget> _rows(
     LoopChainResourceState<Launch2InstancePage> state,
     Launch2ListController controller,
+    Launch2Overview? overview,
   ) {
     final page = state.value;
     if (page == null && state.phase == LoopChainViewPhase.loading) {
@@ -211,22 +250,54 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
             page.items.take(launch2HeroFirstPageRows).toList(growable: false),
           )
         : const <Launch2InstanceRow>[];
-    return <Widget>[
-      if (hero.isNotEmpty)
-        Launch2HeroPager(
-          rows: hero,
-          onNavigate: widget.onNavigate,
-          onElapsed: () => unawaited(controller.reload()),
-        ),
-      const SizedBox(height: 2),
-      for (final row in launch2ListOrder(page.items))
+    final all = scope == Launch2ListScope.all;
+    final now = ref.read(launch2ClockProvider)();
+    final counts = all
+        ? launch2StageCounts(page.items)
+        : const <(Launch2StageGroup, int)>[];
+    final activity = overview?.activity ?? const <Launch2Activity>[];
+    final stats = overview?.stats;
+    Widget tile(Launch2InstanceRow row, {bool live = false}) =>
         Launch2InstanceTile(
           key: ValueKey<String>('launch2-tile-${row.instanceId}'),
           row: row,
           onTap: () => _openInstance(row.instanceId),
           // A row whose stage time passed: the server says what it is now.
           onElapsed: () => unawaited(controller.reload()),
+          // Decision 0163 §7.4: the fuse and the NFT ring on 「v2 发射」 only.
+          fuse: live ? launch2RowFuse(row, now) : null,
+          ringed: live && row.stage == Launch2Stage.nftSale,
+        );
+    return <Widget>[
+      if (all && activity.isNotEmpty)
+        Launch2ActivityTape(
+          items: activity,
+          now: ref.read(launch2ClockProvider),
+          onNavigate: widget.onNavigate,
         ),
+      if (hero.isNotEmpty)
+        Launch2HeroPager(
+          rows: hero,
+          onNavigate: widget.onNavigate,
+          onElapsed: () => unawaited(controller.reload()),
+        ),
+      if (counts.isNotEmpty)
+        Launch2StageCountBar(counts: counts, headingKeyOf: _headingKey),
+      const SizedBox(height: 2),
+      if (all)
+        for (final (group, members) in launch2GroupRows(page.items)) ...[
+          KeyedSubtree(
+            key: ValueKey<String>('launch2-group-${group.name}'),
+            child: Launch2GroupHeading(
+              key: _headingKey(group),
+              group: group,
+              count: members.length,
+            ),
+          ),
+          for (final row in members) tile(row, live: true),
+        ]
+      else
+        for (final row in launch2ListOrder(page.items)) tile(row),
       if (controller.appendFailed && !state.busy)
         LoopInlineUnavailable(
           key: ValueKey<String>('$_keyBase-more-failed'),
@@ -249,6 +320,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           ),
       ] else
         MarketListEnd(key: ValueKey<String>('$_keyBase-end')),
+      if (all && stats != null) Launch2StatsStrip(stats: stats),
       LoopProvenanceLine(
         key: ValueKey<String>('$_keyBase-provenance'),
         sources: const <String>['LOOP 链上索引'],

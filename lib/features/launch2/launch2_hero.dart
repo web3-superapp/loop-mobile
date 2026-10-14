@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -216,6 +217,9 @@ class _Launch2HeroPagerState extends State<Launch2HeroPager> {
   final PageController _controller = PageController();
   final ValueNotifier<int> _page = ValueNotifier<int>(0);
 
+  /// Cards whose fuse already drew itself in (§7.2: once, on first sight).
+  final Set<String> _introduced = <String>{};
+
   @override
   void dispose() {
     _controller.dispose();
@@ -253,6 +257,7 @@ class _Launch2HeroPagerState extends State<Launch2HeroPager> {
                 child: Launch2HeroCard(
                   row: rows[index],
                   reserveDots: dots,
+                  introduceFuse: _introduced.add(rows[index].instanceId),
                   onTap: () =>
                       widget.onNavigate(launch2HeroLocation(rows[index])),
                   onElapsed: widget.onElapsed,
@@ -315,11 +320,15 @@ class Launch2HeroCard extends ConsumerWidget {
     required this.onTap,
     super.key,
     this.reserveDots = false,
+    this.introduceFuse = false,
     this.onElapsed,
   });
 
   final Launch2InstanceRow row;
   final VoidCallback onTap;
+
+  /// The fuse draws itself in (§7.2); the pager asks for it once per card.
+  final bool introduceFuse;
 
   /// The pager draws its dots over this card's top right corner.
   final bool reserveDots;
@@ -416,6 +425,7 @@ class Launch2HeroCard extends ConsumerWidget {
                   child: Launch2HeroFuse(
                     key: ValueKey<String>('launch2-hero-fuse-$id'),
                     fraction: fuse,
+                    introduce: introduceFuse,
                   ),
                 ),
             ],
@@ -519,18 +529,74 @@ class _HeroFigure extends StatelessWidget {
 }
 
 /// The fuse (引线): a 2 px Lime line from the left edge to [fraction] of the
-/// width, over a quiet track. It is drawn once per build, never animated.
-class Launch2HeroFuse extends StatelessWidget {
-  const Launch2HeroFuse({required this.fraction, super.key});
+/// width, over a quiet track.
+///
+/// Decision 0163 §7.2: with [introduce] the line draws itself from 0 to its
+/// value over 600 ms the first time it appears — the page's one choreographed
+/// motion. After that, and always with motion reduced, a new value is drawn
+/// at once.
+class Launch2HeroFuse extends StatefulWidget {
+  const Launch2HeroFuse({
+    required this.fraction,
+    super.key,
+    this.introduce = false,
+  });
 
   final double fraction;
+  final bool introduce;
+
+  static const Duration introDuration = Duration(milliseconds: 600);
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 2,
-    width: double.infinity,
-    child: CustomPaint(painter: _FusePainter(fraction.clamp(0.0, 1.0))),
-  );
+  State<Launch2HeroFuse> createState() => Launch2HeroFuseState();
+}
+
+class Launch2HeroFuseState extends State<Launch2HeroFuse>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _intro;
+
+  /// The fraction drawn this frame (the intro's progress times the value).
+  @visibleForTesting
+  double get drawnFraction {
+    final target = widget.fraction.clamp(0.0, 1.0);
+    final intro = _intro;
+    if (intro == null || intro.isCompleted) return target;
+    return target * Curves.easeOutCubic.transform(intro.value);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_intro != null || !widget.introduce) return;
+    if (LoopMotion.reduced(context)) return;
+    _intro = AnimationController(
+      vsync: this,
+      duration: Launch2HeroFuse.introDuration,
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _intro?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final target = widget.fraction.clamp(0.0, 1.0);
+    final intro = _intro;
+    Widget paint(double value) => SizedBox(
+      height: 2,
+      width: double.infinity,
+      child: CustomPaint(painter: _FusePainter(value)),
+    );
+    if (intro == null || intro.isCompleted) return paint(target);
+    return AnimatedBuilder(
+      animation: intro,
+      builder: (context, _) =>
+          paint(target * Curves.easeOutCubic.transform(intro.value)),
+    );
+  }
 }
 
 class _FusePainter extends CustomPainter {

@@ -14,13 +14,18 @@ import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_nft_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
+import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_overview_api.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
@@ -278,11 +283,22 @@ Future<void> _pump(
   _RecordingWallet? wallet,
   bool noWallet = false,
   Size size = const Size(390, 2600),
+  Launch2OverviewGateway? overview,
+  bool settle = true,
+  bool reduceMotion = false,
 }) => pumpS7Page(
   tester,
-  page,
+  reduceMotion
+      ? Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: page,
+          ),
+        )
+      : page,
   meta: _meta(),
   size: size,
+  settle: settle,
   wallet: noWallet
       ? FakeWalletDirectory()
       : FakeWalletDirectory(
@@ -303,6 +319,8 @@ Future<void> _pump(
       const LoopFeatureSwitchValues(launch2Visible: true),
     ),
     if (wallet != null) walletSigningGatewayProvider.overrideWithValue(wallet),
+    if (overview != null)
+      launch2OverviewGatewayProvider.overrideWithValue(overview),
   ],
 );
 
@@ -957,4 +975,539 @@ void main() {
       await _drain(tester);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Second phase (docs/32 §7)
+  // -------------------------------------------------------------------------
+
+  group('§7.1 tape · sentences and time', () {
+    Launch2Activity item(
+      Launch2ActivityKind kind, {
+      String? actor = '0x1d2f000000000000000000000000000000009b9b',
+      String? amount = '20',
+      Duration ago = const Duration(seconds: 10),
+    }) => Launch2Activity(
+      kind: kind,
+      instanceId: _id(1),
+      ticker: 'DOGE',
+      name: 'Doge on LOOP',
+      actor: actor,
+      amountUsd1: amount == null ? null : Decimal.parse(amount),
+      at: l2Now.subtract(ago),
+    );
+
+    test('the seven kinds', () {
+      expect(
+        launch2ActivityLine(item(Launch2ActivityKind.curveBuy), l2Now),
+        '刚刚 0x1d2f…9b 买入 DOGE 20 USD1',
+      );
+      expect(
+        launch2ActivityText(item(Launch2ActivityKind.curveSell, actor: null)),
+        '有人卖出 DOGE 20 USD1',
+      );
+      expect(
+        launch2ActivityText(
+          item(Launch2ActivityKind.nftMint, actor: null, amount: null),
+        ),
+        '有人铸造 DOGE 勋章',
+      );
+      expect(
+        launch2ActivityText(item(Launch2ActivityKind.graduated, amount: null)),
+        'DOGE 毕业了',
+      );
+      expect(
+        launch2ActivityText(
+          item(Launch2ActivityKind.buyback, actor: null, amount: '100'),
+        ),
+        '平台回购 DOGE 100 USD1',
+      );
+      expect(
+        launch2ActivityText(item(Launch2ActivityKind.roundActivated)),
+        'DOGE 外盘新一轮激活',
+      );
+      expect(
+        launch2ActivityText(
+          item(Launch2ActivityKind.rewardClaimed, amount: '10.94'),
+        ),
+        '0x1d2f…9b 领取 DOGE 奖励 10.94 USD1',
+      );
+    });
+
+    test('relative time: 刚刚, N 分钟前, then HH:mm', () {
+      expect(
+        launch2RelativeTime(l2Now.subtract(const Duration(seconds: 59)), l2Now),
+        '刚刚',
+      );
+      expect(
+        launch2RelativeTime(l2Now.subtract(const Duration(minutes: 5)), l2Now),
+        '5 分钟前',
+      );
+      final earlier = l2Now.subtract(const Duration(hours: 2));
+      expect(launch2RelativeTime(earlier, l2Now), loopLocalClockLabel(earlier));
+    });
+
+    test('the overview codec drops what it cannot read and never fails on '
+        'a field', () {
+      final overview = LoopV2Launch2OverviewCodec.overview(
+        _overviewJson(
+          extra: <Object?>[
+            <String, Object?>{'kind': 'teleport', 'instanceId': _id(1)},
+            'not an object',
+            <String, Object?>{..._activityJson('curve_buy'), 'at': 'yesterday'},
+          ],
+          stats: <String, Object?>{..._statsJson(), 'nftMintedTotal': -1},
+        ),
+        mediaUrl: (_) => null,
+      );
+      expect(overview.activity, hasLength(2));
+      expect(overview.stats, isNull);
+      expect(
+        () => LoopV2Launch2OverviewCodec.overview('x', mediaUrl: (_) => null),
+        throwsA(anything),
+      );
+      final full = LoopV2Launch2OverviewCodec.overview(
+        _overviewJson(),
+        mediaUrl: (_) => null,
+      );
+      expect(full.stats!.graduatedThisWeek, 3);
+      expect(full.activity.first.actor, isNull);
+    });
+  });
+
+  group('§7.1 tape · motion', () {
+    final rows = <Map<String, Object?>>[_rowJson(1, 'nft_sale')];
+
+    ScrollController tapeScroll(WidgetTester tester) => tester
+        .widget<ListView>(
+          find.descendant(
+            of: _key('launch2-tape'),
+            matching: find.byType(ListView),
+          ),
+        )
+        .controller!;
+
+    testWidgets('drifts left at about 40 dp/s, holds under a finger and '
+        'resumes on release; a tap opens the project', (tester) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        _list(opened),
+        _listGateway(rows),
+        overview: _FakeOverview(<Map<String, Object?>>[_overviewJson()]),
+        settle: false,
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(_key('launch2-tape'), findsOneWidget);
+      expect(_key('launch2-tape-drift'), findsOneWidget);
+      final start = tapeScroll(tester).offset;
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      final moved = tapeScroll(tester).offset - start;
+      expect(moved, inInclusiveRange(30, 50));
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_key('launch2-tape')),
+      );
+      final held = tapeScroll(tester).offset;
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tapeScroll(tester).offset, held);
+      await gesture.up();
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tapeScroll(tester).offset, greaterThan(held + 20));
+
+      await tester.tap(_key('launch2-tape-item-0'), warnIfMissed: false);
+      await tester.pump();
+      expect(
+        opened.where((l) => l.startsWith('/launch2/instance?id=')),
+        isNotEmpty,
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('a later read joins the end: the first item does not move', (
+      tester,
+    ) async {
+      final overview = _FakeOverview(<Map<String, Object?>>[
+        _overviewJson(),
+        _overviewJson(
+          extra: <Object?>[],
+          lead: <Map<String, Object?>>[
+            _activityJson('graduated', hash: 'e', ticker: 'NEWT'),
+          ],
+        ),
+      ]);
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(rows),
+        overview: overview,
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      String first() => tester
+          .widget<Text>(
+            find.descendant(
+              of: _key('launch2-tape-item-0'),
+              matching: find.byType(Text),
+            ),
+          )
+          .data!;
+      final before = first();
+      // The list's own poll (1 h in this harness) refreshes the overview.
+      await tester.pump(const Duration(hours: 1));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(overview.reads, 2);
+      expect(first(), before);
+      expect(find.textContaining('NEWT 毕业了'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('motion reduced: a still row of the newest three', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(rows),
+        overview: _FakeOverview(<Map<String, Object?>>[
+          _overviewJson(
+            lead: <Map<String, Object?>>[
+              _activityJson('buyback', hash: 'c'),
+              _activityJson('round_activated', hash: 'd'),
+            ],
+          ),
+        ]),
+        reduceMotion: true,
+      );
+      expect(_key('launch2-tape-still'), findsOneWidget);
+      final still = tester.widget<ListView>(
+        find.descendant(
+          of: _key('launch2-tape'),
+          matching: find.byType(ListView),
+        ),
+      );
+      expect(
+        (still.childrenDelegate as SliverChildBuilderDelegate).childCount,
+        Launch2ActivityTape.reducedCount,
+      );
+      expect(still.controller, isNull);
+      await _drain(tester);
+    });
+
+    testWidgets('no activity, or no overview at all: no tape, no stats', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(rows),
+        overview: _FakeOverview(<Map<String, Object?>>[
+          <String, Object?>{'activity': <Object?>[], 'contractVersion': '2.0'},
+        ]),
+      );
+      expect(_key('launch2-tape'), findsNothing);
+      expect(_key('launch2-stats'), findsNothing);
+      expect(_key('launch2-hero'), findsOneWidget);
+      await _drain(tester);
+
+      await _pump(tester, _list(<String>[]), _listGateway(rows));
+      expect(_key('launch2-tape'), findsNothing);
+      expect(_key('launch2-stats'), findsNothing);
+      await _drain(tester);
+    });
+  });
+
+  group('§7.2 hero fuse draws itself in once', () {
+    Launch2HeroFuseState fuse(WidgetTester tester) =>
+        tester.state<Launch2HeroFuseState>(_key('launch2-hero-fuse-${_id(1)}'));
+
+    testWidgets('0 → value over 600 ms, then still', (tester) async {
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(<Map<String, Object?>>[_rowJson(1, 'nft_sale')]),
+        settle: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      final mid = fuse(tester).drawnFraction;
+      expect(mid, greaterThan(0));
+      expect(mid, lessThan(4 / 7));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(fuse(tester).drawnFraction, closeTo(4 / 7, 1e-9));
+      await _drain(tester);
+    });
+
+    testWidgets('motion reduced: drawn at its value at once', (tester) async {
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(<Map<String, Object?>>[_rowJson(1, 'nft_sale')]),
+        settle: false,
+        reduceMotion: true,
+      );
+      await tester.pump();
+      expect(fuse(tester).drawnFraction, closeTo(4 / 7, 1e-9));
+      await _drain(tester);
+    });
+  });
+
+  group('§7.3 / §7.4 counts and groups', () {
+    testWidgets('groups in order with grey counts; pills only for non-zero '
+        'counts; live rows carry the fuse, the NFT row the Brass ring', (
+      tester,
+    ) async {
+      final json = <Map<String, Object?>>[
+        _rowJson(1, 'upcoming', startIn: const Duration(days: 1)),
+        _rowJson(2, 'closed_no_holders'),
+        _rowJson(3, 'public', soldBps: 2500),
+        _rowJson(4, 'nft_sale'),
+        _rowJson(5, 'snapshot_pending', nextIn: const Duration(hours: 1)),
+        _rowJson(6, 'public', soldBps: 1000),
+        _rowJson(7, 'graduated'),
+      ];
+      await _pump(tester, _list(<String>[]), _listGateway(json));
+      final order = <String>[
+        'minting',
+        'curve',
+        'snapshot',
+        'upcoming',
+        'graduated',
+        'closed',
+      ];
+      final ys = <double>[
+        for (final name in order)
+          tester.getTopLeft(_key('launch2-group-$name')).dy,
+      ];
+      expect(ys, orderedEquals(<double>[...ys]..sort()));
+      expect(_key('launch2-group-priority'), findsNothing);
+      expect(tester.widget<Text>(_key('launch2-group-count-curve')).data, '2');
+      // Group members keep the server's order.
+      expect(
+        tester.getTopLeft(_key('launch2-tile-${_id(3)}')).dy,
+        lessThan(tester.getTopLeft(_key('launch2-tile-${_id(6)}')).dy),
+      );
+      expect(_key('launch2-stage-count-minting'), findsOneWidget);
+      expect(_key('launch2-stage-count-curve'), findsOneWidget);
+      expect(_key('launch2-stage-count-upcoming'), findsOneWidget);
+      expect(_key('launch2-stage-count-priority'), findsNothing);
+      expect(
+        tester
+            .widget<Launch2RowFuse>(_key('launch2-row-fuse-${_id(4)}'))
+            .fraction,
+        closeTo(4 / 7, 1e-9),
+      );
+      expect(
+        tester
+            .widget<Launch2RowFuse>(_key('launch2-row-fuse-${_id(3)}'))
+            .fraction,
+        0.25,
+      );
+      expect(_key('launch2-row-fuse-${_id(1)}'), findsNothing);
+      expect(_key('launch2-row-fuse-${_id(7)}'), findsNothing);
+      expect(_key('launch2-row-ring-${_id(4)}'), findsOneWidget);
+      expect(_key('launch2-row-ring-${_id(3)}'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('only graduated / closed rows: no count bar', (tester) async {
+      final json = <Map<String, Object?>>[
+        _rowJson(1, 'graduated'),
+        _rowJson(2, 'closed_no_holders'),
+      ];
+      await _pump(tester, _list(<String>[]), _listGateway(json));
+      expect(_key('launch2-stage-counts'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('a pill scrolls a far group heading into view', (tester) async {
+      final json = <Map<String, Object?>>[
+        for (var i = 1; i <= 14; i++) _rowJson(i, 'nft_sale'),
+        _rowJson(20, 'upcoming', startIn: const Duration(days: 1)),
+        for (var i = 30; i <= 44; i++) _rowJson(i, 'graduated'),
+      ];
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(json),
+        size: const Size(390, 800),
+      );
+      expect(_key('launch2-group-upcoming'), findsNothing);
+      await tester.tap(_key('launch2-stage-count-upcoming'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-group-upcoming'), findsOneWidget);
+      final y = tester.getTopLeft(_key('launch2-group-upcoming')).dy;
+      expect(y, inInclusiveRange(0, 400));
+      await _drain(tester);
+    });
+
+    testWidgets('the 已毕业 list stays flat: no groups, no fuse, no counts', (
+      tester,
+    ) async {
+      final json = <Map<String, Object?>>[_rowJson(1, 'graduated')];
+      await _pump(
+        tester,
+        _list(<String>[], scope: Launch2ListScope.graduated),
+        _listGateway(json),
+        overview: _FakeOverview(<Map<String, Object?>>[_overviewJson()]),
+      );
+      expect(_key('launch2-group-graduated'), findsNothing);
+      expect(_key('launch2-stage-counts'), findsNothing);
+      expect(_key('launch2-tape'), findsNothing);
+      expect(_key('launch2-stats'), findsNothing);
+      await _drain(tester);
+    });
+  });
+
+  group('§7.5 stats', () {
+    testWidgets('three figures above the source line', (tester) async {
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(<Map<String, Object?>>[_rowJson(1, 'graduated')]),
+        overview: _FakeOverview(<Map<String, Object?>>[
+          <String, Object?>{'stats': _statsJson(), 'contractVersion': '2.0'},
+        ]),
+      );
+      expect(_key('launch2-stats'), findsOneWidget);
+      expect(tester.widget<Text>(_key('launch2-stats-graduated')).data, '3');
+      expect(find.text('本周毕业 · 累计 12'), findsOneWidget);
+      expect(
+        tester.widget<Text>(_key('launch2-stats-buyback')).data,
+        '4,200.5 USD1',
+      );
+      expect(tester.widget<Text>(_key('launch2-stats-minted')).data, '318 枚');
+      expect(
+        tester.getTopLeft(_key('launch2-stats')).dy,
+        lessThan(tester.getTopLeft(_key('launch2-list-all-provenance')).dy),
+      );
+      await _drain(tester);
+    });
+  });
+
+  group('§7 at 360 dp', () {
+    testWidgets('tape, hero, counts, groups and stats do not overflow', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      final json = <Map<String, Object?>>[
+        _rowJson(
+          1,
+          'nft_sale',
+          ticker: 'ABCDEFGHIJKL',
+          name: '一个名字很长很长很长的项目用来测试三百六十宽度',
+        ),
+        _rowJson(2, 'priority', nextIn: const Duration(minutes: 30)),
+        _rowJson(3, 'public', soldBps: 9100),
+        _rowJson(4, 'upcoming', startIn: const Duration(days: 12)),
+      ];
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(json),
+        overview: _FakeOverview(<Map<String, Object?>>[
+          <String, Object?>{
+            ..._overviewJson(),
+            'stats': <String, Object?>{
+              ..._statsJson(),
+              'buybackUsd1Total': '123456789.99',
+            },
+          },
+        ]),
+        size: const Size(360, 800),
+        settle: false,
+      );
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.view.physicalSize, const Size(360, 800));
+      expect(_key('launch2-tape'), findsOneWidget);
+      expect(_key('launch2-stage-counts'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -2000));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(_key('launch2-stats'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await _drain(tester);
+    });
+  });
+}
+
+Map<String, Object?> _activityJson(
+  String kind, {
+  String hash = 'a',
+  String ticker = 'DOGE',
+  String? actor = '0x1d2f000000000000000000000000000000009b9b',
+  String? amount = '20',
+  Duration ago = const Duration(seconds: 10),
+}) => <String, Object?>{
+  'kind': kind,
+  'instanceId': _id(1),
+  'ticker': ticker,
+  'name': 'Doge on LOOP',
+  'logoUrl': null,
+  'actor': actor,
+  'amountUsd1': amount,
+  'at': _iso(l2Now.subtract(ago)),
+  'transactionHash': '0x${hash * 64}',
+};
+
+Map<String, Object?> _statsJson() => <String, Object?>{
+  'liveCount': 9,
+  'mintingCount': 2,
+  'priorityCount': 1,
+  'curveCount': 5,
+  'upcomingCount': 3,
+  'graduatedTotal': 12,
+  'graduatedThisWeek': 3,
+  'buybackUsd1Total': '4200.5',
+  'nftMintedTotal': 318,
+};
+
+Map<String, Object?> _overviewJson({
+  List<Map<String, Object?>> lead = const <Map<String, Object?>>[],
+  List<Object?> extra = const <Object?>[],
+  Map<String, Object?>? stats,
+}) => <String, Object?>{
+  'activity': <Object?>[
+    ...lead,
+    _activityJson('nft_mint', actor: null, amount: null),
+    _activityJson('curve_buy', hash: 'b', ago: const Duration(minutes: 5)),
+    ...extra,
+  ],
+  'stats': stats ?? _statsJson(),
+  'observedAt': _iso(l2Now),
+  'contractVersion': '2.0',
+};
+
+final class _FakeOverview implements Launch2OverviewGateway {
+  _FakeOverview(this.answers);
+
+  /// The reads, in order; the last one repeats.
+  final List<Map<String, Object?>> answers;
+  int reads = 0;
+
+  @override
+  LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
+
+  @override
+  Future<Launch2Overview> loadOverview() {
+    final index = reads < answers.length ? reads : answers.length - 1;
+    reads += 1;
+    return Future<Launch2Overview>.value(
+      LoopV2Launch2OverviewCodec.overview(
+        answers[index],
+        mediaUrl: (_) => null,
+      ),
+    );
+  }
 }

@@ -211,6 +211,8 @@ class Launch2InstanceTile extends ConsumerWidget {
     super.key,
     this.onTap,
     this.onElapsed,
+    this.fuse,
+    this.ringed = false,
   });
 
   final Launch2InstanceRow row;
@@ -218,6 +220,13 @@ class Launch2InstanceTile extends ConsumerWidget {
 
   /// The row's countdown reached zero: the list re-reads the server.
   final VoidCallback? onElapsed;
+
+  /// Decision 0163 §7.4: a 2 px Lime fuse along the row's foot at this
+  /// fraction (`null` draws none — the 已毕业 list and every other caller).
+  final double? fuse;
+
+  /// Decision 0163 §7.4: a 1.5 px Brass ring around the logo (NFT stage).
+  final bool ringed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -302,15 +311,31 @@ class Launch2InstanceTile extends ConsumerWidget {
         Text('平台核对中', style: LoopTypography.body(14, color: LoopColors.text2)),
       ),
     };
-    return LoopQuoteRow(
+    final logoSize = ringed ? memeCardLogoSize - 5 : memeCardLogoSize;
+    final logo = MemeLogo(
+      symbol: row.ticker,
+      imageUrl: row.logoUrl,
+      identity: row.instanceId,
+      size: logoSize,
+      radius: logoSize / 2,
+    );
+    final quote = LoopQuoteRow(
       tapKey: ValueKey<String>('launch2-row-${row.instanceId}'),
-      leading: MemeLogo(
-        symbol: row.ticker,
-        imageUrl: row.logoUrl,
-        identity: row.instanceId,
-        size: memeCardLogoSize,
-        radius: memeCardLogoSize / 2,
-      ),
+      leading: !ringed
+          ? logo
+          : Container(
+              key: ValueKey<String>('launch2-row-ring-${row.instanceId}'),
+              width: memeCardLogoSize,
+              height: memeCardLogoSize,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.fromBorderSide(
+                  BorderSide(color: LoopColors.brass, width: 1.5),
+                ),
+              ),
+              child: logo,
+            ),
       title: row.ticker,
       subtitle: row.name,
       value: value,
@@ -324,6 +349,48 @@ class Launch2InstanceTile extends ConsumerWidget {
           : null,
       onTap: onTap,
       semanticLabel: launch2RowSpokenLabel(row, now),
+    );
+    final fraction = fuse;
+    if (fraction == null) return quote;
+    return Stack(
+      children: <Widget>[
+        quote,
+        Positioned(
+          left: LoopSpacing.page,
+          right: LoopSpacing.page,
+          bottom: 0,
+          child: Launch2RowFuse(
+            key: ValueKey<String>('launch2-row-fuse-${row.instanceId}'),
+            fraction: fraction,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The list row's fuse (decision 0163 §7.4): the hero's 2 px line, drawn at
+/// its value without any motion.
+class Launch2RowFuse extends StatelessWidget {
+  const Launch2RowFuse({required this.fraction, super.key});
+
+  final double fraction;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = fraction.clamp(0.0, 1.0);
+    return SizedBox(
+      height: 2,
+      width: double.infinity,
+      child: ColoredBox(
+        color: LoopColors.card2,
+        child: FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: value,
+          heightFactor: 1,
+          child: const ColoredBox(color: LoopColors.lime),
+        ),
+      ),
     );
   }
 }

@@ -15274,6 +15274,9 @@ MEDAL_COLOUR_ALLOWLIST: dict[str, str] = {
     "lib/features/launch2/launch2_nft_screen.dart": "共识勋章",
     "lib/features/launch2/launch2_instance_screen.dart": "the 铸造页 link",
     "lib/widgets/loop_components.dart": "LoopButtonTone.brass",
+    # Decision 0163 §7: the NFT-stage ring on a list row, the tape's mint mark.
+    "lib/features/launch2/launch2_widgets.dart": "the NFT-stage logo ring",
+    "lib/features/launch2/launch2_launchpad.dart": "the tape's mint mark",
 }
 
 
@@ -15701,6 +15704,13 @@ LAUNCH2_DYNAMIC_PORT = (
     "Launch2DynamicPoolGateway",
     "UnavailableLaunch2DynamicPoolGateway",
 )
+# S180 (decision 0163): the launchpad overview has its own port too.
+LAUNCH2_OVERVIEW_PORT = (
+    "lib/features/launch2/launch2_overview.dart",
+    "launch2OverviewGatewayProvider",
+    "Launch2OverviewGateway",
+    "UnavailableLaunch2OverviewGateway",
+)
 LAUNCH2_SIGNING_OWNER = "lib/features/launch2/launch2_signing.dart"
 
 
@@ -15717,7 +15727,11 @@ def check_launch2_user_contract(root: Path) -> list[str]:
     main_source = (
         strip_dart_comments(read_text(main_path)) if main_path.is_file() else None
     )
-    for relative, provider, port, unavailable in (LAUNCH2_PORT, LAUNCH2_DYNAMIC_PORT):
+    for relative, provider, port, unavailable in (
+        LAUNCH2_PORT,
+        LAUNCH2_DYNAMIC_PORT,
+        LAUNCH2_OVERVIEW_PORT,
+    ):
         path = root / relative
         if not path.is_file():
             errors.append(f"missing MEME v2 port: {relative}")
