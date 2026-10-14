@@ -980,6 +980,75 @@ void main() {
   // Second phase (docs/32 §7)
   // -------------------------------------------------------------------------
 
+  group('one action name per entry', () {
+    Future<void> walk(
+      WidgetTester tester, {
+      required Widget page,
+      required String startKey,
+      required String heading,
+      required String confirm,
+      required String noun,
+      required String absent,
+    }) async {
+      final wallet = _RecordingWallet();
+      final gateway = _Fake(
+        details: <Launch2InstanceDetail>[_detail()],
+        intent: l2Intent(),
+      );
+      await _pump(tester, page, gateway, wallet: wallet);
+      await tester.tap(_key(startKey));
+      await tester.pumpAndSettle();
+      expect(find.text(heading), findsOneWidget);
+      expect(
+        tester.widget<LoopButton>(_key('launch2-nft-confirm-button')).label,
+        confirm,
+      );
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+      final sheet = _key('launch2-sign-sheet');
+      expect(sheet, findsOneWidget);
+      expect(find.text('确认$noun'), findsWidgets);
+      // The two-step strip names the main step the same way.
+      expect(find.textContaining(noun), findsWidgets);
+      // Nothing on the sheet or its step strip names the other action.
+      final onSheet = find.descendant(
+        of: find.ancestor(of: sheet, matching: find.byType(Column)).last,
+        matching: find.textContaining(absent),
+      );
+      expect(onSheet, findsNothing);
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+      expect(wallet.handed.last.title, '确认$noun');
+      await _drain(tester);
+    }
+
+    testWidgets('from 共识勋章: 铸造 all the way to the wallet', (tester) async {
+      await walk(
+        tester,
+        page: const Launch2NftScreen(instanceId: l2InstanceA),
+        startKey: 'launch2-nft-mint',
+        heading: '铸造 FROG 共识勋章',
+        confirm: '继续铸造',
+        noun: '铸造',
+        absent: '购买',
+      );
+    });
+
+    testWidgets('from the project page: 购买 NFT as before', (tester) async {
+      await walk(
+        tester,
+        page: const Launch2InstanceScreen(instanceId: l2InstanceA),
+        startKey: 'launch2-buy-nft',
+        heading: '购买 \$FROG 项目 NFT',
+        confirm: '继续购买',
+        noun: '购买 NFT',
+        absent: '铸造',
+      );
+    });
+  });
+
   group('§7.1 tape · sentences and time', () {
     Launch2Activity item(
       Launch2ActivityKind kind, {

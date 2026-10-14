@@ -315,6 +315,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
       onPrepared: () {
         if (mounted) setState(() => _preparing = false);
       },
+      entry: Launch2NftMintEntry.mintPage,
     );
     if (!mounted) return;
     switch (result) {
@@ -329,7 +330,11 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
         setState(() {
           _settleReads = 0;
           _pending = _Pending(
-            text: launch2OutcomeText(outcome, intent.kind),
+            text: launch2OutcomeText(
+              outcome,
+              intent.kind,
+              noun: Launch2NftMintEntry.mintPage.noun,
+            ),
             locked: outcome.broadcast,
           );
         });

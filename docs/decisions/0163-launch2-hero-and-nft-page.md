@@ -180,3 +180,14 @@ hero 引线 250 ms 时介于 0 与目标之间、650 ms 到目标，减少动画
 为 0 不画、行引线比例（nft_sale 4/7、public 0.25、upcoming / graduated 无）、nft_sale brass 环；只有毕业 / 关闭行时无计数条；
 点胶囊把远处「预告」标题滚进视口；已毕业列表无分组 / 计数 / 流 / 战绩；战绩条三组数字与位置在来源行之前；360 × 800 下
 流、hero、计数、分组、战绩无溢出。
+
+## 补丁：动作名按入口全程一致（模拟器验收反馈）
+
+- `launch2MintNft` 新增 `entry: Launch2NftMintEntry`（默认 `projectPage`）。从共识勋章发起（`mintPage`）时：确认弹层标题
+  「铸造 {TICKER} 共识勋章」、按钮「继续铸造」；签名页标题「确认铸造」、两步条主步骤「铸造」、事实行「操作」为
+  「铸造 {TICKER} 共识勋章（每个地址 1 枚）」、交给钱包的意图标题「确认铸造」、广播 / 未确认提示里的动作名「铸造」；成功 toast 仍是
+  「已铸造 · 等待发售结束进入名单」。从项目页「购买 NFT」发起的文案不变。
+- 实现：`showLaunch2NftConfirmSheet` 加可选 `heading` / `confirmLabel`；`showLaunch2SignSheet` / `Launch2SignSheet` /
+  `Launch2IntentSigner.sign` / `mainSigningIntent` / `approvalSigningIntent` / `launch2IntentFields` / `launch2IntentTitle` /
+  `launch2BroadcastText` / `launch2OutcomeText` 加可选 `noun`，缺省时与之前逐字相同。
+- 测试 +2（两个入口各一条，断言弹层标题、按钮、签名页标题、两步条与事实行不出现另一个动作名、钱包意图标题）。

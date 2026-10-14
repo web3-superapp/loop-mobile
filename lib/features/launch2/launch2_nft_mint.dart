@@ -21,6 +21,20 @@ import 'package:loop_mobile/features/meme/meme_wallet.dart';
 // instance until `viewer.nft` shows the mint. Both pages call this one
 // function; neither keeps its own copy of the trip.
 
+/// Where the mint started (decision 0163): the action keeps one name from
+/// the confirm sheet to the wallet — 「购买 NFT」 from the project page,
+/// 「铸造」 from 共识勋章.
+enum Launch2NftMintEntry {
+  projectPage,
+  mintPage;
+
+  /// The action's name on the signing exit; `null` keeps the kind's own.
+  String? get noun => switch (this) {
+    projectPage => null,
+    mintPage => '铸造',
+  };
+}
+
 /// How one trip through [launch2MintNft] ended.
 sealed class Launch2NftMintResult {
   const Launch2NftMintResult();
@@ -66,11 +80,15 @@ Future<Launch2NftMintResult> launch2MintNft(
   Launch2InstanceDetail detail, {
   VoidCallback? onPreparing,
   VoidCallback? onPrepared,
+  Launch2NftMintEntry entry = Launch2NftMintEntry.projectPage,
 }) async {
+  final mintPage = entry == Launch2NftMintEntry.mintPage;
   final confirmed = await showLaunch2NftConfirmSheet(
     context,
     ticker: detail.row.ticker,
     priceLabel: launch2Usd1Label(detail.row.nftSale.priceUsd1),
+    heading: mintPage ? '铸造 ${detail.row.ticker} 共识勋章' : null,
+    confirmLabel: mintPage ? '继续铸造' : '继续购买',
   );
   if (!confirmed || !context.mounted) return const Launch2NftMintCancelled();
   final wallet = memeReadActiveWallet(ref);
@@ -113,6 +131,7 @@ Future<Launch2NftMintResult> launch2MintNft(
     fromAddress: memeReadActiveWallet(ref).address,
     ticker: detail.row.ticker,
     clock: ref.read(launch2ClockProvider),
+    noun: entry.noun,
   );
   if (outcome == null) return const Launch2NftMintCancelled();
   return Launch2NftMintSigned(intent: intent, outcome: outcome);
@@ -120,13 +139,17 @@ Future<Launch2NftMintResult> launch2MintNft(
 
 /// What the page says about a signing outcome until the read model shows
 /// it — the project page's 「已广播 …」 notice, one sentence for both pages.
-String launch2OutcomeText(Launch2SignOutcome outcome, Launch2IntentKind kind) {
-  final noun = launch2IntentNoun(kind);
+String launch2OutcomeText(
+  Launch2SignOutcome outcome,
+  Launch2IntentKind kind, {
+  String? noun,
+}) {
+  final named = noun ?? launch2IntentNoun(kind);
   return outcome.broadcast
-      ? launch2BroadcastText(outcome, kind)
+      ? launch2BroadcastText(outcome, kind, noun: named)
       : launch2StoppedAtRefresh(outcome)
-      ? launch2RefreshReasonText(outcome, noun)
+      ? launch2RefreshReasonText(outcome, named)
       : outcome.approvalTxHash != null
-      ? launch2ApprovalOnlyText(outcome.reasonCode, noun)
+      ? launch2ApprovalOnlyText(outcome.reasonCode, named)
       : launch2SignReasonText(outcome.reasonCode);
 }

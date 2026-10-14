@@ -76,13 +76,16 @@ String launch2IntentNoun(Launch2IntentKind kind) => switch (kind) {
   Launch2IntentKind.rewardClaim => '领取奖励',
 };
 
+/// [noun] replaces the action's name (decision 0163: 「铸造」 when the NFT
+/// mint starts from 共识勋章).
 String launch2IntentTitle(
   Launch2IntentKind kind, {
   Launch2Venue venue = Launch2Venue.curve,
+  String? noun,
 }) => switch (venue) {
-  Launch2Venue.officialPool => '确认外盘${launch2IntentNoun(kind)}',
+  Launch2Venue.officialPool => '确认外盘${noun ?? launch2IntentNoun(kind)}',
   Launch2Venue.loopDynamicRewards => '确认领取外盘奖励',
-  Launch2Venue.curve => '确认${launch2IntentNoun(kind)}',
+  Launch2Venue.curve => '确认${noun ?? launch2IntentNoun(kind)}',
 };
 
 /// Whom an approval lets spend: the curve, the NFT or the pool's router.
@@ -120,9 +123,12 @@ String _taxLabel(Launch2Intent intent) {
 
 /// The reviewed facts. The sheet renders exactly these, read from the same
 /// object whose transactions the wallet gets.
+/// [noun] 「铸造」 (decision 0163, from 共识勋章) names the NFT mint
+/// 「铸造 T 共识勋章」 instead of 「购买 $T 项目 NFT」.
 List<IntentField> launch2IntentFields(
   Launch2Intent intent, {
   required String ticker,
+  String? noun,
 }) {
   final approval = intent.approval;
   final meme = '\$$ticker';
@@ -130,7 +136,10 @@ List<IntentField> launch2IntentFields(
     IntentField(
       label: '操作',
       value: switch (intent.kind) {
-        Launch2IntentKind.nftMint => '购买 $meme 项目 NFT（每个地址 1 枚）',
+        Launch2IntentKind.nftMint =>
+          noun == null
+              ? '购买 $meme 项目 NFT（每个地址 1 枚）'
+              : '$noun $ticker 共识勋章（每个地址 1 枚）',
         Launch2IntentKind.buy =>
           intent.venue == Launch2Venue.officialPool
               ? '在官方池买入 $meme'
@@ -308,9 +317,10 @@ String launch2ApprovalOnlyText(String reasonCode, String noun) =>
 /// The one sentence after a broadcast. A broadcast is never a result.
 String launch2BroadcastText(
   Launch2SignOutcome outcome,
-  Launch2IntentKind kind,
-) {
-  final noun = launch2IntentNoun(kind);
+  Launch2IntentKind kind, {
+  String? noun,
+}) {
+  noun ??= launch2IntentNoun(kind);
   final hash = outcome.txHash;
   if (hash == null) {
     if (outcome.approvalTxHash != null) {
@@ -358,6 +368,7 @@ final class Launch2IntentSigner {
     required Launch2UnsignedTransaction transaction,
     required String fromAddress,
     required String ticker,
+    String? noun,
   }) => SigningIntent.backendCanonical(
     revision: revision,
     payloadDigest: intent.payloadDigest,
@@ -370,7 +381,7 @@ final class Launch2IntentSigner {
     ),
     observedAt: intent.createdAt,
     expiresAt: intent.expiresAt,
-    fields: launch2IntentFields(intent, ticker: ticker),
+    fields: launch2IntentFields(intent, ticker: ticker, noun: noun),
     stepUpUsd1: launch2IntentStepUpUsd1(intent),
   );
 
@@ -378,6 +389,7 @@ final class Launch2IntentSigner {
     Launch2Intent intent, {
     required String fromAddress,
     required String ticker,
+    String? noun,
   }) {
     final approval = intent.approval;
     if (approval == null) return null;
@@ -389,6 +401,7 @@ final class Launch2IntentSigner {
       transaction: approval.unsignedTransaction,
       fromAddress: fromAddress,
       ticker: ticker,
+      noun: noun,
     );
   }
 
@@ -396,14 +409,16 @@ final class Launch2IntentSigner {
     Launch2Intent intent, {
     required String fromAddress,
     required String ticker,
+    String? noun,
   }) => _signingIntent(
     intent,
     revision: intent.intentId,
     kind: IntentKind.launchPurchase,
-    title: launch2IntentTitle(intent.kind, venue: intent.venue),
+    title: launch2IntentTitle(intent.kind, venue: intent.venue, noun: noun),
     transaction: intent.unsignedTransaction,
     fromAddress: fromAddress,
     ticker: ticker,
+    noun: noun,
   );
 
   /// Refusals that need nothing but the intent, the wallet address and the
@@ -535,6 +550,7 @@ final class Launch2IntentSigner {
     DateTime Function()? clock,
     Launch2IntentRefresher? refresh,
     void Function(Launch2Intent fresh)? onRefreshed,
+    String? noun,
   }) async {
     final refusal = refusalBeforeWallet(
       intent,
@@ -548,11 +564,17 @@ final class Launch2IntentSigner {
       );
     }
     final from = fromAddress!;
-    final main = mainSigningIntent(intent, fromAddress: from, ticker: ticker);
+    final main = mainSigningIntent(
+      intent,
+      fromAddress: from,
+      ticker: ticker,
+      noun: noun,
+    );
     final approval = approvalSigningIntent(
       intent,
       fromAddress: from,
       ticker: ticker,
+      noun: noun,
     );
     if (!main.chainIsPermitted ||
         (approval != null && !approval.chainIsPermitted)) {
@@ -591,7 +613,12 @@ final class Launch2IntentSigner {
         accept: (next) => fresh = next,
       );
       if (stopped != null) return stopped;
-      signed = mainSigningIntent(fresh!, fromAddress: from, ticker: ticker);
+      signed = mainSigningIntent(
+        fresh!,
+        fromAddress: from,
+        ticker: ticker,
+        noun: noun,
+      );
       if (!signed.chainIsPermitted) {
         return Launch2SignOutcome(
           status: MoneySignStatus.refused,
@@ -643,6 +670,7 @@ Future<Launch2SignOutcome?> showLaunch2SignSheet(
   required String ticker,
   DateTime Function()? clock,
   Launch2IntentRefresher? refresh,
+  String? noun,
 }) async {
   final latch = MoneySignLatch();
   final outcome = await showLoopSheet<Launch2SignOutcome>(
@@ -656,6 +684,7 @@ Future<Launch2SignOutcome?> showLaunch2SignSheet(
       clock: clock,
       latch: latch,
       refresh: refresh,
+      noun: noun,
     ),
   );
   if (outcome != null) return outcome;
@@ -677,10 +706,15 @@ class Launch2SignSheet extends StatefulWidget {
     this.clock,
     this.latch,
     this.refresh,
+    this.noun,
   });
 
   final Launch2Intent intent;
   final Launch2IntentSigner signer;
+
+  /// The action's name on the sheet, its steps and the wallet prompt
+  /// (decision 0163); `null` is the kind's own ([launch2IntentNoun]).
+  final String? noun;
   final String? fromAddress;
   final String ticker;
   final DateTime Function()? clock;
@@ -696,6 +730,8 @@ class Launch2SignSheet extends StatefulWidget {
 
 class _Launch2SignSheetState extends State<Launch2SignSheet>
     with LoopStepUpSheetMixin<Launch2SignSheet> {
+  String get _noun => widget.noun ?? launch2IntentNoun(widget.intent.kind);
+
   LoopSignSheetState _state = LoopSignSheetState.pending;
   String? _reason;
   Launch2SignOutcome? _outcome;
@@ -728,7 +764,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
       _reason = launch2SignReasonText(refusal);
     } else if (widget.intent.approval != null) {
       _reason =
-          '会依次打开两次钱包：先授权，再${launch2IntentNoun(widget.intent.kind)}。'
+          '会依次打开两次钱包：先授权，再$_noun。'
           '授权金额只够这一笔。';
     }
     if (refusal == null) planStepUp();
@@ -764,6 +800,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
       onStep: (step) {
         if (mounted) setState(() => _step = step);
       },
+      noun: widget.noun,
       onRefreshed: (fresh) {
         if (!mounted) return;
         setState(() {
@@ -778,10 +815,14 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
       _outcome = outcome;
       if (outcome.broadcast) {
         _state = LoopSignSheetState.complete;
-        _reason = launch2BroadcastText(outcome, widget.intent.kind);
+        _reason = launch2BroadcastText(
+          outcome,
+          widget.intent.kind,
+          noun: widget.noun,
+        );
       } else {
         _state = LoopSignSheetState.simulationFailed;
-        final noun = launch2IntentNoun(widget.intent.kind);
+        final noun = _noun;
         _reason = launch2StoppedAtRefresh(outcome)
             ? launch2RefreshReasonText(outcome, noun)
             : outcome.approvalTxHash != null
@@ -801,12 +842,20 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
 
   @override
   Widget build(BuildContext context) {
-    final fields = launch2IntentFields(_intent, ticker: widget.ticker);
+    final fields = launch2IntentFields(
+      _intent,
+      ticker: widget.ticker,
+      noun: widget.noun,
+    );
     final sheet = LoopSignSheet(
       key: const ValueKey<String>('launch2-sign-sheet'),
       state: _state,
       signingTitle: stepUpSigningTitle,
-      title: launch2IntentTitle(widget.intent.kind, venue: widget.intent.venue),
+      title: launch2IntentTitle(
+        widget.intent.kind,
+        venue: widget.intent.venue,
+        noun: widget.noun,
+      ),
       networkBadge: loopIsTestnetChainId(widget.intent.chainId)
           ? loopTestnetBadgeLabel
           : null,
@@ -823,7 +872,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
       child: widget.intent.approval == null
           ? withStepUpStrip(
               sheet,
-              signLabel: launch2IntentNoun(widget.intent.kind),
+              signLabel: _noun,
               signStatus: stepUpSignStatus(
                 _state,
                 locked: _outcome?.status == MoneySignStatus.locked,
@@ -834,7 +883,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Launch2SignStepStrip(
-                  noun: launch2IntentNoun(widget.intent.kind),
+                  noun: _noun,
                   verify: stepUpStep,
                   approval: _approvalStatus,
                   main: _mainStatus,
@@ -952,24 +1001,39 @@ const String launch2NftRiskSentence = '不保证成交、不保证配售，公�
 /// The NFT purchase confirmation: the price, the one-per-address rule and the
 /// risk sentence in full, which the buyer ticks before the server is asked
 /// for anything. `true` when they confirmed.
+/// [heading] / [confirmLabel] replace 「购买 $T 项目 NFT」 / 「继续购买」
+/// (decision 0163: 共识勋章 says 「铸造 T 共识勋章」 / 「继续铸造」).
 Future<bool> showLaunch2NftConfirmSheet(
   BuildContext context, {
   required String ticker,
   required String priceLabel,
+  String? heading,
+  String confirmLabel = '继续购买',
 }) async {
   final confirmed = await showLoopSheet<bool>(
     context,
-    builder: (context) =>
-        _Launch2NftConfirm(ticker: ticker, priceLabel: priceLabel),
+    builder: (context) => _Launch2NftConfirm(
+      ticker: ticker,
+      priceLabel: priceLabel,
+      heading: heading ?? '购买 \$$ticker 项目 NFT',
+      confirmLabel: confirmLabel,
+    ),
   );
   return confirmed ?? false;
 }
 
 class _Launch2NftConfirm extends StatefulWidget {
-  const _Launch2NftConfirm({required this.ticker, required this.priceLabel});
+  const _Launch2NftConfirm({
+    required this.ticker,
+    required this.priceLabel,
+    required this.heading,
+    required this.confirmLabel,
+  });
 
   final String ticker;
   final String priceLabel;
+  final String heading;
+  final String confirmLabel;
 
   @override
   State<_Launch2NftConfirm> createState() => _Launch2NftConfirmState();
@@ -984,7 +1048,7 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      LoopSheetHeading('购买 \$${widget.ticker} 项目 NFT'),
+      LoopSheetHeading(widget.heading),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         child: Column(
@@ -1048,7 +1112,7 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
             const SizedBox(height: 16),
             LoopButton(
               key: const ValueKey<String>('launch2-nft-confirm-button'),
-              label: '继续购买',
+              label: widget.confirmLabel,
               primary: true,
               block: true,
               onPressed: _ticked ? () => Navigator.of(context).pop(true) : null,
