@@ -416,7 +416,15 @@ class MiningSummaryHero extends StatelessWidget {
           ),
           if (stamp != null) ...<Widget>[
             const SizedBox(height: 9),
-            _HeroStamp(label: stamp!),
+            // `.folio-stamp` in the flow of the Lime card rather than over
+            // its corner: the same pill the folio draws (decision 0167).
+            Align(
+              alignment: Alignment.centerLeft,
+              child: LoopFolioStamp(
+                stamp!,
+                key: const ValueKey<String>('mining-summary-hero-stamp'),
+              ),
+            ),
           ],
           const SizedBox(height: 16),
           Container(
@@ -494,13 +502,15 @@ class MiningSummaryHero extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(
-                child: _HeroAction(
+                // `.mining-summary-actions button:first-child`: Ink on Lime.
+                child: LoopButton(
                   key: const ValueKey<String>('mining-summary-hero-claim'),
                   // Decision 0155: this button only opens 奖励与领取, where
                   // the real claim button is greyed as Coming soon; keep the
                   // way in, rename it so nobody reads it as the claim.
                   label: claimComingSoon ? '查看奖励' : '领取奖励',
-                  filled: true,
+                  primary: true,
+                  tone: LoopButtonTone.ink,
                   onPressed: onClaim,
                   semanticLabel: claimComingSoon
                       ? '查看奖励，打开奖励与领取；领取 $miningClaimComingSoonLabel'
@@ -509,7 +519,7 @@ class MiningSummaryHero extends StatelessWidget {
               ),
               const SizedBox(width: 9),
               Expanded(
-                child: _HeroAction(
+                child: LoopButton(
                   key: const ValueKey<String>('mining-summary-hero-assets'),
                   label: '算力明细',
                   onPressed: onOpenAssets,
@@ -570,150 +580,6 @@ final class MiningHeroMetric {
 
   /// What a screen reader hears in place of an em dash.
   final String spoken;
-}
-
-/// `.mining-summary-actions button`. The filled one is Ink on Lime.
-class _HeroAction extends StatelessWidget {
-  const _HeroAction({
-    required this.label,
-    this.filled = false,
-    this.onPressed,
-    this.semanticLabel,
-    super.key,
-  });
-
-  final String label;
-  final bool filled;
-  final VoidCallback? onPressed;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    final background = filled && enabled ? LoopColors.ink : Colors.transparent;
-    final foreground = filled && enabled
-        ? LoopColors.chalk
-        : LoopColors.ink.withValues(alpha: enabled ? 1 : 0.38);
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: semanticLabel ?? label,
-      excludeSemantics: true,
-      child: Material(
-        color: background,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              // A filled button's edge is its fill: an Ink line on Ink
-              // painted nothing, so it is kept only for the 1px it holds.
-              border: Border.all(
-                color: filled && enabled
-                    ? Colors.transparent
-                    : LoopColors.ink.withValues(alpha: 0.22),
-              ),
-            ),
-            child: Text(
-              label,
-              style: LoopTypography.label(
-                12,
-                weight: FontWeight.w800,
-                color: foreground,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// `.folio-stamp` drawn in the flow of the Lime hero rather than over it.
-class _HeroStamp extends StatelessWidget {
-  const _HeroStamp({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        key: const ValueKey<String>('mining-summary-hero-stamp'),
-        padding: const EdgeInsets.fromLTRB(9, 7, 9, 7),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: LoopColors.ink.withValues(alpha: 0.68)),
-        ),
-        child: Text(
-          label.toUpperCase(),
-          style: LoopTypography.eyebrow(
-            11,
-            color: LoopColors.ink.withValues(alpha: 0.68),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// `.ledger-composite` — a folio with a detail strip welded under it.
-///
-/// The prototype gives five of the six mining pages this shape: the primary
-/// states the page's one conclusion, and the strip beneath carries the one or
-/// two readings that belong to it (`我的总算力 50,000`, `社区排名 #7 · 7D
-/// +12.8%`). The App had turned each strip into a separate key-value section
-/// further down the page (visual audit §I.3–I.7).
-class MiningCompositePrimary extends StatelessWidget {
-  const MiningCompositePrimary({
-    required this.primary,
-    required this.detail,
-    super.key,
-  });
-
-  /// The `.folio-primary` welded to the top of the composite. It must carry
-  /// `margin: EdgeInsets.zero` and `squareBottom: true` so the strip below it
-  /// shares an edge with it rather than floating under it.
-  final Widget primary;
-
-  /// The rows inside `.ledger-composite-detail`.
-  final List<Widget> detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: ColoredBox(
-          color: LoopColors.graphite,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              primary,
-              Container(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 17),
-                decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0x1AF3F5EF))),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: detail,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// `.ledger-composite-detail .detail-row`: a label on the left and its reading

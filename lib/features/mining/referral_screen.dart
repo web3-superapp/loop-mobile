@@ -8,9 +8,9 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
-import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -81,7 +81,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
               heading: launchMissingHeading,
               caption: '加成只计入 Mining Power，不是收入、佣金或返佣。',
             )
-          : MiningCompositePrimary(
+          : LoopLedgerComposite(
               key: const ValueKey<String>('referral-hero'),
               primary: LoopFolioPrimary(
                 variant: LoopFolioVariant.quiet,
@@ -285,7 +285,7 @@ class _LevelCell extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
           decoration: BoxDecoration(
             color: current ? LoopColors.lime : LoopColors.card2,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: LoopRadius.control,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,7 +382,7 @@ class _LevelTile extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: level == 1 ? LoopColors.lime : LoopColors.card2,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: LoopRadius.inner,
       ),
       child: Text(
         'L$level',

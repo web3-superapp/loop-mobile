@@ -87,7 +87,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             onPressed: widget.onOpenRules,
           ),
         ],
-        primary: MiningCompositePrimary(
+        primary: LoopLedgerComposite(
           primary: _assetsHero(assets, state.phase),
           detail: <Widget>[
             MiningDetailRow(
@@ -385,7 +385,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
       tabPage: widget.embedded,
       primary: !showPosition
           ? null
-          : MiningCompositePrimary(
+          : LoopLedgerComposite(
               primary: _rankHero(rank),
               detail: <Widget>[
                 MiningDetailRow(
@@ -788,7 +788,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
           onPressed: widget.onOpenRank,
         ),
       ],
-      primary: MiningCompositePrimary(
+      primary: LoopLedgerComposite(
         primary: _communityHero(community, state.phase),
         detail: <Widget>[
           MiningDetailRow(
@@ -1239,7 +1239,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         // quantity, so the hero is 权重与算力规则, not 权重与价格保护.
         title: '挖矿规则',
         onBack: widget.onBack,
-        primary: MiningCompositePrimary(
+        primary: LoopLedgerComposite(
           primary: LoopFolioPrimary(
             variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.record,

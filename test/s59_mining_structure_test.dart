@@ -60,6 +60,29 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
       }
+      // Decision 0167 (docs/33 L22): the card's two next steps are shared
+      // buttons — Ink on Lime for the first, the ground's outline for the
+      // second — not hand-drawn ones.
+      final claim = tester.widget<LoopButton>(
+        find.byKey(const ValueKey<String>('mining-summary-hero-claim')),
+      );
+      expect(claim.primary, isTrue);
+      expect(claim.tone, LoopButtonTone.ink);
+      // The baseline scope label is the folio's own stamp pill.
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('mining-summary-hero-stamp')),
+        ),
+        isA<LoopFolioStamp>(),
+      );
+      expect(
+        tester
+            .widget<LoopButton>(
+              find.byKey(const ValueKey<String>('mining-summary-hero-assets')),
+            )
+            .primary,
+        isFalse,
+      );
       expect(_labels(tester), <String>[
         'Power Composition',
         'Increase Power',

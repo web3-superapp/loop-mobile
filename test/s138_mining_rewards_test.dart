@@ -29,6 +29,8 @@ import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_minin
 import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
@@ -43,6 +45,16 @@ import 'support/s7_page_harness.dart';
 // ---------------------------------------------------------------------------
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
+
+/// The hero's folio (decision 0167): kicker, heading, caption and stamp are
+/// read off the one `LoopFolioPrimary` inside `MiningMinuteHero`.
+LoopFolioPrimary _heroFolio(WidgetTester tester) =>
+    tester.widget<LoopFolioPrimary>(
+      find.descendant(
+        of: find.byType(MiningMinuteHero),
+        matching: find.byType(LoopFolioPrimary),
+      ),
+    );
 
 const String _walletId = 'd64786bb-408d-415d-8a69-6277d56c921b';
 const String _walletAddress = '0x000000000000000000000000000000000000000a';
@@ -1166,7 +1178,13 @@ void main() {
       expect(find.text('80.0000'), findsOneWidget);
       expect(_key('mining-claim-amount'), findsOneWidget);
       expect(find.text('120.0000 LOOP'), findsOneWidget);
-      expect(find.text('最低领取 1.0000 LOOP'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('mining-claim-minimum'),
+          matching: find.text('1.0000 LOOP'),
+        ),
+        findsOneWidget,
+      );
       await _scrollTo(tester, _key('mining-nft-track'));
       // No real NFT, but invite power: the two are separate rows.
       expect(
@@ -1190,6 +1208,131 @@ void main() {
       expect(find.text('1%'), findsOneWidget);
       await _scrollTo(tester, _key('mining-claims-empty'));
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await _drain(tester);
+    });
+
+    testWidgets('0167 the page speaks the ledger folio family', (tester) async {
+      final rewards = _FakeRewards(
+        rewards: <_Answer<MiningRewardsView>>[
+          _Answer.value(_view(_hourlyJson(excluded: true))),
+        ],
+      );
+      await _pump(tester, rewards: rewards);
+      // H2: a full Lime record folio welded into a ledger composite; the
+      // minute progress lives in the strip beneath it.
+      final hero = find.byType(MiningMinuteHero);
+      expect(
+        find.descendant(of: hero, matching: find.byType(LoopLedgerComposite)),
+        findsOneWidget,
+      );
+      final folio = _heroFolio(tester);
+      expect(folio.variant, LoopFolioVariant.lime);
+      expect(folio.archetype, LoopFolioArchetype.record);
+      expect(folio.kicker, '上一小时奖励');
+      expect(folio.heading, '20.0000 LOOP');
+      expect(folio.caption, matches(RegExp(r'^20/60 · 下次 \d\d:\d\d$')));
+      expect(folio.stamp, isNull);
+      expect(
+        find.descendant(
+          of: find.byType(LoopLedgerComposite),
+          matching: _key('mining-minute-bar'),
+        ),
+        findsOneWidget,
+      );
+      // One full Lime per screen: the folio. The claim is not a Lime button.
+      expect(
+        tester
+            .widgetList<LoopFolioPrimary>(find.byType(LoopFolioPrimary))
+            .where((f) => f.variant == LoopFolioVariant.lime),
+        hasLength(1),
+      );
+      expect(
+        tester.widget<LoopButton>(_key('mining-claim-button')).primary,
+        isFalse,
+      );
+      // M4: the summary is a stat grid; 可领取 > 0 takes the up tone.
+      final grid = tester.widget<LoopStatGrid>(find.byType(LoopStatGrid));
+      expect(grid.stats.map((s) => s.value), <String>[
+        '200.0000',
+        '80.0000',
+        '120.0000',
+      ]);
+      expect(grid.stats.last.tone, LoopStatTone.up);
+      // M5: the claim panel is a record card with a badge and key/values.
+      final panel = _key('mining-claim-panel');
+      expect(tester.widget(panel), isA<LoopRecordCard>());
+      expect(
+        find.descendant(of: panel, matching: find.byType(LoopBadge)),
+        findsOneWidget,
+      );
+      expect(tester.widget(_key('mining-claim-amount')), isA<LoopKeyValue>());
+      expect(tester.widget(_key('mining-claim-minimum')), isA<LoopKeyValue>());
+      // M6: the tracks and the invite table are record cards of key/values.
+      for (final key in <String>[
+        'mining-nft-track',
+        'mining-asset-track',
+        'mining-invite-table',
+      ]) {
+        await _scrollTo(tester, _key(key));
+        expect(
+          find.descendant(of: _key(key), matching: find.byType(LoopRecordCard)),
+          findsOneWidget,
+          reason: key,
+        );
+      }
+      expect(tester.widget(_key('mining-nft-reward')), isA<LoopKeyValue>());
+      expect(
+        tester.widget(_key('mining-asset-excluded-$_graduated')),
+        isA<LoopKeyValue>(),
+      );
+      // Rise / fall belong to price moves only (0117).
+      final painted = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.style?.color)
+          .whereType<Color>();
+      expect(painted, isNot(contains(LoopColors.rise)));
+      expect(painted, isNot(contains(LoopColors.fall)));
+      await _drain(tester);
+    });
+
+    testWidgets('0167 awaiting and unavailable are quiet, neutral folios', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        rewards: _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[
+            _Answer.value(
+              LoopV2MiningRewardsCodec.rewards(
+                _fixture('rewards_nothing_settled')['body'],
+              ),
+            ),
+          ],
+        ),
+      );
+      var folio = _heroFolio(tester);
+      expect(folio.variant, LoopFolioVariant.quiet);
+      expect(folio.headingTone, LoopFolioHeadingTone.neutral);
+      expect(folio.kicker, '上一小时奖励');
+      expect(folio.heading, '你有算力的小时还没有结算');
+      await _drain(tester);
+
+      await _pump(
+        tester,
+        rewards: _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[
+            _Answer.value(
+              LoopV2MiningRewardsCodec.rewards(
+                _fixture('rewards_unavailable')['body'],
+              ),
+            ),
+          ],
+        ),
+      );
+      folio = _heroFolio(tester);
+      expect(folio.variant, LoopFolioVariant.quiet);
+      expect(folio.headingTone, LoopFolioHeadingTone.neutral);
+      expect(folio.heading, '暂时读不到结算结果');
       await _drain(tester);
     });
 
@@ -1293,10 +1436,7 @@ void main() {
       );
       await _pump(tester, rewards: rewards);
       expect(_key('mining-minute-awaiting'), findsOneWidget);
-      expect(
-        tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
-        '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
-      );
+      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。');
       expect(
         tester.widget<Text>(_key('mining-claim-disabled')).data,
         '有算力的小时结算后可领取',
@@ -1319,10 +1459,7 @@ void main() {
         ],
       );
       await _pump(tester, rewards: pending);
-      expect(
-        tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
-        '挖矿规则待生效，暂时没有结算。',
-      );
+      expect(_heroFolio(tester).caption, '挖矿规则待生效，暂时没有结算。');
       await _drain(tester);
 
       // The store is down: the inline notice names that cause.
@@ -1447,8 +1584,17 @@ void main() {
         ],
       );
       await _pump(tester, rewards: settling);
-      expect(_key('mining-minute-settling-tag'), findsOneWidget);
-      expect(find.text('结算中'), findsOneWidget);
+      // 「结算中」 is the folio's stamp, inside the settling composite.
+      expect(_key('mining-minute-settling'), findsOneWidget);
+      expect(_heroFolio(tester).stamp, '结算中');
+      expect(_heroFolio(tester).caption, '下一小时结算后更新');
+      expect(
+        find.descendant(
+          of: _key('mining-minute-settling'),
+          matching: find.text('结算中'),
+        ),
+        findsOneWidget,
+      );
       expect(_key('mining-minute-figure-60.0000'), findsOneWidget);
       // It asks again at once instead of waiting a whole interval.
       expect(settling.rewardReads, greaterThanOrEqualTo(2));
@@ -1561,6 +1707,12 @@ void main() {
         await tester.pump(const Duration(milliseconds: 1));
         await tester.pump();
         expect(_key(key), findsOneWidget, reason: status);
+        // Decision 0167: the status is a `.badge`, never a rise / fall pill.
+        expect(tester.widget<LoopBadge>(_key(key)).kind, switch (status) {
+          'succeeded' => LoopBadgeKind.up,
+          'failed' => LoopBadgeKind.down,
+          _ => LoopBadgeKind.mining,
+        }, reason: status);
         if (status == 'succeeded') {
           expect(_key('mining-claim-tx'), findsOneWidget);
         }
@@ -1811,10 +1963,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(_key('mining-minute-awaiting'), findsOneWidget);
       expect(find.text('你有算力的小时还没有结算'), findsOneWidget);
-      expect(
-        tester.widget<Text>(_key('mining-minute-awaiting-reason')).data,
-        '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
-      );
+      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。');
       expect(
         tester.widget<Text>(_key('mining-claim-disabled')).data,
         '有算力的小时结算后可领取',

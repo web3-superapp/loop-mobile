@@ -381,6 +381,18 @@ String? miningAwaitingReason(MiningRewardsView view) =>
         ? 'MINING_NOTHING_SETTLED'
         : null);
 
+/// The folio's kicker in every phase (decision 0167).
+const String miningMinuteKicker = '上一小时奖励';
+
+/// The page's one primary (decision 0167, docs/33 H2): the prototype's
+/// `mining-rewards` lime ledger folio welded into a `.ledger-composite`.
+///
+/// While an hour is being shown the folio is full Lime — kicker 上一小时奖励,
+/// the stepping figure as its heading in Ink, 「n/60 · 下次 HH:mm」 as its
+/// caption, 「结算中」 as its stamp while the next hour settles — and the
+/// minute progress sits in the strip beneath. Before the first settlement and
+/// when the result cannot be read the folio is the quiet ledger with a
+/// neutral heading: neither is good news, and neither is Lime.
 class MiningMinuteHero extends StatelessWidget {
   const MiningMinuteHero({
     required this.progress,
@@ -397,130 +409,88 @@ class MiningMinuteHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _content(MediaQuery.disableAnimationsOf(context)),
-        ),
-      ),
-    );
-  }
-
-  Widget _content(bool reduceMotion) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     switch (progress.phase) {
       case MiningMinutePhase.awaitingFirstSettlement:
-        return Column(
+        return LoopLedgerComposite(
           key: const ValueKey<String>('mining-minute-awaiting'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('分钟增长', style: LoopType.captionSm),
-            const SizedBox(height: 10),
-            Text(
-              miningAwaitingTitle(awaitingReason),
-              key: const ValueKey<String>('mining-minute-awaiting-title'),
-              style: LoopType.headingSm,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              awaitingReason == null
-                  ? '每个整点结算上一小时，下一小时按分钟展示。'
-                  : miningDisplayReasonText(awaitingReason),
-              key: const ValueKey<String>('mining-minute-awaiting-reason'),
-              style: LoopType.bodySm.copyWith(color: LoopColors.text2),
-            ),
-          ],
+          primary: LoopFolioPrimary(
+            key: const ValueKey<String>('mining-minute-awaiting-title'),
+            variant: LoopFolioVariant.quiet,
+            archetype: LoopFolioArchetype.record,
+            ring: false,
+            margin: EdgeInsets.zero,
+            squareBottom: true,
+            headingTone: LoopFolioHeadingTone.neutral,
+            kicker: miningMinuteKicker,
+            heading: miningAwaitingTitle(awaitingReason),
+            caption: miningMinuteAwaitingCaption(awaitingReason),
+          ),
+          detail: const <Widget>[],
         );
       case MiningMinutePhase.unavailable:
-        return Column(
-          key: const ValueKey<String>('mining-minute-unavailable'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('分钟增长', style: LoopType.captionSm),
-            const SizedBox(height: 10),
-            Text('暂时读不到结算结果', style: LoopType.headingSm),
-          ],
+        return const LoopLedgerComposite(
+          key: ValueKey<String>('mining-minute-unavailable'),
+          primary: LoopFolioPrimary(
+            variant: LoopFolioVariant.quiet,
+            archetype: LoopFolioArchetype.record,
+            ring: false,
+            margin: EdgeInsets.zero,
+            squareBottom: true,
+            headingTone: LoopFolioHeadingTone.neutral,
+            kicker: miningMinuteKicker,
+            heading: '暂时读不到结算结果',
+          ),
+          detail: <Widget>[],
         );
       case MiningMinutePhase.displaying:
       case MiningMinutePhase.settling:
         final settling = progress.phase == MiningMinutePhase.settling;
         final figure = miningLoopFigure(progress.shown);
-        return Column(
+        return LoopLedgerComposite(
           key: ValueKey<String>(
             settling ? 'mining-minute-settling' : 'mining-minute-displaying',
           ),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Text('上一小时奖励展示进度', style: LoopType.captionSm),
-                const Spacer(),
-                if (settling)
-                  Text(
-                    '结算中',
-                    key: const ValueKey<String>('mining-minute-settling-tag'),
-                    style: LoopType.captionSm.copyWith(color: LoopColors.lime),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Semantics(
+          primary: LoopFolioPrimary(
+            variant: LoopFolioVariant.lime,
+            archetype: LoopFolioArchetype.record,
+            ring: false,
+            margin: EdgeInsets.zero,
+            squareBottom: true,
+            kicker: miningMinuteKicker,
+            heading: '$figure LOOP',
+            headingMaxLines: 1,
+            headingBuilder: (heading) => Semantics(
               label: '已展示 $figure LOOP',
               excludeSemantics: true,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: <Widget>[
-                  Flexible(
-                    child: _MinuteFigure(
-                      text: figure,
-                      reduceMotion: reduceMotion,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'LOOP',
-                    style: LoopType.label.copyWith(color: LoopColors.text2),
-                  ),
-                ],
+              child: _MinuteFigure(
+                figure: figure,
+                reduceMotion: reduceMotion,
+                child: heading,
               ),
             ),
-            const SizedBox(height: 12),
+            caption: settling
+                ? '下一小时结算后更新'
+                : '${progress.completedMinutes}/60 · 下次 ${loopClockLabel(progress.nextUpdateAt!)}',
+            stamp: settling ? '结算中' : null,
+          ),
+          detail: <Widget>[
             LoopProgressBar(
               key: const ValueKey<String>('mining-minute-bar'),
               value: progress.completedMinutes / 60,
               semanticLabel: '第 ${progress.completedMinutes} / 60 分钟',
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    '上一小时 ${miningLoopFigure(progress.total)} LOOP',
-                    key: const ValueKey<String>('mining-minute-total'),
-                    style: LoopType.bodySm.copyWith(color: LoopColors.text2),
-                  ),
-                ),
-                Text(
-                  settling
-                      ? '下一小时结算后更新'
-                      : '${progress.completedMinutes}/60 · 下次 ${loopClockLabel(progress.nextUpdateAt!)}',
-                  key: const ValueKey<String>('mining-minute-next'),
-                  style: LoopType.captionSm,
-                ),
-              ],
+            const SizedBox(height: 12),
+            LoopCompositeDetailNote(
+              '上一小时 ${miningLoopFigure(progress.total)} LOOP',
+              key: const ValueKey<String>('mining-minute-total'),
             ),
             if (epoch case final MiningRewardEpoch hour) ...<Widget>[
               const SizedBox(height: 4),
-              Text(
+              LoopCompositeDetailNote(
                 '结算时段 ${loopClockLabel(hour.epochStart)}–${loopClockLabel(hour.epochEnd)} · '
                 '本小时奖励结算后已全部计入可领取',
-                style: LoopType.captionSm,
+                key: const ValueKey<String>('mining-minute-epoch'),
               ),
             ],
           ],
@@ -529,22 +499,32 @@ class MiningMinuteHero extends StatelessWidget {
   }
 }
 
-/// The stepping number. Each new minute slides the figure up once; under
-/// reduced motion it simply changes.
-class _MinuteFigure extends StatelessWidget {
-  const _MinuteFigure({required this.text, required this.reduceMotion});
+/// The awaiting folio's caption: what happens next.
+String miningMinuteAwaitingCaption(String? awaitingReason) =>
+    awaitingReason == null
+    ? '每个整点结算上一小时，下一小时按分钟展示。'
+    : miningDisplayReasonText(awaitingReason);
 
-  final String text;
+/// The stepping number. Each new minute slides the folio's heading up once;
+/// under reduced motion it simply changes.
+class _MinuteFigure extends StatelessWidget {
+  const _MinuteFigure({
+    required this.figure,
+    required this.reduceMotion,
+    required this.child,
+  });
+
+  final String figure;
   final bool reduceMotion;
+
+  /// The heading [Text] as the folio paints it.
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final label = Text(
-      text,
-      key: ValueKey<String>('mining-minute-figure-$text'),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: LoopType.figureXl.copyWith(color: LoopColors.lime),
+    final label = KeyedSubtree(
+      key: ValueKey<String>('mining-minute-figure-$figure'),
+      child: child,
     );
     if (reduceMotion) return label;
     return AnimatedSwitcher(
@@ -572,6 +552,7 @@ class _MinuteFigure extends StatelessWidget {
 // 奖励汇总
 // ---------------------------------------------------------------------------
 
+/// 奖励汇总 as the prototype's `.stat-grid` (decision 0167, docs/33 M4).
 class MiningRewardsSummary extends StatelessWidget {
   const MiningRewardsSummary({required this.view, super.key});
 
@@ -579,84 +560,28 @@ class MiningRewardsSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: _SummaryCell(
-              key: const ValueKey<String>('mining-summary-settled'),
-              label: '累计已结算',
-              value: miningLoopFigure(view.settledTotal),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _SummaryCell(
-              key: const ValueKey<String>('mining-summary-claimed'),
-              label: '累计已领取',
-              value: miningLoopFigure(view.claimedTotal),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _SummaryCell(
-              key: const ValueKey<String>('mining-summary-claimable'),
-              label: '当前可领取',
-              value: miningLoopFigure(view.claimable),
-              // Decision 0149: Lime marks something to take; 0.0000 is not.
-              accent: view.claimable > BigInt.zero,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryCell extends StatelessWidget {
-  const _SummaryCell({
-    required this.label,
-    required this.value,
-    super.key,
-    this.accent = false,
-  });
-
-  final String label;
-  final String value;
-  final bool accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: '$label $value LOOP',
-      excludeSemantics: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: BorderRadius.circular(16),
+    return LoopStatGrid(
+      stats: <LoopStat>[
+        LoopStat(
+          statKey: const ValueKey<String>('mining-summary-settled'),
+          label: '累计已结算 LOOP',
+          value: miningLoopFigure(view.settledTotal),
         ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(label, style: LoopType.captionSm),
-              const SizedBox(height: 6),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  value,
-                  style: LoopType.figureSm.copyWith(
-                    color: accent ? LoopColors.lime : LoopColors.chalk,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        LoopStat(
+          statKey: const ValueKey<String>('mining-summary-claimed'),
+          label: '累计已领取 LOOP',
+          value: miningLoopFigure(view.claimedTotal),
         ),
-      ),
+        LoopStat(
+          statKey: const ValueKey<String>('mining-summary-claimable'),
+          label: '当前可领取 LOOP',
+          value: miningLoopFigure(view.claimable),
+          // Decision 0149: Lime marks something to take; 0.0000 is not.
+          tone: view.claimable > BigInt.zero
+              ? LoopStatTone.up
+              : LoopStatTone.neutral,
+        ),
+      ],
     );
   }
 }
@@ -870,149 +795,123 @@ class MiningClaimPanel extends StatelessWidget {
             ? view.claim.lastTx
             : null,
     };
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return LoopRecordCard(
+      key: const ValueKey<String>('mining-claim-panel'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
             children: <Widget>[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text('本次可领取', style: LoopType.captionSm),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${miningLoopFigure(view.claimable)} LOOP',
-                          key: const ValueKey<String>('mining-claim-amount'),
-                          style: LoopType.figureLg,
-                        ),
-                      ],
-                    ),
-                  ),
-                  _StatusPill(
-                    key: ValueKey<String>(
-                      'mining-claim-status-${status.wireName}',
-                    ),
-                    label: miningClaimStatusLabel(status, any: any),
-                    tone: switch (status) {
-                      MiningClaimStatus.succeeded => LoopColors.rise,
-                      MiningClaimStatus.failed ||
-                      MiningClaimStatus.expired => LoopColors.fall,
-                      MiningClaimStatus.submitting ||
-                      MiningClaimStatus.confirming => LoopColors.lime,
-                      _ => LoopColors.text2,
-                    },
-                  ),
-                ],
+              Expanded(
+                child: Text(
+                  '领取状态',
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
               ),
-              const SizedBox(height: 14),
-              if (claim.phase == MiningClaimPhase.locked &&
-                  claim.outcome?.status == MoneySignStatus.reportRefused)
-                LoopButton(
-                  key: const ValueKey<String>('mining-claim-retry-report'),
-                  label: '重新上报',
-                  block: true,
-                  onPressed: onRetryReport,
-                )
-              else if (claim.phase == MiningClaimPhase.pollTimedOut)
-                LoopButton(
-                  key: const ValueKey<String>('mining-claim-resume'),
-                  label: '继续查询',
-                  block: true,
-                  onPressed: onResume,
-                )
-              else if (comingSoon) ...<Widget>[
-                const LoopButton(
-                  key: ValueKey<String>('mining-claim-button'),
-                  label: miningClaimComingSoonLabel,
-                  primary: true,
-                  block: true,
-                  onPressed: null,
-                  semanticLabel: '领取，$miningClaimComingSoonLabel',
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  miningClaimComingSoonNote,
-                  key: const ValueKey<String>('mining-claim-coming-soon-note'),
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
-                ),
-              ] else
-                LoopButton(
-                  key: const ValueKey<String>('mining-claim-button'),
-                  label: claim.busy || claim.locked ? '领取处理中' : '领取',
-                  primary: true,
-                  block: true,
-                  onPressed: canClaim ? onClaim : null,
-                  semanticLabel: canClaim ? '领取' : '领取，当前不可用',
-                ),
-              if (note != null) ...<Widget>[
-                const SizedBox(height: 10),
-                Text(
-                  note,
-                  key: const ValueKey<String>('mining-claim-note'),
-                  style: LoopType.bodySm.copyWith(color: LoopColors.text2),
-                ),
-              ] else if (disabled != null &&
-                  !claim.locked &&
-                  !comingSoon) ...<Widget>[
-                const SizedBox(height: 10),
-                Text(
-                  disabled,
-                  key: const ValueKey<String>('mining-claim-disabled'),
-                  style: LoopType.captionSm,
-                ),
-              ],
-              if (view.minimumClaim case final BigInt minimum
-                  when minimum > BigInt.zero) ...<Widget>[
-                const SizedBox(height: 8),
-                Text(
-                  '最低领取 ${miningLoopFigure(minimum)} LOOP',
-                  key: const ValueKey<String>('mining-claim-minimum'),
-                  style: LoopType.captionSm,
-                ),
-              ],
-              if (tx != null) ...<Widget>[
-                const SizedBox(height: 8),
-                _ClaimTxLink(tx: tx),
-              ],
+              // Status, never a price move: no rise / fall (0117).
+              LoopBadge(
+                miningClaimStatusLabel(status, any: any),
+                key: ValueKey<String>('mining-claim-status-${status.wireName}'),
+                kind: miningClaimStatusBadge(status, any: any),
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: 6),
+          LoopKeyValue(
+            key: const ValueKey<String>('mining-claim-amount'),
+            label: '本次可领取',
+            value: '${miningLoopFigure(view.claimable)} LOOP',
+            padding: const EdgeInsets.symmetric(vertical: 6),
+          ),
+          if (view.minimumClaim case final BigInt minimum
+              when minimum > BigInt.zero)
+            LoopKeyValue(
+              key: const ValueKey<String>('mining-claim-minimum'),
+              label: '最低领取',
+              value: '${miningLoopFigure(minimum)} LOOP',
+              padding: const EdgeInsets.symmetric(vertical: 6),
+            ),
+          const SizedBox(height: 14),
+          if (claim.phase == MiningClaimPhase.locked &&
+              claim.outcome?.status == MoneySignStatus.reportRefused)
+            LoopButton(
+              key: const ValueKey<String>('mining-claim-retry-report'),
+              label: '重新上报',
+              block: true,
+              onPressed: onRetryReport,
+            )
+          else if (claim.phase == MiningClaimPhase.pollTimedOut)
+            LoopButton(
+              key: const ValueKey<String>('mining-claim-resume'),
+              label: '继续查询',
+              block: true,
+              onPressed: onResume,
+            )
+          else if (comingSoon) ...<Widget>[
+            const LoopButton(
+              key: ValueKey<String>('mining-claim-button'),
+              label: miningClaimComingSoonLabel,
+              block: true,
+              onPressed: null,
+              semanticLabel: '领取，$miningClaimComingSoonLabel',
+            ),
+            const SizedBox(height: 8),
+            Text(
+              miningClaimComingSoonNote,
+              key: const ValueKey<String>('mining-claim-coming-soon-note'),
+              style: LoopType.caption.copyWith(color: LoopColors.text2),
+            ),
+          ] else
+            LoopButton(
+              key: const ValueKey<String>('mining-claim-button'),
+              label: claim.busy || claim.locked ? '领取处理中' : '领取',
+              // The folio above is the screen's one full Lime (docs/33
+              // §1.5): the claim is the quiet block button.
+              block: true,
+              onPressed: canClaim ? onClaim : null,
+              semanticLabel: canClaim ? '领取' : '领取，当前不可用',
+            ),
+          if (note != null) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              note,
+              key: const ValueKey<String>('mining-claim-note'),
+              style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+            ),
+          ] else if (disabled != null &&
+              !claim.locked &&
+              !comingSoon) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              disabled,
+              key: const ValueKey<String>('mining-claim-disabled'),
+              style: LoopType.captionSm,
+            ),
+          ],
+          if (tx != null) ...<Widget>[
+            const SizedBox(height: 8),
+            _ClaimTxLink(tx: tx),
+          ],
+        ],
       ),
     );
   }
 }
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label, required this.tone, super.key});
-
-  final String label;
-  final Color tone;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LoopColors.card2,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        child: Text(label, style: LoopType.label.copyWith(color: tone)),
-      ),
-    );
-  }
-}
+/// The claim status as a `.badge` (decision 0167): Lime-soft for a claim
+/// that is moving or done, the neutral pair for one that did not land or
+/// has nothing to take.
+LoopBadgeKind miningClaimStatusBadge(
+  MiningClaimStatus status, {
+  required bool any,
+}) => switch (status) {
+  MiningClaimStatus.succeeded => LoopBadgeKind.up,
+  MiningClaimStatus.submitting ||
+  MiningClaimStatus.confirming => LoopBadgeKind.mining,
+  MiningClaimStatus.failed || MiningClaimStatus.expired => LoopBadgeKind.down,
+  MiningClaimStatus.none || MiningClaimStatus.claimable =>
+    any ? LoopBadgeKind.mining : LoopBadgeKind.mute,
+};
 
 class _ClaimTxLink extends StatelessWidget {
   const _ClaimTxLink({required this.tx});
@@ -1101,42 +1000,13 @@ class MiningClaimGasSheet extends StatelessWidget {
 // The two tracks
 // ---------------------------------------------------------------------------
 
-class _FactRow extends StatelessWidget {
-  const _FactRow({
-    required this.label,
-    required this.value,
-    super.key,
-    this.strong = false,
-  });
+/// `.kv` inside a track card: no gutter of its own, the card has one.
+const EdgeInsets _factPadding = EdgeInsets.symmetric(vertical: 7);
 
-  final String label;
-  final String value;
-  final bool strong;
+LoopKeyValue _fact(String label, String value, {Key? key}) =>
+    LoopKeyValue(key: key, label: label, value: value, padding: _factPadding);
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              label,
-              style: LoopType.body.copyWith(color: LoopColors.text2),
-            ),
-          ),
-          Text(
-            value,
-            style: strong
-                ? LoopType.figure.copyWith(color: LoopColors.chalk)
-                : LoopType.figureSm,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// The NFT / Meme / invite blocks as `.record-card` (decision 0167).
 class _TrackCard extends StatelessWidget {
   const _TrackCard({required this.children, super.key});
 
@@ -1144,20 +1014,10 @@ class _TrackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
-          ),
-        ),
+    return LoopRecordCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
       ),
     );
   }
@@ -1188,19 +1048,19 @@ class MiningNftTrackCard extends StatelessWidget {
       children: <Widget>[
         // The real count and the weighted power are two facts; an invite
         // power never reads as NFTs held (requirer §8.1).
-        _FactRow(
+        _fact(
+          '持有 NFT（真实数量）',
+          nft.realCount.toString(),
           key: const ValueKey<String>('mining-nft-real-count'),
-          label: '持有 NFT（真实数量）',
-          value: nft.realCount.toString(),
         ),
-        _FactRow(label: '本人加权算力', value: miningPowerFigure(nft.ownPower)),
-        _FactRow(label: '邀请算力', value: miningPowerFigure(nft.invitePower)),
-        _FactRow(label: '总算力', value: miningPowerFigure(nft.totalPower)),
-        _FactRow(
+        _fact('本人加权算力', miningPowerFigure(nft.ownPower)),
+        _fact('邀请算力', miningPowerFigure(nft.invitePower)),
+        _fact('总算力', miningPowerFigure(nft.totalPower)),
+        const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
+        _fact(
+          '上一小时奖励',
+          '${miningLoopFigure(nft.reward)} LOOP',
           key: const ValueKey<String>('mining-nft-reward'),
-          label: '上一小时奖励',
-          value: '${miningLoopFigure(nft.reward)} LOOP',
-          strong: true,
         ),
       ],
     );
@@ -1217,34 +1077,6 @@ String miningExcludedReasonText(String reasonCode) => switch (reasonCode) {
   'MINING_ASSET_WEIGHT_NOT_CONFIGURED' => '还没有配置挖矿权重',
   _ => '暂不计入',
 };
-
-class _ExcludedRow extends StatelessWidget {
-  const _ExcludedRow({required this.label, required this.reason, super.key});
-
-  final String label;
-  final String reason;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(label, style: LoopType.body.copyWith(color: LoopColors.text2)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              '已退出（$reason）',
-              textAlign: TextAlign.right,
-              style: LoopType.captionSm,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class MiningAssetTrackCard extends StatelessWidget {
   const MiningAssetTrackCard({required this.track, super.key});
@@ -1269,20 +1101,20 @@ class MiningAssetTrackCard extends StatelessWidget {
           )
         else
           for (final item in asset.assets)
-            _FactRow(
+            _fact(
+              item.label,
+              miningPowerFigure(item.power),
               key: ValueKey<String>('mining-asset-${item.assetId}'),
-              label: item.label,
-              value: miningPowerFigure(item.power),
             ),
         // An asset that left the pool is named with the reason, never
         // silently dropped (contract §3.3, loop-api decision 0116 §5).
         for (final item in asset.excluded)
-          _ExcludedRow(
+          _fact(
+            item.label,
+            '已退出（${miningExcludedReasonText(item.reasonCode)}）',
             key: ValueKey<String>('mining-asset-excluded-${item.assetId}'),
-            label: item.label,
-            reason: miningExcludedReasonText(item.reasonCode),
           ),
-        const Divider(height: 10, thickness: 1, color: LoopColors.line),
+        const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
         // Decision 0123 (loop-api): asset power is the hour's average holding
         // quantity times the approved mining weight; no price enters it.
         Padding(
@@ -1293,14 +1125,14 @@ class MiningAssetTrackCard extends StatelessWidget {
             style: LoopType.captionSm,
           ),
         ),
-        _FactRow(label: '本人算力', value: miningPowerFigure(asset.ownPower)),
-        _FactRow(label: '邀请算力', value: miningPowerFigure(asset.invitePower)),
-        _FactRow(label: '总算力', value: miningPowerFigure(asset.totalPower)),
-        _FactRow(
+        _fact('本人算力', miningPowerFigure(asset.ownPower)),
+        _fact('邀请算力', miningPowerFigure(asset.invitePower)),
+        _fact('总算力', miningPowerFigure(asset.totalPower)),
+        const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
+        _fact(
+          '上一小时奖励',
+          '${miningLoopFigure(asset.reward)} LOOP',
           key: const ValueKey<String>('mining-asset-reward'),
-          label: '上一小时奖励',
-          value: '${miningLoopFigure(asset.reward)} LOOP',
-          strong: true,
         ),
       ],
     );
@@ -1324,11 +1156,15 @@ class MiningInviteTable extends StatelessWidget {
     bool head = false,
     bool strong = false,
   }) {
+    // The head row is the prototype's `.label` (mono 10, uppercase, Text3);
+    // figures are the `.kv` mono, the 合计 row in Chalk.
     final style = head
-        ? LoopType.captionSm
-        : strong
-        ? LoopType.figureSm.copyWith(color: LoopColors.chalk)
-        : LoopType.figureSm;
+        ? LoopMono.label
+        : LoopTypography.figure(
+            11,
+            weight: strong ? FontWeight.w700 : FontWeight.w500,
+            color: strong ? LoopColors.chalk : LoopColors.text2,
+          );
     return Padding(
       key: key,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1343,7 +1179,7 @@ class MiningInviteTable extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: index == 0 && !head
-                    ? LoopType.body.copyWith(color: LoopColors.text2)
+                    ? LoopTypography.caption(11, color: LoopColors.text2)
                     : style,
               ),
             ),
@@ -1368,7 +1204,7 @@ class MiningInviteTable extends StatelessWidget {
             miningPowerFigure(level.nftPower),
             miningPowerFigure(level.assetPower),
           ], key: ValueKey<String>('mining-invite-level-${level.level}')),
-        const Divider(height: 6, thickness: 1, color: LoopColors.line),
+        const LoopHairline(margin: EdgeInsets.symmetric(vertical: 2)),
         _row(
           <String>[
             '合计',

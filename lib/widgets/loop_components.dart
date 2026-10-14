@@ -442,9 +442,16 @@ class LoopFolioPrimary extends StatelessWidget {
     this.headingMaxLines,
     this.captionMaxLines,
     this.footer,
+    this.headingBuilder,
   });
 
   final String heading;
+
+  /// Wraps the drawn heading (decision 0167: the mining reward figure slides
+  /// up once a minute inside an `AnimatedSwitcher`). It receives the heading
+  /// [Text] exactly as the folio would paint it and returns what goes in its
+  /// place. Null draws the heading as is.
+  final Widget Function(Widget heading)? headingBuilder;
 
   /// A full-height strip on the card's right edge (decision 0165: the
   /// campaign page's cover, `.desk-cover`), set off by a 1 px Lime 20 %
@@ -684,6 +691,19 @@ class LoopFolioPrimary extends StatelessWidget {
     );
   }
 
+  Widget _heading(Color headingColor) {
+    final text = Text(
+      heading,
+      maxLines: headingMaxLines,
+      overflow: headingMaxLines == null ? null : TextOverflow.ellipsis,
+      style: LoopTypography.display(
+        compact ? 24 : archetype.headingSize,
+        color: headingColor,
+      ),
+    );
+    return headingBuilder?.call(text) ?? text;
+  }
+
   Widget _content(
     BuildContext context, {
     required double contentWidth,
@@ -809,17 +829,7 @@ class LoopFolioPrimary extends StatelessWidget {
                                   widthFactor: 0.56,
                                 ),
                               )
-                            : Text(
-                                heading,
-                                maxLines: headingMaxLines,
-                                overflow: headingMaxLines == null
-                                    ? null
-                                    : TextOverflow.ellipsis,
-                                style: LoopTypography.display(
-                                  compact ? 24 : archetype.headingSize,
-                                  color: headingColor,
-                                ),
-                              ),
+                            : _heading(headingColor),
                       ),
                     ),
                   ),
@@ -860,31 +870,59 @@ class LoopFolioPrimary extends StatelessWidget {
             bottom: 14,
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: stampMaxWidth),
-              child: Container(
-                padding: _stampPadding,
-                decoration: BoxDecoration(
-                  borderRadius: LoopRadius.pill,
-                  border: Border.all(color: stampInk, width: _stampBorder),
-                ),
-                child: Text(
-                  stamp!.toUpperCase(),
-                  // `white-space:nowrap`: the pill is one line, and a
-                  // stamp too long for its 42% ceiling ends in an
-                  // ellipsis instead of running under the caption.
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.eyebrow(
-                    _stampTextSize,
-                    color: stampInk,
-                  ),
-                ),
-              ),
+              child: LoopFolioStamp(stamp!, color: stampInk),
             ),
           ),
       ],
     );
   }
+}
+
+/// `.folio-stamp`: the hairline pill a folio carries at its bottom-right.
+///
+/// [LoopFolioPrimary] lays it over its own corner; a Lime card that keeps
+/// the stamp in its flow (the `mining` summary, decision 0167) places the
+/// same pill itself instead of drawing a second one by hand.
+class LoopFolioStamp extends StatelessWidget {
+  const LoopFolioStamp(this.label, {super.key, this.color});
+
+  final String label;
+
+  /// The stamp's ink. Null is the ground's own ink at the Lime / Chalk
+  /// folio weight (68 %).
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink =
+        color ??
+        LoopGround.inkOf(context)
+            .withValues(alpha: _LoopFolioStampMetrics.groundInkOpacity);
+    return Container(
+      padding: LoopFolioPrimary._stampPadding,
+      decoration: BoxDecoration(
+        borderRadius: LoopRadius.pill,
+        border: Border.all(color: ink, width: LoopFolioPrimary._stampBorder),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        // `white-space:nowrap`: the pill is one line, and a stamp too long
+        // for its ceiling ends in an ellipsis instead of running under the
+        // caption.
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: LoopTypography.eyebrow(
+          LoopFolioPrimary._stampTextSize,
+          color: ink,
+        ),
+      ),
+    );
+  }
+}
+
+abstract final class _LoopFolioStampMetrics {
+  static const double groundInkOpacity = 0.68;
 }
 
 // ---------------------------------------------------------------------------
@@ -2249,6 +2287,11 @@ enum LoopButtonTone {
   /// The NFT accent (共识勋章): flat Brass with an Ink label, used only by the
   /// NFT mint page's main button.
   brass,
+
+  /// Flat Ink with a Chalk label: the strongest contrast on a full-Lime
+  /// card (`.mining-summary-actions button:first-child`, decision 0167),
+  /// where a Lime primary would be the card again.
+  ink,
 }
 
 class LoopButton extends StatelessWidget {
@@ -2301,14 +2344,19 @@ class LoopButton extends StatelessWidget {
     // `card2`/`line2`/`chalk` it was an invisible rectangle with an invisible
     // word in it on a Chalk card — and a state strip's one next step is
     // exactly the control that gets carried there.
-    final foreground = paintPrimary
-        ? LoopColors.ink
-        : LoopGround.inkOf(context);
     final brass = tone == LoopButtonTone.brass;
-    final decoration = wide || (paintPrimary && brass)
+    final inkFill = tone == LoopButtonTone.ink;
+    final foreground = paintPrimary
+        ? (inkFill ? LoopColors.chalk : LoopColors.ink)
+        : LoopGround.inkOf(context);
+    final decoration = wide || (paintPrimary && (brass || inkFill))
         ? BoxDecoration(
             color: paintPrimary
-                ? (brass ? LoopColors.brass : LoopColors.lime)
+                ? switch (tone) {
+                    LoopButtonTone.brass => LoopColors.brass,
+                    LoopButtonTone.ink => LoopColors.ink,
+                    LoopButtonTone.lime => LoopColors.lime,
+                  }
                 : LoopColors.card2,
             borderRadius: radius,
           )
