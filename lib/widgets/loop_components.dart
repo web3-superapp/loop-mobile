@@ -437,9 +437,39 @@ class LoopFolioPrimary extends StatelessWidget {
     this.squareBottom = false,
     this.headingLoading = false,
     this.kickerTrailing,
+    this.aside,
+    this.asideWidth = asideDefaultWidth,
+    this.headingMaxLines,
+    this.captionMaxLines,
+    this.footer,
   });
 
   final String heading;
+
+  /// A full-height strip on the card's right edge (decision 0165: the
+  /// campaign page's cover, `.desk-cover`), set off by a 1 px Lime 20 %
+  /// rule. The text keeps out of it (`.desk-campaign{padding-right:122px}`)
+  /// and the stamp sits at the bottom-right of the text, not on the strip.
+  /// Null keeps every existing card's pixels.
+  final Widget? aside;
+
+  /// `.desk-cover{width:112px}`.
+  final double asideWidth;
+
+  static const double asideDefaultWidth = 112;
+
+  /// The room between the text and [aside]: 122 − 112.
+  static const double _asideGap = 10;
+
+  /// Ellipsis after this many heading lines; null is unbounded.
+  final int? headingMaxLines;
+
+  /// Ellipsis after this many caption lines; null is unbounded.
+  final int? captionMaxLines;
+
+  /// A small widget under the caption (a text button), held to the
+  /// caption's own width.
+  final Widget? footer;
 
   /// A small widget at the right end of the kicker line (decision 0100: the
   /// non-release environment tag on the wallet hero). Null keeps the kicker
@@ -629,13 +659,17 @@ class LoopFolioPrimary extends StatelessWidget {
                 // Both prototype ceilings are measured against the card's own
                 // content box, so they are read here once and handed to the
                 // two children that own them.
+                final endPadding = aside == null
+                    ? padding
+                    : asideWidth + _asideGap;
                 final contentWidth = constraints.hasBoundedWidth
-                    ? math.max(constraints.maxWidth - padding * 2, 0.0)
+                    ? math.max(constraints.maxWidth - padding - endPadding, 0.0)
                     : double.infinity;
                 return _content(
                   context,
                   contentWidth: contentWidth,
                   padding: padding,
+                  endPadding: endPadding,
                   foreground: foreground,
                   headingColor: headingColor,
                   ringColor: ringColor,
@@ -654,6 +688,7 @@ class LoopFolioPrimary extends StatelessWidget {
     BuildContext context, {
     required double contentWidth,
     required double padding,
+    required double endPadding,
     required Color foreground,
     required Color headingColor,
     required Color ringColor,
@@ -696,8 +731,27 @@ class LoopFolioPrimary extends StatelessWidget {
               ),
             ),
           ),
+        if (aside case final Widget strip)
+          Positioned(
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: asideWidth,
+            child: Container(
+              key: const ValueKey<String>('loop-folio-aside'),
+              padding: const EdgeInsets.only(left: 1),
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: LoopColors.lime.withValues(alpha: 0.2),
+                  ),
+                ),
+              ),
+              child: strip,
+            ),
+          ),
         Padding(
-          padding: EdgeInsets.all(padding),
+          padding: EdgeInsets.fromLTRB(padding, padding, endPadding, padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -757,6 +811,10 @@ class LoopFolioPrimary extends StatelessWidget {
                               )
                             : Text(
                                 heading,
+                                maxLines: headingMaxLines,
+                                overflow: headingMaxLines == null
+                                    ? null
+                                    : TextOverflow.ellipsis,
                                 style: LoopTypography.display(
                                   compact ? 24 : archetype.headingSize,
                                   color: headingColor,
@@ -774,6 +832,10 @@ class LoopFolioPrimary extends StatelessWidget {
                   constraints: BoxConstraints(maxWidth: captionMaxWidth),
                   child: Text(
                     caption!,
+                    maxLines: captionMaxLines,
+                    overflow: captionMaxLines == null
+                        ? null
+                        : TextOverflow.ellipsis,
                     style: LoopTypography.caption(
                       12,
                       color: _faded(foreground, captionOpacity),
@@ -781,12 +843,20 @@ class LoopFolioPrimary extends StatelessWidget {
                   ),
                 ),
               ],
+              if (footer case final Widget below) ...<Widget>[
+                SizedBox(height: caption == null ? 15 : 8),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: captionMaxWidth),
+                  child: below,
+                ),
+              ],
             ],
           ),
         ),
         if (stamp != null)
           Positioned(
-            right: 14,
+            // With an aside, 4 inside the text's edge (as 14 is of 18).
+            right: aside == null ? 14 : endPadding - 4,
             bottom: 14,
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: stampMaxWidth),

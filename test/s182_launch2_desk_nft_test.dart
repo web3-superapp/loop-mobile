@@ -8,9 +8,11 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
@@ -665,8 +667,8 @@ void main() {
       await _drain(tester);
     });
 
-    test('pages: events in the hero order, then the campaigns running now',
-        () {
+    test('pages: live events, then previews; campaigns join them '
+        '(decision 0165, covered in s184)', () {
       final hero = launch2HeroRows(_rows(<Map<String, Object?>>[
         _rowJson(1, 'upcoming', startIn: const Duration(days: 1)),
         _rowJson(2, 'nft_sale'),
@@ -675,14 +677,16 @@ void main() {
         campaignId: 'c1',
         title: '十月共识周',
         subtitle: '铸造勋章抽 USD1',
-        startAt: l2Now.subtract(const Duration(days: 1)),
-        endAt: l2Now.add(const Duration(days: 1)),
-        link: '/launch2/nft?id=${_id(2)}',
+        startsAt: l2Now.subtract(const Duration(days: 1)),
+        endsAt: l2Now.add(const Duration(days: 1)),
+        link: Launch2CampaignLink.route('/launch2/nft?id=${_id(2)}'),
       );
       final over = Launch2DeskCampaign(
         campaignId: 'c2',
         title: '已结束',
-        endAt: l2Now.subtract(const Duration(minutes: 1)),
+        startsAt: l2Now.subtract(const Duration(days: 2)),
+        endsAt: l2Now.subtract(const Duration(minutes: 1)),
+        link: const Launch2CampaignLink.route('/launch2'),
       );
       final pages = launch2DeskPages(
         hero,
@@ -697,26 +701,33 @@ void main() {
       expect(launch2DeskPages(const <Launch2InstanceRow>[]), isEmpty);
     });
 
-    testWidgets('the campaign stub draws as a ledger page and opens its link',
-        (tester) async {
+    testWidgets('a campaign page draws as the quiet ledger and opens its '
+        'route', (tester) async {
       final opened = <String>[];
       await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: Scaffold(
-            body: Launch2DeskPager(
-              pages: const <Launch2DeskPage>[
-                Launch2DeskCampaignPage(
-                  Launch2DeskCampaign(
-                    campaignId: 'c1',
-                    title: '十月共识周',
-                    subtitle: '铸造勋章抽 USD1',
-                    link: '/launch2/nft',
+        ProviderScope(
+          overrides: <Override>[
+            launch2ClockProvider.overrideWithValue(() => l2Now),
+          ],
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: Scaffold(
+              body: Launch2DeskPager(
+                pages: <Launch2DeskPage>[
+                  Launch2DeskCampaignPage(
+                    Launch2DeskCampaign(
+                      campaignId: 'c1',
+                      title: '十月共识周',
+                      subtitle: '铸造勋章抽 USD1',
+                      startsAt: l2Now.subtract(const Duration(days: 1)),
+                      endsAt: l2Now.add(const Duration(days: 3)),
+                      link: const Launch2CampaignLink.route('/launch2/nft'),
+                    ),
                   ),
-                ),
-              ],
-              chainId: 'eip155:97',
-              onNavigate: opened.add,
+                ],
+                chainId: 'eip155:97',
+                onNavigate: opened.add,
+              ),
             ),
           ),
         ),
@@ -724,7 +735,7 @@ void main() {
       final folio = _folio(tester, 'launch2-desk-page-campaign-c1');
       expect(folio.heading, '十月共识周');
       expect(folio.caption, '铸造勋章抽 USD1');
-      expect(folio.variant, LoopFolioVariant.lime);
+      expect(folio.variant, LoopFolioVariant.quiet);
       await tester.tap(_key('launch2-desk-page-campaign-c1'));
       expect(opened, <String>['/launch2/nft']);
     });

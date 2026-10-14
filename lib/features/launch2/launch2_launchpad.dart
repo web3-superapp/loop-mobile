@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
+import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
@@ -15,9 +16,11 @@ import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
 // ---------------------------------------------------------------------------
 // 发射台 · the prototype's Launch Desk (decision 0164; data since 0163,
@@ -224,31 +227,6 @@ final class Launch2DeskEventPage extends Launch2DeskPage {
   String get id => 'event-${row.instanceId}';
 }
 
-/// An operations campaign the back office configures. The model only: no
-/// read fills it yet, and [launch2DeskPages] adds one only when handed it.
-@immutable
-final class Launch2DeskCampaign {
-  const Launch2DeskCampaign({
-    required this.campaignId,
-    required this.title,
-    this.subtitle,
-    this.coverUrl,
-    this.startAt,
-    this.endAt,
-    this.link,
-  });
-
-  final String campaignId;
-  final String title;
-  final String? subtitle;
-  final String? coverUrl;
-  final DateTime? startAt;
-  final DateTime? endAt;
-
-  /// An in-app location the card opens; `null` opens nothing.
-  final String? link;
-}
-
 final class Launch2DeskCampaignPage extends Launch2DeskPage {
   const Launch2DeskCampaignPage(this.campaign);
 
@@ -258,21 +236,48 @@ final class Launch2DeskCampaignPage extends Launch2DeskPage {
   String get id => 'campaign-${campaign.campaignId}';
 }
 
-/// The desk's pages: one per event of [hero] (live first, then previews —
-/// [launch2HeroRows]' order), then the campaigns running at [now]. Empty:
-/// the desk draws its one empty page.
+/// The most pages the desk shows (decision 0165).
+const int launch2DeskPageLimit = 5;
+
+/// An upcoming campaign this close to its start earns a page.
+const Duration launch2CampaignHorizon = Duration(days: 7);
+
+/// The desk's pages (decision 0165): the events running now (every
+/// [launch2HeroRows] row but the previews), then the pinned campaigns, then
+/// the previews (`upcoming`), then the other campaigns running at [now],
+/// then the campaigns that start within [launch2CampaignHorizon]; at most
+/// [launch2DeskPageLimit], the rest cut. Campaigns keep the server's order
+/// (pinned, `sortOrder`, `startsAt`) inside each step; one that is over at
+/// [now], or starts further out, has no page — pinned or not. Empty: the
+/// desk draws its one empty page.
 List<Launch2DeskPage> launch2DeskPages(
   List<Launch2InstanceRow> hero, {
   List<Launch2DeskCampaign> campaigns = const <Launch2DeskCampaign>[],
   DateTime? now,
-}) => <Launch2DeskPage>[
-  for (final row in hero) Launch2DeskEventPage(row),
-  for (final campaign in campaigns)
-    if (now == null ||
-        ((campaign.startAt == null || !now.isBefore(campaign.startAt!)) &&
-            (campaign.endAt == null || now.isBefore(campaign.endAt!))))
-      Launch2DeskCampaignPage(campaign),
-];
+}) {
+  final at = now ?? DateTime.now();
+  final shown = <Launch2DeskCampaign>[
+    for (final campaign in campaigns)
+      if (at.isBefore(campaign.endsAt) &&
+          !campaign.startsAt.isAfter(at.add(launch2CampaignHorizon)))
+        campaign,
+  ];
+  bool preview(Launch2InstanceRow row) => row.stage == Launch2Stage.upcoming;
+  return <Launch2DeskPage>[
+    for (final row in hero)
+      if (!preview(row)) Launch2DeskEventPage(row),
+    for (final campaign in shown)
+      if (campaign.pinned) Launch2DeskCampaignPage(campaign),
+    for (final row in hero)
+      if (preview(row)) Launch2DeskEventPage(row),
+    for (final campaign in shown)
+      if (!campaign.pinned && campaign.liveAt(at))
+        Launch2DeskCampaignPage(campaign),
+    for (final campaign in shown)
+      if (!campaign.pinned && !campaign.liveAt(at))
+        Launch2DeskCampaignPage(campaign),
+  ].take(launch2DeskPageLimit).toList(growable: false);
+}
 
 /// The pager's fixed height at text scale 1: two heading lines and a
 /// four-line caption at 360 dp.
@@ -311,25 +316,31 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
     super.dispose();
   }
 
-  Widget _card(Launch2DeskPage? page, Widget? dots) => switch (page) {
-    null => Launch2DeskFolio(row: null, chainId: widget.chainId),
-    Launch2DeskEventPage(:final row) => Launch2DeskFolio(
-      key: ValueKey<String>('launch2-desk-page-${row.instanceId}'),
-      row: row,
-      chainId: widget.chainId,
-      dots: dots,
-      onTap: () => widget.onNavigate(launch2HeroLocation(row)),
-      onElapsed: widget.onElapsed,
-    ),
-    Launch2DeskCampaignPage(:final campaign) => Launch2DeskCampaignCard(
-      key: ValueKey<String>('launch2-desk-page-${page.id}'),
-      campaign: campaign,
-      dots: dots,
-      onTap: campaign.link == null
-          ? null
-          : () => widget.onNavigate(campaign.link!),
-    ),
-  };
+  Widget _card(Launch2DeskPage? page, int index) {
+    final count = widget.pages.length;
+    // The dots ride the kicker line of each card, from two pages on: ink on
+    // the full-Lime event card, Lime on the quiet campaign card.
+    Widget? dots({required bool quiet}) => count >= 2
+        ? _DeskDots(count: count, current: index, quiet: quiet)
+        : null;
+    return switch (page) {
+      null => Launch2DeskFolio(row: null, chainId: widget.chainId),
+      Launch2DeskEventPage(:final row) => Launch2DeskFolio(
+        key: ValueKey<String>('launch2-desk-page-${row.instanceId}'),
+        row: row,
+        chainId: widget.chainId,
+        dots: dots(quiet: false),
+        onTap: () => widget.onNavigate(launch2HeroLocation(row)),
+        onElapsed: widget.onElapsed,
+      ),
+      Launch2DeskCampaignPage(:final campaign) => Launch2DeskCampaignCard(
+        key: ValueKey<String>('launch2-desk-page-${page.id}'),
+        campaign: campaign,
+        dots: dots(quiet: true),
+        onNavigate: widget.onNavigate,
+      ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -345,14 +356,7 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
           itemCount: pages.isEmpty ? 1 : pages.length,
           itemBuilder: (context, index) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-            child: _card(
-              pages.isEmpty ? null : pages[index],
-              // The dots ride the kicker line of each card, on the card's
-              // own Lime ground; from two pages on.
-              pages.length >= 2
-                  ? _DeskDots(count: pages.length, current: index)
-                  : null,
-            ),
+            child: _card(pages.isEmpty ? null : pages[index], index),
           ),
         ),
       ),
@@ -361,10 +365,17 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
 }
 
 class _DeskDots extends StatelessWidget {
-  const _DeskDots({required this.count, required this.current});
+  const _DeskDots({
+    required this.count,
+    required this.current,
+    this.quiet = false,
+  });
 
   final int count;
   final int current;
+
+  /// On the quiet (dark) ledger: Lime dots instead of ink.
+  final bool quiet;
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
@@ -380,9 +391,9 @@ class _DeskDots extends StatelessWidget {
             margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: i == current
-                  ? LoopColors.ink
-                  : LoopColors.ink.withValues(alpha: 0.3),
+              color: (quiet ? LoopColors.lime : LoopColors.ink).withValues(
+                alpha: i == current ? 1 : 0.3,
+              ),
             ),
           ),
       ],
@@ -436,7 +447,8 @@ class Launch2DeskFolio extends ConsumerWidget {
       margin: EdgeInsets.zero,
       kicker: kicker,
       kickerTrailing: dots,
-      heading: '${launch2HeroTicker(event.ticker)}\n${launch2DeskStatus(event)}',
+      heading:
+          '${launch2HeroTicker(event.ticker)}\n${launch2DeskStatus(event)}',
       caption: launch2DeskCaption(event),
       stamp: stamp,
     );
@@ -458,41 +470,130 @@ class Launch2DeskFolio extends ConsumerWidget {
   }
 }
 
-/// The campaign page's stub: the same ledger card with the campaign's
-/// title and subtitle. The cover and the dates wait for the read that will
-/// fill the model.
-class Launch2DeskCampaignCard extends StatelessWidget {
+/// The campaign page (decision 0165): the quiet ledger (`.ledger-quiet`,
+/// the same card as the top of the NFT page) with the cover on its right
+/// edge — kicker 「活动 · MM-dd → MM-dd」, the title in at most two lines, the
+/// subtitle when there is one, the button words under it and the stamp
+/// 「剩 N 天」 / 「今天结束」 / 「MM-dd 开始」. A cover that does not load is no
+/// cover: the text takes the whole card. The whole card is one tap.
+class Launch2DeskCampaignCard extends ConsumerStatefulWidget {
   const Launch2DeskCampaignCard({
     required this.campaign,
+    required this.onNavigate,
     super.key,
-    this.onTap,
     this.dots,
   });
 
   final Launch2DeskCampaign campaign;
-  final VoidCallback? onTap;
+
+  /// Pushes an in-app route.
+  final void Function(String location) onNavigate;
   final Widget? dots;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: onTap != null,
-    label: <String>[campaign.title, ?campaign.subtitle].join('，'),
-    excludeSemantics: true,
-    child: LoopPressable(
-      onTap: onTap,
-      scale: false,
-      child: LoopFolioPrimary(
-        variant: LoopFolioVariant.lime,
-        archetype: LoopFolioArchetype.listing,
-        ring: false,
-        margin: EdgeInsets.zero,
-        kicker: 'LAUNCH DESK · 活动',
-        kickerTrailing: dots,
-        heading: campaign.title,
-        caption: campaign.subtitle,
+  ConsumerState<Launch2DeskCampaignCard> createState() =>
+      _Launch2DeskCampaignCardState();
+}
+
+class _Launch2DeskCampaignCardState
+    extends ConsumerState<Launch2DeskCampaignCard> {
+  /// The cover address that failed to load; it is not tried again.
+  String? _failedCover;
+
+  void _open() {
+    final opener = ref.read(launch2ExternalLinkOpenerProvider);
+    launch2OpenCampaign(
+      widget.campaign,
+      push: widget.onNavigate,
+      openExternal: (uri) => unawaited(opener(context, uri)),
+    );
+  }
+
+  void _coverFailed(String url) {
+    if (_failedCover == url) return;
+    // The error arrives during a build of the image; the card redraws
+    // without it on the next frame.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _failedCover = url);
+    });
+  }
+
+  Widget _cover(String url) {
+    final source = loopRemoteImageSource(url);
+    const ground = ColoredBox(color: LoopColors.card2);
+    return SizedBox.expand(
+      child: Image(
+        key: ValueKey<String>(
+          'launch2-campaign-cover-${widget.campaign.campaignId}',
+        ),
+        image: source,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+        gaplessPlayback: true,
+        excludeFromSemantics: true,
+        frameBuilder: (context, child, frame, synchronous) =>
+            synchronous || frame != null ? child : ground,
+        errorBuilder: (context, error, stackTrace) {
+          _coverFailed(url);
+          return ground;
+        },
       ),
-    ),
-  );
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final campaign = widget.campaign;
+    final now = ref.read(launch2ClockProvider)();
+    final stamp = launch2CampaignStamp(campaign, now);
+    final cover = campaign.coverUrl;
+    final id = campaign.campaignId;
+    return Semantics(
+      button: true,
+      label: <String>[
+        '活动',
+        campaign.title,
+        ?campaign.subtitle,
+        stamp,
+        campaign.ctaLabel,
+      ].join('，'),
+      excludeSemantics: true,
+      child: LoopPressable(
+        onTap: _open,
+        scale: false,
+        child: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.listing,
+          ring: false,
+          margin: EdgeInsets.zero,
+          kicker: launch2CampaignKicker(campaign),
+          kickerTrailing: widget.dots,
+          heading: campaign.title,
+          headingMaxLines: 2,
+          caption: campaign.subtitle,
+          captionMaxLines: 2,
+          stamp: stamp,
+          aside: cover == null || cover == _failedCover ? null : _cover(cover),
+          footer: Row(
+            key: ValueKey<String>('launch2-campaign-cta-$id'),
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  campaign.ctaLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.eyebrow(11, color: LoopColors.lime),
+                ),
+              ),
+              const SizedBox(width: 2),
+              const LoopIcon('chevron', size: 12, color: LoopColors.lime),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ---- the record card ---------------------------------------------------------
@@ -551,10 +652,7 @@ class Launch2DeskRecordCard extends ConsumerWidget {
             Row(
               children: <Widget>[
                 if (minting)
-                  LoopMonoTile(
-                    label: _monogram(row.ticker),
-                    accent: true,
-                  )
+                  LoopMonoTile(label: _monogram(row.ticker), accent: true)
                 else
                   MemeLogo(
                     symbol: row.ticker,
@@ -573,7 +671,10 @@ class Launch2DeskRecordCard extends ConsumerWidget {
                         launch2HeroTicker(row.ticker),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.title(14, color: LoopColors.chalk),
+                        style: LoopTypography.title(
+                          14,
+                          color: LoopColors.chalk,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -738,9 +839,8 @@ class _Launch2DeskTapeState extends State<Launch2DeskTape> {
                   item: item,
                   now: now,
                   last: index == lines.length - 1,
-                  onTap: () => widget.onNavigate(
-                    Launch2Route.instance(item.instanceId),
-                  ),
+                  onTap: () =>
+                      widget.onNavigate(Launch2Route.instance(item.instanceId)),
                 ),
             ],
           ),
@@ -872,4 +972,3 @@ const LoopNotice launch2CurationNotice = LoopNotice(
       '统一 10 亿总量，USD1 报价。',
   margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
 );
-

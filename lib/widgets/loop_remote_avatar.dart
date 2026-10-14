@@ -5,6 +5,13 @@ import 'package:loop_mobile/widgets/loop_media_image.dart';
 @visibleForTesting
 ImageProvider<Object> Function(String url)? debugLoopRemoteAvatarImageProvider;
 
+/// The provider a remote picture at [url] is read through — this device's
+/// copy or the download ([LoopMediaImage]), or the tests' replacement. For
+/// pictures that are not a square avatar slot (decision 0165: the campaign
+/// cover) and decode at their own size.
+ImageProvider<Object> loopRemoteImageSource(String url) =>
+    debugLoopRemoteAvatarImageProvider?.call(url) ?? LoopMediaImage(url);
+
 /// A person's uploaded picture, drawn over the face LOOP would otherwise draw.
 ///
 /// [fallback] — the monogram, the preset illustration, the neutral tile — is
@@ -42,8 +49,7 @@ class LoopRemoteAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final source =
-        debugLoopRemoteAvatarImageProvider?.call(url) ?? LoopMediaImage(url);
+    final source = loopRemoteImageSource(url);
     final image = Image(
       key: const ValueKey<String>('loop-remote-avatar-image'),
       image: loopRemoteAvatarImage(source),

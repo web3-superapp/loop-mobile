@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
@@ -134,11 +135,18 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
   /// Decision 0163 §7.1: the overview rides the list's own refresh — the
   /// 60 s poll, the return from a project page and the pull — and has no
   /// timer of its own.
+  ///
+  /// Decision 0165: the campaign cards ride the same refresh.
   void _refreshOverview() {
     if (scope != Launch2ListScope.all) return;
     final overview = ref.read(launch2OverviewControllerProvider);
-    if (overview.busy || overview.refreshing) return;
-    unawaited(ref.read(launch2OverviewControllerProvider.notifier).reload());
+    if (!overview.busy && !overview.refreshing) {
+      unawaited(ref.read(launch2OverviewControllerProvider.notifier).reload());
+    }
+    final campaigns = ref.read(launch2CampaignsControllerProvider);
+    if (!campaigns.busy && !campaigns.refreshing) {
+      unawaited(ref.read(launch2CampaignsControllerProvider.notifier).reload());
+    }
   }
 
   Future<void> _pull(Launch2ListController controller) async {
@@ -189,6 +197,18 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
         () => ref.read(launch2OverviewControllerProvider.notifier).load(),
       );
     }
+    // Decision 0165: the desk's campaign cards, read with the first page.
+    // A failure (404, 503, an unreadable body) is no campaign.
+    final campaigns = blocked || scope != Launch2ListScope.all
+        ? null
+        : ref.watch(launch2CampaignsControllerProvider);
+    if (campaigns != null) {
+      launch2LoadOnce(
+        ref,
+        campaigns,
+        () => ref.read(launch2CampaignsControllerProvider.notifier).load(),
+      );
+    }
     return LoopDashboardPage(
       key: ValueKey<String>(_keyBase),
       archetype: LoopPageArchetype.listing,
@@ -203,7 +223,12 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
             message: 'MEME v2 暂时不可用 · ${launch2CapabilityText(capability)}',
           )
         else
-          ..._rows(state, controller, overview?.value),
+          ..._rows(
+            state,
+            controller,
+            overview?.value,
+            campaigns?.value?.items ?? const <Launch2DeskCampaign>[],
+          ),
       ],
     );
   }
@@ -212,6 +237,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     LoopChainResourceState<Launch2InstancePage> state,
     Launch2ListController controller,
     Launch2Overview? overview,
+    List<Launch2DeskCampaign> campaigns,
   ) {
     final page = state.value;
     if (page == null && state.phase == LoopChainViewPhase.loading) {
@@ -268,7 +294,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     );
     return <Widget>[
       if (all)
-        ..._desk(page, overview, elapsed, tile)
+        ..._desk(page, overview, campaigns, elapsed, tile)
       else
         for (final row in launch2ListOrder(page.items)) tile(row),
       if (controller.appendFailed && !state.busy)
@@ -313,6 +339,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       ),
     ];
   }
+
   /// Decision 0164 · the prototype's Launch Desk over 「v2 发射」: the
   /// ledger card, the segment counts, the record cards, the live tape and
   /// the rows in their `.label` groups — the record cards' rows are not
@@ -320,6 +347,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
   List<Widget> _desk(
     Launch2InstancePage page,
     Launch2Overview? overview,
+    List<Launch2DeskCampaign> campaigns,
     VoidCallback onElapsed,
     Widget Function(Launch2InstanceRow row) tile,
   ) {
@@ -355,7 +383,11 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     final selected = main == null ? null : Launch2DeskSegment.of(main.stage);
     return <Widget>[
       Launch2DeskPager(
-        pages: launch2DeskPages(hero),
+        pages: launch2DeskPages(
+          hero,
+          campaigns: campaigns,
+          now: ref.read(launch2ClockProvider)(),
+        ),
         chainId: page.items.first.chainId,
         onNavigate: widget.onNavigate,
         onElapsed: onElapsed,
@@ -407,7 +439,6 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     ];
   }
 }
-
 
 /// The order a v2 list draws its rows in (decision 0142): the server's own
 /// order (newest activation first), except that `closed_no_holders` rows —
