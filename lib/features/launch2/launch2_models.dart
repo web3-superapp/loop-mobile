@@ -925,7 +925,7 @@ enum Launch2Venue {
   /// A LoopDynamic Hook's reward pot (decision 0157): a claim, not a trade.
   loopDynamicRewards('loop_dynamic_rewards'),
 
-  /// The NFT contract's escrow refund (decision 0162): money back, not a
+  /// The NftEscrow's `claimRefund` (decision 0162): money back, not a
   /// trade.
   nftEscrow('nft_escrow');
 

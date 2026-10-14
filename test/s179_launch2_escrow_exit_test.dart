@@ -89,13 +89,16 @@ Launch2InstanceDetail _detail({
   return LoopV2Launch2Codec.detail(body, mediaUrl: (_) => null);
 }
 
-/// The refund route's intent: `nft_refund`, to the NFT contract, no
-/// approval, paying back 87.5 USD1 (hand-made, 待后端真实回包核对).
-Map<String, Object?> _refundIntentJson() {
+const String _escrow = '0x6666666666666666666666666666666666666666';
+
+/// The refund route's intent: `nft_refund`, `claimRefund` on the instance's
+/// NftEscrow (`contracts.escrow`, loop-api S179), no approval, paying back
+/// 87.5 USD1 (hand-made, 待后端真实回包核对).
+Map<String, Object?> _refundIntentJson({String contract = _escrow}) {
   final body = l2IntentJson(
     kind: 'nft_refund',
     approval: false,
-    contract: l2Nft,
+    contract: contract,
   );
   final intent = body['launch2Intent']! as Map<String, Object?>;
   intent['amountIn'] = '0';
@@ -193,9 +196,10 @@ final class _Fake implements Launch2Gateway {
 }
 
 final class _FakeRefund implements Launch2NftRefundGateway {
-  _FakeRefund({this.refusal, this.onReport});
+  _FakeRefund({this.refusal, this.onReport, this.contract = _escrow});
 
   final String? refusal;
+  final String contract;
   final void Function()? onReport;
   final List<String> prepared = <String>[];
   final List<String> reports = <String>[];
@@ -217,7 +221,7 @@ final class _FakeRefund implements Launch2NftRefundGateway {
       );
     }
     return LoopV2Launch2Codec.intent(
-      _refundIntentJson(),
+      _refundIntentJson(contract: contract),
       venue: Launch2Venue.nftEscrow,
     );
   }
@@ -483,29 +487,25 @@ void main() {
       );
     });
 
-    test('a positions row may carry viewerNftRefunds', () {
+    // loop-api S179: `me/positions` carries no refunds, so the wallet row's
+    // 可退款 tag does not appear today; the optional decode stays.
+    test('a positions row without viewerNftRefunds is not refundable', () {
       expect(l2Positions().items.single.nftRefundClaimable, isFalse);
-      final body = l2PositionsJson();
-      ((body['positions']! as List<Object?>).single!
-          as Map<String, Object?>)['viewerNftRefunds'] = <Object?>[
-        _refund('1'),
-      ];
-      final row = LoopV2Launch2Codec.positions(
-        body,
-        mediaUrl: (_) => null,
-      ).items.single;
-      expect(row.nftRefundClaimable, isTrue);
     });
   });
 
   group('copy', () {
-    test('the five refusal codes each say what did not happen', () {
+    test('the refund refusal codes each say what did not happen', () {
       const expected = <String, String>{
         'LAUNCH2_REFUND_NOT_OPEN': '退款还没有开放，没有发起退款',
         'LAUNCH2_REFUND_ALREADY_CLAIMED': '这枚 NFT 的款已经退过，没有重复退款',
         'LAUNCH2_REFUND_NOT_OWNER': '这枚 NFT 不在当前钱包里，没有发起退款',
         'LAUNCH2_REFUND_GRADUATED': '项目已毕业，NFT 款已转入回购，没有发起退款',
         'LAUNCH2_EXIT_PATHS_UNSUPPORTED': '这个项目的合约不支持退款，没有发起退款',
+        'LAUNCH2_REFUND_NOTHING_TO_REFUND': '托管里已经没有可退的款，没有发起退款',
+        'LAUNCH2_REFUND_INTENT_NOT_FOUND': '找不到这笔退款记录，上报没有成功，链上结果不受影响',
+        'LAUNCH2_REFUND_TRANSACTION_CONFLICT':
+            '这笔退款已用另一笔交易上报过，这次上报没有记录，链上结果不受影响',
       };
       for (final MapEntry(:key, :value) in expected.entries) {
         expect(launch2ReasonText(key), value, reason: key);
@@ -828,33 +828,42 @@ void main() {
     });
   });
 
-  group('钱包 · 资产', () {
-    testWidgets('the NFT row says 可退款 when one can be refunded', (
-      tester,
-    ) async {
-      final body = l2PositionsJson();
-      ((body['positions']! as List<Object?>).single!
-          as Map<String, Object?>)['viewerNftRefunds'] = <Object?>[
-        _refund('1'),
-      ];
-      await _pump(
+  group('project page · refund target', () {
+    testWidgets('an intent to any contract but contracts.escrow (here the '
+        'NFT) is refused before the wallet', (tester) async {
+      final wallet = _RecordingWallet();
+      final refund = _FakeRefund(contract: l2Nft);
+      await _open(
         tester,
-        Scaffold(
-          body: ListView(
-            children: <Widget>[
-              Launch2WalletRows(onOpen: (_) {}, hidden: false),
-            ],
+        _Fake(
+          _detail(
+            exit: _exit(refund: 'open'),
+            refunds: <Object?>[_refund('1')],
           ),
         ),
-        _Fake(
-          _detail(),
-          positions: LoopV2Launch2Codec.positions(body, mediaUrl: (_) => null),
-        ),
+        refund: refund,
+        wallet: wallet,
       );
-      expect(find.text('项目 NFT #1 · 可退款'), findsOneWidget);
+      await _scrollTo(tester, _key('launch2-refund-1'));
+      await tester.tap(_key('launch2-refund-1'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-refund-confirm-button'));
+      await tester.pumpAndSettle();
+      expect(refund.prepared, hasLength(1));
+      expect(_key('launch2-sign-sheet'), findsNothing);
+      expect(wallet.handed, isEmpty);
+      expect(
+        find.descendant(
+          of: _key('launch2-refund-failed-1'),
+          matching: find.textContaining('交易内容与确认内容不一致'),
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
+  });
 
+  group('钱包 · 资产', () {
     testWidgets('without refunds the NFT row is as before', (tester) async {
       await _pump(
         tester,

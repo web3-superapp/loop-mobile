@@ -21,11 +21,12 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.
 /// Strict V2 transport for the NFT escrow refund (client decision 0162,
 /// loop-api S179): `POST …/instances/:id/nft/refund/prepare` (201, the
 /// `launch2Intent` envelope of `nft/prepare`, kind `nft_refund`) and
-/// `POST …/nft/refund/report` (200).
+/// `POST …/nft/refund/report` (200, `nftRefundReport`). The intent is
+/// `claimRefund` on the instance's NftEscrow (`contracts.escrow`), no
+/// approval.
 ///
 /// The bodies follow `nft/prepare` and the dynamic-claim report: `walletId`
 /// + `tokenId`, then `intentId` + `transactionHash` with the two echoes.
-/// 待后端真实回包核对.
 final class DioLoopV2Launch2NftRefundApi {
   DioLoopV2Launch2NftRefundApi(this._dio);
 

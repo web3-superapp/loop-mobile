@@ -93,7 +93,7 @@ String _spenderNoun(Launch2Intent intent) =>
     intent.venue == Launch2Venue.loopDynamicRewards
     ? '奖励合约'
     : intent.venue == Launch2Venue.nftEscrow
-    ? 'NFT 合约'
+    ? '托管合约'
     : intent.venue == Launch2Venue.officialPool
     ? '官方池路由'
     : intent.kind == Launch2IntentKind.nftMint
@@ -106,7 +106,7 @@ String _addressLabel(Launch2Intent intent) => intent.approval == null
     ? switch (intent.venue) {
         Launch2Venue.officialPool => '路由',
         Launch2Venue.loopDynamicRewards => '奖励合约',
-        Launch2Venue.nftEscrow => 'NFT 合约',
+        Launch2Venue.nftEscrow => '托管合约',
         Launch2Venue.curve => '合约',
       }
     : '授权给${_spenderNoun(intent)}';

@@ -396,10 +396,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     }
     if (!mounted) return;
     setState(() => _refunding = null);
-    // A refund goes to this project's NFT contract and spends nothing.
-    final nft = detail.contracts['nft']?.toLowerCase();
+    // A refund is `claimRefund` on this project's NftEscrow and spends
+    // nothing (loop-api S179).
+    final escrow = detail.contracts['escrow']?.toLowerCase();
     if (intent.approval != null ||
-        (nft != null && intent.contractAddress.toLowerCase() != nft)) {
+        escrow == null ||
+        intent.contractAddress.toLowerCase() != escrow) {
       setState(
         () => _refundFailure = (
           refund.tokenId,

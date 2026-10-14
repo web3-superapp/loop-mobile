@@ -1217,9 +1217,11 @@ abstract final class LoopV2Launch2Codec {
     return intentBody(root['launch2Intent'], venue: venue);
   }
 
-  /// `POST …/nft/refund/report` (decision 0162). The backend's body is not
-  /// pinned yet (待后端真实回包核对): only the envelope's `contractVersion`
-  /// and, when present, `nftRefundReport.status` / `intentId` are read.
+  /// `POST …/nft/refund/report` (decision 0162, loop-api S179):
+  /// `{nftRefundReport: {intentId, instanceId, walletId, tokenId,
+  /// transactionHash, status, amountUsd1, refundedAt, blockNumber,
+  /// reportedAt}, contractVersion}`. Only the envelope's `contractVersion`
+  /// and `nftRefundReport.status` / `intentId` are read.
   static Launch2NftRefundReport nftRefundReport(
     Object? raw, {
     required String intentId,
