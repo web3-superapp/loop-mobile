@@ -14,6 +14,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
@@ -60,109 +61,115 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     }
 
     final counts = state.counts;
-    return LoopStreamPage(
-      key: const ValueKey<String>('connections-screen'),
-      archetype: LoopPageArchetype.record,
-      title: '关注与粉丝',
-      kicker: communityPreviewKicker(mode),
-      onBack: widget.onBack,
-      filters: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: LoopSeg(
-                  key: const ValueKey<String>('connections-seg-following'),
-                  quiet: true,
-                  label: counts == null ? '关注' : '关注 ${counts.following}',
-                  selected: state.direction == ConnectionDirection.following,
-                  onSelected: () => unawaited(
-                    controller.selectDirection(ConnectionDirection.following),
+    return LoopFlat(
+      child: LoopStreamPage(
+        key: const ValueKey<String>('connections-screen'),
+        archetype: LoopPageArchetype.record,
+        title: '关注与粉丝',
+        kicker: communityPreviewKicker(mode),
+        onBack: widget.onBack,
+        filters: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: LoopSeg(
+                    key: const ValueKey<String>('connections-seg-following'),
+                    quiet: true,
+                    label: counts == null ? '关注' : '关注 ${counts.following}',
+                    selected: state.direction == ConnectionDirection.following,
+                    onSelected: () => unawaited(
+                      controller.selectDirection(ConnectionDirection.following),
+                    ),
                   ),
                 ),
+                LoopSeg(
+                  key: const ValueKey<String>('connections-seg-followers'),
+                  quiet: true,
+                  label: counts == null ? '粉丝' : '粉丝 ${counts.followers}',
+                  selected: state.direction == ConnectionDirection.followers,
+                  onSelected: () => unawaited(
+                    controller.selectDirection(ConnectionDirection.followers),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        block: communityCapabilityBlocks(mode, capability)
+            ? CommunityCapabilityPageBlock(
+                key: const ValueKey<String>(
+                  'connections-capability-unavailable',
+                ),
+                capability: capability,
+                title: '关注关系当前不可用',
+              )
+            : null,
+        onRefresh: controller.refresh,
+        updating: state.refreshing,
+        collection: ListView(
+          key: const ValueKey<String>('connections-list'),
+          // A short list must still overscroll, or the gesture would exist only
+          // on the accounts that happen to follow enough people.
+          physics: loopRefreshablePhysics(controller.refresh),
+          padding: const EdgeInsets.only(bottom: 24),
+          children: <Widget>[
+            CommunityPreviewNotice(mode: mode, resource: '关注关系'),
+            if (state.phase != CommunityViewPhase.ready)
+              CommunityStateBlock(
+                phase: state.phase,
+                failureKind: state.failureKind,
+                emptyMessage: state.direction == ConnectionDirection.following
+                    ? '还没有关注任何人'
+                    : '还没有粉丝',
+                emptyReason: '被你屏蔽的账号不会出现在这里。',
+                empty: LoopEmptyState(
+                  key: const ValueKey<String>('community-state-empty'),
+                  illustration: LoopIllustration.friends,
+                  title: state.direction == ConnectionDirection.following
+                      ? '还没有关注任何人'
+                      : '还没有粉丝',
+                  message: '被你屏蔽的账号不会出现在这里。',
+                ),
+                onRetry: () => unawaited(controller.reload()),
+              )
+            else ...<Widget>[
+              if (state.failureKind != null)
+                LoopNotice(
+                  key: const ValueKey<String>('connections-action-failure'),
+                  icon: 'warn',
+                  tone: LoopNoticeTone.warn,
+                  title: '上一次操作没有完成',
+                  body: communityFailureReason(state.failureKind),
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                ),
+              for (final entry in state.items)
+                _connectionRow(entry, state, controller),
+              LoopLoadMoreFooter(
+                key: const ValueKey<String>('connections-footer'),
+                keyPrefix: 'connections',
+                cursor: state.nextCursor,
+                canLoadMore: state.canLoadMore && !state.refreshing,
+                loading: state.loadingMore,
+                onLoadMore: controller.loadMore,
               ),
-              LoopSeg(
-                key: const ValueKey<String>('connections-seg-followers'),
-                quiet: true,
-                label: counts == null ? '粉丝' : '粉丝 ${counts.followers}',
-                selected: state.direction == ConnectionDirection.followers,
-                onSelected: () => unawaited(
-                  controller.selectDirection(ConnectionDirection.followers),
+              // One switch, one name: the privacy centre calls it 可被发现.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                child: Text(
+                  '在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。',
+                  key: const ValueKey<String>(
+                    'connections-discoverable-notice',
+                  ),
+                  style: LoopTypography.caption(11, color: LoopColors.text3),
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-      block: communityCapabilityBlocks(mode, capability)
-          ? CommunityCapabilityPageBlock(
-              key: const ValueKey<String>('connections-capability-unavailable'),
-              capability: capability,
-              title: '关注关系当前不可用',
-            )
-          : null,
-      onRefresh: controller.refresh,
-      updating: state.refreshing,
-      collection: ListView(
-        key: const ValueKey<String>('connections-list'),
-        // A short list must still overscroll, or the gesture would exist only
-        // on the accounts that happen to follow enough people.
-        physics: loopRefreshablePhysics(controller.refresh),
-        padding: const EdgeInsets.only(bottom: 24),
-        children: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '关注关系'),
-          if (state.phase != CommunityViewPhase.ready)
-            CommunityStateBlock(
-              phase: state.phase,
-              failureKind: state.failureKind,
-              emptyMessage: state.direction == ConnectionDirection.following
-                  ? '还没有关注任何人'
-                  : '还没有粉丝',
-              emptyReason: '被你屏蔽的账号不会出现在这里。',
-              empty: LoopEmptyState(
-                key: const ValueKey<String>('community-state-empty'),
-                illustration: LoopIllustration.friends,
-                title: state.direction == ConnectionDirection.following
-                    ? '还没有关注任何人'
-                    : '还没有粉丝',
-                message: '被你屏蔽的账号不会出现在这里。',
-              ),
-              onRetry: () => unawaited(controller.reload()),
-            )
-          else ...<Widget>[
-            if (state.failureKind != null)
-              LoopNotice(
-                key: const ValueKey<String>('connections-action-failure'),
-                icon: 'warn',
-                tone: LoopNoticeTone.warn,
-                title: '上一次操作没有完成',
-                body: communityFailureReason(state.failureKind),
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              ),
-            for (final entry in state.items)
-              _connectionRow(entry, state, controller),
-            LoopLoadMoreFooter(
-              key: const ValueKey<String>('connections-footer'),
-              keyPrefix: 'connections',
-              cursor: state.nextCursor,
-              canLoadMore: state.canLoadMore && !state.refreshing,
-              loading: state.loadingMore,
-              onLoadMore: controller.loadMore,
-            ),
-            // One switch, one name: the privacy centre calls it 可被发现.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: Text(
-                '在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。',
-                key: const ValueKey<String>('connections-discoverable-notice'),
-                style: LoopTypography.caption(11, color: LoopColors.text3),
-              ),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }

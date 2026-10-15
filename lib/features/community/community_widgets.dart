@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_progress_fill.dart';
@@ -498,88 +499,77 @@ class CommunityMiningSummaryCard extends StatelessWidget {
             }}$panel',
       LoopMiningPowerSettled() => '$dated$panel',
     };
-    final subtitle = settled != null && settled.isBaseline
-        ? 'Mining Weight · 社区总算力 $power · $miningBaselineLabel'
-        : 'Mining Weight · 社区总算力 $power';
+    final semantic = '社区挖矿面板，权重 $weight，社区算力 $power';
+    // Decision 0170 (docs/33 M2): one `.record-card` of `.kv` rows — the
+    // community's two figures, a hairline, the reader's three — every figure
+    // in Chalk mono. Lime stays for the page's one primary action.
+    final card = LoopRecordCard(
+      onTap: onOpenPanel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const LoopIcon('mine', size: 17, color: LoopColors.text2),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '社区挖矿',
+                  style: LoopTypography.title(14, color: LoopColors.chalk),
+                ),
+              ),
+              if (onOpenPanel != null)
+                const LoopIcon('chevron', size: 14, color: LoopColors.text3),
+            ],
+          ),
+          const SizedBox(height: 6),
+          LoopKeyValue(
+            label: '权重 · Mining Weight',
+            value: weight,
+            valueKey: const ValueKey<String>('community-mining-weight'),
+            padding: _miningFactPadding,
+          ),
+          LoopKeyValue(
+            label: '社区总算力',
+            value: settled != null && settled.isBaseline
+                ? '$power · $miningBaselineLabel'
+                : power,
+            valueKey: const ValueKey<String>('community-mining-power'),
+            padding: _miningFactPadding,
+          ),
+          const LoopHairline(margin: EdgeInsets.symmetric(vertical: 6)),
+          for (final (slug, label, cell)
+              in <(String, String, CommunityMiningCell)>[
+                ('holding', '我的持仓', reading.holding),
+                ('power', '我的算力', reading.power),
+                ('estimated', '预估/日', reading.estimatedDaily),
+              ])
+            Semantics(
+              container: true,
+              label:
+                  '$label，${cell.value ?? cell.reason ?? communityMissingFigure}',
+              child: ExcludeSemantics(
+                child: LoopKeyValue(
+                  label: label,
+                  value: cell.value ?? communityMissingFigure,
+                  valueKey: ValueKey<String>('community-mining-cell-$slug'),
+                  padding: _miningFactPadding,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSurfaceCard(
+        KeyedSubtree(
           key: const ValueKey<String>('community-mining-summary'),
-          margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-          onTap: onOpenPanel,
-          semanticLabel: '社区挖矿面板，权重 $weight，社区算力 $power',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  const LoopIcon('mine', size: 21, color: LoopColors.lime),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          weight,
-                          key: const ValueKey<String>(
-                            'community-mining-weight',
-                          ),
-                          style: LoopTypography.figure(
-                            17,
-                            color: LoopColors.lime,
-                          ),
-                        ),
-                        Text(
-                          subtitle,
-                          style: LoopTypography.caption(
-                            11,
-                            color: LoopColors.text2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (onOpenPanel != null)
-                    const LoopIcon(
-                      'chevron',
-                      size: 14,
-                      color: LoopColors.text3,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 11),
-              const Divider(height: 1, thickness: 1, color: LoopColors.line),
-              const SizedBox(height: 11),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _MiningColumn(
-                    slug: 'holding',
-                    label: '我的持仓',
-                    cell: reading.holding,
-                  ),
-                  const SizedBox(width: 16),
-                  _MiningColumn(
-                    slug: 'power',
-                    label: '我的算力',
-                    cell: reading.power,
-                    accent: true,
-                  ),
-                  const SizedBox(width: 16),
-                  _MiningColumn(
-                    slug: 'estimated',
-                    label: '预估/日',
-                    cell: reading.estimatedDaily,
-                  ),
-                ],
-              ),
-            ],
-          ),
+          child: Semantics(container: true, label: semantic, child: card),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           child: Text(
             note,
             key: const ValueKey<String>('community-mining-summary-note'),
@@ -591,52 +581,9 @@ class CommunityMiningSummaryCard extends StatelessWidget {
   }
 }
 
-/// One column of the mining card: the account's own figure, or the em dash
-/// that stands for the reason the card's own line carries.
-class _MiningColumn extends StatelessWidget {
-  const _MiningColumn({
-    required this.slug,
-    required this.label,
-    required this.cell,
-    this.accent = false,
-  });
-
-  final String slug;
-  final String label;
-  final CommunityMiningCell cell;
-  final bool accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final value = cell.value;
-    return Semantics(
-      container: true,
-      label: '$label，${value ?? cell.reason ?? communityMissingFigure}',
-      child: ExcludeSemantics(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              value ?? communityMissingFigure,
-              key: ValueKey<String>('community-mining-cell-$slug'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopTypography.figure(
-                13,
-                color: accent ? LoopColors.lime : LoopColors.chalk,
-              ),
-            ),
-            Text(
-              label,
-              style: LoopTypography.caption(11, color: LoopColors.text3),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+/// A fact row inside the mining record card: the card already holds the
+/// gutter, so the row adds none of its own.
+const EdgeInsets _miningFactPadding = EdgeInsets.symmetric(vertical: 6);
 
 /// The published announcement rows (`.row` × n), or the one quiet line a
 /// community with nothing published gets.
@@ -1015,11 +962,9 @@ String communityApplicationRowLine(OwnedCommunity entry) {
 
 /// `.badge` for an application's review state.
 ///
-/// [LoopBadge] publishes two pairs — Lime and the neutral ground — and a
-/// refusal is neither: 「已驳回」 in the neutral pair reads as one more piece of
-/// metadata beside 「审核中」, and in Lime it reads as an achievement. The pill
-/// keeps [LoopBadge]'s geometry and type exactly, and only the refusal adds a
-/// third pair, from the one non-Lime accent the palette already carries.
+/// Verified is the Lime pair; 审核中 and 已驳回 are the neutral pair. The
+/// refusal used to borrow the v1 danger pink; the prototype has no red, so
+/// since decision 0170 the word itself carries the refusal.
 ///
 /// It is a status, never an action: nothing here is tappable.
 class CommunityApplicationBadge extends StatelessWidget {
@@ -1030,28 +975,15 @@ class CommunityApplicationBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = communityApplicationStatusLabel(status);
-    if (status != CommunityVerification.rejected) {
-      return LoopBadge(
-        label,
-        kind: status == CommunityVerification.verified
-            ? LoopBadgeKind.up
-            : LoopBadgeKind.mute,
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-      decoration: BoxDecoration(
-        color: LoopColors.danger.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Text(
-        label,
-        style: LoopTypography.label(
-          12,
-          weight: FontWeight.w700,
-          color: LoopColors.danger,
-        ),
-      ),
+    // Decision 0170: a rejection is the Card2 `down` badge — the prototype
+    // has no red, and a status badge is never an alarm (docs/33 §1 rule 3).
+    return LoopBadge(
+      label,
+      kind: switch (status) {
+        CommunityVerification.verified => LoopBadgeKind.up,
+        CommunityVerification.rejected => LoopBadgeKind.down,
+        _ => LoopBadgeKind.mute,
+      },
     );
   }
 }
@@ -1119,6 +1051,9 @@ class CommunityApplicationStatusCard extends StatelessWidget {
             title: '审核中 · 提交于 ${loopLocalTimestampLabel(state.submittedAt)}',
             body: '通过后开放挖矿权重与官方群。运维核验前，这个社区不带验证标记。',
             margin: EdgeInsets.zero,
+            // The progress fill is drawn behind this card; on the flat
+            // community record it must stay a card (decision 0170).
+            keepCard: true,
           ),
         ),
       );

@@ -107,20 +107,23 @@ final class CommunityLogoGround {
 ///
 /// Each pair also clears 4.5:1 between the letters and the fill, which
 /// `community_logo_test.dart` measures rather than asserts by eye.
-const List<CommunityLogoGround> communityLogoGrounds = <CommunityLogoGround>[
+final List<CommunityLogoGround> communityLogoGrounds = <CommunityLogoGround>[
   CommunityLogoGround(id: 'lime', fill: LoopColors.lime, ink: LoopColors.ink),
 
   /// Lime and Chalk, half each.
   CommunityLogoGround(
     id: 'lime-pale',
-    fill: Color(0xFFD6FA88),
+    fill: Color.lerp(LoopColors.lime, LoopColors.chalk, 0.5)!,
     ink: LoopColors.ink,
   ),
 
   /// Lime at 55% over Ink.
   CommunityLogoGround(
     id: 'lime-deep',
-    fill: Color(0xFF678F13),
+    fill: Color.alphaBlend(
+      LoopColors.lime.withValues(alpha: 0.55),
+      LoopColors.ink,
+    ),
     ink: LoopColors.ink,
   ),
 
@@ -128,7 +131,10 @@ const List<CommunityLogoGround> communityLogoGrounds = <CommunityLogoGround>[
   /// disappear into a Chalk card.
   CommunityLogoGround(
     id: 'chalk-dim',
-    fill: Color(0xFFB8B9B4),
+    fill: Color.alphaBlend(
+      LoopColors.chalk.withValues(alpha: 0.75),
+      LoopColors.ink,
+    ),
     ink: LoopColors.ink,
   ),
   CommunityLogoGround(id: 'muted', fill: LoopColors.muted, ink: LoopColors.ink),
@@ -136,7 +142,10 @@ const List<CommunityLogoGround> communityLogoGrounds = <CommunityLogoGround>[
   /// Muted at 60% over Ink, the one ground dark enough to take Chalk letters.
   CommunityLogoGround(
     id: 'muted-deep',
-    fill: Color(0xFF4E554B),
+    fill: Color.alphaBlend(
+      LoopColors.muted.withValues(alpha: 0.6),
+      LoopColors.ink,
+    ),
     ink: LoopColors.chalk,
   ),
 ];

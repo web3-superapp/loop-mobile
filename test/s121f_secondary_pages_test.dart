@@ -264,7 +264,7 @@ void main() {
       expect(_key('community-manage-header'), findsOneWidget);
       for (final title in <String>['资料', '成员', '语音房']) {
         expect(
-          find.widgetWithText(LoopSectionTitle, title),
+          find.widgetWithText(LoopLabel, title),
           findsOneWidget,
           reason: title,
         );

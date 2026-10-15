@@ -179,9 +179,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                   ))
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: LoopSubChip(
+                      // Decision 0170 (docs/33 M14): the filter is the OKX
+                      // quiet seg, the one chip shape of the family.
+                      child: LoopSeg(
                         key: ValueKey<String>('search-seg-${domain.wireName}'),
                         label: domain.label,
+                        quiet: true,
                         selected: state.domain == domain,
                         onSelected: () => controller.selectDomain(domain),
                       ),
@@ -268,10 +271,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     decoration: InputDecoration(
       labelText: searchFieldLabel,
       hintText: '至少 $searchMinimumRunes 个字符',
-      suffixIcon: IconButton(
+      suffixIcon: LoopIconButton(
         key: const ValueKey<String>('search-submit'),
-        tooltip: '搜索',
-        icon: const Icon(Icons.search_rounded),
+        icon: 'search',
+        label: '搜索',
         onPressed: () => unawaited(controller.submit(_query.text)),
       ),
     ),
@@ -348,62 +351,6 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       position: communityRowPosition(index, length),
       onTap: () => _openResult(result),
       semanticLabel: '${result.title}${subtitle == null ? '' : '，$subtitle'}',
-    );
-  }
-}
-
-/// A secondary chip on the OKX reference (S121 §1.1.1 · 3, decision 0121): a
-/// small outlined pill, filled dark grey when chosen — Lime stays for the
-/// primary action. The pill is 32 tall inside a 44 touch target.
-class LoopSubChip extends StatelessWidget {
-  const LoopSubChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-    super.key,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onSelected,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
-          child: Center(
-            widthFactor: 1,
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? LoopColors.card2 : null,
-                border: selected ? null : Border.all(color: LoopColors.line),
-                borderRadius: LoopRadius.pill,
-              ),
-              child: Text(
-                label,
-                style:
-                    LoopTypography.withWeight(
-                      LoopType.body,
-                      selected ? FontWeight.w600 : FontWeight.w400,
-                    ).copyWith(
-                      color: selected ? LoopColors.chalk : LoopColors.text2,
-                    ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -862,7 +862,7 @@ void main() {
         'users:frog',
       ]);
       expect(find.text('frog_maxi'), findsOneWidget);
-      final seg = tester.widget<LoopSubChip>(
+      final seg = tester.widget<LoopSeg>(
         find.byKey(const ValueKey<String>('search-seg-users')),
       );
       expect(seg.selected, isTrue);

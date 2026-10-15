@@ -969,7 +969,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('0.8'), findsOneWidget);
-      expect(find.textContaining('社区总算力 0'), findsOneWidget);
+      expect(_communityPowerFigure(tester), startsWith('0'));
       // The reading says which baseline settled it, and when.
       expect(find.textContaining(miningBaselineLabel), findsOneWidget);
       expect(
@@ -1074,8 +1074,8 @@ void main() {
         const ValueKey<String>('community-mining-summary'),
       );
       await scrollToCommunitySection(tester, card);
-      expect(find.textContaining('社区总算力 531,381.12'), findsOneWidget);
-      expect(find.textContaining('社区总算力 531381.12'), findsNothing);
+      expect(_communityPowerFigure(tester), startsWith('531,381.12'));
+      expect(_communityPowerFigure(tester), isNot(contains('531381.12')));
     });
 
     // Decision 0057: the number stays, and the card says which moment it is
@@ -1106,7 +1106,7 @@ void main() {
         findsOneWidget,
       );
       // The figure is still the one the last complete snapshot settled.
-      expect(find.textContaining('社区总算力 0'), findsOneWidget);
+      expect(_communityPowerFigure(tester), startsWith('0'));
       expect(find.text('0.8'), findsOneWidget);
     });
 
@@ -1143,7 +1143,7 @@ void main() {
             .data,
         '—',
       );
-      expect(find.textContaining('社区总算力 0'), findsOneWidget);
+      expect(_communityPowerFigure(tester), startsWith('0'));
     });
 
     testWidgets('a community with nothing bound has no weight to review', (
@@ -2590,7 +2590,9 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-permission')),
         findsOneWidget,
       );
-      expect(find.text('没有权限查看成员目录'), findsOneWidget);
+      // Decision 0170: the directory is a flat page, so the permission
+      // notice is its one grey line — title and reason together.
+      expect(find.textContaining('没有权限查看成员目录'), findsOneWidget);
     });
 
     testWidgets('loading renders the skeleton without a count', (tester) async {
@@ -3048,4 +3050,15 @@ class _VoiceRoomReturnHarnessState extends State<_VoiceRoomReturnHarness> {
       ],
     );
   }
+}
+
+/// The community's own power, as the mining record card prints it
+/// (decision 0170: a `.kv` row labelled 社区总算力).
+String? _communityPowerFigure(WidgetTester tester) {
+  expect(find.text('社区总算力'), findsOneWidget);
+  return tester
+      .widget<Text>(
+        find.byKey(const ValueKey<String>('community-mining-power')),
+      )
+      .data;
 }

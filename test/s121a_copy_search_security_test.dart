@@ -39,26 +39,16 @@ void main() {
         search: FakeSearchGateway(),
       );
 
-      final chips = tester
-          .widgetList<LoopSubChip>(find.byType(LoopSubChip))
-          .map((seg) => seg.label)
-          .toList();
-      expect(chips, <String>['资产', '社区', '用户']);
-      // OKX secondary chips: the chosen one is solid dark grey, the others
-      // outlined; none is Lime.
-      for (final chip in tester.widgetList<Container>(
-        find.descendant(
-          of: find.byType(LoopSubChip),
-          matching: find.byType(Container),
-        ),
+      final segs = tester.widgetList<LoopSeg>(_searchSegs).toList();
+      expect(segs.map((seg) => seg.label), <String>['资产', '社区', '用户']);
+      // Decision 0170 (docs/33 M14): the filter is the family's quiet seg —
+      // words, one solid dark-grey pill for the chosen one, never Lime.
+      expect(segs.every((seg) => seg.quiet), isTrue);
+      expect(segs.where((seg) => seg.selected), hasLength(1));
+      for (final material in tester.widgetList<Material>(
+        find.descendant(of: _searchSegs, matching: find.byType(Material)),
       )) {
-        final decoration = chip.decoration as BoxDecoration?;
-        if (decoration == null) continue;
-        expect(decoration.color, isNot(LoopColors.lime));
-        expect(
-          decoration.color == LoopColors.card2 || decoration.border != null,
-          isTrue,
-        );
+        expect(material.color, isNot(LoopColors.lime));
       }
       expect(
         tester
@@ -119,7 +109,7 @@ void main() {
         ],
       );
       final chips = tester
-          .widgetList<LoopSubChip>(find.byType(LoopSubChip))
+          .widgetList<LoopSeg>(_searchSegs)
           .map((seg) => seg.label)
           .toList();
       expect(chips, <String>['资产', '社区', '用户', 'Launch', 'DApp']);
@@ -187,3 +177,11 @@ void main() {
     });
   });
 }
+
+/// The search page's domain filters, and nothing else drawn as a seg.
+final Finder _searchSegs = find.byWidgetPredicate(
+  (widget) =>
+      widget is LoopSeg &&
+      widget.key is ValueKey<String> &&
+      (widget.key! as ValueKey<String>).value.startsWith('search-seg-'),
+);

@@ -10,8 +10,12 @@ import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_presentation.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_retry.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_state_card.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 /// Production-only Stream Audio Room boundary.
@@ -490,25 +494,16 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        leading: IconButton(
+        leading: LoopIconButton(
+          icon: 'arrow-down',
+          label: '返回',
           onPressed: () => Navigator.of(context).maybePop(),
-          tooltip: '返回',
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 30),
         ),
       ),
       body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0.25, -0.8),
-            radius: 1.2,
-            colors: <Color>[
-              Color(0xFF182C2B),
-              LoopColors.abyss,
-              LoopColors.abyss,
-            ],
-            stops: <double>[0, 0.48, 1],
-          ),
-        ),
+        // Decision 0170: the Ink page itself. The teal radial glow was a
+        // literal colour the palette does not carry.
+        decoration: const BoxDecoration(color: LoopColors.ink),
         child: SafeArea(
           child: foregroundCall == null
               ? _buildLobby(context)
@@ -542,14 +537,14 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       liveRegion: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: LoopStateCard(
+        child: VoiceMediaStateCard(
           key: const ValueKey<String>('voiceroom-media-restored'),
           title: audioRoomRestoredMicrophoneNote,
           message:
               '网络断开时你的麦克风是开着的。重新连接后保持静音，需要时再点'
               '「${VoiceMediaPresentation.maybeOf(context)?.microphone == null ? '发言' : '取消静音'}」。',
           tone: LoopTone.positive,
-          icon: Icons.mic_off_rounded,
+          icon: 'voice-off',
         ),
       ),
     );
@@ -636,7 +631,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     }
     final stateCard = Semantics(
       liveRegion: content.tone == LoopTone.danger,
-      child: LoopStateCard(
+      child: VoiceMediaStateCard(
         title: content.title,
         message: content.message,
         tone: content.tone,
@@ -644,44 +639,46 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         action: content.loading
             ? const SizedBox.square(
                 dimension: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: LoopColors.lime,
+                ),
               )
             : content.retryAuthorization
-            ? OutlinedButton.icon(
+            ? LoopButton(
                 key: const ValueKey<String>('voiceroom-media-retry-session'),
+                icon: 'refresh',
+                label: '重试会话',
                 onPressed: _refreshingConnection
                     ? null
                     : () => unawaited(_reconnect()),
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('重试会话'),
               )
             : content.retryTarget && widget.onRetryTarget != null
-            ? OutlinedButton.icon(
+            ? LoopButton(
+                key: const ValueKey<String>('voiceroom-media-retry-target'),
+                icon: 'refresh',
+                label: '重试读取语音房',
                 onPressed: widget.onRetryTarget,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('重试读取语音房'),
               )
             : content.retryCleanup
-            ? OutlinedButton.icon(
+            ? LoopButton(
+                key: const ValueKey<String>('voiceroom-media-retry-cleanup'),
+                icon: 'refresh',
+                label: '重试收尾',
                 onPressed: _retryCleanup,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('重试收尾'),
               )
             : null,
       ),
     );
-    final joinButton = SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: joinEnabled ? _joinMuted : null,
-        icon: _joining
-            ? const SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.headset_mic_rounded),
-        label: Text(_joining ? '正在静音连接' : '连接语音'),
-      ),
+    // Decision 0170: the page's one primary — a Lime `.btn-primary`. While
+    // it connects the word says so and the button holds still.
+    final joinButton = LoopButton(
+      key: const ValueKey<String>('voiceroom-media-join'),
+      primary: true,
+      block: true,
+      icon: 'voice',
+      label: _joining ? '正在静音连接' : '连接语音',
+      onPressed: joinEnabled ? _joinMuted : null,
     );
     if (widget.autoConnect) {
       // The connection is not a second decision, so the surface offers no
@@ -697,14 +694,13 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
             stateCard,
             if (content.reconnect) ...<Widget>[
               const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  key: const ValueKey<String>('voiceroom-media-reconnect'),
-                  onPressed: joinEnabled ? _reconnect : null,
-                  icon: const Icon(Icons.headset_mic_rounded),
-                  label: const Text('重新连接语音'),
-                ),
+              LoopButton(
+                key: const ValueKey<String>('voiceroom-media-reconnect'),
+                primary: true,
+                block: true,
+                icon: 'voice',
+                label: '重新连接语音',
+                onPressed: joinEnabled ? _reconnect : null,
               ),
             ],
             const SizedBox(height: 10),
@@ -751,20 +747,22 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
                 constraints: const BoxConstraints(maxWidth: 520),
                 child: Column(
                   children: <Widget>[
+                    // Decision 0170: a Card2 disc with the Lime voice glyph;
+                    // the amber conversation disc is gone.
                     Container(
+                      key: const ValueKey<String>('voiceroom-lobby-mark'),
                       width: 92,
                       height: 92,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: LoopColors.chat.withValues(alpha: 0.12),
-                        border: Border.all(
-                          color: LoopColors.chat.withValues(alpha: 0.3),
-                        ),
+                        color: LoopColors.card2,
+                        border: Border.all(color: LoopColors.line),
                       ),
-                      child: const Icon(
-                        Icons.graphic_eq_rounded,
+                      child: const LoopIcon(
+                        'voice',
                         size: 42,
-                        color: LoopColors.chat,
+                        color: LoopColors.lime,
                       ),
                     ),
                     const SizedBox(height: 22),
@@ -1343,7 +1341,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       return const _StreamVoiceContent(
         title: '正在离开语音房…',
         message: '这次通话已经断开，正在把离开记到 LOOP 的房间记录里。',
-        icon: Icons.logout_rounded,
+        icon: 'back',
         loading: true,
       );
     }
@@ -1355,7 +1353,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         title: '语音连接中断，正在自动重连',
         message: '网络恢复后会自动接回这个房间，你仍然在房间里。要退出请用下面的「离开」。',
         tone: LoopTone.warning,
-        icon: Icons.sync_rounded,
+        icon: 'refresh',
         loading: true,
       );
     }
@@ -1363,7 +1361,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       return const _StreamVoiceContent(
         title: '正在重新连接语音',
         message: '正在重新读取这个房间并重新取得语音身份，然后再连接一次。',
-        icon: Icons.sync_rounded,
+        icon: 'refresh',
         loading: true,
         ready: true,
       );
@@ -1385,7 +1383,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
           title: '已加入，语音连接失败',
           message: '$joinError你仍然在这个房间里，没有被移出。',
           tone: LoopTone.danger,
-          icon: Icons.wifi_off_rounded,
+          icon: 'offline',
           ready: true,
           reconnect: true,
         );
@@ -1395,7 +1393,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
           title: '语音已断开',
           message: '这次通话已经断开，你在 LOOP 记录里仍然是这个房间的成员。',
           tone: LoopTone.warning,
-          icon: Icons.headset_off_rounded,
+          icon: 'voice-off',
           ready: true,
           reconnect: true,
         );
@@ -1403,7 +1401,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       return const _StreamVoiceContent(
         title: '正在连接语音…',
         message: '已经加入房间，正在建立语音连接。你以听众身份静音进入。',
-        icon: Icons.graphic_eq_rounded,
+        icon: 'voice',
         loading: true,
         ready: true,
       );
@@ -1430,7 +1428,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       return const _StreamVoiceContent(
         title: '需要完成登录验证',
         message: '语音只在完成验证的登录会话里启动；离线或未验证的会话不会连接。',
-        icon: Icons.lock_outline_rounded,
+        icon: 'lock',
       );
     }
     if (cleanupPending) {
@@ -1438,7 +1436,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         title: '正在确认上一次通话的收尾',
         message: '在确认上一次通话已关闭麦克风并退出之前，不能再次连接。',
         tone: LoopTone.warning,
-        icon: Icons.sync_rounded,
+        icon: 'refresh',
         loading: true,
       );
     }
@@ -1447,7 +1445,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         title: '上一次通话没有收尾',
         message: '上一次通话没有确认退出。请先重试收尾，再连接语音。',
         tone: LoopTone.danger,
-        icon: Icons.sync_problem_rounded,
+        icon: 'warn',
         retryCleanup: true,
       );
     }
@@ -1455,7 +1453,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       return const _StreamVoiceContent(
         title: '正在准备语音连接',
         message: '正在向后端申请语音身份与短时令牌。期间不会加入任何通话。',
-        icon: Icons.sync_rounded,
+        icon: 'refresh',
         loading: true,
       );
     }
@@ -1467,7 +1465,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         // two causes aloud and named neither.
         message: streamVideoSessionRefusalText(sessionRefusal),
         tone: LoopTone.warning,
-        icon: Icons.cloud_off_rounded,
+        icon: 'cloud',
         retryAuthorization: true,
       );
     }
@@ -1475,7 +1473,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       return const _StreamVoiceContent(
         title: '正在读取语音房',
         message: '正在读取后端已授权的语音房。麦克风保持关闭。',
-        icon: Icons.meeting_room_outlined,
+        icon: 'community',
         loading: true,
       );
     }
@@ -1484,7 +1482,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         title: '语音房读不到',
         message: '已授权的语音房读取失败，不会改连其他房间，也不会用演示数据顶替。',
         tone: LoopTone.warning,
-        icon: Icons.meeting_room_outlined,
+        icon: 'community',
         retryTarget: true,
       );
     }
@@ -1493,7 +1491,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         title: '还没有拿到语音房',
         message: '这次会话还没有拿到已授权的语音房，请从社区的语音房入口进入。',
         tone: LoopTone.warning,
-        icon: Icons.meeting_room_outlined,
+        icon: 'community',
         retryTarget: true,
       );
     }
@@ -1502,7 +1500,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         title: '语音客户端不可用',
         message: '语音房已授权，但绑定当前账号的语音客户端已经失效，请重新授权会话。',
         tone: LoopTone.warning,
-        icon: Icons.sync_problem_rounded,
+        icon: 'warn',
         retryAuthorization: true,
       );
     }
@@ -1511,7 +1509,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         title: '连接失败',
         message: joinError,
         tone: LoopTone.danger,
-        icon: Icons.wifi_off_rounded,
+        icon: 'offline',
         ready: true,
       );
     }
@@ -1519,7 +1517,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       title: '语音可以连接',
       message: '已拿到后端授权的语音房。始终静音进入，切到后台后语音继续。',
       tone: LoopTone.positive,
-      icon: Icons.verified_user_outlined,
+      icon: 'shield',
       ready: true,
     );
   }
@@ -1587,23 +1585,29 @@ class _AudioRoomLobbyFacts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const LoopCard(
-      child: Column(
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: LoopColors.card,
+        borderRadius: LoopRadius.card,
+        border: Border.all(color: LoopColors.line),
+      ),
+      child: const Column(
         children: <Widget>[
           _LobbyFact(
-            icon: Icons.mic_off_rounded,
+            icon: 'voice-off',
             title: '进入即静音',
             message: '连接过程中不会发布任何本地音频。',
           ),
-          Divider(height: 25),
+          LoopHairline(margin: EdgeInsets.symmetric(vertical: 12)),
           _LobbyFact(
-            icon: Icons.security_rounded,
+            icon: 'shield',
             title: '按需申请权限',
             message: '系统麦克风权限只在你点「发言」之后才申请。',
           ),
-          Divider(height: 25),
+          LoopHairline(margin: EdgeInsets.symmetric(vertical: 12)),
           _LobbyFact(
-            icon: Icons.phone_android_rounded,
+            icon: 'phone',
             title: '后台继续',
             message: '切到其他 App 或锁屏后语音继续，只有「离开」才会断开。',
           ),
@@ -1620,7 +1624,7 @@ class _LobbyFact extends StatelessWidget {
     required this.message,
   });
 
-  final IconData icon;
+  final String icon;
   final String title;
   final String message;
 
@@ -1629,7 +1633,7 @@ class _LobbyFact extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Icon(icon, size: 20, color: LoopColors.chat),
+        LoopIcon(icon, size: 20, color: LoopColors.text2),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -1662,7 +1666,9 @@ class _StreamVoiceContent {
 
   final String title;
   final String message;
-  final IconData icon;
+
+  /// A sprite name (decision 0170).
+  final String icon;
   final LoopTone tone;
   final bool loading;
   final bool retryAuthorization;

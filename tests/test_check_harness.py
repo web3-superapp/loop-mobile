@@ -10353,3 +10353,106 @@ class Launch2UserContractTests(unittest.TestCase):
             )
             result = check_harness.check_launch2_user_contract(root)
         self.assertTrue(any("reaches the wallet directly" in error for error in result), result)
+
+
+class FlatFamilyContractTests(unittest.TestCase):
+    """Decision 0170 (S186-5): docs/33 M17 and the M3 / M2 / M14 sweep."""
+
+    def _write(self, root: Path, relative: str, source: str) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+
+    def test_current_repository_passes(self) -> None:
+        self.assertEqual([], check_harness.check_flat_family_contract(REPOSITORY_ROOT))
+
+    def test_person_rows_outside_loop_flat_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/social/friends_screen.dart",
+                "Widget f() => LoopStreamPage(children: [LoopPersonRow(title: 'a')]);\n",
+            )
+            result = check_harness.check_flat_family_contract(root)
+        self.assertEqual(1, len(result), result)
+        self.assertIn("outside LoopFlat", result[0])
+
+    def test_section_title_outside_loop_flat_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/x_screen.dart",
+                "Widget f() => Column(children: [LoopSectionTitle('a')]);\n",
+            )
+            result = check_harness.check_flat_family_contract(root)
+        self.assertEqual(1, len(result), result)
+
+    def test_a_flat_page_and_a_comment_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/social/friends_screen.dart",
+                "Widget f() => LoopFlat(child: LoopPersonRow(title: 'a'));\n",
+            )
+            self._write(
+                root,
+                "lib/features/social/notes.dart",
+                "// LoopPersonRow( is only named here.\nconst x = 1;\n",
+            )
+            result = check_harness.check_flat_family_contract(root)
+        self.assertEqual([], result)
+
+    def test_allowlisted_prototype_page_passes(self) -> None:
+        relative = "lib/features/social/prototype_screen.dart"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, relative, "Widget f() => LoopPersonRow(title: 'a');\n")
+            original = dict(check_harness.FLAT_PAGE_ALLOWLIST)
+            check_harness.FLAT_PAGE_ALLOWLIST[relative] = "drawn in the prototype voice"
+            try:
+                result = check_harness.check_flat_family_contract(root)
+            finally:
+                check_harness.FLAT_PAGE_ALLOWLIST.clear()
+                check_harness.FLAT_PAGE_ALLOWLIST.update(original)
+        self.assertEqual([], result)
+
+    def test_v1_vocabulary_in_the_voice_room_fails(self) -> None:
+        cases = (
+            "final c = LoopColors.chat;\n",
+            "final c = LoopColors.danger;\n",
+            "const c = Color(0xFF182C2B);\n",
+            "Widget f() => FilledButton(onPressed: null, child: x);\n",
+            "Widget f() => OutlinedButton.icon(onPressed: null, label: x);\n",
+            "const i = Icons.mic_rounded;\n",
+            "Widget f() => const LoopStatusPill(label: 'a');\n",
+        )
+        for source in cases:
+            with self.subTest(source=source):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._write(
+                        root, "lib/features/chat/calls/stream_voice_room_page.dart", source
+                    )
+                    result = check_harness.check_flat_family_contract(root)
+                self.assertEqual(1, len(result), result)
+                self.assertIn("speaks the prototype family", result[0])
+
+    def test_sub_chip_in_community_fails_and_other_modules_are_not_swept(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/community/search_screen.dart",
+                "class LoopSubChip {}\n",
+            )
+            self._write(
+                root,
+                "lib/features/market/market_screen.dart",
+                "final c = LoopColors.market;\n",
+            )
+            result = check_harness.check_flat_family_contract(root)
+        self.assertEqual(1, len(result), result)
+        self.assertIn("community/search_screen.dart", result[0])

@@ -1829,6 +1829,7 @@ class LoopNotice extends StatelessWidget {
     this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
     this.chalk = false,
     this.trailing,
+    this.keepCard = false,
   }) : happened = null,
        impact = null,
        next = null;
@@ -1844,6 +1845,7 @@ class LoopNotice extends StatelessWidget {
     this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
     this.chalk = false,
     this.trailing,
+    this.keepCard = false,
   }) : body = null;
 
   final String? title;
@@ -1859,12 +1861,18 @@ class LoopNotice extends StatelessWidget {
   final bool chalk;
   final Widget? trailing;
 
+  /// Keeps the card inside a flat page. For a notice that is itself a
+  /// drawn block — the application-progress card fills behind it — rather
+  /// than an explanation (decision 0170).
+  final bool keepCard;
+
   @override
   Widget build(BuildContext context) {
     // Decision 0126: inside a flat page an informational notice is one 11px
     // grey line with an ⓘ — it explains, it asks nothing of the reader. A
     // warning or danger notice keeps its card, because that one does.
     if (LoopFlat.of(context) &&
+        !keepCard &&
         tone == LoopNoticeTone.normal &&
         !chalk &&
         happened == null &&
@@ -2292,6 +2300,11 @@ enum LoopButtonTone {
   /// card (`.mining-summary-actions button:first-child`, decision 0167),
   /// where a Lime primary would be the card again.
   ink,
+
+  /// `.btn-danger`: flat Chalk with an Ink label — the prototype's leaving
+  /// control (断开 / 离开). The prototype has no red: `--red` is Chalk
+  /// (decision 0170).
+  danger,
 }
 
 class LoopButton extends StatelessWidget {
@@ -2346,15 +2359,17 @@ class LoopButton extends StatelessWidget {
     // exactly the control that gets carried there.
     final brass = tone == LoopButtonTone.brass;
     final inkFill = tone == LoopButtonTone.ink;
+    final chalkFill = tone == LoopButtonTone.danger;
     final foreground = paintPrimary
         ? (inkFill ? LoopColors.chalk : LoopColors.ink)
         : LoopGround.inkOf(context);
-    final decoration = wide || (paintPrimary && (brass || inkFill))
+    final decoration = wide || (paintPrimary && (brass || inkFill || chalkFill))
         ? BoxDecoration(
             color: paintPrimary
                 ? switch (tone) {
                     LoopButtonTone.brass => LoopColors.brass,
                     LoopButtonTone.ink => LoopColors.ink,
+                    LoopButtonTone.danger => LoopColors.chalk,
                     LoopButtonTone.lime => LoopColors.lime,
                   }
                 : LoopColors.card2,
@@ -2488,10 +2503,15 @@ class LoopKeyValue extends StatelessWidget {
     this.labelFlex = 1,
     this.valueFlex = 1,
     this.valueAlign = TextAlign.right,
+    this.valueKey,
   });
 
   final String label;
   final String value;
+
+  /// The key of the value's own [Text], so a test can read one figure
+  /// (decision 0170).
+  final Key? valueKey;
 
   /// true: `.up` Lime; false: `.down` Chalk; null: default.
   final bool? valueUp;
@@ -2528,6 +2548,7 @@ class LoopKeyValue extends StatelessWidget {
             flex: valueFlex,
             child: Text(
               value,
+              key: valueKey,
               textAlign: valueAlign,
               style: LoopTypography.figure(
                 11,

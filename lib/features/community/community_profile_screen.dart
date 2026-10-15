@@ -32,6 +32,7 @@ import 'package:loop_mobile/integrations/communication/stream_video_providers.da
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
@@ -303,175 +304,181 @@ class _CommunityProfileScreenState
         detail.community.communityId == id &&
         !detail.viewer.hasJoined &&
         detail.viewer.membership?.status != CommunityMemberStatus.banned;
-    return LoopDashboardPage(
-      key: const ValueKey<String>('community-profile-screen'),
-      archetype: LoopPageArchetype.record,
-      // Decision 0127: the bar says where the reader is; the name is the
-      // header's, once, at 22.
-      title: '社区',
-      kicker: communityPreviewKicker(mode),
-      onBack: widget.onBack,
-      primary: community == null
-          ? null
-          : _CommunityHeader(
-              community: community,
-              onlineCount: detail?.onlineCount,
-              onExplainPresence: switch (detail?.onlineCount) {
-                CommunityOnlineCountObserved(:final count, :final observedAt) =>
-                  () => unawaited(
-                    showCommunityPresenceMeaningSheet(
-                      context,
-                      count: count,
-                      observedAt: observedAt,
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('community-profile-screen'),
+        archetype: LoopPageArchetype.record,
+        // Decision 0127: the bar says where the reader is; the name is the
+        // header's, once, at 22.
+        title: '社区',
+        kicker: communityPreviewKicker(mode),
+        onBack: widget.onBack,
+        primary: community == null
+            ? null
+            : _CommunityHeader(
+                community: community,
+                onlineCount: detail?.onlineCount,
+                onExplainPresence: switch (detail?.onlineCount) {
+                  CommunityOnlineCountObserved(
+                    :final count,
+                    :final observedAt,
+                  ) =>
+                    () => unawaited(
+                      showCommunityPresenceMeaningSheet(
+                        context,
+                        count: count,
+                        observedAt: observedAt,
+                      ),
                     ),
-                  ),
-                _ => null,
-              },
-            ),
-      block: id != null && communityCapabilityBlocks(mode, capability)
-          ? CommunityCapabilityPageBlock(
-              key: const ValueKey<String>(
-                'community-profile-capability-unavailable',
+                  _ => null,
+                },
               ),
-              capability: capability,
-              title: '社区模块当前不可用',
+        block: id != null && communityCapabilityBlocks(mode, capability)
+            ? CommunityCapabilityPageBlock(
+                key: const ValueKey<String>(
+                  'community-profile-capability-unavailable',
+                ),
+                capability: capability,
+                title: '社区模块当前不可用',
+              )
+            : null,
+        onRefresh: id == null ? null : controller.reload,
+        updating: state.refreshing,
+        // Decision 0127: a reader who has not joined has one thing to do here,
+        // and it stands at the foot of the screen at full width.
+        bottomBar: joinable
+            ? _JoinBar(
+                busy: state.busy,
+                onJoin: () => _changeMembership(controller, joined: true),
+              )
+            : null,
+        sections: <Widget>[
+          CommunityPreviewNotice(mode: mode, resource: '社区档案'),
+          if (id == null)
+            const LoopEmpty(
+              key: ValueKey<String>('community-profile-missing-id'),
+              icon: 'warn',
+              message: '缺少社区标识',
+              reason: '请从社区列表或搜索结果进入，本页不会猜测要打开哪个社区。',
             )
-          : null,
-      onRefresh: id == null ? null : controller.reload,
-      updating: state.refreshing,
-      // Decision 0127: a reader who has not joined has one thing to do here,
-      // and it stands at the foot of the screen at full width.
-      bottomBar: joinable
-          ? _JoinBar(
+          else if (detail == null)
+            CommunityStateBlock(
+              phase: state.phase,
+              failureKind: state.failureKind,
+              skeleton: LoopSkeletonType.detail,
+              emptyMessage: '找不到这个社区',
+              emptyReason: '它可能已被移除，或对当前账号不可见。',
+              empty: const LoopEmptyState(
+                key: ValueKey<String>('community-profile-not-found'),
+                illustration: LoopIllustration.holders,
+                title: '找不到这个社区',
+                message: '它可能已被移除，或对当前账号不可见。',
+              ),
+              onRetry: () => unawaited(controller.reload()),
+            )
+          else ...<Widget>[
+            // The owner's own review, directly under the header. Every other
+            // viewer is sent no `application` and sees nothing here.
+            CommunityApplicationStatusCard(
+              review: detail.application,
+              viewer: detail.viewer,
               busy: state.busy,
-              onJoin: () => _changeMembership(controller, joined: true),
-            )
-          : null,
-      sections: <Widget>[
-        CommunityPreviewNotice(mode: mode, resource: '社区档案'),
-        if (id == null)
-          const LoopEmpty(
-            key: ValueKey<String>('community-profile-missing-id'),
-            icon: 'warn',
-            message: '缺少社区标识',
-            reason: '请从社区列表或搜索结果进入，本页不会猜测要打开哪个社区。',
-          )
-        else if (detail == null)
-          CommunityStateBlock(
-            phase: state.phase,
-            failureKind: state.failureKind,
-            skeleton: LoopSkeletonType.detail,
-            emptyMessage: '找不到这个社区',
-            emptyReason: '它可能已被移除，或对当前账号不可见。',
-            empty: const LoopEmptyState(
-              key: ValueKey<String>('community-profile-not-found'),
-              illustration: LoopIllustration.holders,
-              title: '找不到这个社区',
-              message: '它可能已被移除，或对当前账号不可见。',
+              onResubmit: () => unawaited(_resubmit(controller, detail)),
             ),
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else ...<Widget>[
-          // The owner's own review, directly under the header. Every other
-          // viewer is sent no `application` and sees nothing here.
-          CommunityApplicationStatusCard(
-            review: detail.application,
-            viewer: detail.viewer,
-            busy: state.busy,
-            onResubmit: () => unawaited(_resubmit(controller, detail)),
-          ),
-          // The round keys: 进群聊 / 语音房 / 分享, and 管理 for an owner or
-          // an admin (decision 0127, OKX 4908).
-          _CommunityKeys(
-            detail: detail,
-            opening: ref.watch(voiceRoomOpenControllerProvider),
-            onOpenChat: () => _openChat(detail.community.communityId),
-            onOpenVoiceRoom: () {
-              _warmVoiceSession();
-              widget.onOpenVoiceRoom?.call(detail.community.communityId);
-            },
-            onCreateVoiceRoom: () {
-              _warmVoiceSession();
-              unawaited(_createVoiceRoom(detail));
-            },
-            onShare: () => unawaited(
-              showLoopQrCardSheet(
-                context,
-                LoopCommunityQrCard(
-                  communityId: detail.community.communityId,
-                  name: detail.community.name,
-                  memberCount: detail.community.memberCount,
-                  logoRef: detail.community.logoRef,
-                  description: detail.community.description,
+            // The round keys: 进群聊 / 语音房 / 分享, and 管理 for an owner or
+            // an admin (decision 0127, OKX 4908).
+            _CommunityKeys(
+              detail: detail,
+              opening: ref.watch(voiceRoomOpenControllerProvider),
+              onOpenChat: () => _openChat(detail.community.communityId),
+              onOpenVoiceRoom: () {
+                _warmVoiceSession();
+                widget.onOpenVoiceRoom?.call(detail.community.communityId);
+              },
+              onCreateVoiceRoom: () {
+                _warmVoiceSession();
+                unawaited(_createVoiceRoom(detail));
+              },
+              onShare: () => unawaited(
+                showLoopQrCardSheet(
+                  context,
+                  LoopCommunityQrCard(
+                    communityId: detail.community.communityId,
+                    name: detail.community.name,
+                    memberCount: detail.community.memberCount,
+                    logoRef: detail.community.logoRef,
+                    description: detail.community.description,
+                  ),
+                ),
+              ),
+              onManage: () => unawaited(
+                context.push<void>(
+                  communityManageLocation(detail.community.communityId),
                 ),
               ),
             ),
-            onManage: () => unawaited(
-              context.push<void>(
-                communityManageLocation(detail.community.communityId),
+            if (state.failureKind != null)
+              LoopNotice(
+                key: const ValueKey<String>('community-profile-action-failure'),
+                icon: 'warn',
+                tone: LoopNoticeTone.warn,
+                title: '上一次操作没有完成',
+                body: communityFailureReason(state.failureKind),
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               ),
+            // 绑定代币: one OKX quote row.
+            if (detail.community.hasBoundAsset)
+              _BoundAssetSection(
+                assetKey: detail.community.boundAssetKey!,
+                onOpenToken: widget.onOpenToken,
+              ),
+            // 成员: the directory's first faces, sideways.
+            _MembersSection(
+              detail: detail,
+              onOpenMembers: widget.onOpenMembers == null
+                  ? null
+                  : () => widget.onOpenMembers!(detail.community.communityId),
             ),
-          ),
-          if (state.failureKind != null)
-            LoopNotice(
-              key: const ValueKey<String>('community-profile-action-failure'),
-              icon: 'warn',
-              tone: LoopNoticeTone.warn,
-              title: '上一次操作没有完成',
-              body: communityFailureReason(state.failureKind),
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            // 社区 AI: one entry row.
+            _AiEntryRow(
+              onOpen: () => widget.onOpenAi?.call(detail.community.communityId),
             ),
-          // 绑定代币: one OKX quote row.
-          if (detail.community.hasBoundAsset)
-            _BoundAssetSection(
-              assetKey: detail.community.boundAssetKey!,
-              onOpenToken: widget.onOpenToken,
+            const LoopLabel('挖矿'),
+            CommunityMiningSummaryCard(
+              fact: detail.miningPower,
+              account: _accountReading(detail),
+              onOpenPanel: widget.onOpenMiningPanel == null
+                  ? null
+                  : () =>
+                        widget.onOpenMiningPanel!(detail.community.communityId),
             ),
-          // 成员: the directory's first faces, sideways.
-          _MembersSection(
-            detail: detail,
-            onOpenMembers: widget.onOpenMembers == null
-                ? null
-                : () => widget.onOpenMembers!(detail.community.communityId),
-          ),
-          // 社区 AI: one entry row.
-          _AiEntryRow(
-            onOpen: () => widget.onOpenAi?.call(detail.community.communityId),
-          ),
-          const LoopSectionTitle('挖矿'),
-          CommunityMiningSummaryCard(
-            fact: detail.miningPower,
-            account: _accountReading(detail),
-            onOpenPanel: widget.onOpenMiningPanel == null
-                ? null
-                : () => widget.onOpenMiningPanel!(detail.community.communityId),
-          ),
-          // What the community published about itself — only when it has.
-          if (_hasAnnouncements(detail)) ...<Widget>[
-            const LoopSectionTitle('公告'),
-            CommunityAnnouncementBoard(
-              feed: detail.announcements,
-              onOpen: detail.chat.isAvailable || detail.chat.isSyncing
-                  ? () => _openChat(detail.community.communityId)
-                  : null,
+            // What the community published about itself — only when it has.
+            if (_hasAnnouncements(detail)) ...<Widget>[
+              const LoopLabel('公告'),
+              CommunityAnnouncementBoard(
+                feed: detail.announcements,
+                onOpen: detail.chat.isAvailable || detail.chat.isSyncing
+                    ? () => _openChat(detail.community.communityId)
+                    : null,
+              ),
+            ],
+            if (_hasLinks(detail)) ...<Widget>[
+              const LoopLabel('官方链接'),
+              CommunityOfficialLinkRow(
+                links: detail.officialLinks,
+                onCopy: _copyLink,
+              ),
+            ],
+            // Membership, last: it is the page's exit, not its subject.
+            _MembershipFooter(
+              detail: detail,
+              busy: state.busy,
+              onLeave: () => _changeMembership(controller, joined: false),
             ),
+            const SizedBox(height: 20),
           ],
-          if (_hasLinks(detail)) ...<Widget>[
-            const LoopSectionTitle('官方链接'),
-            CommunityOfficialLinkRow(
-              links: detail.officialLinks,
-              onCopy: _copyLink,
-            ),
-          ],
-          // Membership, last: it is the page's exit, not its subject.
-          _MembershipFooter(
-            detail: detail,
-            busy: state.busy,
-            onLeave: () => _changeMembership(controller, joined: false),
-          ),
-          const SizedBox(height: 20),
         ],
-      ],
+      ),
     );
   }
 
@@ -952,12 +959,23 @@ class _MembersSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSectionTitle(
-          '成员 ${communityCountLabel(community.memberCount)}',
-          trailing: LoopSeeAll(
-            key: const ValueKey<String>('community-profile-open-members'),
-            onPressed: onOpenMembers,
-          ),
+        // `.label` with the 「查看全部」 control at its end (docs/33 M2).
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            Expanded(
+              child: LoopLabel(
+                '成员 ${communityCountLabel(community.memberCount)}',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8, bottom: 4),
+              child: LoopSeeAll(
+                key: const ValueKey<String>('community-profile-open-members'),
+                onPressed: onOpenMembers,
+              ),
+            ),
+          ],
         ),
         if (members != null && members.isNotEmpty)
           CommunityMemberStrip(
@@ -1047,7 +1065,7 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSectionTitle('绑定代币'),
+        const LoopLabel('绑定代币'),
         LoopQuoteRow(
           key: const ValueKey<String>('community-bound-asset'),
           leading: LoopTokenLogo(

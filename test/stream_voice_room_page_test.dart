@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/chat/voice_room_page.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -60,9 +61,11 @@ void main() {
 
     expect(find.text('语音会话暂时不可用'), findsOneWidget);
     expect(find.text('连接语音'), findsOneWidget);
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '连接语音'),
+    final button = tester.widget<LoopButton>(
+      find.byKey(const ValueKey<String>('voiceroom-media-join')),
     );
+    expect(button.label, '连接语音');
+    expect(button.primary, isTrue);
     expect(button.onPressed, isNull);
   });
 
@@ -88,9 +91,11 @@ void main() {
     expect(find.text('还没有拿到语音房'), findsOneWidget);
     expect(find.text('ETH Macro Room'), findsNothing);
     expect(find.text('Connected'), findsNothing);
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '连接语音'),
+    final button = tester.widget<LoopButton>(
+      find.byKey(const ValueKey<String>('voiceroom-media-join')),
     );
+    expect(button.label, '连接语音');
+    expect(button.primary, isTrue);
     expect(button.onPressed, isNull);
   });
 

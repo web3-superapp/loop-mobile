@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'support/community_test_harness.dart';
@@ -325,7 +326,7 @@ void main() {
       expect(gateway.queries, <String>['users:$_ownId']);
       expect(
         tester
-            .widget<LoopSubChip>(
+            .widget<LoopSeg>(
               find.byKey(const ValueKey<String>('search-seg-users')),
             )
             .selected,

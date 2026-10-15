@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
@@ -161,216 +162,224 @@ class _CommunityMembersScreenState
     // The page is titled 成员 and every row on it is a person: without the
     // community's own face nothing here says whose directory this is.
     final community = state.community;
-    return LoopStreamPage(
-      key: const ValueKey<String>('community-members-screen'),
-      archetype: LoopPageArchetype.listing,
-      title: '成员',
-      kicker: communityPreviewKicker(mode),
-      onBack: widget.onBack,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('community-members-search'),
-          icon: _searchOpen ? 'close' : 'search',
-          label: _searchOpen ? '关闭搜索' : '搜索成员',
-          onPressed: () => _toggleSearch(controller),
-        ),
-      ],
-      filters: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (_searchOpen)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: TextField(
-                key: const ValueKey<String>('community-members-search-field'),
-                controller: _query,
-                focusNode: _queryFocus,
-                textInputAction: TextInputAction.search,
-                maxLength: memberSearchMaximumRunes,
-                onChanged: controller.search,
-                decoration: InputDecoration(
-                  labelText: '按别名搜索成员',
-                  hintText: '输入别名开头即可',
-                  counterText: '',
-                  suffixIcon: !searching
-                      ? null
-                      : IconButton(
-                          key: const ValueKey<String>(
-                            'community-members-search-clear',
+    return LoopFlat(
+      child: LoopStreamPage(
+        key: const ValueKey<String>('community-members-screen'),
+        archetype: LoopPageArchetype.listing,
+        title: '成员',
+        kicker: communityPreviewKicker(mode),
+        onBack: widget.onBack,
+        actions: <Widget>[
+          LoopIconButton(
+            key: const ValueKey<String>('community-members-search'),
+            icon: _searchOpen ? 'close' : 'search',
+            label: _searchOpen ? '关闭搜索' : '搜索成员',
+            onPressed: () => _toggleSearch(controller),
+          ),
+        ],
+        filters: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (_searchOpen)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: TextField(
+                  key: const ValueKey<String>('community-members-search-field'),
+                  controller: _query,
+                  focusNode: _queryFocus,
+                  textInputAction: TextInputAction.search,
+                  maxLength: memberSearchMaximumRunes,
+                  onChanged: controller.search,
+                  decoration: InputDecoration(
+                    labelText: '按别名搜索成员',
+                    hintText: '输入别名开头即可',
+                    counterText: '',
+                    suffixIcon: !searching
+                        ? null
+                        : LoopIconButton(
+                            key: const ValueKey<String>(
+                              'community-members-search-clear',
+                            ),
+                            icon: 'close',
+                            label: '清除',
+                            onPressed: () {
+                              _query.clear();
+                              unawaited(controller.clearSearch());
+                              _queryFocus.requestFocus();
+                            },
                           ),
-                          tooltip: '清除',
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () {
-                            _query.clear();
-                            unawaited(controller.clearSearch());
-                            _queryFocus.requestFocus();
-                          },
-                        ),
+                  ),
                 ),
               ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: <Widget>[
-                  _filterSeg(
-                    controller,
-                    state,
-                    CommunityMemberFilter.all,
-                    counts == null || searching ? '全部' : '全部 ${counts.all}',
-                  ),
-                  _filterSeg(
-                    controller,
-                    state,
-                    CommunityMemberFilter.owner,
-                    counts == null || searching
-                        ? 'Owner'
-                        : 'Owner ${counts.owner}',
-                  ),
-                  _filterSeg(
-                    controller,
-                    state,
-                    CommunityMemberFilter.admin,
-                    counts == null || searching
-                        ? 'Admin'
-                        : 'Admin ${counts.admin}',
-                  ),
-                  // The governance view is only opened to a viewer the server
-                  // told may ban, and it carries no count: `counts` stays the
-                  // non-banned directory's.
-                  if (state.viewer?.canBan ?? false)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: <Widget>[
                     _filterSeg(
                       controller,
                       state,
-                      CommunityMemberFilter.banned,
-                      '已封禁',
+                      CommunityMemberFilter.all,
+                      counts == null || searching ? '全部' : '全部 ${counts.all}',
                     ),
-                  // Presence has no source; the segment stays disabled with its
-                  // server reason rather than showing a fabricated online count.
-                  // A tap answers with that reason instead of nothing.
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: LoopSeg(
-                      key: const ValueKey<String>('members-seg-online'),
-                      quiet: true,
-                      label: '在线',
-                      selected: false,
-                      onSelected: null,
-                      onBlocked: () => LoopToast.show(
-                        context,
-                        message: memberDirectoryPresenceNote,
-                        kind: LoopToastKind.warn,
+                    _filterSeg(
+                      controller,
+                      state,
+                      CommunityMemberFilter.owner,
+                      counts == null || searching
+                          ? 'Owner'
+                          : 'Owner ${counts.owner}',
+                    ),
+                    _filterSeg(
+                      controller,
+                      state,
+                      CommunityMemberFilter.admin,
+                      counts == null || searching
+                          ? 'Admin'
+                          : 'Admin ${counts.admin}',
+                    ),
+                    // The governance view is only opened to a viewer the server
+                    // told may ban, and it carries no count: `counts` stays the
+                    // non-banned directory's.
+                    if (state.viewer?.canBan ?? false)
+                      _filterSeg(
+                        controller,
+                        state,
+                        CommunityMemberFilter.banned,
+                        '已封禁',
+                      ),
+                    // Presence has no source; the segment stays disabled with its
+                    // server reason rather than showing a fabricated online count.
+                    // A tap answers with that reason instead of nothing.
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: LoopSeg(
+                        key: const ValueKey<String>('members-seg-online'),
+                        quiet: true,
+                        label: '在线',
+                        selected: false,
+                        onSelected: null,
+                        onBlocked: () => LoopToast.show(
+                          context,
+                          message: memberDirectoryPresenceNote,
+                          kind: LoopToastKind.warn,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      block: id != null && communityCapabilityBlocks(mode, capability)
-          ? CommunityCapabilityPageBlock(
-              key: const ValueKey<String>(
-                'community-members-capability-unavailable',
-              ),
-              capability: capability,
-              title: '社区模块当前不可用',
-            )
-          : null,
-      onRefresh: id == null ? null : controller.refresh,
-      updating: state.refreshing,
-      collection: ListView(
-        key: const ValueKey<String>('community-members-list'),
-        padding: const EdgeInsets.only(bottom: 24),
-        children: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '成员目录'),
-          // Decision 0127: whose directory this is — the community's face and
-          // name in one row — instead of a hero card with an English eyebrow.
-          if (community != null && !typing)
-            LoopPersonRow(
-              key: const ValueKey<String>('community-members-owner-row'),
-              leading: CommunityLogo(
-                key: const ValueKey<String>('community-members-logo'),
-                identity: community.communityId,
-                name: community.name,
-                logoRef: community.logoRef,
-                size: 40,
-                radius: 12,
-              ),
-              title: community.name,
-              subtitle: searching
-                  ? '搜索成员'
-                  : counts == null
-                  ? null
-                  : _directoryHeading(state.filter, counts),
-            ),
-          if (id == null)
-            const LoopEmpty(
-              key: ValueKey<String>('community-members-missing-id'),
-              icon: 'warn',
-              message: '缺少社区标识',
-              reason: '请从社区档案进入，本页不会猜测要打开哪个社区。',
-            )
-          else if (state.phase != CommunityViewPhase.ready)
-            CommunityStateBlock(
-              phase: state.phase,
-              failureKind: state.failureKind,
-              emptyMessage: searching ? '没有匹配的成员' : '这个筛选下没有成员',
-              emptyReason: searching
-                  ? '别名要从开头对上才算匹配，换个开头再试。'
-                  : _emptyFilterReason(state.filter),
-              permissionTitle: '没有权限查看成员目录',
-              empty: LoopEmptyState(
-                key: const ValueKey<String>('community-state-empty'),
-                illustration: LoopIllustration.members,
-                title: searching ? '没有匹配的成员' : '这个筛选下没有成员',
-                message: searching
-                    ? '别名要从开头对上才算匹配，换个开头再试。'
-                    : _emptyFilterReason(state.filter),
-              ),
-              onRetry: () => unawaited(controller.reload()),
-            )
-          else ...<Widget>[
-            // A search re-read keeps the rows it already read; the mark says a
-            // newer answer is on the way instead of a skeleton hiding a page
-            // that is still readable. Same widget, key and copy every other
-            // community surface uses for this.
-            if (state.refreshing)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-                child: LoopUpdatingBadge(
-                  key: ValueKey<String>('community-state-updating'),
+                  ],
                 ),
               ),
-            if (state.failureKind != null)
-              LoopNotice(
-                key: const ValueKey<String>('community-members-action-failure'),
-                icon: 'warn',
-                tone: LoopNoticeTone.warn,
-                title: '上一次操作没有完成',
-                body: communityFailureReason(state.failureKind),
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              ),
-            for (final group in _groups(state.items)) ...<Widget>[
-              LoopLabel(group.$1),
-              for (final entry in group.$2)
-                _memberRow(entry: entry, state: state, controller: controller),
-            ],
-            // The directory reads on as it is scrolled (decision 0129); its
-            // end draws nothing (decision 0127).
-            LoopLoadMoreFooter(
-              key: const ValueKey<String>('community-members-footer'),
-              keyPrefix: 'community-members',
-              cursor: state.nextCursor,
-              canLoadMore: state.canLoadMore && !state.refreshing,
-              loading: state.loadingMore,
-              onLoadMore: controller.loadMore,
             ),
           ],
-        ],
+        ),
+        block: id != null && communityCapabilityBlocks(mode, capability)
+            ? CommunityCapabilityPageBlock(
+                key: const ValueKey<String>(
+                  'community-members-capability-unavailable',
+                ),
+                capability: capability,
+                title: '社区模块当前不可用',
+              )
+            : null,
+        onRefresh: id == null ? null : controller.refresh,
+        updating: state.refreshing,
+        collection: ListView(
+          key: const ValueKey<String>('community-members-list'),
+          padding: const EdgeInsets.only(bottom: 24),
+          children: <Widget>[
+            CommunityPreviewNotice(mode: mode, resource: '成员目录'),
+            // Decision 0127: whose directory this is — the community's face and
+            // name in one row — instead of a hero card with an English eyebrow.
+            if (community != null && !typing)
+              LoopPersonRow(
+                key: const ValueKey<String>('community-members-owner-row'),
+                leading: CommunityLogo(
+                  key: const ValueKey<String>('community-members-logo'),
+                  identity: community.communityId,
+                  name: community.name,
+                  logoRef: community.logoRef,
+                  size: 40,
+                  radius: 12,
+                ),
+                title: community.name,
+                subtitle: searching
+                    ? '搜索成员'
+                    : counts == null
+                    ? null
+                    : _directoryHeading(state.filter, counts),
+              ),
+            if (id == null)
+              const LoopEmpty(
+                key: ValueKey<String>('community-members-missing-id'),
+                icon: 'warn',
+                message: '缺少社区标识',
+                reason: '请从社区档案进入，本页不会猜测要打开哪个社区。',
+              )
+            else if (state.phase != CommunityViewPhase.ready)
+              CommunityStateBlock(
+                phase: state.phase,
+                failureKind: state.failureKind,
+                emptyMessage: searching ? '没有匹配的成员' : '这个筛选下没有成员',
+                emptyReason: searching
+                    ? '别名要从开头对上才算匹配，换个开头再试。'
+                    : _emptyFilterReason(state.filter),
+                permissionTitle: '没有权限查看成员目录',
+                empty: LoopEmptyState(
+                  key: const ValueKey<String>('community-state-empty'),
+                  illustration: LoopIllustration.members,
+                  title: searching ? '没有匹配的成员' : '这个筛选下没有成员',
+                  message: searching
+                      ? '别名要从开头对上才算匹配，换个开头再试。'
+                      : _emptyFilterReason(state.filter),
+                ),
+                onRetry: () => unawaited(controller.reload()),
+              )
+            else ...<Widget>[
+              // A search re-read keeps the rows it already read; the mark says a
+              // newer answer is on the way instead of a skeleton hiding a page
+              // that is still readable. Same widget, key and copy every other
+              // community surface uses for this.
+              if (state.refreshing)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: LoopUpdatingBadge(
+                    key: ValueKey<String>('community-state-updating'),
+                  ),
+                ),
+              if (state.failureKind != null)
+                LoopNotice(
+                  key: const ValueKey<String>(
+                    'community-members-action-failure',
+                  ),
+                  icon: 'warn',
+                  tone: LoopNoticeTone.warn,
+                  title: '上一次操作没有完成',
+                  body: communityFailureReason(state.failureKind),
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                ),
+              for (final group in _groups(state.items)) ...<Widget>[
+                LoopLabel(group.$1),
+                for (final entry in group.$2)
+                  _memberRow(
+                    entry: entry,
+                    state: state,
+                    controller: controller,
+                  ),
+              ],
+              // The directory reads on as it is scrolled (decision 0129); its
+              // end draws nothing (decision 0127).
+              LoopLoadMoreFooter(
+                key: const ValueKey<String>('community-members-footer'),
+                keyPrefix: 'community-members',
+                cursor: state.nextCursor,
+                canLoadMore: state.canLoadMore && !state.refreshing,
+                loading: state.loadingMore,
+                onLoadMore: controller.loadMore,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

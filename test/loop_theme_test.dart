@@ -43,8 +43,6 @@ void main() {
     // files that still use them; the list may only shrink. Remove the guard
     // together with the aliases when the Market slice migrates.
     const legacyAccentConsumers = <String>{
-      'lib/features/chat/calls/stream_foreground_call_view.dart',
-      'lib/features/chat/calls/stream_voice_room_page.dart',
       'lib/features/chat/chat_inbox_page.dart',
       'lib/features/chat/chat_secondary_pages.dart',
       'lib/features/chat/conversation_pages.dart',

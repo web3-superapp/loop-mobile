@@ -15636,6 +15636,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_ia_cleanup_contract(root))
     errors.extend(check_first_frame_cache_contract(root))
     errors.extend(check_launch2_user_contract(root))  # S136
+    errors.extend(check_flat_family_contract(root))  # S186-5
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -15767,6 +15768,67 @@ def check_launch2_user_contract(root: Path) -> list[str]:
     return errors
 
 
+# Decision 0170 (S186-5, docs/33 M17 / M3): a feature page that draws OKX
+# rows (`LoopPersonRow`) or the 17 section title (`LoopSectionTitle`) is a
+# second-level page in the flat voice, so it wraps itself in `LoopFlat`;
+# otherwise its prototype `.label`s and record rows draw in the other voice on
+# the same screen. A page drawn in the prototype voice on purpose is listed
+# here by name, with its reason.
+FLAT_PAGE_PATTERN = re.compile(r"\b(?:LoopPersonRow|LoopSectionTitle)\s*\(")
+FLAT_SCOPE_PATTERN = re.compile(r"\bLoopFlat\s*\(")
+FLAT_PAGE_ALLOWLIST: dict[str, str] = {}
+# The embedded voice media area, community and social speak the family only:
+# no literal colours, no v1 accents, no Material buttons or glyphs, no v1
+# status pill or outlined sub-chip (docs/33 §1 rules 3 and 4).
+FAMILY_SWEEP_DIRS = (
+    "lib/features/chat/calls",
+    "lib/features/community",
+    "lib/features/social",
+)
+FAMILY_SWEEP_FORBIDDEN = (
+    (re.compile(r"\bColor\(\s*0x"), "a literal Color(0x…)"),
+    (
+        re.compile(r"\bLoopColors\.(?:warning|danger|chat|market|elevated)\b"),
+        "a v1 accent colour (warning / danger / chat / market / elevated)",
+    ),
+    (re.compile(r"\b(?:FilledButton|OutlinedButton)\b"), "a Material button"),
+    (re.compile(r"\bIcons\."), "a Material glyph (Icons.*)"),
+    (re.compile(r"\bLoopStatusPill\b"), "the v1 LoopStatusPill"),
+    (re.compile(r"\bLoopSubChip\b"), "the outlined LoopSubChip"),
+)
+
+
+def check_flat_family_contract(root: Path) -> list[str]:
+    """Decision 0170: second-level OKX pages sit in LoopFlat, and the voice /
+    community / social modules carry no v1 colour, Material control or glyph."""
+
+    errors: list[str] = []
+    features = root / "lib" / "features"
+    for dart in sorted(features.rglob("*.dart")) if features.is_dir() else []:
+        rel = dart.relative_to(root).as_posix()
+        if rel in FLAT_PAGE_ALLOWLIST:
+            continue
+        text = strip_dart_comments(read_text(dart))
+        if FLAT_PAGE_PATTERN.search(text) and not FLAT_SCOPE_PATTERN.search(text):
+            errors.append(
+                f"{rel} draws LoopPersonRow / LoopSectionTitle outside LoopFlat; "
+                "wrap the page in LoopFlat or list it in FLAT_PAGE_ALLOWLIST "
+                "with its reason (decision 0170)"
+            )
+    for folder in FAMILY_SWEEP_DIRS:
+        directory = root / folder
+        for dart in sorted(directory.rglob("*.dart")) if directory.is_dir() else []:
+            rel = dart.relative_to(root).as_posix()
+            text = strip_dart_comments(read_text(dart))
+            for pattern, what in FAMILY_SWEEP_FORBIDDEN:
+                if pattern.search(text):
+                    errors.append(
+                        f"{rel} uses {what}; {folder} speaks the prototype "
+                        "family only (decision 0170)"
+                    )
+    return errors
+
+
 def main() -> int:
     errors = validate()
     if errors:
@@ -15794,6 +15856,7 @@ def main() -> int:
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "channel-resolved chat names, recognised chat contract addresses, "
         "gated MEME v2 user pages, "  # S136
+        "flat second-level pages and a v1-free voice / community / social family, "  # S186-5
         "and secret rules are consistent."
     )
     return 0

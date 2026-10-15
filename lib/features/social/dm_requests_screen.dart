@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
@@ -51,78 +52,82 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
       });
     }
 
-    return LoopStreamPage(
-      key: const ValueKey<String>('dm-requests-screen'),
-      archetype: LoopPageArchetype.listing,
-      title: '陌生人请求',
-      kicker: communityPreviewKicker(mode),
-      onBack: widget.onBack,
-      // Decision 0127: the count in the bar's grey line; the hero card and
-      // its English eyebrow are gone.
-      subtitle: switch (state.phase) {
-        CommunityViewPhase.ready => '${state.items.length} 个待处理',
-        CommunityViewPhase.empty => '0 个待处理',
-        _ => null,
-      },
-      block: communityCapabilityBlocks(mode, capability)
-          ? CommunityCapabilityPageBlock(
-              key: const ValueKey<String>('dm-requests-capability-unavailable'),
-              capability: capability,
-              title: '陌生人请求当前不可用',
-            )
-          : null,
-      onRefresh: controller.refresh,
-      updating: state.refreshing,
-      collection: ListView(
-        key: const ValueKey<String>('dm-requests-list'),
-        // A short list must still overscroll, or the gesture would exist only
-        // while the inbox is full.
-        physics: loopRefreshablePhysics(controller.refresh),
-        padding: const EdgeInsets.only(bottom: 24),
-        children: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '陌生人请求'),
-          if (state.phase != CommunityViewPhase.ready)
-            CommunityStateBlock(
-              phase: state.phase,
-              failureKind: state.failureKind,
-              emptyMessage: '没有待处理的请求',
-              emptyReason: '被你屏蔽的账号不会出现在这里。',
-              empty: const LoopEmptyState(
-                key: ValueKey<String>('community-state-empty'),
-                illustration: LoopIllustration.friends,
-                title: '没有待处理的请求',
-                message: '被你屏蔽的账号不会出现在这里。',
+    return LoopFlat(
+      child: LoopStreamPage(
+        key: const ValueKey<String>('dm-requests-screen'),
+        archetype: LoopPageArchetype.listing,
+        title: '陌生人请求',
+        kicker: communityPreviewKicker(mode),
+        onBack: widget.onBack,
+        // Decision 0127: the count in the bar's grey line; the hero card and
+        // its English eyebrow are gone.
+        subtitle: switch (state.phase) {
+          CommunityViewPhase.ready => '${state.items.length} 个待处理',
+          CommunityViewPhase.empty => '0 个待处理',
+          _ => null,
+        },
+        block: communityCapabilityBlocks(mode, capability)
+            ? CommunityCapabilityPageBlock(
+                key: const ValueKey<String>(
+                  'dm-requests-capability-unavailable',
+                ),
+                capability: capability,
+                title: '陌生人请求当前不可用',
+              )
+            : null,
+        onRefresh: controller.refresh,
+        updating: state.refreshing,
+        collection: ListView(
+          key: const ValueKey<String>('dm-requests-list'),
+          // A short list must still overscroll, or the gesture would exist only
+          // while the inbox is full.
+          physics: loopRefreshablePhysics(controller.refresh),
+          padding: const EdgeInsets.only(bottom: 24),
+          children: <Widget>[
+            CommunityPreviewNotice(mode: mode, resource: '陌生人请求'),
+            if (state.phase != CommunityViewPhase.ready)
+              CommunityStateBlock(
+                phase: state.phase,
+                failureKind: state.failureKind,
+                emptyMessage: '没有待处理的请求',
+                emptyReason: '被你屏蔽的账号不会出现在这里。',
+                empty: const LoopEmptyState(
+                  key: ValueKey<String>('community-state-empty'),
+                  illustration: LoopIllustration.friends,
+                  title: '没有待处理的请求',
+                  message: '被你屏蔽的账号不会出现在这里。',
+                ),
+                onRetry: () => unawaited(controller.reload()),
+              )
+            else ...<Widget>[
+              if (state.failureKind != null)
+                LoopNotice(
+                  key: const ValueKey<String>('dm-requests-action-failure'),
+                  icon: 'warn',
+                  tone: LoopNoticeTone.warn,
+                  title: '上一次决定没有完成',
+                  body: communityFailureReason(state.failureKind),
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                ),
+              for (final entry in state.items)
+                _RequestRow(
+                  key: ValueKey<String>('dm-request-${entry.messageRequestId}'),
+                  entry: entry,
+                  busy: state.busy,
+                  onDecide: (decision) =>
+                      unawaited(_decide(entry, decision, controller)),
+                ),
+              LoopLoadMoreFooter(
+                key: const ValueKey<String>('dm-requests-footer'),
+                keyPrefix: 'dm-requests',
+                cursor: state.nextCursor,
+                canLoadMore: state.canLoadMore && !state.refreshing,
+                loading: state.loadingMore,
+                onLoadMore: controller.loadMore,
               ),
-              onRetry: () => unawaited(controller.reload()),
-            )
-          else ...<Widget>[
-            if (state.failureKind != null)
-              LoopNotice(
-                key: const ValueKey<String>('dm-requests-action-failure'),
-                icon: 'warn',
-                tone: LoopNoticeTone.warn,
-                title: '上一次决定没有完成',
-                body: communityFailureReason(state.failureKind),
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              ),
-            for (final entry in state.items)
-              _RequestRow(
-                key: ValueKey<String>('dm-request-${entry.messageRequestId}'),
-                entry: entry,
-                busy: state.busy,
-                onDecide: (decision) =>
-                    unawaited(_decide(entry, decision, controller)),
-              ),
-            LoopLoadMoreFooter(
-              key: const ValueKey<String>('dm-requests-footer'),
-              keyPrefix: 'dm-requests',
-              cursor: state.nextCursor,
-              canLoadMore: state.canLoadMore && !state.refreshing,
-              loading: state.loadingMore,
-              onLoadMore: controller.loadMore,
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

@@ -662,6 +662,12 @@ void main() {
       }
       expect(find.textContaining('FROG · 尚无注册池子'), findsOneWidget);
       expect(find.text('尚无已注册池子，群友买入动态不会出现。'), findsOneWidget);
+      // Decision 0170 (docs/33 L25): the no-pool line is a Text3 sentence,
+      // not the v1 warning yellow.
+      expect(
+        tester.widget<Text>(find.text('尚无已注册池子，群友买入动态不会出现。')).style?.color,
+        LoopColors.text3,
+      );
       expect(find.text('Owner 1 · Admin 3 · 共 128 人'), findsOneWidget);
     });
 

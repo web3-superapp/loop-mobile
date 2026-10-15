@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -85,74 +86,76 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         : null;
     final viewer = detail?.viewer;
     final isOwner = viewer?.isOwner ?? false;
-    return LoopDashboardPage(
-      key: const ValueKey<String>('community-manage-screen'),
-      archetype: LoopPageArchetype.action,
-      title: '社区管理',
-      kicker: communityPreviewKicker(mode),
-      onBack: widget.onBack,
-      // Decision 0127: the community's face and name head the page as one
-      // row; the hero card and its English eyebrow are gone.
-      primary: detail == null
-          ? null
-          : LoopPersonRow(
-              key: const ValueKey<String>('community-manage-header'),
-              height: 72,
-              leading: CommunityLogo(
-                identity: detail.community.communityId,
-                name: detail.community.name,
-                logoRef: detail.community.logoRef,
-                size: 48,
-                radius: 14,
+    return LoopFlat(
+      child: LoopDashboardPage(
+        key: const ValueKey<String>('community-manage-screen'),
+        archetype: LoopPageArchetype.action,
+        title: '社区管理',
+        kicker: communityPreviewKicker(mode),
+        onBack: widget.onBack,
+        // Decision 0127: the community's face and name head the page as one
+        // row; the hero card and its English eyebrow are gone.
+        primary: detail == null
+            ? null
+            : LoopPersonRow(
+                key: const ValueKey<String>('community-manage-header'),
+                height: 72,
+                leading: CommunityLogo(
+                  identity: detail.community.communityId,
+                  name: detail.community.name,
+                  logoRef: detail.community.logoRef,
+                  size: 48,
+                  radius: 14,
+                ),
+                title: detail.community.name,
+                tag: viewer?.membership == null
+                    ? null
+                    : LoopTag(viewer!.membership!.role.label, lime: true),
+                subtitle:
+                    '${communityCountLabel(detail.community.memberCount)} 成员',
               ),
-              title: detail.community.name,
-              tag: viewer?.membership == null
-                  ? null
-                  : LoopTag(viewer!.membership!.role.label, lime: true),
-              subtitle:
-                  '${communityCountLabel(detail.community.memberCount)} 成员',
-            ),
-      block: id != null && blocked
-          ? CommunityCapabilityPageBlock(
-              key: const ValueKey<String>(
-                'community-manage-capability-unavailable',
-              ),
-              capability: capability,
-              title: '社区模块当前不可用',
+        block: id != null && blocked
+            ? CommunityCapabilityPageBlock(
+                key: const ValueKey<String>(
+                  'community-manage-capability-unavailable',
+                ),
+                capability: capability,
+                title: '社区模块当前不可用',
+              )
+            : null,
+        onRefresh: id == null ? null : controller.reload,
+        updating: state.refreshing || state.busy || opening,
+        sections: <Widget>[
+          CommunityPreviewNotice(mode: mode, resource: '社区管理'),
+          if (id == null)
+            const LoopEmpty(
+              key: ValueKey<String>('community-manage-missing-id'),
+              icon: 'warn',
+              message: '缺少社区标识',
+              reason: '请从社区主页右上角的「管理」进入，本页不会猜测要管理哪个社区。',
             )
-          : null,
-      onRefresh: id == null ? null : controller.reload,
-      updating: state.refreshing || state.busy || opening,
-      sections: <Widget>[
-        CommunityPreviewNotice(mode: mode, resource: '社区管理'),
-        if (id == null)
-          const LoopEmpty(
-            key: ValueKey<String>('community-manage-missing-id'),
-            icon: 'warn',
-            message: '缺少社区标识',
-            reason: '请从社区主页右上角的「管理」进入，本页不会猜测要管理哪个社区。',
-          )
-        else if (detail == null)
-          CommunityStateBlock(
-            phase: state.phase == CommunityViewPhase.ready
-                ? CommunityViewPhase.loading
-                : state.phase,
-            failureKind: state.failureKind,
-            skeleton: LoopSkeletonType.list,
-            emptyMessage: '找不到这个社区',
-            emptyReason: '它可能已被移除，或对当前账号不可见。',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else if (!detail.viewer.mayManage)
-          const LoopEmpty(
-            key: ValueKey<String>('community-manage-permission'),
-            icon: 'lock',
-            message: '只有社区所有者与管理员可以管理',
-            reason: '你在这个社区的身份不包含管理权限；社区主页仍然可以照常查看。',
-          )
-        else
-          ..._groups(context, detail, isOwner: isOwner, busy: state.busy),
-      ],
+          else if (detail == null)
+            CommunityStateBlock(
+              phase: state.phase == CommunityViewPhase.ready
+                  ? CommunityViewPhase.loading
+                  : state.phase,
+              failureKind: state.failureKind,
+              skeleton: LoopSkeletonType.list,
+              emptyMessage: '找不到这个社区',
+              emptyReason: '它可能已被移除，或对当前账号不可见。',
+              onRetry: () => unawaited(controller.reload()),
+            )
+          else if (!detail.viewer.mayManage)
+            const LoopEmpty(
+              key: ValueKey<String>('community-manage-permission'),
+              icon: 'lock',
+              message: '只有社区所有者与管理员可以管理',
+              reason: '你在这个社区的身份不包含管理权限；社区主页仍然可以照常查看。',
+            )
+          else
+            ..._groups(context, detail, isOwner: isOwner, busy: state.busy),
+        ],
+      ),
     );
   }
 
@@ -168,7 +171,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
     final counts = ref.watch(communityManageCountsProvider(id));
     return <Widget>[
       // 资料
-      const LoopSectionTitle('资料', top: 12),
+      const LoopLabel('资料'),
       Column(
         key: const ValueKey<String>('community-manage-profile-group'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -206,7 +209,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
               padding: const EdgeInsets.fromLTRB(68, 0, 16, 8),
               child: Text(
                 '尚无已注册池子，群友买入动态不会出现。',
-                style: LoopTypography.caption(11, color: LoopColors.warning),
+                style: LoopTypography.caption(11, color: LoopColors.text3),
               ),
             ),
           LoopPersonRow(
@@ -239,7 +242,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         ],
       ),
       // 成员
-      const LoopSectionTitle('成员'),
+      const LoopLabel('成员'),
       Column(
         key: const ValueKey<String>('community-manage-members-group'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -277,7 +280,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         ],
       ),
       // 语音房
-      const LoopSectionTitle('语音房'),
+      const LoopLabel('语音房'),
       Column(
         key: const ValueKey<String>('community-manage-voice-group'),
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_presentation.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_state_card.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
@@ -100,22 +102,15 @@ abstract final class StreamCallStatusPresentation {
     return LoopTone.conversation;
   }
 
-  static IconData icon(CallStatus status) {
-    if (status.isConnected) {
-      return Icons.graphic_eq_rounded;
-    }
-    if (status is CallStatusReconnectionFailed || status.isDisconnected) {
-      return Icons.wifi_off_rounded;
-    }
-    if (status.isReconnecting ||
-        status.isMigrating ||
-        status.isConnecting ||
-        status.isJoining ||
-        status.isJoined) {
-      return Icons.sync_rounded;
-    }
-    return Icons.headphones_rounded;
-  }
+  /// The `.badge` the status is shown in (decision 0170): the Lime pair
+  /// while the call is live or on its way, the neutral pair once it stopped
+  /// or before it started. The prototype has no amber and no red.
+  static LoopBadgeKind badgeKind(CallStatus status) => switch (tone(status)) {
+    LoopTone.positive => LoopBadgeKind.up,
+    LoopTone.warning => LoopBadgeKind.mining,
+    LoopTone.danger => LoopBadgeKind.down,
+    _ => LoopBadgeKind.mute,
+  };
 }
 
 /// When a stopped connection stops being the call's own business.
@@ -719,10 +714,14 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       children: <Widget>[
         Align(
           alignment: widget.inline ? Alignment.centerLeft : Alignment.center,
-          child: LoopStatusPill(
+          child: Semantics(
             label: StreamCallStatusPresentation.label(data.status),
-            tone: StreamCallStatusPresentation.tone(data.status),
-            icon: StreamCallStatusPresentation.icon(data.status),
+            excludeSemantics: true,
+            child: LoopBadge(
+              StreamCallStatusPresentation.label(data.status),
+              key: const ValueKey<String>('voiceroom-media-status'),
+              kind: StreamCallStatusPresentation.badgeKind(data.status),
+            ),
           ),
         ),
         if (!widget.inline) ...<Widget>[
@@ -752,10 +751,10 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           const SizedBox(height: 14),
           Align(
             alignment: widget.inline ? Alignment.centerLeft : Alignment.center,
-            child: const LoopStatusPill(
-              label: '系统已暂停音频',
-              tone: LoopTone.warning,
-              icon: Icons.pause_circle_outline_rounded,
+            child: const LoopBadge(
+              '系统已暂停音频',
+              key: ValueKey<String>('voiceroom-media-audio-suspended'),
+              kind: LoopBadgeKind.mining,
             ),
           ),
         ],
@@ -839,7 +838,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
               child: Text(
                 _commandError!,
                 style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: LoopColors.danger),
+                    ?.copyWith(color: LoopColors.chalk),
               ),
             ),
             const SizedBox(height: 10),
@@ -866,7 +865,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
               _commandError!,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: LoopColors.danger),
+                  ?.copyWith(color: LoopColors.chalk),
             ),
           ),
           const SizedBox(height: 10),
@@ -885,23 +884,21 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
                     canSendAudio: data.canSendAudio,
                     retirementStarted: retirementStarted,
                   )
-                  ? OutlinedButton.icon(
+                  ? LoopButton(
                       key: const ValueKey<String>(
                         'voiceroom-media-speak-again',
                       ),
+                      block: true,
+                      icon: 'refresh',
+                      label: _speakAgainBusy ? '正在重新连接语音' : '重新连接后发言',
                       onPressed:
                           _speakAgainBusy || _leaveBusy || _microphoneBusy
                           ? null
                           : _requestSpeakAgain,
-                      icon: _speakAgainBusy
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.sync_rounded),
-                      label: Text(_speakAgainBusy ? '正在重新连接语音' : '重新连接后发言'),
                     )
-                  : OutlinedButton.icon(
+                  : LoopButton(
+                      key: const ValueKey<String>('voiceroom-media-microphone'),
+                      block: true,
                       onPressed:
                           !_microphoneBusy &&
                               !_leaveBusy &&
@@ -910,66 +907,55 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
                           ? () =>
                                 _setMicrophone(enabled: !data.microphoneEnabled)
                           : null,
-                      icon: _microphoneBusy
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(
-                              data.microphoneEnabled
-                                  ? Icons.mic_off_rounded
-                                  : data.canSendAudio &&
-                                        !_microphoneEnableRequested &&
-                                        !retirementStarted
-                                  ? Icons.mic_rounded
-                                  : Icons.headphones_rounded,
-                            ),
-                      label: Text(
-                        _microphoneBusy
-                            ? '正在切换麦克风'
-                            : data.microphoneEnabled
-                            ? '静音'
-                            : data.canSendAudio &&
-                                  !_microphoneEnableRequested &&
-                                  !retirementStarted
-                            ? '发言'
-                            : retirementStarted
-                            ? '需要先重试退出'
-                            : data.canSendAudio
-                            ? '这次通话不能再开麦'
-                            : '仅收听',
-                      ),
+                      icon: data.microphoneEnabled
+                          ? 'voice-off'
+                          : data.canSendAudio &&
+                                !_microphoneEnableRequested &&
+                                !retirementStarted
+                          ? 'mic'
+                          : 'voice',
+                      label: _microphoneBusy
+                          ? '正在切换麦克风'
+                          : data.microphoneEnabled
+                          ? '静音'
+                          : data.canSendAudio &&
+                                !_microphoneEnableRequested &&
+                                !retirementStarted
+                          ? '发言'
+                          : retirementStarted
+                          ? '需要先重试退出'
+                          : data.canSendAudio
+                          ? '这次通话不能再开麦'
+                          : '仅收听',
                     ),
             ),
             if (widget.onOutputSelected != null) ...<Widget>[
               const SizedBox(width: 8),
-              _OutputControl(
-                current: data.output,
-                preference: widget.outputPreference,
-                onSelected: widget.onOutputSelected!,
+              // A `LoopButton` measures its label inside the width it is
+              // given; a bare Row child is given none.
+              Flexible(
+                child: _OutputControl(
+                  current: data.output,
+                  preference: widget.outputPreference,
+                  onSelected: widget.onOutputSelected!,
+                ),
               ),
             ],
             const SizedBox(width: 12),
-            IconButton.filled(
-              onPressed: _leaveBusy ? null : _leave,
-              tooltip: '断开语音连接',
-              style: IconButton.styleFrom(
-                minimumSize: const Size.square(48),
-                backgroundColor: LoopColors.danger,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: LoopColors.danger.withValues(
-                  alpha: 0.35,
-                ),
+            // Decision 0170: the prototype's `.btn-danger` — flat Chalk
+            // with an Ink glyph. The pink disc is gone.
+            Tooltip(
+              message: '断开语音连接',
+              excludeFromSemantics: true,
+              child: LoopButton(
+                key: const ValueKey<String>('voiceroom-media-disconnect'),
+                primary: true,
+                tone: LoopButtonTone.danger,
+                icon: 'phone',
+                label: '',
+                semanticLabel: '断开语音连接',
+                onPressed: _leaveBusy ? null : _leave,
               ),
-              icon: _leaveBusy
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.call_end_rounded),
             ),
           ],
         ),
@@ -1081,10 +1067,10 @@ class _OutputControl extends StatelessWidget {
     );
     final label = audioRoomOutputLabel(current);
     final icon = switch (current?.kind) {
-      AudioRoomOutputKind.speaker => Icons.volume_up_rounded,
-      AudioRoomOutputKind.earpiece => Icons.phone_in_talk_rounded,
-      AudioRoomOutputKind.external => Icons.headphones_rounded,
-      null => Icons.volume_up_outlined,
+      AudioRoomOutputKind.earpiece => 'phone',
+      AudioRoomOutputKind.speaker ||
+      AudioRoomOutputKind.external ||
+      null => 'voice',
     };
     final hint = next == null
         ? '声音从已连接的设备输出'
@@ -1098,15 +1084,11 @@ class _OutputControl extends StatelessWidget {
       excludeSemantics: true,
       child: Tooltip(
         message: hint,
-        child: OutlinedButton.icon(
+        child: LoopButton(
           key: const ValueKey<String>('voiceroom-media-output'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-          ),
+          icon: icon,
+          label: label,
           onPressed: next == null ? null : () => onSelected(next),
-          icon: Icon(icon, size: 18),
-          label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ),
     );
@@ -1128,28 +1110,28 @@ class _ParticipantGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     if (phase != StreamCallPhase.connected) {
       return switch (phase) {
-        StreamCallPhase.reconnecting => const LoopStateCard(
+        StreamCallPhase.reconnecting => const VoiceMediaStateCard(
           title: '正在重新连接',
           message: '这次通话掉线了，正在自动接回来。成员明细会在连上后重新读出。',
-          icon: Icons.sync_rounded,
+          icon: 'refresh',
         ),
-        StreamCallPhase.disconnected => const LoopStateCard(
+        StreamCallPhase.disconnected => const VoiceMediaStateCard(
           title: '语音已断开',
           message: '这次通话已经断开，成员明细要重新连接语音之后才能读出。',
-          icon: Icons.headset_off_rounded,
+          icon: 'voice-off',
         ),
-        _ => const LoopStateCard(
+        _ => const VoiceMediaStateCard(
           title: '正在连接语音',
           message: '还没有连上这次通话，成员明细会在连上后读出。',
-          icon: Icons.sync_rounded,
+          icon: 'refresh',
         ),
       };
     }
     if (participants.isEmpty) {
-      return const LoopStateCard(
+      return const VoiceMediaStateCard(
         title: '正在读取通话成员',
         message: '这次通话刚连上，服务商还没有给出成员明细。',
-        icon: Icons.sync_rounded,
+        icon: 'refresh',
       );
     }
     return LayoutBuilder(
@@ -1196,11 +1178,18 @@ class _ParticipantCard extends StatelessWidget {
       isSpeaking: participant.isSpeaking,
       isAudioEnabled: participant.isAudioEnabled,
     );
-    final accent = participant.isSpeaking ? LoopColors.chat : LoopColors.line;
+    // Decision 0170: the `.record-card` ground. A speaker is marked by a
+    // Lime hairline and a Lime glyph, never by the amber conversation accent.
+    final accent = participant.isSpeaking ? LoopColors.lime : LoopColors.line;
     return DecoratedBox(
+      key: ValueKey<String>(
+        participant.isSpeaking
+            ? 'voiceroom-participant-speaking'
+            : 'voiceroom-participant',
+      ),
       decoration: BoxDecoration(
-        color: LoopColors.basalt.withValues(alpha: 0.86),
-        borderRadius: LoopRadius.medium,
+        color: LoopColors.card,
+        borderRadius: LoopRadius.card,
         border: Border.all(color: accent),
       ),
       child: Padding(
@@ -1213,15 +1202,13 @@ class _ParticipantCard extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: LoopColors.chat.withValues(alpha: 0.12),
-                border: Border.all(
-                  color: LoopColors.chat.withValues(alpha: 0.28),
-                ),
+                color: LoopColors.card2,
+                border: Border.all(color: LoopColors.line),
               ),
               child: Text(
                 name.characters.first.toUpperCase(),
                 style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(color: LoopColors.chat),
+                    ?.copyWith(color: LoopColors.chalk),
               ),
             ),
             const SizedBox(width: 12),
@@ -1251,14 +1238,12 @@ class _ParticipantCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              participant.isAudioEnabled
-                  ? Icons.mic_rounded
-                  : Icons.mic_off_rounded,
+            LoopIcon(
+              participant.isAudioEnabled ? 'mic' : 'voice-off',
               size: 18,
               color: participant.isSpeaking
-                  ? LoopColors.chat
-                  : LoopColors.vapor,
+                  ? LoopColors.lime
+                  : LoopColors.text3,
             ),
           ],
         ),
