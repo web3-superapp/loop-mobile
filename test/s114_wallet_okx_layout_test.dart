@@ -40,22 +40,6 @@ void main() {
 
   Finder key(String value) => find.byKey(ValueKey<String>(value));
 
-  LoopNetWorthValued valued({
-    LoopNetWorthChange change = const LoopNetWorthChangeUnavailable(
-      'PRICE_CHANGE_PARTIAL',
-    ),
-  }) => LoopNetWorthValued(
-    partial: false,
-    valuationCurrency: 'USD',
-    valueUsd: Decimal.parse('6352.815'),
-    unavailableCount: 0,
-    quality: LoopFactQuality.fresh,
-    priceSource: LoopFactSource.dexscreener,
-    asOf: DateTime.utc(2026, 9, 8, 7, 52),
-    isSpendable: false,
-    change24h: change,
-  );
-
   LoopAssetBalanceRow zeroRow() => s5Row(
     assetId: s5WbnbAssetId,
     balance: LoopBalanceAvailable(
@@ -218,89 +202,13 @@ void main() {
     });
   });
 
-  group('总资产 · the 24h line in its three states', () {
-    testWidgets('a rise is ▲ with the figure and the percent, in rise', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const WalletScreen(),
-        wallet: FakeWalletReadGateway(),
-      );
-
-      expect(find.text('\$6,352.82'), findsOneWidget);
-      final line = tester.widget<Text>(key('wallet-change24h'));
-      expect(line.data, '▲ \$302.52 (+5%) · 24h');
-      expect(line.style!.color, LoopColors.rise);
-    });
-
-    testWidgets('a fall is ▼ in fall', (tester) async {
-      await pumpS5Page(
-        tester,
-        const WalletScreen(),
-        wallet: FakeWalletReadGateway(
-          balances: S5Answer<LoopWalletBalances>(
-            value: s5Balances(
-              netWorth: valued(
-                change: LoopNetWorthChangeAvailable(
-                  usd: Decimal.parse('-12.3'),
-                  pct: Decimal.parse('-0.1942'),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final line = tester.widget<Text>(key('wallet-change24h'));
-      expect(line.data, '▼ \$12.3 (-0.19%) · 24h');
-      expect(line.style!.color, LoopColors.fall);
-    });
-
-    testWidgets('null says 「24h 变动暂不可用」 once, weakly, never 0', (tester) async {
-      await pumpS5Page(
-        tester,
-        const WalletScreen(),
-        wallet: FakeWalletReadGateway(
-          balances: S5Answer<LoopWalletBalances>(
-            value: s5Balances(netWorth: valued()),
-          ),
-        ),
-      );
-
-      expect(key('wallet-change24h-unavailable'), findsOneWidget);
-      expect(find.text('24h 变动暂不可用'), findsOneWidget);
-      expect(key('wallet-change24h'), findsNothing);
-      expect(find.textContaining('(+0%)'), findsNothing);
-    });
-
-    testWidgets('an unavailable net worth draws no 24h line at all', (
-      tester,
-    ) async {
-      await pumpS5Page(
-        tester,
-        const WalletScreen(),
-        wallet: FakeWalletReadGateway(
-          balances: S5Answer<LoopWalletBalances>(
-            value: s5Balances(
-              netWorth: const LoopNetWorthUnavailable(
-                'MARKET_PRICE_PROVIDER_NOT_CONFIGURED',
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(key('wallet-change24h'), findsNothing);
-      expect(key('wallet-change24h-unavailable'), findsNothing);
-      expect(find.text('暂不可用'), findsOneWidget);
-      expect(find.textContaining('暂时读不到价格'), findsOneWidget);
-    });
-  });
+  // Decision 0188 (钱包 C): the header's 24h line is now 今日盈亏, read from
+  // the net-worth history; its states are covered by
+  // test/s199_wallet_home_c_test.dart.
 
   group('the eye', () {
-    testWidgets('masks the total, the 24h figure and every row amount, and '
-        'is remembered for this run only', (tester) async {
+    testWidgets('masks the total and every row amount, and is remembered '
+        'for this run only', (tester) async {
       final visible = ValueNotifier<bool>(true);
       addTearDown(visible.dispose);
       tester.view.devicePixelRatio = 1;
@@ -339,10 +247,6 @@ void main() {
       expect(
         tester.widget<Text>(key('wallet-total-figure')).data,
         walletMaskedFigure,
-      );
-      expect(
-        tester.widget<Text>(key('wallet-change24h')).data,
-        '$walletMaskedFigure · 24h',
       );
       expect(
         tester.widget<Text>(key('wallet-balance-amount-$s5NativeAssetId')).data,
@@ -514,11 +418,13 @@ void main() {
         key('wallet-balance-value-$s5WbnbAssetId'),
       );
       expect(value.data, '≈\$0');
-      final move = find.descendant(
-        of: key('wallet-balance-change-$s5WbnbAssetId'),
-        matching: find.text('-2.50%'),
+      // A zero holding moved by nothing in USD; the price's own 24h move
+      // still reads in fall (decision 0188's per-row 24h line).
+      final move = tester.widget<Text>(
+        key('wallet-balance-change-$s5WbnbAssetId'),
       );
-      expect(tester.widget<Text>(move).style!.color, LoopColors.fall);
+      expect(move.data, '\$0 (-2.5%)');
+      expect(move.style!.color, LoopColors.fall);
       // Open, the switch offers to fold them again.
       expect(find.text('隐藏零余额资产'), findsOneWidget);
     });

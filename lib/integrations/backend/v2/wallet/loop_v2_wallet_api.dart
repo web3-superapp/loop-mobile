@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -44,6 +45,14 @@ abstract interface class LoopV2WalletApi {
     required String accessToken,
     required String clientVersion,
     required String walletId,
+  });
+
+  /// Decision 0188: `GET /v2/wallets/{walletId}/networth/history`.
+  Future<LoopNetWorthHistory> getNetWorthHistory({
+    required String accessToken,
+    required String clientVersion,
+    required String walletId,
+    required LoopNetWorthRange range,
   });
 }
 
@@ -267,6 +276,136 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         allowedCodes: LoopV2ModuleRequest.chainReadErrors,
       );
     }
+  }
+
+  @override
+  Future<LoopNetWorthHistory> getNetWorthHistory({
+    required String accessToken,
+    required String clientVersion,
+    required String walletId,
+    required LoopNetWorthRange range,
+  }) async {
+    final target = _requireWalletId(walletId);
+    try {
+      final response = await _dio.get<Object?>(
+        '$walletsPath/$target/networth/history',
+        queryParameters: <String, Object?>{'range': range.wireName},
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      return decodeNetWorthHistory(response.data, range: range);
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.chainReadErrors,
+      );
+    }
+  }
+
+  /// The net-worth history, decoded leniently (decision 0188).
+  ///
+  /// The endpoint is new and display-only, so the decoder keeps what it can
+  /// prove and drops the rest: an unknown key is ignored, a malformed point is
+  /// skipped, and a malformed optional block (`current`, `change24h`, `high`,
+  /// `low`, `fiat`) reads as absent. Only a body without `points` and
+  /// `change24h`, or one answering a different `range`, is refused — that is
+  /// "no history", and the page then draws neither the chart nor 今日盈亏.
+  static LoopNetWorthHistory decodeNetWorthHistory(
+    Object? data, {
+    required LoopNetWorthRange range,
+  }) {
+    if (data is! Map) LoopV2ChainCodec.invalid();
+    final root = <String, Object?>{
+      for (final entry in data.entries)
+        if (entry.key is String) entry.key as String: entry.value,
+    };
+    if (!root.containsKey('points') || !root.containsKey('change24h')) {
+      LoopV2ChainCodec.invalid();
+    }
+    final wireRange = root['range'];
+    if (wireRange != null &&
+        (wireRange is! String ||
+            LoopNetWorthRange.tryParse(wireRange) != range)) {
+      LoopV2ChainCodec.invalid();
+    }
+    final rawPoints = root['points'];
+    if (rawPoints is! List || rawPoints.length > 2000) {
+      LoopV2ChainCodec.invalid();
+    }
+    final points = <LoopNetWorthPoint>[
+      for (final raw in rawPoints) ?_lenientPoint(raw, 'at'),
+    ]..sort((a, b) => a.at.compareTo(b.at));
+    final current = _lenientPoint(root['current'], 'at');
+    return LoopNetWorthHistory(
+      range: range,
+      points: List<LoopNetWorthPoint>.unmodifiable(points),
+      currentUsd: current?.netWorthUsd,
+      currentAt: current?.at,
+      change24h: _lenientChange(root['change24h']),
+      high: _lenientPoint(root['high'], 'at'),
+      low: _lenientPoint(root['low'], 'at'),
+      fiat: _lenientFiat(root['fiat']),
+      source: _lenientWord(root['source']),
+      observedAt: _lenientTime(root['observedAt']),
+    );
+  }
+
+  static final RegExp _historyWordPattern = RegExp(r'^[A-Za-z0-9_.:-]{1,64}$');
+
+  static String? _lenientWord(Object? raw) =>
+      raw is String && _historyWordPattern.hasMatch(raw) ? raw : null;
+
+  static DateTime? _lenientTime(Object? raw) {
+    if (raw is! String || raw.length > 64) return null;
+    return DateTime.tryParse(raw)?.toUtc();
+  }
+
+  /// A decimal string or a JSON number, signed only when [signed]. A JSON
+  /// number goes through its shortest text form, never through arithmetic.
+  static Decimal? _lenientDecimal(Object? raw, {bool signed = false}) {
+    final String text;
+    if (raw is String) {
+      text = raw;
+    } else if (raw is num && raw.isFinite) {
+      text = raw.toString();
+    } else {
+      return null;
+    }
+    final pattern = signed
+        ? LoopV2ChainCodec.signedDecimalPattern
+        : LoopV2ChainCodec.unsignedDecimalPattern;
+    if (text.length > 160 || !pattern.hasMatch(text)) return null;
+    return Decimal.tryParse(text);
+  }
+
+  static LoopNetWorthPoint? _lenientPoint(Object? raw, String timeKey) {
+    if (raw is! Map) return null;
+    final at = _lenientTime(raw[timeKey]);
+    final value = _lenientDecimal(raw['netWorthUsd']);
+    if (at == null || value == null) return null;
+    return LoopNetWorthPoint(
+      at: at,
+      netWorthUsd: value,
+      quality: _lenientWord(raw['quality']),
+    );
+  }
+
+  static LoopNetWorthChangeAvailable? _lenientChange(Object? raw) {
+    if (raw is! Map) return null;
+    final usd = _lenientDecimal(raw['usd'], signed: true);
+    final pct = _lenientDecimal(raw['pct'], signed: true);
+    if (usd == null || pct == null) return null;
+    return LoopNetWorthChangeAvailable(usd: usd, pct: pct);
+  }
+
+  static LoopNetWorthFiat? _lenientFiat(Object? raw) {
+    if (raw is! Map) return null;
+    final currency = raw['currency'];
+    final rate = _lenientDecimal(raw['rate']);
+    final amount = _lenientDecimal(raw['amount']);
+    if (currency is! String || rate == null || amount == null) return null;
+    if (!RegExp(r'^[A-Z]{3}$').hasMatch(currency)) return null;
+    return LoopNetWorthFiat(currency: currency, rate: rate, amount: amount);
   }
 
   @override

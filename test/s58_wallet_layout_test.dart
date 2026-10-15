@@ -62,7 +62,7 @@ void main() {
       );
 
       expect(find.text('总资产'), findsOneWidget);
-      expect(find.text('资产'), findsOneWidget);
+      expect(find.text('余额'), findsOneWidget);
       expect(find.text('WALLET LEDGER'), findsNothing);
       expect(find.text('WALLET ASSETS'), findsNothing);
       await scrollToS5Section(

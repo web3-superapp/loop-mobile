@@ -209,3 +209,33 @@ final walletReceiveControllerProvider = NotifierProvider.autoDispose
       LoopChainResourceState<LoopWalletReceive>,
       String
     >(WalletReceiveController.new);
+
+/// Which wallet and which window a net-worth history read is for.
+typedef WalletNetWorthHistoryKey = ({String walletId, LoopNetWorthRange range});
+
+/// `wallet` · `…/networth/history?range=…` (decision 0188). One block per
+/// wallet and window, so switching 7 天 → 30 天 → 7 天 asks the server twice,
+/// not three times, while the page is open.
+final class WalletNetWorthHistoryController
+    extends LoopChainReadController<LoopNetWorthHistory> {
+  WalletNetWorthHistoryController(this.key);
+
+  final WalletNetWorthHistoryKey key;
+
+  @override
+  LoopChainGatewayMode watchMode() => ref.watch(
+    walletNetWorthHistoryGatewayProvider.select((gateway) => gateway.mode),
+  );
+
+  @override
+  Future<LoopNetWorthHistory> fetch() => ref
+      .read(walletNetWorthHistoryGatewayProvider)
+      .loadNetWorthHistory(key.walletId, key.range);
+}
+
+final walletNetWorthHistoryControllerProvider = NotifierProvider.autoDispose
+    .family<
+      WalletNetWorthHistoryController,
+      LoopChainResourceState<LoopNetWorthHistory>,
+      WalletNetWorthHistoryKey
+    >(WalletNetWorthHistoryController.new);

@@ -109,6 +109,18 @@ final loopV2WalletReadGatewayProvider = Provider<WalletReadGateway>((ref) {
   );
 });
 
+/// Decision 0188: the same authenticated wallet adapter answers the
+/// net-worth history; while any of its inputs is missing the port stays
+/// fail-closed and the wallet draws no chart.
+final loopV2WalletNetWorthHistoryGatewayProvider =
+    Provider<WalletNetWorthHistoryGateway>((ref) {
+      final gateway = ref.watch(loopV2WalletReadGatewayProvider);
+      if (gateway is WalletNetWorthHistoryGateway) {
+        return gateway as WalletNetWorthHistoryGateway;
+      }
+      return const UnavailableWalletNetWorthHistoryGateway();
+    });
+
 final loopV2MarketReadGatewayProvider = Provider<MarketReadGateway>((ref) {
   final api = ref.watch(loopV2MarketApiProvider);
   final metadata = ref.watch(loopV2ClientMetadataProvider);

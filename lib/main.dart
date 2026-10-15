@@ -305,6 +305,9 @@ Future<void> main() async {
         walletReadGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2WalletReadGatewayProvider),
         ),
+        walletNetWorthHistoryGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2WalletNetWorthHistoryGatewayProvider),
+        ),
         marketReadGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MarketReadGatewayProvider),
         ),

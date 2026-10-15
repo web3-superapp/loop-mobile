@@ -64,3 +64,39 @@ final class UnavailableWalletReadGateway implements WalletReadGateway {
 final walletReadGatewayProvider = Provider<WalletReadGateway>(
   (ref) => const UnavailableWalletReadGateway(),
 );
+
+/// Feature-facing port for the wallet's net-worth history (decision 0188).
+///
+/// A port of its own rather than a sixth [WalletReadGateway] method: the
+/// history is display information the first screen can do without, and a
+/// server that has not deployed it yet must leave every balance untouched.
+abstract interface class WalletNetWorthHistoryGateway {
+  LoopChainGatewayMode get mode;
+
+  Future<LoopNetWorthHistory> loadNetWorthHistory(
+    String walletId,
+    LoopNetWorthRange range,
+  );
+}
+
+/// Production default: fails closed, so no chart and no 今日盈亏 is drawn.
+final class UnavailableWalletNetWorthHistoryGateway
+    implements WalletNetWorthHistoryGateway {
+  const UnavailableWalletNetWorthHistoryGateway();
+
+  @override
+  LoopChainGatewayMode get mode => LoopChainGatewayMode.unavailable;
+
+  @override
+  Future<LoopNetWorthHistory> loadNetWorthHistory(
+    String walletId,
+    LoopNetWorthRange range,
+  ) => Future<LoopNetWorthHistory>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+}
+
+final walletNetWorthHistoryGatewayProvider =
+    Provider<WalletNetWorthHistoryGateway>(
+      (ref) => const UnavailableWalletNetWorthHistoryGateway(),
+    );

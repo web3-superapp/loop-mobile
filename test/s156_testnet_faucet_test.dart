@@ -755,7 +755,15 @@ void main() {
         lineText(tester, 'testnet-faucet-cooldown'),
         '这个钱包 1 小时内已经领过，下次可领 ${testnetFaucetNextLabel(next)}',
       );
-      expect(find.textContaining('24 小时'), findsNothing);
+      // The sheet never says 24 hours (the balance rows' own 「24 小时」 move
+      // line under the sheet is decision 0188's, not the faucet's period).
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.textContaining('24 小时'),
+        ),
+        findsNothing,
+      );
     });
 
     // Decision 0158 · the server grants only to the embedded wallet.

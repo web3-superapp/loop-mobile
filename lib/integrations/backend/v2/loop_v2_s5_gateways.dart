@@ -123,7 +123,7 @@ final class DioLoopV2ChainGateway
 
 final class DioLoopV2WalletReadGateway
     with _LoopV2S5Adapter
-    implements WalletReadGateway {
+    implements WalletReadGateway, WalletNetWorthHistoryGateway {
   DioLoopV2WalletReadGateway({
     required this._api,
     required this.clientMetadata,
@@ -185,6 +185,19 @@ final class DioLoopV2WalletReadGateway
       clientVersion: clientVersion,
       walletId: walletId,
       cursor: cursor,
+    ),
+  );
+
+  @override
+  Future<LoopNetWorthHistory> loadNetWorthHistory(
+    String walletId,
+    LoopNetWorthRange range,
+  ) => read(
+    (accessToken) => _api.getNetWorthHistory(
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      walletId: walletId,
+      range: range,
     ),
   );
 

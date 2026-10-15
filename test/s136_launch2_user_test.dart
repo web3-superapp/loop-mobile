@@ -1729,6 +1729,57 @@ void main() {
       await _drain(tester);
     });
 
+    // Decision 0188 (钱包 C): an internal-market holding carries 买入 / 卖出,
+    // both into the instance page that trades it; a graduated one does not.
+    testWidgets('a curve holding carries 卖出 / 买入 into its project page', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        Scaffold(
+          body: ListView(
+            children: <Widget>[
+              Launch2WalletRows(onOpen: opened.add, hidden: false),
+            ],
+          ),
+        ),
+        launch2: _FakeLaunch2(
+          positions: _Answer<Launch2Positions>.value(l2Positions()),
+        ),
+      );
+      expect(_key('launch2-wallet-buy-$l2InstanceA'), findsOneWidget);
+      expect(_key('launch2-wallet-sell-$l2InstanceA'), findsOneWidget);
+      await tester.tap(_key('launch2-wallet-buy-$l2InstanceA'));
+      await tester.tap(_key('launch2-wallet-sell-$l2InstanceA'));
+      expect(opened, <String>[
+        '/launch2/instance?id=$l2InstanceA',
+        '/launch2/instance?id=$l2InstanceA',
+      ]);
+      await _drain(tester);
+    });
+
+    testWidgets('a graduated holding draws no 买入 / 卖出', (tester) async {
+      await _pump(
+        tester,
+        Scaffold(
+          body: ListView(
+            children: <Widget>[
+              Launch2WalletRows(onOpen: (_) {}, hidden: false),
+            ],
+          ),
+        ),
+        launch2: _FakeLaunch2(
+          positions: _Answer<Launch2Positions>.value(
+            l2Positions(stage: 'graduated'),
+          ),
+        ),
+      );
+      expect(_key('launch2-wallet-buy-$l2InstanceA'), findsNothing);
+      expect(_key('launch2-wallet-sell-$l2InstanceA'), findsNothing);
+      await _drain(tester);
+    });
+
     testWidgets('the switch off draws nothing and reads nothing', (
       tester,
     ) async {

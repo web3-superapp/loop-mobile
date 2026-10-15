@@ -627,3 +627,98 @@ String loopReceiveWarningText(String warningKey) => switch (warningKey) {
     '只接收 BNB Smart Chain（BSC）网络的资产。把其他网络的资产发到这个地址可能永久丢失。',
   _ => '请先确认发送方使用的网络与这里显示的一致。',
 };
+
+// ---------------------------------------------------------------------------
+// networth history · the wallet's hourly USD snapshots (decision 0188)
+// ---------------------------------------------------------------------------
+
+/// The five windows 钱包 C offers over the net-worth history.
+enum LoopNetWorthRange {
+  day('1d', '1 天'),
+  week('7d', '7 天'),
+  month('30d', '30 天'),
+  halfYear('180d', '180 天'),
+  year('360d', '360 天');
+
+  const LoopNetWorthRange(this.wireName, this.label);
+
+  final String wireName;
+  final String label;
+
+  static LoopNetWorthRange? tryParse(String value) {
+    for (final range in values) {
+      if (range.wireName == value) return range;
+    }
+    return null;
+  }
+}
+
+/// One stored snapshot of the wallet's net worth. Display only: like the
+/// current net worth it is never a spendable figure.
+@immutable
+final class LoopNetWorthPoint {
+  const LoopNetWorthPoint({
+    required this.at,
+    required this.netWorthUsd,
+    this.quality,
+  });
+
+  final DateTime at;
+  final Decimal netWorthUsd;
+
+  /// The server's word on the snapshot (`fresh`, `partial`, …), kept as sent.
+  final String? quality;
+}
+
+/// The fiat restatement the server published (`CNY` only today).
+@immutable
+final class LoopNetWorthFiat {
+  const LoopNetWorthFiat({
+    required this.currency,
+    required this.rate,
+    required this.amount,
+  });
+
+  final String currency;
+  final Decimal rate;
+  final Decimal amount;
+}
+
+/// `GET …/networth/history?range=…`.
+///
+/// Every field but [points] may be absent: a history with no 24h figure says
+/// 「暂无」, one without a fiat rate draws no ¥ line, and nothing here is ever
+/// derived from the balances read.
+@immutable
+final class LoopNetWorthHistory {
+  const LoopNetWorthHistory({
+    required this.range,
+    required this.points,
+    this.currentUsd,
+    this.currentAt,
+    this.change24h,
+    this.high,
+    this.low,
+    this.fiat,
+    this.source,
+    this.observedAt,
+  });
+
+  final LoopNetWorthRange range;
+
+  /// Oldest first.
+  final List<LoopNetWorthPoint> points;
+  final Decimal? currentUsd;
+  final DateTime? currentAt;
+
+  /// `null` when the server had no 24h-old snapshot to compare with.
+  final LoopNetWorthChangeAvailable? change24h;
+  final LoopNetWorthPoint? high;
+  final LoopNetWorthPoint? low;
+  final LoopNetWorthFiat? fiat;
+  final String? source;
+  final DateTime? observedAt;
+
+  /// Whether there is a line to draw: two snapshots at least.
+  bool get drawable => points.length >= 2;
+}

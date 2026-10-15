@@ -1,11 +1,19 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
+import 'package:loop_mobile/features/wallet/wallet_networth_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -17,19 +25,22 @@ import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 // ---------------------------------------------------------------------------
-// The wallet tab's OKX-style first screen (decision 0119)
+// The wallet tab's first screen (decision 0119, 钱包 C since 0188)
 // ---------------------------------------------------------------------------
 //
-// One total with an eye and a 24h line, four equal keys, an unboxed asset
-// list and a short entry group. Every figure is still the server's: nothing
+// One total with an eye, 今日盈亏 and a net-worth sparkline that opens into a
+// chart, four equal keys, the holdings split, a balance list with two actions
+// per row and a short entry group. Every figure is still the server's: nothing
 // here sums, converts or guesses, and a figure that was not read says so in
 // one weak line instead of a block-sized card.
 
 /// A Boolean that lives as long as the app process and no longer.
 ///
-/// AGENTS rule 23 keeps device persistence to `reduceMotion` alone, so the
-/// two wallet display choices below are remembered for this run only: the
-/// provider is not auto-disposed, and nothing writes it anywhere.
+/// AGENTS rule 23 keeps device persistence to a short list of display keys,
+/// so the wallet's own display choices below are remembered for this run
+/// only: the provider is not auto-disposed, and nothing writes it anywhere.
+/// (The eye is the one exception since decision 0188: it is 0175's
+/// installation-scoped 「隐藏余额」, `loopBalanceVisibilityProvider`.)
 final class WalletSessionFlag extends Notifier<bool> {
   WalletSessionFlag(this._initial);
 
@@ -41,14 +52,27 @@ final class WalletSessionFlag extends Notifier<bool> {
   void toggle() => state = !state;
 }
 
-/// Whether the wallet's amounts are masked (the eye beside 总资产).
-final walletAmountsHiddenProvider = NotifierProvider<WalletSessionFlag, bool>(
-  () => WalletSessionFlag(false),
-);
-
 /// Whether rows holding exactly zero are folded away. On by default.
 final walletHideZeroBalancesProvider =
     NotifierProvider<WalletSessionFlag, bool>(() => WalletSessionFlag(true));
+
+/// Whether the net-worth chart under 总资产 is open (decision 0188). Closed
+/// by default; an open chart stays open for the rest of the run.
+final walletNetWorthExpandedProvider =
+    NotifierProvider<WalletSessionFlag, bool>(() => WalletSessionFlag(false));
+
+/// The window the open chart shows; 7 天 by default, kept for the run.
+final class WalletNetWorthRangeChoice extends Notifier<LoopNetWorthRange> {
+  @override
+  LoopNetWorthRange build() => LoopNetWorthRange.week;
+
+  void choose(LoopNetWorthRange range) => state = range;
+}
+
+final walletNetWorthRangeProvider =
+    NotifierProvider<WalletNetWorthRangeChoice, LoopNetWorthRange>(
+      WalletNetWorthRangeChoice.new,
+    );
 
 /// What a masked amount prints.
 const String walletMaskedFigure = '****';
@@ -62,17 +86,6 @@ bool walletRowIsZero(LoopAssetBalanceRow row) {
   if (balance.displayBalance != Decimal.zero) return false;
   final pending = row.pending;
   return pending is! LoopPendingAvailable || pending.value == Decimal.zero;
-}
-
-/// `▲ $302.52 (+5%) · 24h` — the total's 24h line, as text.
-///
-/// The arrow and the colour come from [LoopPriceMove]; a flat total has
-/// neither.
-String walletChangeText(LoopNetWorthChangeAvailable change) {
-  final move = LoopPriceMove.of(change.usd);
-  final usd = change.usd < Decimal.zero ? -change.usd : change.usd;
-  return '${_arrow(move)}${loopFormatUsd(usd)} '
-      '(${loopFormatPercent(change.pct)}) · 24h';
 }
 
 /// `▲5%` / `▼1.2%` / `0%` — a row's own 24h move.
@@ -89,17 +102,28 @@ String _arrow(LoopPriceMove move) => switch (move) {
   LoopPriceMove.flat || LoopPriceMove.unread => '',
 };
 
+/// A row's USD move over 24h, from its value now and the percent the price
+/// moved: `value × pct / (100 + pct)`, i.e. value now − value 24h ago at the
+/// same holding. `null` when the percent is −100 (no prior value to speak of).
+Decimal? walletRowChangeUsd(Decimal valueUsd, Decimal pct) {
+  final base = Decimal.fromInt(100) + pct;
+  if (base == Decimal.zero) return null;
+  return (valueUsd * pct / base).toDecimal(scaleOnInfinitePrecision: 12);
+}
+
 // ---------------------------------------------------------------------------
-// 总资产
+// 总资产 (钱包 C, decision 0188)
 // ---------------------------------------------------------------------------
 
-/// 「总资产」, the eye, the figure, the 24h line and one weak caption.
+/// 「总资产」, the eye, the figure with `USD`, the ¥ / address line, one weak
+/// caption, 今日盈亏, the 7-day sparkline and the chart it opens in place.
 ///
 /// [balances] is the read the figure comes from; `null` while it has not
 /// landed. [unreadText] is what the figure slot says when there is no read
 /// and none is on its way — 「暂不可用」, 「还没有钱包」 — so the slot is never
-/// a zero and never a dash.
-class WalletTotalHeader extends ConsumerWidget {
+/// a zero and never a dash. [walletId] is the wallet whose net-worth history
+/// is read; `null` draws no history at all.
+class WalletTotalHeader extends ConsumerStatefulWidget {
   const WalletTotalHeader({
     required this.keyPrefix,
     required this.balances,
@@ -107,7 +131,9 @@ class WalletTotalHeader extends ConsumerWidget {
     super.key,
     this.unreadText = '暂不可用',
     this.address,
+    this.fullAddress,
     this.environmentTag,
+    this.walletId,
   });
 
   final String keyPrefix;
@@ -118,25 +144,84 @@ class WalletTotalHeader extends ConsumerWidget {
   /// The active wallet's truncated address, when one is active.
   final String? address;
 
+  /// The same address in full, which the copy glyph puts on the clipboard.
+  final String? fullAddress;
+
   /// Decision 0100: the backend environment on a non-release build.
   final String? environmentTag;
 
+  final String? walletId;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hidden = ref.watch(walletAmountsHiddenProvider);
+  ConsumerState<WalletTotalHeader> createState() => _WalletTotalHeaderState();
+}
+
+class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
+  /// Starts a history read nobody has asked for yet. The read is display
+  /// only: whatever it answers, the balances below are untouched.
+  LoopChainResourceState<LoopNetWorthHistory> _watchHistory(
+    WalletNetWorthHistoryKey key,
+  ) {
+    final state = ref.watch(walletNetWorthHistoryControllerProvider(key));
+    if (state.phase == LoopChainViewPhase.loading &&
+        state.value == null &&
+        state.mode != LoopChainGatewayMode.unavailable) {
+      scheduleMicrotask(() {
+        if (!mounted) return;
+        unawaited(
+          ref
+              .read(walletNetWorthHistoryControllerProvider(key).notifier)
+              .load(),
+        );
+      });
+    }
+    return state;
+  }
+
+  void _toggle() => ref.read(walletNetWorthExpandedProvider.notifier).toggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final keyPrefix = widget.keyPrefix;
+    final hidden = ref.watch(
+      loopBalanceVisibilityProvider.select((visibility) => visibility.hidden),
+    );
     final ink = LoopGround.inkOf(context);
     final auxiliary = LoopGround.auxiliaryOf(context);
     final secondary = LoopGround.secondaryOf(context);
+    final balances = widget.balances;
     final netWorth = balances?.netWorth;
     final figure = switch (netWorth) {
       LoopNetWorthValued(valueUsd: final value) =>
         hidden ? walletMaskedFigure : loopFormatUsd(value),
       LoopNetWorthUnavailable() => '暂不可用',
-      null => unreadText,
+      null => widget.unreadText,
     };
     final figureIsAmount = netWorth is LoopNetWorthValued;
+
+    // The history: its own port, its own gate. A server without it (404 /
+    // 503 / a body missing its keys) draws no sparkline, no chart and no
+    // 今日盈亏 — and nothing else on the page moves.
+    final walletId = widget.walletId;
+    final historyMode = ref.watch(
+      walletNetWorthHistoryGatewayProvider.select((gateway) => gateway.mode),
+    );
+    final historyOn =
+        walletId != null && historyMode != LoopChainGatewayMode.unavailable;
+    final expanded = historyOn && ref.watch(walletNetWorthExpandedProvider);
+    final range = ref.watch(walletNetWorthRangeProvider);
+    final weekState = historyOn
+        ? _watchHistory((walletId: walletId, range: LoopNetWorthRange.week))
+        : null;
+    final chartState = !expanded
+        ? null
+        : range == LoopNetWorthRange.week
+        ? weekState
+        : _watchHistory((walletId: walletId, range: range));
+    final week = weekState?.value;
+    final fiat = week?.fiat;
+
     final caption = <String>[
-      ?address,
       if (netWorth case LoopNetWorthValued(
         partial: true,
         unavailableCount: final count,
@@ -148,138 +233,192 @@ class WalletTotalHeader extends ConsumerWidget {
         loopReasonCodeText(reason),
     ].join(' · ');
 
-    // Decision 0133 (audit m9): no chevron to 净值明细. That page repeated
-    // this header and the asset list below it; the (i) carries the rest.
-    final figureText = Text(
-      figure,
-      key: ValueKey<String>('$keyPrefix-total-figure'),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: figureIsAmount
-          ? LoopType.figureXl.copyWith(color: ink)
-          : LoopType.headingSm.copyWith(color: secondary),
+    final figureRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: <Widget>[
+        Flexible(
+          child: Text(
+            figure,
+            key: ValueKey<String>('$keyPrefix-total-figure'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: figureIsAmount
+                ? LoopType.figureXl.copyWith(color: ink)
+                : LoopType.headingSm.copyWith(color: secondary),
+          ),
+        ),
+        if (figureIsAmount) ...<Widget>[
+          const SizedBox(width: 4),
+          Text(
+            'USD',
+            key: ValueKey<String>('$keyPrefix-total-unit'),
+            style: LoopTypography.figure(14, color: secondary),
+          ),
+        ],
+      ],
+    );
+
+    final fiatText = fiat != null && fiat.currency == 'CNY'
+        ? '≈ ¥${hidden ? walletMaskedFigure : loopFormatDecimal(fiat.amount, maxFractionDigits: 2)}'
+        : null;
+    final subline = <String>[?fiatText, ?widget.address].join(' · ');
+    final fullAddress = widget.fullAddress;
+
+    final left = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Text('总资产', style: LoopType.caption.copyWith(color: secondary)),
+            _HeaderGlyphButton(
+              key: ValueKey<String>('$keyPrefix-eye'),
+              label: hidden ? '显示金额' : '隐藏金额',
+              toggled: hidden,
+              onTap: () => unawaited(
+                ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
+              ),
+              child: Icon(
+                hidden
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                size: 16,
+                color: auxiliary,
+              ),
+            ),
+            _HeaderGlyphButton(
+              key: ValueKey<String>('$keyPrefix-info'),
+              label: '总资产说明',
+              onTap: () => showWalletTotalInfoSheet(
+                context,
+                balances: balances,
+                keyPrefix: keyPrefix,
+              ),
+              child: LoopIcon('info', size: 14, color: auxiliary),
+            ),
+            const Spacer(),
+            if (widget.environmentTag case final String tag)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: LoopEnvironmentTag(
+                  tag,
+                  key: ValueKey<String>('$keyPrefix-environment-tag'),
+                ),
+              ),
+          ],
+        ),
+        if (widget.loading && netWorth == null)
+          Padding(
+            key: ValueKey<String>('$keyPrefix-total-loading'),
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: const LoopSkeletonBlock(width: 168, height: 30),
+          )
+        else
+          figureRow,
+        if (subline.isNotEmpty)
+          Semantics(
+            button: fullAddress != null,
+            label: fullAddress == null ? subline : '$subline，复制钱包地址',
+            excludeSemantics: true,
+            child: LoopPressable(
+              key: ValueKey<String>('$keyPrefix-address-copy'),
+              scale: false,
+              onTap: fullAddress == null
+                  ? null
+                  : () => unawaited(
+                      LoopCopy.text(context, fullAddress, message: '钱包地址已复制'),
+                    ),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Flexible(
+                      child: Text(
+                        subline,
+                        key: ValueKey<String>('$keyPrefix-total-subline'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopType.caption.copyWith(color: auxiliary),
+                      ),
+                    ),
+                    if (fullAddress != null) ...<Widget>[
+                      const SizedBox(width: 4),
+                      LoopIcon('copy', size: 12, color: auxiliary),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        if (caption.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, right: 8),
+            child: Text(
+              caption,
+              key: ValueKey<String>('$keyPrefix-total-caption'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.captionSm.copyWith(color: auxiliary),
+            ),
+          ),
+        if (week != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: WalletPnlLine(
+              keyPrefix: keyPrefix,
+              change: week.change24h,
+              hidden: hidden,
+              onTap: _toggle,
+            ),
+          ),
+      ],
     );
 
     return Padding(
       key: ValueKey<String>('$keyPrefix-total-header'),
-      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 8, 6),
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 8, 2),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('总资产', style: LoopType.caption.copyWith(color: secondary)),
-              _HeaderGlyphButton(
-                key: ValueKey<String>('$keyPrefix-eye'),
-                label: hidden ? '显示金额' : '隐藏金额',
-                toggled: hidden,
-                onTap: () =>
-                    ref.read(walletAmountsHiddenProvider.notifier).toggle(),
-                child: Icon(
-                  hidden
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 16,
-                  color: auxiliary,
-                ),
-              ),
-              _HeaderGlyphButton(
-                key: ValueKey<String>('$keyPrefix-info'),
-                label: '总资产说明',
-                onTap: () => showWalletTotalInfoSheet(
-                  context,
-                  balances: balances,
-                  keyPrefix: keyPrefix,
-                ),
-                child: LoopIcon('info', size: 14, color: auxiliary),
-              ),
-              const Spacer(),
-              if (environmentTag case final String tag)
+              Expanded(child: left),
+              if (!expanded && week != null && week.drawable)
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: LoopEnvironmentTag(
-                    tag,
-                    key: ValueKey<String>('$keyPrefix-environment-tag'),
-                  ),
+                  padding: const EdgeInsets.only(top: 38, left: 10, right: 8),
+                  child: WalletNetWorthSpark(history: week, onTap: _toggle),
                 ),
             ],
           ),
-          if (loading && netWorth == null)
-            Padding(
-              key: ValueKey<String>('$keyPrefix-total-loading'),
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: const LoopSkeletonBlock(width: 168, height: 30),
-            )
-          else
-            figureText,
-          WalletChangeLine(
-            keyPrefix: keyPrefix,
-            netWorth: netWorth,
-            hidden: hidden,
-          ),
-          if (caption.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, right: 8),
-              child: Text(
-                caption,
-                key: ValueKey<String>('$keyPrefix-total-caption'),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: LoopType.captionSm.copyWith(color: auxiliary),
-              ),
-            ),
+          if (historyOn)
+            if (expanded)
+              WalletNetWorthPanel(
+                state: chartState,
+                range: range,
+                hidden: hidden,
+                onRange: (next) =>
+                    ref.read(walletNetWorthRangeProvider.notifier).choose(next),
+                onRetry: () => unawaited(
+                  ref
+                      .read(
+                        walletNetWorthHistoryControllerProvider((
+                          walletId: walletId,
+                          range: range,
+                        )).notifier,
+                      )
+                      .reload(),
+                ),
+                onCollapse: _toggle,
+              )
+            else
+              WalletNetWorthChevron(expanded: false, onTap: _toggle),
         ],
       ),
     );
-  }
-}
-
-/// The 24h line under the total, in its three states.
-///
-/// A figure: `▲ $x (x%) · 24h` in rise / fall. No figure because a valued row
-/// had no 24h number: one weak 「24h 变动暂不可用」. No net worth at all:
-/// nothing.
-class WalletChangeLine extends StatelessWidget {
-  const WalletChangeLine({
-    required this.keyPrefix,
-    required this.netWorth,
-    required this.hidden,
-    super.key,
-  });
-
-  final String keyPrefix;
-  final LoopNetWorth? netWorth;
-  final bool hidden;
-
-  @override
-  Widget build(BuildContext context) {
-    final valued = netWorth;
-    if (valued is! LoopNetWorthValued) return const SizedBox.shrink();
-    final auxiliary = LoopGround.auxiliaryOf(context);
-    switch (valued.change24h) {
-      case LoopNetWorthChangeUnavailable():
-        return Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            '24h 变动暂不可用',
-            key: ValueKey<String>('$keyPrefix-change24h-unavailable'),
-            style: LoopType.caption.copyWith(color: auxiliary),
-          ),
-        );
-      case final LoopNetWorthChangeAvailable change:
-        final move = LoopPriceMove.of(change.usd);
-        return Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            hidden ? '$walletMaskedFigure · 24h' : walletChangeText(change),
-            key: ValueKey<String>('$keyPrefix-change24h'),
-            style: LoopType.figureSm.copyWith(
-              color: hidden ? auxiliary : move.color,
-            ),
-          ),
-        );
-    }
   }
 }
 
@@ -869,6 +1008,436 @@ class WalletZeroBalanceToggle extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 持仓分布 (钱包 C, decision 0188)
+// ---------------------------------------------------------------------------
+
+/// One slice of the holdings split: a ticker (or 「其它」) and its share of
+/// the valued rows, in percent.
+typedef WalletHoldingShare = ({String label, Decimal percent});
+
+/// The split: at most three tickers, then 「其它」 for the rest, by each row's own USD
+/// valuation. `null` whenever the valuations are not complete — a balance
+/// that was not read, a held row without a price, a partial or unavailable
+/// total — because a split of an incomplete sum states a share no holding
+/// has. Rows holding nothing take no slice.
+List<WalletHoldingShare>? walletHoldingShares(LoopWalletBalances balances) {
+  final netWorth = balances.netWorth;
+  if (netWorth is! LoopNetWorthValued || netWorth.partial) return null;
+  final valued = <({String symbol, Decimal value})>[];
+  for (final row in balances.balances) {
+    final balance = row.balance;
+    if (balance is! LoopBalanceAvailable) return null;
+    if (balance.displayBalance == Decimal.zero) continue;
+    final valuation = row.valuation;
+    if (valuation is! LoopValuationAvailable) return null;
+    if (valuation.valueUsd <= Decimal.zero) continue;
+    valued.add((symbol: row.symbol, value: valuation.valueUsd));
+  }
+  if (valued.isEmpty) return null;
+  valued.sort((a, b) => b.value.compareTo(a.value));
+  final total = valued.fold<Decimal>(
+    Decimal.zero,
+    (sum, entry) => sum + entry.value,
+  );
+  Decimal share(Decimal value) => (value * Decimal.fromInt(100) / total)
+      .toDecimal(scaleOnInfinitePrecision: 6);
+  final shown = valued.length > 3 ? valued.take(3).toList() : valued;
+  final rest = valued
+      .skip(shown.length)
+      .fold<Decimal>(Decimal.zero, (sum, entry) => sum + entry.value);
+  return <WalletHoldingShare>[
+    for (final entry in shown)
+      (label: entry.symbol, percent: share(entry.value)),
+    if (rest > Decimal.zero) (label: '其它', percent: share(rest)),
+  ];
+}
+
+/// The four slice colours, in order: Lime, Chalk, Card2, Line.
+const List<Color> walletHoldingColors = <Color>[
+  LoopColors.lime,
+  LoopColors.chalk,
+  LoopColors.card2,
+  LoopColors.line,
+];
+
+/// 持仓分布 — one segmented bar and its legend in a record card.
+class WalletHoldingsDistribution extends StatelessWidget {
+  const WalletHoldingsDistribution({required this.shares, super.key});
+
+  final List<WalletHoldingShare> shares;
+
+  static String percentText(Decimal percent) =>
+      '${loopFormatDecimal(percent, maxFractionDigits: percent < Decimal.fromInt(10) ? 1 : 0)}%';
+
+  @override
+  Widget build(BuildContext context) {
+    final secondary = LoopGround.secondaryOf(context);
+    final auxiliary = LoopGround.auxiliaryOf(context);
+    final label = shares
+        .map((entry) => '${entry.label} ${percentText(entry.percent)}')
+        .join('，');
+    return LoopRecordCard(
+      key: const ValueKey<String>('wallet-distribution'),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Semantics(
+        container: true,
+        label: '持仓分布，$label',
+        excludeSemantics: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text('持仓分布', style: LoopType.caption.copyWith(color: secondary)),
+            const SizedBox(height: 10),
+            SizedBox(
+              key: const ValueKey<String>('wallet-distribution-bar'),
+              height: 6,
+              child: Row(
+                children: <Widget>[
+                  for (var index = 0; index < shares.length; index++) ...[
+                    if (index > 0) const SizedBox(width: 2),
+                    Expanded(
+                      // Basis points: the share in the bar's pixel space.
+                      flex: math.max(
+                        1,
+                        (shares[index].percent * Decimal.fromInt(100))
+                            .round()
+                            .toBigInt()
+                            .toInt(),
+                      ),
+                      child: DecoratedBox(
+                        key: ValueKey<String>(
+                          'wallet-distribution-segment-$index',
+                        ),
+                        decoration: BoxDecoration(
+                          color: walletHoldingColors[index],
+                          borderRadius: LoopRadius.pill,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 14,
+              runSpacing: 4,
+              children: <Widget>[
+                for (var index = 0; index < shares.length; index++)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: walletHoldingColors[index],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${shares[index].label} ${percentText(shares[index].percent)}',
+                        key: ValueKey<String>(
+                          'wallet-distribution-legend-$index',
+                        ),
+                        style: LoopType.captionSm.copyWith(color: auxiliary),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 余额 rows (钱包 C, decision 0188)
+// ---------------------------------------------------------------------------
+
+/// One of the two small actions under a balance row.
+@immutable
+final class WalletRowAction {
+  const WalletRowAction({
+    required this.label,
+    required this.actionKey,
+    this.onPressed,
+    this.blockedReason,
+  }) : assert(
+         onPressed == null || blockedReason == null,
+         'An action either runs or says why it cannot.',
+       );
+
+  final String label;
+  final Key actionKey;
+  final VoidCallback? onPressed;
+  final String? blockedReason;
+}
+
+/// The two quiet chips at the end of a row (发送 / 兑换, 买入 / 卖出).
+class WalletRowActions extends StatelessWidget {
+  const WalletRowActions({
+    required this.actions,
+    required this.onBlocked,
+    super.key,
+  });
+
+  final List<WalletRowAction> actions;
+  final void Function(String reason) onBlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: <Widget>[
+        for (var index = 0; index < actions.length; index++) ...<Widget>[
+          if (index > 0) const SizedBox(width: 8),
+          LoopSeg(
+            key: actions[index].actionKey,
+            label: actions[index].label,
+            quiet: true,
+            selected: false,
+            onSelected: actions[index].onPressed,
+            onBlocked: switch (actions[index].blockedReason) {
+              final String reason => () => onBlocked(reason),
+              null => null,
+            },
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// One balance, 钱包 C: Logo 40 · ticker over its name (or 手续费保留 on the
+/// native row) · amount over its USD value; under it the 24h move when the
+/// price source reported one, and the row's two actions.
+///
+/// A row whose chain read failed is drawn by [WalletAssetLine] as before: its
+/// logo, its ticker and one weak line — never `0`, never a dash, and no
+/// action that would act on a balance nobody read.
+class WalletBalanceRow extends StatelessWidget {
+  const WalletBalanceRow({
+    required this.row,
+    required this.hidden,
+    required this.actions,
+    required this.onBlocked,
+    super.key,
+    this.gasReserve,
+    this.onTap,
+    this.onRetry,
+  });
+
+  final LoopAssetBalanceRow row;
+  final bool hidden;
+  final List<WalletRowAction> actions;
+  final void Function(String reason) onBlocked;
+
+  /// The native row's reserve, from `gasReservePolicy`.
+  final Decimal? gasReserve;
+  final VoidCallback? onTap;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final balance = row.balance;
+    if (balance is! LoopBalanceAvailable) {
+      return WalletAssetLine(
+        row: row,
+        hidden: hidden,
+        onTap: onTap,
+        onRetry: onRetry,
+      );
+    }
+    final ink = LoopGround.inkOf(context);
+    final secondary = LoopGround.secondaryOf(context);
+    final auxiliary = LoopGround.auxiliaryOf(context);
+    final amount = hidden
+        ? walletMaskedFigure
+        : loopFormatDecimal(balance.displayBalance);
+    final valuation = row.valuation;
+    final reserve = gasReserve;
+    final subtitle = row.isNative && reserve != null
+        ? '手续费保留 ${loopFormatDecimal(reserve)}'
+        : row.name;
+    final marks = <String>[
+      if (valuation is LoopValuationAvailable)
+        ?loopFactQualityMarker(valuation.quality),
+      if (row.pending case LoopPendingAvailable(value: final value)
+          when value > Decimal.zero)
+        '待确认 ${hidden ? walletMaskedFigure : loopFormatDecimal(value)}',
+      if (row.crossCheck.isMisaligned) '数据源尚未对齐',
+    ];
+
+    final String valueText;
+    String? changeText;
+    Color? changeColour;
+    switch (valuation) {
+      case LoopValuationAvailable(
+        valueUsd: final value,
+        change24hPct: final pct,
+      ):
+        valueText = '≈${hidden ? walletMaskedFigure : loopFormatUsd(value)}';
+        if (pct != null) {
+          final usd = walletRowChangeUsd(value, pct);
+          if (usd != null) {
+            changeText = walletSignedUsdText(usd, pct, hidden: hidden);
+            changeColour = hidden ? secondary : LoopPriceMove.of(pct).color;
+          }
+        }
+      case LoopValuationUnavailable():
+        valueText = '暂无估值';
+    }
+
+    final top = LoopPressable(
+      key: ValueKey<String>('wallet-balance-open-${row.assetId}'),
+      scale: false,
+      onTap: onTap,
+      child: Row(
+        children: <Widget>[
+          LoopTokenLogo(
+            assetSymbol: row.symbol,
+            logoUrl: row.logoUrl,
+            fallbackMonogram: row.symbol,
+            size: 40,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  row.symbol,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.title(
+                    14,
+                    weight: FontWeight.w700,
+                    color: ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: <Widget>[
+                    Flexible(
+                      child: Text(
+                        subtitle,
+                        key: ValueKey<String>(
+                          'wallet-balance-subtitle-${row.assetId}',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopType.captionSm.copyWith(color: secondary),
+                      ),
+                    ),
+                    if (marks.isNotEmpty)
+                      Flexible(
+                        child: Text(
+                          ' · ${marks.join(' · ')}',
+                          key: ValueKey<String>(
+                            'wallet-balance-mark-${row.assetId}',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.captionSm.copyWith(color: auxiliary),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                amount,
+                key: ValueKey<String>('wallet-balance-amount-${row.assetId}'),
+                maxLines: 1,
+                style: LoopTypography.figure(
+                  14,
+                  weight: FontWeight.w700,
+                  color: ink,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                valueText,
+                key: ValueKey<String>('wallet-balance-value-${row.assetId}'),
+                maxLines: 1,
+                style: LoopTypography.figure(11, color: LoopColors.text2),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    return Semantics(
+      key: ValueKey<String>('wallet-balance-${row.assetId}'),
+      container: true,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: LoopColors.line)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Semantics(
+                label:
+                    '${row.symbol}，$subtitle，余额 $amount，估值 $valueText'
+                    '${changeText == null ? '' : '，24 小时 $changeText'}',
+                excludeSemantics: true,
+                button: onTap != null,
+                child: top,
+              ),
+              if (changeText != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 52, top: 8),
+                  child: Row(
+                    children: <Widget>[
+                      Text(
+                        '24 小时',
+                        style: LoopType.captionSm.copyWith(color: auxiliary),
+                      ),
+                      const Spacer(),
+                      Text(
+                        changeText,
+                        key: ValueKey<String>(
+                          'wallet-balance-change-${row.assetId}',
+                        ),
+                        style: LoopTypography.figure(11, color: changeColour!),
+                      ),
+                    ],
+                  ),
+                ),
+              if (actions.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: WalletRowActions(
+                    actions: actions,
+                    onBlocked: onBlocked,
+                  ),
+                ),
+            ],
           ),
         ),
       ),

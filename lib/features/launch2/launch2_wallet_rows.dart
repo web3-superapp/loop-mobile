@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
@@ -80,6 +81,9 @@ class Launch2WalletRows extends ConsumerWidget {
             title: position.ticker,
             subtitle: 'v2 内盘持仓',
             value: hidden ? '****' : launch2MemeFigure(position.curve.net),
+            // Decision 0188 (钱包 C): an internal-market holding carries
+            // 买入 / 卖出, both into the instance page that trades it.
+            trades: _tradesOnCurve(position.stage),
           ),
         if (position.nftHeld > 0)
           _row(
@@ -104,7 +108,66 @@ class Launch2WalletRows extends ConsumerWidget {
     );
   }
 
+  /// The two rounds whose trades run on the curve.
+  static bool _tradesOnCurve(Launch2Stage stage) =>
+      stage == Launch2Stage.priority || stage == Launch2Stage.public;
+
   Widget _row({
+    required String key,
+    required Launch2Position position,
+    required String title,
+    required String subtitle,
+    required String value,
+    String? location,
+    bool trades = false,
+  }) {
+    final row = _quoteRow(
+      key: key,
+      position: position,
+      title: title,
+      subtitle: subtitle,
+      value: value,
+      location: location,
+    );
+    if (!trades) return row;
+    final instance = Launch2Route.instance(position.instanceId);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        row,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              LoopSeg(
+                key: ValueKey<String>(
+                  'launch2-wallet-sell-${position.instanceId}',
+                ),
+                label: '卖出',
+                quiet: true,
+                selected: false,
+                onSelected: () => onOpen(instance),
+              ),
+              const SizedBox(width: 8),
+              LoopSeg(
+                key: ValueKey<String>(
+                  'launch2-wallet-buy-${position.instanceId}',
+                ),
+                label: '买入',
+                quiet: true,
+                selected: false,
+                onSelected: () => onOpen(instance),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _quoteRow({
     required String key,
     required Launch2Position position,
     required String title,

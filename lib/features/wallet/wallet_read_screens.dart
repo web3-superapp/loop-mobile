@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/loop_backend_identity.dart';
+import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/qr/loop_qr_code.dart';
@@ -105,11 +106,31 @@ Future<void> _refreshWallet(WidgetRef ref, String? walletId) async {
   final balances = walletId == null
       ? null
       : ref.read(walletBalancesControllerProvider(walletId).notifier);
+  // Decision 0188: the net-worth history the header already asked for is
+  // read again with the rest; a window nobody opened is not.
+  final histories = walletId == null
+      ? const <WalletNetWorthHistoryController>[]
+      : <WalletNetWorthHistoryController>[
+          for (final range in LoopNetWorthRange.values)
+            if (ref.exists(
+              walletNetWorthHistoryControllerProvider((
+                walletId: walletId,
+                range: range,
+              )),
+            ))
+              ref.read(
+                walletNetWorthHistoryControllerProvider((
+                  walletId: walletId,
+                  range: range,
+                )).notifier,
+              ),
+        ];
   // S88d: the mining figures on this page are retained between visits, so a
   // pull is the one place they are read again on the spot.
   await Future.wait<void>(<Future<void>>[
     directory.reload(),
     if (balances != null) balances.reload(),
+    for (final history in histories) history.reload(),
     if (ref.exists(miningSummaryControllerProvider))
       ref.read(miningSummaryControllerProvider.notifier).reload(),
   ]);
@@ -251,7 +272,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final sendGate = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.sendApprovals),
     );
-    final hidden = ref.watch(walletAmountsHiddenProvider);
+    // Decision 0188: the eye is 0175's 「隐藏余额」, the same choice as 我.
+    final hidden = ref.watch(
+      loopBalanceVisibilityProvider.select((visibility) => visibility.hidden),
+    );
     final hideZero = ref.watch(walletHideZeroBalancesProvider);
     final directoryEmpty = _directoryIsEmpty(directory);
     // Decision 0158: the server grants only to the signed-in embedded wallet,
@@ -307,7 +331,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             ? '离线'
             : '暂不可用',
         address: directory.value?.active?.truncatedAddress,
+        fullAddress: directory.value?.active?.address,
         environmentTag: ref.watch(loopEnvironmentTagProvider),
+        walletId: walletId,
       ),
       sections: <Widget>[
         LoopFreshnessStrip(
@@ -425,16 +451,28 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               ),
             ),
-          WalletSectionHeading(
-            title: '资产',
-            trailing: WalletPowerTag(
-              onTap: () => unawaited(
-                showWalletPowerSheet(
-                  context,
-                  onOpenMining: () => _open('/mining'),
+          // Decision 0188 · 持仓分布: only over a complete set of valuations.
+          if (balances != null)
+            if (walletHoldingShares(balances) case final shares?)
+              WalletHoldingsDistribution(shares: shares),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              // There is no list sort to offer, so the label stands alone
+              // with the mining note (decision 0188).
+              const Expanded(child: LoopLabel('余额', tight: true)),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: WalletPowerTag(
+                  onTap: () => unawaited(
+                    showWalletPowerSheet(
+                      context,
+                      onOpenMining: () => _open('/mining'),
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
           ..._assetBody(
             walletId: walletId,
@@ -443,6 +481,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             state: balancesState,
             hidden: hidden,
             hideZero: hideZero,
+            sendGate: sendGate,
+            swapGate: swapGate,
           ),
           // S136 · decision 0139: MEME v2 holdings and NFTs, one row each,
           // read from `me/positions`. Nothing is drawn unless the switch is
@@ -488,6 +528,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     required LoopChainResourceState<LoopWalletBalances>? state,
     required bool hidden,
     required bool hideZero,
+    required LoopCapabilityProjection sendGate,
+    required LoopCapabilityProjection swapGate,
   }) {
     void retry() => unawaited(
       ref.read(walletBalancesControllerProvider(walletId).notifier).reload(),
@@ -564,11 +606,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             for (final row in visible)
-              WalletAssetLine(
+              WalletBalanceRow(
                 row: row,
                 hidden: hidden,
+                gasReserve: row.isNative
+                    ? balances.gasReservePolicy.nativeReserve
+                    : null,
                 onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
                 onRetry: retry,
+                onBlocked: _blocked,
+                actions: _rowActions(row, sendGate, swapGate),
               ),
             if (visible.isEmpty)
               LoopInlineUnavailable(
@@ -608,6 +655,43 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ),
     ];
   }
+
+  /// 发送 / 兑换 under a balance row (decision 0188). Each promises what the
+  /// four keys above promise: the same gate, the same server sentence when
+  /// it is shut. 兑换 starts from this row's asset.
+  List<WalletRowAction> _rowActions(
+    LoopAssetBalanceRow row,
+    LoopCapabilityProjection sendGate,
+    LoopCapabilityProjection swapGate,
+  ) => <WalletRowAction>[
+    WalletRowAction(
+      label: '发送',
+      actionKey: ValueKey<String>('wallet-balance-send-${row.assetId}'),
+      onPressed: sendGate.isAvailable ? () => _open('/wallet/send') : null,
+      blockedReason: sendGate.isAvailable
+          ? null
+          : loopReasonCodeText(
+              sendGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+            ),
+    ),
+    WalletRowAction(
+      label: '兑换',
+      actionKey: ValueKey<String>('wallet-balance-swap-${row.assetId}'),
+      onPressed: swapGate.isAvailable
+          ? () => _open(
+              Uri(
+                path: '/wallet/swap',
+                queryParameters: <String, String>{'from': row.assetId},
+              ).toString(),
+            )
+          : null,
+      blockedReason: swapGate.isAvailable
+          ? null
+          : loopReasonCodeText(
+              swapGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+            ),
+    ),
+  ];
 
   /// One short line per failure, so the asset list keeps its place.
   String _balancesFailureLine(

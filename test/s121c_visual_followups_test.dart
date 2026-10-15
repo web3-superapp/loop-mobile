@@ -24,10 +24,9 @@ void main() {
   loopWatchGround();
   Finder key(String value) => find.byKey(ValueKey<String>(value));
 
-  group('1 · wallet asset rows are OKX rows', () {
-    testWidgets('logo 36, symbol 18, amount 18, ≈\$ grey, the 96 × 44 pill', (
-      tester,
-    ) async {
+  group('1 · wallet asset rows (钱包 C, decision 0188 supersedes 0123)', () {
+    testWidgets('logo 40, symbol 14 bold, amount 14 bold, value 11 grey, '
+        'the 24h line and two quiet actions', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -39,35 +38,45 @@ void main() {
       expect(
         find.descendant(of: row, matching: find.byType(LoopQuoteRow)),
         findsNothing,
-        reason: 'the row itself is the quote row',
       );
-      expect(tester.widget(row), isA<LoopQuoteRow>());
       final logo = find.descendant(
         of: row,
         matching: find.byWidgetPredicate(
           (widget) => widget.runtimeType.toString() == 'LoopTokenLogo',
         ),
       );
-      expect(tester.getSize(logo), const Size(36, 36));
+      expect(tester.getSize(logo), const Size(40, 40));
       final symbol = tester.widget<Text>(
         find.descendant(of: row, matching: find.text('BNB')).first,
       );
-      expect(symbol.style!.fontSize, 18);
+      expect(symbol.style!.fontSize, 14);
+      expect(symbol.style!.fontWeight, FontWeight.w700);
       final amount = tester.widget<Text>(
         key('wallet-balance-amount-$s5NativeAssetId'),
       );
-      expect(amount.style!.fontSize, 18);
-      final pill = find.descendant(
-        of: key('wallet-balance-change-$s5NativeAssetId'),
-        matching: key('loop-change-pill'),
+      expect(amount.style!.fontSize, 14);
+      expect(amount.style!.fontWeight, FontWeight.w700);
+      final value = tester.widget<Text>(
+        key('wallet-balance-value-$s5NativeAssetId'),
       );
-      expect(tester.getSize(pill), loopChangePillSize);
+      expect(value.style!.fontSize, 11);
+      expect(value.style!.color, LoopColors.text2);
+      // The native row's grey line is its gas reserve, from the policy.
+      expect(
+        tester
+            .widget<Text>(key('wallet-balance-subtitle-$s5NativeAssetId'))
+            .data,
+        '手续费保留 0.005',
+      );
       // The derived-price note is small type at the end of the grey line.
       final mark = tester.widget<Text>(
         key('wallet-balance-mark-$s5NativeAssetId'),
       );
       expect(mark.data, contains('以 WBNB 计价'));
       expect(mark.style!.fontSize, 11);
+      expect(key('wallet-balance-change-$s5NativeAssetId'), findsOneWidget);
+      expect(key('wallet-balance-send-$s5NativeAssetId'), findsOneWidget);
+      expect(key('wallet-balance-swap-$s5NativeAssetId'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -120,7 +129,10 @@ void main() {
       expect(find.text('tBNB'), findsOneWidget);
       expect(find.text('2.5'), findsOneWidget);
       expect(find.text('可动用 2.495'), findsOneWidget);
-      expect(find.text('手续费保留 0.005'), findsOneWidget);
+      expect(
+        find.descendant(of: row, matching: find.text('手续费保留 0.005')),
+        findsOneWidget,
+      );
     });
   });
 

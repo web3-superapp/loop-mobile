@@ -85,16 +85,17 @@ void main() {
           const ValueKey<String>('wallet-balance-value-$s5NativeAssetId'),
         ),
       );
-      // Decision 0123: ≈\$ is the grey line, the 24h move is the pill.
+      // Decision 0188 (钱包 C): ≈\$ is the grey line under the amount, and
+      // the 24h move is its own line — the USD move and the percent — in
+      // rise / fall.
       expect(value.data, '≈\$5,231.73');
-      final pill = find.descendant(
-        of: find.byKey(
+      final change = tester.widget<Text>(
+        find.byKey(
           const ValueKey<String>('wallet-balance-change-$s5NativeAssetId'),
         ),
-        matching: find.text('+5.00%'),
       );
-      expect(pill, findsOneWidget);
-      expect(tester.widget<Text>(pill).style!.color, LoopColors.rise);
+      expect(change.data, '+\$249.13 (+5%)');
+      expect(change.style!.color, LoopColors.rise);
     });
 
     testWidgets('the gas reserve comes from the server, never a constant', (
@@ -624,10 +625,9 @@ void main() {
 
       expect(find.textContaining('2 项资产暂无价格，未计入'), findsOneWidget);
       expect(find.textContaining('数据可能过期'), findsWidgets);
-      expect(
-        find.byKey(const ValueKey<String>('wallet-change24h-unavailable')),
-        findsOneWidget,
-      );
+      // Decision 0188: 今日盈亏 comes from the net-worth history, which this
+      // composition does not mount, so the line is not drawn at all.
+      expect(find.byKey(const ValueKey<String>('wallet-pnl')), findsNothing);
     });
 
     testWidgets('an unavailable net worth states its reason', (tester) async {
