@@ -567,7 +567,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               ),
               child: Text(
                 '本次认购：Round $lockedRoundIndex',
-                style: LoopTypography.caption(12, color: LoopColors.text2),
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ),
           _TradeParameters(
@@ -639,7 +639,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                 child: SelectableText(
                   trade.refusalReasonCode!,
-                  style: LoopTypography.figure(12, color: LoopColors.text2),
+                  style: LoopType.code,
                 ),
               ),
             ),
@@ -792,7 +792,7 @@ class _TradeQuoteCard extends StatelessWidget {
             children: <Widget>[
               Text(
                 '支付 $payAsset',
-                style: LoopTypography.eyebrow(11, color: auxiliary),
+                style: LoopType.kicker.copyWith(color: auxiliary),
               ),
               const SizedBox(height: 4),
               Row(
@@ -813,11 +813,7 @@ class _TradeQuoteCard extends StatelessWidget {
                       // gets the page's 「完成」 bar (decision 0091).
                       textInputAction: TextInputAction.done,
                       cursorColor: ink,
-                      style: LoopTypography.figure(
-                        24,
-                        weight: FontWeight.w700,
-                        color: ink,
-                      ),
+                      style: LoopType.figureLg.copyWith(color: ink),
                       decoration: InputDecoration(
                         isDense: true,
                         filled: false,
@@ -827,16 +823,12 @@ class _TradeQuoteCard extends StatelessWidget {
                         focusedBorder: InputBorder.none,
                         disabledBorder: InputBorder.none,
                         hintText: '0',
-                        hintStyle: LoopTypography.figure(
-                          24,
-                          weight: FontWeight.w700,
-                          color: auxiliary,
-                        ),
+                        hintStyle: LoopType.figureLg.copyWith(color: auxiliary),
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(payAsset, style: LoopTypography.figure(13, color: ink)),
+                  Text(payAsset, style: LoopType.figure.copyWith(color: ink)),
                 ],
               ),
               const LoopHairline(),
@@ -850,24 +842,20 @@ class _TradeQuoteCard extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           '预计获得',
-                          style: LoopTypography.caption(11, color: auxiliary),
+                          style: LoopType.captionSm.copyWith(color: auxiliary),
                         ),
                         const SizedBox(height: 3),
                         Text(
                           intent == null
                               ? launchMissingFigure
                               : launchUnitsFigure(intent.expectedTokenAmount),
-                          style: LoopTypography.figure(
-                            18,
-                            weight: FontWeight.w700,
-                            color: ink,
-                          ),
+                          style: LoopType.figureMd.copyWith(color: ink),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(ticker, style: LoopTypography.figure(13, color: ink)),
+                  Text(ticker, style: LoopType.figure.copyWith(color: ink)),
                 ],
               ),
               const SizedBox(height: 7),
@@ -875,7 +863,7 @@ class _TradeQuoteCard extends StatelessWidget {
                 '包含本轮手续费 ${feeLabel ?? launchMissingFigure} · '
                 'USD1 余额 $balance · 授权额度 $allowance',
                 key: const ValueKey<String>('launch-trade-balance'),
-                style: LoopTypography.caption(11, color: auxiliary),
+                style: LoopType.captionSm.copyWith(color: auxiliary),
               ),
             ],
           );
@@ -1241,15 +1229,9 @@ class _TradeLimitsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      '固定价格',
-                      style: LoopTypography.eyebrow(
-                        11,
-                        color: LoopColors.text3,
-                      ),
-                    ),
+                    Text('固定价格', style: LoopType.kicker),
                     const SizedBox(height: 5),
-                    Text(price, style: LoopTypography.figure(20, height: 1.05)),
+                    Text(price, style: LoopType.figureLg),
                   ],
                 ),
               ),
@@ -1257,11 +1239,8 @@ class _TradeLimitsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(window, style: LoopTypography.figure(13)),
-                  Text(
-                    '本轮截止',
-                    style: LoopTypography.caption(11, color: LoopColors.text3),
-                  ),
+                  Text(window, style: LoopType.figure),
+                  Text('本轮截止', style: LoopType.captionSm),
                 ],
               ),
             ],
@@ -1269,7 +1248,7 @@ class _TradeLimitsCard extends StatelessWidget {
           const LoopHairline(),
           Text(
             '已募集 $raisedLabel / 硬顶 $hardCap',
-            style: LoopTypography.caption(11, color: LoopColors.text2),
+            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
           const SizedBox(height: 10),
           LoopProgressBar(

@@ -110,14 +110,14 @@ class _LoopAppLockCurtain extends ConsumerWidget {
                   child: Text(
                     'LOOP 已锁定',
                     key: const ValueKey<String>('loop-app-lock-title'),
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: LoopType.titleLg,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   '这台设备的锁屏验证通过后才会显示内容。',
                   textAlign: TextAlign.center,
-                  style: LoopTypography.caption(12, color: LoopColors.text3),
+                  style: LoopType.caption,
                 ),
                 if (outcome != null &&
                     outcome != LoopDeviceAuthOutcome.succeeded) ...<Widget>[
@@ -126,7 +126,7 @@ class _LoopAppLockCurtain extends ConsumerWidget {
                     loopAppLockAttemptText(outcome, state.systemMessage),
                     key: const ValueKey<String>('loop-app-lock-attempt'),
                     textAlign: TextAlign.center,
-                    style: LoopTypography.caption(12, color: LoopColors.text2),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
                 ],
                 const SizedBox(height: 22),

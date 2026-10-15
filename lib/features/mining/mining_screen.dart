@@ -488,7 +488,7 @@ class _ReferralCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('REFERRAL POWER', style: LoopMono.label),
+            Text('REFERRAL POWER', style: LoopType.eyebrow),
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -498,13 +498,7 @@ class _ReferralCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text(
-                        '邀请关系加成',
-                        style: LoopTypography.display(
-                          21,
-                          color: LoopColors.chalk,
-                        ),
-                      ),
+                      Text('邀请关系加成', style: LoopType.headingSm),
                       const SizedBox(height: 6),
                       Text(
                         // Decision 0149: the boost is never read on this
@@ -512,8 +506,7 @@ class _ReferralCard extends StatelessWidget {
                         // dash before a full stop (「当前加成 —。」).
                         '一级至五级关系按服务端公布的比例增加算力，'
                         '你的加成在邀请页查看。',
-                        style: LoopTypography.caption(
-                          11,
+                        style: LoopType.captionSm.copyWith(
                           color: LoopColors.text2,
                         ),
                       ),

@@ -241,7 +241,7 @@ class IdentityStepCopy extends StatelessWidget {
           key: const ValueKey<String>('identity-step-copy'),
           text,
           textAlign: TextAlign.start,
-          style: LoopTypography.body(14, color: LoopColors.text2),
+          style: LoopType.body.copyWith(color: LoopColors.text2),
         ),
       ),
     );
@@ -383,7 +383,7 @@ class SplashScreen extends StatelessWidget {
                     '正在准备你的账号…',
                     key: const ValueKey<String>('loop-splash-preparing'),
                     textAlign: TextAlign.center,
-                    style: LoopTypography.caption(12, color: LoopColors.text3),
+                    style: LoopType.caption,
                   ),
                 ),
               ],
@@ -397,10 +397,7 @@ class SplashScreen extends StatelessWidget {
                       unavailableReason!,
                       key: const ValueKey<String>('loop-splash-unavailable'),
                       textAlign: TextAlign.center,
-                      style: LoopTypography.caption(
-                        12,
-                        color: LoopColors.text3,
-                      ),
+                      style: LoopType.caption,
                     ),
                   ),
                 ),
@@ -837,7 +834,7 @@ class WalletCreateScreen extends StatelessWidget {
                   },
                   headline,
                   textAlign: TextAlign.center,
-                  style: LoopTypography.display(21),
+                  style: LoopType.heading,
                 ),
                 const SizedBox(height: 8),
                 ConstrainedBox(
@@ -845,7 +842,7 @@ class WalletCreateScreen extends StatelessWidget {
                   child: Text(
                     detail,
                     textAlign: TextAlign.center,
-                    style: LoopTypography.body(12.5, color: LoopColors.text2),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -926,8 +923,7 @@ class WalletCreateScreen extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.start,
-                      style: LoopTypography.body(
-                        13,
+                      style: LoopType.bodySm.copyWith(
                         color: done ? LoopColors.text2 : LoopColors.chalk,
                       ),
                     ),
@@ -935,10 +931,7 @@ class WalletCreateScreen extends StatelessWidget {
                       Text(
                         pendingDetail,
                         textAlign: TextAlign.start,
-                        style: LoopTypography.caption(
-                          11,
-                          color: LoopColors.text3,
-                        ),
+                        style: LoopType.captionSm,
                       ),
                   ],
                 ),
@@ -946,11 +939,10 @@ class WalletCreateScreen extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 done ? '已完成' : '未完成',
-                style: LoopTypography.figure(
-                  11,
-                  weight: FontWeight.w500,
-                  color: done ? LoopColors.lime : LoopColors.text3,
-                ),
+                style: LoopTypography.withWeight(
+                  LoopType.figureXs,
+                  FontWeight.w500,
+                ).copyWith(color: done ? LoopColors.lime : LoopColors.text3),
               ),
             ],
           ),

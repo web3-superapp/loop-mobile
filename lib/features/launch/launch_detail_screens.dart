@@ -599,10 +599,7 @@ class _LaunchRoundProgressCard extends StatelessWidget {
                             : current == null
                             ? 'Round $index 剩余'
                             : 'Round $index 截止',
-                        style: LoopTypography.caption(
-                          11,
-                          color: LoopColors.text3,
-                        ),
+                        style: LoopType.captionSm,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -642,7 +639,7 @@ class _LaunchRoundProgressCard extends StatelessWidget {
                   ? '市值 $launchMissingFigure / 毕业线 $launchMissingFigure'
                   : '已募集 ${launchUsd1Label(raised.toString())} / '
                         '硬顶 ${launchUsd1Label(config.hardCapUsd1)}',
-              style: LoopTypography.caption(11, color: LoopColors.text2),
+              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
             ),
           ],
         ),
@@ -931,11 +928,10 @@ class LaunchTrackRoundDetail extends StatelessWidget {
           'Round ${round.roundIndex} · $access',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: LoopTypography.label(
-            12,
-            weight: FontWeight.w700,
-            color: LoopGround.inkOf(context),
-          ),
+          style: LoopTypography.withWeight(
+            LoopType.label,
+            FontWeight.w700,
+          ).copyWith(color: LoopGround.inkOf(context)),
         ),
         const SizedBox(height: 8),
         IntrinsicHeight(
@@ -970,8 +966,7 @@ class LaunchTrackRoundDetail extends StatelessWidget {
             Text(
               '已募集',
               maxLines: 1,
-              style: LoopTypography.caption(
-                11,
+              style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
               ),
             ),
@@ -985,7 +980,7 @@ class LaunchTrackRoundDetail extends StatelessWidget {
                   child: Text(
                     launchUsd1Label(round.raisedUsd1),
                     maxLines: 1,
-                    style: LoopMono.stamp.copyWith(
+                    style: LoopType.figureXs.copyWith(
                       color: LoopGround.inkOf(context),
                     ),
                   ),
@@ -1011,8 +1006,7 @@ class LaunchTrackRoundDetail extends StatelessWidget {
             'LOOP 没有这一轮的记录，不能在这里认购',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: LoopTypography.caption(
-              11,
+            style: LoopType.captionSm.copyWith(
               color: LoopGround.auxiliaryOf(context),
             ),
           ),
@@ -1049,8 +1043,7 @@ class _TrackCard extends StatelessWidget {
                 entries[index].$1,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.caption(
-                  11,
+                style: LoopType.captionSm.copyWith(
                   color: LoopGround.auxiliaryOf(context),
                 ),
               ),
@@ -1061,11 +1054,10 @@ class _TrackCard extends StatelessWidget {
                 child: Text(
                   entries[index].$2,
                   maxLines: 1,
-                  style: LoopTypography.figure(
-                    12,
-                    weight: FontWeight.w600,
-                    color: LoopGround.inkOf(context),
-                  ),
+                  style: LoopTypography.withWeight(
+                    LoopType.figureSm,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopGround.inkOf(context)),
                 ),
               ),
             ],
@@ -1094,10 +1086,7 @@ class _TrackFooter extends StatelessWidget {
           text,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: LoopTypography.figure(
-            11,
-            weight: FontWeight.w400,
-            height: 1.35,
+          style: LoopType.figureXs.copyWith(
             color: LoopGround.auxiliaryOf(context),
           ),
         ),
@@ -1124,11 +1113,10 @@ class _TrackGraduationDetail extends StatelessWidget {
           '毕业与迁移',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: LoopTypography.label(
-            12,
-            weight: FontWeight.w700,
-            color: LoopGround.inkOf(context),
-          ),
+          style: LoopTypography.withWeight(
+            LoopType.label,
+            FontWeight.w700,
+          ).copyWith(color: LoopGround.inkOf(context)),
         ),
         const SizedBox(height: 6),
         Text(
@@ -1136,8 +1124,7 @@ class _TrackGraduationDetail extends StatelessWidget {
           key: const ValueKey<String>('launch-track-end-line'),
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: LoopTypography.caption(
-            11,
+          style: LoopType.captionSm.copyWith(
             color: LoopGround.secondaryOf(context),
           ),
         ),
@@ -1751,7 +1738,7 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
               ),
               child: Text(
                 '本次发射的资格不依赖 LOOP 质押',
-                style: LoopTypography.caption(12, color: LoopColors.text2),
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ),
           if (evaluated != null) ...<Widget>[

@@ -133,7 +133,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
                   key: const ValueKey<String>('privy-otp-resend-hint'),
                   cooldown > 0 ? '$cooldown 秒后可重新发送' : '现在可以重新发送验证码',
                   textAlign: TextAlign.center,
-                  style: LoopTypography.caption(12, color: LoopColors.text3),
+                  style: LoopType.caption,
                 ),
               ),
             ),
@@ -150,8 +150,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
                     ? '尝试次数已用完，请重新发送验证码。'
                     : '还可尝试 ${authState.remainingAttempts} 次',
                 textAlign: TextAlign.center,
-                style: LoopTypography.caption(
-                  12,
+                style: LoopType.caption.copyWith(
                   color: authState.attemptsExhausted
                       ? LoopColors.chalk
                       : LoopColors.text3,
@@ -264,12 +263,7 @@ class _OtpGrid extends StatelessWidget {
                       child: ExcludeSemantics(
                         child: Text(
                           index < digits.length ? digits[index] : '',
-                          style: LoopTypography.figure(
-                            26,
-                            weight: FontWeight.w600,
-                            height: 1.15,
-                            color: LoopColors.chalk,
-                          ),
+                          style: LoopType.figureLg,
                         ),
                       ),
                     ),

@@ -101,7 +101,7 @@ class LoopPendingSurface extends StatelessWidget {
                                   _unavailable
                                       ? unavailableHeadline
                                       : pendingHeadline,
-                                  style: theme.textTheme.titleLarge,
+                                  style: LoopType.titleLg,
                                 ),
                               ),
                             ],
@@ -157,7 +157,6 @@ class _Topbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -185,10 +184,10 @@ class _Topbar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(kicker, style: LoopMono.label),
+                  Text(kicker, style: LoopType.eyebrow),
                   Text(
                     title,
-                    style: theme.textTheme.headlineLarge,
+                    style: LoopType.titleLg,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -220,9 +219,9 @@ class _Row extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          Text(label, style: LoopMono.label),
+          Text(label, style: LoopType.eyebrow),
           const Spacer(),
-          Text(value, style: LoopMono.value),
+          Text(value, style: LoopType.figure),
         ],
       ),
     );

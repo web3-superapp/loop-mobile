@@ -194,7 +194,7 @@ class Launch2TemplateCard extends StatelessWidget {
           Text(
             launch2SupplyLabel(economics.memeTotalSupplyRaw),
             key: const ValueKey<String>('launch2-template-supply'),
-            style: LoopType.figureXl,
+            style: LoopType.figureLg,
           ),
           const SizedBox(height: 10),
           for (final (label, value) in rows)

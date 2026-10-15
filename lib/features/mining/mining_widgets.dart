@@ -74,7 +74,7 @@ class MiningFormulaBlock extends StatelessWidget {
               child: Text(
                 '$detail $identifier',
                 key: const ValueKey<String>('mining-formula-pending-version'),
-                style: LoopTypography.caption(11, color: LoopColors.text3),
+                style: LoopType.captionSm,
               ),
             ),
           ),
@@ -131,24 +131,14 @@ class MiningMetricRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                label,
-                style: LoopTypography.figure(11, color: LoopColors.text3),
-              ),
+              Text(label, style: LoopType.kicker),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: LoopTypography.figure(
-                  20,
-                  height: 1.15,
-                  color: LoopColors.chalk,
-                ),
-              ),
+              Text(value, style: LoopType.figureLg),
               if (caption.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 4),
                 Text(
                   caption,
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
               ],
             ],
@@ -354,7 +344,7 @@ class MiningSummaryHero extends StatelessWidget {
               Expanded(
                 child: Text(
                   'MINING POWER',
-                  style: LoopTypography.eyebrow(9, color: muted),
+                  style: LoopType.kicker.copyWith(color: muted),
                 ),
               ),
               if (rank != null)
@@ -363,15 +353,14 @@ class MiningSummaryHero extends StatelessWidget {
                     children: <InlineSpan>[
                       TextSpan(
                         text: 'RANK ',
-                        style: LoopTypography.eyebrow(9, color: muted),
+                        style: LoopType.kicker.copyWith(color: muted),
                       ),
                       TextSpan(
                         text: rank,
-                        style: LoopTypography.figure(
-                          11,
-                          weight: FontWeight.w700,
-                          color: ink,
-                        ),
+                        style: LoopTypography.withWeight(
+                          LoopType.figureXs,
+                          FontWeight.w600,
+                        ).copyWith(color: ink),
                       ),
                     ],
                   ),
@@ -387,30 +376,25 @@ class MiningSummaryHero extends StatelessWidget {
                 if (unit != null)
                   TextSpan(
                     text: ' $unit',
-                    style: LoopTypography.figure(
-                      16,
-                      weight: FontWeight.w700,
-                      color: ink,
-                    ),
+                    style: LoopType.figureMd.copyWith(color: ink),
                   ),
               ],
             ),
             key: const ValueKey<String>('mining-summary-hero-power'),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: LoopTypography.display(
-              // `.mining-power-value` is 44px for a figure; words in that slot
-              // would wrap to three lines and push the metrics off the card.
-              unit == null ? 29 : 44,
-              color: ink,
-            ).copyWith(height: 0.98, letterSpacing: -2),
+            // Decision 0192: the prototype's 44px `.mining-power-value` is the
+            // page's hero figure (R22 `figureXl`); words in that slot are a
+            // folio heading (R9 `displayXl`). Both are 28 on the ladder.
+            style: (unit == null ? LoopType.displayXl : LoopType.figureXl)
+                .copyWith(color: ink),
           ),
           const SizedBox(height: 9),
           Text(
             caption,
             key: const ValueKey<String>('mining-summary-hero-caption'),
             style: LoopTypography.withWeight(
-              LoopTypography.caption(11, color: ink.withValues(alpha: 0.67)),
+              LoopType.captionSm.copyWith(color: ink.withValues(alpha: 0.67)),
               FontWeight.w700,
             ),
           ),
@@ -472,22 +456,14 @@ class MiningSummaryHero extends StatelessWidget {
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: LoopTypography.figure(
-                                  11,
-                                  height: 1.2,
-                                  weight: FontWeight.w700,
-                                  color: ink,
-                                ),
+                                style: LoopType.figure.copyWith(color: ink),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 metrics[index].label,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: LoopTypography.withWeight(
-                                  LoopTypography.caption(10, color: muted),
-                                  FontWeight.w700,
-                                ),
+                                style: LoopType.kicker.copyWith(color: muted),
                               ),
                             ],
                           ),
@@ -531,8 +507,7 @@ class MiningSummaryHero extends StatelessWidget {
             Text(
               miningPowerOnlyNotice,
               key: const ValueKey<String>('mining-summary-hero-power-only'),
-              style: LoopTypography.caption(
-                12,
+              style: LoopType.caption.copyWith(
                 color: ink.withValues(alpha: 0.67),
               ),
             ),
@@ -590,7 +565,7 @@ class MiningDetailRow extends StatelessWidget {
     super.key,
     this.trailingLabel,
     this.trailingValue,
-    this.valueSize = 20,
+    this.valueStyle,
     this.spoken,
   });
 
@@ -598,7 +573,10 @@ class MiningDetailRow extends StatelessWidget {
   final String value;
   final String? trailingLabel;
   final String? trailingValue;
-  final double valueSize;
+
+  /// The step of the single reading; [LoopType.figureLg] unless a caller
+  /// names a smaller figure step (decision 0192).
+  final TextStyle? valueStyle;
 
   /// What a screen reader hears when [value] is an em dash.
   final String? spoken;
@@ -608,18 +586,11 @@ class MiningDetailRow extends StatelessWidget {
     final left = trailingLabel == null
         ? Text(
             label,
-            style: LoopTypography.caption(11, color: LoopColors.text2),
+            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           )
         : _pair(label, value);
     final right = trailingLabel == null
-        ? Text(
-            value,
-            style: LoopTypography.figure(
-              valueSize,
-              weight: FontWeight.w700,
-              color: LoopColors.chalk,
-            ),
-          )
+        ? Text(value, style: valueStyle ?? LoopType.figureLg)
         : _pair(trailingLabel!, trailingValue ?? launchMissingFigure);
     return Semantics(
       container: true,
@@ -645,16 +616,9 @@ class MiningDetailRow extends StatelessWidget {
       children: <InlineSpan>[
         TextSpan(
           text: '$label ',
-          style: LoopTypography.caption(11, color: LoopColors.text2),
+          style: LoopType.captionSm.copyWith(color: LoopColors.text2),
         ),
-        TextSpan(
-          text: value,
-          style: LoopTypography.figure(
-            12,
-            weight: FontWeight.w700,
-            color: LoopColors.chalk,
-          ),
-        ),
+        TextSpan(text: value, style: LoopType.figure),
       ],
     ),
     maxLines: 2,
@@ -761,7 +725,7 @@ class MiningDashReasons extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 '${entry.value.join('、')}：${entry.key}',
-                style: LoopTypography.caption(11, color: LoopColors.text2),
+                style: LoopType.captionSm.copyWith(color: LoopColors.text2),
               ),
             ),
         ],

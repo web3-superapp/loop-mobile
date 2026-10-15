@@ -931,12 +931,7 @@ class MiningClaimPanel extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  '领取状态',
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
-                ),
-              ),
+              Expanded(child: Text('领取状态', style: LoopType.eyebrow)),
               // Status, never a price move: no rise / fall (0117).
               LoopBadge(
                 miningClaimStatusLabel(status, any: any),
@@ -991,14 +986,14 @@ class MiningClaimPanel extends StatelessWidget {
             Text(
               note,
               key: const ValueKey<String>('mining-claim-note'),
-              style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+              style: LoopType.caption,
             ),
           ] else if (disabled != null && !claim.locked) ...<Widget>[
             const SizedBox(height: 10),
             Text(
               disabled,
               key: const ValueKey<String>('mining-claim-disabled'),
-              style: LoopType.captionSm,
+              style: LoopType.caption,
             ),
           ],
           if (tx != null) ...<Widget>[
@@ -1143,7 +1138,7 @@ Widget _trackPending(String key) => Padding(
     // Decision 0149: the hero names whose hour (「你有算力的小时」); the
     // track lines no longer repeat 「首个小时」 under it.
     '有算力的小时结算后显示',
-    style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+    style: LoopType.caption,
   ),
 );
 
@@ -1219,10 +1214,7 @@ class MiningAssetTrackCard extends StatelessWidget {
           Padding(
             key: const ValueKey<String>('mining-asset-empty'),
             padding: const EdgeInsets.symmetric(vertical: 7),
-            child: Text(
-              '上一小时没有计入挖矿的 Meme 币',
-              style: LoopType.bodySm.copyWith(color: LoopColors.text2),
-            ),
+            child: Text('上一小时没有计入挖矿的 Meme 币', style: LoopType.caption),
           )
         else
           for (final item in asset.assets)
@@ -1245,10 +1237,7 @@ class MiningAssetTrackCard extends StatelessWidget {
         Padding(
           key: const ValueKey<String>('mining-asset-basis'),
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(
-            '按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重',
-            style: LoopType.captionSm,
-          ),
+          child: Text('按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重', style: LoopType.caption),
         ),
         _fact('本人算力', miningPowerFigure(asset.ownPower)),
         _fact('邀请算力', miningPowerFigure(asset.invitePower)),
@@ -1286,12 +1275,13 @@ class MiningInviteTable extends StatelessWidget {
     // The head row is the prototype's `.label` (mono 10, uppercase, Text3);
     // figures are the `.kv` mono, the 合计 row in Chalk.
     final style = head
-        ? LoopMono.label
-        : LoopTypography.figure(
-            11,
-            weight: strong ? FontWeight.w700 : FontWeight.w500,
-            color: strong ? LoopColors.chalk : LoopColors.text2,
-          );
+        ? LoopType.kicker
+        : strong
+        ? LoopTypography.withWeight(
+            LoopType.figureXs,
+            FontWeight.w600,
+          ).copyWith(color: LoopColors.chalk)
+        : LoopTypography.withWeight(LoopType.figureXs, FontWeight.w500);
     return Padding(
       key: key,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1306,7 +1296,7 @@ class MiningInviteTable extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: index == 0 && !head
-                    ? LoopTypography.caption(11, color: LoopColors.text2)
+                    ? LoopType.captionSm.copyWith(color: LoopColors.text2)
                     : style,
               ),
             ),
@@ -1347,7 +1337,7 @@ class MiningInviteTable extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4, bottom: 6),
           child: Text(
             '只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。',
-            style: LoopType.captionSm,
+            style: LoopType.caption,
           ),
         ),
       ],

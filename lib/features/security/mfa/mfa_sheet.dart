@@ -79,13 +79,10 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
           Text(
             '二次验证',
             key: const ValueKey<String>('mfa-sheet-title'),
-            style: Theme.of(context).textTheme.headlineMedium,
+            style: LoopType.heading,
           ),
           const SizedBox(height: 8),
-          Text(
-            '两种方式都由登录服务保管，LOOP 不保存密钥，也不保存 Passkey。',
-            style: LoopTypography.caption(12, color: LoopColors.text3),
-          ),
+          Text('两种方式都由登录服务保管，LOOP 不保存密钥，也不保存 Passkey。', style: LoopType.bodySm),
           if (failure != null) ...<Widget>[
             const SizedBox(height: 12),
             LoopNotice(
@@ -108,7 +105,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
                 : '验证器 App 是手机上生成 6 位验证码的应用，例如 Google Authenticator、'
                       'Microsoft Authenticator、1Password。用它扫码或输入密钥即可。'
                       '密钥由登录服务签发，LOOP 不保存它。',
-            style: LoopTypography.caption(12, color: LoopColors.text3),
+            style: LoopType.bodySm,
           ),
           const SizedBox(height: 12),
           if (state.hasTotp)
@@ -174,7 +171,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
             child: SelectableText(
               secret.secret,
               key: const ValueKey<String>('mfa-sheet-secret'),
-              style: LoopTypography.figure(15, color: LoopColors.chalk),
+              style: LoopType.code,
             ),
           ),
           const SizedBox(width: 12),
@@ -192,7 +189,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
         controller: _code,
         enabled: !state.isBusy,
         keyboardType: TextInputType.number,
-        style: LoopTypography.figure(20, color: LoopColors.chalk),
+        style: LoopType.figureLg,
         inputFormatters: <TextInputFormatter>[
           FilteringTextInputFormatter.digitsOnly,
           LengthLimitingTextInputFormatter(6),
@@ -243,7 +240,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
             ? '这个账号已经有 Passkey，可以直接把它也用作二次验证。'
             : '用这台设备创建一个 Passkey，并把它作为二次验证方式。',
         key: const ValueKey<String>('mfa-sheet-passkey-status'),
-        style: LoopTypography.caption(12, color: LoopColors.text3),
+        style: LoopType.bodySm,
       ),
       const SizedBox(height: 12),
       LoopButton(

@@ -111,10 +111,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                       Text(
                         '欢迎来到 LOOP',
                         textAlign: TextAlign.center,
-                        style: LoopTypography.heading(
-                          24,
-                          weight: FontWeight.w700,
-                        ),
+                        style: LoopType.stepTitle,
                       ),
                       const SizedBox(height: 8),
                       ConstrainedBox(
@@ -122,8 +119,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                         child: Text(
                           '登录后自动创建钱包，持仓即产生算力。',
                           textAlign: TextAlign.center,
-                          style: LoopTypography.body(
-                            14,
+                          style: LoopType.body.copyWith(
                             color: LoopColors.text2,
                           ),
                         ),
@@ -177,7 +173,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                     textInputAction: TextInputAction.done,
                     autofillHints: const <String>[AutofillHints.email],
                     autocorrect: false,
-                    style: LoopTypography.body(16),
+                    style: LoopType.bodyLg,
                     decoration: loopFormFieldDecoration(
                       hint: 'name@example.com',
                     ),
@@ -235,7 +231,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                 child: Text(
                   '继续即表示同意用户协议与隐私政策 · 外部钱包只是登录凭证，不是 LOOP 交易钱包，不能授权任何交易',
                   textAlign: TextAlign.center,
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
               ),
               if (previewEnabled) ...<Widget>[
@@ -264,7 +260,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                   child: Text(
                     '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
                     textAlign: TextAlign.center,
-                    style: LoopTypography.caption(11, color: LoopColors.text3),
+                    style: LoopType.captionSm,
                   ),
                 ),
               ],
@@ -331,7 +327,7 @@ class _AuthMethod extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 '暂不可用 · $unavailableReason',
-                style: LoopTypography.caption(11, color: LoopColors.text3),
+                style: LoopType.captionSm,
               ),
             ),
         ],
@@ -358,7 +354,7 @@ class _AuthDivider extends StatelessWidget {
           const Expanded(child: Divider(height: 1, color: LoopColors.line)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('或', style: LoopTypography.eyebrow(10)),
+            child: Text('或', style: LoopType.captionSm),
           ),
           const Expanded(child: Divider(height: 1, color: LoopColors.line)),
         ],
@@ -484,7 +480,7 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                     PrivySessionRestoreScreen.restoringTitle,
                     key: const ValueKey<String>('privy-restoring-title'),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: LoopType.titleLg,
                   ),
                   const SizedBox(height: 6),
                   Padding(
@@ -497,10 +493,7 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                           : PrivySessionRestoreScreen.restoringMessage,
                       key: const ValueKey<String>('privy-restoring-message'),
                       textAlign: TextAlign.center,
-                      style: LoopTypography.caption(
-                        11,
-                        color: LoopColors.text3,
-                      ),
+                      style: LoopType.captionSm,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -629,10 +622,7 @@ class PrivySessionSignOutScreen extends StatelessWidget {
               children: <Widget>[
                 LoopBrandLoader(width: 160),
                 const SizedBox(height: 18),
-                Text(
-                  '正在安全退出',
-                  style: LoopTypography.body(13, color: LoopColors.text2),
-                ),
+                Text('正在安全退出', style: LoopType.bodySm),
               ],
             ),
           ),
@@ -661,16 +651,12 @@ class _CentredStateCopy extends StatelessWidget {
           children: <Widget>[
             const LoopIcon('offline', size: 28, color: LoopColors.text3),
             const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: LoopTypography.title(16),
-            ),
+            Text(title, textAlign: TextAlign.center, style: LoopType.titleLg),
             const SizedBox(height: 6),
             Text(
               body,
               textAlign: TextAlign.center,
-              style: LoopTypography.body(14, color: LoopColors.text2),
+              style: LoopType.body.copyWith(color: LoopColors.text2),
             ),
           ],
         ),

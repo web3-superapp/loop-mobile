@@ -16044,17 +16044,8 @@ TYPE_LADDER_CANVAS_FILES: dict[str, str] = {
     "lib/features/market/loop_market_chart.dart": "market chart axis and price tags (9px)",
 }
 TYPE_LADDER_FEATURE_ALLOWLIST: dict[str, tuple[int, int]] = {
-    "lib/features/account/account_screens.dart": (8, 0),
-    "lib/features/account/loop_id_setup_screen.dart": (4, 0),
-    "lib/features/account/onboarding_communities.dart": (4, 0),
-    "lib/features/account/privy_login_screen.dart": (11, 0),
-    "lib/features/account/privy_otp_screen.dart": (3, 0),
     "lib/features/chain/chain_widgets.dart": (0, 5),
     "lib/features/intel/intel_rank_board.dart": (0, 2),
-    "lib/features/launch/launch_action_screens.dart": (13, 0),
-    "lib/features/launch/launch_detail_screens.dart": (11, 1),
-    "lib/features/launch/launch_trade_screen.dart": (15, 0),
-    "lib/features/launch/launch_widgets.dart": (17, 0),
     "lib/features/launch2/launch2_instance_screen.dart": (6, 0),
     "lib/features/launch2/launch2_launchpad.dart": (9, 1),
     "lib/features/launch2/launch2_nft_screen.dart": (2, 0),
@@ -16067,20 +16058,6 @@ TYPE_LADDER_FEATURE_ALLOWLIST: dict[str, tuple[int, int]] = {
     "lib/features/market/watchlist/watchlist_editor_screen.dart": (1, 1),
     "lib/features/meme/meme_home_top.dart": (2, 0),
     "lib/features/meme/meme_widgets.dart": (4, 0),
-    "lib/features/mining/mining_screen.dart": (2, 1),
-    "lib/features/mining/mining_secondary_screens.dart": (11, 1),
-    "lib/features/mining/mining_widgets.dart": (16, 0),
-    "lib/features/mining/referral_screen.dart": (9, 0),
-    "lib/features/mining_rewards/mining_rewards_screen.dart": (3, 1),
-    "lib/features/security/app_lock/app_lock_gate.dart": (2, 0),
-    "lib/features/security/app_lock/app_lock_prompt.dart": (2, 0),
-    "lib/features/security/mfa/mfa_sheet.dart": (5, 0),
-    "lib/features/security/mfa/passkey_sheet.dart": (1, 0),
-    "lib/features/security/step_up/step_up_widgets.dart": (2, 0),
-    "lib/features/shell/loop_pending_surface.dart": (0, 3),
-    "lib/features/shell/loop_shell.dart": (1, 0),
-    "lib/features/system/system_surfaces.dart": (3, 0),
-    "lib/features/wallet/approval_screens.dart": (0, 1),
     "lib/features/wallet/money_actions_widgets.dart": (0, 2),
     "lib/features/wallet/send_screens.dart": (2, 0),
     "lib/features/wallet/swap_screens.dart": (0, 3),
@@ -16089,11 +16066,7 @@ TYPE_LADDER_FEATURE_ALLOWLIST: dict[str, tuple[int, int]] = {
     "lib/features/wallet/wallet_read_widgets.dart": (6, 2),
 }
 TYPE_FLOOR_FEATURE_ALLOWLIST: dict[str, int] = {
-    "lib/features/account/privy_login_screen.dart": 1,
     "lib/features/meme/meme_widgets.dart": 1,
-    "lib/features/mining/mining_secondary_screens.dart": 3,
-    "lib/features/mining/mining_widgets.dart": 3,
-    "lib/features/mining/referral_screen.dart": 1,
 }
 
 

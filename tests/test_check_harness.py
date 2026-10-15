@@ -10714,4 +10714,4 @@ class TypeLadderContractTests(unittest.TestCase):
             },
             set(check_harness.TYPE_LADDER_CANVAS_FILES),
         )
-        self.assertEqual(9, sum(check_harness.TYPE_FLOOR_FEATURE_ALLOWLIST.values()))
+        self.assertEqual(1, sum(check_harness.TYPE_FLOOR_FEATURE_ALLOWLIST.values()))

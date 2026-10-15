@@ -406,10 +406,7 @@ class _LoopStepUpThresholdSheetState
         const LoopSheetHeading('大额交易验证金额'),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Text(
-            '签名的金额达到或超过这个数时，会先用这台设备验证身份。',
-            style: LoopTypography.body(14, color: LoopColors.text2),
-          ),
+          child: Text('签名的金额达到或超过这个数时，会先用这台设备验证身份。', style: LoopType.bodySm),
         ),
         LoopFlatField(
           label: '金额（USD1）',
@@ -424,7 +421,7 @@ class _LoopStepUpThresholdSheetState
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(7),
             ],
-            style: LoopTypography.figure(16),
+            style: LoopType.figureLg,
             decoration: loopFormFieldDecoration(hint: '例如 1000'),
             onChanged: (_) => setState(() => _error = null),
           ),

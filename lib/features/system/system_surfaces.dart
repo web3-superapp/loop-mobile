@@ -662,7 +662,7 @@ class _CenteredStateBlock extends StatelessWidget {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
                 if (action != null) ...<Widget>[
                   const SizedBox(height: 18),
@@ -753,10 +753,7 @@ class _PolicyGatePage extends StatelessWidget {
                         child: Text(
                           line,
                           textAlign: TextAlign.center,
-                          style: LoopTypography.caption(
-                            11,
-                            color: LoopColors.text3,
-                          ),
+                          style: LoopType.captionSm,
                         ),
                       ),
                   ],
@@ -806,7 +803,7 @@ class _PolicyExit extends StatelessWidget {
               child: Text(
                 unavailableReason,
                 textAlign: TextAlign.center,
-                style: LoopTypography.caption(11, color: LoopColors.text3),
+                style: LoopType.captionSm,
               ),
             ),
         ],

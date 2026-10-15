@@ -63,12 +63,12 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
           Text(
             'Passkey',
             key: const ValueKey<String>('passkey-sheet-title'),
-            style: Theme.of(context).textTheme.headlineMedium,
+            style: LoopType.heading,
           ),
           const SizedBox(height: 8),
           Text(
             'Passkey 由这台设备的系统保管，登录服务只记下它的公钥。换手机后，用同一个系统账号同步过去的 Passkey 就能再次进入。',
-            style: LoopTypography.caption(12, color: LoopColors.text3),
+            style: LoopType.bodySm,
           ),
           if (failure != null) ...<Widget>[
             const SizedBox(height: 12),

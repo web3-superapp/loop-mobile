@@ -16,6 +16,7 @@ import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `referral` · my invite code and relationship counts.
@@ -176,28 +177,33 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     barrierLabel: '关闭 Referral 说明',
     builder: (sheetContext) => Padding(
       key: const ValueKey<String>('referral-explain-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            'Referral 说明',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '每个账号只有一个邀请码。被邀请人激活 LOOP ID 并绑定钱包后，关系进入下一个验证阶段；'
-            '「有效」需要挖矿公式版本被批准，因此当前不会出现有效关系。'
-            '加成只计入 Mining Power，不是收入、佣金或返佣。',
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 16),
-          LoopButton(
-            key: const ValueKey<String>('referral-explain-close'),
-            label: '知道了',
-            block: true,
-            onPressed: () => Navigator.of(sheetContext).pop(),
+          const LoopSheetHeading('Referral 说明'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  '每个账号只有一个邀请码。被邀请人激活 LOOP ID 并绑定钱包后，关系进入下一个验证阶段；'
+                  '「有效」需要挖矿公式版本被批准，因此当前不会出现有效关系。'
+                  '加成只计入 Mining Power，不是收入、佣金或返佣。',
+                  style: LoopType.bodySm,
+                ),
+                const SizedBox(height: 16),
+                LoopButton(
+                  key: const ValueKey<String>('referral-explain-close'),
+                  label: '知道了',
+                  block: true,
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -296,8 +302,10 @@ class _LevelCell extends StatelessWidget {
                 'L${level.level} · ${level.boostPercent}%',
                 maxLines: 1,
                 overflow: TextOverflow.clip,
-                style: LoopTypography.eyebrow(
-                  9,
+                // R13 / R12, the steps `LoopStatGrid` draws (decision 0192);
+                // the five-across strip with its filled current depth is not
+                // a two-column grid, so the cell stays local.
+                style: LoopType.kicker.copyWith(
                   color: current ? LoopColors.ink : LoopColors.text2,
                 ),
               ),
@@ -305,9 +313,7 @@ class _LevelCell extends StatelessWidget {
               Text(
                 '${level.counts.valid}',
                 maxLines: 1,
-                style: LoopTypography.figure(
-                  15,
-                  weight: FontWeight.w700,
+                style: LoopType.figure.copyWith(
                   color: current ? LoopColors.ink : LoopColors.chalk,
                 ),
               ),
@@ -343,7 +349,7 @@ class _DepthExplainer extends StatelessWidget {
           child: Text(
             '「有效」只统计已验证的关系，其余一律显示为待验证，'
             '不计入任何加成。',
-            style: LoopTypography.caption(11, color: LoopColors.text2),
+            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
         ),
       ],
@@ -387,8 +393,7 @@ class _LevelTile extends StatelessWidget {
       ),
       child: Text(
         'L$level',
-        style: LoopTypography.figure(
-          13,
+        style: LoopType.figure.copyWith(
           color: level == 1 ? LoopColors.ink : LoopColors.chalk,
         ),
       ),
@@ -533,7 +538,7 @@ class _RulesFooter extends StatelessWidget {
         '生效于 ${launchTimestampLabel(rules.effectiveAt)} · '
         '最大深度 L${rules.maximumDepth} · '
         '绑定窗口 ${rules.claimWindowDays} 天 · 作用于 ${rules.appliesTo}',
-        style: LoopTypography.caption(11, color: LoopColors.text3),
+        style: LoopType.captionSm,
       ),
     );
   }
@@ -571,47 +576,52 @@ class _ClaimFormState extends State<_ClaimForm> {
   Widget build(BuildContext context) {
     return Padding(
       key: const ValueKey<String>('referral-claim-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            '绑定邀请码',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。',
-            style: LoopTypography.caption(12, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            key: const ValueKey<String>('referral-claim-input'),
-            controller: _code,
-            autocorrect: false,
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(
-              labelText: '邀请码（形如 LOOP-XXXXX）',
-              errorText: _invalid ? '邀请码格式不对，请检查后再试。' : null,
+          const LoopSheetHeading('绑定邀请码'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  '一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。',
+                  style: LoopType.bodySm,
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  key: const ValueKey<String>('referral-claim-input'),
+                  controller: _code,
+                  autocorrect: false,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    labelText: '邀请码（形如 LOOP-XXXXX）',
+                    errorText: _invalid ? '邀请码格式不对，请检查后再试。' : null,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                LoopButtonPair(
+                  padded: false,
+                  children: <Widget>[
+                    LoopButton(
+                      key: const ValueKey<String>('referral-claim-submit'),
+                      label: '绑定',
+                      primary: true,
+                      onPressed: _submit,
+                    ),
+                    LoopButton(
+                      key: const ValueKey<String>('referral-claim-cancel'),
+                      label: '取消',
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('referral-claim-submit'),
-                label: '绑定',
-                primary: true,
-                onPressed: _submit,
-              ),
-              LoopButton(
-                key: const ValueKey<String>('referral-claim-cancel'),
-                label: '取消',
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
           ),
         ],
       ),

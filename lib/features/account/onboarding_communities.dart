@@ -572,7 +572,10 @@ class _OnboardingCommunitiesScreenState
                 onPressed: state.submitting ? null : _leave,
                 child: Text(
                   '跳过',
-                  style: LoopTypography.label(14, color: LoopColors.muted),
+                  style: LoopTypography.withWeight(
+                    LoopType.label,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopColors.text2),
                 ),
               ),
             ],
@@ -587,7 +590,7 @@ class _OnboardingCommunitiesScreenState
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
               child: Text(
                 '选几个感兴趣的社区。加入后默认免打扰，随时可以退出。',
-                style: LoopTypography.body(14, color: LoopColors.text2),
+                style: LoopType.body.copyWith(color: LoopColors.text2),
               ),
             ),
             if (state.phase != CommunityViewPhase.ready)
@@ -897,16 +900,13 @@ class _OnboardingCommunitiesEnteringState
                               'onboarding-entering-title',
                             ),
                             textAlign: TextAlign.center,
-                            style: LoopTypography.title(16),
+                            style: LoopType.titleLg,
                           ),
                           const SizedBox(height: 6),
                           Text(
                             OnboardingCommunitiesEntering.detail,
                             textAlign: TextAlign.center,
-                            style: LoopTypography.caption(
-                              12,
-                              color: LoopColors.text3,
-                            ),
+                            style: LoopType.caption,
                           ),
                         ],
                       ),

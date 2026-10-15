@@ -378,11 +378,10 @@ class LoopTabItem extends StatelessWidget {
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.label(
-                            12,
-                            weight: FontWeight.w700,
-                            color: color,
-                          ),
+                          style: LoopTypography.withWeight(
+                            LoopType.label,
+                            FontWeight.w700,
+                          ).copyWith(color: color),
                         ),
                       ),
                     ],

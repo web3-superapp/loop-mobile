@@ -177,7 +177,7 @@ class _StakeAmountCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       '质押数量',
-                      style: LoopTypography.eyebrow(11, color: auxiliary),
+                      style: LoopType.kicker.copyWith(color: auxiliary),
                     ),
                   ),
                   LoopBadge(
@@ -193,20 +193,16 @@ class _StakeAmountCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       launchMissingFigure,
-                      style: LoopTypography.figure(
-                        24,
-                        weight: FontWeight.w700,
-                        color: ink,
-                      ),
+                      style: LoopType.figureLg.copyWith(color: ink),
                     ),
                   ),
-                  Text('LOOP', style: LoopTypography.figure(13, color: ink)),
+                  Text('LOOP', style: LoopType.figure.copyWith(color: ink)),
                 ],
               ),
               const LoopHairline(),
               Text(
                 '质押合约还没有上线，这一页不接受金额输入，也不会打开签名。',
-                style: LoopTypography.caption(11, color: auxiliary),
+                style: LoopType.captionSm.copyWith(color: auxiliary),
               ),
             ],
           );
@@ -450,17 +446,12 @@ class _EconomyLaunchCard extends StatelessWidget {
         children: <Widget>[
           Text(
             value,
-            style: LoopTypography.figure(
-              16,
-              weight: FontWeight.w700,
-              color: LoopGround.inkOf(context),
-            ),
+            style: LoopType.figure.copyWith(color: LoopGround.inkOf(context)),
           ),
           const SizedBox(height: 3),
           Text(
             label,
-            style: LoopTypography.caption(
-              11,
+            style: LoopType.kicker.copyWith(
               color: LoopGround.auxiliaryOf(context),
             ),
           ),
@@ -542,10 +533,7 @@ class _EconomyOnChainCard extends StatelessWidget {
                   '读自区块 ${loopGroupedFigure(value.indexedBlockNumber)}'
                   ' · LOOP 链上事件索引',
                   key: const ValueKey<String>('loop-economy-onchain-block'),
-                  style: LoopTypography.figure(
-                    11,
-                    weight: FontWeight.w400,
-                    height: 1.35,
+                  style: LoopType.figureXs.copyWith(
                     color: LoopGround.auxiliaryOf(context),
                   ),
                 ),
@@ -590,8 +578,7 @@ class _EconomyOnChainCard extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               label,
-              style: LoopTypography.caption(
-                11,
+              style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
               ),
             ),
@@ -983,22 +970,16 @@ class _CurationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            'CURATED LAUNCH',
-            style: LoopTypography.eyebrow(11, color: LoopColors.text3),
-          ),
+          Text('CURATED LAUNCH', style: LoopType.kicker),
           const SizedBox(height: 8),
-          Text('先评估，再发射', style: LoopTypography.title(24)),
+          Text('先评估，再发射', style: LoopType.displaySm),
           const SizedBox(height: 5),
           Text(
             'LOOP 与交易所、KOL 和社区共同筛选有叙事、有传播力、可长期运营的项目。',
-            style: LoopTypography.caption(11, color: LoopColors.text2),
+            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
           const LoopHairline(),
-          Text(
-            '人工审核 · 上限配置 · 流动性方案',
-            style: LoopTypography.caption(11, color: LoopColors.text3),
-          ),
+          Text('人工审核 · 上限配置 · 流动性方案', style: LoopType.captionSm),
         ],
       ),
     );
@@ -1244,7 +1225,7 @@ class _ApplyForm extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 '当前状态下资料为只读。只有草稿与被退回的申请可以修改。',
-                style: LoopTypography.caption(11, color: LoopColors.text2),
+                style: LoopType.captionSm.copyWith(color: LoopColors.text2),
               ),
             ),
         ],

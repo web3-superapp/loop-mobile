@@ -170,24 +170,14 @@ class LaunchEmptyMetric extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                label,
-                style: LoopTypography.figure(11, color: LoopColors.text3),
-              ),
+              Text(label, style: LoopType.kicker),
               const SizedBox(height: 4),
-              Text(
-                launchMissingFigure,
-                style: LoopTypography.figure(
-                  20,
-                  height: 1.15,
-                  color: LoopColors.chalk,
-                ),
-              ),
+              Text(launchMissingFigure, style: LoopType.figureLg),
               if (showReason) ...<Widget>[
                 const SizedBox(height: 4),
                 Text(
                   launchMetricReasonLine(reasonCode: reasonCode, note: note),
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
               ],
             ],
@@ -287,7 +277,7 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
               subjects.length == metrics.length
                   ? shared
                   : '${subjects.join('、')}：$shared',
-              style: LoopTypography.caption(11, color: LoopColors.text2),
+              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
             ),
           ),
         for (final metric in metrics)
@@ -451,7 +441,7 @@ class LaunchSourceFooter extends StatelessWidget {
       child: Text(
         '来源 ${launchSourceLabel(source, kind)} · '
         '观察于 ${launchTimestampLabel(observedAt)}',
-        style: LoopTypography.caption(11, color: LoopColors.text3),
+        style: LoopType.captionSm,
       ),
     );
   }
@@ -571,7 +561,7 @@ class LaunchAxisBlock extends StatelessWidget {
           child: Text(
             launchStateProjection(chain),
             key: const ValueKey<String>('launch-axis-projection'),
-            style: LoopTypography.title(14),
+            style: LoopType.title,
           ),
         ),
         LoopRecordGroup(
@@ -595,7 +585,7 @@ class LaunchAxisBlock extends StatelessWidget {
             '快照区块 ${loopGroupedFigure(chain.snapshotBlockNumber)} · '
             '状态摘要 ${launchShortHex(chain.stateTupleDigest)}',
             key: const ValueKey<String>('launch-axis-snapshot'),
-            style: LoopTypography.caption(11, color: LoopColors.text3),
+            style: LoopType.captionSm,
           ),
         ),
       ],
@@ -623,7 +613,7 @@ class LaunchAxisBlock extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
             '链上信息暂时读不到，因此这一页不显示合约地址、总量、税率或上限。',
-            style: LoopTypography.caption(11, color: LoopColors.text3),
+            style: LoopType.captionSm,
           ),
         ),
       ],
@@ -853,8 +843,7 @@ class LaunchIdentityStrip extends StatelessWidget {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.title(
-                      15,
+                    style: LoopType.title.copyWith(
                       color: LoopGround.inkOf(context),
                     ),
                   ),
@@ -864,8 +853,7 @@ class LaunchIdentityStrip extends StatelessWidget {
                       narrative!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.caption(
-                        11,
+                      style: LoopType.captionSm.copyWith(
                         color: LoopGround.secondaryOf(context),
                       ),
                     ),
@@ -873,10 +861,10 @@ class LaunchIdentityStrip extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     '合约 ${address == null ? launchMissingFigure : suffixOf(address)}',
-                    style: LoopTypography.figure(
-                      11,
-                      color: LoopGround.auxiliaryOf(context),
-                    ),
+                    style: LoopTypography.withWeight(
+                      LoopType.figureXs,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopGround.auxiliaryOf(context)),
                   ),
                 ],
               ),
@@ -1029,8 +1017,7 @@ class LaunchCapCard extends StatelessWidget {
             Text(
               '上限只在内盘阶段生效，由合约执行；本页不写入任何固定比例或数量，'
               '数值以这次发射被确认的配置为准。',
-              style: LoopTypography.caption(
-                11,
+              style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
               ),
             ),
@@ -1051,8 +1038,7 @@ class LaunchCapCard extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: LoopTypography.caption(
-                11,
+              style: LoopType.captionSm.copyWith(
                 color: LoopGround.secondaryOf(context),
               ),
             ),
@@ -1060,11 +1046,7 @@ class LaunchCapCard extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             value,
-            style: LoopTypography.figure(
-              15,
-              weight: FontWeight.w700,
-              color: LoopGround.inkOf(context),
-            ),
+            style: LoopType.figure.copyWith(color: LoopGround.inkOf(context)),
           ),
         ],
       ),
@@ -1115,8 +1097,7 @@ class LaunchChainCapCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           rows[index].$1,
-                          style: LoopTypography.caption(
-                            11,
+                          style: LoopType.captionSm.copyWith(
                             color: LoopGround.secondaryOf(context),
                           ),
                         ),
@@ -1124,9 +1105,7 @@ class LaunchChainCapCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       Text(
                         rows[index].$2,
-                        style: LoopTypography.figure(
-                          13,
-                          weight: FontWeight.w700,
+                        style: LoopType.figure.copyWith(
                           color: LoopGround.inkOf(context),
                         ),
                       ),
@@ -1139,8 +1118,7 @@ class LaunchChainCapCard extends StatelessWidget {
             Text(
               '上限由合约在每次认购时执行；这里是合约在快照区块的读数，'
               '不是 LOOP 写下的固定比例或数量。',
-              style: LoopTypography.caption(
-                11,
+              style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
               ),
             ),

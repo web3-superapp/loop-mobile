@@ -174,7 +174,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                           required isFocused,
                           required maxLength,
                         }) => null,
-                        style: LoopTypography.body(16, color: LoopColors.chalk),
+                        style: LoopType.bodyLg,
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           hintText: '1–40 个字符，可以和别人重复',
@@ -203,7 +203,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                   maxLength: profileMaximumBioCodePoints,
                   maxLines: 3,
                   minLines: 1,
-                  style: LoopTypography.body(15, color: LoopColors.chalk),
+                  style: LoopType.bodyLg,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     hintText: '一句话介绍自己（可以不填）',
@@ -232,19 +232,12 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                       Text(
                         key: const ValueKey<String>('loop-id-value'),
                         '尚未分配',
-                        style: LoopTypography.caption(
-                          13,
+                        style: LoopType.bodySm.copyWith(
                           color: LoopColors.text3,
                         ),
                       ),
                     const SizedBox(height: 4),
-                    Text(
-                      '系统生成、唯一、不可更改。好友可以用它搜到你。',
-                      style: LoopTypography.caption(
-                        12,
-                        color: LoopColors.text3,
-                      ),
-                    ),
+                    Text('系统生成、唯一、不可更改。好友可以用它搜到你。', style: LoopType.caption),
                   ],
                 ),
               ),

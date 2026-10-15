@@ -115,7 +115,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                 child: Text(
                   '按$miningBaselineLabel计算',
                   key: const ValueKey<String>('mining-assets-total-baseline'),
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
               ),
           ],
@@ -420,7 +420,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
                 const MiningDetailRule(),
                 Text(
                   '榜单按服务端已确认算力快照排序',
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
               ],
             ),
@@ -629,7 +629,7 @@ class _RankingBlock extends StatelessWidget {
         child: Text(
           _participantsLine(participants),
           key: const ValueKey<String>('mining-rank-participants'),
-          style: LoopTypography.caption(11, color: LoopColors.text3),
+          style: LoopType.captionSm,
         ),
       ),
     ],
@@ -922,7 +922,7 @@ class _WeightBlock extends StatelessWidget {
                   key: const ValueKey<String>(
                     'mining-community-weight-version',
                   ),
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
               ),
             ),
@@ -1065,8 +1065,7 @@ class _MyContributionCard extends StatelessWidget {
               ),
               Text(
                 '权重由平台审核结果授予，已经算在上面的算力里。',
-                style: LoopTypography.caption(
-                  10,
+                style: LoopType.captionSm.copyWith(
                   color: LoopColors.ink.withValues(alpha: 0.58),
                 ),
               ),
@@ -1085,17 +1084,12 @@ class _MyContributionCard extends StatelessWidget {
         value,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: LoopTypography.figure(
-          16,
-          weight: FontWeight.w700,
-          color: LoopColors.ink,
-        ),
+        style: LoopType.figureMd.copyWith(color: LoopColors.ink),
       ),
       const SizedBox(height: 4),
       Text(
         label,
-        style: LoopTypography.caption(
-          9,
+        style: LoopType.kicker.copyWith(
           color: LoopColors.ink.withValues(alpha: 0.58),
         ),
       ),
@@ -1283,7 +1277,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             squareBottom: true,
           ),
           detail: <Widget>[
-            Text('DAILY OUTPUT', style: LoopMono.label),
+            Text('DAILY OUTPUT', style: LoopType.eyebrow),
             const SizedBox(height: 8),
             Text.rich(
               TextSpan(
@@ -1291,7 +1285,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                   TextSpan(
                     text: '每日产出 ',
                     style: LoopTypography.withWeight(
-                      LoopTypography.caption(11, color: LoopColors.chalk),
+                      LoopType.captionSm.copyWith(color: LoopColors.chalk),
                       FontWeight.w700,
                     ),
                   ),
@@ -1302,7 +1296,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                       ),
                       null => launchMissingFigure,
                     },
-                    style: LoopTypography.caption(11, color: LoopColors.text2),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                   ),
                 ],
               ),
@@ -1552,7 +1546,7 @@ class _FormulaVersionBlock extends StatelessWidget {
                 '批准于 ${launchTimestampLabel(version.approvedAt!)}',
             ].join(' · '),
             key: ValueKey<String>('$keyPrefix-status'),
-            style: Theme.of(context).textTheme.labelMedium,
+            style: LoopType.captionSm,
           ),
         ),
         if (version.assetWeights.isNotEmpty) ...<Widget>[
@@ -1603,7 +1597,7 @@ class _FormulaVersionBlock extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
                     miningRuleKeyText(factor),
-                    style: LoopTypography.caption(11, color: LoopColors.ink),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.ink),
                   ),
                 ),
               Padding(
@@ -1615,8 +1609,7 @@ class _FormulaVersionBlock extends StatelessWidget {
               ),
               Text(
                 '具体量化分值不公开，权重以平台综合评定结果为准。',
-                style: LoopTypography.caption(
-                  9,
+                style: LoopType.captionSm.copyWith(
                   color: LoopColors.ink.withValues(alpha: 0.62),
                 ),
               ),

@@ -127,7 +127,7 @@ class Launch2DeploymentScreen extends ConsumerWidget {
           key: ValueKey<String>(
             'launch2-deployment-status-${job.status.wireName}',
           ),
-          style: LoopType.figureLg,
+          style: LoopType.heading,
         ),
       ),
       Padding(

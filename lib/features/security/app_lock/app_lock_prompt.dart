@@ -211,10 +211,7 @@ class _LoopAppLockPromptSheetState
         const LoopSheetHeading('开启应用锁'),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Text(
-            loopAppLockPromptBody,
-            style: LoopTypography.body(14, color: LoopColors.text2),
-          ),
+          child: Text(loopAppLockPromptBody, style: LoopType.bodySm),
         ),
         if (outcome != null &&
             outcome != LoopDeviceAuthOutcome.succeeded &&
@@ -226,7 +223,7 @@ class _LoopAppLockPromptSheetState
               child: Text(
                 loopAppLockAttemptText(outcome, lock.systemMessage),
                 key: const ValueKey<String>('app-lock-prompt-attempt'),
-                style: LoopTypography.caption(12, color: LoopColors.text2),
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ),
           ),

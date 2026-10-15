@@ -23,6 +23,7 @@ import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
 /// The route argument for `approval-guard`.
 @immutable
@@ -164,7 +165,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Text('APPROVAL GUARD · REQUEST', style: LoopMono.label),
+                Text('APPROVAL GUARD · REQUEST', style: LoopType.eyebrow),
                 const SizedBox(height: 10),
                 LoopKeyValue(
                   label: '代币',
@@ -300,30 +301,38 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('确认无限授权', style: LoopType.titleLg),
-          const SizedBox(height: 10),
-          Text(
-            '无限额度不会随时间或这笔交易结束而失效。'
-            '该 Spender 之后可以在不再询问你的情况下转走这个代币的全部余额。'
-            '只有你在授权盘点里发送一笔 approve(spender, 0) 才会收回。',
-            style: LoopType.bodySm,
-          ),
-          const SizedBox(height: 16),
-          LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('approval-unlimited-cancel'),
-                label: '改用限额',
-                onPressed: () => Navigator.of(context).pop(false),
-              ),
-              LoopButton(
-                key: const ValueKey<String>('approval-unlimited-accept'),
-                label: '我了解，仍要无限授权',
-                primary: true,
-                onPressed: () => Navigator.of(context).pop(true),
-              ),
-            ],
+          const LoopSheetHeading('确认无限授权'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  '无限额度不会随时间或这笔交易结束而失效。'
+                  '该 Spender 之后可以在不再询问你的情况下转走这个代币的全部余额。'
+                  '只有你在授权盘点里发送一笔 approve(spender, 0) 才会收回。',
+                  style: LoopType.bodySm,
+                ),
+                const SizedBox(height: 16),
+                LoopButtonPair(
+                  padded: false,
+                  children: <Widget>[
+                    LoopButton(
+                      key: const ValueKey<String>('approval-unlimited-cancel'),
+                      label: '改用限额',
+                      onPressed: () => Navigator.of(context).pop(false),
+                    ),
+                    LoopButton(
+                      key: const ValueKey<String>('approval-unlimited-accept'),
+                      label: '我了解，仍要无限授权',
+                      primary: true,
+                      onPressed: () => Navigator.of(context).pop(true),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -694,29 +703,34 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            '${row.symbol} · ${row.spender.checksumAddress}',
-            style: LoopType.titleLg,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            loopReasonCodeText(row.riskFacts.reasonCode),
-            style: LoopType.caption,
-          ),
-          const SizedBox(height: 16),
-          LoopButton(
-            key: const ValueKey<String>('approval-action-limit'),
-            label: '改为限额授权',
-            block: true,
-            onPressed: () => Navigator.of(context).pop('limit'),
-          ),
-          const SizedBox(height: 10),
-          LoopButton(
-            key: const ValueKey<String>('approval-action-revoke'),
-            label: '回收授权（approve 0）',
-            primary: true,
-            block: true,
-            onPressed: () => Navigator.of(context).pop('revoke'),
+          LoopSheetHeading('${row.symbol} · ${row.spender.checksumAddress}'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  loopReasonCodeText(row.riskFacts.reasonCode),
+                  style: LoopType.caption,
+                ),
+                const SizedBox(height: 16),
+                LoopButton(
+                  key: const ValueKey<String>('approval-action-limit'),
+                  label: '改为限额授权',
+                  block: true,
+                  onPressed: () => Navigator.of(context).pop('limit'),
+                ),
+                const SizedBox(height: 10),
+                LoopButton(
+                  key: const ValueKey<String>('approval-action-revoke'),
+                  label: '回收授权（approve 0）',
+                  primary: true,
+                  block: true,
+                  onPressed: () => Navigator.of(context).pop('revoke'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
