@@ -325,7 +325,10 @@ class _FeedStateBlock extends StatelessWidget {
   }
 }
 
-/// `.post`: avatar, name, kind badge and age; the token line; the text; ♡.
+/// `.feed-post` (decision 0187, docs/35 body4 「动态 A」): a 32 avatar, the
+/// name, the kind badge and the age on one line; the text (or, for an event,
+/// the sentence [squareFeedPostSentence] writes); the token's quote capsule;
+/// ♡. Everything under the head is indented past the avatar.
 class SquareFeedPostRow extends StatelessWidget {
   const SquareFeedPostRow({
     required this.post,
@@ -345,8 +348,11 @@ class SquareFeedPostRow extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   /// The avatar column; the rows under the head are indented past it.
-  static const double avatarSize = 36;
-  static const double indent = avatarSize + 10;
+  static const double avatarSize = 32;
+  static const double indent = avatarSize + 8;
+
+  /// `.feed-token`: the quote capsule's fixed height.
+  static const double capsuleHeight = 40;
 
   @override
   Widget build(BuildContext context) {
@@ -354,12 +360,13 @@ class SquareFeedPostRow extends StatelessWidget {
     final name = author?.displayName ?? 'LOOP 官方';
     final token = post.token;
     final badge = squareFeedBadge(post);
-    final text = post.text;
-    final quote = _quoteLine(context);
+    final sentence = squareFeedPostSentence(post);
     final content = Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: LoopSpacing.page,
-        vertical: 14,
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        12,
+        LoopSpacing.page,
+        4,
       ),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: LoopColors.line)),
@@ -367,81 +374,84 @@ class SquareFeedPostRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              InkWell(
-                key: const ValueKey<String>('square-post-author'),
-                borderRadius: LoopRadius.inner,
-                onTap: author == null
-                    ? null
-                    : () => onOpen(userProfileLocation(author.publicProfileId)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (author == null)
-                      const _OfficialAvatar()
-                    else
-                      LoopProfileAvatar(
-                        avatarRef: author.avatarRef,
-                        alias: author.displayName,
-                        size: avatarSize,
-                      ),
-                    const SizedBox(width: 10),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 150),
-                      child: Text(
-                        name,
-                        key: const ValueKey<String>('square-post-name'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.title(14),
-                      ),
+          SizedBox(
+            height: avatarSize,
+            child: Row(
+              children: <Widget>[
+                Flexible(
+                  child: InkWell(
+                    key: const ValueKey<String>('square-post-author'),
+                    borderRadius: LoopRadius.inner,
+                    onTap: author == null
+                        ? null
+                        : () => onOpen(
+                            userProfileLocation(author.publicProfileId),
+                          ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        if (author == null)
+                          const _OfficialAvatar()
+                        else
+                          LoopProfileAvatar(
+                            avatarRef: author.avatarRef,
+                            alias: author.displayName,
+                            size: avatarSize,
+                          ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            name,
+                            key: const ValueKey<String>('square-post-name'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopTypography.title(13),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              if (badge != null) ...<Widget>[const SizedBox(width: 8), badge],
-              const Spacer(),
-              const SizedBox(width: 8),
-              Text(
-                squareFeedAgeLabel(post.createdAt, now: now),
-                key: const ValueKey<String>('square-post-age'),
-                style: LoopTypography.figure(
-                  11,
-                  weight: FontWeight.w400,
-                  color: LoopColors.text3,
+                if (badge != null) ...<Widget>[const SizedBox(width: 8), badge],
+                const Spacer(),
+                const SizedBox(width: 8),
+                Text(
+                  squareFeedAgeLabel(post.createdAt, now: now),
+                  key: const ValueKey<String>('square-post-age'),
+                  maxLines: 1,
+                  style: LoopTypography.figure(
+                    11,
+                    weight: FontWeight.w400,
+                    color: LoopColors.text3,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          if (quote != null)
-            Padding(
-              padding: const EdgeInsets.only(left: indent, top: 8),
-              child: token == null
-                  ? quote
-                  : InkWell(
-                      key: const ValueKey<String>('square-post-token'),
-                      borderRadius: LoopRadius.inner,
-                      onTap: () {
-                        final location = squareFeedTokenLocation(token);
-                        if (location != null) onOpen(location);
-                      },
-                      child: quote,
-                    ),
+              ],
             ),
-          if (text != null)
+          ),
+          if (sentence != null)
             Padding(
-              padding: const EdgeInsets.only(left: indent, top: 8),
+              padding: const EdgeInsets.only(left: indent, top: 6),
               child: post.kind == SquareFeedPostKind.system
-                  ? _OfficialRecap(text: text)
+                  ? _OfficialRecap(text: sentence)
                   : SquareFeedText(
                       key: const ValueKey<String>('square-post-text'),
-                      text: text,
+                      text: sentence,
                       style: LoopTypography.body(13),
                     ),
             ),
+          if (token != null)
+            Padding(
+              padding: const EdgeInsets.only(left: indent, top: 8),
+              child: SquareFeedQuoteCapsule(
+                token: token,
+                onTap: () {
+                  final location = squareFeedTokenLocation(token);
+                  if (location != null) onOpen(location);
+                },
+              ),
+            ),
           Padding(
-            padding: const EdgeInsets.only(left: indent - 12, top: 2),
+            padding: const EdgeInsets.only(left: indent - 8, top: 2),
             child: Align(
               alignment: Alignment.centerLeft,
               child: _LikeButton(post: post, onTap: onLike),
@@ -461,117 +471,203 @@ class SquareFeedPostRow extends StatelessWidget {
       ),
     );
   }
+}
 
-  /// The one line under the head: the quoted token and the figures the
-  /// server read for it, or the event's own facts. Nothing unread is drawn.
-  Widget? _quoteLine(BuildContext context) {
-    final token = post.token;
-    final parts = <Widget>[];
-    void add(Widget widget) {
-      if (parts.isNotEmpty) parts.add(const SizedBox(width: 8));
-      parts.add(widget);
-    }
+/// `.feed-token`: one Card-ground capsule, 40 high — a 24 logo, the ticker,
+/// the market cap in text2, then the price (zeros folded, one line) and the
+/// 1 h move in its rise / fall colour. A figure the server did not read is
+/// not drawn at all.
+class SquareFeedQuoteCapsule extends StatelessWidget {
+  const SquareFeedQuoteCapsule({required this.token, super.key, this.onTap});
 
-    if (token != null) {
-      add(
-        MemeLogo(
-          symbol: token.symbol,
-          imageUrl: token.logoUrl,
-          identity: token.id,
-          size: 28,
-          radius: 14,
+  final SquareFeedToken token;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cap = token.marketCapUsd1;
+    final price = token.priceUsd1;
+    final move = squareFeedQuoteMove(token);
+    return Material(
+      color: LoopColors.card,
+      borderRadius: LoopRadius.control,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const ValueKey<String>('square-post-token'),
+        onTap: onTap,
+        child: SizedBox(
+          key: const ValueKey<String>('square-post-quote'),
+          height: SquareFeedPostRow.capsuleHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Logo, its gap and a few letters of the ticker stay.
+                final figuresMax = (constraints.maxWidth - 24 - 8 - 40).clamp(
+                  0.0,
+                  double.infinity,
+                );
+                return Row(
+                  children: <Widget>[
+                    MemeLogo(
+                      symbol: token.symbol,
+                      imageUrl: token.logoUrl,
+                      identity: token.id,
+                      size: 24,
+                      radius: 12,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Row(
+                        children: <Widget>[
+                          Flexible(
+                            child: Text(
+                              token.symbol,
+                              key: const ValueKey<String>('square-post-symbol'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: LoopTypography.title(13),
+                            ),
+                          ),
+                          if (cap != null) ...<Widget>[
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '市值 ${memeCapLabel(cap)}',
+                                key: const ValueKey<String>('square-post-cap'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: LoopTypography.caption(
+                                  11,
+                                  color: LoopColors.text2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (price != null || move != null)
+                      ConstrainedBox(
+                        // The figures come first and never wrap; on a phone too
+                        // narrow for them they shrink, the ticker gives way first.
+                        constraints: BoxConstraints(maxWidth: figuresMax),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const SizedBox(width: 8),
+                              if (price != null)
+                                Text(
+                                  squareFeedQuotePrice(price),
+                                  key: const ValueKey<String>(
+                                    'square-post-price',
+                                  ),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: LoopTypography.figure(13),
+                                ),
+                              if (price != null && move != null)
+                                const SizedBox(width: 6),
+                              if (move != null)
+                                Text(
+                                  loopSignedPercent(move),
+                                  key: const ValueKey<String>(
+                                    'square-post-change',
+                                  ),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: LoopTypography.figure(
+                                    11,
+                                    color: LoopPriceMove.of(move).color,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
         ),
-      );
-      add(
-        Text(
-          token.symbol,
-          key: const ValueKey<String>('square-post-symbol'),
-          style: LoopTypography.title(13),
-        ),
-      );
-    }
-    switch (post.kind) {
-      case SquareFeedPostKind.buy:
-        final amount = post.eventDecimal('amountUsd1');
-        if (amount != null && amount > Decimal.zero) {
-          add(
-            Text(
-              '买入 ${loopFormatCompactFigure(amount)}',
-              key: const ValueKey<String>('square-post-amount'),
-              style: LoopTypography.figure(13),
-            ),
-          );
-        }
-        final cap = token?.marketCapUsd1;
-        if (cap != null) {
-          add(
-            Text(
-              '市值 ${memeCapLabel(cap)}',
-              key: const ValueKey<String>('square-post-cap'),
-              style: LoopTypography.caption(13, color: LoopColors.text2),
-            ),
-          );
-        }
-      case SquareFeedPostKind.claim:
-        final round = post.event['roundId'];
-        if (round != null && int.tryParse(round) != null) {
-          add(
-            Text(
-              '第 $round 轮',
-              key: const ValueKey<String>('square-post-round'),
-              style: LoopTypography.figure(13),
-            ),
-          );
-        }
-        final weight = post.eventDecimal('weightPct');
-        if (weight != null) {
-          add(
-            Text(
-              '权重 ${loopFormatDecimal(weight, maxFractionDigits: 2)}%',
-              key: const ValueKey<String>('square-post-weight'),
-              style: LoopTypography.caption(13, color: LoopColors.text2),
-            ),
-          );
-        }
-      case SquareFeedPostKind.opinion:
-      case SquareFeedPostKind.graduation:
-      case SquareFeedPostKind.system:
-        final price = token?.priceUsd1;
-        if (price != null) {
-          add(
-            Text(
-              memePriceLabel(price),
-              key: const ValueKey<String>('square-post-price'),
-              style: LoopTypography.figure(13),
-            ),
-          );
-        }
-        final change = token?.change1hPct;
-        if (change != null) {
-          add(
-            Text(
-              loopSignedPercent(change),
-              key: const ValueKey<String>('square-post-change'),
-              style: LoopTypography.figure(
-                12,
-                color: LoopPriceMove.of(change).color,
-              ),
-            ),
-          );
-        }
-    }
-    if (parts.isEmpty) return null;
-    return Row(
-      key: const ValueKey<String>('square-post-quote'),
-      children: <Widget>[
-        for (final part in parts)
-          part is SizedBox ? part : Flexible(child: part),
-      ],
+      ),
     );
   }
 }
 
-/// The kind badge (decision 0177 §2). `system` carries one only when pinned.
+/// The capsule's price: the list row's figure with a long zero run folded
+/// (`$0.0₅4173`), so it fits one line.
+String squareFeedQuotePrice(Decimal price) =>
+    loopFoldedZerosPrice(memePriceLabel(price));
+
+/// The capsule's 1 h move, or `null` when there is nothing to say: unread,
+/// or exactly flat — TF 23 showed 「0.00%」 on every quiet token, which reads
+/// as a figure while telling the reader nothing (decision 0187).
+Decimal? squareFeedQuoteMove(SquareFeedToken token) {
+  final change = token.change1hPct;
+  if (change == null || change == Decimal.zero) return null;
+  return change;
+}
+
+/// What a post says under its head (decision 0187 §3). A person's post and
+/// LOOP's own say their text; an event the server wrote from the chain has
+/// no text, so one sentence is made from its kind and facts:
+///
+/// - graduation 「X 打满内盘，官方池已建，回购开始。」
+/// - claim 「在 X 第 N 轮领到 N USD1，权重 x%。」 (each missing fact left out)
+/// - buy 「买入 N USD1 的 X。」
+///
+/// A fact that was not sent is left out of the sentence, never written as 0;
+/// `null` when there is nothing true to say.
+String? squareFeedPostSentence(SquareFeedPost post) {
+  final text = post.text?.trim();
+  if (text != null && text.isNotEmpty) return post.text;
+  final symbol = post.token?.symbol.trim();
+  final named = symbol == null || symbol.isEmpty ? null : symbol;
+  String? usd1(String key) => switch (post.eventDecimal(key)) {
+    final Decimal amount when amount > Decimal.zero =>
+      '${loopFormatDecimal(amount, maxFractionDigits: 2)} USD1',
+    _ => null,
+  };
+  switch (post.kind) {
+    case SquareFeedPostKind.opinion:
+    case SquareFeedPostKind.system:
+      return null;
+    case SquareFeedPostKind.graduation:
+      return named == null ? '这个代币打满内盘，官方池已建，回购开始。' : '$named 打满内盘，官方池已建，回购开始。';
+    case SquareFeedPostKind.buy:
+      final amount = usd1('amountUsd1');
+      if (amount == null) return null;
+      return named == null ? '买入 $amount。' : '买入 $amount 的 $named。';
+    case SquareFeedPostKind.claim:
+      final amount = usd1('amountUsd1');
+      final roundText = post.event['roundId'];
+      final round = roundText == null ? null : int.tryParse(roundText);
+      final weight = post.eventDecimal('weightPct');
+      final where = <String>[
+        if (named != null) '在 $named',
+        if (round != null && round > 0) '第 $round 轮',
+      ].join(' ');
+      final got = amount == null ? '领到奖励' : '领到 $amount';
+      // 「第 2 轮领到」 runs on; a Latin ticker before 「领到」 keeps its space.
+      final head = where.isEmpty
+          ? got
+          : where.endsWith('轮')
+          ? '$where$got'
+          : '$where $got';
+      return weight == null || weight < Decimal.zero
+          ? '$head。'
+          : '$head，权重 ${loopFormatDecimal(weight, maxFractionDigits: 2)}%。';
+  }
+}
+
+/// The kind badge (decisions 0177 §2, 0187). `system` carries one only when
+/// pinned. The claim's amount moved into the sentence, so its badge is the
+/// word alone.
 Widget? squareFeedBadge(SquareFeedPost post) => switch (post.kind) {
   SquareFeedPostKind.opinion => const LoopBadge(
     '观点',
@@ -582,13 +678,9 @@ Widget? squareFeedBadge(SquareFeedPost post) => switch (post.kind) {
     key: ValueKey<String>('square-post-badge-buy'),
     kind: LoopBadgeKind.launch,
   ),
-  SquareFeedPostKind.claim => LoopBadge(
-    switch (post.eventDecimal('amountUsd1')) {
-      final Decimal amount when amount > Decimal.zero =>
-        '领奖 ${loopFormatDecimal(amount, maxFractionDigits: 2)} USD1',
-      _ => '领奖',
-    },
-    key: const ValueKey<String>('square-post-badge-claim'),
+  SquareFeedPostKind.claim => const LoopBadge(
+    '领奖',
+    key: ValueKey<String>('square-post-badge-claim'),
     kind: LoopBadgeKind.up,
   ),
   SquareFeedPostKind.graduation => const LoopBadge(
@@ -644,7 +736,7 @@ class _OfficialAvatar extends StatelessWidget {
     ),
     child: const LoopBrandMark(
       kind: LoopBrandMarkKind.appIcon,
-      height: 20,
+      height: 18,
       vector: true,
       semanticLabel: 'LOOP 官方',
     ),
@@ -819,6 +911,10 @@ class _SquareFeedTextState extends State<SquareFeedText> {
 class _LikeButton extends StatelessWidget {
   const _LikeButton({required this.post, required this.onTap});
 
+  /// The foot line (`.feed-foot`): 32 high, so a post stays near the design's
+  /// 90 dp; the full row width beside it is free for the long-press.
+  static const double likeHeight = 32;
+
   final SquareFeedPost post;
   final VoidCallback onTap;
 
@@ -836,9 +932,12 @@ class _LikeButton extends StatelessWidget {
         borderRadius: LoopRadius.inner,
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          constraints: const BoxConstraints(
+            minHeight: likeHeight,
+            minWidth: likeHeight,
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[

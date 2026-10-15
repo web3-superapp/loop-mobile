@@ -137,10 +137,15 @@ LoopV2MetaSnapshot _meta({required bool feed}) {
   );
 }
 
-Future<void> _pumpSegment(WidgetTester tester, _Feed feed) => pumpS7Page(
+Future<void> _pumpSegment(
+  WidgetTester tester,
+  _Feed feed, {
+  Size size = const Size(390, 2600),
+}) => pumpS7Page(
   tester,
   SquareFeedSegment(onNavigate: (_) {}, now: () => _now),
   meta: _meta(feed: true),
+  size: size,
   overrides: <Override>[squareFeedGatewayProvider.overrideWithValue(feed)],
 );
 
@@ -257,7 +262,9 @@ void main() {
       expect(find.text('置顶'), findsOneWidget);
       expect(find.text('观点'), findsOneWidget);
       expect(find.text('买入'), findsOneWidget);
-      expect(find.text('领奖 10.94 USD1'), findsOneWidget);
+      expect(find.text('领奖'), findsOneWidget);
+      // The claim's amount is in its sentence now (decision 0187).
+      expect(find.text('领到 10.94 USD1。'), findsOneWidget);
       expect(find.text('毕业'), findsOneWidget);
       final badges = tester
           .widgetList<LoopBadge>(find.byType(LoopBadge))
@@ -268,7 +275,7 @@ void main() {
       expect(badge('置顶').kind, LoopBadgeKind.mute);
       expect(badge('买入').kind, LoopBadgeKind.launch);
       expect(badge('毕业').kind, LoopBadgeKind.launch);
-      expect(badge('领奖 10.94 USD1').kind, LoopBadgeKind.up);
+      expect(badge('领奖').kind, LoopBadgeKind.up);
       // The pinned post is first and its text sits in a record card.
       final pinnedTop = tester.getTopLeft(_key('square-post-${_uuid(1)}')).dy;
       final opinionTop = tester.getTopLeft(_key('square-post-${_uuid(2)}')).dy;
@@ -336,6 +343,189 @@ void main() {
       expect(find.text(r'$0'), findsNothing);
       expect(find.text('0.00%'), findsNothing);
       await _teardown(tester);
+    });
+
+    testWidgets('a flat move is not drawn either (TF 23 0.00%)', (
+      tester,
+    ) async {
+      await _pumpSegment(
+        tester,
+        _Feed(
+          page: _page(<SquareFeedPost>[
+            _post(
+              1,
+              token: SquareFeedToken(
+                kind: SquareFeedTokenKind.meme,
+                memeTokenId: _uuid(77),
+                symbol: 'AI',
+                priceUsd1: Decimal.parse('24344.25'),
+                change1hPct: Decimal.zero,
+              ),
+            ),
+          ]),
+        ),
+      );
+      expect(_key('square-post-price'), findsOneWidget);
+      expect(_key('square-post-change'), findsNothing);
+      expect(find.text('0.00%'), findsNothing);
+      await _teardown(tester);
+    });
+
+    testWidgets('rows are compact: ≤ 110 dp bare, ≤ 156 dp with a capsule', (
+      tester,
+    ) async {
+      await _pumpSegment(
+        tester,
+        _Feed(
+          page: _page(<SquareFeedPost>[
+            _post(1, text: 'Bottom in. 这个位置我继续加。'),
+            _post(
+              2,
+              text: 'Bottom in. 这个位置我继续加。',
+              token: SquareFeedToken(
+                kind: SquareFeedTokenKind.meme,
+                memeTokenId: _uuid(77),
+                symbol: 'S1378A05',
+                priceUsd1: Decimal.parse('0.00004173'),
+                change1hPct: Decimal.parse('14.4'),
+                marketCapUsd1: Decimal.parse('666700'),
+              ),
+            ),
+          ]),
+        ),
+      );
+      final bare = tester.getSize(_key('square-post-${_uuid(1)}')).height;
+      final quoted = tester.getSize(_key('square-post-${_uuid(2)}')).height;
+      expect(bare, lessThanOrEqualTo(110));
+      expect(quoted, lessThanOrEqualTo(156));
+      // The capsule is the design's 40 dp Card strip.
+      expect(
+        tester.getSize(_key('square-post-quote')).height,
+        SquareFeedPostRow.capsuleHeight,
+      );
+      await _teardown(tester);
+    });
+
+    testWidgets('the price stays on one line on a narrow phone', (
+      tester,
+    ) async {
+      await _pumpSegment(
+        tester,
+        size: const Size(320, 1600),
+        _Feed(
+          page: _page(<SquareFeedPost>[
+            _post(
+              1,
+              token: SquareFeedToken(
+                kind: SquareFeedTokenKind.meme,
+                memeTokenId: _uuid(77),
+                symbol: 'VERYLONGTICKER',
+                priceUsd1: Decimal.parse('0.00004173'),
+                change1hPct: Decimal.parse('-49.5'),
+                marketCapUsd1: Decimal.parse('3400000'),
+              ),
+            ),
+          ]),
+        ),
+      );
+      final price = tester.widget<Text>(_key('square-post-price'));
+      expect(price.data, r'$0.0₄4173');
+      expect(price.maxLines, 1);
+      expect(price.softWrap, isFalse);
+      final line = tester.getSize(_key('square-post-price')).height;
+      expect(line, lessThan(13 * 2));
+      expect(find.text('-49.50%'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await _teardown(tester);
+    });
+
+    test('event posts say one sentence from their facts', () {
+      SquareFeedToken token(String symbol) => SquareFeedToken(
+        kind: SquareFeedTokenKind.launch2,
+        instanceId: _uuid(60),
+        symbol: symbol,
+      );
+      expect(
+        squareFeedPostSentence(
+          _post(
+            1,
+            kind: SquareFeedPostKind.graduation,
+            text: null,
+            token: token('S1371AE4'),
+          ),
+        ),
+        'S1371AE4 打满内盘，官方池已建，回购开始。',
+      );
+      expect(
+        squareFeedPostSentence(
+          _post(
+            2,
+            kind: SquareFeedPostKind.claim,
+            text: null,
+            token: token('S1376B5B'),
+            event: const <String, String>{
+              'amountUsd1': '10.94',
+              'roundId': '2',
+              'weightPct': '50.00',
+            },
+          ),
+        ),
+        '在 S1376B5B 第 2 轮领到 10.94 USD1，权重 50%。',
+      );
+      // A fact that was not sent is left out, never written as 0.
+      expect(
+        squareFeedPostSentence(
+          _post(
+            3,
+            kind: SquareFeedPostKind.claim,
+            text: null,
+            token: token('S1376B5B'),
+            event: const <String, String>{'amountUsd1': '10.94'},
+          ),
+        ),
+        '在 S1376B5B 领到 10.94 USD1。',
+      );
+      expect(
+        squareFeedPostSentence(
+          _post(
+            4,
+            kind: SquareFeedPostKind.buy,
+            text: null,
+            token: token('S1378A05'),
+            event: const <String, String>{'amountUsd1': '40'},
+          ),
+        ),
+        '买入 40 USD1 的 S1378A05。',
+      );
+      expect(
+        squareFeedPostSentence(
+          _post(5, kind: SquareFeedPostKind.buy, text: null),
+        ),
+        isNull,
+      );
+      // A person's words are their own.
+      expect(squareFeedPostSentence(_post(6, text: 'Bottom in')), 'Bottom in');
+      expect(
+        squareFeedPostSentence(
+          _post(7, kind: SquareFeedPostKind.system, text: '日报'),
+        ),
+        '日报',
+      );
+    });
+
+    test('badge by kind', () {
+      LoopBadge? badge(SquareFeedPostKind kind, {bool pinned = false}) =>
+          squareFeedBadge(_post(1, kind: kind, pinned: pinned)) as LoopBadge?;
+      expect(badge(SquareFeedPostKind.opinion)!.text, '观点');
+      expect(badge(SquareFeedPostKind.opinion)!.kind, LoopBadgeKind.mute);
+      expect(badge(SquareFeedPostKind.buy)!.text, '买入');
+      expect(badge(SquareFeedPostKind.buy)!.kind, LoopBadgeKind.launch);
+      expect(badge(SquareFeedPostKind.claim)!.text, '领奖');
+      expect(badge(SquareFeedPostKind.claim)!.kind, LoopBadgeKind.up);
+      expect(badge(SquareFeedPostKind.graduation)!.text, '毕业');
+      expect(badge(SquareFeedPostKind.graduation)!.kind, LoopBadgeKind.launch);
+      expect(badge(SquareFeedPostKind.system, pinned: true)!.text, '置顶');
+      expect(badge(SquareFeedPostKind.system), isNull);
     });
 
     testWidgets('like flips at once and rolls back with a toast on failure', (
