@@ -14300,6 +14300,11 @@ def check_first_frame_cache_contract(root: Path) -> list[str]:
     return errors
 
 
+# Share of opaque pure-white pixels above which the adaptive foreground is
+# treated as a baked plate (decision 0179: metallic highlights stay well below).
+LAUNCH_ICON_WHITE_PLATE_SHARE = 0.12
+
+
 def check_launch_icon_contract(root: Path) -> list[str]:
     """The adaptive foreground carries the mark only; any baked plate is cropped
     into an octagon by the launcher and Android 12+ splash circular masks."""
@@ -14343,18 +14348,22 @@ def check_launch_icon_contract(root: Path) -> list[str]:
                     errors.append(
                         f"{smallest} {name} corner must be fully transparent, got rgba{tuple(pixel)}"
                     )
+            # A baked plate is a large white field; a metallic mark (decision
+            # 0179) has pure-white highlights of its own, so only a white share
+            # above LAUNCH_ICON_WHITE_PLATE_SHARE counts as a plate.
+            white = 0
+            total = 0
             for row in rows:
                 for position in range(0, len(row), 4):
                     red, green, blue, alpha = row[position : position + 4]
+                    total += 1
                     if alpha == 255 and red > 250 and green > 250 and blue > 250:
-                        errors.append(
-                            f"{smallest} contains opaque white pixels: the adaptive "
-                            "foreground must not bake a plate behind the mark"
-                        )
-                        break
-                else:
-                    continue
-                break
+                        white += 1
+            if total and white / total > LAUNCH_ICON_WHITE_PLATE_SHARE:
+                errors.append(
+                    f"{smallest} is {white / total:.0%} opaque white: the adaptive "
+                    "foreground must not bake a plate behind the mark"
+                )
     splash = res / "values-v31/styles.xml"
     if splash.is_file():
         text = splash.read_text(encoding="utf-8")
