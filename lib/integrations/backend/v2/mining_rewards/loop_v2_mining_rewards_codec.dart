@@ -314,11 +314,22 @@ abstract final class LoopV2MiningRewardsCodec {
       minimumClaim = amountRaw(parameters, 'minimumClaimRaw');
     }
 
-    final claimMap = LoopV2Contract.strictMap(map['claim'], const <String>{
-      'executable',
-      'reasonCode',
-      'latest',
-    });
+    // Decision 0185: `configurationReasonCode` (loop-api 0144 §8) is read
+    // when present; an older backend omits it and the stage is inferred.
+    final claimMap = LoopV2Contract.strictMapWithOptional(
+      map['claim'],
+      const <String>{'executable', 'reasonCode', 'latest'},
+      const <String>{'configurationReasonCode'},
+    );
+    // Read leniently: a value that is not a reason code is treated as if the
+    // key were absent, so one odd field never blanks the rewards page.
+    final configurationRaw = claimMap['configurationReasonCode'];
+    final configurationReported =
+        claimMap.containsKey('configurationReasonCode') &&
+        (configurationRaw == null ||
+            (configurationRaw is String &&
+                configurationRaw.length <= 64 &&
+                LoopV2ChainCodec.reasonCodePattern.hasMatch(configurationRaw)));
     final latest = claimMap['latest'] == null
         ? null
         : claimRecord(claimMap['latest']);
@@ -330,6 +341,10 @@ abstract final class LoopV2MiningRewardsCodec {
       failureReasonCode: latest?.failureReasonCode,
       executable: LoopV2ChainCodec.requireBool(claimMap, 'executable'),
       reasonCode: LoopV2ChainCodec.optionalReasonCode(claimMap, 'reasonCode'),
+      configurationReported: configurationReported,
+      configurationReasonCode: configurationReported
+          ? configurationRaw as String?
+          : null,
     );
 
     return MiningRewardsView(

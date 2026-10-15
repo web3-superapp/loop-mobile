@@ -669,11 +669,14 @@ Future<void> openS7Disclosure(WidgetTester tester, Key key) async {
 /// Decision 0184: a rewards port that answers only the claim gate, so a page
 /// outside 挖矿奖励 can be mounted with the LOOP token live or not. The
 /// figures are zeros and empty tracks; the claim is what the test chooses.
+/// Both answers carry `configurationReasonCode` as the current backend does
+/// (decision 0185).
 final class S7TokenStageRewards implements MiningRewardsGateway {
   S7TokenStageRewards.live()
     : claim = const MiningClaimSummary(
         status: MiningClaimStatus.none,
         executable: true,
+        configurationReported: true,
       );
 
   S7TokenStageRewards.preToken()
@@ -681,6 +684,8 @@ final class S7TokenStageRewards implements MiningRewardsGateway {
         status: MiningClaimStatus.none,
         executable: false,
         reasonCode: miningClaimContractNotConfiguredCode,
+        configurationReported: true,
+        configurationReasonCode: miningClaimContractNotConfiguredCode,
       );
 
   final MiningClaimSummary claim;

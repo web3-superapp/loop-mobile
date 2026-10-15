@@ -306,6 +306,8 @@ final class MiningClaimSummary {
     this.reasonCode,
     this.amount,
     this.failureReasonCode,
+    this.configurationReported = false,
+    this.configurationReasonCode,
   });
 
   final MiningClaimStatus status;
@@ -320,6 +322,17 @@ final class MiningClaimSummary {
   final String? reasonCode;
   final BigInt? amount;
   final String? failureReasonCode;
+
+  /// Whether the server sent `hourly.claim.configurationReasonCode` at all
+  /// (loop-api decision 0144 §8). An older backend omits the key; its answer
+  /// is then read by decision 0184's inference.
+  final bool configurationReported;
+
+  /// `hourly.claim.configurationReasonCode`: the claim path's configuration
+  /// reason alone, never masked by a ledger reason in [reasonCode]; `null`
+  /// when the claim path is configured. Meaningful only when
+  /// [configurationReported].
+  final String? configurationReasonCode;
 }
 
 /// `hourly.claim.reasonCode` while no claim contract is configured.
@@ -337,9 +350,11 @@ enum MiningTokenStage {
   /// The server shows the claim path past its contract check.
   live,
 
-  /// The claim gate stopped on a ledger fact first (nothing settled, nothing
-  /// or too little to claim, parameters pending, settlement down), so the
-  /// answer does not say whether a contract is configured. Read as
+  /// The answer does not say whether a contract is configured: the settlement
+  /// store is unconfigured (decision 0185), or, on a backend without
+  /// `configurationReasonCode`, the claim gate stopped on a ledger fact first
+  /// (nothing settled, nothing or too little to claim, parameters pending,
+  /// settlement down). Read as
   /// [preToken] by [miningTokenLive]: a LOOP amount is never printed on a
   /// guess.
   unknown,
@@ -361,13 +376,43 @@ const Set<String> _miningClaimPastContractCodes = <String>{
 const String miningMainnetChainId = 'eip155:56';
 
 /// [MiningTokenStage] from `hourly.claim`.
+///
+/// Decision 0185: when the server reports `configurationReasonCode` it alone
+/// decides — `null` is live, a reason checked before or at the contract is
+/// pre-token, a reason checked past it is live, and the settlement store
+/// being unconfigured (checked before the contract) does not say. A ledger
+/// reason in `reasonCode` no longer hides the answer. An older backend that
+/// omits the key falls back to decision 0184's inference.
 MiningTokenStage miningTokenStage(MiningClaimSummary claim) {
+  if (claim.configurationReported) {
+    final configuration = claim.configurationReasonCode;
+    if (configuration == null) return MiningTokenStage.live;
+    if (_miningClaimPreTokenCodes.contains(configuration)) {
+      return MiningTokenStage.preToken;
+    }
+    if (_miningClaimPastContractCodes.contains(configuration)) {
+      return MiningTokenStage.live;
+    }
+    return MiningTokenStage.unknown;
+  }
+  return _legacyMiningTokenStage(claim);
+}
+
+/// The configuration reasons that mean no LOOP token yet: no claim contract,
+/// or the mainnet claim closed (checked before the contract).
+const Set<String> _miningClaimPreTokenCodes = <String>{
+  miningClaimContractNotConfiguredCode,
+  'MINING_CLAIM_MAINNET_CLOSED',
+};
+
+/// Decision 0184's reading, kept for a backend without
+/// `configurationReasonCode`.
+MiningTokenStage _legacyMiningTokenStage(MiningClaimSummary claim) {
   if (claim.executable) return MiningTokenStage.live;
   final reason = claim.reasonCode;
   // `MAINNET_CLOSED` is checked before the contract: on mainnet the claim
   // is closed whatever is configured, so the token is not live there either.
-  if (reason == miningClaimContractNotConfiguredCode ||
-      reason == 'MINING_CLAIM_MAINNET_CLOSED') {
+  if (_miningClaimPreTokenCodes.contains(reason)) {
     return MiningTokenStage.preToken;
   }
   if (_miningClaimPastContractCodes.contains(reason)) {

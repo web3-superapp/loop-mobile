@@ -85,6 +85,10 @@ Map<String, Object?> _hourlyJson({
   bool excluded = false,
   String? displayedRaw,
   bool parameters = true,
+  // Decision 0185: `hourly.claim.configurationReasonCode`. Omitted by default
+  // (an older backend), so decision 0184's cases still read the inference.
+  bool configurationReported = false,
+  String? configurationReason,
 }) => <String, Object?>{
   'claimable': <String, Object?>{
     'status': 'unavailable',
@@ -198,6 +202,7 @@ Map<String, Object?> _hourlyJson({
     'claim': <String, Object?>{
       'executable': executable,
       'reasonCode': executable ? null : claimReason,
+      if (configurationReported) 'configurationReasonCode': configurationReason,
       'latest': latestClaim,
     },
   },
@@ -2333,6 +2338,170 @@ void main() {
       expect(_key('mining-summary-hero-claimable'), findsOneWidget);
       expect(_key('mining-summary-hero-power-only'), findsNothing);
       expect(_key('mining-summary-hero-last-hour-power'), findsNothing);
+      await _drain(tester);
+    });
+  });
+
+  group('S195 · token stage by configurationReasonCode (decision 0185)', () {
+    const notConfigured = miningClaimContractNotConfiguredCode;
+
+    MiningRewardsView reported({
+      required String? configuration,
+      bool executable = false,
+      String claimReason = 'MINING_NOTHING_SETTLED',
+    }) => _view(
+      _hourlyJson(
+        executable: executable,
+        claimReason: claimReason,
+        configurationReported: true,
+        configurationReason: configuration,
+      ),
+    );
+
+    test('the codec reads the key, null, and its absence apart', () {
+      final configured = reported(configuration: null).claim;
+      expect(configured.configurationReported, isTrue);
+      expect(configured.configurationReasonCode, isNull);
+
+      final closed = reported(configuration: notConfigured).claim;
+      expect(closed.configurationReported, isTrue);
+      expect(closed.configurationReasonCode, notConfigured);
+
+      final legacy = _view(
+        _hourlyJson(executable: false, claimReason: 'MINING_NOTHING_SETTLED'),
+      ).claim;
+      expect(legacy.configurationReported, isFalse);
+      expect(legacy.configurationReasonCode, isNull);
+
+      // Lenient: a value that is not a reason code reads as an older backend
+      // instead of failing the whole resource.
+      for (final odd in <Object?>['lower_case', 7, true]) {
+        final json = _hourlyJson(executable: false);
+        ((json['hourly']! as Map<String, Object?>)['claim']!
+                as Map<String, Object?>)['configurationReasonCode'] =
+            odd;
+        final claim = _view(json).claim;
+        expect(claim.configurationReported, isFalse, reason: '$odd');
+        expect(claim.configurationReasonCode, isNull, reason: '$odd');
+      }
+      // Any other unknown key is still rejected.
+      final extra = _hourlyJson();
+      ((extra['hourly']! as Map<String, Object?>)['claim']!
+              as Map<String, Object?>)['configured'] =
+          true;
+      expect(() => _view(extra), throwsA(isA<LoopBackendFailure>()));
+    });
+
+    test('the new field alone decides, whatever the ledger reason', () {
+      const ledger = <String>[
+        'MINING_SETTLEMENT_UNAVAILABLE',
+        'MINING_PARAMETERS_PENDING',
+        'MINING_NOTHING_SETTLED',
+        'MINING_CLAIM_NOTHING_TO_CLAIM',
+        'MINING_CLAIM_BELOW_MINIMUM',
+        'MINING_CLAIM_IN_FLIGHT',
+      ];
+      for (final code in ledger) {
+        expect(
+          miningTokenStage(
+            reported(configuration: null, claimReason: code).claim,
+          ),
+          MiningTokenStage.live,
+          reason: code,
+        );
+        for (final configuration in <String>[
+          notConfigured,
+          'MINING_CLAIM_MAINNET_CLOSED',
+        ]) {
+          expect(
+            miningTokenStage(
+              reported(configuration: configuration, claimReason: code).claim,
+            ),
+            MiningTokenStage.preToken,
+            reason: '$code + $configuration',
+          );
+        }
+      }
+      for (final configuration in <String>[
+        'MINING_CLAIM_CHAIN_NOT_CONFIGURED',
+        'MINING_CLAIM_SIGNER_NOT_CONFIGURED',
+        'MINING_CLAIM_WRITES_DISABLED',
+      ]) {
+        expect(
+          miningTokenStage(
+            reported(
+              configuration: configuration,
+              claimReason: configuration,
+            ).claim,
+          ),
+          MiningTokenStage.live,
+          reason: configuration,
+        );
+      }
+      // The settlement store is checked before the contract: no answer.
+      expect(
+        miningTokenStage(
+          reported(
+            configuration: 'MINING_SETTLEMENT_UNAVAILABLE',
+            claimReason: 'MINING_SETTLEMENT_UNAVAILABLE',
+          ).claim,
+        ),
+        MiningTokenStage.unknown,
+      );
+      // A mainnet claim is no longer read when the field is there.
+      expect(
+        miningTokenStage(
+          const MiningClaimSummary(
+            status: MiningClaimStatus.succeeded,
+            executable: false,
+            reasonCode: 'MINING_CLAIM_NOTHING_TO_CLAIM',
+            lastTx: MiningClaimTx(txHash: _hash, chainId: 'eip155:56'),
+            configurationReported: true,
+            configurationReasonCode: notConfigured,
+          ),
+        ),
+        MiningTokenStage.preToken,
+      );
+    });
+
+    testWidgets('a ledger reason with the contract configured is the full '
+        'page; with it absent, power only', (tester) async {
+      await _pump(
+        tester,
+        rewards: _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[
+            _Answer.value(
+              reported(
+                configuration: null,
+                claimReason: 'MINING_CLAIM_BELOW_MINIMUM',
+              ),
+            ),
+          ],
+        ),
+      );
+      expect(_key('mining-power-only-notice'), findsNothing);
+      expect(_key('mining-summary-settled'), findsOneWidget);
+      final closed = tester.widget<LoopButton>(_key('mining-claim-button'));
+      expect(closed.label, '领取');
+      expect(closed.onPressed, isNull);
+      await _drain(tester);
+
+      await _pump(
+        tester,
+        rewards: _FakeRewards(
+          rewards: <_Answer<MiningRewardsView>>[
+            _Answer.value(
+              reported(
+                configuration: notConfigured,
+                claimReason: 'MINING_NOTHING_SETTLED',
+              ),
+            ),
+          ],
+        ),
+      );
+      expect(_key('mining-power-only-notice'), findsOneWidget);
+      expect(_key('mining-claim-panel'), findsNothing);
+      expect(_key('mining-summary-settled'), findsNothing);
       await _drain(tester);
     });
   });
