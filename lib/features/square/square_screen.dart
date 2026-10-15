@@ -12,6 +12,8 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
+import 'package:loop_mobile/features/square/square_feed.dart';
+import 'package:loop_mobile/features/square/square_feed_view.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -24,17 +26,19 @@ import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `square` · 广场 (decision 0110, S106 §3; the 社区 segment is the club
-/// list of decision 0116).
+/// list of decision 0116; the 动态 segment is decision 0177).
 ///
-/// Two page segments: every community in the directory, and every voice
-/// room live on the platform right now. The segment survives leaving the
-/// tab and coming back.
-class SquareScreen extends StatelessWidget {
+/// Three page segments while the server's `squareFeed` capability is usable —
+/// the 动态 timeline, every community in the directory, and every voice room
+/// live on the platform right now — and the older two otherwise. The segment
+/// survives leaving the tab and coming back.
+class SquareScreen extends ConsumerWidget {
   const SquareScreen({
     required this.onOpenCommunity,
     required this.onOpenVoiceRoom,
     super.key,
     this.onOpenSearch,
+    this.onNavigate,
   });
 
   /// Opens `/search` from the 社区 segment's entry. Null pushes the route.
@@ -46,37 +50,51 @@ class SquareScreen extends StatelessWidget {
   /// Opens the live room of one community (`/chat/voice?id=`).
   final ValueChanged<String> onOpenVoiceRoom;
 
+  /// Opens a location from the 动态 segment. Null pushes it.
+  final ValueChanged<String>? onNavigate;
+
   static const segments = <String>['社区', '语音房'];
+  static const feedSegments = <String>['动态', '社区', '语音房'];
+
+  /// The 社区 segment's index on the page as it is drawn now.
+  static int communityIndex({required bool feed}) => feed ? 1 : 0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final feed = squareFeedVisible(ref);
+    final offset = feed ? 1 : 0;
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('square-screen'),
       tabKey: 'square',
       title: '广场',
-      segments: segments,
+      segments: feed ? feedSegments : segments,
       // The segment bodies are embedded pages with no bar of their own, so
       // their 更新中 is drawn on the segment row (S106b).
-      updating: (ref, index) => index == 0
-          ? ref.watch(
-              communityDiscoverControllerProvider.select(
-                (state) => state.refreshing,
-              ),
-            )
-          : ref.watch(
-              liveVoiceRoomsControllerProvider.select(
-                (state) => state.refreshing,
-              ),
-            ),
-      builder: (context, index) => index == 0
-          ? SquareCommunityList(
-              onOpenCommunity: onOpenCommunity,
-              onOpenSearch: onOpenSearch,
-            )
-          : LiveVoiceRoomList(
-              onOpenCommunity: onOpenCommunity,
-              onOpenVoiceRoom: onOpenVoiceRoom,
-            ),
+      updating: (ref, index) => switch (index - offset) {
+        < 0 => ref.watch(
+          squareFeedControllerProvider(ref.watch(squareFeedScopeProvider))
+              .select((state) => state.refreshing),
+        ),
+        0 => ref.watch(
+          communityDiscoverControllerProvider.select(
+            (state) => state.refreshing,
+          ),
+        ),
+        _ => ref.watch(
+          liveVoiceRoomsControllerProvider.select((state) => state.refreshing),
+        ),
+      },
+      builder: (context, index) => switch (index - offset) {
+        < 0 => SquareFeedSegment(onNavigate: onNavigate),
+        0 => SquareCommunityList(
+          onOpenCommunity: onOpenCommunity,
+          onOpenSearch: onOpenSearch,
+        ),
+        _ => LiveVoiceRoomList(
+          onOpenCommunity: onOpenCommunity,
+          onOpenVoiceRoom: onOpenVoiceRoom,
+        ),
+      },
     );
   }
 }
@@ -172,7 +190,12 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
                   // Back to the 社区 segment of the same page.
                   onPressed: () => ref
                       .read(loopTabSegmentMemoryProvider.notifier)
-                      .select('square', 0),
+                      .select(
+                        'square',
+                        SquareScreen.communityIndex(
+                          feed: squareFeedVisible(ref),
+                        ),
+                      ),
                 ),
               ),
               onRetry: () => unawaited(controller.reload()),

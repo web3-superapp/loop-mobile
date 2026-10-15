@@ -238,9 +238,14 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   /// `testnetFaucet` was added by loop-api S156 (client decision 0154). A
   /// backend without it has no faucet: the absent row reads `unavailable`,
   /// so its entry is never drawn.
+  ///
+  /// `squareFeed` was added by loop-api decision 0143 (client decision 0177).
+  /// A backend without it has no timeline: the absent row reads
+  /// `unavailable` and 广场 keeps its two older segments.
   static const omissibleCapabilities = <LoopV2CapabilityId>{
     LoopV2CapabilityId.launch2,
     LoopV2CapabilityId.testnetFaucet,
+    LoopV2CapabilityId.squareFeed,
   };
 
   /// The reason code on a capability the backend did not publish. It is the
@@ -252,20 +257,24 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   static const testnetFaucetAbsentReasonCode =
       'TESTNET_FAUCET_CAPABILITY_ABSENT';
 
+  /// The same, for an absent `squareFeed` (decision 0177).
+  static const squareFeedAbsentReasonCode = 'SQUARE_FEED_CAPABILITY_ABSENT';
+
   /// The row an omitted capability reads as: `deferred` (`launch2`) or
   /// `unavailable` (`testnetFaucet`) with no provider precondition, the same
   /// shape loop-api emits for a module that is off.
   LoopV2Capability _absentCapability(LoopV2CapabilityId id) {
     assert(omissibleCapabilities.contains(id), '$id is not omissible');
-    final faucet = id == LoopV2CapabilityId.testnetFaucet;
     return LoopV2Capability(
       id: id,
-      availability: faucet
-          ? LoopV2CapabilityAvailability.unavailable
-          : LoopV2CapabilityAvailability.deferred,
-      reasonCode: faucet
-          ? testnetFaucetAbsentReasonCode
-          : launch2AbsentReasonCode,
+      availability: id == LoopV2CapabilityId.launch2
+          ? LoopV2CapabilityAvailability.deferred
+          : LoopV2CapabilityAvailability.unavailable,
+      reasonCode: switch (id) {
+        LoopV2CapabilityId.testnetFaucet => testnetFaucetAbsentReasonCode,
+        LoopV2CapabilityId.squareFeed => squareFeedAbsentReasonCode,
+        _ => launch2AbsentReasonCode,
+      },
       evidence: const LoopV2CapabilityEvidence(
         status: LoopV2CapabilityEvidenceStatus.notApplicable,
         reasonCode: null,

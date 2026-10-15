@@ -380,6 +380,9 @@ void main() {
         // 「8 亿」, a trade row's token column) — the same kind. Quotes,
         // quota and signing facts use the exact `launch2MemeFigure`.
         'lib/features/launch2/launch2_format.dart',
+        // Decision 0177: the 动态 post's token line 「市值 \$3.40M」 — the
+        // same summary slot; the quote itself is exact.
+        'lib/features/square/square_feed_view.dart',
       };
       final callers = <String>{};
       for (final file in Directory('lib').listSync(recursive: true)) {

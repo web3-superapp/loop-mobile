@@ -5936,19 +5936,21 @@ class HarnessTests(unittest.TestCase):
     def test_current_s7_surfaces_pass_their_guard(self) -> None:
         self.assertEqual(check_harness.check_s7_truth_contract(REPOSITORY_ROOT), [])
 
-    def test_capability_enum_must_hold_the_contracts_thirty_four_ids(self) -> None:
+    def test_capability_enum_must_hold_the_contracts_thirty_five_ids(self) -> None:
         relative = str(check_harness.S5_CAPABILITY_META_PATH)
         source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
         mutations = (
-            # A thirty-fifth id the contract never listed.
+            # A thirty-sixth id the contract never listed.
             (
-                "  testnetFaucet('testnetFaucet');",
-                "  testnetFaucet('testnetFaucet'),\n  perpTrading('perpTrading');",
+                "  squareFeed('squareFeed');",
+                "  squareFeed('squareFeed'),\n  perpTrading('perpTrading');",
             ),
             # `launch2` dropped: omissible on the wire, never in the enum.
             ("  launch2('launch2'),\n", ""),
             # `testnetFaucet` dropped: omissible on the wire, never in the enum.
-            ("  testnetFaucet('testnetFaucet');", "  ;"),
+            ("  testnetFaucet('testnetFaucet'),\n", ""),
+            # `squareFeed` dropped (decision 0177): omissible on the wire too.
+            ("  squareFeed('squareFeed');", "  ;"),
             # A dropped id.
             ("  marketRead('marketRead'),\n", ""),
             # A renamed wire value.
@@ -5969,11 +5971,11 @@ class HarnessTests(unittest.TestCase):
 
                 self.assertTrue(
                     any(
-                        "LoopV2CapabilityId must list exactly the contract's 34 ids"
+                        "LoopV2CapabilityId must list exactly the contract's 35 ids"
                         in error
                         for error in result
                     ),
-                    msg=f"expected 34-capability guard: {result}",
+                    msg=f"expected 35-capability guard: {result}",
                 )
 
     def test_swap_entry_point_must_be_gated_on_swappable_alone(self) -> None:

@@ -203,15 +203,17 @@ final class LoopV2TermsGate {
 /// `security`, `settings` and `support` by the step-8 decision 0037 module
 /// that steps 6 and 7 already read, `meme` by loop-api decision 0101, and
 /// `launch2` by loop-api decision 0114 (client decision 0137), and
-/// `testnetFaucet` by loop-api S156 (client decision 0154), for 34 ids in the
-/// exact order of `openapi/loop-api.v2.json`.
+/// `testnetFaucet` by loop-api S156 (client decision 0154), and `squareFeed`
+/// by loop-api decision 0143 (client decision 0177), for 35 ids in the exact
+/// order of `openapi/loop-api.v2.json`.
 /// The parser requires the exact set, so this list must track the frozen
 /// contract even for modules a given step does not consume. The two
 /// exceptions are [launch2]: a backend that predates loop-api decision 0114
 /// publishes the ids without it, and the parser fills it in as `deferred`
 /// (decision 0137, see `DioLoopV2MetaRepository.launch2AbsentReasonCode`);
 /// and [testnetFaucet]: a backend that predates loop-api S156 omits it, and
-/// the parser fills it in as `unavailable` (decision 0154).
+/// the parser fills it in as `unavailable` (decision 0154); [squareFeed] the
+/// same way (decision 0177).
 enum LoopV2CapabilityId {
   privyAuthentication('privyAuthentication'),
   accountSession('accountSession'),
@@ -252,7 +254,10 @@ enum LoopV2CapabilityId {
   // The testnet faucet (loop-api S156, client decision 0154). `available`
   // only on a testnet deployment whose operator wallet is configured; a
   // mainnet build never draws its entry.
-  testnetFaucet('testnetFaucet');
+  testnetFaucet('testnetFaucet'),
+  // The square 「动态」 timeline (loop-api decision 0143, client decision
+  // 0177). A backend that predates it omits the id and reads unavailable.
+  squareFeed('squareFeed');
 
   const LoopV2CapabilityId(this.wireName);
 

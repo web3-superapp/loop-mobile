@@ -24,6 +24,7 @@ import 'package:loop_mobile/features/meme/meme_signing.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
@@ -157,6 +158,34 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
       return;
     }
     context.push(location);
+  }
+
+  void _offerToSquare(LoopChainResourceState<MemeTokenDetail> state) {
+    final row = state.value?.row;
+    final held = ref.read(squareRecentTokensProvider);
+    if (row == null ||
+        (held.isNotEmpty &&
+            held.first.id == row.memeTokenId &&
+            held.first.symbol == row.symbol &&
+            held.first.logoUrl == row.imageUrl) ||
+        state.mode != LoopChainGatewayMode.production ||
+        row.status == MemeTokenStatus.draft ||
+        row.status == MemeTokenStatus.pendingChain) {
+      return;
+    }
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      ref
+          .read(squareRecentTokensProvider.notifier)
+          .record(
+            SquareFeedTokenRef(
+              kind: SquareFeedTokenKind.meme,
+              id: row.memeTokenId,
+              symbol: row.symbol,
+              logoUrl: row.imageUrl,
+            ),
+          );
+    });
   }
 
   Future<void> _reloadAll(String id) async {
@@ -307,6 +336,9 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
         if (mounted) unawaited(ref.read(provider.notifier).load());
       });
     }
+    // Decision 0177: a token opened here is offered as the 广场 post's token,
+    // for this run only, and only from the production adapter.
+    if (state != null) _offerToSquare(state);
     final scope = MemeTokenScreen.tradeScope(memeTokenId);
     final submission = ref.watch(memeSubmissionControllerProvider(scope));
     ref.listen<MemeSubmissionState>(memeSubmissionControllerProvider(scope), (
