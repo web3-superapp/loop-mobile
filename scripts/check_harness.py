@@ -15294,7 +15294,6 @@ PRESS_FEEDBACK_DEBT = {
     "lib/features/community/community_profile_screen.dart": 1,
     "lib/features/community/community_widgets.dart": 1,
     "lib/features/community/search_screen.dart": 1,
-    "lib/features/intel/intel_rank_board.dart": 1,
     "lib/features/profile/profile_v2_screens.dart": 1,
     "lib/features/square/square_community_list.dart": 1,
     "lib/integrations/communication/loop_chat_image_attachments.dart": 1,
