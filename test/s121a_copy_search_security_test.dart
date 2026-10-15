@@ -30,7 +30,7 @@ void main() {
   loopWatchGround();
 
   group('search', () {
-    testWidgets('offers 资产 / 社区 / 用户 and a one-line scope hint', (
+    testWidgets('offers 全部 / 代币 / 社区 / 用户 and a one-line scope hint', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -40,16 +40,13 @@ void main() {
       );
 
       final segs = tester.widgetList<LoopSeg>(_searchSegs).toList();
-      expect(segs.map((seg) => seg.label), <String>['资产', '社区', '用户']);
-      // Decision 0170 (docs/33 M14): the filter is the family's quiet seg —
-      // words, one solid dark-grey pill for the chosen one, never Lime.
-      expect(segs.every((seg) => seg.quiet), isTrue);
+      expect(segs.map((seg) => seg.label), <String>['全部', '代币', '社区', '用户']);
+      // Decision 0178 (docs/35 「搜索」): the chosen segment is `.seg.on`, the
+      // others the family's quiet words (decision 0170).
       expect(segs.where((seg) => seg.selected), hasLength(1));
-      for (final material in tester.widgetList<Material>(
-        find.descendant(of: _searchSegs, matching: find.byType(Material)),
-      )) {
-        expect(material.color, isNot(LoopColors.lime));
-      }
+      expect(segs.first.selected, isTrue);
+      expect(segs.first.quiet, isFalse);
+      expect(segs.skip(1).every((seg) => seg.quiet), isTrue);
       expect(
         tester
             .getSize(find.byKey(const ValueKey<String>('search-seg-users')))
@@ -80,6 +77,8 @@ void main() {
       );
       expect(hint.data, '按昵称只能搜到允许被发现的账号，LOOP ID 可以精确搜索');
       expect(hint.style?.fontSize, 11);
+      // Decision 0178: the field sits in the bottom bar, the hint right
+      // above it, and the segments at the top of the page.
       final field = tester.getRect(
         find.byKey(const ValueKey<String>('search-field')),
       );
@@ -89,8 +88,8 @@ void main() {
       final firstChip = tester.getRect(
         find.byKey(const ValueKey<String>('search-seg-assets')),
       );
-      expect(line.top, greaterThanOrEqualTo(field.bottom));
-      expect(line.bottom, lessThanOrEqualTo(firstChip.top));
+      expect(line.bottom, lessThanOrEqualTo(field.top));
+      expect(firstChip.bottom, lessThanOrEqualTo(line.top));
 
       for (final text in _texts(tester)) {
         expect(_forbidden.hasMatch(text), isFalse, reason: text);
@@ -112,7 +111,7 @@ void main() {
           .widgetList<LoopSeg>(_searchSegs)
           .map((seg) => seg.label)
           .toList();
-      expect(chips, <String>['资产', '社区', '用户', 'Launch', 'DApp']);
+      expect(chips, <String>['全部', '代币', '社区', '用户', 'Launch', 'DApp']);
     });
 
     test('the switch is off in this build', () {

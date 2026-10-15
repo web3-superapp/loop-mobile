@@ -87,6 +87,8 @@ import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_balance_visibility_store.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_search_recent_store.dart';
+import 'package:loop_mobile/features/community/search_recent.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
 import 'package:loop_mobile/integrations/sharing/system_wallet_activity_export_sink.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
@@ -201,6 +203,11 @@ Future<void> main() async {
         // Decision 0175: 我's 「隐藏余额」 choice, one Boolean on this device.
         loopBalanceVisibilityStoreProvider.overrideWithValue(
           createSharedPreferencesBalanceVisibilityStore(),
+        ),
+        // Decision 0178: the global search's 「最近搜索」, one device-local
+        // key. A refusing store leaves the list run-local.
+        searchRecentStoreProvider.overrideWithValue(
+          SharedPreferencesSearchRecentStore(),
         ),
         friendGatewayProvider.overrideWith(
           (ref) => ref.watch(loopProductionFriendGatewayProvider),

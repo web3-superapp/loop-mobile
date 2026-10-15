@@ -316,7 +316,7 @@ void main() {
 
       final paste = find.byKey(const ValueKey<String>('search-paste-loop-id'));
       expect(tester.getSize(paste).height, greaterThanOrEqualTo(44));
-      expect(find.bySemanticsLabel('粘贴 LOOP ID 并搜索'), findsOneWidget);
+      expect(find.bySemanticsLabel('粘贴'), findsOneWidget);
       await _tap(tester, paste);
 
       final field = tester.widget<TextField>(
@@ -353,10 +353,11 @@ void main() {
       expect(gateway.queries, <String>['users:$_ownId']);
     });
 
-    testWidgets('no ID on the clipboard leaves the field and sends nothing', (
+    testWidgets('other text on the clipboard is pasted and searched', (
       tester,
     ) async {
-      _mockClipboard(tester).text = 'onchain.mia 你好';
+      // Decision 0178: 「粘贴」 fills the field with one searchable line.
+      _mockClipboard(tester).text = ' onchain.mia ';
       final gateway = FakeSearchGateway(
         pages: <SearchDomain, SearchPage>{SearchDomain.users: _userPage()},
       );
@@ -373,9 +374,34 @@ void main() {
       final field = tester.widget<TextField>(
         find.byKey(const ValueKey<String>('search-field')),
       );
+      expect(field.controller?.text, 'onchain.mia');
+      expect(gateway.queries, <String>[
+        'assets:onchain.mia',
+        'communities:onchain.mia',
+        'users:onchain.mia',
+      ]);
+    });
+
+    testWidgets('a multi-line clipboard leaves the field and sends nothing', (
+      tester,
+    ) async {
+      _mockClipboard(tester).text = 'onchain.mia\n你好';
+      final gateway = FakeSearchGateway();
+      await pumpCommunityPage(
+        tester,
+        const GlobalSearchScreen(),
+        search: gateway,
+      );
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('search-paste-loop-id')),
+      );
+      final field = tester.widget<TextField>(
+        find.byKey(const ValueKey<String>('search-field')),
+      );
       expect(field.controller?.text, isEmpty);
       expect(gateway.queries, isEmpty);
-      expect(find.text('剪贴板里没有 LOOP ID'), findsOneWidget);
+      expect(find.text('剪贴板里没有可以搜索的内容'), findsOneWidget);
     });
 
     testWidgets('an empty clipboard says the same', (tester) async {
@@ -391,7 +417,7 @@ void main() {
         find.byKey(const ValueKey<String>('search-paste-loop-id')),
       );
       expect(gateway.queries, isEmpty);
-      expect(find.text('剪贴板里没有 LOOP ID'), findsOneWidget);
+      expect(find.text('剪贴板里没有可以搜索的内容'), findsOneWidget);
     });
 
     testWidgets('an ID given to the page asks 用户 first', (tester) async {

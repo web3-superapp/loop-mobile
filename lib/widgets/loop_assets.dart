@@ -254,9 +254,14 @@ class LoopTokenLogo extends StatefulWidget {
     this.fallbackMonogram,
     this.size = 36,
     this.semanticLabel,
+    this.cornerRadius,
   });
 
   final String assetSymbol;
+
+  /// Draws the logo as a rounded tile of this corner instead of a circle
+  /// (search's token rows, decision 0178). `null` keeps the circle.
+  final double? cornerRadius;
 
   /// The registry's published artwork. Anything [loopRemoteLogoUri] refuses
   /// is treated as if the server had published nothing at all.
@@ -429,21 +434,30 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
     final monogram = loopMonogram(
       widget.fallbackMonogram ?? widget.assetSymbol,
     );
+    final corner = widget.cornerRadius;
+    final shape = corner == null ? BoxShape.circle : BoxShape.rectangle;
+    Widget clip(Widget child) => corner == null
+        ? ClipOval(child: child)
+        : ClipRRect(
+            borderRadius: BorderRadius.all(Radius.circular(corner)),
+            child: child,
+          );
     Widget bundled() {
       final path = LoopTokenAssets.pathForSymbol(widget.assetSymbol);
       if (path == null) {
         return _MonogramFallback(
           text: monogram,
           size: size,
-          shape: BoxShape.circle,
+          shape: shape,
+          radius: corner,
           semanticLabel: label,
         );
       }
       return SizedBox(
         width: size,
         height: size,
-        child: ClipOval(
-          child: SvgPicture.asset(
+        child: clip(
+          SvgPicture.asset(
             path,
             width: size,
             height: size,
@@ -452,7 +466,8 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
             errorBuilder: (context, error, stackTrace) => _MonogramFallback(
               text: monogram,
               size: size,
-              shape: BoxShape.circle,
+              shape: shape,
+              radius: corner,
               semanticLabel: label,
             ),
           ),
@@ -472,8 +487,8 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
     return SizedBox(
       width: size,
       height: size,
-      child: ClipOval(
-        child: Image(
+      child: clip(
+        Image(
           image: ResizeImage.resizeIfNeeded(pixels, pixels, source),
           key: const ValueKey<String>('loop-token-logo-remote'),
           width: size,

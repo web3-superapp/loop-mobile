@@ -85,15 +85,20 @@ final class SearchState {
     this.nextCursor,
     this.failureKind,
     this.loadingMore = false,
+    this.all = false,
+    this.truncated = const <SearchDomain>{},
+    this.failedDomains = const <SearchDomain>{},
   });
 
+  /// The page opens on 全部 (decision 0178).
   factory SearchState.initial(CommunityGatewayMode mode) {
     final closed = mode == CommunityGatewayMode.unavailable;
     return SearchState(
       mode: mode,
       phase: closed ? CommunityViewPhase.unavailable : CommunityViewPhase.empty,
-      domain: SearchDomain.communities,
+      domain: SearchDomain.assets,
       failureKind: closed ? CommunityFailureKind.unavailable : null,
+      all: true,
     );
   }
 
@@ -109,7 +114,20 @@ final class SearchState {
   final CommunityFailureKind? failureKind;
   final bool loadingMore;
 
-  bool get canLoadMore => nextCursor != null && !loadingMore;
+  /// 全部 (decision 0178): the query is asked of every searchable domain at
+  /// once, one first page each, and [domain] is not the filter. The server
+  /// has no `all` domain; this is the client asking the three it has.
+  final bool all;
+
+  /// Under [all], the domains whose first page said there is more. The page
+  /// offers 「更多」 into that domain instead of paging a mixed list.
+  final Set<SearchDomain> truncated;
+
+  /// Under [all], the domains that refused while another one answered. Their
+  /// refusal is stated on its own line, never folded into an empty answer.
+  final Set<SearchDomain> failedDomains;
+
+  bool get canLoadMore => !all && nextCursor != null && !loadingMore;
 
   bool get isPreview => mode == CommunityGatewayMode.preview;
 
@@ -167,6 +185,7 @@ final class SearchController extends Notifier<SearchState>
       failureKind: state.mode == CommunityGatewayMode.unavailable
           ? CommunityFailureKind.unavailable
           : null,
+      all: state.all,
     );
     if (state.mode == CommunityGatewayMode.unavailable) return;
     _debounce = Timer(searchDebounce, () {
@@ -183,8 +202,26 @@ final class SearchController extends Notifier<SearchState>
     if (state.query != trimmed) await submit(trimmed);
   }
 
+  /// Selects 全部: the query is asked of every searchable domain again.
+  void selectAll() {
+    if (state.all) return;
+    final closed = state.mode == CommunityGatewayMode.unavailable;
+    state = SearchState(
+      mode: state.mode,
+      phase: closed ? CommunityViewPhase.unavailable : CommunityViewPhase.empty,
+      domain: state.domain,
+      query: state.query,
+      failureKind: closed ? CommunityFailureKind.unavailable : null,
+      all: true,
+    );
+    if (closed) return;
+    if (searchQueryIsSubmittable(state.query)) {
+      unawaited(submit(state.query));
+    }
+  }
+
   void selectDomain(SearchDomain domain) {
-    if (domain == state.domain) return;
+    if (!state.all && domain == state.domain) return;
     final closed = state.mode == CommunityGatewayMode.unavailable;
     state = SearchState(
       mode: state.mode,
@@ -264,7 +301,7 @@ final class SearchController extends Notifier<SearchState>
   /// opened from a profile link (decision 0104) names a person, so it is asked
   /// of 用户 before anything else.
   Future<void> submit(String query, {bool land = true, SearchDomain? domain}) {
-    if (domain != null && domain != state.domain) {
+    if (domain != null && (state.all || domain != state.domain)) {
       state = SearchState(
         mode: state.mode,
         phase: state.phase,
@@ -285,6 +322,7 @@ final class SearchController extends Notifier<SearchState>
         failureKind: state.mode == CommunityGatewayMode.unavailable
             ? CommunityFailureKind.unavailable
             : null,
+        all: state.all,
       );
       return Future<void>.value();
     }
@@ -293,12 +331,95 @@ final class SearchController extends Notifier<SearchState>
       phase: CommunityViewPhase.loading,
       domain: state.domain,
       query: trimmed,
+      all: state.all,
     );
+    if (state.all) return _fetchAll();
     // A submitted query is a question about LOOP, not about the chip that
     // happened to be selected: 「voy」 answered 「没有匹配的结果」 under 社区
     // while 用户 held the account being looked for.
     return _fetch(append: false, land: land);
   }
+
+  /// 全部: one first page from each searchable domain, asked together.
+  ///
+  /// A domain that refuses keeps its refusal on its own line while another
+  /// answered; when none answered, the first refusal is the page's answer, so
+  /// a quota or offline refusal is never presented as 「没有结果」.
+  Future<void> _fetchAll() => single(() async {
+    final gateway = ref.read(searchGatewayProvider);
+    final previous = state;
+    final generation = nextGeneration();
+    final answers = await Future.wait<(SearchDomain, SearchPage?, Object?)>(
+      <Future<(SearchDomain, SearchPage?, Object?)>>[
+        for (final domain in searchableDomains)
+          gateway
+              .search(domain: domain, query: previous.query)
+              .then<(SearchDomain, SearchPage?, Object?)>(
+                (page) => (domain, page, null),
+                onError: (Object error) => (domain, null, error),
+              ),
+      ],
+    );
+    if (!isCurrent(generation)) return;
+    final results = <SearchResult>[];
+    final truncated = <SearchDomain>{};
+    final failed = <SearchDomain>{};
+    Object? firstFailure;
+    String? firstReason;
+    var answered = false;
+    for (final (domain, page, error) in answers) {
+      if (page == null) {
+        failed.add(domain);
+        firstFailure ??= error;
+        continue;
+      }
+      if (!page.available) {
+        failed.add(domain);
+        firstReason ??= page.reasonCode;
+        continue;
+      }
+      answered = true;
+      results.addAll(page.results);
+      if (page.nextCursor != null) truncated.add(domain);
+    }
+    if (!answered) {
+      if (firstFailure == null && firstReason != null) {
+        state = SearchState(
+          mode: previous.mode,
+          phase: CommunityViewPhase.unavailable,
+          domain: previous.domain,
+          query: previous.query,
+          failureKind: CommunityFailureKind.unavailable,
+          all: true,
+        );
+        return;
+      }
+      final kind = firstFailure is CommunityGatewayException
+          ? firstFailure.kind
+          : CommunityFailureKind.unexpected;
+      state = SearchState(
+        mode: previous.mode,
+        phase: communityPhaseForFailure(kind),
+        domain: previous.domain,
+        query: previous.query,
+        failureKind: kind,
+        all: true,
+      );
+      return;
+    }
+    state = SearchState(
+      mode: previous.mode,
+      phase: results.isEmpty
+          ? CommunityViewPhase.empty
+          : CommunityViewPhase.ready,
+      domain: previous.domain,
+      query: previous.query,
+      results: List<SearchResult>.unmodifiable(results),
+      all: true,
+      truncated: Set<SearchDomain>.unmodifiable(truncated),
+      failedDomains: Set<SearchDomain>.unmodifiable(failed),
+    );
+  });
 
   Future<void> loadMore() {
     if (!state.canLoadMore) return Future<void>.value();

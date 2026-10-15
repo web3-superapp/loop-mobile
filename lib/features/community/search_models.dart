@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 enum SearchDomain {
   users('users', '用户'),
   communities('communities', '社区'),
-  assets('assets', '资产'),
+  assets('assets', '代币'),
   launch('launch', 'Launch'),
   dapps('dapps', 'DApp');
 

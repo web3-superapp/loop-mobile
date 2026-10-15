@@ -49,7 +49,7 @@ void main() {
       );
       for (final domain in loop_search.searchableDomains) {
         expect(
-          field.decoration?.labelText,
+          field.decoration?.hintText,
           contains(domain.label),
           reason: domain.wireName,
         );
@@ -57,12 +57,12 @@ void main() {
       for (final domain in loop_search.searchDomainOrder) {
         if (!loop_search.searchDomainIsDeferred(domain)) continue;
         expect(
-          field.decoration?.labelText,
+          field.decoration?.hintText,
           isNot(contains(domain.label)),
           reason: domain.wireName,
         );
       }
-      expect(field.decoration?.labelText, isNot(contains('搜索社区或用户')));
+      expect(field.decoration?.hintText, isNot(contains('搜索社区或用户')));
 
       // And one line under the field says what a nickname search reaches
       // (decision 0121).
@@ -108,7 +108,7 @@ void main() {
       // bare — 「mock-vol-01」 under 「Alpha Signals 1」 — and names nothing a
       // reader can use.
       expect(find.text('alpha-holders'), findsNothing);
-      expect(find.text('128'), findsOneWidget);
+      expect(find.text('128 位成员'), findsOneWidget);
     });
 
     testWidgets('one word is one request, not one per keystroke', (

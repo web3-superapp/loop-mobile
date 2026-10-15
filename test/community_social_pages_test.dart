@@ -806,7 +806,7 @@ void main() {
     ) async {
       // Device walkthrough 2026-09-23 · a55–a65: the label offered five
       // domains while three of them refused every query.
-      expect(searchFieldLabel, '搜索资产、社区、用户');
+      expect(searchFieldLabel, '搜索代币、社区、用户');
       expect(searchableDomains, <SearchDomain>[
         SearchDomain.assets,
         SearchDomain.communities,
@@ -821,7 +821,7 @@ void main() {
       final field = tester.widget<TextField>(
         find.byKey(const ValueKey<String>('search-field')),
       );
-      expect(field.decoration!.labelText, searchFieldLabel);
+      expect(field.decoration!.hintText, '$searchFieldLabel…');
       // Decision 0121: only the three domains that answer get a chip.
       for (final domain in searchDomainOrder) {
         expect(
@@ -832,11 +832,10 @@ void main() {
       }
     });
 
-    testWidgets('a submitted query lands on the domain that has results', (
-      tester,
-    ) async {
+    testWidgets('全部 asks every domain and shows what answered', (tester) async {
       // 「voy」 answered 「没有匹配的结果」 under 社区 while the account being
       // looked for sat under 用户 (device walkthrough 2026-09-23 · a59/a62).
+      // Decision 0178: the page opens on 全部, which asks all three at once.
       final gateway = FakeSearchGateway(
         pages: <SearchDomain, SearchPage>{
           SearchDomain.communities: _searchPage(
@@ -853,19 +852,34 @@ void main() {
         social: FakeSocialGateway(),
       );
 
-      // 资产 is asked before 用户 — the chip order — and it refused here, so
-      // the refusal stays with it and the page lands on the domain that
-      // answered.
+      // In segment order. 代币 refused here, so the refusal stays on its own
+      // line and the answer from 用户 is shown.
       expect(gateway.queries, <String>[
-        'communities:frog',
         'assets:frog',
+        'communities:frog',
         'users:frog',
       ]);
       expect(find.text('frog_maxi'), findsOneWidget);
-      final seg = tester.widget<LoopSeg>(
-        find.byKey(const ValueKey<String>('search-seg-users')),
+      expect(
+        find.byKey(const ValueKey<String>('search-domain-failed-assets')),
+        findsOneWidget,
       );
-      expect(seg.selected, isTrue);
+      expect(
+        tester
+            .widget<LoopSeg>(
+              find.byKey(const ValueKey<String>('search-seg-all')),
+            )
+            .selected,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<LoopSeg>(
+              find.byKey(const ValueKey<String>('search-seg-users')),
+            )
+            .selected,
+        isFalse,
+      );
     });
 
     testWidgets('an asset result opens the token page by its assetId', (
@@ -913,13 +927,18 @@ void main() {
         search: gateway,
         social: FakeSocialGateway(),
       );
-      expect(gateway.queries, <String>['communities:frog']);
+      expect(gateway.queries, <String>[
+        'assets:frog',
+        'communities:frog',
+        'users:frog',
+      ]);
 
       await tester.tap(find.byKey(const ValueKey<String>('search-seg-users')));
       await tester.pumpAndSettle();
 
       // The empty answer stands: the reader asked this domain by hand.
-      expect(gateway.queries, <String>['communities:frog', 'users:frog']);
+      expect(gateway.queries.last, 'users:frog');
+      expect(gateway.queries, hasLength(4));
       expect(find.text('Frog Holders'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('search-empty')),

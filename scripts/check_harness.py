@@ -4436,6 +4436,9 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
         # Decision 0175: 我's 「隐藏余额」 Boolean, pinned by
         # `check_balance_visibility_store_contract`.
         BALANCE_VISIBILITY_STORE_OWNER,
+        # Decision 0178: the global search's 「最近搜索」, pinned by
+        # `check_search_recent_store_contract`.
+        SEARCH_RECENT_STORE_OWNER,
     }
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -4889,6 +4892,70 @@ def check_balance_visibility_store_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_search_recent_store_contract(root: Path) -> list[str]:
+    """Decision 0178: 「最近搜索」 is one narrow, fail-open device-local key."""
+
+    errors = require_fragments(
+        root,
+        {
+            SEARCH_RECENT_STORE_OWNER.as_posix(): (
+                "class SharedPreferencesSearchRecentStore",
+                "SharedPreferencesAsync()",
+                "static const String recentKey = 'loop.search.v1.recent';",
+                ".timeout(_budget)",
+                "decodeSearchRecent(",
+                "encodeSearchRecent(",
+            ),
+            "lib/features/community/search_recent.dart": (
+                "const int searchRecentLimit = 10;",
+                "abstract interface class SearchRecentStore",
+                "final class RunLocalSearchRecentStore",
+                "CommunityGatewayMode.production",
+            ),
+            "lib/main.dart": (
+                "searchRecentStoreProvider.overrideWithValue(",
+                "SharedPreferencesSearchRecentStore()",
+            ),
+            "test/s187_6_search_layout_test.dart": (
+                "recent entries survive a restart through the store",
+                "a Preview result is never written to the store",
+            ),
+        },
+    )
+    adapter_path = root / SEARCH_RECENT_STORE_OWNER
+    if adapter_path.is_file():
+        adapter_source = strip_dart_comments(read_text(adapter_path))
+        adapter = strip_dart_comments_and_strings(adapter_source)
+        imports = re.findall(
+            r"^import\s+['\"]([^'\"]+)['\"](?:\s+show\s+[^;]+)?\s*;",
+            adapter_source,
+            flags=re.MULTILINE,
+        )
+        if imports != [
+            "package:flutter/foundation.dart",
+            "package:loop_mobile/features/community/search_recent.dart",
+            "package:shared_preferences/shared_preferences.dart",
+        ]:
+            errors.append(
+                "the search recent adapter imports only Flutter annotations, "
+                "its narrow port, and Shared Preferences"
+            )
+        preference_members = re.findall(r"\bpreferences\.(\w+)\b", adapter)
+        if preference_members != ["getString", "setString", "remove"]:
+            errors.append(
+                "the search recent adapter may call only SharedPreferencesAsync "
+                "getString/setString/remove"
+            )
+        if len(re.findall(r"\bSharedPreferencesAsync\s*\(\s*\)", adapter)) != 1:
+            errors.append(
+                "the search recent adapter must create exactly one "
+                "SharedPreferencesAsync adapter"
+            )
+        if len(re.findall(r"\bstatic\s+const\s+String\s+\w+\s*=", adapter)) != 1:
+            errors.append("the search recent adapter must declare exactly one key")
+    return errors
+
+
 def check_build_profile_configuration_contract(root: Path) -> list[str]:
     """Keep Debug/Release client values centralized and fail-closed."""
 
@@ -5296,6 +5363,13 @@ BALANCE_VISIBILITY_STORE_OWNER = Path(
     "lib/integrations/personalization/shared_preferences_balance_visibility_store.dart"
 )
 BALANCE_VISIBILITY_KEY = "loop.display.v1.hide_balance"
+# Decision 0178: the only file allowed to store the global search's
+# 「最近搜索」 — at most ten `{type, stableId, name}` entries under one
+# installation-scoped key. Never a credential, a price, a follow state or a
+# Preview result.
+SEARCH_RECENT_STORE_OWNER = Path(
+    "lib/integrations/personalization/shared_preferences_search_recent_store.dart"
+)
 V2_SECURE_STORAGE_OWNER = Path(
     "lib/integrations/backend/v2/loop_v2_session_store.dart"
 )
@@ -15403,6 +15477,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_local_display_preferences_contract(root))
     errors.extend(check_onboarding_sequence_contract(root))
     errors.extend(check_balance_visibility_store_contract(root))
+    errors.extend(check_search_recent_store_contract(root))  # S187-6
     errors.extend(check_build_profile_configuration_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_stream_token_client_contract(root))
@@ -15749,7 +15824,6 @@ FEATURE_LEGACY_WIDGET_ALLOWLIST: dict[str, str] = {
     "lib/features/community/community_widgets.dart": (
         _LEGACY_EMPTY + "; LoopWideButton is the 0127 application form"
     ),
-    "lib/features/community/search_screen.dart": _LEGACY_EMPTY,
     "lib/features/social/blocklist_screen.dart": _LEGACY_EMPTY,
     "lib/features/social/public_profile/user_profile_screen.dart": _LEGACY_EMPTY,
     "lib/features/social/public_profile_sheet.dart": _LEGACY_EMPTY,
