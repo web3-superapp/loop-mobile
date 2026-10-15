@@ -83,56 +83,49 @@ class Launch2DynamicRoundCard extends StatelessWidget {
     key: const ValueKey<String>('launch2-dyn-round'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      Padding(
-        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 4, 4),
-        child: Row(
-          children: <Widget>[
-            Text('本轮状态', style: launch2PanelHeadingStyle),
-            const SizedBox(width: 8),
-            LoopBadge(
-              state.armed ? '已激活' : '未激活',
-              key: ValueKey<String>(
-                state.armed ? 'launch2-dyn-armed' : 'launch2-dyn-idle',
+      // Decision 0166: the page's `.label` (was a 20 / 700 heading), the
+      // armed badge at its end and 「我的奖励」 after it.
+      Launch2SectionLabel(
+        '本轮状态',
+        trailing: LoopBadge(
+          state.armed ? '已激活' : '未激活',
+          key: ValueKey<String>(
+            state.armed ? 'launch2-dyn-armed' : 'launch2-dyn-idle',
+          ),
+          kind: state.armed ? LoopBadgeKind.launch : LoopBadgeKind.mute,
+        ),
+        info: Semantics(
+          button: true,
+          label: '我的奖励',
+          excludeSemantics: true,
+          child: LoopPressable(
+            key: const ValueKey<String>('launch2-dyn-rewards-link'),
+            onTap: onOpenRewards,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: LoopTouch.minimum,
+                minWidth: LoopTouch.minimum,
               ),
-              kind: state.armed ? LoopBadgeKind.launch : LoopBadgeKind.mute,
-            ),
-            const Spacer(),
-            Semantics(
-              button: true,
-              label: '我的奖励',
-              excludeSemantics: true,
-              child: LoopPressable(
-                key: const ValueKey<String>('launch2-dyn-rewards-link'),
-                onTap: onOpenRewards,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: LoopTouch.minimum,
-                    minWidth: LoopTouch.minimum,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          '我的奖励',
-                          style: LoopType.caption.copyWith(
-                            color: LoopColors.text2,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        const LoopIcon(
-                          'chevron',
-                          size: 14,
-                          color: LoopColors.text3,
-                        ),
-                      ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      '我的奖励',
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
                     ),
-                  ),
+                    const SizedBox(width: 2),
+                    const LoopIcon(
+                      'chevron',
+                      size: 14,
+                      color: LoopColors.text3,
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
       if (!state.armed)

@@ -735,7 +735,7 @@ void main() {
     ) async {
       await open(tester, l2Detail(stage: 'upcoming'));
       expect(_key('launch2-stage-upcoming'), findsOneWidget);
-      expect(_key('launch2-stage-label'), findsOneWidget);
+      expect(_key('launch2-instance-folio'), findsOneWidget);
       expect(find.text('即将开售'), findsOneWidget);
       expect(_key('launch2-countdown'), findsOneWidget);
       expect(find.text('开售时间'), findsOneWidget);

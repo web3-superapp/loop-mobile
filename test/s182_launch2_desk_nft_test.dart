@@ -24,6 +24,7 @@ import 'package:loop_mobile/features/launch2/launch2_nft_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
+import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_overview_api.dart';
@@ -33,6 +34,7 @@ import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -404,10 +406,10 @@ void main() {
         _id(7),
       ]);
       // The record cards: the main event and the next one open now.
-      expect(
-        launch2DeskRecordRows(hero).map((row) => row.instanceId),
-        <String>[_id(6), _id(4)],
-      );
+      expect(launch2DeskRecordRows(hero).map((row) => row.instanceId), <String>[
+        _id(6),
+        _id(4),
+      ]);
     });
 
     test('at most five; NFT sales ending soonest lead', () {
@@ -458,9 +460,7 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('the 已毕业 list draws no desk whatever it holds', (
-      tester,
-    ) async {
+    testWidgets('the 已毕业 list draws no desk whatever it holds', (tester) async {
       final rows = <Map<String, Object?>>[_rowJson(1, 'nft_sale')];
       await _pump(
         tester,
@@ -595,7 +595,9 @@ void main() {
       await _pump(
         tester,
         _list(opened),
-        _listGateway(<Map<String, Object?>>[_rowJson(5, 'public', soldBps: 9100)]),
+        _listGateway(<Map<String, Object?>>[
+          _rowJson(5, 'public', soldBps: 9100),
+        ]),
       );
       final folio = _folio(tester, 'launch2-desk');
       expect(folio.heading, 'FROG\n内盘冲刺 91%');
@@ -653,8 +655,10 @@ void main() {
       await tester.drag(_key('launch2-desk-pages'), const Offset(-300, 0));
       await tester.pumpAndSettle();
       expect(dot(1), active);
-      expect(_folio(tester, 'launch2-desk-page-${_id(2)}').heading,
-          'FROG\n白名单提前购');
+      expect(
+        _folio(tester, 'launch2-desk-page-${_id(2)}').heading,
+        'FROG\n白名单提前购',
+      );
       await tester.tap(_key('launch2-desk-page-${_id(2)}'));
       await tester.pump();
       expect(opened.last, '/launch2/instance?id=${_id(2)}');
@@ -662,17 +666,21 @@ void main() {
       await tester.drag(_key('launch2-desk-pages'), const Offset(-300, 0));
       await tester.pumpAndSettle();
       expect(dot(2), active);
-      expect(_folio(tester, 'launch2-desk-page-${_id(3)}').stamp,
-          startsWith('距开售 '));
+      expect(
+        _folio(tester, 'launch2-desk-page-${_id(3)}').stamp,
+        startsWith('距开售 '),
+      );
       await _drain(tester);
     });
 
     test('pages: live events, then previews; campaigns join them '
         '(decision 0165, covered in s184)', () {
-      final hero = launch2HeroRows(_rows(<Map<String, Object?>>[
-        _rowJson(1, 'upcoming', startIn: const Duration(days: 1)),
-        _rowJson(2, 'nft_sale'),
-      ]));
+      final hero = launch2HeroRows(
+        _rows(<Map<String, Object?>>[
+          _rowJson(1, 'upcoming', startIn: const Duration(days: 1)),
+          _rowJson(2, 'nft_sale'),
+        ]),
+      );
       final running = Launch2DeskCampaign(
         campaignId: 'c1',
         title: '十月共识周',
@@ -884,7 +892,9 @@ void main() {
       );
       expect(find.byType(Launch2DeskRecordCard), findsNWidgets(2));
       expect(
-        tester.widget<LoopProgressBar>(_key('launch2-desk-bar-${_id(2)}')).value,
+        tester
+            .widget<LoopProgressBar>(_key('launch2-desk-bar-${_id(2)}'))
+            .value,
         0.8,
       );
       expect(
@@ -909,9 +919,7 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('a preview main event: no bar, the price line', (
-      tester,
-    ) async {
+    testWidgets('a preview main event: no bar, the price line', (tester) async {
       await _pump(
         tester,
         _list(<String>[]),
@@ -951,10 +959,7 @@ void main() {
         _list(opened),
         _listGateway(rows),
         overview: _FakeOverview(<Map<String, Object?>>[
-          <String, Object?>{
-            'activity': many(12),
-            'contractVersion': '2.0',
-          },
+          <String, Object?>{'activity': many(12), 'contractVersion': '2.0'},
         ]),
       );
       expect(_key('launch2-tape'), findsOneWidget);
@@ -1112,7 +1117,9 @@ void main() {
       );
       expect(
         find.byWidgetPredicate(
-          (widget) => widget is Container && widget.key is ValueKey<String> &&
+          (widget) =>
+              widget is Container &&
+              widget.key is ValueKey<String> &&
               (widget.key! as ValueKey<String>).value.startsWith(
                 'launch2-row-ring',
               ),
@@ -1142,15 +1149,12 @@ void main() {
           matching: find.byType(LoopStatGrid),
         ),
       );
-      expect(
-        grid.stats.map((stat) => '${stat.value}|${stat.label}'),
-        <String>[
-          '3|本周毕业 · 累计 12',
-          '4,200.5 USD1|累计回购',
-          '318 枚|勋章已铸',
-          '9|进行中',
-        ],
-      );
+      expect(grid.stats.map((stat) => '${stat.value}|${stat.label}'), <String>[
+        '3|本周毕业 · 累计 12',
+        '4,200.5 USD1|累计回购',
+        '318 枚|勋章已铸',
+        '9|进行中',
+      ]);
       expect(_key('launch2-stats-buyback'), findsOneWidget);
       final notice = tester.widget<LoopNotice>(_key('launch2-curation-notice'));
       expect(notice.title, '精品发射，不是每天几万个');
@@ -1171,7 +1175,9 @@ void main() {
         tester,
         _list(<String>[]),
         _listGateway(<Map<String, Object?>>[_rowJson(1, 'graduated')]),
-        overview: _FakeOverview(<Map<String, Object?>>[_overviewJson(noStats: true)]),
+        overview: _FakeOverview(<Map<String, Object?>>[
+          _overviewJson(noStats: true),
+        ]),
       );
       expect(_key('launch2-tape'), findsOneWidget);
       expect(_key('launch2-stats'), findsNothing);
@@ -1180,7 +1186,6 @@ void main() {
       await _drain(tester);
     });
   });
-
 
   group('共识勋章 · the seven states', () {
     testWidgets('upcoming: grey ring, 开售倒计时, 开售后可铸造 disabled', (tester) async {
@@ -1521,7 +1526,6 @@ void main() {
     });
   });
 
-
   group('360 dp', () {
     testWidgets('the desk, counts, record cards, tape, groups and 战绩 with '
         'long tickers and names do not overflow', (tester) async {
@@ -1574,7 +1578,6 @@ void main() {
       expect(tester.takeException(), isNull);
       await _drain(tester);
     });
-
 
     testWidgets('共识勋章 with a long ticker and name does not overflow', (
       tester,
@@ -1769,6 +1772,235 @@ void main() {
       );
       expect(full.stats!.graduatedThisWeek, 3);
       expect(full.activity.first.actor, isNull);
+    });
+  });
+
+  // Decision 0166 (S186-1): the project page in the 共识勋章 page's parts.
+  group('project page folio (0166)', () {
+    Launch2InstanceDetail detailOf(
+      String stage, {
+      String? holdReason,
+      String name = 'Frog Launch',
+    }) {
+      final body = l2DetailJson(
+        stage: stage,
+        holdReason: holdReason,
+        noNextChange:
+            stage == 'public' || stage == 'graduated' || stage == 'paused',
+        includePool: stage == 'graduated',
+      );
+      (body['instance']! as Map<String, Object?>)['name'] = name;
+      return LoopV2Launch2Codec.detail(body, mediaUrl: (_) => null);
+    }
+
+    /// Every colour the page paints in text and glyphs.
+    Set<Color> paintedColours(WidgetTester tester) => <Color>{
+      for (final text in tester.widgetList<Text>(find.byType(Text)))
+        ?text.style?.color,
+      for (final icon in tester.widgetList<LoopIcon>(find.byType(LoopIcon)))
+        ?icon.color,
+    };
+
+    testWidgets('nft_sale: one quiet record folio on top, the stage as its '
+        'kicker and the countdown in its stamp; labels, stat grid, '
+        'record card + bar; 铸造页 in Text2', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[_detail()]),
+      );
+      final folios = tester.widgetList<LoopFolioPrimary>(
+        find.byType(LoopFolioPrimary),
+      );
+      expect(folios, hasLength(1));
+      final folio = folios.single;
+      expect(folio.key, const ValueKey<String>('launch2-instance-folio'));
+      expect(folio.variant, LoopFolioVariant.quiet);
+      expect(folio.archetype, LoopFolioArchetype.record);
+      expect(folio.ring, isFalse);
+      expect(folio.kicker, 'NFT 发售中');
+      expect(folio.heading, 'FROG');
+      expect(folio.headingTone, LoopFolioHeadingTone.accent);
+      expect(folio.caption, startsWith('Frog Launch · '));
+      expect(folio.stamp, startsWith('剩 '));
+      expect(_key('launch2-copy-address'), findsOneWidget);
+      // The folio is above every stage block.
+      expect(
+        tester.getTopLeft(_key('launch2-instance-folio')).dy,
+        lessThan(tester.getTopLeft(_key('launch2-nft-sale')).dy),
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-nft-sale'),
+          matching: find.byWidgetPredicate(
+            (w) => w is LoopLabel && w.text == '项目 NFT',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-nft-sale'),
+          matching: find.byType(LoopStatGrid),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-nft-progress'),
+          matching: find.byType(LoopProgressBar),
+        ),
+        findsOneWidget,
+      );
+      final link = tester.widget<Text>(
+        find.descendant(
+          of: _key('launch2-nft-open'),
+          matching: find.text('铸造页'),
+        ),
+      );
+      expect(link.style?.color, LoopColors.text2);
+      await _drain(tester);
+    });
+
+    testWidgets('public: the curve is a label, a stat grid and a record card '
+        'with its bar; the panel opens with a label', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[detailOf('public')]),
+      );
+      final folio = tester.widget<LoopFolioPrimary>(
+        find.byType(LoopFolioPrimary),
+      );
+      expect(folio.kicker, '公开内盘');
+      expect(folio.stamp, isNull);
+      expect(_key('launch2-countdown'), findsNothing);
+      for (final label in <String>['内盘', '公开内盘']) {
+        expect(
+          find.byWidgetPredicate((w) => w is LoopLabel && w.text == label),
+          findsOneWidget,
+          reason: label,
+        );
+      }
+      expect(_key('launch2-curve-price'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch2-curve'),
+          matching: find.byType(LoopProgressBar),
+        ),
+        findsOneWidget,
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('upcoming and paused state the heading in Chalk', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[detailOf('upcoming')]),
+      );
+      var folio = tester.widget<LoopFolioPrimary>(
+        find.byType(LoopFolioPrimary),
+      );
+      expect(folio.headingTone, LoopFolioHeadingTone.neutral);
+      expect(folio.stamp, startsWith('距开售 '));
+      await _drain(tester);
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        _Fake(
+          details: <Launch2InstanceDetail>[
+            detailOf('paused', holdReason: 'LAUNCH2_ACTIVATION_MISSING'),
+          ],
+        ),
+      );
+      folio = tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary));
+      expect(folio.kicker, '已暂停');
+      expect(folio.headingTone, LoopFolioHeadingTone.neutral);
+      await _drain(tester);
+    });
+
+    for (final stage in <String>[
+      'upcoming',
+      'nft_sale',
+      'public',
+      'graduated',
+      'paused',
+    ]) {
+      testWidgets('$stage: no v1 warning, no Brass, no 20 / 700 heading', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          const Launch2InstanceScreen(instanceId: l2InstanceA),
+          _Fake(
+            details: <Launch2InstanceDetail>[
+              stage == 'nft_sale'
+                  ? _detail()
+                  : detailOf(
+                      stage,
+                      holdReason: stage == 'paused'
+                          ? 'LAUNCH2_ACTIVATION_MISSING'
+                          : null,
+                    ),
+            ],
+          ),
+        );
+        final colours = paintedColours(tester);
+        expect(colours, isNot(contains(LoopColors.warning)));
+        expect(colours, isNot(contains(LoopColors.brass)));
+        expect(
+          find.byWidgetPredicate(
+            (w) =>
+                w is Text &&
+                w.style?.fontSize == 20 &&
+                w.style?.fontWeight == FontWeight.w700,
+          ),
+          findsNothing,
+        );
+        await _drain(tester);
+      });
+    }
+
+    testWidgets('the paused stage pill is grey, not warning yellow', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            backgroundColor: LoopColors.ink,
+            body: Center(child: Launch2StagePill(stage: Launch2Stage.paused)),
+          ),
+        ),
+      );
+      final text = tester.widget<Text>(find.text('已暂停'));
+      expect(text.style?.color, LoopColors.text2);
+    });
+
+    testWidgets('360 dp: a long name in the folio and the curve do not '
+        'overflow', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: l2InstanceA),
+        _Fake(
+          details: <Launch2InstanceDetail>[
+            detailOf('public', name: '一个名字很长很长很长的项目用来测试三百六十宽度'),
+          ],
+        ),
+        size: const Size(360, 800),
+      );
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(
+        _key('launch2-trade-panel'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await _drain(tester);
     });
   });
 }

@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
@@ -132,7 +133,9 @@ class Launch2Countdown extends StatelessWidget {
 
 /// The stage in the quote row's fixed 96 × 44 slot. Lime only marks the two
 /// stages that take orders and the graduated one; every waiting stage sits on
-/// the card ground in grey (S121 §1.1.1 rule 3).
+/// the card ground in grey (S121 §1.1.1 rule 3). Decision 0166: 已暂停 is
+/// grey like them (was the v1 warning yellow) and the corner is
+/// [LoopRadius.inner].
 class Launch2StagePill extends StatelessWidget {
   const Launch2StagePill({required this.stage, super.key});
 
@@ -145,7 +148,6 @@ class Launch2StagePill extends StatelessWidget {
         stage == Launch2Stage.priority ||
         stage == Launch2Stage.public ||
         stage == Launch2Stage.graduated;
-    final paused = stage == Launch2Stage.paused;
     return Container(
       key: ValueKey<String>('launch2-stage-pill-${stage.wireName}'),
       width: size.width,
@@ -154,7 +156,7 @@ class Launch2StagePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: lit ? LoopColors.limeSoft : LoopColors.card2,
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        borderRadius: LoopRadius.inner,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -172,11 +174,7 @@ class Launch2StagePill extends StatelessWidget {
                 maxLines: 1,
                 style: LoopTypography.title(
                   14,
-                  color: lit
-                      ? LoopColors.lime
-                      : paused
-                      ? LoopColors.warning
-                      : LoopColors.text2,
+                  color: lit ? LoopColors.lime : LoopColors.text2,
                 ),
               ),
             ),
@@ -213,16 +211,97 @@ String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
 /// Sora caps and digits advance about 0.62 em).
 const double launch2TickerMinWidth = 92;
 
-/// The project page's section heading (官方池 / 回购 / 发射规则 and the
-/// two trade panels): one size for every section of the page (decision 0149;
-/// the panels were 18 / 600 between 20 / 700 neighbours).
-TextStyle get launch2PanelHeadingStyle =>
-    LoopTypography.title(20, weight: FontWeight.w700);
+/// A project-page section's `.label` (decision 0166, replacing decision
+/// 0149's 20 / 700 headings): [LoopLabel] with, at its end, one quiet
+/// [trailing] widget (a badge, a tax, a count) and/or an (i) [info] button.
+/// Without either it is exactly [LoopLabel].
+class Launch2SectionLabel extends StatelessWidget {
+  const Launch2SectionLabel(this.title, {super.key, this.info, this.trailing});
 
-/// Distance above a trade panel's heading: a section's break from the
-/// figures before it (decision 0149; was 4, the readings ran into the
-/// heading).
-const double launch2PanelTopGap = 24;
+  final String title;
+
+  /// A 44 dp icon button at the end of the label's line.
+  final Widget? info;
+  final Widget? trailing;
+
+  /// With [info], the label stands this much higher in the row so the 48 dp
+  /// box's centre sits on the 10 px label's centre (24 = 9 + 8 + 7).
+  static const double _infoLift = 9;
+
+  /// Android's minimum tap target.
+  static const double _infoBox = 48;
+
+  @override
+  Widget build(BuildContext context) {
+    final info = this.info;
+    final trailing = this.trailing;
+    if (info == null && trailing == null) return LoopLabel(title);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        Expanded(
+          child: info == null
+              ? LoopLabel(title)
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: _infoLift),
+                  child: LoopLabel(title),
+                ),
+        ),
+        if (trailing != null)
+          Padding(
+            padding: EdgeInsets.only(
+              right: info == null ? LoopSpacing.page : 0,
+              bottom: info == null ? LoopSpacing.tight : 15,
+            ),
+            child: trailing,
+          ),
+        if (info != null)
+          // The 44 dp control in a box of at least 48 dp that answers for
+          // it, so the label's (i) meets the Android tap-target size.
+          Padding(
+            padding: const EdgeInsets.only(right: 2),
+            child: MergeSemantics(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: _infoBox,
+                  minHeight: _infoBox,
+                ),
+                child: Align(child: info),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// One warning line inside a block (decision 0166): the warn glyph in Lime
+/// (the prototype's `--amber` is Lime) and the sentence in Text2. It replaces
+/// the v1 warning-yellow glyph and text of the trade panels and the failure
+/// line above a button.
+class Launch2WarnLine extends StatelessWidget {
+  const Launch2WarnLine(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      const Padding(
+        padding: EdgeInsets.only(top: 2),
+        child: LoopIcon('warn', size: 15, color: LoopColors.lime),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(
+          message,
+          style: LoopType.caption.copyWith(color: LoopColors.text2),
+        ),
+      ),
+    ],
+  );
+}
 
 /// One v2 row in the OKX quote shape (S121 §1.1.1): logo 36 · ticker over
 /// name · two stage lines on the right · the stage pill in the fixed slot.
@@ -474,22 +553,7 @@ class Launch2ActionFailureLine extends StatelessWidget {
           Semantics(
             liveRegion: true,
             container: true,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: LoopIcon('warn', size: 15, color: LoopColors.warning),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: LoopType.caption.copyWith(color: LoopColors.warning),
-                  ),
-                ),
-              ],
-            ),
+            child: Launch2WarnLine(message),
           ),
           if (topUp != null)
             Align(

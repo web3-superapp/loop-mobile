@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
+import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_nft_mint.dart';
@@ -38,6 +39,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// `launch2-instance` · one MEME v2 project (archetype `record`, layout
 /// `dashboard`, client decision 0139).
@@ -481,14 +483,11 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     final pending = _pending;
     final paused = detail.stage == Launch2Stage.paused;
     final body = <Widget>[
-      _Identity(
+      _InstanceFolio(
         detail: detail,
         onCopy: () => unawaited(
           LoopCopy.text(context, detail.row.memeAddress, message: '已复制代币地址'),
         ),
-      ),
-      _StageBar(
-        detail: detail,
         onElapsed: () => unawaited(
           ref
               .read(
@@ -586,6 +585,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     String? dynamicBlocked,
   }) => switch (detail.stage) {
     Launch2Stage.upcoming => <Widget>[
+      const LoopLabel('NFT 发售'),
       _Figures(
         keyName: 'launch2-upcoming',
         rows: <(String, String)>[
@@ -741,50 +741,115 @@ class _OwnerStrip extends StatelessWidget {
   );
 }
 
-class _Identity extends StatelessWidget {
-  const _Identity({required this.detail, required this.onCopy});
+/// Whether the folio heading carries the accent: the stage takes orders,
+/// mints, or trades in the official pool (decision 0166). Every waiting or
+/// held stage is stated in Chalk.
+bool launch2InstanceHeadingLit(Launch2Stage stage) => switch (stage) {
+  Launch2Stage.nftSale ||
+  Launch2Stage.priority ||
+  Launch2Stage.public ||
+  Launch2Stage.graduated => true,
+  Launch2Stage.upcoming ||
+  Launch2Stage.snapshotPending ||
+  Launch2Stage.closedNoHolders ||
+  Launch2Stage.paused => false,
+};
+
+/// The words before the folio stamp's countdown (decision 0166).
+String launch2InstanceStampPrefix(Launch2Stage stage) =>
+    stage == Launch2Stage.upcoming ? '距开售 ' : '剩 ';
+
+/// The folio caption (decision 0166): the project's name, then the stage's
+/// line without the countdown words the stamp now carries.
+String launch2InstanceFolioCaption(Launch2InstanceDetail detail) {
+  final row = detail.row;
+  final line = switch (row.stage) {
+    Launch2Stage.upcoming =>
+      '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚 · '
+          '发售 ${launch2SaleDurationLabel(row.nftSale)}',
+    Launch2Stage.nftSale => '每地址 1 枚 · 已售 ${row.nftSale.soldCount} 枚',
+    Launch2Stage.priority => '持有人优先',
+    Launch2Stage.snapshotPending ||
+    Launch2Stage.closedNoHolders ||
+    Launch2Stage.public ||
+    Launch2Stage.graduated ||
+    Launch2Stage.paused => launch2StageCaption(row.stage),
+  };
+  return '${row.name} · $line';
+}
+
+/// `.ledger-card.ledger-quiet.folio-primary` (decision 0166, after the
+/// 共识勋章 page of decision 0164): the stage as the kicker, the ticker as the
+/// heading with the logo beside it, the name and the stage's line as the
+/// caption, the token address under it and the countdown in the stamp. It
+/// takes the place of decision 0163's identity row and grey stage bar; the
+/// stamp is the page's one moving figure and only it redraws every second.
+class _InstanceFolio extends StatelessWidget {
+  const _InstanceFolio({
+    required this.detail,
+    required this.onCopy,
+    required this.onElapsed,
+  });
 
   final Launch2InstanceDetail detail;
   final VoidCallback onCopy;
+  final VoidCallback onElapsed;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    key: const ValueKey<String>('launch2-identity'),
-    padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
-    child: Row(
-      children: <Widget>[
-        MemeLogo(
-          symbol: detail.row.ticker,
-          imageUrl: detail.row.logoUrl,
-          identity: detail.instanceId,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                detail.row.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: LoopType.titleLg,
-              ),
-              Text(
-                launch2ShortAddress(detail.row.memeAddress),
-                style: LoopType.codeSm.copyWith(color: LoopColors.text2),
-              ),
-            ],
+  Widget build(BuildContext context) {
+    final row = detail.row;
+    final next = row.nextChangeAt;
+    Widget folio(String? stamp) => LoopFolioPrimary(
+      key: const ValueKey<String>('launch2-instance-folio'),
+      archetype: LoopFolioArchetype.record,
+      ring: false,
+      headingTone: launch2InstanceHeadingLit(row.stage)
+          ? LoopFolioHeadingTone.accent
+          : LoopFolioHeadingTone.neutral,
+      kicker: launch2StageLabel(row.stage),
+      heading: launch2HeroTicker(row.ticker),
+      headingMaxLines: 1,
+      trailing: MemeLogo(
+        symbol: row.ticker,
+        imageUrl: row.logoUrl,
+        identity: detail.instanceId,
+      ),
+      caption: launch2InstanceFolioCaption(detail),
+      captionMaxLines: 3,
+      footer: Row(
+        key: const ValueKey<String>('launch2-identity'),
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Flexible(
+            child: Text(
+              launch2ShortAddress(row.memeAddress),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.codeSm.copyWith(color: LoopColors.text2),
+            ),
           ),
-        ),
-        LoopIconButton(
-          key: const ValueKey<String>('launch2-copy-address'),
-          icon: 'copy',
-          label: '复制代币地址',
-          onPressed: onCopy,
-        ),
-      ],
-    ),
-  );
+          LoopIconButton(
+            key: const ValueKey<String>('launch2-copy-address'),
+            icon: 'copy',
+            label: '复制代币地址',
+            color: LoopColors.text2,
+            onPressed: onCopy,
+          ),
+        ],
+      ),
+      stamp: stamp,
+    );
+    if (next == null) return folio(null);
+    final prefix = launch2InstanceStampPrefix(row.stage);
+    return KeyedSubtree(
+      key: const ValueKey<String>('launch2-countdown'),
+      child: Launch2CountdownBuilder(
+        target: next,
+        onElapsed: onElapsed,
+        builder: (context, text) => folio('$prefix$text'),
+      ),
+    );
+  }
 }
 
 /// `closed_no_holders` (decision 0142): the sentence, the cutoff block and
@@ -831,77 +896,6 @@ class _ClosedBlock extends StatelessWidget {
   }
 }
 
-/// The stage and its countdown, the page's one moving figure.
-class _StageBar extends StatelessWidget {
-  const _StageBar({required this.detail, required this.onElapsed});
-
-  final Launch2InstanceDetail detail;
-  final VoidCallback onElapsed;
-
-  @override
-  Widget build(BuildContext context) {
-    final stage = detail.stage;
-    final next = detail.row.nextChangeAt;
-    final live =
-        stage == Launch2Stage.nftSale ||
-        stage == Launch2Stage.priority ||
-        stage == Launch2Stage.public;
-    return Padding(
-      key: const ValueKey<String>('launch2-stage-bar'),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        decoration: const BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: live
-                    ? LoopColors.lime
-                    : stage == Launch2Stage.paused
-                    ? LoopColors.warning
-                    : LoopColors.text3,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    launch2StageLabel(stage),
-                    key: const ValueKey<String>('launch2-stage-label'),
-                    style: LoopTypography.title(16),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    launch2StageCaption(stage),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopType.caption.copyWith(color: LoopColors.text2),
-                  ),
-                ],
-              ),
-            ),
-            if (next != null)
-              Launch2Countdown(
-                target: next,
-                onElapsed: onElapsed,
-                style: LoopTypography.figure(20, weight: FontWeight.w700),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Label / value rows in one quiet group.
 class _Figures extends StatelessWidget {
   const _Figures({required this.keyName, required this.rows});
@@ -923,36 +917,6 @@ class _Figures extends StatelessWidget {
   );
 }
 
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title, this.info, this.trailing});
-
-  final String title;
-  final Widget? info;
-
-  /// A quiet figure at the end of the heading.
-  final String? trailing;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 4, 4),
-    child: Row(
-      children: <Widget>[
-        Text(title, style: launch2PanelHeadingStyle),
-        const Spacer(),
-        if (trailing case final String text)
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Text(
-              text,
-              style: LoopType.caption.copyWith(color: LoopColors.text2),
-            ),
-          ),
-        ?info,
-      ],
-    ),
-  );
-}
-
 /// The fixed template, read-only (contract §3.2): the figures every v2
 /// project shares. The explanation is behind (i).
 class _TemplateCard extends StatelessWidget {
@@ -967,8 +931,8 @@ class _TemplateCard extends StatelessWidget {
       key: const ValueKey<String>('launch2-template'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _SectionHeading(
-          title: '发射规则',
+        Launch2SectionLabel(
+          '发射规则',
           info: LoopIconButton(
             key: const ValueKey<String>('launch2-template-info'),
             icon: 'info',
@@ -1025,7 +989,10 @@ class _TemplateCard extends StatelessWidget {
   }
 }
 
-class _NftSaleBlock extends StatelessWidget {
+/// 项目 NFT (decision 0166): the price and what was sold as a `.stat-grid`,
+/// the sale's elapsed time as a `.record-card` with its 6 px `.bar` and the
+/// cutoff, 「铸造页」 at the card's foot in Text2, and what this wallet holds.
+class _NftSaleBlock extends ConsumerWidget {
   const _NftSaleBlock({required this.detail, required this.onOpenMintPage});
 
   final Launch2InstanceDetail detail;
@@ -1034,77 +1001,103 @@ class _NftSaleBlock extends StatelessWidget {
   final VoidCallback onOpenMintPage;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final sale = detail.row.nftSale;
     final viewer = detail.viewer;
+    final elapsed = launch2HeroFuse(
+      detail.row,
+      ref.read(launch2ClockProvider)(),
+    );
+    final elapsedText = elapsed == null
+        ? '读取中'
+        : '已过 ${(elapsed * 100).floor()}%';
     return Column(
       key: const ValueKey<String>('launch2-nft-sale'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        Launch2SectionLabel(
+          '项目 NFT',
+          info: LoopIconButton(
+            key: const ValueKey<String>('launch2-nft-info'),
+            icon: 'info',
+            label: '关于项目 NFT',
+            color: LoopColors.text2,
+            onPressed: () => unawaited(
+              showLoopInfoSheet(
+                context,
+                title: '项目 NFT',
+                sheetKey: 'launch2-nft-sheet',
+                notes: const <LoopInfoNote>[
+                  LoopInfoNote(
+                    body:
+                        '每个地址终身只能买 1 枚。发售结束时持有 NFT 的地址进入快照名单，'
+                        '名单发布后有 1 小时提前购。',
+                  ),
+                  LoopInfoNote(
+                    key: ValueKey<String>('launch2-nft-risk-note'),
+                    title: '风险',
+                    body: '$launch2NftRiskSentence。',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        LoopStatGrid(
+          stats: <LoopStat>[
+            LoopStat(
+              label: '价格 / 枚',
+              value: launch2Usd1Label(sale.priceUsd1),
+              statKey: const ValueKey<String>('launch2-nft-price'),
+            ),
+            LoopStat(
+              label: '已售',
+              value: '${sale.soldCount} 枚',
+              statKey: const ValueKey<String>('launch2-nft-sold'),
+            ),
+          ],
+        ),
+        LoopRecordCard(
+          key: const ValueKey<String>('launch2-nft-progress'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              // Decision 0163: the price gives way to 「铸造页」 rather than
-              // pushing it off a narrow row.
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.bottomLeft,
-                  child: Text(
-                    launch2Usd1Label(sale.priceUsd1),
-                    key: const ValueKey<String>('launch2-nft-price'),
-                    style: LoopType.figureXl,
+              Row(
+                children: <Widget>[
+                  Text(
+                    '发售进度',
+                    style: LoopTypography.caption(11, color: LoopColors.text2),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  '/ 枚',
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                key: const ValueKey<String>('launch2-nft-open'),
-                onPressed: onOpenMintPage,
-                style: TextButton.styleFrom(
-                  foregroundColor: LoopColors.brass,
-                  minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-                child: Text(
-                  '铸造页',
-                  style: LoopType.caption.copyWith(color: LoopColors.brass),
-                ),
-              ),
-              LoopIconButton(
-                key: const ValueKey<String>('launch2-nft-info'),
-                icon: 'info',
-                label: '关于项目 NFT',
-                color: LoopColors.text2,
-                onPressed: () => unawaited(
-                  showLoopInfoSheet(
-                    context,
-                    title: '项目 NFT',
-                    sheetKey: 'launch2-nft-sheet',
-                    notes: const <LoopInfoNote>[
-                      LoopInfoNote(
-                        body:
-                            '每个地址终身只能买 1 枚。发售结束时持有 NFT 的地址进入快照名单，'
-                            '名单发布后有 1 小时提前购。',
-                      ),
-                      LoopInfoNote(
-                        key: ValueKey<String>('launch2-nft-risk-note'),
-                        title: '风险',
-                        body: '$launch2NftRiskSentence。',
-                      ),
-                    ],
+                  const Spacer(),
+                  Text(
+                    elapsedText,
+                    style: LoopTypography.figure(13, color: LoopColors.chalk),
                   ),
-                ),
+                ],
+              ),
+              const SizedBox(height: 11),
+              LoopProgressBar(
+                value: elapsed,
+                semanticLabel: '发售时间$elapsedText',
+              ),
+              const SizedBox(height: 3),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      '截止 ${loopDateTimeLabel(sale.endAt)}',
+                      key: const ValueKey<String>('launch2-nft-end'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.caption(
+                        11,
+                        color: LoopColors.text2,
+                      ),
+                    ),
+                  ),
+                  _MintPageLink(onTap: onOpenMintPage),
+                ],
               ),
             ],
           ),
@@ -1114,17 +1107,53 @@ class _NftSaleBlock extends StatelessWidget {
           label: '我的持有',
           value: viewer == null ? '未激活钱包' : '${viewer.nftHeld} / 1',
         ),
-        LoopKeyValue(
-          key: const ValueKey<String>('launch2-nft-sold'),
-          label: '已售',
-          value: '${sale.soldCount} 枚',
-        ),
-        LoopKeyValue(label: '截止', value: loopDateTimeLabel(sale.endAt)),
       ],
     );
   }
 }
 
+/// 「铸造页」 (decision 0163 entry, decision 0166 colour): a Text2 link with a
+/// chevron, 44 dp — Brass stays on the 共识勋章 page itself.
+class _MintPageLink extends StatelessWidget {
+  const _MintPageLink({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '铸造页',
+    excludeSemantics: true,
+    child: LoopPressable(
+      key: const ValueKey<String>('launch2-nft-open'),
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: LoopTouch.minimum,
+          minWidth: LoopTouch.minimum,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                '铸造页',
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              ),
+              const SizedBox(width: 2),
+              const LoopIcon('chevron', size: 14, color: LoopColors.text3),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// 内盘 (decision 0166): the current price (and this wallet's curve
+/// position) as a `.stat-grid`, the share sold as a `.record-card` with its
+/// 6 px `.bar`.
 class _CurveBlock extends StatelessWidget {
   const _CurveBlock({required this.detail});
 
@@ -1134,54 +1163,71 @@ class _CurveBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final curve = detail.row.curve;
     final viewer = detail.viewer;
-    return Padding(
+    final holding = viewer != null && viewer.curve.net > Decimal.zero
+        ? viewer.curve.net
+        : null;
+    return Column(
       key: const ValueKey<String>('launch2-curve'),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            launch2PriceLabel(curve.priceUsd1),
-            key: const ValueKey<String>('launch2-curve-price'),
-            style: LoopType.figureXl,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '当前价 · USD1',
-            style: LoopType.caption.copyWith(color: LoopColors.text3),
-          ),
-          const SizedBox(height: 12),
-          Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopLabel('内盘'),
+        LoopStatGrid(
+          stats: <LoopStat>[
+            LoopStat(
+              label: '当前价 · USD1',
+              value: launch2PriceLabel(curve.priceUsd1),
+              statKey: const ValueKey<String>('launch2-curve-price'),
+            ),
+            if (holding != null)
+              LoopStat(
+                label: '我的内盘持仓',
+                value: launch2MemeLabel(holding, detail.row.ticker),
+                statKey: const ValueKey<String>('launch2-curve-holding'),
+              )
+            else
+              LoopStat(label: '内盘已售', value: launch2BpsLabel(curve.soldBps)),
+          ],
+        ),
+        LoopRecordCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(
-                '内盘进度',
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              Row(
+                children: <Widget>[
+                  Text(
+                    '内盘进度',
+                    style: LoopTypography.caption(11, color: LoopColors.text2),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${launch2BpsLabel(curve.soldBps)} · '
+                      '${launch2MemeCompact(curve.soldSupply)} / '
+                      '${launch2MemeCompact(curve.saleSupply)}',
+                      key: const ValueKey<String>('launch2-curve-progress'),
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.figure(13, color: LoopColors.chalk),
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
+              const SizedBox(height: 11),
+              LoopProgressBar(
+                value: launch2Fraction(curve.soldBps),
+                semanticLabel: '内盘进度 ${launch2BpsLabel(curve.soldBps)}',
+              ),
+              const SizedBox(height: 7),
               Text(
-                '${launch2BpsLabel(curve.soldBps)} · '
-                '${launch2MemeCompact(curve.soldSupply)} / '
-                '${launch2MemeCompact(curve.saleSupply)}',
-                key: const ValueKey<String>('launch2-curve-progress'),
-                style: LoopTypography.figure(13),
+                '卖满 ${launch2MemeCompact(curve.saleSupply)} 自动建官方池毕业',
+                style: LoopTypography.caption(11, color: LoopColors.text2),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          LoopProgressBar(
-            value: launch2Fraction(curve.soldBps),
-            semanticLabel: '内盘进度 ${launch2BpsLabel(curve.soldBps)}',
-          ),
-          if (viewer != null && viewer.curve.net > Decimal.zero) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              '我的内盘持仓 ${launch2MemeLabel(viewer.curve.net, detail.row.ticker)}',
-              key: const ValueKey<String>('launch2-curve-holding'),
-              style: LoopType.body.copyWith(color: LoopColors.text2),
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1198,7 +1244,7 @@ class _RecentTrades extends StatelessWidget {
       key: const ValueKey<String>('launch2-trades'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const _SectionHeading(title: '最新成交'),
+        const LoopLabel('最新成交'),
         if (trades.isEmpty)
           const LoopEmptyState(
             key: ValueKey<String>('launch2-trades-empty'),
@@ -1261,9 +1307,12 @@ class _MyPoolTrades extends ConsumerWidget {
       key: const ValueKey<String>('launch2-my-pool-trades'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _SectionHeading(
-          title: '我的外盘成交',
-          trailing: '共 ${loopGroupedFigure(count.toString())} 笔',
+        Launch2SectionLabel(
+          '我的外盘成交',
+          trailing: Text(
+            '共 ${loopGroupedFigure(count.toString())} 笔',
+            style: LoopType.caption.copyWith(color: LoopColors.text2),
+          ),
         ),
         if (page == null)
           state.phase == LoopChainViewPhase.loading
@@ -1323,8 +1372,8 @@ class _GraduatedBlock extends StatelessWidget {
       key: const ValueKey<String>('launch2-graduated'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _SectionHeading(
-          title: '官方池',
+        Launch2SectionLabel(
+          '官方池',
           info: LoopIconButton(
             key: const ValueKey<String>('launch2-pool-info'),
             icon: 'info',
@@ -1475,8 +1524,8 @@ class _BuybackPanel extends ConsumerWidget {
       key: const ValueKey<String>('launch2-buyback'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _SectionHeading(
-          title: '回购',
+        Launch2SectionLabel(
+          '回购',
           info: LoopIconButton(
             key: const ValueKey<String>('launch2-buyback-info'),
             icon: 'info',

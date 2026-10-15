@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
-import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_screen.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -162,12 +161,6 @@ void main() {
     await tester.tap(link);
     expect(opened, 1);
     expect(find.byType(TextButton), findsNothing);
-  });
-
-  test('project page sections share one heading size', () {
-    expect(launch2PanelHeadingStyle.fontSize, 20);
-    expect(launch2PanelHeadingStyle.fontWeight, FontWeight.w700);
-    expect(launch2PanelTopGap, greaterThanOrEqualTo(24));
   });
 
   test('rewards awaiting title names the account state for its own hours', () {

@@ -490,13 +490,16 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             message: line,
             padding: EdgeInsets.zero,
           )
+        else if (view.lines.isEmpty && view.overHolding)
+          Launch2WarnLine(
+            view.quotePlaceholder ?? '',
+            key: const ValueKey<String>('launch2-pool-quote-empty'),
+          )
         else if (view.lines.isEmpty)
           Text(
             view.quotePlaceholder ?? '',
             key: const ValueKey<String>('launch2-pool-quote-empty'),
-            style: LoopType.caption.copyWith(
-              color: view.overHolding ? LoopColors.warning : LoopColors.text3,
-            ),
+            style: LoopType.caption.copyWith(color: LoopColors.text3),
           )
         else
           Column(
@@ -523,19 +526,17 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
         if (view.balanceLine case final String line)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text(
+            child: Launch2WarnLine(
               line,
               key: const ValueKey<String>('launch2-pool-balance-short'),
-              style: LoopType.caption.copyWith(color: LoopColors.warning),
             ),
           ),
         if (_notice case final String line)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text(
+            child: Launch2WarnLine(
               line,
               key: const ValueKey<String>('launch2-pool-notice'),
-              style: LoopType.caption.copyWith(color: LoopColors.warning),
             ),
           ),
         if (_prepareFailure case final LoopChainException failure)
@@ -618,25 +619,19 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           ),
       ],
     );
-    return Padding(
+    // Decision 0166: a page section like 官方池 / 回购 — the page's
+    // `.label`, the badge and the tax at its end.
+    return Column(
       key: const ValueKey<String>('launch2-pool-panel'),
-      // Decision 0149: a page section like 官方池 / 回购 — the same 20 / 700
-      // heading and a section's distance from the pool figures above it.
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        launch2PanelTopGap,
-        LoopSpacing.page,
-        12,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Launch2SectionLabel(
+          '外盘交易',
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text('外盘交易', style: launch2PanelHeadingStyle),
-              const SizedBox(width: 8),
               const LoopBadge('官方池', kind: LoopBadgeKind.launch),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 view.taxLabel,
                 key: const ValueKey<String>('launch2-pool-tax-label'),
@@ -644,34 +639,47 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
               ),
             ],
           ),
-          // Decision 0157: rewards are credited to buys the LoopHook can
-          // attribute, which only the LOOP router guarantees.
-          if (dynamicPool != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                '在 LOOP 里买入才保证记入奖励',
-                key: const ValueKey<String>('launch2-dyn-panel-note'),
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
-              ),
-            ),
-          const SizedBox(height: 10),
-          if (view.blockedLine case final String line)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                line,
-                key: const ValueKey<String>('launch2-pool-blocked'),
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
-              ),
-            ),
-          Launch2Greyed(
-            key: const ValueKey<String>('launch2-pool-controls'),
-            greyed: greyed,
-            child: controls,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
           ),
-        ],
-      ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              // Decision 0157: rewards are credited to buys the LoopHook can
+              // attribute, which only the LOOP router guarantees.
+              if (dynamicPool != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '在 LOOP 里买入才保证记入奖励',
+                    key: const ValueKey<String>('launch2-dyn-panel-note'),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
+                ),
+              const SizedBox(height: 10),
+              if (view.blockedLine case final String line)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    line,
+                    key: const ValueKey<String>('launch2-pool-blocked'),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
+                ),
+              Launch2Greyed(
+                key: const ValueKey<String>('launch2-pool-controls'),
+                greyed: greyed,
+                child: controls,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -440,10 +440,9 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
         if (_notice case final String line)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text(
+            child: Launch2WarnLine(
               line,
               key: const ValueKey<String>('launch2-trade-notice'),
-              style: LoopType.caption.copyWith(color: LoopColors.warning),
             ),
           ),
         if (_prepareFailure case final LoopChainException failure
@@ -480,22 +479,18 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           ),
       ],
     );
-    return Padding(
+    // Decision 0166: the panel opens with the page's `.label`, its badge
+    // and tax at the label's end (was decision 0149's 20 / 700 heading).
+    return Column(
       key: const ValueKey<String>('launch2-trade-panel'),
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        launch2PanelTopGap,
-        LoopSpacing.page,
-        12,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Launch2SectionLabel(
+          _priority ? '提前购' : '公开内盘',
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(_priority ? '提前购' : '公开内盘', style: launch2PanelHeadingStyle),
-              const SizedBox(width: 8),
-              if (_priority)
+              if (_priority) ...<Widget>[
                 LoopBadge(
                   viewer?.snapshotMember == true ? '名单内' : '不在名单',
                   key: const ValueKey<String>('launch2-eligibility-badge'),
@@ -503,7 +498,8 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
                       ? LoopBadgeKind.launch
                       : LoopBadgeKind.mute,
                 ),
-              const Spacer(),
+                const SizedBox(width: 8),
+              ],
               Text(
                 '税率 ${launch2BpsLabel(taxBps)}',
                 key: const ValueKey<String>('launch2-trade-tax'),
@@ -511,26 +507,38 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          _QuotaBar(used: used, cap: cap, ticker: _ticker),
-          const SizedBox(height: 12),
-          if (blockedLine != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                blockedLine,
-                key: const ValueKey<String>('launch2-trade-blocked'),
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
-              ),
-            ),
-          // Greyed, not hidden: the reader sees what opens later.
-          Launch2Greyed(
-            key: const ValueKey<String>('launch2-trade-controls'),
-            greyed: blockedLine != null,
-            child: controls,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
           ),
-        ],
-      ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _QuotaBar(used: used, cap: cap, ticker: _ticker),
+              const SizedBox(height: 12),
+              if (blockedLine != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    blockedLine,
+                    key: const ValueKey<String>('launch2-trade-blocked'),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
+                ),
+              // Greyed, not hidden: the reader sees what opens later.
+              Launch2Greyed(
+                key: const ValueKey<String>('launch2-trade-controls'),
+                greyed: blockedLine != null,
+                child: controls,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -662,11 +670,10 @@ class _QuoteLines extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Expanded(
-                  child: Text(
+                  child: Launch2WarnLine(
                     '超出可${side == Launch2Side.buy ? '买' : '卖'}上限'
                     '（${launch2LimitedByText(value.limitedBy)}）',
                     key: const ValueKey<String>('launch2-trade-exceeds'),
-                    style: LoopType.caption.copyWith(color: LoopColors.warning),
                   ),
                 ),
                 TextButton(

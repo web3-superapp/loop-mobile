@@ -517,19 +517,13 @@ class _RoundRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 16, 4),
-            child: Row(
-              children: <Widget>[
-                Text('第 $id 轮', style: launch2PanelHeadingStyle),
-                const SizedBox(width: 8),
-                LoopBadge(
-                  round.closed ? '已结束' : '进行中',
-                  kind: round.closed
-                      ? LoopBadgeKind.mute
-                      : LoopBadgeKind.launch,
-                ),
-              ],
+          // Decision 0166: the `.label` the project page uses (the 20 / 700
+          // heading style is gone).
+          Launch2SectionLabel(
+            '第 $id 轮',
+            trailing: LoopBadge(
+              round.closed ? '已结束' : '进行中',
+              kind: round.closed ? LoopBadgeKind.mute : LoopBadgeKind.launch,
             ),
           ),
           LoopKeyValue(

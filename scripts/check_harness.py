@@ -15270,9 +15270,9 @@ MEDAL_COLOUR_ALLOWLIST: dict[str, str] = {
     # Decision 0163 (docs/32 §2): Brass is the MEME v2 NFT accent — the
     # medal ring, the held mark and the mint page's main button — and
     # nothing else on these surfaces. Decision 0164: the launchpad (the
-    # Launch Desk) paints none; the medal page keeps it.
+    # Launch Desk) paints none; the medal page keeps it. Decision 0166: the
+    # project page's 「铸造页」 link is Text2, so it paints none either.
     "lib/features/launch2/launch2_nft_screen.dart": "共识勋章",
-    "lib/features/launch2/launch2_instance_screen.dart": "the 铸造页 link",
     "lib/widgets/loop_components.dart": "LoopButtonTone.brass",
 }
 

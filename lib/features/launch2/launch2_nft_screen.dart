@@ -536,11 +536,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
       LoopRecordGroup(
         key: const ValueKey<String>('launch2-nft-benefits'),
         rows: <LoopRecordRow>[
-          _entry(
-            'ticket',
-            '进快照名单',
-            '发售结束时持有，进入快照名单；名单发布后有 1 小时提前购内盘',
-          ),
+          _entry('ticket', '进快照名单', '发售结束时持有，进入快照名单；名单发布后有 1 小时提前购内盘'),
           _entry(
             'droplet',
             '托管与回购',
