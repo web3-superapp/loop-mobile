@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_create_screen.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
@@ -13,11 +17,13 @@ import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_step_track.dart';
@@ -326,6 +332,12 @@ Future<void> _pump(
     ...overrides,
   ],
 );
+
+/// 快买's memory as though a 42 USD1 buy had been confirmed this run.
+final class _RememberedAmount extends MemeQuickBuyAmount {
+  @override
+  String? build() => '42';
+}
 
 /// Lets the pending timers of the page run out before teardown.
 Future<void> _drain(WidgetTester tester) async {
@@ -803,24 +815,170 @@ void main() {
     ) async {
       final meme = gateway(memeDetail());
       await _pump(tester, page(), meme: meme);
-      expect(find.text(r'$FROG'), findsWidgets);
-      expect(_key('meme-token-price-figure'), findsOneWidget);
-      expect(find.text('▲ 76.89% · 1h'), findsOneWidget);
-      expect(find.text('市值 \$9,891'), findsOneWidget);
+      // Decision 0174 · the bar: logo 36 r12, ticker, state badge, name ·
+      // address with the copy target; no separate identity line.
+      expect(find.text('FROG'), findsOneWidget);
+      expect(
+        tester.widget<LoopBadge>(_key('meme-token-status-badge')).text,
+        '内盘',
+      );
+      expect(
+        tester.widget<LoopBadge>(_key('meme-token-status-badge')).kind,
+        LoopBadgeKind.mute,
+      );
+      expect(find.text('Frog · 0xac42…ca94'), findsOneWidget);
+      expect(_key('meme-token-copy-address'), findsOneWidget);
+      final logo = tester.widget<MemeLogo>(find.byType(MemeLogo).first);
+      expect(logo.size, 36);
+      expect(logo.radius, LoopRadius.innerValue);
+      // The price head: figure, amount + percentage move, cap on the right.
+      final figure = tester.widget<Text>(_key('meme-token-price-figure'));
+      expect(figure.style, LoopType.figureXl);
+      final change = tester.widget<Text>(_key('meme-token-change'));
+      expect(change.data, startsWith(r'▲ $'));
+      expect(change.data, endsWith(' (76.89%) · 1h'));
+      expect(change.style?.color, LoopColors.rise);
+      expect(find.text(r'$9,891'), findsOneWidget);
+      expect(find.text('市值'), findsOneWidget);
+      expect(
+        tester.getCenter(_key('meme-token-cap')).dx,
+        greaterThan(tester.getCenter(_key('meme-token-price-figure')).dx),
+      );
       expect(_key('meme-token-holding'), findsOneWidget);
       expect(find.textContaining('持有 10 \$FROG'), findsOneWidget);
-      expect(find.text('内盘进度 33.27%'), findsOneWidget);
+      // Two stats over the bar; the old paragraph is gone.
+      expect(
+        find.descendant(
+          of: _key('meme-token-stat-progress'),
+          matching: find.textContaining('33.27% · 还差 \$'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('meme-token-stat-volume'),
+          matching: find.text(r'$1,980'),
+        ),
+        findsOneWidget,
+      );
+      final stats = tester.widget<LoopStatGrid>(_key('meme-token-stats'));
+      expect(stats.stats, hasLength(2));
+      expect(stats.stats.first.tone, LoopStatTone.up);
       // Decision 0169: the family's 6 px `.bar`.
       final bar = tester.widget<LoopProgressBar>(
         _key('meme-token-progress-bar'),
       );
       expect(bar.value, closeTo(0.3327, 1e-9));
       expect(tester.getSize(_key('meme-token-progress-bar')).height, 6);
-      expect(find.text('已募 1,980 USD1 / ≈17,582 USD1'), findsOneWidget);
-      expect(find.text('打满后自动上 PancakeSwap'), findsOneWidget);
+      expect(find.textContaining('已募'), findsNothing);
+      expect(find.text('打满后自动上 PancakeSwap'), findsNothing);
+      expect(_key('meme-token-liquidity-low'), findsNothing);
       expect(_key('meme-token-price-provenance'), findsOneWidget);
       expect(find.textContaining('来源 LOOP 曲线'), findsWidgets);
-      expect(_key('meme-chart-15m'), findsOneWidget);
+      expect(_key('meme-chart-1m'), findsOneWidget);
+      // The holder count is in its tab's title.
+      expect(_key('meme-token-tab-持有者 12'), findsOneWidget);
+      expect(find.text('持有者 12'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('S187-2 · the chart is full bleed, Lime, with a price tag', (
+      tester,
+    ) async {
+      final meme = gateway(memeDetail());
+      await _pump(tester, page(), meme: meme);
+      final screen = tester.getSize(find.byType(MemeTokenScreen));
+      final chart = tester.widget<LoopMarketChart>(
+        find.byType(LoopMarketChart),
+      );
+      expect(chart.height, memeTokenChartHeight(screen.height));
+      expect(chart.lineColor, LoopColors.lime);
+      expect(chart.lastPriceTag, isTrue);
+      expect(chart.showVolume, isFalse);
+      final rect = tester.getRect(_key('loop-market-chart'));
+      expect(rect.height, chart.height);
+      expect(rect.left, 0);
+      expect(rect.width, screen.width);
+      // It follows the price head directly.
+      expect(
+        rect.top,
+        greaterThanOrEqualTo(tester.getRect(_key('meme-token-price')).bottom),
+      );
+      expect(
+        rect.top - tester.getRect(_key('meme-token-price')).bottom,
+        lessThan(12),
+      );
+      final tag = _key('loop-market-chart-last-price-tag');
+      expect(tag, findsOneWidget);
+      final box = tester.widget<DecoratedBox>(
+        find.descendant(of: tag, matching: find.byType(DecoratedBox)),
+      );
+      final decoration = box.decoration as BoxDecoration;
+      expect(decoration.color, LoopColors.lime);
+      expect(decoration.borderRadius, LoopRadius.badge);
+      final label = tester.widget<Text>(
+        find.descendant(of: tag, matching: find.byType(Text)),
+      );
+      expect(label.style?.color, LoopColors.ink);
+      // LIVE / 1H / 4H / 1D quiet chips and K; no ALL.
+      for (final label in <String>['LIVE', '1H', '4H', '1D', 'K']) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      expect(find.text('ALL'), findsNothing);
+      expect(tester.widget<LoopSeg>(_key('meme-interval-1m')).selected, isTrue);
+      expect(tester.widget<LoopSeg>(_key('meme-interval-1m')).quiet, isTrue);
+      await tester.tap(_key('meme-interval-1h'));
+      await tester.pumpAndSettle();
+      expect(_key('meme-chart-1h'), findsOneWidget);
+      await tester.tap(_key('meme-chart-style'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<LoopMarketChart>(find.byType(LoopMarketChart)).style,
+        LoopChartStyle.candles,
+      );
+      expect(tester.widget<LoopSeg>(_key('meme-chart-style')).selected, isTrue);
+      await _drain(tester);
+    });
+
+    test('S187-2 · chart height and the one-hour amount', () {
+      expect(memeTokenChartHeight(700), 210);
+      expect(memeTokenChartHeight(400), 180);
+      expect(memeTokenChartHeight(2000), 260);
+      // 110 now after +10%: the price an hour ago was 100.
+      expect(
+        memeChange1hAmount(Decimal.fromInt(110), Decimal.fromInt(10)),
+        Decimal.fromInt(10),
+      );
+      expect(memeChange1hAmount(null, Decimal.fromInt(10)), isNull);
+      expect(memeChange1hAmount(Decimal.one, null), isNull);
+      expect(memeChange1hAmount(Decimal.one, Decimal.fromInt(-100)), isNull);
+    });
+
+    testWidgets('S187-2 · a thin curve warns that large buys slip', (
+      tester,
+    ) async {
+      final meme = gateway(memeDetail(curve: memeFreshCurveJson()));
+      await _pump(tester, page(), meme: meme);
+      final notice = tester.widget<LoopNotice>(
+        _key('meme-token-liquidity-low'),
+      );
+      expect(notice.tone, LoopNoticeTone.warn);
+      expect(notice.body, startsWith('流动性低 · 内盘储备 \$0'));
+      expect(notice.body, endsWith('大额买入滑点高'));
+      await _drain(tester);
+    });
+
+    testWidgets('S187-2 · without a price the move is the percentage only', (
+      tester,
+    ) async {
+      final meme = gateway(
+        memeDetail(price: null, quoteUnavailable: 'MEME_DEX_QUOTE_UNAVAILABLE'),
+      );
+      await _pump(tester, page(), meme: meme);
+      expect(_key('meme-token-price-unavailable'), findsOneWidget);
+      expect(find.text('外盘行情暂时取不到'), findsOneWidget);
+      expect(find.text('▲ 76.89% · 1h'), findsOneWidget);
+      expect(_key('meme-token-cap'), findsNothing);
       await _drain(tester);
     });
 
@@ -843,11 +1001,120 @@ void main() {
       });
     }
 
-    testWidgets('trading shows 买入 and 卖出', (tester) async {
+    testWidgets('trading shows 买入, 快买 and, while held, 卖出', (tester) async {
       final meme = gateway(memeDetail());
       await _pump(tester, page(), meme: meme);
       expect(_key('meme-token-buy'), findsOneWidget);
       expect(_key('meme-token-sell'), findsOneWidget);
+      expect(_key('meme-token-quick-buy'), findsOneWidget);
+      // Decision 0174: one full-Lime body in the bar — 买入.
+      final bar = _key('loop-page-bottom-bar');
+      expect(
+        find.descendant(
+          of: bar,
+          matching: find.byKey(const ValueKey<String>('loop-button-primary')),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.widget<LoopButton>(_key('meme-token-buy')).primary, isTrue);
+      expect(
+        tester.widget<LoopButton>(_key('meme-token-sell')).primary,
+        isFalse,
+      );
+      final quick = tester.widget<Material>(
+        _key('meme-token-quick-buy-surface'),
+      );
+      expect(quick.color, LoopColors.card2);
+      expect(tester.getSize(_key('meme-token-quick-buy')).width, 52);
+      final bolt = tester.widget<LoopIcon>(
+        find.descendant(
+          of: _key('meme-token-quick-buy'),
+          matching: find.byType(LoopIcon),
+        ),
+      );
+      expect(bolt.name, 'bolt');
+      expect(bolt.color, LoopColors.chalk);
+      expect(
+        tester.getCenter(_key('meme-token-quick-buy')).dx,
+        greaterThan(tester.getCenter(_key('meme-token-buy')).dx),
+      );
+      await _drain(tester);
+
+      // Nothing held: no 卖出 in the bar (the panel still has its side).
+      final empty = gateway(memeDetail(viewer: memeViewerJson(balance: '0')));
+      await _pump(tester, page(), meme: empty);
+      expect(_key('meme-token-sell'), findsNothing);
+      expect(_key('meme-token-buy'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets(
+      'S187-2 · 快买 opens the buy panel at 10 USD1 and remembers the amount',
+      (tester) async {
+        final wallet = _RecordingWallet();
+        final meme =
+            gateway(memeDetail(), quote: _Answer<MemeQuote>.value(memeQuote()))
+              ..prepareAnswer = _Answer<MemeIntent>.value(memeIntent())
+              ..reportAnswer = _Answer<MemeIntent>.value(
+                memeIntent(state: 'broadcast_reported'),
+              );
+        await _pump(tester, page(), meme: meme, wallet: wallet);
+        await tester.tap(_key('meme-token-quick-buy'));
+        await tester.pumpAndSettle();
+        // The pre-filled amount waits the same debounce a typed one does.
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pump();
+        expect(find.text(r'买入 $FROG'), findsOneWidget);
+        expect(
+          tester.widget<TextField>(_key('meme-trade-amount')).controller!.text,
+          '10',
+        );
+        // Quoted like a typed amount; nothing is prepared before 确认买入.
+        expect(meme.quoteCalls.single, (MemeTradeSide.buy, '10', memeWalletId));
+        expect(meme.prepareCalls, isEmpty);
+        await tester.enterText(_key('meme-trade-amount'), '25');
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('meme-trade-confirm'));
+        await tester.pumpAndSettle();
+        // The same exit as 买入: one prepared intent, the signing sheet.
+        expect(meme.prepareCalls.single['usd1Amount'], '25');
+        expect(_key('meme-sign-sheet'), findsOneWidget);
+        await tester.tap(find.text('确认签名'));
+        await tester.pumpAndSettle();
+        expect(wallet.handed, hasLength(1));
+        // The amount just confirmed is what 快买 offers next.
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(MemeTokenScreen)),
+        );
+        expect(container.read(memeQuickBuyAmountProvider), '25');
+        await _drain(tester);
+      },
+    );
+
+    testWidgets('S187-2 · 快买 pre-fills the last amount used', (tester) async {
+      final meme = gateway(
+        memeDetail(),
+        quote: _Answer<MemeQuote>.value(memeQuote()),
+      );
+      await _pump(
+        tester,
+        page(),
+        meme: meme,
+        overrides: <Override>[
+          memeQuickBuyAmountProvider.overrideWith(_RememberedAmount.new),
+        ],
+      );
+      await tester.tap(_key('meme-token-quick-buy'));
+      await tester.pumpAndSettle();
+      // The pre-filled amount waits the same debounce a typed one does.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      expect(
+        tester.widget<TextField>(_key('meme-trade-amount')).controller!.text,
+        '42',
+      );
+      expect(meme.quoteCalls.single.$2, '42');
       await _drain(tester);
     });
 
@@ -865,12 +1132,15 @@ void main() {
           ),
         );
         await _pump(tester, page(onNavigate: opened.add), meme: meme);
-        expect(find.text('内盘进度 100%'), findsOneWidget);
+        expect(find.text('100% · 已毕业'), findsOneWidget);
         expect(
           tester.widget<LoopProgressBar>(_key('meme-token-progress-bar')).value,
           1,
         );
-        expect(_key('meme-graduated-tag'), findsOneWidget);
+        expect(
+          tester.widget<LoopBadge>(_key('meme-token-status-badge')).text,
+          '已毕业',
+        );
         expect(find.text('暂无外盘报价'), findsOneWidget);
         // S118: the testnet has no in-app swap.
         expect(_key('meme-token-swap'), findsNothing);
@@ -1098,7 +1368,7 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('S123e · the chart periods sit above the chart', (
+    testWidgets('S187-2 · the chart periods sit under the chart', (
       tester,
     ) async {
       final meme = gateway(memeDetail());
@@ -1112,7 +1382,7 @@ void main() {
             key.value != 'meme-chart-section';
       });
       expect(chart, findsWidgets);
-      expect(strip, lessThan(tester.getTopLeft(chart.first).dy));
+      expect(strip, greaterThan(tester.getBottomLeft(chart.first).dy - 1));
       await _drain(tester);
     });
 

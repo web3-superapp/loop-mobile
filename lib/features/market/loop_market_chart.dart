@@ -368,6 +368,8 @@ class LoopMarketChart extends StatefulWidget {
     this.showVolume = true,
     this.height = 280,
     this.edgeGuard = 24,
+    this.lineColor,
+    this.lastPriceTag = false,
   });
 
   final List<LoopCandle> candles;
@@ -383,6 +385,17 @@ class LoopMarketChart extends StatefulWidget {
   /// The strip along the left edge that answers no gesture, so the system's
   /// edge-swipe back is never taken by the chart (decision 0118).
   final double edgeGuard;
+
+  /// The line's ink. `null` (the default) colours it by the window's own
+  /// direction, rise or fall; the MEME token page (decision 0174) hands Lime
+  /// so its one line reads as the page's accent rather than as a move.
+  final Color? lineColor;
+
+  /// The newest close as a `LoopRadius.badge` tag in [lineColor] (Lime when
+  /// unset) with Ink figures, over the right edge of the plot, and a soft
+  /// halo round the current-price dot (decision 0174). Off by default: the
+  /// axis keeps its own 16 px box and nothing else changes.
+  final bool lastPriceTag;
 
   /// The two averages the MA switch draws.
   static const List<int> averagePeriods = <int>[7, 25];
@@ -554,6 +567,8 @@ class LoopMarketChartState extends State<LoopMarketChart> {
                         showAverages: widget.showMovingAverages,
                         crosshair: crosshair,
                         textScaler: MediaQuery.textScalerOf(context),
+                        lineColor: widget.lineColor,
+                        lastPriceTag: widget.lastPriceTag,
                       ),
                     ),
                   ),
@@ -584,6 +599,8 @@ class LoopMarketChartState extends State<LoopMarketChart> {
                       ),
                     ),
                   ),
+                if (widget.lastPriceTag && _viewport.endOffset < 1)
+                  _lastPriceTagFor(geometry),
                 if (crosshair != null)
                   ..._crosshairBubbles(geometry, crosshair),
                 // Gestures start [edgeGuard] in from the left edge.
@@ -606,6 +623,48 @@ class LoopMarketChartState extends State<LoopMarketChart> {
           ),
         );
       },
+    );
+  }
+
+  /// The height of the [LoopMarketChart.lastPriceTag] tag: 11 px figures
+  /// inside 6 px of padding above and below.
+  static const double lastPriceTagHeight = 23;
+
+  Widget _lastPriceTagFor(_ChartGeometry geometry) {
+    final last = widget.candles.length - 1;
+    final y = geometry.yFor(_series.close[last]);
+    final bottom = math.max(
+      0.0,
+      widget.height - _ChartGeometry.timeAxisHeight - lastPriceTagHeight,
+    );
+    return Positioned(
+      key: const ValueKey<String>('loop-market-chart-last-price-tag'),
+      right: 4,
+      top: (y - lastPriceTagHeight / 2).clamp(0.0, bottom),
+      height: lastPriceTagHeight,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: widget.lineColor ?? LoopColors.lime,
+            borderRadius: LoopRadius.badge,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                loopFormatCandlePrice(widget.candles[last].close),
+                maxLines: 1,
+                softWrap: false,
+                style: LoopTypography.withWeight(
+                  LoopType.figureXs.copyWith(color: LoopColors.ink),
+                  FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -665,6 +724,8 @@ class _LoopMarketChartPainter extends CustomPainter {
     required this.showAverages,
     required this.crosshair,
     required this.textScaler,
+    this.lineColor,
+    this.lastPriceTag = false,
   });
 
   final _ChartGeometry geometry;
@@ -673,6 +734,8 @@ class _LoopMarketChartPainter extends CustomPainter {
   final bool showAverages;
   final int? crosshair;
   final TextScaler textScaler;
+  final Color? lineColor;
+  final bool lastPriceTag;
 
   _NormalisedSeries get series => geometry.series;
 
@@ -742,6 +805,8 @@ class _LoopMarketChartPainter extends CustomPainter {
   }
 
   Color get _lineColor {
+    final fixed = lineColor;
+    if (fixed != null) return fixed;
     final first = series.candles[geometry.viewport.firstIndex].close;
     final last = series.candles[geometry.viewport.lastIndex].close;
     final move = LoopPriceMove.between(open: first, close: last);
@@ -940,12 +1005,19 @@ class _LoopMarketChartPainter extends CustomPainter {
         ..strokeWidth = 0.8,
     );
     if (style == LoopChartStyle.line) {
-      canvas.drawCircle(
-        Offset(geometry.xFor(lastIndex), y),
-        3.5,
-        Paint()..color = color,
-      );
+      final dot = Offset(geometry.xFor(lastIndex), y);
+      if (lastPriceTag) {
+        // `.bigchart .dot{box-shadow:0 0 0 6px rgba(lime,.18)}`.
+        canvas.drawCircle(
+          dot,
+          9.5,
+          Paint()..color = color.withValues(alpha: 0.18),
+        );
+      }
+      canvas.drawCircle(dot, 3.5, Paint()..color = color);
     }
+    // The tag is laid out as a widget over the plot instead.
+    if (lastPriceTag) return;
     final painter = TextPainter(
       text: TextSpan(
         text: loopFormatCandlePrice(series.candles[lastIndex].close),
@@ -999,5 +1071,7 @@ class _LoopMarketChartPainter extends CustomPainter {
       oldDelegate.showVolume != showVolume ||
       oldDelegate.showAverages != showAverages ||
       oldDelegate.crosshair != crosshair ||
-      oldDelegate.textScaler != textScaler;
+      oldDelegate.textScaler != textScaler ||
+      oldDelegate.lineColor != lineColor ||
+      oldDelegate.lastPriceTag != lastPriceTag;
 }

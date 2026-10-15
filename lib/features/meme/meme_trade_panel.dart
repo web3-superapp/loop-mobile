@@ -34,14 +34,40 @@ const List<int> memeSlippagePresets = <int>[100, 300];
 /// The panel's debounce before it asks for a quote.
 const Duration memeQuoteDebounce = Duration(milliseconds: 350);
 
+/// What 快买 puts in the amount field when no buy has been made in this run
+/// (decision 0174): 10 USD1.
+const String memeQuickBuyDefaultAmount = '10';
+
+/// The USD1 amount of the last buy this run handed to the signing exit, for
+/// 快买 to offer again (decision 0174). Held in memory only: an amount is a
+/// money fact and is never written to device storage.
+final memeQuickBuyAmountProvider =
+    NotifierProvider<MemeQuickBuyAmount, String?>(MemeQuickBuyAmount.new);
+
+class MemeQuickBuyAmount extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// The amount of a buy the owner just confirmed in the panel.
+  void remember(String amount) => state = amount;
+}
+
 /// Opens the buy / sell panel for one token. `null` when it was closed.
+///
+/// [initialAmount] pre-fills the field (快买); the panel then quotes it as
+/// though it had been typed, and nothing is confirmed until the owner says so.
 Future<MemeTradeRequest?> showMemeTradePanel(
   BuildContext context, {
   required MemeTokenDetail detail,
   required MemeTradeSide side,
+  String? initialAmount,
 }) => showLoopSheet<MemeTradeRequest>(
   context,
-  builder: (context) => MemeTradePanel(detail: detail, initialSide: side),
+  builder: (context) => MemeTradePanel(
+    detail: detail,
+    initialSide: side,
+    initialAmount: initialAmount,
+  ),
 );
 
 /// The text a 25 / 50 / 75 / 100% shortcut puts in the amount field: the
@@ -65,10 +91,14 @@ class MemeTradePanel extends ConsumerStatefulWidget {
     required this.detail,
     required this.initialSide,
     super.key,
+    this.initialAmount,
   });
 
   final MemeTokenDetail detail;
   final MemeTradeSide initialSide;
+
+  /// The amount the field opens with, in whole units of the side's asset.
+  final String? initialAmount;
 
   @override
   ConsumerState<MemeTradePanel> createState() => _MemeTradePanelState();
@@ -122,6 +152,15 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialAmount;
+    if (initial != null && memeRawFromInput(initial) != null) {
+      // Quoted after the same debounce a typed amount waits for. Set before
+      // the listener is attached: `setState` may not run inside initState.
+      _amount.text = initial;
+      _request += 1;
+      _quoting = true;
+      _debounce = Timer(memeQuoteDebounce, () => unawaited(_fetchQuote()));
+    }
     _amount.addListener(_amountChanged);
     _customSlippage.addListener(() => setState(() {}));
   }

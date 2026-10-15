@@ -511,6 +511,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.framedTools = false,
     this.bottomBar,
     this.embedded = false,
+    this.titleField,
   });
 
   final LoopPageArchetype archetype;
@@ -518,6 +519,12 @@ class LoopDashboardPage extends StatelessWidget {
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
+
+  /// A widget that takes the bar's whole title column
+  /// (`LoopTopbar.titleField`); [title] stays the bar's accessible name.
+  /// The MEME token page's logo, ticker, state and address line
+  /// (decision 0174). `null` keeps the plain title.
+  final Widget? titleField;
 
   /// A control strip pinned to the bottom of the page, over the scroll.
   ///
@@ -633,6 +640,7 @@ class LoopDashboardPage extends StatelessWidget {
                       minHeight: LoopLayout.topbarContentHeight,
                       updating: updating,
                       framedTools: framedTools,
+                      titleField: titleField,
                     ),
                   ),
                 ),

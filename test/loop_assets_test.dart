@@ -20,11 +20,12 @@ void main() {
         reason: name,
       );
     }
-    // 61 sprites imported from the prototype plus nine drawn for LOOP:
+    // 61 sprites imported from the prototype plus ten drawn for LOOP:
     // `refresh`, `plus` / `share` for the top-bar words decision 0087
     // turned into glyphs, `copy` for the LOOP ID (decision 0104, S97b) and
-    // the five message reactions (decision 0121, S121a).
-    expect(LoopIconNames.all, hasLength(70));
+    // the five message reactions (decision 0121, S121a) and `bolt` for the
+    // MEME token page's 快买 key (decision 0174, S187-2).
+    expect(LoopIconNames.all, hasLength(71));
     for (final name in <String>[
       'react-like',
       'react-laugh',
@@ -44,7 +45,7 @@ void main() {
           .whereType<File>()
           .where((file) => file.path.endsWith('.svg'))
           .length,
-      70,
+      71,
     );
     for (final file in LoopTokenAssets.bySymbol.values) {
       expect(

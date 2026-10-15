@@ -39,6 +39,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -57,16 +58,65 @@ enum MemeTokenTab {
 /// The token page's chart when fewer than two candles exist (decision 0121).
 const String memeChartEmptyMessage = '还没有成交';
 
+/// The chart's range chips under the plot (decision 0174, 代币页 B): each
+/// names one bucket width the server already serves. 「ALL」 has no bucket of
+/// its own and is not drawn; 5 / 15 minute buckets are no longer offered.
+const List<(MemeCandleInterval, String)> memeChartRanges =
+    <(MemeCandleInterval, String)>[
+      (MemeCandleInterval.oneMinute, 'LIVE'),
+      (MemeCandleInterval.oneHour, '1H'),
+      (MemeCandleInterval.fourHours, '4H'),
+      (MemeCandleInterval.oneDay, '1D'),
+    ];
+
+/// The token page's full-bleed chart height for a screen [screenHeight] tall
+/// (decision 0174): 30% of it, held between 180 and 260 — 210 on a 700 pt
+/// phone, as the design draws it.
+double memeTokenChartHeight(double screenHeight) =>
+    (screenHeight * 0.3).clamp(180.0, 260.0);
+
+/// The badge beside the ticker in the bar.
+String memeTokenStatusLabel(MemeTokenStatus status) => switch (status) {
+  MemeTokenStatus.draft => '草稿',
+  MemeTokenStatus.pendingChain => '创建中',
+  MemeTokenStatus.trading => '内盘',
+  MemeTokenStatus.full => '已打满',
+  MemeTokenStatus.paused => '暂停',
+  MemeTokenStatus.graduated => '已毕业',
+};
+
+/// The one-hour move as an amount: the price now less the price an hour
+/// ago, where `now / (1 + pct/100)` is that earlier price. `null` when either
+/// figure is missing or the percentage cannot describe a positive past price.
+Decimal? memeChange1hAmount(Decimal? price, Decimal? changePct) {
+  if (price == null || changePct == null) return null;
+  final base = Decimal.fromInt(100) + changePct;
+  if (base <= Decimal.zero) return null;
+  return (price * changePct / base).toDecimal(scaleOnInfinitePrecision: 30);
+}
+
+/// Whether the curve's real USD1 reserve is under 5% of what it raises when
+/// it fills (decision 0174): a large buy then moves the price a long way.
+bool memeLiquidityLow(MemeTokenDetail detail) {
+  if (detail.status != MemeTokenStatus.trading) return false;
+  final target = detail.curve.fillTargetUsd1;
+  if (target == null) return false;
+  return detail.curve.realUsd1 * BigInt.from(20) < target;
+}
+
 /// `meme-token` · one MEME curve token (archetype `record`, layout
-/// `dashboard`), laid out on the S113 token skeleton (decision 0118).
+/// `dashboard`), drawn as the design's 代币页 B (decision 0174).
 ///
-/// The bar names `$SYMBOL` and shares; under it the identity line, the price
-/// with its one-hour move and the market cap, the holding row when the
-/// active wallet holds some, the curve's progress, the chart of the curve's
-/// own trades, then 持有者 / 动态 / 关于. The bottom bar follows the token's
-/// state (contract §10): 买入 / 卖出 while trading, a disabled line while
-/// full or paused, 「去兑换」 once graduated. A full curve is re-read until
-/// it graduates, and the graduation is marked once.
+/// The bar carries the logo, the ticker with its state badge and the name ·
+/// address line (tap to copy), and shares. Under it the price head — the
+/// price, its one-hour move as an amount and a percentage, the market cap —
+/// then the full-bleed Lime chart with its range chips, two stats (fill
+/// progress and 24h volume) over the progress bar, then 持有者 N / 动态 /
+/// 关于. The bottom bar follows the token's state (contract §10): one Lime
+/// 买入 and the ⚡ 快买 key while trading (卖出 beside them once something is
+/// held), a disabled line while full or paused, 「去兑换」 once graduated. A
+/// full curve is re-read until it graduates, and the graduation is marked
+/// once.
 class MemeTokenScreen extends ConsumerStatefulWidget {
   const MemeTokenScreen({
     required this.memeTokenId,
@@ -89,7 +139,7 @@ class MemeTokenScreen extends ConsumerStatefulWidget {
 }
 
 class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
-  MemeCandleInterval _interval = MemeCandleInterval.fifteenMinutes;
+  MemeCandleInterval _interval = memeChartRanges.first.$1;
   MemeTokenTab _tab = MemeTokenTab.holders;
   Timer? _poll;
   bool _celebrate = false;
@@ -145,13 +195,21 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     });
   }
 
-  Future<void> _trade(MemeTokenDetail detail, MemeTradeSide side) async {
+  Future<void> _trade(
+    MemeTokenDetail detail,
+    MemeTradeSide side, {
+    String? initialAmount,
+  }) async {
     final request = await showMemeTradePanel(
       context,
       detail: detail,
       side: side,
+      initialAmount: initialAmount,
     );
     if (request == null || !mounted) return;
+    if (request.side == MemeTradeSide.buy) {
+      ref.read(memeQuickBuyAmountProvider.notifier).remember(request.amount);
+    }
     final wallet = memeReadActiveWallet(ref);
     final walletId = wallet.walletId ?? detail.viewer?.walletId;
     if (walletId == null) {
@@ -281,10 +339,22 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
       if (detail.status == MemeTokenStatus.trading) memeActiveWallet(ref);
     }
 
+    final address = detail == null
+        ? null
+        : detail.row.tokenAddress ?? detail.predictedAddress;
     return LoopDashboardPage(
       key: ValueKey<String>('meme-token-screen-$memeTokenId'),
       archetype: LoopPageArchetype.record,
       title: detail == null ? '代币' : '\$${detail.row.symbol}',
+      titleField: detail == null
+          ? null
+          : _TokenTitle(
+              detail: detail,
+              address: address,
+              onCopy: address == null
+                  ? null
+                  : () => unawaited(_copy(address, '已复制合约地址')),
+            ),
       onBack: widget.onBack,
       updating: state?.refreshing ?? false,
       onRefresh: blocked ? null : () => _reloadAll(memeTokenId),
@@ -326,7 +396,17 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     return switch (detail.status) {
       MemeTokenStatus.trading => _TradeBar(
         busy: busy,
+        holding: (detail.viewer?.balance ?? BigInt.zero) > BigInt.zero,
         onBuy: () => unawaited(_trade(detail, MemeTradeSide.buy)),
+        onQuickBuy: () => unawaited(
+          _trade(
+            detail,
+            MemeTradeSide.buy,
+            initialAmount:
+                ref.read(memeQuickBuyAmountProvider) ??
+                memeQuickBuyDefaultAmount,
+          ),
+        ),
         onSell: () => unawaited(_trade(detail, MemeTradeSide.sell)),
       ),
       // S118: the testnet has no in-app swap (`/v2/swap/quote` answers
@@ -403,32 +483,12 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     LoopCapabilityProjection capability,
   ) {
     final row = detail.row;
-    final address = row.tokenAddress ?? detail.predictedAddress;
     final statusText = memeSubmissionText(
       submission,
       submission.intent?.kind ?? MemeIntentKind.buy,
     );
-    final chartHeight = (MediaQuery.sizeOf(context).height * 0.32).clamp(
-      180.0,
-      340.0,
-    );
+    final chartHeight = memeTokenChartHeight(MediaQuery.sizeOf(context).height);
     return <Widget>[
-      _IdentityLine(
-        detail: detail,
-        address: address,
-        onCopy: address == null
-            ? null
-            : () => unawaited(_copy(address, '已复制合约地址')),
-      ),
-      _PriceBlock(detail: detail),
-      if (detail.viewer case final viewer? when viewer.balance > BigInt.zero)
-        _HoldingRow(detail: detail, balance: viewer.balance),
-      if (detail.viewerUnavailableReason case final reason?)
-        LoopInlineUnavailable(
-          key: const ValueKey<String>('meme-token-viewer-unavailable'),
-          icon: 'info',
-          message: '我的持仓暂时读不到 · ${memeReasonText(reason)}',
-        ),
       if (statusText != null)
         LoopNotice(
           key: ValueKey<String>('meme-token-status-${submission.phase.name}'),
@@ -437,6 +497,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               : 'clock',
           body: statusText,
           trailing: _statusAction(submission, detail.memeTokenId),
+          margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
         ),
       if (_celebrate)
         _GraduationBanner(onClose: () => setState(() => _celebrate = false)),
@@ -449,23 +510,58 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
             _ => '运营已将此代币从发射台隐藏',
           },
         ),
-      _ProgressBlock(detail: detail),
-      if (capability.evidencePending)
-        const LoopInlineUnavailable(
-          key: ValueKey<String>('meme-token-evidence-pending'),
-          icon: 'info',
-          message: '发射台合约还在核对，交易可能暂时不可用',
-        ),
+      _PriceBlock(detail: detail),
+      // Decision 0174: the chart follows the price head directly, full
+      // bleed, its range chips under it.
       _ChartSection(
         memeTokenId: detail.memeTokenId,
         interval: _interval,
         height: chartHeight,
         onIntervalChanged: (value) => setState(() => _interval = value),
       ),
+      _ProgressStats(detail: detail),
+      if (memeLiquidityLow(detail))
+        LoopNotice(
+          key: const ValueKey<String>('meme-token-liquidity-low'),
+          icon: 'warn',
+          tone: LoopNoticeTone.warn,
+          body:
+              '流动性低 · 内盘储备 '
+              '${memeCapLabel(memeUnits(detail.curve.realUsd1))}，大额买入滑点高',
+        ),
+      if (detail.viewer case final viewer? when viewer.balance > BigInt.zero)
+        _HoldingRow(detail: detail, balance: viewer.balance),
+      if (detail.viewerUnavailableReason case final reason?)
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('meme-token-viewer-unavailable'),
+          icon: 'info',
+          message: '我的持仓暂时读不到 · ${memeReasonText(reason)}',
+        ),
+      if (capability.evidencePending)
+        const LoopInlineUnavailable(
+          key: ValueKey<String>('meme-token-evidence-pending'),
+          icon: 'info',
+          message: '发射台合约还在核对，交易可能暂时不可用',
+        ),
+      if (row.priceSource case final source?)
+        MemeProvenance(
+          key: const ValueKey<String>('meme-token-price-provenance'),
+          sources: <String>[source.source.label],
+          observedAt: source.observedAt,
+          detail: source.source == MemePriceSource.loopCurve
+              ? '内盘价格 = 曲线虚拟储备之比，市值 = 价格 × 10 亿总量。'
+              : '毕业后的价格与市值读自 DexScreener。',
+        ),
       MarketTabBar(
         key: const ValueKey<String>('meme-token-tabs'),
         keyPrefix: 'meme-token-tab',
-        labels: <String>[for (final tab in MemeTokenTab.values) tab.label],
+        // Decision 0174: the holder count rides in its tab's title.
+        labels: <String>[
+          for (final tab in MemeTokenTab.values)
+            tab == MemeTokenTab.holders
+                ? '${tab.label} ${row.holderCount}'
+                : tab.label,
+        ],
         selectedIndex: MemeTokenTab.values.indexOf(_tab),
         onSelected: (index) =>
             setState(() => _tab = MemeTokenTab.values[index]),
@@ -685,28 +781,38 @@ class _BarShell extends StatelessWidget {
 class _TradeBar extends StatelessWidget {
   const _TradeBar({
     required this.busy,
+    required this.holding,
     required this.onBuy,
+    required this.onQuickBuy,
     required this.onSell,
   });
 
   final bool busy;
+
+  /// The active wallet holds some of the token: 卖出 is offered beside 买入.
+  final bool holding;
   final VoidCallback onBuy;
+  final VoidCallback onQuickBuy;
   final VoidCallback onSell;
 
   @override
   Widget build(BuildContext context) => _BarShell(
     child: Row(
       children: <Widget>[
-        Expanded(
-          child: LoopButton(
-            key: const ValueKey<String>('meme-token-sell'),
-            label: '卖出',
-            block: true,
-            onPressed: busy ? null : onSell,
+        if (holding) ...<Widget>[
+          Expanded(
+            child: LoopButton(
+              key: const ValueKey<String>('meme-token-sell'),
+              label: '卖出',
+              block: true,
+              onPressed: busy ? null : onSell,
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
+          const SizedBox(width: 10),
+        ],
+        // Decision 0174: the screen's one full-Lime body.
         Expanded(
+          flex: holding ? 2 : 1,
           child: LoopButton(
             key: const ValueKey<String>('meme-token-buy'),
             label: '买入',
@@ -715,13 +821,56 @@ class _TradeBar extends StatelessWidget {
             onPressed: busy ? null : onBuy,
           ),
         ),
+        const SizedBox(width: 10),
+        _QuickBuyKey(onPressed: busy ? null : onQuickBuy),
       ],
     ),
   );
 }
 
-class _IdentityLine extends StatelessWidget {
-  const _IdentityLine({
+/// `.bottombar .flash`: the 52-wide 快买 key — Card2 ground, a Chalk bolt.
+/// It opens the same buy panel with the last amount filled in; it signs
+/// nothing by itself.
+class _QuickBuyKey extends StatelessWidget {
+  const _QuickBuyKey({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  static const double width = 52;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    enabled: onPressed != null,
+    label: '快买',
+    child: Opacity(
+      opacity: onPressed == null ? 0.4 : 1,
+      child: Material(
+        key: const ValueKey<String>('meme-token-quick-buy-surface'),
+        color: LoopColors.card2,
+        borderRadius: LoopRadius.control,
+        child: InkWell(
+          key: const ValueKey<String>('meme-token-quick-buy'),
+          onTap: onPressed,
+          borderRadius: LoopRadius.control,
+          child: const SizedBox(
+            width: width,
+            height: LoopTouch.primaryButton,
+            child: Center(
+              child: LoopIcon('bolt', size: 20, color: LoopColors.chalk),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// The bar's title column (decision 0174): the 36 logo, the ticker with its
+/// state badge, and 「name · 0x8a3f…c21e」 with the copy glyph. The text
+/// column is one tap target that copies the contract address.
+class _TokenTitle extends StatelessWidget {
+  const _TokenTitle({
     required this.detail,
     required this.address,
     required this.onCopy,
@@ -732,46 +881,91 @@ class _IdentityLine extends StatelessWidget {
   final VoidCallback? onCopy;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    key: const ValueKey<String>('meme-token-identity'),
-    padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
-    child: Row(
+  Widget build(BuildContext context) {
+    final row = detail.row;
+    final text = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Flexible(
+              child: Text(
+                row.symbol,
+                key: const ValueKey<String>('meme-token-ticker'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.title,
+              ),
+            ),
+            const SizedBox(width: 6),
+            LoopBadge(
+              memeTokenStatusLabel(row.status),
+              key: const ValueKey<String>('meme-token-status-badge'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Row(
+          children: <Widget>[
+            Flexible(
+              child: Text(
+                '${row.name} · '
+                '${address == null ? '还没有地址' : memeShortAddress(address!)}',
+                key: const ValueKey<String>('meme-token-identity'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+              ),
+            ),
+            if (onCopy != null) ...<Widget>[
+              const SizedBox(width: 4),
+              const LoopIcon('copy', size: 12, color: LoopColors.text2),
+            ],
+          ],
+        ),
+      ],
+    );
+    return Row(
       children: <Widget>[
         MemeLogo(
-          symbol: detail.row.symbol,
-          imageUrl: detail.row.imageUrl,
-          identity: detail.row.memeTokenId,
+          symbol: row.symbol,
+          imageUrl: row.imageUrl,
+          identity: row.memeTokenId,
+          size: 36,
+          radius: LoopRadius.innerValue,
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                detail.row.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: LoopType.titleLg,
-              ),
-              Text(
-                address == null ? '还没有地址' : memeShortAddress(address!),
-                style: LoopType.codeSm.copyWith(color: LoopColors.text2),
-              ),
-            ],
-          ),
+          child: onCopy == null
+              ? text
+              : Semantics(
+                  button: true,
+                  label: '复制合约地址',
+                  child: InkWell(
+                    key: const ValueKey<String>('meme-token-copy-address'),
+                    onTap: onCopy,
+                    borderRadius: LoopRadius.inner,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: LoopTouch.minimum,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: text,
+                      ),
+                    ),
+                  ),
+                ),
         ),
-        if (onCopy != null)
-          LoopIconButton(
-            key: const ValueKey<String>('meme-token-copy-address'),
-            icon: 'copy',
-            label: '复制合约地址',
-            onPressed: onCopy,
-          ),
       ],
-    ),
-  );
+    );
+  }
 }
 
+/// `.pricehead` (decision 0174): the price at the figure step, the one-hour
+/// move as an amount and a percentage in rise / fall, and the market cap on
+/// the right.
 class _PriceBlock extends StatelessWidget {
   const _PriceBlock({required this.detail});
 
@@ -785,50 +979,100 @@ class _PriceBlock extends StatelessWidget {
     return Padding(
       key: const ValueKey<String>('meme-token-price'),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
-          if (price == null)
-            Text(
-              memeQuoteUnavailableText(row.quoteUnavailableReason),
-              key: const ValueKey<String>('meme-token-price-unavailable'),
-              style: LoopType.titleLg.copyWith(color: LoopColors.text2),
-            )
-          else
-            Text(
-              memePriceLabel(price),
-              key: const ValueKey<String>('meme-token-price-figure'),
-              style: LoopType.figureXl,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (price == null)
+                  Text(
+                    memeQuoteUnavailableText(row.quoteUnavailableReason),
+                    key: const ValueKey<String>('meme-token-price-unavailable'),
+                    style: LoopType.titleLg.copyWith(color: LoopColors.text2),
+                  )
+                else
+                  Text(
+                    memePriceLabel(price),
+                    key: const ValueKey<String>('meme-token-price-figure'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.figureXl,
+                  ),
+                const SizedBox(height: 6),
+                if (row.isGraduated)
+                  Text(
+                    '外盘价格',
+                    style: LoopType.caption.copyWith(color: LoopColors.text3),
+                  )
+                else
+                  _ChangeLine(price: price, change: row.change1hPct),
+              ],
             ),
-          const SizedBox(height: 4),
-          Row(
-            children: <Widget>[
-              if (row.isGraduated)
-                Text(
-                  '外盘价格',
-                  style: LoopType.caption.copyWith(color: LoopColors.text3),
-                )
-              else
-                MemeChangeLabel(change: row.change1hPct, suffix: ' · 1h'),
-              const SizedBox(width: 12),
-              if (cap != null)
-                Text(
-                  '市值 ${memeCapLabel(cap)}',
-                  key: const ValueKey<String>('meme-token-cap'),
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
-                ),
-            ],
           ),
-          if (row.priceSource case final source?)
-            MemeProvenance(
-              key: const ValueKey<String>('meme-token-price-provenance'),
-              sources: <String>[source.source.label],
-              observedAt: source.observedAt,
-              detail: source.source == MemePriceSource.loopCurve
-                  ? '内盘价格 = 曲线虚拟储备之比，市值 = 价格 × 10 亿总量。'
-                  : '毕业后的价格与市值读自 DexScreener。',
+          if (cap != null) ...<Widget>[
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Text(
+                  memeCapLabel(cap),
+                  key: const ValueKey<String>('meme-token-cap'),
+                  style: LoopType.figureMd,
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '市值',
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+                ),
+              ],
             ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// 「▲ $0.0₅4797 (14.38%) · 1h」 in the 0117 rise / fall ink; only the
+/// percentage when there is no price to take the amount from.
+class _ChangeLine extends StatelessWidget {
+  const _ChangeLine({required this.price, required this.change});
+
+  final Decimal? price;
+  final Decimal? change;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = change;
+    if (pct == null) return const MemeChangeLabel(change: null);
+    final move = LoopPriceMove.of(pct);
+    final amount = memeChange1hAmount(price, pct);
+    final String text;
+    if (amount == null) {
+      text = '${marketMoveLabel(pct)} · 1h';
+    } else {
+      final arrow = switch (move) {
+        LoopPriceMove.up => '▲ ',
+        LoopPriceMove.down => '▼ ',
+        LoopPriceMove.flat || LoopPriceMove.unread => '',
+      };
+      final magnitude = pct < Decimal.zero ? -pct : pct;
+      final absolute = amount < Decimal.zero ? -amount : amount;
+      text =
+          '$arrow${memePriceLabel(absolute)} '
+          '(${magnitude.toStringAsFixed(2)}%) · 1h';
+    }
+    return Text(
+      text,
+      key: const ValueKey<String>('meme-token-change'),
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.fade,
+      style: LoopTypography.withWeight(
+        LoopType.figureSm.copyWith(color: move.color),
+        FontWeight.w600,
       ),
     );
   }
@@ -858,8 +1102,10 @@ class _HoldingRow extends StatelessWidget {
   }
 }
 
-class _ProgressBlock extends StatelessWidget {
-  const _ProgressBlock({required this.detail});
+/// Two stats — fill progress with what is still to raise, and 24h volume —
+/// over the 6 px progress bar (decision 0174; replaces the 0169 text block).
+class _ProgressStats extends StatelessWidget {
+  const _ProgressStats({required this.detail});
 
   final MemeTokenDetail detail;
 
@@ -868,52 +1114,45 @@ class _ProgressBlock extends StatelessWidget {
     final row = detail.row;
     final curve = detail.curve;
     final graduated = row.isGraduated;
+    final bps = graduated ? 10000 : row.progressBps;
     final target = curve.fillTargetUsd1;
-    return Padding(
+    final left = target == null ? null : target - curve.realUsd1;
+    final progress = graduated
+        ? '100% · 已毕业'
+        : left != null && left > BigInt.zero
+        ? '${memeBpsLabel(bps)} · 还差 ${memeCapLabel(memeUnits(left))}'
+        : memeBpsLabel(bps);
+    return Column(
       key: const ValueKey<String>('meme-token-progress'),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Text(
-                graduated
-                    ? '内盘进度 100%'
-                    : '内盘进度 ${memeBpsLabel(row.progressBps)}',
-                key: const ValueKey<String>('meme-token-progress-label'),
-                style: LoopType.title,
-              ),
-              const Spacer(),
-              if (graduated) const MemeGraduatedTag(),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Decision 0169: the family's 6 px `.bar` (was an 8 px own track).
-          LoopProgressBar(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopStatGrid(
+          key: const ValueKey<String>('meme-token-stats'),
+          margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+          stats: <LoopStat>[
+            LoopStat(
+              label: '打满进度',
+              value: progress,
+              tone: LoopStatTone.up,
+              statKey: const ValueKey<String>('meme-token-stat-progress'),
+            ),
+            LoopStat(
+              label: '24h 交易量',
+              value: memeCapLabel(row.volume24hUsd1),
+              statKey: const ValueKey<String>('meme-token-stat-volume'),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          // Decision 0169: the family's 6 px `.bar`.
+          child: LoopProgressBar(
             key: const ValueKey<String>('meme-token-progress-bar'),
-            value: memeProgressFraction(graduated ? 10000 : row.progressBps),
-            semanticLabel:
-                '内盘进度 ${memeBpsLabel(graduated ? 10000 : row.progressBps)}',
+            value: memeProgressFraction(bps),
+            semanticLabel: '内盘进度 ${memeBpsLabel(bps)}',
           ),
-          const SizedBox(height: 8),
-          Text(
-            target == null
-                ? '已募 ${memeUsd1Label(curve.realUsd1, maxFractionDigits: 0)}'
-                : '已募 ${memeUsd1Label(curve.realUsd1, maxFractionDigits: 0)} '
-                      '/ ≈${memeUsd1Label(target, maxFractionDigits: 0)}',
-            key: const ValueKey<String>('meme-token-raised'),
-            style: LoopType.figureSm.copyWith(color: LoopColors.text2),
-          ),
-          const SizedBox(height: 2),
-          Text(switch (row.status) {
-            MemeTokenStatus.graduated => '已上 PancakeSwap，外盘开盘价略低于内盘末价',
-            MemeTokenStatus.full => '已打满，正在上 PancakeSwap',
-            MemeTokenStatus.paused => '交易已暂停',
-            _ => '打满后自动上 PancakeSwap',
-          }, style: LoopType.caption.copyWith(color: LoopColors.text3)),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1026,6 +1265,11 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
         interval: widget.interval.axis,
         style: _style,
         height: widget.height,
+        // Decision 0174: one Lime line over the page itself — no card, no
+        // volume strip — with the current price as a Lime tag.
+        showVolume: false,
+        lineColor: LoopColors.lime,
+        lastPriceTag: true,
         semanticLabel:
             '${series.candles.length} 根${widget.interval.label}'
             '${_style == LoopChartStyle.line ? '收盘价折线' : 'K 线'}，单位 USD1',
@@ -1035,50 +1279,44 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
       key: const ValueKey<String>('meme-chart-section'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        Padding(padding: const EdgeInsets.only(top: 6, bottom: 2), child: body),
+        // Decision 0174: the range chips sit under the full-bleed chart, the
+        // K switch at the end of the same line (decision 0131's periods
+        // above the chart are superseded; the bar's height is reserved, so
+        // they are never under it).
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 4, 0),
-          child: Row(
-            children: <Widget>[
-              Text(
-                '曲线成交',
-                style: LoopType.caption.copyWith(color: LoopColors.text3),
-              ),
-              const Spacer(),
-              LoopSeg(
-                key: const ValueKey<String>('meme-chart-style'),
-                label: _style == LoopChartStyle.line ? 'K线' : '折线',
-                selected: false,
-                onSelected: () => setState(
-                  () => _style = _style == LoopChartStyle.line
-                      ? LoopChartStyle.candles
-                      : LoopChartStyle.line,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // The periods sit above the chart, not under it: under it they ended
-        // exactly where the pinned 买入 / 卖出 bar begins on a first screen
-        // and were half covered by it (audit 2026-10-09 m18, decision 0131).
-        SingleChildScrollView(
           key: const ValueKey<String>('meme-interval-strip'),
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
           child: Row(
             children: <Widget>[
-              for (final interval in MemeCandleInterval.values) ...<Widget>[
+              for (final (interval, label) in memeChartRanges) ...<Widget>[
                 LoopSeg(
                   key: ValueKey<String>('meme-interval-${interval.wireName}'),
-                  label: interval.label,
+                  label: label,
+                  quiet: true,
                   selected: interval == widget.interval,
                   onSelected: () => widget.onIntervalChanged(interval),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
               ],
+              const Spacer(),
+              Semantics(
+                label: _style == LoopChartStyle.line ? '切到 K 线' : '切到折线',
+                child: LoopSeg(
+                  key: const ValueKey<String>('meme-chart-style'),
+                  label: 'K',
+                  quiet: true,
+                  selected: _style == LoopChartStyle.candles,
+                  onSelected: () => setState(
+                    () => _style = _style == LoopChartStyle.line
+                        ? LoopChartStyle.candles
+                        : LoopChartStyle.line,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-        body,
         if (series != null)
           MemeProvenance(
             key: const ValueKey<String>('meme-candles-provenance'),
@@ -1160,14 +1398,21 @@ List<Widget> memeHolderSections(
         compact: true,
       )
     else
-      for (final (index, holder) in page.items.indexed)
-        _HolderRow(
-          key: ValueKey<String>('$keyPrefix-${holder.wallet}'),
-          rank: index + 1,
-          holder: holder,
-          symbol: symbol,
-          onOpenProfile: onOpenProfile,
-        ),
+      // Decision 0174: one `.record-card` group of `.row`s.
+      LoopRecordGroup(
+        key: ValueKey<String>('$keyPrefix-rows'),
+        rows: <LoopRecordRow>[
+          for (final (index, holder) in page.items.indexed)
+            memeHolderRow(
+              key: ValueKey<String>('$keyPrefix-${holder.wallet}'),
+              rank: index + 1,
+              holder: holder,
+              symbol: symbol,
+              price: detail.row.priceUsd1,
+              onOpenProfile: onOpenProfile,
+            ),
+        ],
+      ),
     if (controller.appendFailed && !state.busy)
       LoopInlineUnavailable(
         key: ValueKey<String>('$keyPrefix-more-failed'),
@@ -1197,70 +1442,53 @@ List<Widget> memeHolderSections(
   ];
 }
 
-class _HolderRow extends StatelessWidget {
-  const _HolderRow({
-    required this.rank,
-    required this.holder,
-    required this.symbol,
-    required this.onOpenProfile,
-    super.key,
-  });
-
-  final int rank;
-  final MemeHolder holder;
-  final String symbol;
-  final void Function(String publicProfileId) onOpenProfile;
-
-  @override
-  Widget build(BuildContext context) {
-    final account = holder.account;
-    final name = account?.displayName ?? memeShortAddress(holder.wallet);
-    return InkWell(
-      onTap: account == null
-          ? null
-          : () => onOpenProfile(account.publicProfileId),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 52),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Row(
-          children: <Widget>[
-            SizedBox(
-              width: 28,
-              child: Text(
-                '$rank',
-                style: LoopType.figureSm.copyWith(color: LoopColors.text3),
-              ),
-            ),
-            Expanded(
-              child: Wrap(
-                spacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: <Widget>[
-                  Text(name, style: LoopType.body),
-                  if (holder.isCreator) const LoopBadge('创建者'),
-                  if (holder.isViewer)
-                    const LoopBadge('我', kind: LoopBadgeKind.up),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Text(
-                  memeTokenCompact(holder.balance),
-                  style: LoopType.figureSm,
-                ),
-                Text(
-                  memeBpsLabel(holder.shareBps),
-                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-                ),
+/// One holder as a `.row` (decision 0174): avatar, name, rank and amount;
+/// the holding's value on the right and its share of supply under it. The
+/// index keeps no cost basis, so no profit or loss is drawn.
+LoopRecordRow memeHolderRow({
+  required Key key,
+  required int rank,
+  required MemeHolder holder,
+  required String symbol,
+  required Decimal? price,
+  required void Function(String publicProfileId) onOpenProfile,
+}) {
+  final account = holder.account;
+  final name = account?.displayName ?? memeShortAddress(holder.wallet);
+  final value = price == null ? null : memeHoldingValue(holder.balance, price);
+  final badges = <Widget>[
+    if (holder.isCreator) const LoopBadge('创建者'),
+    if (holder.isViewer) const LoopBadge('我', kind: LoopBadgeKind.up),
+  ];
+  return LoopRecordRow(
+    key: key,
+    leading: LoopProfileAvatar(
+      avatarRef: account?.avatarRef,
+      alias: account?.displayName,
+      size: 36,
+    ),
+    title: name,
+    subtitle: '第 $rank · ${memeTokenCompact(holder.balance)} $symbol',
+    trailingBadge: badges.isEmpty
+        ? null
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              for (final (index, badge) in badges.indexed) ...<Widget>[
+                if (index > 0) const SizedBox(width: 4),
+                badge,
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+            ],
+          ),
+    trailing: value == null
+        ? memeTokenCompact(holder.balance)
+        : loopFormatUsd(value),
+    trailingCaption: memeBpsLabel(holder.shareBps),
+    chevron: false,
+    onTap: account == null
+        ? null
+        : () => onOpenProfile(account.publicProfileId),
+  );
 }
 
 /// 动态: the curve's trades, newest first, a page at a time.
