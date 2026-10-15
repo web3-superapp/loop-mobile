@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
@@ -221,6 +222,9 @@ class _MiningRewardsHourlyScreenState
       });
     }
     final view = state.value;
+    // Decision 0184: before the LOOP token is live the page counts power
+    // only — no hourly reward, no balance, no claim.
+    final live = miningTokenLive(view);
     final restored = controller.restoredObservedAt != null;
     final visible = LoopForegroundPoll.pageVisible(context);
 
@@ -260,6 +264,9 @@ class _MiningRewardsHourlyScreenState
                 progress: progress,
                 epoch: view.lastEpoch,
                 awaitingReason: miningAwaitingReason(view),
+                live: live,
+                nftPower: view.nft?.totalPower,
+                assetPower: view.asset?.totalPower,
               ),
         block: view == null && state.phase != LoopChainViewPhase.loading
             ? Center(
@@ -285,57 +292,79 @@ class _MiningRewardsHourlyScreenState
                 if (view.display.state == MiningDisplayState.unavailable)
                   LoopInlineUnavailable(
                     key: const ValueKey<String>('mining-rewards-unavailable'),
-                    message: miningDisplayReasonText(view.display.reasonCode),
+                    message: miningDisplayReasonText(
+                      view.display.reasonCode,
+                      live: live,
+                    ),
                     onRetry: () => unawaited(controller.reload()),
                   ),
-                const LoopLabel('奖励汇总'),
-                MiningRewardsSummary(view: view),
-                const LoopLabel('领取'),
-                MiningClaimPanel(
-                  view: view,
-                  claim: claim,
-                  restored: restored,
-                  wallet: wallet,
-                  onClaim: () => unawaited(_claim(wallet)),
-                  onRetryReport: () => unawaited(
-                    ref
-                        .read(miningClaimControllerProvider.notifier)
-                        .retryReport(),
+                if (!live) ...<Widget>[
+                  const LoopLabel('算力汇总'),
+                  MiningPowerSummary(view: view),
+                  // The claim block, whole, is this one line (decision 0184).
+                  const LoopNotice(
+                    key: ValueKey<String>('mining-power-only-notice'),
+                    icon: 'mine',
+                    body: miningPowerOnlyNotice,
+                    margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
                   ),
-                  onResume: () => ref
-                      .read(miningClaimControllerProvider.notifier)
-                      .resumePolling(),
-                  onDismiss: () =>
-                      ref.read(miningClaimControllerProvider.notifier).reset(),
-                ),
+                ] else ...<Widget>[
+                  const LoopLabel('奖励汇总'),
+                  MiningRewardsSummary(view: view),
+                  const LoopLabel('领取'),
+                  MiningClaimPanel(
+                    view: view,
+                    claim: claim,
+                    restored: restored,
+                    wallet: wallet,
+                    onClaim: () => unawaited(_claim(wallet)),
+                    onRetryReport: () => unawaited(
+                      ref
+                          .read(miningClaimControllerProvider.notifier)
+                          .retryReport(),
+                    ),
+                    onResume: () => ref
+                        .read(miningClaimControllerProvider.notifier)
+                        .resumePolling(),
+                    onDismiss: () => ref
+                        .read(miningClaimControllerProvider.notifier)
+                        .reset(),
+                  ),
+                ],
                 const LoopLabel('NFT 轨道'),
-                MiningNftTrackCard(track: view.nft),
+                MiningNftTrackCard(track: view.nft, live: live),
                 const LoopLabel('Meme 币轨道'),
-                MiningAssetTrackCard(track: view.asset),
+                MiningAssetTrackCard(track: view.asset, live: live),
                 const LoopLabel('五级邀请'),
                 MiningInviteTable(invites: view.invites),
-                const LoopLabel('领取记录'),
-                MiningClaimRecords(
-                  state: claims,
-                  onRetry: () => unawaited(
-                    ref.read(miningClaimsControllerProvider.notifier).reload(),
+                if (live) ...<Widget>[
+                  const LoopLabel('领取记录'),
+                  MiningClaimRecords(
+                    state: claims,
+                    onRetry: () => unawaited(
+                      ref
+                          .read(miningClaimsControllerProvider.notifier)
+                          .reload(),
+                    ),
+                    onLoadMore: () => unawaited(
+                      ref
+                          .read(miningClaimsControllerProvider.notifier)
+                          .loadMore(),
+                    ),
                   ),
-                  onLoadMore: () => unawaited(
-                    ref
-                        .read(miningClaimsControllerProvider.notifier)
-                        .loadMore(),
-                  ),
-                ),
+                ],
                 const SizedBox(height: 16),
                 LoopProvenanceLine(
                   key: const ValueKey<String>('mining-rewards-provenance'),
                   sources: const <String>['LOOP 小时结算'],
                   observedAt: controller.valueObservedAt,
                   prefix: restored ? '上次读取' : null,
-                  detail:
-                      '每个整点（UTC）结算上一小时的 NFT 与 Meme 币两条轨道；'
-                      '结算完成后该小时奖励即可领取。分钟增长只是展示上一小时的奖励，'
-                      '不改变可领取数量。',
+                  detail: live
+                      ? '每个整点（UTC）结算上一小时的 NFT 与 Meme 币两条轨道；'
+                            '结算完成后该小时奖励即可领取。分钟增长只是展示上一小时的奖励，'
+                            '不改变可领取数量。'
+                      : '每个整点（UTC）统计上一小时 NFT 与 Meme 币两条轨道的算力；'
+                            'LOOP 代币上线前只统计算力，上线后开始正式开挖。',
                 ),
                 const SizedBox(height: 24),
               ],
@@ -352,25 +381,29 @@ class _MiningRewardsHourlyScreenState
 /// Three causes are told apart: the settlement store is down, no approved
 /// parameter version is in force, or the rules are in force but no hour has
 /// settled yet (decision 0143).
-String miningDisplayReasonText(String? reasonCode) => switch (reasonCode) {
-  'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂时没有结算。',
-  'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，下面的数字可能不是最新的。',
-  // Loop-api 0125 (client 0147): judged on the caller's own hours — no hour
-  // with power or reward has settled for this account yet, whatever the
-  // network has settled.
-  // Decision 0149: the hero's title now says the state (「你有算力的小时还没有
-  // 结算」), so this line no longer repeats it — it says what happens next.
-  'MINING_NOTHING_SETTLED' => '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
-  _ => '结算数据暂时读不到，下面的数字可能不是最新的。',
-};
+String miningDisplayReasonText(String? reasonCode, {bool live = true}) =>
+    switch (reasonCode) {
+      'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂时没有结算。',
+      // Decision 0184: before the token is live nothing is shown by the minute
+      // and nothing is claimed; the hour's power is what appears.
+      'MINING_NOTHING_SETTLED' when !live => '挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。',
+      'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，下面的数字可能不是最新的。',
+      // Loop-api 0125 (client 0147): judged on the caller's own hours — no hour
+      // with power or reward has settled for this account yet, whatever the
+      // network has settled.
+      // Decision 0149: the hero's title now says the state (「你有算力的小时还没有
+      // 结算」), so this line no longer repeats it — it says what happens next.
+      'MINING_NOTHING_SETTLED' => '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
+      _ => '结算数据暂时读不到，下面的数字可能不是最新的。',
+    };
 
 /// The awaiting hero's title (decision 0149). Judged on the caller's own
 /// hours (loop-api 0125 / client 0147) it is the account's state, not the
 /// network's: the network may have settled many hours already.
-String miningAwaitingTitle(String? awaitingReason) =>
+String miningAwaitingTitle(String? awaitingReason, {bool live = true}) =>
     awaitingReason == 'MINING_NOTHING_SETTLED'
     ? '你有算力的小时还没有结算'
-    : '首个小时结算后开始展示奖励';
+    : (live ? '首个小时结算后开始展示奖励' : '首个小时结算后开始展示算力');
 
 /// Why nothing has settled yet: `hourly.reasonCode` when the server names
 /// one (`MINING_PARAMETERS_PENDING`), otherwise `MINING_NOTHING_SETTLED` from
@@ -383,6 +416,9 @@ String? miningAwaitingReason(MiningRewardsView view) =>
 
 /// The folio's kicker in every phase (decision 0167).
 const String miningMinuteKicker = '上一小时奖励';
+
+/// The kicker while the token is not live (decision 0184).
+const String miningPowerKicker = '上一小时算力';
 
 /// The page's one primary (decision 0167, docs/33 H2): the prototype's
 /// `mining-rewards` lime ledger folio welded into a `.ledger-composite`.
@@ -398,6 +434,9 @@ class MiningMinuteHero extends StatelessWidget {
     required this.progress,
     this.epoch,
     this.awaitingReason,
+    this.live = true,
+    this.nftPower,
+    this.assetPower,
     super.key,
   });
 
@@ -407,9 +446,18 @@ class MiningMinuteHero extends StatelessWidget {
   /// [miningAwaitingReason]; read only while awaiting the first settlement.
   final String? awaitingReason;
 
+  /// [miningTokenLive]. While false the folio states the last hour's power
+  /// and never a LOOP amount (decision 0184).
+  final bool live;
+
+  /// The last settled hour's two track powers, drawn while [live] is false.
+  final Decimal? nftPower;
+  final Decimal? assetPower;
+
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final kicker = live ? miningMinuteKicker : miningPowerKicker;
     switch (progress.phase) {
       case MiningMinutePhase.awaitingFirstSettlement:
         return LoopLedgerComposite(
@@ -422,15 +470,15 @@ class MiningMinuteHero extends StatelessWidget {
             margin: EdgeInsets.zero,
             squareBottom: true,
             headingTone: LoopFolioHeadingTone.neutral,
-            kicker: miningMinuteKicker,
-            heading: miningAwaitingTitle(awaitingReason),
-            caption: miningMinuteAwaitingCaption(awaitingReason),
+            kicker: kicker,
+            heading: miningAwaitingTitle(awaitingReason, live: live),
+            caption: miningMinuteAwaitingCaption(awaitingReason, live: live),
           ),
           detail: const <Widget>[],
         );
       case MiningMinutePhase.unavailable:
-        return const LoopLedgerComposite(
-          key: ValueKey<String>('mining-minute-unavailable'),
+        return LoopLedgerComposite(
+          key: const ValueKey<String>('mining-minute-unavailable'),
           primary: LoopFolioPrimary(
             variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.record,
@@ -438,14 +486,15 @@ class MiningMinuteHero extends StatelessWidget {
             margin: EdgeInsets.zero,
             squareBottom: true,
             headingTone: LoopFolioHeadingTone.neutral,
-            kicker: miningMinuteKicker,
+            kicker: kicker,
             heading: '暂时读不到结算结果',
           ),
-          detail: <Widget>[],
+          detail: const <Widget>[],
         );
       case MiningMinutePhase.displaying:
       case MiningMinutePhase.settling:
         final settling = progress.phase == MiningMinutePhase.settling;
+        if (!live) return _powerFolio(settling: settling);
         final figure = miningLoopFigure(progress.shown);
         return LoopLedgerComposite(
           key: ValueKey<String>(
@@ -497,13 +546,62 @@ class MiningMinuteHero extends StatelessWidget {
         );
     }
   }
+
+  /// The settled hour as power (decision 0184): the folio's heading is the
+  /// hour's power, its caption whether the hour counted, and the strip the
+  /// two tracks and the settled period. Nothing steps by the minute — the
+  /// minute display is a reward's, and there is none yet.
+  Widget _powerFolio({required bool settling}) {
+    final total = nftPower == null && assetPower == null
+        ? null
+        : (nftPower ?? Decimal.zero) + (assetPower ?? Decimal.zero);
+    final figure = total == null ? loopFigureDash : miningPowerFigure(total);
+    final counted = total != null && total > Decimal.zero;
+    return LoopLedgerComposite(
+      key: ValueKey<String>(
+        settling ? 'mining-power-settling' : 'mining-power-displaying',
+      ),
+      primary: LoopFolioPrimary(
+        key: const ValueKey<String>('mining-power-folio'),
+        variant: LoopFolioVariant.lime,
+        archetype: LoopFolioArchetype.record,
+        ring: false,
+        margin: EdgeInsets.zero,
+        squareBottom: true,
+        kicker: miningPowerKicker,
+        heading: '$figure 算力',
+        headingMaxLines: 1,
+        caption: settling
+            ? '下一小时结算后更新'
+            : (counted ? '上一小时有效，已计入算力统计' : '上一小时没有算力'),
+        stamp: settling ? '结算中' : null,
+      ),
+      detail: <Widget>[
+        LoopCompositeDetailNote(
+          'NFT 算力 ${nftPower == null ? loopFigureDash : miningPowerFigure(nftPower!)} · '
+          'Meme 币算力 ${assetPower == null ? loopFigureDash : miningPowerFigure(assetPower!)}',
+          key: const ValueKey<String>('mining-power-tracks'),
+        ),
+        if (epoch case final MiningRewardEpoch hour) ...<Widget>[
+          const SizedBox(height: 4),
+          LoopCompositeDetailNote(
+            '统计时段 ${loopClockLabel(hour.epochStart)}–${loopClockLabel(hour.epochEnd)} · '
+            '每个整点统计一次',
+            key: const ValueKey<String>('mining-power-epoch'),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 /// The awaiting folio's caption: what happens next.
-String miningMinuteAwaitingCaption(String? awaitingReason) =>
-    awaitingReason == null
-    ? '每个整点结算上一小时，下一小时按分钟展示。'
-    : miningDisplayReasonText(awaitingReason);
+String miningMinuteAwaitingCaption(
+  String? awaitingReason, {
+  bool live = true,
+}) => awaitingReason == null
+    ? (live ? '每个整点结算上一小时，下一小时按分钟展示。' : '每个整点统计上一小时的算力。')
+    : miningDisplayReasonText(awaitingReason, live: live);
 
 /// The stepping number. Each new minute slides the folio's heading up once;
 /// under reduced motion it simply changes.
@@ -586,6 +684,50 @@ class MiningRewardsSummary extends StatelessWidget {
   }
 }
 
+/// 算力汇总: the 奖励汇总 grid while the token is not live (decision 0184).
+/// Power, the two tracks and the invites the server counted — no LOOP.
+class MiningPowerSummary extends StatelessWidget {
+  const MiningPowerSummary({required this.view, super.key});
+
+  final MiningRewardsView view;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = miningLastHourPower(view);
+    final nft = view.nft?.totalPower;
+    final asset = view.asset?.totalPower;
+    final invites = view.invites?.total.activeMembers;
+    return LoopStatGrid(
+      key: const ValueKey<String>('mining-power-summary'),
+      stats: <LoopStat>[
+        LoopStat(
+          statKey: const ValueKey<String>('mining-power-summary-total'),
+          label: '上一小时算力',
+          value: total == null ? loopFigureDash : miningPowerFigure(total),
+          tone: total != null && total > Decimal.zero
+              ? LoopStatTone.up
+              : LoopStatTone.neutral,
+        ),
+        LoopStat(
+          statKey: const ValueKey<String>('mining-power-summary-nft'),
+          label: 'NFT 算力',
+          value: nft == null ? loopFigureDash : miningPowerFigure(nft),
+        ),
+        LoopStat(
+          statKey: const ValueKey<String>('mining-power-summary-asset'),
+          label: 'Meme 币算力',
+          value: asset == null ? loopFigureDash : miningPowerFigure(asset),
+        ),
+        LoopStat(
+          statKey: const ValueKey<String>('mining-power-summary-invites'),
+          label: '有效邀请',
+          value: invites == null ? loopFigureDash : '$invites 人',
+        ),
+      ],
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // 领取
 // ---------------------------------------------------------------------------
@@ -650,9 +792,9 @@ String miningClaimUnavailableText(String? reasonCode, {BigInt? minimum}) =>
             ? '满 ${miningLoopFigure(minimum)} LOOP 可领取'
             : '可领取数量未达到最低领取数量',
       'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取',
-      // Decision 0155: not an outage — the token is not on chain yet. The
-      // panel shows Coming soon for it; no wording about configuration.
-      miningClaimContractNotConfiguredCode => miningClaimComingSoonNote,
+      // Decisions 0155 / 0184: not an outage — the token is not on chain
+      // yet. The page shows its power-only notice; no configuration wording.
+      miningClaimContractNotConfiguredCode => miningPowerOnlyNotice,
       'MINING_CLAIM_CHAIN_NOT_CONFIGURED' => '领取所在的链尚未配置，暂不能领取',
       'MINING_CLAIM_SIGNER_NOT_CONFIGURED' => '领取凭证签发尚未配置，暂不能领取',
       'MINING_CLAIM_WRITES_DISABLED' => '链上写入暂时关闭，暂不能领取',
@@ -671,7 +813,7 @@ String miningClaimPrepareFailureText(LoopChainException? failure) {
     'MINING_CLAIM_NOTHING_TO_CLAIM' => '现在没有可领取的 LOOP。',
     'MINING_CLAIM_BELOW_MINIMUM' => '可领取数量低于最低领取数量。',
     'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取。',
-    miningClaimContractNotConfiguredCode => miningClaimComingSoonNote,
+    miningClaimContractNotConfiguredCode => miningPowerOnlyNotice,
     'MINING_CLAIM_SIMULATION_REVERTED' => '试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。',
     'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，余额不变。',
     'MINING_CLAIM_CHAIN_READ_FAILED' => '领取合约暂时读不到，没有生成领取凭证，余额不变。',
@@ -739,15 +881,6 @@ class MiningClaimPanel extends StatelessWidget {
     }
   }
 
-  /// Decision 0155: no claim contract yet. The button stays where it is,
-  /// greyed, and says Coming soon; the balance above it is shown as it is.
-  bool get _comingSoon =>
-      !restored &&
-      !claim.busy &&
-      !claim.locked &&
-      !view.claim.status.inFlight &&
-      view.claim.comingSoon;
-
   String? get _disabledReason {
     if (restored) return '正在读取最新的可领取数量';
     if (claim.busy || claim.locked) return null;
@@ -775,17 +908,13 @@ class MiningClaimPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = _status;
     final any = view.claimable > BigInt.zero;
-    final comingSoon = _comingSoon;
     final disabled = _disabledReason;
     final canClaim =
-        !comingSoon &&
         disabled == null &&
         !claim.busy &&
         !claim.locked &&
         claim.phase != MiningClaimPhase.prepared;
-    // Under Coming soon the button and its one line say everything; no
-    // phase note is added beside them (decision 0155).
-    final note = comingSoon ? null : miningClaimPhaseText(claim);
+    final note = miningClaimPhaseText(claim);
     final tx = switch (claim.record) {
       final MiningClaimRecord record
           when record.status == MiningClaimStatus.succeeded =>
@@ -847,21 +976,7 @@ class MiningClaimPanel extends StatelessWidget {
               block: true,
               onPressed: onResume,
             )
-          else if (comingSoon) ...<Widget>[
-            const LoopButton(
-              key: ValueKey<String>('mining-claim-button'),
-              label: miningClaimComingSoonLabel,
-              block: true,
-              onPressed: null,
-              semanticLabel: '领取，$miningClaimComingSoonLabel',
-            ),
-            const SizedBox(height: 8),
-            Text(
-              miningClaimComingSoonNote,
-              key: const ValueKey<String>('mining-claim-coming-soon-note'),
-              style: LoopType.caption.copyWith(color: LoopColors.text2),
-            ),
-          ] else
+          else
             LoopButton(
               key: const ValueKey<String>('mining-claim-button'),
               label: claim.busy || claim.locked ? '领取处理中' : '领取',
@@ -878,9 +993,7 @@ class MiningClaimPanel extends StatelessWidget {
               key: const ValueKey<String>('mining-claim-note'),
               style: LoopType.bodySm.copyWith(color: LoopColors.text2),
             ),
-          ] else if (disabled != null &&
-              !claim.locked &&
-              !comingSoon) ...<Widget>[
+          ] else if (disabled != null && !claim.locked) ...<Widget>[
             const SizedBox(height: 10),
             Text(
               disabled,
@@ -1035,9 +1148,12 @@ Widget _trackPending(String key) => Padding(
 );
 
 class MiningNftTrackCard extends StatelessWidget {
-  const MiningNftTrackCard({required this.track, super.key});
+  const MiningNftTrackCard({required this.track, this.live = true, super.key});
 
   final MiningNftTrack? track;
+
+  /// [miningTokenLive]: the hour's LOOP reward line is drawn only then.
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -1056,12 +1172,14 @@ class MiningNftTrackCard extends StatelessWidget {
         _fact('本人加权算力', miningPowerFigure(nft.ownPower)),
         _fact('邀请算力', miningPowerFigure(nft.invitePower)),
         _fact('总算力', miningPowerFigure(nft.totalPower)),
-        const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
-        _fact(
-          '上一小时奖励',
-          '${miningLoopFigure(nft.reward)} LOOP',
-          key: const ValueKey<String>('mining-nft-reward'),
-        ),
+        if (live) ...<Widget>[
+          const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
+          _fact(
+            '上一小时奖励',
+            '${miningLoopFigure(nft.reward)} LOOP',
+            key: const ValueKey<String>('mining-nft-reward'),
+          ),
+        ],
       ],
     );
   }
@@ -1079,9 +1197,16 @@ String miningExcludedReasonText(String reasonCode) => switch (reasonCode) {
 };
 
 class MiningAssetTrackCard extends StatelessWidget {
-  const MiningAssetTrackCard({required this.track, super.key});
+  const MiningAssetTrackCard({
+    required this.track,
+    this.live = true,
+    super.key,
+  });
 
   final MiningAssetTrack? track;
+
+  /// [miningTokenLive]: the hour's LOOP reward line is drawn only then.
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -1128,12 +1253,14 @@ class MiningAssetTrackCard extends StatelessWidget {
         _fact('本人算力', miningPowerFigure(asset.ownPower)),
         _fact('邀请算力', miningPowerFigure(asset.invitePower)),
         _fact('总算力', miningPowerFigure(asset.totalPower)),
-        const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
-        _fact(
-          '上一小时奖励',
-          '${miningLoopFigure(asset.reward)} LOOP',
-          key: const ValueKey<String>('mining-asset-reward'),
-        ),
+        if (live) ...<Widget>[
+          const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
+          _fact(
+            '上一小时奖励',
+            '${miningLoopFigure(asset.reward)} LOOP',
+            key: const ValueKey<String>('mining-asset-reward'),
+          ),
+        ],
       ],
     );
   }

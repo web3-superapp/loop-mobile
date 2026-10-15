@@ -320,25 +320,87 @@ final class MiningClaimSummary {
   final String? reasonCode;
   final BigInt? amount;
   final String? failureReasonCode;
-
-  /// Decision 0155 (user, 2026-10-12): the LOOP token is not on chain yet and
-  /// rewards are kept on the server's books, so a server with no claim
-  /// contract configured means 「not yet」, not 「broken」. Only this one reason
-  /// reads as Coming soon; every other closed reason keeps its own words.
-  bool get comingSoon =>
-      !executable && reasonCode == miningClaimContractNotConfiguredCode;
 }
 
 /// `hourly.claim.reasonCode` while no claim contract is configured.
 const String miningClaimContractNotConfiguredCode =
     'MINING_CLAIM_CONTRACT_NOT_CONFIGURED';
 
-/// The claim button's words under [MiningClaimSummary.comingSoon]. English by
-/// the user's own choice (decision 0155), the one exception to zh-CN copy.
-const String miningClaimComingSoonLabel = 'Coming soon';
+/// Decision 0184 (需求方 docs/36 第 4 题): whether the LOOP token is live, read
+/// from the one switch the server already has — the claim contract. The day
+/// an operator configures it is the day mining starts for real; before it the
+/// pages count power, place and invites and print no LOOP amount at all.
+enum MiningTokenStage {
+  /// No claim contract: the token is not on chain yet.
+  preToken,
 
-/// The 12px line under that button (decision 0155).
-const String miningClaimComingSoonNote = 'LOOP 代币上线后开放领取，奖励已记在账上';
+  /// The server shows the claim path past its contract check.
+  live,
+
+  /// The claim gate stopped on a ledger fact first (nothing settled, nothing
+  /// or too little to claim, parameters pending, settlement down), so the
+  /// answer does not say whether a contract is configured. Read as
+  /// [preToken] by [miningTokenLive]: a LOOP amount is never printed on a
+  /// guess.
+  unknown,
+}
+
+/// The configuration reasons the server checks only after the claim contract
+/// is configured (loop-api `miningClaimUnavailableReason`, decision 0125
+/// §8.2): any of them proves a contract is there.
+const Set<String> _miningClaimPastContractCodes = <String>{
+  'MINING_CLAIM_CHAIN_NOT_CONFIGURED',
+  'MINING_CLAIM_SIGNER_NOT_CONFIGURED',
+  'MINING_CLAIM_WRITES_DISABLED',
+  'MINING_CLAIM_CONTRACT_PAUSED',
+  'MINING_CLAIM_CHAIN_READ_FAILED',
+  'MINING_CLAIM_FUNDING_INSUFFICIENT',
+};
+
+/// BSC mainnet, where the LOOP token launches.
+const String miningMainnetChainId = 'eip155:56';
+
+/// [MiningTokenStage] from `hourly.claim`.
+MiningTokenStage miningTokenStage(MiningClaimSummary claim) {
+  if (claim.executable) return MiningTokenStage.live;
+  final reason = claim.reasonCode;
+  // `MAINNET_CLOSED` is checked before the contract: on mainnet the claim
+  // is closed whatever is configured, so the token is not live there either.
+  if (reason == miningClaimContractNotConfiguredCode ||
+      reason == 'MINING_CLAIM_MAINNET_CLOSED') {
+    return MiningTokenStage.preToken;
+  }
+  if (_miningClaimPastContractCodes.contains(reason)) {
+    return MiningTokenStage.live;
+  }
+  // A claim the server recorded on BSC mainnet was prepared against the
+  // token's own contract. A testnet claim proves nothing: a test contract may
+  // have been configured once and removed since.
+  if (claim.status != MiningClaimStatus.none &&
+      claim.lastTx?.chainId == miningMainnetChainId) {
+    return MiningTokenStage.live;
+  }
+  return MiningTokenStage.unknown;
+}
+
+/// LOOP amounts may be drawn only when the rewards resource shows the token
+/// live. An unread resource, and an answer that does not say, both keep the
+/// pages on power only (decision 0184).
+bool miningTokenLive(MiningRewardsView? view) =>
+    view != null && miningTokenStage(view.claim) == MiningTokenStage.live;
+
+/// The one line that stands where the claim block was while the token is not
+/// live (decision 0184; it replaces 0155's Coming soon button and its note).
+const String miningPowerOnlyNotice = 'LOOP 代币上线后开始正式开挖，上线前只统计算力';
+
+/// The account's power in the last settled hour: the NFT track plus the Meme
+/// track, as the server settled them. `null` when neither track was read.
+Decimal? miningLastHourPower(MiningRewardsView? view) {
+  final nft = view?.nft?.totalPower;
+  final asset = view?.asset?.totalPower;
+  if (nft == null && asset == null) return null;
+  return (nft ?? Decimal.zero) + (asset ?? Decimal.zero);
+}
 
 /// `GET /v2/mining/rewards`, decoded.
 @immutable

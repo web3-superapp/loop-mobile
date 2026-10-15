@@ -37,6 +37,22 @@ final miningRewardsViewControllerProvider =
       LoopChainResourceState<MiningRewardsView>
     >(MiningRewardsController.new);
 
+/// Decision 0184: [miningTokenLive] for a surface outside 挖矿奖励, read from
+/// the same provider (no second request when that page has read it) and
+/// asked for when nobody has yet. Until it answers the surface counts power
+/// only.
+bool watchMiningTokenLive(WidgetRef ref, {bool enabled = true}) {
+  final state = ref.watch(miningRewardsViewControllerProvider);
+  if (enabled && state.phase == LoopChainViewPhase.loading) {
+    scheduleMicrotask(
+      () => unawaited(
+        ref.read(miningRewardsViewControllerProvider.notifier).load(),
+      ),
+    );
+  }
+  return miningTokenLive(state.value);
+}
+
 // ---------------------------------------------------------------------------
 // The claim record list
 // ---------------------------------------------------------------------------

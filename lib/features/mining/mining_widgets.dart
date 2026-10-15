@@ -306,7 +306,7 @@ class MiningSummaryHero extends StatelessWidget {
     this.onClaim,
     this.claimSemanticLabel,
     this.onOpenAssets,
-    this.claimComingSoon = false,
+    this.powerOnly = false,
   });
 
   /// The power itself, or the words for its absence. Never a 44px dash.
@@ -332,10 +332,10 @@ class MiningSummaryHero extends StatelessWidget {
   final String? claimSemanticLabel;
   final VoidCallback? onOpenAssets;
 
-  /// Decision 0155: the rewards resource says no claim contract is
-  /// configured (the LOOP token is not on chain yet). The claim button stays,
-  /// greyed, reads Coming soon, and carries one line under the actions.
-  final bool claimComingSoon;
+  /// Decision 0184: the LOOP token is not live ([miningTokenLive] is false).
+  /// The first button opens the hour's power rather than a claim, and one
+  /// line under the actions says mining starts when the token does.
+  final bool powerOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -505,15 +505,14 @@ class MiningSummaryHero extends StatelessWidget {
                 // `.mining-summary-actions button:first-child`: Ink on Lime.
                 child: LoopButton(
                   key: const ValueKey<String>('mining-summary-hero-claim'),
-                  // Decision 0155: this button only opens 奖励与领取, where
-                  // the real claim button is greyed as Coming soon; keep the
-                  // way in, rename it so nobody reads it as the claim.
-                  label: claimComingSoon ? '查看奖励' : '领取奖励',
+                  // Decision 0184: before the token is live the page it
+                  // opens counts power, so the button says so.
+                  label: powerOnly ? '小时算力' : '领取奖励',
                   primary: true,
                   tone: LoopButtonTone.ink,
                   onPressed: onClaim,
-                  semanticLabel: claimComingSoon
-                      ? '查看奖励，打开奖励与领取；领取 $miningClaimComingSoonLabel'
+                  semanticLabel: powerOnly
+                      ? '小时算力，打开挖矿奖励页'
                       : claimSemanticLabel,
                 ),
               ),
@@ -527,11 +526,11 @@ class MiningSummaryHero extends StatelessWidget {
               ),
             ],
           ),
-          if (claimComingSoon) ...<Widget>[
+          if (powerOnly) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              '领取 $miningClaimComingSoonLabel · $miningClaimComingSoonNote',
-              key: const ValueKey<String>('mining-summary-hero-coming-soon'),
+              miningPowerOnlyNotice,
+              key: const ValueKey<String>('mining-summary-hero-power-only'),
               style: LoopTypography.caption(
                 12,
                 color: ink.withValues(alpha: 0.67),

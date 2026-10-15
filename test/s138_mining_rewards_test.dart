@@ -1313,7 +1313,7 @@ void main() {
       var folio = _heroFolio(tester);
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.headingTone, LoopFolioHeadingTone.neutral);
-      expect(folio.kicker, '上一小时奖励');
+      expect(folio.kicker, '上一小时算力');
       expect(folio.heading, '你有算力的小时还没有结算');
       await _drain(tester);
 
@@ -1387,11 +1387,28 @@ void main() {
         'MINING_CLAIM_BELOW_MINIMUM': '满 1.0000 LOOP 可领取',
         'MINING_CLAIM_IN_FLIGHT': '上一笔领取还在处理中，完成后再领取',
         'MINING_CLAIM_MAINNET_CLOSED': '主网领取尚未开放',
-        // MINING_CLAIM_CONTRACT_NOT_CONFIGURED reads Coming soon (0155).
+        // MINING_CLAIM_CONTRACT_NOT_CONFIGURED is the power-only page (0184).
         'MINING_CLAIM_CHAIN_NOT_CONFIGURED': '领取所在的链尚未配置，暂不能领取',
         'MINING_CLAIM_SIGNER_NOT_CONFIGURED': '领取凭证签发尚未配置，暂不能领取',
       };
       for (final MapEntry(key: reason, value: text) in expected.entries) {
+        expect(
+          miningClaimUnavailableText(reason, minimum: BigInt.from(10).pow(18)),
+          text,
+          reason: reason,
+        );
+        // Decision 0184: a gate that stops before the contract check does not
+        // say the token is live, so the page draws no claim block for it.
+        if (miningTokenStage(
+              MiningClaimSummary(
+                status: MiningClaimStatus.none,
+                executable: false,
+                reasonCode: reason,
+              ),
+            ) !=
+            MiningTokenStage.live) {
+          continue;
+        }
         final rewards = _FakeRewards(
           rewards: <_Answer<MiningRewardsView>>[
             _Answer.value(
@@ -1436,16 +1453,21 @@ void main() {
       );
       await _pump(tester, rewards: rewards);
       expect(_key('mining-minute-awaiting'), findsOneWidget);
-      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。');
+      // Decision 0184: this answer does not say the token is live, so the
+      // page counts power only and the claim block is one notice.
+      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。');
+      expect(_key('mining-power-only-notice'), findsOneWidget);
+      expect(_key('mining-claim-button'), findsNothing);
+      expect(_key('mining-rewards-unavailable'), findsNothing);
+      // The live wording is unchanged.
       expect(
-        tester.widget<Text>(_key('mining-claim-disabled')).data,
+        miningDisplayReasonText('MINING_NOTHING_SETTLED'),
+        '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
+      );
+      expect(
+        miningClaimUnavailableText('MINING_NOTHING_SETTLED'),
         '有算力的小时结算后可领取',
       );
-      expect(
-        tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
-        isNull,
-      );
-      expect(_key('mining-rewards-unavailable'), findsNothing);
       await _drain(tester);
 
       // No approved rules: the captured Development answer.
@@ -1479,13 +1501,19 @@ void main() {
     });
 
     testWidgets('0123 in flight: progress shown, no new claim', (tester) async {
+      // Decision 0184: the captured claim is on the testnet, which does not
+      // say the token is live; the same claim on mainnet does.
+      final body =
+          _fixture('rewards_in_flight')['body']! as Map<String, Object?>;
+      final latest =
+          ((body['hourly']! as Map<String, Object?>)['claim']!
+                  as Map<String, Object?>)['latest']!
+              as Map<String, Object?>;
+      latest['chainId'] = 'eip155:56';
+      latest['chainReference'] = 56;
       final rewards = _FakeRewards(
         rewards: <_Answer<MiningRewardsView>>[
-          _Answer.value(
-            LoopV2MiningRewardsCodec.rewards(
-              _fixture('rewards_in_flight')['body'],
-            ),
-          ),
+          _Answer.value(LoopV2MiningRewardsCodec.rewards(body)),
         ],
         // The chain has not answered yet: the claim stays where it is.
         reportAnswers: const <_Answer<MiningClaimRecord>>[_Answer.pending()],
@@ -1963,15 +1991,10 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(_key('mining-minute-awaiting'), findsOneWidget);
       expect(find.text('你有算力的小时还没有结算'), findsOneWidget);
-      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。');
-      expect(
-        tester.widget<Text>(_key('mining-claim-disabled')).data,
-        '有算力的小时结算后可领取',
-      );
-      expect(
-        tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
-        isNull,
-      );
+      // Decision 0184: the gate stopped before the contract check.
+      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。');
+      expect(_key('mining-power-only-notice'), findsOneWidget);
+      expect(_key('mining-claim-button'), findsNothing);
       expect(_key('mining-rewards-unavailable'), findsNothing);
       await _drain(tester);
     });
@@ -2035,100 +2058,193 @@ void main() {
     });
   });
 
-  group('S159 · claim Coming soon (decision 0155)', () {
+  group('S191 · power only before the LOOP token (decision 0184)', () {
     const reason = miningClaimContractNotConfiguredCode;
 
-    _FakeRewards notConfigured() => _FakeRewards(
+    _FakeRewards closedWith(String code) => _FakeRewards(
       rewards: <_Answer<MiningRewardsView>>[
-        _Answer.value(
-          _view(_hourlyJson(executable: false, claimReason: reason)),
-        ),
+        _Answer.value(_view(_hourlyJson(executable: false, claimReason: code))),
       ],
     );
 
-    testWidgets('the claim button is greyed, reads Coming soon, and says why '
-        'in one line', (tester) async {
-      await _pump(tester, rewards: notConfigured());
+    /// Every painted string on screen that states a LOOP quantity: a figure
+    /// followed by LOOP (「60.0000 LOOP」, 「领取 40 LOOP」).
+    final loopAmount = RegExp(r'\d[\d,]*(\.\d+)?\s*LOOP');
+    List<String> loopAmounts(WidgetTester tester) => <String>[
+      for (final text in tester.widgetList<RichText>(find.byType(RichText)))
+        if (loopAmount.hasMatch(text.text.toPlainText()))
+          text.text.toPlainText(),
+    ];
 
-      final button = tester.widget<LoopButton>(_key('mining-claim-button'));
-      expect(button.label, 'Coming soon');
-      expect(button.onPressed, isNull);
-      expect(
-        tester.widget<Text>(_key('mining-claim-coming-soon-note')).data,
-        'LOOP 代币上线后开放领取，奖励已记在账上',
-      );
+    testWidgets('the rewards page draws power and one notice, no LOOP amount '
+        'and no claim block', (tester) async {
+      await _pump(tester, rewards: closedWith(reason));
+
+      expect(loopAmounts(tester), isEmpty);
+      // The hero is the hour's power.
+      final folio = _heroFolio(tester);
+      expect(folio.kicker, '上一小时算力');
+      expect(folio.heading, '1,236.25 算力');
+      expect(folio.caption, '上一小时有效，已计入算力统计');
+      expect(_key('mining-minute-bar'), findsNothing);
       expect(
         tester
-            .widget<Text>(_key('mining-claim-coming-soon-note'))
-            .style
-            ?.fontSize,
-        12,
+            .widget<LoopCompositeDetailNote>(_key('mining-power-tracks'))
+            .text,
+        'NFT 算力 0.75 · Meme 币算力 1,235.5',
       );
-      // The balance, the summary and the records are shown as they are.
-      expect(find.text('120.0000 LOOP'), findsOneWidget);
-      expect(_key('mining-summary-settled'), findsOneWidget);
-      expect(_key('mining-summary-claimable'), findsOneWidget);
-      // Nothing else speaks for this reason, anywhere on the page.
-      expect(_key('mining-claim-disabled'), findsNothing);
-      expect(_key('mining-claim-note'), findsNothing);
+      // 奖励汇总 is 算力汇总.
+      expect(find.text('算力汇总'), findsOneWidget);
+      expect(find.text('奖励汇总'), findsNothing);
+      expect(_key('mining-power-summary-total'), findsOneWidget);
+      expect(_key('mining-summary-settled'), findsNothing);
+      expect(_key('mining-summary-claimable'), findsNothing);
+      // The claim block, whole, is one notice.
+      final notice = tester.widget<LoopNotice>(
+        _key('mining-power-only-notice'),
+      );
+      expect(notice.body, 'LOOP 代币上线后开始正式开挖，上线前只统计算力');
+      expect(_key('mining-claim-panel'), findsNothing);
+      expect(_key('mining-claim-button'), findsNothing);
+      expect(find.text('Coming soon'), findsNothing);
       expect(find.textContaining('尚未配置'), findsNothing);
-      expect(find.textContaining('领取合约'), findsNothing);
       expect(find.textContaining(reason), findsNothing);
-      await _scrollTo(tester, find.text('领取记录'));
-      expect(find.textContaining('尚未配置'), findsNothing);
+
+      await _scrollTo(tester, _key('mining-rewards-provenance'));
+      expect(loopAmounts(tester), isEmpty);
+      expect(_key('mining-nft-track'), findsOneWidget);
+      expect(_key('mining-nft-reward'), findsNothing);
+      expect(_key('mining-asset-reward'), findsNothing);
+      expect(_key('mining-invite-table'), findsOneWidget);
+      expect(find.text('领取记录'), findsNothing);
+      expect(find.textContaining('已记在账上'), findsNothing);
       await _drain(tester);
     });
 
-    testWidgets('other closed reasons keep their words and the 领取 label', (
+    testWidgets('an answer that does not say keeps the page on power only', (
       tester,
     ) async {
-      for (final other in <String>[
-        'MINING_CLAIM_CHAIN_NOT_CONFIGURED',
-        'MINING_CLAIM_WRITES_DISABLED',
+      // The claim gate stops on a ledger fact before it checks the contract,
+      // so these answers do not say whether the token is live.
+      for (final code in <String>[
+        'MINING_CLAIM_NOTHING_TO_CLAIM',
+        'MINING_CLAIM_BELOW_MINIMUM',
+        'MINING_NOTHING_SETTLED',
         'MINING_CLAIM_MAINNET_CLOSED',
       ]) {
-        await _pump(
-          tester,
-          rewards: _FakeRewards(
-            rewards: <_Answer<MiningRewardsView>>[
-              _Answer.value(
-                _view(_hourlyJson(executable: false, claimReason: other)),
-              ),
-            ],
-          ),
-        );
-        final button = tester.widget<LoopButton>(_key('mining-claim-button'));
-        expect(button.label, '领取', reason: other);
-        expect(button.onPressed, isNull, reason: other);
-        expect(
-          tester.widget<Text>(_key('mining-claim-disabled')).data,
-          miningClaimUnavailableText(other),
-          reason: other,
-        );
-        expect(_key('mining-claim-coming-soon-note'), findsNothing);
-        expect(find.text('Coming soon'), findsNothing, reason: other);
+        await _pump(tester, rewards: closedWith(code));
+        expect(loopAmounts(tester), isEmpty, reason: code);
+        expect(_key('mining-power-only-notice'), findsOneWidget, reason: code);
+        expect(_key('mining-claim-panel'), findsNothing, reason: code);
         await _drain(tester);
       }
     });
 
-    testWidgets('an executable claim is untouched', (tester) async {
+    testWidgets('once the contract is configured the page is as before', (
+      tester,
+    ) async {
       await _pump(
         tester,
         rewards: _FakeRewards(
-          rewards: <_Answer<MiningRewardsView>>[
-            _Answer.value(_view(_hourlyJson())),
-          ],
+          rewards: <_Answer<MiningRewardsView>>[_Answer.value(_view())],
         ),
       );
+      expect(_heroFolio(tester).heading, '20.0000 LOOP');
+      expect(find.text('奖励汇总'), findsOneWidget);
+      expect(_key('mining-summary-settled'), findsOneWidget);
+      expect(_key('mining-power-only-notice'), findsNothing);
+      expect(_key('mining-power-summary'), findsNothing);
       final button = tester.widget<LoopButton>(_key('mining-claim-button'));
       expect(button.label, '领取');
       expect(button.onPressed, isNotNull);
-      expect(find.text('Coming soon'), findsNothing);
+      await _scrollTo(tester, find.text('领取记录'));
+      expect(_key('mining-nft-reward'), findsOneWidget);
       await _drain(tester);
+
+      // A reason the server checks only past the contract is live too.
+      for (final code in <String>[
+        'MINING_CLAIM_CHAIN_NOT_CONFIGURED',
+        'MINING_CLAIM_SIGNER_NOT_CONFIGURED',
+        'MINING_CLAIM_WRITES_DISABLED',
+        'MINING_CLAIM_CONTRACT_PAUSED',
+      ]) {
+        await _pump(tester, rewards: closedWith(code));
+        final closed = tester.widget<LoopButton>(_key('mining-claim-button'));
+        expect(closed.label, '领取', reason: code);
+        expect(closed.onPressed, isNull, reason: code);
+        expect(
+          tester.widget<Text>(_key('mining-claim-disabled')).data,
+          miningClaimUnavailableText(code),
+          reason: code,
+        );
+        expect(find.text('120.0000 LOOP'), findsOneWidget, reason: code);
+        expect(_key('mining-power-only-notice'), findsNothing, reason: code);
+        await _drain(tester);
+      }
     });
 
-    test('no copy path names the configuration for this reason', () {
-      expect(miningClaimUnavailableText(reason), 'LOOP 代币上线后开放领取，奖励已记在账上');
+    test('the token stage is read from the claim gate alone', () {
+      MiningTokenStage stage({
+        bool executable = false,
+        String? code,
+        MiningClaimStatus status = MiningClaimStatus.none,
+        String? chainId,
+      }) => miningTokenStage(
+        MiningClaimSummary(
+          status: status,
+          executable: executable,
+          reasonCode: code,
+          lastTx: chainId == null
+              ? null
+              : MiningClaimTx(txHash: _hash, chainId: chainId),
+        ),
+      );
+      expect(stage(code: reason), MiningTokenStage.preToken);
+      expect(
+        stage(code: 'MINING_CLAIM_MAINNET_CLOSED'),
+        MiningTokenStage.preToken,
+      );
+      expect(stage(executable: true), MiningTokenStage.live);
+      for (final code in <String>[
+        'MINING_CLAIM_CHAIN_NOT_CONFIGURED',
+        'MINING_CLAIM_SIGNER_NOT_CONFIGURED',
+        'MINING_CLAIM_WRITES_DISABLED',
+        'MINING_CLAIM_CONTRACT_PAUSED',
+        'MINING_CLAIM_CHAIN_READ_FAILED',
+        'MINING_CLAIM_FUNDING_INSUFFICIENT',
+      ]) {
+        expect(stage(code: code), MiningTokenStage.live, reason: code);
+      }
+      for (final code in <String>[
+        'MINING_SETTLEMENT_UNAVAILABLE',
+        'MINING_PARAMETERS_PENDING',
+        'MINING_NOTHING_SETTLED',
+        'MINING_CLAIM_NOTHING_TO_CLAIM',
+        'MINING_CLAIM_BELOW_MINIMUM',
+        'MINING_CLAIM_IN_FLIGHT',
+      ]) {
+        expect(stage(code: code), MiningTokenStage.unknown, reason: code);
+      }
+      // A mainnet claim proves the token contract; a testnet one does not.
+      expect(
+        stage(
+          code: 'MINING_CLAIM_NOTHING_TO_CLAIM',
+          status: MiningClaimStatus.succeeded,
+          chainId: 'eip155:56',
+        ),
+        MiningTokenStage.live,
+      );
+      expect(
+        stage(
+          code: 'MINING_CLAIM_NOTHING_TO_CLAIM',
+          status: MiningClaimStatus.succeeded,
+          chainId: 'eip155:97',
+        ),
+        MiningTokenStage.unknown,
+      );
+      expect(miningTokenLive(null), isFalse);
+      // No copy path names the configuration, or a reward kept on the books.
+      expect(miningClaimUnavailableText(reason), miningPowerOnlyNotice);
       expect(
         miningClaimPrepareFailureText(
           const LoopChainException(
@@ -2136,26 +2252,8 @@ void main() {
             reasonCode: reason,
           ),
         ),
-        'LOOP 代币上线后开放领取，奖励已记在账上',
+        miningPowerOnlyNotice,
       );
-      const closed = MiningClaimSummary(
-        status: MiningClaimStatus.none,
-        executable: false,
-        reasonCode: reason,
-      );
-      expect(closed.comingSoon, isTrue);
-      const open = MiningClaimSummary(
-        status: MiningClaimStatus.none,
-        executable: true,
-        reasonCode: reason,
-      );
-      expect(open.comingSoon, isFalse);
-      const other = MiningClaimSummary(
-        status: MiningClaimStatus.none,
-        executable: false,
-        reasonCode: 'MINING_CLAIM_WRITES_DISABLED',
-      );
-      expect(other.comingSoon, isFalse);
     });
 
     Future<void> pumpMining(WidgetTester tester, _FakeRewards rewards) =>
@@ -2172,22 +2270,37 @@ void main() {
           ],
         );
 
-    testWidgets('the 我的挖矿 entry stays a way in and says the claim is '
-        'Coming soon', (tester) async {
-      final rewards = notConfigured();
+    testWidgets('我的挖矿 counts power, place and invites before the token', (
+      tester,
+    ) async {
+      final rewards = closedWith(reason);
       await pumpMining(tester, rewards);
       expect(rewards.rewardReads, 1);
-      final claim = _key('mining-summary-hero-claim');
-      expect(claim, findsOneWidget);
-      // The entry is not the claim: it keeps opening 奖励与领取, where the
-      // real claim button is greyed (decision 0155, main-agent ruling).
+      expect(loopAmounts(tester), isEmpty);
+      for (final slug in <String>[
+        'estimated-today',
+        'accumulated',
+        'claimable',
+      ]) {
+        expect(_key('mining-summary-hero-$slug'), findsNothing, reason: slug);
+      }
+      expect(find.text('今日预估'), findsNothing);
+      expect(find.text('累计已挖'), findsNothing);
+      expect(find.text('待领取'), findsNothing);
       expect(
-        find.descendant(of: claim, matching: find.text('查看奖励')),
-        findsOneWidget,
+        tester.widget<Text>(_key('mining-summary-hero-last-hour-power')).data,
+        '1,236.25',
       );
       expect(
-        find.descendant(of: claim, matching: find.text('Coming soon')),
-        findsNothing,
+        tester.widget<Text>(_key('mining-summary-hero-active-invites')).data,
+        '15 人',
+      );
+      expect(_key('mining-summary-hero-network-power'), findsOneWidget);
+      // The first step opens the hour's power, still a way in.
+      final claim = _key('mining-summary-hero-claim');
+      expect(
+        find.descendant(of: claim, matching: find.text('小时算力')),
+        findsOneWidget,
       );
       expect(
         tester
@@ -2197,31 +2310,18 @@ void main() {
             .onTap,
         isNotNull,
       );
-      final note = tester.widget<Text>(_key('mining-summary-hero-coming-soon'));
-      expect(note.data, '领取 Coming soon · LOOP 代币上线后开放领取，奖励已记在账上');
-      expect(note.style?.fontSize, 12);
-      expect(find.textContaining('尚未配置'), findsNothing);
-      // The second action is not touched.
-      expect(_key('mining-summary-hero-assets'), findsOneWidget);
+      final note = tester.widget<Text>(_key('mining-summary-hero-power-only'));
+      expect(note.data, miningPowerOnlyNotice);
+      expect(find.text('Coming soon'), findsNothing);
+      expect(find.textContaining('Coming soon'), findsNothing);
       await _drain(tester);
     });
 
-    testWidgets('the 我的挖矿 entry opens 挖矿奖励 for any other answer', (
-      tester,
-    ) async {
+    testWidgets('我的挖矿 is as before once the token is live', (tester) async {
       await pumpMining(
         tester,
         _FakeRewards(
-          rewards: <_Answer<MiningRewardsView>>[
-            _Answer.value(
-              _view(
-                _hourlyJson(
-                  executable: false,
-                  claimReason: 'MINING_CLAIM_WRITES_DISABLED',
-                ),
-              ),
-            ),
-          ],
+          rewards: <_Answer<MiningRewardsView>>[_Answer.value(_view())],
         ),
       );
       final claim = _key('mining-summary-hero-claim');
@@ -2229,15 +2329,10 @@ void main() {
         find.descendant(of: claim, matching: find.text('领取奖励')),
         findsOneWidget,
       );
-      expect(
-        tester
-            .widget<InkWell>(
-              find.descendant(of: claim, matching: find.byType(InkWell)),
-            )
-            .onTap,
-        isNotNull,
-      );
-      expect(_key('mining-summary-hero-coming-soon'), findsNothing);
+      expect(_key('mining-summary-hero-estimated-today'), findsOneWidget);
+      expect(_key('mining-summary-hero-claimable'), findsOneWidget);
+      expect(_key('mining-summary-hero-power-only'), findsNothing);
+      expect(_key('mining-summary-hero-last-hour-power'), findsNothing);
       await _drain(tester);
     });
   });

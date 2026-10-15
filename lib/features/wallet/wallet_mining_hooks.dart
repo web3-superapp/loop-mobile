@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -99,6 +100,9 @@ class WalletHoldingsPowerHint extends ConsumerWidget {
       MiningDailyOutputUnavailable() || null => loopFigureDash,
     };
     final baseline = summary != null && miningGateIsBaseline(summary.formula);
+    // Decision 0184: today's estimate is a LOOP amount, stated only once the
+    // token is live.
+    final live = watchMiningTokenLive(ref);
     // Decision 0149: Lime marks power that is being produced. An unsigned
     // decimal string of only zeros ("0", "0.000") is none, and reads in the
     // quiet card like an unread figure.
@@ -114,7 +118,7 @@ class WalletHoldingsPowerHint extends ConsumerWidget {
       figure: <String>[
         '$power 算力',
         // Decision 0149: 「今日预估 — LOOP」 read as a broken figure.
-        daily == loopFigureDash ? '今日预估暂无' : '今日预估 $daily LOOP',
+        if (live) daily == loopFigureDash ? '今日预估暂无' : '今日预估 $daily LOOP',
         if (baseline) miningBaselineLabel,
       ].join(' · '),
       onTap: onOpenMining,

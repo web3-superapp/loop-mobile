@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
@@ -44,6 +45,7 @@ void main() {
           ),
         ),
         size: _tall,
+        overrides: <Override>[s7TokenLive()],
       );
 
       // One composite primary carrying the power, the rank, three readings and

@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -99,10 +100,11 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       });
     }
 
-    // Decision 0155: whether the claim is Coming soon is the rewards
-    // resource's to say (`hourly.claim.reasonCode`). It is the same provider
+    // Decision 0184: whether the LOOP token is live is the rewards resource's
+    // to say (`hourly.claim`, the claim contract). It is the same provider
     // 挖矿奖励 reads, so opening that page from here costs no second request.
-    // Until it answers, the button keeps opening 挖矿奖励 as before.
+    // Until it answers — and whenever it does not say — the page counts
+    // power only.
     final rewardsState = ref.watch(miningRewardsViewControllerProvider);
     if (!blocked && rewardsState.phase == LoopChainViewPhase.loading) {
       scheduleMicrotask(() {
@@ -113,7 +115,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         }
       });
     }
-    final claimComingSoon = rewardsState.value?.claim.comingSoon ?? false;
+    final rewards = rewardsState.value;
+    final live = miningTokenLive(rewards);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-screen'),
@@ -136,30 +139,36 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
           : MiningSummaryHero(
               heading: _heroHeading(summary),
               unit: _heroUnit(summary),
-              caption: _heroCaption(summary),
+              caption: _heroCaption(summary, live: live),
               stamp: _heroStamp(summary),
               rank: _rankBadge(rankState.value),
-              metrics: <MiningHeroMetric>[
-                _dailyMetric(summary.estimatedToday),
-                MiningHeroMetric(
-                  slug: 'accumulated',
-                  label: '累计已挖',
-                  value: launchMissingFigure,
-                  spoken: launchReasonCodeText(summary.accumulated.reasonCode),
-                ),
-                MiningHeroMetric(
-                  slug: 'claimable',
-                  label: '待领取',
-                  value: launchMissingFigure,
-                  spoken: launchReasonCodeText(summary.claimable.reasonCode),
-                ),
-              ],
+              metrics: live
+                  ? <MiningHeroMetric>[
+                      _dailyMetric(summary.estimatedToday),
+                      MiningHeroMetric(
+                        slug: 'accumulated',
+                        label: '累计已挖',
+                        value: launchMissingFigure,
+                        spoken: launchReasonCodeText(
+                          summary.accumulated.reasonCode,
+                        ),
+                      ),
+                      MiningHeroMetric(
+                        slug: 'claimable',
+                        label: '待领取',
+                        value: launchMissingFigure,
+                        spoken: launchReasonCodeText(
+                          summary.claimable.reasonCode,
+                        ),
+                      ),
+                    ]
+                  : _powerMetrics(summary, rewards),
               // The claim itself lives on 奖励与领取, which states whether it
               // can be executed; this button is how the reader gets there.
               onClaim: widget.onOpenRewards,
               claimSemanticLabel: '领取奖励，打开奖励与领取',
               onOpenAssets: widget.onOpenAssets,
-              claimComingSoon: claimComingSoon,
+              powerOnly: !live,
             ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -193,18 +202,27 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             // version accounts for — in the caption's own words — so neither
             // its sentence nor the gate's own is written again underneath it.
             said: <String>{
-              _heroCaption(summary),
+              _heroCaption(summary, live: live),
               if (summary.formula case MiningFormulaPending(:final reasonCode))
                 launchReasonCodeText(reasonCode),
             },
-            entries: <(String, String)>[
-              if (summary.estimatedToday case MiningDailyOutputUnavailable(
-                :final reasonCode,
-              ))
-                ('今日预估', launchReasonCodeText(reasonCode)),
-              ('累计已挖', launchReasonCodeText(summary.accumulated.reasonCode)),
-              ('待领取', launchReasonCodeText(summary.claimable.reasonCode)),
-            ],
+            entries: live
+                ? <(String, String)>[
+                    if (summary.estimatedToday
+                        case MiningDailyOutputUnavailable(:final reasonCode))
+                      ('今日预估', launchReasonCodeText(reasonCode)),
+                    (
+                      '累计已挖',
+                      launchReasonCodeText(summary.accumulated.reasonCode),
+                    ),
+                    ('待领取', launchReasonCodeText(summary.claimable.reasonCode)),
+                  ]
+                : <(String, String)>[
+                    if (summary.networkPower case MiningFigureUnavailable(
+                      :final reasonCode,
+                    ))
+                      ('全网算力', launchReasonCodeText(reasonCode)),
+                  ],
           ),
           // The numbers above are the last complete snapshot's whenever a
           // later run did not finish, so the page dates them before it
@@ -296,15 +314,17 @@ String _heroHeading(MiningSummary summary) => switch (summary.formula) {
 String? _heroUnit(MiningSummary summary) =>
     _heroHeading(summary) == launchMissingHeading ? null : 'H';
 
-String _heroCaption(MiningSummary summary) => switch (summary.formula) {
-  MiningFormulaPending() => '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。',
-  MiningFormulaEffective() => switch (summary.power) {
-    MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
-      reasonCode,
-    ),
-    MiningFigureValue() => '持仓与社区权重共同构成当前算力，不是收益承诺。',
-  },
-};
+String _heroCaption(MiningSummary summary, {required bool live}) =>
+    switch (summary.formula) {
+      MiningFormulaPending() =>
+        live ? '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。' : '算力要等挖矿公式版本被批准后才能计算。',
+      MiningFormulaEffective() => switch (summary.power) {
+        MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
+          reasonCode,
+        ),
+        MiningFigureValue() => '持仓与社区权重共同构成当前算力，不是收益承诺。',
+      },
+    };
 
 String? _heroStamp(MiningSummary summary) => switch (summary.formula) {
   MiningFormulaPending(:final pendingVersion) =>
@@ -312,6 +332,45 @@ String? _heroStamp(MiningSummary summary) => switch (summary.formula) {
   MiningFormulaEffective(:final scope) =>
     scope.isBaseline ? miningBaselineLabel : null,
 };
+
+/// The three cells while the LOOP token is not live (decision 0184): the
+/// network's power, the account's last settled hour and its counted
+/// invites. None of them is a LOOP amount.
+List<MiningHeroMetric> _powerMetrics(
+  MiningSummary summary,
+  MiningRewardsView? rewards,
+) {
+  final hour = miningLastHourPower(rewards);
+  final invites = rewards?.invites?.total.activeMembers;
+  return <MiningHeroMetric>[
+    switch (summary.networkPower) {
+      MiningFigureValue(:final value) => MiningHeroMetric(
+        slug: 'network-power',
+        label: '全网算力',
+        value: loopGroupedFigure(value),
+        spoken: loopGroupedFigure(value),
+      ),
+      MiningFigureUnavailable(:final reasonCode) => MiningHeroMetric(
+        slug: 'network-power',
+        label: '全网算力',
+        value: launchMissingFigure,
+        spoken: launchReasonCodeText(reasonCode),
+      ),
+    },
+    MiningHeroMetric(
+      slug: 'last-hour-power',
+      label: '上一小时算力',
+      value: hour == null ? launchMissingFigure : miningPowerFigure(hour),
+      spoken: hour == null ? '还没有结算的小时' : miningPowerFigure(hour),
+    ),
+    MiningHeroMetric(
+      slug: 'active-invites',
+      label: '有效邀请',
+      value: invites == null ? launchMissingFigure : '$invites 人',
+      spoken: invites == null ? '还没有读到' : '$invites 人',
+    ),
+  ];
+}
 
 MiningHeroMetric _dailyMetric(MiningDailyOutput output) => switch (output) {
   MiningDailyOutputEstimate(:final value) => MiningHeroMetric(

@@ -13,6 +13,8 @@ import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -663,3 +665,68 @@ Future<void> openS7Disclosure(WidgetTester tester, Key key) async {
   await tester.tap(summary);
   await tester.pumpAndSettle();
 }
+
+/// Decision 0184: a rewards port that answers only the claim gate, so a page
+/// outside 挖矿奖励 can be mounted with the LOOP token live or not. The
+/// figures are zeros and empty tracks; the claim is what the test chooses.
+final class S7TokenStageRewards implements MiningRewardsGateway {
+  S7TokenStageRewards.live()
+    : claim = const MiningClaimSummary(
+        status: MiningClaimStatus.none,
+        executable: true,
+      );
+
+  S7TokenStageRewards.preToken()
+    : claim = const MiningClaimSummary(
+        status: MiningClaimStatus.none,
+        executable: false,
+        reasonCode: miningClaimContractNotConfiguredCode,
+      );
+
+  final MiningClaimSummary claim;
+  int reads = 0;
+
+  @override
+  LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
+
+  @override
+  Future<MiningRewardsView> loadRewards() async {
+    reads += 1;
+    return MiningRewardsView(
+      settledTotal: BigInt.zero,
+      claimedTotal: BigInt.zero,
+      claimable: BigInt.zero,
+      lastEpoch: null,
+      display: const MiningMinuteDisplay(
+        state: MiningDisplayState.awaitingFirstSettlement,
+      ),
+      nft: null,
+      asset: null,
+      invites: null,
+      claim: claim,
+      serverTime: DateTime.utc(2026, 10, 15, 12),
+    );
+  }
+
+  @override
+  Future<MiningClaimPage> loadClaims({String? cursor}) async =>
+      const MiningClaimPage(items: <MiningClaimRecord>[]);
+
+  @override
+  Future<MiningClaimPrepareResult> prepareClaim({required String walletId}) =>
+      Future<MiningClaimPrepareResult>.error(
+        const LoopChainException(LoopChainFailureKind.unavailable),
+      );
+
+  @override
+  Future<MiningClaimRecord> reportClaim({
+    required String claimId,
+    required String txHash,
+  }) => Future<MiningClaimRecord>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+}
+
+/// The override that mounts a page with the LOOP token live (decision 0184).
+Override s7TokenLive() =>
+    miningRewardsGatewayProvider.overrideWithValue(S7TokenStageRewards.live());

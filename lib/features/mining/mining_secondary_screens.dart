@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -1240,6 +1241,9 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
     final symbols = assets == null
         ? const <String, String>{}
         : _assetSymbols(assets);
+    // Decision 0184: a version's daily budget is a LOOP amount, printed only
+    // once the token is live.
+    final live = watchMiningTokenLive(ref, enabled: !blocked);
 
     return LoopFlat(
       child: LoopDashboardPage(
@@ -1342,6 +1346,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                 version: rules.approved!,
                 keyPrefix: 'mining-rules-approved',
                 symbols: symbols,
+                live: live,
               ),
             if (rules.approved?.scope.isBaseline ?? false)
               // Decision 0121: what a baseline means is in the ⓘ, not a
@@ -1370,6 +1375,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                   version: version,
                   keyPrefix: 'mining-rules-pending-${version.configVersion}',
                   symbols: symbols,
+                  live: live,
                 ),
             const LoopLabel('邀请关系规则'),
             LoopRecordGroup(
@@ -1430,8 +1436,13 @@ class _FormulaVersionBlock extends StatelessWidget {
   const _FormulaVersionBlock({
     required this.version,
     required this.keyPrefix,
+    required this.live,
     this.symbols = const <String, String>{},
   });
+
+  /// [miningTokenLive]: the daily budget, a LOOP amount, is printed only then
+  /// (decision 0184).
+  final bool live;
 
   final MiningFormulaVersion version;
   final String keyPrefix;
@@ -1469,11 +1480,13 @@ class _FormulaVersionBlock extends StatelessWidget {
         // it: a placeholder number never stands on the page by itself. The
         // separators are display only and are dropped whenever they cannot be
         // added without changing what the server said.
-        trailing: version.dailyOutput == null
+        trailing: version.dailyOutput == null || !live
             ? null
             : loopGroupedFigure(version.dailyOutput!.budget),
         trailingCaption: version.dailyOutput == null
             ? null
+            : !live
+            ? 'LOOP 代币上线后公布'
             : (version.dailyOutput!.isPlaceholder ? '占位产量' : '当日产量'),
         position: LoopRowPosition.middle,
       ),

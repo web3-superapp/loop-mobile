@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
+import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart';
+import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -164,6 +167,7 @@ void main() {
         tester,
         const MiningScreen(),
         mining: FakeMiningGateway(),
+        overrides: <Override>[s7TokenLive()],
       );
 
       // The three readings the hero carries, each an em dash of its own.
@@ -269,6 +273,7 @@ void main() {
         tester,
         const MiningScreen(),
         mining: FakeMiningGateway(),
+        overrides: <Override>[s7TokenLive()],
       );
 
       // Four of the six figures are empty for the same reason. The block
@@ -309,6 +314,7 @@ void main() {
         mining: FakeMiningGateway(
           summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
         ),
+        overrides: <Override>[s7TokenLive()],
       );
 
       final reason = find.byKey(
@@ -351,6 +357,7 @@ void main() {
         mining: FakeMiningGateway(
           summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
         ),
+        overrides: <Override>[s7TokenLive()],
       );
 
       // The number is the server's: the only display transform is a grouping
@@ -463,6 +470,7 @@ void main() {
             ),
           ),
         ),
+        overrides: <Override>[s7TokenLive()],
       );
 
       // A settled zero is a reading, not an absence: it keeps the figure and
@@ -1868,6 +1876,34 @@ void main() {
       expect(tester.widget<LoopRecordRow>(row).subtitle, s7UsdtAssetId);
     });
 
+    testWidgets('before the LOOP token the budget is not printed (0184)', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(
+          rules: S7Answer<MiningRules>(value: s7BaselineMiningRules()),
+        ),
+        overrides: <Override>[
+          miningRewardsGatewayProvider.overrideWithValue(
+            S7TokenStageRewards.preToken(),
+          ),
+        ],
+      );
+      final output = find.byKey(
+        const ValueKey<String>('mining-rules-approved-daily-output'),
+      );
+      await scrollToS7Section(tester, output);
+      expect(tester.widget<LoopRecordRow>(output).trailing, isNull);
+      expect(
+        tester.widget<LoopRecordRow>(output).trailingCaption,
+        'LOOP 代币上线后公布',
+      );
+      expect(find.text('1,000,000'), findsNothing);
+      expect(find.text('占位产量'), findsNothing);
+    });
+
     testWidgets('the development baseline prints its weights and its budget', (
       tester,
     ) async {
@@ -1877,6 +1913,7 @@ void main() {
         mining: FakeMiningGateway(
           rules: S7Answer<MiningRules>(value: s7BaselineMiningRules()),
         ),
+        overrides: <Override>[s7TokenLive()],
       );
 
       // The version in force is said the way every other mining page says it.
@@ -2348,6 +2385,43 @@ void main() {
         find.textContaining('0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae'),
         findsNothing,
       );
+    });
+  });
+
+  group('wallet power hint · decision 0184', () {
+    Future<void> pumpHint(WidgetTester tester, Override rewards) => pumpS7Page(
+      tester,
+      WalletHoldingsPowerHint(onOpenMining: () {}),
+      mining: FakeMiningGateway(
+        summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+      ),
+      overrides: <Override>[rewards],
+    );
+
+    testWidgets('before the token the strip states power only', (tester) async {
+      await pumpHint(
+        tester,
+        miningRewardsGatewayProvider.overrideWithValue(
+          S7TokenStageRewards.preToken(),
+        ),
+      );
+      final hint = tester.widget<LoopPowerHint>(
+        find.byKey(const ValueKey<String>('wallet-power-hint')),
+      );
+      expect(hint.figure, startsWith('1,000 算力'));
+      expect(hint.figure, isNot(contains('今日预估')));
+      expect(hint.figure, isNot(contains('LOOP')));
+    });
+
+    testWidgets('once the token is live it adds today\'s estimate', (
+      tester,
+    ) async {
+      await pumpHint(tester, s7TokenLive());
+      final hint = tester.widget<LoopPowerHint>(
+        find.byKey(const ValueKey<String>('wallet-power-hint')),
+      );
+      expect(hint.figure, contains('今日预估'));
+      expect(hint.figure, contains('LOOP'));
     });
   });
 }
