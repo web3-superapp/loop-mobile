@@ -369,24 +369,9 @@ class _RoundIndexTile extends StatelessWidget {
 
   final int index;
 
+  // Decision 0172: the shared `.row-ico` monogram tile.
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        // A numbered tile is the ground plus a little, like every other
-        // monogram tile: derived, so it survives a move onto a light card.
-        color: LoopGround.fillOf(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        '$index',
-        style: LoopTypography.figure(13, color: LoopGround.inkOf(context)),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LoopMonoTile(label: '$index', size: 40);
 }
 
 /// Row position inside a group of [length] rows.
@@ -538,28 +523,12 @@ class LaunchTickerTile extends StatelessWidget {
   final String ticker;
   final double size;
 
+  // Decision 0172: the shared `.row-ico` monogram tile, four runes at most.
   @override
-  Widget build(BuildContext context) {
-    final runes = ticker.runes.take(4).toList(growable: false);
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        // Same rule as the other monogram tiles.
-        color: LoopGround.fillOf(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        String.fromCharCodes(runes),
-        style: LoopTypography.figure(
-          size / 4.4,
-          weight: FontWeight.w700,
-          color: LoopGround.inkOf(context),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LoopMonoTile(
+    label: String.fromCharCodes(ticker.runes.take(4)),
+    size: size,
+  );
 }
 
 /// The four on-chain axes as four separate rows (decision 0088).

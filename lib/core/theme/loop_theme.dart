@@ -51,6 +51,24 @@ abstract final class LoopColors {
   /// Selected tab gradient start (`#c6ff45` in the prototype tab bar).
   static const Color limeHighlight = Color(0xFFC6FF45);
 
+  /// `.ledger-card.ledger-quiet` glow over its 7.5 % tint, composited: the
+  /// centre stop (Lime 23 %) and the edge stop (Lime 7.5 %) of the quiet
+  /// folio's radial gradient (decision 0172 named them; values unchanged).
+  static const Color quietFolioGlow = Color(0x3BB8FF20);
+  static const Color quietFolioTint = Color(0x13B8FF20);
+
+  /// `.record-card` glow over its Card tint, composited: Chalk 9.4 % at the
+  /// centre, Chalk 4.3 % at the edge.
+  static const Color recordCardGlow = Color(0x18F3F5EF);
+  static const Color recordCardTint = Color(0x0BF3F5EF);
+
+  /// `.btn-primary` glow: rgba(184,255,32,.24), the first shadow.
+  static const Color primaryGlow = Color(0x3DB8FF20);
+
+  /// rgba(5,6,4,.4): the contact shadow of `.btn-primary` and of a pressed
+  /// bottom-rounded selection card.
+  static const Color contactShadow = Color(0x66050604);
+
   /// Ink at 62% — unselected tab icon and label on the Chalk bar.
   static const Color inkMuted = Color(0x9E050604);
 
@@ -209,6 +227,23 @@ abstract final class LoopRadius {
   /// [controlValue].
   static const double bubbleTailValue = 5;
 
+  /// `.row-ico` / `.tcard-logo` / `.notice` / `.power-hint` /
+  /// `.composer input` / `.sk-circle{border-radius:15px}`: the 44 tile and
+  /// the inline surfaces cut to the same corner (decision 0172).
+  static const double tileValue = 15;
+
+  /// `.btn` / `.seg` / `.composer button{border-radius:14px}`.
+  static const double buttonValue = 14;
+
+  /// `.back` / `.tool-btn{border-radius:13px}`: the 44 top-bar controls.
+  static const double toolValue = 13;
+
+  /// `.badge{border-radius:7px}`.
+  static const double badgeValue = 7;
+
+  /// The flat-page wide button (decision 0127): half of its 52 height.
+  static const double wideButtonValue = 26;
+
   static const BorderRadius shell = BorderRadius.all(
     Radius.circular(shellValue),
   );
@@ -223,6 +258,17 @@ abstract final class LoopRadius {
     Radius.circular(tabBarValue),
   );
   static const Radius bubbleTail = Radius.circular(bubbleTailValue);
+  static const BorderRadius tile = BorderRadius.all(Radius.circular(tileValue));
+  static const BorderRadius button = BorderRadius.all(
+    Radius.circular(buttonValue),
+  );
+  static const BorderRadius tool = BorderRadius.all(Radius.circular(toolValue));
+  static const BorderRadius badge = BorderRadius.all(
+    Radius.circular(badgeValue),
+  );
+  static const BorderRadius wideButton = BorderRadius.all(
+    Radius.circular(wideButtonValue),
+  );
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
 
   // Existing aliases.

@@ -192,28 +192,37 @@ class LoopTag extends StatelessWidget {
 /// A small capsule action at the end of a row — 「接受」 on a request
 /// (decision 0127). Lime when it is the row's one forward step, outlined
 /// otherwise. The visible capsule is 32 tall; the touch target is 44.
+///
+/// [soft] is the in-list forward step that must not spend the screen's one
+/// solid Lime (decision 0172, Square's 「加入」): LimeSoft ground, Lime word.
 class LoopPillAction extends StatelessWidget {
   const LoopPillAction({
     required this.label,
     required this.onPressed,
     super.key,
     this.primary = true,
+    this.soft = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool primary;
+  final bool soft;
 
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
     final ground = !enabled
         ? LoopColors.card2
+        : soft
+        ? LoopColors.limeSoft
         : primary
         ? LoopColors.lime
         : Colors.transparent;
     final ink = !enabled
         ? LoopColors.text3
+        : soft
+        ? LoopColors.lime
         : primary
         ? LoopColors.ink
         : LoopColors.chalk;
@@ -235,7 +244,7 @@ class LoopPillAction extends StatelessWidget {
               decoration: BoxDecoration(
                 color: ground,
                 borderRadius: BorderRadius.circular(999),
-                border: primary || !enabled
+                border: primary || soft || !enabled
                     ? null
                     : Border.all(color: LoopColors.line2),
               ),

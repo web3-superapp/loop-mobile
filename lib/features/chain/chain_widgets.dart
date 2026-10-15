@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 
@@ -502,11 +503,13 @@ class LoopChainCommandPermission extends StatelessWidget {
 /// Renders one `{status: unavailable, reasonCode}` block. It never renders a
 /// figure, a zero, or a fixture in place of the missing fact.
 ///
-/// It is an inline strip, like every other state block since decision 0071:
-/// one glyph, what is missing, why, and — when there is one — the single step
-/// that could change the answer.
-class LoopUnavailableCard extends StatelessWidget {
-  const LoopUnavailableCard({
+/// Decision 0172 retired the v1 `LoopUnavailableLine` strip: the block is one
+/// [LoopInlineUnavailable] — the warn glyph, what is missing, and the server's
+/// reason on the line under it. It keeps the `unavailable-<code>` key the strip
+/// carried, so a reader of the tree finds the same block. [action] is the one
+/// next step, under the line.
+class LoopUnavailableLine extends StatelessWidget {
+  const LoopUnavailableLine({
     required this.label,
     required this.reasonCode,
     super.key,
@@ -514,7 +517,7 @@ class LoopUnavailableCard extends StatelessWidget {
     this.action,
   });
 
-  LoopUnavailableCard.fact({
+  LoopUnavailableLine.fact({
     required String label,
     required LoopUnavailable fact,
     Key? key,
@@ -530,28 +533,43 @@ class LoopUnavailableCard extends StatelessWidget {
 
   final String label;
 
-  /// `null` when the server stated no reason. The card then renders the
-  /// neutral sentence rather than inventing a code the server never sent.
+  /// `null` when the server stated no reason; the line then reads the
+  /// neutral sentence rather than a code the server never sent.
   final String? reasonCode;
   final EdgeInsets margin;
-
-  /// The one next step, when one exists. A block with no next step shows none.
   final Widget? action;
 
   @override
   Widget build(BuildContext context) {
-    return LoopEmpty(
+    final line = LoopInlineUnavailable(
       key: ValueKey<String>('unavailable-${reasonCode ?? 'unstated'}'),
-      icon: 'warn',
       message: label,
-      reason: loopReasonCodeText(reasonCode),
-      margin: margin,
-      action: action,
+      detail: loopReasonCodeText(reasonCode),
+      maxLines: 2,
+      detailMaxLines: 3,
+      padding: EdgeInsets.zero,
+    );
+    final next = action;
+    return Padding(
+      padding: margin,
+      child: next == null
+          ? line
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                line,
+                Padding(
+                  padding: const EdgeInsets.only(left: 23, bottom: 10),
+                  child: next,
+                ),
+              ],
+            ),
     );
   }
 }
 
-/// The whole-page counterpart of [LoopUnavailableCard].
+/// The whole-page counterpart of [LoopUnavailableLine].
 ///
 /// A capability gate closes the page, not a block inside it, so it renders a
 /// [LoopPageBlock] in the room the page scaffold hands it (`block:`) instead
@@ -650,7 +668,7 @@ class LoopCapabilityBlockCard extends StatelessWidget {
         reason: loopChainFailureReason(LoopChainFailureKind.offline),
       );
     }
-    return LoopUnavailableCard(
+    return LoopUnavailableLine(
       label: label,
       reasonCode: capability.reasonCode ?? fallbackReasonCode,
     );

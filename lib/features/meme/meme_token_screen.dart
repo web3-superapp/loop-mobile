@@ -227,11 +227,12 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
         title: '无法打开这个代币',
         onBack: widget.onBack,
         body: const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('meme-token-invalid-identity'),
-            icon: 'warn',
-            message: '路由中没有可用的代币标识',
-            reason: '没有请求任何数据，也没有回退到其他代币。',
+            illustration: LoopIllustration.launchpad,
+            title: '路由中没有可用的代币标识',
+            message: '没有请求任何数据，也没有回退到其他代币。',
+            compact: true,
           ),
         ],
       );
@@ -1518,10 +1519,11 @@ class MemeTokenListScreen extends ConsumerWidget {
         title: title,
         onBack: onBack,
         body: const <Widget>[
-          LoopEmpty(
-            icon: 'warn',
+          LoopInlineUnavailable(
             message: '路由中没有可用的代币标识',
-            reason: '没有请求任何数据，也没有回退到其他代币。',
+            detail: '没有请求任何数据，也没有回退到其他代币。',
+            detailMaxLines: 3,
+            maxLines: 2,
           ),
         ],
       );

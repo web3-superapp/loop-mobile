@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/core/time/loop_time_format.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
@@ -16,6 +14,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -228,9 +227,14 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
                 height: 12,
               ),
             if (state.observedAt case final DateTime observedAt)
-              LoopProvenanceFooter(
-                key: const ValueKey<String>('square-voice-room-observed'),
-                text: '读取于 ${loopLocalClockLabel(observedAt)}',
+              // Decision 0172: the shared provenance line (decision 0117).
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 12),
+                child: LoopProvenanceLine(
+                  key: const ValueKey<String>('square-voice-room-observed'),
+                  sources: const <String>['LOOP'],
+                  observedAt: observedAt,
+                ),
               ),
           ],
         ],

@@ -150,8 +150,8 @@ void main() {
 
       await _pumpPhone(tester, ProfileSurfaceScreen.fromId(retiredId));
 
-      expect(find.text('Setting unavailable'), findsOneWidget);
-      expect(find.text('No changes made'), findsOneWidget);
+      expect(find.text('设置不可用'), findsOneWidget);
+      expect(find.text('没有做任何更改'), findsOneWidget);
       expect(find.textContaining('Recovery phrase'), findsNothing);
       expect(find.byType(TextField), findsNothing);
     }

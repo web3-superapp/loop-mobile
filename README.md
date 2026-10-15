@@ -63,7 +63,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 所有供应商写入默认 fail-closed。正式入口 `lib/main.dart` 不注入 fixture；只有 `lib/main_preview.dart` 的显式离线 Preview 组合根注入 memory/fixture gateway。Preview 中的聊天、语音、钱包和交易状态都标注为 offline / simulated 或 `开发预览`，不代表生产登录、签名、下单、聊天或语音已经接通。
 
-应用逻辑继续通过页面状态、Riverpod controller 和窄业务 port 隔离 provider。`lib/features/` 不直接依赖 Dio 或保存 `/v1/` 路由；旧 Perp adapter 仅作为未挂载的实现历史保留，不再继续产品开发。尚未接入的 production port 仍使用 unavailable 实现，Fake 仅允许测试与显式 Preview 注入。
+应用逻辑继续通过页面状态、Riverpod controller 和窄业务 port 隔离 provider。`lib/features/` 不直接依赖 Dio 或保存 `/v1/` 路由；旧 Perp 页面与 adapter 已按决策 0172 删除，只在路由清单里保留退役路径。尚未接入的 production port 仍使用 unavailable 实现，Fake 仅允许测试与显式 Preview 注入。
 
 Stream 生产路径使用 V2 account/session 返回的 opaque `streamUserId`，再通过保留的 V1 Chat/Video token 路由获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话。每个 Privy principal 使用独立的 Stream client/persistence 实例，账号切换或退出会退役旧实例，避免不可取消的旧连接污染新账号。正式 Chat 页面直接使用 Stream 官方 controller/UI 作为消息、分页、已读、输入状态与离线历史的真相源；缺少授权时保持 fail-closed，也不会把本地 preview 伪装成在线能力。附件与语音录制会等平台权限和产品策略正式配置后再开放。真实 Token 接受、连接、刷新、双设备消息和 Video 仍需要真机验证。
 

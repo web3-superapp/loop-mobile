@@ -505,62 +505,80 @@ class _CommunityAiReply extends StatelessWidget {
     return Padding(
       // `.msg{padding:8px 16px;gap:10px}`.
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: LoopGround.fillOf(context),
-              shape: BoxShape.circle,
-              border: Border.all(color: LoopGround.hairlineOf(context)),
-            ),
-            child: const LoopIcon('ai', size: 16, color: LoopColors.text3),
+      child: _CommunityAiTurn(
+        bubble: Text(
+          body,
+          style: LoopTypography.body(
+            13,
+            color: LoopGround.secondaryOf(context),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  'Community AI',
-                  style: LoopTypography.caption(
-                    11,
-                    color: LoopGround.secondaryOf(context),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: LoopGround.fillOf(context),
-                    // `.msg-txt{border-radius:5px 16px 16px 16px}`.
-                    borderRadius: const BorderRadiusDirectional.only(
-                      topStart: LoopRadius.bubbleTail,
-                      topEnd: Radius.circular(LoopRadius.controlValue),
-                      bottomStart: Radius.circular(LoopRadius.controlValue),
-                      bottomEnd: Radius.circular(LoopRadius.controlValue),
-                    ),
-                  ),
-                  child: Text(
-                    body,
-                    style: LoopTypography.body(
-                      13,
-                      color: LoopGround.secondaryOf(context),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+/// The assistant's one turn shape (decision 0172): the 34 round `ai` mark,
+/// 「Community AI」 and the `.msg-txt` bubble
+/// (`border-radius:5px 16px 16px 16px`), then whatever the turn adds under
+/// the bubble. A pending line, a refusal and an answer all draw this.
+class _CommunityAiTurn extends StatelessWidget {
+  const _CommunityAiTurn({required this.bubble, this.after = const <Widget>[]});
+
+  final Widget bubble;
+  final List<Widget> after;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: LoopGround.fillOf(context),
+            shape: BoxShape.circle,
+            border: Border.all(color: LoopGround.hairlineOf(context)),
+          ),
+          child: const LoopIcon('ai', size: 16, color: LoopColors.text3),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                'Community AI',
+                style: LoopTypography.caption(
+                  11,
+                  color: LoopGround.secondaryOf(context),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: LoopGround.fillOf(context),
+                  borderRadius: const BorderRadiusDirectional.only(
+                    topStart: LoopRadius.bubbleTail,
+                    topEnd: Radius.circular(LoopRadius.controlValue),
+                    bottomStart: Radius.circular(LoopRadius.controlValue),
+                    bottomEnd: Radius.circular(LoopRadius.controlValue),
+                  ),
+                ),
+                child: bubble,
+              ),
+              ...after,
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -592,111 +610,63 @@ class _CommunityAiAnswerBubble extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                width: 34,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: LoopGround.fillOf(context),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: LoopGround.hairlineOf(context)),
-                ),
-                child: const LoopIcon('ai', size: 16, color: LoopColors.text3),
+          child: _CommunityAiTurn(
+            bubble: _CommunityAiAnswerText(runs: runs),
+            after: <Widget>[
+              _CommunityAiGeneratedMark(
+                model: answer.model,
+                generatedAt: answer.generatedAt,
+                padded: false,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'Community AI',
-                      style: LoopTypography.caption(
-                        11,
-                        color: LoopGround.secondaryOf(context),
+              if (answer.sources.isNotEmpty)
+                _CommunityAiSourceList(
+                  key: ValueKey<String>(
+                    'community-ai-sources-${answer.answerId}',
+                  ),
+                  summary: '本次使用的来源（${answer.sources.length}）',
+                  sources: answer.sources,
+                ),
+              if (answer.omittedSources.isNotEmpty)
+                _CommunityAiOmittedList(
+                  key: ValueKey<String>(
+                    'community-ai-omitted-${answer.answerId}',
+                  ),
+                  omitted: answer.omittedSources,
+                ),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Semantics(
+                  button: !reported,
+                  label: reported ? '已举报' : '举报这条回答',
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      key: ValueKey<String>(
+                        'community-ai-report-${answer.answerId}',
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: LoopGround.fillOf(context),
-                        borderRadius: const BorderRadiusDirectional.only(
-                          topStart: LoopRadius.bubbleTail,
-                          topEnd: Radius.circular(LoopRadius.controlValue),
-                          bottomStart: Radius.circular(LoopRadius.controlValue),
-                          bottomEnd: Radius.circular(LoopRadius.controlValue),
+                      onTap: reported ? null : onReport,
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minHeight: LoopTouch.minimum,
                         ),
-                      ),
-                      child: _CommunityAiAnswerText(runs: runs),
-                    ),
-                    _CommunityAiGeneratedMark(
-                      model: answer.model,
-                      generatedAt: answer.generatedAt,
-                      padded: false,
-                    ),
-                    if (answer.sources.isNotEmpty)
-                      _CommunityAiSourceList(
-                        key: ValueKey<String>(
-                          'community-ai-sources-${answer.answerId}',
-                        ),
-                        summary: '本次使用的来源（${answer.sources.length}）',
-                        sources: answer.sources,
-                      ),
-                    if (answer.omittedSources.isNotEmpty)
-                      _CommunityAiOmittedList(
-                        key: ValueKey<String>(
-                          'community-ai-omitted-${answer.answerId}',
-                        ),
-                        omitted: answer.omittedSources,
-                      ),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Semantics(
-                        button: !reported,
-                        label: reported ? '已举报' : '举报这条回答',
-                        child: Material(
-                          type: MaterialType.transparency,
-                          child: InkWell(
-                            key: ValueKey<String>(
-                              'community-ai-report-${answer.answerId}',
-                            ),
-                            onTap: reported ? null : onReport,
-                            child: Container(
-                              constraints: const BoxConstraints(
-                                minHeight: LoopTouch.minimum,
-                              ),
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  LoopIcon(
-                                    'warn',
-                                    size: 13,
-                                    color: LoopColors.text3,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    reported ? '已举报' : '举报',
-                                    style: LoopTypography.caption(
-                                      11,
-                                      color: LoopColors.text3,
-                                    ),
-                                  ),
-                                ],
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            LoopIcon('warn', size: 13, color: LoopColors.text3),
+                            const SizedBox(width: 5),
+                            Text(
+                              reported ? '已举报' : '举报',
+                              style: LoopTypography.caption(
+                                11,
+                                color: LoopColors.text3,
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -756,18 +726,15 @@ class _CommunityAiCitationChip extends StatelessWidget {
         child: InkWell(
           key: ValueKey<String>('community-ai-citation-${source.sourceId}'),
           onTap: () => showCommunityAiSourceSheet(context, source: source),
-          borderRadius: BorderRadius.circular(6),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(
-              color: LoopColors.limeSoft,
-              borderRadius: BorderRadius.circular(6),
-            ),
+          borderRadius: LoopRadius.badge,
+          // Decision 0172: the handle is the shared `.badge` (LimeSoft,
+          // Lime), not a hand-drawn r6 block.
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             child: ExcludeSemantics(
-              child: Text(
+              child: LoopBadge(
                 '[${source.sourceId}]',
-                style: LoopTypography.figure(11, color: LoopColors.lime),
+                kind: LoopBadgeKind.launch,
               ),
             ),
           ),

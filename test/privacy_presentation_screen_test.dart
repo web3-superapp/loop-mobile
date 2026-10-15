@@ -474,22 +474,20 @@ void main() {
       expect(find.byKey(ValueKey<String>(retiredKey)), findsNothing);
     }
 
+    // Decision 0172 deleted the unrouted copy-trade placeholder; the id now
+    // falls through to the unknown-setting state with no control at all.
+    expect(
+      ProfileSurfaceScreen.supportedIds,
+      isNot(contains('copytrade-perms')),
+    );
     await _pumpPrivacy(tester, surfaceId: 'copytrade-perms');
-
-    expect(find.text('Copy trading is not connected'), findsOneWidget);
-    expect(find.text('No permission can be granted here'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('unknown-profile-surface')),
+      findsOneWidget,
+    );
     expect(find.text('Save permissions'), findsNothing);
-    expect(find.text('Copy-trade permissions saved.'), findsNothing);
-    expect(find.text('Copy trading remains off.'), findsNothing);
     expect(find.byType(TextField), findsNothing);
-    expect(find.byType(FilledButton), findsNothing);
-    expect(find.byType(OutlinedButton), findsNothing);
-    expect(find.byType(TextButton), findsNothing);
-    expect(find.byType(IconButton), findsNothing);
     expect(find.byType(SwitchListTile), findsNothing);
-    expect(find.byType(CheckboxListTile), findsNothing);
-    expect(find.byType(Slider), findsNothing);
-    expect(find.byType(ChoiceChip), findsNothing);
   });
 }
 

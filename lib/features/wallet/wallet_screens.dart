@@ -9,7 +9,6 @@ export 'send_screens.dart';
 export 'swap_screens.dart';
 export 'transfer_amount.dart';
 export 'tx_result_screen.dart';
-export 'wallet_management_screens.dart';
 export 'wallet_preview_activity.dart';
 export 'wallet_read_controllers.dart';
 export 'wallet_read_gateway.dart';

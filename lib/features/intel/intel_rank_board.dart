@@ -604,7 +604,7 @@ class _PodiumCard extends StatelessWidget {
         // OKX card: a flat face, no edge; the winner is one step lighter
         // and one crown taller (decision 0122).
         color: first ? LoopColors.card2 : LoopColors.card,
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        borderRadius: LoopRadius.control,
       ),
       child: Column(
         children: <Widget>[
@@ -703,25 +703,14 @@ class _PodiumCard extends StatelessWidget {
   }
 }
 
-/// 「权重 1.5」 as a hairline capsule.
+/// 「权重 1.5」: a status, so it is the mute `.badge` (decision 0172).
 class _WeightTag extends StatelessWidget {
   const _WeightTag({required this.weight});
 
   final String weight;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-    decoration: const BoxDecoration(
-      borderRadius: LoopRadius.pill,
-      border: Border.fromBorderSide(BorderSide(color: LoopColors.line2)),
-    ),
-    child: Text(
-      '权重 $weight',
-      maxLines: 1,
-      style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-    ),
-  );
+  Widget build(BuildContext context) => LoopBadge('权重 $weight');
 }
 
 /// One place from the fourth on: position · face · name · figure. No card;

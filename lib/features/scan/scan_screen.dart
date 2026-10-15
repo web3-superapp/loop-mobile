@@ -259,7 +259,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                     decoration: BoxDecoration(
                       color: unknown == null ? null : LoopColors.ink,
                       borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20),
+                        top: Radius.circular(LoopRadius.cardValue),
                       ),
                     ),
                     child: SafeArea(
@@ -477,7 +477,12 @@ class _MaskPainter extends CustomPainter {
     final veil = Path()
       ..fillType = PathFillType.evenOdd
       ..addRect(Offset.zero & size)
-      ..addRRect(RRect.fromRectAndRadius(window, const Radius.circular(16)));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          window,
+          const Radius.circular(LoopRadius.controlValue),
+        ),
+      );
     canvas.drawPath(
       veil,
       Paint()..color = LoopColors.ink.withValues(alpha: 0.55),

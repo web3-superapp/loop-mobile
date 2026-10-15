@@ -356,7 +356,7 @@ class _MemberTile extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: LoopRadius.inner,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
           child: tile,
@@ -655,7 +655,7 @@ class _MoreTile extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: LoopRadius.inner,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
           child: SizedBox(

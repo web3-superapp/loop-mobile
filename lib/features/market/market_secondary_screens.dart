@@ -59,11 +59,12 @@ Widget _invalidAssetPage(String title, VoidCallback? onBack) => LoopFocusPage(
   title: title,
   onBack: onBack,
   body: const <Widget>[
-    LoopEmpty(
+    LoopEmptyState(
       key: ValueKey<String>('invalid-asset-identity'),
-      icon: 'warn',
-      message: '路由中没有可用的资产标识',
-      reason: '本页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。',
+      illustration: LoopIllustration.search,
+      title: '路由中没有可用的资产标识',
+      message: '本页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。',
+      compact: true,
     ),
   ],
 );
@@ -908,7 +909,7 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
 
 /// One block LOOP could not read, said in one weak line (decision 0171,
 /// docs/33 L6): what is missing, then the server's own reason. It replaces
-/// the block-sized `LoopUnavailableCard` strip on the data-dense market
+/// the block-sized `LoopUnavailableLine` strip on the data-dense market
 /// pages; it never renders a figure, a zero or a dash.
 class _MarketUnavailableLine extends StatelessWidget {
   const _MarketUnavailableLine({

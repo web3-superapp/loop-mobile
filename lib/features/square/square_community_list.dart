@@ -21,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -665,52 +666,16 @@ class _MembershipCapsule extends StatelessWidget {
       SquareMembershipAction.pending => ('pending', '审核中', false, onOpen),
       SquareMembershipAction.none => ('none', '', false, null),
     };
-    final foreground = lime ? LoopColors.ink : LoopColors.text2;
-    return Semantics(
-      button: true,
-      enabled: onTap != null,
-      label: joining ? '正在加入' : label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        key: ValueKey<String>('square-community-$key-$communityId'),
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: LoopTouch.minimum,
-            minHeight: LoopTouch.minimum,
-          ),
-          child: Center(
-            widthFactor: 1,
-            child: Container(
-              height: 28,
-              constraints: const BoxConstraints(minWidth: 60),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: lime ? LoopColors.lime : LoopColors.card2,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: joining
-                  ? SizedBox(
-                      key: ValueKey<String>(
-                        'square-community-joining-$communityId',
-                      ),
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: foreground,
-                      ),
-                    )
-                  : Text(
-                      label,
-                      style: LoopTypography.label(12, color: foreground),
-                    ),
-            ),
-          ),
-        ),
-      ),
+    // Decision 0172: the row's action is the shared `LoopPillAction`. 「加入」
+    // is the soft forward step (LimeSoft ground, Lime word) so a list of
+    // communities never prints five solid Lime blocks; the others are the
+    // outlined quiet pill.
+    return LoopPillAction(
+      key: ValueKey<String>('square-community-$key-$communityId'),
+      label: joining ? '加入中' : label,
+      primary: lime,
+      soft: lime,
+      onPressed: onTap,
     );
   }
 }

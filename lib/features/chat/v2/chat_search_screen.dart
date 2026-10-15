@@ -62,7 +62,9 @@ List<InlineSpan>? chatSearchHighlightSpans(String text, String term) {
     spans.add(
       TextSpan(
         text: text.substring(at, at + term.length),
-        style: const TextStyle(color: LoopColors.lime),
+        // The row's own second line (`bodySmall` = caption) in Lime
+        // (decision 0172: a type step, never a bare TextStyle).
+        style: LoopType.caption.copyWith(color: LoopColors.lime),
       ),
     );
     cursor = at + term.length;
@@ -395,11 +397,11 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           ),
           contentPadding: const EdgeInsets.fromLTRB(0, 11, 14, 11),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: LoopRadius.inner,
             borderSide: const BorderSide(color: LoopColors.line),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: LoopRadius.inner,
             borderSide: const BorderSide(color: LoopColors.line),
           ),
         ),

@@ -552,7 +552,7 @@ class _SecurityDevicesBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (block) {
       LoopSecurityDevicesUnavailable(fact: final fact) =>
-        LoopUnavailableCard.fact(
+        LoopUnavailableLine.fact(
           key: const ValueKey<String>('security-devices-unavailable'),
           label: '设备与会话读不到',
           fact: fact,
@@ -605,7 +605,7 @@ class _SecurityApprovalsBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (block) {
       LoopSecurityApprovalsUnavailable(fact: final fact) =>
-        LoopUnavailableCard.fact(
+        LoopUnavailableLine.fact(
           key: const ValueKey<String>('security-approvals-unavailable'),
           label: '授权盘点读不到',
           fact: fact,
@@ -661,7 +661,7 @@ class _SecurityEventsBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (block) {
       LoopSecurityEventsUnavailable(fact: final fact) =>
-        LoopUnavailableCard.fact(
+        LoopUnavailableLine.fact(
           key: const ValueKey<String>('security-events-unavailable'),
           label: '最近安全事件读不到',
           fact: fact,
@@ -846,7 +846,7 @@ class _DeviceManagementScreenState
               onPressed: null,
             ),
           ),
-          LoopUnavailableCard.fact(
+          LoopUnavailableLine.fact(
             key: const ValueKey<String>('devices-revoke-all-unavailable'),
             label: '需要二次验证，当前不可执行',
             fact: directory.revokeAll,
@@ -942,7 +942,7 @@ class _RevokeConfirmSheet extends StatelessWidget {
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-          child: Text('撤销这个会话？', style: Theme.of(context).textTheme.titleLarge),
+          child: Text('撤销这个会话？', style: LoopType.titleLg),
         ),
         LoopKeyValue(label: '平台', value: device.platform.label),
         LoopKeyValue(label: '客户端版本', value: device.clientVersion),
@@ -1071,7 +1071,7 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
             ),
           )
         else
-          LoopUnavailableCard(
+          LoopUnavailableLine(
             key: const ValueKey<String>('key-export-unavailable'),
             label: '导出私钥当前不可用',
             // The codec admits no available form for this method.
@@ -1203,7 +1203,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
             ),
           )
         else
-          LoopUnavailableCard(
+          LoopUnavailableLine(
             key: const ValueKey<String>('social-recovery-unavailable'),
             label: '社交恢复当前不可用',
             // The codec admits no available form for this method.

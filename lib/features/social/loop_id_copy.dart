@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -56,7 +57,7 @@ class LoopIdCopyLine extends StatelessWidget {
             type: MaterialType.transparency,
             child: InkWell(
               onTap: () => unawaited(copyLoopId(context, loopId)),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: LoopRadius.inner,
               child: SizedBox(
                 width: targetSize,
                 height: targetSize,

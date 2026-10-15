@@ -158,7 +158,7 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
           }, style: LoopTypography.heading(18, weight: FontWeight.w700)),
           const SizedBox(height: 12),
           if (code == null)
-            const LoopUnavailableCard(
+            const LoopUnavailableLine(
               key: ValueKey<String>('qr-card-unavailable'),
               label: '二维码不可用',
               reasonCode: 'QR_CARD_LINK_UNAVAILABLE',
@@ -337,102 +337,108 @@ class LoopSharePoster extends StatelessWidget {
       label: '$name 的二维码名片',
       child: DefaultTextStyle(
         style: LoopTypography.body(14),
+        // The quiet ledger ground (decision 0172): Ink, the shell radius, a
+        // Line2 edge and the `.ledger-quiet` dot field, the same texture the
+        // quiet folio paints, so the saved poster is one of the family.
         child: Container(
           width: width,
           height: height,
-          padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: LoopColors.ink,
-            borderRadius: BorderRadius.circular(LoopRadius.shellValue),
+            borderRadius: LoopRadius.shell,
             border: Border.all(color: LoopColors.line2),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
+          child: CustomPaint(
+            key: const ValueKey<String>('qr-card-poster-texture'),
+            painter: const LoopLedgerTexturePainter(
+              spec: LoopLedgerTexture.quiet,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  face,
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.heading(
-                            20,
-                            weight: FontWeight.w700,
-                          ),
+                  Row(
+                    children: <Widget>[
+                      face,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: LoopTypography.heading(
+                                20,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              line,
+                              key: const ValueKey<String>(
+                                'qr-card-poster-line',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: subject is LoopUserQrCard
+                                  ? LoopTypography.code(
+                                      12,
+                                      color: LoopColors.lime,
+                                    )
+                                  : LoopTypography.caption(
+                                      12,
+                                      color: LoopColors.text2,
+                                    ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          line,
-                          key: const ValueKey<String>('qr-card-poster-line'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: subject is LoopUserQrCard
-                              ? LoopTypography.code(12, color: LoopColors.lime)
-                              : LoopTypography.caption(
-                                  12,
-                                  color: LoopColors.text2,
-                                ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Center(
+                    child: Container(
+                      width: 236,
+                      height: 236,
+                      decoration: BoxDecoration(
+                        color: LoopColors.chalk,
+                        borderRadius: BorderRadius.circular(
+                          LoopRadius.cardValue,
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Center(
-                child: Container(
-                  width: 236,
-                  height: 236,
-                  decoration: BoxDecoration(
-                    color: LoopColors.chalk,
-                    borderRadius: BorderRadius.circular(LoopRadius.cardValue),
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: LoopQrView(
-                    key: const ValueKey<String>('qr-card-code'),
-                    code: code,
-                    semanticLabel: '$name 的二维码',
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Row(
-                children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: LoopColors.lime,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'LOOP',
-                      style: LoopTypography.label(
-                        12,
-                        weight: FontWeight.w700,
-                        color: LoopColors.ink,
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: LoopQrView(
+                        key: const ValueKey<String>('qr-card-code'),
+                        code: code,
+                        semanticLabel: '$name 的二维码',
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'LOOP · $action',
-                      key: const ValueKey<String>('qr-card-poster-action'),
-                      style: LoopTypography.title(15),
-                    ),
+                  const Spacer(),
+                  Row(
+                    children: <Widget>[
+                      const LoopBadge(
+                        'LOOP',
+                        key: ValueKey<String>('qr-card-poster-badge'),
+                        kind: LoopBadgeKind.launch,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'LOOP · $action',
+                          key: const ValueKey<String>('qr-card-poster-action'),
+                          style: LoopTypography.title(15),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -189,7 +189,6 @@ REQUIRED_FILES = (
     "lib/features/chat/friends/friend_gateway.dart",
     "lib/features/chat/friends/friend_models.dart",
     "lib/features/chat/friends/friend_request_controller.dart",
-    "lib/features/chat/friends/friend_request_screen.dart",
     "lib/features/chat/friends/friend_screens.dart",
     "lib/features/chat/group_alias/group_alias_controller.dart",
     "lib/features/chat/group_alias/group_alias_gateway.dart",
@@ -229,14 +228,6 @@ REQUIRED_FILES = (
     # Step 5 retired the v1 notification-preference module and its Preview
     # adapter; `notif-settings` is now the V2 ten-category page registered
     # with the step-5 files below.
-    "lib/features/perp/account/perp_account_controller.dart",
-    "lib/features/perp/perp_portfolio_screens.dart",
-    "lib/features/perp/positions/perp_positions_controller.dart",
-    "lib/features/perp/private/perp_private_gateway.dart",
-    "lib/features/perp/private/perp_private_models.dart",
-    "lib/integrations/backend/loop_perp_providers.dart",
-    "lib/integrations/backend/loop_perp_repository.dart",
-    "lib/integrations/backend/loop_perp_session.dart",
     "test/app_notification_coordinator_test.dart",
     "test/app_config_test.dart",
     "test/loop_stream_token_repository_test.dart",
@@ -289,13 +280,6 @@ REQUIRED_FILES = (
     "test/privacy_controller_test.dart",
     "test/privacy_models_test.dart",
     "test/privacy_presentation_screen_test.dart",
-    "test/loop_perp_providers_test.dart",
-    "test/loop_perp_repository_test.dart",
-    "test/loop_perp_session_test.dart",
-    "test/perp_account_controller_test.dart",
-    "test/perp_account_screen_test.dart",
-    "test/perp_positions_controller_test.dart",
-    "test/perp_positions_screen_test.dart",
     # Step 5 replaced `SpotMarketRoute`, the Hyperliquid Spot Market screens
     # and the v1 wallet/notification modules with the V2 chain, market, wallet,
     # watchlist, alert and notification modules.
@@ -490,7 +474,6 @@ REOWN_EXCLUDED_WALLET_IDS = {
 }
 REOWN_FORBIDDEN_IMPORT_ROOTS = (
     Path("lib/features/market"),
-    Path("lib/features/perp"),
     Path("lib/features/review"),
     Path("lib/integrations/hyperliquid"),
 )
@@ -995,10 +978,6 @@ S5_SWAP_CARD_GATE = "tradable: detail.capability.swappable,"
 S5_QR_ENCODER_PATH = Path("lib/core/qr/loop_qr_code.dart")
 S5_QR_ENCODER_IMPORTS = frozenset({"'package:flutter/foundation.dart'"})
 S5_HYPERLIQUID_IMPORT_ROOT = "package:loop_mobile/integrations/hyperliquid/"
-# `lib/features/perp/**` is retained, unmounted history for the same reason the
-# Hyperliquid adapters are: no product route reaches it. It may keep its
-# imports; nothing that is mounted may.
-S5_HYPERLIQUID_UNMOUNTED_EXEMPT_ROOT = Path("lib/features/perp")
 PRODUCTION_FIXTURE_MARKERS = (
     "MemoryCommunicationGateway(",
     "MemoryPrivacyGateway",
@@ -1272,120 +1251,6 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
             r"\bfor\s*\(\s*var\s+index\s*=\s*1\s*;",
             r"\bfind\.byKey\s*\([\s\S]*?\)\s*,\s*findsOneWidget",
             r"\bfindsNothing\b",
-        ),
-    },
-}
-PERP_POSITIONS_CONTROLLER_PATH = Path(
-    "lib/features/perp/positions/perp_positions_controller.dart"
-)
-PERP_POSITIONS_SURFACE_PATH = Path(
-    "lib/features/perp/perp_portfolio_screens.dart"
-)
-PERP_POSITIONS_BEHAVIOR_TEST_MARKERS = {
-    Path("test/perp_positions_controller_test.dart"): (
-        "all position reads share one single-flight",
-        "initial read uses bounded limit and continuation uses cursor only",
-        "malformed dataset coverage and cursor pages clear all facts",
-        "expiry clears nonempty and empty position facts",
-        "gateway rotation retires late positions from the previous owner",
-        "expired load-more releases single-flight for a fresh initial read",
-        "wallet binding rejection never attempts a binding mutation",
-    ),
-    Path("test/perp_positions_screen_test.dart"): (
-        "explicit Preview is labelled and performs no private read",
-        "production renders Decimal-backed positions without fixture facts",
-        "production binding failure links to Perp account without binding",
-        "returning from Perp account retries positions without binding",
-        "resume clears expired position facts",
-        "production D5 fails closed without an ETH fixture",
-    ),
-}
-PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE = {
-    Path("test/perp_positions_controller_test.dart"): {
-        "all position reads share one single-flight": (
-            r"\bidentical\s*\(\s*first\s*,\s*second\s*\)",
-            r"\bidentical\s*\(\s*first\s*,\s*refresh\s*\)",
-            r"\bidentical\s*\(\s*firstMore\s*,\s*secondMore\s*\)",
-            r"\bidentical\s*\(\s*firstMore\s*,\s*refreshDuringMore\s*\)",
-            r"\bexpect\s*\(\s*gateway\.requests\s*,\s*hasLength\s*\(\s*2\s*\)",
-        ),
-        "initial read uses bounded limit and continuation uses cursor only": (
-            r"\bawait\s+fixture\.controller\.load\s*\(",
-            r"\bawait\s+fixture\.controller\.loadMore\s*\(",
-            r"\bexpect\s*\(\s*gateway\.requests\b",
-            r"\blimit\s*:\s*PerpPositionsController\.initialLimit\b",
-            r"\blimit\s*:\s*null\b",
-        ),
-        "malformed dataset coverage and cursor pages clear all facts": (
-            r"\bPerpSourceDataset\.account\b",
-            r"\bPerpRecentWindowCoverage\s*\(",
-            r"\bitems\s*:\s*const\s*<PerpPosition>\[\]\s*,\s*nextCursor\s*:",
-            r"\bcursor\s*==\s*null\s*\?[\s\S]*?\bnextCursor\s*:[\s\S]*?"
-            r":\s*_page\s*\([\s\S]*?\bnextCursor\s*:",
-            r"\.controller\.loadMore\s*\(",
-            r"\bPerpGatewayFailureKind\.invalidData\b",
-            r"\.state\.items\s*,\s*isEmpty\b",
-        ),
-        "expiry clears nonempty and empty position facts": (
-            r"\bfor\s*\(\s*final\s+items\b",
-            r"\bscheduler\.fireNext\s*\(",
-            r"\bPerpPositionsPhase\.stale\b",
-            r"\.state\.items\s*,\s*isEmpty\b",
-            r"\.state\.nextCursor\s*,\s*isNull\b",
-        ),
-        "gateway rotation retires late positions from the previous owner": (
-            r"\.container\.updateOverrides\s*\(",
-            r"\boldPage\.complete\s*\(",
-            r"\bawait\s+retired\b",
-            r"\bPerpCoin\.sol\b",
-        ),
-        "expired load-more releases single-flight for a fresh initial read": (
-            r"\bretiredLoadMore\b",
-            r"\.controller\.expireIfNeeded\s*\(",
-            r"\.controller\.refresh\s*\(",
-            r"\bexpect\s*\(\s*initialCalls\s*,\s*2\s*\)",
-            r"\bawait\s+retiredLoadMore\b",
-        ),
-        "wallet binding rejection never attempts a binding mutation": (
-            r"\bPerpGatewayFailureKind\.walletBindingRequired\b",
-            r"\bPerpPositionsPhase\.bindingRequired\b",
-            r"\bexpect\s*\(\s*gateway\.bindCalls\s*,\s*0\s*\)",
-        ),
-    },
-    Path("test/perp_positions_screen_test.dart"): {
-        "explicit Preview is labelled and performs no private read": (
-            r"\bpreview\s*:\s*true\b",
-            r"\bfind\.byKey\s*\(",
-            r"\bexpect\s*\(\s*gateway\.requests\s*,\s*isEmpty\s*\)",
-        ),
-        "production renders Decimal-backed positions without fixture facts": (
-            r"\b_AuthenticatedSession\.new\b",
-            r"\b_position\s*\(\s*PerpCoin\.eth\s*\)",
-            r"\bPerpPositionsController\.initialLimit\b",
-            r"\bfindsOne\b",
-            r"\bfindsNothing\b",
-        ),
-        "production binding failure links to Perp account without binding": (
-            r"\bPerpGatewayFailureKind\.walletBindingRequired\b",
-            r"\bfind\.byKey\s*\(",
-            r"\bexpect\s*\(\s*gateway\.bindCalls\s*,\s*0\s*\)",
-        ),
-        "returning from Perp account retries positions without binding": (
-            r"\bGoRouter\s*\(",
-            r"\btester\.tap\s*\(",
-            r"\bexpect\s*\(\s*calls\s*,\s*2\s*\)",
-            r"\bexpect\s*\(\s*gateway\.bindCalls\s*,\s*0\s*\)",
-        ),
-        "resume clears expired position facts": (
-            r"\bhandleAppLifecycleStateChanged\s*\(\s*AppLifecycleState\.paused",
-            r"\bhandleAppLifecycleStateChanged\s*\(\s*AppLifecycleState\.resumed",
-            r"\btester\.widget<Semantics>\s*\(",
-            r"\.properties\.liveRegion\b",
-        ),
-        "production D5 fails closed without an ETH fixture": (
-            r"\bscreen\s*:\s*const\s+PerpPositionScreen\s*\(",
-            r"\bfindsNothing\b",
-            r"\bexpect\s*\(\s*gateway\.requests\s*,\s*isEmpty\s*\)",
         ),
     },
 }
@@ -11399,9 +11264,9 @@ def check_s5_truth_contract(root: Path) -> list[str]:
     features_root = root / "lib" / "features"
     if features_root.is_dir():
         mounted_paths.extend(sorted(features_root.rglob("*.dart")))
-    exempt_root = root / S5_HYPERLIQUID_UNMOUNTED_EXEMPT_ROOT
+    # Decision 0172 deleted `lib/features/perp/**`, the one exempt root.
     for path in mounted_paths:
-        if not path.is_file() or exempt_root in path.parents:
+        if not path.is_file():
             continue
         executable = strip_dart_comments(read_text(path))
         if re.search(
@@ -12579,181 +12444,6 @@ def check_notification_preferences_application_contract(root: Path) -> list[str]
 
 
 
-def check_perp_positions_application_contract(root: Path) -> list[str]:
-    """Keep production D4 principal-bound, short-lived, and preview-free."""
-
-    errors: list[str] = []
-    for relative, markers in PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
-        configured = PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE.get(relative, {})
-        missing = sorted(set(markers).difference(configured))
-        unexpected = sorted(set(configured).difference(markers))
-        if missing or unexpected:
-            errors.append(
-                f"{relative} Perp Positions behavior/evidence keys differ: "
-                f"missing={missing}, unexpected={unexpected}"
-            )
-
-    errors.extend(require_fragments(
-        root,
-        {
-            str(PERP_POSITIONS_CONTROLLER_PATH): (
-                "static const int initialLimit = 2;",
-                "gateway.listPositions(limit: initialLimit)",
-                "gateway.listPositions(cursor: cursor)",
-                "PerpGatewayFailureKind.walletBindingRequired",
-                "void expireIfNeeded()",
-                "_generation += 1;",
-            ),
-            str(PERP_POSITIONS_SURFACE_PATH): (
-                "ref.watch(developmentPreviewEnabledProvider)",
-                "perp-preview-positions",
-                "开发预览",
-                "perp-live-positions",
-                "perp-position-live-unavailable",
-                "Review in Perp account",
-                "await context.push<void>('/perp/account');",
-                "LOADED · FRESH",
-                "perp-positions-status-live-region",
-                "No preview position is substituted in production.",
-            ),
-        },
-    ))
-
-    controller_path = root / PERP_POSITIONS_CONTROLLER_PATH
-    if controller_path.is_file():
-        controller_source = strip_dart_comments(read_text(controller_path))
-        controller_code = strip_dart_comments_and_strings(controller_source)
-        if re.search(r"\bbindWallet\s*\(", controller_code):
-            errors.append(
-                "Perp Positions controller must never perform wallet binding"
-            )
-        if "package:dio/" in controller_source or re.search(
-            r"(['\"])/v1/", controller_source
-        ):
-            errors.append(
-                "Perp Positions controller must use PerpPrivateGateway, not a direct transport"
-            )
-        initial_calls = re.findall(
-            r"\.listPositions\s*\(\s*limit\s*:\s*initialLimit\s*\)",
-            controller_code,
-        )
-        continuation_calls = re.findall(
-            r"\.listPositions\s*\(\s*cursor\s*:\s*cursor\s*\)",
-            controller_code,
-        )
-        if len(initial_calls) != 1:
-            errors.append(
-                "Perp Positions must issue exactly one bounded initial-read call site"
-            )
-        if len(continuation_calls) != 1:
-            errors.append(
-                "Perp Positions continuation must have exactly one cursor-only call site"
-            )
-        expire_start = controller_code.find("void _expireProjection()")
-        expire_end = controller_code.find("bool _isCurrent", expire_start)
-        expire_body = controller_code[expire_start:expire_end]
-        if (
-            expire_start < 0
-            or expire_end < 0
-            or re.search(r"\b_operation\s*=\s*null\s*;", expire_body) is None
-        ):
-            errors.append(
-                "Perp Positions expiry must release a retired logical single-flight"
-            )
-
-    surface_path = root / PERP_POSITIONS_SURFACE_PATH
-    if surface_path.is_file():
-        surface_source = strip_dart_comments(read_text(surface_path))
-        surface_code = strip_dart_comments_and_strings(surface_source)
-        d4_start = surface_code.find("class PerpPositionsScreen")
-        d4_end = surface_code.find("class _PerpPositionsPreview", d4_start)
-        d4_selector = surface_code[d4_start:d4_end]
-        if d4_start < 0 or d4_end < 0 or re.search(
-            r"if\s*\(\s*ref\.watch\s*\(\s*"
-            r"developmentPreviewEnabledProvider\s*\)\s*\)\s*\{\s*"
-            r"return\s+_PerpPositionsPreview\s*\([^;]*;\s*\}\s*"
-            r"return\s+const\s+_PerpPositionsLive\s*\(\s*\)\s*;",
-            d4_selector,
-            re.DOTALL,
-        ) is None:
-            errors.append(
-                "PerpPositionsScreen must select Preview only when the explicit "
-                "development flag is true"
-            )
-
-        d5_start = surface_code.find("class PerpPositionScreen")
-        d5_end = surface_code.find("class _PerpPositionLiveUnavailable", d5_start)
-        d5_selector = surface_code[d5_start:d5_end]
-        if d5_start < 0 or d5_end < 0 or re.search(
-            r"if\s*\(\s*!\s*ref\.watch\s*\(\s*"
-            r"developmentPreviewEnabledProvider\s*\)\s*\)\s*\{\s*"
-            r"return\s+const\s+_PerpPositionLiveUnavailable\s*\(\s*\)\s*;\s*\}",
-            d5_selector,
-            re.DOTALL,
-        ) is None:
-            errors.append(
-                "PerpPositionScreen must fail closed unless the explicit "
-                "development Preview flag is true"
-            )
-
-        live_start = surface_source.find("class _PerpPositionsLive")
-        live_end = surface_source.find("class _PositionCard", live_start)
-        if live_start < 0 or live_end < 0:
-            errors.append(
-                "Perp Positions surface must preserve separate production and Preview classes"
-            )
-        else:
-            live_source = surface_source[live_start:live_end]
-            for marker in (
-                "PerpPreviewData",
-                "_PositionCard(",
-                "context.push('/perp/position')",
-                "bindWallet(",
-                "32.4%",
-                "Mark price",
-                "Close position unavailable",
-            ):
-                if marker in live_source:
-                    errors.append(
-                        "Live Perp Positions must not reference preview, detail, or "
-                        f"binding marker: {marker}"
-                    )
-            if ".toDouble(" in strip_dart_comments_and_strings(live_source):
-                errors.append(
-                    "Live Perp Positions must render Decimal values without double conversion"
-                )
-
-        detail_start = surface_source.find("class _PerpPositionLiveUnavailable")
-        detail_end = surface_source.find("class _DisabledPositionAction", detail_start)
-        if detail_start < 0 or detail_end < 0:
-            errors.append(
-                "Production D5 must preserve its explicit unavailable boundary"
-            )
-        else:
-            detail_source = surface_source[detail_start:detail_end]
-            for marker in (
-                "PerpPreviewData",
-                "ETH-PERP",
-                "4,630.50",
-                "Close position unavailable",
-            ):
-                if marker in detail_source:
-                    errors.append(
-                        "Production D5 must fail closed without preview marker: "
-                        f"{marker}"
-                    )
-
-    errors.extend(
-        check_behavior_test_evidence(root, PERP_POSITIONS_BEHAVIOR_TEST_MARKERS)
-    )
-    errors.extend(
-        check_named_executable_test_evidence(
-            root, PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE
-        )
-    )
-    return errors
-
-
 FRIEND_FRONTEND_TEST_MARKERS = {
     Path("test/friend_feature_test.dart"): (
         "friend inputs allow shared aliases but reject duplicate identities and non-v4 IDs",
@@ -12766,8 +12456,7 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "unknown group draft survives route disposal in this session",
         "production group receipt without a Chat CID stays unconfirmed",
         "production friend surfaces fail closed without controls",
-        "gateway rotation clears visible friend and group text",
-        "Preview can search an alias and send a pending request",
+        "gateway rotation clears the visible group text",
         "Preview selects accepted friends and creates no Stream channel",
         "production group success requires a canonical CID and routes to guarded Chat",
         "Chat add menu exposes create-group and add-friend routes",
@@ -12777,7 +12466,6 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "loads incoming and outgoing first pages and paginates each list independently",
         "accept and reject remove only the decided incoming request",
         "unknown decision keeps one operation and permits reconciliation only",
-        "accept refreshes a mounted friend directory",
         "Preview cannot opt into production friend-request behavior",
     ),
     Path("test/loop_social_authenticated_session_test.dart"): (
@@ -12984,20 +12672,12 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "_unresolvedWriteKeepAlive ??= ref.keepAlive()",
                 "reconcileDecision",
             ),
-            "lib/features/chat/friends/friend_request_screen.dart": (
-                "ValueKey<String>('friend-requests-incoming-empty')",
-                "ValueKey<String>('friend-requests-outgoing-empty')",
-                "ValueKey<String>('friend-decision-reconcile')",
-            ),
+            # Decision 0172 deleted the unrouted friend list, add-friend and
+            # friend-request pages; only the mounted create-group flow stays.
             "lib/features/chat/friends/friend_screens.dart": (
-                "ValueKey<String>('friends-service-unavailable')",
-                "ValueKey<String>('friend-search-unavailable')",
                 "ValueKey<String>('friend-group-unavailable')",
                 "ValueKey<String>('friend-group-open-channel')",
-                "ValueKey<String>('friend-direct-reconcile')",
-                "ValueKey<String>('friend-request-reconcile')",
                 "ValueKey<String>('friend-group-reconcile')",
-                "ref.listenManual<FriendSearchState>",
                 "ref.listenManual<FriendGroupState>",
             ),
             "lib/features/chat/group_alias/group_alias_models.dart": (
@@ -13306,9 +12986,11 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
     screens_path = friend_feature_root / "friend_screens.dart"
     if screens_path.is_file():
         screens = strip_dart_comments(read_text(screens_path))
-        if screens.count("ref.listenManual<FriendGateway>") < 2:
+        # Decision 0172 deleted the unrouted add-friend page; the create
+        # group flow is the one remaining text owner.
+        if screens.count("ref.listenManual<FriendGateway>") < 1:
             errors.append(
-                "Friend search and group text must both clear on principal-bound gateway rotation"
+                "Group text must clear on principal-bound gateway rotation"
             )
 
     stream_route_path = root / "lib/features/chat/stream_chat_inbox_page.dart"
@@ -15614,7 +15296,6 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_profile_application_contract(root))
     errors.extend(check_privacy_application_contract(root))
     errors.extend(check_notification_preferences_application_contract(root))
-    errors.extend(check_perp_positions_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_user_visible_copy(root))
     errors.extend(check_list_refresh_contract(root))
@@ -15637,6 +15318,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_first_frame_cache_contract(root))
     errors.extend(check_launch2_user_contract(root))  # S136
     errors.extend(check_flat_family_contract(root))  # S186-5
+    errors.extend(check_family_guard_contract(root))  # S186-7
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -15829,6 +15511,211 @@ def check_flat_family_contract(root: Path) -> list[str]:
     return errors
 
 
+# Decision 0172 (S186-7, docs/33 §4 last row): three family guards over
+# `lib/features/**`. Each allowlist below may only shrink: an entry whose file
+# no longer needs it is itself an error, so a fixed file cannot keep a pass.
+#
+# 1. No surface corner is a bare number. A corner is a `LoopRadius` token; the
+#    only literals are named once, inside the declaration listed here.
+FEATURE_RADIUS_LITERAL_PATTERN = re.compile(
+    r"\b(?:Border)?Radius\.circular\(\s*[0-9.]"
+)
+FEATURE_RADIUS_LITERAL_ALLOWLIST: dict[tuple[str, str], str] = {
+    # Chart canvas geometry (decision 0171): 1 / 3 / 4 px is drawing, not a
+    # surface; a `LoopRadius` step would turn a 2 px candle into a pill.
+    ("lib/features/market/loop_market_chart.dart", "_ChartCorner"): (
+        "candle body, axis tag and crosshair bubble corners"
+    ),
+    ("lib/features/market/loop_candle_chart.dart", "_candleCorner"): (
+        "the candle body corner of the full chart"
+    ),
+    # The user's ruling (decision 0169, M1): the classic quick-fill card keeps
+    # decision 0122's r16 face untouched.
+    ("lib/features/meme/meme_widgets.dart", "MemeHeroCard"): (
+        "M1 quick-fill card, kept as 0122 drew it by user ruling"
+    ),
+    ("lib/features/community/community_home_widgets.dart", "_communityDiscoverHeroRadius"): (
+        "`.community-discover-hero{border-radius:19px}`, the prototype's own corner"
+    ),
+}
+# 2. No v1 accent. `market / chat / danger / warning / elevated` survive only
+#    in the chat pages mounted by Preview routes alone (docs/33 out-of-scope).
+FEATURE_LEGACY_COLOUR_PATTERN = re.compile(
+    r"\bLoopColors\.(?:market|chat|danger|warning|elevated)\b"
+)
+FEATURE_LEGACY_COLOUR_ALLOWLIST: dict[str, str] = {
+    "lib/features/chat/chat_inbox_page.dart": "Preview-only inbox",
+    "lib/features/chat/conversation_pages.dart": "Preview-only conversation",
+    "lib/features/chat/chat_secondary_pages.dart": "Preview-only chat subpages",
+    "lib/features/chat/voice_room_page.dart": "Preview-only voice room",
+    "lib/features/chat/chat_preview_pages.dart": "Preview-only chat pages",
+    "lib/features/chat/widgets/chat_components.dart": "Preview-only chat parts",
+}
+# 3. No v1 shell or state widget. What is left is listed file by file, each
+#    with the reason it still stands; the list may only shrink.
+FEATURE_LEGACY_WIDGET_PATTERN = re.compile(
+    r"\b(?:LoopStateCard\b|LoopPage\(|LoopEmpty\(|LoopUnavailableCard\b|"
+    r"LoopCard\(|LoopSectionLabel\b|LoopStatusPill\b|LoopWideButton\b|"
+    r"LoopSubChip\b)"
+)
+_PREVIEW_ONLY = "Preview-only chat surface (docs/33: not on a production route)"
+_LEGACY_EMPTY = (
+    "inline LoopEmpty strips outside the S186 batches (docs/33 lists no item "
+    "here); moving them to LoopEmptyState / LoopInlineUnavailable needs a "
+    "page-by-page acceptance pass"
+)
+FEATURE_LEGACY_WIDGET_ALLOWLIST: dict[str, str] = {
+    "lib/features/chat/chat_inbox_page.dart": _PREVIEW_ONLY,
+    "lib/features/chat/chat_preview_pages.dart": _PREVIEW_ONLY,
+    "lib/features/chat/chat_preview_route_guard.dart": _PREVIEW_ONLY,
+    "lib/features/chat/chat_secondary_pages.dart": _PREVIEW_ONLY,
+    "lib/features/chat/conversation_pages.dart": _PREVIEW_ONLY,
+    "lib/features/chat/preview_conversation_unavailable_page.dart": _PREVIEW_ONLY,
+    "lib/features/chat/voice_room_page.dart": _PREVIEW_ONLY,
+    "lib/features/chat/widgets/chat_components.dart": _PREVIEW_ONLY,
+    # The shared chain state blocks every slice renders (loading / offline /
+    # permission strips); retiring them moves every chain page at once.
+    "lib/features/chain/chain_widgets.dart": (
+        "shared LoopChainStateBlock strips used by every chain slice"
+    ),
+    # The account opening flow (05 steps) and its OTP / LOOP ID pages.
+    "lib/features/account/account_screens.dart": _LEGACY_EMPTY,
+    "lib/features/account/loop_id_setup_screen.dart": _LEGACY_EMPTY,
+    "lib/features/account/privy_otp_screen.dart": _LEGACY_EMPTY,
+    # Chat v2 production pages (S186-3 retired the shells, not the strips).
+    "lib/features/chat/token_card/chat_token_card.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/chat_forward_screens.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/chat_search_screen.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/community_chat_screen.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/direct_message_screen.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/forward_target_sheet.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/group_screens.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/loop_stream_channel_surface.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/voice_room_screens.dart": _LEGACY_EMPTY,
+    "lib/features/chat/v2/voice_room_stage.dart": _LEGACY_EMPTY,
+    # Community / social: S186-5 swept colours and controls, not the strips;
+    # the two LoopWideButton pages are the 0127 application form.
+    "lib/features/community/community_ai_screen.dart": _LEGACY_EMPTY,
+    "lib/features/community/community_discover_screen.dart": _LEGACY_EMPTY,
+    "lib/features/community/community_manage_screen.dart": _LEGACY_EMPTY,
+    "lib/features/community/community_members_screen.dart": _LEGACY_EMPTY,
+    "lib/features/community/community_profile_screen.dart": (
+        _LEGACY_EMPTY + "; LoopWideButton is the 0127 application entry"
+    ),
+    "lib/features/community/community_screen.dart": _LEGACY_EMPTY,
+    "lib/features/community/community_widgets.dart": (
+        _LEGACY_EMPTY + "; LoopWideButton is the 0127 application form"
+    ),
+    "lib/features/community/search_screen.dart": _LEGACY_EMPTY,
+    "lib/features/social/blocklist_screen.dart": _LEGACY_EMPTY,
+    "lib/features/social/public_profile/user_profile_screen.dart": _LEGACY_EMPTY,
+    "lib/features/social/public_profile_sheet.dart": _LEGACY_EMPTY,
+    "lib/features/square/square_community_list.dart": _LEGACY_EMPTY,
+    # The hidden IDO launch (decision 0110 keeps it recoverable) and the
+    # launch2 project / NFT pages' invalid-route strips.
+    "lib/features/launch/launch_action_screens.dart": _LEGACY_EMPTY,
+    "lib/features/launch/launch_detail_screens.dart": _LEGACY_EMPTY,
+    "lib/features/launch/launch_screen.dart": _LEGACY_EMPTY,
+    "lib/features/launch/launch_trade_screen.dart": _LEGACY_EMPTY,
+    "lib/features/launch/launch_widgets.dart": _LEGACY_EMPTY,
+    "lib/features/launch2/launch2_instance_screen.dart": _LEGACY_EMPTY,
+    "lib/features/launch2/launch2_nft_screen.dart": _LEGACY_EMPTY,
+    "lib/features/mining/mining_screen.dart": _LEGACY_EMPTY,
+    "lib/features/mining/mining_secondary_screens.dart": _LEGACY_EMPTY,
+    "lib/features/mining/referral_screen.dart": _LEGACY_EMPTY,
+    "lib/features/profile/profile_v2_screens.dart": _LEGACY_EMPTY,
+    "lib/features/profile/security/security_screens.dart": _LEGACY_EMPTY,
+    "lib/features/scan/scan_screen.dart": _LEGACY_EMPTY,
+    "lib/features/security/mfa/passkey_sheet.dart": _LEGACY_EMPTY,
+    "lib/features/system/system_surfaces.dart": _LEGACY_EMPTY,
+}
+
+
+def _enclosing_declaration(lines: list[str], index: int) -> str | None:
+    """The top-level class or constant that line [index] sits in."""
+
+    declaration = re.compile(
+        r"^(?:(?:abstract|final|sealed|base|interface|mixin)\s+)*class\s+(\w+)"
+        r"|^(?:const|final)\s+[\w<>?, ]+?\s+(\w+)\s*="
+    )
+    for cursor in range(index, -1, -1):
+        match = declaration.match(lines[cursor])
+        if match:
+            return match.group(1) or match.group(2)
+    return None
+
+
+def check_family_guard_contract(
+    root: Path,
+    radius_allowlist: dict[tuple[str, str], str] | None = None,
+    colour_allowlist: dict[str, str] | None = None,
+    widget_allowlist: dict[str, str] | None = None,
+) -> list[str]:
+    """Decision 0172: `lib/features/**` writes no bare corner, no v1 accent
+    and no v1 shell or state widget outside its shrinking allowlists."""
+
+    radii = FEATURE_RADIUS_LITERAL_ALLOWLIST if radius_allowlist is None else radius_allowlist
+    colours = FEATURE_LEGACY_COLOUR_ALLOWLIST if colour_allowlist is None else colour_allowlist
+    widgets = FEATURE_LEGACY_WIDGET_ALLOWLIST if widget_allowlist is None else widget_allowlist
+    errors: list[str] = []
+    used_radii: set[tuple[str, str]] = set()
+    used_colours: set[str] = set()
+    used_widgets: set[str] = set()
+    features = root / "lib" / "features"
+    for dart in sorted(features.rglob("*.dart")) if features.is_dir() else []:
+        rel = dart.relative_to(root).as_posix()
+        text = strip_dart_comments(read_text(dart))
+        lines = text.split("\n")
+        for number, line in enumerate(lines):
+            if not FEATURE_RADIUS_LITERAL_PATTERN.search(line):
+                continue
+            owner = _enclosing_declaration(lines, number)
+            if owner is not None and (rel, owner) in radii:
+                used_radii.add((rel, owner))
+                continue
+            errors.append(
+                f"{rel}:{number + 1} writes a corner as a bare number; use a "
+                "LoopRadius token (decision 0172)"
+            )
+        if FEATURE_LEGACY_COLOUR_PATTERN.search(text):
+            if rel in colours:
+                used_colours.add(rel)
+            else:
+                errors.append(
+                    f"{rel} uses a v1 accent colour (market / chat / danger / "
+                    "warning / elevated); only Preview-only chat pages may "
+                    "(decision 0172)"
+                )
+        found = sorted(
+            {match.group(0).rstrip("(") for match in FEATURE_LEGACY_WIDGET_PATTERN.finditer(text)}
+        )
+        if found:
+            if rel in widgets:
+                used_widgets.add(rel)
+            else:
+                errors.append(
+                    f"{rel} uses the v1 {', '.join(found)}; use LoopEmptyState / "
+                    "LoopInlineUnavailable / LoopNotice / LoopLabel / LoopBadge "
+                    "(decision 0172)"
+                )
+    for entry in sorted(set(radii) - used_radii):
+        errors.append(
+            f"FEATURE_RADIUS_LITERAL_ALLOWLIST entry {entry[0]} · {entry[1]} is "
+            "no longer needed; remove it (the list only shrinks)"
+        )
+    for entry in sorted(set(colours) - used_colours):
+        errors.append(
+            f"FEATURE_LEGACY_COLOUR_ALLOWLIST entry {entry} is no longer "
+            "needed; remove it (the list only shrinks)"
+        )
+    for entry in sorted(set(widgets) - used_widgets):
+        errors.append(
+            f"FEATURE_LEGACY_WIDGET_ALLOWLIST entry {entry} is no longer "
+            "needed; remove it (the list only shrinks)"
+        )
+    return errors
+
+
 def main() -> int:
     errors = validate()
     if errors:
@@ -15857,6 +15744,7 @@ def main() -> int:
         "channel-resolved chat names, recognised chat contract addresses, "
         "gated MEME v2 user pages, "  # S136
         "flat second-level pages and a v1-free voice / community / social family, "  # S186-5
+        "token-only feature corners, no v1 accent and no new v1 widget, "  # S186-7
         "and secret rules are consistent."
     )
     return 0

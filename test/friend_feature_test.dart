@@ -17,7 +17,6 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/friends/friend_controllers.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
-import 'package:loop_mobile/features/chat/friends/friend_request_screen.dart';
 import 'package:loop_mobile/features/chat/friends/friend_screens.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
@@ -623,32 +622,16 @@ void main() {
   testWidgets('production friend surfaces fail closed without controls', (
     tester,
   ) async {
-    await _pumpPage(tester, const AddFriendPage());
-    expect(
-      find.byKey(const ValueKey<String>('friend-search-unavailable')),
-      findsOneWidget,
-    );
-    expect(find.byType(TextField), findsNothing);
-    expect(find.textContaining('开发预览'), findsNothing);
-
     await _pumpPage(tester, const CreateFriendGroupPage());
     expect(
       find.byKey(const ValueKey<String>('friend-group-unavailable')),
       findsOneWidget,
     );
     expect(find.byType(Checkbox), findsNothing);
-
-    await _pumpPage(tester, const FriendListPage());
-    expect(
-      find.byKey(const ValueKey<String>('friends-service-unavailable')),
-      findsOneWidget,
-    );
-    expect(find.text('NightOwl'), findsNothing);
+    expect(find.textContaining('开发预览'), findsNothing);
   });
 
-  testWidgets('gateway rotation clears visible friend and group text', (
-    tester,
-  ) async {
+  testWidgets('gateway rotation clears the visible group text', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -659,33 +642,6 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(theme: LoopTheme.dark, home: AddFriendPage()),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('friend-alias-search-input')),
-      'previous-account-alias',
-    );
-    container.updateOverrides([
-      friendGatewayProvider.overrideWithValue(MemoryFriendGateway()),
-    ]);
-    await tester.pump();
-    await tester.pump();
-    expect(
-      tester
-          .widget<TextField>(
-            find.byKey(const ValueKey<String>('friend-alias-search-input')),
-          )
-          .controller
-          ?.text,
-      isEmpty,
-    );
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -716,59 +672,6 @@ void main() {
           ?.text,
       isEmpty,
     );
-  });
-
-  testWidgets('unknown friend query restores after route disposal', (
-    tester,
-  ) async {
-    final gateway = _OutcomeUnknownFriendGateway();
-    final container = ProviderContainer(
-      overrides: [friendGatewayProvider.overrideWithValue(gateway)],
-    );
-    addTearDown(container.dispose);
-    final subscription = container.listen(
-      friendSearchControllerProvider,
-      (previous, next) {},
-      fireImmediately: true,
-    );
-    final controller = container.read(friendSearchControllerProvider.notifier);
-    await controller.search('mia');
-    await controller.sendRequest(
-      container
-          .read(friendSearchControllerProvider)
-          .results
-          .single
-          .identity
-          .profileRef,
-    );
-    subscription.close();
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const SizedBox.shrink(),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 1));
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(theme: LoopTheme.dark, home: AddFriendPage()),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
-
-    expect(
-      tester
-          .widget<TextField>(
-            find.byKey(const ValueKey<String>('friend-alias-search-input')),
-          )
-          .controller
-          ?.text,
-      'mia',
-    );
-    expect(find.text('好友请求结果待确认'), findsOneWidget);
   });
 
   testWidgets('unknown group name restores after route disposal', (
@@ -820,77 +723,6 @@ void main() {
       'Spot Research',
     );
     expect(find.text('群组创建结果待确认'), findsOneWidget);
-  });
-
-  testWidgets('definitive friend rejection copy never claims unknown outcome', (
-    tester,
-  ) async {
-    final gateway = _FailFirstFriendGateway();
-    await _pumpPage(tester, const AddFriendPage(), gateway: gateway);
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('friend-alias-search-input')),
-      'mia',
-    );
-    await tester.pump();
-    await tester.tap(
-      find.byKey(const ValueKey<String>('friend-alias-search-submit')),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey<String>('friend-add-result-0')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('好友请求未发送'), findsOneWidget);
-    expect(find.text('服务暂时无法完成请求；没有好友关系或群组被修改。'), findsOneWidget);
-    expect(find.textContaining('无法确认'), findsNothing);
-  });
-
-  testWidgets('Preview can search an alias and send a pending request', (
-    tester,
-  ) async {
-    final gateway = MemoryFriendGateway();
-    await _pumpPage(tester, const AddFriendPage(), gateway: gateway);
-
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('friend-alias-search-input')),
-      'mia',
-    );
-    await tester.pump();
-    expect(
-      tester
-          .widget<FilledButton>(
-            find.byKey(const ValueKey<String>('friend-alias-search-submit')),
-          )
-          .onPressed,
-      isNotNull,
-    );
-    await tester.ensureVisible(
-      find.byKey(const ValueKey<String>('friend-alias-search-submit')),
-    );
-    await tester.tap(
-      find.byKey(const ValueKey<String>('friend-alias-search-submit')),
-    );
-    await tester.pumpAndSettle();
-
-    final searchState = ProviderScope.containerOf(
-      tester.element(find.byType(AddFriendPage)),
-    ).read(friendSearchControllerProvider);
-    expect(searchState.phase, FriendSearchPhase.ready);
-    expect(searchState.results, hasLength(1));
-
-    expect(find.text('onchain.mia'), findsOneWidget);
-    expect(find.text('添加'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey<String>('friend-add-result-0')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('已发送'), findsOneWidget);
-    expect(
-      (await gateway.searchByAlias('mia')).single.relationship,
-      FriendRelationship.requestPending,
-    );
-    expect(
-      (await gateway.loadFriends()).map((friend) => friend.alias),
-      isNot(contains('onchain.mia')),
-    );
   });
 
   testWidgets(
@@ -1123,19 +955,16 @@ void main() {
       // longer mounted and land back on Community as informational retirements.
       router.go('/profile/friends');
       await tester.pumpAndSettle();
-      expect(find.byType(FriendListPage), findsNothing);
       expect(router.routeInformationProvider.value.uri.path, '/chat');
 
       router.go('/chat/friends/add');
       await tester.pumpAndSettle();
-      expect(find.byType(AddFriendPage), findsNothing);
       expect(router.routeInformationProvider.value.uri.path, '/chat');
 
       // Step 4 folded the V1 request inbox into `dm-requests`: the legacy
       // location is no longer mounted and lands back on Community.
       router.go('/chat/friends/requests');
       await tester.pumpAndSettle();
-      expect(find.byType(FriendRequestsPage), findsNothing);
       expect(router.routeInformationProvider.value.uri.path, '/chat');
     },
   );

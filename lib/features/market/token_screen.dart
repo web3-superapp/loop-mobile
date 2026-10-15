@@ -126,11 +126,12 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         title: '无法打开这个资产',
         onBack: widget.onBack,
         body: const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('token-invalid-identity'),
-            icon: 'warn',
-            message: '路由中没有可用的资产标识',
-            reason: 'Token 页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。',
+            illustration: LoopIllustration.chartEmpty,
+            title: '路由中没有可用的资产标识',
+            message: 'Token 页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。',
+            compact: true,
           ),
         ],
       );
@@ -307,7 +308,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             ),
           )
         else if (detail.capability.blocksEntirePage)
-          LoopUnavailableCard(
+          LoopUnavailableLine(
             key: const ValueKey<String>('token-asset-blocked'),
             label: '该资产已被标记为不可展示',
             reasonCode: detail.capability.reasonCode ?? 'ASSET_BLOCKED',
@@ -1043,11 +1044,12 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
               SizedBox(
                 height: widget.height,
                 child: const Center(
-                  child: LoopEmpty(
+                  child: LoopEmptyState(
                     key: ValueKey<String>('candles-empty'),
-                    message: '这个区间没有成交',
-                    reason: '只画有成交的桶，空桶不会补 0。',
-                    margin: EdgeInsets.zero,
+                    illustration: LoopIllustration.chartEmpty,
+                    title: '这个区间没有成交',
+                    message: '只画有成交的桶，空桶不会补 0。',
+                    compact: true,
                   ),
                 ),
               ),
@@ -1484,10 +1486,12 @@ class _TokenNotificationFeedState
         .where((entry) => entry.contextParams['assetId'] == widget.assetId)
         .toList(growable: false);
     if (entries.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('token-feed-empty'),
-        message: '还没有与这个资产相关的通知',
-        reason: '价格提醒触发后会出现在这里。推送还没有开放。',
+        illustration: LoopIllustration.chartEmpty,
+        title: '还没有与这个资产相关的通知',
+        message: '价格提醒触发后会出现在这里。推送还没有开放。',
+        compact: true,
       );
     }
     return LoopRecordGroup(

@@ -1,5 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -151,15 +153,19 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
           ),
         ),
         if (listed.isEmpty && folded.isEmpty)
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('${widget.rowKeyPrefix}-none'),
-            message: _query.text.trim().isEmpty ? '这个钱包还没有可读资产' : '没有匹配的资产',
+            illustration: LoopIllustration.search,
+            title: _query.text.trim().isEmpty ? '这个钱包还没有可读资产' : '没有匹配的资产',
+            compact: true,
           )
         else ...<Widget>[
           if (listed.isEmpty)
-            LoopEmpty(
+            LoopEmptyState(
               key: ValueKey<String>('${widget.rowKeyPrefix}-none-spendable'),
-              message: '没有可动用余额的资产',
+              illustration: LoopIllustration.search,
+              title: '没有可动用余额的资产',
+              compact: true,
             )
           else
             LoopRecordGroup(

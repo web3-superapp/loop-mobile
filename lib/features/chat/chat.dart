@@ -13,7 +13,6 @@ export 'friends/friend_controllers.dart';
 export 'friends/friend_gateway.dart';
 export 'friends/friend_models.dart';
 export 'friends/friend_request_controller.dart';
-export 'friends/friend_request_screen.dart';
 export 'friends/friend_screens.dart';
 export 'group_alias/group_alias_controller.dart';
 export 'group_alias/group_alias_gateway.dart';

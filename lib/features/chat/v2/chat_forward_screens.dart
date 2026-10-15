@@ -888,7 +888,7 @@ class _MergeCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
               decoration: const BoxDecoration(
                 color: LoopColors.ink,
-                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderRadius: LoopRadius.tile,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -984,7 +984,7 @@ class _MergeRow extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: accent ? LoopColors.lime : LoopColors.ink,
-            borderRadius: const BorderRadius.all(Radius.circular(15)),
+            borderRadius: LoopRadius.tile,
           ),
           child: Text(
             ordinal.toString().padLeft(2, '0'),

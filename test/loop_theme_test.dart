@@ -46,15 +46,8 @@ void main() {
       'lib/features/chat/chat_inbox_page.dart',
       'lib/features/chat/chat_secondary_pages.dart',
       'lib/features/chat/conversation_pages.dart',
-      'lib/features/chat/friends/chat_create_menu_button.dart',
-      'lib/features/chat/stream_chat_inbox_page.dart',
       'lib/features/chat/voice_room_page.dart',
       'lib/features/chat/widgets/chat_components.dart',
-      'lib/features/home/home_screens.dart',
-      'lib/features/launchpad/launchpad_screen.dart',
-      'lib/features/perp/perp_account_screens.dart',
-      'lib/features/perp/perp_models.dart',
-      'lib/features/profile/profile_screens.dart',
       'lib/widgets/loop_ui.dart',
     };
     final pattern = RegExp(r'LoopColors\.(?:market|chat)\b');

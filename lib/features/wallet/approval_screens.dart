@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -395,7 +396,7 @@ class _DecodedCallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final decoded = intent.review.decodedCall;
     if (decoded == null) {
-      return const LoopUnavailableCard(
+      return const LoopUnavailableLine(
         key: ValueKey<String>('approval-decoded-unavailable'),
         label: '调用无法解码',
         reasonCode: 'SIGNING_PAYLOAD_UNAVAILABLE',
@@ -543,11 +544,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               ],
             ),
             const LoopLabel('按额度排序'),
-            LoopEmpty(
+            LoopInlineUnavailable(
               key: const ValueKey<String>('approvals-page-block'),
-              icon: 'warn',
               message: '授权清单当前不可用',
-              reason: loopChainFailureReason(state!.failureKind),
+              detail: loopChainFailureReason(state!.failureKind),
+              detailMaxLines: 3,
+              maxLines: 2,
             ),
           ] else if (walletId == null || state == null || !state.isReady)
             LoopChainStateBlock(

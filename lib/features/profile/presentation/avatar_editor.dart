@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// The edge of the square the device uploads. The server re-encodes to
@@ -398,11 +399,13 @@ class _LoopAvatarEditorState extends ConsumerState<LoopAvatarEditor> {
           ),
         ] else if (failure != null) ...<Widget>[
           const SizedBox(height: 8),
-          Text(
+          // Decision 0172: the refusal is the shared inline line (warn glyph
+          // + secondary text), never the v1 pink.
+          LoopInlineUnavailable(
             key: ValueKey<String>('loop-avatar-upload-failure-${failure.name}'),
-            avatarUploadFailureReason(failure),
-            textAlign: TextAlign.center,
-            style: LoopTypography.caption(12, color: LoopColors.danger),
+            message: avatarUploadFailureReason(failure),
+            maxLines: 3,
+            padding: EdgeInsets.zero,
           ),
         ],
       ],

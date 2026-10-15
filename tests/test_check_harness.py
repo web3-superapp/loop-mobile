@@ -194,7 +194,6 @@ FRIEND_FRONTEND_FIXTURE_FILES = (
     "lib/features/chat/friends/friend_gateway.dart",
     "lib/features/chat/friends/friend_models.dart",
     "lib/features/chat/friends/friend_request_controller.dart",
-    "lib/features/chat/friends/friend_request_screen.dart",
     "lib/features/chat/friends/friend_screens.dart",
     "lib/features/chat/group_alias/group_alias_controller.dart",
     "lib/features/chat/group_alias/group_alias_gateway.dart",
@@ -6225,9 +6224,9 @@ class HarnessTests(unittest.TestCase):
                     msg=f"expected unmounted Hyperliquid guard: {result}",
                 )
 
-    def test_retained_perp_history_may_keep_its_hyperliquid_imports(self) -> None:
-        # `lib/features/perp/**` is retained, unmounted history for the same
-        # reason: no product route reaches it.
+    def test_deleted_perp_history_has_no_hyperliquid_exemption(self) -> None:
+        # Decision 0172 deleted `lib/features/perp/**`; a file recreated there
+        # is an ordinary feature file and may not import the adapters.
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             target = root / "lib/features/perp/perp_overview_screens.dart"
@@ -6240,10 +6239,9 @@ class HarnessTests(unittest.TestCase):
 
             result = check_harness.check_s5_truth_contract(root)
 
-        self.assertEqual(
-            [],
-            [error for error in result if "unmounted history" in error],
-            msg=f"retained Perp history must stay exempt: {result}",
+        self.assertTrue(
+            any("must stay unmounted history" in error for error in result),
+            msg=f"a recreated Perp file must not be exempt: {result}",
         )
 
     def test_receive_qr_encoder_cannot_take_a_dependency(self) -> None:
@@ -8254,275 +8252,6 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_chat_camera_contract(root)
         self.assertTrue(any("no assertion" in error for error in result), result)
 
-    def test_perp_positions_paths_are_required(self) -> None:
-        expected = {
-            "docs/decisions/0014-connect-perp-positions-projection.md",
-            "lib/features/perp/perp_portfolio_screens.dart",
-            "lib/features/perp/positions/perp_positions_controller.dart",
-            "test/perp_positions_controller_test.dart",
-            "test/perp_positions_screen_test.dart",
-        }
-
-        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
-
-    def test_perp_positions_behavior_tests_cannot_be_hollowed_out(self) -> None:
-        for relative, markers in check_harness.PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
-            forged_markers = ", ".join(repr(marker) for marker in markers)
-            hollow_tests = "\n".join(
-                f"test({marker!r}, () {{ final observed = true; }});"
-                for marker in markers
-            )
-            dummy_assertions = "\n".join(
-                f"test({marker!r}, () {{ expect(true, isTrue); }});"
-                for marker in markers
-            )
-            hollow_sources = (
-                "void main() {}\n",
-                f"void main() {{ const markers = <String>[{forged_markers}]; }}\n",
-                "void main() {\n" + hollow_tests + "\n}\n",
-                "void main() {\n" + dummy_assertions + "\n}\n",
-            )
-            for source_text in hollow_sources:
-                with self.subTest(path=str(relative), source=source_text):
-                    with tempfile.TemporaryDirectory() as temporary:
-                        root = Path(temporary)
-                        test_path = root / relative
-                        test_path.parent.mkdir(parents=True)
-                        test_path.write_text(source_text, encoding="utf-8")
-
-                        result = check_harness.check_perp_positions_application_contract(
-                            root
-                        )
-
-                    self.assertTrue(
-                        any(
-                            "missing required behavior evidence" in error
-                            or "lacks executable contract evidence" in error
-                            for error in result
-                        ),
-                        msg=f"expected non-hollow Perp Positions guard: {result}",
-                    )
-
-    def test_perp_positions_every_marker_has_executable_evidence(self) -> None:
-        for relative, markers in check_harness.PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
-            configured = check_harness.PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE.get(
-                relative,
-                {},
-            )
-            self.assertEqual(set(markers), set(configured), msg=str(relative))
-
-    def test_perp_positions_dummy_assertions_fail_for_every_marker(self) -> None:
-        for relative, markers in check_harness.PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
-            source_text = "void main() {\n" + "\n".join(
-                f"test({marker!r}, () {{ expect(true, isTrue); }});"
-                for marker in markers
-            ) + "\n}\n"
-            with tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
-                test_path = root / relative
-                test_path.parent.mkdir(parents=True)
-                test_path.write_text(source_text, encoding="utf-8")
-
-                result = check_harness.check_named_executable_test_evidence(
-                    root,
-                    check_harness.PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE,
-                )
-
-            for marker in markers:
-                self.assertTrue(
-                    any(f"test `{marker}` lacks" in error for error in result),
-                    msg=f"expected evidence failure for {relative} / {marker}: {result}",
-                )
-
-    def test_perp_positions_malformed_cursor_cases_are_independently_guarded(
-        self,
-    ) -> None:
-        source = (
-            REPOSITORY_ROOT
-            / "test"
-            / "perp_positions_controller_test.dart"
-        ).read_text(encoding="utf-8")
-        mutations = (
-            (
-                "empty page with cursor",
-                "items: const <PerpPosition>[],\n"
-                "              nextCursor: 'cursor-without-progress',",
-                "items: <PerpPosition>[_position(PerpCoin.btc)],",
-            ),
-            (
-                "repeated cursor",
-                "items: <PerpPosition>[_position(PerpCoin.sol)],\n"
-                "                    nextCursor: 'same-cursor',",
-                "items: <PerpPosition>[_position(PerpCoin.sol)],",
-            ),
-        )
-        for name, before, after in mutations:
-            with self.subTest(case=name):
-                self.assertIn(before, source)
-                with tempfile.TemporaryDirectory() as temporary:
-                    root = Path(temporary)
-                    test_path = root / "test" / "perp_positions_controller_test.dart"
-                    test_path.parent.mkdir(parents=True)
-                    test_path.write_text(
-                        source.replace(before, after, 1),
-                        encoding="utf-8",
-                    )
-
-                    result = check_harness.check_named_executable_test_evidence(
-                        root,
-                        check_harness.PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE,
-                    )
-
-                self.assertTrue(
-                    any(
-                        "malformed dataset coverage and cursor pages clear all facts"
-                        in error
-                        for error in result
-                    ),
-                    msg=f"expected independent {name} evidence guard: {result}",
-                )
-
-    def test_perp_positions_contract_rejects_auto_bind_and_preview_leaks(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            controller = root / check_harness.PERP_POSITIONS_CONTROLLER_PATH
-            controller.parent.mkdir(parents=True)
-            controller_source = (
-                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_CONTROLLER_PATH
-            ).read_text(encoding="utf-8")
-            controller.write_text(
-                controller_source.replace(
-                    "final page = await gateway.listPositions(limit: initialLimit);",
-                    "await gateway.bindWallet();\n"
-                    "      final page = await gateway.listPositions(limit: initialLimit);",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            surface = root / check_harness.PERP_POSITIONS_SURFACE_PATH
-            surface.parent.mkdir(parents=True, exist_ok=True)
-            surface_source = (
-                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_SURFACE_PATH
-            ).read_text(encoding="utf-8")
-            surface.write_text(
-                surface_source.replace(
-                    "        const _PerpPositionsLiveBanner(),",
-                    "        Text(PerpPreviewData.ethPosition.toString()),\n"
-                    "        const _PerpPositionsLiveBanner(),",
-                    1,
-                ).replace(
-                    "No ETH fixture, mark price",
-                    "ETH-PERP fixture, mark price",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_perp_positions_application_contract(root)
-
-        self.assertTrue(
-            any("must never perform wallet binding" in error for error in result),
-            msg=f"expected wallet-binding guard: {result}",
-        )
-        self.assertTrue(
-            any("PerpPreviewData" in error for error in result),
-            msg=f"expected live-preview guard: {result}",
-        )
-        self.assertTrue(
-            any("Production D5" in error and "ETH-PERP" in error for error in result),
-            msg=f"expected D5 fail-closed guard: {result}",
-        )
-
-    def test_perp_positions_selectors_cannot_invert_preview_and_production(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            surface = root / check_harness.PERP_POSITIONS_SURFACE_PATH
-            surface.parent.mkdir(parents=True)
-            source = (
-                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_SURFACE_PATH
-            ).read_text(encoding="utf-8")
-            surface.write_text(
-                source.replace(
-                    "if (!ref.watch(developmentPreviewEnabledProvider)) {",
-                    "if (ref.watch(developmentPreviewEnabledProvider)) {",
-                    1,
-                ).replace(
-                    "if (ref.watch(developmentPreviewEnabledProvider)) {",
-                    "if (!ref.watch(developmentPreviewEnabledProvider)) {",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_perp_positions_application_contract(root)
-
-        self.assertTrue(
-            any("PerpPositionsScreen must select Preview only" in error for error in result),
-            msg=f"expected D4 selector guard: {result}",
-        )
-        self.assertTrue(
-            any("PerpPositionScreen must fail closed" in error for error in result),
-            msg=f"expected D5 selector guard: {result}",
-        )
-
-    def test_perp_positions_continuation_must_remain_cursor_only(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            controller = root / check_harness.PERP_POSITIONS_CONTROLLER_PATH
-            controller.parent.mkdir(parents=True)
-            source = (
-                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_CONTROLLER_PATH
-            ).read_text(encoding="utf-8")
-            controller.write_text(
-                source.replace(
-                    "gateway.listPositions(cursor: cursor)",
-                    "gateway.listPositions(limit: initialLimit, cursor: cursor)",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_perp_positions_application_contract(root)
-
-        self.assertTrue(
-            any("cursor-only call site" in error for error in result),
-            msg=f"expected cursor-only continuation guard: {result}",
-        )
-
-    def test_perp_positions_expiry_releases_retired_single_flight(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            controller = root / check_harness.PERP_POSITIONS_CONTROLLER_PATH
-            controller.parent.mkdir(parents=True)
-            source = (
-                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_CONTROLLER_PATH
-            ).read_text(encoding="utf-8")
-            controller.write_text(
-                source.replace(
-                    "    _generation += 1;\n"
-                    "    _operation = null;\n"
-                    "    _cancelExpiry();\n"
-                    "    state = PerpPositionsState._(\n"
-                    "      mode: state.mode,\n"
-                    "      phase: PerpPositionsPhase.stale,",
-                    "    _generation += 1;\n"
-                    "    _cancelExpiry();\n"
-                    "    state = PerpPositionsState._(\n"
-                    "      mode: state.mode,\n"
-                    "      phase: PerpPositionsPhase.stale,",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_perp_positions_application_contract(root)
-
-        self.assertTrue(
-            any("release a retired logical single-flight" in error for error in result),
-            msg=f"expected expiry single-flight guard: {result}",
-        )
-
     def test_a11_cannot_restore_a_providerless_protection_switch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -10456,3 +10185,215 @@ class FlatFamilyContractTests(unittest.TestCase):
             result = check_harness.check_flat_family_contract(root)
         self.assertEqual(1, len(result), result)
         self.assertIn("community/search_screen.dart", result[0])
+
+
+class FamilyGuardContractTests(unittest.TestCase):
+    """Decision 0172 (S186-7): the three `lib/features/**` family guards."""
+
+    def _write(self, root: Path, relative: str, source: str) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+
+    def _check(self, root: Path, **allowlists: object) -> list[str]:
+        return check_harness.check_family_guard_contract(
+            root,
+            radius_allowlist=allowlists.get("radii", {}),
+            colour_allowlist=allowlists.get("colours", {}),
+            widget_allowlist=allowlists.get("widgets", {}),
+        )
+
+    def test_current_repository_passes(self) -> None:
+        self.assertEqual([], check_harness.check_family_guard_contract(REPOSITORY_ROOT))
+
+    # Guard 1 · corners.
+    def test_bare_corner_in_a_feature_fails(self) -> None:
+        for source in (
+            "final r = BorderRadius.circular(14);\n",
+            "final r = BorderRadius.all(Radius.circular(16));\n",
+            "final r = BorderRadius.vertical(top: Radius.circular(20.0));\n",
+        ):
+            with self.subTest(source=source):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._write(root, "lib/features/wallet/x.dart", source)
+                    result = self._check(root)
+                self.assertEqual(1, len(result), result)
+                self.assertIn("lib/features/wallet/x.dart:1", result[0])
+                self.assertIn("bare number", result[0])
+
+    def test_token_corner_and_comment_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/x.dart",
+                "// BorderRadius.circular(14) was here\n"
+                "final a = LoopRadius.tile;\n"
+                "final b = Radius.circular(LoopRadius.controlValue);\n",
+            )
+            # A widget folder is outside the guard.
+            self._write(
+                root,
+                "lib/widgets/y.dart",
+                "final r = BorderRadius.circular(7);\n",
+            )
+            self.assertEqual([], self._check(root))
+
+    def test_named_constant_is_allowed_only_where_listed(self) -> None:
+        source = (
+            "abstract final class _ChartCorner {\n"
+            "  static const Radius candle = Radius.circular(1);\n"
+            "}\n"
+            "class Other {\n"
+            "  final r = Radius.circular(1);\n"
+            "}\n"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, "lib/features/market/chart.dart", source)
+            result = self._check(
+                root,
+                radii={("lib/features/market/chart.dart", "_ChartCorner"): "chart"},
+            )
+        self.assertEqual(1, len(result), result)
+        self.assertIn("chart.dart:5", result[0])
+
+    def test_stale_corner_entry_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, "lib/features/market/chart.dart", "final a = 1;\n")
+            result = self._check(
+                root,
+                radii={("lib/features/market/chart.dart", "_ChartCorner"): "chart"},
+            )
+        self.assertEqual(1, len(result), result)
+        self.assertIn("no longer needed", result[0])
+
+    def test_shipped_corner_allowlist_names_its_declarations(self) -> None:
+        self.assertEqual(
+            {
+                ("lib/features/market/loop_market_chart.dart", "_ChartCorner"),
+                ("lib/features/market/loop_candle_chart.dart", "_candleCorner"),
+                ("lib/features/meme/meme_widgets.dart", "MemeHeroCard"),
+                (
+                    "lib/features/community/community_home_widgets.dart",
+                    "_communityDiscoverHeroRadius",
+                ),
+            },
+            set(check_harness.FEATURE_RADIUS_LITERAL_ALLOWLIST),
+        )
+
+    # Guard 2 · v1 accents.
+    def test_v1_accent_in_a_feature_fails(self) -> None:
+        for colour in ("market", "chat", "danger", "warning", "elevated"):
+            with self.subTest(colour=colour):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._write(
+                        root,
+                        "lib/features/wallet/x.dart",
+                        f"final c = LoopColors.{colour};\n",
+                    )
+                    result = self._check(root)
+                self.assertEqual(1, len(result), result)
+                self.assertIn("v1 accent colour", result[0])
+
+    def test_v1_accent_passes_in_a_listed_preview_file_and_family_colours_pass(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/chat/chat_inbox_page.dart",
+                "final c = LoopColors.chat;\n",
+            )
+            self._write(
+                root,
+                "lib/features/wallet/x.dart",
+                "final c = LoopColors.lime; final d = LoopColors.chatter;\n",
+            )
+            result = self._check(
+                root,
+                colours={"lib/features/chat/chat_inbox_page.dart": "preview"},
+            )
+        self.assertEqual([], result)
+
+    def test_colour_allowlist_is_the_preview_files_only(self) -> None:
+        self.assertEqual(
+            {
+                "lib/features/chat/chat_inbox_page.dart",
+                "lib/features/chat/conversation_pages.dart",
+                "lib/features/chat/chat_secondary_pages.dart",
+                "lib/features/chat/voice_room_page.dart",
+                "lib/features/chat/chat_preview_pages.dart",
+                "lib/features/chat/widgets/chat_components.dart",
+            },
+            set(check_harness.FEATURE_LEGACY_COLOUR_ALLOWLIST),
+        )
+
+    # Guard 3 · v1 widgets.
+    def test_new_v1_widget_use_fails(self) -> None:
+        for source in (
+            "final w = LoopStateCard(title: 'a');\n",
+            "final w = LoopPage(title: 'a');\n",
+            "final w = LoopEmpty(message: 'a');\n",
+            "final w = LoopUnavailableCard(label: 'a');\n",
+            "final w = LoopCard(child: x);\n",
+            "final w = LoopSectionLabel('a');\n",
+            "final w = LoopStatusPill(label: 'a');\n",
+            "final w = LoopWideButton(label: 'a');\n",
+            "final w = LoopSubChip(label: 'a');\n",
+        ):
+            with self.subTest(source=source):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._write(root, "lib/features/wallet/x.dart", source)
+                    result = self._check(root)
+                self.assertEqual(1, len(result), result)
+                self.assertIn("uses the v1", result[0])
+
+    def test_family_widgets_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/x.dart",
+                "final a = LoopEmptyState(title: 'a');\n"
+                "final b = LoopFocusPage(title: 'a');\n"
+                "final c = LoopRecordCard(child: x);\n"
+                "final d = LoopUnavailableLine(label: 'a');\n"
+                "// LoopEmpty(message: 'retired')\n",
+            )
+            self.assertEqual([], self._check(root))
+
+    def test_listed_file_passes_and_a_fixed_one_must_leave_the_list(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/chat/chat_inbox_page.dart",
+                "final w = LoopStateCard(title: 'a');\n",
+            )
+            self._write(root, "lib/features/wallet/x.dart", "final a = 1;\n")
+            result = self._check(
+                root,
+                widgets={
+                    "lib/features/chat/chat_inbox_page.dart": "preview",
+                    "lib/features/wallet/x.dart": "fixed already",
+                },
+            )
+        self.assertEqual(1, len(result), result)
+        self.assertIn("lib/features/wallet/x.dart is no longer needed", result[0])
+
+    def test_every_widget_allowlist_entry_states_a_reason(self) -> None:
+        for path, reason in check_harness.FEATURE_LEGACY_WIDGET_ALLOWLIST.items():
+            with self.subTest(path=path):
+                self.assertTrue(path.startswith("lib/features/"))
+                self.assertGreater(len(reason.strip()), 10)
+        # Market, MEME and wallet were moved to the family in S186-7; none of
+        # them may come back into the list.
+        for path in check_harness.FEATURE_LEGACY_WIDGET_ALLOWLIST:
+            for folder in ("lib/features/market/", "lib/features/meme/", "lib/features/wallet/"):
+                self.assertFalse(path.startswith(folder), path)

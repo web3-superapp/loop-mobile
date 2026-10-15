@@ -296,7 +296,7 @@ class _NotificationPreferencesScreenState
             // something" are two different claims and only the first is made
             // here.
             if (resource.push != null)
-              LoopUnavailableCard.fact(
+              LoopUnavailableLine.fact(
                 key: const ValueKey<String>('notification-push-unavailable'),
                 label: '推送尚不可用',
                 fact: resource.push!,

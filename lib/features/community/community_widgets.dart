@@ -1044,7 +1044,7 @@ class CommunityApplicationStatusCard extends StatelessWidget {
           progress: communityApplicationPendingProgress,
           from: 0,
           fillColor: LoopColors.limeSoft,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: LoopRadius.tile,
           child: LoopNotice(
             key: const ValueKey<String>('community-application-pending'),
             icon: 'clock',

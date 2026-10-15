@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -155,10 +157,12 @@ class _TransactionResultScreenState
           caption: '结果页只展示一笔具体操作，需要指定是哪一笔。',
         ),
         body: const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('tx-result-empty'),
-            message: '这里还没有要展示的操作',
-            reason: '从发送、授权或兑换的签名页进来时，这一页会显示那一笔的状态。',
+            illustration: LoopIllustration.history,
+            title: '这里还没有要展示的操作',
+            message: '从发送、授权或兑换的签名页进来时，这一页会显示那一笔的状态。',
+            compact: true,
           ),
         ],
       );

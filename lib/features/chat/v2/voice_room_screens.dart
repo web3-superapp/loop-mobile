@@ -783,8 +783,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     );
   }
 
-  /// The (i) control. It wears the warning colour while a provider write is
-  /// unconfirmed, which is the one note that used to stand in the page.
+  /// The (i) control. It turns Lime (the prototype's `--amber`) while a
+  /// provider write is unconfirmed, which is the one note that used to stand
+  /// in the page (decision 0172 retired the v1 warning yellow).
   Widget _infoButton(
     BuildContext context,
     VoiceRoomSnapshot snapshot, {
@@ -795,7 +796,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       key: const ValueKey<String>('voiceroom-info'),
       icon: 'info',
       label: unconfirmed ? '房间说明，有一项服务商未确认' : '房间说明',
-      color: unconfirmed ? LoopColors.warning : null,
+      color: unconfirmed ? LoopColors.lime : null,
       framed: framed,
       onPressed: () => unawaited(
         showVoiceRoomInfoSheet(

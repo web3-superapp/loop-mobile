@@ -369,14 +369,16 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     }
     if (page.items.isEmpty) {
       return <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: ValueKey<String>('$keyBase-empty'),
-          message: '「${category.label}」里还没有代币',
-          reason: switch (category) {
+          illustration: LoopIllustration.search,
+          title: '「${category.label}」里还没有代币',
+          message: switch (category) {
             MarketCategory.major => '主流资产名单里暂时没有可展示的资产。',
             MarketCategory.meme => '还没有已登记的 Launch 项目代币。',
             MarketCategory.community => '还没有已认证社区绑定代币。',
           },
+          compact: true,
         ),
       ];
     }

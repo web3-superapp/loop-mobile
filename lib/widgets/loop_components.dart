@@ -265,14 +265,14 @@ class LoopIconButton extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             onTap: onPressed ?? onBlocked,
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: LoopRadius.tool,
             child: Container(
               width: LoopTouch.minimum,
               height: LoopTouch.minimum,
               decoration: framed
                   ? BoxDecoration(
                       color: LoopGround.tintOf(context),
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: LoopRadius.tool,
                       border: Border.all(color: LoopGround.hairlineOf(context)),
                     )
                   : null,
@@ -620,7 +620,7 @@ class LoopFolioPrimary extends StatelessWidget {
         gradient: const RadialGradient(
           center: Alignment(0.76, -1.24),
           radius: 1.2,
-          colors: <Color>[Color(0x3BB8FF20), Color(0x13B8FF20)],
+          colors: <Color>[LoopColors.quietFolioGlow, LoopColors.quietFolioTint],
           stops: <double>[0, 0.62],
         ),
         borderRadius: radius,
@@ -1287,7 +1287,10 @@ class LoopRecordCard extends StatelessWidget {
           gradient: const RadialGradient(
             center: Alignment(0.84, -1.28),
             radius: 1.3,
-            colors: <Color>[Color(0x18F3F5EF), Color(0x0BF3F5EF)],
+            colors: <Color>[
+              LoopColors.recordCardGlow,
+              LoopColors.recordCardTint,
+            ],
             stops: <double>[0, 0.6],
           ),
           borderRadius: LoopRadius.card,
@@ -1338,6 +1341,10 @@ class _Pressable extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 enum LoopRowPosition { single, first, middle, last }
+
+/// The selected row's 3 px Lime rail: its right end is half its width
+/// (decision 0172 named it; the value is unchanged).
+const Radius _selectedRowRailEnd = Radius.circular(3);
 
 /// `.row`: identity, primary copy, secondary copy and a stable trailing value.
 /// Consecutive rows form one card: first gets the top radius and light edge,
@@ -1564,7 +1571,7 @@ class LoopRecordRow extends StatelessWidget {
         boxShadow: bottomRadius
             ? const <BoxShadow>[
                 BoxShadow(
-                  color: Color(0x66050604),
+                  color: LoopColors.contactShadow,
                   offset: Offset(0, 8),
                   blurRadius: 22,
                 ),
@@ -1588,7 +1595,7 @@ class LoopRecordRow extends StatelessWidget {
                     decoration: const BoxDecoration(
                       color: LoopColors.lime,
                       borderRadius: BorderRadius.horizontal(
-                        right: Radius.circular(3),
+                        right: _selectedRowRailEnd,
                       ),
                     ),
                   ),
@@ -1951,7 +1958,7 @@ class LoopNotice extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
             decoration: BoxDecoration(
               color: background,
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: LoopRadius.tile,
               border: Border.all(color: border),
             ),
             child: Row(
@@ -2088,7 +2095,7 @@ class LoopBadge extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: LoopRadius.badge,
       ),
       child: Text(
         text,
@@ -2163,7 +2170,7 @@ class LoopSeg extends StatelessWidget {
         shape: quiet
             ? const StadiumBorder()
             : RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: LoopRadius.button,
                 side: BorderSide(
                   color: selected ? LoopColors.lime : LoopColors.line,
                 ),
@@ -2179,7 +2186,7 @@ class LoopSeg extends StatelessWidget {
                   onSelected!();
                 },
           customBorder: quiet ? const StadiumBorder() : null,
-          borderRadius: quiet ? null : BorderRadius.circular(14),
+          borderRadius: quiet ? null : LoopRadius.button,
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minWidth: LoopTouch.minimum,
@@ -2362,9 +2369,7 @@ class LoopButton extends StatelessWidget {
     // `LoopWideButton` — 52 tall, fully rounded, flat Lime, 16 label — so
     // the two second-level passes share one form button.
     final wide = block && LoopFlat.of(context);
-    final radius = wide
-        ? const BorderRadius.all(Radius.circular(26))
-        : const BorderRadius.all(Radius.circular(14));
+    final radius = wide ? LoopRadius.wideButton : LoopRadius.button;
     // A secondary button is the ground plus a little: its fill, its edge and
     // its label all come from whatever it was put on. Named as
     // `card2`/`line2`/`chalk` it was an invisible rectangle with an invisible
@@ -2396,16 +2401,16 @@ class LoopButton extends StatelessWidget {
               colors: <Color>[LoopColors.limeHighlight, LoopColors.lime],
               stops: <double>[0, 0.62],
             ),
-            borderRadius: BorderRadius.all(Radius.circular(14)),
+            borderRadius: LoopRadius.button,
             border: Border.fromBorderSide(BorderSide(color: LoopColors.lime)),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Color(0x3DB8FF20),
+                color: LoopColors.primaryGlow,
                 offset: Offset(0, 8),
                 blurRadius: 22,
               ),
               BoxShadow(
-                color: Color(0x66050604),
+                color: LoopColors.contactShadow,
                 offset: Offset(0, 2),
                 blurRadius: 6,
               ),
@@ -2413,7 +2418,7 @@ class LoopButton extends StatelessWidget {
           )
         : BoxDecoration(
             color: LoopGround.fillOf(context),
-            borderRadius: const BorderRadius.all(Radius.circular(14)),
+            borderRadius: LoopRadius.button,
             border: Border.fromBorderSide(
               BorderSide(color: LoopGround.edgeOf(context)),
             ),
@@ -2663,19 +2668,19 @@ class _LoopComposerState extends State<LoopComposer> {
                     vertical: 12,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: LoopRadius.tile,
                     borderSide: const BorderSide(color: LoopColors.line),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: LoopRadius.tile,
                     borderSide: const BorderSide(color: LoopColors.line),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: LoopRadius.tile,
                     borderSide: const BorderSide(color: LoopColors.lime),
                   ),
                   disabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: LoopRadius.tile,
                     borderSide: const BorderSide(color: LoopColors.line),
                   ),
                 ),
@@ -2689,11 +2694,11 @@ class _LoopComposerState extends State<LoopComposer> {
             enabled: _canSend,
             child: Material(
               color: _canSend ? LoopColors.lime : LoopColors.card2,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: LoopRadius.button,
               child: InkWell(
                 key: const ValueKey<String>('loop-composer-send'),
                 onTap: _canSend ? _send : null,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: LoopRadius.button,
                 child: SizedBox(
                   width: LoopTouch.minimum,
                   height: LoopTouch.minimum,
@@ -2748,7 +2753,7 @@ class LoopPowerHint extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
         color: active ? LoopColors.limeSoft : LoopColors.card,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: LoopRadius.tile,
       ),
       child: Row(
         children: <Widget>[
@@ -2794,7 +2799,7 @@ class LoopPowerHint extends StatelessWidget {
                 type: MaterialType.transparency,
                 child: InkWell(
                   onTap: onTap,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: LoopRadius.tile,
                   child: content,
                 ),
               ),
@@ -3847,7 +3852,7 @@ class LoopOfflineState extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           decoration: BoxDecoration(
             color: LoopColors.card2,
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: LoopRadius.tile,
             border: Border.all(color: LoopColors.line2),
           ),
           child: Column(
@@ -3985,7 +3990,7 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       decoration: BoxDecoration(
         color: LoopColors.card,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: LoopRadius.tile,
         border: Border.all(color: LoopColors.line),
       ),
       clipBehavior: Clip.antiAlias,

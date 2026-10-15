@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_capability_refresh.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -107,7 +109,7 @@ Widget sendCapabilityBlockCard(
   final capability = ref.watch(
     loopCapabilityProvider(LoopV2CapabilityId.sendApprovals),
   );
-  return LoopUnavailableCard(
+  return LoopUnavailableLine(
     key: key,
     label: label,
     // An unreachable gate has no server reason to render; the client never
@@ -768,10 +770,12 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             ),
           )
         else if (balances.balances.isEmpty)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('send-assets-empty'),
-            message: '还没有可读取的资产',
-            reason: '登记资产后，这里会为每一个资产恒定保留一行。',
+            illustration: LoopIllustration.history,
+            title: '还没有可读取的资产',
+            message: '登记资产后，这里会为每一个资产恒定保留一行。',
+            compact: true,
           )
         else ...<Widget>[
           LoopRecordGroup(

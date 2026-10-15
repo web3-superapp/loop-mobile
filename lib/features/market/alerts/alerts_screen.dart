@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -190,10 +192,11 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             ),
           const LoopLabel('已设提醒'),
           if (visible.isEmpty)
-            LoopEmpty(
+            LoopEmptyState(
               key: const ValueKey<String>('alerts-empty'),
-              message: focusLabel == null ? '还没有价格提醒' : '$focusLabel 还没有提醒',
-              reason: '设一个目标价，价格到了会在通知里告诉你。',
+              illustration: LoopIllustration.history,
+              title: focusLabel == null ? '还没有价格提醒' : '$focusLabel 还没有提醒',
+              message: '设一个目标价，价格到了会在通知里告诉你。',
               action: LoopButton(
                 key: const ValueKey<String>('alerts-empty-create'),
                 label: '新建提醒',
@@ -201,6 +204,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                   _openEditor(controller, presetAssetId: focusAssetId),
                 ),
               ),
+              compact: true,
             )
           else
             LoopRecordGroup(
@@ -799,10 +803,12 @@ class _AlertAssetPickerSheetState
                 ),
               )
             else if (items.isEmpty)
-              const LoopEmpty(
+              const LoopEmptyState(
                 key: ValueKey<String>('alert-asset-picker-empty'),
-                message: '自选里还没有资产',
-                reason: '先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。',
+                illustration: LoopIllustration.history,
+                title: '自选里还没有资产',
+                message: '先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。',
+                compact: true,
               )
             else
               LoopRecordGroup(
@@ -889,20 +895,24 @@ class _AlertNotificationFeedState
               .toList(growable: false);
     final more = feed.nextCursor != null;
     if (entries.isEmpty && !more) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('alerts-feed-empty'),
-        message: '还没有触发记录',
-        reason: '提醒触发后会在这里留下一条记录，标注出处和时间。',
+        illustration: LoopIllustration.history,
+        title: '还没有触发记录',
+        message: '提醒触发后会在这里留下一条记录，标注出处和时间。',
+        compact: true,
       );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (entries.isEmpty)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('alerts-feed-empty-page'),
-            message: '这一页没有价格提醒的记录',
-            reason: '后面还有记录，继续往下滑。',
+            illustration: LoopIllustration.history,
+            title: '这一页没有价格提醒的记录',
+            message: '后面还有记录，继续往下滑。',
+            compact: true,
           )
         else
           LoopRecordGroup(

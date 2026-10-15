@@ -117,7 +117,7 @@ void main() {
       expect(withAction, greaterThan(oneLine));
     });
 
-    testWidgets('LoopUnavailableCard keeps its key, semantics and next step', (
+    testWidgets('LoopUnavailableLine keeps its key, semantics and next step', (
       tester,
     ) async {
       var retries = 0;
@@ -126,7 +126,7 @@ void main() {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            LoopUnavailableCard(
+            LoopUnavailableLine(
               label: '余额当前不可用',
               reasonCode: 'BALANCE_SOURCE_DEFERRED',
               action: LoopButton(label: '重试', onPressed: () => retries += 1),

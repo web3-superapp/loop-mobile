@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -246,15 +248,17 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
               key: const ValueKey<String>('watchlist-group-label'),
             ),
             if (group.items.isEmpty)
-              LoopEmpty(
+              LoopEmptyState(
                 key: const ValueKey<String>('watchlist-group-empty'),
-                message: '这个分组还没有资产',
-                reason: '打开代币页，点右上角星标即可加入自选。',
+                illustration: LoopIllustration.watchlist,
+                title: '这个分组还没有资产',
+                message: '打开代币页，点右上角星标即可加入自选。',
                 action: LoopButton(
                   key: const ValueKey<String>('watchlist-group-empty-add'),
                   label: '添加资产',
                   onPressed: _openAddAsset,
                 ),
+                compact: true,
               )
             else
               _ReorderableWatchlist(
@@ -269,10 +273,11 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           ],
           const LoopLabel('分组'),
           if (state.groups.isEmpty)
-            LoopEmpty(
+            LoopEmptyState(
               key: const ValueKey<String>('watchlist-no-groups'),
-              message: '还没有分组',
-              reason:
+              illustration: LoopIllustration.watchlist,
+              title: '还没有分组',
+              message:
                   '有两条路：在代币页点右上角星标，资产会进入默认分组「$watchlistDefaultGroupName」；'
                   '或者在这里先建一个分组。',
               action: LoopButton(
@@ -282,6 +287,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                     ? null
                     : () => unawaited(_createGroup(controller, state)),
               ),
+              compact: true,
             )
           else
             Padding(

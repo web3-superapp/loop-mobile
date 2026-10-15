@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -349,7 +351,7 @@ class WalletNetWorthCard extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (netWorth) {
       case LoopNetWorthUnavailable(reasonCode: final reasonCode):
-        return LoopUnavailableCard(
+        return LoopUnavailableLine(
           key: const ValueKey<String>('wallet-networth-unavailable'),
           label: '净值不可用',
           reasonCode: reasonCode,
@@ -462,7 +464,7 @@ class WalletLaunchChainCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (native == null)
-          LoopUnavailableCard(
+          LoopUnavailableLine(
             key: const ValueKey<String>('wallet-launch-chain-unavailable'),
             label: '${launchChain.name}余额不可用',
             reasonCode: launchChain.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
@@ -527,12 +529,14 @@ class WalletCreationBlock extends ConsumerWidget {
         session.canUseProviderBackedFeatures && session.account != null;
 
     if (!canCreate) {
-      return LoopEmpty(
+      return LoopEmptyState(
         key: ValueKey<String>('$keyPrefix-no-wallet'),
-        message: '这个账号还没有钱包',
-        reason: session.isPreview
+        illustration: LoopIllustration.profile,
+        title: '这个账号还没有钱包',
+        message: session.isPreview
             ? '开发预览不会创建真实钱包，也不会调用 Privy。'
             : '当前会话未完成验证，暂时不能创建钱包。重新登录后可以再试。',
+        compact: true,
       );
     }
 
@@ -544,10 +548,11 @@ class WalletCreationBlock extends ConsumerWidget {
       _ => 'LOOP 会为这个账号创建一个 Privy 嵌入式钱包。地址是公开的链上事实，不是账号标识。',
     };
 
-    return LoopEmpty(
+    return LoopEmptyState(
       key: ValueKey<String>('$keyPrefix-no-wallet'),
-      message: '这个账号还没有钱包',
-      reason: reason,
+      illustration: LoopIllustration.profile,
+      title: '这个账号还没有钱包',
+      message: reason,
       action: LoopButton(
         key: ValueKey<String>('$keyPrefix-create-wallet'),
         label: provisioning.isCreating ? '创建中…' : '创建钱包',
@@ -556,6 +561,7 @@ class WalletCreationBlock extends ConsumerWidget {
             ? null
             : () => unawaited(_create(context, ref)),
       ),
+      compact: true,
     );
   }
 

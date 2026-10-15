@@ -90,6 +90,12 @@ class CommunityToolButton extends StatelessWidget {
   }
 }
 
+/// `.community-discover-hero{border-radius:19px}`: the prototype's own
+/// corner for this one Lime card, named once (decision 0172).
+const BorderRadius _communityDiscoverHeroRadius = BorderRadius.all(
+  Radius.circular(19),
+);
+
 /// `.community-discover-hero`: one compact Lime band above the index folio.
 ///
 /// [verifiedCount] is the kicker's own figure. It is null unless the server
@@ -123,13 +129,13 @@ class CommunityDiscoverHero extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(19),
+            borderRadius: _communityDiscoverHeroRadius,
             child: Container(
               constraints: const BoxConstraints(minHeight: 72),
               padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
               decoration: BoxDecoration(
                 color: LoopColors.lime,
-                borderRadius: BorderRadius.circular(19),
+                borderRadius: _communityDiscoverHeroRadius,
               ),
               child: Row(
                 children: <Widget>[

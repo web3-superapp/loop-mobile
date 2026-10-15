@@ -10,7 +10,7 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 // ---------------------------------------------------------------------------
 //
 // A market list, a wallet's asset rows and a token's holder tab are read in a
-// glance. The block-sized state strip (`LoopUnavailableCard`) and a provenance
+// glance. The block-sized v1 state strip (since retired, decision 0172) and a provenance
 // footer under every block took more of that glance than the figures did. The
 // two widgets here say the same things in one 44px line each: what could not
 // be read and why, and where the figures came from and when.
@@ -23,8 +23,8 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 /// started over the first.
 ///
 /// It never renders a figure, a zero or a dash in place of the missing fact;
-/// [message] is the whole content. The block-sized `LoopUnavailableCard`
-/// stays for pages that are not data-dense.
+/// [message] is the whole content. `LoopUnavailableLine` is this line with a
+/// server reason under it (decision 0172).
 class LoopInlineUnavailable extends StatelessWidget {
   const LoopInlineUnavailable({
     required this.message,
@@ -35,6 +35,7 @@ class LoopInlineUnavailable extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 16),
     this.detail,
     this.maxLines = 1,
+    this.detailMaxLines = 1,
   });
 
   /// The minimum height of the line — one touch target.
@@ -56,6 +57,10 @@ class LoopInlineUnavailable extends StatelessWidget {
 
   /// Lines [message] may take; one by default.
   final int maxLines;
+
+  /// Lines [detail] may take; one by default. A server reason sentence takes
+  /// three (decision 0172), so the reason is never cut mid-word.
+  final int detailMaxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +93,7 @@ class LoopInlineUnavailable extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         second,
-                        maxLines: 1,
+                        maxLines: detailMaxLines,
                         overflow: TextOverflow.ellipsis,
                         style: LoopType.captionSm.copyWith(color: auxiliary),
                       ),

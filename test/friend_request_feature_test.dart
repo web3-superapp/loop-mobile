@@ -1,21 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chat/friends/friend_controllers.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/friends/friend_request_controller.dart';
-import 'package:loop_mobile/features/chat/friends/friend_request_screen.dart';
-import 'package:loop_mobile/features/chat/friends/friend_screens.dart';
-
-import 'support/loop_ground_probe.dart';
 
 void main() {
-  // This file mounts pages through its own `pumpWidget`, so it arms the
-  // ground probe itself; the page harnesses arm it for everybody else.
-  loopWatchGround();
-
   test('loads incoming and outgoing first pages and paginates each list independently', () async {
     final incomingOne = _request(
       requestIndex: 1,
@@ -314,69 +303,6 @@ void main() {
     },
   );
 
-  testWidgets('accept refreshes a mounted friend directory', (tester) async {
-    final incoming = _request(
-      requestIndex: 31,
-      profileIndex: 131,
-      alias: 'New Friend',
-      direction: FriendRequestDirection.incoming,
-    );
-    var friendLoads = 0;
-    final gateway = _FakeLoopSocialFriendGateway(
-      requestPages: <String, FriendRequestPage>{
-        _requestPageKey(
-          FriendRequestDirection.incoming,
-          null,
-        ): FriendRequestPage(
-          items: <FriendRequestRecord>[incoming],
-          nextCursor: null,
-        ),
-      },
-      onFriendPage: (cursor) async {
-        friendLoads += 1;
-        return FriendDirectoryPage(
-          items: friendLoads == 1
-              ? const <FriendIdentity>[]
-              : <FriendIdentity>[incoming.counterparty],
-          nextCursor: null,
-        );
-      },
-    );
-    final container = ProviderContainer(
-      overrides: [friendGatewayProvider.overrideWithValue(gateway)],
-    );
-    addTearDown(container.dispose);
-    _configurePhoneView(tester);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          theme: LoopTheme.dark,
-          home: const IndexedStack(
-            index: 1,
-            children: <Widget>[FriendListPage(), FriendRequestsPage()],
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(friendLoads, 1);
-    expect(container.read(friendDirectoryControllerProvider).friends, isEmpty);
-
-    await tester.tap(
-      find.byKey(
-        ValueKey<String>('friend-request-accept-${incoming.friendRequestId}'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(friendLoads, 2);
-    expect(
-      container.read(friendDirectoryControllerProvider).friends,
-      <FriendIdentity>[incoming.counterparty],
-    );
-  });
-
   test('providerless friend requests fail closed', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -442,184 +368,6 @@ void main() {
     expect(state.incoming, isEmpty);
     expect(gateway.requestPageCalls, isEmpty);
   });
-
-  testWidgets('renders incoming and outgoing cells with the correct actions', (
-    tester,
-  ) async {
-    final incoming = _request(
-      requestIndex: 61,
-      profileIndex: 161,
-      alias: 'Incoming Cell',
-      direction: FriendRequestDirection.incoming,
-    );
-    final outgoing = _request(
-      requestIndex: 62,
-      profileIndex: 162,
-      alias: 'Outgoing Cell',
-      direction: FriendRequestDirection.outgoing,
-    );
-    final gateway = _FakeLoopSocialFriendGateway(
-      requestPages: <String, FriendRequestPage>{
-        _requestPageKey(
-          FriendRequestDirection.incoming,
-          null,
-        ): FriendRequestPage(
-          items: <FriendRequestRecord>[incoming],
-          nextCursor: null,
-        ),
-        _requestPageKey(
-          FriendRequestDirection.outgoing,
-          null,
-        ): FriendRequestPage(
-          items: <FriendRequestRecord>[outgoing],
-          nextCursor: null,
-        ),
-      },
-    );
-
-    await _pumpRequestsPage(tester, gateway);
-
-    expect(find.text('收到的申请'), findsOneWidget);
-    expect(find.text('已发送'), findsOneWidget);
-    expect(find.text('Incoming Cell'), findsOneWidget);
-    expect(find.text('Outgoing Cell'), findsOneWidget);
-    expect(
-      find.text('LOOP #${incoming.counterparty.profileCode}'),
-      findsOneWidget,
-    );
-    expect(
-      find.text('LOOP #${outgoing.counterparty.profileCode}'),
-      findsOneWidget,
-    );
-    final rejectFinder = find.byKey(
-      ValueKey<String>('friend-request-reject-${incoming.friendRequestId}'),
-    );
-    final acceptFinder = find.byKey(
-      ValueKey<String>('friend-request-accept-${incoming.friendRequestId}'),
-    );
-    expect(rejectFinder, findsOneWidget);
-    expect(acceptFinder, findsOneWidget);
-    expect(tester.widget<IconButton>(rejectFinder).onPressed, isNotNull);
-    expect(tester.widget<IconButton>(acceptFinder).onPressed, isNotNull);
-    expect(
-      find.byKey(
-        ValueKey<String>('friend-request-accept-${outgoing.friendRequestId}'),
-      ),
-      findsNothing,
-    );
-    expect(find.text('等待中'), findsOneWidget);
-  });
-
-  testWidgets(
-    'unknown decision leaves reconciliation as the only enabled page action',
-    (tester) async {
-      final incoming = _request(
-        requestIndex: 71,
-        profileIndex: 171,
-        alias: 'Unknown Outcome',
-        direction: FriendRequestDirection.incoming,
-      );
-      final outgoing = _request(
-        requestIndex: 72,
-        profileIndex: 172,
-        alias: 'Outgoing More',
-        direction: FriendRequestDirection.outgoing,
-      );
-      final gateway = _FakeLoopSocialFriendGateway(
-        requestPages: <String, FriendRequestPage>{
-          _requestPageKey(
-            FriendRequestDirection.incoming,
-            null,
-          ): FriendRequestPage(
-            items: <FriendRequestRecord>[incoming],
-            nextCursor: 'incoming-more',
-          ),
-          _requestPageKey(
-            FriendRequestDirection.outgoing,
-            null,
-          ): FriendRequestPage(
-            items: <FriendRequestRecord>[outgoing],
-            nextCursor: 'outgoing-more',
-          ),
-        },
-        onDecision: (call) async => throw const FriendGatewayException(
-          FriendGatewayFailureKind.outcomeUnknown,
-        ),
-      );
-      await _pumpRequestsPage(tester, gateway);
-      // The footers read the next pages as soon as the page is built.
-      expect(
-        gateway.requestPageCalls.map((call) => call.cursor),
-        containsAll(<String>['incoming-more', 'outgoing-more']),
-      );
-
-      await tester.tap(
-        find.byKey(
-          ValueKey<String>('friend-request-accept-${incoming.friendRequestId}'),
-        ),
-      );
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.text('处理结果待确认'), findsOneWidget);
-      final reconcile = find.byKey(
-        const ValueKey<String>('friend-decision-reconcile'),
-      );
-      expect(reconcile, findsOneWidget);
-      expect(tester.widget<OutlinedButton>(reconcile).onPressed, isNotNull);
-      expect(
-        tester
-            .widget<IconButton>(
-              find.byKey(const ValueKey<String>('friend-requests-refresh')),
-            )
-            .onPressed,
-        isNull,
-      );
-      // Decision 0129: the next pages are read on their own, with no
-      // 加载更多 control; nothing more is read while the outcome is unknown.
-      expect(find.textContaining('加载更多'), findsNothing);
-      final pagesBefore = gateway.requestPageCalls.length;
-      await tester.pump(const Duration(seconds: 1));
-      expect(gateway.requestPageCalls, hasLength(pagesBefore));
-      expect(
-        find.byKey(
-          ValueKey<String>('friend-request-reject-${incoming.friendRequestId}'),
-        ),
-        findsNothing,
-      );
-      expect(
-        find.byKey(
-          ValueKey<String>('friend-request-accept-${incoming.friendRequestId}'),
-        ),
-        findsNothing,
-      );
-      expect(gateway.decisionCalls, hasLength(1));
-    },
-  );
-}
-
-Future<void> _pumpRequestsPage(
-  WidgetTester tester,
-  FriendGateway gateway,
-) async {
-  _configurePhoneView(tester);
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [friendGatewayProvider.overrideWithValue(gateway)],
-      child: MaterialApp(
-        theme: LoopTheme.dark,
-        home: const FriendRequestsPage(),
-      ),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
-void _configurePhoneView(WidgetTester tester) {
-  tester.view.physicalSize = const Size(390, 844);
-  tester.view.devicePixelRatio = 1;
-  addTearDown(tester.view.resetPhysicalSize);
-  addTearDown(tester.view.resetDevicePixelRatio);
 }
 
 FriendRequestRecord _request({
@@ -651,9 +399,6 @@ String _requestPageKey(FriendRequestDirection direction, String? cursor) =>
 typedef _DecisionHandler = Future<FriendRequestDecisionReceipt> Function(
   _DecisionCall call,
 );
-typedef _FriendPageHandler = Future<FriendDirectoryPage> Function(
-  String? cursor,
-);
 
 final class _FakeLoopSocialFriendGateway implements LoopSocialFriendGateway {
   _FakeLoopSocialFriendGateway({
@@ -661,7 +406,6 @@ final class _FakeLoopSocialFriendGateway implements LoopSocialFriendGateway {
     Map<String, FriendRequestPage> requestPages =
         const <String, FriendRequestPage>{},
     this.onDecision,
-    this.onFriendPage,
   }) : _requestPages = Map<String, FriendRequestPage>.unmodifiable(
          requestPages,
        );
@@ -671,14 +415,11 @@ final class _FakeLoopSocialFriendGateway implements LoopSocialFriendGateway {
 
   final Map<String, FriendRequestPage> _requestPages;
   final _DecisionHandler? onDecision;
-  final _FriendPageHandler? onFriendPage;
   final List<_RequestPageCall> requestPageCalls = <_RequestPageCall>[];
   final List<_DecisionCall> decisionCalls = <_DecisionCall>[];
 
   @override
   Future<FriendDirectoryPage> loadFriendPage({String? cursor}) async {
-    final handler = onFriendPage;
-    if (handler != null) return handler(cursor);
     return FriendDirectoryPage(
       items: const <FriendIdentity>[],
       nextCursor: null,

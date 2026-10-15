@@ -97,7 +97,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
         sections: <Widget>[
           const LoopLabel('通用'),
           if (blocked)
-            LoopUnavailableCard(
+            LoopUnavailableLine(
               key: const ValueKey<String>('settings-capability-block'),
               label: '账号设置当前不可用',
               reasonCode:

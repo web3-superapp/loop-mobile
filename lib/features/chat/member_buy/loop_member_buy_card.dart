@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/social/public_profile/public_profile_models
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -277,16 +278,13 @@ class _Card extends StatelessWidget {
     final name = buyer?.name ?? loopMemberBuyNeutralBuyer;
     final open = LoopChatAvatarTapScope.maybeOf(context);
     final showQuote = event.quoteAmount > Decimal.zero;
+    // Decision 0172: the shared `.record-card` (r20, Line edge); it brings
+    // its own 16 side and 14 bottom margin.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-      child: Container(
+      padding: const EdgeInsets.only(top: 6),
+      child: LoopRecordCard(
         key: LoopMemberBuyCard.cardKey,
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-        decoration: BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: LoopColors.line),
-        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -413,7 +411,7 @@ class _TxHash extends StatelessWidget {
     label: '复制交易哈希',
     child: InkWell(
       key: LoopMemberBuyCard.txKey,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: LoopRadius.inner,
       onTap: () => unawaited(_copy(context)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 44),
@@ -441,29 +439,12 @@ class _TxHash extends StatelessWidget {
 class _IncompleteCard extends StatelessWidget {
   const _IncompleteCard();
 
+  // Decision 0172: an informational `.notice`, not a hand-drawn card.
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-    child: Container(
-      key: LoopMemberBuyCard.incompleteKey,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: LoopColors.card,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: LoopColors.line),
-      ),
-      child: Row(
-        children: <Widget>[
-          const LoopIcon('info', size: 15, color: LoopColors.text3),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$loopMemberBuyPreviewLabel · 动态数据不完整',
-              style: LoopTypography.caption(12),
-            ),
-          ),
-        ],
-      ),
-    ),
+  Widget build(BuildContext context) => const LoopNotice(
+    key: LoopMemberBuyCard.incompleteKey,
+    icon: 'info',
+    body: '$loopMemberBuyPreviewLabel · 动态数据不完整',
+    margin: EdgeInsets.fromLTRB(16, 6, 16, 6),
   );
 }

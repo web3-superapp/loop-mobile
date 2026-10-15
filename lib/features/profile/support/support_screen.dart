@@ -164,7 +164,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
           ),
           const LoopLabel('提交工单'),
           if (blocked)
-            LoopUnavailableCard(
+            LoopUnavailableLine(
               key: const ValueKey<String>('support-capability-block'),
               label: '客服工单当前不可用',
               reasonCode:
@@ -229,7 +229,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
               ),
             ),
             if (page != null)
-              LoopUnavailableCard.fact(
+              LoopUnavailableLine.fact(
                 key: const ValueKey<String>('support-attachments-unavailable'),
                 label: '暂不支持附件',
                 fact: page.attachments,

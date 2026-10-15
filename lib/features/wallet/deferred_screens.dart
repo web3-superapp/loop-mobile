@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/security/loop_url_review.dart';
@@ -123,7 +126,7 @@ class BridgeScreen extends ConsumerWidget {
             onPressed: null,
           ),
         ),
-        LoopUnavailableCard(
+        LoopUnavailableLine(
           key: const ValueKey<String>('bridge-unavailable'),
           label: '跨链尚未开放',
           reasonCode: _reasonFor(capability, deferredReasonCode),
@@ -196,15 +199,16 @@ class BridgeStatusScreen extends ConsumerWidget {
         // states this page invented for a transfer that does not exist. The
         // group states the one fact there is.
         const LoopLabel('步骤'),
-        LoopEmpty(
+        LoopInlineUnavailable(
           key: const ValueKey<String>('bridge-status-page-block'),
-          icon: 'warn',
           // 读不到 would say LOOP tried and failed. Nothing was tried,
           // because bridging has not been built.
           message: '还没有可跟踪的跨链',
-          reason: loopReasonCodeText(
+          detail: loopReasonCodeText(
             _reasonFor(capability, deferredReasonCode),
           ),
+          detailMaxLines: 3,
+          maxLines: 2,
         ),
         if (onOpenWallet != null)
           Padding(
@@ -330,10 +334,12 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
           ),
         const LoopLabel('本地核对'),
         if (typed.isEmpty)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('dapp-review-empty'),
-            message: '还没有可核对的网址',
-            reason: '输入网址后，这里会显示规范化结果与发现的问题。',
+            illustration: LoopIllustration.search,
+            title: '还没有可核对的网址',
+            message: '输入网址后，这里会显示规范化结果与发现的问题。',
+            compact: true,
           )
         else ...<Widget>[
           LoopRecordGroup(
@@ -377,11 +383,12 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             ),
           const LoopLabel('发现'),
           if (review.findings.isEmpty)
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('dapp-findings-empty'),
-              icon: 'check',
-              message: '没有发现问题',
-              reason: '这只说明地址本身规范；它不代表这个站点可信。',
+              illustration: LoopIllustration.search,
+              title: '没有发现问题',
+              message: '这只说明地址本身规范；它不代表这个站点可信。',
+              compact: true,
             )
           else
             LoopRecordGroup(
@@ -408,14 +415,14 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
         // once there is a domain to have one.
         if (typed.isNotEmpty) ...<Widget>[
           const LoopLabel('域名信誉'),
-          const LoopUnavailableCard(
+          const LoopUnavailableLine(
             key: ValueKey<String>('dapp-reputation-unavailable'),
             label: '读不到域名信誉',
             reasonCode: DappReviewScreen.reputationReasonCode,
           ),
         ],
         const LoopLabel('连接与签名'),
-        LoopUnavailableCard(
+        LoopUnavailableLine(
           key: const ValueKey<String>('dapp-execution-unavailable'),
           label: '连接钱包与签名尚未开放',
           reasonCode: _reasonFor(

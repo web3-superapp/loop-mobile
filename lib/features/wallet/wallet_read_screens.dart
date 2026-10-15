@@ -325,16 +325,18 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         if (directoryEmpty)
           const WalletCreationBlock(keyPrefix: 'wallet-directory')
         else if (walletId == null && directory.isReady)
-          LoopEmpty(
+          LoopEmptyState(
             key: const ValueKey<String>('wallet-directory-no-active'),
-            message: '还没有选定当前钱包',
-            reason: '这个账号已经有钱包，但还没有选定当前钱包。到“钱包管理”里选一个后才会显示余额。',
+            illustration: LoopIllustration.history,
+            title: '还没有选定当前钱包',
+            message: '这个账号已经有钱包，但还没有选定当前钱包。到“钱包管理”里选一个后才会显示余额。',
             action: LoopButton(
               key: const ValueKey<String>('wallet-directory-pick'),
               label: '钱包管理',
               primary: true,
               onPressed: () => _open('/wallet/manage'),
             ),
+            compact: true,
           )
         else if (walletId == null)
           LoopChainStateBlock(
@@ -514,9 +516,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     if (!state.isReady) {
       if (state.phase == LoopChainViewPhase.empty) {
         return const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('wallet-balances-state-empty'),
-            message: '这个钱包还没有可读资产',
+            illustration: LoopIllustration.history,
+            title: '这个钱包还没有可读资产',
+            compact: true,
           ),
         ];
       }
@@ -535,10 +539,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final balances = state.value!;
     if (balances.balances.isEmpty) {
       return const <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: ValueKey<String>('wallet-balances-empty'),
-          message: '还没有可读取的资产',
-          reason: '登记资产后，这里会为每一个资产恒定保留一行。',
+          illustration: LoopIllustration.history,
+          title: '还没有可读取的资产',
+          message: '登记资产后，这里会为每一个资产恒定保留一行。',
+          compact: true,
         ),
       ];
     }
@@ -741,11 +747,12 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
         title: '无法打开这个资产',
         onBack: widget.onBack,
         body: const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('wallet-asset-invalid-identity'),
-            icon: 'warn',
-            message: '路由中没有可用的资产标识',
-            reason: '本页只接受规范的 CAIP assetId，未请求任何余额。',
+            illustration: LoopIllustration.history,
+            title: '路由中没有可用的资产标识',
+            message: '本页只接受规范的 CAIP assetId，未请求任何余额。',
+            compact: true,
           ),
         ],
       );
@@ -880,11 +887,12 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
                   ),
           )
         else if (row == null)
-          const LoopEmpty(
+          const LoopInlineUnavailable(
             key: ValueKey<String>('wallet-asset-missing-row'),
-            icon: 'warn',
             message: '这个资产不在可读清单里',
-            reason: '只有已登记的资产才会显示余额。',
+            detail: '只有已登记的资产才会显示余额。',
+            detailMaxLines: 3,
+            maxLines: 2,
           )
         else ...<Widget>[
           // The prototype's 2x2. Its four cells are 成本 / 浮动盈亏 / 收益率 /
@@ -1174,10 +1182,12 @@ class _WalletAssetTransfers extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (entries.isEmpty)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('wallet-asset-activity-empty'),
-            message: '这个资产还没有收发记录',
-            reason: '索引器已经读到这个区间，但其中没有属于这个资产的转账。',
+            illustration: LoopIllustration.history,
+            title: '这个资产还没有收发记录',
+            message: '索引器已经读到这个区间，但其中没有属于这个资产的转账。',
+            compact: true,
           )
         else
           LoopRecordGroup(
@@ -1222,7 +1232,7 @@ class _BalanceBreakdown extends StatelessWidget {
             children: <Widget>[
               switch (balance) {
                 LoopBalanceUnavailable(reasonCode: final reasonCode) =>
-                  LoopUnavailableCard(
+                  LoopUnavailableLine(
                     key: const ValueKey<String>('wallet-asset-balance-missing'),
                     label: '链上余额读不到',
                     reasonCode: reasonCode,
@@ -1254,7 +1264,7 @@ class _BalanceBreakdown extends StatelessWidget {
               },
               switch (row.pending) {
                 LoopPendingUnavailable(reasonCode: final reasonCode) =>
-                  LoopUnavailableCard(
+                  LoopUnavailableLine(
                     key: const ValueKey<String>('wallet-asset-pending-missing'),
                     label: '待确认金额不可用',
                     reasonCode: reasonCode,
@@ -1285,7 +1295,7 @@ class _ValuationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (valuation) {
       case LoopValuationUnavailable(reasonCode: final reasonCode):
-        return LoopUnavailableCard(
+        return LoopUnavailableLine(
           key: const ValueKey<String>('wallet-asset-valuation-unavailable'),
           label: '估值不可用',
           reasonCode: reasonCode,
@@ -1341,7 +1351,7 @@ class _CrossCheckCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
     if (crossCheck.status == LoopCrossCheckStatus.unavailable) {
-      return LoopUnavailableCard(
+      return LoopUnavailableLine(
         key: const ValueKey<String>('wallet-asset-crosscheck-unavailable'),
         label: '与 Privy 的交叉核对不可用',
         // The server may state no reason. Substituting one here would invent a
@@ -1528,11 +1538,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                     ),
             )
           else if (network == null)
-            const LoopEmpty(
+            const LoopInlineUnavailable(
               key: ValueKey<String>('receive-no-network'),
-              icon: 'warn',
               message: '没有可接收的网络',
-              reason: '暂时读不到可接收的网络。',
+              detail: '暂时读不到可接收的网络。',
+              detailMaxLines: 3,
+              maxLines: 2,
             )
           else ...<Widget>[
             // Only the networks the server published are listed: a chip for a
@@ -2344,7 +2355,7 @@ class _TransactionHistoryScreenState
         ];
       case 3:
         return <Widget>[
-          LoopUnavailableCard.fact(
+          LoopUnavailableLine.fact(
             key: const ValueKey<String>('tx-history-native-unavailable'),
             label: '原生 BNB 转账不可用',
             fact: page.nativeTransfers,
@@ -2352,7 +2363,7 @@ class _TransactionHistoryScreenState
         ];
       case 4:
         return <Widget>[
-          LoopUnavailableCard.fact(
+          LoopUnavailableLine.fact(
             key: const ValueKey<String>('tx-history-cross-chain-unavailable'),
             label: '跨链与挖矿领取记录不可用',
             fact: page.crossChain,
@@ -2655,7 +2666,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
               ),
             )
           else if (status.chainIdMismatched)
-            const LoopUnavailableCard(
+            const LoopUnavailableLine(
               key: ValueKey<String>('networks-chain-mismatch'),
               label: '端点返回的不是 BNB Smart Chain',
               reasonCode: 'BSC_CHAIN_ID_MISMATCH',
@@ -2761,7 +2772,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                     ),
                     const LoopLabel('RPC 端点', tight: true),
                     if (status.rpc.endpoints.isEmpty)
-                      LoopUnavailableCard(
+                      LoopUnavailableLine(
                         key: const ValueKey<String>('networks-no-endpoints'),
                         label: '没有已配置的 RPC 端点',
                         reasonCode:
@@ -2897,7 +2908,7 @@ class _LaunchChainRow extends StatelessWidget {
     // height or health to report for it. It renders as the unavailable card
     // the rest of the page uses for a missing source.
     if (reasonCode == 'LAUNCH_CHAIN_RPC_NOT_CONFIGURED') {
-      return LoopUnavailableCard(
+      return LoopUnavailableLine(
         key: const ValueKey<String>('networks-launch-chain-unavailable'),
         label: '${launchChain.name}（Launch）未配置 RPC',
         reasonCode: reasonCode!,

@@ -345,6 +345,8 @@ class LoopRowIcon extends StatelessWidget {
     this.semanticLabel,
     this.size = 44,
     this.circle = false,
+    this.choice = false,
+    this.chosen = false,
   }) : assert(
          icon != null || monogram != null,
          'A row icon carries a glyph or a monogram.',
@@ -360,13 +362,22 @@ class LoopRowIcon extends StatelessWidget {
   /// a flat page and outside one.
   final bool circle;
 
+  /// `.row-choice .row-ico` (decision 0172): the tile of a row the reader
+  /// picks from. It stays the square tile in a flat page too, because its
+  /// glyph colour is the selection mark ([chosen]:
+  /// `.row-choice.is-chosen .row-ico{color:var(--lime)}`).
+  final bool choice;
+
+  /// Whether this choice row is the chosen one; only read with [choice].
+  final bool chosen;
+
   @override
   Widget build(BuildContext context) {
     // Decision 0126: a record mark (`circle`) and every row glyph on a flat
     // page are decision 0127's `LoopEntryIcon` — a round card2 tile with a
     // 20 glyph — at 36 for a record and 40 for an entry.
     final mark = icon;
-    if (mark != null && (circle || LoopFlat.of(context))) {
+    if (mark != null && !choice && (circle || LoopFlat.of(context))) {
       return Semantics(
         label: semanticLabel,
         excludeSemantics: semanticLabel == null,
@@ -377,7 +388,7 @@ class LoopRowIcon extends StatelessWidget {
       LoopRowIconTone.accent => (LoopColors.limeSoft, LoopColors.lime),
       LoopRowIconTone.neutral => (
         LoopGround.fillOf(context),
-        LoopGround.secondaryOf(context),
+        choice && chosen ? LoopColors.lime : LoopGround.secondaryOf(context),
       ),
     };
     final glyph = icon;
@@ -389,7 +400,7 @@ class LoopRowIcon extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: LoopRadius.tile,
         ),
         alignment: Alignment.center,
         child: glyph != null
@@ -1351,7 +1362,7 @@ class LoopMonoTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         color: accent ? LoopColors.lime : LoopGround.fillOf(context),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: LoopRadius.tile,
       ),
       child: Text(
         label,

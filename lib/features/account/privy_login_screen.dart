@@ -6,6 +6,8 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/account/account_screens.dart'
+    show LoopBrandLoader;
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -505,16 +507,7 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                   // `.loop-brand-loader{width:min(244px,64vw)}`. The line
                   // stays indeterminate here: this frame is waiting for an
                   // answer, and a full bar would claim one arrived.
-                  const SizedBox(
-                    width: 244,
-                    child: LinearProgressIndicator(
-                      minHeight: 2,
-                      backgroundColor: LoopColors.line2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        LoopColors.lime,
-                      ),
-                    ),
-                  ),
+                  LoopBrandLoader(),
                 ] else ...<Widget>[
                   _CentredStateCopy(
                     key: const ValueKey<String>(
@@ -593,16 +586,8 @@ class PrivySessionAwaitingNetworkScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   // Indeterminate: the frame is waiting, and a full bar would
                   // claim an answer arrived.
-                  const SizedBox(
-                    width: 244,
-                    child: LinearProgressIndicator(
-                      key: ValueKey<String>('privy-awaiting-network-progress'),
-                      minHeight: 2,
-                      backgroundColor: LoopColors.line2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        LoopColors.lime,
-                      ),
-                    ),
+                  LoopBrandLoader(
+                    key: ValueKey<String>('privy-awaiting-network-progress'),
                   ),
                   const SizedBox(height: 18),
                   Padding(
@@ -642,14 +627,7 @@ class PrivySessionSignOutScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const SizedBox(
-                  width: 160,
-                  child: LinearProgressIndicator(
-                    minHeight: 3,
-                    backgroundColor: LoopColors.line2,
-                    valueColor: AlwaysStoppedAnimation<Color>(LoopColors.lime),
-                  ),
-                ),
+                LoopBrandLoader(width: 160),
                 const SizedBox(height: 18),
                 Text(
                   '正在安全退出',

@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -251,6 +252,8 @@ class IdentityStepCopy extends StatelessWidget {
 /// than three paragraphs. The glyph turns Lime only on the chosen row
 /// (`.row-choice.is-chosen .row-ico`), so the colour is a selection mark and
 /// never a claim that the method is available or enrolled.
+///
+/// Decision 0172: it is the shared [LoopRowIcon] in its `.row-choice` form.
 class IdentityOptionIcon extends StatelessWidget {
   const IdentityOptionIcon(this.icon, {this.chosen = false, super.key});
 
@@ -258,22 +261,8 @@ class IdentityOptionIcon extends StatelessWidget {
   final bool chosen;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: LoopColors.card2,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: LoopIcon(
-        icon,
-        size: 21,
-        color: chosen ? LoopColors.lime : LoopColors.text2,
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      LoopRowIcon(icon: icon, choice: true, chosen: chosen);
 }
 
 /// One recovery / security option whose availability comes from a capability.
@@ -1457,18 +1446,22 @@ class SecuritySetupScreen extends StatelessWidget {
           // that opened this page spoke to engineers. Each row below states its
           // own state; the page saves no PIN and claims no protection is on.
           const LoopLabel('应用锁'),
-          _SecurityCard(rows: <LoopRecordRow>[_appLockRow()]),
+          // Decision 0172: both groups are the shared `.record-card` rows.
+          LoopRecordGroup(rows: <LoopRecordRow>[_appLockRow()]),
           const LoopLabel('交易验证'),
           // Prototype order: the amount rule first, the second factor after it.
-          _SecurityCard(
-            rows: <Widget>[
+          // The step-up row reads its own state, so it is not a plain
+          // [LoopRecordRow] a [LoopRecordGroup] could re-position; the two
+          // rows carry `first` / `last` themselves, as the group would.
+          Column(
+            key: const ValueKey<String>('security-verification-group'),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
               // Decision 0152: a real switch now. A signature worth at least
               // the threshold in USD1 asks the device first; the row reads
               // and writes its own per-account choice.
-              LoopStepUpSettingRow(
-                position: LoopRowPosition.first,
-                rowBuilder: _SecurityRow.of,
-              ),
+              const LoopStepUpSettingRow(position: LoopRowPosition.first),
               _mfaRow(),
             ],
           ),
@@ -1566,134 +1559,6 @@ class SecuritySetupScreen extends StatelessWidget {
                 ? 'MFA，未开启，点按开启'
                 : 'MFA，已开启：$detail'
           : 'MFA，不可用：$reason',
-    );
-  }
-}
-
-/// `security-setup`'s grouped rows on the OKX reference (S121 §1.1.1 · 5):
-/// one `card` face, radius 16, no edge and no shadow, a hairline between
-/// rows (decision 0121). A row that is not a [LoopRecordRow] draws itself
-/// (decision 0152: the step-up row reads its own state).
-class _SecurityCard extends StatelessWidget {
-  const _SecurityCard({required this.rows});
-
-  final List<Widget> rows;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      decoration: BoxDecoration(
-        color: LoopColors.card,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          for (var index = 0; index < rows.length; index++) ...<Widget>[
-            if (index > 0)
-              const Divider(
-                height: 1,
-                thickness: 1,
-                indent: 16,
-                endIndent: 16,
-                color: LoopColors.line,
-              ),
-            switch (rows[index]) {
-              final LoopRecordRow row => _SecurityRow.of(row),
-              final Widget other => other,
-            },
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// One row inside [_SecurityCard]: title and subtitle on the left, the state
-/// as a grey word and a chevron on the right when the row opens something.
-///
-/// It is still a [LoopRecordRow] — the same fields, the same key — drawn
-/// without the shared row's own face, edge and shadow.
-class _SecurityRow extends LoopRecordRow {
-  _SecurityRow.of(LoopRecordRow row)
-    : super(
-        key: row.key,
-        title: row.title,
-        leading: row.leading,
-        subtitle: row.subtitle,
-        subtitleMaxLines: row.subtitleMaxLines,
-        trailing: row.trailing,
-        onTap: row.onTap,
-        semanticLabel: row.semanticLabel,
-        selected: row.selected,
-        position: row.position,
-        trailingBadge: row.trailingBadge,
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final content = Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: <Widget>[
-          if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium,
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    maxLines: subtitleMaxLines,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
-                  ),
-              ],
-            ),
-          ),
-          if (trailing != null) ...<Widget>[
-            const SizedBox(width: 12),
-            Text(
-              trailing!,
-              style: LoopType.body.copyWith(color: LoopColors.text3),
-            ),
-          ],
-          // Decision 0152: a switch row (大额交易二次验证).
-          if (trailingBadge != null) ...<Widget>[
-            const SizedBox(width: 8),
-            trailingBadge!,
-          ],
-          if (onTap != null) ...<Widget>[
-            const SizedBox(width: 4),
-            const LoopIcon('chevron', size: 15, color: LoopColors.text3),
-          ],
-        ],
-      ),
-    );
-    if (onTap == null) return content;
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          highlightColor: LoopColors.card2,
-          child: content,
-        ),
-      ),
     );
   }
 }

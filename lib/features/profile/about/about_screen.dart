@@ -169,7 +169,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             text: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
           ),
           if (about != null)
-            LoopUnavailableCard(
+            LoopUnavailableLine(
               key: const ValueKey<String>('about-client-build-note'),
               label: 'LOOP 不发布客户端版本',
               reasonCode: about.clientBuildReasonCode,
@@ -230,7 +230,7 @@ class _AboutTermsBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!termsGate.isAvailable) {
-      return LoopUnavailableCard(
+      return LoopUnavailableLine(
         key: const ValueKey<String>('about-terms-unavailable'),
         label: '用户协议、隐私政策与风险披露没有文档地址',
         reasonCode: termsGate.reasonCode,

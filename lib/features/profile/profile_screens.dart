@@ -1,14 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/features/profile/about/about_screen.dart';
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_screen.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/profile/security/security_screens.dart';
 import 'package:loop_mobile/features/profile/settings/settings_screen.dart';
 import 'package:loop_mobile/features/profile/support/support_screen.dart';
-import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 @immutable
@@ -75,19 +76,14 @@ class ProfileSurfaceScreen extends StatelessWidget {
     'profile',
     'profile-edit',
     'privacy',
-    'copytrade-perms',
     'security',
     'devices',
     'key-export',
     'social-recovery',
     'notif-settings',
-    'connections',
-    'blocklist',
     'settings',
     'about',
     'support',
-    'mining',
-    'referral',
   };
 
   final String surfaceId;
@@ -121,7 +117,6 @@ class ProfileSurfaceScreen extends StatelessWidget {
       ),
       'profile-edit' => ProfileEditScreen(onNavigate: navigate, onBack: onBack),
       'privacy' => PrivacyCenterScreen(onNavigate: navigate, onBack: onBack),
-      'copytrade-perms' => const _CopyTradePermissions(),
       'security' => SecurityCenterScreen(onNavigate: navigate, onBack: onBack),
       'devices' => DeviceManagementScreen(onBack: onBack),
       'key-export' => KeyExportScreen(onBack: onBack),
@@ -130,8 +125,6 @@ class ProfileSurfaceScreen extends StatelessWidget {
         onBack: onBack,
         onOpenSecurity: () => navigate('security'),
       ),
-      'connections' => const _ConnectionsScreen(),
-      'blocklist' => const _BlocklistScreen(),
       'settings' => GeneralSettingsScreen(
         onNavigate: navigate,
         onBack: onBack,
@@ -139,209 +132,32 @@ class ProfileSurfaceScreen extends StatelessWidget {
       ),
       'about' => AboutScreen(onBack: onBack),
       'support' => SupportScreen(onNavigate: navigate, onBack: onBack),
-      'mining' => const _ComingLaterScreen(
-        eyebrow: 'MINING & REWARDS',
-        title: 'Rewards are coming later',
-        message: 'Tasks, contribution rewards, and daily claims are planned for Phase 2. No points are accruing yet.',
-        icon: Icons.hexagon_outlined,
-        accent: LoopColors.market,
-      ),
-      'referral' => const _ComingLaterScreen(
-        eyebrow: 'INVITE FRIENDS',
-        title: 'Referrals are coming later',
-        message: 'Invite codes and reward rules are planned for Phase 2. Sharing now will not create a referral.',
-        icon: Icons.group_add_outlined,
-        accent: LoopColors.chat,
-      ),
       _ => const _UnknownProfileScreen(),
     };
   }
 }
 
-class _CopyTradePermissions extends StatelessWidget {
-  const _CopyTradePermissions();
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoopPage(
-      eyebrow: 'COPY TRADING',
-      title: 'Copy trading is not connected',
-      subtitle: 'No copy-trade authorization, limits, follower enforcement, or execution path is available in this app build.',
-      children: <Widget>[
-        LoopStateCard(
-          title: 'No permission can be granted here',
-          message: 'The previous local controls were removed because they could not create a backend authorization or protect an order.',
-          icon: Icons.lock_outline_rounded,
-          tone: LoopTone.warning,
-        ),
-        SizedBox(height: 14),
-        LoopStateCard(
-          title: 'Visibility is not authorization',
-          message: 'The separate Privacy resource stores only a private, followers, or public presentation preference. It never lets another account trade or access a wallet.',
-          icon: Icons.rule_folder_outlined,
-        ),
-      ],
-    );
-  }
-}
-
-class _ConnectionsScreen extends StatelessWidget {
-  const _ConnectionsScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoopPage(
-      eyebrow: 'NETWORK',
-      title: 'Connections',
-      subtitle:
-          'Connections belong to your LOOP account, not a wallet address.',
-      children: <Widget>[
-        LoopStateCard(
-          key: ValueKey<String>('connections-unavailable'),
-          title: 'Connections are not connected',
-          message: 'No follower graph was loaded and no sample people are being presented as account data.',
-          icon: Icons.people_outline_rounded,
-          tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
-class _BlocklistScreen extends StatelessWidget {
-  const _BlocklistScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoopPage(
-      eyebrow: 'BLOCKED ITEMS',
-      title: 'Control what you see',
-      subtitle: 'A future account service will own blocked people, contracts, and domains.',
-      children: <Widget>[
-        LoopStateCard(
-          key: ValueKey<String>('blocklist-unavailable'),
-          title: 'Blocklist is not connected',
-          message: 'No block records were loaded and this build will not pretend a local removal changed an account-level rule.',
-          icon: Icons.block_outlined,
-          tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
-class _ComingLaterScreen extends StatelessWidget {
-  const _ComingLaterScreen({
-    required this.eyebrow,
-    required this.title,
-    required this.message,
-    required this.icon,
-    required this.accent,
-  });
-
-  final String eyebrow;
-  final String title;
-  final String message;
-  final IconData icon;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: eyebrow,
-      title: title,
-      subtitle: message,
-      children: <Widget>[
-        AspectRatio(
-          aspectRatio: 1.2,
-          child: LoopCard(
-            child: Stack(
-              alignment: Alignment.center,
-              children: <Widget>[
-                Container(
-                  width: 176,
-                  height: 176,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent.withValues(alpha: 0.22)),
-                  ),
-                ),
-                Container(
-                  width: 112,
-                  height: 112,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accent.withValues(alpha: 0.1),
-                    border: Border.all(color: accent.withValues(alpha: 0.42)),
-                  ),
-                  child: Icon(icon, color: accent, size: 48),
-                ),
-                Positioned(
-                  right: 18,
-                  top: 18,
-                  child: LoopStatusPill(
-                    label: 'COMING LATER',
-                    tone: accent == LoopColors.chat
-                        ? LoopTone.conversation
-                        : LoopTone.market,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        const _PrivacyFootnote(
-          text: 'This page is informational. No rewards, balances, codes, or eligibility are active.',
-        ),
-      ],
-    );
-  }
-}
-
+/// An id outside [ProfileSurfaceScreen.supportedIds]: no route reaches it,
+/// so it only states that nothing changed (decision 0172).
 class _UnknownProfileScreen extends StatelessWidget {
   const _UnknownProfileScreen();
 
   @override
   Widget build(BuildContext context) {
-    return const LoopPage(
-      key: ValueKey<String>('unknown-profile-surface'),
-      eyebrow: 'PROFILE',
-      title: 'Setting unavailable',
-      subtitle: 'This profile setting could not be opened.',
-      children: <Widget>[
-        LoopStateCard(
-          title: 'No changes made',
-          message: 'Return to Profile and choose another setting.',
-          icon: Icons.settings_backup_restore_rounded,
+    final navigator = Navigator.of(context);
+    return LoopFocusPage(
+      key: const ValueKey<String>('unknown-profile-surface'),
+      archetype: LoopPageArchetype.state,
+      title: '设置不可用',
+      onBack: navigator.canPop() ? () => unawaited(navigator.maybePop()) : null,
+      body: const <Widget>[],
+      block: const SingleChildScrollView(
+        child: LoopEmptyState(
+          illustration: LoopIllustration.profile,
+          title: '没有做任何更改',
+          message: '回到「我」，选择其它设置。',
         ),
-      ],
-    );
-  }
-}
-
-class _PrivacyFootnote extends StatelessWidget {
-  const _PrivacyFootnote({
-    this.text = 'Changing visibility affects future views. Content already shared in a conversation may remain visible to its participants.',
-  });
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Icon(
-          Icons.info_outline_rounded,
-          size: 18,
-          color: LoopColors.vapor,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
-        ),
-      ],
+      ),
     );
   }
 }

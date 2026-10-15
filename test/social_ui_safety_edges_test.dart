@@ -180,13 +180,10 @@ void main() {
         expect(gateway.directOperationIds[firstTarget], <String>[
           blocked.operationId!,
         ]);
-
-        await _pumpWithContainer(tester, container, const FriendListPage());
-        expect(
-          find.byKey(const ValueKey<String>('friend-direct-failure')),
-          findsOneWidget,
-        );
-        expect(find.text('频道需要后台人工核对；不会自动创建第二个频道。'), findsOneWidget);
+        // Mount the container once so the frame loop runs the disposal
+        // Riverpod scheduled for the listeners above (the retired friend list
+        // page used to do this, decision 0172).
+        await _pumpWithContainer(tester, container, const SizedBox.shrink());
       },
     );
   });

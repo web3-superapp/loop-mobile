@@ -316,7 +316,7 @@ class LoopToastView extends StatelessWidget {
       key: ValueKey<String>('loop-toast-${entry.kind.name}'),
       decoration: const BoxDecoration(
         color: LoopColors.chalk,
-        borderRadius: BorderRadius.all(Radius.circular(15)),
+        borderRadius: LoopRadius.tile,
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: Color(0x9E050604),

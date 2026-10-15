@@ -767,10 +767,14 @@ class _MessageBubble extends StatelessWidget {
               : LoopColors.line,
         ),
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(15),
-          topRight: const Radius.circular(15),
-          bottomLeft: Radius.circular(message.isMine ? 15 : 4),
-          bottomRight: Radius.circular(message.isMine ? 4 : 15),
+          topLeft: const Radius.circular(LoopRadius.tileValue),
+          topRight: const Radius.circular(LoopRadius.tileValue),
+          bottomLeft: message.isMine
+              ? const Radius.circular(LoopRadius.tileValue)
+              : LoopRadius.bubbleTail,
+          bottomRight: message.isMine
+              ? LoopRadius.bubbleTail
+              : const Radius.circular(LoopRadius.tileValue),
         ),
       ),
       child: Padding(
