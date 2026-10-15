@@ -888,9 +888,12 @@ class _ProgressBlock extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          MemeProgressBar(
-            progressBps: graduated ? 10000 : row.progressBps,
-            thickness: 8,
+          // Decision 0169: the family's 6 px `.bar` (was an 8 px own track).
+          LoopProgressBar(
+            key: const ValueKey<String>('meme-token-progress-bar'),
+            value: memeProgressFraction(graduated ? 10000 : row.progressBps),
+            semanticLabel:
+                '内盘进度 ${memeBpsLabel(graduated ? 10000 : row.progressBps)}',
           ),
           const SizedBox(height: 8),
           Text(

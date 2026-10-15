@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
@@ -27,6 +28,8 @@ import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2_creator/loop_v2_launch2_creator_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_step_track.dart';
 
 import 'support/loop_ground_probe.dart';
 import 'support/s7_fixtures.dart';
@@ -489,6 +492,10 @@ void main() {
         'ticker are there; back goes one step', (tester) async {
       await _pump(tester, const Launch2CreateScreen());
       expect(_key('launch2-create-step-1'), findsOneWidget);
+      expect(
+        tester.widget<LoopStepTrack>(_key('launch2-create-step-1')).current,
+        0,
+      );
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-step-1'), findsOneWidget);
@@ -712,6 +719,22 @@ void main() {
       ]);
       expect(_key('launch2-status-approved'), findsOneWidget);
       expect(_key('launch2-status-rejected'), findsOneWidget);
+      // Decision 0169: the state is a `.badge` at the end of a `.row` in
+      // one group; a refusal takes the quiet pair, not the fall red.
+      expect(tester.widget(_key('launch2-status-rejected')), isA<LoopBadge>());
+      expect(
+        tester.widget<LoopBadge>(_key('launch2-status-rejected')).kind,
+        LoopBadgeKind.down,
+      );
+      expect(
+        tester.widget<LoopBadge>(_key('launch2-status-approved')).kind,
+        LoopBadgeKind.mute,
+      );
+      expect(
+        tester.widget(_key('launch2-project-row-$_projectId')),
+        isA<LoopRecordRow>(),
+      );
+      expect(find.byType(LoopRecordGroup), findsOneWidget);
       expect(find.text('请补充社区链接。'), findsOneWidget);
       // An approved project resumes on the signing page.
       await tester.tap(_key('launch2-project-row-$_projectId'));
@@ -793,6 +816,13 @@ void main() {
         ),
       );
       expect(_key('launch2-milestones-rejected'), findsOneWidget);
+      // Decision 0169: the shared step track; the failed milestone is Chalk.
+      final track = tester.widget<LoopStepTrack>(
+        _key('launch2-milestones-rejected'),
+      );
+      expect(track.failed, isTrue);
+      expect(track.segmentColor(track.current), LoopColors.chalk);
+      expect(track.segmentColor(track.current + 1), LoopColors.line2);
       expect(find.text('请补充社区链接。'), findsOneWidget);
       await tester.tap(_key('launch2-project-resubmit'));
       expect(opened.single, Launch2CreatorRoute.edit(_projectId));
@@ -1188,6 +1218,17 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('签名已过期，请重新签名提交。'), findsWidgets);
+      // Decision 0169: the failed step is a Chalk dot; no danger pink.
+      final dot = tester.widget<Container>(
+        _key('launch2-event-dot-failed').first,
+      );
+      expect((dot.decoration! as BoxDecoration).color, LoopColors.chalk);
+      for (final box in tester.widgetList<Container>(find.byType(Container))) {
+        final decoration = box.decoration;
+        if (decoration is BoxDecoration) {
+          expect(decoration.color, isNot(LoopColors.danger));
+        }
+      }
       await tester.tap(_key('launch2-deployment-resign'));
       expect(resign.single, _projectId);
       await _drain(tester);
@@ -1300,6 +1341,10 @@ void main() {
       expect(_key('launch2-status-awaiting_approval'), findsOneWidget);
       expect(_key('launch2-status-deploying'), findsOneWidget);
       expect(_key('launch2-status-active'), findsOneWidget);
+      expect(
+        tester.widget<LoopBadge>(_key('launch2-status-active')).kind,
+        LoopBadgeKind.launch,
+      );
       // Only the activated row looks for its instance.
       expect(creator.instanceReads, 1);
       for (final id in ids) {

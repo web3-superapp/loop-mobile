@@ -11,6 +11,10 @@ const double loopQuoteRowHeight = 72;
 /// The fixed size of the change pill at the right end of a quote row.
 const Size loopChangePillSize = Size(96, 44);
 
+/// The corner of that slot's pill, shared by [LoopChangePill] and the MEME
+/// list's progress pill so the two read as one column (decision 0122).
+const BorderRadius loopChangePillRadius = BorderRadius.all(Radius.circular(10));
+
 /// `+2.50%` / `-1.01%` / `0.00%`: a move in percent points, signed.
 String loopSignedPercent(Decimal percent) {
   final magnitude = percent < Decimal.zero ? -percent : percent;
@@ -73,7 +77,7 @@ class LoopChangePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: ground,
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        borderRadius: loopChangePillRadius,
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,

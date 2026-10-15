@@ -408,9 +408,12 @@ class MemeMarketSegment extends ConsumerWidget {
       ];
     } else if (page.items.isEmpty) {
       rows = const <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: ValueKey<String>('meme-market-empty'),
+          illustration: LoopIllustration.chartEmpty,
+          title: '还没有 MEME 资产',
           message: '平台 MEME 资产上线后在这里显示',
+          compact: true,
         ),
       ];
     } else {

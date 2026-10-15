@@ -244,11 +244,12 @@ class _Launch2DynamicRewardsScreenState
         title: '外盘奖励',
         onBack: widget.onBack,
         body: const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('launch2-dyn-rewards-invalid-identity'),
-            icon: 'warn',
-            message: '路由中没有可用的项目标识',
-            reason: '没有请求任何数据，也没有回退到其他项目。',
+            illustration: LoopIllustration.launchpad,
+            title: '路由中没有可用的项目标识',
+            message: '没有请求任何数据，也没有回退到其他项目。',
+            compact: true,
           ),
         ],
       );
@@ -350,10 +351,12 @@ class _Launch2DynamicRewardsScreenState
         kindState.mode == LoopChainGatewayMode.unavailable ||
         kind is Launch2OfficialTaxPool) {
       return const <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: ValueKey<String>('launch2-dyn-rewards-none'),
-          message: '这个项目没有外盘奖励',
-          reason: '只有开启动态税的项目才有按轮次的外盘奖励。',
+          illustration: LoopIllustration.history,
+          title: '这个项目没有外盘奖励',
+          message: '只有开启动态税的项目才有按轮次的外盘奖励。',
+          compact: true,
         ),
       ];
     }
@@ -389,11 +392,12 @@ class _Launch2DynamicRewardsScreenState
     }
     if (rewardsKey == null) {
       return const <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: ValueKey<String>('launch2-dyn-rewards-no-wallet'),
-          icon: 'wallet',
-          message: '还没有可用的钱包',
-          reason: '外盘奖励按钱包记录，激活钱包后可查看与领取。',
+          illustration: LoopIllustration.profile,
+          title: '还没有可用的钱包',
+          message: '外盘奖励按钱包记录，激活钱包后可查看与领取。',
+          compact: true,
         ),
       ];
     }
@@ -508,6 +512,8 @@ class _RoundRow extends StatelessWidget {
           _ => round.canClaim ? '领取' : '没有可领',
         };
 
+  static const EdgeInsets _kvPadding = EdgeInsets.symmetric(vertical: 6);
+
   @override
   Widget build(BuildContext context) {
     final id = round.roundId.toString();
@@ -526,45 +532,61 @@ class _RoundRow extends StatelessWidget {
               kind: round.closed ? LoopBadgeKind.mute : LoopBadgeKind.launch,
             ),
           ),
-          LoopKeyValue(
-            key: ValueKey<String>('launch2-dyn-round-$id-span'),
-            label: '起止',
-            value: _span,
-          ),
-          LoopKeyValue(
-            key: ValueKey<String>('launch2-dyn-round-$id-weight'),
-            label: '我的权重 / 总权重',
-            value:
-                '${loopFormatDecimal(round.weightUsd1, maxFractionDigits: 4)} / '
-                '${usd1(round.totalBuyWeightUsd1)}',
-          ),
-          LoopKeyValue(
-            key: ValueKey<String>('launch2-dyn-round-$id-allocation'),
-            label: '本轮奖金',
-            value: round.allocationUsd1 == null
-                ? '本轮结束后结算'
-                : usd1(round.allocationUsd1!),
-          ),
-          LoopKeyValue(
-            key: ValueKey<String>('launch2-dyn-round-$id-claimable'),
-            label: '可领',
-            value: usd1(round.claimableUsd1),
-          ),
-          LoopKeyValue(
-            key: ValueKey<String>('launch2-dyn-round-$id-claimed'),
-            label: '已领',
-            value: round.claimedUsd1 != null
-                ? usd1(round.claimedUsd1!)
-                : usd1(Decimal.zero),
+          // Decision 0169: the round's facts in one `.record-card` under the
+          // `.label`, as the project page groups its own.
+          LoopRecordCard(
+            key: ValueKey<String>('launch2-dyn-round-$id-card'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                LoopKeyValue(
+                  padding: _kvPadding,
+                  key: ValueKey<String>('launch2-dyn-round-$id-span'),
+                  label: '起止',
+                  value: _span,
+                ),
+                LoopKeyValue(
+                  padding: _kvPadding,
+                  key: ValueKey<String>('launch2-dyn-round-$id-weight'),
+                  label: '我的权重 / 总权重',
+                  value:
+                      '${loopFormatDecimal(round.weightUsd1, maxFractionDigits: 4)} / '
+                      '${usd1(round.totalBuyWeightUsd1)}',
+                ),
+                LoopKeyValue(
+                  padding: _kvPadding,
+                  key: ValueKey<String>('launch2-dyn-round-$id-allocation'),
+                  label: '本轮奖金',
+                  value: round.allocationUsd1 == null
+                      ? '本轮结束后结算'
+                      : usd1(round.allocationUsd1!),
+                ),
+                LoopKeyValue(
+                  padding: _kvPadding,
+                  key: ValueKey<String>('launch2-dyn-round-$id-claimable'),
+                  label: '可领',
+                  value: usd1(round.claimableUsd1),
+                ),
+                LoopKeyValue(
+                  padding: _kvPadding,
+                  key: ValueKey<String>('launch2-dyn-round-$id-claimed'),
+                  label: '已领',
+                  value: round.claimedUsd1 != null
+                      ? usd1(round.claimedUsd1!)
+                      : usd1(Decimal.zero),
+                ),
+              ],
+            ),
           ),
           if (failure case final String text)
             Launch2ActionFailureLine(
               key: ValueKey<String>('launch2-dyn-claim-failed-$id'),
-              padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 0),
+              padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 0),
               message: text,
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 0),
             child: LoopButton(
               key: ValueKey<String>('launch2-dyn-claim-$id'),
               label: _label,

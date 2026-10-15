@@ -141,51 +141,6 @@ String launch2EventTitle(Launch2JobEvent event) => switch (event.kind) {
   _ => '状态更新',
 };
 
-/// The 44 px step dots of a multi-step page.
-class Launch2StepDots extends StatelessWidget {
-  const Launch2StepDots({required this.index, required this.labels, super.key});
-
-  final int index;
-  final List<String> labels;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      key: ValueKey<String>('launch2-create-step-${index + 1}'),
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        4,
-        LoopSpacing.page,
-        14,
-      ),
-      child: Semantics(
-        label: '第 ${index + 1} 步，共 ${labels.length} 步，${labels[index]}',
-        excludeSemantics: true,
-        child: Row(
-          children: <Widget>[
-            for (var i = 0; i < labels.length; i += 1) ...<Widget>[
-              Container(
-                width: i == index ? 22 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: i <= index ? LoopColors.lime : LoopColors.line2,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
-            const SizedBox(width: 6),
-            Text(
-              '${index + 1} / ${labels.length} · ${labels[index]}',
-              style: LoopType.caption.copyWith(color: LoopColors.text2),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// The fixed template, read-only (S134–S137 §3.1): the page's one large
 /// figure is the total supply.
 class Launch2TemplateCard extends StatelessWidget {
@@ -259,101 +214,29 @@ class Launch2TemplateCard extends StatelessWidget {
   }
 }
 
-/// The five milestones of one project, the status page's one memory point.
-class Launch2MilestoneTrack extends StatelessWidget {
-  const Launch2MilestoneTrack({required this.status, super.key});
-
-  final Launch2CreatorStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final current = status.milestone;
-    final failed = status.isFailure;
-    return Semantics(
-      label: '进度：${launch2CreatorMilestones[current]}，${status.label}',
-      excludeSemantics: true,
-      child: Padding(
-        key: ValueKey<String>('launch2-milestones-${status.wireName}'),
-        padding: const EdgeInsets.fromLTRB(
-          LoopSpacing.page,
-          4,
-          LoopSpacing.page,
-          20,
-        ),
-        child: Row(
-          children: <Widget>[
-            for (
-              var i = 0;
-              i < launch2CreatorMilestones.length;
-              i += 1
-            ) ...<Widget>[
-              Expanded(
-                child: Column(
-                  children: <Widget>[
-                    Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color:
-                            i < current ||
-                                (i == current &&
-                                    status == Launch2CreatorStatus.active)
-                            ? LoopColors.lime
-                            : i == current
-                            ? (failed ? LoopColors.danger : LoopColors.lime)
-                            : LoopColors.line2,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      launch2CreatorMilestones[i],
-                      style: LoopType.captionSm.copyWith(
-                        color: i <= current
-                            ? LoopColors.chalk
-                            : LoopColors.text3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (i < launch2CreatorMilestones.length - 1)
-                const SizedBox(width: 4),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A status pill for a row or a header.
+/// A project's state for a row or a header: the `.badge` (decision 0169;
+/// was a self-drawn r999 pill with the fall red for a refusal). Lime-soft
+/// once active, the quiet pair for every other state — a refusal is said by
+/// its word and by the page's notice, not by a colour.
 class Launch2StatusPill extends StatelessWidget {
   const Launch2StatusPill({required this.status, super.key});
 
   final Launch2CreatorStatus status;
 
+  /// The badge kind a state takes.
+  static LoopBadgeKind kindOf(Launch2CreatorStatus status) => switch (status) {
+    Launch2CreatorStatus.active => LoopBadgeKind.launch,
+    Launch2CreatorStatus.rejected ||
+    Launch2CreatorStatus.deployFailed => LoopBadgeKind.down,
+    _ => LoopBadgeKind.mute,
+  };
+
   @override
-  Widget build(BuildContext context) {
-    final (Color ground, Color ink) = switch (status) {
-      Launch2CreatorStatus.active => (LoopColors.limeSoft, LoopColors.lime),
-      Launch2CreatorStatus.rejected || Launch2CreatorStatus.deployFailed => (
-        LoopColors.fallSoft,
-        LoopColors.fall,
-      ),
-      _ => (LoopColors.card2, LoopColors.chalk),
-    };
-    return Container(
-      key: ValueKey<String>('launch2-status-${status.wireName}'),
-      constraints: const BoxConstraints(minWidth: 72, minHeight: 28),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: ground,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(status.label, style: LoopType.label.copyWith(color: ink)),
-    );
-  }
+  Widget build(BuildContext context) => LoopBadge(
+    status.label,
+    key: ValueKey<String>('launch2-status-${status.wireName}'),
+    kind: kindOf(status),
+  );
 }
 
 /// A time on the reader's clock, plus how far away it is.
@@ -396,7 +279,7 @@ class Launch2FixedRecipient extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: const BoxDecoration(
                 color: LoopColors.card,
-                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderRadius: LoopRadius.inner,
               ),
               child: Row(
                 children: <Widget>[

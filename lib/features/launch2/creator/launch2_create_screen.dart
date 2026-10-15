@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_editor.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
@@ -508,7 +509,11 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         onPressed: save.busy || _uploading ? null : _next,
       ),
       body: <Widget>[
-        Launch2StepDots(index: _step, labels: launch2CreateSteps),
+        LoopStepTrack.dots(
+          key: ValueKey<String>('launch2-create-step-${_step + 1}'),
+          labels: launch2CreateSteps,
+          current: _step,
+        ),
         ...switch (_step) {
           0 => _profileStep(),
           1 => _communityStep(),
@@ -598,7 +603,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
                         ? const ValueKey<String>('launch2-create-logo-missing')
                         : null,
                     style: LoopType.captionSm.copyWith(
-                      color: logoMissing ? LoopColors.danger : LoopColors.text3,
+                      color: logoMissing ? LoopColors.chalk : LoopColors.text3,
                     ),
                   ),
                 ],

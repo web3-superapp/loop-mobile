@@ -240,12 +240,17 @@ class _EventRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Decision 0169: a failed step is a Chalk dot, not the v1 danger
+          // pink; what failed is the page's `LoopNotice` and the line below.
           Container(
+            key: ValueKey<String>(
+              'launch2-event-dot-${failed ? 'failed' : 'done'}',
+            ),
             margin: const EdgeInsets.only(top: 5),
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: failed ? LoopColors.danger : LoopColors.lime,
+              color: failed ? LoopColors.chalk : LoopColors.lime,
               shape: BoxShape.circle,
             ),
           ),

@@ -107,53 +107,6 @@ class MemeLogo extends StatelessWidget {
   }
 }
 
-/// The curve's progress as a filled track.
-///
-/// Lime is LOOP's own mark: a progress bar is a LOOP process, not a price
-/// direction. [thickness] is 2 on a row and 8 on the token page.
-class MemeProgressBar extends StatelessWidget {
-  const MemeProgressBar({
-    required this.progressBps,
-    super.key,
-    this.thickness = 2,
-  });
-
-  final int progressBps;
-  final double thickness;
-
-  @override
-  Widget build(BuildContext context) {
-    final fraction = memeProgressFraction(progressBps);
-    final duration = LoopMotion.of(context, LoopMotion.progressFill);
-    return Semantics(
-      label: '内盘进度 ${memeBpsLabel(progressBps)}',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(thickness / 2),
-        child: SizedBox(
-          height: thickness,
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              const ColoredBox(color: LoopColors.line),
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(end: fraction),
-                duration: duration,
-                curve: LoopMotion.progressCurve,
-                builder: (context, value, _) => FractionallySizedBox(
-                  key: const ValueKey<String>('meme-progress-fill'),
-                  alignment: Alignment.centerLeft,
-                  widthFactor: value.clamp(0, 1),
-                  child: const ColoredBox(color: LoopColors.lime),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// 「已毕业」, in place of a progress bar.
 class MemeGraduatedTag extends StatelessWidget {
   const MemeGraduatedTag({super.key});
@@ -382,7 +335,8 @@ class MemeProgressPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const radius = BorderRadius.all(Radius.circular(10));
+    // The quote row's value pill and this one are one shape (decision 0122).
+    const radius = loopChangePillRadius;
     final size = loopChangePillSize;
     if (row.isGraduated) {
       return Container(
@@ -435,7 +389,7 @@ class MemeProgressPill extends StatelessWidget {
           FittedBox(fit: BoxFit.scaleDown, child: label),
           const SizedBox(height: 5),
           ClipRRect(
-            borderRadius: const BorderRadius.all(Radius.circular(2)),
+            borderRadius: LoopRadius.pill,
             child: SizedBox(
               height: 4,
               child: Stack(

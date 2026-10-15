@@ -10,7 +10,6 @@ import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
-import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
@@ -337,11 +336,16 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                     75,
                     100,
                   ]) ...<Widget>[
+                    // Decision 0169: the family's `.seg` (was an outlined
+                    // r999 pill). A shortcut is an action, never a choice,
+                    // so it is never drawn selected.
                     Expanded(
-                      child: _FillChip(
+                      child: LoopSeg(
                         key: ValueKey<String>('meme-trade-fill-$percent'),
                         label: '$percent%',
-                        onTap: balance == null || balance <= BigInt.zero
+                        selected: false,
+                        block: true,
+                        onSelected: balance == null || balance <= BigInt.zero
                             ? null
                             : () => _fill(percent),
                       ),
@@ -358,14 +362,15 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                 side: _side,
                 ticker: _ticker,
               ),
+              // Decision 0169: the refusal is a warn `.notice` (Lime-soft),
+              // not v1 warning-yellow words.
               if (blocking != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    blocking,
-                    key: const ValueKey<String>('meme-trade-blocking'),
-                    style: LoopType.caption.copyWith(color: LoopColors.warning),
-                  ),
+                LoopNotice(
+                  key: const ValueKey<String>('meme-trade-blocking'),
+                  icon: 'warn',
+                  tone: LoopNoticeTone.warn,
+                  body: blocking,
+                  margin: const EdgeInsets.only(top: 6),
                 ),
               const SizedBox(height: 10),
               Text(
@@ -519,52 +524,6 @@ class _QuoteBlock extends StatelessWidget {
               : '链上暂时读不到，报价按索引快照计算，可能落后几个区块。',
         ),
       ],
-    );
-  }
-}
-
-/// One of the four amount shortcuts, on the OKX reference (S121 §1.1.1,
-/// decision 0121): an outlined 32px pill in a 44px touch target, four to a
-/// row. It is an action, not a choice, so it never stays selected.
-class _FillChip extends StatelessWidget {
-  const _FillChip({required this.label, required this.onTap, super.key});
-
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: label,
-      excludeSemantics: true,
-      child: LoopPressable(
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
-          child: Center(
-            child: Container(
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border.all(color: LoopColors.line),
-                borderRadius: LoopRadius.pill,
-              ),
-              child: Text(
-                label,
-                style: LoopType.caption.copyWith(
-                  color: enabled ? LoopColors.chalk : LoopColors.text3,
-                  fontFeatures: const <FontFeature>[
-                    FontFeature.tabularFigures(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

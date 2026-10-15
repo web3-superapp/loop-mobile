@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -18,7 +17,6 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// `launch2-projects` · 我的项目 (archetype `index`, layout `stream`).
 ///
@@ -71,30 +69,32 @@ class Launch2ProjectsScreen extends ConsumerWidget {
         ],
       );
     } else {
-      collection = ListView.builder(
+      // Decision 0169: the owner's projects are one `.row` group.
+      collection = ListView(
         key: const ValueKey<String>('launch2-projects-list'),
-        itemCount: page.rows.length + 1,
-        itemBuilder: (context, index) {
-          if (index == page.rows.length) {
-            return LoopLoadMoreFooter(
-              key: const ValueKey<String>('launch2-projects-footer'),
-              keyPrefix: 'launch2-projects',
-              cursor: page.nextCursor,
-              canLoadMore: !state.busy && !state.refreshing,
-              loading: state.busy,
-              onLoadMore: controller.loadMore,
-            );
-          }
-          final row = page.rows[index];
-          return _ProjectRow(
-            row: row,
-            status: row.status,
-            // Straight to where the owner left off (decision 0142).
-            onTap: () => onNavigate?.call(
-              Launch2CreatorRoute.resume(row.projectId, row.resume),
-            ),
-          );
-        },
+        padding: const EdgeInsets.only(top: 4),
+        children: <Widget>[
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              for (final row in page.rows)
+                _projectRow(
+                  row,
+                  // Straight to where the owner left off (decision 0142).
+                  () => onNavigate?.call(
+                    Launch2CreatorRoute.resume(row.projectId, row.resume),
+                  ),
+                ),
+            ],
+          ),
+          LoopLoadMoreFooter(
+            key: const ValueKey<String>('launch2-projects-footer'),
+            keyPrefix: 'launch2-projects',
+            cursor: page.nextCursor,
+            canLoadMore: !state.busy && !state.refreshing,
+            loading: state.busy,
+            onLoadMore: controller.loadMore,
+          ),
+        ],
       );
     }
     return LoopStreamPage(
@@ -117,90 +117,41 @@ class Launch2ProjectsScreen extends ConsumerWidget {
   }
 }
 
-class _ProjectRow extends StatelessWidget {
-  const _ProjectRow({
-    required this.row,
-    required this.status,
-    required this.onTap,
-  });
+/// What a row says under the project's name.
+String _projectSubtitle(Launch2CreatorRow row) {
+  final draft = row.draft;
+  return switch (row.status) {
+    Launch2CreatorStatus.rejected => switch (row.rejection) {
+      final LaunchRejection rejection => launch2RejectionTitle(rejection),
+      null => row.project.reviewReasonText ?? '审核未通过',
+    },
+    Launch2CreatorStatus.approved when row.config.recipientOutdated =>
+      '回购收币地址需要更新',
+    Launch2CreatorStatus.draft when draft == null => '还没有发射配置',
+    _ when draft != null => '开售 ${loopLocalTimestampLabel(draft.nftSaleStart)}',
+    _ => '\$${row.project.ticker}',
+  };
+}
 
-  final Launch2CreatorRow row;
-  final Launch2CreatorStatus status;
-  final VoidCallback onTap;
-
-  String get _subtitle {
-    final draft = row.draft;
-    return switch (status) {
-      Launch2CreatorStatus.rejected => switch (row.rejection) {
-        final LaunchRejection rejection => launch2RejectionTitle(rejection),
-        null => row.project.reviewReasonText ?? '审核未通过',
-      },
-      Launch2CreatorStatus.approved when row.config.recipientOutdated =>
-        '回购收币地址需要更新',
-      Launch2CreatorStatus.draft when draft == null => '还没有发射配置',
-      _ when draft != null =>
-        '开售 ${loopLocalTimestampLabel(draft.nftSaleStart)}',
-      _ => '\$${row.project.ticker}',
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final project = row.project;
-    return LoopPressable(
-      key: ValueKey<String>('launch2-project-row-${project.projectId}'),
-      onTap: onTap,
-      haptic: LoopHaptic.selection,
-      scale: false,
-      child: Semantics(
-        button: true,
-        label: '${project.name}，${status.label}',
-        excludeSemantics: true,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 72),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: LoopSpacing.page,
-              vertical: 12,
-            ),
-            child: Row(
-              children: <Widget>[
-                MemeLogo(
-                  symbol: project.ticker,
-                  imageUrl: row.draft?.logoAssetUrl,
-                  size: 36,
-                  radius: 18,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        project.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.titleLg,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.caption.copyWith(
-                          color: LoopColors.text2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Launch2StatusPill(status: status),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+/// One project: logo, name, where it stands and its state badge.
+LoopRecordRow _projectRow(Launch2CreatorRow row, VoidCallback onTap) {
+  final project = row.project;
+  final status = row.status;
+  return LoopRecordRow(
+    key: ValueKey<String>('launch2-project-row-${project.projectId}'),
+    leading: MemeLogo(
+      symbol: project.ticker,
+      imageUrl: row.draft?.logoAssetUrl,
+      size: 36,
+      radius: 18,
+    ),
+    title: project.name,
+    subtitle: _projectSubtitle(row),
+    trailingBadge: Launch2StatusPill(status: status),
+    semanticLabel: '${project.name}，${status.label}',
+    onTap: () {
+      LoopHaptics.selection();
+      onTap();
+    },
+  );
 }

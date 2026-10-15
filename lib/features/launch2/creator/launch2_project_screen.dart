@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `launch2-project` · 项目状态 (archetype `record`, layout `stream`).
@@ -127,7 +128,16 @@ class Launch2ProjectScreen extends ConsumerWidget {
           ],
         ),
       ),
-      Launch2MilestoneTrack(status: status),
+      // Decision 0169: the shared step track (was Launch2MilestoneTrack).
+      LoopStepTrack.milestones(
+        key: ValueKey<String>('launch2-milestones-${status.wireName}'),
+        labels: launch2CreatorMilestones,
+        current: status.milestone,
+        reachedCurrent: status == Launch2CreatorStatus.active,
+        failed: status.isFailure,
+        semanticLabel:
+            '进度：${launch2CreatorMilestones[status.milestone]}，${status.label}',
+      ),
       ..._next(value, status),
       if (draft != null) ...<Widget>[
         const LoopLabel('发射配置'),

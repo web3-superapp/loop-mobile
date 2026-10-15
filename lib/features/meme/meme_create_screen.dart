@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// Replaces the square crop in a page test, which has no image codec to run
@@ -485,7 +486,13 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
           : null,
       primaryAction: blocked ? null : _primaryAction(draft, wallet, submission),
       body: <Widget>[
-        _StepDots(step: _step),
+        LoopStepTrack.dots(
+          key: ValueKey<String>('meme-create-step-${_step.index + 1}'),
+          labels: <String>[
+            for (final step in MemeCreateStep.values) step.label,
+          ],
+          current: _step.index,
+        ),
         ...switch (_step) {
           MemeCreateStep.profile => _profileStep(),
           MemeCreateStep.media => _mediaStep(),
@@ -969,52 +976,6 @@ class MemeAddressTail extends StatelessWidget {
             TextSpan(
               text: tail,
               style: LoopType.code.copyWith(color: LoopColors.lime),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StepDots extends StatelessWidget {
-  const _StepDots({required this.step});
-
-  final MemeCreateStep step;
-
-  @override
-  Widget build(BuildContext context) {
-    const total = MemeCreateStep.values;
-    return Padding(
-      key: ValueKey<String>('meme-create-step-${step.index + 1}'),
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        4,
-        LoopSpacing.page,
-        14,
-      ),
-      child: Semantics(
-        label: '第 ${step.index + 1} 步，共 ${total.length} 步，${step.label}',
-        excludeSemantics: true,
-        child: Row(
-          children: <Widget>[
-            for (final item in total) ...<Widget>[
-              Container(
-                width: item == step ? 22 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: item.index <= step.index
-                      ? LoopColors.lime
-                      : LoopColors.line2,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
-            const SizedBox(width: 6),
-            Text(
-              '${step.index + 1} / ${total.length} · ${step.label}',
-              style: LoopType.caption.copyWith(color: LoopColors.text2),
             ),
           ],
         ),

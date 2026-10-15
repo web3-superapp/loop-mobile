@@ -18,7 +18,9 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
@@ -550,6 +552,11 @@ void main() {
       final meme = _FakeMeme();
       await _pump(tester, const MemeCreateScreen(), meme: meme);
       expect(_key('meme-create-step-1'), findsOneWidget);
+      // Decision 0169: the same step track as the v2 发射 flow.
+      final track = tester.widget<LoopStepTrack>(_key('meme-create-step-1'));
+      expect(track.current, 0);
+      expect(track.labels, hasLength(3));
+      expect(track.milestones, isFalse);
       await tester.enterText(_key('meme-create-symbol'), 'X');
       await tester.tap(_key('meme-create-next'));
       await tester.pump();
@@ -803,6 +810,12 @@ void main() {
       expect(_key('meme-token-holding'), findsOneWidget);
       expect(find.textContaining('持有 10 \$FROG'), findsOneWidget);
       expect(find.text('内盘进度 33.27%'), findsOneWidget);
+      // Decision 0169: the family's 6 px `.bar`.
+      final bar = tester.widget<LoopProgressBar>(
+        _key('meme-token-progress-bar'),
+      );
+      expect(bar.value, closeTo(0.3327, 1e-9));
+      expect(tester.getSize(_key('meme-token-progress-bar')).height, 6);
       expect(find.text('已募 1,980 USD1 / ≈17,582 USD1'), findsOneWidget);
       expect(find.text('打满后自动上 PancakeSwap'), findsOneWidget);
       expect(_key('meme-token-price-provenance'), findsOneWidget);
@@ -853,6 +866,10 @@ void main() {
         );
         await _pump(tester, page(onNavigate: opened.add), meme: meme);
         expect(find.text('内盘进度 100%'), findsOneWidget);
+        expect(
+          tester.widget<LoopProgressBar>(_key('meme-token-progress-bar')).value,
+          1,
+        );
         expect(_key('meme-graduated-tag'), findsOneWidget);
         expect(find.text('暂无外盘报价'), findsOneWidget);
         // S118: the testnet has no in-app swap.
@@ -1032,6 +1049,11 @@ void main() {
       expect(find.text('影响'), findsOneWidget);
       expect(find.text('0.24%'), findsOneWidget);
       expect(_key('meme-trade-blocking'), findsOneWidget);
+      // Decision 0169: a warn `.notice`, not warning-yellow words.
+      expect(
+        tester.widget<LoopNotice>(_key('meme-trade-blocking')).tone,
+        LoopNoticeTone.warn,
+      );
       expect(find.textContaining('超过单钱包上限'), findsOneWidget);
       expect(
         tester.widget<LoopButton>(_key('meme-trade-confirm')).onPressed,
@@ -1167,22 +1189,20 @@ void main() {
       await _pump(tester, page(), meme: meme);
       await tester.tap(_key('meme-token-sell'));
       await tester.pumpAndSettle();
-      // Four outlined pills in one row (OKX reference, decision 0121).
+      // Four `.seg` shortcuts in one row (decision 0169; were outlined
+      // pills, decision 0121). An action, so never drawn selected.
       final fills = <Rect>[
         for (final percent in <int>[25, 50, 75, 100])
           tester.getRect(_key('meme-trade-fill-$percent')),
       ];
       expect(fills.map((rect) => rect.top).toSet(), hasLength(1));
       expect(fills.first.height, greaterThanOrEqualTo(44));
-      final pill = tester.widget<Container>(
-        find.descendant(
-          of: _key('meme-trade-fill-100'),
-          matching: find.byType(Container),
-        ),
-      );
-      final decoration = pill.decoration! as BoxDecoration;
-      expect(decoration.color, isNull);
-      expect(decoration.border, isNotNull);
+      for (final percent in <int>[25, 50, 75, 100]) {
+        final seg = tester.widget<LoopSeg>(_key('meme-trade-fill-$percent'));
+        expect(seg.selected, isFalse);
+        expect(seg.block, isTrue);
+        expect(seg.onSelected, isNotNull);
+      }
       await tester.tap(_key('meme-trade-fill-100'));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();

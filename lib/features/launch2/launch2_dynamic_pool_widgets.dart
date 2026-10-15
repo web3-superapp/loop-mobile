@@ -128,26 +128,38 @@ class Launch2DynamicRoundCard extends StatelessWidget {
           ),
         ),
       ),
-      if (!state.armed)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 4),
-          child: Text(
-            launch2DynamicIdleText,
-            key: const ValueKey<String>('launch2-dyn-idle-line'),
-            style: LoopType.caption.copyWith(color: LoopColors.text2),
-          ),
+      // Decision 0169: the round's facts in one `.record-card` under the
+      // `.label` (was loose key/value lines on the page).
+      LoopRecordCard(
+        key: const ValueKey<String>('launch2-dyn-round-card'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (!state.armed)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  launch2DynamicIdleText,
+                  key: const ValueKey<String>('launch2-dyn-idle-line'),
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                ),
+              ),
+            for (final (key, label, value) in launch2DynamicRoundRows(state))
+              LoopKeyValue(
+                key: ValueKey<String>('launch2-dyn-$key'),
+                label: label,
+                value: value,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+          ],
         ),
-      for (final (key, label, value) in launch2DynamicRoundRows(state))
-        LoopKeyValue(
-          key: ValueKey<String>('launch2-dyn-$key'),
-          label: label,
-          value: value,
-        ),
+      ),
       LoopProvenanceLine(
         key: const ValueKey<String>('launch2-dyn-provenance'),
         sources: const <String>['LoopHook'],
         observedAt: observedAt,
-        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 4),
+        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 4),
         detail: '跌幅按 5 分钟 K 线计算；回购买入不计奖励权重。',
       ),
     ],

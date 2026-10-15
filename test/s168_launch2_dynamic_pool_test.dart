@@ -32,6 +32,8 @@ import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
@@ -1145,6 +1147,21 @@ void main() {
       expect(find.text('未激活'), findsOneWidget);
       expect(find.text('价格 5 分钟内跌超 10% 将开启动态税与买入奖励'), findsOneWidget);
       expect(_key('launch2-dyn-drop'), findsNothing);
+      // Decision 0169: the round's facts sit in one `.record-card`.
+      expect(
+        find.descendant(
+          of: find.byType(LoopRecordCard),
+          matching: _key('launch2-dyn-pot'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-dyn-round-card'),
+          matching: _key('launch2-dyn-idle-line'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: _key('launch2-dyn-pot'),
@@ -1301,6 +1318,12 @@ void main() {
       );
       await openRewards(tester, official);
       expect(_key('launch2-dyn-rewards-none'), findsOneWidget);
+      // Decision 0169: the illustrated empty state, not the old strip.
+      expect(
+        tester.widget(_key('launch2-dyn-rewards-none')),
+        isA<LoopEmptyState>(),
+      );
+      expect(find.byType(LoopEmpty), findsNothing);
       expect(official.rewardReads, 0);
       await _drain(tester);
       await _pump(
@@ -1336,6 +1359,10 @@ void main() {
         dynamicPool: dynamicPool,
       );
       expect(_key('launch2-dyn-rewards-invalid-identity'), findsOneWidget);
+      expect(
+        tester.widget(_key('launch2-dyn-rewards-invalid-identity')),
+        isA<LoopEmptyState>(),
+      );
       expect(dynamicPool.kindReads, 0);
       await _drain(tester);
     });
@@ -1375,6 +1402,25 @@ void main() {
       await openRewards(tester, dynamicPool);
       expect(dynamicPool.rewardWallets.toSet(), <String>{l2WalletId});
       expect(find.text('第 3 轮'), findsOneWidget);
+      // Decision 0169: each round is a `.label` over one `.record-card`
+      // that holds its key/value lines.
+      expect(
+        find.ancestor(of: find.text('第 3 轮'), matching: find.byType(LoopLabel)),
+        findsOneWidget,
+      );
+      for (final id in <String>['3', '2', '1']) {
+        final card = _key('launch2-dyn-round-$id-card');
+        if (card.evaluate().isEmpty) continue;
+        expect(tester.widget(card), isA<LoopRecordCard>());
+        expect(
+          find.descendant(
+            of: card,
+            matching: _key('launch2-dyn-round-$id-claimable'),
+          ),
+          findsOneWidget,
+        );
+      }
+      expect(_key('launch2-dyn-round-3-card'), findsOneWidget);
       expect(find.text('K 线 #5999990 起 · 进行中'), findsOneWidget);
       expect(find.text('K 线 #100 – #104'), findsOneWidget);
       expect(find.text('K 线 #40 – #43'), findsOneWidget);
