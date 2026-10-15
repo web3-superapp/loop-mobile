@@ -384,7 +384,8 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         textInputAction: TextInputAction.search,
         onChanged: _onChanged,
         onSubmitted: (_) => _searchNow(),
-        style: LoopTypography.caption(13.5),
+        // M40 R26 a search field: body 14 (decision 0191).
+        style: LoopType.body,
         decoration: InputDecoration(
           hintText: '搜消息',
           isDense: true,

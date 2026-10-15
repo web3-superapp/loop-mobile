@@ -23,6 +23,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
 /// The room page after DeBox (decision 0115, S108–S110 §5), restyled in
 /// decision 0127: the host at 88 on a stage, the speakers at 56 in a
@@ -175,7 +176,8 @@ class VoiceRoomHostStage extends StatelessWidget {
                     key: const ValueKey<String>('voiceroom-host-name'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.title(17),
+                    // L16 the host's name on the headingSm step (decision 0191).
+                    style: LoopType.headingSm,
                   ),
                   const SizedBox(height: 6),
                   Row(
@@ -193,8 +195,7 @@ class VoiceRoomHostStage extends StatelessWidget {
                         if (name != '主持人') const SizedBox(width: 8),
                         Text(
                           caption,
-                          style: LoopTypography.caption(
-                            12,
+                          style: LoopType.caption.copyWith(
                             color: mic.speaking
                                 ? LoopColors.lime
                                 : LoopColors.text2,
@@ -343,8 +344,7 @@ class _MemberTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: LoopTypography.caption(
-              12,
+            style: LoopType.caption.copyWith(
               color: speaking ? LoopColors.lime : LoopColors.text2,
             ),
           ),
@@ -680,7 +680,10 @@ class _MoreTile extends StatelessWidget {
                       child: Text(
                         '+$count',
                         maxLines: 1,
-                        style: LoopTypography.figure(12),
+                        style: LoopTypography.withWeight(
+                          LoopType.figureSm,
+                          FontWeight.w600,
+                        ).copyWith(color: LoopColors.chalk),
                       ),
                     ),
                   ),
@@ -688,7 +691,7 @@ class _MoreTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '全部',
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
               ],
             ),
@@ -947,65 +950,72 @@ Future<void> showVoiceRoomInfoSheet(
   return showLoopSheet<void>(
     context,
     barrierLabel: '关闭房间说明',
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => Column(
       key: const ValueKey<String>('voiceroom-info-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            voiceRoomTitle(room.communityName, title: room.title),
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading(voiceRoomTitle(room.communityName, title: room.title)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                caption,
+                // R19 sheet support copy in text2 (decision 0191 L1).
+                style: LoopType.bodySm,
+              ),
+              const SizedBox(height: 12),
+              LoopKeyValue(
+                label: '社区',
+                value: room.communityName,
+                padding: EdgeInsets.zero,
+              ),
+              LoopKeyValue(
+                label: '开播',
+                value: loopLocalClockLabel(room.createdAt),
+                padding: EdgeInsets.zero,
+              ),
+              if (figures != null)
+                LoopKeyValue(
+                  label: '人数',
+                  value: figures,
+                  padding: EdgeInsets.zero,
+                ),
+              LoopKeyValue(
+                label: '我的身份',
+                value: role?.label ?? '还没有加入',
+                padding: EdgeInsets.zero,
+              ),
+              if (!snapshot.providerSync.confirmed)
+                LoopNotice(
+                  key: const ValueKey<String>('voiceroom-provider-unconfirmed'),
+                  icon: 'warn',
+                  tone: LoopNoticeTone.warn,
+                  title: '服务商侧未确认',
+                  body: providerSyncText,
+                  margin: const EdgeInsets.only(top: 14),
+                ),
+              const LoopNotice(
+                key: ValueKey<String>('voiceroom-provider-note'),
+                icon: 'info',
+                title: 'Stream Video / Audio Rooms',
+                body: '语音连接、发言权限与在线状态由 Stream 提供。',
+                margin: EdgeInsets.only(top: 14),
+              ),
+              const SizedBox(height: 16),
+              LoopButton(
+                key: const ValueKey<String>('voiceroom-info-close'),
+                label: '知道了',
+                block: true,
+                onPressed: () => Navigator.of(sheetContext).pop(),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            caption,
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 12),
-          LoopKeyValue(
-            label: '社区',
-            value: room.communityName,
-            padding: EdgeInsets.zero,
-          ),
-          LoopKeyValue(
-            label: '开播',
-            value: loopLocalClockLabel(room.createdAt),
-            padding: EdgeInsets.zero,
-          ),
-          if (figures != null)
-            LoopKeyValue(label: '人数', value: figures, padding: EdgeInsets.zero),
-          LoopKeyValue(
-            label: '我的身份',
-            value: role?.label ?? '还没有加入',
-            padding: EdgeInsets.zero,
-          ),
-          if (!snapshot.providerSync.confirmed)
-            LoopNotice(
-              key: const ValueKey<String>('voiceroom-provider-unconfirmed'),
-              icon: 'warn',
-              tone: LoopNoticeTone.warn,
-              title: '服务商侧未确认',
-              body: providerSyncText,
-              margin: const EdgeInsets.only(top: 14),
-            ),
-          const LoopNotice(
-            key: ValueKey<String>('voiceroom-provider-note'),
-            icon: 'info',
-            title: 'Stream Video / Audio Rooms',
-            body: '语音连接、发言权限与在线状态由 Stream 提供。',
-            margin: EdgeInsets.only(top: 14),
-          ),
-          const SizedBox(height: 16),
-          LoopButton(
-            key: const ValueKey<String>('voiceroom-info-close'),
-            label: '知道了',
-            block: true,
-            onPressed: () => Navigator.of(sheetContext).pop(),
-          ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -1091,79 +1101,84 @@ class _VoiceRoomStartSheetState extends ConsumerState<_VoiceRoomStartSheet> {
       // While the room is being opened the sheet stays: its answer is what
       // the caller reports, and a pop here would swallow it.
       canPop: !opening,
-      child: Padding(
+      child: Column(
         key: const ValueKey<String>('community-open-voice-room-sheet'),
-        padding: EdgeInsets.fromLTRB(
-          16,
-          4,
-          16,
-          8 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              '开播',
-              style: LoopTypography.heading(18, weight: FontWeight.w700),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopSheetHeading('开播'),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              0,
+              16,
+              8 + MediaQuery.viewInsetsOf(context).bottom,
             ),
-            const SizedBox(height: 8),
-            Text(
-              '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
-              '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
-              style: LoopTypography.body(13, color: LoopColors.muted),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              key: const ValueKey<String>('voiceroom-start-title'),
-              controller: _title,
-              enabled: !opening && pending == null,
-              textInputAction: TextInputAction.done,
-              inputFormatters: <TextInputFormatter>[
-                _CodePointLimit(voiceRoomTitleMaxCodePoints),
-              ],
-              decoration: const InputDecoration(
-                labelText: '房间标题（可留空）',
-                hintText: '留空时显示「社区名 语音房」',
-              ),
-              onSubmitted: opening ? null : (_) => unawaited(_submit()),
-            ),
-            if (pending != null) ...<Widget>[
-              const SizedBox(height: 6),
-              Text(
-                '上一次开播还没有完成，再开播会接着完成它，标题沿用当时填写的内容。',
-                key: const ValueKey<String>('voiceroom-start-pending'),
-                style: LoopTypography.caption(12, color: LoopColors.text2),
-              ),
-            ],
-            const SizedBox(height: 6),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '$used / $voiceRoomTitleMaxCodePoints',
-                style: LoopTypography.figure(11, color: LoopColors.text3),
-              ),
-            ),
-            const SizedBox(height: 12),
-            LoopButtonPair(
-              padded: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                LoopButton(
-                  key: const ValueKey<String>('voiceroom-start-submit'),
-                  label: opening ? '正在开播…' : '开播',
-                  primary: true,
-                  icon: 'voice',
-                  onPressed: opening ? null : () => unawaited(_submit()),
+                Text(
+                  '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
+                  '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
+                  // R19 sheet support copy in text2 (decision 0191 L1).
+                  style: LoopType.bodySm,
                 ),
-                LoopButton(
-                  key: const ValueKey<String>('voiceroom-start-cancel'),
-                  label: '取消',
-                  onPressed: opening ? null : () => Navigator.of(context).pop(),
+                const SizedBox(height: 14),
+                TextField(
+                  key: const ValueKey<String>('voiceroom-start-title'),
+                  controller: _title,
+                  enabled: !opening && pending == null,
+                  textInputAction: TextInputAction.done,
+                  inputFormatters: <TextInputFormatter>[
+                    _CodePointLimit(voiceRoomTitleMaxCodePoints),
+                  ],
+                  decoration: const InputDecoration(
+                    labelText: '房间标题（可留空）',
+                    hintText: '留空时显示「社区名 语音房」',
+                  ),
+                  onSubmitted: opening ? null : (_) => unawaited(_submit()),
+                ),
+                if (pending != null) ...<Widget>[
+                  const SizedBox(height: 6),
+                  Text(
+                    '上一次开播还没有完成，再开播会接着完成它，标题沿用当时填写的内容。',
+                    key: const ValueKey<String>('voiceroom-start-pending'),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '$used / $voiceRoomTitleMaxCodePoints',
+                    style: LoopType.figureXs.copyWith(color: LoopColors.text3),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                LoopButtonPair(
+                  padded: false,
+                  children: <Widget>[
+                    LoopButton(
+                      key: const ValueKey<String>('voiceroom-start-submit'),
+                      label: opening ? '正在开播…' : '开播',
+                      primary: true,
+                      icon: 'voice',
+                      onPressed: opening ? null : () => unawaited(_submit()),
+                    ),
+                    LoopButton(
+                      key: const ValueKey<String>('voiceroom-start-cancel'),
+                      label: '取消',
+                      onPressed: opening
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

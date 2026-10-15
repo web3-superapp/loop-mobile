@@ -25,6 +25,7 @@ import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The four D20 security surfaces (decision 0037).
@@ -947,10 +948,8 @@ class _RevokeConfirmSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-          child: Text('撤销这个会话？', style: LoopType.titleLg),
-        ),
+        // R2 the one sheet-title step (decision 0191 M12).
+        const LoopSheetHeading('撤销这个会话？'),
         LoopKeyValue(label: '平台', value: device.platform.label),
         LoopKeyValue(label: '客户端版本', value: device.clientVersion),
         // Which session this is: the sheet is the last screen before the
@@ -1124,7 +1123,7 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
           child: Text(
             '导出会要求 Face ID、MFA 与一次风险确认，并在导出期间禁止截图与录屏。'
             '这一页不会预先渲染任何私钥样例：一段被遮罩的字符会被读成「已经导出过」。',
-            style: LoopTypography.caption(12, color: LoopColors.text2),
+            style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
         ),
       ),
@@ -1248,7 +1247,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
           child: Text(
             '守护人由你邀请，对方要在自己的 App 里主动确认；未确认的不计入 2-of-3。'
             '守护人看不到你的资产，也不能发起交易。',
-            style: LoopTypography.caption(12, color: LoopColors.text2),
+            style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
         ),
       ),

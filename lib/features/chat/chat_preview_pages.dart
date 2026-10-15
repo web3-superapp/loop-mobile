@@ -131,10 +131,7 @@ class ContractFactsPreviewPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                '0x71e4…9a2c',
-                style: LoopType.monoTitle.copyWith(color: LoopColors.chalk),
-              ),
+              Text('0x71e4…9a2c', style: LoopType.figureLg),
               const SizedBox(height: 7),
               Text(
                 'Base · example contract reference',

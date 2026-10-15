@@ -142,7 +142,7 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
               enabled: group.canEdit,
               maxLength: 60,
               textInputAction: TextInputAction.next,
-              style: LoopTypography.body(16, color: LoopColors.chalk),
+              style: LoopType.bodyLg,
               decoration: loopFormFieldDecoration(
                 hint: '群组名称',
                 counterText: '',
@@ -182,7 +182,7 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
                 Text(
                   '至少选择 $groupMinimumSelectedFriends 位好友',
                   textAlign: TextAlign.center,
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
               ],
             )

@@ -18,6 +18,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The eight capability rows the prototype lists, as this build states them
@@ -490,7 +491,10 @@ class _CommunityAiQuestionBubble extends StatelessWidget {
                   bottomEnd: Radius.circular(LoopRadius.controlValue),
                 ),
               ),
-              child: Text(question, style: LoopTypography.body(13)),
+              child: Text(
+                question,
+                style: LoopType.bodySm.copyWith(color: LoopColors.chalk),
+              ),
             ),
           ),
         ],
@@ -516,8 +520,7 @@ class _CommunityAiReply extends StatelessWidget {
       child: _CommunityAiTurn(
         bubble: Text(
           body,
-          style: LoopTypography.body(
-            13,
+          style: LoopType.bodySm.copyWith(
             color: LoopGround.secondaryOf(context),
           ),
         ),
@@ -560,8 +563,7 @@ class _CommunityAiTurn extends StatelessWidget {
             children: <Widget>[
               Text(
                 'Community AI',
-                style: LoopTypography.caption(
-                  11,
+                style: LoopType.captionSm.copyWith(
                   color: LoopGround.secondaryOf(context),
                 ),
               ),
@@ -665,10 +667,7 @@ class _CommunityAiAnswerBubble extends StatelessWidget {
                             const SizedBox(width: 5),
                             Text(
                               reported ? '已举报' : '举报',
-                              style: LoopTypography.caption(
-                                11,
-                                color: LoopColors.text3,
-                              ),
+                              style: LoopType.captionSm,
                             ),
                           ],
                         ),
@@ -693,8 +692,7 @@ class _CommunityAiAnswerText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = LoopTypography.body(
-      13,
+    final style = LoopType.bodySm.copyWith(
       color: LoopGround.secondaryOf(context),
     );
     return Text.rich(
@@ -779,7 +777,7 @@ class _CommunityAiSourceList extends StatelessWidget {
                 child: Text(
                   '${source.label} · 观察于 '
                   '${communityAiTimestamp(source.observedAt)}',
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
               ),
           ],
@@ -810,7 +808,7 @@ class _CommunityAiOmittedList extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   communityAiReason(entry.reasonCode),
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
               ),
           ],
@@ -847,7 +845,7 @@ class _CommunityAiGeneratedMark extends StatelessWidget {
           Flexible(
             child: Text(
               communityAiGeneratedLabel(model: model, generatedAt: generatedAt),
-              style: LoopTypography.figure(11, color: LoopColors.text3),
+              style: LoopType.captionSm,
             ),
           ),
         ],
@@ -876,7 +874,7 @@ class _CommunityAiDisclaimer extends StatelessWidget {
         text,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: LoopTypography.caption(11, color: LoopColors.text3),
+        style: LoopType.captionSm,
       ),
     );
   }
@@ -889,35 +887,38 @@ Future<void> showCommunityAiSourceSheet(
 }) => showLoopSheet<void>(
   context,
   barrierLabel: '关闭来源说明',
-  builder: (sheetContext) => Padding(
+  builder: (sheetContext) => Column(
     key: const ValueKey<String>('community-ai-source-sheet'),
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(
-          source.label,
-          style: LoopTypography.heading(18, weight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '观察于 ${communityAiTimestamp(source.observedAt)}',
-          style: LoopTypography.figure(12, color: LoopColors.text3),
-        ),
-        const SizedBox(height: 18),
-        LoopButtonPair(
-          padded: false,
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      LoopSheetHeading(source.label),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            LoopButton(
-              key: const ValueKey<String>('community-ai-source-close'),
-              label: '知道了',
-              onPressed: () => Navigator.of(sheetContext).pop(),
+            Text(
+              '观察于 ${communityAiTimestamp(source.observedAt)}',
+              // L2 R21 provenance: captionSm 11 (decision 0191).
+              style: LoopType.captionSm,
+            ),
+            const SizedBox(height: 18),
+            LoopButtonPair(
+              padded: false,
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('community-ai-source-close'),
+                  label: '知道了',
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                ),
+              ],
             ),
           ],
         ),
-      ],
-    ),
+      ),
+    ],
   ),
 );
 
@@ -928,59 +929,62 @@ Future<CommunityAiReportReason?> showCommunityAiReportSheet(
 ) => showLoopSheet<CommunityAiReportReason>(
   context,
   barrierLabel: '关闭举报选项',
-  builder: (sheetContext) => Padding(
+  builder: (sheetContext) => Column(
     key: const ValueKey<String>('community-ai-report-sheet'),
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(
-          '举报这条回答',
-          style: LoopTypography.heading(18, weight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '选择一个原因。举报只记录这条回答和你的选择，不会上传你问过的问题。',
-          style: LoopTypography.body(13, color: LoopColors.muted),
-        ),
-        const SizedBox(height: 12),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            for (
-              var index = 0;
-              index < CommunityAiReportReason.values.length;
-              index += 1
-            )
-              LoopRecordRow(
-                key: ValueKey<String>(
-                  'community-ai-report-reason-'
-                  '${CommunityAiReportReason.values[index].wireName}',
-                ),
-                title: CommunityAiReportReason.values[index].label,
-                onTap: () =>
-                    Navigator.of(sheetContext)
-                        .pop(CommunityAiReportReason.values[index]),
-                position: communityRowPosition(
-                  index,
-                  CommunityAiReportReason.values.length,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        LoopButtonPair(
-          padded: false,
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      const LoopSheetHeading('举报这条回答'),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            LoopButton(
-              key: const ValueKey<String>('community-ai-report-cancel'),
-              label: '取消',
-              onPressed: () => Navigator.of(sheetContext).pop(),
+            Text(
+              '选择一个原因。举报只记录这条回答和你的选择，不会上传你问过的问题。',
+              // R19 sheet support copy in text2 (decision 0191 L1).
+              style: LoopType.bodySm,
+            ),
+            const SizedBox(height: 12),
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                for (
+                  var index = 0;
+                  index < CommunityAiReportReason.values.length;
+                  index += 1
+                )
+                  LoopRecordRow(
+                    key: ValueKey<String>(
+                      'community-ai-report-reason-'
+                      '${CommunityAiReportReason.values[index].wireName}',
+                    ),
+                    title: CommunityAiReportReason.values[index].label,
+                    onTap: () =>
+                        Navigator.of(sheetContext)
+                            .pop(CommunityAiReportReason.values[index]),
+                    position: communityRowPosition(
+                      index,
+                      CommunityAiReportReason.values.length,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            LoopButtonPair(
+              padded: false,
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('community-ai-report-cancel'),
+                  label: '取消',
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                ),
+              ],
             ),
           ],
         ),
-      ],
-    ),
+      ),
+    ],
   ),
 );
 

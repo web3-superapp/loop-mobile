@@ -36,6 +36,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 export 'package:loop_mobile/features/chat/v2/voice_room_stage.dart'
@@ -1708,43 +1709,46 @@ Future<VoiceRoomMemberCommand?> chooseVoiceRoomMemberCommand(
   return showLoopSheet<VoiceRoomMemberCommand>(
     context,
     barrierLabel: '关闭成员操作弹层',
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => Column(
       key: const ValueKey<String>('voiceroom-member-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            voiceRoomMemberName(member),
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。',
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 18),
-          for (final command in member.commands)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: LoopButton(
-                key: ValueKey<String>(
-                  'voiceroom-member-command-${command.wireName}',
-                ),
-                label: command.label,
-                block: true,
-                onPressed: () => Navigator.of(sheetContext).pop(command),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading(voiceRoomMemberName(member)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                '这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。',
+                // R19 sheet support copy in text2 (decision 0191 L1).
+                style: LoopType.bodySm,
               ),
-            ),
-          LoopButton(
-            key: const ValueKey<String>('voiceroom-member-command-cancel'),
-            label: '取消',
-            block: true,
-            onPressed: () => Navigator.of(sheetContext).pop(),
+              const SizedBox(height: 18),
+              for (final command in member.commands)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: LoopButton(
+                    key: ValueKey<String>(
+                      'voiceroom-member-command-${command.wireName}',
+                    ),
+                    label: command.label,
+                    block: true,
+                    onPressed: () => Navigator.of(sheetContext).pop(command),
+                  ),
+                ),
+              LoopButton(
+                key: const ValueKey<String>('voiceroom-member-command-cancel'),
+                label: '取消',
+                block: true,
+                onPressed: () => Navigator.of(sheetContext).pop(),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -2296,12 +2300,9 @@ class _VoiceRoomMinimizedBannerState
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: LoopTypography.withWeight(
-                                    LoopTypography.body(
-                                      13,
-                                      color: LoopColors.ink,
-                                    ),
+                                    LoopType.bodySm,
                                     FontWeight.w600,
-                                  ),
+                                  ).copyWith(color: LoopColors.ink),
                                 ),
                                 // No maxLines and no ellipsis: this line
                                 // wraps rather than drop a word of it.
@@ -2312,12 +2313,9 @@ class _VoiceRoomMinimizedBannerState
                                     phase: phase,
                                   ),
                                   style: LoopTypography.withWeight(
-                                    LoopTypography.body(
-                                      12,
-                                      color: LoopColors.ink,
-                                    ),
+                                    LoopType.caption,
                                     FontWeight.w600,
-                                  ),
+                                  ).copyWith(color: LoopColors.ink),
                                 ),
                               ],
                             ),
@@ -2360,7 +2358,7 @@ class _VoiceRoomMinimizedBannerState
                       child: Text(
                         '离开后你会退出这次通话，举手也会一并取消。',
                         maxLines: 2,
-                        style: LoopTypography.body(12, color: LoopColors.ink),
+                        style: LoopType.caption.copyWith(color: LoopColors.ink),
                       ),
                     ),
                     const SizedBox(width: LoopSpacing.tight),
@@ -2495,10 +2493,11 @@ class _BannerAction extends StatelessWidget {
               widthFactor: 1,
               child: Text(
                 label,
+                // R17 an inline text action: label 12 (0191 L21).
                 style: LoopTypography.withWeight(
-                  LoopTypography.body(12, color: LoopColors.ink),
+                  LoopType.label,
                   onPressed == null ? FontWeight.w400 : FontWeight.w600,
-                ),
+                ).copyWith(color: LoopColors.ink),
               ),
             ),
           ),

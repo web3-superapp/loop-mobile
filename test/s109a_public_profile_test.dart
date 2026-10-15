@@ -782,7 +782,7 @@ void main() {
   });
 
   group('user-profile page · OKX header and round keys (decision 0127)', () {
-    testWidgets('a stranger: 72 face, 22 name, LOOP ID, four round keys', (
+    testWidgets('a stranger: 72 face, 24 name, LOOP ID, four round keys', (
       tester,
     ) async {
       await _pump(
@@ -800,7 +800,7 @@ void main() {
             )
             .style
             ?.fontSize,
-        22,
+        24, // R27 displaySm (decision 0191 H1)
       );
       expect(
         find.byKey(const ValueKey<String>('user-profile-loop-id')),

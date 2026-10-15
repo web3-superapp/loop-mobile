@@ -316,7 +316,7 @@ class ConversationRow extends StatelessWidget {
                               child: Text(
                                 '${conversation.unreadCount}',
                                 textAlign: TextAlign.center,
-                                style: LoopType.monoStamp.copyWith(
+                                style: LoopType.figureXs.copyWith(
                                   color: LoopColors.abyss,
                                 ),
                               ),

@@ -224,11 +224,9 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                         loopId: loopId,
                         textKey: const ValueKey<String>('loop-id-value'),
                         copyKey: const ValueKey<String>('loop-id-copy'),
-                        style: LoopTypography.figure(
-                          18,
-                          height: 1.2,
-                          color: LoopColors.chalk,
-                        ),
+                        // M19 the setup page's main value: figureLg 20
+                        // (decision 0191).
+                        style: LoopType.figureLg,
                       )
                     else
                       Text(

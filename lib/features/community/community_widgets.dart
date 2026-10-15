@@ -20,6 +20,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_progress_fill.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
 /// `开发预览` eyebrow for a Preview-backed S3 page. Production and unavailable
 /// modes carry no kicker, so the label can never appear outside Preview.
@@ -272,130 +273,49 @@ Future<void> showCommunityPresenceMeaningSheet(
   await showLoopSheet<void>(
     context,
     barrierLabel: '关闭在线人数说明',
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => Column(
       key: const ValueKey<String>('community-online-meaning-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            '这里数的是连接，不是活跃',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数'
-            '（${communityCountLabel(count)} 人），不是「正在看这个频道」，'
-            '不是「最近活跃」，也不是社区成员总数。它是一次观察，不是持续统计。',
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '观察于 ${communityObservedAtLabel(observedAt)}',
-            style: LoopTypography.figure(12, color: LoopColors.text3),
-          ),
-          const SizedBox(height: 18),
-          LoopButtonPair(
-            padded: false,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('这里数的是连接，不是活跃'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('community-online-meaning-close'),
-                label: '知道了',
-                onPressed: () => Navigator.of(sheetContext).pop(),
+              Text(
+                '这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数'
+                '（${communityCountLabel(count)} 人），不是「正在看这个频道」，'
+                '不是「最近活跃」，也不是社区成员总数。它是一次观察，不是持续统计。',
+                style: LoopType.bodySm,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '观察于 ${communityObservedAtLabel(observedAt)}',
+                // L2 R21 provenance: captionSm 11 (decision 0191).
+                style: LoopType.captionSm,
+              ),
+              const SizedBox(height: 18),
+              LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>(
+                      'community-online-meaning-close',
+                    ),
+                    label: '知道了',
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// The community's own identity block (`#scr-community-profile .pad`): the
-/// logo, the name, one mono line of counts and the community's description.
-///
-/// The counts line only ever carries facts the server sent. An unavailable
-/// presence reading drops the 在线 segment instead of explaining itself in
-/// place: the explanation belongs to the reading, and the reading is not
-/// there.
-class CommunityIdentityBlock extends StatelessWidget {
-  const CommunityIdentityBlock({
-    required this.community,
-    required this.onlineCount,
-    super.key,
-    this.onExplainPresence,
-  });
-
-  final CommunitySummary community;
-  final CommunityOnlineCount onlineCount;
-
-  /// Opens the presence explanation. Offered only when a reading exists.
-  final VoidCallback? onExplainPresence;
-
-  @override
-  Widget build(BuildContext context) {
-    final observed = onlineCount is CommunityOnlineCountObserved
-        ? onlineCount as CommunityOnlineCountObserved
-        : null;
-    final members = communityCountLabel(community.memberCount);
-    final counts = <InlineSpan>[
-      TextSpan(text: '$members 成员'),
-      if (observed != null) ...<InlineSpan>[
-        const TextSpan(text: ' · '),
-        TextSpan(
-          text: '${communityCountLabel(observed.count)} 在线',
-          style: LoopTypography.figure(12, color: LoopColors.lime),
         ),
       ],
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          CommunityLogo(
-            key: const ValueKey<String>('community-profile-logo'),
-            identity: community.communityId,
-            name: community.name,
-            logoRef: community.logoRef,
-            size: 88,
-            radius: LoopRadius.controlValue,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(community.name, style: LoopTypography.title(19)),
-                const SizedBox(height: 3),
-                Text.rich(
-                  TextSpan(
-                    children: counts,
-                    style: LoopTypography.figure(12, color: LoopColors.text2),
-                  ),
-                  key: const ValueKey<String>('community-profile-counts'),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  community.description ?? '这个社区还没有填写简介。',
-                  style: LoopTypography.body(12, color: LoopColors.text2),
-                ),
-              ],
-            ),
-          ),
-          if (observed != null && onExplainPresence != null)
-            LoopIconButton(
-              key: const ValueKey<String>('community-online-count-explain'),
-              icon: 'info',
-              label: '在线人数是怎么数的',
-              onPressed: onExplainPresence,
-            ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 }
 
 /// One of the three per-account cells on the community record's mining card.
@@ -537,7 +457,8 @@ class CommunityMiningSummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '社区挖矿',
-                  style: LoopTypography.title(14, color: LoopColors.chalk),
+                  // L13 R4 a card head: title 15 (decision 0191).
+                  style: LoopType.title,
                 ),
               ),
               if (onOpenPanel != null)
@@ -594,7 +515,7 @@ class CommunityMiningSummaryCard extends StatelessWidget {
           child: Text(
             note,
             key: const ValueKey<String>('community-mining-summary-note'),
-            style: LoopTypography.caption(11, color: LoopColors.text3),
+            style: LoopType.captionSm,
           ),
         ),
       ],
@@ -743,10 +664,7 @@ class CommunityQuietLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Text(
-        text,
-        style: LoopTypography.caption(12, color: LoopColors.text3),
-      ),
+      child: Text(text, style: LoopType.caption),
     );
   }
 }
@@ -832,7 +750,7 @@ class CommunityMiningPowerCard extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                   child: Text(
                     '这次算力快照所用的公式版本 $identifier',
-                    style: LoopTypography.caption(11, color: LoopColors.text3),
+                    style: LoopType.captionSm,
                   ),
                 ),
               ),
@@ -1260,38 +1178,40 @@ Future<bool> confirmCommunityAction(
   final confirmed = await showLoopSheet<bool>(
     context,
     barrierLabel: '关闭确认弹层',
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => Column(
       key: ValueKey<String>(sheetKey),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            title,
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(body, style: LoopTypography.body(13, color: LoopColors.muted)),
-          const SizedBox(height: 18),
-          LoopButtonPair(
-            padded: false,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading(title),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('community-confirm-accept'),
-                label: confirmLabel,
-                primary: true,
-                onPressed: () => Navigator.of(sheetContext).pop(true),
-              ),
-              LoopButton(
-                key: const ValueKey<String>('community-confirm-cancel'),
-                label: cancelLabel,
-                onPressed: () => Navigator.of(sheetContext).pop(false),
+              Text(body, style: LoopType.bodySm),
+              const SizedBox(height: 18),
+              LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>('community-confirm-accept'),
+                    label: confirmLabel,
+                    primary: true,
+                    onPressed: () => Navigator.of(sheetContext).pop(true),
+                  ),
+                  LoopButton(
+                    key: const ValueKey<String>('community-confirm-cancel'),
+                    label: cancelLabel,
+                    onPressed: () => Navigator.of(sheetContext).pop(false),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
   return confirmed ?? false;
@@ -1318,38 +1238,42 @@ Future<void> showCommunityApplicationSubmittedSheet(
   await showLoopSheet<void>(
     context,
     barrierLabel: '关闭确认弹层',
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => Column(
       key: const ValueKey<String>('community-apply-submitted-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            '申请已提交 · 审核中',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '「$communityName」已进入审核队列，你是它的所有者。'
-            '$communityApplicationProgressHint'
-            '通过后才会显示验证标记，并开放挖矿权重与官方群。',
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 18),
-          LoopButtonPair(
-            padded: false,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('申请已提交 · 审核中'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('community-apply-submitted-open'),
-                label: '查看社区',
-                primary: true,
-                onPressed: () => Navigator.of(sheetContext).pop(),
+              Text(
+                '「$communityName」已进入审核队列，你是它的所有者。'
+                '$communityApplicationProgressHint'
+                '通过后才会显示验证标记，并开放挖矿权重与官方群。',
+                style: LoopType.bodySm,
+              ),
+              const SizedBox(height: 18),
+              LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>(
+                      'community-apply-submitted-open',
+                    ),
+                    label: '查看社区',
+                    primary: true,
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -1452,76 +1376,80 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
   @override
   Widget build(BuildContext context) {
     final community = widget.community;
-    return Padding(
+    return Column(
       key: const ValueKey<String>('community-edit-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            '编辑社区资料',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            key: const ValueKey<String>('community-edit-name'),
-            controller: _name,
-            decoration: const InputDecoration(labelText: '社区名称'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            key: const ValueKey<String>('community-edit-description'),
-            controller: _description,
-            maxLines: 3,
-            decoration: const InputDecoration(labelText: '简介（可留空）'),
-          ),
-          const SizedBox(height: 12),
-          if (widget.includeBoundAsset) ...<Widget>[
-            TextField(
-              key: const ValueKey<String>('community-edit-bound-asset'),
-              controller: _assetKey,
-              autocorrect: false,
-              enableSuggestions: false,
-              onChanged: (_) {
-                if (_assetKeyInvalid) setState(() => _assetKeyInvalid = false);
-              },
-              decoration: InputDecoration(
-                labelText: '绑定代币（仅所有者，可留空）',
-                hintText: 'eip155:56:0x…',
-                errorText: _assetKeyInvalid
-                    ? communityApplicationFieldReason(
-                        CommunityApplicationField.boundAssetKey,
-                      )
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-          LoopKeyValue(
-            label: '短链接（不可修改）',
-            value: community.slug,
-            padding: EdgeInsets.zero,
-          ),
-          const SizedBox(height: 16),
-          LoopButtonPair(
-            padded: false,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('编辑社区资料'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('community-edit-submit'),
-                label: '下一步',
-                primary: true,
-                onPressed: _submit,
+              TextField(
+                key: const ValueKey<String>('community-edit-name'),
+                controller: _name,
+                decoration: const InputDecoration(labelText: '社区名称'),
               ),
-              LoopButton(
-                key: const ValueKey<String>('community-edit-cancel'),
-                label: '取消',
-                onPressed: () => Navigator.of(context).pop(),
+              const SizedBox(height: 12),
+              TextField(
+                key: const ValueKey<String>('community-edit-description'),
+                controller: _description,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: '简介（可留空）'),
+              ),
+              const SizedBox(height: 12),
+              if (widget.includeBoundAsset) ...<Widget>[
+                TextField(
+                  key: const ValueKey<String>('community-edit-bound-asset'),
+                  controller: _assetKey,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  onChanged: (_) {
+                    if (_assetKeyInvalid) {
+                      setState(() => _assetKeyInvalid = false);
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: '绑定代币（仅所有者，可留空）',
+                    hintText: 'eip155:56:0x…',
+                    errorText: _assetKeyInvalid
+                        ? communityApplicationFieldReason(
+                            CommunityApplicationField.boundAssetKey,
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              LoopKeyValue(
+                label: '短链接（不可修改）',
+                value: community.slug,
+                padding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
+              LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>('community-edit-submit'),
+                    label: '下一步',
+                    primary: true,
+                    onPressed: _submit,
+                  ),
+                  LoopButton(
+                    key: const ValueKey<String>('community-edit-cancel'),
+                    label: '取消',
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1612,158 +1540,163 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
     // Decision 0127: the logo at 72 on top, then four equal 52 fields, then
     // one page-wide Lime button. The rules the server enforces are in each
     // field's hint and in its error; the form carries no paragraph of them.
-    return Padding(
+    return Column(
       key: const ValueKey<String>('community-apply-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            '创建社区',
-            textAlign: TextAlign.center,
-            style: LoopTypography.heading(20, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: _ApplyLogoSlot(logoRef: _logoRef, name: _name.text),
-          ),
-          const SizedBox(height: 12),
-          // The twelve published marks, picked by looking at them.
-          SizedBox(
-            height: 52,
-            child: ListView.separated(
-              key: const ValueKey<String>('community-apply-logo-strip'),
-              scrollDirection: Axis.horizontal,
-              itemCount: _logoRefs.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final reference = _logoRefs[index];
-                final selected = _logoRef == reference;
-                return Semantics(
-                  button: true,
-                  selected: selected,
-                  label: reference == null
-                      ? '不设置社区标识'
-                      : '社区标识 ${reference.split('-').last}',
-                  excludeSemantics: true,
-                  child: GestureDetector(
-                    key: ValueKey<String>(
-                      'community-apply-logo-${reference ?? 'none'}',
-                    ),
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => setState(() => _logoRef = reference),
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: selected
-                              ? LoopColors.lime
-                              : Colors.transparent,
-                          width: 2,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('创建社区'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Center(
+                child: _ApplyLogoSlot(logoRef: _logoRef, name: _name.text),
+              ),
+              const SizedBox(height: 12),
+              // The twelve published marks, picked by looking at them.
+              SizedBox(
+                height: 52,
+                child: ListView.separated(
+                  key: const ValueKey<String>('community-apply-logo-strip'),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _logoRefs.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final reference = _logoRefs[index];
+                    final selected = _logoRef == reference;
+                    return Semantics(
+                      button: true,
+                      selected: selected,
+                      label: reference == null
+                          ? '不设置社区标识'
+                          : '社区标识 ${reference.split('-').last}',
+                      excludeSemantics: true,
+                      child: GestureDetector(
+                        key: ValueKey<String>(
+                          'community-apply-logo-${reference ?? 'none'}',
+                        ),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => setState(() => _logoRef = reference),
+                        child: Container(
+                          width: 52,
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selected
+                                  ? LoopColors.lime
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          child: reference == null
+                              ? Container(
+                                  width: 44,
+                                  height: 44,
+                                  alignment: Alignment.center,
+                                  decoration: const BoxDecoration(
+                                    color: LoopColors.card2,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const LoopIcon(
+                                    'close',
+                                    size: 16,
+                                    color: LoopColors.text2,
+                                  ),
+                                )
+                              : CommunityLogo(
+                                  identity: 'community-apply-$reference',
+                                  name: _name.text,
+                                  logoRef: reference,
+                                  size: 44,
+                                  radius: 22,
+                                ),
                         ),
                       ),
-                      child: reference == null
-                          ? Container(
-                              width: 44,
-                              height: 44,
-                              alignment: Alignment.center,
-                              decoration: const BoxDecoration(
-                                color: LoopColors.card2,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const LoopIcon(
-                                'close',
-                                size: 16,
-                                color: LoopColors.text2,
-                              ),
-                            )
-                          : CommunityLogo(
-                              identity: 'community-apply-$reference',
-                              name: _name.text,
-                              logoRef: reference,
-                              size: 44,
-                              radius: 22,
-                            ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            key: const ValueKey<String>('community-apply-name'),
-            controller: _name,
-            onChanged: (_) => setState(() {}),
-            decoration: loopFormFieldDecoration(
-              hint: '社区名称',
-              error: _errorFor(CommunityApplicationField.name),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            key: const ValueKey<String>('community-apply-slug'),
-            controller: _slug,
-            decoration: loopFormFieldDecoration(
-              hint: '短链接，小写字母、数字与连字符',
-              error: _errorFor(CommunityApplicationField.slug),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            key: const ValueKey<String>('community-apply-description'),
-            controller: _description,
-            maxLines: 2,
-            minLines: 1,
-            decoration: loopFormFieldDecoration(
-              hint: '简介（选填）',
-              error: _errorFor(CommunityApplicationField.description),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            key: const ValueKey<String>('community-apply-asset-key'),
-            controller: _assetKey,
-            decoration: loopFormFieldDecoration(
-              hint: '绑定代币（选填）eip155:56:0x…',
-              error: _errorFor(CommunityApplicationField.boundAssetKey),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '提交后进入审核，你是所有者；验证标记由运维核验后设置。',
-            textAlign: TextAlign.center,
-            style: LoopTypography.caption(11, color: LoopColors.text3),
-          ),
-          const SizedBox(height: 16),
-          // The sheet is not a flat page; the scope gives its one primary
-          // the flat wide form button look (decision 0127 / 0183).
-          LoopFlat(
-            child: LoopButton(
-              key: const ValueKey<String>('community-apply-submit'),
-              label: '提交申请',
-              primary: true,
-              block: true,
-              onPressed: _submit,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Center(
-            child: TextButton(
-              key: const ValueKey<String>('community-apply-cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                '取消',
-                style: LoopTypography.body(14, color: LoopColors.text2),
+                    );
+                  },
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const ValueKey<String>('community-apply-name'),
+                controller: _name,
+                onChanged: (_) => setState(() {}),
+                decoration: loopFormFieldDecoration(
+                  hint: '社区名称',
+                  error: _errorFor(CommunityApplicationField.name),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: const ValueKey<String>('community-apply-slug'),
+                controller: _slug,
+                decoration: loopFormFieldDecoration(
+                  hint: '短链接，小写字母、数字与连字符',
+                  error: _errorFor(CommunityApplicationField.slug),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: const ValueKey<String>('community-apply-description'),
+                controller: _description,
+                maxLines: 2,
+                minLines: 1,
+                decoration: loopFormFieldDecoration(
+                  hint: '简介（选填）',
+                  error: _errorFor(CommunityApplicationField.description),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: const ValueKey<String>('community-apply-asset-key'),
+                controller: _assetKey,
+                decoration: loopFormFieldDecoration(
+                  hint: '绑定代币（选填）eip155:56:0x…',
+                  error: _errorFor(CommunityApplicationField.boundAssetKey),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '提交后进入审核，你是所有者；验证标记由运维核验后设置。',
+                textAlign: TextAlign.center,
+                style: LoopType.captionSm,
+              ),
+              const SizedBox(height: 16),
+              // The sheet is not a flat page; the scope gives its one primary
+              // the flat wide form button look (decision 0127 / 0183).
+              LoopFlat(
+                child: LoopButton(
+                  key: const ValueKey<String>('community-apply-submit'),
+                  label: '提交申请',
+                  primary: true,
+                  block: true,
+                  onPressed: _submit,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  key: const ValueKey<String>('community-apply-cancel'),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    '取消',
+                    // R17 an inline text action: label 12 at 600 (0191 L21).
+                    style: LoopTypography.withWeight(
+                      LoopType.label,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopColors.text2),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

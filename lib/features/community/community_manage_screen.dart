@@ -211,10 +211,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             Padding(
               key: const ValueKey<String>('community-manage-no-pool'),
               padding: const EdgeInsets.fromLTRB(68, 0, 16, 8),
-              child: Text(
-                '尚无已注册池子，群友买入动态不会出现。',
-                style: LoopTypography.caption(11, color: LoopColors.text3),
-              ),
+              child: Text('尚无已注册池子，群友买入动态不会出现。', style: LoopType.captionSm),
             ),
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-share'),
@@ -332,7 +329,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         child: Text(
           isOwner ? '社区图标、短链接与验证状态不能在这里修改；不提供解散社区。' : '社区图标、短链接与验证状态不能在这里修改。',
           key: const ValueKey<String>('community-manage-logo-note'),
-          style: LoopTypography.caption(11),
+          style: LoopType.captionSm,
         ),
       ),
       const SizedBox(height: 24),

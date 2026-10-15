@@ -717,10 +717,9 @@ class _ProfileTopRow extends StatelessWidget {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: LoopTypography.label(
-                              13,
-                              weight: FontWeight.w600,
-                              color: LoopColors.chalk,
+                            style: LoopTypography.withWeight(
+                              LoopType.titleSm,
+                              FontWeight.w600,
                             ),
                           ),
                         ),
@@ -859,7 +858,7 @@ class _ProfileNetWorthPanel extends StatelessWidget {
                   child: Text(
                     centre,
                     key: ValueKey<String>(centreKey),
-                    style: LoopTypography.caption(13, color: LoopColors.text3),
+                    style: LoopType.bodySm.copyWith(color: LoopColors.text3),
                   ),
                 ),
               ),
@@ -922,10 +921,7 @@ class _ProfileFirstBuyCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(
-                    '获取你的第一个代币',
-                    style: LoopTypography.title(15, weight: FontWeight.w700),
-                  ),
+                  Text('获取你的第一个代币', style: LoopType.title),
                   const SizedBox(height: 4),
                   Text(
                     '领取测试币后首次买入 0 手续费',
@@ -935,11 +931,11 @@ class _ProfileFirstBuyCard extends StatelessWidget {
                   Text(
                     '立即买入 →',
                     key: const ValueKey<String>('profile-first-buy-go'),
-                    style: LoopTypography.label(
-                      13,
-                      weight: FontWeight.w700,
-                      color: LoopColors.lime,
-                    ),
+                    // R17 an inline text action: label 12 at 600 (0191 L21).
+                    style: LoopTypography.withWeight(
+                      LoopType.label,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopColors.lime),
                   ),
                 ],
               ),
@@ -1233,11 +1229,10 @@ class _ProfileAccountEntriesState extends ConsumerState<ProfileAccountEntries> {
               children: <Widget>[
                 Text(
                   code,
-                  style: LoopTypography.figure(
-                    14,
-                    weight: FontWeight.w500,
-                    color: LoopColors.text2,
-                  ),
+                  style: LoopTypography.withWeight(
+                    LoopType.figure,
+                    FontWeight.w500,
+                  ).copyWith(color: LoopColors.text2),
                 ),
                 _CopyInviteCodeButton(code: code),
               ],
@@ -1614,7 +1609,11 @@ class _ProfileIdentityCard extends StatelessWidget {
     final loopId = resource.loopId;
     final bio = resource.values.bio;
     final activatedAt = resource.activatedAt;
-    final idStyle = LoopTypography.caption(13, color: LoopColors.text2);
+    // M19 an inline LOOP ID: figure 13 at 500, text2 (decision 0191).
+    final idStyle = LoopTypography.withWeight(
+      LoopType.figure,
+      FontWeight.w500,
+    ).copyWith(color: LoopColors.text2);
     final counts = this.counts;
     return Column(
       key: const ValueKey<String>('profile-identity-card'),
@@ -1717,7 +1716,8 @@ class _ProfileIdentityCard extends StatelessWidget {
               key: const ValueKey<String>('profile-bio'),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: LoopType.body.copyWith(color: LoopColors.chalk),
+              // L25 R18 prose in text2, as on a person's home (decision 0191).
+              style: LoopType.body.copyWith(color: LoopColors.text2),
             ),
           )
         else
@@ -1735,7 +1735,10 @@ class _ProfileIdentityCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 16, 0),
                 child: Text(
                   '＋ 添加个人简介',
-                  style: LoopTypography.title(14, color: LoopColors.lime),
+                  style: LoopTypography.withWeight(
+                    LoopType.label,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopColors.lime),
                 ),
               ),
             ),
@@ -1822,10 +1825,7 @@ class _ProfileCountLink extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: LoopTypography.caption(13, color: LoopColors.text2),
-                ),
+                Text(label, style: LoopType.bodySm),
               ],
             ),
           ),
@@ -2076,7 +2076,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   required isFocused,
                   required maxLength,
                 }) => null,
-                style: LoopTypography.body(16, color: LoopColors.chalk),
+                style: LoopType.bodyLg,
                 decoration: loopFormFieldDecoration(hint: '1–40 个字符，可以和别人重复'),
                 onChanged: (value) => _applyAlias(controller, value),
               ),
@@ -2097,7 +2097,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   required isFocused,
                   required maxLength,
                 }) => null,
-                style: LoopTypography.body(15, color: LoopColors.chalk),
+                style: LoopType.bodyLg,
                 decoration: loopFormFieldDecoration(hint: '一句话介绍自己（可以不填）'),
                 onChanged: (value) => _applyBio(controller, value),
               ),
@@ -2115,11 +2115,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     copyKey: const ValueKey<String>(
                       'profile-edit-copy-loop-id',
                     ),
-                    style: LoopTypography.figure(
-                      15,
-                      height: 1.3,
-                      color: LoopColors.chalk,
-                    ),
+                    style: LoopTypography.withWeight(
+                      LoopType.figure,
+                      FontWeight.w500,
+                    ).copyWith(color: LoopColors.text2),
                   ),
                 ),
               ),

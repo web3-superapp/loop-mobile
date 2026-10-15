@@ -315,8 +315,9 @@ class _Card extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.label(
-                            13,
+                          // L19 the buyer's name is the card's second voice,
+                          // over the 买入 line: R5 caption 12 text2 (0191).
+                          style: LoopType.caption.copyWith(
                             color: LoopColors.text2,
                           ),
                         ),
@@ -324,9 +325,7 @@ class _Card extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         loopStreamClockLabel(event.occurredAt),
-                        style: LoopTypography.figure(
-                          11,
-                          weight: FontWeight.w400,
+                        style: LoopType.figureXs.copyWith(
                           color: LoopColors.text3,
                         ),
                       ),
@@ -336,17 +335,16 @@ class _Card extends StatelessWidget {
                   Text.rich(
                     TextSpan(
                       children: <InlineSpan>[
-                        TextSpan(text: '买入 ', style: LoopTypography.title(15)),
+                        TextSpan(text: '买入 ', style: LoopType.title),
                         TextSpan(
                           text: loopFormatMemberBuyAmount(event.amount),
-                          style: LoopTypography.figure(
-                            15,
+                          style: LoopType.title.copyWith(
                             color: LoopColors.lime,
                           ),
                         ),
                         TextSpan(
                           text: ' ${event.symbol}',
-                          style: LoopTypography.title(15),
+                          style: LoopType.title,
                         ),
                       ],
                     ),
@@ -366,10 +364,9 @@ class _Card extends StatelessWidget {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: LoopTypography.figure(
-                              12,
-                              weight: FontWeight.w500,
-                              color: LoopColors.text2,
+                            style: LoopTypography.withWeight(
+                              LoopType.figureSm,
+                              FontWeight.w500,
                             ),
                           ),
                         ),
@@ -420,7 +417,7 @@ class _TxHash extends StatelessWidget {
           children: <Widget>[
             Text(
               event.shortTxHash,
-              style: LoopTypography.code(11, color: LoopColors.text3),
+              style: LoopType.codeSm.copyWith(color: LoopColors.text3),
             ),
             const SizedBox(width: 4),
             const LoopIcon('copy', size: 13, color: LoopColors.text3),

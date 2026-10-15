@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
@@ -22,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The unavailable facts `group-info` renders instead of prototype samples.
@@ -510,50 +510,52 @@ class _GroupRenameFormState extends State<_GroupRenameForm> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => Column(
     key: const ValueKey<String>('group-rename-sheet'),
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(
-          '修改群名称',
-          style: LoopTypography.heading(18, weight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          key: const ValueKey<String>('group-rename-field'),
-          controller: _name,
-          autofocus: true,
-          onChanged: (_) {
-            if (_invalid) setState(() => _invalid = false);
-          },
-          onSubmitted: (_) => _submit(),
-          decoration: InputDecoration(
-            labelText: '群名称（1–$groupNameMaximumRunes 个字符）',
-            errorText: _invalid ? '群名称需要 1–40 个字符，且不能含控制字符' : null,
-          ),
-        ),
-        const SizedBox(height: 16),
-        LoopButtonPair(
-          padded: false,
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      const LoopSheetHeading('修改群名称'),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            LoopButton(
-              key: const ValueKey<String>('group-rename-submit'),
-              label: '保存',
-              primary: true,
-              onPressed: _submit,
+            TextField(
+              key: const ValueKey<String>('group-rename-field'),
+              controller: _name,
+              autofocus: true,
+              onChanged: (_) {
+                if (_invalid) setState(() => _invalid = false);
+              },
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                labelText: '群名称（1–$groupNameMaximumRunes 个字符）',
+                errorText: _invalid ? '群名称需要 1–40 个字符，且不能含控制字符' : null,
+              ),
             ),
-            LoopButton(
-              key: const ValueKey<String>('group-rename-cancel'),
-              label: '取消',
-              onPressed: () => Navigator.of(context).pop(),
+            const SizedBox(height: 16),
+            LoopButtonPair(
+              padded: false,
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('group-rename-submit'),
+                  label: '保存',
+                  primary: true,
+                  onPressed: _submit,
+                ),
+                LoopButton(
+                  key: const ValueKey<String>('group-rename-cancel'),
+                  label: '取消',
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
             ),
           ],
         ),
-      ],
-    ),
+      ),
+    ],
   );
 }
 

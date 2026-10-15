@@ -85,14 +85,14 @@ void main() {
         ),
       );
 
-      // Header: the logo at 72, the name at 22, verification as a mark.
+      // Header: the logo at 72, the name at 24, verification as a mark.
       expect(
         tester.getSize(_key('community-profile-logo')),
         const Size(72, 72),
       );
       expect(
         tester.widget<Text>(_key('community-profile-name')).style?.fontSize,
-        22,
+        24, // R27 displaySm (decision 0191 M20)
       );
       expect(_key('community-profile-verification'), findsOneWidget);
       expect(find.text('已验证'), findsOneWidget);

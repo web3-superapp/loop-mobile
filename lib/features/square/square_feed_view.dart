@@ -405,7 +405,8 @@ class SquareFeedPostRow extends StatelessWidget {
                             key: const ValueKey<String>('square-post-name'),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: LoopTypography.title(13),
+                            // L14 R4 the author at title 15 (decision 0191).
+                            style: LoopType.title,
                           ),
                         ),
                       ],
@@ -419,11 +420,7 @@ class SquareFeedPostRow extends StatelessWidget {
                   squareFeedAgeLabel(post.createdAt, now: now),
                   key: const ValueKey<String>('square-post-age'),
                   maxLines: 1,
-                  style: LoopTypography.figure(
-                    11,
-                    weight: FontWeight.w400,
-                    color: LoopColors.text3,
-                  ),
+                  style: LoopType.figureXs.copyWith(color: LoopColors.text3),
                 ),
               ],
             ),
@@ -436,7 +433,7 @@ class SquareFeedPostRow extends StatelessWidget {
                   : SquareFeedText(
                       key: const ValueKey<String>('square-post-text'),
                       text: sentence,
-                      style: LoopTypography.body(13),
+                      style: LoopType.bodySm.copyWith(color: LoopColors.chalk),
                     ),
             ),
           if (token != null)
@@ -526,7 +523,12 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
                               key: const ValueKey<String>('square-post-symbol'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: LoopTypography.title(13),
+                              // L14 capsule words at caption 12, figures at
+                              // figure 13 / figureXs 11 (decision 0191).
+                              style: LoopTypography.withWeight(
+                                LoopType.caption,
+                                FontWeight.w600,
+                              ).copyWith(color: LoopColors.chalk),
                             ),
                           ),
                           if (cap != null) ...<Widget>[
@@ -537,8 +539,7 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
                                 key: const ValueKey<String>('square-post-cap'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: LoopTypography.caption(
-                                  11,
+                                style: LoopType.caption.copyWith(
                                   color: LoopColors.text2,
                                 ),
                               ),
@@ -567,7 +568,7 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
                                   ),
                                   maxLines: 1,
                                   softWrap: false,
-                                  style: LoopTypography.figure(13),
+                                  style: LoopType.figure,
                                 ),
                               if (price != null && move != null)
                                 const SizedBox(width: 6),
@@ -579,10 +580,13 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
                                   ),
                                   maxLines: 1,
                                   softWrap: false,
-                                  style: LoopTypography.figure(
-                                    11,
-                                    color: LoopPriceMove.of(move).color,
-                                  ),
+                                  style:
+                                      LoopTypography.withWeight(
+                                        LoopType.figureXs,
+                                        FontWeight.w600,
+                                      ).copyWith(
+                                        color: LoopPriceMove.of(move).color,
+                                      ),
                                 ),
                             ],
                           ),
@@ -764,7 +768,7 @@ class _OfficialRecapState extends State<_OfficialRecap> {
     final lines = widget.text.split('\n');
     final title = lines.length > 1 ? lines.first.trim() : null;
     final body = title == null ? widget.text : lines.skip(1).join('\n').trim();
-    final style = LoopTypography.caption(12, color: LoopColors.text2);
+    final style = LoopType.caption.copyWith(color: LoopColors.text2);
     return LoopRecordCard(
       key: const ValueKey<String>('square-post-recap'),
       margin: EdgeInsets.zero,
@@ -775,7 +779,13 @@ class _OfficialRecapState extends State<_OfficialRecap> {
           if (title != null && title.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text(title, style: LoopTypography.title(13)),
+              child: Text(
+                title,
+                style: LoopTypography.withWeight(
+                  LoopType.titleSm,
+                  FontWeight.w600,
+                ),
+              ),
             ),
           if (body.isNotEmpty)
             LayoutBuilder(
@@ -810,11 +820,10 @@ class _OfficialRecapState extends State<_OfficialRecap> {
                               widthFactor: 1,
                               child: Text(
                                 '展开',
-                                style: LoopTypography.label(
-                                  12,
-                                  weight: FontWeight.w600,
-                                  color: LoopColors.lime,
-                                ),
+                                style: LoopTypography.withWeight(
+                                  LoopType.label,
+                                  FontWeight.w600,
+                                ).copyWith(color: LoopColors.lime),
                               ),
                             ),
                           ),
@@ -946,11 +955,10 @@ class _LikeButton extends StatelessWidget {
                 Text(
                   '${post.likeCount}',
                   key: const ValueKey<String>('square-post-like-count'),
-                  style: LoopTypography.figure(
-                    12,
-                    weight: FontWeight.w500,
-                    color: color,
-                  ),
+                  style: LoopTypography.withWeight(
+                    LoopType.figureSm,
+                    FontWeight.w500,
+                  ).copyWith(color: color),
                 ),
               ],
             ),
@@ -975,7 +983,8 @@ class _DeleteConfirm extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Text(
           '删除后所有人都看不到它，也不能恢复。',
-          style: LoopTypography.body(14, color: LoopColors.text2),
+          // M18 R19 sheet support copy: bodySm 13 (decision 0191).
+          style: LoopType.bodySm,
         ),
       ),
       Padding(
@@ -1088,7 +1097,7 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
             minLines: 4,
             maxLines: 8,
             keyboardType: TextInputType.multiline,
-            style: LoopTypography.body(15, color: LoopColors.chalk),
+            style: LoopType.bodyLg,
             decoration: loopFormFieldDecoration(hint: '说点什么…'),
             onChanged: (_) => setState(() => _error = null),
           ),

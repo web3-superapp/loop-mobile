@@ -24,6 +24,7 @@ import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The one line that replaced the DISCOVERY DESK card (decision 0116).
@@ -300,7 +301,7 @@ class _SquareHeaderLine extends StatelessWidget {
               squareCommunityRuleLine,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: LoopTypography.caption(12, color: LoopColors.muted),
+              style: LoopType.caption,
             ),
           ),
           Semantics(
@@ -322,7 +323,10 @@ class _SquareHeaderLine extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
                       '规则',
-                      style: LoopTypography.label(12, color: LoopColors.text2),
+                      style: LoopTypography.withWeight(
+                        LoopType.label,
+                        FontWeight.w600,
+                      ).copyWith(color: LoopColors.text2),
                     ),
                   ),
                 ),
@@ -369,7 +373,8 @@ class _SquareSearchEntry extends StatelessWidget {
                   const SizedBox(width: 10),
                   Text(
                     '搜索社区',
-                    style: LoopTypography.caption(13, color: LoopColors.text3),
+                    // M41 R26 a search placeholder: body 14 text3 (decision 0191).
+                    style: LoopType.body.copyWith(color: LoopColors.text3),
                   ),
                 ],
               ),
@@ -586,7 +591,7 @@ class SquareCommunityRow extends StatelessWidget {
                                     community.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: LoopTypography.title(15),
+                                    style: LoopType.title,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
@@ -609,8 +614,7 @@ class SquareCommunityRow extends StatelessWidget {
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: LoopTypography.caption(
-                                12,
+                              style: LoopType.caption.copyWith(
                                 color: LoopColors.text2,
                               ),
                             ),
@@ -703,51 +707,53 @@ class _SquareRulesSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rule = recommendation;
-    return Padding(
+    return Column(
       key: const ValueKey<String>('square-community-rules-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            '排序规则',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。',
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          if (rule != null) ...<Widget>[
-            const SizedBox(height: 6),
-            Text(
-              'RULE · ${rule.ruleVersion}',
-              key: const ValueKey<String>('square-community-rule-version'),
-              style: LoopTypography.figure(11, color: LoopColors.text3),
-            ),
-          ],
-          const SizedBox(height: 18),
-          Text('社区怎么入驻', style: LoopTypography.title(15)),
-          const SizedBox(height: 6),
-          Text(
-            '任何社区都可以提交申请。申请后状态为"审核中"，只有运维核验通过才会显示验证标记；'
-            '本页不代表任何 Mining 权重结论。',
-            style: LoopTypography.body(13, color: LoopColors.muted),
-          ),
-          const SizedBox(height: 14),
-          LoopButtonPair(
-            padded: false,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSheetHeading('排序规则'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('square-community-apply'),
-                label: '申请入驻',
-                onPressed: onApply,
+              Text(
+                '排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。',
+                style: LoopType.bodySm,
+              ),
+              if (rule != null) ...<Widget>[
+                const SizedBox(height: 6),
+                Text(
+                  'RULE · ${rule.ruleVersion}',
+                  key: const ValueKey<String>('square-community-rule-version'),
+                  style: LoopType.captionSm,
+                ),
+              ],
+              const SizedBox(height: 18),
+              Text('社区怎么入驻', style: LoopType.title),
+              const SizedBox(height: 6),
+              Text(
+                '任何社区都可以提交申请。申请后状态为"审核中"，只有运维核验通过才会显示验证标记；'
+                '本页不代表任何 Mining 权重结论。',
+                style: LoopType.bodySm,
+              ),
+              const SizedBox(height: 14),
+              LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>('square-community-apply'),
+                    label: '申请入驻',
+                    onPressed: onApply,
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

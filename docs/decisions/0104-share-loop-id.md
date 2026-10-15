@@ -87,3 +87,7 @@ Proposed 2026-09-28。S97，客户端单侧。基线 `integration/v2` e10a529。
 Evidence：`test/s97_share_loop_id_test.dart`（20 项）新增复制图标 32×32 且与 ID 同行紧随、图标 16–18 dp、
 长按复制、分享图标 44×44 位于卡片右上角、描边按钮已移除；他人资料卡复制图标 32×32 紧随 ID。
 模拟器（emulator-5554，连 api-dev）截图 `/private/tmp/s97b/`。
+
+## 0191 修订（2026-10-16）
+
+LOOP ID 复制行的字体统一（docs/37 M19）：主页、他人主页、资料弹层、编辑资料四处行内为 `figure` 13/500 text2；LOOP ID 设置页主值为 `figureLg` 20。

@@ -130,3 +130,8 @@ S121b / S121c（0122 / 0123）把一级页改成 OKX 的样子（`LoopQuoteRow`�
 - 未做：预览专用 `lib/features/chat/voice_room_page.dart`（只在开发预览路由出现，生产走 `VoiceRoomScreen`）；群资料页 `GroupInfoScreen` 的成员段；
   `FriendListPage` / `FriendRequestsPage` / `AddFriendPage`（无路由）；社区 AI 页。
 - 截图核对：未用模拟器（另一代理占用），主代理合并后截图。
+
+## 0191 修订（2026-10-16）
+
+他人主页交易行不再是 OKX 报价行，改为 `LoopRecordRow` 平铺形态（title 15 / caption 12 / figure 13·600 / figureXs 11，docs/37 H7）；他人主页名字 24/600、
+计数 13/700 + 13 text2；社区主页名字 24/600（M20）；创建社区等社区弹层标题统一走 `LoopSheetHeading` 20/600（M5 / M6）。

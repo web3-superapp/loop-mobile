@@ -876,15 +876,12 @@ class _MergeCard extends StatelessWidget {
                     sourceLabel == null ? '已选择的会话' : '$sourceLabel · 已选择的会话',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.eyebrow(
-                      11,
-                      color: LoopColors.inkText3,
-                    ),
+                    style: LoopType.kicker.copyWith(color: LoopColors.inkText3),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     '社区信号摘要',
-                    style: LoopTypography.display(26, color: LoopColors.ink),
+                    style: LoopType.display.copyWith(color: LoopColors.ink),
                   ),
                 ],
               ),
@@ -905,13 +902,13 @@ class _MergeCard extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     '${rows.length}/$selectedCount',
-                    style: LoopTypography.display(17, color: LoopColors.chalk),
+                    // L8 a count is a figure: figureMd 17 (decision 0191).
+                    style: LoopType.figureMd,
                   ),
                   const SizedBox(height: 5),
                   Text(
                     '将输出',
-                    style: LoopTypography.eyebrow(
-                      11,
+                    style: LoopType.kicker.copyWith(
                       color: LoopColors.chalk.withValues(alpha: 0.72),
                     ),
                   ),
@@ -950,7 +947,7 @@ class _MergeCard extends StatelessWidget {
             Expanded(
               child: Text(
                 '钱包地址、昵称与内部编号不会出现在长图里，长图也不会上传。',
-                style: LoopTypography.caption(11, color: LoopColors.inkText3),
+                style: LoopType.captionSm.copyWith(color: LoopColors.inkText3),
               ),
             ),
           ],
@@ -998,10 +995,10 @@ class _MergeRow extends StatelessWidget {
           ),
           child: Text(
             ordinal.toString().padLeft(2, '0'),
-            style: LoopTypography.figure(
-              11,
-              color: accent ? LoopColors.ink : LoopColors.chalk,
-            ),
+            style: LoopTypography.withWeight(
+              LoopType.figureXs,
+              FontWeight.w600,
+            ).copyWith(color: accent ? LoopColors.ink : LoopColors.chalk),
           ),
         ),
         const SizedBox(width: 12),
@@ -1014,17 +1011,18 @@ class _MergeRow extends StatelessWidget {
                 row.senderName ?? chatMergeAnonymousLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.label(14, color: LoopColors.ink),
+                // L18 R4 the sender at title 15 (decision 0191).
+                style: LoopType.title.copyWith(color: LoopColors.ink),
               ),
               const SizedBox(height: 2),
               Text(
                 communityObservedAtLabel(row.createdAt),
-                style: LoopTypography.figure(11, color: LoopColors.inkText3),
+                style: LoopType.figureXs.copyWith(color: LoopColors.inkText3),
               ),
               const SizedBox(height: 5),
               Text(
                 row.text,
-                style: LoopTypography.caption(11, color: LoopColors.ink),
+                style: LoopType.captionSm.copyWith(color: LoopColors.ink),
               ),
             ],
           ),

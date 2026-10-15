@@ -117,7 +117,7 @@ class ChatTokenCard extends ConsumerWidget {
             child: Text(
               loopChatTokenCardKicker,
               key: ValueKey<String>('chat-token-card-kicker-$address'),
-              style: LoopTypography.caption(11, color: LoopColors.muted),
+              style: LoopType.captionSm,
             ),
           ),
           _body(context, ref, entry, cache),

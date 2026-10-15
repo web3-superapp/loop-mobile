@@ -275,7 +275,8 @@ class _PublicProfileSheetState<T extends Object>
                     Text(
                       identity.displayName,
                       key: const ValueKey<String>('public-profile-name'),
-                      style: LoopTypography.title(17),
+                      // L17 a sheet's person name: headingSm 17.
+                      style: LoopType.headingSm,
                     ),
                     // The LOOP ID row is drawn only when the caller actually
                     // has one; it is never derived from display copy.
@@ -292,12 +293,11 @@ class _PublicProfileSheetState<T extends Object>
                         copyKey: const ValueKey<String>(
                           'public-profile-copy-loop-id',
                         ),
-                        style: LoopTypography.figure(
-                          12,
-                          weight: FontWeight.w500,
-                          height: 1.5,
-                          color: LoopColors.muted,
-                        ),
+                        // M19 an inline LOOP ID: figure 13 at 500, text2.
+                        style: LoopTypography.withWeight(
+                          LoopType.figure,
+                          FontWeight.w500,
+                        ).copyWith(color: LoopColors.text2),
                       ),
                     ],
                   ],
@@ -359,7 +359,7 @@ class _PublicProfileSheetState<T extends Object>
             Text(
               '还没有建立联系时，会先请你发送一条消息请求。',
               key: const ValueKey<String>('public-profile-dm-hint'),
-              style: LoopTypography.caption(11, color: LoopColors.muted),
+              style: LoopType.captionSm,
             ),
           ],
           if (widget.onOpenProfile != null &&

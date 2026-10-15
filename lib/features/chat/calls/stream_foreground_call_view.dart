@@ -729,7 +729,8 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           Text(
             '语音房',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge,
+            // M43 R31 a centred state title: titleLg 16 (decision 0191).
+            style: LoopType.titleLg,
           ),
         ],
         if (showsParticipants) ...<Widget>[

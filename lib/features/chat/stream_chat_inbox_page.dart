@@ -454,7 +454,7 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
                               children: <Widget>[
                                 Expanded(
                                   child: LoopSkeletonLine(
-                                    style: LoopTypography.title(16),
+                                    style: LoopType.titleLg,
                                     widthFactor: _titles[index % 4],
                                   ),
                                 ),
@@ -464,7 +464,7 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             LoopSkeletonLine(
-                              style: LoopTypography.body(14),
+                              style: LoopType.body,
                               widthFactor: _previews[index % 4],
                             ),
                           ],

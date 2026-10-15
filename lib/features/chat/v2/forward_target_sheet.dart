@@ -14,6 +14,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Where a forward goes and how it gets there (S108 §2.2).
@@ -214,80 +215,88 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
   }
 
   Widget _content(BuildContext context, int count) {
-    return Padding(
+    return Column(
       key: const ValueKey<String>('forward-target-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            count == 1 ? '转发到' : '逐条转发 $count 条到',
-            style: LoopTypography.heading(18, weight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '最近 $chatForwardTargetPageSize 个已加入的会话 · 转发后会标注来源会话',
-            style: LoopTypography.caption(12),
-          ),
-          const SizedBox(height: 12),
-          Flexible(
-            child: FutureBuilder<List<ChatForwardTarget>>(
-              future: _targets,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const LoopSkeleton(
-                    key: ValueKey<String>('forward-target-sheet-loading'),
-                    type: LoopSkeletonType.list,
-                    rows: 4,
-                  );
-                }
-                if (snapshot.hasError) {
-                  void retry() => setState(() => _targets = _load());
-                  if (loopStreamFailureIsOffline(snapshot.error)) {
-                    return LoopOfflineState(
-                      key: const ValueKey<String>(
-                        'forward-target-sheet-offline',
-                      ),
-                      pausedActions: const <String>['读取会话', '转发'],
-                      onRetry: retry,
-                      margin: EdgeInsets.zero,
-                    );
-                  }
-                  return LoopErrorState(
-                    key: const ValueKey<String>('forward-target-sheet-error'),
-                    reason: '没有读到可转发的会话，本次没有转发任何内容。',
-                    onRetry: retry,
-                    margin: EdgeInsets.zero,
-                  );
-                }
-                final targets = snapshot.data ?? const <ChatForwardTarget>[];
-                if (targets.isEmpty) {
-                  return const LoopEmptyState(
-                    key: ValueKey<String>('forward-target-sheet-empty'),
-                    illustration: LoopIllustration.chat,
-                    title: '没有可用的目标会话',
-                    message: '转发目标必须是你已加入的会话。',
-                    compact: true,
-                  );
-                }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: targets.length,
-                  separatorBuilder: (_, _) =>
-                      const Divider(height: 1, color: LoopColors.line),
-                  itemBuilder: (context, index) => _TargetRow(
-                    target: targets[index],
-                    sending: _sendingTo == targets[index].cid,
-                    enabled: _sendingTo == null,
-                    onTap: () => unawaited(_send(targets[index])),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading(count == 1 ? '转发到' : '逐条转发 $count 条到'),
+        Flexible(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  '最近 $chatForwardTargetPageSize 个已加入的会话 · 转发后会标注来源会话',
+                  // R19 sheet support copy (decision 0191 M17).
+                  style: LoopType.bodySm,
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: FutureBuilder<List<ChatForwardTarget>>(
+                    future: _targets,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return const LoopSkeleton(
+                          key: ValueKey<String>('forward-target-sheet-loading'),
+                          type: LoopSkeletonType.list,
+                          rows: 4,
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        void retry() => setState(() => _targets = _load());
+                        if (loopStreamFailureIsOffline(snapshot.error)) {
+                          return LoopOfflineState(
+                            key: const ValueKey<String>(
+                              'forward-target-sheet-offline',
+                            ),
+                            pausedActions: const <String>['读取会话', '转发'],
+                            onRetry: retry,
+                            margin: EdgeInsets.zero,
+                          );
+                        }
+                        return LoopErrorState(
+                          key: const ValueKey<String>(
+                            'forward-target-sheet-error',
+                          ),
+                          reason: '没有读到可转发的会话，本次没有转发任何内容。',
+                          onRetry: retry,
+                          margin: EdgeInsets.zero,
+                        );
+                      }
+                      final targets =
+                          snapshot.data ?? const <ChatForwardTarget>[];
+                      if (targets.isEmpty) {
+                        return const LoopEmptyState(
+                          key: ValueKey<String>('forward-target-sheet-empty'),
+                          illustration: LoopIllustration.chat,
+                          title: '没有可用的目标会话',
+                          message: '转发目标必须是你已加入的会话。',
+                          compact: true,
+                        );
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: targets.length,
+                        separatorBuilder: (_, _) =>
+                            const Divider(height: 1, color: LoopColors.line),
+                        itemBuilder: (context, index) => _TargetRow(
+                          target: targets[index],
+                          sending: _sendingTo == targets[index].cid,
+                          enabled: _sendingTo == null,
+                          onTap: () => unawaited(_send(targets[index])),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -341,13 +350,13 @@ class _TargetRow extends StatelessWidget {
                       target.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.title(15),
+                      style: LoopType.title,
                     ),
                     Text(
                       target.detail,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.caption(12),
+                      style: LoopType.caption,
                     ),
                   ],
                 ),

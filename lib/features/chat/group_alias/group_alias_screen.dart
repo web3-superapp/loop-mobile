@@ -392,7 +392,7 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
             enabled: !state.isBusy,
             maxLength: groupAliasMaximumCodePoints,
             textInputAction: TextInputAction.done,
-            style: LoopTypography.body(16, color: LoopColors.chalk),
+            style: LoopType.bodyLg,
             decoration: loopFormFieldDecoration(
               hint: '1–40 个字符',
               counterText: '',
@@ -494,7 +494,7 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
             enabled: !state.isBusy,
             maxLength: groupAliasMaximumCodePoints,
             textInputAction: TextInputAction.search,
-            style: LoopTypography.body(16, color: LoopColors.chalk),
+            style: LoopType.bodyLg,
             decoration: loopFormFieldDecoration(
               hint: '输入要查找的昵称',
               counterText: '',

@@ -288,8 +288,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                                 '对准 LOOP 名片、社区二维码或钱包地址二维码。',
                                 key: const ValueKey<String>('scan-hint'),
                                 textAlign: TextAlign.center,
-                                style: LoopTypography.caption(
-                                  13,
+                                style: LoopType.bodySm.copyWith(
                                   color: LoopColors.chalk,
                                 ),
                               ),
@@ -371,10 +370,7 @@ class _ScanBar extends StatelessWidget {
           ],
           Semantics(
             header: true,
-            child: Text(
-              '扫一扫',
-              style: LoopTypography.heading(20, weight: FontWeight.w700),
-            ),
+            child: Text('扫一扫', style: LoopType.flatTitle),
           ),
         ],
       ),
@@ -437,7 +433,7 @@ class _ScanTool extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.caption(12, color: ink),
+                style: LoopType.caption.copyWith(color: ink),
               ),
             ],
           ),
@@ -520,7 +516,7 @@ class _ViewfinderState extends StatelessWidget {
       child: Text(
         '正在打开相机…',
         key: const ValueKey<String>('scan-state-loading'),
-        style: LoopTypography.caption(12, color: LoopColors.text2),
+        style: LoopType.caption.copyWith(color: LoopColors.text2),
       ),
     ),
     LoopQrCameraStatus.permissionDenied => const Center(
@@ -618,7 +614,7 @@ class _UnknownCode extends StatelessWidget {
             text,
             key: const ValueKey<String>('scan-unknown-text'),
             maxLines: 6,
-            style: LoopTypography.code(12, color: LoopColors.text2),
+            style: LoopType.code.copyWith(color: LoopColors.text2),
           ),
         ),
       ),

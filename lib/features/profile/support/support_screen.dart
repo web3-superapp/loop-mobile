@@ -201,7 +201,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                   FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
                 ],
                 onChanged: (_) => setState(() {}),
-                style: LoopTypography.body(15, color: LoopColors.chalk),
+                style: LoopType.bodyLg,
                 decoration: loopFormFieldDecoration(
                   hint: '描述你遇到的问题；不要填写私钥、助记词或验证码',
                 ),
@@ -350,7 +350,7 @@ class _SupportTicketDetail extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Expanded(
-                child: Text(ticket.category.label, style: LoopMono.label),
+                child: Text(ticket.category.label, style: LoopType.eyebrow),
               ),
               LoopBadge(
                 ticket.status.label,
@@ -389,7 +389,7 @@ class _SupportTicketDetail extends StatelessWidget {
                       Text(
                         '${event.actor.label} · ${event.eventType.label} · '
                         '${loopRelativeTime(event.occurredAt)}',
-                        style: LoopMono.label,
+                        style: LoopType.eyebrow,
                       ),
                       if (event.note case final String note) ...<Widget>[
                         const SizedBox(height: 8),

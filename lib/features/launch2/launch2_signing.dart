@@ -1068,7 +1068,8 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
             const SizedBox(height: 10),
             Text(
               '持有 NFT 的地址进入快照名单，可参加 1 小时提前购。',
-              style: LoopTypography.body(14, color: LoopColors.text2),
+              // M18 R19 sheet support copy: bodySm 13 (decision 0191).
+              style: LoopType.bodySm,
             ),
             const SizedBox(height: 12),
             Semantics(
@@ -1101,7 +1102,7 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
                         child: Text(
                           '我已知晓：$launch2NftRiskSentence。',
                           key: const ValueKey<String>('launch2-nft-risk'),
-                          style: LoopTypography.title(15),
+                          style: LoopType.title,
                         ),
                       ),
                     ],

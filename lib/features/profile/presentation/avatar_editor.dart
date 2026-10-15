@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
 /// The edge of the square the device uploads. The server re-encodes to
 /// 512 px WebP; a little headroom keeps the downscale sharp.
@@ -152,18 +153,17 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text(
-                '裁剪头像',
-                style: LoopTypography.title(17, color: LoopColors.chalk),
-              ),
+            // R2 the one sheet-title step (decision 0191 M15).
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: LoopSheetHeading('裁剪头像'),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
                 '拖动、双指缩放，方框里的部分就是头像。',
-                style: LoopTypography.caption(12, color: LoopColors.text2),
+                // R19 sheet support copy (decision 0191 M17).
+                style: LoopType.bodySm,
               ),
             ),
             Expanded(
@@ -392,8 +392,7 @@ class _LoopAvatarEditorState extends ConsumerState<LoopAvatarEditor> {
             key: const ValueKey<String>('loop-avatar-upload-unavailable'),
             '头像上传暂未开放，先用默认头像。',
             textAlign: TextAlign.center,
-            style: LoopTypography.caption(
-              12,
+            style: LoopType.caption.copyWith(
               color: LoopGround.auxiliaryOf(context),
             ),
           ),

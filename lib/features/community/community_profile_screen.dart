@@ -671,7 +671,7 @@ class _CommunityHeader extends StatelessWidget {
         const TextSpan(text: ' · '),
         TextSpan(
           text: '${communityCountLabel(observed.count)} 在线',
-          style: LoopTypography.figure(14, color: LoopColors.lime),
+          style: LoopType.figure.copyWith(color: LoopColors.lime),
         ),
       ],
       if (symbol != null) TextSpan(text: ' · \$$symbol'),
@@ -679,11 +679,11 @@ class _CommunityHeader extends StatelessWidget {
     final countLine = Text.rich(
       TextSpan(
         children: counts,
-        style: LoopTypography.figure(
-          14,
-          weight: FontWeight.w400,
-          color: LoopColors.text2,
-        ),
+        // L12 the count line at figure 13 (decision 0191).
+        style: LoopTypography.withWeight(
+          LoopType.figure,
+          FontWeight.w400,
+        ).copyWith(color: LoopColors.text2),
       ),
       key: const ValueKey<String>('community-profile-counts'),
       maxLines: 1,
@@ -723,10 +723,9 @@ class _CommunityHeader extends StatelessWidget {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: LoopTypography.heading(
-                              22,
-                              weight: FontWeight.w700,
-                            ),
+                            // R27 the name on a community's home, as on a
+                            // person's (decision 0191 M20).
+                            style: LoopType.displaySm,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -780,7 +779,7 @@ class _CommunityHeader extends StatelessWidget {
               key: const ValueKey<String>('community-profile-description'),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: LoopTypography.body(14, color: LoopColors.text2),
+              style: LoopType.body.copyWith(color: LoopColors.text2),
             ),
           ],
         ],
@@ -907,7 +906,7 @@ class _CommunityKeys extends ConsumerWidget {
               reasons.join(' '),
               key: const ValueKey<String>('community-profile-action-reasons'),
               textAlign: TextAlign.center,
-              style: LoopTypography.caption(11, color: LoopColors.text3),
+              style: LoopType.captionSm,
             ),
           ),
       ],
@@ -1138,7 +1137,7 @@ class _MembershipFooter extends StatelessWidget {
         child: Text(
           '所有者需要先在「成员」页转让所有者，降为 Admin 后才能退出。',
           key: const ValueKey<String>('community-owner-cannot-leave'),
-          style: LoopTypography.caption(11, color: LoopColors.text3),
+          style: LoopType.captionSm,
         ),
       );
     }

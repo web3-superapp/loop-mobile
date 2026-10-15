@@ -433,7 +433,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: LoopTypography.title(14, weight: FontWeight.w700),
+                  // L15 R4 title 15/600 (decision 0191).
+                  style: LoopType.title,
                 ),
                 const SizedBox(height: 6),
                 pill,
@@ -493,11 +494,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                     widthFactor: 1,
                     child: Text(
                       action,
-                      style: LoopTypography.label(
-                        12,
-                        weight: FontWeight.w600,
-                        color: LoopColors.lime,
-                      ),
+                      style: LoopTypography.withWeight(
+                        LoopType.label,
+                        FontWeight.w600,
+                      ).copyWith(color: LoopColors.lime),
                     ),
                   ),
                 ),

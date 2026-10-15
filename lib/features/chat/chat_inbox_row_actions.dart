@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// What one conversation row in 聊天 can do besides opening (decision 0129,
@@ -136,38 +137,38 @@ Future<ChatInboxRowAction?> showChatInboxRowActionSheet(
     barrierLabel: '关闭会话操作',
     // The inbox is a tab root: the sheet goes over the floating tab bar.
     useRootNavigator: true,
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => Column(
       key: const ValueKey<String>('chat-inbox-row-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LoopTypography.heading(16, weight: FontWeight.w700),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading(title),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (final action in actions) ...<Widget>[
+                LoopButton(
+                  key: ValueKey<String>('chat-inbox-row-sheet-${action.name}'),
+                  label: action.label,
+                  block: true,
+                  onPressed: () => Navigator.of(sheetContext).pop(action),
+                ),
+                const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 2),
+              LoopButton(
+                key: const ValueKey<String>('chat-inbox-row-sheet-cancel'),
+                label: '取消',
+                block: true,
+                onPressed: () => Navigator.of(sheetContext).pop(),
+              ),
+            ],
           ),
-          const SizedBox(height: 14),
-          for (final action in actions) ...<Widget>[
-            LoopButton(
-              key: ValueKey<String>('chat-inbox-row-sheet-${action.name}'),
-              label: action.label,
-              block: true,
-              onPressed: () => Navigator.of(sheetContext).pop(action),
-            ),
-            const SizedBox(height: 8),
-          ],
-          const SizedBox(height: 2),
-          LoopButton(
-            key: const ValueKey<String>('chat-inbox-row-sheet-cancel'),
-            label: '取消',
-            block: true,
-            onPressed: () => Navigator.of(sheetContext).pop(),
-          ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -503,11 +504,10 @@ class _ActionKey extends StatelessWidget {
                 child: Text(
                   action.label,
                   textAlign: TextAlign.center,
-                  style: LoopTypography.label(
-                    12,
-                    weight: FontWeight.w700,
-                    color: foreground,
-                  ),
+                  style: LoopTypography.withWeight(
+                    LoopType.label,
+                    FontWeight.w700,
+                  ).copyWith(color: foreground),
                 ),
               ),
             ),

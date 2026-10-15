@@ -146,24 +146,23 @@ class CommunityDiscoverHero extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           kicker,
-                          style: LoopTypography.eyebrow(
-                            11,
+                          // L26 the small folio on the ladder: kicker /
+                          // headingSm / captionSm (decision 0191).
+                          style: LoopType.kicker.copyWith(
                             color: LoopColors.inkMuted,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Text(
                           title,
-                          style: LoopTypography.heading(
-                            18,
+                          style: LoopType.headingSm.copyWith(
                             color: LoopColors.ink,
                           ),
                         ),
                         const SizedBox(height: 5),
                         Text(
                           body,
-                          style: LoopTypography.caption(
-                            11,
+                          style: LoopType.captionSm.copyWith(
                             color: LoopColors.inkText2,
                           ),
                         ),
@@ -199,7 +198,8 @@ class CommunityObservedFootnote extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
       child: Text(
         '数据观察于 ${communityObservedAtLabel(observedAt)}',
-        style: LoopTypography.eyebrow(11, color: LoopColors.text3),
+        // L3 R21 provenance (decision 0191).
+        style: LoopType.captionSm,
       ),
     );
   }

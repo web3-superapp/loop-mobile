@@ -164,7 +164,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   key: const ValueKey<String>(
                     'connections-discoverable-notice',
                   ),
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
               ),
             ],

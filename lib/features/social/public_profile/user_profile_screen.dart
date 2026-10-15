@@ -19,6 +19,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
@@ -307,7 +308,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               '举报通道暂未开放；需要时可以先拉黑。',
               key: const ValueKey<String>('user-profile-report-unavailable'),
               textAlign: TextAlign.center,
-              style: LoopTypography.caption(12, color: LoopColors.text3),
+              style: LoopType.caption,
             ),
             const SizedBox(height: 10),
             LoopButton(
@@ -431,10 +432,9 @@ class _ProfileHeader extends StatelessWidget {
                       key: const ValueKey<String>('user-profile-name'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.heading(
-                        22,
-                        weight: FontWeight.w700,
-                      ),
+                      // R27 the name on a person's home, as on 我的主页
+                      // (decision 0191 H1).
+                      style: LoopType.displaySm,
                     ),
                     const SizedBox(height: 2),
                     LoopIdCopyLine(
@@ -443,12 +443,11 @@ class _ProfileHeader extends StatelessWidget {
                       copyKey: const ValueKey<String>(
                         'user-profile-copy-loop-id',
                       ),
-                      style: LoopTypography.figure(
-                        13,
-                        weight: FontWeight.w400,
-                        height: 1.5,
-                        color: LoopColors.text2,
-                      ),
+                      // M19 an inline LOOP ID: figure 13 at 500, text2.
+                      style: LoopTypography.withWeight(
+                        LoopType.figure,
+                        FontWeight.w500,
+                      ).copyWith(color: LoopColors.text2),
                     ),
                   ],
                 ),
@@ -471,7 +470,7 @@ class _ProfileHeader extends StatelessWidget {
               key: const ValueKey<String>('user-profile-bio'),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: LoopTypography.body(14, color: LoopColors.text2),
+              style: LoopType.body.copyWith(color: LoopColors.text2),
             ),
           ],
           const SizedBox(height: 12),
@@ -504,10 +503,11 @@ class _Count extends StatelessWidget {
     children: <Widget>[
       Text(
         loopFormatDecimal(Decimal.fromInt(value), maxFractionDigits: 0),
-        style: LoopTypography.figure(16, color: LoopColors.chalk),
+        // R28 (decision 0191 H2): the figure at 13/700, the word at bodySm.
+        style: LoopTypography.withWeight(LoopType.figure, FontWeight.w700),
       ),
       const SizedBox(width: 4),
-      Text(label, style: LoopTypography.caption(13, color: LoopColors.text2)),
+      Text(label, style: LoopType.bodySm),
     ],
   );
 }
@@ -714,22 +714,20 @@ class _HoldingsSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                '持仓总额',
-                style: LoopTypography.caption(12, color: LoopColors.muted),
-              ),
+              Text('持仓总额', style: LoopType.caption),
               const SizedBox(height: 4),
               Text(
                 total == null ? '暂无报价' : loopFormatUsd(total),
                 key: const ValueKey<String>('user-profile-holdings-total'),
-                style: LoopTypography.figure(26, color: LoopColors.chalk),
+                // L5 a second-level page's total: figureLg 20.
+                style: LoopType.figureLg,
               ),
               if (value.observedAt case final DateTime observedAt)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     '读取于 ${loopLocalTimestampLabel(observedAt)}',
-                    style: LoopTypography.caption(11, color: LoopColors.text3),
+                    style: LoopType.captionSm,
                   ),
                 ),
             ],
@@ -863,8 +861,11 @@ class _TradesSection extends StatelessWidget {
     );
   }
 
-  /// One OKX quote row (decision 0127): 买入 / 卖出 and the token, when,
-  /// the signed amount over its dollar value.
+  /// One trade-record row (decision 0191 H7): 买入 / 卖出 and the token,
+  /// when, the signed amount over its dollar value — the `LoopRecordRow`
+  /// steps every trade list shares (title 15 / caption 12 / figure 13·600 /
+  /// figureXs 11). Drawn in the flat voice so the row keeps the groundless,
+  /// page-inset shape the quote row had.
   Widget _tradeRow(ProfileTrade trade) {
     final usd = trade.usdValue;
     final inbound =
@@ -872,25 +873,21 @@ class _TradesSection extends StatelessWidget {
         trade.kind == ProfileTradeKind.transferIn;
     final amount =
         '${inbound ? '+' : '-'}${loopFormatDecimal(trade.amount, maxFractionDigits: 4)}';
-    return LoopQuoteRow(
+    return LoopFlat(
       key: ValueKey<String>('user-profile-trade-${trade.eventId}'),
-      leading: LoopTokenLogo(assetSymbol: trade.symbol, size: 36),
-      title: '${trade.kind.label} ${trade.symbol}',
-      subtitle: switch ((trade.blockTimestamp, trade.blockNumber)) {
-        (final DateTime at, _) => loopLocalTimestampLabel(at),
-        (null, final String block) => '区块 #$block',
-        (null, null) => null,
-      },
-      value: amount,
-      valueCaption: usd == null
-          ? null
-          : Text(
-              loopFormatUsd(usd),
-              style: LoopTypography.body(
-                14,
-                color: inbound ? LoopColors.rise : LoopColors.text2,
-              ),
-            ),
+      child: LoopRecordRow(
+        leading: LoopTokenLogo(assetSymbol: trade.symbol, size: 36),
+        title: '${trade.kind.label} ${trade.symbol}',
+        subtitle: switch ((trade.blockTimestamp, trade.blockNumber)) {
+          (final DateTime at, _) => loopLocalTimestampLabel(at),
+          (null, final String block) => '区块 #$block',
+          (null, null) => null,
+        },
+        trailing: amount,
+        trailingStrong: true,
+        trailingColor: inbound ? LoopColors.rise : null,
+        trailingCaption: usd == null ? null : loopFormatUsd(usd),
+      ),
     );
   }
 }

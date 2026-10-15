@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 
@@ -145,83 +146,91 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
     // The poster keeps its 2:3 shape at any size; on a short phone it gives
     // way so the link and the two actions stay inside the sheet.
     final posterHeight = (screenHeight * 0.5).clamp(300.0, 480.0);
-    return Padding(
+    return Column(
       key: const ValueKey<String>('qr-card-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(switch (subject) {
-            LoopUserQrCard() => '我的二维码名片',
-            LoopCommunityQrCard() => '社区二维码名片',
-          }, style: LoopTypography.heading(18, weight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          if (code == null)
-            const LoopUnavailableLine(
-              key: ValueKey<String>('qr-card-unavailable'),
-              label: '二维码不可用',
-              reasonCode: 'QR_CARD_LINK_UNAVAILABLE',
-              margin: EdgeInsets.zero,
-            )
-          else
-            Center(
-              child: SizedBox(
-                height: posterHeight,
-                width: posterHeight * LoopSharePoster.aspectRatio,
-                child: FittedBox(
-                  child: RepaintBoundary(
-                    key: _posterKey,
-                    child: LoopSharePoster(subject: subject, code: code),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        // R2 the one sheet-title step (decision 0191 M8).
+        LoopSheetHeading(switch (subject) {
+          LoopUserQrCard() => '我的二维码名片',
+          LoopCommunityQrCard() => '社区二维码名片',
+        }),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (code == null)
+                const LoopUnavailableLine(
+                  key: ValueKey<String>('qr-card-unavailable'),
+                  label: '二维码不可用',
+                  reasonCode: 'QR_CARD_LINK_UNAVAILABLE',
+                  margin: EdgeInsets.zero,
+                )
+              else
+                Center(
+                  child: SizedBox(
+                    height: posterHeight,
+                    width: posterHeight * LoopSharePoster.aspectRatio,
+                    child: FittedBox(
+                      child: RepaintBoundary(
+                        key: _posterKey,
+                        child: LoopSharePoster(subject: subject, code: code),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          if (link != null) ...<Widget>[
-            const SizedBox(height: 12),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    link,
-                    key: const ValueKey<String>('qr-card-link'),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.code(11, color: LoopColors.text2),
-                  ),
-                ),
-                LoopIconButton(
-                  key: const ValueKey<String>('qr-card-copy-link'),
-                  icon: 'copy',
-                  label: '复制链接',
-                  onPressed: () => unawaited(_copy(link, '已复制链接')),
+              if (link != null) ...<Widget>[
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        link,
+                        key: const ValueKey<String>('qr-card-link'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopType.codeSm.copyWith(
+                          color: LoopColors.text2,
+                        ),
+                      ),
+                    ),
+                    LoopIconButton(
+                      key: const ValueKey<String>('qr-card-copy-link'),
+                      icon: 'copy',
+                      label: '复制链接',
+                      onPressed: () => unawaited(_copy(link, '已复制链接')),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-          const SizedBox(height: 12),
-          LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('qr-card-share-poster'),
-                label: _exporting ? '正在生成…' : '分享海报',
-                primary: true,
-                onPressed: code == null || _exporting
-                    ? null
-                    : () => unawaited(_export()),
-              ),
-              LoopButton(
-                key: const ValueKey<String>('qr-card-copy-invite'),
-                label: '复制邀请文字',
-                onPressed: () => unawaited(
-                  _copy(loopQrCardInviteText(subject, base), '已复制邀请文字'),
-                ),
+              const SizedBox(height: 12),
+              LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  LoopButton(
+                    key: const ValueKey<String>('qr-card-share-poster'),
+                    label: _exporting ? '正在生成…' : '分享海报',
+                    primary: true,
+                    onPressed: code == null || _exporting
+                        ? null
+                        : () => unawaited(_export()),
+                  ),
+                  LoopButton(
+                    key: const ValueKey<String>('qr-card-copy-invite'),
+                    label: '复制邀请文字',
+                    onPressed: () => unawaited(
+                      _copy(loopQrCardInviteText(subject, base), '已复制邀请文字'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -336,7 +345,7 @@ class LoopSharePoster extends StatelessWidget {
       container: true,
       label: '$name 的二维码名片',
       child: DefaultTextStyle(
-        style: LoopTypography.body(14),
+        style: LoopType.body,
         // The quiet ledger ground (decision 0172): Ink, the shell radius, a
         // Line2 edge and the `.ledger-quiet` dot field, the same texture the
         // quiet folio paints, so the saved poster is one of the family.
@@ -371,10 +380,7 @@ class LoopSharePoster extends StatelessWidget {
                               name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: LoopTypography.heading(
-                                20,
-                                weight: FontWeight.w700,
-                              ),
+                              style: LoopType.flatTitle,
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -385,12 +391,10 @@ class LoopSharePoster extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: subject is LoopUserQrCard
-                                  ? LoopTypography.code(
-                                      12,
+                                  ? LoopType.code.copyWith(
                                       color: LoopColors.lime,
                                     )
-                                  : LoopTypography.caption(
-                                      12,
+                                  : LoopType.caption.copyWith(
                                       color: LoopColors.text2,
                                     ),
                             ),
@@ -431,7 +435,7 @@ class LoopSharePoster extends StatelessWidget {
                         child: Text(
                           'LOOP · $action',
                           key: const ValueKey<String>('qr-card-poster-action'),
-                          style: LoopTypography.title(15),
+                          style: LoopType.title,
                         ),
                       ),
                     ],

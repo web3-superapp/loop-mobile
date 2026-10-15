@@ -363,15 +363,14 @@ class LiveVoiceRoomCard extends StatelessWidget {
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: LoopTypography.title(15),
+                              style: LoopType.title,
                             ),
                             const SizedBox(height: 2),
                             Text(
                               room.communityName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: LoopTypography.caption(
-                                12,
+                              style: LoopType.caption.copyWith(
                                 color: LoopColors.text2,
                               ),
                             ),
@@ -392,8 +391,7 @@ class LiveVoiceRoomCard extends StatelessWidget {
                           '主持 $host',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.caption(
-                            12,
+                          style: LoopType.caption.copyWith(
                             color: LoopColors.text2,
                           ),
                         ),
@@ -404,10 +402,9 @@ class LiveVoiceRoomCard extends StatelessWidget {
                         key: const ValueKey<String>(
                           'square-voice-room-figures',
                         ),
-                        style: LoopTypography.figure(
-                          12,
-                          weight: FontWeight.w500,
-                          color: LoopColors.text2,
+                        style: LoopTypography.withWeight(
+                          LoopType.figureSm,
+                          FontWeight.w500,
                         ),
                       ),
                     ],

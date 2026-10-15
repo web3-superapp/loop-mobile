@@ -293,16 +293,15 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       title: community.name,
       subtitle: accent == null ? members : '$members · $accent',
       subtitleSpans: <InlineSpan>[
-        TextSpan(text: members, style: LoopMono.stamp),
+        TextSpan(text: members, style: LoopType.figureXs),
         if (accent != null) ...<InlineSpan>[
           const TextSpan(text: ' · '),
           TextSpan(
             text: accent,
-            style: LoopTypography.figure(
-              13,
-              weight: FontWeight.w700,
-              color: LoopColors.lime,
-            ),
+            style: LoopTypography.withWeight(
+              LoopType.figure,
+              FontWeight.w700,
+            ).copyWith(color: LoopColors.lime),
           ),
         ],
       ],

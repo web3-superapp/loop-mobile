@@ -219,7 +219,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: Text(
               settings == null ? '主题在当前版本固定，不能更改。' : '语言、货币单位与主题在当前版本固定，不能更改。',
-              style: LoopTypography.caption(12, color: LoopColors.text3),
+              style: LoopType.caption,
             ),
           ),
           if (preferences.persistence ==

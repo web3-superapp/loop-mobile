@@ -69,3 +69,9 @@ Accepted 2026-10-15。基线 `integration/v2` 449ad64。来源：主仓库 `docs
 - `test/s187_4_square_feed_test.dart` 跟改并新增：平盘不画涨跌、帖子高度上限（纯文字 ≤ 110、带胶囊 ≤ 156、胶囊 = 40）、
   320 宽下价格单行折零且无溢出、事件文案函数（毕业 / 领奖全量与缺项 / 买入 / 无金额为 null / 原文优先）、徽标映射。
 - 回归：广场、社区、语音房、导航与主题相关 9 个测试文件 231 例通过。未起模拟器、未做真机验收。
+
+## 0191 修订（2026-10-16）
+
+字体落到 0189 阶梯（docs/37 L14），帖子布局与高度目标不变：作者名 `title(13)` → `LoopType.title` 15；胶囊符号 `title(13)` → `caption` 12/600、
+「市值」`caption(11)` → `caption` 12 text2、价格 `figure(13)` → `figure` 13、涨跌 `figure(11)` → `figureXs` 11/600；正文 `body(13)` → `bodySm` 13 chalk；
+官方回顾标题 `title(13)` → `titleSm` 13/600；♡ 数 `figure(12)`/500 → `figureSm`/500；删除确认说明 `body(14)` → `bodySm` 13。

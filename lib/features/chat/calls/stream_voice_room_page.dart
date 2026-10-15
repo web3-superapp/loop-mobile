@@ -769,7 +769,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
                     Text(
                       '语音房',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineLarge,
+                      // M43 R31 a centred state title: titleLg 16 (0191).
+                      style: LoopType.titleLg,
                     ),
                     const SizedBox(height: 8),
                     Text(

@@ -64,3 +64,8 @@ docs/35 把「我的」改成 fomo 版式：隐藏余额胶囊 + 齿轮、72 头
 
 - `bin/dart format`（本批文件）、`bin/flutter analyze`、`python3 scripts/check_harness.py`、`python3 -m unittest discover -s tests -p 'test_*.py'`、
   profile / social / wallet 相关 `bin/flutter test`（含新 `test/s187_profile_home_test.dart`，结果见提交说明）。未起模拟器、未做真机验收。
+
+## 0191 修订（2026-10-16）
+
+我的主页 LOOP ID 由 `caption(13)` text2 改为行内 `figure` 13/500 text2（与他人主页、资料弹层同，docs/37 M19）；简介由 chalk 改为 text2（L25）；
+「立即买入 →」「＋ 添加个人简介」改为行内文字动作 `label` 12/600（L21）。

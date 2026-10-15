@@ -78,7 +78,7 @@ class CommunityMemberStrip extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: LoopTypography.caption(11, color: LoopColors.text2),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                   ),
                 ],
               ),

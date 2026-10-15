@@ -59,12 +59,9 @@ class VoiceMediaStateCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(title, style: LoopTypography.title(15)),
+                Text(title, style: LoopType.title),
                 const SizedBox(height: 4),
-                Text(
-                  message,
-                  style: LoopTypography.body(13, color: LoopColors.text2),
-                ),
+                Text(message, style: LoopType.bodySm),
                 if (action case final Widget next) ...<Widget>[
                   const SizedBox(height: 14),
                   next,

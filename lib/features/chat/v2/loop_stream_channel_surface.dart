@@ -958,7 +958,7 @@ class LoopChatHeaderStrip extends StatelessWidget {
               stated.join(' · '),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: LoopTypography.caption(11),
+              style: LoopType.captionSm,
             ),
           ),
         ],
@@ -1061,7 +1061,7 @@ class LoopChatAiUnavailableBubble extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 // `.msg-who`.
-                Text(name, style: LoopTypography.caption(11)),
+                Text(name, style: LoopType.captionSm),
                 const SizedBox(height: 4),
                 // `.msg-txt`, without the Lime that marks a real reply.
                 Container(
@@ -1080,7 +1080,7 @@ class LoopChatAiUnavailableBubble extends StatelessWidget {
                   ),
                   child: Text(
                     reason,
-                    style: LoopTypography.body(14, color: LoopColors.text2),
+                    style: LoopType.body.copyWith(color: LoopColors.text2),
                   ),
                 ),
               ],
