@@ -364,7 +364,8 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                     : _side == MemeTradeSide.buy
                     ? '可用 ${memeUsd1Label(balance)}'
                     : '持有 ${memeTokenLabel(balance, _ticker)}',
-                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+                // R20, the same line as the launch panels (decision 0190 L24).
+                style: LoopType.caption.copyWith(color: LoopColors.text3),
               ),
               const SizedBox(height: 8),
               Row(

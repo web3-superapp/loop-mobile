@@ -281,7 +281,8 @@ void main() {
       await _pump(tester, balances: <LoopWalletBalances>[s5Balances()]);
       expect(_text(tester, 'meme-balance-figure'), r'$6,352.82');
       final figure = tester.widget<Text>(_key('meme-balance-figure'));
-      expect(figure.textSpan!.style!.fontSize, LoopType.figureXl.fontSize);
+      expect(figure.style!.fontSize, LoopType.figureXl.fontSize);
+      expect(figure.style!.fontWeight, FontWeight.w600);
       expect(
         _text(tester, 'meme-balance-change'),
         startsWith(r'+$302.52 · 24 小时'),

@@ -480,7 +480,8 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             child: Text(
               line,
               key: const ValueKey<String>('launch2-pool-holding'),
-              style: LoopType.caption.copyWith(color: LoopColors.text2),
+              // R20, the same line as the MEME panel (decision 0190 L24).
+              style: LoopType.caption.copyWith(color: LoopColors.text3),
             ),
           ),
         const SizedBox(height: 10),
@@ -705,11 +706,11 @@ class _PoolMaxKey extends StatelessWidget {
         child: Center(
           child: Text(
             'MAX',
-            style: LoopTypography.label(
-              13,
-              weight: FontWeight.w700,
-              color: onTap == null ? LoopColors.text3 : LoopColors.lime,
-            ),
+            // R17 inline text action (decision 0190 L21).
+            style: LoopTypography.withWeight(LoopType.label, FontWeight.w600)
+                .copyWith(
+                  color: onTap == null ? LoopColors.text3 : LoopColors.lime,
+                ),
           ),
         ),
       ),
@@ -815,7 +816,11 @@ class Launch2PoolSwapLink extends StatelessWidget {
             children: <Widget>[
               Text(
                 '也可以在钱包兑换里交易',
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
+                // R17 (decision 0190 L23).
+                style: LoopTypography.withWeight(
+                  LoopType.label,
+                  FontWeight.w600,
+                ).copyWith(color: LoopColors.text2),
               ),
               const SizedBox(width: 2),
               const LoopIcon('chevron', size: 14, color: LoopColors.text3),

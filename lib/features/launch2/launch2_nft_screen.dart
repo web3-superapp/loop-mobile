@@ -532,7 +532,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
             key: const ValueKey<String>('launch2-nft-summary'),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: LoopTypography.caption(12, color: LoopColors.text2),
+            style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
         ),
       const LoopLabel('这枚勋章能做什么'),
@@ -732,11 +732,10 @@ class _MedalPainter extends CustomPainter {
           ..strokeWidth = 1
           ..color = tone.withValues(alpha: 0.35),
       );
-    final style = LoopTypography.figure(
-      11,
-      weight: FontWeight.w600,
-      color: tone,
-    ).copyWith(letterSpacing: 0);
+    final style = LoopTypography.withWeight(
+      LoopType.figureXs,
+      FontWeight.w600,
+    ).copyWith(color: tone, letterSpacing: 0);
     final textRadius = radius - _band;
     _arc(canvas, center, textRadius, top, style, upper: true);
     _arc(canvas, center, textRadius, bottom, style, upper: false);

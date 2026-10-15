@@ -254,11 +254,12 @@ class MemeProgressRing extends StatelessWidget {
                   child: Text(
                     memeRingLabel(progressBps),
                     maxLines: 1,
-                    style: LoopTypography.figure(
-                      size >= 44 ? 11 : 10,
-                      weight: FontWeight.w700,
-                      color: LoopColors.chalk,
-                    ),
+                    // R7 at 700; the FittedBox shrinks it inside the small
+                    // ring (it used to ask for 10, under the 11 floor).
+                    style: LoopTypography.withWeight(
+                      LoopType.figureXs,
+                      FontWeight.w700,
+                    ).copyWith(color: LoopColors.chalk),
                   ),
                 ),
               ),
@@ -373,7 +374,8 @@ class MemeTokenCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             softWrap: false,
-            style: LoopType.title,
+            // The quote-row title (decision 0190 H4): the same 16 as 情报·行情.
+            style: LoopType.titleLg,
           ),
         ),
         if (row.isGraduated) ...<Widget>[
@@ -390,12 +392,11 @@ class MemeTokenCard extends StatelessWidget {
             key: const ValueKey<String>('meme-row-age'),
             maxLines: 1,
             softWrap: false,
-            style: LoopTypography.figure(
-              10,
-              weight: FontWeight.w600,
-              height: 1,
-              color: LoopColors.lime,
-            ),
+            // R7 at 600 (decision 0190 M27; it was 10, under the floor).
+            style: LoopTypography.withWeight(
+              LoopType.figureXs,
+              FontWeight.w600,
+            ).copyWith(color: LoopColors.lime),
           ),
         ],
       ],
@@ -409,7 +410,7 @@ class MemeTokenCard extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       softWrap: false,
-      style: LoopType.caption.copyWith(color: LoopColors.text2),
+      style: LoopType.bodySm,
     );
     final value = cap == null
         ? Text(
@@ -428,7 +429,8 @@ class MemeTokenCard extends StatelessWidget {
               key: const ValueKey<String>('meme-row-cap'),
               maxLines: 1,
               softWrap: false,
-              style: LoopTypography.figure(13, weight: FontWeight.w700),
+              // The quote-row value (decision 0190 H4).
+              style: LoopType.figureMd,
             ),
           );
     final change = row.change1hPct;
@@ -441,12 +443,10 @@ class MemeTokenCard extends StatelessWidget {
                   key: const ValueKey<String>('meme-change'),
                   maxLines: 1,
                   softWrap: false,
-                  style: LoopTypography.figure(
-                    11,
-                    weight: FontWeight.w700,
-                    height: 1,
-                    color: LoopPriceMove.of(change).color,
-                  ),
+                  style: LoopTypography.withWeight(
+                    LoopType.figureSm,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopPriceMove.of(change).color, height: 1),
                 )
         : _MemeRowProgress(progressBps: row.progressBps);
     final content = Container(
@@ -558,12 +558,11 @@ class _MemeRowProgress extends StatelessWidget {
           key: const ValueKey<String>('meme-progress-label'),
           maxLines: 1,
           softWrap: false,
-          style: LoopTypography.figure(
-            11,
-            weight: FontWeight.w600,
-            height: 1,
-            color: LoopColors.lime,
-          ),
+          style: LoopTypography.withWeight(
+            LoopType.figureSm,
+            FontWeight.w600,
+            // Line height 1 keeps the 44 tile the row's tallest part.
+          ).copyWith(color: LoopColors.lime, height: 1),
         ),
       ],
     );

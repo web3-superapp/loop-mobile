@@ -25,7 +25,7 @@ void main() {
   Finder key(String value) => find.byKey(ValueKey<String>(value));
 
   group('1 · wallet asset rows (钱包 C, decision 0188 supersedes 0123)', () {
-    testWidgets('logo 40, symbol 14 bold, amount 14 bold, value 11 grey, '
+    testWidgets('logo 40, symbol 15, amount 13, value 11 grey, '
         'the 24h line and two quiet actions', (tester) async {
       await pumpS5Page(
         tester,
@@ -49,13 +49,14 @@ void main() {
       final symbol = tester.widget<Text>(
         find.descendant(of: row, matching: find.text('BNB')).first,
       );
-      expect(symbol.style!.fontSize, 14);
-      expect(symbol.style!.fontWeight, FontWeight.w700);
+      // Decision 0190 H5 / H7: R4 / R6 / R7 (it was 14 bold / 14 bold / 11).
+      expect(symbol.style!.fontSize, LoopType.title.fontSize);
+      expect(symbol.style!.fontWeight, FontWeight.w600);
       final amount = tester.widget<Text>(
         key('wallet-balance-amount-$s5NativeAssetId'),
       );
-      expect(amount.style!.fontSize, 14);
-      expect(amount.style!.fontWeight, FontWeight.w700);
+      expect(amount.style!.fontSize, LoopType.figure.fontSize);
+      expect(amount.style!.fontWeight, FontWeight.w600);
       final value = tester.widget<Text>(
         key('wallet-balance-value-$s5NativeAssetId'),
       );

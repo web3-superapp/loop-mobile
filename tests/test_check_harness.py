@@ -10714,4 +10714,5 @@ class TypeLadderContractTests(unittest.TestCase):
             },
             set(check_harness.TYPE_LADDER_CANVAS_FILES),
         )
-        self.assertEqual(1, sum(check_harness.TYPE_FLOOR_FEATURE_ALLOWLIST.values()))
+        # Decision 0190 cleared the last sub-11 size (meme_widgets.dart's age).
+        self.assertEqual(0, sum(check_harness.TYPE_FLOOR_FEATURE_ALLOWLIST.values()))

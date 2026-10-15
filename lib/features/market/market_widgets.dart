@@ -329,11 +329,17 @@ class MarketTabBar extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // R16 the quiet segment's word (decision 0190 M24): `action`
+                  // 14 at 600, 700 when chosen — the step `LoopSeg(quiet:)`
+                  // draws; the underline stays the strip's own.
                   child: Text(
                     labels[index],
                     style: index == selectedIndex
-                        ? LoopType.title
-                        : LoopType.title.copyWith(color: LoopColors.text3),
+                        ? LoopTypography.withWeight(
+                            LoopType.action,
+                            FontWeight.w700,
+                          )
+                        : LoopType.action.copyWith(color: LoopColors.text3),
                   ),
                 ),
               ),
@@ -704,11 +710,13 @@ class MarketQuoteCells extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                // R13 / R12, the steps `LoopStatGrid` draws (decision 0190
+                // M25); the four-up strip keeps its own layout.
                 Text(
                   cells[index].label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.captionSm,
+                  style: LoopType.kicker,
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -717,7 +725,7 @@ class MarketQuoteCells extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: cells[index].available
                       ? LoopType.figure
-                      : LoopType.captionSm,
+                      : LoopType.kicker,
                 ),
               ],
             ),

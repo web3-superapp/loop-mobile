@@ -1415,7 +1415,8 @@ class _ValuationCard extends StatelessWidget {
                   if (valued.proxyAsset != null)
                     '代理资产 ${loopTruncatedAssetId(valued.proxyAsset!)}',
                 ].join(' · '),
-                style: LoopType.label,
+                // R21 (decision 0190 M30).
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
             ],
           ),
@@ -1524,7 +1525,8 @@ class _RegistryFactsCard extends StatelessWidget {
               if (asset.source.verifiedAt != null)
                 '校验于 ${loopRelativeTime(asset.source.verifiedAt!)}',
             ].join(' · '),
-            style: LoopType.label,
+            // R21 (decision 0190 M30).
+            style: LoopType.captionSm.copyWith(color: LoopColors.text3),
           ),
         ],
       ),
@@ -1775,9 +1777,7 @@ class _ReceiveQrCard extends StatelessWidget {
                       network.address,
                       key: const ValueKey<String>('receive-address-text'),
                       textAlign: TextAlign.center,
-                      style: LoopMono.address.copyWith(
-                        color: LoopColors.inkText2,
-                      ),
+                      style: LoopType.code.copyWith(color: LoopColors.inkText2),
                     ),
                   ),
                   LoopIconButton(
@@ -2605,7 +2605,7 @@ class WalletActivityDetailSheet extends StatelessWidget {
               child: SelectableText(
                 entry.transactionHash,
                 key: const ValueKey<String>('tx-entry-sheet-hash'),
-                style: LoopMono.body,
+                style: LoopType.code.copyWith(color: LoopColors.text2),
               ),
             ),
             LoopButtonPair(
@@ -2633,7 +2633,7 @@ class WalletActivityDetailSheet extends StatelessWidget {
               SelectableText(
                 url,
                 key: const ValueKey<String>('tx-entry-sheet-link'),
-                style: LoopType.label,
+                style: LoopType.codeSm.copyWith(color: LoopColors.text2),
               ),
             ],
             // Opening an external browser needs a launcher this build does not

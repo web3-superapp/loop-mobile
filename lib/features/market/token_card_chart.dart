@@ -169,7 +169,7 @@ class _TokenCardChartNotice extends StatelessWidget {
         text,
         maxLines: 3,
         overflow: TextOverflow.ellipsis,
-        style: LoopTypography.caption(11, color: LoopColors.muted),
+        style: LoopType.captionSm.copyWith(color: LoopColors.muted),
       ),
     );
   }

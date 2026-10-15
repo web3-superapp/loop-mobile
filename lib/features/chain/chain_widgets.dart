@@ -711,7 +711,6 @@ class LoopFactLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = fact.value;
-    final theme = Theme.of(context);
     if (value == null) {
       return Padding(
         key: ValueKey<String>('fact-$label-unavailable'),
@@ -719,11 +718,12 @@ class LoopFactLine extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(label, style: LoopMono.label),
+            Text(label, style: LoopType.eyebrow),
             const SizedBox(height: 4),
             Text(
               loopReasonCodeText(fact.reasonCode),
-              style: theme.textTheme.labelMedium,
+              // R21 (decision 0190 M31).
+              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
             ),
           ],
         ),
@@ -736,11 +736,11 @@ class LoopFactLine extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(label, style: LoopMono.label),
+          Text(label, style: LoopType.eyebrow),
           const SizedBox(height: 4),
           Text(
             (formatter ?? loopFormatDecimal)(value),
-            style: emphasize ? LoopMono.headline : LoopMono.value,
+            style: emphasize ? LoopType.figureLg : LoopType.figure,
           ),
           const SizedBox(height: 4),
           Row(
@@ -757,7 +757,8 @@ class LoopFactLine extends StatelessWidget {
               Expanded(
                 child: Text(
                   loopFactProvenance(fact, now: now),
-                  style: theme.textTheme.labelMedium,
+                  // R21 (decision 0190 M31).
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
                 ),
               ),
             ],
@@ -786,7 +787,8 @@ class LoopProvenanceFooter extends StatelessWidget {
       child: Text(
         text,
         key: const ValueKey<String>('provenance-footer'),
-        style: LoopMono.stamp.copyWith(color: LoopColors.text3),
+        // R21 one grey provenance line.
+        style: LoopType.captionSm.copyWith(color: LoopColors.text3),
       ),
     );
   }

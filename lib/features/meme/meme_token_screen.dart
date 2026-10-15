@@ -1654,10 +1654,17 @@ class _TradeRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(name, style: LoopType.body),
+                  // The trade-record row (decision 0190 H7): R4 / R5 / R6 / R7,
+                  // the steps `LoopRecordRow` draws.
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.title,
+                  ),
                   Text(
                     loopDateTimeLabel(trade.at),
-                    style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
                 ],
               ),
@@ -1667,11 +1674,11 @@ class _TradeRow extends StatelessWidget {
               children: <Widget>[
                 Text(
                   memeUsd1Label(trade.usd1Amount),
-                  style: LoopType.figureSm.copyWith(color: move.color),
+                  style: LoopType.figure.copyWith(color: move.color),
                 ),
                 Text(
                   '${memeTokenCompact(trade.tokenAmount)} $symbol',
-                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+                  style: LoopType.figureXs.copyWith(color: LoopColors.text3),
                 ),
               ],
             ),
@@ -1709,7 +1716,9 @@ class _MemeShareSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(title, style: LoopType.titleLg),
+              // The sheet's title is the heading above (R2, decision 0190
+              // M13); the token it shares is the support line under it (R19).
+              Text(title, textAlign: TextAlign.center, style: LoopType.bodySm),
               const SizedBox(height: 12),
               if (code != null)
                 Container(

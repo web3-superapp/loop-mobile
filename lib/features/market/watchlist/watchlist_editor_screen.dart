@@ -686,11 +686,11 @@ class _WatchlistSwipeBackground extends StatelessWidget {
         padding: const EdgeInsets.only(right: 20),
         child: Text(
           '删除',
-          style: LoopTypography.label(
-            13,
-            weight: FontWeight.w700,
-            color: LoopColors.chalk,
-          ),
+          // R17 inline text action (decision 0190 L21).
+          style: LoopTypography.withWeight(
+            LoopType.label,
+            FontWeight.w600,
+          ).copyWith(color: LoopColors.chalk),
         ),
       ),
     ),
@@ -731,7 +731,7 @@ class _ConflictDiff extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('重新加载会丢弃', style: LoopMono.label),
+          Text('重新加载会丢弃', style: LoopType.eyebrow),
           const SizedBox(height: 6),
           if (changes.isEmpty)
             Text(

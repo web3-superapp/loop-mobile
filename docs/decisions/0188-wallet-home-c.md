@@ -105,3 +105,8 @@ Accepted 2026-10-15。基线 `integration/v2` 449ad64（含 0166 ~ 0187）。来
 - `test/s136_launch2_user_test.dart` 新增内盘持仓的买入 / 卖出路由与已毕业不画；`s114` / `s5_wallet_pages` / `s121c` /
   `s26` / `s58` / `s156` 跟随版式更新（四圆键文字限定在键行内、24h 胶囊改为 24 小时行、「资产」→「余额」）。
 - 未起模拟器、未做真机验收。
+
+## 0190 修订
+
+`WalletBalanceRow` 的字号回到账本行四档：ticker 14/700 → `title` 15/600，副行 11 → `caption` 12，数额 14/700 → `figure` 13/600，估值 11/600 → `figureXs` 11/400，24h 变动 `figureXs`@600；
+读不到余额的行 ticker 与之同为 15。两个说明弹层标题改用 `LoopSheetHeading`（20/600）。

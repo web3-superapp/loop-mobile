@@ -1068,13 +1068,10 @@ class _NftSaleBlock extends ConsumerWidget {
                 children: <Widget>[
                   Text(
                     '发售进度',
-                    style: LoopTypography.caption(11, color: LoopColors.text2),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                   ),
                   const Spacer(),
-                  Text(
-                    elapsedText,
-                    style: LoopTypography.figure(13, color: LoopColors.chalk),
-                  ),
+                  Text(elapsedText, style: LoopType.figure),
                 ],
               ),
               const SizedBox(height: 11),
@@ -1091,10 +1088,8 @@ class _NftSaleBlock extends ConsumerWidget {
                       key: const ValueKey<String>('launch2-nft-end'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.caption(
-                        11,
-                        color: LoopColors.text2,
-                      ),
+                      // R20 the note under the bar.
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
                     ),
                   ),
                   _MintPageLink(onTap: onOpenMintPage),
@@ -1138,9 +1133,13 @@ class _MintPageLink extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              // R17 inline text action (decision 0190 L23).
               Text(
                 '铸造页',
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
+                style: LoopTypography.withWeight(
+                  LoopType.label,
+                  FontWeight.w600,
+                ).copyWith(color: LoopColors.text2),
               ),
               const SizedBox(width: 2),
               const LoopIcon('chevron', size: 14, color: LoopColors.text3),
@@ -1198,7 +1197,7 @@ class _CurveBlock extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     '内盘进度',
-                    style: LoopTypography.caption(11, color: LoopColors.text2),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -1210,7 +1209,7 @@ class _CurveBlock extends StatelessWidget {
                       textAlign: TextAlign.right,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.figure(13, color: LoopColors.chalk),
+                      style: LoopType.figure,
                     ),
                   ),
                 ],
@@ -1223,7 +1222,7 @@ class _CurveBlock extends StatelessWidget {
               const SizedBox(height: 7),
               Text(
                 '卖满 ${launch2MemeCompact(curve.saleSupply)} 自动建官方池毕业',
-                style: LoopTypography.caption(11, color: LoopColors.text2),
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ],
           ),

@@ -619,7 +619,7 @@ class _AssetField extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(label, style: LoopMono.label),
+            Text(label, style: LoopType.eyebrow),
             const SizedBox(height: 6),
             Row(
               children: <Widget>[
@@ -685,7 +685,7 @@ class _ReceiveField extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text('获得', style: LoopMono.label),
+            Text('获得', style: LoopType.eyebrow),
             const SizedBox(height: 6),
             Row(
               children: <Widget>[
@@ -695,7 +695,12 @@ class _ReceiveField extends StatelessWidget {
                     quote == null
                         ? (quoting ? '报价中…' : '报价后显示')
                         : quote!.quote.estimatedOutputAmount.display,
-                    style: LoopMono.headline,
+                    // A quoted amount is the figure (R24); 「报价中…」 and
+                    // 「报价后显示」 are words, the note step (R20, decision
+                    // 0190 L10).
+                    style: quote == null
+                        ? LoopType.caption.copyWith(color: LoopColors.text3)
+                        : LoopType.figureLg,
                   ),
                 ),
                 const SizedBox(width: 8),

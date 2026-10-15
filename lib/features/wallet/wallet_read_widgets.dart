@@ -152,7 +152,7 @@ Widget walletBalanceTray(
   String? miningText,
 }) {
   final facts = walletBalanceTrayFacts(row, miningText: miningText);
-  final style = LoopTypography.caption(12, color: LoopColors.text2);
+  final style = LoopType.caption.copyWith(color: LoopColors.text2);
   return LoopTrayDisclosure(
     key: ValueKey<String>('wallet-balance-tray-${row.assetId}'),
     trayInset: LoopSpacing.page + LoopTrayDisclosure.defaultTrayInset,
@@ -294,16 +294,9 @@ class WalletActivityDayHeader extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    header: true,
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 16, 16, 4),
-      child: Text(
-        label,
-        style: LoopTypography.caption(13, color: LoopColors.text2),
-      ),
-    ),
-  );
+  // R3 the section label (decision 0190 M29); a flat page draws it as its
+  // own section title. LoopLabel carries the header semantics itself.
+  Widget build(BuildContext context) => LoopLabel(label, followsLabel: true);
 }
 
 /// The snapshot footer every balance block carries: all figures come from one
@@ -392,7 +385,8 @@ class WalletNetWorthCard extends StatelessWidget {
                     '观察于 ${loopRelativeTime(valued.asOf, now: now)}',
                     if (valued.partial) '只是已估值资产的合计，不是总资产',
                   ].join(' · '),
-                  style: LoopType.label,
+                  // R21 (decision 0190 M30).
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
                 ),
               ],
             ),
@@ -404,9 +398,9 @@ class WalletNetWorthCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('净值（${valued.valuationCurrency}）', style: LoopMono.label),
+              Text('净值（${valued.valuationCurrency}）', style: LoopType.eyebrow),
               const SizedBox(height: 6),
-              Text(loopFormatUsd(valued.valueUsd), style: LoopMono.display),
+              Text(loopFormatUsd(valued.valueUsd), style: LoopType.figureXl),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -433,7 +427,8 @@ class WalletNetWorthCard extends StatelessWidget {
                   '观察于 ${loopRelativeTime(valued.asOf, now: now)}',
                   if (valued.partial) '只是已估值资产的合计，不是总资产',
                 ].join(' · '),
-                style: LoopType.label,
+                // R21 (decision 0190 M30).
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
             ],
           ),
@@ -619,12 +614,12 @@ class WalletActivitySkeleton extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           LoopSkeletonLine(
-                            style: LoopTypography.title(16),
+                            style: LoopType.title,
                             widthFactor: _titles[index % 4],
                           ),
                           const SizedBox(height: 2),
                           LoopSkeletonLine(
-                            style: LoopTypography.body(13),
+                            style: LoopType.caption,
                             widthFactor: _subtitles[index % 4],
                           ),
                         ],
@@ -638,7 +633,7 @@ class WalletActivitySkeleton extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           LoopSkeletonLine(
-                            style: LoopTypography.figure(16),
+                            style: LoopType.figure,
                             widthFactor: 1,
                           ),
                           Align(
@@ -646,7 +641,7 @@ class WalletActivitySkeleton extends StatelessWidget {
                             child: SizedBox(
                               width: 40,
                               child: LoopSkeletonLine(
-                                style: LoopTypography.figure(11),
+                                style: LoopType.figureXs,
                                 widthFactor: 1,
                               ),
                             ),

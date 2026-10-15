@@ -898,11 +898,11 @@ class IntelRankListHead extends StatelessWidget {
                 leftOf(scope).toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopMono.label,
+                style: LoopType.eyebrow,
               ),
             ),
             const SizedBox(width: 12),
-            Text(rightOf(scope).toUpperCase(), style: LoopMono.label),
+            Text(rightOf(scope).toUpperCase(), style: LoopType.eyebrow),
           ],
         ),
       ),
@@ -991,10 +991,9 @@ class IntelRankRow extends StatelessWidget {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.withWeight(
-                          LoopType.body,
-                          FontWeight.w600,
-                        ),
+                        // R4 / R5 / R6, the record row's steps (decision 0190
+                        // L20; 0182's layout unchanged).
+                        style: LoopType.title,
                       ),
                     ),
                     if (weight != null) ...<Widget>[
@@ -1009,7 +1008,7 @@ class IntelRankRow extends StatelessWidget {
                     caption!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
                 ],
               ],
@@ -1024,10 +1023,9 @@ class IntelRankRow extends StatelessWidget {
                 figure,
                 key: const ValueKey<String>('intel-rank-row-figure'),
                 maxLines: 1,
-                style: LoopTypography.withWeight(
-                  LoopType.figure,
-                  FontWeight.w700,
-                ).copyWith(color: accent ?? LoopColors.chalk),
+                style: LoopType.figure.copyWith(
+                  color: accent ?? LoopColors.chalk,
+                ),
               ),
               if (share case final double fraction) ...<Widget>[
                 const SizedBox(height: 6),

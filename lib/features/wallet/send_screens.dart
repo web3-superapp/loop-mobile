@@ -618,8 +618,8 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               child: Text(
                 status,
                 key: const ValueKey<String>('send-recipient-status'),
-                style: LoopTypography.label(
-                  11,
+                // R20 the note under a form field.
+                style: LoopType.caption.copyWith(
                   color: preflight != null ? LoopColors.lime : LoopColors.text2,
                 ),
               ),
@@ -630,7 +630,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               child: Text(
                 '收款地址来自扫码，已自动校验',
                 key: const ValueKey<String>('send-recipient-prefill'),
-                style: LoopTypography.label(11, color: LoopColors.text3),
+                style: LoopType.caption.copyWith(color: LoopColors.text3),
               ),
             ),
           // An address check that never reached the server has not prepared

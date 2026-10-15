@@ -22,6 +22,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 // ---------------------------------------------------------------------------
@@ -253,7 +254,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
           Text(
             'USD',
             key: ValueKey<String>('$keyPrefix-total-unit'),
-            style: LoopTypography.figure(14, color: secondary),
+            style: LoopType.figure.copyWith(color: secondary),
           ),
         ],
       ],
@@ -474,77 +475,90 @@ Future<void> showWalletTotalInfoSheet(
       final secondary = LoopGround.secondaryOf(sheetContext);
       return Padding(
         key: ValueKey<String>('$keyPrefix-info-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text('关于总资产', style: LoopType.headingSm),
-            const SizedBox(height: 10),
-            Text(
-              '总资产是按当前价格对已登记资产的估值，只用于展示，不是可用余额。'
-              '能动用的数量以每个资产页的「可动用」为准。',
-              key: ValueKey<String>('$keyPrefix-not-spendable'),
-              style: LoopType.bodySm.copyWith(color: secondary),
-            ),
-            const SizedBox(height: 12),
-            if (netWorth case final LoopNetWorthValued valued) ...<Widget>[
-              LoopKeyValue(
-                label: '价格来源',
-                value: loopFactSourceLabel(valued.priceSource),
-                padding: EdgeInsets.zero,
+            // R2 (decision 0190 M14).
+            const LoopSheetHeading('关于总资产'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Text(
+                    '总资产是按当前价格对已登记资产的估值，只用于展示，不是可用余额。'
+                    '能动用的数量以每个资产页的「可动用」为准。',
+                    key: ValueKey<String>('$keyPrefix-not-spendable'),
+                    style: LoopType.bodySm.copyWith(color: secondary),
+                  ),
+                  const SizedBox(height: 12),
+                  if (netWorth
+                      case final LoopNetWorthValued valued) ...<Widget>[
+                    LoopKeyValue(
+                      label: '价格来源',
+                      value: loopFactSourceLabel(valued.priceSource),
+                      padding: EdgeInsets.zero,
+                    ),
+                    LoopKeyValue(
+                      label: '观察于',
+                      value: loopDateTimeLabel(valued.asOf),
+                      padding: EdgeInsets.zero,
+                    ),
+                    if (valued.partial)
+                      LoopKeyValue(
+                        label: '未计入',
+                        value: '${valued.unavailableCount} 项资产暂无价格',
+                        padding: EdgeInsets.zero,
+                      ),
+                    LoopKeyValue(
+                      label: '24h 变动',
+                      value: switch (valued.change24h) {
+                        LoopNetWorthChangeAvailable() => '按同一次价格读取计算',
+                        LoopNetWorthChangeUnavailable() =>
+                          '部分资产没有 24h 价格变化，暂不显示',
+                      },
+                      padding: EdgeInsets.zero,
+                    ),
+                  ] else if (netWorth case LoopNetWorthUnavailable(
+                    reasonCode: final reason,
+                  ))
+                    LoopKeyValue(
+                      label: '总资产',
+                      value: loopReasonCodeText(reason),
+                      padding: EdgeInsets.zero,
+                    ),
+                  if (snapshot != null) ...<Widget>[
+                    LoopKeyValue(
+                      label: '余额区块',
+                      value: loopGroupedFigure(snapshot.blockNumber.toString()),
+                      padding: EdgeInsets.zero,
+                    ),
+                    LoopKeyValue(
+                      label: '确认数',
+                      value: loopGroupedFigure(
+                        snapshot.confirmations.toString(),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                  if (balances != null)
+                    LoopKeyValue(
+                      label: '手续费保留',
+                      value:
+                          '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB',
+                      padding: EdgeInsets.zero,
+                    ),
+                  const SizedBox(height: 16),
+                  LoopButton(
+                    label: '知道了',
+                    block: true,
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                  ),
+                ],
               ),
-              LoopKeyValue(
-                label: '观察于',
-                value: loopDateTimeLabel(valued.asOf),
-                padding: EdgeInsets.zero,
-              ),
-              if (valued.partial)
-                LoopKeyValue(
-                  label: '未计入',
-                  value: '${valued.unavailableCount} 项资产暂无价格',
-                  padding: EdgeInsets.zero,
-                ),
-              LoopKeyValue(
-                label: '24h 变动',
-                value: switch (valued.change24h) {
-                  LoopNetWorthChangeAvailable() => '按同一次价格读取计算',
-                  LoopNetWorthChangeUnavailable() => '部分资产没有 24h 价格变化，暂不显示',
-                },
-                padding: EdgeInsets.zero,
-              ),
-            ] else if (netWorth case LoopNetWorthUnavailable(
-              reasonCode: final reason,
-            ))
-              LoopKeyValue(
-                label: '总资产',
-                value: loopReasonCodeText(reason),
-                padding: EdgeInsets.zero,
-              ),
-            if (snapshot != null) ...<Widget>[
-              LoopKeyValue(
-                label: '余额区块',
-                value: loopGroupedFigure(snapshot.blockNumber.toString()),
-                padding: EdgeInsets.zero,
-              ),
-              LoopKeyValue(
-                label: '确认数',
-                value: loopGroupedFigure(snapshot.confirmations.toString()),
-                padding: EdgeInsets.zero,
-              ),
-            ],
-            if (balances != null)
-              LoopKeyValue(
-                label: '手续费保留',
-                value:
-                    '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB',
-                padding: EdgeInsets.zero,
-              ),
-            const SizedBox(height: 16),
-            LoopButton(
-              label: '知道了',
-              block: true,
-              onPressed: () => Navigator.of(sheetContext).pop(),
             ),
           ],
         ),
@@ -671,12 +685,15 @@ class _QuickActionTile extends StatelessWidget {
                 action.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.title(
-                  13,
-                  color: enabled
-                      ? LoopGround.inkOf(context)
-                      : LoopGround.auxiliaryOf(context),
-                ),
+                style:
+                    LoopTypography.withWeight(
+                      LoopType.titleSm,
+                      FontWeight.w600,
+                    ).copyWith(
+                      color: enabled
+                          ? LoopGround.inkOf(context)
+                          : LoopGround.auxiliaryOf(context),
+                    ),
               ),
             ],
           ),
@@ -781,11 +798,8 @@ Future<void> showWalletPowerSheet(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('持仓产生算力', style: LoopType.headingSm),
-          ),
-          const SizedBox(height: 10),
+          // R2 (decision 0190 M14).
+          const LoopSheetHeading('持仓产生算力'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -830,12 +844,18 @@ class WalletAssetLine extends StatelessWidget {
     super.key,
     this.onTap,
     this.onRetry,
+    this.recordRow = false,
   });
 
   final LoopAssetBalanceRow row;
   final bool hidden;
   final VoidCallback? onTap;
   final VoidCallback? onRetry;
+
+  /// The failed row stands in a list of [WalletBalanceRow]s (R4 15) rather
+  /// than of quote rows (16): its ticker takes the step of the rows around it
+  /// (decision 0190 H5).
+  final bool recordRow;
 
   @override
   Widget build(BuildContext context) {
@@ -851,7 +871,10 @@ class WalletAssetLine extends StatelessWidget {
       row.symbol,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: LoopType.title.copyWith(color: ink),
+      // H5: the same step as the healthy rows of the same list.
+      style: (recordRow ? LoopType.title : LoopType.titleLg).copyWith(
+        color: ink,
+      ),
     );
 
     if (balance is LoopBalanceUnavailable) {
@@ -945,10 +968,10 @@ class WalletAssetLine extends StatelessWidget {
       subtitleMarkKey: ValueKey<String>('wallet-balance-mark-${row.assetId}'),
       value: amount,
       valueKey: ValueKey<String>('wallet-balance-amount-${row.assetId}'),
+      // The quote row owns the secondary value's step (decision 0190 M21).
       valueCaption: Text(
         valueText,
         key: ValueKey<String>('wallet-balance-value-${row.assetId}'),
-        style: LoopTypography.figure(14, color: LoopColors.text2),
       ),
       trailing: KeyedSubtree(
         key: ValueKey<String>('wallet-balance-change-${row.assetId}'),
@@ -998,7 +1021,7 @@ class WalletZeroBalanceToggle extends StatelessWidget {
                 Text(
                   label,
                   key: const ValueKey<String>('wallet-zero-toggle-label'),
-                  style: LoopTypography.body(14, color: secondary),
+                  style: LoopType.body.copyWith(color: secondary),
                 ),
                 const SizedBox(width: 4),
                 RotatedBox(
@@ -1259,6 +1282,7 @@ class WalletBalanceRow extends StatelessWidget {
         hidden: hidden,
         onTap: onTap,
         onRetry: onRetry,
+        recordRow: true,
       );
     }
     final ink = LoopGround.inkOf(context);
@@ -1323,11 +1347,8 @@ class WalletBalanceRow extends StatelessWidget {
                   row.symbol,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.title(
-                    14,
-                    weight: FontWeight.w700,
-                    color: ink,
-                  ),
+                  // The record row (decision 0190 H5 / H7): R4 / R5 / R6 / R7.
+                  style: LoopType.title.copyWith(color: ink),
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -1340,7 +1361,7 @@ class WalletBalanceRow extends StatelessWidget {
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopType.captionSm.copyWith(color: secondary),
+                        style: LoopType.caption.copyWith(color: secondary),
                       ),
                     ),
                     if (marks.isNotEmpty)
@@ -1369,18 +1390,14 @@ class WalletBalanceRow extends StatelessWidget {
                 amount,
                 key: ValueKey<String>('wallet-balance-amount-${row.assetId}'),
                 maxLines: 1,
-                style: LoopTypography.figure(
-                  14,
-                  weight: FontWeight.w700,
-                  color: ink,
-                ),
+                style: LoopType.figure.copyWith(color: ink),
               ),
               const SizedBox(height: 4),
               Text(
                 valueText,
                 key: ValueKey<String>('wallet-balance-value-${row.assetId}'),
                 maxLines: 1,
-                style: LoopTypography.figure(11, color: LoopColors.text2),
+                style: LoopType.figureXs,
               ),
             ],
           ),
@@ -1424,7 +1441,10 @@ class WalletBalanceRow extends StatelessWidget {
                         key: ValueKey<String>(
                           'wallet-balance-change-${row.assetId}',
                         ),
-                        style: LoopTypography.figure(11, color: changeColour!),
+                        style: LoopTypography.withWeight(
+                          LoopType.figureXs,
+                          FontWeight.w600,
+                        ).copyWith(color: changeColour!),
                       ),
                     ],
                   ),

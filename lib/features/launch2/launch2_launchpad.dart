@@ -583,7 +583,11 @@ class _Launch2DeskCampaignCardState
                   campaign.ctaLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.eyebrow(11, color: LoopColors.lime),
+                  // R17 the folio's text action.
+                  style: LoopTypography.withWeight(
+                    LoopType.label,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopColors.lime),
                 ),
               ),
               const SizedBox(width: 2),
@@ -619,11 +623,8 @@ class Launch2DeskRecordCard extends ConsumerWidget {
     final id = row.instanceId;
     final fraction = launch2HeroFuse(row, now);
     final next = row.nextChangeAt;
-    final figureStyle = LoopTypography.figure(
-      16,
-      weight: FontWeight.w700,
-      color: LoopColors.lime,
-    );
+    // R4 / R5 / R6, the same steps as the list's rows (decision 0190 M23).
+    final figureStyle = LoopType.figure.copyWith(color: LoopColors.lime);
     final figure = !launch2RecordCountsDown(row.stage)
         ? Text(
             launch2BpsLabel(row.curve.soldBps),
@@ -671,10 +672,7 @@ class Launch2DeskRecordCard extends ConsumerWidget {
                         launch2HeroTicker(row.ticker),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.title(
-                          14,
-                          color: LoopColors.chalk,
-                        ),
+                        style: LoopType.title,
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -682,8 +680,7 @@ class Launch2DeskRecordCard extends ConsumerWidget {
                         key: ValueKey<String>('launch2-desk-record-sub-$id'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.caption(
-                          11,
+                        style: LoopType.caption.copyWith(
                           color: LoopColors.text2,
                         ),
                       ),
@@ -702,8 +699,7 @@ class Launch2DeskRecordCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       launch2RecordFigureCaption(row.stage),
-                      style: LoopTypography.caption(
-                        11,
+                      style: LoopType.captionSm.copyWith(
                         color: LoopColors.text3,
                       ),
                     ),
@@ -725,7 +721,7 @@ class Launch2DeskRecordCard extends ConsumerWidget {
               key: ValueKey<String>('launch2-desk-record-foot-$id'),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: LoopTypography.caption(11, color: LoopColors.text2),
+              style: LoopType.caption.copyWith(color: LoopColors.text2),
             ),
           ],
         ),
@@ -809,9 +805,11 @@ class _Launch2DeskTapeState extends State<Launch2DeskTape> {
                         heightFactor: 1,
                         child: Text(
                           _open ? '收起' : '全部',
-                          style: LoopMono.label.copyWith(
-                            color: LoopColors.text2,
-                          ),
+                          // R17 inline text action (decision 0190 L22).
+                          style: LoopTypography.withWeight(
+                            LoopType.label,
+                            FontWeight.w600,
+                          ).copyWith(color: LoopColors.text2),
                         ),
                       ),
                     ),
@@ -872,11 +870,7 @@ class _TapeLine extends StatelessWidget {
     final figure = amount == null ? null : launch2Usd1Label(amount);
     // `.tape-line b`: the amount, when the sentence ends on one, in Chalk.
     final split = figure != null && text.endsWith(' $figure');
-    final mono = LoopTypography.figure(
-      11,
-      weight: FontWeight.w400,
-      color: LoopColors.text2,
-    );
+    final mono = LoopType.figureXs;
     return Semantics(
       button: true,
       label: '$time $text',
@@ -895,11 +889,10 @@ class _TapeLine extends StatelessWidget {
             children: <Widget>[
               Text(
                 time,
-                style: LoopTypography.figure(
-                  11,
-                  weight: FontWeight.w600,
-                  color: LoopColors.lime,
-                ),
+                style: LoopTypography.withWeight(
+                  LoopType.figureXs,
+                  FontWeight.w600,
+                ).copyWith(color: LoopColors.lime),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -914,11 +907,10 @@ class _TapeLine extends StatelessWidget {
                       if (split)
                         TextSpan(
                           text: figure,
-                          style: LoopTypography.figure(
-                            11,
-                            weight: FontWeight.w600,
-                            color: LoopColors.chalk,
-                          ),
+                          style: LoopTypography.withWeight(
+                            LoopType.figureXs,
+                            FontWeight.w600,
+                          ).copyWith(color: LoopColors.chalk),
                         ),
                     ],
                   ),

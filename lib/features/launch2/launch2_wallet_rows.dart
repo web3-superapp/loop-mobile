@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -186,10 +185,8 @@ class Launch2WalletRows extends ConsumerWidget {
     title: title,
     subtitle: subtitle,
     value: value,
-    valueCaption: Text(
-      launch2StageLabel(position.stage),
-      style: LoopTypography.body(14, color: LoopColors.text2),
-    ),
+    // The quote row owns the secondary value's step (decision 0190 M21).
+    valueCaption: Text(launch2StageLabel(position.stage)),
     onTap: () => onOpen(location ?? Launch2Route.instance(position.instanceId)),
     semanticLabel:
         '$title，$subtitle，$value，${launch2StageLabel(position.stage)}',

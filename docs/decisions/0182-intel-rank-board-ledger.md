@@ -94,3 +94,7 @@ HTML 结构即规格；标「存档」的 A / B 不做）。用户裁决：整�
   `test/s121b_visual_second_pass_test.dart`（领奖台 record-card 与奖牌圆角、行的副标题与 64 px 进度条）。
 - 命令：`bin/dart format`（本批文件）、`bin/flutter analyze`、`python3 scripts/check_harness.py`、intel / mining rank 相关 `bin/flutter test`（结果见提交说明）。
   未起模拟器、未做真机验收。
+
+## 0190 修订
+
+列表行（§4）的档位按 0189 阶梯对齐：名字 `body`@600 14 → R4 `title` 15/600，副行 `captionSm` 11 → R5 `caption` 12 text2，右侧数 `figure`@700 → R6 `figure` 13/600；榜头 `LoopMono.label` → `eyebrow`。布局（名次列、头像、权重标、占比条）不变。

@@ -140,15 +140,17 @@ void main() {
       expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
       expect(find.text('市值 \$9,891'), findsOneWidget);
       final cap = tester.widget<Text>(_key('meme-row-cap'));
-      expect(cap.style!.fontSize, 13);
-      expect(cap.style!.fontWeight, FontWeight.w700);
+      // Decision 0190 H4: the quote-row value, figureMd 17/600.
+      expect(cap.style!.fontSize, LoopType.figureMd.fontSize);
+      expect(cap.style!.fontWeight, FontWeight.w600);
       // The 56 px `.bar` and the Lime percentage beside it.
       expect(tester.getSize(_key('meme-row-progress')), const Size(56, 6));
       expect(find.byType(LoopProgressBar), findsOneWidget);
       expect(find.text('33%'), findsOneWidget);
       final label = tester.widget<Text>(_key('meme-progress-label'));
       expect(label.style!.color, LoopColors.lime);
-      expect(label.style!.fontSize, 11);
+      // Decision 0190 H4: the quote-row secondary step, figureSm 12.
+      expect(label.style!.fontSize, LoopType.figureSm.fontSize);
       expect(
         tester.getRect(_key('meme-progress-label')).left,
         greaterThan(tester.getRect(_key('meme-row-progress')).right),

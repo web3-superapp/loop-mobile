@@ -290,20 +290,13 @@ class _MemeBalanceBlockState extends ConsumerState<MemeBalanceBlock> {
         style: LoopType.figureXl,
       );
     } else {
-      final dot = figure.indexOf('.');
-      main = Text.rich(
+      // R22: the one hero figure, 28/600 as one string — the same as the
+      // wallet tab and 我的 (decision 0190 H3; the bold integer over a 20 grey
+      // fraction is gone).
+      main = Text(
+        figure,
         key: const ValueKey<String>('meme-balance-figure'),
-        TextSpan(
-          text: dot < 0 ? figure : figure.substring(0, dot),
-          style: LoopTypography.withWeight(LoopType.figureXl, FontWeight.w700),
-          children: <InlineSpan>[
-            if (dot >= 0)
-              TextSpan(
-                text: figure.substring(dot),
-                style: LoopType.figureLg.copyWith(color: LoopColors.text3),
-              ),
-          ],
-        ),
+        style: LoopType.figureXl,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
@@ -476,11 +469,10 @@ class MemeBestTradeCard extends StatelessWidget {
                         trade.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.label(
-                          12,
-                          weight: FontWeight.w700,
-                          color: LoopColors.chalk,
-                        ),
+                        style: LoopTypography.withWeight(
+                          LoopType.label,
+                          FontWeight.w700,
+                        ).copyWith(color: LoopColors.chalk),
                       ),
                     ),
                   ],
@@ -509,12 +501,7 @@ class MemeBestTradeCard extends StatelessWidget {
                         'meme-best-trade-${trade.rank}-gain',
                       ),
                       maxLines: 1,
-                      style: LoopTypography.figure(
-                        15,
-                        weight: FontWeight.w700,
-                        height: 1,
-                        color: LoopColors.lime,
-                      ),
+                      style: LoopType.figureMd.copyWith(color: LoopColors.lime),
                     ),
                   ),
                 ),

@@ -112,9 +112,8 @@ class Launch2Countdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style =
-        this.style ??
-        LoopTypography.figure(14, weight: FontWeight.w600, height: 1.2);
+    // R6 by default (decision 0190).
+    final style = this.style ?? LoopType.figure;
     return Launch2CountdownBuilder(
       target: target,
       onElapsed: onElapsed,
@@ -172,10 +171,10 @@ class Launch2StagePill extends StatelessWidget {
               child: Text(
                 launch2StageLabel(stage),
                 maxLines: 1,
-                style: LoopTypography.title(
-                  14,
-                  color: lit ? LoopColors.lime : LoopColors.text2,
-                ),
+                style: LoopTypography.withWeight(
+                  LoopType.titleSm,
+                  FontWeight.w600,
+                ).copyWith(color: lit ? LoopColors.lime : LoopColors.text2),
               ),
             ),
           ),
@@ -328,21 +327,17 @@ class Launch2InstanceTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final now = ref.read(launch2ClockProvider)();
     final next = row.nextChangeAt;
-    final figure = LoopTypography.figure(
-      18,
-      weight: FontWeight.w700,
-      color: LoopGround.inkOf(context),
-    );
+    // The quote row's steps (decision 0190 M22): its value `figureMd`, a
+    // figure under it `figureSm`, a word under it R5 `caption`.
+    final figure = LoopType.figureMd.copyWith(color: LoopGround.inkOf(context));
+    final words = LoopType.caption.copyWith(color: LoopColors.text2);
     Widget countdown(String prefix) => next == null
-        ? Text(
-            '$prefix待定',
-            style: LoopTypography.body(14, color: LoopColors.text2),
-          )
+        ? Text('$prefix待定', style: words)
         : Launch2Countdown(
             target: next,
             prefix: prefix,
             onElapsed: onElapsed,
-            style: LoopTypography.body(14, color: LoopColors.text2),
+            style: LoopType.figureSm,
           );
     final (String? value, Widget caption) = switch (row.stage) {
       Launch2Stage.upcoming => (
@@ -359,10 +354,7 @@ class Launch2InstanceTile extends ConsumerWidget {
                     style: figure,
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    '后开售',
-                    style: LoopTypography.body(14, color: LoopColors.text2),
-                  ),
+                  Text('后开售', style: words),
                 ],
               ),
       ),
@@ -372,7 +364,7 @@ class Launch2InstanceTile extends ConsumerWidget {
       ),
       Launch2Stage.snapshotPending => (
         'NFT 已售 ${row.nftSale.soldCount}',
-        Text('名单生成中', style: LoopTypography.body(14, color: LoopColors.text2)),
+        Text('名单生成中', style: words),
       ),
       // Grey like every waiting stage; no figure, nothing counts down.
       Launch2Stage.closedNoHolders => (
@@ -380,7 +372,7 @@ class Launch2InstanceTile extends ConsumerWidget {
         Text(
           launch2ClosedNoHoldersText,
           key: const ValueKey<String>('launch2-row-closed'),
-          style: LoopTypography.body(14, color: LoopColors.text2),
+          style: words,
         ),
       ),
       Launch2Stage.priority || Launch2Stage.public => (
@@ -388,7 +380,7 @@ class Launch2InstanceTile extends ConsumerWidget {
         Text(
           launch2PriceLabel(row.curve.priceUsd1),
           key: const ValueKey<String>('launch2-row-price'),
-          style: LoopTypography.body(14, color: LoopColors.text2),
+          style: LoopType.figureSm,
         ),
       ),
       // Decision 0146: the pill already says 已毕业, so the figure column
@@ -399,13 +391,10 @@ class Launch2InstanceTile extends ConsumerWidget {
         Text(
           '毕业价',
           key: const ValueKey<String>('launch2-row-price'),
-          style: LoopTypography.body(14, color: LoopColors.text2),
+          style: words,
         ),
       ),
-      Launch2Stage.paused => (
-        '已暂停',
-        Text('平台核对中', style: LoopTypography.body(14, color: LoopColors.text2)),
-      ),
+      Launch2Stage.paused => ('已暂停', Text('平台核对中', style: words)),
     };
     return LoopQuoteRow(
       tapKey: ValueKey<String>('launch2-row-${row.instanceId}'),
@@ -600,9 +589,13 @@ class _FailureLink extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              // R17 inline text action (decision 0190 L23).
               Text(
                 label,
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
+                style: LoopTypography.withWeight(
+                  LoopType.label,
+                  FontWeight.w600,
+                ).copyWith(color: LoopColors.text2),
               ),
               const SizedBox(width: 2),
               const LoopIcon('chevron', size: 14, color: LoopColors.text3),

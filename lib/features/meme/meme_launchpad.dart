@@ -321,9 +321,13 @@ class MemeGraduatingStrip extends ConsumerWidget {
                   foregroundColor: LoopColors.text2,
                   minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
                 ),
+                // R17 inline text action (decision 0190 L23).
                 child: Text(
                   '全部',
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  style: LoopTypography.withWeight(
+                    LoopType.label,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopColors.text2),
                 ),
               ),
             ],

@@ -113,7 +113,11 @@ class Launch2DynamicRoundCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       '我的奖励',
-                      style: LoopType.caption.copyWith(color: LoopColors.text2),
+                      // R17 (decision 0190 L23).
+                      style: LoopTypography.withWeight(
+                        LoopType.label,
+                        FontWeight.w600,
+                      ).copyWith(color: LoopColors.text2),
                     ),
                     const SizedBox(width: 2),
                     const LoopIcon(

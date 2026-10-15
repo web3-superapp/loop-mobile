@@ -575,7 +575,7 @@ class _QuotaBar extends StatelessWidget {
                   ? '— / ${launch2MemeFigure(cap)}'
                   : '${launch2MemeFigure(value)} / ${launch2MemeFigure(cap)}',
               key: const ValueKey<String>('launch2-quota-figure'),
-              style: LoopTypography.figure(13, color: LoopColors.chalk),
+              style: LoopType.figure,
             ),
           ],
         ),
@@ -613,11 +613,11 @@ class _MaxKey extends StatelessWidget {
         child: Center(
           child: Text(
             'MAX',
-            style: LoopTypography.label(
-              13,
-              weight: FontWeight.w700,
-              color: onTap == null ? LoopColors.text3 : LoopColors.lime,
-            ),
+            // R17 inline text action (decision 0190 L21).
+            style: LoopTypography.withWeight(LoopType.label, FontWeight.w600)
+                .copyWith(
+                  color: onTap == null ? LoopColors.text3 : LoopColors.lime,
+                ),
           ),
         ),
       ),

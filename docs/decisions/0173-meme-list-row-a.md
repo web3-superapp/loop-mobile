@@ -63,3 +63,8 @@ HTML 结构即规格：`.row` / `.tile-img`（44、r15）/ `.row-t` + `.age`（m
 - `test/s121c_visual_followups_test.dart`、`test/s117_meme_launchpad_test.dart` 跟随改键（`meme-row-progress`）与文案。`test/support/meme_fixtures.dart` 的 `memeRowJson` 新增 `volume` / `createdAt` / `listingFields`。
 - 命令：`bin/dart format`（本批文件）、`bin/flutter analyze`、`python3 scripts/check_harness.py`、上述三个 MEME 测试文件 + `s117_meme_codec_test.dart`；
   另跑过一次全量 `bin/flutter test`（唯一失败为本批新用例的 finder，已修，修后 MEME 文件全过）。未起模拟器、未做真机验收。
+
+## 0190 修订
+
+列表 A 的字号改用 `LoopQuoteRow` 同一套（与情报·行情一致）：ticker 15 → `titleLg` 16，「交易量 · 名称」12 → `bodySm` 13，市值 13/700 → `figureMd` 17/600，进度百分比 / 1h 涨跌 11 → `figureSm`@600 12，
+行龄 10 → `figureXs`@600 11。版式（44 tile、56 px 进度条、分隔线、行高）不变。

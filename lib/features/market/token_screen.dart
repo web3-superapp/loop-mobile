@@ -790,9 +790,16 @@ class TokenPriceHeader extends StatelessWidget {
                   key: const ValueKey<String>('token-change'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.figureSm.copyWith(
-                    color: changeValue == null ? LoopColors.text3 : move.color,
-                  ),
+                  // R7 a move at 600, as the MEME token page (decision 0190 M26).
+                  style:
+                      LoopTypography.withWeight(
+                        LoopType.figureSm,
+                        FontWeight.w600,
+                      ).copyWith(
+                        color: changeValue == null
+                            ? LoopColors.text3
+                            : move.color,
+                      ),
                 ),
               ],
             ),
@@ -881,7 +888,8 @@ class TokenTradeRow extends StatelessWidget {
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+                    // R5 (decision 0190 H7).
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
                 ],
               ),
@@ -893,7 +901,8 @@ class TokenTradeRow extends StatelessWidget {
             Text(
               loopFormatDecimal(trade.amountAsset, maxFractionDigits: 4),
               maxLines: 1,
-              style: LoopType.figureSm.copyWith(color: LoopColors.text2),
+              // R6 the row's trailing figure (decision 0190 H7).
+              style: LoopType.figure.copyWith(color: LoopColors.text2),
             ),
           ],
         ),
@@ -1206,7 +1215,7 @@ class TokenPoolAndContractFacts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = LoopTypography.caption(12, color: LoopColors.text2);
+    final style = LoopType.caption.copyWith(color: LoopColors.text2);
     final resolved = pair;
     final children = <Widget>[
       Padding(
@@ -1393,8 +1402,7 @@ class TokenFactCell extends StatelessWidget {
                 tokenSecurityFactShortText(fact),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.caption(
-                  12,
+                style: LoopType.caption.copyWith(
                   color: risk ? LoopColors.chalk : LoopColors.text2,
                 ),
               ),

@@ -378,14 +378,14 @@ class MoneyIntentReviewCard extends StatelessWidget {
               Text(
                 '${moneyActionTitle(intent.kind).replaceFirst('确认', '')} · '
                 'FINAL REVIEW',
-                style: LoopMono.label,
+                style: LoopType.eyebrow,
               ),
               const SizedBox(height: 10),
               Text(
                 review.amount.isUnlimited
                     ? '无限 ${review.asset.symbol}'
                     : '${review.amount.display} ${review.asset.symbol}',
-                style: LoopMono.display,
+                style: LoopType.figureXl,
               ),
               const SizedBox(height: 8),
               Text(
