@@ -2419,6 +2419,14 @@ String _profilePath(String id) => switch (id) {
   // `dm-requests` page, so the profile row now opens that manifest slug.
   'friend-requests' => LoopRouteManifest.pathFor('dm-requests'),
   'wallets' => LoopRouteManifest.pathFor('wallets'),
+  // Decision 0175: 我's 充值 falls back to the wallet tab, its first-buy card
+  // opens the MEME tab, and a holding row opens that asset's wallet page.
+  'wallet' => LoopRouteManifest.pathFor('wallet'),
+  'meme' => LoopRouteManifest.pathFor('meme'),
+  final String held when held.startsWith(profileWalletAssetDestination) =>
+    MarketAssetRoute.walletAsset(
+      held.substring(profileWalletAssetDestination.length),
+    ),
   'community-discover' => LoopRouteManifest.pathFor('community-discover'),
   // Not a route of its own: the same manifest page narrowed to the owner's
   // memberships, which is what 我的社区 opens once the aggregate reports any.

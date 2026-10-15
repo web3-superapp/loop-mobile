@@ -10397,3 +10397,69 @@ class FamilyGuardContractTests(unittest.TestCase):
         for path in check_harness.FEATURE_LEGACY_WIDGET_ALLOWLIST:
             for folder in ("lib/features/market/", "lib/features/meme/", "lib/features/wallet/"):
                 self.assertFalse(path.startswith(folder), path)
+
+
+class BalanceVisibilityStoreContractTests(unittest.TestCase):
+    """Decision 0175: 「隐藏余额」 is one Boolean under one exact key."""
+
+    ADAPTER = check_harness.BALANCE_VISIBILITY_STORE_OWNER
+
+    def _with_adapter(self, transform) -> list[str]:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / self.ADAPTER
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / self.ADAPTER).read_text(encoding="utf-8")
+            path.write_text(transform(source), encoding="utf-8")
+            return check_harness.check_balance_visibility_store_contract(root)
+
+    def test_repository_passes(self) -> None:
+        self.assertEqual(
+            [], check_harness.check_balance_visibility_store_contract(REPOSITORY_ROOT)
+        )
+
+    def test_adapter_is_an_allowed_shared_preferences_importer(self) -> None:
+        errors = check_harness.check_local_display_preferences_contract(
+            REPOSITORY_ROOT
+        )
+        self.assertFalse(
+            any(str(self.ADAPTER) in error for error in errors), msg=errors
+        )
+
+    def test_a_second_key_is_rejected(self) -> None:
+        result = self._with_adapter(
+            lambda source: source.replace(
+                "static const String hideBalanceKey =",
+                "static const String walletKey = 'loop.wallet';\n"
+                "  static const String hideBalanceKey =",
+            )
+        )
+        self.assertIn(
+            "the balance visibility adapter must declare exactly one key", result
+        )
+        self.assertIn(
+            "the balance visibility adapter may contain only its exact key literal",
+            result,
+        )
+
+    def test_a_string_write_is_rejected(self) -> None:
+        result = self._with_adapter(
+            lambda source: source
+            + "\nFuture<void> unsafe(SharedPreferencesAsync preferences) => "
+            "preferences.setString(SharedPreferencesLoopBalanceVisibilityStore"
+            ".hideBalanceKey, '1');\n"
+        )
+        self.assertTrue(
+            any("getBool/setBool" in error for error in result), msg=result
+        )
+
+    def test_a_renamed_key_is_rejected(self) -> None:
+        result = self._with_adapter(
+            lambda source: source.replace(
+                "loop.display.v1.hide_balance", "loop.display.v1.hidden"
+            )
+        )
+        self.assertIn(
+            "the balance visibility adapter must retain its exact namespaced key",
+            result,
+        )

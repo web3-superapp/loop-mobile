@@ -85,8 +85,10 @@ void main() {
       );
       expect(find.text('Voyager_7'), findsWidgets);
       expect(find.text(loopId), findsOneWidget);
-      // Metrics have no source, so the mining row states its figure as
-      // unread and hands the reader the page that owns it.
+      // Decision 0175: the mining row moved to 设置. Metrics have no source
+      // there, so it states its figure as unread and hands the reader the
+      // page that owns it.
+      await _pump(tester, 'settings', gateway: _Gateway(resource: active()));
       final mining = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('profile-open-mining')),
       );
@@ -101,7 +103,8 @@ void main() {
       // not read power, while the mining tab held 4.48 and 第 47 名.
       await _pump(
         tester,
-        'profile',
+        // Decision 0175: the entries hang on 设置, behind 我's gear.
+        'settings',
         gateway: _Gateway(resource: active()),
         mining: FakeMiningGateway(
           summary: S7Answer<MiningSummary>(
@@ -133,7 +136,8 @@ void main() {
       // `#scr-profile`: 「2 个已绑定」, 「匿名模式已开启」, 「关注 24 · 粉丝 108」.
       await _pump(
         tester,
-        'profile',
+        // Decision 0175: the entries hang on 设置, behind 我's gear.
+        'settings',
         gateway: _Gateway(resource: active()),
         social: FakeSocialGateway(
           connections: const ConnectionPage(
@@ -169,7 +173,8 @@ void main() {
       final routes = <String>[];
       await _pump(
         tester,
-        'profile',
+        // Decision 0175: the entries hang on 设置, behind 我's gear.
+        'settings',
         gateway: _Gateway(resource: active()),
         onNavigate: routes.add,
       );
@@ -241,14 +246,14 @@ void main() {
       final destinations = <String>[];
       await _pump(
         tester,
-        'profile',
+        // Decision 0175: the entries hang on 设置, behind 我's gear.
+        'settings',
         gateway: _Gateway(resource: active()),
         onNavigate: destinations.add,
       );
 
       // Decision 0110 · S106 §5: 我, top to bottom — mining, invite,
       // communities, account, settings. Every row reaches its own slug.
-      expect(find.text('我'), findsWidgets);
       for (final entry in <(String, String)>[
         // Decision 0126: the round keys under the header, then the three
         // sections top to bottom; 挖矿总览 became the fourth key.
@@ -267,7 +272,6 @@ void main() {
         ('profile-open-privacy', 'privacy'),
         ('profile-open-security', 'security'),
         ('profile-open-notifications', 'notif-settings'),
-        ('profile-open-settings', 'settings'),
       ]) {
         await _scrollTo(tester, entry.$1);
         await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
@@ -292,7 +296,8 @@ void main() {
       final destinations = <String>[];
       await _pump(
         tester,
-        'profile',
+        // Decision 0175: the entries hang on 设置, behind 我's gear.
+        'settings',
         gateway: _Gateway(resource: active()),
         onNavigate: destinations.add,
         switches: const LoopFeatureSwitchValues(idoLaunchVisible: true),
@@ -327,7 +332,7 @@ void main() {
     testWidgets('no retired social-privacy or copy-trade entry survives', (
       tester,
     ) async {
-      await _pump(tester, 'profile', gateway: _Gateway(resource: active()));
+      await _pump(tester, 'settings', gateway: _Gateway(resource: active()));
 
       expect(find.textContaining('跟单'), findsNothing);
       expect(find.textContaining('社交隐私'), findsNothing);

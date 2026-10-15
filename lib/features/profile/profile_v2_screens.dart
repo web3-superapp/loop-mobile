@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -30,10 +33,14 @@ import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
-import 'package:loop_mobile/features/profile/sign_out_button.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
+import 'package:loop_mobile/features/social/social_models.dart';
+import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
+import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -42,6 +49,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -352,18 +361,29 @@ class LoopTogglePreferenceRow extends StatelessWidget {
 // profile · dashboard / record
 // ---------------------------------------------------------------------------
 
+/// The destination prefix for one held asset's wallet page. The composition
+/// root owns the path; the id travels in the destination because the asset
+/// page addresses exactly one canonical `assetId`.
+const String profileWalletAssetDestination = 'wallet-asset:';
+
+/// `我` · decision 0175 (docs/35 「我的」): the fomo layout in LOOP's family.
+///
+/// A 「隐藏余额」 capsule and the gear, the person (avatar 72, name, LOOP ID,
+/// bio, follow counts, the month the LOOP ID was activated), the net worth
+/// over a dot ground, the holdings and one Lime 充值 bar. Every figure is a
+/// read: a fact without a source — holding time, trade count, the net worth
+/// history — is not drawn. The account's other entries moved behind the gear
+/// to `settings` ([ProfileAccountEntries]); no route was added or removed.
 class ProfileHomeScreen extends ConsumerStatefulWidget {
   const ProfileHomeScreen({
     required this.onNavigate,
     super.key,
     this.onBack,
-    this.onSignOut,
     this.walletAddress,
   });
 
   final ValueChanged<String> onNavigate;
   final VoidCallback? onBack;
-  final Future<void> Function()? onSignOut;
   final String? walletAddress;
 
   @override
@@ -373,25 +393,14 @@ class ProfileHomeScreen extends ConsumerStatefulWidget {
 class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
   var _startedSideReads = false;
 
-  /// Starts the reads the prototype's own rows are printed from, once.
-  ///
-  /// `#scr-profile` states a figure on the mining row and a state on each of
-  /// the four 账户 rows. LOOP has no projection that carries them together,
-  /// so the page asks the four modules that own them — each is the same read
-  /// the row's destination makes, so opening that destination costs nothing
-  /// extra. A read that fails leaves its row without a second line; the page
-  /// never writes 「读不到」 where a state belongs.
+  /// The two reads this page prints from besides the profile: the follow
+  /// counts and the wallet directory the holdings hang on.
   void _startSideReads() {
     if (_startedSideReads) return;
     _startedSideReads = true;
     scheduleMicrotask(() {
       if (!mounted) return;
-      unawaited(ref.read(miningSummaryControllerProvider.notifier).load());
-      unawaited(ref.read(miningUserRankControllerProvider.notifier).load());
-      unawaited(ref.read(walletDirectoryControllerProvider.notifier).load());
-      unawaited(ref.read(privacyControllerProvider.notifier).load());
       unawaited(ref.read(connectionsControllerProvider.notifier).load());
-      unawaited(ref.read(referralControllerProvider.notifier).load());
     });
   }
 
@@ -407,17 +416,14 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     }
     _startSideReads();
     final resource = state.resource;
-    final alias = resource?.values.alias;
     final phase = profileResourcePhase(state);
     final isPreview = state.mode == ProfileMode.preview;
-    final switches = ref.watch(loopFeatureSwitchesProvider);
+    final visibility = ref.watch(loopBalanceVisibilityProvider);
+    // Watched in every phase, so the read started above is kept alive while
+    // the profile itself is still loading.
+    final counts = ref.watch(connectionsControllerProvider).counts;
+    final wallet = _watchWallet();
 
-    // 我 (decision 0126, OKX 资产页 4908): the person, four round keys, then
-    // three flat sections — 账号, 资产与挖矿, 设置 — and the version last.
-    final loopId = resource?.loopId;
-    final version = ref
-        .watch(appConfigProvider)
-        .loopClientVersionForCurrentBuild;
     return LoopFlat(
       child: LoopDashboardPage(
         key: const ValueKey<String>('profile-home-screen'),
@@ -425,8 +431,17 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         title: '我',
         kicker: loopPreviewKicker(isPreview),
         onBack: widget.onBack,
+        // The page's one full-Lime body (docs/33 §1 rule 5).
+        bottomBar: _ProfileDepositBar(onDeposit: () => _deposit(wallet)),
         sections: <Widget>[
           LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
+          _ProfileTopRow(
+            visibility: visibility,
+            onToggle: () => unawaited(
+              ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
+            ),
+            onOpenSettings: () => widget.onNavigate('settings'),
+          ),
           if (phase != LoopResourcePhase.ready)
             _ProfileStateBlock(
               phase: phase,
@@ -438,174 +453,731 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           else
             _ProfileIdentityCard(
               resource: resource!,
+              counts: counts,
               onEdit: () => widget.onNavigate('profile-edit'),
+              onOpenRewards: () => widget.onNavigate('mining-rewards'),
+              onOpenConnections: () => widget.onNavigate('connections'),
             ),
-          // Decision 0126 on decision 0127's round keys: 56 Lime discs. The
-          // fourth, 好友, opened 关注与粉丝 — the row below — under another
-          // name (decision 0133, audit m9).
-          LoopRoundKeyRow(
-            key: const ValueKey<String>('profile-round-keys'),
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-            keys: <Widget>[
-              LoopRoundKey(
-                key: const ValueKey<String>('profile-share-loop-id'),
-                icon: 'share',
-                label: '分享名片',
-                onPressed: loopId == null
-                    ? null
-                    : () => unawaited(
-                        showLoopQrCardSheet(
-                          context,
-                          LoopUserQrCard(
-                            loopId: loopId,
-                            displayName: alias ?? loopId,
-                            avatarRef: resource?.values.avatarRef,
+          _ProfileNetWorthPanel(wallet: wallet, hidden: visibility.hidden),
+          ..._holdings(wallet, hidden: visibility.hidden),
+        ],
+      ),
+    );
+  }
+
+  /// The wallet facts this page reads, through the wallet's own controllers
+  /// and gates — the same reads the wallet tab makes.
+  _ProfileWalletRead _watchWallet() {
+    final mode = ref.watch(walletReadGatewayProvider).mode;
+    final walletReadGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.walletRead),
+    );
+    final bscGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.bscRead),
+    );
+    final preview = mode == LoopChainGatewayMode.preview;
+    final blocked = !preview && !walletReadGate.isAvailable;
+    final chainClosed = !preview && !blocked && !bscGate.isAvailable;
+    final directory = ref.watch(walletDirectoryControllerProvider);
+    if (!blocked && directory.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(walletDirectoryControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    final walletId = directory.value?.activeWalletId;
+    final balances = walletId == null || chainClosed || blocked
+        ? null
+        : ref.watch(walletBalancesControllerProvider(walletId));
+    if (walletId != null &&
+        balances != null &&
+        balances.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(walletBalancesControllerProvider(walletId).notifier)
+                .load(),
+          );
+        }
+      });
+    }
+    return _ProfileWalletRead(
+      blockedReason: blocked
+          ? (walletReadGate.reasonCode ?? 'WALLET_RUNTIME_UNAVAILABLE')
+          : chainClosed
+          ? (bscGate.reasonCode ?? 'BSC_CHAIN_RUNTIME_UNAVAILABLE')
+          : null,
+      directory: directory,
+      walletId: walletId,
+      balances: balances,
+      faucetVisible:
+          testnetFaucetVisible(ref) &&
+          directory.value?.active?.kind == LoopWalletKind.embedded,
+    );
+  }
+
+  /// 充值: the testnet faucet while the server publishes it for the active
+  /// embedded wallet (decision 0154 / 0158); otherwise the wallet tab, where
+  /// 接收 is the deposit address.
+  void _deposit(_ProfileWalletRead wallet) {
+    final walletId = wallet.walletId;
+    if (wallet.faucetVisible &&
+        walletId != null &&
+        WalletRoute.isCanonical(walletId)) {
+      unawaited(
+        showTestnetFaucetSheet(
+          context,
+          walletId: walletId,
+          address: wallet.directory.value?.active?.address,
+        ),
+      );
+      return;
+    }
+    widget.onNavigate('wallet');
+  }
+
+  /// `持仓 (N)` and the rows, or the first-buy card when the read answered
+  /// that nothing is held.
+  List<Widget> _holdings(_ProfileWalletRead wallet, {required bool hidden}) {
+    final read = wallet.balances;
+    final value = read?.value;
+    if (wallet.blockedReason != null) {
+      return <Widget>[
+        const LoopLabel('持仓'),
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('profile-holdings-unavailable'),
+          message: loopReasonCodeText(wallet.blockedReason),
+          maxLines: 2,
+        ),
+      ];
+    }
+    if (wallet.directory.isReady &&
+        (wallet.directory.value?.isEmpty ?? false)) {
+      return <Widget>[
+        const LoopLabel('持仓'),
+        const LoopInlineUnavailable(
+          key: ValueKey<String>('profile-holdings-no-wallet'),
+          icon: 'info',
+          message: '还没有钱包，钱包页可以创建',
+        ),
+      ];
+    }
+    if (value == null) {
+      final loading =
+          wallet.directory.phase == LoopChainViewPhase.loading ||
+          read == null ||
+          read.phase == LoopChainViewPhase.loading;
+      return <Widget>[
+        const LoopLabel('持仓'),
+        if (loading)
+          const LoopSkeleton(
+            key: ValueKey<String>('profile-holdings-loading'),
+            type: LoopSkeletonType.record,
+            rows: 2,
+            leadingSize: 36,
+            subtitleLines: 1,
+          )
+        else
+          LoopInlineUnavailable(
+            key: const ValueKey<String>('profile-holdings-failed'),
+            message: '持仓暂时读不到',
+            onRetry: wallet.walletId == null
+                ? null
+                : () => unawaited(
+                    ref
+                        .read(
+                          walletBalancesControllerProvider(wallet.walletId!)
+                              .notifier,
+                        )
+                        .reload(),
+                  ),
+          ),
+      ];
+    }
+    final held = profileHeldRows(value);
+    final unread = value.balances
+        .where((row) => row.balance is LoopBalanceUnavailable)
+        .length;
+    return <Widget>[
+      LoopLabel('持仓 (${held.length})'),
+      for (final row in held)
+        WalletAssetLine(
+          row: row,
+          hidden: hidden,
+          onTap: () =>
+              widget.onNavigate('$profileWalletAssetDestination${row.assetId}'),
+        ),
+      if (unread > 0)
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('profile-holdings-unread'),
+          message: '$unread 项余额读不到，未列入',
+        ),
+      if (held.isEmpty && unread == 0)
+        _ProfileFirstBuyCard(onOpen: () => widget.onNavigate('meme')),
+    ];
+  }
+}
+
+/// The rows this page calls holdings: a balance the chain read answered and
+/// that is not zero. A row whose read failed is unknown, never a holding.
+List<LoopAssetBalanceRow> profileHeldRows(LoopWalletBalances balances) =>
+    balances.balances
+        .where(
+          (row) => row.balance is LoopBalanceAvailable && !walletRowIsZero(row),
+        )
+        .toList(growable: false);
+
+/// What [_ProfileHomeScreenState] read from the wallet module.
+final class _ProfileWalletRead {
+  const _ProfileWalletRead({
+    required this.blockedReason,
+    required this.directory,
+    required this.walletId,
+    required this.balances,
+    required this.faucetVisible,
+  });
+
+  /// The server's reason when the wallet or the chain gate is shut.
+  final String? blockedReason;
+  final LoopChainResourceState<LoopWalletDirectory> directory;
+  final String? walletId;
+  final LoopChainResourceState<LoopWalletBalances>? balances;
+  final bool faucetVisible;
+}
+
+/// `.me-top`: the 「隐藏余额」 capsule and the gear to `settings`.
+class _ProfileTopRow extends StatelessWidget {
+  const _ProfileTopRow({
+    required this.visibility,
+    required this.onToggle,
+    required this.onOpenSettings,
+  });
+
+  final LoopBalanceVisibility visibility;
+  final VoidCallback onToggle;
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = visibility.hidden;
+    final label = hidden ? '余额已隐藏，再点一次取消隐藏' : '点一下隐藏余额';
+    // Rule 23: a choice the device could not keep says so, in this run.
+    final runLocal =
+        visibility.persistence == LoopBalanceVisibilityPersistence.unavailable;
+    return Padding(
+      key: const ValueKey<String>('profile-top-row'),
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 8, 10),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Semantics(
+              button: true,
+              toggled: hidden,
+              label: runLocal ? '$label，仅本次运行有效' : label,
+              excludeSemantics: true,
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  key: const ValueKey<String>('profile-hide-balance'),
+                  onTap: onToggle,
+                  customBorder: const StadiumBorder(),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minHeight: LoopTouch.minimum,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: const ShapeDecoration(
+                      shape: StadiumBorder(
+                        side: BorderSide(color: LoopColors.line2),
+                      ),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          hidden
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 16,
+                          color: LoopColors.text2,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            label,
+                            key: const ValueKey<String>(
+                              'profile-hide-balance-label',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopTypography.label(
+                              13,
+                              weight: FontWeight.w600,
+                              color: LoopColors.chalk,
+                            ),
                           ),
                         ),
-                      ),
-                onBlocked: () =>
-                    LoopToast.show(context, message: '资料还没读到，暂时不能分享'),
-              ),
-              LoopRoundKey(
-                key: const ValueKey<String>('profile-open-scan'),
-                icon: 'camera',
-                label: '扫一扫',
-                onPressed: () => widget.onNavigate('scan'),
-              ),
-              LoopRoundKey(
-                key: const ValueKey<String>('profile-open-mining-key'),
-                icon: 'mine',
-                label: '挖矿',
-                onPressed: () => widget.onNavigate('mining'),
-              ),
-            ],
-          ),
-          // The prototype's 账户 rows carry a state value on their second
-          // line — 「2 个已绑定」, 「关注 24 · 粉丝 108」 — read from the module
-          // that owns it; a row whose state this device has not read carries
-          // no second line at all.
-          const LoopLabel('账号'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-wallets'),
-                leading: const LoopRowIcon(icon: 'wallet'),
-                title: '我的钱包',
-                trailing: _walletSubtitle(),
-                onTap: () => widget.onNavigate('wallets'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-connections'),
-                leading: const LoopRowIcon(icon: 'users'),
-                title: '关注与粉丝',
-                trailing: _connectionsSubtitle(),
-                onTap: () => widget.onNavigate('connections'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-friend-requests'),
-                leading: const LoopRowIcon(icon: 'hand'),
-                // The page it opens, and the row on 聊天, both say 陌生人请求
-                // (audit m9).
-                title: '陌生人请求',
-                onTap: () => widget.onNavigate('friend-requests'),
-              ),
-              _inviteRow(),
-            ],
-          ),
-          ProfileCommunitiesRow(onNavigate: widget.onNavigate),
-          const LoopLabel('资产与挖矿'),
-          // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
-          // under it, read from the same two projections the mining page
-          // does. Since decision 0110 the mining record pages hang under it.
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              _miningRow(),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-mining-assets'),
-                leading: const LoopRowIcon(icon: 'droplet'),
-                title: '挖矿资产',
-                onTap: () => widget.onNavigate('mining-assets'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-mining-rewards'),
-                leading: const LoopRowIcon(icon: 'parachute'),
-                title: '挖矿奖励',
-                onTap: () => widget.onNavigate('mining-rewards'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-mining-rules'),
-                leading: const LoopRowIcon(icon: 'book'),
-                title: '挖矿规则',
-                onTap: () => widget.onNavigate('mining-rules'),
-              ),
-              // 需求方 2026-10-08: IDO Launch keeps its code and its pages,
-              // and its entries on 我 follow the one switch that brings it
-              // back.
-              if (switches.idoLaunchVisible) ...<LoopRecordRow>[
-                LoopRecordRow(
-                  key: const ValueKey<String>('profile-open-launch-history'),
-                  leading: const LoopRowIcon(icon: 'launch'),
-                  title: '参与记录',
-                  trailing: '未开放',
-                  onTap: () => widget.onNavigate('launch-history'),
+                        if (runLocal)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Text(
+                              '仅本次',
+                              key: const ValueKey<String>(
+                                'profile-hide-balance-run-local',
+                              ),
+                              style: LoopType.captionSm.copyWith(
+                                color: LoopColors.text3,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-                LoopRecordRow(
-                  key: const ValueKey<String>('profile-open-launch-tier'),
-                  leading: const LoopRowIcon(icon: 'ticket'),
-                  title: '我的资格',
-                  trailing: '未开放',
-                  onTap: () => widget.onNavigate('launch-tier'),
-                ),
-              ],
-            ],
-          ),
-          const LoopLabel('设置'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-privacy'),
-                leading: const LoopRowIcon(icon: 'lock'),
-                title: '隐私中心',
-                trailing: _privacySubtitle(),
-                onTap: () => widget.onNavigate('privacy'),
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-security'),
-                leading: const LoopRowIcon(icon: 'shield'),
-                title: '安全中心',
-                // The security projection reports every method as
-                // unavailable while the device holds Privy MFA of its own
-                // (walkthrough · h17). Until the two agree this row states no
-                // posture.
-                onTap: () => widget.onNavigate('security'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-notifications'),
-                leading: const LoopRowIcon(icon: 'bell'),
-                title: '通知设置',
-                onTap: () => widget.onNavigate('notif-settings'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('profile-open-settings'),
-                leading: const LoopRowIcon(icon: 'settings'),
-                title: '通用设置',
-                onTap: () => widget.onNavigate('settings'),
-              ),
-            ],
-          ),
-          // Decision 0133 (audit M14, m15): the same confirmed control 设置
-          // carries, at the foot of the list.
-          if (widget.onSignOut != null)
-            LoopSignOutButton(
-              key: const ValueKey<String>('profile-sign-out'),
-              onSignOut: widget.onSignOut!,
             ),
-          LoopFlatFootnote(
-            version.isEmpty ? 'LOOP' : 'LOOP $version',
-            key: const ValueKey<String>('profile-version'),
+          ),
+          const SizedBox(width: 2),
+          LoopIconButton(
+            key: const ValueKey<String>('profile-open-settings'),
+            icon: 'settings',
+            label: '设置',
+            onPressed: onOpenSettings,
           ),
         ],
       ),
+    );
+  }
+}
+
+/// `.me-chart`: the net worth over a 200-high dot ground, the four periods,
+/// and — in place of a curve — what is known.
+///
+/// LOOP publishes no net worth history (`GET /v2/wallets/:id/balances` is the
+/// only owner-scoped valuation), so no line is drawn and the periods are
+/// closed controls that say why (AGENTS rule 20). The figure is the server's
+/// `netWorth`, never a spendable total (rule 25).
+class _ProfileNetWorthPanel extends StatelessWidget {
+  const _ProfileNetWorthPanel({required this.wallet, required this.hidden});
+
+  final _ProfileWalletRead wallet;
+  final bool hidden;
+
+  static const double height = 200;
+  static const List<String> periods = <String>['24 小时', '7 天', '30 天', '全部'];
+
+  @override
+  Widget build(BuildContext context) {
+    final balances = wallet.balances?.value;
+    final netWorth = balances?.netWorth;
+    final held = balances == null ? null : profileHeldRows(balances);
+    final String? figure = switch (netWorth) {
+      LoopNetWorthValued(valueUsd: final value) =>
+        hidden ? walletMaskedFigure : loopFormatUsd(value),
+      _ => null,
+    };
+    final caption = switch (netWorth) {
+      LoopNetWorthValued(partial: true, unavailableCount: final count) =>
+        '净值 · $count 项资产暂无价格，未计入',
+      LoopNetWorthValued() => '净值 · 不是可用余额',
+      LoopNetWorthUnavailable(reasonCode: final reason) => loopReasonCodeText(
+        reason,
+      ),
+      null => null,
+    };
+    final String centre;
+    final String centreKey;
+    if (held != null && held.isEmpty) {
+      centre = '暂无持仓';
+      centreKey = 'profile-chart-empty';
+    } else {
+      centre = '净值走势暂时读不到';
+      centreKey = 'profile-chart-no-history';
+    }
+    void explain() => LoopToast.show(context, message: '净值走势暂时读不到，时间段还不能切换');
+
+    return SizedBox(
+      key: const ValueKey<String>('profile-networth-panel'),
+      height: height,
+      child: CustomPaint(
+        painter: const _ProfileDotGroundPainter(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 8, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                // One row that shrinks on a narrow phone rather than a second
+                // scroll view inside the page's own.
+                child: FittedBox(
+                  key: const ValueKey<String>('profile-chart-periods'),
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      for (final period in periods)
+                        LoopSeg(
+                          key: ValueKey<String>('profile-chart-period-$period'),
+                          label: period,
+                          quiet: true,
+                          selected: false,
+                          onSelected: null,
+                          onBlocked: explain,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (figure != null)
+                Text(
+                  figure,
+                  key: const ValueKey<String>('profile-networth-figure'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.figureXl.copyWith(
+                    color: hidden ? LoopColors.text3 : LoopColors.chalk,
+                  ),
+                ),
+              if (caption != null)
+                Text(
+                  caption,
+                  key: const ValueKey<String>('profile-networth-caption'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+                ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    centre,
+                    key: ValueKey<String>(centreKey),
+                    style: LoopTypography.caption(13, color: LoopColors.text3),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `background:radial-gradient(rgba(243,245,239,.08) 1px, transparent 1px)`
+/// on a 14 px grid, in the Card2 transparency step.
+class _ProfileDotGroundPainter extends CustomPainter {
+  const _ProfileDotGroundPainter();
+
+  static const double spacing = 14;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final points = <Offset>[
+      for (var y = spacing / 2; y < size.height; y += spacing)
+        for (var x = spacing / 2; x < size.width; x += spacing) Offset(x, y),
+    ];
+    canvas.drawPoints(
+      PointMode.points,
+      points,
+      Paint()
+        ..color = LoopColors.card2
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProfileDotGroundPainter oldDelegate) => false;
+}
+
+/// `.promo`: the first-buy card under an empty `持仓 (0)`.
+class _ProfileFirstBuyCard extends StatelessWidget {
+  const _ProfileFirstBuyCard({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: const ValueKey<String>('profile-first-buy'),
+      button: true,
+      label: '获取你的第一个代币，领取测试币后首次买入 0 手续费，立即买入',
+      excludeSemantics: true,
+      child: LoopRecordCard(
+        onTap: onOpen,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    '获取你的第一个代币',
+                    style: LoopTypography.title(15, weight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '领取测试币后首次买入 0 手续费',
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '立即买入 →',
+                    key: const ValueKey<String>('profile-first-buy-go'),
+                    style: LoopTypography.label(
+                      13,
+                      weight: FontWeight.w700,
+                      color: LoopColors.lime,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            const LoopRowIcon(
+              icon: 'launch',
+              tone: LoopRowIconTone.accent,
+              size: 44,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `.bottombar`: the one full-Lime 充值 block button.
+class _ProfileDepositBar extends StatelessWidget {
+  const _ProfileDepositBar({required this.onDeposit});
+
+  final VoidCallback onDeposit;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(color: LoopColors.ink),
+    child: Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        10,
+        16,
+        10 + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: LoopButton(
+        key: const ValueKey<String>('profile-deposit'),
+        label: '充值',
+        primary: true,
+        block: true,
+        onPressed: onDeposit,
+      ),
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// settings · the account's entries (decision 0175)
+// ---------------------------------------------------------------------------
+
+/// The entries 我 carried before decision 0175 — share card, scanner,
+/// mining, 账号, 我的社区, 资产与挖矿 and 隐私 / 安全 / 通知 — drawn at the
+/// head of `settings`, which the gear on 我 opens. Each row keeps its key and
+/// its destination; only the page they hang on changed.
+class ProfileAccountEntries extends ConsumerStatefulWidget {
+  const ProfileAccountEntries({required this.onNavigate, super.key});
+
+  final ValueChanged<String> onNavigate;
+
+  @override
+  ConsumerState<ProfileAccountEntries> createState() =>
+      _ProfileAccountEntriesState();
+}
+
+class _ProfileAccountEntriesState extends ConsumerState<ProfileAccountEntries> {
+  var _startedSideReads = false;
+
+  /// Starts the reads the rows' second lines are printed from, once. Each is
+  /// the same read the row's destination makes; a read that fails leaves its
+  /// row without a second line.
+  void _startSideReads() {
+    if (_startedSideReads) return;
+    _startedSideReads = true;
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      final profile = ref.read(profileControllerProvider);
+      if (profile.phase == ProfilePhase.initial) {
+        unawaited(ref.read(profileControllerProvider.notifier).load());
+      }
+      unawaited(ref.read(miningSummaryControllerProvider.notifier).load());
+      unawaited(ref.read(miningUserRankControllerProvider.notifier).load());
+      unawaited(ref.read(walletDirectoryControllerProvider.notifier).load());
+      unawaited(ref.read(privacyControllerProvider.notifier).load());
+      unawaited(ref.read(connectionsControllerProvider.notifier).load());
+      unawaited(ref.read(referralControllerProvider.notifier).load());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _startSideReads();
+    final resource = ref.watch(profileControllerProvider).resource;
+    final alias = resource?.values.alias;
+    final loopId = resource?.loopId;
+    final switches = ref.watch(loopFeatureSwitchesProvider);
+    return Column(
+      key: const ValueKey<String>('profile-account-entries'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        // Decision 0126 on decision 0127's round keys: 56 Lime discs. The
+        // fourth, 好友, opened 关注与粉丝 — the row below — under another
+        // name (decision 0133, audit m9).
+        LoopRoundKeyRow(
+          key: const ValueKey<String>('profile-round-keys'),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+          keys: <Widget>[
+            LoopRoundKey(
+              key: const ValueKey<String>('profile-share-loop-id'),
+              icon: 'share',
+              label: '分享名片',
+              onPressed: loopId == null
+                  ? null
+                  : () => unawaited(
+                      showLoopQrCardSheet(
+                        context,
+                        LoopUserQrCard(
+                          loopId: loopId,
+                          displayName: alias ?? loopId,
+                          avatarRef: resource?.values.avatarRef,
+                        ),
+                      ),
+                    ),
+              onBlocked: () =>
+                  LoopToast.show(context, message: '资料还没读到，暂时不能分享'),
+            ),
+            LoopRoundKey(
+              key: const ValueKey<String>('profile-open-scan'),
+              icon: 'camera',
+              label: '扫一扫',
+              onPressed: () => widget.onNavigate('scan'),
+            ),
+            LoopRoundKey(
+              key: const ValueKey<String>('profile-open-mining-key'),
+              icon: 'mine',
+              label: '挖矿',
+              onPressed: () => widget.onNavigate('mining'),
+            ),
+          ],
+        ),
+        const LoopLabel('账号'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-wallets'),
+              leading: const LoopRowIcon(icon: 'wallet'),
+              title: '我的钱包',
+              trailing: _walletSubtitle(),
+              onTap: () => widget.onNavigate('wallets'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-connections'),
+              leading: const LoopRowIcon(icon: 'users'),
+              title: '关注与粉丝',
+              trailing: _connectionsSubtitle(),
+              onTap: () => widget.onNavigate('connections'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-friend-requests'),
+              leading: const LoopRowIcon(icon: 'hand'),
+              // The page it opens, and the row on 聊天, both say 陌生人请求
+              // (audit m9).
+              title: '陌生人请求',
+              onTap: () => widget.onNavigate('friend-requests'),
+            ),
+            _inviteRow(),
+          ],
+        ),
+        ProfileCommunitiesRow(onNavigate: widget.onNavigate),
+        const LoopLabel('资产与挖矿'),
+        // `#scr-profile` prints `12,840 H` here with 「总算力 · 排名 #8,421」
+        // under it, read from the same two projections the mining page does.
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            _miningRow(),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-mining-assets'),
+              leading: const LoopRowIcon(icon: 'droplet'),
+              title: '挖矿资产',
+              onTap: () => widget.onNavigate('mining-assets'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-mining-rewards'),
+              leading: const LoopRowIcon(icon: 'parachute'),
+              title: '挖矿奖励',
+              onTap: () => widget.onNavigate('mining-rewards'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-mining-rules'),
+              leading: const LoopRowIcon(icon: 'book'),
+              title: '挖矿规则',
+              onTap: () => widget.onNavigate('mining-rules'),
+            ),
+            // 需求方 2026-10-08: IDO Launch keeps its code and its pages,
+            // and its entries follow the one switch that brings it back.
+            if (switches.idoLaunchVisible) ...<LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-launch-history'),
+                leading: const LoopRowIcon(icon: 'launch'),
+                title: '参与记录',
+                trailing: '未开放',
+                onTap: () => widget.onNavigate('launch-history'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('profile-open-launch-tier'),
+                leading: const LoopRowIcon(icon: 'ticket'),
+                title: '我的资格',
+                trailing: '未开放',
+                onTap: () => widget.onNavigate('launch-tier'),
+              ),
+            ],
+          ],
+        ),
+        const LoopLabel('隐私与安全'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-privacy'),
+              leading: const LoopRowIcon(icon: 'lock'),
+              title: '隐私中心',
+              trailing: _privacySubtitle(),
+              onTap: () => widget.onNavigate('privacy'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-security'),
+              leading: const LoopRowIcon(icon: 'shield'),
+              title: '安全中心',
+              // The security projection reports every method as unavailable
+              // while the device holds Privy MFA of its own (walkthrough ·
+              // h17). Until the two agree this row states no posture.
+              onTap: () => widget.onNavigate('security'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-notifications'),
+              leading: const LoopRowIcon(icon: 'bell'),
+              title: '通知设置',
+              onTap: () => widget.onNavigate('notif-settings'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -705,6 +1277,22 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final counts = ref.watch(connectionsControllerProvider).counts;
     if (counts == null) return null;
     return '关注 ${counts.following} · 粉丝 ${counts.followers}';
+  }
+}
+
+/// `LOOP 1.2.3` at the foot of `settings`, read from the device build.
+class ProfileVersionFootnote extends ConsumerWidget {
+  const ProfileVersionFootnote({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final version = ref
+        .watch(appConfigProvider)
+        .loopClientVersionForCurrentBuild;
+    return LoopFlatFootnote(
+      version.isEmpty ? 'LOOP' : 'LOOP $version',
+      key: const ValueKey<String>('profile-version'),
+    );
   }
 }
 
@@ -990,90 +1578,257 @@ class _ProfileApplicationNotificationsState
   }
 }
 
-/// The person at the top of 我 (decision 0126, OKX 资产页): avatar 56, the
-/// name at 18 bold, the LOOP ID at 13 grey with its copy glyph, and one edit
-/// glyph on the right. Sharing moved to the first round key under it.
-class _ProfileIdentityCard extends ConsumerWidget {
-  const _ProfileIdentityCard({required this.resource, required this.onEdit});
+/// The person on 我 (decision 0175, docs/35 `.me-head` … `.me-meta`).
+///
+/// Avatar 72 with the edit corner, the outlined 奖励 button, the name, the
+/// LOOP ID, the bio (or the link that adds one), the follow counts and the
+/// one metadata fact LOOP has a source for: the month the LOOP ID was
+/// activated. Holding time and trade count have no source and are not drawn.
+class _ProfileIdentityCard extends StatelessWidget {
+  const _ProfileIdentityCard({
+    required this.resource,
+    required this.counts,
+    required this.onEdit,
+    required this.onOpenRewards,
+    required this.onOpenConnections,
+  });
 
   final ProfileResource resource;
+
+  /// `null` until the connections read answered; the line is then absent.
+  final ConnectionCounts? counts;
   final VoidCallback onEdit;
+  final VoidCallback onOpenRewards;
+  final VoidCallback onOpenConnections;
+
+  /// `2026 年 10 月加入`, in the device's local calendar.
+  static String joinedLine(DateTime activatedAt) {
+    final local = activatedAt.toLocal();
+    return '${local.year} 年 ${local.month} 月加入';
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final alias = resource.values.alias;
     final loopId = resource.loopId;
-    final idStyle = LoopTypography.figure(
-      13,
-      weight: FontWeight.w400,
-      color: LoopColors.text3,
-    );
-    return Padding(
+    final bio = resource.values.bio;
+    final activatedAt = resource.activatedAt;
+    final idStyle = LoopTypography.caption(13, color: LoopColors.text2);
+    final counts = this.counts;
+    return Column(
       key: const ValueKey<String>('profile-identity-card'),
-      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 8, 6, 16),
-      child: Row(
-        children: <Widget>[
-          GestureDetector(
-            onTap: onEdit,
-            child: LoopProfileAvatar(
-              avatarRef: resource.values.avatarRef,
-              alias: alias,
-              size: 56,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  alias ?? '尚未设置别名',
-                  key: const ValueKey<String>('profile-alias'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.heading(18, weight: FontWeight.w700),
-                ),
-                const SizedBox(height: 2),
-                // Decision 0104 (S97b layout): the copy glyph follows the ID
-                // it copies; an ID this device could not read offers nothing
-                // to copy.
-                if (loopId != null)
-                  LoopIdCopyLine(
-                    loopId: loopId,
-                    style: idStyle,
-                    textKey: const ValueKey<String>('profile-loop-id'),
-                    copyKey: const ValueKey<String>('profile-copy-loop-id'),
-                  )
-                else
-                  Text(
-                    'LOOP ID 不可读',
-                    key: const ValueKey<String>('profile-loop-id'),
-                    style: idStyle,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 8, 16, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Semantics(
+                key: const ValueKey<String>('profile-open-edit'),
+                button: true,
+                label: '编辑头像与资料',
+                excludeSemantics: true,
+                child: LoopPressable(
+                  onTap: onEdit,
+                  child: SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        LoopProfileAvatar(
+                          avatarRef: resource.values.avatarRef,
+                          alias: alias,
+                        ),
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Container(
+                            key: const ValueKey<String>('profile-avatar-edit'),
+                            width: 22,
+                            height: 22,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: LoopColors.chalk,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.edit_outlined,
+                              size: 12,
+                              color: LoopColors.ink,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-              ],
-            ),
+                ),
+              ),
+              const Spacer(),
+              LoopButton(
+                key: const ValueKey<String>('profile-open-rewards'),
+                label: '奖励',
+                icon: 'parachute',
+                onPressed: onOpenRewards,
+              ),
+            ],
           ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 12, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                alias ?? '尚未设置别名',
+                key: const ValueKey<String>('profile-alias'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.displaySm.copyWith(color: LoopColors.chalk),
+              ),
+              const SizedBox(height: 2),
+              // Decision 0104 (S97b layout): the copy glyph follows the ID it
+              // copies; an ID this device could not read offers nothing.
+              if (loopId != null)
+                LoopIdCopyLine(
+                  loopId: loopId,
+                  style: idStyle,
+                  textKey: const ValueKey<String>('profile-loop-id'),
+                  copyKey: const ValueKey<String>('profile-copy-loop-id'),
+                )
+              else
+                Text(
+                  'LOOP ID 不可读',
+                  key: const ValueKey<String>('profile-loop-id'),
+                  style: idStyle,
+                ),
+            ],
+          ),
+        ),
+        if (bio != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 16, 0),
+            child: Text(
+              bio,
+              key: const ValueKey<String>('profile-bio'),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.body.copyWith(color: LoopColors.chalk),
+            ),
+          )
+        else
           Semantics(
-            key: const ValueKey<String>('profile-open-edit'),
             button: true,
-            label: '编辑资料',
+            label: '添加个人简介',
             excludeSemantics: true,
-            child: InkWell(
+            child: LoopPressable(
+              key: const ValueKey<String>('profile-add-bio'),
               onTap: onEdit,
-              customBorder: const CircleBorder(),
-              child: const SizedBox(
-                width: LoopTouch.minimum,
-                height: LoopTouch.minimum,
-                child: Icon(
-                  Icons.edit_outlined,
-                  size: 20,
-                  color: LoopColors.chalk,
+              scale: false,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+                alignment: AlignmentDirectional.centerStart,
+                padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 16, 0),
+                child: Text(
+                  '＋ 添加个人简介',
+                  style: LoopTypography.title(14, color: LoopColors.lime),
                 ),
               ),
             ),
           ),
-        ],
+        if (counts != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
+            child: Row(
+              children: <Widget>[
+                _ProfileCountLink(
+                  key: const ValueKey<String>('profile-following-count'),
+                  figure: counts.following,
+                  label: '已关注',
+                  onTap: onOpenConnections,
+                ),
+                _ProfileCountLink(
+                  key: const ValueKey<String>('profile-followers-count'),
+                  figure: counts.followers,
+                  label: '粉丝',
+                  onTap: onOpenConnections,
+                ),
+              ],
+            ),
+          ),
+        Container(
+          key: const ValueKey<String>('profile-meta'),
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 16, 14),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: LoopColors.line)),
+          ),
+          child: activatedAt == null
+              ? const SizedBox.shrink()
+              : Row(
+                  children: <Widget>[
+                    const LoopIcon('id', size: 14, color: LoopColors.text3),
+                    const SizedBox(width: 6),
+                    Text(
+                      joinedLine(activatedAt),
+                      key: const ValueKey<String>('profile-joined'),
+                      style: LoopType.caption.copyWith(color: LoopColors.text3),
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// `<b>0</b>已关注` — one count that opens 关注与粉丝.
+class _ProfileCountLink extends StatelessWidget {
+  const _ProfileCountLink({
+    required this.figure,
+    required this.label,
+    required this.onTap,
+    super.key,
+  });
+
+  final int figure;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$figure $label',
+      excludeSemantics: true,
+      child: LoopPressable(
+        onTap: onTap,
+        scale: false,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  '$figure',
+                  style: LoopTypography.withWeight(
+                    LoopType.figure,
+                    FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: LoopTypography.caption(13, color: LoopColors.text2),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

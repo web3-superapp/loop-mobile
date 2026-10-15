@@ -35,18 +35,20 @@ void main() {
 
   group('退出登录 (M14, m15)', () {
     testWidgets(
-      '我: the tap asks first; cancel leaves, confirm signs out once',
+      '设置: the tap asks first; cancel leaves, confirm signs out once',
       (tester) async {
         var signedOut = 0;
         final release = Completer<void>();
+        // Decision 0175: the control moved from 我 to 设置, behind the gear.
         await _pumpProfile(
           tester,
+          surface: 'settings',
           onSignOut: () async {
             signedOut += 1;
             await release.future;
           },
         );
-        final button = find.byKey(const ValueKey<String>('profile-sign-out'));
+        final button = find.byKey(const ValueKey<String>('settings-sign-out'));
         await tester.scrollUntilVisible(
           button,
           240,
@@ -89,17 +91,17 @@ void main() {
       },
     );
 
-    testWidgets('我 and 设置 draw the same control', (tester) async {
+    testWidgets('我 draws no second control; 设置 holds the one', (tester) async {
+      // Decision 0175: 我 is the fomo layout and its gear opens 设置, where
+      // the one confirmed 退出登录 stands.
       await _pumpProfile(tester, onSignOut: () async {});
-      final profile = find.byKey(const ValueKey<String>('profile-sign-out'));
-      await tester.scrollUntilVisible(
-        profile,
-        240,
-        scrollable: find.byType(Scrollable).first,
+      expect(
+        find.byKey(const ValueKey<String>('profile-sign-out')),
+        findsNothing,
       );
-      expect(tester.widget(profile), isA<LoopSignOutButton>());
-      final profileButton = tester.widget<LoopButton>(
-        find.descendant(of: profile, matching: find.byType(LoopButton)),
+      expect(
+        find.byKey(const ValueKey<String>('profile-open-settings')),
+        findsOneWidget,
       );
 
       await pumpS8Page(
@@ -108,13 +110,16 @@ void main() {
         settings: FakeAccountSettingsGateway(),
       );
       final settings = find.byKey(const ValueKey<String>('settings-sign-out'));
+      await tester.scrollUntilVisible(
+        settings,
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(tester.widget(settings), isA<LoopSignOutButton>());
       final settingsButton = tester.widget<LoopButton>(
         find.descendant(of: settings, matching: find.byType(LoopButton)),
       );
-      expect(settingsButton.block, profileButton.block);
-      expect(settingsButton.primary, profileButton.primary);
-      expect(settingsButton.label, profileButton.label);
+      expect(settingsButton.block, isTrue);
     });
   });
 
@@ -178,7 +183,7 @@ void main() {
       tester,
     ) async {
       final opened = <String>[];
-      await _pumpProfile(tester, onNavigate: opened.add);
+      await _pumpProfile(tester, surface: 'settings', onNavigate: opened.add);
 
       expect(
         find.byKey(const ValueKey<String>('profile-open-friends')),
@@ -452,6 +457,7 @@ void main() {
 
 Future<void> _pumpProfile(
   WidgetTester tester, {
+  String surface = 'profile',
   Future<void> Function()? onSignOut,
   ValueChanged<String>? onNavigate,
 }) async {
@@ -464,7 +470,7 @@ Future<void> _pumpProfile(
       theme: LoopTheme.dark,
       home: ProviderScope(
         child: ProfileSurfaceScreen.fromId(
-          'profile',
+          surface,
           onNavigate: onNavigate ?? (_) {},
           onSignOut: onSignOut,
         ),

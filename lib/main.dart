@@ -20,6 +20,7 @@ import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_live_v
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/core/cache/loop_owner_face.dart';
@@ -85,6 +86,7 @@ import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_camp
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_balance_visibility_store.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
 import 'package:loop_mobile/integrations/sharing/system_wallet_activity_export_sink.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
@@ -195,6 +197,10 @@ Future<void> main() async {
         // simply restarts the sequence at 02 after a cold start.
         loopOnboardingProgressStoreProvider.overrideWithValue(
           SharedPreferencesLoopOnboardingProgressStore(),
+        ),
+        // Decision 0175: 我's 「隐藏余额」 choice, one Boolean on this device.
+        loopBalanceVisibilityStoreProvider.overrideWithValue(
+          createSharedPreferencesBalanceVisibilityStore(),
         ),
         friendGatewayProvider.overrideWith(
           (ref) => ref.watch(loopProductionFriendGatewayProvider),

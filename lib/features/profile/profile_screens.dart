@@ -112,7 +112,6 @@ class ProfileSurfaceScreen extends StatelessWidget {
       'profile' => ProfileHomeScreen(
         onNavigate: navigate,
         onBack: onBack,
-        onSignOut: onSignOut,
         walletAddress: identity.address,
       ),
       'profile-edit' => ProfileEditScreen(onNavigate: navigate, onBack: onBack),

@@ -4426,13 +4426,16 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
     allowed_importer = Path(
         "lib/integrations/personalization/shared_preferences_display_store.dart"
     )
-    # Two reviewed adapters may touch device-local preferences, and no other
+    # Three reviewed adapters may touch device-local preferences, and no other
     # file may. The second one (S53) stores where the five-step account
     # opening got to; it is pinned just as narrowly by
     # `check_onboarding_sequence_contract`.
     allowed_importers = {
         allowed_importer,
         ONBOARDING_PROGRESS_STORE_OWNER,
+        # Decision 0175: 我's 「隐藏余额」 Boolean, pinned by
+        # `check_balance_visibility_store_contract`.
+        BALANCE_VISIBILITY_STORE_OWNER,
     }
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -4761,6 +4764,128 @@ def check_onboarding_sequence_contract(root: Path) -> list[str]:
                 "the onboarding progress adapter must declare exactly one key"
             )
 
+    return errors
+
+
+def check_balance_visibility_store_contract(root: Path) -> list[str]:
+    """Decision 0175: 「隐藏余额」 is one Boolean under one exact key."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/app/loop_balance_visibility.dart": (
+                "abstract interface class LoopBalanceVisibilityStore",
+                "Future<bool?> readHideBalance()",
+                "Future<void> writeHideBalance(bool value)",
+                "class UnavailableLoopBalanceVisibilityStore",
+                "const loopBalanceVisibilityIoTimeout = Duration(seconds: 1)",
+                "final previous = _writeTail",
+            ),
+            "lib/main.dart": (
+                "loopBalanceVisibilityStoreProvider.overrideWithValue(",
+                "createSharedPreferencesBalanceVisibilityStore()",
+            ),
+            "AGENTS.md": ("`loop.display.v1.hide_balance`",),
+            "docs/product/implementation-constraints.md": (
+                "`loop.display.v1.hide_balance`",
+            ),
+            "docs/decisions/0175-profile-home-fomo-layout.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+            ),
+            "test/s187_profile_home_test.dart": (
+                "hide-balance adapter uses one namespaced Boolean key",
+                "a stored hidden choice masks the net worth after reconstruction",
+                "a failed read starts shown and stays run-local",
+            ),
+        },
+    )
+    adapter_path = root / BALANCE_VISIBILITY_STORE_OWNER
+    if not adapter_path.is_file():
+        errors.append(f"{BALANCE_VISIBILITY_STORE_OWNER} must exist (decision 0175)")
+        return errors
+    adapter_source = strip_dart_comments(read_text(adapter_path))
+    adapter = strip_dart_comments_and_strings(adapter_source)
+    imports = re.findall(
+        r"^import\s+['\"]([^'\"]+)['\"](?:\s+show\s+[^;]+)?\s*;",
+        adapter_source,
+        flags=re.MULTILINE,
+    )
+    if imports != [
+        "package:flutter/foundation.dart",
+        "package:loop_mobile/app/loop_balance_visibility.dart",
+        "package:shared_preferences/shared_preferences.dart",
+    ]:
+        errors.append(
+            "the balance visibility adapter imports only Flutter annotations, "
+            "its narrow port, and Shared Preferences"
+        )
+    if (
+        "static const String hideBalanceKey = "
+        f"'{BALANCE_VISIBILITY_KEY}';"
+    ) not in adapter_source:
+        errors.append(
+            "the balance visibility adapter must retain its exact namespaced key"
+        )
+    if len(re.findall(r"\bstatic\s+const\s+String\s+\w+\s*=", adapter)) != 1:
+        errors.append("the balance visibility adapter must declare exactly one key")
+    adapter_without_imports = re.sub(
+        r"^import\s+['\"][^'\"]+['\"](?:\s+show\s+[^;]+)?\s*;\s*",
+        "",
+        adapter_source,
+        flags=re.MULTILINE,
+    )
+    literals = [
+        single or double
+        for single, double in re.findall(
+            r"'([^'\\]*(?:\\.[^'\\]*)*)'|\"([^\"\\]*(?:\\.[^\"\\]*)*)\"",
+            adapter_without_imports,
+        )
+    ]
+    if literals != [BALANCE_VISIBILITY_KEY]:
+        errors.append(
+            "the balance visibility adapter may contain only its exact key literal"
+        )
+    if re.findall(r"\bpreferences\.(\w+)\b", adapter) != ["getBool", "setBool"]:
+        errors.append(
+            "the balance visibility adapter may call only SharedPreferencesAsync "
+            "getBool/setBool"
+        )
+    if len(re.findall(r"\bSharedPreferencesAsync\s*\(\s*\)", adapter)) != 1:
+        errors.append(
+            "the balance visibility adapter must create exactly one "
+            "SharedPreferencesAsync adapter"
+        )
+    if len(re.findall(r"\b_readBool\s*\(\s*hideBalanceKey\s*\)", adapter)) != 1 or len(
+        re.findall(r"\b_writeBool\s*\(\s*hideBalanceKey\s*,\s*value\s*\)", adapter)
+    ) != 1:
+        errors.append(
+            "the balance visibility adapter must read and write only its exact key"
+        )
+    if re.search(
+        r"\b(?:clear|remove|getAll|getKeys|getString|setString|getInt|setInt|getDouble|setDouble|getStringList|setStringList)\s*\(",
+        adapter,
+    ):
+        errors.append(
+            "the balance visibility adapter may only read or write its one Boolean"
+        )
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in lib_root.rglob("*.dart"):
+            relative = path.relative_to(root)
+            if relative in (BALANCE_VISIBILITY_STORE_OWNER, Path("lib/main.dart")):
+                continue
+            source = strip_dart_comments_and_strings(read_text(path))
+            if (
+                "SharedPreferencesLoopBalanceVisibilityStore" in source
+                or "createSharedPreferencesBalanceVisibilityStore" in source
+            ):
+                errors.append(
+                    "the balance visibility adapter may only be composed by "
+                    "lib/main.dart: " + str(relative)
+                )
     return errors
 
 
@@ -5163,6 +5288,14 @@ V2_SESSION_TEST_MARKERS = {
 ONBOARDING_PROGRESS_STORE_OWNER = Path(
     "lib/integrations/personalization/shared_preferences_onboarding_store.dart"
 )
+# Decision 0175: the third device-local preference adapter keeps one
+# installation-scoped display Boolean — whether 我 masks its net worth and
+# holdings — under one exact key. It is never a figure, a wallet or an
+# account resource.
+BALANCE_VISIBILITY_STORE_OWNER = Path(
+    "lib/integrations/personalization/shared_preferences_balance_visibility_store.dart"
+)
+BALANCE_VISIBILITY_KEY = "loop.display.v1.hide_balance"
 V2_SECURE_STORAGE_OWNER = Path(
     "lib/integrations/backend/v2/loop_v2_session_store.dart"
 )
@@ -15269,6 +15402,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_account_mfa_contract(root))
     errors.extend(check_local_display_preferences_contract(root))
     errors.extend(check_onboarding_sequence_contract(root))
+    errors.extend(check_balance_visibility_store_contract(root))
     errors.extend(check_build_profile_configuration_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_stream_token_client_contract(root))

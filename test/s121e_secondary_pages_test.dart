@@ -144,27 +144,44 @@ void main() {
   });
 
   group('我', () {
-    testWidgets('header, three round keys, three sections, the version', (
-      tester,
-    ) async {
+    testWidgets('我: the fomo header, no folio, the gear to 设置', (tester) async {
+      // Decision 0175: 我 is docs/35's 「我的」 — the capsule and the gear,
+      // avatar 72, the name in the 24 display step, the LOOP ID at 13.
       final destinations = <String>[];
       await _pumpProfile(tester, 'profile', onNavigate: destinations.add);
 
       expect(find.byType(LoopFolioPrimary), findsNothing);
       expect(find.text('PUBLIC PROFILE'), findsNothing);
-      final header = find.byKey(
-        const ValueKey<String>('profile-identity-card'),
+      expect(
+        find.byKey(const ValueKey<String>('profile-identity-card')),
+        findsOneWidget,
       );
-      expect(header, findsOneWidget);
-      expect(tester.widget<Text>(find.text('Voyager_7')).style?.fontSize, 18);
+      expect(tester.widget<Text>(find.text('Voyager_7')).style?.fontSize, 24);
       expect(tester.widget<Text>(find.text(_loopId)).style?.fontSize, 13);
       expect(
         find.byKey(const ValueKey<String>('profile-open-edit')),
         findsOneWidget,
       );
+      // The round keys and the entry groups moved behind the gear.
+      expect(
+        find.byKey(const ValueKey<String>('profile-round-keys')),
+        findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('profile-open-settings')),
+      );
+      expect(destinations.last, 'settings');
+      _expectCleanCopy(tester);
+    });
 
-      // 56 Lime discs, in order, under the header. Decision 0133: 好友
-      // opened 关注与粉丝, a row below, under a second name, and is gone.
+    testWidgets('设置: three round keys, the entry sections, the version', (
+      tester,
+    ) async {
+      final destinations = <String>[];
+      await _pumpProfile(tester, 'settings', onNavigate: destinations.add);
+
+      // 56 Lime discs, in order, at the head of the page. Decision 0133:
+      // 好友 opened 关注与粉丝, a row below, under a second name, and is gone.
       final keys = <String>[
         'profile-share-loop-id',
         'profile-open-scan',
@@ -174,12 +191,15 @@ void main() {
         find.byKey(const ValueKey<String>('profile-open-friends')),
         findsNothing,
       );
+      final firstRow = find.byKey(
+        const ValueKey<String>('profile-open-wallets'),
+      );
       double? previous;
       for (final key in keys) {
         final finder = find.byKey(ValueKey<String>(key));
         expect(finder, findsOneWidget, reason: key);
         final rect = tester.getRect(finder);
-        expect(rect.top, greaterThanOrEqualTo(tester.getRect(header).bottom));
+        expect(rect.bottom, lessThanOrEqualTo(tester.getRect(firstRow).top));
         if (previous != null) expect(rect.left, greaterThan(previous));
         previous = rect.left;
         final disc = tester.widget<Container>(
@@ -204,12 +224,11 @@ void main() {
       }
 
       expect(_labels(tester), containsAllInOrder(<String>['账号', '资产与挖矿']));
-      // 挖矿资产 / 奖励 / 规则 sit under 资产与挖矿.
-      final miningTop = tester.getTopLeft(find.text('资产与挖矿')).dy;
       for (final key in <String>[
         'profile-open-mining-assets',
         'profile-open-mining-rewards',
         'profile-open-mining-rules',
+        'profile-open-security',
       ]) {
         await tester.scrollUntilVisible(
           find.byKey(ValueKey<String>(key)),
@@ -218,7 +237,7 @@ void main() {
         );
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
       }
-      expect(miningTop, isNotNull);
+      expect(_labels(tester), contains('隐私与安全'));
 
       final version = find.byKey(const ValueKey<String>('profile-version'));
       await tester.scrollUntilVisible(
@@ -227,7 +246,6 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      expect(_labels(tester), contains('设置'));
       final versionText = tester.widget<Text>(
         find.descendant(of: version, matching: find.byType(Text)),
       );
@@ -264,8 +282,9 @@ void main() {
           find.byKey(const ValueKey<String>('profile-identity-card')),
           findsNothing,
         );
+        // The capsule and the gear stand whatever the profile answered.
         expect(
-          find.byKey(const ValueKey<String>('profile-round-keys')),
+          find.byKey(const ValueKey<String>('profile-top-row')),
           findsOneWidget,
         );
       });

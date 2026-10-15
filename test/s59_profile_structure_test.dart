@@ -121,7 +121,13 @@ void main() {
       );
       expect(find.byType(LoopFolioPrimary), findsNothing);
       // Decision 0133: the 账户 group repeated rows 我 and 钱包 already carry.
-      expect(_labels(tester), <String>['通用', '关于']);
+      // Decision 0175: 我's entries stand at the head of this page, behind
+      // 我's gear, once each; 通用 and 关于 follow them.
+      expect(
+        _labels(tester),
+        containsAllInOrder(<String>['账号', '资产与挖矿', '隐私与安全', '通用', '关于']),
+      );
+      expect(_labels(tester).where((label) => label == '通用'), hasLength(1));
 
       // §D+ #11: 语言 reads its value, not a sentence about why it is fixed;
       // decision 0133 (m8) makes it a read-only value with one shared note.

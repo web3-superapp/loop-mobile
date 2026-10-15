@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/profile/settings/settings_controller.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
 import 'package:loop_mobile/features/profile/sign_out_button.dart';
@@ -17,7 +18,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
-/// `settings` · the account resource plus the device-local display switch.
+/// `settings` · the account's entries (decision 0175), the account resource
+/// and the device-local display switch.
 ///
 /// Both account values are fixed constants published by the server, so they
 /// are read-only here. `reduceMotion` never leaves the device, and the
@@ -95,6 +97,9 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
         // title as its own heading — 「设置」 above 「设置」 (audit 2026-09-21
         // §D+ #13).
         sections: <Widget>[
+          // Decision 0175: 我 became the fomo layout, and every entry it
+          // carried stands here, behind its gear — same keys, same pages.
+          ProfileAccountEntries(onNavigate: widget.onNavigate),
           const LoopLabel('通用'),
           if (blocked)
             LoopUnavailableLine(
@@ -236,9 +241,10 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                     .retryPersistence,
               ),
             ),
-          // Decision 0133 (audit m9): 隐私中心, 安全中心 and 通知 are rows on 我,
-          // one level up, and 网络 is a row on 钱包. The 账户 group repeated
-          // all four; a destination has one entry per hub.
+          // Decision 0133 (audit m9): a destination has one entry per hub.
+          // 隐私中心, 安全中心 and 通知 are rows of [ProfileAccountEntries]
+          // above (decision 0175 moved them here from 我), and 网络 is a row
+          // on 钱包.
           const LoopLabel('关于'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
@@ -272,6 +278,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               key: const ValueKey<String>('settings-sign-out'),
               onSignOut: widget.onSignOut!,
             ),
+          const ProfileVersionFootnote(),
           const SizedBox(height: 20),
         ],
       ),

@@ -73,7 +73,8 @@ Future<void> _pumpProfile(
 }) async {
   await pumpCommunityPage(
     tester,
-    ProfileSurfaceScreen.fromId('profile', onNavigate: onNavigate ?? (_) {}),
+    // Decision 0175: 我的社区 hangs on 设置, behind 我's gear.
+    ProfileSurfaceScreen.fromId('settings', onNavigate: onNavigate ?? (_) {}),
     community: community,
     meta: meta,
   );

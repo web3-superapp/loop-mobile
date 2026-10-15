@@ -150,7 +150,12 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey<String>('chat-open-profile')));
     await tester.pumpAndSettle();
-    final signOut = find.byKey(const ValueKey<String>('profile-sign-out'));
+    // Decision 0175: 退出登录 lives behind 我's gear, on 设置.
+    await tester.tap(
+      find.byKey(const ValueKey<String>('profile-open-settings')),
+    );
+    await tester.pumpAndSettle();
+    final signOut = find.byKey(const ValueKey<String>('settings-sign-out'));
     await tester.scrollUntilVisible(signOut, 240);
     // scrollUntilVisible stops as soon as the row is built; on a taller page
     // that can still leave it under the viewport edge.

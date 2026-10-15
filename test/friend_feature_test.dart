@@ -921,15 +921,20 @@ void main() {
         MaterialApp(
           theme: LoopTheme.dark,
           home: ProviderScope(
+            // Decision 0175: the row hangs on 设置, behind 我's gear.
             child: ProfileSurfaceScreen.fromId(
-              'profile',
+              'settings',
               onNavigate: (value) => destination = value,
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
+      await tester.scrollUntilVisible(
+        find.text('陌生人请求'),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
       // Decision 0133: the row carries the name of the page it opens.
       await tester.ensureVisible(find.text('陌生人请求'));

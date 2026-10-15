@@ -143,16 +143,15 @@ void main() {
       expect(find.text('已复制 LOOP ID'), findsOneWidget);
     });
 
-    // Decision 0126: 分享名片 is the first of 我's four 56 Lime round keys,
-    // under the identity header, not a glyph in a card's corner.
-    testWidgets('分享名片 is the first 56 round key under the header', (
+    // Decision 0126: 分享名片 is the first of the 56 Lime round keys, not a
+    // glyph in a card's corner. Decision 0175 moved the keys from 我 to the
+    // head of 设置, behind 我's gear, above the 账号 rows.
+    testWidgets('分享名片 is the first 56 round key at the head of 设置', (
       tester,
     ) async {
-      await _pumpProfile(tester, loopId: _ownId);
+      await _pumpProfile(tester, loopId: _ownId, surface: 'settings');
 
-      final header = find.byKey(
-        const ValueKey<String>('profile-identity-card'),
-      );
+      final header = find.byKey(const ValueKey<String>('profile-open-wallets'));
       final share = find.byKey(const ValueKey<String>('profile-share-loop-id'));
       expect(
         tester.getSemantics(share),
@@ -175,8 +174,8 @@ void main() {
       );
       expect(tester.getSize(disc), const Size(56, 56));
       expect(
-        tester.getRect(share).top,
-        greaterThanOrEqualTo(tester.getRect(header).bottom),
+        tester.getRect(share).bottom,
+        lessThanOrEqualTo(tester.getRect(header).top),
       );
       // The outlined 复制 / 分享 buttons under the ID are gone.
       expect(find.text('复制'), findsNothing);
@@ -189,7 +188,7 @@ void main() {
       tester,
     ) async {
       final clipboard = _mockClipboard(tester);
-      await _pumpProfile(tester, loopId: _ownId);
+      await _pumpProfile(tester, loopId: _ownId, surface: 'settings');
 
       await _tap(
         tester,
@@ -227,7 +226,8 @@ void main() {
         find.byKey(const ValueKey<String>('profile-copy-loop-id')),
         findsNothing,
       );
-      // The key keeps its place and says why it cannot share.
+      // The key keeps its place on 设置 and says why it cannot share.
+      await _pumpProfile(tester, loopId: null, surface: 'settings');
       expect(
         tester.getSemantics(
           find.byKey(const ValueKey<String>('profile-share-loop-id')),
@@ -509,6 +509,7 @@ _Clipboard _mockClipboard(WidgetTester tester) {
 Future<void> _pumpProfile(
   WidgetTester tester, {
   required String? loopId,
+  String surface = 'profile',
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(900, 1800);
@@ -532,7 +533,7 @@ Future<void> _pumpProfile(
         theme: LoopTheme.dark,
         builder: (context, child) => LoopToastHost(child: child!),
         home: ProfileSurfaceScreen.fromId(
-          'profile',
+          surface,
           identity: const ProfileIdentity(),
         ),
       ),
