@@ -22,7 +22,10 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -294,27 +297,28 @@ class _HolderDistributionScreenState
           // `.stat-grid`: the prototype's two cells. The concentration half
           // has no source in this step and says so in the figure's place,
           // which keeps the grid's shape without printing a zero.
-          MarketStatGrid(
+          // Decision 0171 (docs/33 L6): the shared `LoopStatGrid`, not a
+          // one-row copy of it.
+          LoopStatGrid(
             key: const ValueKey<String>('token-holders-stats'),
-            cells: <MarketStatCell>[
+            stats: <LoopStat>[
               MarketStatCell.fact(
                 '持有人总数',
                 holders.holderCount,
                 formatter: (value) =>
                     loopFormatDecimal(value, maxFractionDigits: 0),
-              ),
+              ).toStat(),
               MarketStatCell(
                 label: 'Top 10 集中度',
                 value: loopReasonCodeSummaryText(
                   holders.distribution.reasonCode,
                 ),
                 available: false,
-              ),
+              ).toStat(),
             ],
           ),
           const LoopLabel('持有人总数'),
-          LoopSurfaceCard(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          LoopRecordCard(
             child: LoopFactLine(
               label: '持有人总数',
               fact: holders.holderCount,
@@ -324,10 +328,10 @@ class _HolderDistributionScreenState
             ),
           ),
           const LoopLabel('分布'),
-          LoopUnavailableCard.fact(
+          _MarketUnavailableLine(
             key: const ValueKey<String>('token-holders-distribution'),
             label: 'Top 持有人、集中度与聚类标注不可用',
-            fact: holders.distribution,
+            reasonCode: holders.distribution.reasonCode,
           ),
           const LoopNotice(
             key: ValueKey<String>('token-holders-notice'),
@@ -429,7 +433,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         else
           ...switch (block) {
             MarketTradesUnavailable(reasonCode: final reasonCode) => <Widget>[
-              LoopUnavailableCard(
+              _MarketUnavailableLine(
                 key: const ValueKey<String>('token-trades-unavailable'),
                 label: '成交记录不可用',
                 reasonCode: reasonCode,
@@ -509,16 +513,18 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         ],
       ),
       if (_segment == 2)
-        const LoopUnavailableCard(
+        const _MarketUnavailableLine(
           key: ValueKey<String>('token-trades-smart-money'),
           label: '聪明钱筛选不可用',
           reasonCode: 'SMART_MONEY_RUNTIME_DEFERRED',
         )
       else if (visible.isEmpty)
-        LoopEmpty(
+        LoopEmptyState(
           key: const ValueKey<String>('token-trades-empty'),
-          message: _segment == 1 ? '这一页没有大单' : '这一页没有成交',
-          reason: _segment == 1
+          illustration: LoopIllustration.history,
+          compact: true,
+          title: _segment == 1 ? '这一页没有大单' : '这一页没有成交',
+          message: _segment == 1
               ? '大单是按成交金额在本机筛出来的，不是官方标注。'
               : '索引器已经读到这个区间，但其中没有成交。',
         )
@@ -679,7 +685,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
             // No provider means the whole page is unavailable, with the
             // server's reason — never an empty list.
             MarketNewPairsUnavailable(reasonCode: final reasonCode) => <Widget>[
-              LoopUnavailableCard(
+              _MarketUnavailableLine(
                 key: const ValueKey<String>('new-pairs-unavailable'),
                 label: '新币发现不可用',
                 reasonCode: reasonCode,
@@ -687,10 +693,12 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
             ],
             MarketNewPairsAvailable() => <Widget>[
               if (block.items.isEmpty)
-                const LoopEmpty(
+                const LoopEmptyState(
                   key: ValueKey<String>('new-pairs-empty'),
-                  message: '当前没有新的池',
-                  reason: '这是数据本身的结果，不是筛选后的结论。',
+                  illustration: LoopIllustration.search,
+                  compact: true,
+                  title: '当前没有新的池',
+                  message: '这是数据本身的结果，不是筛选后的结论。',
                 )
               else
                 LoopRecordGroup(
@@ -732,10 +740,10 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
           },
         if (page != null) ...<Widget>[
           const LoopLabel('风险预筛'),
-          LoopUnavailableCard.fact(
+          _MarketUnavailableLine(
             key: const ValueKey<String>('new-pairs-risk-screening'),
             label: '风险预筛不可用',
-            fact: page.riskScreening,
+            reasonCode: page.riskScreening.reasonCode,
           ),
         ],
         const LoopNotice(
@@ -872,18 +880,20 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
           // both state the server's own reason where its rows would be, so
           // the page keeps the shape it will have once the data exists.
           const LoopLabel('关注地址'),
-          LoopUnavailableCard.fact(
+          _MarketUnavailableLine(
             key: const ValueKey<String>('smart-money-unavailable'),
             label: '关注地址不可用',
-            fact: fact,
+            reasonCode: fact.reasonCode,
           ),
           const LoopLabel('最近动向'),
           // The server's own sentence is stated once, by the block above.
           // This one says what it depends on instead of repeating it.
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('smart-money-moves-unavailable'),
-            message: '还没有可列的动向',
-            reason: '动向来自关注地址，而关注地址还没有开放。',
+            illustration: LoopIllustration.rank,
+            compact: true,
+            title: '还没有可列的动向',
+            message: '动向来自关注地址，而关注地址还没有开放。',
           ),
         ],
         const LoopNotice(
@@ -894,4 +904,27 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
       ],
     );
   }
+}
+
+/// One block LOOP could not read, said in one weak line (decision 0171,
+/// docs/33 L6): what is missing, then the server's own reason. It replaces
+/// the block-sized `LoopUnavailableCard` strip on the data-dense market
+/// pages; it never renders a figure, a zero or a dash.
+class _MarketUnavailableLine extends StatelessWidget {
+  const _MarketUnavailableLine({
+    required this.label,
+    required this.reasonCode,
+    super.key,
+  });
+
+  final String label;
+
+  /// `null` when the server stated none; the neutral sentence is used then.
+  final String? reasonCode;
+
+  @override
+  Widget build(BuildContext context) => LoopInlineUnavailable(
+    message: '$label · ${loopReasonCodeText(reasonCode)}',
+    maxLines: 3,
+  );
 }

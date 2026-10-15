@@ -655,7 +655,7 @@ class _AssetField extends StatelessWidget {
             Text(
               balanceLine,
               key: ValueKey<String>('$keyPrefix-balance'),
-              style: Theme.of(context).textTheme.bodySmall,
+              style: LoopType.caption,
             ),
           ],
         ),

@@ -524,15 +524,9 @@ class _SecurityMethodGroup extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(
-                            item.id.label,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
+                          Text(item.id.label, style: LoopType.title),
                           const SizedBox(height: 3),
-                          Text(
-                            item.id.description,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
+                          Text(item.id.description, style: LoopType.bodySm),
                         ],
                       ),
                     ),

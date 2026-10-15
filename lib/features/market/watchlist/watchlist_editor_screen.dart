@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -62,16 +63,25 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
     LoopHaptics.medium();
     controller.removeAt(index);
     _undoTimer?.cancel();
-    setState(() {
-      _removal = _WatchlistRemoval(
-        groupKey: group.key,
-        index: index,
-        item: item,
-      );
-    });
-    _undoTimer = Timer(undoWindow, () {
-      if (mounted) setState(() => _removal = null);
-    });
+    // The staged removal is state the toast's 撤销 reads, not something the
+    // page draws, so it changes without a rebuild.
+    _removal = _WatchlistRemoval(groupKey: group.key, index: index, item: item);
+    _undoTimer = Timer(undoWindow, () => _removal = null);
+    // Decision 0171 (docs/33 M11): the shared toast with its one action,
+    // for exactly the undo window.
+    LoopToast.show(
+      context,
+      toastKey: const ValueKey<String>('watchlist-undo-toast'),
+      message: '已移除 ${item.displayName}，保存后生效',
+      duration: undoWindow,
+      action: LoopToastAction(
+        key: const ValueKey<String>('watchlist-undo'),
+        label: '撤销',
+        onPressed: () {
+          if (mounted) _undo(controller);
+        },
+      ),
+    );
   }
 
   void _undo(WatchlistEditorController controller) {
@@ -83,7 +93,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
       index: removal.index,
       item: removal.item,
     );
-    setState(() => _removal = null);
+    _removal = null;
   }
 
   void _open(String location) {
@@ -130,7 +140,6 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
     }
     final controller = ref.read(watchlistEditorControllerProvider.notifier);
     final group = state.selectedGroup;
-    final removal = _removal;
 
     final page = LoopDashboardPage(
       key: const ValueKey<String>('watchlist-editor-screen'),
@@ -370,22 +379,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
         ],
       ],
     );
-    return Stack(
-      children: <Widget>[
-        Positioned.fill(child: page),
-        if (removal != null)
-          Positioned(
-            left: LoopSpacing.page,
-            right: LoopSpacing.page,
-            bottom: MediaQuery.paddingOf(context).bottom + LoopSpacing.page,
-            child: _WatchlistUndoToast(
-              key: const ValueKey<String>('watchlist-undo-toast'),
-              message: '已移除 ${removal.item.displayName}，保存后生效',
-              onUndo: () => _undo(controller),
-            ),
-          ),
-      ],
-    );
+    return page;
   }
 
   /// Asks for a name, then adds the group to the draft.
@@ -483,7 +477,7 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
               Text(
                 watchlistGroupNameIssueText(issue),
                 key: const ValueKey<String>('watchlist-group-name-error'),
-                style: Theme.of(context).textTheme.labelMedium,
+                style: LoopType.label,
               ),
             ],
             const SizedBox(height: 16),
@@ -505,7 +499,7 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
             const SizedBox(height: 10),
             Text(
               '分组保存后才会生效，最多 $watchlistMaxGroups 个。',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: LoopType.caption,
             ),
           ],
         ),
@@ -531,16 +525,16 @@ class _ReorderableWatchlist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      // `.row` inside one container: the prototype's rows share a card and a
-      // hairline. LOOP gave every row its own card with air between them, and
-      // the list lost its rhythm (audit 2026-09-21 §G.6).
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: LoopColors.chalk.withValues(alpha: 0.045),
-          borderRadius: LoopRadius.card,
-        ),
+    // `.row` inside one `.record-card`: the prototype's rows share a card
+    // and a hairline. LOOP gave every row its own card with air between
+    // them, and the list lost its rhythm (audit 2026-09-21 §G.6). Decision
+    // 0171 (docs/33 M11): the shared record card, rows edge to edge, clipped
+    // to its radius so a swipe's ground stays inside the card.
+    return LoopRecordCard(
+      key: const ValueKey<String>('watchlist-record-card'),
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: LoopRadius.card,
         child: ReorderableListView.builder(
           key: const ValueKey<String>('watchlist-reorderable'),
           shrinkWrap: true,
@@ -574,11 +568,7 @@ class _ReorderableWatchlist extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: last
                           ? null
-                          : Border(
-                              bottom: BorderSide(
-                                color: LoopColors.chalk.withValues(alpha: 0.1),
-                              ),
-                            ),
+                          : Border(bottom: BorderSide(color: LoopColors.line)),
                     ),
                     child: Row(
                       children: <Widget>[
@@ -586,19 +576,12 @@ class _ReorderableWatchlist extends StatelessWidget {
                         // in the prototype, so it reads as something to grab.
                         ReorderableDragStartListener(
                           index: index,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: LoopGround.fillOf(context),
-                              borderRadius: BorderRadius.circular(12),
+                          child: LoopRowIcon(
+                            key: ValueKey<String>(
+                              'watchlist-drag-${item.assetId}',
                             ),
-                            child: const LoopIcon(
-                              'drag',
-                              size: 18,
-                              color: LoopColors.text2,
-                            ),
+                            icon: 'drag',
+                            size: 36,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -621,16 +604,13 @@ class _ReorderableWatchlist extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              Text(
-                                item.displayName,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
+                              Text(item.displayName, style: LoopType.title),
                               const SizedBox(height: 3),
                               Text(
                                 item.displayDetail,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall,
+                                style: LoopType.caption,
                               ),
                             ],
                           ),
@@ -654,7 +634,7 @@ class _ReorderableWatchlist extends StatelessWidget {
                                 'watchlist-remove-${item.assetId}',
                               ),
                               onTap: busy ? null : () => onRemove(index),
-                              borderRadius: BorderRadius.circular(9),
+                              borderRadius: LoopRadius.inner,
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 4,
@@ -683,13 +663,17 @@ class _ReorderableWatchlist extends StatelessWidget {
   }
 }
 
-/// What a swipe reveals under a row: the word, on the fall colour.
+/// What a swipe reveals under a row: the word in Chalk on Card2.
+///
+/// Decision 0171 (docs/33 M11): `fall` is a price colour (0117); a staged
+/// removal is not a price move, and nothing has left the server yet.
 class _WatchlistSwipeBackground extends StatelessWidget {
   const _WatchlistSwipeBackground();
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: LoopColors.fall,
+    key: const ValueKey<String>('watchlist-swipe-background'),
+    color: LoopColors.card2,
     child: Align(
       alignment: Alignment.centerRight,
       child: Padding(
@@ -721,101 +705,6 @@ final class _WatchlistRemoval {
   final WatchlistItem item;
 }
 
-/// The toast after a removal, with the one thing it offers: 撤销.
-///
-/// It is the toast surface (Chalk, Lime bar) with a real button, because the
-/// shared toast host is deliberately not interactive.
-class _WatchlistUndoToast extends StatelessWidget {
-  const _WatchlistUndoToast({
-    required this.message,
-    required this.onUndo,
-    super.key,
-  });
-
-  final String message;
-  final VoidCallback onUndo;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      liveRegion: true,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: LoopColors.chalk,
-          borderRadius: BorderRadius.all(Radius.circular(15)),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Color(0x9E050604),
-              offset: Offset(0, 14),
-              blurRadius: 38,
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Container(width: 4, color: LoopColors.lime),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 4, 0),
-                  child: Row(
-                    children: <Widget>[
-                      const LoopIcon('check', size: 15, color: LoopColors.ink),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          message,
-                          style: LoopTypography.label(
-                            12,
-                            weight: FontWeight.w700,
-                            color: LoopColors.ink,
-                          ),
-                        ),
-                      ),
-                      Material(
-                        type: MaterialType.transparency,
-                        child: InkWell(
-                          key: const ValueKey<String>('watchlist-undo'),
-                          onTap: onUndo,
-                          borderRadius: BorderRadius.circular(10),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              minWidth: LoopTouch.minimum,
-                              minHeight: LoopTouch.minimum + 4,
-                            ),
-                            child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                child: Text(
-                                  '撤销',
-                                  style: LoopTypography.label(
-                                    13,
-                                    weight: FontWeight.w700,
-                                    color: LoopColors.ink,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Names every change a reload would discard, and offers to keep them.
 class _ConflictDiff extends StatelessWidget {
   const _ConflictDiff({
@@ -842,16 +731,13 @@ class _ConflictDiff extends StatelessWidget {
             Text(
               '这份草稿与已提交的版本没有差异。',
               key: const ValueKey<String>('watchlist-conflict-no-diff'),
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: LoopType.bodySm,
             )
           else
             for (final change in changes)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Text(
-                  '· $change',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                child: Text('· $change', style: LoopType.bodySm),
               ),
           const SizedBox(height: 12),
           LoopButtonPair(

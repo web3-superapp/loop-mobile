@@ -1110,7 +1110,11 @@ class _CandleProvenance extends StatelessWidget {
   }
 }
 
-/// A 44pt toolbar control drawn as a small label.
+/// A chart toolbar switch (K线 / MA / VOL).
+///
+/// Decision 0171 (docs/33 L4): the shared quiet `.seg` — a word, and the
+/// solid dark-grey pill while it is on — instead of a hand-made r6 capsule.
+/// A screen reader hears what it switches, not the abbreviation.
 class _ChartToggle extends StatelessWidget {
   const _ChartToggle({
     required this.label,
@@ -1131,36 +1135,15 @@ class _ChartToggle extends StatelessWidget {
     toggled: on,
     label: semantic,
     excludeSemantics: true,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: LoopTouch.minimum,
-          minHeight: LoopTouch.minimum,
-        ),
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(
-              color: on ? LoopColors.chalk.withValues(alpha: 0.12) : null,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: LoopColors.line),
-            ),
-            child: Text(
-              label,
-              style: LoopType.figureXs.copyWith(
-                color: on ? LoopColors.chalk : LoopColors.text3,
-              ),
-            ),
-          ),
-        ),
-      ),
-    ),
+    child: LoopSeg(label: label, quiet: true, selected: on, onSelected: onTap),
   );
 }
 
 /// 15分 / 1时 / 4时 / 1日 / 1周, then the caller's trailing control.
+///
+/// Decision 0171 (docs/33 L4): the periods are quiet `LoopSeg`s, the same
+/// OKX filter pill as every other peer choice. The row scrolls rather than
+/// overflowing on a narrow phone, and the trailing control keeps its place.
 class _IntervalChips extends StatelessWidget {
   const _IntervalChips({
     required this.selected,
@@ -1178,48 +1161,28 @@ class _IntervalChips extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 2, 4, 0),
       child: Row(
         children: <Widget>[
-          for (final interval in LoopCandleInterval.values)
-            Semantics(
-              button: true,
-              selected: interval == selected,
-              child: Material(
-                type: MaterialType.transparency,
-                child: InkWell(
-                  key: ValueKey<String>('token-interval-${interval.wireName}'),
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () => onSelected(interval),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: LoopTouch.minimum,
-                      minHeight: LoopTouch.minimum,
-                    ),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: interval == selected
-                              ? LoopColors.chalk.withValues(alpha: 0.1)
-                              : null,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          loopChartIntervalLabel(interval),
-                          style: interval == selected
-                              ? LoopType.titleSm
-                              : LoopType.titleSm.copyWith(
-                                  color: LoopColors.text3,
-                                ),
-                        ),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: <Widget>[
+                  for (final (index, interval)
+                      in LoopCandleInterval.values.indexed) ...<Widget>[
+                    if (index > 0) const SizedBox(width: 4),
+                    LoopSeg(
+                      key: ValueKey<String>(
+                        'token-interval-${interval.wireName}',
                       ),
+                      label: loopChartIntervalLabel(interval),
+                      quiet: true,
+                      selected: interval == selected,
+                      onSelected: () => onSelected(interval),
                     ),
-                  ),
-                ),
+                  ],
+                ],
               ),
             ),
-          const Spacer(),
+          ),
           ?trailing,
         ],
       ),
@@ -1415,7 +1378,9 @@ class TokenFactCell extends StatelessWidget {
             DecoratedBox(
               key: ValueKey<String>('token-fact-dot-${fact.fact}'),
               decoration: BoxDecoration(
-                color: risk ? LoopColors.warning : LoopColors.text3,
+                // Decision 0171 (docs/33 L5): a risk fact is marked in Lime
+                // (the prototype's `--amber`), never the v1 warning yellow.
+                color: risk ? LoopColors.lime : LoopColors.text3,
                 shape: BoxShape.circle,
               ),
               child: const SizedBox.square(dimension: 6),

@@ -11,7 +11,6 @@ import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gatewa
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -565,28 +564,18 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
     ];
   }
 
-  Widget _line({required String key, required String text}) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-    child: Semantics(
-      liveRegion: true,
-      container: true,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: LoopIcon('warn', size: 15, color: LoopColors.warning),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              key: ValueKey<String>(key),
-              style: LoopType.caption.copyWith(color: LoopColors.warning),
-            ),
-          ),
-        ],
-      ),
+  /// One warn line (docs/33 L17): the shared `.notice-warn`, never the v1
+  /// warning yellow. It is still a live region, so a cooldown or a failure
+  /// that arrives while the sheet is open is read out.
+  Widget _line({required String key, required String text}) => Semantics(
+    liveRegion: true,
+    container: true,
+    child: LoopNotice(
+      key: ValueKey<String>(key),
+      tone: LoopNoticeTone.warn,
+      icon: 'warn',
+      body: text,
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
     ),
   );
 

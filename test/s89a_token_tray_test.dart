@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
@@ -86,6 +87,13 @@ void main() {
     expect(cells, findsNWidgets(facts.length));
     final first = tester.widget<TokenFactCell>(cells.first);
     expect(first.risk, isTrue);
+    // Decision 0171 (docs/33 L5): a risk dot is Lime, a neutral one Text3;
+    // the v1 warning yellow is gone.
+    BoxDecoration dot(String fact) =>
+        tester.widget<DecoratedBox>(key('token-fact-dot-$fact')).decoration
+            as BoxDecoration;
+    expect(dot('mintable').color, LoopColors.lime);
+    expect(dot('proxy').color, LoopColors.text3);
     expect(find.textContaining('合约事实 ${facts.length} 项'), findsOneWidget);
     expect(find.textContaining('来源 GoPlus'), findsOneWidget);
   });

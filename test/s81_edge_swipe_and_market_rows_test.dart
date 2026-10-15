@@ -4,12 +4,10 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/cupertino.dart'
     show CupertinoPageTransition, CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
-import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
@@ -268,75 +266,6 @@ void main() {
     });
   });
 
-  group('行情 row · the price column takes its width from the name', () {
-    Future<void> pumpRow(WidgetTester tester, String price) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 900);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetPhysicalSize);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: Scaffold(
-            backgroundColor: LoopColors.ink,
-            body: Column(
-              children: <Widget>[
-                MarketAssetTileGroup(
-                  tiles: <Widget>[
-                    MarketAssetTile(
-                      row: s5MarketRow(price: s5FreshFact(price)),
-                      sparkline: const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
-
-    double priceWidth(WidgetTester tester) => tester
-        .getSize(find.byKey(const ValueKey<String>('market-row-price-slot')))
-        .width;
-
-    double nameWidth(WidgetTester tester) =>
-        tester.getSize(find.text('WBNB')).width;
-
-    testWidgets('a five-figure price is printed whole, not ellipsised', (
-      tester,
-    ) async {
-      await pumpRow(tester, '85866.13');
-      expect(find.text(r'$85,866'), findsOneWidget);
-      final paragraph = tester.renderObject<RenderParagraph>(
-        find.text(r'$85,866'),
-      );
-      expect(paragraph.didExceedMaxLines, isFalse);
-      expect(priceWidth(tester), greaterThanOrEqualTo(marketRowPriceWidth));
-      expect(priceWidth(tester), lessThanOrEqualTo(marketRowPriceMaxWidth));
-    });
-
-    testWidgets('a wider figure takes the width off the name, never off the '
-        'change block', (tester) async {
-      await pumpRow(tester, '7.39');
-      final narrowPrice = priceWidth(tester);
-      final wideName = nameWidth(tester);
-      final change = tester.getSize(find.byType(MarketChangeBlock)).width;
-
-      await pumpRow(tester, '0.0000012345');
-      expect(priceWidth(tester), greaterThan(narrowPrice));
-      expect(nameWidth(tester), lessThan(wideName));
-      expect(tester.getSize(find.byType(MarketChangeBlock)).width, change);
-      expect(change, marketRowChangeWidth);
-    });
-
-    testWidgets('a short figure still holds the column floor', (tester) async {
-      await pumpRow(tester, '7.39');
-      expect(priceWidth(tester), marketRowPriceWidth);
-    });
-  });
-
   // -------------------------------------------------------------------------
   // § 3 · the line comes with the row
   // -------------------------------------------------------------------------
@@ -353,89 +282,9 @@ void main() {
       expect(market.intervals, isEmpty);
     });
 
-    testWidgets('a row with no series leaves the slot reserved and empty', (
-      tester,
-    ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 900);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetPhysicalSize);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: Scaffold(
-            backgroundColor: LoopColors.ink,
-            body: Column(
-              children: <Widget>[
-                MarketAssetTileGroup(
-                  tiles: <Widget>[
-                    MarketAssetTile(
-                      key: const ValueKey<String>('tile-without'),
-                      row: s5MarketRow(withSparkline: false),
-                      sparkline: MarketRowSparkline(
-                        series: s5MarketRow(withSparkline: false).sparkline,
-                      ),
-                    ),
-                    MarketAssetTile(
-                      key: const ValueKey<String>('tile-with'),
-                      row: s5MarketRow(),
-                      sparkline: MarketRowSparkline(
-                        series: s5MarketRow().sparkline,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byKey(const ValueKey<String>('market-spark-absent')),
-        findsOneWidget,
-      );
-      expect(find.byType(LoopSparkline), findsOneWidget);
-      // Both rows keep the same slot, so the value column does not move.
-      expect(
-        tester
-            .getSize(
-              find.byKey(const ValueKey<String>('market-row-spark-slot')).first,
-            )
-            .width,
-        marketRowSparklineSize.width,
-      );
-      expect(
-        tester.getSize(find.byType(MarketAssetTile).first).height,
-        tester.getSize(find.byType(MarketAssetTile).last).height,
-      );
-    });
-
-    testWidgets('a single close is not a line', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: marketRowSparklineSize.width,
-                height: marketRowSparklineSize.height,
-                child: MarketRowSparkline(
-                  series: s5RowSparkline(closes: const <String>['1']),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(LoopSparkline), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('market-spark-absent')),
-        findsOneWidget,
-      );
-    });
+    // Decision 0171 (docs/33 L7): the unmounted 行情 tile, its change
+    // block and its sparkline slot were deleted; the 行情 list is drawn by
+    // `LoopQuoteRow`, which carries no line (decision 0118, above).
   });
 
   group('行情 折线 · the row contract decodes the series', () {

@@ -235,6 +235,21 @@ final class _NormalisedSeries {
 }
 
 /// Where everything sits for one size and one window.
+/// Plot-pixel corners (decision 0171). They are chart geometry, not surface
+/// radii: the `LoopRadius` ladder starts at 12, which would round a 2 px
+/// candle into a pill. Named here so no surface radius is written as a bare
+/// literal in `market/`.
+abstract final class _ChartCorner {
+  /// A candle body.
+  static const Radius candle = Radius.circular(1);
+
+  /// The price tag on the right axis.
+  static const Radius axisTag = Radius.circular(3);
+
+  /// The crosshair read-out bubble.
+  static const BorderRadius bubble = BorderRadius.all(Radius.circular(4));
+}
+
 final class _ChartGeometry {
   _ChartGeometry({
     required this.size,
@@ -628,7 +643,7 @@ class _Bubble extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       color: LoopColors.chalk,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: _ChartCorner.bubble,
     ),
     child: Center(
       child: Text(
@@ -805,7 +820,7 @@ class _LoopMarketChartPainter extends CustomPainter {
       }
       final rect = RRect.fromRectAndRadius(
         Rect.fromLTRB(x - body / 2, top, x + body / 2, bottom),
-        const Radius.circular(1),
+        _ChartCorner.candle,
       );
       if (candle.isOpen) {
         // A bucket that has not closed is an outline: it will still move.
@@ -865,8 +880,10 @@ class _LoopMarketChartPainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
+          // Decision 0171 (docs/33 L5): the first average in Lime (the
+          // prototype's `--amber`), the second in Chalk; no warning yellow.
           ..color = line == 0
-              ? LoopColors.warning.withValues(alpha: 0.85)
+              ? LoopColors.lime.withValues(alpha: 0.85)
               : LoopColors.chalk.withValues(alpha: 0.55)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.1,
@@ -945,7 +962,7 @@ class _LoopMarketChartPainter extends CustomPainter {
       16,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(box, const Radius.circular(3)),
+      RRect.fromRectAndRadius(box, _ChartCorner.axisTag),
       Paint()..color = color,
     );
     painter.paint(

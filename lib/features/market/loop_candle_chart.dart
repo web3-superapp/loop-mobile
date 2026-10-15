@@ -259,7 +259,7 @@ class _LoopCandlePainter extends CustomPainter {
           centerX + (bodyWidth / 2),
           visibleBottom,
         ),
-        const Radius.circular(1.25),
+        _candleCorner,
       );
       if (candle.isOpen) {
         // An open bucket is an outline: its close, high and low will still
@@ -487,6 +487,10 @@ String loopFormatCandlePrice(Decimal value) {
     maxFractionDigits: scale + _candleSignificantDigits - 1,
   );
 }
+
+/// A candle body's corner: plot-pixel geometry, not a surface radius
+/// (decision 0171).
+const Radius _candleCorner = Radius.circular(1.25);
 
 final Decimal _candleLargeFrom = Decimal.fromInt(1000);
 

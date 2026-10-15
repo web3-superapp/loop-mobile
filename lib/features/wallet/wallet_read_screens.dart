@@ -377,6 +377,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 actionKey: const ValueKey<String>('wallet-swap-entry'),
                 label: '兑换',
                 glyph: (color) => LoopIcon('swap-vert', size: 22, color: color),
+                primary: true,
                 onPressed: swapGate.isAvailable
                     ? () => _open('/wallet/swap')
                     : null,
@@ -1320,7 +1321,7 @@ class _ValuationCard extends StatelessWidget {
                   if (valued.proxyAsset != null)
                     '代理资产 ${loopTruncatedAssetId(valued.proxyAsset!)}',
                 ].join(' · '),
-                style: Theme.of(context).textTheme.labelMedium,
+                style: LoopType.label,
               ),
             ],
           ),
@@ -1429,7 +1430,7 @@ class _RegistryFactsCard extends StatelessWidget {
               if (asset.source.verifiedAt != null)
                 '校验于 ${loopRelativeTime(asset.source.verifiedAt!)}',
             ].join(' · '),
-            style: Theme.of(context).textTheme.labelMedium,
+            style: LoopType.label,
           ),
         ],
       ),
@@ -1638,61 +1639,62 @@ class _ReceiveQrCard extends StatelessWidget {
       key: const ValueKey<String>('receive-card'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (code == null)
-          const LoopUnavailableCard(
-            key: ValueKey<String>('receive-qr-unavailable'),
-            label: '二维码不可用',
-            reasonCode: 'RECEIVE_QR_ENCODING_FAILED',
-          )
-        else
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: LoopColors.chalk,
-                borderRadius: LoopRadius.card,
-              ),
-              child: Semantics(
-                key: const ValueKey<String>('receive-qr'),
-                image: true,
-                label: '${network.name} 收款二维码',
-                child: SizedBox(
-                  width: 208,
-                  height: 208,
-                  child: CustomPaint(painter: _QrPainter(code: code)),
-                ),
-              ),
-            ),
-          ),
-        const SizedBox(height: 20),
-        // The address capsule: the whole address, selectable, and a copy
-        // glyph at its end.
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
-            key: const ValueKey<String>('receive-address-capsule'),
-            padding: const EdgeInsets.fromLTRB(16, 6, 4, 6),
-            decoration: const BoxDecoration(
-              color: LoopColors.card,
-              borderRadius: LoopRadius.inner,
-            ),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: SelectableText(
-                    network.address,
-                    key: const ValueKey<String>('receive-address-text'),
-                    style: LoopMono.address.copyWith(color: LoopColors.chalk),
+        // Decision 0171 (docs/33 L15): the prototype's one `.chalk-card` —
+        // the code on the Chalk plate and the whole address under it in Ink
+        // mono, with the copy glyph at its end. The hand-made Chalk box and
+        // the Card address capsule are gone.
+        LoopChalkCard(
+          key: const ValueKey<String>('receive-chalk-card'),
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (code == null)
+                LoopInlineUnavailable(
+                  key: const ValueKey<String>('receive-qr-unavailable'),
+                  message:
+                      '二维码不可用 · '
+                      '${loopReasonCodeText('RECEIVE_QR_ENCODING_FAILED')}',
+                  maxLines: 2,
+                  padding: const EdgeInsets.only(right: 8),
+                )
+              else
+                Center(
+                  child: Semantics(
+                    key: const ValueKey<String>('receive-qr'),
+                    image: true,
+                    label: '${network.name} 收款二维码',
+                    child: SizedBox(
+                      width: 208,
+                      height: 208,
+                      child: CustomPaint(painter: _QrPainter(code: code)),
+                    ),
                   ),
                 ),
-                LoopIconButton(
-                  key: const ValueKey<String>('receive-address-copy'),
-                  icon: 'copy',
-                  label: '复制地址',
-                  onPressed: onCopy,
-                ),
-              ],
-            ),
+              const SizedBox(height: 12),
+              Row(
+                key: const ValueKey<String>('receive-address-capsule'),
+                children: <Widget>[
+                  Expanded(
+                    child: SelectableText(
+                      network.address,
+                      key: const ValueKey<String>('receive-address-text'),
+                      textAlign: TextAlign.center,
+                      style: LoopMono.address.copyWith(
+                        color: LoopColors.inkText2,
+                      ),
+                    ),
+                  ),
+                  LoopIconButton(
+                    key: const ValueKey<String>('receive-address-copy'),
+                    icon: 'copy',
+                    label: '复制地址',
+                    color: LoopColors.ink,
+                    onPressed: onCopy,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ],
@@ -1958,7 +1960,7 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
             children: <Widget>[
               Text(
                 '钱包 ${wallet.truncatedAddress} 会成为余额、活动与收款页的当前钱包。',
-                style: Theme.of(sheetContext).textTheme.bodyMedium,
+                style: LoopType.bodySm,
               ),
               const SizedBox(height: 16),
               LoopButtonPair(
@@ -2536,7 +2538,7 @@ class WalletActivityDetailSheet extends StatelessWidget {
               SelectableText(
                 url,
                 key: const ValueKey<String>('tx-entry-sheet-link'),
-                style: Theme.of(context).textTheme.labelMedium,
+                style: LoopType.label,
               ),
             ],
             // Opening an external browser needs a launcher this build does not

@@ -5,17 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
-import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
-import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
-import 'package:loop_mobile/features/market/market_mining_hooks.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
-import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -114,99 +114,6 @@ const String marketWatchlistKicker = '自选管理';
 // The 行情 row
 // ---------------------------------------------------------------------------
 
-/// The one height every 行情 row takes (approved design, 2026-09-23).
-///
-/// A price list is read down its columns: the eye follows the value column and
-/// stops at the one that moved. That only works when every row starts and ends
-/// at the same place, and the walkthrough (2026-09-23, d01–d03) found rows
-/// between two and three lines tall because the second line carried a chain of
-/// facts that wrapped. The row therefore has a fixed height and every line in
-/// it is one line: what does not fit is moved out of the row, not wrapped
-/// inside it.
-const double marketRowHeight = 58;
-
-/// `.market-spark`: the slot the 1H line is drawn in.
-///
-/// It is reserved on every row, including the rows that have no line. Half
-/// the list carried a shape and half did not (walkthrough, 趋势区), and with
-/// the slot collapsed the value column moved sideways from row to row.
-const Size marketRowSparklineSize = Size(48, 24);
-
-/// The price column's floor.
-///
-/// The design's grid is `1fr 96px 88px` with 8pt gaps, which on a 390pt screen
-/// leaves the name cell 60pt once the 32pt mark and the 56pt line are inside
-/// it — and 「成交额 $1.28B」 ellipsised to 「成交额 $…」 (first render, S78b).
-/// The fixed columns are trimmed to what their own content actually needs at
-/// the ladder's steps, and the difference goes to the name.
-///
-/// It is a floor and not a width: decision 0085. A fixed 84pt cell ellipsised
-/// 「$85,866.13」 to 「$85,866…」 on a real iPhone — the column that the whole
-/// list is read down lost the one thing it carries. The price is the last
-/// thing in a 行情 row that may be abbreviated, so when the figure needs more
-/// than the floor it takes it, up to [marketRowPriceMaxWidth], out of the name
-/// cell beside it: a truncated 「PancakeSwap Tok…」 still names the row, a
-/// truncated price names nothing. The change block never moves.
-const double marketRowPriceWidth = 84;
-
-/// How far the price column may grow into the name.
-///
-/// The widest figure the row can print is a four-significant-digit sub-dollar
-/// price (`$0.0000012345`, 13 characters). Past this the name would be down to
-/// a couple of glyphs, so the price ellipsises instead — with the magnitude
-/// rule below that case does not arise for any price BSC has quoted.
-const double marketRowPriceMaxWidth = 124;
-
-/// The change block: `76×30`, radius 6.
-const double marketRowChangeWidth = 70;
-const double marketRowChangeHeight = 30;
-const double marketRowChangeRadius = 6;
-
-/// The logo tile on a list row.
-const double marketRowLogoSize = 32;
-
-/// The price column's step.
-///
-/// The design sets the price at the symbol's own size and weight with tabular
-/// figures; band 7 has no 15 step, so this is band 3's step with the figure
-/// feature turned on — same face, same size, same weight, and a column that
-/// lines up. It writes no size, weight or family of its own. If the ladder
-/// ever grows a `figure 15`, this becomes that name.
-final TextStyle marketRowPriceStyle = LoopType.title.copyWith(
-  fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-);
-
-/// The registry artwork for this row, when the asset contract published one.
-///
-/// One function, so the `logo` field (decision 0072) has exactly one place to
-/// land and every 行情 surface picks it up at once.
-String? marketAssetLogoUrl(MarketAssetRow row) => row.logoUrl;
-
-/// The secondary line of a 行情 row.
-///
-/// The design puts the 24-hour turnover there, because that is what the list
-/// is ordered by and the one fact that separates two rows at a glance. A row
-/// with no turnover figure (the Watchlist block carries none) falls back to
-/// the asset's own name, and then to its truncated identity.
-///
-/// The weight joins it only when the published rules are not a development
-/// baseline. A column of 「权重 1× · 开发基线」 repeated the same internal
-/// label on every row in the accent colour, which is the loudest thing on the
-/// page and says nothing about any of them (walkthrough 2026-09-23, d01). The
-/// development label belongs to 关于, the weight to 代币页 and 挖矿.
-String marketAssetSubtitle(MarketAssetRow row, {MarketMiningWeight? weight}) {
-  if (!row.price.isAvailable) return loopReasonCodeText(row.price.reasonCode);
-  final volume = row.volume24h;
-  final parts = <String>[
-    if (volume != null && volume.isAvailable)
-      '成交额 ${loopFormatCompactFigure(volume.value!)}'
-    else
-      row.asset?.name ?? loopTruncatedAssetId(row.assetId),
-    if (weight != null && !weight.baseline) '权重 ${weight.label}',
-  ];
-  return parts.join(' · ');
-}
-
 /// The price a 行情 row prints.
 ///
 /// `loopFormatUsd` rounds to cents at every magnitude, which prints
@@ -300,223 +207,6 @@ enum MarketMove {
     MarketMove.flat => LoopPriceMove.flat,
     MarketMove.unread => LoopPriceMove.unread,
   };
-}
-
-/// `76×30`, radius 6: the solid 24-hour block the approved design puts at the
-/// end of every row.
-///
-/// Lime rises, `danger` falls, `muted` stands still — the design's own three,
-/// and the first place in LOOP where a fall is red. A change that was not
-/// readable renders 「读不到」 on the muted ground: never `0.00%`, which would
-/// claim the price stood still.
-class MarketChangeBlock extends StatelessWidget {
-  const MarketChangeBlock({
-    required this.fact,
-    super.key,
-    this.width = marketRowChangeWidth,
-    this.height = marketRowChangeHeight,
-  });
-
-  final LoopFact fact;
-  final double width;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final move = MarketMove.of(fact);
-    final ground = move.shared.ground;
-    return Container(
-      width: width,
-      height: height,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: ground,
-        borderRadius: BorderRadius.circular(marketRowChangeRadius),
-      ),
-      child: Text(
-        switch (move) {
-          MarketMove.unread => '读不到',
-          // `loopFormatPercent` signs every figure, so a row that did not move
-          // read 「+0%」 — a rise of nothing. Zero has no direction.
-          MarketMove.flat => '0.00%',
-          MarketMove.up || MarketMove.down => loopFormatPercent(fact.value!),
-        },
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        // Ink on all three grounds: every one of them is opaque and light.
-        style: LoopTypography.withWeight(
-          LoopType.figure.copyWith(color: LoopColors.ink),
-          FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-/// One asset row for 行情, at the density a price list is read at.
-///
-/// Logo · ticker over one grey line · the 1H shape · the price · the 24-hour
-/// block. Every column is in the same place on every row, and the row is
-/// [marketRowHeight] tall whether or not it has a shape and whether or not its
-/// change was readable. A price that could not be read spends the identity
-/// line on the reason, and the value column stays empty rather than printing
-/// the same sentence twice.
-class MarketAssetTile extends StatelessWidget {
-  const MarketAssetTile({
-    required this.row,
-    super.key,
-    this.onTap,
-    this.now,
-    this.miningWeight,
-    this.sparkline,
-  });
-
-  final MarketAssetRow row;
-  final VoidCallback? onTap;
-  final DateTime? now;
-  final MarketMiningWeight? miningWeight;
-
-  /// The 1H line, when this surface draws one. The slot is reserved either
-  /// way.
-  final Widget? sparkline;
-
-  @override
-  Widget build(BuildContext context) {
-    final price = row.price;
-    final priceValue = price.value;
-    final marker = loopFactQualityMarker(price.quality);
-    final subtitle = marketAssetSubtitle(row, weight: miningWeight);
-    final semanticLabel =
-        '${row.displayName}，'
-        '${priceValue == null ? '价格不可用' : marketRowPrice(priceValue)}'
-        '${row.priceChange24h.isAvailable ? '，24 小时 ${loopFormatPercent(row.priceChange24h.value!)}' : '，24 小时涨跌读不到'}'
-        '${price.isAvailable ? '，${loopFactProvenance(price, now: now)}' : ''}';
-
-    final content = Container(
-      height: marketRowHeight,
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        children: <Widget>[
-          LoopTokenLogo(
-            assetSymbol: row.displayName,
-            logoUrl: marketAssetLogoUrl(row),
-            fallbackMonogram: row.displayName,
-            size: marketRowLogoSize,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  row.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.title,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.caption,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          SizedBox(
-            key: const ValueKey<String>('market-row-spark-slot'),
-            width: marketRowSparklineSize.width,
-            height: marketRowSparklineSize.height,
-            child: sparkline,
-          ),
-          const SizedBox(width: 6),
-          // The price cell sizes to its own figure between a floor and a cap.
-          // A `Row`'s non-flexible children are laid out first and against
-          // unbounded width, so what this takes above the floor comes off the
-          // `Expanded` name beside it — which is the order a price list is
-          // read in (decision 0085).
-          ConstrainedBox(
-            key: const ValueKey<String>('market-row-price-slot'),
-            constraints: const BoxConstraints(
-              minWidth: marketRowPriceWidth,
-              maxWidth: marketRowPriceMaxWidth,
-            ),
-            child: Text(
-              // No figure and no stand-in: the identity line beside this
-              // column already carries the whole reason, and a second,
-              // shorter copy of it here would be the same sentence twice on
-              // one row.
-              priceValue == null ? '' : marketRowPrice(priceValue),
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: marketRowPriceStyle,
-            ),
-          ),
-          const SizedBox(width: 6),
-          // A stale or estimated price says so where the change would be: the
-          // two never appear at once, and the marker is the more important of
-          // the two statements.
-          if (marker != null)
-            SizedBox(
-              width: marketRowChangeWidth,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: LoopBadge(
-                  marker,
-                  kind: price.quality == LoopFactQuality.stale
-                      ? LoopBadgeKind.down
-                      : LoopBadgeKind.mute,
-                ),
-              ),
-            )
-          else
-            MarketChangeBlock(fact: row.priceChange24h),
-        ],
-      ),
-    );
-    if (onTap == null) return content;
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          highlightColor: LoopColors.card2,
-          child: content,
-        ),
-      ),
-    );
-  }
-}
-
-/// The design's continuous table: rows in a column, no card around them.
-///
-/// The exchange list the requester approved has no card: a card draws a box
-/// around eight rows that are already a table, and the box costs the row the
-/// page margins on both sides. The hairline under each row is the table.
-class MarketAssetTileGroup extends StatelessWidget {
-  const MarketAssetTileGroup({required this.tiles, super.key});
-
-  final List<Widget> tiles;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: tiles,
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -629,8 +319,11 @@ class MarketTabBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
+                        // Decision 0122 / 0171 (docs/33 L3): the chosen
+                        // tab is underlined in Chalk; Lime stays for the
+                        // page's one primary body.
                         color: index == selectedIndex
-                            ? LoopColors.lime
+                            ? LoopColors.chalk
                             : Colors.transparent,
                         width: 2,
                       ),
@@ -767,18 +460,22 @@ class _MarketNewPairsListState extends ConsumerState<MarketNewPairsList> {
         else
           ...switch (block) {
             MarketNewPairsUnavailable(reasonCode: final reasonCode) => <Widget>[
-              LoopUnavailableCard(
+              // Decision 0171: the same one-line state the new-pairs page
+              // uses, never the block-sized strip.
+              LoopInlineUnavailable(
                 key: const ValueKey<String>('market-new-pairs-unavailable'),
-                label: '新币发现不可用',
-                reasonCode: reasonCode,
+                message: '新币发现不可用 · ${loopReasonCodeText(reasonCode)}',
+                maxLines: 3,
               ),
             ],
             MarketNewPairsAvailable(items: final items) => <Widget>[
               if (items.isEmpty)
-                const LoopEmpty(
+                const LoopEmptyState(
                   key: ValueKey<String>('market-new-pairs-empty'),
-                  message: '当前没有新的池',
-                  reason: '这是数据本身的结果，不是筛选后的结论。',
+                  illustration: LoopIllustration.search,
+                  compact: true,
+                  title: '当前没有新的池',
+                  message: '这是数据本身的结果，不是筛选后的结论。',
                 )
               else
                 LoopRecordGroup(
@@ -810,46 +507,6 @@ class _MarketNewPairsListState extends ConsumerState<MarketNewPairsList> {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// The 1H line the prototype draws inside every 行情 row (`.market-spark`).
-///
-/// It draws the series the **row itself** carried
-/// ([MarketAssetRow.sparkline]) and reads nothing. Until decision 0085 this
-/// widget asked the candles controller for its own `1h` series when it
-/// mounted: one request per visible row, per scroll, against a rate-limited
-/// provider — which is why most rows on a real phone showed no line at all
-/// (iPhone report, 2026-09-23). There is no second source and no fallback: a
-/// row with no series, or with fewer than two closes, leaves the slot blank
-/// and the value column beside it is unaffected. The reason belongs to the
-/// token page, which has the room to state it.
-class MarketRowSparkline extends StatelessWidget {
-  const MarketRowSparkline({required this.series, super.key});
-
-  /// The row's own closes, or `null` when the list delivered none.
-  final MarketRowSparklineSeries? series;
-
-  @override
-  Widget build(BuildContext context) {
-    final resolved = series;
-    if (resolved == null || !resolved.hasShape) {
-      return const SizedBox.shrink(
-        key: ValueKey<String>('market-spark-absent'),
-      );
-    }
-    final closes = resolved.closes;
-    // A chart is never a segment swipe (S123 m7): a drag that starts on
-    // the line stays with the row.
-    return LoopSegmentSwipeBarrier(
-      child: LoopSparkline(
-        key: const ValueKey<String>('market-spark-line'),
-        closes: closes,
-        semanticLabel:
-            '${closes.length} 个 ${resolved.interval.label} 收盘价的走势线，'
-            '观察于 ${loopRelativeTime(resolved.observedAt)}',
-      ),
     );
   }
 }
@@ -1002,28 +659,6 @@ class MarketDirectionAvatar extends StatelessWidget {
         size: size * 0.5,
         color: inbound ? LoopColors.lime : LoopColors.chalk,
       ),
-    );
-  }
-}
-
-/// `.row-ico.mono`: the rank square the prototype puts beside a Top holder.
-class MarketRankAvatar extends StatelessWidget {
-  const MarketRankAvatar({required this.rank, super.key, this.size = 36});
-
-  final int rank;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: LoopGround.fillOf(context),
-        borderRadius: BorderRadius.circular(size / 3),
-      ),
-      child: Text('$rank', style: LoopMono.stamp),
     );
   }
 }
@@ -1192,68 +827,6 @@ class MarketTradeBar extends StatelessWidget {
   }
 }
 
-/// `.stat-grid`: two or three cells of label over figure.
-///
-/// A cell with no figure states why in the figure's place, so the grid keeps
-/// its shape and never prints a zero for a fact that was not read.
-class MarketStatGrid extends StatelessWidget {
-  const MarketStatGrid({required this.cells, super.key});
-
-  final List<MarketStatCell> cells;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            for (var index = 0; index < cells.length; index += 1) ...<Widget>[
-              if (index > 0) const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
-                  decoration: BoxDecoration(
-                    color: LoopColors.card,
-                    borderRadius: LoopRadius.control,
-                    border: Border.all(color: LoopColors.line),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        cells[index].value,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: cells[index].available
-                            ? LoopTypography.figure(19, height: 1.2)
-                            : LoopTypography.caption(
-                                11,
-                                color: LoopColors.text3,
-                              ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        cells[index].label,
-                        style: LoopTypography.caption(
-                          11,
-                          color: LoopColors.text3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 @immutable
 final class MarketStatCell {
   const MarketStatCell({
@@ -1282,4 +855,9 @@ final class MarketStatCell {
   final String label;
   final String value;
   final bool available;
+
+  /// The same cell as one shared `.stat` (decision 0171, docs/33 L6): a page
+  /// that lays these out as a grid uses `LoopStatGrid`, not a copy of it.
+  LoopStat toStat({Key? statKey}) =>
+      LoopStat(label: label, value: value, statKey: statKey);
 }

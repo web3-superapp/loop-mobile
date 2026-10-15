@@ -8,6 +8,23 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 /// `.toast-ok / .toast-warn / .toast-err`.
 enum LoopToastKind { ok, warn, err }
 
+/// The one thing a toast may offer (decision 0171): 撤销 after a staged
+/// removal. A toast without one stays non-interactive, as it always was.
+@immutable
+final class LoopToastAction {
+  const LoopToastAction({
+    required this.label,
+    required this.onPressed,
+    this.key,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  /// The button's widget key, so a page's own test can press it.
+  final Key? key;
+}
+
 /// Toast controller (chapter 5.5): one toast at a time, fixed above the tab
 /// bar (`bottom: 94px` + safe area), z 90, 2.6 s, `role=status` /
 /// `aria-live=polite` expressed as a Semantics live region.
@@ -40,6 +57,8 @@ abstract final class LoopToast {
     LoopToastKind kind = LoopToastKind.ok,
     Duration? duration,
     bool? clearsTabBar,
+    LoopToastAction? action,
+    Key? toastKey,
   }) {
     final host = LoopToastHost.maybeOf(context);
     final clears = clearsTabBar ?? LoopTabBarScope.of(context);
@@ -50,7 +69,13 @@ abstract final class LoopToast {
       // same toast, laid on the nearest overlay for the same duration.
       _showOnOverlay(
         context,
-        LoopToastEntry(message: message, kind: kind, clearsTabBar: clears),
+        LoopToastEntry(
+          message: message,
+          kind: kind,
+          clearsTabBar: clears,
+          action: action,
+          toastKey: toastKey,
+        ),
         duration ?? defaultDuration,
       );
       return;
@@ -62,6 +87,8 @@ abstract final class LoopToast {
       // The host sits above the router and cannot tell which page called it;
       // the caller's own context can.
       clearsTabBar: clears,
+      action: action,
+      toastKey: toastKey,
     );
   }
 
@@ -115,10 +142,18 @@ final class LoopToastEntry {
     required this.message,
     required this.kind,
     this.clearsTabBar = false,
+    this.action,
+    this.toastKey,
   });
 
   final String message;
   final LoopToastKind kind;
+
+  /// The toast's one action, or `null` for the usual read-only toast.
+  final LoopToastAction? action;
+
+  /// A key for the whole toast, so a page can find its own toast.
+  final Key? toastKey;
 
   /// True when the page that raised this toast draws the floating tab bar.
   final bool clearsTabBar;
@@ -161,6 +196,8 @@ class LoopToastHostState extends State<LoopToastHost> {
     required LoopToastKind kind,
     Duration? duration,
     bool clearsTabBar = false,
+    LoopToastAction? action,
+    Key? toastKey,
   }) {
     _hideTimer?.cancel();
     _clearTimer?.cancel();
@@ -169,6 +206,8 @@ class LoopToastHostState extends State<LoopToastHost> {
         message: message,
         kind: kind,
         clearsTabBar: clearsTabBar,
+        action: action,
+        toastKey: toastKey,
       );
       _visible = true;
     });
@@ -208,7 +247,9 @@ class LoopToastHostState extends State<LoopToastHost> {
                     ? LoopToast.bottomOffset
                     : LoopToast.pageBottomOffset) +
                 safeBottom,
+            // Only a toast that offers an action takes a touch.
             child: IgnorePointer(
+              ignoring: entry.action == null || !_visible,
               child: AnimatedSlide(
                 offset: _visible ? Offset.zero : const Offset(0, 0.18),
                 duration: reduceMotion
@@ -220,7 +261,13 @@ class LoopToastHostState extends State<LoopToastHost> {
                   duration: reduceMotion
                       ? Duration.zero
                       : const Duration(milliseconds: 220),
-                  child: LoopToastView(entry: entry),
+                  child: LoopToastView(
+                    entry: entry,
+                    onAction: () {
+                      entry.action?.onPressed();
+                      dismiss();
+                    },
+                  ),
                 ),
               ),
             ),
@@ -233,9 +280,13 @@ class LoopToastHostState extends State<LoopToastHost> {
 /// The toast surface: Chalk ground, Ink text, 4px semantic bar on the left
 /// (Lime for ok, Ink for warn/err), radius 15, sprite glyph.
 class LoopToastView extends StatelessWidget {
-  const LoopToastView({required this.entry, super.key});
+  const LoopToastView({required this.entry, super.key, this.onAction});
 
   final LoopToastEntry entry;
+
+  /// Runs the entry's action and closes the toast; the host supplies it.
+  /// Without it the action button runs the action alone.
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -244,58 +295,125 @@ class LoopToastView extends StatelessWidget {
       LoopToastKind.warn => ('warn', LoopColors.ink, '警告'),
       LoopToastKind.err => ('close', LoopColors.ink, '错误'),
     };
-    return Semantics(
-      container: true,
-      liveRegion: true,
-      label: '$label：${entry.message}',
-      child: ExcludeSemantics(
-        child: Container(
-          key: ValueKey<String>('loop-toast-${entry.kind.name}'),
-          decoration: const BoxDecoration(
-            color: LoopColors.chalk,
-            borderRadius: BorderRadius.all(Radius.circular(15)),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Color(0x9E050604),
-                offset: Offset(0, 14),
-                blurRadius: 38,
-              ),
-            ],
+    final action = entry.action;
+    final message = Row(
+      children: <Widget>[
+        LoopIcon(icon, size: 15, color: LoopColors.ink),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            entry.message,
+            style: LoopTypography.label(
+              12,
+              weight: FontWeight.w700,
+              color: LoopColors.ink,
+            ),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Container(width: 4, color: bar),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
-                    child: Row(
-                      children: <Widget>[
-                        LoopIcon(icon, size: 15, color: LoopColors.ink),
-                        const SizedBox(width: 9),
-                        Expanded(
-                          child: Text(
-                            entry.message,
-                            style: LoopTypography.label(
-                              12,
-                              weight: FontWeight.w700,
-                              color: LoopColors.ink,
+        ),
+      ],
+    );
+    final surface = Container(
+      key: ValueKey<String>('loop-toast-${entry.kind.name}'),
+      decoration: const BoxDecoration(
+        color: LoopColors.chalk,
+        borderRadius: BorderRadius.all(Radius.circular(15)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Color(0x9E050604),
+            offset: Offset(0, 14),
+            blurRadius: 38,
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(width: 4, color: bar),
+            Expanded(
+              child: action == null
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
+                      child: message,
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 4, 0),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Semantics(
+                              container: true,
+                              liveRegion: true,
+                              label: '$label：${entry.message}',
+                              child: ExcludeSemantics(child: message),
                             ),
                           ),
-                        ),
-                      ],
+                          _LoopToastActionButton(
+                            action: action,
+                            onPressed: onAction ?? action.onPressed,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+    final view = action == null
+        ? Semantics(
+            container: true,
+            liveRegion: true,
+            label: '$label：${entry.message}',
+            child: ExcludeSemantics(child: surface),
+          )
+        : surface;
+    final key = entry.toastKey;
+    return key == null ? view : KeyedSubtree(key: key, child: view);
+  }
+}
+
+/// The toast's one text action: Ink on the Chalk surface, a full touch target.
+class _LoopToastActionButton extends StatelessWidget {
+  const _LoopToastActionButton({required this.action, required this.onPressed});
+
+  final LoopToastAction action;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: action.label,
+    excludeSemantics: true,
+    child: Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        key: action.key,
+        onTap: onPressed,
+        borderRadius: LoopRadius.inner,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: LoopTouch.minimum,
+            minHeight: LoopTouch.minimum + 4,
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                action.label,
+                style: LoopTypography.label(
+                  13,
+                  weight: FontWeight.w700,
+                  color: LoopColors.ink,
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 /// The overlay-borne toast used when no [LoopToastHost] is above the caller.
@@ -343,6 +461,15 @@ class _OverlayToastState extends State<_OverlayToast> {
             ? LoopToast.bottomOffset
             : LoopToast.pageBottomOffset) +
         MediaQuery.paddingOf(context).bottom,
-    child: IgnorePointer(child: LoopToastView(entry: widget.entry)),
+    child: IgnorePointer(
+      ignoring: widget.entry.action == null,
+      child: LoopToastView(
+        entry: widget.entry,
+        onAction: () {
+          widget.entry.action?.onPressed();
+          widget.onDone();
+        },
+      ),
+    ),
   );
 }

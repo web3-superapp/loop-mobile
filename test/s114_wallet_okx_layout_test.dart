@@ -14,6 +14,8 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -412,6 +414,59 @@ void main() {
       expect(
         tester.getTopLeft(key('wallet-bridge-entry')).dy,
         greaterThan(tester.getTopLeft(key('wallet-pay-entry')).dy),
+      );
+    });
+
+    // Decision 0171 (docs/33 M15, user ruling): one full-Lime key, 兑换;
+    // the other three are Card2 discs with a Chalk glyph.
+    testWidgets('only 兑换 wears the Lime disc', (tester) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(),
+        meta: s5MetaSnapshot(
+          sendApprovals: LoopV2CapabilityAvailability.available,
+          privySwap: LoopV2CapabilityAvailability.available,
+          swapEvidencePending: false,
+        ),
+      );
+      Color? disc(String label) =>
+          (tester.widget<Container>(key('wallet-quick-disc-$label')).decoration!
+                  as BoxDecoration)
+              .color;
+      expect(disc('兑换'), LoopColors.lime);
+      for (final label in const <String>['接收', '发送', '扫码']) {
+        expect(disc(label), LoopColors.card2, reason: label);
+      }
+      final glyph = tester.widget<LoopIcon>(
+        find.descendant(
+          of: key('wallet-quick-disc-接收'),
+          matching: find.byType(LoopIcon),
+        ),
+      );
+      expect(glyph.color, LoopColors.chalk);
+    });
+
+    testWidgets('产生算力 is a mute badge with an info glyph', (tester) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(),
+      );
+      final badge = tester.widget<LoopBadge>(
+        find.descendant(
+          of: key('wallet-power-tag'),
+          matching: find.byType(LoopBadge),
+        ),
+      );
+      expect(badge.text, '产生算力');
+      expect(badge.kind, LoopBadgeKind.mute);
+      expect(
+        find.descendant(
+          of: key('wallet-power-tag'),
+          matching: find.byType(LoopIcon),
+        ),
+        findsOneWidget,
       );
     });
 

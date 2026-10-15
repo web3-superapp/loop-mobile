@@ -1257,10 +1257,23 @@ class LoopSurfaceCard extends StatelessWidget {
 
 /// `.record-card`: detail record with the Chalk text and lift-card depth.
 class LoopRecordCard extends StatelessWidget {
-  const LoopRecordCard({required this.child, super.key, this.onTap});
+  const LoopRecordCard({
+    required this.child,
+    super.key,
+    this.onTap,
+    this.padding = defaultPadding,
+  });
+
+  /// `.record-card{padding:15px}`.
+  static const EdgeInsets defaultPadding = EdgeInsets.all(15);
 
   final Widget child;
   final VoidCallback? onTap;
+
+  /// The card's inner padding. A card that holds edge-to-edge rows (a
+  /// reorderable list whose hairlines meet the border) passes zero and lets
+  /// each row pad itself (decision 0171).
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
@@ -1282,7 +1295,7 @@ class LoopRecordCard extends StatelessWidget {
           boxShadow: LoopDepth.liftCard,
         ),
         borderRadius: LoopRadius.card,
-        child: Padding(padding: const EdgeInsets.all(15), child: child),
+        child: Padding(padding: padding, child: child),
       ),
     );
   }

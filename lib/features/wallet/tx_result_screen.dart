@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
@@ -347,7 +348,7 @@ class _ResultBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   moneyIntentStateLabel(intent.state),
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: LoopType.titleLg,
                 ),
               ),
               LoopBadge(label, kind: kind),
@@ -358,7 +359,7 @@ class _ResultBanner extends StatelessWidget {
             intent.result.reasonCode == null
                 ? '最新状态。'
                 : loopReasonCodeText(intent.result.reasonCode),
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: LoopType.bodySm,
           ),
         ],
       ),

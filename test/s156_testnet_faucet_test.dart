@@ -5,6 +5,7 @@ import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gateway.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_models.dart';
@@ -29,6 +30,14 @@ import 'support/testnet_faucet_fakes.dart';
 /// Decision 0154 · the testnet faucet.
 void main() {
   Finder key(String value) => find.byKey(ValueKey<String>(value));
+
+  // Docs/33 L17 (decision 0171): a faucet line is a warn `LoopNotice`; its
+  // sentence is the notice's one body text.
+  String? lineText(WidgetTester tester, String value) => tester
+      .widget<Text>(
+        find.descendant(of: key(value), matching: find.byType(Text)),
+      )
+      .data;
 
   Matcher invalid() => throwsA(
     isA<LoopBackendFailure>().having(
@@ -710,10 +719,22 @@ void main() {
       await tester.pumpAndSettle();
       final time = testnetFaucetNextLabel(next);
       expect(
-        tester.widget<Text>(key('testnet-faucet-cooldown')).data,
+        lineText(tester, 'testnet-faucet-cooldown'),
         '这个钱包 24 小时内已经领过，下次可领 $time',
       );
       expect(find.text('下次可领 $time'), findsOneWidget);
+      // The line is the shared warn notice, never the v1 warning yellow.
+      final notice = tester.widget<LoopNotice>(key('testnet-faucet-cooldown'));
+      expect(notice.tone, LoopNoticeTone.warn);
+      final colours = tester
+          .widgetList<Text>(
+            find.descendant(
+              of: key('testnet-faucet-cooldown'),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((text) => text.style?.color);
+      expect(colours, isNot(contains(LoopColors.warning)));
     });
 
     // Decision 0158 · the period on the sheet is the server's cooldown.
@@ -731,7 +752,7 @@ void main() {
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<Text>(key('testnet-faucet-cooldown')).data,
+        lineText(tester, 'testnet-faucet-cooldown'),
         '这个钱包 1 小时内已经领过，下次可领 ${testnetFaucetNextLabel(next)}',
       );
       expect(find.textContaining('24 小时'), findsNothing);
@@ -779,7 +800,7 @@ void main() {
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<Text>(key('testnet-faucet-partial')).data,
+        lineText(tester, 'testnet-faucet-partial'),
         'tBNB 已到账，tUSD1 这次没成功，24 小时后可再领',
       );
       expect(key('testnet-faucet-tx-tBNB'), findsOneWidget);
@@ -801,7 +822,7 @@ void main() {
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<Text>(key('testnet-faucet-failure')).data,
+        lineText(tester, 'testnet-faucet-failure'),
         testnetFaucetOperatorLowText,
       );
 
@@ -812,7 +833,7 @@ void main() {
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<Text>(key('testnet-faucet-failure')).data,
+        lineText(tester, 'testnet-faucet-failure'),
         testnetFaucetNotOwnedText,
       );
     });
@@ -871,7 +892,7 @@ void main() {
       // One read on opening, then six at 3 s and the last at 20 s.
       expect(faucet.statusReads, hasLength(8));
       expect(
-        tester.widget<Text>(key('testnet-faucet-pending')).data,
+        lineText(tester, 'testnet-faucet-pending'),
         testnetFaucetInFlightLaterText,
       );
       expect(find.text(testnetFaucetBusyLabel), findsNothing);
@@ -900,7 +921,7 @@ void main() {
       // Decision 0158: a record read back proves the tBNB was sent, not
       // that it arrived.
       expect(
-        tester.widget<Text>(key('testnet-faucet-partial')).data,
+        lineText(tester, 'testnet-faucet-partial'),
         'tBNB 已发出，tUSD1 这次没发；24 小时后可再领',
       );
       expect(find.textContaining('已到账'), findsNothing);
@@ -925,7 +946,7 @@ void main() {
       expect(faucet.statusReads, hasLength(3));
       expect(faucet.claims, hasLength(1));
       expect(
-        tester.widget<Text>(key('testnet-faucet-pending')).data,
+        lineText(tester, 'testnet-faucet-pending'),
         testnetFaucetTimedOutLaterText,
       );
       expect(key('testnet-faucet-failure'), findsNothing);
@@ -946,7 +967,7 @@ void main() {
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<Text>(key('testnet-faucet-partial')).data,
+        lineText(tester, 'testnet-faucet-partial'),
         'tBNB 已发出但还没确认，tUSD1 这次没发；24 小时后可再领',
       );
       expect(key('testnet-faucet-tx-tBNB'), findsOneWidget);
@@ -965,10 +986,7 @@ void main() {
       await _openSheet(tester, faucet);
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<Text>(key('testnet-faucet-failure')).data,
-        '这次没有发出，可以重试',
-      );
+      expect(lineText(tester, 'testnet-faucet-failure'), '这次没有发出，可以重试');
       expect(
         tester.widget<LoopButton>(key('testnet-faucet-claim')).onPressed,
         isNotNull,

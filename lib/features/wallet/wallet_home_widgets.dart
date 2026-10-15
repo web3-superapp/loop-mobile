@@ -427,6 +427,7 @@ final class WalletQuickAction {
     required this.glyph,
     this.onPressed,
     this.blockedReason,
+    this.primary = false,
   }) : assert(
          onPressed == null || blockedReason == null,
          'A key either runs or says why it cannot.',
@@ -437,6 +438,11 @@ final class WalletQuickAction {
   final Widget Function(Color color) glyph;
   final VoidCallback? onPressed;
   final String? blockedReason;
+
+  /// The one key that wears the solid Lime disc (decision 0171, user ruling
+  /// on docs/33 M15: 兑换). The other keys sit on Card2 with a Chalk glyph,
+  /// so the row keeps one full-Lime body on screen.
+  final bool primary;
 }
 
 /// 接收 / 发送 / 兑换 / 扫码 — one row, four equal columns, a round glyph
@@ -481,9 +487,21 @@ class _QuickActionTile extends StatelessWidget {
     final run = action.onPressed;
     final reason = action.blockedReason;
     final enabled = run != null;
-    // OKX round action keys (decision 0122): a 56 solid Lime disc with an
-    // Ink glyph; a closed key keeps its place on the quiet card ground.
-    final ink = enabled ? LoopColors.ink : LoopGround.auxiliaryOf(context);
+    // OKX round action keys (decision 0122): a 56 disc. Decision 0171: only
+    // the primary key (兑换) is solid Lime with an Ink glyph; the others are
+    // Card2 with a Chalk glyph, and a closed key keeps its place on the quiet
+    // card ground.
+    final lime = enabled && action.primary;
+    final ink = !enabled
+        ? LoopGround.auxiliaryOf(context)
+        : lime
+        ? LoopColors.ink
+        : LoopColors.chalk;
+    final disc = !enabled
+        ? LoopGround.fillOf(context)
+        : lime
+        ? LoopColors.lime
+        : LoopColors.card2;
     final onTap = run ?? (reason == null ? null : () => onBlocked(reason));
     return Semantics(
       button: true,
@@ -502,12 +520,10 @@ class _QuickActionTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
+                key: ValueKey<String>('wallet-quick-disc-${action.label}'),
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(
-                  color: enabled ? LoopColors.lime : LoopGround.fillOf(context),
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: disc, shape: BoxShape.circle),
                 alignment: Alignment.center,
                 child: action.glyph(ink),
               ),
@@ -573,6 +589,9 @@ class WalletSectionHeading extends StatelessWidget {
 }
 
 /// 「产生算力」: the small tag beside 资产 that opens the mining note.
+///
+/// Decision 0171 (docs/33 L14): the shared mute `.badge` with an (i) glyph
+/// after it, in place of the hand-made r999 outlined capsule.
 class WalletPowerTag extends StatelessWidget {
   const WalletPowerTag({required this.onTap, super.key});
 
@@ -592,23 +611,13 @@ class WalletPowerTag extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
           child: Center(
             widthFactor: 1,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: LoopGround.edgeOf(context)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    '产生算力',
-                    style: LoopType.captionSm.copyWith(color: secondary),
-                  ),
-                  const SizedBox(width: 3),
-                  LoopIcon('info', size: 11, color: secondary),
-                ],
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const LoopBadge('产生算力'),
+                const SizedBox(width: 4),
+                LoopIcon('info', size: 13, color: secondary),
+              ],
             ),
           ),
         ),

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -501,14 +502,19 @@ void main() {
       LoopColors.ink,
     ).map((probe) => probe.ground.toARGB32()).toSet();
 
-    // The light ground the Wallet page renders is its four round Lime keys
-    // (decision 0122). The Market page used to carry this premise on its
-    // selected chip, which is a dark-grey pill since the same decision.
+    // The light ground the Wallet page renders is its one round Lime key,
+    // 兑换 (decision 0171: the other three keys moved to Card2). The Market
+    // page used to carry this premise on its selected chip, which is a
+    // dark-grey pill since decision 0122.
     testWidgets('the Wallet page renders a light key ground', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
         wallet: FakeWalletReadGateway(),
+        meta: s5MetaSnapshot(
+          privySwap: LoopV2CapabilityAvailability.available,
+          swapEvidencePending: false,
+        ),
       );
 
       expect(
@@ -517,10 +523,11 @@ void main() {
       );
     });
 
-    // Decision 0126: the address moved into a flat capsule on the Ink page;
-    // the only light ground left is the plate behind the code, which carries
-    // no text for the probe to sample.
-    testWidgets('the Receive page draws its code on a Chalk plate', (
+    // Decision 0171 (docs/33 L15): the code and the address now share the
+    // prototype's one `.chalk-card`, so the Receive page renders a Chalk
+    // ground with text on it — the address, in Ink — for the probe to
+    // sample.
+    testWidgets('the Receive page draws its code on a Chalk card', (
       tester,
     ) async {
       await pumpS5Page(
@@ -529,18 +536,16 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      final plate = tester.widget<Container>(
-        find
-            .ancestor(
-              of: find.byKey(const ValueKey<String>('receive-qr')),
-              matching: find.byType(Container),
-            )
-            .first,
+      expect(
+        find.ancestor(
+          of: find.byKey(const ValueKey<String>('receive-qr')),
+          matching: find.byType(LoopChalkCard),
+        ),
+        findsOneWidget,
       );
-      expect((plate.decoration! as BoxDecoration).color, LoopColors.chalk);
       expect(
         groundsOf(tester, find.byType(ReceiveScreen)),
-        isNot(contains(LoopColors.chalk.toARGB32())),
+        contains(LoopColors.chalk.toARGB32()),
       );
     });
   });

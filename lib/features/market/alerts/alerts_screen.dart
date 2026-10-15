@@ -21,6 +21,7 @@ import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -409,22 +410,19 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
 }
 
 /// `.row-ico` with a check: one triggered record.
+///
+/// Decision 0171 (docs/33 L13): the shared accent `LoopRowIcon`, not a
+/// hand-made Lime-soft square.
 class _TriggeredAvatar extends StatelessWidget {
   const _TriggeredAvatar();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: LoopColors.limeSoft,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const LoopIcon('check', size: 18, color: LoopColors.lime),
-    );
-  }
+  Widget build(BuildContext context) => const LoopRowIcon(
+    key: ValueKey<String>('alert-triggered-icon'),
+    icon: 'check',
+    tone: LoopRowIconTone.accent,
+    size: 36,
+  );
 }
 
 class _AlertEditorResult {
@@ -688,7 +686,7 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
             Text(
               alertConditionExplanation(_condition),
               key: const ValueKey<String>('alert-condition-explanation'),
-              style: Theme.of(context).textTheme.bodySmall,
+              style: LoopType.caption,
             ),
             const SizedBox(height: 12),
             TextField(
@@ -712,7 +710,7 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
               Text(
                 _error!,
                 key: const ValueKey<String>('alert-editor-error'),
-                style: Theme.of(context).textTheme.labelMedium,
+                style: LoopType.label,
               ),
             ],
             const SizedBox(height: 16),

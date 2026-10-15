@@ -220,10 +220,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    '只授权本次交易需要的额度。',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text('只授权本次交易需要的额度。', style: LoopType.caption),
                 ],
               ),
             ),
@@ -302,13 +299,13 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('确认无限授权', style: Theme.of(context).textTheme.titleLarge),
+          Text('确认无限授权', style: LoopType.titleLg),
           const SizedBox(height: 10),
           Text(
             '无限额度不会随时间或这笔交易结束而失效。'
             '该 Spender 之后可以在不再询问你的情况下转走这个代币的全部余额。'
             '只有你在授权盘点里发送一笔 approve(spender, 0) 才会收回。',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: LoopType.bodySm,
           ),
           const SizedBox(height: 16),
           LoopButtonPair(
@@ -697,12 +694,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         children: <Widget>[
           Text(
             '${row.symbol} · ${row.spender.checksumAddress}',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: LoopType.titleLg,
           ),
           const SizedBox(height: 6),
           Text(
             loopReasonCodeText(row.riskFacts.reasonCode),
-            style: Theme.of(context).textTheme.bodySmall,
+            style: LoopType.caption,
           ),
           const SizedBox(height: 16),
           LoopButton(

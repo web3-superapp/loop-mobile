@@ -599,7 +599,18 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               ),
             ),
           ),
-          if (status != null)
+          // A passed check is a Lime line and a running one a grey line; a
+          // refused address is the shared warn notice (docs/33 L17), never
+          // the v1 warning yellow.
+          if (status != null && preflight == null && !_checking)
+            LoopNotice(
+              key: const ValueKey<String>('send-recipient-status'),
+              tone: LoopNoticeTone.warn,
+              icon: 'warn',
+              body: status,
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            )
+          else if (status != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
               child: Text(
@@ -607,11 +618,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
                 key: const ValueKey<String>('send-recipient-status'),
                 style: LoopTypography.label(
                   11,
-                  color: preflight != null
-                      ? LoopColors.lime
-                      : _checking
-                      ? LoopColors.text2
-                      : LoopColors.warning,
+                  color: preflight != null ? LoopColors.lime : LoopColors.text2,
                 ),
               ),
             ),
@@ -852,11 +859,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
       if (missing != null) ...<Widget>[
-        Text(
-          missing,
-          key: ValueKey<String>(missingKey),
-          style: Theme.of(context).textTheme.labelMedium,
-        ),
+        Text(missing, key: ValueKey<String>(missingKey), style: LoopType.label),
         const SizedBox(height: 8),
       ],
       button,
@@ -1346,7 +1349,7 @@ class _SendDraftFacts extends StatelessWidget {
             Text(
               '这两行是你在上一步填的内容，还不是服务端的事实。'
               '网络费、余额与试算会在准备好这一笔之后一起显示。',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: LoopType.caption,
             ),
           ],
         ),
@@ -1381,7 +1384,7 @@ class _SendArrivalEstimate extends StatelessWidget {
             Text(
               '没有到账时间的来源，这里不给一个编出来的秒数。'
               '提交之后在结果页按确认数跟踪，那是唯一的进度。',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: LoopType.caption,
             ),
           ],
         ),
