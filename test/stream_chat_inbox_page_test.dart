@@ -26,6 +26,11 @@ import 'package:loop_mobile/integrations/communication/stream_communication_gate
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_ui.dart';
+
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
@@ -293,6 +298,14 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('会话还没有连接'), findsOneWidget);
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('stream-chat-unavailable')),
+        ),
+        isA<LoopEmptyState>(),
+      );
+      expect(find.byType(LoopStateCard), findsNothing);
+      expect(find.byType(OutlinedButton), findsNothing);
       expect(find.byType(StreamChannelListView), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('stream-audio-room-entry')),
@@ -545,6 +558,11 @@ void main() {
       find.byKey(const ValueKey<String>('stream-chat-unavailable')),
       findsOneWidget,
     );
+    final retry = find.byKey(
+      const ValueKey<String>('stream-chat-unavailable-retry'),
+    );
+    expect(tester.widget(retry), isA<LoopButton>());
+    expect(tester.widget<LoopButton>(retry).onPressed, isNotNull);
     expect(
       find.byKey(const ValueKey<String>('stream-audio-room-entry')),
       findsNothing,
@@ -574,11 +592,22 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('stream-chat-channel-unavailable')),
-      findsOneWidget,
+    final state = find.byKey(
+      const ValueKey<String>('stream-chat-channel-unavailable'),
     );
+    expect(state, findsOneWidget);
     expect(find.byType(StreamChannel), findsNothing);
+    // Decision 0168: the stream shell with a Chinese title and one chat
+    // empty state — not the English `Discuss / Chat` card.
+    expect(tester.widget(state), isA<LoopEmptyState>());
+    expect(find.byType(LoopStreamPage), findsOneWidget);
+    expect(find.text('聊天'), findsOneWidget);
+    expect(find.text('聊天服务还没有连接'), findsOneWidget);
+    expect(find.text('Chat'), findsNothing);
+    expect(find.text('Discuss'), findsNothing);
+    expect(find.textContaining('Stream not connected'), findsNothing);
+    expect(find.byType(LoopStateCard), findsNothing);
+    expect(find.byType(Icon), findsNothing);
   });
 
   testWidgets('a channel deep link redirects to the surface its prefix names', (

@@ -7,10 +7,17 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/chat/friends/friend_controllers.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
+import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart'
+    show LoopSelectionCheck;
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -546,40 +553,54 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
       });
     }
 
-    // Decision 0127: no English eyebrow; a preview build keeps its 开发预览
+    final preview = group.mode == FriendGatewayMode.preview;
+    final receipt = group.receipt;
+    final editing =
+        group.phase != FriendGroupPhase.unavailable && receipt == null;
+    // Decision 0168: the create flow is a focus page — a quiet folio, the
+    // name field, one labelled group of pickable rows and one block button
+    // at the foot. No English eyebrow; a preview build keeps its 开发预览
     // mark, which is the one label that must stay visible.
-    return LoopPage(
-      eyebrow: group.mode == FriendGatewayMode.preview ? '开发预览' : null,
+    return LoopFocusPage(
+      key: const ValueKey<String>('friend-group-create-screen'),
+      archetype: LoopPageArchetype.action,
       title: '创建群组',
-      children: <Widget>[
-        if (group.mode == FriendGatewayMode.preview) ...<Widget>[
-          const _FriendPreviewBanner(),
-          const SizedBox(height: 14),
-        ],
-        if (group.phase == FriendGroupPhase.unavailable)
-          const LoopStateCard(
-            key: ValueKey<String>('friend-group-unavailable'),
-            title: '创建群聊还没有开放',
-            message: '创建群聊还没有开放，这里不会创建任何群或添加成员。',
-            icon: Icons.group_add_outlined,
-            tone: LoopTone.warning,
-          )
-        else if (group.receipt != null)
-          _CreatedFriendGroupCard(
+      kicker: preview ? '开发预览' : null,
+      onBack: _friendPageBack(context),
+      keyboardAccessory: true,
+      folio: const LoopFolioPrimary(
+        key: ValueKey<String>('friend-group-folio'),
+        variant: LoopFolioVariant.quiet,
+        archetype: LoopFolioArchetype.action,
+        kicker: '好友建群',
+        heading: '创建群组',
+        caption: '从已接受的好友里选人。群由 LOOP 后端创建，成功后才会出现在聊天里。',
+        stamp: '仅好友',
+      ),
+      block: group.phase == FriendGroupPhase.unavailable
+          ? const LoopEmptyState(
+              key: ValueKey<String>('friend-group-unavailable'),
+              illustration: LoopIllustration.friends,
+              title: '创建群聊还没有开放',
+              message: '这里不会创建任何群或添加成员。',
+            )
+          : null,
+      body: <Widget>[
+        if (preview) const _FriendPreviewNotice(),
+        if (receipt != null)
+          _CreatedFriendGroupResult(
             mode: group.mode,
-            receipt: group.receipt!,
-            onOpen: group.receipt!.streamCid == null
+            receipt: receipt,
+            onOpen: receipt.streamCid == null
                 ? null
                 : () => context.push(
-                    '/chat/channel/${Uri.encodeComponent(group.receipt!.streamCid!)}',
+                    '/chat/channel/${Uri.encodeComponent(receipt.streamCid!)}',
                   ),
             onSetAlias:
-                group.receipt!.groupId == null ||
+                receipt.groupId == null ||
                     !ref.watch(loopFeatureSwitchesProvider).groupAliasVisible
                 ? null
-                : () => context.push(
-                    '/chat/groups/${group.receipt!.groupId}/alias',
-                  ),
+                : () => context.push('/chat/groups/${receipt.groupId}/alias'),
             onReset: () {
               groupController.reset();
               _nameController.clear();
@@ -587,22 +608,28 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
             },
           )
         else ...<Widget>[
-          TextField(
-            key: const ValueKey<String>('friend-group-name-input'),
-            controller: _nameController,
-            enabled: group.canEdit,
-            maxLength: 60,
-            textInputAction: TextInputAction.next,
-            decoration: loopFormFieldDecoration(hint: '群组名称', counterText: ''),
-            onChanged: groupController.editName,
-          ),
-          LoopSectionLabel(
-            '选择好友',
-            trailing: LoopStatusPill(
-              label:
-                  '${group.selectedFriendRefs.length}/$groupMaximumSelectedFriends',
-              tone: LoopTone.conversation,
+          const SizedBox(height: LoopSpacing.group),
+          LoopFlatField(
+            key: const ValueKey<String>('friend-group-name-field'),
+            label: '群组名称',
+            footnote: '最多 60 个字符',
+            child: TextField(
+              key: const ValueKey<String>('friend-group-name-input'),
+              controller: _nameController,
+              enabled: group.canEdit,
+              maxLength: 60,
+              textInputAction: TextInputAction.next,
+              style: LoopTypography.body(16, color: LoopColors.chalk),
+              decoration: loopFormFieldDecoration(
+                hint: '群组名称',
+                counterText: '',
+              ),
+              onChanged: groupController.editName,
             ),
+          ),
+          LoopLabel(
+            '选择好友 · ${group.selectedFriendRefs.length}/$groupMaximumSelectedFriends',
+            key: const ValueKey<String>('friend-group-selection-label'),
           ),
           ..._friendSelection(
             directory,
@@ -610,23 +637,33 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
             group,
             groupController,
           ),
-          const SizedBox(height: 18),
-          LoopWideButton(
-            key: const ValueKey<String>('friend-group-create-submit'),
-            label: group.phase == FriendGroupPhase.creating ? '创建中…' : '创建群组',
-            busy: group.phase == FriendGroupPhase.creating,
-            onPressed: group.canCreate
-                ? () => unawaited(groupController.create())
-                : null,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '至少选择 $groupMinimumSelectedFriends 位好友',
-            textAlign: TextAlign.center,
-            style: LoopTypography.caption(11, color: LoopColors.text3),
-          ),
         ],
       ],
+      primaryAction: editing
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('friend-group-create-submit'),
+                  label: group.phase == FriendGroupPhase.creating
+                      ? '创建中…'
+                      : '创建群组',
+                  primary: true,
+                  block: true,
+                  onPressed: group.canCreate
+                      ? () => unawaited(groupController.create())
+                      : null,
+                ),
+                const SizedBox(height: LoopSpacing.tight),
+                Text(
+                  '至少选择 $groupMinimumSelectedFriends 位好友',
+                  textAlign: TextAlign.center,
+                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                ),
+              ],
+            )
+          : null,
     );
   }
 
@@ -638,94 +675,229 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
   ) {
     if (directory.phase == FriendDirectoryPhase.loading &&
         directory.friends.isEmpty) {
-      return const <Widget>[_FriendLoadingCard(label: '正在加载好友…')];
+      return const <Widget>[
+        LoopSkeleton(
+          key: ValueKey<String>('friend-group-friends-loading'),
+          type: LoopSkeletonType.list,
+          rows: 3,
+        ),
+      ];
     }
     if (directory.phase == FriendDirectoryPhase.failure &&
         directory.friends.isEmpty) {
       return <Widget>[
-        LoopStateCard(
+        LoopEmptyState(
           key: const ValueKey<String>('friend-group-friends-failure'),
+          illustration: LoopIllustration.friends,
           title: '好友列表暂时无法加载',
           message: _friendFailureMessage(directory.failureKind),
-          icon: Icons.sync_problem_rounded,
-          tone: LoopTone.danger,
-          action: OutlinedButton.icon(
+          compact: true,
+          action: LoopButton(
+            key: const ValueKey<String>('friend-group-friends-retry'),
+            label: '重试',
+            icon: 'refresh',
             onPressed: directory.isBusy
                 ? null
                 : () => unawaited(directoryController.reload()),
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('重试'),
           ),
         ),
       ];
     }
     if (directory.friends.isEmpty) {
       return <Widget>[
-        LoopStateCard(
+        LoopEmptyState(
           key: const ValueKey<String>('friend-group-friends-empty'),
+          illustration: LoopIllustration.friends,
           title: '没有可选择的好友',
           message: '好友请求被对方接受后，才能邀请对方创建群组。',
-          icon: Icons.group_off_outlined,
-          action: OutlinedButton.icon(
+          compact: true,
+          action: LoopButton(
+            key: const ValueKey<String>('friend-group-find-friends'),
+            label: '添加好友',
+            icon: 'users',
             onPressed: () => context.push('/search'),
-            icon: const Icon(Icons.person_add_alt_1_outlined),
-            label: const Text('添加好友'),
           ),
         ),
       ];
     }
 
-    // OKX rows (decision 0127): no card and no dividers.
     final content = <Widget>[
-      for (var index = 0; index < directory.friends.length; index++)
-        _SelectableFriendRow(
-          rowKey: 'friend-select-result-$index',
-          identity: directory.friends[index],
-          selected: group.selectedFriendRefs.contains(
-            directory.friends[index].profileRef,
-          ),
-          enabled: group.canEdit,
-          onChanged: () =>
-              groupController.toggleFriend(directory.friends[index].profileRef),
-        ),
+      LoopRecordGroup(
+        key: const ValueKey<String>('friend-group-selection'),
+        rows: <LoopRecordRow>[
+          for (var index = 0; index < directory.friends.length; index++)
+            _selectableFriendRow(
+              rowKey: 'friend-select-result-$index',
+              identity: directory.friends[index],
+              selected: group.selectedFriendRefs.contains(
+                directory.friends[index].profileRef,
+              ),
+              onChanged: group.canEdit
+                  ? () => groupController.toggleFriend(
+                      directory.friends[index].profileRef,
+                    )
+                  : null,
+            ),
+        ],
+      ),
     ];
     if (group.phase == FriendGroupPhase.failure) {
       final unresolved =
           group.failureKind == FriendGatewayFailureKind.outcomeUnknown ||
           group.failureKind == FriendGatewayFailureKind.operatorRequired;
+      final recovery = group.canReconcile
+          ? LoopButton(
+              key: const ValueKey<String>('friend-group-reconcile'),
+              label: '查询结果',
+              icon: 'search',
+              block: true,
+              onPressed: () => unawaited(groupController.reconcile()),
+            )
+          : group.canResumeEditing
+          ? LoopButton(
+              key: const ValueKey<String>('friend-group-resume-editing'),
+              label: '修改草稿',
+              block: true,
+              onPressed: groupController.resumeEditing,
+            )
+          : null;
       content.insertAll(0, <Widget>[
-        LoopStateCard(
+        LoopNotice(
           key: const ValueKey<String>('friend-group-create-failure'),
+          icon: 'warn',
+          tone: LoopNoticeTone.danger,
           title: group.failureKind == FriendGatewayFailureKind.operatorRequired
               ? '群组创建需人工核对'
               : group.failureKind == FriendGatewayFailureKind.outcomeUnknown
               ? '群组创建结果待确认'
               : '群组未创建',
-          message: unresolved
+          body: unresolved
               ? '${_friendFailureMessage(group.failureKind)} 当前草稿已冻结，不会自动重复提交。'
               : _friendFailureMessage(group.failureKind),
-          icon: Icons.sync_problem_rounded,
-          tone: LoopTone.danger,
-          action: group.canReconcile
-              ? OutlinedButton.icon(
-                  key: const ValueKey<String>('friend-group-reconcile'),
-                  onPressed: () => unawaited(groupController.reconcile()),
-                  icon: const Icon(Icons.manage_search_rounded),
-                  label: const Text('查询结果'),
-                )
-              : group.canResumeEditing
-              ? OutlinedButton.icon(
-                  key: const ValueKey<String>('friend-group-resume-editing'),
-                  onPressed: groupController.resumeEditing,
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('修改草稿'),
-                )
-              : null,
         ),
-        const SizedBox(height: 14),
+        if (recovery != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              LoopSpacing.card,
+            ),
+            child: recovery,
+          ),
       ]);
     }
     return content;
+  }
+}
+
+/// One friend to pick (decision 0168): a `.row` in the labelled group — the
+/// initials at 36, the alias over the LOOP code, and the shared round
+/// [LoopSelectionCheck] in the value column.
+LoopRecordRow _selectableFriendRow({
+  required String rowKey,
+  required FriendIdentity identity,
+  required bool selected,
+  required VoidCallback? onChanged,
+}) => LoopRecordRow(
+  key: ValueKey<String>(rowKey),
+  leading: LoopInitialsAvatar(label: identity.alias, size: 36),
+  title: identity.alias,
+  subtitle: 'LOOP #${identity.profileCode}',
+  trailingBadge: LoopSelectionCheck(selected: selected),
+  chevron: false,
+  onTap: onChanged,
+  semanticLabel: '${identity.alias}，${selected ? '已选择' : '未选择'}',
+);
+
+/// The topbar's back control while there is a page under this one, as the
+/// retired `LoopPage` shell drew it.
+VoidCallback? _friendPageBack(BuildContext context) {
+  final navigator = Navigator.of(context);
+  return navigator.canPop() ? () => unawaited(navigator.maybePop()) : null;
+}
+
+/// The 开发预览 statement on the create flow: a notice, not a card.
+class _FriendPreviewNotice extends StatelessWidget {
+  const _FriendPreviewNotice();
+
+  @override
+  Widget build(BuildContext context) => const LoopNotice(
+    key: ValueKey<String>('friend-preview-banner'),
+    icon: 'info',
+    title: '开发预览 · 仅本次运行',
+    body: '好友、请求与新群组只保存在内存中，不会写入 LOOP 后端或 Stream。',
+    margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+  );
+}
+
+/// The create flow's result (decision 0168): one notice that states what was
+/// created and where it lives, and the next steps under it.
+class _CreatedFriendGroupResult extends StatelessWidget {
+  const _CreatedFriendGroupResult({
+    required this.mode,
+    required this.receipt,
+    required this.onReset,
+    required this.onOpen,
+    required this.onSetAlias,
+  });
+
+  final FriendGatewayMode mode;
+  final CreatedFriendGroup receipt;
+  final VoidCallback onReset;
+  final VoidCallback? onOpen;
+  final VoidCallback? onSetAlias;
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = mode == FriendGatewayMode.preview;
+    return Column(
+      key: ValueKey<String>(
+        preview ? 'friend-group-created-preview' : 'friend-group-created',
+      ),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopLabel('结果'),
+        LoopNotice(
+          icon: 'check',
+          title: preview ? '开发预览群组已创建' : '群组已创建',
+          body: preview
+              ? '${receipt.name} · ${receipt.friendRefs.length + 1} 位成员。这个结果仅存在于本次运行，未创建 Stream 频道。'
+              : '${receipt.name} · ${receipt.friendRefs.length + 1} 位成员。频道已由 LOOP 后端创建并授权。',
+        ),
+        if (preview)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+            child: LoopButton(
+              key: const ValueKey<String>('friend-group-create-another'),
+              label: '再建一个',
+              icon: 'plus',
+              block: true,
+              onPressed: onReset,
+            ),
+          )
+        else
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('friend-group-set-alias'),
+                label: '设置群昵称',
+                icon: 'id',
+                block: true,
+                onPressed: onSetAlias,
+              ),
+              LoopButton(
+                key: const ValueKey<String>('friend-group-open-channel'),
+                label: '进入群聊',
+                icon: 'chat',
+                primary: true,
+                block: true,
+                onPressed: onOpen,
+              ),
+            ],
+          ),
+      ],
+    );
   }
 }
 
@@ -897,146 +1069,6 @@ class _FriendSearchResultRow extends StatelessWidget {
             },
         ],
       ),
-    );
-  }
-}
-
-/// One friend to pick (decision 0127): the face at 36, the alias over the
-/// LOOP code, and a 24 round check on the right — Lime and filled once
-/// picked.
-class _SelectableFriendRow extends StatelessWidget {
-  const _SelectableFriendRow({
-    required this.rowKey,
-    required this.identity,
-    required this.selected,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final String rowKey;
-  final FriendIdentity identity;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      checked: selected,
-      enabled: enabled,
-      label: '${identity.alias}，${selected ? '已选择' : '未选择'}',
-      excludeSemantics: true,
-      child: InkWell(
-        key: ValueKey<String>(rowKey),
-        onTap: enabled ? onChanged : null,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 60),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: <Widget>[
-                ChatAvatar(
-                  label: identity.alias,
-                  colorSeed: identity.colorSeed,
-                  size: 36,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        identity.alias,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.title(16),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'LOOP #${identity.profileCode}',
-                        style: LoopTypography.body(13, color: LoopColors.text2),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 24,
-                  height: 24,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: selected ? LoopColors.lime : Colors.transparent,
-                    border: selected
-                        ? null
-                        : Border.all(color: LoopColors.line2, width: 1.5),
-                  ),
-                  child: selected
-                      ? const LoopIcon('check', size: 14, color: LoopColors.ink)
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CreatedFriendGroupCard extends StatelessWidget {
-  const _CreatedFriendGroupCard({
-    required this.mode,
-    required this.receipt,
-    required this.onReset,
-    required this.onOpen,
-    required this.onSetAlias,
-  });
-
-  final FriendGatewayMode mode;
-  final CreatedFriendGroup receipt;
-  final VoidCallback onReset;
-  final VoidCallback? onOpen;
-  final VoidCallback? onSetAlias;
-
-  @override
-  Widget build(BuildContext context) {
-    final preview = mode == FriendGatewayMode.preview;
-    return LoopStateCard(
-      key: ValueKey<String>(
-        preview ? 'friend-group-created-preview' : 'friend-group-created',
-      ),
-      title: preview ? '开发预览群组已创建' : '群组已创建',
-      message: preview
-          ? '${receipt.name} · ${receipt.friendRefs.length + 1} 位成员。这个结果仅存在于本次运行，未创建 Stream 频道。'
-          : '${receipt.name} · ${receipt.friendRefs.length + 1} 位成员。频道已由 LOOP 后端创建并授权。',
-      icon: Icons.groups_rounded,
-      tone: LoopTone.conversation,
-      action: preview
-          ? OutlinedButton.icon(
-              key: const ValueKey<String>('friend-group-create-another'),
-              onPressed: onReset,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('再建一个'),
-            )
-          : Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: <Widget>[
-                OutlinedButton.icon(
-                  key: const ValueKey<String>('friend-group-set-alias'),
-                  onPressed: onSetAlias,
-                  icon: const Icon(Icons.badge_outlined),
-                  label: const Text('设置群昵称'),
-                ),
-                FilledButton.icon(
-                  key: const ValueKey<String>('friend-group-open-channel'),
-                  onPressed: onOpen,
-                  icon: const Icon(Icons.forum_outlined),
-                  label: const Text('进入群聊'),
-                ),
-              ],
-            ),
     );
   }
 }

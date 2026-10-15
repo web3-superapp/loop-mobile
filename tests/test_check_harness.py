@@ -7637,14 +7637,26 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_chat_attachment_contract(root)
         self.assertTrue(any("spreads and computed entries are forbidden" in error for error in result))
 
-    def test_token_card_view_network_source_is_rejected(self) -> None:
+    def test_token_card_builder_network_source_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            view = root / "lib" / "features" / "chat" / "widgets" / "token_card_view.dart"
+            view = (
+                root
+                / "lib"
+                / "features"
+                / "chat"
+                / "attachments"
+                / "stream_token_card_attachment_builder.dart"
+            )
             view.parent.mkdir(parents=True)
             view.write_text("import 'dart:io';\nfinal client = HttpClient();\n", encoding="utf-8")
             result = check_harness.check_chat_attachment_contract(root)
-        self.assertTrue(any("token_card_view.dart (`dart:io`)" in error for error in result))
+        self.assertTrue(
+            any(
+                "stream_token_card_attachment_builder.dart (`dart:io`)" in error
+                for error in result
+            )
+        )
 
     def test_token_card_renderer_helper_import_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -7716,13 +7728,13 @@ class HarnessTests(unittest.TestCase):
                 / "lib"
                 / "features"
                 / "chat"
-                / "widgets"
-                / "token_card_view.dart"
+                / "attachments"
+                / "stream_token_card_attachment_builder.dart"
             )
             view.parent.mkdir(parents=True)
             expected_imports = sorted(
                 check_harness.TOKEN_CARD_RENDER_IMPORTS[
-                    "lib/features/chat/widgets/token_card_view.dart"
+                    "lib/features/chat/attachments/stream_token_card_attachment_builder.dart"
                 ]
             )
             view.write_text(
@@ -7733,7 +7745,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_chat_attachment_contract(root)
         self.assertTrue(
             any(
-                "token_card_view.dart (`Image.network(`)" in error
+                "stream_token_card_attachment_builder.dart (`Image.network(`)" in error
                 for error in result
             )
         )

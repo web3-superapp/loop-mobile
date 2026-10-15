@@ -39,7 +39,6 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// The 「发起」 button and the margin above it: 56 + 32 (decision 0123).
@@ -655,8 +654,8 @@ class StreamChatChannelRoutePage extends ConsumerWidget {
     final address = parseLoopStreamChannelCid(cid);
     if (address == null) {
       return const _StreamChannelUnavailablePage(
-        title: 'Invalid chat link',
-        message: 'This link does not identify a supported LOOP conversation.',
+        title: '会话链接无效',
+        message: '这个链接没有指向 LOOP 支持的会话，没有打开任何频道。',
       );
     }
 
@@ -666,21 +665,21 @@ class StreamChatChannelRoutePage extends ConsumerWidget {
           skipLoadingOnReload: false,
           skipLoadingOnRefresh: false,
           loading: () => const _StreamChannelUnavailablePage(
-            title: 'Restoring chat',
-            message: 'LOOP is restoring the server-authorized Stream session.',
+            title: '正在恢复会话',
+            message: 'LOOP 正在恢复由服务端授权的聊天连接。',
             loading: true,
           ),
           error: (error, stackTrace) => const _StreamChannelUnavailablePage(
-            title: 'Chat unavailable',
-            message: 'Stream authorization could not be restored.',
+            title: '聊天暂不可用',
+            message: '聊天授权没有恢复成功，没有打开任何会话。',
           ),
           data: (authorization) {
             final session = ref.watch(streamChatSdkSessionProvider);
             if (authorization != StreamSessionAuthorization.authorized ||
                 session?.client.state.currentUser == null) {
               return const _StreamChannelUnavailablePage(
-                title: 'Stream not connected',
-                message: 'A server-derived Stream identity and short-lived token are required before opening this conversation.',
+                title: '聊天服务还没有连接',
+                message: '打开这个会话前，需要服务端确认的聊天身份和短期凭证。',
               );
             }
             return _ExistingMemberStreamChannelPage(
@@ -717,8 +716,8 @@ class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
       GroupAliasStreamChannelId.fromCid(cid);
     } on InvalidGroupAliasContractException {
       return const _StreamChannelUnavailablePage(
-        title: 'Invalid group link',
-        message: 'This link does not identify a supported LOOP group.',
+        title: '群聊链接无效',
+        message: '这个链接没有指向 LOOP 支持的群聊，没有解析任何群组。',
       );
     }
 
@@ -728,13 +727,13 @@ class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
           skipLoadingOnReload: false,
           skipLoadingOnRefresh: false,
           loading: () => const _StreamChannelUnavailablePage(
-            title: 'Restoring chat',
-            message: 'LOOP is restoring the server-authorized Stream session.',
+            title: '正在恢复会话',
+            message: 'LOOP 正在恢复由服务端授权的聊天连接。',
             loading: true,
           ),
           error: (error, stackTrace) => const _StreamChannelUnavailablePage(
-            title: 'Group identity unavailable',
-            message: 'Stream authorization could not be restored.',
+            title: '群内身份暂不可用',
+            message: '聊天授权没有恢复成功，没有解析任何群组。',
           ),
           data: (authorization) {
             final session = ref.watch(streamChatSdkSessionProvider);
@@ -743,8 +742,8 @@ class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
                 session == null ||
                 currentUser == null) {
               return const _StreamChannelUnavailablePage(
-                title: 'Stream not connected',
-                message: 'Current Stream membership must be confirmed before resolving a LOOP group.',
+                title: '聊天服务还没有连接',
+                message: '解析 LOOP 群组前，需要先确认你当前仍是这个群聊的成员。',
               );
             }
             return _ExistingMemberGroupAliasPage(
@@ -810,15 +809,15 @@ class _ExistingMemberGroupAliasPageState
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const _StreamChannelUnavailablePage(
-            title: 'Confirming group',
-            message: 'LOOP is confirming this exact Stream channel membership.',
+            title: '正在确认群聊',
+            message: 'LOOP 正在确认你是这个群聊的成员。',
             loading: true,
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
           return const _StreamChannelUnavailablePage(
-            title: 'Group unavailable',
-            message: 'No existing Stream group membership was confirmed. LOOP did not resolve a group.',
+            title: '群聊不可用',
+            message: '没有确认到你在这个群聊里的成员身份，没有解析任何群组。',
           );
         }
         return GroupAliasChannelRoutePage(routeCid: widget.cid);
@@ -877,15 +876,15 @@ class _ExistingMemberStreamChannelPageState
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const _StreamChannelUnavailablePage(
-            title: 'Opening chat',
-            message: 'LOOP is confirming this channel and your membership.',
+            title: '正在打开会话',
+            message: 'LOOP 正在确认这个频道和你的成员身份。',
             loading: true,
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
           return const _StreamChannelUnavailablePage(
-            title: 'Conversation unavailable',
-            message: 'No existing Stream channel membership was confirmed. LOOP did not create or open a channel.',
+            title: '会话不可用',
+            message: '没有确认到你在这个频道里的成员身份，没有创建或打开任何频道。',
           );
         }
         GroupAliasStreamChannelId? groupAliasChannelId;
@@ -1160,20 +1159,19 @@ class _StreamChannelListBodyState
                       ),
                     ),
                   ),
-                  errorBuilder: (context, error) => Align(
-                    alignment: Alignment.topCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: LoopStateCard(
-                        title: '会话列表读不到',
-                        message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
-                        icon: Icons.cloud_off_outlined,
-                        tone: LoopTone.warning,
-                        action: OutlinedButton.icon(
-                          onPressed: () => controller.refresh(),
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: const Text('重试'),
-                        ),
+                  errorBuilder: (context, error) => SingleChildScrollView(
+                    child: LoopEmptyState(
+                      key: const ValueKey<String>('stream-chat-list-error'),
+                      illustration: LoopIllustration.chat,
+                      title: '会话列表读不到',
+                      message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
+                      action: LoopButton(
+                        key: const ValueKey<String>('stream-chat-list-retry'),
+                        label: '重试',
+                        icon: 'refresh',
+                        // Secondary: the inbox's 「发起」 key is this
+                        // screen's one Lime body.
+                        onPressed: () => controller.refresh(),
                       ),
                     ),
                   ),
@@ -1394,6 +1392,9 @@ loopInboxChannelDestination({
   return (location: '/chat/channel/$encoded', target: null, heading: null);
 }
 
+/// A conversation location that cannot open (decision 0168): the stream
+/// shell with the Chinese title the inbox carries, and one centred chat
+/// state saying why. It never offers a message action.
 class _StreamChannelUnavailablePage extends StatelessWidget {
   const _StreamChannelUnavailablePage({
     required this.title,
@@ -1407,22 +1408,28 @@ class _StreamChannelUnavailablePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'Discuss',
-      title: 'Chat',
-      children: <Widget>[
-        LoopStateCard(
+    final navigator = Navigator.of(context);
+    return LoopStreamPage(
+      archetype: LoopPageArchetype.state,
+      title: '聊天',
+      updating: loading,
+      onBack: navigator.canPop() ? () => unawaited(navigator.maybePop()) : null,
+      collection: const SizedBox.shrink(),
+      block: SingleChildScrollView(
+        child: LoopEmptyState(
           key: const ValueKey<String>('stream-chat-channel-unavailable'),
+          illustration: LoopIllustration.chat,
           title: title,
           message: message,
-          icon: loading ? Icons.sync_rounded : Icons.cloud_off_outlined,
-          tone: LoopTone.neutral,
         ),
-      ],
+      ),
     );
   }
 }
 
+/// The inbox's collection while there is no connected chat session: the
+/// chat illustration, why, and — when the session can be asked again — one
+/// retry.
 class _StreamUnavailableCard extends StatelessWidget {
   const _StreamUnavailableCard({required this.message, this.onRetry});
 
@@ -1431,20 +1438,21 @@ class _StreamUnavailableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: LoopStateCard(
+    return SingleChildScrollView(
+      child: LoopEmptyState(
         key: const ValueKey<String>('stream-chat-unavailable'),
+        illustration: LoopIllustration.chat,
         title: '会话还没有连接',
         message: message,
-        icon: Icons.cloud_off_outlined,
-        tone: LoopTone.neutral,
         action: onRetry == null
             ? null
-            : OutlinedButton.icon(
+            : LoopButton(
+                key: const ValueKey<String>('stream-chat-unavailable-retry'),
+                label: '重试',
+                icon: 'refresh',
+                // Secondary: the inbox's 「发起」 key is this screen's one
+                // Lime body.
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('重试'),
               ),
       ),
     );

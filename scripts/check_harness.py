@@ -431,9 +431,10 @@ TOKEN_CARD_RENDER_IMPORTS = {
     ),
     "lib/features/chat/attachments/stream_token_card_attachment_builder.dart": frozenset(
         {
-            "'package:flutter/widgets.dart' show BuildContext, Widget",
+            "'package:flutter/widgets.dart' show BuildContext, EdgeInsets, StatelessWidget, ValueKey, Widget",
             "'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart'",
-            "'package:loop_mobile/features/chat/widgets/token_card_view.dart'",
+            "'package:loop_mobile/features/chat/attachments/token_card_attachment.dart'",
+            "'package:loop_mobile/widgets/loop_token_card.dart' show LoopTokenCard, LoopTokenCardModel, LoopTokenCardState",
             "'package:stream_chat_flutter/stream_chat_flutter.dart' show Attachment, Message, StreamAttachmentWidgetBuilder",
         }
     ),
@@ -442,22 +443,6 @@ TOKEN_CARD_RENDER_IMPORTS = {
             "'package:flutter/widgets.dart' show BuildContext, TextSpan",
             "'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart'",
             "'package:stream_chat_flutter/stream_chat_flutter.dart' show ChannelModel, DraftMessage, Message, MessageState, StreamMessagePreviewFormatter, User",
-        }
-    ),
-    "lib/features/chat/widgets/token_card_view.dart": frozenset(
-        {
-            (
-                "'package:flutter/material.dart' show Alignment, Border, BoxDecoration, BoxShape, "
-                "BuildContext, ClipRRect, Column, Color, Container, CrossAxisAlignment, "
-                "DecoratedBox, EdgeInsets, Expanded, FontWeight, Icon, IconData, Icons, "
-                "MainAxisSize, OutlinedButton, Padding, Positioned, Row, Semantics, SizedBox, "
-                "Stack, StatelessWidget, Text, TextOverflow, Theme, ValueKey, Widget, immutable"
-            ),
-            (
-                "'package:loop_mobile/core/theme/loop_theme.dart' show "
-                "LoopColors, LoopRadius, LoopType, LoopTypography"
-            ),
-            "'package:loop_mobile/features/chat/attachments/token_card_attachment.dart'",
         }
     ),
 }
@@ -9196,8 +9181,10 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
                 "extends StreamAttachmentWidgetBuilder",
                 "LoopStreamTokenCardAttachmentPolicy.containsRawTokenCard",
                 "LoopStreamTokenCardAttachmentPolicy.tryParse",
-                "LoopTokenCardViewState.unavailable",
-                "LoopTokenCardViewState.malformed",
+                "LoopUnavailableTokenCard(reference: reference)",
+                "const LoopMalformedTokenCard()",
+                "state: LoopTokenCardState.partial",
+                "消息只保存代币标识",
                 "This builder performs no network request",
             ),
             "lib/features/chat/attachments/stream_token_card_attachment_policy.dart": (
@@ -9211,11 +9198,6 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
                 "unsupportedTokenCardLabel",
                 "formatMessageSemanticsLabel",
                 "formatDraftMessageSemanticsLabel",
-            ),
-            "lib/features/chat/widgets/token_card_view.dart": (
-                "Current facts unavailable",
-                "The message stores identifiers only",
-                "开发预览",
             ),
             "test/stream_token_card_attachment_builder_test.dart": (
                 "official Stream message renderer uses the configured builder",
@@ -13170,7 +13152,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "Filter.equal('cid', cid)",
                 "Filter.in_('members', <Object>[userId])",
                 "channel.membership?.userId != userId",
-                "No existing Stream channel membership was confirmed",
+                "没有确认到你在这个频道里的成员身份",
                 "GroupAliasStreamChannelId.fromCid(widget.cid)",
                 "LoopStreamGroupChannelPage(",
                 "loopStreamChannelListIdentityItem(defaultItem)",

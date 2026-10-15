@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart'
+    show LoopSelectionCheck;
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
@@ -42,8 +48,33 @@ void main() {
       const ValueKey<String>('friend-group-create-submit'),
     );
     await tester.ensureVisible(submit);
-    expect(tester.widget<LoopWideButton>(submit).label, '创建群组');
-    expect(tester.getSize(submit).height, 52);
+    expect(tester.widget<LoopButton>(submit).label, '创建群组');
+    expect(tester.widget<LoopButton>(submit).block, isTrue);
+    expect(tester.widget<LoopButton>(submit).primary, isTrue);
+    // Decision 0168: the flow is the prototype's — a quiet folio, a labelled
+    // group of pickable rows with the shared round check, one block button —
+    // and no retired shell is left on it.
+    expect(find.byType(LoopFocusPage), findsOneWidget);
+    final folio = tester.widget<LoopFolioPrimary>(
+      find.byType(LoopFolioPrimary),
+    );
+    expect(folio.variant, LoopFolioVariant.quiet);
+    expect(find.byType(LoopRecordGroup), findsOneWidget);
+    expect(find.byType(LoopSelectionCheck), findsWidgets);
+    expect(
+      find.byKey(const ValueKey<String>('friend-preview-banner')),
+      findsOneWidget,
+    );
+    expect(find.byType(LoopNotice), findsWidgets);
+    expect(find.byType(LoopFlatField), findsOneWidget);
+    expect(find.byType(LoopPage), findsNothing);
+    expect(find.byType(LoopStateCard), findsNothing);
+    expect(find.byType(LoopWideButton), findsNothing);
+    expect(find.byType(LoopStatusPill), findsNothing);
+    expect(find.byType(LoopSectionLabel), findsNothing);
+    expect(find.byType(OutlinedButton), findsNothing);
+    expect(find.byType(FilledButton), findsNothing);
+    expect(find.byType(Icon), findsNothing);
   });
 
   // This file mounts pages through its own `pumpWidget`, so it arms the
@@ -891,7 +922,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<LoopWideButton>(
+            .widget<LoopButton>(
               find.byKey(const ValueKey<String>('friend-group-create-submit')),
             )
             .onPressed,

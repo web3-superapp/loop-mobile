@@ -41,6 +41,7 @@ import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
@@ -120,9 +121,11 @@ import 'package:loop_mobile/integrations/communication/stream_chat_localizations
 import 'package:loop_mobile/integrations/communication/stream_chat_presence.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
     show
         StreamChat,
@@ -2448,6 +2451,9 @@ String _profilePath(String id) => switch (id) {
   _ => LoopRouteManifest.pathFor('profile'),
 };
 
+/// A location no route claims (decision 0168): the focus shell, one centred
+/// state with the chat illustration, and the one way back — to the inbox,
+/// which is the post-login home.
 class UnknownRouteScreen extends StatelessWidget {
   const UnknownRouteScreen({required this.location, super.key});
 
@@ -2455,22 +2461,29 @@ class UnknownRouteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopPage(
+    final navigator = Navigator.of(context);
+    return LoopFocusPage(
+      key: const ValueKey<String>('unknown-route-screen'),
+      archetype: LoopPageArchetype.state,
       title: '页面不存在',
-      eyebrow: '404',
       subtitle: location,
-      children: <Widget>[
-        LoopStateCard(
+      onBack: navigator.canPop() ? () => unawaited(navigator.maybePop()) : null,
+      body: const <Widget>[],
+      block: SingleChildScrollView(
+        child: LoopEmptyState(
+          key: const ValueKey<String>('unknown-route-state'),
+          illustration: LoopIllustration.chat,
           title: '这个地址不在 LOOP 的页面里',
           message: '这次访问已记录。',
-          icon: Icons.route_outlined,
-          tone: LoopTone.warning,
-          action: FilledButton(
+          action: LoopButton(
+            key: const ValueKey<String>('unknown-route-home'),
+            label: '回到聊天',
+            icon: 'chat',
+            primary: true,
             onPressed: () => context.go(LoopRouteManifest.defaultPath),
-            child: const Text('回到聊天'),
           ),
         ),
-      ],
+      ),
     );
   }
 }

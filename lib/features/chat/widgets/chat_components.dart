@@ -8,7 +8,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
-import 'package:loop_mobile/features/chat/widgets/token_card_view.dart';
+import 'package:loop_mobile/widgets/loop_token_card.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -796,23 +796,39 @@ class TokenMessageCard extends StatelessWidget {
         'snapshot_at': '2026-08-23T14:07:00.000Z',
       },
     )!;
-    return LoopTokenCardView(
-      state: LoopTokenCardViewState.previewReady,
-      reference: reference,
-      previewPrice: r'$0.0842',
-      previewChange: '+8.4% · 演示数据',
-      previewSource: '开发预览事实 · 非 provider 响应 · 14:06 UTC',
-      previewFacts: const <LoopTokenCardPreviewFact>[
-        LoopTokenCardPreviewFact(
-          label: 'LP unlocks in 3 days',
-          tone: LoopTokenCardTone.warning,
-          icon: Icons.lock_clock_outlined,
-        ),
-        LoopTokenCardPreviewFact(
-          label: 'Top holders 61%',
-          tone: LoopTokenCardTone.warning,
-          icon: Icons.pie_chart_outline_rounded,
-        ),
+    // A visibly labelled fixture (decision 0168): the prototype `.tcard` in
+    // its 正常 shape, every figure marked 演示数据 and every action off.
+    return LoopTokenCard(
+      key: const ValueKey<String>('token-card-preview'),
+      state: LoopTokenCardState.normal,
+      margin: EdgeInsets.zero,
+      model: LoopTokenCardModel(
+        symbol: reference.assetId,
+        identifier: '${reference.chainId} · ${reference.compactContract}',
+        badge: '开发预览',
+        price: r'$0.0842',
+        change: '+8.4% · 演示数据',
+        riskFacts: const <LoopTokenRiskFact>[
+          LoopTokenRiskFact(
+            fact: 'LP 3 天后解锁',
+            source: '开发预览事实',
+            observedLabel: '14:06 UTC',
+          ),
+          LoopTokenRiskFact(
+            fact: '前十持有人占 61%',
+            source: '开发预览事实',
+            observedLabel: '14:06 UTC',
+          ),
+        ],
+        footnotes: const <String>[
+          '开发预览事实 · 非 provider 响应 · 14:06 UTC',
+          '演示数据不能触发交易或自选变更。',
+        ],
+      ),
+      actions: const <LoopTokenCardAction>[
+        LoopTokenCardAction('图表'),
+        LoopTokenCardAction('自选'),
+        LoopTokenCardAction('买入', buy: true),
       ],
     );
   }

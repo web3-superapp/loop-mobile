@@ -13,10 +13,55 @@ import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_ui.dart';
+
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/loop_ground_probe.dart';
 
 void main() {
+  testWidgets('the unmatched-route page is the focus shell with one empty '
+      'state and a 回到聊天 button (decision 0168)', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/',
+          builder: (context, state) =>
+              const UnknownRouteScreen(location: '/nowhere'),
+        ),
+        GoRoute(
+          path: LoopRouteManifest.defaultPath,
+          builder: (context, state) => const Text('chat-home'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      MaterialApp.router(theme: LoopTheme.dark, routerConfig: router),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoopFocusPage), findsOneWidget);
+    expect(find.text('页面不存在'), findsOneWidget);
+    expect(find.text('/nowhere'), findsOneWidget);
+    expect(
+      tester.widget(find.byKey(const ValueKey<String>('unknown-route-state'))),
+      isA<LoopEmptyState>(),
+    );
+    expect(find.byType(LoopStateCard), findsNothing);
+    expect(find.byType(FilledButton), findsNothing);
+    expect(find.byType(Icon), findsNothing);
+    final home = find.byKey(const ValueKey<String>('unknown-route-home'));
+    expect(tester.widget<LoopButton>(home).label, '回到聊天');
+    await tester.tap(home);
+    await tester.pumpAndSettle();
+    expect(find.text('chat-home'), findsOneWidget);
+  });
+
   // This file mounts pages through its own `pumpWidget`, so it arms the
   // ground probe itself; the page harnesses arm it for everybody else.
   loopWatchGround();

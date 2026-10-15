@@ -4,7 +4,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_builder.dart';
 import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
-import 'package:loop_mobile/features/chat/widgets/token_card_view.dart';
+import 'package:loop_mobile/widgets/loop_token_card.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 void main() {
@@ -50,19 +50,28 @@ void main() {
   ) async {
     await _pumpBuilder(tester, <Attachment>[_tokenAttachment()]);
 
+    final card = find.byKey(const ValueKey<String>('token-card-unavailable'));
+    expect(card, findsOneWidget);
+    // Decision 0168: the attachment is the prototype `.tcard` in its 数据缺失
+    // shape, not a hand-built frame.
+    expect(tester.widget(card), isA<LoopTokenCard>());
     expect(
-      find.byKey(const ValueKey<String>('token-card-unavailable')),
-      findsOneWidget,
+      tester.widget<LoopTokenCard>(card).state,
+      LoopTokenCardState.partial,
     );
+    expect(tester.widget<LoopTokenCard>(card).actions, isEmpty);
     expect(find.text('GLYPH'), findsOneWidget);
     expect(find.text('base · 0x71e40…09a2c'), findsOneWidget);
-    expect(find.text('Current facts unavailable'), findsOneWidget);
+    expect(find.text('当前事实不可得'), findsOneWidget);
+    expect(find.textContaining('消息只保存代币标识'), findsOneWidget);
     expect(find.textContaining('2026-08-23 14:07 UTC'), findsOneWidget);
     expect(find.textContaining(r'$0.0842'), findsNothing);
     expect(find.text('Buy'), findsNothing);
-    expect(find.text('Watch'), findsNothing);
+    expect(find.text('买入'), findsNothing);
+    expect(find.text('自选'), findsNothing);
     expect(find.byType(FilledButton), findsNothing);
     expect(find.byType(OutlinedButton), findsNothing);
+    expect(find.byType(Icon), findsNothing);
   });
 
   testWidgets('official Stream message renderer uses the configured builder', (
@@ -75,7 +84,7 @@ void main() {
       find.byKey(const ValueKey<String>('token-card-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('Current facts unavailable'), findsOneWidget);
+    expect(find.text('当前事实不可得'), findsOneWidget);
     expect(find.text('Buy'), findsNothing);
   });
 
@@ -119,7 +128,16 @@ void main() {
       find.byKey(const ValueKey<String>('token-card-malformed')),
       findsOneWidget,
     );
-    expect(find.text('Unsupported token card'), findsOneWidget);
+    expect(find.text('无法识别的代币卡'), findsOneWidget);
+    expect(
+      tester
+          .widget<LoopTokenCard>(
+            find.byKey(const ValueKey<String>('token-card-malformed')),
+          )
+          .actions,
+      isEmpty,
+    );
+    expect(find.text('GLYPH'), findsNothing);
     expect(find.textContaining(r'$999999'), findsNothing);
     expect(find.text('Buy'), findsNothing);
 
@@ -144,45 +162,6 @@ void main() {
     expect(find.textContaining('attacker.example'), findsNothing);
   });
 
-  testWidgets('incomplete and stale preview states fail closed', (
-    tester,
-  ) async {
-    final reference = LoopTokenCardAttachment.tryParse(
-      type: LoopTokenCardAttachment.attachmentType,
-      extraData: _tokenAttachment().extraData,
-    )!;
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: LoopTheme.dark,
-        home: Scaffold(
-          body: LoopTokenCardView(
-            state: LoopTokenCardViewState.previewReady,
-            reference: reference,
-          ),
-        ),
-      ),
-    );
-    expect(
-      find.byKey(const ValueKey<String>('token-card-malformed')),
-      findsOneWidget,
-    );
-
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: LoopTheme.dark,
-        home: Scaffold(
-          body: LoopTokenCardView(
-            state: LoopTokenCardViewState.previewStale,
-            reference: reference,
-          ),
-        ),
-      ),
-    );
-    expect(find.text('开发预览'), findsOneWidget);
-    expect(find.text('Preview facts expired'), findsOneWidget);
-    expect(find.text('Buy'), findsNothing);
-  });
-
   testWidgets('identity card survives narrow layout and large text', (
     tester,
   ) async {
@@ -196,7 +175,7 @@ void main() {
     ], textScaler: const TextScaler.linear(2));
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Current facts unavailable'), findsOneWidget);
+    expect(find.text('当前事实不可得'), findsOneWidget);
   });
 
   testWidgets('fixture card is visibly preview-only and has no mutation', (
@@ -220,17 +199,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final card = find.byKey(const ValueKey<String>('token-card-preview'));
+    expect(tester.widget(card), isA<LoopTokenCard>());
     expect(find.text('开发预览'), findsOneWidget);
     expect(find.textContaining('非 provider 响应'), findsOneWidget);
-    expect(find.text('Chart'), findsOneWidget);
-    expect(find.text('Buy'), findsOneWidget);
-    expect(find.text('Watch'), findsOneWidget);
+    expect(find.textContaining('演示数据'), findsWidgets);
+    expect(find.text('图表'), findsOneWidget);
+    expect(find.text('买入'), findsOneWidget);
+    expect(find.text('自选'), findsOneWidget);
+    expect(find.text('Buy'), findsNothing);
     expect(find.byType(FilledButton), findsNothing);
-    expect(find.byType(OutlinedButton), findsNWidgets(3));
-    for (final button in tester.widgetList<OutlinedButton>(
-      find.byType(OutlinedButton),
-    )) {
-      expect(button.onPressed, isNull);
+    expect(find.byType(OutlinedButton), findsNothing);
+    for (final action in tester.widget<LoopTokenCard>(card).actions) {
+      expect(action.onTap, isNull, reason: action.label);
     }
     expect(tester.takeException(), isNull);
   });

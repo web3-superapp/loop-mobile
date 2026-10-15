@@ -9,6 +9,10 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_ui.dart';
+
 import 'support/loop_ground_probe.dart';
 
 const _groupIdValue = 'e464386d-cd85-472d-9b22-2d94412ad413';
@@ -257,7 +261,10 @@ void main() {
         const ValueKey<String>('group-alias-resolver-retry'),
       );
       expect(retry, findsOneWidget);
-      expect(tester.widget<OutlinedButton>(retry).onPressed, isNotNull);
+      expect(tester.widget<LoopButton>(retry).onPressed, isNotNull);
+      expect(find.byType(LoopEmptyState), findsOneWidget);
+      expect(find.byType(OutlinedButton), findsNothing);
+      expect(find.byType(LoopStateCard), findsNothing);
       expect(find.byType(GroupAliasPage), findsNothing);
 
       await tester.tap(retry);

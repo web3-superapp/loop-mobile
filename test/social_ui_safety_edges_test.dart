@@ -10,6 +10,12 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_ui.dart';
+
 import 'support/loop_ground_probe.dart';
 
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
@@ -204,6 +210,58 @@ void main() {
       expect(gateway.searchCalls, 0);
     });
 
+    testWidgets('群内昵称 is the prototype record page with no retired shell '
+        '(decision 0168)', (tester) async {
+      final gateway = _ScenarioGroupAliasGateway();
+      await _pumpAliasRoute(
+        tester,
+        gateway,
+        const GroupAliasRoutePage(routeGroupId: _groupIdValue),
+      );
+
+      expect(find.byType(LoopDashboardPage), findsOneWidget);
+      final folio = tester.widget<LoopFolioPrimary>(
+        find.byType(LoopFolioPrimary),
+      );
+      expect(folio.variant, LoopFolioVariant.quiet);
+      expect(find.byType(LoopLabel), findsWidgets);
+      expect(find.byType(LoopFlatField), findsNWidgets(2));
+      expect(
+        find.byKey(const ValueKey<String>('group-alias-boundary')),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget(find.byKey(const ValueKey<String>('group-alias-submit'))),
+        isA<LoopButton>(),
+      );
+      expect(find.byType(LoopPage), findsNothing);
+      expect(find.byType(LoopStateCard), findsNothing);
+      expect(find.byType(LoopCard), findsNothing);
+      expect(find.byType(LoopSectionLabel), findsNothing);
+      expect(find.byType(OutlinedButton), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.byType(ListTile), findsNothing);
+      expect(find.byType(Icon), findsNothing);
+    });
+
+    testWidgets('an invalid group reference is a whole-page empty state', (
+      tester,
+    ) async {
+      await _pumpAliasRoute(
+        tester,
+        _ScenarioGroupAliasGateway(),
+        const GroupAliasRoutePage(routeGroupId: 'messaging:loop_group_unsafe'),
+      );
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('group-alias-route-invalid')),
+        ),
+        isA<LoopEmptyState>(),
+      );
+      expect(find.byType(LoopPage), findsNothing);
+      expect(find.byType(Icon), findsNothing);
+    });
+
     for (final scenario in _AliasPutScenario.values) {
       testWidgets(
         '404 allows first Alias reservation and ${scenario.name} stays truthful',
@@ -307,6 +365,7 @@ void main() {
 
         final row = find.byKey(const ValueKey<String>('group-alias-result-0'));
         expect(row, findsOneWidget);
+        expect(tester.widget(row), isA<LoopRecordRow>());
         expect(
           find.descendant(of: row, matching: find.text('Night Owl')),
           findsOneWidget,

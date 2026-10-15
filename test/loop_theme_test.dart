@@ -52,7 +52,6 @@ void main() {
       'lib/features/chat/stream_chat_inbox_page.dart',
       'lib/features/chat/voice_room_page.dart',
       'lib/features/chat/widgets/chat_components.dart',
-      'lib/features/chat/widgets/token_card_view.dart',
       'lib/features/home/home_screens.dart',
       'lib/features/launchpad/launchpad_screen.dart',
       'lib/features/perp/perp_account_screens.dart',

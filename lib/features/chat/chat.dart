@@ -31,4 +31,3 @@ export 'widgets/chat_components.dart'
         InlineVoiceRoomCard,
         TokenMessageCard,
         VoicePhasePill;
-export 'widgets/token_card_view.dart';
