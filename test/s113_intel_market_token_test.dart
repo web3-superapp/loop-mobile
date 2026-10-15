@@ -674,13 +674,13 @@ void main() {
         IntelRankBoard(onNavigate: (_) {}),
         mining: mining,
       );
-      // No me: 还没有名次.
-      expect(find.text('还没有名次'), findsOneWidget);
+      // No me: 还没有名次 on the ledger card (decision 0182).
+      expect(find.text('我的名次\n还没有名次'), findsOneWidget);
       await tester.tap(find.text('推广'));
       await tester.pumpAndSettle();
       expect(mining.reads.last, (MiningRankScope.referrals, null));
-      expect(find.text('第 3 名'), findsOneWidget);
-      expect(find.text('5 人'), findsOneWidget);
+      expect(find.text('我的名次\n第 3 名'), findsOneWidget);
+      expect(find.text('直接邀请 5 人'), findsOneWidget);
       expect(find.text('inviter'), findsOneWidget);
       // B7: an anonymous inviter stays anonymous.
       expect(find.text('匿名成员'), findsOneWidget);
@@ -720,12 +720,13 @@ void main() {
       await tester.scrollUntilVisible(
         _key('intel-rank-end'),
         400,
-        scrollable: find.byType(Scrollable).last,
+        // The page itself: the last Scrollable is the chips' sideways strip.
+        scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
       expect(mining.reads, contains((MiningRankScope.users, 'users.two')));
       expect(find.text('member35'), findsOneWidget);
-      expect(find.text('第 7 名'), findsOneWidget);
+      expect(find.text('我的名次\n第 7 名'), findsOneWidget);
     });
   });
 

@@ -336,7 +336,7 @@ void main() {
       expect(second.left, lessThan(first.left));
       expect(first.left, lessThan(third.left));
       // Decision 0123: one height for all three; the winner stands out by
-      // its crown, its 56 face and its lighter card.
+      // its crown and its 56 face. Decision 0182: each is a record card.
       expect(first.height, second.height);
       expect(second.height, third.height);
       for (final place in <int>[1, 2, 3]) {
@@ -344,6 +344,11 @@ void main() {
       }
       final medal = tester.widget<Container>(_key('intel-rank-medal-2'));
       expect((medal.decoration! as BoxDecoration).color, LoopColors.brass);
+      expect(
+        (medal.decoration! as BoxDecoration).borderRadius,
+        LoopRadius.badge,
+      );
+      expect(find.byType(LoopRecordCard), findsNWidgets(3));
       expect(find.text('权重 1.1'), findsOneWidget);
       expect(find.textContaining('人有算力'), findsNothing);
     });
@@ -353,15 +358,22 @@ void main() {
         tester,
         IntelRankRow(
           position: 4,
-          leading: const SizedBox.square(dimension: 36),
+          leading: const SizedBox.square(dimension: 40),
           name: '新手村',
           weight: '0.5',
+          caption: '9 人有算力',
           figure: '384',
+          share: 0.25,
         ),
       );
       expect(find.text('4'), findsOneWidget);
       expect(find.text('权重 0.5'), findsOneWidget);
+      expect(find.text('9 人有算力'), findsOneWidget);
       expect(find.text('算力'), findsNothing);
+      // Decision 0182: the figure's share of the leader's, a 64 px bar.
+      final bar = tester.widget<LoopProgressBar>(find.byType(LoopProgressBar));
+      expect(bar.value, 0.25);
+      expect(tester.getSize(find.byType(LoopProgressBar)).width, 64);
     });
   });
 

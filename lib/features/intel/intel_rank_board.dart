@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -21,6 +22,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart'
     show LoopProfileAvatar;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart' show LoopProgressBar;
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -35,16 +37,20 @@ String intelRankScopeLabel(MiningRankScope scope) => switch (scope) {
   MiningRankScope.referrals => '推广',
 };
 
-/// The height of one board row.
-const double intelRankRowHeight = 60;
+/// The face on a board row (docs/35 `.rank-row .face`).
+const double intelRankRowFaceSize = 40;
 
-/// 情报 · 算力榜 (decision 0118).
+/// The width of the share bar under a row's figure (`.rank-row .fig .bar`).
+const double intelRankShareBarWidth = 64;
+
+/// 情报 · 算力榜 (decisions 0118, 0122, 0182).
 ///
-/// Three boards behind chips — 社区 / 用户 / 推广 — each opened on the
-/// reader's own place and then the board itself, a row per place: position,
-/// face, name, figure. The board reads on as the reader scrolls and ends on
-/// 「没有更多」. What the figures are and when they were computed is one weak
-/// line at the foot, which opens the display rules that used to be two cards.
+/// The reader's own place is the page's one Lime ledger card; the three
+/// boards sit behind chips under it — 社区 / 用户 / 推广 — then the first
+/// three on a podium and every later place as a row with its share of the
+/// leader's figure. The board reads on as the reader scrolls. What the
+/// figures are and when they were computed is one weak line at the foot,
+/// which opens the display rules.
 class IntelRankBoard extends ConsumerStatefulWidget {
   const IntelRankBoard({required this.onNavigate, super.key});
 
@@ -88,6 +94,27 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
       }
     }
 
+    // The ledger card: the board's own reading once it lands, a skeleton
+    // heading while the first page of a board is on its way, nothing when the
+    // board could not be read (the state block below says why).
+    final Widget? ledger = rank != null
+        ? IntelRankLedger(
+            key: const ValueKey<String>('intel-rank-me'),
+            rank: rank,
+            faces: faces,
+          )
+        : state.phase == LaunchViewPhase.loading
+        ? const LoopFolioPrimary(
+            key: ValueKey<String>('intel-rank-me-loading'),
+            variant: LoopFolioVariant.lime,
+            archetype: LoopFolioArchetype.record,
+            ring: false,
+            kicker: intelRankLedgerKickerBase,
+            heading: '我的名次读取中',
+            headingLoading: true,
+          )
+        : null;
+
     // The three boards follow a sideways swipe as well as a tap on their
     // chips (S123 m7); past the first or last board the swipe moves 情报's
     // own segments.
@@ -111,6 +138,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
                 capability: capability,
               )
             : null,
+        primary: ledger,
         sections: <Widget>[
           LoopSegBar(
             key: const ValueKey<String>('intel-rank-scope'),
@@ -135,7 +163,6 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
-            IntelRankMePill(rank: rank, faces: faces),
             MiningStaleNotice(slug: 'intel-rank', snapshot: rank.snapshot),
             ..._rows(rank, faces),
             if (_hasRows(rank.ranking)) ...<Widget>[
@@ -202,39 +229,42 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             illustration: LoopIllustration.rank,
             title: referrals ? '还没有人邀请到好友' : '这一次还没有条目上榜',
             message: referrals ? '邀请到第一位好友后，这里按直接邀请人数排名' : '下一次算力快照后再来看看',
+            // The ledger card is this page's one full Lime (decision 0182).
             action: referrals
                 ? LoopButton(
                     key: const ValueKey<String>('intel-rank-empty-invite'),
                     label: '去邀请',
                     icon: 'users',
-                    primary: true,
                     onPressed: () => widget.onNavigate('/profile/referral'),
                   )
                 : null,
           ),
         ];
       case MiningRankingUsers(:final items):
-        return _board(<IntelRankEntry>[
+        return _board(rank, <IntelRankEntry>[
           for (var index = 0; index < items.length; index += 1)
             _userEntry(items[index], index, rank),
         ]);
       case MiningRankingCommunities(:final items):
-        return _board(<IntelRankEntry>[
+        final mine = rank.me?.communityId;
+        return _board(rank, <IntelRankEntry>[
           for (final row in items)
             IntelRankEntry(
               id: 'community-${row.community.communityId}',
               position: row.position,
-              leading: (size) => CommunityLogo(
-                identity: row.community.communityId,
-                name: row.community.name,
-                logoRef: faces[row.community.communityId]?.logoRef,
-                size: size,
-                radius: size >= 48 ? 16 : LoopRadius.innerValue,
+              leading: (size) => _communityLogo(
+                row.community.communityId,
+                row.community.name,
+                faces,
+                size,
               ),
               name: row.community.name,
               weight: row.weight,
+              caption: '${row.participants} 人有算力',
+              amount: Decimal.tryParse(row.power),
+              isSelf: mine != null && mine == row.community.communityId,
               figure: loopGroupedFigure(row.power),
-              spoken: '${row.participants} 人有算力，算力',
+              spoken: '算力',
               onTap: () => widget.onNavigate(
                 '/community/profile?id='
                 '${Uri.encodeQueryComponent(row.community.communityId)}',
@@ -242,14 +272,16 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             ),
         ]);
       case MiningRankingReferrals(:final items):
-        return _board(<IntelRankEntry>[
+        return _board(rank, <IntelRankEntry>[
           for (var index = 0; index < items.length; index += 1)
             IntelRankEntry(
               id: 'referral-$index',
               position: items[index].position,
               leading: (size) => _identityAvatar(items[index].display, size),
               name: _identityName(items[index].display, rank),
+              caption: '直接邀请',
               isSelf: items[index].isSelf,
+              amount: Decimal.fromInt(items[index].invitedCount),
               figure: '${items[index].invitedCount}',
               spoken: '邀请人数',
             ),
@@ -257,31 +289,52 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
     }
   }
 
-  /// The first three places on the podium, every later one as a row.
+  /// The first three places on the podium, every later one as a row, and the
+  /// reader's own row at the end when the pages read so far do not hold it.
   ///
   /// Only a place the server numbered 1, 2 or 3 goes up; a tie keeps the
   /// server's own number on both entries.
-  List<Widget> _board(List<IntelRankEntry> entries) {
+  List<Widget> _board(MiningRank rank, List<IntelRankEntry> entries) {
     var podium = 0;
     while (podium < entries.length &&
         podium < 3 &&
         (entries[podium].position ?? 99) <= 3) {
       podium += 1;
     }
+    final leader = intelRankLeaderAmount(entries);
+    final me = rank.me;
+    final selfMissing = me != null && !entries.any((entry) => entry.isSelf);
+    final rows = entries.skip(podium).toList();
     return <Widget>[
-      if (podium > 0) IntelRankPodium(entries: entries.sublist(0, podium)),
-      for (final entry in entries.skip(podium))
+      if (podium > 0) ...<Widget>[
+        const LoopLabel(
+          '前三名',
+          key: ValueKey<String>('intel-rank-podium-label'),
+        ),
+        IntelRankPodium(entries: entries.sublist(0, podium)),
+      ],
+      if (rows.isNotEmpty || selfMissing) IntelRankListHead(scope: rank.scope),
+      for (final entry in rows)
         IntelRankRow(
           key: ValueKey<String>('intel-rank-${entry.id}'),
           position: entry.position,
-          leading: entry.leading(36),
+          leading: entry.leading(intelRankRowFaceSize),
           name: entry.name,
           caption: entry.caption,
           weight: entry.weight,
           isSelf: entry.isSelf,
           figure: entry.figure,
+          share: intelRankShare(entry.amount, leader),
           spoken: entry.spoken,
           onTap: entry.onTap,
+        ),
+      if (selfMissing)
+        IntelRankSelfRow(
+          key: const ValueKey<String>('intel-rank-self-row'),
+          rank: rank,
+          me: me,
+          leader: leader,
+          faces: ref.watch(communityFacesProvider),
         ),
     ];
   }
@@ -298,6 +351,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
       name: _identityName(row.display, rank),
       caption: anonymousToOthers ? '其他人看到的是匿名成员' : null,
       isSelf: row.isSelf,
+      amount: row.power == null ? null : Decimal.tryParse(row.power!),
       // A number its owner keeps to themselves is withheld, not unread.
       figure: row.power == null ? '仅本人可见' : loopGroupedFigure(row.power!),
       spoken: row.power == null ? null : '算力',
@@ -361,6 +415,20 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
   }
 }
 
+/// A community's logo as a round face (docs/35 `.face{border-radius:50%}`).
+Widget _communityLogo(
+  String communityId,
+  String name,
+  Map<String, CommunityFace> faces,
+  double size,
+) => CommunityLogo(
+  identity: communityId,
+  name: name,
+  logoRef: faces[communityId]?.logoRef,
+  size: size,
+  radius: size >= 48 ? LoopRadius.controlValue : size / 2,
+);
+
 /// The chip glyph of each board (decision 0122).
 String intelRankScopeIcon(MiningRankScope scope) => switch (scope) {
   MiningRankScope.communities => 'community',
@@ -368,8 +436,8 @@ String intelRankScopeIcon(MiningRankScope scope) => switch (scope) {
   MiningRankScope.referrals => 'users',
 };
 
-/// How many members hold power in each ranked community — the figure the
-/// rows used to print as 「N 人有算力 ·」 (decision 0122 moved it here).
+/// How many members hold power in each ranked community, for the source
+/// line's detail (decision 0122).
 String? intelRankParticipantsDetail(MiningRank rank) {
   final ranking = rank.ranking;
   if (ranking is! MiningRankingCommunities || ranking.items.isEmpty) {
@@ -377,6 +445,180 @@ String? intelRankParticipantsDetail(MiningRank rank) {
   }
   return '有算力的成员：${<String>[for (final row in ranking.items) '${row.community.name} ${row.participants} 人'].join('、')}。';
 }
+
+// ---------------------------------------------------------------------------
+// The ledger card (decision 0182)
+// ---------------------------------------------------------------------------
+
+/// The kicker every board's ledger card opens with.
+const String intelRankLedgerKickerBase = 'POWER BOARD';
+
+/// 「POWER BOARD · 快照 10-15 04:00」 on the two power boards (the snapshot's
+/// own computation time, local), 「POWER BOARD · 实时」 on 推广, which reads
+/// the invite relation live, and the bare 「POWER BOARD」 when no snapshot was
+/// computed.
+String intelRankLedgerKicker(MiningRank rank) {
+  if (rank.scope == MiningRankScope.referrals) {
+    return '$intelRankLedgerKickerBase · 实时';
+  }
+  return switch (rank.snapshot) {
+    MiningSnapshotComputed(:final computedAt) =>
+      '$intelRankLedgerKickerBase · 快照 ${intelRankMonthDayClock(computedAt)}',
+    MiningSnapshotUnavailable() => intelRankLedgerKickerBase,
+  };
+}
+
+/// "MM-dd HH:mm" in the device's local time.
+String intelRankMonthDayClock(DateTime at) {
+  final local = at.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(local.month)}-${two(local.day)} ${loopClockLabel(local)}';
+}
+
+/// 「我的名次\n第 12 名」, or 「我的名次\n还没有名次」.
+String intelRankLedgerHeading(MiningRank rank) {
+  final me = rank.me;
+  return me == null ? '我的名次\n还没有名次' : '我的名次\n第 ${me.rank} 名';
+}
+
+/// Every board place the pages read so far hold, with its figure: power on
+/// the two power boards, direct invitees on 推广. A withheld power has none.
+List<(int, Decimal)> _placedAmounts(MiningRanking ranking) => switch (ranking) {
+  MiningRankingUsers(:final items) => <(int, Decimal)>[
+    for (final row in items)
+      if (row.position case final int place)
+        if (row.power case final String power)
+          if (Decimal.tryParse(power) case final Decimal value) (place, value),
+  ],
+  MiningRankingCommunities(:final items) => <(int, Decimal)>[
+    for (final row in items)
+      if (row.position case final int place)
+        if (Decimal.tryParse(row.power) case final Decimal value)
+          (place, value),
+  ],
+  MiningRankingReferrals(:final items) => <(int, Decimal)>[
+    for (final row in items) (row.position, Decimal.fromInt(row.invitedCount)),
+  ],
+  MiningRankingUnavailable() => const <(int, Decimal)>[],
+};
+
+/// 「距第 11 名还差 80」 — only when the rows read so far hold the place
+/// right above the reader's with a figure larger than the reader's own.
+String? intelRankGapToNext(MiningRank rank) {
+  final me = rank.me;
+  if (me == null || me.rank <= 1) return null;
+  final mine = Decimal.tryParse(me.value);
+  if (mine == null) return null;
+  final above = me.rank - 1;
+  for (final (place, value) in _placedAmounts(rank.ranking)) {
+    if (place != above) continue;
+    final gap = value - mine;
+    if (gap <= Decimal.zero) return null;
+    final figure = loopGroupedFigure(gap.toString());
+    return rank.scope == MiningRankScope.referrals
+        ? '距第 $above 名还差 $figure 人'
+        : '距第 $above 名还差 $figure';
+  }
+  return null;
+}
+
+/// 「社区 S137 Testnet 权重 1.0」: the reader's best-ranked community on the
+/// community board, its weight only when its row has been read.
+String? intelRankLedgerCommunity(
+  MiningRank rank,
+  Map<String, CommunityFace> faces,
+) {
+  final mine = rank.me?.communityId;
+  if (rank.scope != MiningRankScope.communities || mine == null) return null;
+  final ranking = rank.ranking;
+  if (ranking is MiningRankingCommunities) {
+    for (final row in ranking.items) {
+      if (row.community.communityId == mine) {
+        return '社区 ${row.community.name} 权重 ${row.weight}';
+      }
+    }
+  }
+  final name = faces[mine]?.name;
+  return name == null || name.isEmpty ? null : '社区 $name';
+}
+
+/// The ledger card's caption: the reader's figure, the gap to the place
+/// above when it can be read, and the reader's community on the community
+/// board. A reader without a place is told how a place is earned.
+String intelRankLedgerCaption(
+  MiningRank rank,
+  Map<String, CommunityFace> faces,
+) {
+  final me = rank.me;
+  final referrals = rank.scope == MiningRankScope.referrals;
+  if (me == null) {
+    return referrals ? '邀请到第一位好友后上榜' : '有算力后，下一次算力快照上榜';
+  }
+  return <String>[
+    if (referrals)
+      '直接邀请 ${me.value} 人'
+    else
+      '算力 ${loopGroupedFigure(me.value)}',
+    ?intelRankGapToNext(rank),
+    ?intelRankLedgerCommunity(rank, faces),
+  ].join(' · ');
+}
+
+/// How many places the board has, when the server said so.
+int? intelRankBoardSize(MiningRanking ranking) => switch (ranking) {
+  MiningRankingUsers(:final participants) => participants,
+  MiningRankingCommunities(:final participants) => participants,
+  MiningRankingReferrals(:final participants) => participants,
+  MiningRankingUnavailable() => null,
+};
+
+/// 「TOP 8%」 = the reader's place ÷ the board's size, rounded up and held
+/// to 1–100. No place or no size draws no stamp.
+String? intelRankTopShare(MiningRank rank) {
+  final me = rank.me;
+  final size = intelRankBoardSize(rank.ranking);
+  if (me == null || size == null || size <= 0 || me.rank <= 0) return null;
+  final percent = ((me.rank * 100 + size - 1) ~/ size).clamp(1, 100);
+  return 'TOP $percent%';
+}
+
+/// 「我的名次」 as the page's Lime ledger card (decision 0182): kicker
+/// 「POWER BOARD · 快照 …」, heading 「我的名次 / 第 N 名」, a caption with the
+/// figure and what can be read around it, and 「TOP x%」 when the board's
+/// size is known.
+class IntelRankLedger extends StatelessWidget {
+  const IntelRankLedger({required this.rank, required this.faces, super.key});
+
+  final MiningRank rank;
+  final Map<String, CommunityFace> faces;
+
+  @override
+  Widget build(BuildContext context) {
+    final heading = intelRankLedgerHeading(rank);
+    final caption = intelRankLedgerCaption(rank, faces);
+    final stamp = intelRankTopShare(rank);
+    return Semantics(
+      container: true,
+      label: <String>[heading.replaceAll('\n', '，'), caption, ?stamp].join('，'),
+      excludeSemantics: true,
+      child: LoopFolioPrimary(
+        variant: LoopFolioVariant.lime,
+        archetype: LoopFolioArchetype.record,
+        ring: false,
+        kicker: intelRankLedgerKicker(rank),
+        heading: heading,
+        headingMaxLines: 2,
+        caption: caption,
+        captionMaxLines: 3,
+        stamp: stamp,
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Entries, podium and rows
+// ---------------------------------------------------------------------------
 
 /// One place on a board, before it is drawn on the podium or as a row.
 @immutable
@@ -390,6 +632,7 @@ final class IntelRankEntry {
     this.caption,
     this.weight,
     this.spoken,
+    this.amount,
     this.isSelf = false,
     this.onTap,
   });
@@ -402,13 +645,19 @@ final class IntelRankEntry {
   final Widget Function(double size) leading;
   final String name;
   final String figure;
+
+  /// The row's second line (「31 人有算力」, 「直接邀请」).
   final String? caption;
 
-  /// The community's approved weight, drawn as a small 「权重 x」 tag.
+  /// The community's approved weight, drawn as a 「权重 x」 badge.
   final String? weight;
 
   /// What the figure is, said aloud only (「算力」, 「邀请人数」).
   final String? spoken;
+
+  /// The figure as a number, for the share of the leader's; `null` when the
+  /// figure is withheld.
+  final Decimal? amount;
   final bool isSelf;
   final VoidCallback? onTap;
 
@@ -422,6 +671,25 @@ final class IntelRankEntry {
   ].join('，');
 }
 
+/// The leader's figure: the entry the server numbered 1. `null` when the
+/// board has none or its figure is withheld or zero.
+Decimal? intelRankLeaderAmount(List<IntelRankEntry> entries) {
+  for (final entry in entries) {
+    if (entry.position != 1) continue;
+    final amount = entry.amount;
+    if (amount != null && amount > Decimal.zero) return amount;
+  }
+  return null;
+}
+
+/// A row's share of the leader's figure, 0–1, for its 6 px bar. Computed on
+/// the device from the two figures on screen; `null` draws no bar.
+double? intelRankShare(Decimal? amount, Decimal? leader) {
+  if (amount == null || leader == null || leader <= Decimal.zero) return null;
+  final share = (amount / leader).toDouble();
+  return share.clamp(0, 1).toDouble();
+}
+
 /// The colour of a medal: first Lime, second brass, third copper.
 Color intelRankMedalColour(int place) => switch (place) {
   1 => LoopColors.lime,
@@ -429,120 +697,10 @@ Color intelRankMedalColour(int place) => switch (place) {
   _ => LoopColors.copper,
 };
 
-/// 「我的名次」 as one capsule under the chips (decision 0122): the reader's
-/// face, 「第 2 名」 and the figure — or 「还没有名次」.
-class IntelRankMePill extends ConsumerWidget {
-  const IntelRankMePill({required this.rank, required this.faces, super.key});
-
-  final MiningRank rank;
-  final Map<String, CommunityFace> faces;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final me = rank.me;
-    final referrals = rank.scope == MiningRankScope.referrals;
-    final mine = me?.communityId;
-    final Widget face;
-    if (rank.scope == MiningRankScope.communities && mine != null) {
-      String name = faces[mine]?.name ?? '';
-      final ranking = rank.ranking;
-      if (ranking is MiningRankingCommunities) {
-        for (final row in ranking.items) {
-          if (row.community.communityId == mine) name = row.community.name;
-        }
-      }
-      face = CommunityLogo(
-        identity: mine,
-        name: name,
-        logoRef: faces[mine]?.logoRef,
-        size: 26,
-        radius: 8,
-      );
-    } else {
-      final state = ref.watch(profileControllerProvider);
-      if (state.phase == ProfilePhase.initial) {
-        scheduleMicrotask(() {
-          if (context.mounted) {
-            unawaited(ref.read(profileControllerProvider.notifier).load());
-          }
-        });
-      }
-      // Decision 0132: the same face 聊天's head draws, stored or live.
-      final profile = ref.watch(ownerFaceProvider);
-      face = LoopProfileAvatar(
-        avatarRef: profile?.avatarRef,
-        alias: profile?.alias,
-        size: 26,
-      );
-    }
-    final value = me == null
-        ? null
-        : (referrals ? '${me.value} 人' : loopGroupedFigure(me.value));
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Semantics(
-          container: true,
-          label: me == null ? '我的名次，还没有名次' : '我的名次，第 ${me.rank} 名，$value',
-          child: ExcludeSemantics(
-            child: Container(
-              key: const ValueKey<String>('intel-rank-me'),
-              height: 36,
-              padding: const EdgeInsets.fromLTRB(5, 0, 14, 0),
-              decoration: const BoxDecoration(
-                color: LoopColors.card,
-                borderRadius: LoopRadius.pill,
-                border: Border.fromBorderSide(
-                  BorderSide(color: LoopColors.line),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  face,
-                  const SizedBox(width: 8),
-                  Text(
-                    me == null ? '还没有名次' : '第 ${me.rank} 名',
-                    key: const ValueKey<String>('intel-rank-me-heading'),
-                    style: LoopTypography.title(
-                      13,
-                      color: me == null ? LoopColors.text2 : LoopColors.chalk,
-                    ),
-                  ),
-                  if (value != null) ...<Widget>[
-                    Text(
-                      '  ·  ',
-                      style: LoopType.caption.copyWith(color: LoopColors.text3),
-                    ),
-                    Flexible(
-                      child: Text(
-                        value,
-                        key: const ValueKey<String>('intel-rank-me-value'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.figure(
-                          13,
-                          weight: FontWeight.w600,
-                          color: LoopColors.text2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The first three places (decision 0122): three cards side by side, the
-/// winner in the middle with a crown and a 56 face, second and third with 48
-/// faces, all three one height (decision 0123), each with a medal in its
-/// place colour.
+/// The first three places (decision 0122): three record cards side by side,
+/// the winner in the middle with a crown and a 56 face, second and third
+/// with 48 faces, all three one height (decision 0123), each with a medal in
+/// its place colour at its top-left (decision 0182).
 class IntelRankPodium extends StatelessWidget {
   const IntelRankPodium({required this.entries, super.key})
     : assert(entries.length >= 1 && entries.length <= 3);
@@ -559,7 +717,7 @@ class IntelRankPodium extends StatelessWidget {
     ];
     return Padding(
       key: const ValueKey<String>('intel-rank-podium'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       // Decision 0123: the three cards share one height, so a two-line name
       // never makes one card taller than its neighbours.
       child: IntrinsicHeight(
@@ -585,6 +743,9 @@ class IntelRankPodium extends StatelessWidget {
 /// The face size on the podium: the winner 56, second and third 48.
 double intelPodiumFaceSize(int place) => place == 1 ? 56 : 48;
 
+/// The medal's side (`.podium .p .medal{width:20px}`).
+const double intelRankMedalSize = 20;
+
 class _PodiumCard extends StatelessWidget {
   const _PodiumCard({required this.entry, required this.place});
 
@@ -598,107 +759,95 @@ class _PodiumCard extends StatelessWidget {
     final medal = intelRankMedalColour(place);
     final first = place == 1;
     final number = entry.position ?? place;
-    final card = Container(
-      padding: const EdgeInsets.fromLTRB(8, 14, 8, 14),
-      decoration: BoxDecoration(
-        // OKX card: a flat face, no edge; the winner is one step lighter
-        // and one crown taller (decision 0122).
-        color: first ? LoopColors.card2 : LoopColors.card,
-        borderRadius: LoopRadius.control,
-      ),
-      child: Column(
-        children: <Widget>[
-          if (first) ...<Widget>[
-            const LoopIcon('crown', size: 18, color: LoopColors.lime),
-            const SizedBox(height: 6),
-          ] else
-            // Second and third stand lower than the winner: the spare height
-            // of the equal cards goes above their faces, not between the
-            // name and the figure (decision 0123).
-            const Spacer(),
-          Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              SizedBox.square(
-                key: ValueKey<String>('intel-rank-face-$place'),
-                dimension: intelPodiumFaceSize(place),
-                child: entry.leading(intelPodiumFaceSize(place)),
-              ),
-              Positioned(
-                right: -6,
-                bottom: -6,
-                child: Container(
-                  key: ValueKey<String>('intel-rank-medal-$place'),
-                  width: 22,
-                  height: 22,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: medal,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: LoopColors.ink, width: 2),
-                  ),
-                  child: Text(
-                    '$number',
-                    style: LoopTypography.figure(
-                      11,
-                      weight: FontWeight.w800,
-                      color: LoopColors.ink,
-                      height: 1,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+    final content = Column(
+      children: <Widget>[
+        if (first) ...<Widget>[
+          const LoopIcon('crown', size: 18, color: LoopColors.lime),
+          const SizedBox(height: 6),
+        ] else
+          // Second and third stand lower than the winner: the spare height
+          // of the equal cards goes above their faces, not between the
+          // name and the figure (decision 0123).
+          const Spacer(),
+        SizedBox.square(
+          key: ValueKey<String>('intel-rank-face-$place'),
+          dimension: intelPodiumFaceSize(place),
+          child: entry.leading(intelPodiumFaceSize(place)),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          entry.name,
+          key: ValueKey<String>('intel-rank-name-$place'),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: LoopTypography.withWeight(
+            LoopType.titleSm,
+            FontWeight.w600,
+          ).copyWith(color: LoopColors.chalk),
+        ),
+        // The figures sit on one line across the three cards.
+        if (first) const Spacer(),
+        const SizedBox(height: 4),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            entry.figure,
+            maxLines: 1,
+            style: LoopTypography.withWeight(
+              LoopType.figure,
+              FontWeight.w700,
+            ).copyWith(color: LoopColors.chalk),
           ),
-          const SizedBox(height: 12),
-          Text(
-            entry.name,
-            key: ValueKey<String>('intel-rank-name-$place'),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: LoopTypography.title(14),
-          ),
-          // The figures sit on one line across the three cards.
-          if (first) const Spacer(),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              entry.figure,
-              maxLines: 1,
-              style: LoopTypography.figure(
-                15,
-                weight: FontWeight.w700,
-                color: LoopColors.chalk,
-              ),
-            ),
-          ),
-          if (entry.weight != null || entry.isSelf) ...<Widget>[
-            const SizedBox(height: 6),
-            entry.isSelf
-                ? const LoopBadge('我')
-                : _WeightTag(weight: entry.weight!),
-          ],
+        ),
+        if (entry.weight != null || entry.isSelf) ...<Widget>[
+          const SizedBox(height: 6),
+          entry.isSelf
+              ? const LoopBadge('我')
+              : _WeightTag(weight: entry.weight!),
         ],
-      ),
+      ],
     );
     final tap = entry.onTap;
     return Semantics(
       button: tap != null,
       label: entry.spokenLabel(),
       excludeSemantics: true,
-      child: tap == null
-          ? KeyedSubtree(
-              key: ValueKey<String>('intel-rank-${entry.id}'),
-              child: card,
-            )
-          : GestureDetector(
-              key: ValueKey<String>('intel-rank-${entry.id}'),
-              behavior: HitTestBehavior.opaque,
+      child: KeyedSubtree(
+        key: ValueKey<String>('intel-rank-${entry.id}'),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            LoopRecordCard(
+              margin: EdgeInsets.zero,
+              padding: EdgeInsets.fromLTRB(8, first ? 16 : 12, 8, 10),
               onTap: tap,
-              child: card,
+              child: content,
             ),
+            Positioned(
+              left: 10,
+              top: 10,
+              child: Container(
+                key: ValueKey<String>('intel-rank-medal-$place'),
+                width: intelRankMedalSize,
+                height: intelRankMedalSize,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: medal,
+                  borderRadius: LoopRadius.badge,
+                ),
+                child: Text(
+                  '$number',
+                  style: LoopTypography.withWeight(
+                    LoopType.figureXs,
+                    FontWeight.w800,
+                  ).copyWith(color: LoopColors.ink, height: 1),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -713,8 +862,58 @@ class _WeightTag extends StatelessWidget {
   Widget build(BuildContext context) => LoopBadge('权重 $weight');
 }
 
-/// One place from the fourth on: position · face · name · figure. No card;
-/// a hairline under it.
+/// The head over the rows (`.rank-list-head`): what the left and the right
+/// columns are, mono and uppercase like a `.label`.
+class IntelRankListHead extends StatelessWidget {
+  const IntelRankListHead({required this.scope, super.key});
+
+  final MiningRankScope scope;
+
+  static String leftOf(MiningRankScope scope) => switch (scope) {
+    MiningRankScope.communities => '名次 · 社区 · 权重',
+    MiningRankScope.users => '名次 · 用户',
+    MiningRankScope.referrals => '名次 · 用户',
+  };
+
+  static String rightOf(MiningRankScope scope) => switch (scope) {
+    MiningRankScope.referrals => '直接邀请 · 占第一名比例',
+    _ => '算力 · 占第一名比例',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      key: const ValueKey<String>('intel-rank-list-head'),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        LoopSpacing.tight,
+        LoopSpacing.page,
+        4,
+      ),
+      child: ExcludeSemantics(
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                leftOf(scope).toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopMono.label,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(rightOf(scope).toUpperCase(), style: LoopMono.label),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One place from the fourth on (docs/35 定稿 · B row): position · face 40 ·
+/// name with its badge over a second line · the figure over its share of the
+/// leader's. No card; a hairline under it. The reader's own row is
+/// limeSoft with a Lime position and figure.
 class IntelRankRow extends StatelessWidget {
   const IntelRankRow({
     required this.position,
@@ -724,6 +923,7 @@ class IntelRankRow extends StatelessWidget {
     super.key,
     this.caption,
     this.weight,
+    this.share,
     this.spoken,
     this.isSelf = false,
     this.onTap,
@@ -737,6 +937,9 @@ class IntelRankRow extends StatelessWidget {
   final String? weight;
   final String figure;
 
+  /// The figure's share of the leader's, 0–1; `null` draws no bar.
+  final double? share;
+
   /// What the figure is, said aloud only.
   final String? spoken;
   final bool isSelf;
@@ -745,31 +948,37 @@ class IntelRankRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final place = position;
+    final accent = isSelf ? LoopColors.lime : null;
     final content = Container(
-      height: intelRankRowHeight,
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.symmetric(
+        horizontal: LoopSpacing.page,
+        vertical: 12,
+      ),
       decoration: BoxDecoration(
-        color: isSelf ? LoopColors.card : null,
+        color: isSelf ? LoopColors.limeSoft : null,
         border: const Border(bottom: BorderSide(color: LoopColors.line)),
       ),
       child: Row(
         children: <Widget>[
-          SizedBox(
-            width: 30,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 22),
             child: Text(
               place == null ? '未上榜' : '$place',
+              key: const ValueKey<String>('intel-rank-row-position'),
               maxLines: 1,
+              textAlign: TextAlign.right,
               style: place == null
                   ? LoopType.captionSm.copyWith(color: LoopColors.text3)
-                  : LoopTypography.figure(
-                      13,
-                      weight: FontWeight.w600,
-                      color: LoopColors.text3,
-                    ),
+                  : LoopTypography.withWeight(
+                      LoopType.figure,
+                      FontWeight.w700,
+                    ).copyWith(color: accent ?? LoopColors.text3),
             ),
           ),
-          leading,
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
+          SizedBox.square(dimension: intelRankRowFaceSize, child: leading),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -782,12 +991,15 @@ class IntelRankRow extends StatelessWidget {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopType.title,
+                        style: LoopTypography.withWeight(
+                          LoopType.body,
+                          FontWeight.w600,
+                        ),
                       ),
                     ),
-                    if (isSelf) ...<Widget>[
+                    if (weight != null) ...<Widget>[
                       const SizedBox(width: 6),
-                      const LoopBadge('我'),
+                      _WeightTag(weight: weight!),
                     ],
                   ],
                 ),
@@ -797,17 +1009,39 @@ class IntelRankRow extends StatelessWidget {
                     caption!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                   ),
-                ] else if (weight != null) ...<Widget>[
-                  const SizedBox(height: 3),
-                  _WeightTag(weight: weight!),
                 ],
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          Text(figure, maxLines: 1, style: LoopType.figure),
+          const SizedBox(width: 12),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              Text(
+                figure,
+                key: const ValueKey<String>('intel-rank-row-figure'),
+                maxLines: 1,
+                style: LoopTypography.withWeight(
+                  LoopType.figure,
+                  FontWeight.w700,
+                ).copyWith(color: accent ?? LoopColors.chalk),
+              ),
+              if (share case final double fraction) ...<Widget>[
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: intelRankShareBarWidth,
+                  child: LoopProgressBar(
+                    key: const ValueKey<String>('intel-rank-row-share'),
+                    value: fraction,
+                    semanticLabel: '占第一名 ${(fraction * 100).round()}%',
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -830,6 +1064,64 @@ class IntelRankRow extends StatelessWidget {
               type: MaterialType.transparency,
               child: InkWell(onTap: tap, child: content),
             ),
+    );
+  }
+}
+
+/// The reader's own row at the end of the rows read so far, when none of
+/// them is the reader's (decision 0182): the place and figure come from the
+/// board's own `me`, the face and name from the reader's profile — or, on
+/// the community board, the reader's best-ranked community.
+class IntelRankSelfRow extends ConsumerWidget {
+  const IntelRankSelfRow({
+    required this.rank,
+    required this.me,
+    required this.leader,
+    required this.faces,
+    super.key,
+  });
+
+  final MiningRank rank;
+  final MiningRankMe me;
+  final Decimal? leader;
+  final Map<String, CommunityFace> faces;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final referrals = rank.scope == MiningRankScope.referrals;
+    final Widget face;
+    final String name;
+    final community = me.communityId;
+    if (rank.scope == MiningRankScope.communities && community != null) {
+      name = faces[community]?.name ?? '我的社区';
+      face = _communityLogo(community, name, faces, intelRankRowFaceSize);
+    } else {
+      final state = ref.watch(profileControllerProvider);
+      if (state.phase == ProfilePhase.initial) {
+        scheduleMicrotask(() {
+          if (context.mounted) {
+            unawaited(ref.read(profileControllerProvider.notifier).load());
+          }
+        });
+      }
+      // Decision 0132: the same face 聊天's head draws, stored or live.
+      final profile = ref.watch(ownerFaceProvider);
+      name = profile?.alias ?? '我';
+      face = LoopProfileAvatar(
+        avatarRef: profile?.avatarRef,
+        alias: profile?.alias,
+        size: intelRankRowFaceSize,
+      );
+    }
+    return IntelRankRow(
+      position: me.rank,
+      leading: face,
+      name: name,
+      caption: referrals ? '直接邀请' : null,
+      isSelf: true,
+      figure: referrals ? me.value : loopGroupedFigure(me.value),
+      share: intelRankShare(Decimal.tryParse(me.value), leader),
+      spoken: referrals ? '邀请人数' : '算力',
     );
   }
 }
