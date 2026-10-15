@@ -407,10 +407,7 @@ class LoopMetric extends StatelessWidget {
       children: <Widget>[
         Text(label, style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: 6),
-        Text(
-          value,
-          style: LoopType.monoTitle.copyWith(color: LoopColors.chalk),
-        ),
+        Text(value, style: LoopType.figureLg.copyWith(color: LoopColors.chalk)),
         if (detail != null) ...<Widget>[
           const SizedBox(height: 3),
           Text(
@@ -657,7 +654,7 @@ class LoopKeyValueRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: context.dataStyle.copyWith(
+              style: LoopType.figure.copyWith(
                 color: tone == LoopTone.neutral
                     ? LoopColors.chalk
                     : loopToneColor(tone),

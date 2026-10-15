@@ -593,7 +593,7 @@ class _TitleLine extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.clip,
               softWrap: false,
-              style: LoopMono.label.copyWith(color: _inkFor(context, tone)),
+              style: LoopType.eyebrow.copyWith(color: _inkFor(context, tone)),
             ),
           ),
           if (fade == null) ...<Widget>[
@@ -676,11 +676,10 @@ class _CollapsedContent extends StatelessWidget {
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.clip,
-                            style: LoopTypography.label(
-                              12,
-                              weight: FontWeight.w600,
-                              color: wordColor,
-                            ),
+                            style: LoopTypography.withWeight(
+                              LoopType.label,
+                              FontWeight.w600,
+                            ).copyWith(color: wordColor),
                           ),
                         ],
                       ],

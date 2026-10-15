@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 
 /// The title line of a sheet's content (decision 0131).
 ///
@@ -20,7 +21,8 @@ class LoopSheetHeading extends StatelessWidget {
       header: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Text(title, style: Theme.of(context).textTheme.headlineMedium),
+        // R2: the only sheet-title step (decision 0189).
+        child: Text(title, style: LoopType.heading),
       ),
     );
   }

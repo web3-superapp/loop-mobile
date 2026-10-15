@@ -161,3 +161,8 @@ Accepted 2026-10-09。主代理设计（`LOOP/docs/modules/S121-visual-second-pa
 - 钱包资产行、代币详情「关于」链接行图标、自选空态与图表外的其他 `LoopEmpty` 调用点（约 180 处内联用法保持原样）。
 - 「快打满」hero 在 dev 没有数据，未能真机截图。
 - 聊天行之间的 Stream 分隔线仍在（Stream 默认 separator），OKX 无分隔线。
+
+## 0189 修订（2026-10-16）
+
+用户裁决 S1（docs/37 方案 A）：`LoopQuoteRow` 回到字体阶梯内——标题 `LoopType.titleLg` 16、副题 `bodySm` 13、数值 `figureMd` 17 / 600、副值 `figureSm` 12，
+`LoopChangePill` 涨跌 `figure` 13 / 700。本文所述 OKX 行「18 粗 / 14 灰」与胶囊 16 粗不再成立；行高 72、Logo 36、96 × 44 胶囊不变。详见 `0189-type-ladder-final.md`。

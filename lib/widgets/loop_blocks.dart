@@ -159,15 +159,14 @@ class _LoopStatCell extends StatelessWidget {
                 stat.value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.figure(13, color: figureColor),
+                style: LoopType.figure.copyWith(color: figureColor),
               ),
               const SizedBox(height: 4),
               Text(
                 stat.label.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.eyebrow(
-                  11,
+                style: LoopType.kicker.copyWith(
                   color: LoopGround.auxiliaryOf(context),
                 ),
               ),
@@ -271,8 +270,7 @@ class LoopChartPanel extends StatelessWidget {
                         range,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.figure(
-                          11,
+                        style: LoopType.figureXs.copyWith(
                           color: LoopColors.muted,
                         ),
                       ),
@@ -281,21 +279,24 @@ class LoopChartPanel extends StatelessWidget {
                       const SizedBox(width: 10),
                       Text(
                         current!,
-                        style: LoopTypography.figure(11, color: _ink),
+                        style: LoopType.figureXs.copyWith(color: _ink),
                       ),
                     ],
                     if (direction != null) ...<Widget>[
                       const SizedBox(width: 10),
                       Text(
                         direction!,
-                        style: LoopTypography.figure(
-                          11,
-                          color: switch (directionUp) {
-                            true => LoopColors.lime,
-                            false => _ink,
-                            null => LoopColors.muted,
-                          },
-                        ),
+                        style:
+                            LoopTypography.withWeight(
+                              LoopType.figureXs,
+                              FontWeight.w600,
+                            ).copyWith(
+                              color: switch (directionUp) {
+                                true => LoopColors.lime,
+                                false => _ink,
+                                null => LoopColors.muted,
+                              },
+                            ),
                       ),
                     ],
                   ],
@@ -311,10 +312,7 @@ class LoopChartPanel extends StatelessWidget {
                       child: Text(
                         absence!,
                         key: const ValueKey<String>('loop-chart-panel-absence'),
-                        style: LoopTypography.caption(
-                          11,
-                          color: LoopColors.text3,
-                        ),
+                        style: LoopType.captionSm,
                       ),
                     ),
                   ),
@@ -412,7 +410,10 @@ class LoopRowIcon extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: LoopTypography.figure(11, color: foreground),
+                  style: LoopTypography.withWeight(
+                    LoopType.figureXs,
+                    FontWeight.w600,
+                  ).copyWith(color: foreground),
                 ),
               ),
       ),
@@ -532,11 +533,10 @@ class _LoopActionTile extends StatelessWidget {
             action.label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: LoopTypography.label(
-              12,
-              weight: FontWeight.w700,
-              color: foreground,
-            ),
+            style: LoopTypography.withWeight(
+              LoopType.label,
+              FontWeight.w700,
+            ).copyWith(color: foreground),
           ),
         ],
       ),
@@ -646,19 +646,17 @@ class _LoopPayTile extends StatelessWidget {
                   action.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.label(
-                    16,
-                    weight: FontWeight.w800,
-                    color: LoopColors.ink,
-                  ),
+                  style: LoopTypography.withWeight(
+                    LoopType.titleLg,
+                    FontWeight.w700,
+                  ).copyWith(color: LoopColors.ink),
                 ),
                 if (action.caption != null)
                   Text(
                     action.caption!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.caption(
-                      11,
+                    style: LoopType.captionSm.copyWith(
                       color: LoopColors.inkText2,
                     ),
                   ),
@@ -710,11 +708,10 @@ class _LoopCompactTile extends StatelessWidget {
               action.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: LoopTypography.label(
-                12,
-                weight: FontWeight.w800,
-                color: foreground,
-              ),
+              style: LoopTypography.withWeight(
+                LoopType.label,
+                FontWeight.w700,
+              ).copyWith(color: foreground),
             ),
           ),
         ],
@@ -842,7 +839,8 @@ class LoopOmnibox extends StatelessWidget {
                 keyboardType: TextInputType.url,
                 autocorrect: false,
                 onChanged: onChanged,
-                style: LoopTypography.figure(13),
+                // R26: a search-shaped field, text and placeholder alike.
+                style: LoopType.body,
                 decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
@@ -850,7 +848,7 @@ class LoopOmnibox extends StatelessWidget {
                   focusedBorder: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
                   hintText: hintText,
-                  hintStyle: LoopTypography.caption(11),
+                  hintStyle: LoopType.body.copyWith(color: LoopColors.text3),
                 ),
               ),
             ),
@@ -955,7 +953,7 @@ class LoopPlaceholderStage extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.title(15),
+                    style: LoopType.title,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -963,11 +961,7 @@ class LoopPlaceholderStage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(11),
-            ),
+            Text(body, textAlign: TextAlign.center, style: LoopType.captionSm),
           ],
         ),
       ),
@@ -1023,8 +1017,7 @@ class LoopFigureBox extends StatelessWidget {
           children: <Widget>[
             Text(
               caption,
-              style: LoopTypography.caption(
-                11,
+              style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
               ),
             ),
@@ -1036,8 +1029,7 @@ class LoopFigureBox extends StatelessWidget {
                     figure,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.figure(
-                      21,
+                    style: LoopType.figureLg.copyWith(
                       color: LoopGround.inkOf(context),
                     ),
                   ),
@@ -1052,8 +1044,7 @@ class LoopFigureBox extends StatelessWidget {
               const SizedBox(height: 5),
               Text(
                 footnote!,
-                style: LoopTypography.caption(
-                  11,
+                style: LoopType.captionSm.copyWith(
                   color: LoopGround.auxiliaryOf(context),
                 ),
               ),
@@ -1179,7 +1170,8 @@ class LoopCompositeDetailRow extends StatelessWidget {
   final String? trailingLabel;
   final String? trailingValue;
 
-  /// `.ledger-composite-detail .detail-value{font:800 26px/1}`.
+  /// `.ledger-composite-detail .detail-value{font:800 26px/1}` — the
+  /// prototype pixel; the row draws the nearest figure step (decision 0189).
   final double valueSize;
   final String? spoken;
 
@@ -1228,24 +1220,28 @@ class LoopCompositeDetailRow extends StatelessWidget {
         value,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: LoopTypography.figure(
-          size,
-          height: 1.05,
-          weight: FontWeight.w800,
-          color: LoopGround.inkOf(context),
-        ),
+        style: _figureStep(size).copyWith(color: LoopGround.inkOf(context)),
       ),
       const SizedBox(height: 4),
       Text(
         label,
         maxLines: 2,
-        style: LoopTypography.caption(
-          11,
+        style: LoopType.captionSm.copyWith(
           color: LoopGround.secondaryOf(context),
         ),
       ),
     ],
   );
+
+  /// The figure step nearest the prototype size a caller asks for (decision
+  /// 0189): [valueSize] still names the `.detail-value` pixel, but the row
+  /// draws a ladder step, at its own 600 weight.
+  static TextStyle _figureStep(double size) {
+    if (size >= 24) return LoopType.figureXl;
+    if (size >= 19) return LoopType.figureLg;
+    if (size >= 15) return LoopType.figureMd;
+    return LoopType.figure;
+  }
 }
 
 /// `.ledger-composite-detail>p`: one sentence inside a composite strip.
@@ -1257,7 +1253,7 @@ class LoopCompositeDetailNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     text,
-    style: LoopTypography.caption(11, color: LoopGround.secondaryOf(context)),
+    style: LoopType.captionSm.copyWith(color: LoopGround.secondaryOf(context)),
   );
 }
 
@@ -1369,77 +1365,10 @@ class LoopMonoTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
-        style: LoopTypography.figure(
-          11,
-          color: accent ? LoopColors.ink : LoopGround.secondaryOf(context),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// .hero-num / .hero-sub
-// ---------------------------------------------------------------------------
-
-/// `.hero-num` + `.hero-sub`: the oversized result a page states under its
-/// folio, with one line of context beneath it.
-class LoopHeroFigure extends StatelessWidget {
-  const LoopHeroFigure({
-    required this.figure,
-    super.key,
-    this.caption,
-    this.accent = true,
-    this.semanticLabel,
-  });
-
-  final String figure;
-  final String? caption;
-
-  /// `.hero-num.launch-accent`: Lime. A figure that is not good news, or that
-  /// was not read at all, asks for the neutral weight instead.
-  final bool accent;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: semanticLabel ?? <String>[figure, ?caption].join('。'),
-      child: ExcludeSemantics(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-              child: Text(
-                figure,
-                style: LoopTypography.title(
-                  32,
-                  weight: FontWeight.w800,
-                  color: accent ? LoopColors.lime : LoopGround.inkOf(context),
-                ),
-              ),
+        style: LoopTypography.withWeight(LoopType.figureXs, FontWeight.w600)
+            .copyWith(
+              color: accent ? LoopColors.ink : LoopGround.secondaryOf(context),
             ),
-            if (caption != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  LoopSpacing.page,
-                  4,
-                  LoopSpacing.page,
-                  LoopSpacing.page,
-                ),
-                child: Text(
-                  caption!,
-                  style: LoopTypography.caption(
-                    11,
-                    color: LoopGround.secondaryOf(context),
-                  ),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }

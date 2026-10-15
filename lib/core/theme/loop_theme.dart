@@ -614,95 +614,164 @@ abstract final class LoopTypography {
       style.copyWith(fontWeight: weight);
 }
 
-/// The named steps of the seven bands. This is the whole vocabulary available
-/// to pages: `lib/features/**` and `lib/widgets/**` take a step from here (or
-/// the `TextTheme` slot that mirrors it) and never a raw number.
+/// The named steps of the seven bands — the type ladder, final since decision
+/// 0189 (docs/37 §1). This is the whole vocabulary available to pages:
+/// `lib/features/**` and `lib/widgets/**` take a step from here (or the
+/// `TextTheme` slot that mirrors it) and never a raw number. A weight may move
+/// only through [LoopTypography.withWeight], a colour only through
+/// `.copyWith(color: …)`; `scripts/check_harness.py` (G1) refuses a
+/// `LoopTypography.<band>(<number>)` call or a `copyWith(fontSize: …)` outside
+/// `lib/core/theme`, and (G2) any text below the 11px screen floor outside the
+/// chart canvases.
 ///
-/// | band | step | size | weight | height | family |
+/// Every role has exactly one step (R-numbers are docs/37 §1):
+///
+/// | band | step | size | weight | height | roles |
 /// | --- | --- | --- | --- | --- | --- |
-/// | display | `displayXl` | 28 | 600 | 1.2 | system display |
-/// | display | `display` | 26 | 600 | 1.2 | system display |
-/// | display | `displaySm` | 24 | 600 | 1.2 | system display |
-/// | heading | `headingLg` | 22 | 600 | 1.25 | system display |
-/// | heading | `heading` | 20 | 600 | 1.25 | system display |
-/// | heading | `headingSm` | 17 | 600 | 1.3 | system text |
-/// | title | `titleLg` | 16 | 600 | 1.3 | system text |
-/// | title | `title` | 15 | 600 | 1.3 | system text |
-/// | title | `titleSm` | 13 | 500 | 1.3 | system text |
-/// | body | `bodyLg` | 15 | 400 | 1.4 | system text |
-/// | body | `body` | 14 | 400 | 1.4 | system text |
-/// | body | `bodySm` | 13 | 400 | 1.4 | system text |
-/// | caption | `caption` | 12 | 400 | 1.35 | system text |
-/// | caption | `captionSm` | 11 | 400 | 1.35 | system text |
-/// | label | `action` | 14 | 600 | 1.25 | system text |
-/// | label | `label` | 12 | 500 | 1.25 | system text |
-/// | label | `eyebrow` | 12 | 500 | 1.25 | system text |
-/// | figure | `figureXl` (`monoDisplay`) | 28 | 600 | 1.2 | system display, tnum |
-/// | figure | `figureLg` (`monoTitle`) | 20 | 600 | 1.25 | system display, tnum |
-/// | figure | `figureMd` (`monoQuote`) | 17 | 600 | 1.3 | system text, tnum |
-/// | figure | `figure` (`monoValue`) | 13 | 500 | 1.3 | system text, tnum |
-/// | figure | `figureSm` (`monoBody`) | 12 | 400 | 1.4 | system text, tnum |
-/// | figure | `figureXs` (`monoStamp`) | 11 | 400 | 1.35 | system text, tnum |
-/// | code | `code` | 13 | 500 | 1.4 | IBM Plex Mono |
-/// | code | `codeSm` | 11 | 500 | 1.35 | IBM Plex Mono |
+/// | display | `displayXl` | 28 | 600 | 1.2 | R9 folio heading (intro / record / state) |
+/// | display | `display` | 26 | 600 | 1.2 | R9 folio heading (action) |
+/// | display | `displaySm` | 24 | 600 | 1.2 | R9 folio heading (index / compact), R27 profile name |
+/// | heading | `stepTitle` | 24 | 700 | 1.25 | R1c step-page title |
+/// | heading | `headingLg` | 22 | 600 | 1.25 | R1 page title |
+/// | heading | `flatTitle` | 20 | 700 | 1.25 | R1b flat second-level page title |
+/// | heading | `heading` | 20 | 600 | 1.25 | R2 sheet title (only via `LoopSheetHeading`) |
+/// | heading | `headingSm` | 17 | 600 | 1.3 | R1d dense top bar, R3b flat section title |
+/// | title | `titleLg` | 16 | 600 | 1.3 | R15 flat wide button, R31 centred state title, quote-row title |
+/// | title | `title` | 15 | 600 | 1.3 | R4 row title (flat and ledger alike) |
+/// | title | `titleSm` | 13 | 500 | 1.3 | small control word |
+/// | body | `bodyLg` | 15 | 400 | 1.4 | R25 text input and its placeholder |
+/// | body | `body` | 14 | 400 | 1.4 | R18 prose, R26 search placeholder |
+/// | body | `bodySm` | 13 | 400 | 1.4 | R19 sheet support copy |
+/// | caption | `caption` | 12 | 400 | 1.35 | R5 row subtitle, R10 folio caption, R20 notice |
+/// | caption | `captionSm` | 11 | 400 | 1.35 | R21 provenance / version / footnote |
+/// | label | `action` | 14 | 600 | 1.25 | Material button slot |
+/// | label | `label` | 12 | 500 | 1.25 | R14 badge, R15 button, R16 seg, R17 inline action (at 600 / 700) |
+/// | label | `eyebrow` | 12 | 500 | 1.25 | R3 / R3c section label |
+/// | label | `kicker` | 11 | 500 | 1.25 | R8 folio kicker, R11 stamp, R13 stat label |
+/// | figure | `figureXl` | 28 | 600 | 1.2 | R22 hero figure (never bolder) |
+/// | figure | `figureLg` | 20 | 600 | 1.25 | R22b, R24 amount input |
+/// | figure | `figureMd` | 17 | 600 | 1.3 | R23 secondary hero, quote-row value |
+/// | figure | `figure` | 13 | 600 | 1.3 | R6 row value, R12 stat value |
+/// | figure | `figureSm` | 12 | 400 | 1.4 | quote-row secondary value |
+/// | figure | `figureXs` | 11 | 400 | 1.35 | R7 row secondary value (600 for a move) |
+/// | code | `code` | 13 | 500 | 1.4 | R30 address / hash |
+/// | code | `codeSm` | 11 | 500 | 1.35 | R30 compact address |
 ///
-/// Tracking is 0 on every step. The `mono*` names are kept because the
-/// feature slices call them; they are band 7 — tabular figures in the page's
-/// own sans — and no longer a fixed-width face.
+/// Tracking is 0 on every step. The figure steps are tabular figures in the
+/// page's own sans; only `code` is fixed-width.
 abstract final class LoopType {
   // Band 1 · display.
+  /// R9 folio heading on the intro / record / state archetypes.
   static final TextStyle displayXl = LoopTypography.display(28);
+
+  /// R9 folio heading on the action archetype.
   static final TextStyle display = LoopTypography.display(26);
+
+  /// R9 folio heading on the index archetype and every compact folio; R27
+  /// the name on a person's or a community's home.
   static final TextStyle displaySm = LoopTypography.display(24);
 
   // Band 2 · heading.
+  /// R1c the heading of an account-opening step page (`LoopFlat(step:)`,
+  /// `LoopFlatHeading`), bold where a page title is semibold.
+  static final TextStyle stepTitle = LoopTypography.heading(
+    24,
+    weight: FontWeight.w700,
+  );
+
+  /// R1 page title of a first-level tab or a ledger second-level page.
   static final TextStyle headingLg = LoopTypography.heading(22);
+
+  /// R1b the one-line title of a flat second-level page (decision 0126).
+  static final TextStyle flatTitle = LoopTypography.heading(
+    20,
+    weight: FontWeight.w700,
+  );
+
+  /// R2 every sheet's title — drawn only by `LoopSheetHeading` / `LoopSheet`
+  /// / `LoopSignSheet`.
   static final TextStyle heading = LoopTypography.heading(20);
+
+  /// R1d dense (chat) top bar; R3b section title on a flat page.
   static final TextStyle headingSm = LoopTypography.heading(17);
 
   // Band 3 · title.
+  /// The quote-row title (decision 0189 S1); R15 a flat wide button's word;
+  /// R31 the title of a centred state (empty / error / locked).
   static final TextStyle titleLg = LoopTypography.title(16);
+
+  /// R4 a row title — ledger rows, flat rows and person rows alike (0189 S2).
   static final TextStyle title = LoopTypography.title(15);
+
+  /// A small control word or a label over a form field.
   static final TextStyle titleSm = LoopTypography.title(
     13,
     weight: FontWeight.w500,
   );
 
   // Band 4 · body.
+  /// R25 the text of a text input and its placeholder.
   static final TextStyle bodyLg = LoopTypography.body(15);
+
+  /// R18 running prose; R26 a search field's placeholder.
   static final TextStyle body = LoopTypography.body(14);
+
+  /// R19 the support copy under a sheet title; the quote-row grey line.
   static final TextStyle bodySm = LoopTypography.body(
     13,
     color: LoopColors.text2,
   );
 
   // Band 5 · caption.
+  /// R5 a row's second line; R10 a folio caption; R20 a notice or the note
+  /// under a form field.
   static final TextStyle caption = LoopTypography.caption(12);
+
+  /// R21 one grey line of provenance, version or legal footnote.
   static final TextStyle captionSm = LoopTypography.caption(11);
 
   // Band 6 · label.
+  /// The Material button slot (`labelLarge`).
   static final TextStyle action = LoopTypography.label(
     14,
     weight: FontWeight.w600,
     color: LoopColors.chalk,
   );
+
+  /// R14 badge (700), R15 button (700), R16 segment (600 / 700 selected), R17
+  /// inline text action (600).
   static final TextStyle label = LoopTypography.label(12);
+
+  /// R3 the section label over a group, R3c the first line inside a card.
   static final TextStyle eyebrow = LoopTypography.eyebrow(12);
 
+  /// R8 folio kicker, R11 folio stamp, R13 stat-grid label — the 11px floor
+  /// of the prototype's `.scr :is(.label,.badge,…,small)` rule.
+  static final TextStyle kicker = LoopTypography.eyebrow(11);
+
   // Band 7 · figure — tabular numbers in the page's own voice.
+  /// R22 the one hero figure on a page. 600, never bolder (decision 0080).
   static final TextStyle figureXl = LoopTypography.figure(28, height: 1.2);
+
+  /// R22b the fraction of a hero figure; R24 an amount input.
   static final TextStyle figureLg = LoopTypography.figure(20, height: 1.25);
+
+  /// R23 a secondary hero figure; the quote-row value (0189 S1).
   static final TextStyle figureMd = LoopTypography.figure(17);
-  static final TextStyle figure = LoopTypography.figure(
-    13,
-    weight: FontWeight.w500,
-  );
+
+  /// R6 a row's trailing value; R12 a stat-grid value. 600 since decision
+  /// 0189 (it was 500, a step thinner than the row that drew it).
+  static final TextStyle figure = LoopTypography.figure(13);
+
+  /// The quote-row secondary value (0189 S1).
   static final TextStyle figureSm = LoopTypography.figure(
     12,
     weight: FontWeight.w400,
     height: 1.4,
     color: LoopColors.text2,
   );
+
+  /// R7 a row's secondary value; a price move restates it at 600.
   static final TextStyle figureXs = LoopTypography.figure(
     11,
     weight: FontWeight.w400,
@@ -710,43 +779,44 @@ abstract final class LoopType {
     color: LoopColors.text2,
   );
 
-  // The names the feature slices already call, over the same steps.
-  static final TextStyle monoDisplay = figureXl;
+  // Retired aliases (decision 0189). Only two Preview-only chat files still
+  // call them; they are counted in G1's shrinking allowlist and go with
+  // those files. New code takes the step itself.
   static final TextStyle monoTitle = figureLg;
-  static final TextStyle monoQuote = figureMd;
-  static final TextStyle monoValue = figure;
-  static final TextStyle monoBody = figureSm;
   static final TextStyle monoStamp = figureXs;
 
   // Band 7b · code — the only fixed-width steps.
+  /// R30 an address, a hash, a contract identifier.
   static final TextStyle code = LoopTypography.code(13);
+
+  /// R30 the same at the compact size.
   static final TextStyle codeSm = LoopTypography.code(11, height: 1.35);
 }
 
-/// `LoopMono` styles: the set every number, ticker and time must use. Since
-/// decision 0080 these are band 7 — the page's own sans with tabular figures
-/// — under the names the feature slices already call; only [address] is still
-/// fixed-width. New code should prefer [LoopType].
+/// Retired alias layer (decision 0189). These are [LoopType] steps under the
+/// names some feature slices and the Stream chat theme still call; `lib/widgets`
+/// no longer does, and every `lib/features` call is counted in G1's shrinking
+/// allowlist. New code takes the [LoopType] step itself.
 abstract final class LoopMono {
-  /// Main figure (balance, price).
+  /// Retired: [LoopType.figureXl].
   static final TextStyle display = LoopType.figureXl;
 
-  /// Card headline figure.
+  /// Retired: [LoopType.figureLg].
   static final TextStyle headline = LoopType.figureLg;
 
-  /// Row trailing value.
+  /// Retired: [LoopType.figure].
   static final TextStyle value = LoopType.figure;
 
-  /// Body-sized figure inside prose.
+  /// Retired: [LoopType.figureSm].
   static final TextStyle body = LoopType.figureSm;
 
-  /// The small subheading over a group (the former uppercase eyebrow).
+  /// Retired: [LoopType.eyebrow].
   static final TextStyle label = LoopType.eyebrow;
 
-  /// Timestamp / count stamp.
+  /// Retired: [LoopType.figureXs].
   static final TextStyle stamp = LoopType.figureXs;
 
-  /// Address, hash, contract identifier — the fixed-width band.
+  /// Retired: [LoopType.code].
   static final TextStyle address = LoopType.code;
 }
 
@@ -780,8 +850,9 @@ abstract final class LoopTheme {
       titleLarge: LoopType.titleLg,
       titleMedium: LoopType.title,
       titleSmall: LoopType.titleSm,
-      // Band 4 · body.
-      bodyLarge: LoopType.body,
+      // Band 4 · body. `bodyLarge` is the slot a bare `TextField` draws in,
+      // so it is the input step (R25, decision 0189).
+      bodyLarge: LoopType.bodyLg,
       bodyMedium: LoopType.bodySm,
       // Band 5 · caption.
       bodySmall: LoopType.caption,
@@ -861,8 +932,10 @@ abstract final class LoopTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: LoopColors.card,
-        hintStyle: textTheme.bodyMedium,
-        labelStyle: textTheme.bodyMedium,
+        // R25: a field's placeholder and floating label are the input step,
+        // the same size as what is typed into it (decision 0189).
+        hintStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
+        labelStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 15,
@@ -925,6 +998,12 @@ abstract final class LoopTheme {
         shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       ),
+      // A list tile's title stays prose (R18) now that `bodyLarge` is the
+      // input step.
+      listTileTheme: ListTileThemeData(
+        titleTextStyle: LoopType.body,
+        subtitleTextStyle: LoopType.bodySm,
+      ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: LoopColors.graphite,
         modalBackgroundColor: LoopColors.graphite,
@@ -948,7 +1027,7 @@ abstract final class LoopTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: LoopColors.graphite,
-        contentTextStyle: textTheme.bodyLarge,
+        contentTextStyle: LoopType.body,
         behavior: SnackBarBehavior.floating,
         shape: const RoundedRectangleBorder(
           borderRadius: LoopRadius.control,
@@ -1002,8 +1081,8 @@ const PageTransitionsTheme loopPageTransitionsTheme = PageTransitionsTheme(
 );
 
 extension LoopTextStyles on BuildContext {
-  /// Existing alias used by feature slices for tabular figures.
-  TextStyle get dataStyle => LoopMono.value;
+  /// Retired alias for [LoopType.figure] (decision 0189).
+  TextStyle get dataStyle => LoopType.figure;
 
   TextTheme get loopText => Theme.of(this).textTheme;
 }

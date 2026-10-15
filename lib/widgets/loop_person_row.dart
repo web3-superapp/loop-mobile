@@ -4,8 +4,9 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// One OKX-shaped row about a person or an entry (decision 0127): a face on
-/// the left, a 16 name with an optional small tag after it, a 13 grey line
-/// under it, and one thing on the right — a figure, a capsule or a chevron.
+/// the left, a name with an optional small tag after it, a grey line under it
+/// — the one row ladder every list shares since decision 0189 S2
+/// (`LoopType.title` 15 over `LoopType.caption` 12 in text2) — and one thing on the right — a figure, a capsule or a chevron.
 /// No card and no hairline: rows are told apart by their height, as on the
 /// OKX social and asset lists.
 class LoopPersonRow extends StatelessWidget {
@@ -65,8 +66,7 @@ class LoopPersonRow extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           softWrap: false,
-                          style: LoopTypography.title(
-                            16,
+                          style: LoopType.title.copyWith(
                             color: titleColor ?? LoopColors.chalk,
                           ),
                         ),
@@ -84,7 +84,7 @@ class LoopPersonRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       softWrap: false,
-                      style: LoopTypography.body(13, color: LoopColors.text2),
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
                     ),
                   ],
                 ],
@@ -177,11 +177,10 @@ class LoopTag extends StatelessWidget {
           Text(
             text,
             maxLines: 1,
-            style: LoopTypography.label(
-              11,
-              weight: FontWeight.w600,
-              color: foreground,
-            ),
+            style: LoopTypography.withWeight(
+              LoopType.kicker,
+              FontWeight.w600,
+            ).copyWith(color: foreground),
           ),
         ],
       ),
@@ -251,11 +250,10 @@ class LoopPillAction extends StatelessWidget {
               child: Text(
                 label,
                 maxLines: 1,
-                style: LoopTypography.label(
-                  13,
-                  weight: FontWeight.w600,
-                  color: ink,
-                ),
+                style: LoopTypography.withWeight(
+                  LoopType.titleSm,
+                  FontWeight.w600,
+                ).copyWith(color: ink),
               ),
             ),
           ),
@@ -321,10 +319,7 @@ class LoopSeeAll extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(
-                label,
-                style: LoopTypography.body(13, color: LoopColors.text2),
-              ),
+              Text(label, style: LoopType.bodySm),
               const SizedBox(width: 2),
               const LoopIcon('chevron', size: 14, color: LoopColors.text3),
             ],
@@ -353,7 +348,8 @@ InputDecoration loopFormFieldDecoration({
   isDense: true,
   constraints: const BoxConstraints(minHeight: 52),
   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-  hintStyle: LoopTypography.body(15, color: LoopColors.text3),
+  // R25: the placeholder is the input step itself (decision 0189).
+  hintStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
   border: const OutlineInputBorder(
     borderRadius: BorderRadius.all(Radius.circular(12)),
     borderSide: BorderSide.none,

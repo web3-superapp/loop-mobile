@@ -328,10 +328,7 @@ class _Head extends StatelessWidget {
           color: LoopGround.fillOf(context),
           borderRadius: LoopRadius.control,
         ),
-        child: Text(
-          '⋯',
-          style: LoopTypography.figure(17, height: 1.15, color: secondary),
-        ),
+        child: Text('⋯', style: LoopType.figureMd.copyWith(color: secondary)),
       ),
       LoopTokenCardState.partial => _GlyphLogo(icon: 'question'),
       LoopTokenCardState.risk => _GlyphLogo(icon: 'phishing'),
@@ -365,9 +362,7 @@ class _Head extends StatelessWidget {
                           : model.symbol,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.label(
-                        14,
-                        weight: FontWeight.w700,
+                      style: LoopType.title.copyWith(
                         color: muted ? secondary : foreground,
                       ),
                     ),
@@ -379,11 +374,10 @@ class _Head extends StatelessWidget {
                   model.identifier,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.figure(
-                    11,
-                    weight: FontWeight.w500,
-                    color: secondary,
-                  ),
+                  style: LoopTypography.withWeight(
+                    LoopType.figureXs,
+                    FontWeight.w500,
+                  ).copyWith(color: secondary),
                 ),
               ],
             ),
@@ -399,20 +393,14 @@ class _Head extends StatelessWidget {
                     '识别中',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.figure(
-                      17,
-                      height: 1.15,
-                      color: secondary,
-                    ),
+                    style: LoopType.figureMd.copyWith(color: secondary),
                   )
                 else if (model.price != null)
                   Text(
                     model.price!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.figure(
-                      17,
-                      height: 1.15,
+                    style: LoopType.figureMd.copyWith(
                       color: muted ? secondary : foreground,
                     ),
                   )
@@ -426,7 +414,7 @@ class _Head extends StatelessWidget {
                     maxLines: 2,
                     textAlign: TextAlign.end,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.caption(11, color: secondary),
+                    style: LoopType.captionSm.copyWith(color: secondary),
                   ),
                 // A card that never read the 24h fact says nothing about it;
                 // only an owner that did read one supplies [change].
@@ -447,21 +435,26 @@ class _Head extends StatelessWidget {
                       // list (decision 0086); before it was Chalk, which is
                       // the colour of every other word on the card.
                       style:
-                          LoopTypography.figure(
-                            11,
-                            color: switch ((model.move, chalk)) {
-                              (LoopPriceMove.unread, _) => secondary,
-                              (final move, false) => move.color,
-                              (LoopPriceMove.up, true) => LoopColors.ink,
-                              (_, true) => LoopColors.inkText2,
-                            },
-                          ).copyWith(
-                            decoration: model.move == LoopPriceMove.up && chalk
-                                ? TextDecoration.underline
-                                : null,
-                            decorationThickness: 1,
-                            decorationColor: LoopColors.ink,
-                          ),
+                          LoopTypography.withWeight(
+                                LoopType.figureXs,
+                                FontWeight.w600,
+                              )
+                              .copyWith(
+                                color: switch ((model.move, chalk)) {
+                                  (LoopPriceMove.unread, _) => secondary,
+                                  (final move, false) => move.color,
+                                  (LoopPriceMove.up, true) => LoopColors.ink,
+                                  (_, true) => LoopColors.inkText2,
+                                },
+                              )
+                              .copyWith(
+                                decoration:
+                                    model.move == LoopPriceMove.up && chalk
+                                    ? TextDecoration.underline
+                                    : null,
+                                decorationThickness: 1,
+                                decorationColor: LoopColors.ink,
+                              ),
                     ),
                   ),
               ],
@@ -515,8 +508,7 @@ class _Chart extends StatelessWidget {
                 height: 18,
                 child: Text(
                   model.chartRangeLabel!,
-                  style: LoopTypography.eyebrow(
-                    11,
+                  style: LoopType.kicker.copyWith(
                     color: chalk ? LoopColors.inkText2 : LoopColors.muted,
                   ),
                 ),
@@ -562,14 +554,13 @@ class _Metrics extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       metrics[index].label.toUpperCase(),
-                      style: LoopTypography.caption(11, color: labelColor),
+                      style: LoopType.kicker.copyWith(color: labelColor),
                     ),
                     Text(
                       metrics[index].value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.figure(
-                        13,
+                      style: LoopType.figure.copyWith(
                         color: metrics[index].accent
                             ? LoopColors.lime
                             : valueColor,
@@ -611,7 +602,7 @@ class _CommunityLine extends StatelessWidget {
           LoopIcon(icon, size: 17, color: accent ? LoopColors.lime : color),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text, style: LoopTypography.caption(11, color: color)),
+            child: Text(text, style: LoopType.captionSm.copyWith(color: color)),
           ),
         ],
       ),
@@ -638,7 +629,7 @@ class _Footnotes extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           for (final line in lines)
-            Text(line, style: LoopTypography.caption(11, color: color)),
+            Text(line, style: LoopType.captionSm.copyWith(color: color)),
         ],
       ),
     );
@@ -682,7 +673,7 @@ class _RiskBar extends StatelessWidget {
                 for (final fact in facts)
                   Text(
                     '${fact.fact} —— 来源 ${fact.source}，观察于 ${fact.observedLabel}',
-                    style: LoopTypography.caption(11, color: foreground),
+                    style: LoopType.captionSm.copyWith(color: foreground),
                   ),
               ],
             ),
@@ -742,13 +733,15 @@ class _Actions extends StatelessWidget {
                           child: Text(
                             actions[index].label,
                             textAlign: TextAlign.center,
-                            style: LoopTypography.label(
-                              12,
-                              weight: FontWeight.w700,
-                              color: actions[index].buy
-                                  ? LoopColors.lime
-                                  : foreground,
-                            ),
+                            style:
+                                LoopTypography.withWeight(
+                                  LoopType.label,
+                                  FontWeight.w700,
+                                ).copyWith(
+                                  color: actions[index].buy
+                                      ? LoopColors.lime
+                                      : foreground,
+                                ),
                           ),
                         ),
                       ),

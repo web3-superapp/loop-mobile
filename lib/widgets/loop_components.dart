@@ -141,7 +141,7 @@ class LoopTopbar extends StatelessWidget {
                         kicker!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopMono.label,
+                        style: LoopType.eyebrow,
                       ),
                     Semantics(
                       header: true,
@@ -160,10 +160,7 @@ class LoopTopbar extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: flat
                             ? (LoopFlat.stepOf(context)
-                                  ? LoopTypography.heading(
-                                      24,
-                                      weight: FontWeight.w700,
-                                    )
+                                  ? LoopType.stepTitle
                                   : loopFlatTitleStyle())
                             : dense
                             ? theme.textTheme.headlineSmall
@@ -177,8 +174,7 @@ class LoopTopbar extends StatelessWidget {
                           subtitle!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.caption(
-                            11,
+                          style: LoopType.captionSm.copyWith(
                             color: LoopColors.text2,
                           ),
                         ),
@@ -344,7 +340,7 @@ class LoopLabel extends StatelessWidget {
             // a 22 title would outweigh the page's own sections.
             child: Text(
               text,
-              style: tight ? LoopTypography.title(15) : loopFlatSectionStyle(),
+              style: tight ? LoopType.title : loopFlatSectionStyle(),
             ),
           ),
         ),
@@ -364,7 +360,7 @@ class LoopLabel extends StatelessWidget {
       ),
       child: Semantics(
         header: true,
-        child: Text(text.toUpperCase(), style: LoopMono.label),
+        child: Text(text.toUpperCase(), style: LoopType.eyebrow),
       ),
     );
   }
@@ -396,25 +392,32 @@ enum LoopFolioHeadingTone {
 
 /// Per-archetype folio metrics (`[data-page-archetype] .folio-*`).
 enum LoopFolioArchetype {
-  intro('intro', minHeight: 216, headingSize: 30, headingTop: 28),
+  intro('intro', minHeight: 216, headingTop: 28),
 
   /// `data-page-archetype="index"` (`index` is reserved on Dart enums).
-  listing('index', minHeight: 158, headingSize: 25, headingTop: 16),
-  record('record', minHeight: 178, headingSize: 29, headingTop: 16),
-  action('action', minHeight: 174, headingSize: 27, headingTop: 16),
-  state('state', minHeight: 194, headingSize: 29, headingTop: 22);
+  listing('index', minHeight: 158, headingTop: 16),
+  record('record', minHeight: 178, headingTop: 16),
+  action('action', minHeight: 174, headingTop: 16),
+  state('state', minHeight: 194, headingTop: 22);
 
   const LoopFolioArchetype(
     this.wireName, {
     required this.minHeight,
-    required this.headingSize,
     required this.headingTop,
   });
 
   /// Prototype `data-page-archetype` value.
   final String wireName;
   final double minHeight;
-  final double headingSize;
+
+  /// R9 the folio heading's step (decision 0189): the prototype's 30 / 25 /
+  /// 29 / 27 / 29 folded onto the display band — 28 for intro, record and
+  /// state, 26 for action, 24 for index (and for every compact folio).
+  TextStyle get headingStyle => switch (this) {
+    intro || record || state => LoopType.displayXl,
+    action => LoopType.display,
+    listing => LoopType.displaySm,
+  };
   final double headingTop;
 }
 
@@ -544,7 +547,6 @@ class LoopFolioPrimary extends StatelessWidget {
   /// floor the prototype's `.scr :is(…,.folio-stamp,small)` rule sets.
   static const EdgeInsets _stampPadding = EdgeInsets.fromLTRB(9, 7, 9, 7);
   static const double _stampBorder = 1;
-  static const double _stampTextSize = 11;
 
   /// The gap the caption keeps between its longest line and the stamp.
   static const double _stampGap = 12;
@@ -560,10 +562,7 @@ class LoopFolioPrimary extends StatelessWidget {
   /// prototype's fixed budget, because the stamp itself is capped at 42%.
   double _stampWidth(BuildContext context, String label, double contentWidth) {
     final painter = TextPainter(
-      text: TextSpan(
-        text: label.toUpperCase(),
-        style: LoopTypography.eyebrow(_stampTextSize),
-      ),
+      text: TextSpan(text: label.toUpperCase(), style: LoopType.kicker),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
@@ -696,8 +695,7 @@ class LoopFolioPrimary extends StatelessWidget {
       heading,
       maxLines: headingMaxLines,
       overflow: headingMaxLines == null ? null : TextOverflow.ellipsis,
-      style: LoopTypography.display(
-        compact ? 24 : archetype.headingSize,
+      style: (compact ? LoopType.displaySm : archetype.headingStyle).copyWith(
         color: headingColor,
       ),
     );
@@ -784,8 +782,7 @@ class LoopFolioPrimary extends StatelessWidget {
                         kicker!.toUpperCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.eyebrow(
-                          11,
+                        style: LoopType.kicker.copyWith(
                           color: _faded(foreground, kickerOpacity),
                         ),
                       ),
@@ -800,8 +797,7 @@ class LoopFolioPrimary extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     kicker!.toUpperCase(),
-                    style: LoopTypography.eyebrow(
-                      11,
+                    style: LoopType.kicker.copyWith(
                       color: _faded(foreground, kickerOpacity),
                     ),
                   ),
@@ -823,9 +819,9 @@ class LoopFolioPrimary extends StatelessWidget {
                                   key: const ValueKey<String>(
                                     'loop-folio-heading-skeleton',
                                   ),
-                                  style: LoopTypography.display(
-                                    compact ? 24 : archetype.headingSize,
-                                  ),
+                                  style: compact
+                                      ? LoopType.displaySm
+                                      : archetype.headingStyle,
                                   widthFactor: 0.56,
                                 ),
                               )
@@ -846,8 +842,7 @@ class LoopFolioPrimary extends StatelessWidget {
                     overflow: captionMaxLines == null
                         ? null
                         : TextOverflow.ellipsis,
-                    style: LoopTypography.caption(
-                      12,
+                    style: LoopType.caption.copyWith(
                       color: _faded(foreground, captionOpacity),
                     ),
                   ),
@@ -912,10 +907,7 @@ class LoopFolioStamp extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.ellipsis,
-        style: LoopTypography.eyebrow(
-          LoopFolioPrimary._stampTextSize,
-          color: ink,
-        ),
+        style: LoopType.kicker.copyWith(color: ink),
       ),
     );
   }
@@ -1397,8 +1389,9 @@ class LoopRecordRow extends StatelessWidget {
   /// sent in `fall` (decision 0126 · 交易记录).
   final Color? trailingColor;
 
-  /// [trailing] is the row's figure (an amount), drawn at 16 semibold in a
-  /// flat page instead of the 14 grey value.
+  /// [trailing] is the row's figure (an amount): Chalk instead of the grey a
+  /// flat page gives a setting's value. Same step either way (decision 0189
+  /// S2); it used to be 16 against 14.
   final bool trailingStrong;
   final String? subtitle;
 
@@ -1475,10 +1468,28 @@ class LoopRecordRow extends StatelessWidget {
   /// every navigation row keeps the mark it already had.
   final bool chevron;
 
+  /// R5 the row's second line: `LoopType.caption` 12 in text2, on a ledger
+  /// row and a flat row alike (decision 0189 S2).
+  TextStyle get _subtitleStyle =>
+      LoopType.caption.copyWith(color: LoopColors.text2);
+
+  /// R7 the small line under the value: `LoopType.figureXs` 11, at 600 when
+  /// it states a direction.
+  TextStyle get _trailingCaptionStyle => switch (trailingCaptionUp) {
+    true => LoopTypography.withWeight(
+      LoopType.figureXs,
+      FontWeight.w600,
+    ).copyWith(color: LoopPriceMove.up.color),
+    false => LoopTypography.withWeight(
+      LoopType.figureXs,
+      FontWeight.w600,
+    ).copyWith(color: LoopPriceMove.down.color),
+    null => LoopType.figureXs.copyWith(color: LoopColors.text3),
+  };
+
   @override
   Widget build(BuildContext context) {
     if (LoopFlat.of(context)) return _buildFlat(context);
-    final theme = Theme.of(context);
     final topRadius =
         position == LoopRowPosition.first || position == LoopRowPosition.single;
     final bottomRadius =
@@ -1506,21 +1517,21 @@ class LoopRecordRow extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium,
+                  style: LoopType.title,
                 ),
                 if (subtitleSpans != null)
                   Text.rich(
                     TextSpan(children: subtitleSpans),
                     maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
+                    style: _subtitleStyle,
                   )
                 else if (subtitle != null)
                   Text(
                     subtitle!,
                     maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall,
+                    style: _subtitleStyle,
                   ),
               ],
             ),
@@ -1546,23 +1557,12 @@ class LoopRecordRow extends StatelessWidget {
                 if (trailing != null)
                   Text(
                     trailing!,
-                    style: LoopTypography.figure(
-                      13,
+                    style: LoopType.figure.copyWith(
                       color: trailingColor ?? LoopColors.chalk,
                     ),
                   ),
                 if (trailingCaption != null)
-                  Text(
-                    trailingCaption!,
-                    style: LoopTypography.figure(
-                      11,
-                      color: switch (trailingCaptionUp) {
-                        true => LoopPriceMove.up.color,
-                        false => LoopPriceMove.down.color,
-                        null => LoopColors.text3,
-                      },
-                    ),
-                  ),
+                  Text(trailingCaption!, style: _trailingCaptionStyle),
               ],
             ),
           ],
@@ -1656,8 +1656,9 @@ class LoopRecordRow extends StatelessWidget {
 }
 
 /// The OKX entry row (decision 0126): no ground, no separator, 56 tall; a
-/// 20 glyph, a 16 title, a 13 grey second line, a 14 grey value and a
-/// chevron. A chosen row carries a Lime check instead of a wash.
+/// 20 glyph and a chevron. Its type is the ledger row's (decision 0189 S2):
+/// `LoopType.title` 15, a `LoopType.caption` 12 grey second line and a
+/// `LoopType.figure` 13 value — grey, or in [LoopRecordRow.trailingColor]. A chosen row carries a Lime check instead of a wash.
 extension on LoopRecordRow {
   Widget _buildFlat(BuildContext context) {
     final content = Container(
@@ -1680,7 +1681,7 @@ extension on LoopRecordRow {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.title(16),
+                  style: LoopType.title,
                 ),
                 if (subtitleSpans != null)
                   Padding(
@@ -1689,7 +1690,7 @@ extension on LoopRecordRow {
                       TextSpan(children: subtitleSpans),
                       maxLines: subtitleMaxLines,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.body(13, color: LoopColors.text2),
+                      style: _subtitleStyle,
                     ),
                   )
                 else if (subtitle != null)
@@ -1699,7 +1700,7 @@ extension on LoopRecordRow {
                       subtitle!,
                       maxLines: subtitleMaxLines,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.body(13, color: LoopColors.text2),
+                      style: _subtitleStyle,
                     ),
                   ),
               ],
@@ -1732,33 +1733,18 @@ extension on LoopRecordRow {
                       trailing!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: trailingStrong
-                          ? LoopTypography.figure(
-                              16,
-                              color: trailingColor ?? LoopColors.chalk,
-                            )
-                          : LoopTypography.figure(
-                              14,
-                              weight: FontWeight.w500,
-                              color:
-                                  trailingColor ??
-                                  (readOnly && onTap == null
-                                      ? LoopColors.text3
-                                      : LoopColors.text2),
-                            ),
-                    ),
-                  if (trailingCaption != null)
-                    Text(
-                      trailingCaption!,
-                      style: LoopTypography.figure(
-                        11,
-                        color: switch (trailingCaptionUp) {
-                          true => LoopPriceMove.up.color,
-                          false => LoopPriceMove.down.color,
-                          null => LoopColors.text3,
-                        },
+                      style: LoopType.figure.copyWith(
+                        color:
+                            trailingColor ??
+                            (trailingStrong
+                                ? LoopColors.chalk
+                                : readOnly && onTap == null
+                                ? LoopColors.text3
+                                : LoopColors.text2),
                       ),
                     ),
+                  if (trailingCaption != null)
+                    Text(trailingCaption!, style: _trailingCaptionStyle),
                 ],
               ),
             ),
@@ -1901,8 +1887,8 @@ class LoopNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Decision 0126: inside a flat page an informational notice is one 11px
-    // grey line with an ⓘ — it explains, it asks nothing of the reader. A
+    // Decision 0126: inside a flat page an informational notice is one
+    // `LoopType.caption` (R20, 12 since decision 0189) grey line with an ⓘ — it explains, it asks nothing of the reader. A
     // warning or danger notice keeps its card, because that one does.
     if (LoopFlat.of(context) &&
         !keepCard &&
@@ -1931,12 +1917,7 @@ class LoopNotice extends StatelessWidget {
                   child: LoopIcon('info', size: 13, color: LoopColors.text3),
                 ),
                 const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    line,
-                    style: LoopTypography.caption(11, color: LoopColors.text3),
-                  ),
-                ),
+                Expanded(child: Text(line, style: LoopType.caption)),
               ],
             ),
           ),
@@ -1951,7 +1932,7 @@ class LoopNotice extends StatelessWidget {
             LoopNoticeTone.danger => (LoopColors.card2, LoopColors.line2),
           };
     final foreground = chalk ? LoopColors.ink : LoopColors.chalk;
-    final bodyStyle = LoopTypography.caption(11, color: foreground);
+    final bodyStyle = LoopType.caption.copyWith(color: foreground);
     final structured = happened != null;
     final label = <String?>[
       title,
@@ -2112,11 +2093,10 @@ class LoopBadge extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: LoopTypography.label(
-          12,
-          weight: FontWeight.w700,
-          color: foreground,
-        ),
+        style: LoopTypography.withWeight(
+          LoopType.label,
+          FontWeight.w700,
+        ).copyWith(color: foreground),
       ),
     );
   }
@@ -2237,11 +2217,10 @@ class LoopSeg extends StatelessWidget {
       maxLines: 1,
       // `.seg{font-size:11px;font-weight:600}` / `.seg.on{700}`
       // — the selected chip is the only one that goes bold.
-      style: LoopTypography.label(
-        quiet ? 14 : 12,
-        weight: selected ? FontWeight.w700 : FontWeight.w600,
-        color: colour,
-      ),
+      style: LoopTypography.withWeight(
+        quiet ? LoopType.action : LoopType.label,
+        selected ? FontWeight.w700 : FontWeight.w600,
+      ).copyWith(color: colour),
     );
     final glyph = icon;
     if (glyph == null) return text;
@@ -2461,12 +2440,11 @@ class LoopButton extends StatelessWidget {
                 label,
                 textAlign: TextAlign.center,
                 style: wide
-                    ? LoopTypography.title(16, color: foreground)
-                    : LoopTypography.label(
-                        12,
-                        weight: FontWeight.w700,
-                        color: foreground,
-                      ),
+                    ? LoopType.titleLg.copyWith(color: foreground)
+                    : LoopTypography.withWeight(
+                        LoopType.label,
+                        FontWeight.w700,
+                      ).copyWith(color: foreground),
               ),
             ),
         ],
@@ -2571,7 +2549,7 @@ class LoopKeyValue extends StatelessWidget {
             flex: labelFlex,
             child: Text(
               label,
-              style: LoopTypography.caption(11, color: LoopColors.text2),
+              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
             ),
           ),
           const SizedBox(width: 14),
@@ -2581,15 +2559,17 @@ class LoopKeyValue extends StatelessWidget {
               value,
               key: valueKey,
               textAlign: valueAlign,
-              style: LoopTypography.figure(
-                11,
-                weight: FontWeight.w500,
-                color: switch (valueUp) {
-                  true => LoopColors.lime,
-                  false => LoopColors.chalk,
-                  null => LoopColors.chalk,
-                },
-              ),
+              style:
+                  LoopTypography.withWeight(
+                    LoopType.figureXs,
+                    FontWeight.w500,
+                  ).copyWith(
+                    color: switch (valueUp) {
+                      true => LoopColors.lime,
+                      false => LoopColors.chalk,
+                      null => LoopColors.chalk,
+                    },
+                  ),
             ),
           ),
         ],
@@ -2670,7 +2650,8 @@ class _LoopComposerState extends State<LoopComposer> {
                 maxLines: 4,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _send(),
-                style: LoopTypography.caption(11),
+                // R25: the text input step (decision 0189).
+                style: LoopType.bodyLg,
                 decoration: InputDecoration(
                   hintText: widget.hintText,
                   isDense: true,
@@ -2782,13 +2763,16 @@ class LoopPowerHint extends StatelessWidget {
               children: <Widget>[
                 Text(
                   text,
-                  style: LoopTypography.caption(11, color: foreground),
+                  style: LoopType.captionSm.copyWith(color: foreground),
                 ),
                 if (figure != null) ...<Widget>[
                   const SizedBox(height: 3),
                   Text(
                     figure!,
-                    style: LoopTypography.figure(11, color: accent),
+                    style: LoopTypography.withWeight(
+                      LoopType.figureXs,
+                      FontWeight.w600,
+                    ).copyWith(color: accent),
                   ),
                 ],
               ],
@@ -3576,7 +3560,7 @@ class _LoopPageBlockState extends State<LoopPageBlock> {
                 Text(
                   widget.message,
                   textAlign: TextAlign.center,
-                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                  style: LoopType.captionSm,
                 ),
                 if (retry != null && _retryFailed && !_retrying) ...<Widget>[
                   const SizedBox(height: 8),
@@ -3588,8 +3572,7 @@ class _LoopPageBlockState extends State<LoopPageBlock> {
                         'loop-page-block-retry-failed',
                       ),
                       textAlign: TextAlign.center,
-                      style: LoopTypography.caption(
-                        11,
+                      style: LoopType.captionSm.copyWith(
                         color: LoopColors.text2,
                       ),
                     ),
@@ -3690,7 +3673,7 @@ class LoopErrorState extends StatelessWidget {
                     if (traceId != null) '追踪号 $traceId',
                     if (source != null) '来源 $source',
                   ].join(' · '),
-                  style: LoopMono.stamp,
+                  style: LoopType.figureXs,
                 ),
               ],
               if (onRetry != null || alternative != null) ...<Widget>[
@@ -3813,7 +3796,7 @@ class LoopOfflineState extends StatelessWidget {
                     Text(
                       '缓存 $cachedAt',
                       key: const ValueKey<String>('loop-offline-cached-at'),
-                      style: LoopMono.stamp,
+                      style: LoopType.figureXs,
                       semanticsLabel: '缓存时间 $cachedAt',
                     ),
                 ],
@@ -3955,9 +3938,10 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
                         child: ExcludeSemantics(
                           child: Text(
                             widget.summary,
-                            style: LoopTypography.label(
-                              12,
-                              weight: FontWeight.w700,
+                            // R17 an inline text action: label at 600.
+                            style: LoopTypography.withWeight(
+                              LoopType.label,
+                              FontWeight.w600,
                             ),
                           ),
                         ),
@@ -3965,9 +3949,7 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
                       ExcludeSemantics(
                         child: Text(
                           _open ? '−' : '+',
-                          style: LoopTypography.figure(
-                            17,
-                            height: 1.15,
+                          style: LoopType.figureMd.copyWith(
                             color: LoopColors.lime,
                           ),
                         ),

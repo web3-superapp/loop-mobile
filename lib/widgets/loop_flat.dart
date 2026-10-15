@@ -9,14 +9,15 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 /// - [LoopTopbar] — back control, a 20 bold title on one line;
 /// - `LoopLabel` — the 17 section title of `LoopSectionTitle` (decision
 ///   0127), 24 above it, in the page's own words (never upper-cased);
-/// - `LoopRecordRow` — 56 tall, no card ground, no shadow, no separator; the
-///   `LoopPersonRow` metrics: a 40 round glyph tile, a 16 title, a 13 grey
-///   second line, a 14 grey value and a chevron;
+/// - `LoopRecordRow` — 56 tall, no card ground, no shadow, no separator, a
+///   40 round glyph tile and a chevron. The type is the one row ladder every
+///   list shares (decision 0189 S2): a flat page no longer changes a row's
+///   sizes;
 /// - `LoopRowIcon` — decision 0127's `LoopEntryIcon` (40 circle, 20 glyph);
 /// - `LoopButton(block: true)` — decision 0127's wide form button (the old
 ///   `LoopWideButton` was folded into it by decision 0183);
 /// - `LoopTogglePreferenceRow` — a Lime [Switch] instead of a state pill;
-/// - an informational `LoopNotice` — one 11px grey line with an ⓘ instead of a
+/// - an informational `LoopNotice` — one 12px grey line with an ⓘ instead of a
 ///   card. A warning or danger notice keeps its card: that one asks for an
 ///   action (S121 §1 提示分级 ③).
 ///
@@ -47,9 +48,8 @@ class LoopFlat extends InheritedWidget {
   bool updateShouldNotify(LoopFlat oldWidget) => oldWidget.step != step;
 }
 
-/// The flat page title style: 20, bold.
-TextStyle loopFlatTitleStyle() =>
-    LoopTypography.heading(20, weight: FontWeight.w700);
+/// The flat page title style: `LoopType.flatTitle`, 20 bold.
+TextStyle loopFlatTitleStyle() => LoopType.flatTitle;
 
 /// The flat section title style: 17 semibold, the step `LoopSectionTitle`
 /// (decision 0127) uses, so both second-level passes read alike.
@@ -107,7 +107,7 @@ class LoopStepDots extends StatelessWidget {
                 key: const ValueKey<String>('loop-step-label'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.label(13, color: LoopColors.text2),
+                style: LoopType.titleSm.copyWith(color: LoopColors.text2),
               ),
             ),
           ],
@@ -143,7 +143,7 @@ class LoopFlatHeading extends StatelessWidget {
             child: Text(
               title,
               key: const ValueKey<String>('loop-flat-heading'),
-              style: LoopTypography.display(24),
+              style: LoopType.stepTitle,
             ),
           ),
           if (subtitle case final String line) ...<Widget>[
@@ -151,7 +151,7 @@ class LoopFlatHeading extends StatelessWidget {
             Text(
               line,
               key: const ValueKey<String>('loop-flat-subheading'),
-              style: LoopTypography.body(14, color: LoopColors.text2),
+              style: LoopType.body.copyWith(color: LoopColors.text2),
             ),
           ],
         ],
@@ -243,7 +243,7 @@ class LoopFlatField extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(
               label,
-              style: LoopTypography.label(13, color: LoopColors.text3),
+              style: LoopType.titleSm.copyWith(color: LoopColors.text3),
             ),
           ),
           if (trailing case final Widget control)
@@ -261,8 +261,7 @@ class LoopFlatField extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
               child: Text(
                 line,
-                style: LoopTypography.caption(
-                  11,
+                style: LoopType.captionSm.copyWith(
                   color: error ? LoopColors.danger : LoopColors.text3,
                 ),
               ),
@@ -283,11 +282,7 @@ class LoopFlatFootnote extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 8),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: LoopTypography.caption(11, color: LoopColors.text3),
-      ),
+      child: Text(text, textAlign: TextAlign.center, style: LoopType.captionSm),
     );
   }
 }

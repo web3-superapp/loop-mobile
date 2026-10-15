@@ -145,7 +145,14 @@ class _InlineTextAction extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerRight,
               widthFactor: 1,
-              child: Text(label, style: LoopType.label.copyWith(color: ink)),
+              // R17 an inline text action: label at 600 (decision 0189).
+              child: Text(
+                label,
+                style: LoopTypography.withWeight(
+                  LoopType.label,
+                  FontWeight.w600,
+                ).copyWith(color: ink),
+              ),
             ),
           ),
         ),

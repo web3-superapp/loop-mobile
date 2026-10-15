@@ -96,3 +96,8 @@ Accepted 2026-10-08。主代理设计（`LOOP/docs/modules/S112-S114-intel-walle
   后端 `change24h` 真实数据的颜色与舍入显示；`flutter build apk --debug` 未跑（不是特性检查点要求的原生变更）。
 - 待办：红涨绿跌偏好（D3 后半，AGENTS 23 限制）；授权与网络若需要独立路由页；钱包子页的英文戳记（`QR READY`、
   `N WALLETS` 等）未动。
+
+## 0189 修订（2026-10-16）
+
+用户裁决 S1（docs/37 方案 A）：`LoopQuoteRow` 回到字体阶梯内——标题 `LoopType.titleLg` 16、副题 `bodySm` 13、数值 `figureMd` 17 / 600、副值 `figureSm` 12，
+`LoopChangePill` 涨跌 `figure` 13 / 700。本文所述 OKX 行「18 粗 / 14 灰」与胶囊 16 粗不再成立；行高 72、Logo 36、96 × 44 胶囊不变。详见 `0189-type-ladder-final.md`。

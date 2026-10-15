@@ -53,7 +53,8 @@ String loopFoldedZerosPrice(String printed) {
 }
 
 /// The OKX change pill: a fixed 96 × 44 block on the move's soft ground with
-/// the signed figure in the move's colour, 16 bold. A move that was not
+/// the signed figure in the move's colour, `LoopType.figure` at 700 (13 bold
+/// since decision 0189 S1; it was 16). A move that was not
 /// reported is the same block on the card ground with a weak 「未报告」.
 class LoopChangePill extends StatelessWidget {
   const LoopChangePill({required this.change, super.key});
@@ -86,21 +87,21 @@ class LoopChangePill extends StatelessWidget {
           maxLines: 1,
           style: move == null
               ? LoopType.caption.copyWith(color: LoopColors.text3)
-              : LoopTypography.figure(
-                  16,
-                  weight: FontWeight.w700,
-                  color: direction.color,
-                ),
+              : LoopTypography.withWeight(
+                  LoopType.figure,
+                  FontWeight.w700,
+                ).copyWith(color: direction.color),
         ),
       ),
     );
   }
 }
 
-/// One OKX-shaped quote row (decision 0122): a round mark, two lines on the
-/// left (title 18 bold over a 14 grey line), two lines on the right (figure
-/// 18 bold over a 14 grey line) and an optional fixed trailing block — the
-/// change pill. No card and no hairline: rows are separated by their height.
+/// One OKX-shaped quote row (decision 0122, ladder per decision 0189 S1): a
+/// round mark, two lines on the left (`LoopType.titleLg` 16 over a
+/// `LoopType.bodySm` 13 grey line), two lines on the right (`LoopType.figureMd`
+/// 17 over a `LoopType.figureSm` 12 grey line) and an optional fixed trailing
+/// block — the change pill. No card and no hairline: rows are separated by their height.
 class LoopQuoteRow extends StatelessWidget {
   const LoopQuoteRow({
     required this.leading,
@@ -196,7 +197,7 @@ class LoopQuoteRow extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             softWrap: false,
-                            style: LoopTypography.title(18),
+                            style: LoopType.titleLg,
                           ),
                         ),
                         if (titleTrailing != null) ...<Widget>[
@@ -218,10 +219,7 @@ class LoopQuoteRow extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: false,
-                                style: LoopTypography.body(
-                                  14,
-                                  color: LoopColors.text2,
-                                ),
+                                style: LoopType.bodySm,
                               ),
                             ),
                           if (subtitleMark != null) ...<Widget>[
@@ -233,10 +231,7 @@ class LoopQuoteRow extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: false,
-                                style: LoopTypography.caption(
-                                  11,
-                                  color: LoopColors.text3,
-                                ),
+                                style: LoopType.captionSm,
                               ),
                             ),
                           ],
@@ -271,9 +266,7 @@ class LoopQuoteRow extends StatelessWidget {
                             key: valueKey,
                             maxLines: 1,
                             softWrap: false,
-                            style: LoopTypography.figure(
-                              18,
-                              weight: FontWeight.w700,
+                            style: LoopType.figureMd.copyWith(
                               color: LoopGround.inkOf(context),
                             ),
                           ),
@@ -281,10 +274,7 @@ class LoopQuoteRow extends StatelessWidget {
                       if (valueCaption != null) ...<Widget>[
                         const SizedBox(height: 2),
                         DefaultTextStyle.merge(
-                          style: LoopTypography.body(
-                            14,
-                            color: LoopColors.text2,
-                          ),
+                          style: LoopType.figureSm,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           child: valueCaption!,

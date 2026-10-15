@@ -474,11 +474,7 @@ class LoopKeyboardDoneBar extends StatelessWidget {
                     widthFactor: 1,
                     child: Text(
                       '完成',
-                      style: LoopTypography.label(
-                        15,
-                        weight: FontWeight.w600,
-                        color: LoopColors.lime,
-                      ),
+                      style: LoopType.action.copyWith(color: LoopColors.lime),
                     ),
                   ),
                 ),

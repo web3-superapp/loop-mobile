@@ -48,13 +48,10 @@ Future<void> showLoopInfoSheet(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   if (note.title != null) ...<Widget>[
-                    Text(note.title!, style: LoopTypography.title(15)),
+                    Text(note.title!, style: LoopType.title),
                     const SizedBox(height: 4),
                   ],
-                  Text(
-                    note.body,
-                    style: LoopTypography.body(13, color: LoopColors.text2),
-                  ),
+                  Text(note.body, style: LoopType.bodySm),
                 ],
               ),
             ),

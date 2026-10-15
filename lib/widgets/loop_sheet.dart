@@ -87,7 +87,6 @@ class LoopSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     // A modal bottom sheet is not moved by the keyboard on its own: on an
     // iPhone the 二次验证 sheet's code field and its buttons sat under the
     // keypad (2026-09-22). The sheet gives up the keyboard's height at its
@@ -172,10 +171,7 @@ class LoopSheet extends StatelessWidget {
                     if (title != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                        child: Text(
-                          title!,
-                          style: theme.textTheme.headlineMedium,
-                        ),
+                        child: Text(title!, style: LoopType.heading),
                       ),
                     Flexible(child: SingleChildScrollView(child: child)),
                   ],

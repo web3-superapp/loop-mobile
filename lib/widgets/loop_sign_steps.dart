@@ -94,15 +94,17 @@ class LoopSignStepStrip extends StatelessWidget {
                   ),
                   child: Text(
                     number,
-                    style: LoopTypography.label(
-                      12,
-                      weight: FontWeight.w700,
-                      color: lit
-                          ? LoopColors.ink
-                          : next
-                          ? LoopColors.chalk
-                          : LoopColors.text2,
-                    ),
+                    style:
+                        LoopTypography.withWeight(
+                          LoopType.label,
+                          FontWeight.w700,
+                        ).copyWith(
+                          color: lit
+                              ? LoopColors.ink
+                              : next
+                              ? LoopColors.chalk
+                              : LoopColors.text2,
+                        ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -113,8 +115,7 @@ class LoopSignStepStrip extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         step.label,
-                        style: LoopTypography.title(
-                          14,
+                        style: LoopType.title.copyWith(
                           color: later ? LoopColors.text2 : LoopColors.chalk,
                         ),
                       ),

@@ -123,10 +123,10 @@ class LoopRoundKey extends StatelessWidget {
                         ),
                         child: Text(
                           count,
-                          style: LoopTypography.figure(
-                            11,
-                            color: LoopColors.ink,
-                          ),
+                          style: LoopTypography.withWeight(
+                            LoopType.figureXs,
+                            FontWeight.w600,
+                          ).copyWith(color: LoopColors.ink),
                         ),
                       ),
                     ),
@@ -137,10 +137,13 @@ class LoopRoundKey extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopTypography.title(
-                  13,
-                  color: enabled ? LoopColors.chalk : LoopColors.text3,
-                ),
+                style:
+                    LoopTypography.withWeight(
+                      LoopType.titleSm,
+                      FontWeight.w600,
+                    ).copyWith(
+                      color: enabled ? LoopColors.chalk : LoopColors.text3,
+                    ),
               ),
             ],
           ),

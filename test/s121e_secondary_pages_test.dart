@@ -30,51 +30,54 @@ void main() {
   loopWatchGround();
 
   group('LoopFlat primitives', () {
-    testWidgets('a flat row is 56 high, unboxed, 16 title, 40 entry tile', (
-      tester,
-    ) async {
-      await _pumpFlat(
-        tester,
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('row'),
-              leading: const LoopRowIcon(icon: 'wallet'),
-              title: '我的钱包',
-              trailing: '1 个已绑定',
-              onTap: () {},
-            ),
-          ],
-        ),
-      );
-
-      final row = find.byKey(const ValueKey<String>('row'));
-      expect(tester.getSize(row).height, greaterThanOrEqualTo(56));
-      final title = tester.widget<Text>(find.text('我的钱包'));
-      expect(title.style?.fontSize, 16);
-      final value = tester.widget<Text>(find.text('1 个已绑定'));
-      expect(value.style?.fontSize, 14);
-      // No card ground: the only fill under the row is the round glyph
-      // tile (decision 0127's `LoopEntryIcon`).
-      expect(
-        find.descendant(
-          of: row,
-          matching: find.byWidgetPredicate(
-            (widget) =>
-                widget is Container &&
-                widget.decoration is BoxDecoration &&
-                (widget.decoration! as BoxDecoration).color != null &&
-                (widget.decoration! as BoxDecoration).shape != BoxShape.circle,
+    testWidgets(
+      'a flat row is 56 high, unboxed, row-step title, 40 entry tile',
+      (tester) async {
+        await _pumpFlat(
+          tester,
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('row'),
+                leading: const LoopRowIcon(icon: 'wallet'),
+                title: '我的钱包',
+                trailing: '1 个已绑定',
+                onTap: () {},
+              ),
+            ],
           ),
-        ),
-        findsNothing,
-      );
-      final tile = find.descendant(
-        of: row,
-        matching: find.byType(LoopEntryIcon),
-      );
-      expect(tester.getSize(tile), const Size(40, 40));
-    });
+        );
+
+        final row = find.byKey(const ValueKey<String>('row'));
+        expect(tester.getSize(row).height, greaterThanOrEqualTo(56));
+        final title = tester.widget<Text>(find.text('我的钱包'));
+        // Decision 0189 S2: a flat row shares the ledger row's steps.
+        expect(title.style?.fontSize, LoopType.title.fontSize);
+        final value = tester.widget<Text>(find.text('1 个已绑定'));
+        expect(value.style?.fontSize, LoopType.figure.fontSize);
+        // No card ground: the only fill under the row is the round glyph
+        // tile (decision 0127's `LoopEntryIcon`).
+        expect(
+          find.descendant(
+            of: row,
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Container &&
+                  widget.decoration is BoxDecoration &&
+                  (widget.decoration! as BoxDecoration).color != null &&
+                  (widget.decoration! as BoxDecoration).shape !=
+                      BoxShape.circle,
+            ),
+          ),
+          findsNothing,
+        );
+        final tile = find.descendant(
+          of: row,
+          matching: find.byType(LoopEntryIcon),
+        );
+        expect(tester.getSize(tile), const Size(40, 40));
+      },
+    );
 
     testWidgets('a flat label is the 17 section title of decision 0127', (
       tester,
@@ -113,7 +116,8 @@ void main() {
         ),
       );
       final line = tester.widget<Text>(find.text('说明。这是一句话。'));
-      expect(line.style?.fontSize, 11);
+      // R20: a notice line is `LoopType.caption` (decision 0189).
+      expect(line.style?.fontSize, LoopType.caption.fontSize);
       expect(
         find.byKey(const ValueKey<String>('loop-notice-warn')),
         findsOneWidget,
@@ -393,7 +397,7 @@ void main() {
       );
       final amount = tester.widget<Text>(find.text('+1.5'));
       expect(amount.style?.color, LoopColors.rise);
-      expect(amount.style?.fontSize, 16);
+      expect(amount.style?.fontSize, LoopType.figure.fontSize);
       // A 36 circle heads the row.
       final mark = find.byWidgetPredicate(
         (widget) =>

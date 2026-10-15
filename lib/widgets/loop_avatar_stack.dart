@@ -278,8 +278,7 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        style: LoopTypography.caption(
-                          _labelFontSize,
+                        style: LoopType.captionSm.copyWith(
                           color: LoopGround.secondaryOf(context),
                         ),
                       ),
@@ -324,7 +323,7 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
 
   static double _lerp(double a, double b, double t) => a + (b - a) * t;
 
-  static const double _labelFontSize = 11;
+  static final double _labelFontSize = LoopType.captionSm.fontSize!;
 }
 
 /// The last disc of a stack: how many people it does not draw.

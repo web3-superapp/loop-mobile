@@ -86,7 +86,8 @@ void main() {
     );
     final heading = tester.widget<Text>(find.text('当前设备离线'));
     expect(heading.style?.color, LoopColors.lime);
-    expect(heading.style?.fontSize, 29);
+    // R9: the state archetype's heading is the display-band step (0189).
+    expect(heading.style?.fontSize, LoopType.displayXl.fontSize);
     expect(find.text('LAST SYNC'), findsOneWidget);
     expect(find.text('OFFLINE'), findsOneWidget);
     final limeHeading = tester.widget<Text>(find.text('Lime'));

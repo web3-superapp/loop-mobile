@@ -123,7 +123,9 @@ void main() {
     expect(title.fontFamilyFallback!.first, LoopFonts.android);
 
     expect(text.displayMedium!.fontSize, 26);
-    expect(text.bodyLarge!.fontSize, 14);
+    // `bodyLarge` is the slot a bare TextField draws in: the input step
+    // (R25, decision 0189).
+    expect(text.bodyLarge, same(LoopType.bodyLg));
     expect(text.bodyLarge!.fontWeight, FontWeight.w400);
     expect(text.bodyMedium!.fontSize, 13);
     expect(text.bodyMedium!.height, 1.4);
@@ -172,6 +174,9 @@ void main() {
       'action': LoopType.action,
       'label': LoopType.label,
       'eyebrow': LoopType.eyebrow,
+      'kicker': LoopType.kicker,
+      'stepTitle': LoopType.stepTitle,
+      'flatTitle': LoopType.flatTitle,
     };
     proportional.forEach((name, style) {
       expect(
@@ -228,12 +233,20 @@ void main() {
       expect(entry.value.fontSize, greaterThanOrEqualTo(11), reason: entry.key);
       expect(entry.value.fontSize, lessThanOrEqualTo(28), reason: entry.key);
     }
-    // The `mono*` names the feature slices call are those steps.
-    expect(LoopType.monoDisplay, LoopType.figureXl);
+    // Decision 0189: the figure steps that carry a row or a hero are 600;
+    // the two small secondary steps are 400 and move to 600 for a direction.
+    for (final style in <TextStyle>[
+      LoopType.figureXl,
+      LoopType.figureLg,
+      LoopType.figureMd,
+      LoopType.figure,
+    ]) {
+      expect(style.fontWeight, FontWeight.w600);
+    }
+    expect(LoopType.figureSm.fontWeight, FontWeight.w400);
+    expect(LoopType.figureXs.fontWeight, FontWeight.w400);
+    // The two retired `mono*` names still standing are those steps.
     expect(LoopType.monoTitle, LoopType.figureLg);
-    expect(LoopType.monoQuote, LoopType.figureMd);
-    expect(LoopType.monoValue, LoopType.figure);
-    expect(LoopType.monoBody, LoopType.figureSm);
     expect(LoopType.monoStamp, LoopType.figureXs);
 
     // Restating a weight is still the only sanctioned way to move one.

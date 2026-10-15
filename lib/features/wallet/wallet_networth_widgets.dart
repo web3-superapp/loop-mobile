@@ -257,7 +257,7 @@ class WalletNetWorthChart extends StatelessWidget {
     final low = values[extremes.low];
     final highText = hidden ? _masked : loopFormatUsd(high);
     final lowText = hidden ? _masked : loopFormatUsd(low);
-    final labelStyle = LoopTypography.figure(11, color: LoopColors.text2);
+    final labelStyle = LoopType.figureXs.copyWith(color: LoopColors.text2);
     return Semantics(
       container: true,
       image: true,
@@ -473,7 +473,7 @@ class WalletPnlLine extends StatelessWidget {
                   key: ValueKey<String>('$keyPrefix-pnl-value'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.figure(12, color: colour),
+                  style: LoopType.figureSm.copyWith(color: colour),
                 ),
               ),
               const SizedBox(width: 2),

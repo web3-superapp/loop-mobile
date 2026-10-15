@@ -10552,3 +10552,166 @@ class BalanceVisibilityStoreContractTests(unittest.TestCase):
             "the balance visibility adapter must retain its exact namespaced key",
             result,
         )
+
+
+class TypeLadderContractTests(unittest.TestCase):
+    """Decision 0189 (S197-1): G1 no off-ladder size, G2 the 11px floor."""
+
+    def _write(self, root: Path, relative: str, source: str) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+
+    def _check(self, root: Path, **allowlists: object) -> list[str]:
+        return check_harness.check_type_ladder_contract(
+            root,
+            ladder_allowlist=allowlists.get("ladder", {}),
+            floor_allowlist=allowlists.get("floor", {}),
+            canvas_files=allowlists.get("canvases", {}),
+        )
+
+    def test_current_repository_passes(self) -> None:
+        self.assertEqual([], check_harness.check_type_ladder_contract(REPOSITORY_ROOT))
+
+    def test_widgets_have_no_allowance(self) -> None:
+        for entry in check_harness.TYPE_LADDER_FEATURE_ALLOWLIST:
+            self.assertTrue(entry.startswith("lib/features/"), entry)
+        for entry in check_harness.TYPE_FLOOR_FEATURE_ALLOWLIST:
+            self.assertTrue(entry.startswith("lib/features/"), entry)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, "lib/widgets/x.dart", "final s = LoopTypography.title(15);\n")
+            result = self._check(root, ladder={"lib/widgets/x.dart": (1, 0)})
+        self.assertTrue(any("outside lib/features" in error for error in result), result)
+
+    # G1 · off-ladder sizes.
+    def test_numeric_builder_copy_size_and_alias_fail(self) -> None:
+        for source in (
+            "final s = LoopTypography.title(18);\n",
+            "final s = LoopTypography.figure(\n  16,\n  weight: FontWeight.w700,\n);\n",
+            "final s = LoopTypography.sans(size: 12, weight: FontWeight.w400);\n",
+            "final s = LoopType.body.copyWith(fontSize: 13);\n",
+            "final s = LoopType.body.copyWith(color: c, fontSize: 13);\n",
+            "final s = LoopMono.label;\n",
+            "final s = LoopType.monoTitle;\n",
+            "final s = context.dataStyle;\n",
+        ):
+            for tree in ("lib/features/wallet", "lib/widgets"):
+                with self.subTest(source=source, tree=tree):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        root = Path(temporary)
+                        self._write(root, f"{tree}/x.dart", source)
+                        result = self._check(root)
+                    self.assertEqual(1, len(result), result)
+                    self.assertIn(f"{tree}/x.dart", result[0])
+                    self.assertIn("decision 0189 G1", result[0])
+
+    def test_ladder_steps_weights_and_comments_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(
+                root,
+                "lib/features/wallet/x.dart",
+                "// LoopTypography.title(18) was the old quote row\n"
+                "final a = LoopType.titleLg;\n"
+                "final b = LoopTypography.withWeight(LoopType.figure, FontWeight.w700);\n"
+                "final c = LoopType.caption.copyWith(color: LoopColors.text2);\n"
+                "final d = LoopTypography.figure(size * 0.34);\n",
+            )
+            self._write(root, "lib/widgets/y.dart", "final a = LoopType.kicker;\n")
+            # The theme itself defines the steps with numbers.
+            self._write(
+                root,
+                "lib/core/theme/loop_theme.dart",
+                "final kicker = LoopTypography.eyebrow(11);\n",
+            )
+            self.assertEqual([], self._check(root))
+
+    def test_allowlisted_file_must_match_its_count_exactly(self) -> None:
+        source = "final a = LoopTypography.title(18);\nfinal b = LoopMono.label;\n"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, "lib/features/wallet/x.dart", source)
+            rel = "lib/features/wallet/x.dart"
+            self.assertEqual([], self._check(root, ladder={rel: (1, 1)}))
+            grew = self._check(root, ladder={rel: (0, 1)})
+            shrank = self._check(root, ladder={rel: (2, 1)})
+        self.assertEqual(1, len(grew), grew)
+        self.assertIn("grew", grew[0])
+        self.assertEqual(1, len(shrank), shrank)
+        self.assertIn("shrank", shrank[0])
+        self.assertIn("lower the entry", shrank[0])
+
+    def test_stale_ladder_entry_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, "lib/features/wallet/x.dart", "final a = LoopType.title;\n")
+            result = self._check(root, ladder={"lib/features/wallet/x.dart": (1, 0)})
+        self.assertEqual(1, len(result), result)
+        self.assertIn("no longer needed", result[0])
+
+    # G2 · the 11px floor.
+    def test_sub_floor_size_anywhere_in_lib_fails(self) -> None:
+        for relative, source in (
+            ("lib/features/mining/x.dart", "final s = LoopTypography.eyebrow(9);\n"),
+            ("lib/widgets/x.dart", "final s = LoopTypography.figure(10, height: 1);\n"),
+            ("lib/integrations/x.dart", "final s = TextStyle(fontSize: 10.5);\n"),
+        ):
+            with self.subTest(relative=relative):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._write(root, relative, source)
+                    result = [
+                        error for error in self._check(root) if "G2" in error
+                    ]
+                self.assertEqual(1, len(result), result)
+                self.assertIn(f"{relative}:1", result[0])
+                self.assertIn("screen floor", result[0])
+
+    def test_floor_steps_and_chart_canvas_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, "lib/widgets/x.dart", "final s = LoopType.captionSm;\n")
+            self._write(
+                root,
+                "lib/integrations/y.dart",
+                "final s = TextStyle(fontSize: 11);\n",
+            )
+            self._write(
+                root,
+                "lib/features/market/chart.dart",
+                "final s = LoopTypography.figure(7);\n",
+            )
+            result = self._check(
+                root, canvases={"lib/features/market/chart.dart": "axis"}
+            )
+        self.assertEqual([], result)
+
+    def test_floor_allowlist_only_shrinks(self) -> None:
+        rel = "lib/features/mining/x.dart"
+        source = "final a = LoopTypography.caption(9);\nfinal b = LoopTypography.caption(10);\n"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write(root, rel, source)
+            exact = self._check(root, ladder={rel: (2, 0)}, floor={rel: 2})
+            more = self._check(root, ladder={rel: (2, 0)}, floor={rel: 1})
+            fewer = self._check(root, ladder={rel: (2, 0)}, floor={rel: 3})
+            self._write(root, rel, "final a = LoopType.caption;\n")
+            stale = self._check(root, floor={rel: 2})
+        self.assertEqual([], exact)
+        self.assertEqual(1, len(more), more)
+        self.assertIn("raise them", more[0])
+        self.assertEqual(1, len(fewer), fewer)
+        self.assertIn("lower the entry", fewer[0])
+        self.assertEqual(1, len(stale), stale)
+        self.assertIn("no longer needed", stale[0])
+
+    def test_canvas_and_floor_lists_are_fixed(self) -> None:
+        self.assertEqual(
+            {
+                "lib/features/market/loop_candle_chart.dart",
+                "lib/features/market/loop_market_chart.dart",
+            },
+            set(check_harness.TYPE_LADDER_CANVAS_FILES),
+        )
+        self.assertEqual(9, sum(check_harness.TYPE_FLOOR_FEATURE_ALLOWLIST.values()))

@@ -98,7 +98,6 @@ class LoopSignSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final background = switch (state) {
       LoopSignSheetState.simulationFailed => const Color(0x1CB8FF20),
       LoopSignSheetState.policyRejected => LoopColors.card2,
@@ -147,7 +146,10 @@ class LoopSignSheet extends StatelessWidget {
                           Expanded(
                             child: Text(
                               title,
-                              style: theme.textTheme.titleLarge,
+                              // R2: the one sheet-title step (decision
+                              // 0189; it was 16 against every other sheet's
+                              // 20).
+                              style: LoopType.heading,
                             ),
                           ),
                           if (networkBadge != null) ...<Widget>[
@@ -184,8 +186,7 @@ class LoopSignSheet extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           reason!,
-                          style: LoopTypography.caption(
-                            11,
+                          style: LoopType.caption.copyWith(
                             color: LoopColors.text2,
                           ),
                         ),
@@ -286,16 +287,12 @@ class _SigningBody extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: LoopTypography.title(13, weight: FontWeight.w700),
-        ),
+        Text(title, textAlign: TextAlign.center, style: LoopType.title),
         const SizedBox(height: 4),
         Text(
           '请勿关闭 App',
           textAlign: TextAlign.center,
-          style: LoopTypography.caption(11, color: LoopColors.text3),
+          style: LoopType.captionSm,
         ),
         const SizedBox(height: 12),
         LoopButtonPair(

@@ -32,8 +32,7 @@ class LoopEnvironmentTag extends StatelessWidget {
         child: Text(
           label,
           maxLines: 1,
-          style: LoopTypography.code(
-            11,
+          style: LoopType.codeSm.copyWith(
             height: 1,
             color: LoopGround.secondaryOf(context),
           ),

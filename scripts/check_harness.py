@@ -15671,6 +15671,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_launch2_user_contract(root))  # S136
     errors.extend(check_flat_family_contract(root))  # S186-5
     errors.extend(check_family_guard_contract(root))  # S186-7
+    errors.extend(check_type_ladder_contract(root))  # S197-1
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -16008,6 +16009,258 @@ def check_family_guard_contract(
     return errors
 
 
+# Decision 0189 (S197-1, docs/37 §4.1): the type ladder is final. Two guards
+# keep it that way.
+#
+# G1 · no size outside the ladder. `lib/features/**` and `lib/widgets/**` take
+#    a `LoopType` step; they never hand a band builder a number
+#    (`LoopTypography.title(18)`), never restate a size through
+#    `copyWith(fontSize: …)` and never call the retired alias layer
+#    (`LoopMono.*`, `LoopType.mono*`, `context.dataStyle`). `lib/widgets/**`
+#    is at zero. The feature files below still carry calls from before the
+#    ladder was fixed; S197-2…4 clear them page by page. Each entry is the
+#    file's exact count `(numeric builder calls, retired alias calls)` and may
+#    only shrink: a file that grows fails, and a file that shrank must lower
+#    its entry (or drop it at zero), so a fixed call cannot quietly come back.
+# G2 · nothing below the 11px screen floor. A text size parsed from a builder
+#    call or a `fontSize:` anywhere under `lib/**` must be at least 11. The
+#    chart canvases draw axis ticks at 7–9px, as the prototype's
+#    `.kline-axis-label` does, and are exempt from both guards; the nine
+#    sub-floor feature calls below are counted the same shrinking way.
+TYPE_LADDER_GUARDED_TREES = ("lib/features", "lib/widgets")
+TYPE_LADDER_BUILDER_PATTERN = re.compile(
+    r"\bLoopTypography\.(?:display|heading|title|body|caption|label|eyebrow|"
+    r"figure|code|sans|mono)\(\s*(?:size\s*:\s*)?(?P<size>[0-9][0-9.]*)"
+)
+TYPE_LADDER_FONT_SIZE_COPY_PATTERN = re.compile(r"\.copyWith\(\s*[^()]*?\bfontSize\s*:")
+TYPE_LADDER_ALIAS_PATTERN = re.compile(
+    r"\bLoopMono\.\w+|\bLoopType\.mono\w*|\.dataStyle\b"
+)
+TYPE_LADDER_FONT_SIZE_PATTERN = re.compile(r"\bfontSize\s*:\s*(?P<size>[0-9][0-9.]*)")
+TYPE_LADDER_SCREEN_FLOOR = 11
+# Chart canvases: axis and price-tag text painted at the prototype's 7–9px.
+TYPE_LADDER_CANVAS_FILES: dict[str, str] = {
+    "lib/features/market/loop_candle_chart.dart": "candle axis labels (`.kline-axis-label` 7px)",
+    "lib/features/market/loop_market_chart.dart": "market chart axis and price tags (9px)",
+}
+TYPE_LADDER_FEATURE_ALLOWLIST: dict[str, tuple[int, int]] = {
+    "lib/features/account/account_screens.dart": (8, 0),
+    "lib/features/account/loop_id_setup_screen.dart": (5, 0),
+    "lib/features/account/onboarding_communities.dart": (4, 0),
+    "lib/features/account/privy_login_screen.dart": (11, 0),
+    "lib/features/account/privy_otp_screen.dart": (3, 0),
+    "lib/features/chain/chain_widgets.dart": (0, 5),
+    "lib/features/chat/calls/voice_media_state_card.dart": (2, 0),
+    "lib/features/chat/chat_inbox_row_actions.dart": (2, 0),
+    "lib/features/chat/chat_preview_pages.dart": (0, 1),
+    "lib/features/chat/friends/friend_screens.dart": (2, 0),
+    "lib/features/chat/group_alias/group_alias_screen.dart": (2, 0),
+    "lib/features/chat/member_buy/loop_member_buy_card.dart": (7, 0),
+    "lib/features/chat/stream_chat_inbox_page.dart": (2, 0),
+    "lib/features/chat/token_card/chat_token_card.dart": (1, 0),
+    "lib/features/chat/v2/chat_forward_screens.dart": (9, 0),
+    "lib/features/chat/v2/chat_search_screen.dart": (1, 0),
+    "lib/features/chat/v2/forward_target_sheet.dart": (4, 0),
+    "lib/features/chat/v2/group_screens.dart": (1, 0),
+    "lib/features/chat/v2/loop_stream_channel_surface.dart": (3, 0),
+    "lib/features/chat/v2/voice_room_screens.dart": (6, 0),
+    "lib/features/chat/v2/voice_room_stage.dart": (11, 0),
+    "lib/features/chat/widgets/chat_components.dart": (0, 1),
+    "lib/features/community/community_ai_screen.dart": (13, 0),
+    "lib/features/community/community_home_widgets.dart": (4, 0),
+    "lib/features/community/community_manage_screen.dart": (2, 0),
+    "lib/features/community/community_member_faces.dart": (1, 0),
+    "lib/features/community/community_profile_screen.dart": (6, 0),
+    "lib/features/community/community_screen.dart": (1, 1),
+    "lib/features/community/community_widgets.dart": (19, 0),
+    "lib/features/community/search_screen.dart": (2, 0),
+    "lib/features/intel/intel_rank_board.dart": (0, 2),
+    "lib/features/launch/launch_action_screens.dart": (13, 0),
+    "lib/features/launch/launch_detail_screens.dart": (11, 1),
+    "lib/features/launch/launch_trade_screen.dart": (15, 0),
+    "lib/features/launch/launch_widgets.dart": (17, 0),
+    "lib/features/launch2/launch2_instance_screen.dart": (6, 0),
+    "lib/features/launch2/launch2_launchpad.dart": (9, 1),
+    "lib/features/launch2/launch2_nft_screen.dart": (2, 0),
+    "lib/features/launch2/launch2_pool_trade_panel.dart": (1, 0),
+    "lib/features/launch2/launch2_signing.dart": (2, 0),
+    "lib/features/launch2/launch2_trade_panel.dart": (2, 0),
+    "lib/features/launch2/launch2_wallet_rows.dart": (1, 0),
+    "lib/features/launch2/launch2_widgets.dart": (11, 0),
+    "lib/features/market/token_card_chart.dart": (1, 0),
+    "lib/features/market/token_screen.dart": (2, 0),
+    "lib/features/market/watchlist/watchlist_editor_screen.dart": (1, 1),
+    "lib/features/meme/meme_home_top.dart": (2, 0),
+    "lib/features/meme/meme_widgets.dart": (4, 0),
+    "lib/features/mining/mining_screen.dart": (2, 1),
+    "lib/features/mining/mining_secondary_screens.dart": (11, 1),
+    "lib/features/mining/mining_widgets.dart": (16, 0),
+    "lib/features/mining/referral_screen.dart": (9, 0),
+    "lib/features/mining_rewards/mining_rewards_screen.dart": (3, 1),
+    "lib/features/profile/presentation/avatar_editor.dart": (3, 0),
+    "lib/features/profile/profile_v2_screens.dart": (11, 0),
+    "lib/features/profile/security/security_screens.dart": (2, 0),
+    "lib/features/profile/settings/settings_screen.dart": (1, 0),
+    "lib/features/profile/support/support_screen.dart": (1, 2),
+    "lib/features/scan/scan_screen.dart": (5, 0),
+    "lib/features/security/app_lock/app_lock_gate.dart": (2, 0),
+    "lib/features/security/app_lock/app_lock_prompt.dart": (2, 0),
+    "lib/features/security/mfa/mfa_sheet.dart": (5, 0),
+    "lib/features/security/mfa/passkey_sheet.dart": (1, 0),
+    "lib/features/security/step_up/step_up_widgets.dart": (2, 0),
+    "lib/features/shell/loop_pending_surface.dart": (0, 3),
+    "lib/features/shell/loop_shell.dart": (1, 0),
+    "lib/features/social/connections_screen.dart": (1, 0),
+    "lib/features/social/public_profile/user_profile_screen.dart": (10, 0),
+    "lib/features/social/public_profile_sheet.dart": (3, 0),
+    "lib/features/social/qr/loop_qr_card.dart": (7, 0),
+    "lib/features/square/square_community_list.dart": (10, 0),
+    "lib/features/square/square_feed_view.dart": (13, 0),
+    "lib/features/square/square_screen.dart": (4, 0),
+    "lib/features/system/system_surfaces.dart": (3, 0),
+    "lib/features/wallet/approval_screens.dart": (0, 1),
+    "lib/features/wallet/money_actions_widgets.dart": (0, 2),
+    "lib/features/wallet/send_screens.dart": (2, 0),
+    "lib/features/wallet/swap_screens.dart": (0, 3),
+    "lib/features/wallet/wallet_home_widgets.dart": (8, 0),
+    "lib/features/wallet/wallet_read_screens.dart": (0, 2),
+    "lib/features/wallet/wallet_read_widgets.dart": (6, 2),
+}
+TYPE_FLOOR_FEATURE_ALLOWLIST: dict[str, int] = {
+    "lib/features/account/privy_login_screen.dart": 1,
+    "lib/features/meme/meme_widgets.dart": 1,
+    "lib/features/mining/mining_secondary_screens.dart": 3,
+    "lib/features/mining/mining_widgets.dart": 3,
+    "lib/features/mining/referral_screen.dart": 1,
+}
+
+
+def type_ladder_counts(source: str) -> tuple[int, int]:
+    """`(numeric builder or copyWith(fontSize) calls, retired alias calls)`
+    in comment-stripped Dart [source]."""
+
+    builders = len(TYPE_LADDER_BUILDER_PATTERN.findall(source))
+    builders += len(TYPE_LADDER_FONT_SIZE_COPY_PATTERN.findall(source))
+    aliases = len(TYPE_LADDER_ALIAS_PATTERN.findall(source))
+    return builders, aliases
+
+
+def type_floor_violations(source: str) -> list[tuple[int, float]]:
+    """`(line, size)` for every literal text size below the screen floor."""
+
+    found: list[tuple[int, float]] = []
+    for pattern in (TYPE_LADDER_BUILDER_PATTERN, TYPE_LADDER_FONT_SIZE_PATTERN):
+        for match in pattern.finditer(source):
+            try:
+                size = float(match.group("size").rstrip("."))
+            except ValueError:
+                continue
+            if size < TYPE_LADDER_SCREEN_FLOOR:
+                found.append((source.count("\n", 0, match.start()) + 1, size))
+    return sorted(found)
+
+
+def check_type_ladder_contract(
+    root: Path,
+    ladder_allowlist: dict[str, tuple[int, int]] | None = None,
+    floor_allowlist: dict[str, int] | None = None,
+    canvas_files: dict[str, str] | None = None,
+) -> list[str]:
+    """Decision 0189: G1 (no size outside the ladder) and G2 (11px floor)."""
+
+    ladder = TYPE_LADDER_FEATURE_ALLOWLIST if ladder_allowlist is None else ladder_allowlist
+    floor = TYPE_FLOOR_FEATURE_ALLOWLIST if floor_allowlist is None else floor_allowlist
+    canvases = TYPE_LADDER_CANVAS_FILES if canvas_files is None else canvas_files
+    errors: list[str] = []
+    seen_ladder: set[str] = set()
+    seen_floor: set[str] = set()
+
+    for entry in sorted(ladder):
+        if not entry.startswith("lib/features/"):
+            errors.append(
+                f"TYPE_LADDER_FEATURE_ALLOWLIST entry {entry} is outside "
+                "lib/features; lib/widgets has no allowance (decision 0189)"
+            )
+
+    # G1 over the two guarded trees.
+    for tree in TYPE_LADDER_GUARDED_TREES:
+        base = root / tree
+        for dart in sorted(base.rglob("*.dart")) if base.is_dir() else []:
+            rel = dart.relative_to(root).as_posix()
+            if rel in canvases:
+                continue
+            builders, aliases = type_ladder_counts(strip_dart_comments(read_text(dart)))
+            if builders == 0 and aliases == 0:
+                continue
+            allowed = ladder.get(rel)
+            if allowed is None:
+                errors.append(
+                    f"{rel} sizes text outside the type ladder ({builders} "
+                    f"`LoopTypography.<band>(<number>)` / `copyWith(fontSize:)`, "
+                    f"{aliases} retired `LoopMono` / `LoopType.mono*` / "
+                    "`dataStyle`); take a LoopType step (decision 0189 G1)"
+                )
+                continue
+            seen_ladder.add(rel)
+            if (builders, aliases) != allowed:
+                verb = (
+                    "grew"
+                    if builders > allowed[0] or aliases > allowed[1]
+                    else "shrank"
+                )
+                errors.append(
+                    f"{rel} {verb}: it has {(builders, aliases)} off-ladder "
+                    f"calls against its TYPE_LADDER_FEATURE_ALLOWLIST entry "
+                    f"{allowed}; "
+                    + (
+                        "take a LoopType step (decision 0189 G1)"
+                        if verb == "grew"
+                        else "lower the entry to match (the list only shrinks)"
+                    )
+                )
+    for entry in sorted(set(ladder) - seen_ladder):
+        errors.append(
+            f"TYPE_LADDER_FEATURE_ALLOWLIST entry {entry} is no longer "
+            "needed; remove it (the list only shrinks)"
+        )
+
+    # G2 over all of lib/.
+    lib = root / "lib"
+    for dart in sorted(lib.rglob("*.dart")) if lib.is_dir() else []:
+        rel = dart.relative_to(root).as_posix()
+        if rel in canvases:
+            continue
+        found = type_floor_violations(strip_dart_comments(read_text(dart)))
+        if not found:
+            continue
+        allowed_floor = floor.get(rel)
+        if allowed_floor is None:
+            where = ", ".join(f"{rel}:{line} ({size:g})" for line, size in found)
+            errors.append(
+                f"text below the {TYPE_LADDER_SCREEN_FLOOR}px screen floor at "
+                f"{where}; take a LoopType step (decision 0189 G2)"
+            )
+            continue
+        seen_floor.add(rel)
+        if len(found) != allowed_floor:
+            errors.append(
+                f"{rel} has {len(found)} sub-{TYPE_LADDER_SCREEN_FLOOR}px text "
+                f"sizes against its TYPE_FLOOR_FEATURE_ALLOWLIST entry "
+                f"{allowed_floor}; "
+                + (
+                    "raise them to a LoopType step (decision 0189 G2)"
+                    if len(found) > allowed_floor
+                    else "lower the entry to match (the list only shrinks)"
+                )
+            )
+    for entry in sorted(set(floor) - seen_floor):
+        errors.append(
+            f"TYPE_FLOOR_FEATURE_ALLOWLIST entry {entry} is no longer needed; "
+            "remove it (the list only shrinks)"
+        )
+    return errors
+
+
 def main() -> int:
     errors = validate()
     if errors:
@@ -16037,6 +16290,7 @@ def main() -> int:
         "gated MEME v2 user pages, "  # S136
         "flat second-level pages and a v1-free voice / community / social family, "  # S186-5
         "token-only feature corners, no v1 accent and no new v1 widget, "  # S186-7
+        "a final type ladder with no off-ladder size and an 11px floor, "  # S197-1
         "and secret rules are consistent."
     )
     return 0

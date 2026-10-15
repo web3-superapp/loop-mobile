@@ -303,11 +303,10 @@ class LoopToastView extends StatelessWidget {
         Expanded(
           child: Text(
             entry.message,
-            style: LoopTypography.label(
-              12,
-              weight: FontWeight.w700,
-              color: LoopColors.ink,
-            ),
+            style: LoopTypography.withWeight(
+              LoopType.label,
+              FontWeight.w700,
+            ).copyWith(color: LoopColors.ink),
           ),
         ),
       ],
@@ -402,11 +401,10 @@ class _LoopToastActionButton extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 action.label,
-                style: LoopTypography.label(
-                  13,
-                  weight: FontWeight.w700,
-                  color: LoopColors.ink,
-                ),
+                style: LoopTypography.withWeight(
+                  LoopType.label,
+                  FontWeight.w700,
+                ).copyWith(color: LoopColors.ink),
               ),
             ),
           ),

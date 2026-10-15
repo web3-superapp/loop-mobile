@@ -120,3 +120,9 @@ OKX 资产页 4908（头部、四个圆键、section 标题、无卡行）；已
 - harness：`ILLUSTRATION_NAMES` 增 `profile`、`history`；H12 「唯一显示开关」要求 `setReduceMotion(` 只出现一次，行与开关共用一个本地函数。
 - 未做：设备页 `devices`、导出私钥、社交恢复三页仍是旧 folio（不在本单列表）；挖矿排行 / 社区面板与推荐页的英文 eyebrow（`NETWORK POSITION`、`COMMUNITY POWER`、`MINING POWER`、`FINAL BOOST`）未动；
   帮助页常见问题仍是描边折叠卡；登录等未登录页无设备截图。
+
+## 0189 修订（2026-10-16）
+
+用户裁决 S2：平铺行与账本行合并为一套行尺寸（docs/37 §1 R4–R7）。`LoopRecordRow` 在 `LoopFlat` 内不再改字号：标题 `LoopType.title` 15、副行 `caption` 12 text2、
+右值 `figure` 13 / 600（灰或 Chalk / `trailingColor`；`trailingStrong` 只改颜色，不再 16）、副值 `figureXs` 11；`LoopPersonRow`（0127）同档。平铺提示行 11 → `caption` 12。
+平铺页标题 20 粗（`LoopType.flatTitle`）、段标题 17（`headingSm`）、宽按钮 16、步骤页标题 24 粗（`LoopType.stepTitle`）不变。详见 `0189-type-ladder-final.md`。
