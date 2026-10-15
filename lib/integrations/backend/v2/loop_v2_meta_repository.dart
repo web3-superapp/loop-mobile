@@ -193,10 +193,13 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     });
     _validateBaseline(root);
     final rawCapabilities = root['capabilities'];
-    // Every id is required except the omissible ones (decision 0137), so the
-    // list holds either the full set or the full set minus some of those.
+    // Every id this build knows is required except the omissible ones
+    // (decision 0137), so the list holds at least the known set minus some of
+    // those. Decision 0180: a newer backend may publish ids this build does
+    // not know yet; they are skipped, never a reason to refuse the whole
+    // projection (TestFlight 6, 9 and 20 each went dark when a backend added
+    // one id ahead of the App).
     if (rawCapabilities is! List ||
-        rawCapabilities.length > LoopV2CapabilityId.values.length ||
         rawCapabilities.length <
             LoopV2CapabilityId.values.length - omissibleCapabilities.length) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
@@ -205,6 +208,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     final capabilities = <LoopV2Capability>[];
     final seen = <LoopV2CapabilityId>{};
     for (final rawCapability in rawCapabilities) {
+      if (_isUnknownCapabilityId(rawCapability)) continue;
       final capability = _parseCapability(rawCapability);
       if (!seen.add(capability.id)) {
         throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
@@ -410,6 +414,15 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
           reasonCode: null,
         );
     }
+  }
+
+  /// Decision 0180: an entry whose `capabilityId` is a string this build
+  /// cannot name. Anything else (a non-map, a missing or non-string id) is
+  /// still an invalid payload and reaches [_parseCapability].
+  static bool _isUnknownCapabilityId(Object? value) {
+    if (value is! Map) return false;
+    final rawId = value['capabilityId'];
+    return rawId is String && LoopV2CapabilityId.tryParse(rawId) == null;
   }
 
   LoopV2Capability _parseCapability(Object? value) {

@@ -517,6 +517,27 @@ void main() {
             .cast<Map<String, Object?>>()
             .singleWhere((item) => item['capabilityId'] == 'launch2');
 
+    test('a backend id this build does not know is skipped (0180)', () async {
+      final value = _capabilities();
+      final items = value['capabilities']! as List<Object?>;
+      items.add(<String, Object?>{
+        'capabilityId': 'somethingNewerThanThisBuild',
+        'availability': 'available',
+        'reasonCode': null,
+        'evidence': <String, Object?>{
+          'status': 'confirmed',
+          'reasonCode': null,
+        },
+      });
+      expect(items, hasLength(36));
+      final capabilities = await _resolvingRepository(value).getCapabilities();
+      expect(capabilities.capabilities, hasLength(35));
+      expect(
+        capabilities.capabilities.map((LoopV2Capability c) => c.id),
+        containsAll(LoopV2CapabilityId.values),
+      );
+    });
+
     test('a 35-id list reads launch2 as the backend publishes it', () async {
       final value = _capabilities();
       launch2Row(value)
