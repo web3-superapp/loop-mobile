@@ -47,6 +47,7 @@ class LoopSegmentedTabPage extends ConsumerWidget {
     this.actionsBuilder,
     this.updating,
     this.archetype = LoopPageArchetype.listing,
+    this.initialIndex = 0,
   }) : assert(segments.length > 1, 'A segmented page has two segments or more');
 
   /// Stable key of the tab (`square`, `meme`, `intel`) for the segment
@@ -73,9 +74,14 @@ class LoopSegmentedTabPage extends ConsumerWidget {
   final bool Function(WidgetRef ref, int index)? updating;
   final LoopPageArchetype archetype;
 
+  /// The segment shown before the reader has picked one on this tab
+  /// (decision 0181: 广场 opens on 社区, not on the 动态 segment in front of it).
+  final int initialIndex;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final remembered = ref.watch(loopTabSegmentMemoryProvider)[tabKey] ?? 0;
+    final remembered =
+        ref.watch(loopTabSegmentMemoryProvider)[tabKey] ?? initialIndex;
     final selected = remembered.clamp(0, segments.length - 1);
     final actions = actionsBuilder?.call(context, selected) ?? const <Widget>[];
     final isUpdating = updating?.call(ref, selected) ?? false;

@@ -180,11 +180,18 @@ void main() {
   loopWatchGround();
 
   group('segments and the capability', () {
-    testWidgets('squareFeed usable: 动态 / 社区 / 语音房, 动态 first', (tester) async {
+    testWidgets('squareFeed usable: 动态 / 社区 / 语音房, opens on 社区 (0181)', (
+      tester,
+    ) async {
       await _pumpSquare(tester, capability: true, feed: _Feed());
       expect(_segmentLabel(tester, 0), '动态');
       expect(_segmentLabel(tester, 1), '社区');
       expect(_segmentLabel(tester, 2), '语音房');
+      // Decision 0181: 动态 is in front, but the page opens on 社区.
+      expect(_key('square-feed'), findsNothing);
+      expect(_key('square-community-list'), findsOneWidget);
+      await tester.tap(_key('square-segment-0'));
+      await tester.pumpAndSettle();
       expect(_key('square-feed'), findsOneWidget);
       await _teardown(tester);
     });

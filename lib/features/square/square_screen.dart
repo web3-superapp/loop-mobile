@@ -68,6 +68,9 @@ class SquareScreen extends ConsumerWidget {
       tabKey: 'square',
       title: '广场',
       segments: feed ? feedSegments : segments,
+      // Decision 0181: the page opens on 社区; 动态 sits in front of it but
+      // is a segment the reader picks.
+      initialIndex: communityIndex(feed: feed),
       // The segment bodies are embedded pages with no bar of their own, so
       // their 更新中 is drawn on the segment row (S106b).
       updating: (ref, index) => switch (index - offset) {
