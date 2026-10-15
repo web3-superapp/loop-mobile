@@ -10423,6 +10423,71 @@ class FamilyGuardContractTests(unittest.TestCase):
         )
 
 
+class AppLockPromptStoreContractTests(unittest.TestCase):
+    """Decision 0186: the first-launch app lock prompt is one device Boolean."""
+
+    ADAPTER = check_harness.APP_LOCK_PROMPT_STORE_OWNER
+
+    def _with_adapter(self, transform) -> list[str]:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / self.ADAPTER
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / self.ADAPTER).read_text(encoding="utf-8")
+            path.write_text(transform(source), encoding="utf-8")
+            return check_harness.check_app_lock_prompt_store_contract(root)
+
+    def test_repository_passes(self) -> None:
+        self.assertEqual(
+            [], check_harness.check_app_lock_prompt_store_contract(REPOSITORY_ROOT)
+        )
+
+    def test_adapter_is_an_allowed_shared_preferences_importer(self) -> None:
+        errors = check_harness.check_local_display_preferences_contract(
+            REPOSITORY_ROOT
+        )
+        self.assertFalse(
+            any(str(self.ADAPTER) in error for error in errors), msg=errors
+        )
+
+    def test_adapter_is_not_a_secure_storage_owner(self) -> None:
+        self.assertNotIn(self.ADAPTER, check_harness.SECURE_STORAGE_OWNERS)
+
+    def test_a_second_key_is_rejected(self) -> None:
+        result = self._with_adapter(
+            lambda source: source.replace(
+                "static const String promptedKey =",
+                "static const String lockKey = 'loop.app_lock';\n"
+                "  static const String promptedKey =",
+            )
+        )
+        self.assertIn(
+            "the app lock prompt adapter must declare exactly one key", result
+        )
+
+    def test_a_string_write_is_rejected(self) -> None:
+        result = self._with_adapter(
+            lambda source: source
+            + "\nFuture<void> unsafe(SharedPreferencesAsync preferences) => "
+            "preferences.setString(SharedPreferencesLoopAppLockPromptStore"
+            ".promptedKey, '1');\n"
+        )
+        self.assertTrue(
+            any("getBool/setBool" in error for error in result), msg=result
+        )
+
+    def test_a_renamed_key_is_rejected(self) -> None:
+        result = self._with_adapter(
+            lambda source: source.replace(
+                "loop.display.v1.app_lock_prompted", "loop.app_lock.v1.prompted"
+            )
+        )
+        self.assertIn(
+            "the app lock prompt adapter must retain its exact namespaced key",
+            result,
+        )
+
+
 class BalanceVisibilityStoreContractTests(unittest.TestCase):
     """Decision 0175: 「隐藏余额」 is one Boolean under one exact key."""
 

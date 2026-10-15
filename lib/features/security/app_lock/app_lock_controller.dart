@@ -115,6 +115,7 @@ final class LoopAppLockState {
 /// system answers.
 final class LoopAppLockController extends Notifier<LoopAppLockState> {
   Future<void>? _running;
+  Future<void>? _loading;
   DateTime? _leftForegroundAt;
 
   @override
@@ -124,7 +125,15 @@ final class LoopAppLockController extends Notifier<LoopAppLockState> {
   ///
   /// A start that finds the lock on is locked: the whole point is that the
   /// App is not readable before the owner is asked.
-  Future<void> load() async {
+  Future<void> load() => _loading = _load();
+
+  /// Waits for the start-up read, starting it if nobody has (decision 0186).
+  ///
+  /// The first-launch prompt asks "is the lock available and off?", and the
+  /// answer before the read is "not known", never "off".
+  Future<void> whenLoaded() => _loading ?? load();
+
+  Future<void> _load() async {
     final capability = await _readCapability();
     bool? stored;
     try {

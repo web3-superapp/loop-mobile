@@ -4442,6 +4442,9 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
         # Decision 0178: the global search's 「最近搜索」, pinned by
         # `check_search_recent_store_contract`.
         SEARCH_RECENT_STORE_OWNER,
+        # Decision 0186: whether this installation was offered the app lock,
+        # pinned by `check_app_lock_prompt_store_contract`.
+        APP_LOCK_PROMPT_STORE_OWNER,
     }
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -4959,6 +4962,127 @@ def check_search_recent_store_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_app_lock_prompt_store_contract(root: Path) -> list[str]:
+    """Decision 0186: the first-launch app lock prompt is one device Boolean."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/security/app_lock/app_lock_prompt.dart": (
+                "abstract interface class LoopAppLockPromptStore",
+                "class UnavailableLoopAppLockPromptStore",
+                "const loopAppLockPromptIoTimeout = Duration(seconds: 1)",
+                "final previous = _writeTail",
+                "LoopSessionMode.authenticated",
+                "loopAppLockProvider.notifier).enable()",
+            ),
+            "lib/app.dart": ("loopOfferAppLock(context, ref)",),
+            "lib/main.dart": (
+                "loopAppLockPromptStoreProvider.overrideWithValue(",
+                "createSharedPreferencesAppLockPromptStore()",
+            ),
+            "AGENTS.md": (f"`{APP_LOCK_PROMPT_KEY}`",),
+            "docs/product/implementation-constraints.md": (
+                f"`{APP_LOCK_PROMPT_KEY}`",
+            ),
+            "docs/decisions/0186-app-lock-first-launch-prompt.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+            ),
+            "test/s196_app_lock_prompt_test.dart": (
+                "an available lock that is off is offered once",
+                "an enabled lock is not offered",
+                "an unavailable lock is not offered and nothing is recorded",
+                "开启 runs the lock's own switch",
+                "a failed read is not asked yet but still once per run",
+                "Preview is never offered the lock",
+                "the prompt adapter uses one namespaced Boolean key",
+            ),
+        },
+    )
+    adapter_path = root / APP_LOCK_PROMPT_STORE_OWNER
+    if not adapter_path.is_file():
+        errors.append(f"{APP_LOCK_PROMPT_STORE_OWNER} must exist (decision 0186)")
+        return errors
+    adapter_source = strip_dart_comments(read_text(adapter_path))
+    adapter = strip_dart_comments_and_strings(adapter_source)
+    imports = re.findall(
+        r"^import\s+['\"]([^'\"]+)['\"](?:\s+show\s+[^;]+)?\s*;",
+        adapter_source,
+        flags=re.MULTILINE,
+    )
+    if imports != [
+        "package:flutter/foundation.dart",
+        "package:loop_mobile/features/security/app_lock/app_lock_prompt.dart",
+        "package:shared_preferences/shared_preferences.dart",
+    ]:
+        errors.append(
+            "the app lock prompt adapter imports only Flutter annotations, "
+            "its narrow port, and Shared Preferences"
+        )
+    if (
+        f"static const String promptedKey = '{APP_LOCK_PROMPT_KEY}';"
+        not in adapter_source
+    ):
+        errors.append(
+            "the app lock prompt adapter must retain its exact namespaced key"
+        )
+    if len(re.findall(r"\bstatic\s+const\s+String\s+\w+\s*=", adapter)) != 1:
+        errors.append("the app lock prompt adapter must declare exactly one key")
+    adapter_without_imports = re.sub(
+        r"^import\s+['\"][^'\"]+['\"](?:\s+show\s+[^;]+)?\s*;\s*",
+        "",
+        adapter_source,
+        flags=re.MULTILINE,
+    )
+    literals = [
+        single or double
+        for single, double in re.findall(
+            r"'([^'\\]*(?:\\.[^'\\]*)*)'|\"([^\"\\]*(?:\\.[^\"\\]*)*)\"",
+            adapter_without_imports,
+        )
+    ]
+    if literals != [APP_LOCK_PROMPT_KEY]:
+        errors.append(
+            "the app lock prompt adapter may contain only its exact key literal"
+        )
+    if re.findall(r"\bpreferences\.(\w+)\b", adapter) != ["getBool", "setBool"]:
+        errors.append(
+            "the app lock prompt adapter may call only SharedPreferencesAsync "
+            "getBool/setBool"
+        )
+    if len(re.findall(r"\bSharedPreferencesAsync\s*\(\s*\)", adapter)) != 1:
+        errors.append(
+            "the app lock prompt adapter must create exactly one "
+            "SharedPreferencesAsync adapter"
+        )
+    if re.search(
+        r"\b(?:clear|remove|getAll|getKeys|getString|setString|getInt|setInt|getDouble|setDouble|getStringList|setStringList)\s*\(",
+        adapter,
+    ):
+        errors.append(
+            "the app lock prompt adapter may only read or write its one Boolean"
+        )
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in lib_root.rglob("*.dart"):
+            relative = path.relative_to(root)
+            if relative in (APP_LOCK_PROMPT_STORE_OWNER, Path("lib/main.dart")):
+                continue
+            source = strip_dart_comments_and_strings(read_text(path))
+            if (
+                "SharedPreferencesLoopAppLockPromptStore" in source
+                or "createSharedPreferencesAppLockPromptStore" in source
+            ):
+                errors.append(
+                    "the app lock prompt adapter may only be composed by "
+                    "lib/main.dart: " + str(relative)
+                )
+    return errors
+
+
 def check_build_profile_configuration_contract(root: Path) -> list[str]:
     """Keep Debug/Release client values centralized and fail-closed."""
 
@@ -5373,6 +5497,13 @@ BALANCE_VISIBILITY_KEY = "loop.display.v1.hide_balance"
 SEARCH_RECENT_STORE_OWNER = Path(
     "lib/integrations/personalization/shared_preferences_search_recent_store.dart"
 )
+# Decision 0186: one installation-scoped Boolean saying this installation was
+# offered the application lock. It is not the lock's state (that stays in the
+# secure store) and never an identity, a credential or an account resource.
+APP_LOCK_PROMPT_STORE_OWNER = Path(
+    "lib/integrations/personalization/shared_preferences_app_lock_prompt_store.dart"
+)
+APP_LOCK_PROMPT_KEY = "loop.display.v1.app_lock_prompted"
 V2_SECURE_STORAGE_OWNER = Path(
     "lib/integrations/backend/v2/loop_v2_session_store.dart"
 )
@@ -15480,6 +15611,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_onboarding_sequence_contract(root))
     errors.extend(check_balance_visibility_store_contract(root))
     errors.extend(check_search_recent_store_contract(root))  # S187-6
+    errors.extend(check_app_lock_prompt_store_contract(root))  # S196
     errors.extend(check_build_profile_configuration_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_stream_token_client_contract(root))

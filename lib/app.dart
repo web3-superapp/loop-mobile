@@ -27,6 +27,7 @@ import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_prompt.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
@@ -547,6 +548,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     if (!mounted) return;
     if (!ref.read(loopCommunityArrivalProvider.notifier).landed()) return;
     pushRegistrationCoordinator.onIdentityMayHaveChanged();
+    _offerAppLock();
   }
 
   /// A product page has been drawn. The other half of the arrival: without
@@ -558,6 +560,21 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     if (!mounted) return;
     if (!ref.read(loopCommunityArrivalProvider.notifier).productDrawn()) return;
     pushRegistrationCoordinator.onIdentityMayHaveChanged();
+    _offerAppLock();
+  }
+
+  /// Decision 0186: the arrival is also where this installation is offered
+  /// the application lock, once, when the device can lock and the lock is
+  /// off. A reinstall clears the lock's keychain choice without a word; this
+  /// is the word. The sheet waits for the frame after the arrival, so it
+  /// opens over the drawn page and never over the opening's last step.
+  void _offerAppLock() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final context = router.routerDelegate.navigatorKey.currentContext;
+      if (context == null || !context.mounted) return;
+      unawaited(loopOfferAppLock(context, ref));
+    });
   }
 
   /// Puts the five-step account sequence on the step this account is on.

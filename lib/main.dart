@@ -50,6 +50,7 @@ import 'package:loop_mobile/features/profile/about/about_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/security/security_gateway.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_prompt.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
@@ -61,6 +62,7 @@ import 'package:loop_mobile/integrations/device/secure_storage_step_up_store.dar
 import 'package:loop_mobile/integrations/notifications/firebase_notification_ingress.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/integrations/notifications/loop_push_token_source.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_app_lock_prompt_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
@@ -186,6 +188,12 @@ Future<void> main() async {
         ),
         loopAppLockStoreProvider.overrideWithValue(
           const SecureStorageLoopAppLockStore(),
+        ),
+        // Decision 0186: whether this installation was offered the lock, one
+        // device-local Boolean beside it — never in the keychain, so a
+        // reinstall is asked again.
+        loopAppLockPromptStoreProvider.overrideWithValue(
+          createSharedPreferencesAppLockPromptStore(),
         ),
         // The large-amount step-up (decision 0152): per account, on this
         // device, beside the lock whose prompt it reuses.
