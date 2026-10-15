@@ -14,6 +14,8 @@ import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 
@@ -203,6 +205,14 @@ void main() {
       expect(find.text('0 个社区在挖矿'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-joined-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('community-joined-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });
@@ -1451,6 +1461,16 @@ void main() {
         find.byKey(const ValueKey<String>('community-profile-missing-id')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('community-profile-missing-id'),
+          ),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(gateway.commands, isEmpty);
     });
 
@@ -1894,6 +1914,25 @@ void main() {
   });
 
   group('community-members · OKX rows (decision 0127)', () {
+    testWidgets('a route without a community id is one inline line', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: null),
+        community: FakeCommunityGateway(),
+      );
+
+      // Decision 0183: the missing id is a fact that could not be read.
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('community-members-missing-id')),
+        ),
+        isA<LoopInlineUnavailable>(),
+      );
+      expect(find.text('缺少社区标识'), findsOneWidget);
+    });
+
     testWidgets('every row is a face, a name, a role mark and the LOOP ID', (
       tester,
     ) async {

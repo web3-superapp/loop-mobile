@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
@@ -30,6 +31,8 @@ import 'package:loop_mobile/integrations/communication/stream_video_providers.da
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -388,19 +391,20 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '语音房'),
         if (evidencePending)
-          LoopEmpty(
+          LoopInlineUnavailable(
             key: const ValueKey<String>('voiceroom-evidence-pending'),
             icon: 'shield',
             message: '语音房当前不可用',
-            reason: communicationUnavailableReason(
+            detail: communicationUnavailableReason(
               capability.evidenceReasonCode ??
                   'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING',
             ),
+            maxLines: 2,
+            detailMaxLines: 4,
           )
         else if (communityCapabilityBlocks(mode, capability))
-          LoopEmpty(
+          LoopInlineUnavailable(
             key: const ValueKey<String>('voiceroom-capability-unavailable'),
-            icon: 'warn',
             message: '语音房当前不可用',
             // Three different answers used to share one sentence about a
             // list this page never named: LOOP closed the room type, LOOP
@@ -408,18 +412,21 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             // last one is worth another try where the reader stands, and a
             // host who has just opened a room lands here often enough that
             // it has to say which of the three it is.
-            reason: capability.unreachable
+            detail: capability.unreachable
                 ? '这台设备没能读到语音房的开放状态，请检查网络后重试。'
                 : capability.reasonCode == null
                 ? '这次还没有读到语音房的开放状态，请稍后再试。'
                 : communicationUnavailableReason(capability.reasonCode),
+            maxLines: 2,
+            detailMaxLines: 4,
           )
         else if (id == null)
-          const LoopEmpty(
+          const LoopInlineUnavailable(
             key: ValueKey<String>('voiceroom-missing-id'),
-            icon: 'warn',
             message: '缺少社区标识',
-            reason: '请从社区主页或社区官方群进入，本页不会猜测要打开哪个社区的语音房。',
+            detail: '请从社区主页或社区官方群进入，本页不会猜测要打开哪个社区的语音房。',
+            maxLines: 2,
+            detailMaxLines: 4,
           )
         else if (snapshot == null)
           CommunityStateBlock(
@@ -439,27 +446,37 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               // times; the reader is told what is true and given the one
               // thing that can change it — a read, which the server takes as
               // its own cue to open the room again.
-              LoopEmpty(
+              Column(
                 key: const ValueKey<String>('voiceroom-media-backstage'),
-                icon: 'warn',
-                message: '这个房间还没有开放收听',
-                // One fact, one next step. The fact is the server's own when
-                // it named which write is unconfirmed, and the next step is
-                // the button below — so it is not said twice.
-                reason: snapshot.providerSync.confirmed
-                    ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
-                    : communicationUnavailableReason(
-                        snapshot.providerSync.reason,
-                      ),
-                action: LoopButton(
-                  key: const ValueKey<String>(
-                    'voiceroom-media-backstage-retry',
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  LoopInlineUnavailable(
+                    message: '这个房间还没有开放收听',
+                    // One fact, one next step. The fact is the server's own when
+                    // it named which write is unconfirmed, and the next step is
+                    // the button below — so it is not said twice.
+                    detail: snapshot.providerSync.confirmed
+                        ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
+                        : communicationUnavailableReason(
+                            snapshot.providerSync.reason,
+                          ),
+                    maxLines: 2,
+                    detailMaxLines: 4,
                   ),
-                  label: state.busy ? '正在刷新…' : '刷新',
-                  onPressed: state.busy
-                      ? null
-                      : () => unawaited(controller.refreshRoom()),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: LoopButton(
+                      key: const ValueKey<String>(
+                        'voiceroom-media-backstage-retry',
+                      ),
+                      label: state.busy ? '正在刷新…' : '刷新',
+                      onPressed: state.busy
+                          ? null
+                          : () => unawaited(controller.refreshRoom()),
+                    ),
+                  ),
+                ],
               )
             else
               _MediaSection(
@@ -619,20 +636,34 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       ),
       if (viewer.hasJoined && room.isJoinable)
         if (!room.audioOpen)
-          LoopEmpty(
+          Column(
             key: const ValueKey<String>('voiceroom-media-backstage'),
-            icon: 'warn',
-            message: '这个房间还没有开放收听',
-            reason: snapshot.providerSync.confirmed
-                ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
-                : communicationUnavailableReason(snapshot.providerSync.reason),
-            action: LoopButton(
-              key: const ValueKey<String>('voiceroom-media-backstage-retry'),
-              label: state.busy ? '正在刷新…' : '刷新',
-              onPressed: state.busy
-                  ? null
-                  : () => unawaited(controller.refreshRoom()),
-            ),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              LoopInlineUnavailable(
+                message: '这个房间还没有开放收听',
+                detail: snapshot.providerSync.confirmed
+                    ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
+                    : communicationUnavailableReason(
+                        snapshot.providerSync.reason,
+                      ),
+                maxLines: 2,
+                detailMaxLines: 4,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: LoopButton(
+                  key: const ValueKey<String>(
+                    'voiceroom-media-backstage-retry',
+                  ),
+                  label: state.busy ? '正在刷新…' : '刷新',
+                  onPressed: state.busy
+                      ? null
+                      : () => unawaited(controller.refreshRoom()),
+                ),
+              ),
+            ],
           )
         else
           _MediaSection(
@@ -647,11 +678,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             onCallStopped: controller.refreshRoom,
           ),
       if (!viewer.hasJoined && !room.isJoinable)
-        const LoopEmpty(
+        const LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-not-joinable'),
-          icon: 'warn',
           message: '这个房间还不能加入',
-          reason: '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。',
+          detail: '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。',
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       LoopLabel('发言者 ${snapshot.participants.speakerCount}'),
       VoiceRoomSpeakerGrid(
@@ -671,11 +703,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         onOpenMember: openMember,
       ),
       if (viewer.isHost && !viewer.canEndRoom)
-        const LoopEmpty(
+        const LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-host-no-leave'),
-          icon: 'warn',
           message: '现在不能结束房间',
-          reason: '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。',
+          detail: '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。',
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       if (state.failureKind != null)
         LoopNotice(
@@ -1346,11 +1379,12 @@ class _MediaSection extends StatelessWidget {
             roomId: id,
           );
     if (target == null) {
-      return const LoopEmpty(
+      return const LoopInlineUnavailable(
         key: ValueKey<String>('voiceroom-media-unavailable'),
-        icon: 'warn',
         message: '语音连接不可用',
-        reason: '这个语音房暂时打不开，没有发起任何连接。',
+        detail: '这个语音房暂时打不开，没有发起任何连接。',
+        maxLines: 2,
+        detailMaxLines: 4,
       );
     }
     // The authorized room is handed straight to the reviewed lobby: no scoped
@@ -1513,12 +1547,14 @@ class _RosterSection extends StatelessWidget {
             ),
             // An empty roster that was read is a fact about the room; it is not
             // the same sentence as a roster that could not be read.
-            CommunityViewPhase.empty => LoopEmpty(
+            CommunityViewPhase.empty => LoopEmptyState(
               key: ValueKey<String>('voiceroom-roster-$slug-empty'),
-              message: '当前没有${view.label}',
-              reason: view == VoiceRoomRosterView.speaker
+              illustration: LoopIllustration.members,
+              title: '当前没有${view.label}',
+              message: view == VoiceRoomRosterView.speaker
                   ? 'LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。'
                   : 'LOOP 记录里这个房间还没有听众。主持人不在这份名单里。',
+              compact: true,
             ),
             CommunityViewPhase.offline => LoopOfflineState(
               key: ValueKey<String>('voiceroom-roster-$slug-offline'),
@@ -1531,11 +1567,12 @@ class _RosterSection extends StatelessWidget {
               title: '没有权限查看${view.label}名单',
               purpose: communityFailureReason(roster.failureKind),
             ),
-            CommunityViewPhase.unavailable => LoopEmpty(
+            CommunityViewPhase.unavailable => LoopInlineUnavailable(
               key: ValueKey<String>('voiceroom-roster-$slug-unavailable'),
-              icon: 'warn',
               message: '${view.label}名单当前不可用',
-              reason: communityFailureReason(roster.failureKind),
+              detail: communityFailureReason(roster.failureKind),
+              maxLines: 2,
+              detailMaxLines: 4,
             ),
             CommunityViewPhase.error => LoopErrorState(
               key: ValueKey<String>('voiceroom-roster-$slug-error'),
@@ -1726,10 +1763,12 @@ class _HandRaiseQueue extends StatelessWidget {
     if (!viewer.isHost) {
       final own = viewer.handRaise;
       if (own == null || !own.isPending) {
-        return const LoopEmpty(
+        return const LoopEmptyState(
           key: ValueKey<String>('voiceroom-queue-self-only'),
-          message: '你还没有举手',
-          reason: '完整的举手队列只有主持人能看到。举手之后，这里会显示你的位置。',
+          illustration: LoopIllustration.members,
+          title: '你还没有举手',
+          message: '完整的举手队列只有主持人能看到。举手之后，这里会显示你的位置。',
+          compact: true,
         );
       }
       return LoopRecordGroup(
@@ -1747,10 +1786,12 @@ class _HandRaiseQueue extends StatelessWidget {
     }
     final entries = state.handRaises;
     if (entries.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('voiceroom-queue-empty'),
-        message: '举手队列为空',
-        reason: '没有成员在排队。有人举手后会按顺序列在这里。',
+        illustration: LoopIllustration.members,
+        title: '举手队列为空',
+        message: '没有成员在排队。有人举手后会按顺序列在这里。',
+        compact: true,
       );
     }
     return LoopRecordGroup(
@@ -1820,10 +1861,12 @@ class _HostControls extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (snapshot.viewer.canInviteSpeakers && pending.isEmpty)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('voiceroom-invite-empty'),
-            message: '没有待邀请的举手',
-            reason: '有人举手后会按顺序列在这里。',
+            illustration: LoopIllustration.members,
+            title: '没有待邀请的举手',
+            message: '有人举手后会按顺序列在这里。',
+            compact: true,
           )
         else if (pending.isNotEmpty)
           LoopRecordGroup(
@@ -1909,10 +1952,11 @@ class _ViewerActions extends StatelessWidget {
       // not be told 「语音已断开」 and offered 「重新连接语音」: there is no
       // room left to connect to. The room itself says so, and the only thing
       // left to do here is to go back.
-      return LoopEmpty(
+      return LoopEmptyState(
         key: const ValueKey<String>('voiceroom-ended'),
-        message: '房间已结束',
-        reason: '主持人已经结束这个语音房。',
+        illustration: LoopIllustration.voiceRoom,
+        title: '房间已结束',
+        message: '主持人已经结束这个语音房。',
         action: onBack == null
             ? null
             : LoopButton(
@@ -1920,6 +1964,7 @@ class _ViewerActions extends StatelessWidget {
                 label: '返回社区',
                 onPressed: onBack,
               ),
+        compact: true,
       );
     }
     if (!viewer.hasJoined) {
@@ -1927,11 +1972,12 @@ class _ViewerActions extends StatelessWidget {
       // refusal is stated: a disabled button with no sentence beside it is
       // read as a tap that did nothing.
       if (!snapshot.room.isJoinable) {
-        return const LoopEmpty(
+        return const LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-not-joinable'),
-          icon: 'warn',
           message: '这个房间还不能加入',
-          reason: '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。',
+          detail: '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。',
+          maxLines: 2,
+          detailMaxLines: 4,
         );
       }
       return Padding(
@@ -1952,11 +1998,12 @@ class _ViewerActions extends StatelessWidget {
       // prototype's control bar is 结束房间. Two paragraphs used to stand
       // here saying that the button the host was looking for did not exist.
       if (!viewer.canEndRoom) {
-        return const LoopEmpty(
+        return const LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-host-no-leave'),
-          icon: 'warn',
           message: '现在不能结束房间',
-          reason: '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。',
+          detail: '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。',
+          maxLines: 2,
+          detailMaxLines: 4,
         );
       }
       return LoopButtonPair(
@@ -1982,11 +2029,12 @@ class _ViewerActions extends StatelessWidget {
           // `DELETE /v2/voice-rooms/{id}/speakers/{profile}` refuses the
           // caller's own account, so LOOP has no self-demotion command to
           // offer. The fact is stated instead of a button that would fail.
-          const LoopEmpty(
+          const LoopInlineUnavailable(
             key: ValueKey<String>('voiceroom-step-down-unavailable'),
-            icon: 'warn',
             message: '自助下麦当前不可用',
-            reason: '后端只允许主持人调整发言人。要退出发言，请联系主持人，或离开房间。',
+            detail: '后端只允许主持人调整发言人。要退出发言，请联系主持人，或离开房间。',
+            maxLines: 2,
+            detailMaxLines: 4,
           ),
         LoopButtonPair(
           children: <Widget>[

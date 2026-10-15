@@ -6,9 +6,9 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 /// A collection that has nothing in it yet (decision 0122).
 ///
 /// One line illustration, one title, at most one sentence and at most one
-/// next step, centred. It replaces the inline [LoopEmpty] strip — a 17px
-/// glyph and two lines of 11px grey in the top-left corner — wherever a whole
-/// list or a whole block is empty; the strip stays for the inline cases.
+/// next step, centred. It replaced the inline `LoopEmpty` strip — a 17px
+/// glyph and two lines of 11px grey in the top-left corner — everywhere; the
+/// strip itself was deleted by decision 0183.
 ///
 /// A page-level state takes roughly half the viewport and centres itself in
 /// it, so it sits in the middle of the content area under the page's own

@@ -3,13 +3,15 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 /// Whether an S5 page must stop at the capability gate instead of reading.
 bool loopChainCapabilityBlocks(
@@ -251,9 +253,14 @@ class LoopChainStateBlock extends StatelessWidget {
     this.keyPrefix = 'chain',
     this.refreshing = false,
     this.empty,
+    this.emptyIllustration = LoopIllustration.history,
   });
 
-  /// What the empty phase draws instead of the inline strip — a centred
+  /// The illustration of the default empty state when [empty] is not given
+  /// (decision 0183).
+  final LoopIllustration emptyIllustration;
+
+  /// What the empty phase draws instead of the default — a centred
   /// `LoopEmptyState` (decision 0122).
   final Widget? empty;
 
@@ -290,10 +297,12 @@ class LoopChainStateBlock extends StatelessWidget {
         );
       case LoopChainViewPhase.empty:
         return empty ??
-            LoopEmpty(
+            LoopEmptyState(
               key: ValueKey<String>('$keyPrefix-state-empty'),
-              message: emptyMessage,
-              reason: emptyReason,
+              illustration: emptyIllustration,
+              title: emptyMessage,
+              message: emptyReason,
+              compact: true,
             );
       case LoopChainViewPhase.offline:
         return LoopOfflineState(
@@ -303,11 +312,12 @@ class LoopChainStateBlock extends StatelessWidget {
           pausedActions: const <String>['刷新', '切换钱包', '保存自选', '价格提醒'],
         );
       case LoopChainViewPhase.unavailable:
-        return LoopEmpty(
+        return LoopInlineUnavailable(
           key: ValueKey<String>('$keyPrefix-state-unavailable'),
-          icon: 'warn',
           message: '该内容当前不可用',
-          reason: loopChainFailureReason(failureKind),
+          detail: loopChainFailureReason(failureKind),
+          maxLines: 2,
+          detailMaxLines: 4,
         );
       case LoopChainViewPhase.permission:
         final stepUp = failureKind == LoopChainFailureKind.stepUpRequired;
@@ -661,11 +671,13 @@ class LoopCapabilityBlockCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (capability.unreachable) {
-      return LoopEmpty(
+      return LoopInlineUnavailable(
         key: const ValueKey<String>('capability-unreachable'),
         icon: 'offline',
         message: label,
-        reason: loopChainFailureReason(LoopChainFailureKind.offline),
+        detail: loopChainFailureReason(LoopChainFailureKind.offline),
+        maxLines: 2,
+        detailMaxLines: 4,
       );
     }
     return LoopUnavailableLine(

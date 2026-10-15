@@ -13,7 +13,8 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 ///   `LoopPersonRow` metrics: a 40 round glyph tile, a 16 title, a 13 grey
 ///   second line, a 14 grey value and a chevron;
 /// - `LoopRowIcon` — decision 0127's `LoopEntryIcon` (40 circle, 20 glyph);
-/// - `LoopButton(block: true)` — decision 0127's `LoopWideButton` look;
+/// - `LoopButton(block: true)` — decision 0127's wide form button (the old
+///   `LoopWideButton` was folded into it by decision 0183);
 /// - `LoopTogglePreferenceRow` — a Lime [Switch] instead of a state pill;
 /// - an informational `LoopNotice` — one 11px grey line with an ⓘ instead of a
 ///   card. A warning or danger notice keeps its card: that one asks for an

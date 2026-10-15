@@ -22,6 +22,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 /// Whether [color] is one of the palette's soft tokens — the Chalk hue at a
 /// low alpha.
 ///
@@ -135,11 +137,11 @@ void main() {
       expect(fill.toARGB32(), LoopColors.card2.toARGB32());
     });
 
-    testWidgets('a state strip is readable inside a Chalk card', (
-      tester,
-    ) async {
+    testWidgets('a state line is readable inside a Chalk card', (tester) async {
       await tester.pumpWidget(
-        _onChalk(const LoopEmpty(message: '二维码不可用', reason: '这一项暂时读不到。')),
+        _onChalk(
+          const LoopInlineUnavailable(message: '二维码不可用', detail: '这一项暂时读不到。'),
+        ),
       );
       await tester.pumpAndSettle();
 

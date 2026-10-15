@@ -10400,6 +10400,28 @@ class FamilyGuardContractTests(unittest.TestCase):
             for folder in ("lib/features/market/", "lib/features/meme/", "lib/features/wallet/"):
                 self.assertFalse(path.startswith(folder), path)
 
+    def test_widget_allowlist_is_only_the_preview_chat_surfaces(self) -> None:
+        # Decision 0183 (S192): every production LoopEmpty strip, the shared
+        # chain blocks and the 0127 LoopWideButton moved to the family; what
+        # is left is the eight chat pages mounted by Preview routes alone.
+        self.assertEqual(
+            {
+                "lib/features/chat/chat_inbox_page.dart",
+                "lib/features/chat/chat_preview_pages.dart",
+                "lib/features/chat/chat_preview_route_guard.dart",
+                "lib/features/chat/chat_secondary_pages.dart",
+                "lib/features/chat/conversation_pages.dart",
+                "lib/features/chat/preview_conversation_unavailable_page.dart",
+                "lib/features/chat/voice_room_page.dart",
+                "lib/features/chat/widgets/chat_components.dart",
+            },
+            set(check_harness.FEATURE_LEGACY_WIDGET_ALLOWLIST),
+        )
+        self.assertEqual(
+            {check_harness._PREVIEW_ONLY},
+            set(check_harness.FEATURE_LEGACY_WIDGET_ALLOWLIST.values()),
+        )
+
 
 class BalanceVisibilityStoreContractTests(unittest.TestCase):
     """Decision 0175: 「隐藏余额」 is one Boolean under one exact key."""

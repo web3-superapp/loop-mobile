@@ -12,6 +12,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/loop_ground_probe.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 // One injected instant, advanced explicitly to cross the resend cooldown.
 final _base = DateTime.utc(2026, 9, 7, 1);
 DateTime _now = _base;
@@ -30,6 +32,14 @@ void main() {
 
     expect(
       find.byKey(const ValueKey<String>('privy-otp-no-destination')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('privy-otp-no-destination')),
+        matching: find.byType(LoopEmptyState),
+        matchRoot: true,
+      ),
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('privy-otp-field')), findsNothing);

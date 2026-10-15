@@ -19,6 +19,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
@@ -110,11 +111,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         title: '用户资料',
         onBack: widget.onBack,
         collection: const SizedBox.shrink(),
-        block: const LoopEmpty(
+        block: const LoopEmptyState(
           key: ValueKey<String>('user-profile-invalid-target'),
-          icon: 'warn',
-          message: '链接里没有可打开的用户',
-          reason: '请从聊天、搜索或成员列表进入。',
+          illustration: LoopIllustration.profile,
+          title: '链接里没有可打开的用户',
+          message: '请从聊天、搜索或成员列表进入。',
+          compact: true,
         ),
       );
     }
@@ -359,19 +361,21 @@ class _RecordStateBlock extends StatelessWidget {
     if (phase == CommunityViewPhase.empty) {
       // `404 PROFILE_NOT_FOUND`: no such account, or one that blocked the
       // viewer. The server does not say which and neither does the page.
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('user-profile-not-found'),
-        icon: 'user',
-        message: '找不到这个用户',
-        reason: '账号不存在，或对方的资料对你不可见。',
+        illustration: LoopIllustration.profile,
+        title: '找不到这个用户',
+        message: '账号不存在，或对方的资料对你不可见。',
+        compact: true,
       );
     }
     if (phase == CommunityViewPhase.unavailable) {
-      return const LoopEmpty(
+      return const LoopInlineUnavailable(
         key: ValueKey<String>('user-profile-unavailable'),
-        icon: 'warn',
         message: '用户资料暂不可用',
-        reason: '资料服务还没有开放，这一页没有读取任何内容。',
+        detail: '资料服务还没有开放，这一页没有读取任何内容。',
+        maxLines: 2,
+        detailMaxLines: 4,
       );
     }
     return CommunityStateBlock(
@@ -641,11 +645,12 @@ class _UnavailableSection extends StatelessWidget {
           message: '对方还没有绑定钱包，没有可显示的$what。',
           compact: true,
         )
-      : LoopEmpty(
+      : LoopInlineUnavailable(
           key: ValueKey<String>('user-profile-$sectionKey-unavailable'),
-          icon: 'warn',
           message: '$what暂时读不到',
-          reason: '链上数据暂不可用，这里不会显示 0 代替。',
+          detail: '链上数据暂不可用，这里不会显示 0 代替。',
+          maxLines: 2,
+          detailMaxLines: 4,
         );
 }
 
@@ -896,10 +901,12 @@ class _CommunitiesSection extends StatelessWidget {
   final PublicProfileRecord record;
 
   @override
-  Widget build(BuildContext context) => LoopEmpty(
+  Widget build(BuildContext context) => LoopInlineUnavailable(
     key: const ValueKey<String>('user-profile-communities-unavailable'),
     icon: 'community',
     message: '已加入 ${record.counts.communities} 个社区',
-    reason: '社区列表暂未开放查看。',
+    detail: '社区列表暂未开放查看。',
+    maxLines: 2,
+    detailMaxLines: 4,
   );
 }

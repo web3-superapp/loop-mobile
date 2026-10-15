@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -17,6 +18,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `mining` · the Mining destination.
@@ -387,13 +390,14 @@ class _CompositionBlock extends ConsumerWidget {
       );
     }
     if (value.included.isEmpty) {
-      return LoopEmpty(
+      return LoopEmptyState(
         key: const ValueKey<String>('mining-composition-empty'),
-        icon: 'info',
-        message: value.isUnsettled ? '还没有算过这些资产' : '这次快照没有计入任何资产',
-        reason: value.isUnsettled
+        illustration: LoopIllustration.holders,
+        title: value.isUnsettled ? '还没有算过这些资产' : '这次快照没有计入任何资产',
+        message: value.isUnsettled
             ? '下一次算力快照之后，每个资产的算式会显示在这里。'
             : '你的持仓里没有可以计入的资产。',
+        compact: true,
       );
     }
     return LoopRecordGroup(
@@ -477,14 +481,16 @@ class _SnapshotBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (snapshot) {
       MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
-        LoopEmpty(
+        LoopInlineUnavailable(
           key: const ValueKey<String>('mining-snapshot-unavailable'),
           icon: 'clock',
           message: miningSnapshotAbsenceMessage(reasonCode),
-          reason: miningSnapshotAbsenceReason(
+          detail: miningSnapshotAbsenceReason(
             reasonCode,
             attempt: latestAttempt,
           ),
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(

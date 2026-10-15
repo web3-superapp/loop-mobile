@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -14,6 +15,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_accordion_strip.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// The 内盘持有人 row on `launch-detail`, following the holders resource
@@ -489,11 +491,12 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                       config: detail.saleConfig!,
                     )
                   else if (config == null)
-                    const LoopEmpty(
+                    const LoopEmptyState(
                       key: ValueKey<String>('launch-detail-no-config'),
-                      icon: 'warn',
-                      message: '还没有任何配置版本',
-                      reason: '轮次、上限与费率都要等到配置版本被确认后才有数值。',
+                      illustration: LoopIllustration.launchpad,
+                      title: '还没有任何配置版本',
+                      message: '轮次、上限与费率都要等到配置版本被确认后才有数值。',
+                      compact: true,
                     )
                   else
                     LoopRecordGroup(
@@ -732,11 +735,12 @@ class _TrackBlock extends StatelessWidget {
       );
     }
     if (rounds.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('launch-track-empty'),
-        icon: 'warn',
-        message: '还没有配置任何轮次',
-        reason: '轮次数量由每次发射自己决定。',
+        illustration: LoopIllustration.launchpad,
+        title: '还没有配置任何轮次',
+        message: '轮次数量由每次发射自己决定。',
+        compact: true,
       );
     }
     final fee = launchFeeLabel(config);
@@ -1165,11 +1169,12 @@ class _AccessTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rounds.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('launch-rounds-empty'),
-        icon: 'warn',
-        message: '还没有配置任何轮次',
-        reason: '轮次数量由每次发射自己决定。',
+        illustration: LoopIllustration.launchpad,
+        title: '还没有配置任何轮次',
+        message: '轮次数量由每次发射自己决定。',
+        compact: true,
       );
     }
     final fee = launchFeeLabel(config);
@@ -1318,12 +1323,14 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
           : null,
       sections: <Widget>[
         if (subject == null)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('launch-rounds-no-subject'),
-            message: '还没有选定要看哪次发射',
-            reason:
+            illustration: LoopIllustration.launchpad,
+            title: '还没有选定要看哪次发射',
+            message:
                 '轮次配置属于某一次具体发射，不是全站统一的规则。'
                 '回到 Launch 目录打开一个项目，再看它的轮次配置。',
+            compact: true,
           )
         else if (detail == null)
           LaunchStateBlock(
@@ -1377,11 +1384,12 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
               ),
             ),
           ] else if (config == null)
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('launch-rounds-no-config'),
-              icon: 'warn',
-              message: '还没有任何配置版本',
-              reason: '上限与费率要等到配置版本被确认后才有数值。',
+              illustration: LoopIllustration.launchpad,
+              title: '还没有任何配置版本',
+              message: '上限与费率要等到配置版本被确认后才有数值。',
+              compact: true,
             )
           else ...<Widget>[
             LaunchCapCard(config: config),
@@ -2131,12 +2139,14 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
           ),
           const SizedBox(height: 20),
         ] else if (history.isEmpty) ...<Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: const ValueKey<String>('launch-history-indexed-empty'),
-            message: '这个钱包在本次发射没有记录',
-            reason:
+            illustration: LoopIllustration.history,
+            title: '这个钱包在本次发射没有记录',
+            message:
                 '链上索引到区块 ${loopGroupedFigure(indexed.indexedBlockNumber)}，'
                 '其中没有这个钱包的认购、权益或退款。',
+            compact: true,
           ),
           const SizedBox(height: 20),
         ] else ...<Widget>[

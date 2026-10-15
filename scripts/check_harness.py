@@ -15779,11 +15779,6 @@ FEATURE_LEGACY_WIDGET_PATTERN = re.compile(
     r"LoopSubChip\b)"
 )
 _PREVIEW_ONLY = "Preview-only chat surface (docs/33: not on a production route)"
-_LEGACY_EMPTY = (
-    "inline LoopEmpty strips outside the S186 batches (docs/33 lists no item "
-    "here); moving them to LoopEmptyState / LoopInlineUnavailable needs a "
-    "page-by-page acceptance pass"
-)
 FEATURE_LEGACY_WIDGET_ALLOWLIST: dict[str, str] = {
     "lib/features/chat/chat_inbox_page.dart": _PREVIEW_ONLY,
     "lib/features/chat/chat_preview_pages.dart": _PREVIEW_ONLY,
@@ -15793,60 +15788,6 @@ FEATURE_LEGACY_WIDGET_ALLOWLIST: dict[str, str] = {
     "lib/features/chat/preview_conversation_unavailable_page.dart": _PREVIEW_ONLY,
     "lib/features/chat/voice_room_page.dart": _PREVIEW_ONLY,
     "lib/features/chat/widgets/chat_components.dart": _PREVIEW_ONLY,
-    # The shared chain state blocks every slice renders (loading / offline /
-    # permission strips); retiring them moves every chain page at once.
-    "lib/features/chain/chain_widgets.dart": (
-        "shared LoopChainStateBlock strips used by every chain slice"
-    ),
-    # The account opening flow (05 steps) and its OTP / LOOP ID pages.
-    "lib/features/account/account_screens.dart": _LEGACY_EMPTY,
-    "lib/features/account/loop_id_setup_screen.dart": _LEGACY_EMPTY,
-    "lib/features/account/privy_otp_screen.dart": _LEGACY_EMPTY,
-    # Chat v2 production pages (S186-3 retired the shells, not the strips).
-    "lib/features/chat/token_card/chat_token_card.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/chat_forward_screens.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/chat_search_screen.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/community_chat_screen.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/direct_message_screen.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/forward_target_sheet.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/group_screens.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/loop_stream_channel_surface.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/voice_room_screens.dart": _LEGACY_EMPTY,
-    "lib/features/chat/v2/voice_room_stage.dart": _LEGACY_EMPTY,
-    # Community / social: S186-5 swept colours and controls, not the strips;
-    # the two LoopWideButton pages are the 0127 application form.
-    "lib/features/community/community_ai_screen.dart": _LEGACY_EMPTY,
-    "lib/features/community/community_discover_screen.dart": _LEGACY_EMPTY,
-    "lib/features/community/community_manage_screen.dart": _LEGACY_EMPTY,
-    "lib/features/community/community_members_screen.dart": _LEGACY_EMPTY,
-    "lib/features/community/community_profile_screen.dart": (
-        _LEGACY_EMPTY + "; LoopWideButton is the 0127 application entry"
-    ),
-    "lib/features/community/community_screen.dart": _LEGACY_EMPTY,
-    "lib/features/community/community_widgets.dart": (
-        _LEGACY_EMPTY + "; LoopWideButton is the 0127 application form"
-    ),
-    "lib/features/social/blocklist_screen.dart": _LEGACY_EMPTY,
-    "lib/features/social/public_profile/user_profile_screen.dart": _LEGACY_EMPTY,
-    "lib/features/social/public_profile_sheet.dart": _LEGACY_EMPTY,
-    "lib/features/square/square_community_list.dart": _LEGACY_EMPTY,
-    # The hidden IDO launch (decision 0110 keeps it recoverable) and the
-    # launch2 project / NFT pages' invalid-route strips.
-    "lib/features/launch/launch_action_screens.dart": _LEGACY_EMPTY,
-    "lib/features/launch/launch_detail_screens.dart": _LEGACY_EMPTY,
-    "lib/features/launch/launch_screen.dart": _LEGACY_EMPTY,
-    "lib/features/launch/launch_trade_screen.dart": _LEGACY_EMPTY,
-    "lib/features/launch/launch_widgets.dart": _LEGACY_EMPTY,
-    "lib/features/launch2/launch2_instance_screen.dart": _LEGACY_EMPTY,
-    "lib/features/launch2/launch2_nft_screen.dart": _LEGACY_EMPTY,
-    "lib/features/mining/mining_screen.dart": _LEGACY_EMPTY,
-    "lib/features/mining/mining_secondary_screens.dart": _LEGACY_EMPTY,
-    "lib/features/mining/referral_screen.dart": _LEGACY_EMPTY,
-    "lib/features/profile/profile_v2_screens.dart": _LEGACY_EMPTY,
-    "lib/features/profile/security/security_screens.dart": _LEGACY_EMPTY,
-    "lib/features/scan/scan_screen.dart": _LEGACY_EMPTY,
-    "lib/features/security/mfa/passkey_sheet.dart": _LEGACY_EMPTY,
-    "lib/features/system/system_surfaces.dart": _LEGACY_EMPTY,
 }
 
 

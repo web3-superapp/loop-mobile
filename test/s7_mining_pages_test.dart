@@ -13,6 +13,8 @@ import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 /// Every Mining figure needs an approved formula version, and there is none.
 /// These tests pin the em dash, the server's own reason and the absence of
 /// every ratio the prototype used to state.
@@ -487,6 +489,7 @@ void main() {
       );
       await scrollToS7Section(tester, snapshot);
       expect(snapshot, findsOneWidget);
+      expect(tester.widget(snapshot), isA<LoopInlineUnavailable>());
       // The one code that means "there is none" says so.
       expect(find.text('还没有算力快照'), findsOneWidget);
     });
@@ -1484,6 +1487,16 @@ void main() {
         find.byKey(const ValueKey<String>('mining-community-weight-pending')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('mining-community-weight-pending'),
+          ),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('权重还在审核中'), findsOneWidget);
       expect(_figures(tester), isEmpty);
     });
@@ -1506,6 +1519,16 @@ void main() {
       expect(
         find.byKey(
           const ValueKey<String>('mining-community-weight-not-applicable'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('mining-community-weight-not-applicable'),
+          ),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
         ),
         findsOneWidget,
       );

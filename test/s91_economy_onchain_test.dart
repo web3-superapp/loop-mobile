@@ -14,6 +14,8 @@ import 'support/s5_fixtures.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 /// Decision 0100 · S91. The strict decoders against three optional keys the
 /// server already sends (loop-api `openapi/loop-api.v2.json`):
 ///
@@ -251,6 +253,7 @@ void main() {
       );
       await scrollToS7Section(tester, strip);
       expect(strip, findsOneWidget);
+      expect(tester.widget(strip), isA<LoopInlineUnavailable>());
       expect(find.textContaining('链上事件索引还没有开始'), findsOneWidget);
       // The list-row sentence of the global mapping would be wrong here.
       expect(find.textContaining('列表不逐个读链'), findsNothing);

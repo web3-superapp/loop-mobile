@@ -3,17 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/community/community_home_widgets.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_home_widgets.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -189,10 +191,12 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         else ...<Widget>[
           if (joined.isEmpty) ...<Widget>[
             const LoopLabel('已加入的社区'),
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('community-joined-empty'),
-              message: '还没有加入任何社区',
-              reason: '从"发现社区"开始，加入后这里会显示你的社区。',
+              illustration: LoopIllustration.members,
+              title: '还没有加入任何社区',
+              message: '从"发现社区"开始，加入后这里会显示你的社区。',
+              compact: true,
             ),
           ],
           // Two groups, in the prototype's order: the communities that

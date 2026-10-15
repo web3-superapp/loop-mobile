@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
@@ -11,6 +12,7 @@ import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -350,10 +352,12 @@ class LaunchGraduatedBlock extends StatelessWidget {
           ),
         );
       case LaunchGraduatedAvailable(:final launches) when launches.isEmpty:
-        return const LoopEmpty(
+        return const LoopEmptyState(
           key: ValueKey<String>('launch-graduated-empty'),
-          message: '还没有已毕业的项目',
-          reason: '流动性锁定后的项目会出现在这里。',
+          illustration: LoopIllustration.launchpad,
+          title: '还没有已毕业的项目',
+          message: '流动性锁定后的项目会出现在这里。',
+          compact: true,
         );
       case LaunchGraduatedAvailable(:final launches):
         return LoopRecordGroup(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
@@ -11,6 +12,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_providers.dar
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -261,10 +263,12 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
                 }
                 final targets = snapshot.data ?? const <ChatForwardTarget>[];
                 if (targets.isEmpty) {
-                  return const LoopEmpty(
+                  return const LoopEmptyState(
                     key: ValueKey<String>('forward-target-sheet-empty'),
-                    message: '没有可用的目标会话',
-                    reason: '转发目标必须是你已加入的会话。',
+                    illustration: LoopIllustration.chat,
+                    title: '没有可用的目标会话',
+                    message: '转发目标必须是你已加入的会话。',
+                    compact: true,
                   );
                 }
                 return ListView.separated(

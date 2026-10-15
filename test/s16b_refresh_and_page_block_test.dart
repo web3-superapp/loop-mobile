@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -228,16 +229,19 @@ void main() {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopEmpty(message: '还没有自选资产'),
+              LoopInlineUnavailable(message: '自选资产暂时读不到'),
               LoopSkeleton.row(),
             ],
           ),
         ),
       );
 
-      // A block inside a page that did load is a strip; a page that is still
+      // A block inside a page that did load is a line; a page that is still
       // reading is a skeleton. Neither is the whole-page block.
-      expect(find.byKey(const ValueKey<String>('loop-empty')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('loop-inline-unavailable')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('loop-skeleton-row')),
         findsOneWidget,

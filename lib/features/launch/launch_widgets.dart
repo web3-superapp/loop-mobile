@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -8,6 +9,8 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 /// Whether an S7 page must stop at the capability gate instead of reading.
 ///
@@ -53,10 +56,12 @@ class LaunchStateBlock extends StatelessWidget {
           rows: rows,
         );
       case LaunchViewPhase.empty:
-        return LoopEmpty(
+        return LoopEmptyState(
           key: ValueKey<String>('$prefix-state-empty'),
-          message: emptyMessage,
-          reason: emptyReason,
+          illustration: LoopIllustration.launchpad,
+          title: emptyMessage,
+          message: emptyReason,
+          compact: true,
         );
       case LaunchViewPhase.offline:
         return LoopOfflineState(
@@ -68,11 +73,12 @@ class LaunchStateBlock extends StatelessWidget {
           pausedActions: const <String>['申请', '提交', '认购', '领取', '绑定'],
         );
       case LaunchViewPhase.unavailable:
-        return LoopEmpty(
+        return LoopInlineUnavailable(
           key: ValueKey<String>('$prefix-state-unavailable'),
-          icon: 'warn',
           message: '该功能当前不可用',
-          reason: launchFailureReason(failureKind),
+          detail: launchFailureReason(failureKind),
+          maxLines: 2,
+          detailMaxLines: 4,
         );
       case LaunchViewPhase.permission:
         return LoopPermissionState(
@@ -114,11 +120,13 @@ class LaunchUnavailableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopEmpty(
+    return LoopInlineUnavailable(
       key: ValueKey<String>('launch-unavailable-$label'),
       message: label,
-      reason: reason ?? launchReasonCodeText(fact.reasonCode),
-      margin: margin,
+      detail: reason ?? launchReasonCodeText(fact.reasonCode),
+      maxLines: 2,
+      detailMaxLines: 4,
+      padding: margin,
     );
   }
 }

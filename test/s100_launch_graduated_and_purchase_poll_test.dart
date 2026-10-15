@@ -21,6 +21,8 @@ import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/s83c_fixtures.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 /// S100 · decision 0103 addenda.
 ///
 /// 1. S83b7c: `overview.graduated` is a union on `status` (loop-api S83b7b):
@@ -418,6 +420,8 @@ void main() {
       );
       final empty = _key('launch-graduated-empty');
       await scrollToS7Section(tester, empty);
+      // Decision 0183: the illustrated empty state.
+      expect(tester.widget(empty), isA<LoopEmptyState>());
       expect(
         find.descendant(of: empty, matching: find.text('还没有已毕业的项目')),
         findsOneWidget,

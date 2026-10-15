@@ -1323,7 +1323,6 @@ void main() {
         tester.widget(_key('launch2-dyn-rewards-none')),
         isA<LoopEmptyState>(),
       );
-      expect(find.byType(LoopEmpty), findsNothing);
       expect(official.rewardReads, 0);
       await _drain(tester);
       await _pump(

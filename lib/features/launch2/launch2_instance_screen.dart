@@ -349,11 +349,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         title: '无法打开这个项目',
         onBack: widget.onBack,
         body: const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('launch2-invalid-identity'),
-            icon: 'warn',
-            message: '路由中没有可用的项目标识',
-            reason: '没有请求任何数据，也没有回退到其他项目。',
+            illustration: LoopIllustration.launchpad,
+            title: '路由中没有可用的项目标识',
+            message: '没有请求任何数据，也没有回退到其他项目。',
+            compact: true,
           ),
         ],
       );

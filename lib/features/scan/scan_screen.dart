@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
 import 'package:loop_mobile/features/scan/scan_result.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -199,11 +200,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
         archetype: LoopPageArchetype.action,
         title: '扫一扫',
         onBack: widget.onBack,
-        block: const LoopEmpty(
+        block: const LoopInlineUnavailable(
           key: ValueKey<String>('scan-unavailable'),
           icon: 'camera',
           message: '扫码当前不可用',
-          reason: '这个版本没有装配相机扫码，本页不会打开相机。',
+          detail: '这个版本没有装配相机扫码，本页不会打开相机。',
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
         body: const <Widget>[],
       );
@@ -521,19 +524,23 @@ class _ViewfinderState extends StatelessWidget {
       ),
     ),
     LoopQrCameraStatus.permissionDenied => const Center(
-      child: LoopEmpty(
+      child: LoopInlineUnavailable(
         key: ValueKey<String>('scan-state-permission'),
         icon: 'camera',
         message: '没有相机权限',
-        reason: scanCameraDeniedBody,
+        detail: scanCameraDeniedBody,
+        maxLines: 2,
+        detailMaxLines: 4,
       ),
     ),
     LoopQrCameraStatus.unsupported => const Center(
-      child: LoopEmpty(
+      child: LoopInlineUnavailable(
         key: ValueKey<String>('scan-state-unsupported'),
         icon: 'camera',
         message: '这台设备没有可用的相机',
-        reason: '可以改用下方的「相册」识别二维码图片。',
+        detail: '可以改用下方的「相册」识别二维码图片。',
+        maxLines: 2,
+        detailMaxLines: 4,
       ),
     ),
     LoopQrCameraStatus.failed => Center(

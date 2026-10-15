@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
@@ -13,6 +14,8 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -332,20 +335,23 @@ class _CommunityAiStateBlock extends StatelessWidget {
         type: LoopSkeletonType.list,
         rows: 3,
       ),
-      CommunityViewPhase.empty => const LoopEmpty(
+      CommunityViewPhase.empty => const LoopEmptyState(
         key: ValueKey<String>('community-ai-state-empty'),
-        message: '这个社区还没有可以问的内容',
+        illustration: LoopIllustration.chat,
+        title: '这个社区还没有可以问的内容',
+        compact: true,
       ),
       CommunityViewPhase.offline => LoopOfflineState(
         key: const ValueKey<String>('community-ai-state-offline'),
         onRetry: onRetry,
         pausedActions: const <String>['提问', '举报'],
       ),
-      CommunityViewPhase.unavailable => LoopEmpty(
+      CommunityViewPhase.unavailable => LoopInlineUnavailable(
         key: const ValueKey<String>('community-ai-state-unavailable'),
-        icon: 'warn',
         message: '这一页暂时不可用',
-        reason: reason,
+        detail: reason,
+        maxLines: 2,
+        detailMaxLines: 4,
       ),
       CommunityViewPhase.permission => LoopPermissionState(
         key: const ValueKey<String>('community-ai-state-permission'),
@@ -371,9 +377,11 @@ class _CommunityAiAbilities extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (capabilities.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('community-ai-capabilities-empty'),
-        message: '这个社区还没有开放的助理能力',
+        illustration: LoopIllustration.chat,
+        title: '这个社区还没有开放的助理能力',
+        compact: true,
       );
     }
     return LoopRecordGroup(

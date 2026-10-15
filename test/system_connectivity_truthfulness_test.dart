@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/system_surface_harness.dart';
+
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 void main() {
   testWidgets('production offline route draws both specimen states', (
@@ -105,7 +106,8 @@ void main() {
         reason: scope.name,
       );
       if (scope == LoopConnectivityScope.fullyOffline) {
-        expect(find.byType(LoopEmpty), findsOneWidget);
+        expect(find.byType(LoopInlineUnavailable), findsOneWidget);
+        expect(find.text('无法连接到服务器'), findsWidgets);
         expect(find.text('OFFLINE'), findsOneWidget);
       }
       await tester.ensureVisible(find.text('重试'));

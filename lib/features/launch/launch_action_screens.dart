@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `loop-stake` · the LOOP staking position.
@@ -491,12 +492,14 @@ class _EconomyOnChainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (onChain) {
-      LaunchEconomyOnChainUnavailable(:final reasonCode) => LoopEmpty(
-        key: const ValueKey<String>('loop-economy-onchain-unavailable'),
-        icon: 'info',
-        message: '链上账本暂时读不到',
-        reason: launchEconomyOnChainReasonText(reasonCode),
-      ),
+      LaunchEconomyOnChainUnavailable(:final reasonCode) =>
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('loop-economy-onchain-unavailable'),
+          message: '链上账本暂时读不到',
+          detail: launchEconomyOnChainReasonText(reasonCode),
+          maxLines: 2,
+          detailMaxLines: 4,
+        ),
       final LaunchEconomyOnChainAvailable value => LoopChalkCard(
         key: const ValueKey<String>('loop-economy-onchain'),
         child: Builder(
@@ -621,11 +624,12 @@ class _EconomyReasons extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         for (final code in codes)
-          LoopEmpty(
+          LoopInlineUnavailable(
             key: ValueKey<String>('loop-economy-reason-$code'),
-            icon: 'info',
             message: '总量、累计分发与累计生态税暂时没有数值',
-            reason: launchEconomyReasonText(code, contractLive: contractLive),
+            detail: launchEconomyReasonText(code, contractLive: contractLive),
+            maxLines: 2,
+            detailMaxLines: 4,
           ),
       ],
     );
@@ -1258,22 +1262,25 @@ class _DeferredProviderBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = project;
     if (current == null) {
-      return const LoopEmpty(
+      return const LoopInlineUnavailable(
         key: ValueKey<String>('launch-apply-providers-pending'),
-        icon: 'info',
         message: '附件上传与主体审核暂未开放',
-        reason: '开放后可以在这里上传材料并查看审核状态。',
+        detail: '开放后可以在这里上传材料并查看审核状态。',
+        maxLines: 2,
+        detailMaxLines: 4,
       );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         LaunchUnavailableCard(label: '附件', fact: current.attachments),
-        LoopEmpty(
+        LoopInlineUnavailable(
           key: const ValueKey<String>('launch-apply-kyb'),
           icon: 'shield',
           message: '主体审核还没有开放',
-          reason: launchReasonCodeText(current.kyb.reasonCode),
+          detail: launchReasonCodeText(current.kyb.reasonCode),
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       ],
     );

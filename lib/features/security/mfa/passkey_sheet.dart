@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 /// Binds or unbinds a passkey as a way back into this account.
@@ -138,10 +140,12 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
     final confirming = _confirming;
     return <Widget>[
       if (state.passkeys.isEmpty)
-        const LoopEmpty(
+        const LoopEmptyState(
           key: ValueKey<String>('passkey-sheet-empty'),
-          message: '这个账号还没有 Passkey',
-          reason: '绑定后，这台设备的面容或指纹就是一条独立的回来路。',
+          illustration: LoopIllustration.profile,
+          title: '这个账号还没有 Passkey',
+          message: '绑定后，这台设备的面容或指纹就是一条独立的回来路。',
+          compact: true,
         )
       else ...<Widget>[
         const LoopLabel('已绑定', tight: true),

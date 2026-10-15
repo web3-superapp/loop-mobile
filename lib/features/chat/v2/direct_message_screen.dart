@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
@@ -15,6 +16,8 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The trusted identity an in-app caller hands to `dm`.
@@ -179,13 +182,15 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopEmpty(
+              LoopInlineUnavailable(
                 key: ValueKey<String>('dm-operator-required'),
                 icon: 'clock',
                 message: '需要人工处理',
-                reason:
+                detail:
                     '这次请求已经收到，需要人工处理才能完成。'
                     '这里不提供重试：重新提交会开出第二个操作。请联系支持后再回到这个会话。',
+                maxLines: 2,
+                detailMaxLines: 4,
               ),
               LoopNotice(
                 key: ValueKey<String>('dm-operator-required-notice'),
@@ -332,11 +337,11 @@ class _FriendshipRequired extends StatelessWidget {
         // is the only thing on screen. A conversation that did open keeps the
         // one-line strip instead, so the messages get the height.
         directMessageFolio(identity),
-        LoopEmpty(
+        LoopEmptyState(
           key: const ValueKey<String>('dm-friendship-required'),
-          icon: 'shield',
-          message: '还不能直接私聊',
-          reason: requestSent
+          illustration: LoopIllustration.friends,
+          title: '还不能直接私聊',
+          message: requestSent
               ? '消息请求已经发出。对方接受之前，这里不会出现会话。'
               // The refusal does not enumerate: a missing friendship, a
               // closed 私聊 switch in the other account's privacy centre and
@@ -345,6 +350,7 @@ class _FriendshipRequired extends StatelessWidget {
               : '私聊需要双方成为好友，并且对方没有在隐私中心关掉私聊。'
                     '先发送一条消息请求，对方接受后这个会话才会打开。'
                     '这个结果不代表对方账号一定存在。',
+          compact: true,
         ),
         // A refused send is the page's own outcome and outlives the toast
         // that announced it. It never replaces the control: the same request
@@ -396,11 +402,12 @@ class _Block extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.symmetric(vertical: 12),
-    child: LoopEmpty(
+    child: LoopInlineUnavailable(
       key: ValueKey<String>(blockKey),
-      icon: 'warn',
       message: message,
-      reason: reason,
+      detail: reason,
+      maxLines: 2,
+      detailMaxLines: 4,
     ),
   );
 }

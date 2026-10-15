@@ -11,6 +11,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 
 import 'support/community_test_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 CommunityDirectoryPage _directory() => CommunityDirectoryPage(
   ordering: const CommunityOrderingApplied(
     sort: CommunityDirectorySort.members,
@@ -338,6 +340,16 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('public-profile-not-targetable')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('public-profile-not-targetable'),
+          ),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(

@@ -39,6 +39,8 @@ import 'support/s5_page_harness.dart';
 import 'support/s6_fixtures.dart';
 import 'support/s6_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 const _stagingBase = 'https://api-staging.quant-dinger.cc';
 const _loopId = 'LOOP-FE3EMCPE';
 const _address = '0x71bd2e4c5b6c4d7e8f901a2b3c4d5e60aa0b0b91';
@@ -436,6 +438,14 @@ void main() {
         find.byKey(const ValueKey<String>('scan-state-permission')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('scan-state-permission')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(find.text(scanCameraDeniedBody), findsOneWidget);
       // The preview stays mounted under the state, so a later start never
       // waits on a widget that is not there.
@@ -511,6 +521,14 @@ void main() {
       await pumpCommunityPage(tester, const ScanScreen());
       expect(
         find.byKey(const ValueKey<String>('scan-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('scan-unavailable')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(
@@ -759,6 +777,14 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('community-manage-permission')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey<String>('community-manage-edit-profile')),
         findsNothing,
       );
@@ -822,6 +848,14 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('community-manage-missing-id')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('community-manage-missing-id')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(gateway.reads, 0);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -16,6 +17,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -165,11 +167,12 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                 margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
               )
             else if (assets.included.isEmpty)
-              const LoopEmpty(
+              const LoopEmptyState(
                 key: ValueKey<String>('mining-assets-included-empty'),
-                icon: 'info',
-                message: '这次快照没有计入任何资产',
-                reason: '你的持仓里没有可以计入的资产。',
+                illustration: LoopIllustration.holders,
+                title: '这次快照没有计入任何资产',
+                message: '你的持仓里没有可以计入的资产。',
+                compact: true,
               )
             else
               LoopRecordGroup(
@@ -189,11 +192,12 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             if (!assets.isUnsettled) ...<Widget>[
               const LoopLabel('未计入的资产'),
               if (assets.excluded.isEmpty)
-                const LoopEmpty(
+                const LoopEmptyState(
                   key: ValueKey<String>('mining-assets-excluded-empty'),
-                  icon: 'info',
-                  message: '没有被排除的资产',
-                  reason: '你持有的资产这次都计入了。',
+                  illustration: LoopIllustration.holders,
+                  title: '没有被排除的资产',
+                  message: '你持有的资产这次都计入了。',
+                  compact: true,
                 )
               else
                 LoopRecordGroup(
@@ -309,15 +313,17 @@ class _AssetsSourceBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (source) {
       MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
-        LoopEmpty(
+        LoopInlineUnavailable(
           key: const ValueKey<String>('mining-assets-source-unavailable'),
           icon: 'clock',
           message: miningSnapshotAbsenceMessage(reasonCode),
-          reason: miningSnapshotAbsenceReason(
+          detail: miningSnapshotAbsenceReason(
             reasonCode,
             attempt: latestAttempt,
             symbols: symbols,
           ),
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(
@@ -584,11 +590,12 @@ class _RankingBlock extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
       if (ranked.isEmpty)
-        const LoopEmpty(
+        const LoopEmptyState(
           key: ValueKey<String>('mining-rank-none-ranked'),
-          icon: 'info',
-          message: '这一次没有条目上榜',
-          reason: '下面的条目算力为 0，快照没有给它们名次。',
+          illustration: LoopIllustration.rank,
+          title: '这一次没有条目上榜',
+          message: '下面的条目算力为 0，快照没有给它们名次。',
+          compact: true,
         )
       else
         LoopRecordGroup(
@@ -627,11 +634,12 @@ class _RankingBlock extends StatelessWidget {
     ],
   );
 
-  static Widget _emptyBoard(int participants) => LoopEmpty(
+  static Widget _emptyBoard(int participants) => LoopEmptyState(
     key: const ValueKey<String>('mining-rank-empty'),
-    icon: 'info',
-    message: '最近一次算力快照里没有可以上榜的条目',
-    reason: _participantsLine(participants),
+    illustration: LoopIllustration.rank,
+    title: '最近一次算力快照里没有可以上榜的条目',
+    message: _participantsLine(participants),
+    compact: true,
   );
 
   static String _participantsLine(int participants) =>
@@ -925,17 +933,20 @@ class _WeightBlock extends StatelessWidget {
         :final reasonCode,
         reviewStatus: MiningWeightReviewStatus.pendingReview,
       ) =>
-        LoopEmpty(
+        LoopInlineUnavailable(
           key: const ValueKey<String>('mining-community-weight-pending'),
           icon: 'clock',
           message: '权重审核中',
-          reason: launchReasonCodeText(reasonCode),
+          detail: launchReasonCodeText(reasonCode),
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
-      MiningCommunityWeightPending(:final reasonCode) => LoopEmpty(
+      MiningCommunityWeightPending(:final reasonCode) => LoopInlineUnavailable(
         key: const ValueKey<String>('mining-community-weight-not-applicable'),
-        icon: 'info',
         message: '没有可审的权重',
-        reason: launchReasonCodeText(reasonCode),
+        detail: launchReasonCodeText(reasonCode),
+        maxLines: 2,
+        detailMaxLines: 4,
       ),
     };
   }
@@ -1148,14 +1159,16 @@ class _CommunitySnapshotBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (snapshot) {
       MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
-        LoopEmpty(
+        LoopInlineUnavailable(
           key: const ValueKey<String>('mining-community-snapshot-unavailable'),
           icon: 'clock',
           message: miningSnapshotAbsenceMessage(reasonCode),
-          reason: miningSnapshotAbsenceReason(
+          detail: miningSnapshotAbsenceReason(
             reasonCode,
             attempt: latestAttempt,
           ),
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(
@@ -1344,11 +1357,12 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               ),
             const LoopLabel('待批准的版本'),
             if (rules.pendingApproval.isEmpty)
-              const LoopEmpty(
+              const LoopEmptyState(
                 key: ValueKey<String>('mining-rules-no-pending'),
-                icon: 'info',
-                message: '没有待批准的版本',
-                reason: '目前没有草案版本。',
+                illustration: LoopIllustration.history,
+                title: '没有待批准的版本',
+                message: '目前没有草案版本。',
+                compact: true,
               )
             else
               for (final version in rules.pendingApproval)

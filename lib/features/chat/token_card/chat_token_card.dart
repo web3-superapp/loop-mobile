@@ -16,7 +16,7 @@ import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
@@ -165,24 +165,25 @@ class ChatTokenCard extends ConsumerWidget {
     return switch (entry.asset.failureKind) {
       // The registry has never carried this contract. That is an answer, not
       // a failure: there is nothing to retry and no figure to wait for.
-      LoopChainFailureKind.notFound => LoopEmpty(
+      LoopChainFailureKind.notFound => LoopInlineUnavailable(
         key: ValueKey<String>('chat-token-card-unlisted-$address'),
         icon: 'info',
         message: '未收录的代币 · ${loopChatTokenShortAddress(address)}',
-        reason: '这个合约地址不在 LOOP 的资产目录里，没有可展示的行情。',
+        detail: '这个合约地址不在 LOOP 的资产目录里，没有可展示的行情。',
+        maxLines: 2,
+        detailMaxLines: 4,
       ),
       LoopChainFailureKind.offline ||
-      LoopChainFailureKind.timedOut => LoopEmpty(
+      LoopChainFailureKind.timedOut => LoopInlineUnavailable(
         key: ValueKey<String>('chat-token-card-offline-$address'),
         icon: 'offline',
         message: entry.asset.failureKind == LoopChainFailureKind.timedOut
             ? 'LOOP 响应超时，没有读到这个合约'
             : '设备离线，没有读这个合约',
-        reason: loopChainFailureReason(entry.asset.failureKind),
-        action: LoopButton(
-          label: '重试',
-          onPressed: () => unawaited(cache.resolve(address, force: true)),
-        ),
+        detail: loopChainFailureReason(entry.asset.failureKind),
+        maxLines: 2,
+        detailMaxLines: 4,
+        onRetry: () => unawaited(cache.resolve(address, force: true)),
       ),
       // Nothing has failed and nothing has answered yet.
       null => LoopTokenCard(

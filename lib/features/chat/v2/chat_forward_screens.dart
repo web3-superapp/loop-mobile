@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -14,12 +15,14 @@ import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// The forward and merge caps fixed by the step-4 ruling.
@@ -494,11 +497,12 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
       ),
       sections: <Widget>[
         if (widget.sourceCid == null)
-          const LoopEmpty(
+          const LoopInlineUnavailable(
             key: ValueKey<String>('chat-forward-missing-source'),
-            icon: 'warn',
             message: '找不到原会话',
-            reason: '请从会话页进入转发，本页不会猜测要转发哪个会话的消息。',
+            detail: '请从会话页进入转发，本页不会猜测要转发哪个会话的消息。',
+            maxLines: 2,
+            detailMaxLines: 4,
           )
         else if (state.loading)
           const LoopSkeleton(
@@ -529,10 +533,12 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         else ...<Widget>[
           const LoopLabel('选择消息'),
           if (state.messages.isEmpty)
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('chat-forward-no-messages'),
-              message: '这个会话还没有可转发的消息',
-              reason: '只有已同步到本机的文本消息可以被转发。',
+              illustration: LoopIllustration.chat,
+              title: '这个会话还没有可转发的消息',
+              message: '只有已同步到本机的文本消息可以被转发。',
+              compact: true,
             )
           else
             LoopRecordGroup(
@@ -546,10 +552,12 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
           // (audit 2026-09-20 · B.6).
           const LoopLabel('发送到 · 最近 $chatForwardTargetPageSize 个会话'),
           if (state.targets.isEmpty)
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('chat-forward-no-targets'),
-              message: '没有可用的目标会话',
-              reason: '转发目标必须是你已加入的会话。',
+              illustration: LoopIllustration.chat,
+              title: '没有可用的目标会话',
+              message: '转发目标必须是你已加入的会话。',
+              compact: true,
             )
           else
             LoopRecordGroup(
@@ -744,10 +752,12 @@ class _ChatMergePreviewScreenState
             ),
       sections: <Widget>[
         if (rows.isEmpty)
-          const LoopEmpty(
+          const LoopEmptyState(
             key: ValueKey<String>('chat-merge-empty'),
-            message: '还没有选择任何消息',
-            reason: '回到转发页选择要合并的消息，最多 $chatMergeSelectionLimit 条。',
+            illustration: LoopIllustration.chat,
+            title: '还没有选择任何消息',
+            message: '回到转发页选择要合并的消息，最多 $chatMergeSelectionLimit 条。',
+            compact: true,
           )
         else ...<Widget>[
           if (state.mergeTruncated)

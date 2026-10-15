@@ -19,8 +19,9 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
-import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The Owner / Admin head count the 成员 row prints, read once per visit
@@ -128,11 +129,12 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         sections: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '社区管理'),
           if (id == null)
-            const LoopEmpty(
+            const LoopInlineUnavailable(
               key: ValueKey<String>('community-manage-missing-id'),
-              icon: 'warn',
               message: '缺少社区标识',
-              reason: '请从社区主页右上角的「管理」进入，本页不会猜测要管理哪个社区。',
+              detail: '请从社区主页右上角的「管理」进入，本页不会猜测要管理哪个社区。',
+              maxLines: 2,
+              detailMaxLines: 4,
             )
           else if (detail == null)
             CommunityStateBlock(
@@ -146,11 +148,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
               onRetry: () => unawaited(controller.reload()),
             )
           else if (!detail.viewer.mayManage)
-            const LoopEmpty(
+            const LoopInlineUnavailable(
               key: ValueKey<String>('community-manage-permission'),
               icon: 'lock',
               message: '只有社区所有者与管理员可以管理',
-              reason: '你在这个社区的身份不包含管理权限；社区主页仍然可以照常查看。',
+              detail: '你在这个社区的身份不包含管理权限；社区主页仍然可以照常查看。',
+              maxLines: 2,
+              detailMaxLines: 4,
             )
           else
             ..._groups(context, detail, isOwner: isOwner, busy: state.busy),

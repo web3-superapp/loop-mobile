@@ -7,7 +7,6 @@ import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart'
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -68,7 +67,6 @@ void main() {
     expect(find.byType(LoopFlatField), findsOneWidget);
     expect(find.byType(LoopPage), findsNothing);
     expect(find.byType(LoopStateCard), findsNothing);
-    expect(find.byType(LoopWideButton), findsNothing);
     expect(find.byType(LoopStatusPill), findsNothing);
     expect(find.byType(LoopSectionLabel), findsNothing);
     expect(find.byType(OutlinedButton), findsNothing);

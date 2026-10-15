@@ -9,6 +9,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s8_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 /// `security`, `devices`, `key-export`, `social-recovery` (D20).
 void main() {
   group('security', () {
@@ -205,6 +207,14 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('devices-state-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('devices-state-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(

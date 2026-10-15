@@ -42,6 +42,8 @@ import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
 
 const String _txHash =
@@ -1404,6 +1406,14 @@ void main() {
         gateway,
       );
       expect(_key('launch2-nft-invalid-identity'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch2-nft-invalid-identity'),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(gateway.detailReads, 0);
       await _drain(tester);
     });

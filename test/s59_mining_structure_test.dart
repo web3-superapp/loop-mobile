@@ -8,6 +8,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 /// The block order of the six Mining pages, pinned against the frozen
 /// prototype (`docs/prototype/screens/mining*.html`).
 ///
@@ -89,6 +91,31 @@ void main() {
         '公式版本',
         '算力快照',
       ]);
+    });
+
+    testWidgets('a settled snapshot with nothing counted is illustrated', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningSettledAssets(included: const <MiningAssetRow>[]),
+          ),
+        ),
+        size: _tall,
+      );
+
+      // Decision 0183: an empty composition is the illustrated empty state.
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('mining-composition-empty')),
+        ),
+        isA<LoopEmptyState>(),
+      );
+      expect(find.text('这次快照没有计入任何资产'), findsOneWidget);
     });
 
     testWidgets('算力明细 leads with the priced list, not with a table', (

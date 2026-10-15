@@ -148,7 +148,7 @@ void main() {
 
       final join = _key('community-join-action');
       expect(join, findsOneWidget);
-      expect(tester.widget<LoopWideButton>(join).label, '加入社区');
+      expect(tester.widget<LoopButton>(join).label, '加入社区');
       expect(tester.getSize(join).height, 52);
       expect(_key('community-profile-manage'), findsNothing);
       // Without membership the directory is not read and no strip drawn.
@@ -518,7 +518,7 @@ void main() {
         );
       }
       expect(
-        tester.widget<LoopWideButton>(_key('community-apply-submit')).label,
+        tester.widget<LoopButton>(_key('community-apply-submit')).label,
         '提交申请',
       );
       // Picking a mark puts it in the 72 slot.

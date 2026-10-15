@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
@@ -13,6 +14,9 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_progress_fill.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -122,7 +126,7 @@ class CommunityStateBlock extends StatelessWidget {
   final String emptyMessage;
   final String? emptyReason;
 
-  /// What the empty phase draws instead of the inline strip — a centred
+  /// What the empty phase draws instead of the default — a centred
   /// `LoopEmptyState` (decision 0122). [emptyMessage] stays its fallback.
   final Widget? empty;
   final String permissionTitle;
@@ -144,10 +148,12 @@ class CommunityStateBlock extends StatelessWidget {
         );
       case CommunityViewPhase.empty:
         return empty ??
-            LoopEmpty(
+            LoopEmptyState(
               key: const ValueKey<String>('community-state-empty'),
-              message: emptyMessage,
-              reason: emptyReason,
+              illustration: LoopIllustration.members,
+              title: emptyMessage,
+              message: emptyReason,
+              compact: true,
             );
       case CommunityViewPhase.offline:
         return LoopOfflineState(
@@ -159,11 +165,12 @@ class CommunityStateBlock extends StatelessWidget {
           pausedActions: const <String>['加入', '关注', '屏蔽', '治理'],
         );
       case CommunityViewPhase.unavailable:
-        return LoopEmpty(
+        return LoopInlineUnavailable(
           key: const ValueKey<String>('community-state-unavailable'),
-          icon: 'warn',
           message: '该功能当前不可用',
-          reason: communityFailureReason(failureKind),
+          detail: communityFailureReason(failureKind),
+          maxLines: 2,
+          detailMaxLines: 4,
         );
       case CommunityViewPhase.permission:
         return LoopPermissionState(
@@ -207,12 +214,26 @@ class CommunityUnavailableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopEmpty(
-      key: ValueKey<String>('community-unavailable-${fact.reasonCode}'),
+    final line = LoopInlineUnavailable(
       message: label,
-      reason: communityUnavailableReason(fact.reasonCode),
-      margin: margin,
-      action: action,
+      detail: communityUnavailableReason(fact.reasonCode),
+      maxLines: 2,
+      detailMaxLines: 4,
+      padding: margin,
+    );
+    final next = action;
+    return Column(
+      key: ValueKey<String>('community-unavailable-${fact.reasonCode}'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        line,
+        if (next != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(margin.left, 0, margin.right, 10),
+            child: next,
+          ),
+      ],
     );
   }
 }
@@ -1719,10 +1740,16 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
             style: LoopTypography.caption(11, color: LoopColors.text3),
           ),
           const SizedBox(height: 16),
-          LoopWideButton(
-            key: const ValueKey<String>('community-apply-submit'),
-            label: '提交申请',
-            onPressed: _submit,
+          // The sheet is not a flat page; the scope gives its one primary
+          // the flat wide form button look (decision 0127 / 0183).
+          LoopFlat(
+            child: LoopButton(
+              key: const ValueKey<String>('community-apply-submit'),
+              label: '提交申请',
+              primary: true,
+              block: true,
+              onPressed: _submit,
+            ),
           ),
           const SizedBox(height: 4),
           Center(

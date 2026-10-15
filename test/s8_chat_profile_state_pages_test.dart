@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'support/communication_test_harness.dart';
@@ -378,6 +379,14 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('chat-search-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey<String>('chat-search-error')),
         findsNothing,
       );
@@ -476,7 +485,23 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('chat-forward-no-messages')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey<String>('chat-forward-no-targets')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('chat-forward-no-targets')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(

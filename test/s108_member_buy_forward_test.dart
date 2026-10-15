@@ -31,6 +31,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_localizations
 import 'package:loop_mobile/integrations/communication/stream_connection.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -199,12 +200,17 @@ final class _Port implements ChatForwardPort {
   /// Holds every send until completed, when set.
   Completer<void>? gate;
 
+  /// Answers with no target at all, when set.
+  bool noTargets = false;
+
   @override
   Future<List<ChatForwardTarget>> recentTargets({
     required String excludeCid,
-  }) async => const <ChatForwardTarget>[
-    ChatForwardTarget(cid: _target, label: '周末爬山群', detail: '群聊 · 3 人'),
-  ];
+  }) async => noTargets
+      ? const <ChatForwardTarget>[]
+      : const <ChatForwardTarget>[
+          ChatForwardTarget(cid: _target, label: '周末爬山群', detail: '群聊 · 3 人'),
+        ];
 
   @override
   Future<void> send({
@@ -541,6 +547,28 @@ void main() {
       await room.openActions(tester, '消息 1');
       expect(find.text('删除消息'), findsOneWidget);
       expect(find.text('转发'), findsOneWidget);
+      await room.dispose(tester);
+    });
+
+    testWidgets('a sheet with no target is the illustrated empty state', (
+      tester,
+    ) async {
+      final room = _Room();
+      room.port.noTargets = true;
+      await room.pump(tester);
+      await room.openActions(tester, '消息 2');
+      await tester.tap(find.text('转发'));
+      await tester.pumpAndSettle();
+
+      // Decision 0183.
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('forward-target-sheet-empty')),
+        ),
+        isA<LoopEmptyState>(),
+      );
+      expect(find.text('没有可用的目标会话'), findsOneWidget);
+      expect(room.port.sent, isEmpty);
       await room.dispose(tester);
     });
 

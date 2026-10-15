@@ -5,6 +5,8 @@ import 'package:loop_mobile/features/account/account_screens.dart';
 
 import 'support/loop_ground_probe.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 void main() {
   // This file mounts pages through its own `pumpWidget`, so it arms the
   // ground probe itself; the page harnesses arm it for everybody else.
@@ -52,6 +54,14 @@ void main() {
     // local verification UI beside the real PrivyOtpScreen at `/auth/otp`.
     expect(
       find.byKey(const ValueKey<String>('unknown-account-surface')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('unknown-account-surface')),
+        matching: find.byType(LoopEmptyState),
+        matchRoot: true,
+      ),
       findsOneWidget,
     );
     expect(find.byType(TextField), findsNothing);

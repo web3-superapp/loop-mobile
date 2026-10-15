@@ -22,6 +22,8 @@ import 'support/s5_page_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 /// The five reviewed states for the nine business pages that reached the 93-page
 /// acceptance matrix with **no** state pinned by a test of their own
 /// (`LOOP/docs/acceptance/93-pages.md` §3, the 0/5 row).
@@ -599,6 +601,14 @@ void main() {
         );
         expect(
           find.byKey(const ValueKey<String>('group-info-state-empty')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('group-info-state-empty')),
+            matching: find.byType(LoopEmptyState),
+            matchRoot: true,
+          ),
           findsOneWidget,
         );
         expect(

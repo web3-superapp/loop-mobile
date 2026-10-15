@@ -15,6 +15,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_repository.dart
 import 'support/community_test_harness.dart';
 import 'support/communication_test_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 /// Decision 0068 gives `evidence.status` a third value. `pending` was the only
 /// answer the voice-room precondition could ever have, so the page had no way
 /// back: these tests pin the new `confirmed` answer, the reference that is the
@@ -354,6 +356,16 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('voiceroom-capability-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('voiceroom-capability-unavailable'),
+          ),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(voice.commands, isEmpty);

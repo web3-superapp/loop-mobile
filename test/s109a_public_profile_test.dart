@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
@@ -542,6 +544,14 @@ void main() {
         find.byKey(const ValueKey<String>('user-profile-not-found')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('user-profile-not-found')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(find.text('找不到这个用户'), findsOneWidget);
     });
 
@@ -552,6 +562,14 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('user-profile-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('user-profile-unavailable')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(find.text('frog_maxi'), findsNothing);
@@ -573,6 +591,14 @@ void main() {
       await _pump(tester, profiles: profiles, target: null);
       expect(
         find.byKey(const ValueKey<String>('user-profile-invalid-target')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('user-profile-invalid-target')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(profiles.calls, isEmpty);

@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 /// `community-chat` · the official community channel.
 ///
@@ -474,11 +475,12 @@ class _ChatBlock extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopEmpty(
+        LoopInlineUnavailable(
           key: ValueKey<String>(blockKey),
-          icon: 'warn',
           message: message,
-          reason: reason,
+          detail: reason,
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
         if (onRetry != null)
           Padding(

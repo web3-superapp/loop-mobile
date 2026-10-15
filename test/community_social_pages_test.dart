@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
@@ -520,6 +521,14 @@ void main() {
         find.byKey(const ValueKey<String>('blocklist-deferred-kinds')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('blocklist-deferred-kinds')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(gateway.commands, <String>['blocks:user']);
     });
 
@@ -576,6 +585,14 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('community-state-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('community-state-unavailable')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });

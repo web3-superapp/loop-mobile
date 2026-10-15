@@ -5,6 +5,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -46,11 +47,12 @@ final _catalogue = <String, Widget Function()>{
   'skeleton card': () => const LoopSkeleton(type: LoopSkeletonType.card),
   'skeleton list': () =>
       const LoopSkeleton(type: LoopSkeletonType.list, rows: 1),
-  'state strip': () => const LoopEmpty(message: '二维码不可用', reason: '这一项暂时读不到。'),
-  'state strip with a next step': () => LoopEmpty(
+  'state line': () =>
+      const LoopInlineUnavailable(message: '二维码不可用', detail: '这一项暂时读不到。'),
+  'state line with a retry': () => LoopInlineUnavailable(
     message: '资料暂时读不到',
-    reason: '稍后再试。',
-    action: LoopButton(label: '重试', onPressed: () {}),
+    detail: '稍后再试。',
+    onRetry: () {},
   ),
   'secondary button': () => LoopButton(label: '返回聊天', onPressed: () {}),
   'primary button': () =>

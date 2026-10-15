@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/wallet_creation_facts.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
@@ -12,7 +13,9 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// Capabilities confirmed by the Privy integration at runtime.
@@ -716,10 +719,12 @@ class ExternalWalletScreen extends StatelessWidget {
               body: '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。',
             ),
           const LoopLabel('可连接的钱包'),
-          const LoopEmpty(
+          const LoopInlineUnavailable(
             key: ValueKey<String>('external-wallet-list-unavailable'),
             message: '已安装钱包清单暂不可读',
-            reason: '连接钱包后才会显示可用的钱包名称。',
+            detail: '连接钱包后才会显示可用的钱包名称。',
+            maxLines: 2,
+            detailMaxLines: 4,
           ),
         ],
       ),
@@ -1572,10 +1577,12 @@ class UnknownAccountScreen extends StatelessWidget {
       archetype: LoopPageArchetype.state,
       title: '页面不存在',
       body: <Widget>[
-        LoopEmpty(
+        LoopEmptyState(
           key: ValueKey<String>('unknown-account-surface'),
-          message: '这个账户页面不在 93 页产品清单里',
-          reason: '请返回社区。请求已被记录。',
+          illustration: LoopIllustration.profile,
+          title: '这个账户页面不在 93 页产品清单里',
+          message: '请返回社区。请求已被记录。',
+          compact: true,
         ),
       ],
     );

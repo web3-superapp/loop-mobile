@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -22,24 +23,24 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_voice_room_open.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
-import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
-import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// `community-profile` · one community record.
 ///
@@ -355,11 +356,12 @@ class _CommunityProfileScreenState
         sections: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '社区档案'),
           if (id == null)
-            const LoopEmpty(
+            const LoopInlineUnavailable(
               key: ValueKey<String>('community-profile-missing-id'),
-              icon: 'warn',
               message: '缺少社区标识',
-              reason: '请从社区列表或搜索结果进入，本页不会猜测要打开哪个社区。',
+              detail: '请从社区列表或搜索结果进入，本页不会猜测要打开哪个社区。',
+              maxLines: 2,
+              detailMaxLines: 4,
             )
           else if (detail == null)
             CommunityStateBlock(
@@ -930,11 +932,14 @@ class _JoinBar extends StatelessWidget {
         16,
         10 + MediaQuery.paddingOf(context).bottom,
       ),
-      child: LoopWideButton(
+      // Inside the flat page a primary block button is decision 0127's wide
+      // form button (decision 0183); busy, it takes no tap.
+      child: LoopButton(
         key: const ValueKey<String>('community-join-action'),
         label: busy ? '正在加入…' : '加入社区',
-        busy: busy,
-        onPressed: onJoin,
+        primary: true,
+        block: true,
+        onPressed: busy ? null : onJoin,
       ),
     ),
   );

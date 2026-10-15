@@ -12,14 +12,14 @@ import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
-import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
-import 'package:loop_mobile/features/chain/chain_contract.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
@@ -39,22 +39,23 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
-import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
-import 'package:loop_mobile/widgets/loop_person_row.dart';
-import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-import 'package:loop_mobile/widgets/loop_copy.dart';
 
 // ---------------------------------------------------------------------------
 // Shared identity presentation
@@ -1872,10 +1873,12 @@ class _ProfileStateBlock extends StatelessWidget {
         title: '资料暂不可用',
         body: profileFailureReason(state.failureKind),
       ),
-      LoopResourcePhase.empty => const LoopEmpty(
+      LoopResourcePhase.empty => const LoopEmptyState(
         key: ValueKey<String>('profile-empty'),
-        message: '还没有可展示的资料',
-        reason: '账号资料尚未读取。',
+        illustration: LoopIllustration.profile,
+        title: '还没有可展示的资料',
+        message: '账号资料尚未读取。',
+        compact: true,
       ),
       // A refusal is not an error: the request arrived and the server answered
       // "no". Retrying it would claim otherwise, so the block offers the only
@@ -2548,10 +2551,12 @@ class _PrivacyStateBlock extends StatelessWidget {
         title: '隐私设置暂不可用',
         body: privacyFailureReason(state.failureKind),
       ),
-      LoopResourcePhase.empty => const LoopEmpty(
+      LoopResourcePhase.empty => const LoopEmptyState(
         key: ValueKey<String>('privacy-empty'),
-        message: '还没有可展示的隐私设置',
-        reason: '隐私偏好尚未读取。',
+        illustration: LoopIllustration.profile,
+        title: '还没有可展示的隐私设置',
+        message: '隐私偏好尚未读取。',
+        compact: true,
       ),
       LoopResourcePhase.permission => LoopPermissionState(
         key: const ValueKey<String>('privacy-permission'),

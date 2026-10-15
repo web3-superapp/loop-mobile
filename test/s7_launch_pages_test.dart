@@ -13,6 +13,9 @@ import 'support/s7_fixtures.dart';
 import 'support/s83c_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 /// Every rendered percentage, currency amount or countdown on the page. In
 /// step 7 there is nothing that could legitimately produce one.
 List<String> _figures(WidgetTester tester) {
@@ -281,6 +284,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('launch-rounds-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('launch-rounds-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(find.textContaining('轮次数量由每次发射自己决定'), findsOneWidget);
@@ -837,6 +848,7 @@ void main() {
       final kyb = find.byKey(const ValueKey<String>('launch-apply-kyb'));
       await scrollToS7Section(tester, kyb);
       expect(kyb, findsOneWidget);
+      expect(tester.widget(kyb), isA<LoopInlineUnavailable>());
       expect(find.textContaining('主体审核还没有开放'), findsOneWidget);
       for (final button in tester.widgetList<LoopButton>(
         find.byType(LoopButton),

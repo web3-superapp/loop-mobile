@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 Future<void> _pump(WidgetTester tester, Widget child, {Size? size}) async {
   if (size != null) {
@@ -573,10 +574,10 @@ void main() {
         tester,
         Column(
           children: <Widget>[
-            const LoopEmpty(
+            const LoopInlineUnavailable(
               icon: 'offline',
               message: '无法连接到服务器',
-              reason: '缓存为空',
+              detail: '缓存为空',
             ),
             LoopErrorState(
               title: '服务暂时不可用',
@@ -599,7 +600,10 @@ void main() {
         ),
         size: const Size(390, 1600),
       );
-      expect(find.byKey(const ValueKey<String>('loop-empty')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('loop-inline-unavailable')),
+        findsOneWidget,
+      );
       expect(find.text('缓存为空'), findsOneWidget);
       expect(find.text('追踪号 7f3a2c9e · 来源 Wallet API'), findsOneWidget);
       await tester.tap(find.text('重试'));

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_capability_refresh.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -23,6 +24,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `launch-trade` · the internal-market purchase form (archetype `action`,
@@ -1316,11 +1318,12 @@ class _TradeParameters extends StatelessWidget {
     }
     final rounds = detail?.rounds ?? const <LaunchRound>[];
     if (rounds.isEmpty) {
-      return const LoopEmpty(
+      return const LoopEmptyState(
         key: ValueKey<String>('launch-trade-no-round'),
-        icon: 'warn',
-        message: '没有可参与的轮次',
-        reason: '轮次配置尚未确认，因此没有价格、资格或额度可以展示。',
+        illustration: LoopIllustration.launchpad,
+        title: '没有可参与的轮次',
+        message: '轮次配置尚未确认，因此没有价格、资格或额度可以展示。',
+        compact: true,
       );
     }
     // LOOP's own round slots: shown as configured, never selectable, because

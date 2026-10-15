@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
@@ -16,9 +17,9 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -441,11 +442,12 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
       title: '没有权限查看发言人名单',
       purpose: communityFailureReason(roster.failureKind),
     ),
-    CommunityViewPhase.unavailable => LoopEmpty(
+    CommunityViewPhase.unavailable => LoopInlineUnavailable(
       key: const ValueKey<String>('voiceroom-speakers-unavailable'),
-      icon: 'warn',
       message: '发言人名单当前不可用',
-      reason: communityFailureReason(roster.failureKind),
+      detail: communityFailureReason(roster.failureKind),
+      maxLines: 2,
+      detailMaxLines: 4,
     ),
     CommunityViewPhase.error => LoopErrorState(
       key: const ValueKey<String>('voiceroom-speakers-error'),
@@ -554,11 +556,12 @@ class VoiceRoomListenerGrid extends StatelessWidget {
       title: '没有权限查看听众名单',
       purpose: communityFailureReason(roster.failureKind),
     ),
-    CommunityViewPhase.unavailable => LoopEmpty(
+    CommunityViewPhase.unavailable => LoopInlineUnavailable(
       key: const ValueKey<String>('voiceroom-listeners-unavailable'),
-      icon: 'warn',
       message: '听众名单当前不可用',
-      reason: communityFailureReason(roster.failureKind),
+      detail: communityFailureReason(roster.failureKind),
+      maxLines: 2,
+      detailMaxLines: 4,
     ),
     CommunityViewPhase.error => LoopErrorState(
       key: const ValueKey<String>('voiceroom-listeners-error'),

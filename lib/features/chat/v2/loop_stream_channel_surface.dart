@@ -13,15 +13,16 @@ import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
 import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/stream_connection.dart';
+import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
 import 'package:loop_mobile/integrations/communication/stream_server_clock_source.dart';
 import 'package:loop_mobile/integrations/communication/stream_unread_pill_band.dart';
-import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
-import 'package:loop_mobile/integrations/communication/stream_connection.dart';
-import 'package:loop_mobile/integrations/communication/stream_failure.dart';
-import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:stream_chat_flutter/scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -848,7 +849,13 @@ class LoopStreamChannelStateBlock extends StatelessWidget {
               margin: EdgeInsets.zero,
             )
           : onRetry == null
-          ? LoopEmpty(icon: icon, message: '会话不可用', reason: message)
+          ? LoopInlineUnavailable(
+              icon: icon,
+              message: '会话不可用',
+              detail: message,
+              maxLines: 2,
+              detailMaxLines: 4,
+            )
           : LoopErrorState(
               reason: message,
               onRetry: onRetry,

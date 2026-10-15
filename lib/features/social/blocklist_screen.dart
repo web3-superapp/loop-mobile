@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -116,13 +117,14 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '屏蔽名单'),
           if (!state.kind.isSupported)
-            LoopEmpty(
+            LoopInlineUnavailable(
               key: ValueKey<String>(
                 'blocklist-kind-unavailable-${state.kind.wireName}',
               ),
-              icon: 'warn',
               message: '"${_segmentLabels[state.kind]}" 屏蔽暂不可用',
-              reason: '合约与域名屏蔽还没有开放，这里不会列出任何条目。',
+              detail: '合约与域名屏蔽还没有开放，这里不会列出任何条目。',
+              maxLines: 2,
+              detailMaxLines: 4,
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
@@ -165,12 +167,13 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
           ],
           // The two deferred kinds are disabled segments, so their reason is
           // stated here instead of only after a selection that cannot happen.
-          const LoopEmpty(
+          const LoopInlineUnavailable(
             key: ValueKey<String>('blocklist-deferred-kinds'),
-            icon: 'warn',
             message: '合约与域名屏蔽暂不可用',
-            reason: '这两类屏蔽还没有开放，这里不会列出任何条目。',
-            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            detail: '这两类屏蔽还没有开放，这里不会列出任何条目。',
+            maxLines: 2,
+            detailMaxLines: 4,
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
           ),
           const LoopNotice(
             key: ValueKey<String>('blocklist-precedence-notice'),

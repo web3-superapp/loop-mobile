@@ -4,6 +4,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -625,7 +626,7 @@ class _StatePage extends StatelessWidget {
 /// The prototype's `.empty` block: a centred glyph, one line and one way out,
 /// inside a hairline frame (`.refined-page .folio-body>.empty`).
 ///
-/// [LoopEmpty] is the inline strip used *inside* a loaded page; the offline
+/// `LoopInlineUnavailable` is the line used *inside* a loaded page; the offline
 /// page's 无法连接到服务器 card is the other shape — it is the page's middle and
 /// it owns the retry.
 class _CenteredStateBlock extends StatelessWidget {
@@ -965,12 +966,11 @@ class _OfflinePage extends StatelessWidget {
           body: copy.body,
         ),
         if (fullyOffline)
-          LoopEmpty(
+          LoopInlineUnavailable(
             icon: 'offline',
             message: '无法连接到服务器',
-            action: onRetry == null
-                ? null
-                : LoopButton(label: '重试', onPressed: onRetry),
+            maxLines: 2,
+            onRetry: onRetry,
           )
         else if (onRetry != null)
           Padding(

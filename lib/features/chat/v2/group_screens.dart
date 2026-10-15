@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
@@ -14,9 +16,10 @@ import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -313,20 +316,22 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '群信息'),
         if (blocked)
-          LoopEmpty(
+          LoopInlineUnavailable(
             key: const ValueKey<String>('group-info-capability-unavailable'),
-            icon: 'warn',
             message: '群聊当前不可用',
-            reason: capability.reasonCode == null
+            detail: capability.reasonCode == null
                 ? '尚未读取到能力清单，本页不请求任何群资源。'
                 : communicationUnavailableReason(capability.reasonCode),
+            maxLines: 2,
+            detailMaxLines: 4,
           )
         else if (widget.channelCid == null)
-          const LoopEmpty(
+          const LoopInlineUnavailable(
             key: ValueKey<String>('group-info-missing-cid'),
-            icon: 'warn',
             message: '缺少群聊标识',
-            reason: '请从群聊页进入，本页不会猜测要打开哪个群的信息。',
+            detail: '请从群聊页进入，本页不会猜测要打开哪个群的信息。',
+            maxLines: 2,
+            detailMaxLines: 4,
           )
         else ...<Widget>[
           const LoopLabel('成员'),
@@ -363,18 +368,20 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               pausedActions: const <String>['退出群聊'],
             )
           else if (_resolveFailure == GroupAliasGatewayFailureKind.notFound)
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('group-info-state-empty'),
-              icon: 'info',
-              message: '没有可退出的群成员关系',
-              reason: '找不到这个群，或者你已经不是成员了。这不代表退出失败。',
+              illustration: LoopIllustration.members,
+              title: '没有可退出的群成员关系',
+              message: '找不到这个群，或者你已经不是成员了。这不代表退出失败。',
+              compact: true,
             )
           else if (_resolveFailure == GroupAliasGatewayFailureKind.unavailable)
-            const LoopEmpty(
+            const LoopInlineUnavailable(
               key: ValueKey<String>('group-info-state-unavailable'),
-              icon: 'warn',
               message: '退出操作当前不可用',
-              reason: '群成员关系服务暂时不可用，本页没有提交任何变更。',
+              detail: '群成员关系服务暂时不可用，本页没有提交任何变更。',
+              maxLines: 2,
+              detailMaxLines: 4,
             )
           else if (_resolveFailure != null)
             LoopErrorState(
@@ -564,11 +571,12 @@ class _Block extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.symmetric(vertical: 12),
-    child: LoopEmpty(
+    child: LoopInlineUnavailable(
       key: ValueKey<String>(blockKey),
-      icon: 'warn',
       message: message,
-      reason: reason,
+      detail: reason,
+      maxLines: 2,
+      detailMaxLines: 4,
     ),
   );
 }

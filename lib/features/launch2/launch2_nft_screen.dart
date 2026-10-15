@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -22,6 +23,7 @@ import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -365,11 +367,12 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
         title: '共识勋章',
         onBack: widget.onBack,
         body: const <Widget>[
-          LoopEmpty(
+          LoopEmptyState(
             key: ValueKey<String>('launch2-nft-invalid-identity'),
-            icon: 'warn',
-            message: '路由中没有可用的项目标识',
-            reason: '没有请求任何数据，也没有回退到其他项目。',
+            illustration: LoopIllustration.launchpad,
+            title: '路由中没有可用的项目标识',
+            message: '没有请求任何数据，也没有回退到其他项目。',
+            compact: true,
           ),
         ],
       );

@@ -18,6 +18,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -135,18 +136,28 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
         onRetry: () => unawaited(controller.refresh()),
       ),
       if (orderingReason != null)
-        LoopEmpty(
+        Column(
           key: const ValueKey<String>('square-community-ordering-unavailable'),
-          icon: 'warn',
-          message: '「${selectedSegment.label}」暂时不可用',
-          reason: communityUnavailableReason(orderingReason),
-          action: LoopButton(
-            key: const ValueKey<String>('square-community-ordering-back'),
-            label: '按成员最多排序',
-            onPressed: () => unawaited(
-              controller.selectSort(CommunityDirectorySort.members),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            LoopInlineUnavailable(
+              message: '「${selectedSegment.label}」暂时不可用',
+              detail: communityUnavailableReason(orderingReason),
+              maxLines: 2,
+              detailMaxLines: 4,
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: LoopButton(
+                key: const ValueKey<String>('square-community-ordering-back'),
+                label: '按成员最多排序',
+                onPressed: () => unawaited(
+                  controller.selectSort(CommunityDirectorySort.members),
+                ),
+              ),
+            ),
+          ],
         )
       else if (state.phase == CommunityViewPhase.empty && joinedOnly)
         LoopEmptyState(

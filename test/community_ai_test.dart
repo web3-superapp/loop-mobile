@@ -22,6 +22,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 const _requestId = '11111111-1111-4111-8111-111111111111';
 const _communityId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 const _answerId = '9c1f0f2e-5a7b-4c3d-8e9f-0a1b2c3d4e5f';
@@ -716,6 +718,13 @@ void main() {
           ),
         );
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
+        if (kind == CommunityFailureKind.unavailable) {
+          // Decision 0183: the unavailable block is one inline line.
+          expect(
+            tester.widget(find.byKey(ValueKey<String>(key))),
+            isA<LoopInlineUnavailable>(),
+          );
+        }
         expect(find.textContaining('COMMUNITY_AI'), findsNothing);
       }
 

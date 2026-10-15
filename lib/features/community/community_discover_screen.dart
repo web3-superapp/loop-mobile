@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -226,20 +227,32 @@ class _CommunityDiscoverScreenState
           if (orderingReason != null)
             // The page answered and the order did not: an empty list here
             // would say 「没有社区」, which is not what was measured.
-            LoopEmpty(
+            Column(
               key: const ValueKey<String>(
                 'community-discover-ordering-unavailable',
               ),
-              icon: 'warn',
-              message: '「${selectedSegment.label}」暂时不可用',
-              reason: communityUnavailableReason(orderingReason),
-              action: LoopButton(
-                key: const ValueKey<String>('community-discover-ordering-back'),
-                label: '按成员最多排序',
-                onPressed: () => unawaited(
-                  controller.selectSort(CommunityDirectorySort.members),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                LoopInlineUnavailable(
+                  message: '「${selectedSegment.label}」暂时不可用',
+                  detail: communityUnavailableReason(orderingReason),
+                  maxLines: 2,
+                  detailMaxLines: 4,
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: LoopButton(
+                    key: const ValueKey<String>(
+                      'community-discover-ordering-back',
+                    ),
+                    label: '按成员最多排序',
+                    onPressed: () => unawaited(
+                      controller.selectSort(CommunityDirectorySort.members),
+                    ),
+                  ),
+                ),
+              ],
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(

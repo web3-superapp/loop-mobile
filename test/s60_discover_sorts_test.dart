@@ -19,6 +19,8 @@ import 'support/community_test_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 /// S60 · decision 0061: the two discover orders that name their source, and
 /// the settled run that admits which kinds of balance it counted.
 ///
@@ -542,6 +544,16 @@ void main() {
       expect(
         find.byKey(
           const ValueKey<String>('community-discover-ordering-unavailable'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('community-discover-ordering-unavailable'),
+          ),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
         ),
         findsOneWidget,
       );

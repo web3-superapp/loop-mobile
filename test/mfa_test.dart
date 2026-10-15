@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/integrations/privy/privy_mfa_gateway.dart';
 
@@ -683,6 +684,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('passkey-sheet-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('passkey-sheet-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
 

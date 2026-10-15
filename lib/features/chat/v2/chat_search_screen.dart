@@ -2,15 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
-import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -434,11 +437,12 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
   }) {
     if (!connected) {
       return const SingleChildScrollView(
-        child: LoopEmpty(
+        child: LoopInlineUnavailable(
           key: ValueKey<String>('chat-search-not-connected'),
-          icon: 'warn',
           message: '聊天搜索当前不可用',
-          reason: '聊天搜索暂时不可用，这一页没有发起任何请求。',
+          detail: '聊天搜索暂时不可用，这一页没有发起任何请求。',
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       );
     }
@@ -471,20 +475,23 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     }
     if (hits == null) {
       return const SingleChildScrollView(
-        child: LoopEmpty(
+        child: LoopEmptyState(
           key: ValueKey<String>('chat-search-idle'),
-          icon: 'search',
-          message: '输入关键词开始搜索',
-          reason: '至少输入 2 个字符。结果只来自你已加入的会话。',
+          illustration: LoopIllustration.search,
+          title: '输入关键词开始搜索',
+          message: '至少输入 2 个字符。结果只来自你已加入的会话。',
+          compact: true,
         ),
       );
     }
     if (hits.isEmpty) {
       return const SingleChildScrollView(
-        child: LoopEmpty(
+        child: LoopEmptyState(
           key: ValueKey<String>('chat-search-empty'),
-          message: '没有匹配的消息',
-          reason: '换一个关键词，或切换到更大的范围再试。',
+          illustration: LoopIllustration.search,
+          title: '没有匹配的消息',
+          message: '换一个关键词，或切换到更大的范围再试。',
+          compact: true,
         ),
       );
     }

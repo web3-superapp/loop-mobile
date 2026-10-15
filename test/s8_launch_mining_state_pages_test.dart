@@ -14,6 +14,8 @@ import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 /// Loading / Empty / Error / Offline for the ten Launch and Mining pages that
 /// render their read states through `LaunchStateBlock`.
 ///
@@ -552,6 +554,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('launch-trade-no-round')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('launch-trade-no-round')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(

@@ -8,6 +8,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 /// The Launch desk's (i) used to be a dead end.
 ///
 /// It pushes `launch-rounds` without a launch id, and that page reported the
@@ -57,6 +59,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('launch-rounds-no-subject')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('launch-rounds-no-subject')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(find.textContaining('目标不存在'), findsNothing);

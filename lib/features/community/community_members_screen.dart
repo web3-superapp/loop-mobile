@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
@@ -13,13 +14,13 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_flat.dart';
-import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
-import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The UI copy for one server-published governance command.
@@ -310,11 +311,12 @@ class _CommunityMembersScreenState
                     : _directoryHeading(state.filter, counts),
               ),
             if (id == null)
-              const LoopEmpty(
+              const LoopInlineUnavailable(
                 key: ValueKey<String>('community-members-missing-id'),
-                icon: 'warn',
                 message: '缺少社区标识',
-                reason: '请从社区档案进入，本页不会猜测要打开哪个社区。',
+                detail: '请从社区档案进入，本页不会猜测要打开哪个社区。',
+                maxLines: 2,
+                detailMaxLines: 4,
               )
             else if (state.phase != CommunityViewPhase.ready)
               CommunityStateBlock(

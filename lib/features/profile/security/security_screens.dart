@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart'
@@ -19,7 +20,9 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -667,10 +670,12 @@ class _SecurityEventsBlock extends StatelessWidget {
           fact: fact,
         ),
       LoopSecurityEventsAvailable(items: final items) when items.isEmpty =>
-        const LoopEmpty(
+        const LoopEmptyState(
           key: ValueKey<String>('security-events-empty'),
-          message: '还没有安全事件',
-          reason: '目前只有"撤销其他设备"会记录一条安全事件。',
+          illustration: LoopIllustration.history,
+          title: '还没有安全事件',
+          message: '目前只有"撤销其他设备"会记录一条安全事件。',
+          compact: true,
         ),
       LoopSecurityEventsAvailable(items: final items) => LoopRecordGroup(
         rows: <LoopRecordRow>[
@@ -816,10 +821,12 @@ class _DeviceManagementScreenState
             ),
           const LoopLabel('会话'),
           if (directory.devices.isEmpty)
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('devices-state-empty'),
-              message: '还没有设备会话',
-              reason: '这个账号还没有完成过一次设备初始化。',
+              illustration: LoopIllustration.profile,
+              title: '还没有设备会话',
+              message: '这个账号还没有完成过一次设备初始化。',
+              compact: true,
             )
           else
             LoopRecordGroup(
@@ -1214,11 +1221,13 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
         // (audit 2026-09-21 §J.8). No count: there is no guardian resource to
         // count, so 「0 / 3」 would be a figure with no source.
         const LoopLabel('守护人'),
-        const LoopEmpty(
+        const LoopInlineUnavailable(
           key: ValueKey<String>('social-recovery-no-guardians'),
           icon: 'user',
           message: '还没有添加守护人',
-          reason: '守护人还没有开放，这里不会列出任何人。',
+          detail: '守护人还没有开放，这里不会列出任何人。',
+          maxLines: 2,
+          detailMaxLines: 4,
         ),
       ],
       // The prototype puts 添加守护人 straight under the empty frame; pinned,

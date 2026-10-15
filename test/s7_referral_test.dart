@@ -10,6 +10,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 /// The referral page reads `GET /v2/referral`. It shows an invite code, counts
 /// grouped by the server's validation state, and an unavailable boost — never
 /// a commission, a payout or a downline income.
@@ -155,6 +157,14 @@ void main() {
         find.byKey(const ValueKey<String>('referral-claim-closed')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('referral-claim-closed')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an unactivated account has no window at all', (tester) async {
@@ -178,6 +188,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('referral-claim-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('referral-claim-unavailable')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(find.textContaining('需要先完成 LOOP ID 激活'), findsOneWidget);

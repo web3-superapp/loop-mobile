@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 /// One extra command a caller offers on the public-profile sheet.
@@ -311,12 +312,13 @@ class _PublicProfileSheetState<T extends Object>
           ),
           const SizedBox(height: 16),
           if (!canFollow)
-            const LoopEmpty(
+            const LoopInlineUnavailable(
               key: ValueKey<String>('public-profile-not-targetable'),
-              icon: 'warn',
               message: '这个成员没有可用的公开资料',
-              reason: '这个账号没有公开资料，不能关注，也不能进行其他操作。',
-              margin: EdgeInsets.zero,
+              detail: '这个账号没有公开资料，不能关注，也不能进行其他操作。',
+              maxLines: 2,
+              detailMaxLines: 4,
+              padding: EdgeInsets.zero,
             )
           else ...<Widget>[
             if (following == null)

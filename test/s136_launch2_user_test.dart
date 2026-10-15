@@ -30,6 +30,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/launch2_fixtures.dart';
@@ -947,6 +948,14 @@ void main() {
         launch2: idle,
       );
       expect(_key('launch2-invalid-identity'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch2-invalid-identity'),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
 
       await _pump(

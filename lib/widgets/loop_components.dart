@@ -2379,7 +2379,7 @@ class LoopButton extends StatelessWidget {
     // 自选管理's 保存 was read as "disabled-looking" while it was disabled.
     final paintPrimary = primary && enabled;
     // Decision 0126: inside a flat page a block button is decision 0127's
-    // `LoopWideButton` — 52 tall, fully rounded, flat Lime, 16 label — so
+    // wide form button — 52 tall, fully rounded, flat Lime, 16 label — so
     // the two second-level passes share one form button.
     final wide = block && LoopFlat.of(context);
     final radius = wide ? LoopRadius.wideButton : LoopRadius.button;
@@ -3434,108 +3434,13 @@ class LoopUpdatingBadge extends StatelessWidget {
 // Empty and recovery states (.empty + chapter 9 contract)
 // ---------------------------------------------------------------------------
 
-/// `.empty` (S16-C): an inline strip, not a framed panel.
-///
-/// A missing collection is a sentence, not a room. The block is one 17px
-/// Text3 glyph, one line of copy, an optional second line and an optional
-/// action; its height follows its content, it draws no border and it claims
-/// no vertical space it does not use. The 190 call sites keep their existing
-/// arguments and the `loop-empty` key: only the presentation changed.
-///
-/// Whole-page unavailability is a different job — use [LoopPageBlock].
-class LoopEmpty extends StatelessWidget {
-  const LoopEmpty({
-    required this.message,
-    super.key,
-    this.icon = 'info',
-    this.reason,
-    this.action,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
-    this.iconSize = compactIconSize,
-    this.padding = const EdgeInsets.symmetric(vertical: 10),
-  });
-
-  /// `.ico-sm` — the inline glyph size for a state strip.
-  static const double compactIconSize = 17;
-
-  final String message;
-  final String icon;
-
-  /// Why the collection is empty (never "0" for figures — use `—`).
-  final String? reason;
-  final Widget? action;
-  final EdgeInsets margin;
-
-  /// Kept inside the prototype's inline glyph range (`.ico-xs`..`.ico`).
-  final double iconSize;
-
-  /// Inner padding. It stays small on purpose; a state strip is a line of
-  /// copy, so nothing here reserves a panel's worth of space.
-  final EdgeInsets padding;
-
-  @override
-  Widget build(BuildContext context) {
-    assert(
-      iconSize >= 15 && iconSize <= 20,
-      'LoopEmpty keeps the inline glyph between 15 and 20 px.',
-    );
-    // The strip is used inside Chalk cards as well as on the Ink page, and
-    // the caption default is Chalk at 58% — unreadable on Chalk. Both the
-    // glyph and the copy take the ground's own ink at that same weight.
-    final auxiliary = LoopGround.auxiliaryOf(context);
-    final copy = LoopTypography.caption(11, color: auxiliary);
-    return Padding(
-      padding: margin,
-      child: Semantics(
-        container: true,
-        child: Padding(
-          key: const ValueKey<String>('loop-empty'),
-          padding: padding,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Padding(
-                // Optical alignment with the first text line.
-                padding: const EdgeInsets.only(top: 1),
-                child: LoopIcon(
-                  icon,
-                  size: iconSize,
-                  color: auxiliary,
-                  semanticLabel: message,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(message, style: copy),
-                    if (reason != null) ...<Widget>[
-                      const SizedBox(height: 2),
-                      Text(reason!, style: copy),
-                    ],
-                    if (action != null) ...<Widget>[
-                      const SizedBox(height: 10),
-                      Align(alignment: Alignment.centerLeft, child: action!),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The whole-page counterpart of [LoopEmpty].
+/// The whole-page unavailable block.
 ///
 /// A page that has nothing to show is the one place that earns the room: the
 /// brand mark, one heading, one explanation and at most one next step,
 /// centred in the space the page already owns. Blocks inside a page never
-/// use it — they use [LoopEmpty].
+/// use it — they use `LoopEmptyState(compact: true)` or
+/// `LoopInlineUnavailable` (decision 0183).
 class LoopPageBlock extends StatefulWidget {
   const LoopPageBlock({
     required this.title,

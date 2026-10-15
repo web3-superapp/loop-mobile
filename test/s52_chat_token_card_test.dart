@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/chat/token_card/chat_token_detection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 import 'support/s5_fixtures.dart';
@@ -407,6 +408,13 @@ void main() {
         find.byKey(ValueKey<String>('chat-token-card-unlisted-$_address')),
         findsOneWidget,
       );
+      // Decision 0183: an unlisted contract is one weak line, not a strip.
+      expect(
+        tester.widget(
+          find.byKey(ValueKey<String>('chat-token-card-unlisted-$_address')),
+        ),
+        isA<LoopInlineUnavailable>(),
+      );
       expect(
         find.text('未收录的代币 · ${loopChatTokenShortAddress(_address)}'),
         findsOneWidget,
@@ -476,6 +484,12 @@ void main() {
       expect(
         find.byKey(ValueKey<String>('chat-token-card-offline-$_address')),
         findsOneWidget,
+      );
+      expect(
+        tester.widget(
+          find.byKey(ValueKey<String>('chat-token-card-offline-$_address')),
+        ),
+        isA<LoopInlineUnavailable>(),
       );
       expect(find.text('重试'), findsOneWidget);
     });

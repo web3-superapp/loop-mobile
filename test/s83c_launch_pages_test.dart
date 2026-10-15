@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
 import 'support/s7_fixtures.dart';
@@ -520,6 +521,14 @@ void main() {
         ),
       );
       expect(_key('launch-history-indexed-empty'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch-history-indexed-empty'),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('45,000,100'), findsWidgets);
     });
   });

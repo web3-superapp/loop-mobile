@@ -31,6 +31,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
@@ -128,6 +130,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('community-chat-missing-id')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('community-chat-missing-id')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });
@@ -261,6 +271,14 @@ void main() {
         find.byKey(const ValueKey<String>('dm-missing-target')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('dm-missing-target')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a non-friend target explains the message request first', (
@@ -278,6 +296,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('dm-friendship-required')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('dm-friendship-required')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(
@@ -521,6 +547,14 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('dm-operator-required')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey<String>('dm-operator-required-notice')),
         findsOneWidget,
       );
@@ -547,6 +581,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('group-missing-cid')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('group-missing-cid')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });
@@ -647,6 +689,14 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('chat-search-not-connected')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey<String>('chat-search-results')),
         findsNothing,
       );
@@ -686,6 +736,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('chat-forward-missing-source')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('chat-forward-missing-source')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });
@@ -746,6 +804,14 @@ void main() {
       // Nothing is selected yet, so nothing may be rendered.
       expect(
         find.byKey(const ValueKey<String>('chat-merge-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('chat-merge-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });
@@ -875,6 +941,14 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-evidence-pending')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('voiceroom-evidence-pending')),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('语音房还在验证中'), findsOneWidget);
       // The page must not read the room while the evidence is missing.
       expect(voice.commands, isEmpty);
@@ -893,6 +967,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('community-state-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('community-state-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
       expect(find.text('PEPE 语音房'), findsNothing);
@@ -1011,6 +1093,16 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('voiceroom-step-down-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('voiceroom-step-down-unavailable'),
+          ),
+          matching: find.byType(LoopInlineUnavailable),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });
@@ -1593,6 +1685,14 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('voiceroom-queue-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('voiceroom-queue-empty')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
 

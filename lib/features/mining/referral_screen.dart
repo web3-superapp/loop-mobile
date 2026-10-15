@@ -12,10 +12,11 @@ import 'package:loop_mobile/features/mining/referral_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_copy.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// `referral` · my invite code and relationship counts.
 ///
@@ -436,12 +437,15 @@ class _BindingBlock extends StatelessWidget {
           )
         else
           switch (window) {
-            ReferralClaimWindowUnavailable(:final reasonCode) => LoopEmpty(
-              key: const ValueKey<String>('referral-claim-unavailable'),
-              icon: 'id',
-              message: '还不能绑定邀请码',
-              reason: launchReasonCodeText(reasonCode),
-            ),
+            ReferralClaimWindowUnavailable(:final reasonCode) =>
+              LoopInlineUnavailable(
+                key: const ValueKey<String>('referral-claim-unavailable'),
+                icon: 'id',
+                message: '还不能绑定邀请码',
+                detail: launchReasonCodeText(reasonCode),
+                maxLines: 2,
+                detailMaxLines: 4,
+              ),
             ReferralClaimWindowTimed(:final isOpen, :final closesAt) =>
               isOpen
                   ? Column(
@@ -473,13 +477,15 @@ class _BindingBlock extends StatelessWidget {
                         ),
                       ],
                     )
-                  : LoopEmpty(
+                  : LoopInlineUnavailable(
                       key: const ValueKey<String>('referral-claim-closed'),
                       icon: 'clock',
                       message: '绑定窗口已关闭',
-                      reason:
+                      detail:
                           '邀请码只能在账号激活后的窗口期内绑定，本账号的窗口已于 '
                           '${launchTimestampLabel(closesAt)} 结束。',
+                      maxLines: 2,
+                      detailMaxLines: 4,
                     ),
           },
         if (claimShapeInvalid)

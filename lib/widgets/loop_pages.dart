@@ -273,8 +273,8 @@ class LoopFocusPage extends StatelessWidget {
   /// refusal). It takes the room the body, the folio and the pinned action
   /// would have used; only the topbar stays, so the user can leave.
   ///
-  /// A block inside a page that did load is not this — that is a `LoopEmpty`
-  /// strip — and a page that is still reading is not this either, that is a
+  /// A block inside a page that did load is not this — that is a compact
+  /// `LoopEmptyState` or a `LoopInlineUnavailable` line — and a page that is still reading is not this either, that is a
   /// `LoopSkeleton`.
   final Widget? block;
 

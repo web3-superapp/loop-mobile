@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -82,10 +84,12 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
             destination == null ? '尚未发送验证码，请先回到上一步输入邮箱。' : '已发送至 $destination',
           ),
           if (destination == null)
-            const LoopEmpty(
+            const LoopEmptyState(
               key: ValueKey<String>('privy-otp-no-destination'),
-              message: '没有待验证的邮箱',
-              reason: '返回登录页重新输入邮箱后再来这一步。',
+              illustration: LoopIllustration.profile,
+              title: '没有待验证的邮箱',
+              message: '返回登录页重新输入邮箱后再来这一步。',
+              compact: true,
             )
           else ...<Widget>[
             _OtpGrid(

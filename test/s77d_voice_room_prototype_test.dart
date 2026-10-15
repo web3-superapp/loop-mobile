@@ -19,6 +19,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
 
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
+
 LoopFolioPrimary _folio(WidgetTester tester) =>
     tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary));
 
@@ -239,6 +241,14 @@ void main() {
       expect(find.textContaining('进入前确认'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-ended')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('voiceroom-ended')),
+          matching: find.byType(LoopEmptyState),
+          matchRoot: true,
+        ),
         findsOneWidget,
       );
     });

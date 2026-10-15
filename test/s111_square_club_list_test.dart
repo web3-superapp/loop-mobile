@@ -9,6 +9,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+
 const _otherId = '4b96a75e-6828-4a6b-8c1d-2e3f4a5b6c7d';
 const _assetId = 'eip155:56:0x55d398326f99059ff775485246999027b3197955';
 
@@ -610,6 +612,41 @@ void main() {
         throwsA(anything),
       );
     });
+  });
+
+  testWidgets('an order the server could not apply is one inline line', (
+    tester,
+  ) async {
+    final gateway = FakeCommunityGateway(
+      directoryPage: const CommunityDirectoryPage(
+        items: <CommunitySummary>[],
+        nextCursor: null,
+        recommendation: CommunityRecommendation(
+          recommendationId: '22222222-2222-4222-8222-222222222222',
+          ruleVersion: 'rule:verified-members-v1',
+        ),
+        ordering: CommunityOrderingUnavailable(
+          sort: CommunityDirectorySort.members,
+          reasonCode: 'COMMUNITY_ACTIVITY_NOT_OBSERVED',
+        ),
+      ),
+    );
+    await _pump(tester, gateway);
+
+    // Decision 0183: the line, and under it the order the page can apply.
+    final block = find.byKey(
+      const ValueKey<String>('square-community-ordering-unavailable'),
+    );
+    expect(block, findsOneWidget);
+    expect(
+      find.descendant(of: block, matching: find.byType(LoopInlineUnavailable)),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('square-community-ordering-back')),
+      findsOneWidget,
+    );
+    await _drain(tester);
   });
 }
 

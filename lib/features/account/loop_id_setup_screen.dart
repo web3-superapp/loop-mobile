@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_controller.dart';
@@ -11,6 +12,7 @@ import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -105,11 +107,13 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
           else if (state.resource == null && state.failureKind == null)
             // Nothing has been read yet and nothing failed: an initial state is
             // not an error.
-            LoopEmpty(
+            LoopEmptyState(
               key: const ValueKey<String>('loop-id-empty'),
-              message: '还没有读取到你的 LOOP ID',
-              reason: '账号资料尚未载入。',
+              illustration: LoopIllustration.profile,
+              title: '还没有读取到你的 LOOP ID',
+              message: '账号资料尚未载入。',
               action: LoopButton(label: '载入', onPressed: controller.reload),
+              compact: true,
             )
           else if (state.resource == null)
             LoopErrorState(
