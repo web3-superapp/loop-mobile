@@ -1265,10 +1265,7 @@ class LoopRecordCard extends StatelessWidget {
     this.margin = defaultMargin,
   });
 
-  /// `.record-card{padding:15px}`.
-  static const EdgeInsets defaultPadding = EdgeInsets.all(15);
-
-  /// The page gutter and the gap under the card in a vertical stack.
+  /// The page gutter on both sides and the card gap below.
   static const EdgeInsets defaultMargin = EdgeInsets.fromLTRB(
     16,
     0,
@@ -1276,9 +1273,8 @@ class LoopRecordCard extends StatelessWidget {
     LoopSpacing.card,
   );
 
-  /// Where the card sits. A card in a horizontal strip (search's 「最近搜索」,
-  /// decision 0178) passes zero and lets the strip space it.
-  final EdgeInsets margin;
+  /// `.record-card{padding:15px}`.
+  static const EdgeInsets defaultPadding = EdgeInsets.all(15);
 
   final Widget child;
   final VoidCallback? onTap;
@@ -1287,6 +1283,10 @@ class LoopRecordCard extends StatelessWidget {
   /// reorderable list whose hairlines meet the border) passes zero and lets
   /// each row pad itself (decision 0171).
   final EdgeInsets padding;
+
+  /// The space around the card. A card laid out by its parent (a sideways
+  /// strip of cards, decisions 0176 and 0178) passes zero.
+  final EdgeInsets margin;
 
   @override
   Widget build(BuildContext context) {

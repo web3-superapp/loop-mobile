@@ -27,6 +27,7 @@ import 'package:loop_mobile/core/cache/loop_owner_face.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
+import 'package:loop_mobile/features/meme/meme_best_trades.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart'; // S136
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_gateway.dart'; // S168
@@ -74,6 +75,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_best_trades_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining_rewards/loop_v2_mining_rewards_api.dart'; // S138
 // S135 (decision 0138): MEME v2 project side.
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
@@ -333,6 +335,10 @@ Future<void> main() async {
         // its Dio client, client metadata and authenticated session all exist.
         memeGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MemeGatewayProvider),
+        ),
+        // S187-3 (decision 0176): 每周最佳交易 on the MEME Tab.
+        memeBestTradesGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2MemeBestTradesGatewayProvider),
         ),
         // S135 (decision 0138): the MEME v2 project side — the Hooks routes
         // and the EIP-712 signer. Both fail closed until their inputs exist.

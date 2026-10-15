@@ -14,6 +14,9 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
+import 'package:loop_mobile/features/meme/meme_best_trades.dart';
+import 'package:loop_mobile/features/meme/meme_home_top.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
@@ -49,9 +52,22 @@ String memeCapabilityText(LoopCapabilityProjection capability) {
 /// reader scrolls. An empty chip says so and offers the create entry; a
 /// closed capability is one inline line, never an empty list.
 class MemeLaunchpadSegment extends ConsumerStatefulWidget {
-  const MemeLaunchpadSegment({required this.onNavigate, super.key});
+  const MemeLaunchpadSegment({
+    required this.onNavigate,
+    super.key,
+    this.onOpenGraduated,
+    this.toolsInTopbar = false,
+  });
 
   final void Function(String location) onNavigate;
+
+  /// Decision 0176: the 「已毕业」 tab over the list opens the MEME Tab's own
+  /// 已毕业 segment. `null` (no such segment) picks the classic 已毕业 chip.
+  final VoidCallback? onOpenGraduated;
+
+  /// Decision 0176: the search and create entries sit in the Tab's top bar
+  /// (the 经典 segment of the v2 Tab), so the segment draws no tool line.
+  final bool toolsInTopbar;
 
   @override
   ConsumerState<MemeLaunchpadSegment> createState() =>
@@ -80,12 +96,24 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
       title: '发射台',
       embedded: true,
       tabPage: true,
-      onRefresh: blocked ? null : () => ref.read(provider.notifier).reload(),
+      onRefresh: blocked ? null : _refresh,
       sections: <Widget>[
-        _LaunchpadTools(
-          createEnabled: !blocked,
-          onSearch: () => widget.onNavigate('/search'),
-          onCreate: () => widget.onNavigate(MemeRoute.createPath),
+        if (!widget.toolsInTopbar)
+          _LaunchpadTools(
+            createEnabled: !blocked,
+            onSearch: () => widget.onNavigate('/search'),
+            onCreate: () => widget.onNavigate(MemeRoute.createPath),
+          ),
+        // Decision 0176 (design 35 首页): balance + 充值, 每周最佳交易, the
+        // three tabs, then the chips and the list as before.
+        MemeBalanceBlock(onNavigate: widget.onNavigate),
+        if (!blocked) MemeBestTradesStrip(onNavigate: widget.onNavigate),
+        MemeHomeTabs(
+          selectedIndex:
+              widget.onOpenGraduated == null && _tab == MemeListTab.graduated
+              ? MemeHomeTabs.graduated
+              : MemeHomeTabs.tokens,
+          onSelected: _selectHomeTab,
         ),
         LoopSegBar(
           key: const ValueKey<String>('meme-list-chips'),
@@ -110,6 +138,33 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           ..._rows(state!),
       ],
     );
+  }
+
+  Future<void> _refresh() async {
+    final now = ref.read(loopReadClockProvider)();
+    await Future.wait(<Future<void>>[
+      ref.read(memeListControllerProvider(_tab).notifier).reload(),
+      ref.read(memeBestTradesControllerProvider.notifier).refreshWithList(now),
+    ]);
+  }
+
+  void _selectHomeTab(int index) {
+    switch (index) {
+      case MemeHomeTabs.watchlist:
+        // 行情 opens on its 自选 list.
+        widget.onNavigate('/market');
+      case MemeHomeTabs.graduated:
+        final open = widget.onOpenGraduated;
+        if (open != null) {
+          open();
+        } else {
+          setState(() => _tab = MemeListTab.graduated);
+        }
+      default:
+        if (widget.onOpenGraduated == null && _tab == MemeListTab.graduated) {
+          setState(() => _tab = MemeListTab.fresh);
+        }
+    }
   }
 
   List<Widget> _rows(LoopChainResourceState<MemeTokenPage> state) {
@@ -162,7 +217,6 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
             key: const ValueKey<String>('meme-empty-create'),
             label: '创建第一个',
             icon: 'plus',
-            primary: true,
             onPressed: () => widget.onNavigate(MemeRoute.createPath),
           ),
         ),
@@ -350,11 +404,11 @@ class _LaunchpadTools extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
+        // Decision 0176: 「充值」 is the screen's one full-Lime body.
         LoopButton(
           key: const ValueKey<String>('meme-create-entry'),
           label: '创建代币',
           icon: 'plus',
-          primary: true,
           onPressed: createEnabled ? onCreate : null,
         ),
       ],

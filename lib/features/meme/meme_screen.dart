@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_launchpad.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 
 /// `meme` · MEME (decision 0110; MEME curve launchpad, decision 0120).
@@ -172,6 +173,36 @@ class MemeScreen extends ConsumerWidget {
                 classicCreatePath: MemeRoute.createPath,
               ),
             ]
+          // Decision 0176 (design 35 首页): 经典's search and create sit in
+          // the bar, as the design's top bar carries its search.
+          : index == 1
+          ? <Widget>[
+              Consumer(
+                builder: (context, ref, _) {
+                  final blocked = memeReadsBlocked(ref);
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      LoopIconButton(
+                        key: const ValueKey<String>('meme-search-entry'),
+                        icon: 'search',
+                        label: '搜索代币',
+                        onPressed: () => open('/search'),
+                      ),
+                      const SizedBox(width: 6),
+                      LoopIconButton(
+                        key: const ValueKey<String>('meme-create-entry'),
+                        icon: 'plus',
+                        label: '创建代币',
+                        onPressed: blocked
+                            ? null
+                            : () => open(MemeRoute.createPath),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ]
           : const <Widget>[],
       updating: (ref, index) => switch (index) {
         0 => ref.watch(
@@ -195,7 +226,11 @@ class MemeScreen extends ConsumerWidget {
           onEmptyAction: () => select(1),
           onOpenGraduated: () => select(2),
         ),
-        1 => MemeLaunchpadSegment(onNavigate: open),
+        1 => MemeLaunchpadSegment(
+          onNavigate: open,
+          onOpenGraduated: () => select(2),
+          toolsInTopbar: true,
+        ),
         _ when ido && index == idoIndex => LaunchScreen(
           embedded: true,
           onOpenLaunch: onOpenLaunch,
