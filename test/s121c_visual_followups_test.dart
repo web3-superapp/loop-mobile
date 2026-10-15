@@ -124,19 +124,15 @@ void main() {
     });
   });
 
-  group('2 · launchpad trading pill', () {
-    testWidgets('a 4px Lime bar under the percentage; graduated unchanged', (
+  group('2 · launchpad row progress (decision 0173)', () {
+    testWidgets('a 56 px bar beside the Lime percentage; graduated badge', (
       tester,
     ) async {
       await _pump(tester, MemeTokenCard(row: _meme()));
       final label = tester.getRect(key('meme-progress-label'));
-      final bar = tester.getRect(key('meme-progress-fill'));
-      expect(bar.height, 4);
-      expect(bar.top, greaterThan(label.bottom));
-      final fill = tester.widget<FractionallySizedBox>(
-        key('meme-progress-fill'),
-      );
-      expect((fill.child! as ColoredBox).color, LoopColors.lime);
+      final bar = tester.getRect(key('meme-row-progress'));
+      expect(bar.size, const Size(56, 6));
+      expect(label.left, greaterThan(bar.right));
       expect(find.text('33%'), findsOneWidget);
 
       await _pump(
@@ -144,7 +140,7 @@ void main() {
         MemeTokenCard(row: _meme(status: 'graduated', progressBps: 10000)),
       );
       expect(key('meme-graduated-tag'), findsOneWidget);
-      expect(key('meme-progress-fill'), findsNothing);
+      expect(key('meme-row-progress'), findsNothing);
       expect(find.text('已毕业'), findsOneWidget);
     });
 

@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
@@ -45,14 +46,18 @@ abstract final class LoopV2MemeCodec {
     'priceUsd1',
     'marketCapUsd1',
     'change1hPct',
-    'volume24hUsd1',
     'holderCount',
     'tradeCount',
-    'createdAt',
     'graduatedAt',
     'pool',
     'priceSource',
   };
+
+  /// Decision 0173 (loop-api S187-api-a): the list row's volume and launch
+  /// time. Read leniently — absent, `null` or malformed is `null`, never a
+  /// bad row — so a server from before them, or one that cannot compute
+  /// them, still lists every token.
+  static const rowListingKeys = <String>{'volume24hUsd1', 'createdAt'};
 
   static const detailKeys = <String>{
     ...rowKeys,
@@ -332,15 +337,32 @@ abstract final class LoopV2MemeCodec {
       priceUsd1: priceUsd1,
       marketCapUsd1: marketCapUsd1,
       change1hPct: change,
-      volume24hUsd1: price(map, 'volume24hUsd1'),
+      volume24hUsd1: _lenient(() {
+        final volume = optionalPrice(map, 'volume24hUsd1');
+        // A volume is never negative; one that is is not a figure to print.
+        return volume == null || volume < Decimal.zero ? null : volume;
+      }),
       holderCount: LoopV2ChainCodec.requireInt(map, 'holderCount'),
       tradeCount: LoopV2ChainCodec.requireInt(map, 'tradeCount'),
-      createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
+      createdAt: _lenient(
+        () => LoopV2ChainCodec.optionalTimestamp(map, 'createdAt'),
+      ),
       graduatedAt: LoopV2ChainCodec.optionalTimestamp(map, 'graduatedAt'),
       pool: optionalAddress(map, 'pool'),
       priceSource: provenance,
       quoteUnavailableReason: priceUsd1 == null ? unavailableReason : null,
     );
+  }
+
+  /// [read], or `null` when the value it reads is malformed.
+  static T? _lenient<T>(T? Function() read) {
+    try {
+      return read();
+    } on LoopBackendFailure {
+      return null;
+    } on FormatException {
+      return null;
+    }
   }
 
   static MemeTokenRow row(
@@ -349,6 +371,7 @@ abstract final class LoopV2MemeCodec {
   }) => _row(
     LoopV2Contract.strictMapWithOptional(raw, rowKeys, const <String>{
       'quoteUnavailable',
+      ...rowListingKeys,
     }),
     mediaUrl: mediaUrl,
   );
@@ -449,6 +472,7 @@ abstract final class LoopV2MemeCodec {
         'quoteUnavailable',
         'viewerUnavailable',
         ...detailListingKeys,
+        ...rowListingKeys,
       },
     );
     final links = LoopV2Contract.strictMap(map['links'], const <String>{

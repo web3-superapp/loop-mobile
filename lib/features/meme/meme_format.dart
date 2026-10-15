@@ -40,6 +40,18 @@ String memePriceLabel(Decimal price) => marketRowPrice(price);
 /// A market cap or a volume in a summary slot (`$9,891`, `$1.2M`).
 String memeCapLabel(Decimal value) => loopFormatCompactFigure(value);
 
+/// How long a token has been live, in the list row's words (decision 0173,
+/// design 35 列表 A): 「11 分钟」, 「12 小时」, 「1 天」. Under a minute — or a
+/// launch time ahead of [now], a clock that disagrees — is 「刚刚」.
+String memeAgeLabel(DateTime createdAt, {DateTime? now}) {
+  final reference = (now ?? DateTime.now()).toUtc();
+  final age = reference.difference(createdAt.toUtc());
+  if (age.inMinutes < 1) return '刚刚';
+  if (age.inHours < 1) return '${age.inMinutes} 分钟';
+  if (age.inDays < 1) return '${age.inHours} 小时';
+  return '${age.inDays} 天';
+}
+
 /// Basis points as a percentage with up to two decimals (`33.27%`, `1%`).
 String memeBpsLabel(int bps) {
   final value = Decimal.fromInt(bps).shift(-2);

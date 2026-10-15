@@ -89,8 +89,8 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
         ),
         LoopSegBar(
           key: const ValueKey<String>('meme-list-chips'),
+          // Design 35 列表 A: one line of plain quiet segs, no glyphs.
           labels: <String>[for (final tab in MemeListTab.values) tab.label],
-          icons: <String>[for (final tab in MemeListTab.values) tab.icon],
           selectedIndex: MemeListTab.values.indexOf(_tab),
           onSelected: (index) =>
               setState(() => _tab = MemeListTab.values[index]),
@@ -123,7 +123,9 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           type: LoopSkeletonType.priceRow,
           rows: 6,
           rowHeight: memeCardHeight,
-          leadingSize: memeCardLogoSize,
+          leadingSize: memeRowLogoSize,
+          leadingRadius: LoopRadius.tileValue,
+          trailingPill: false,
         ),
       ];
     }
@@ -169,9 +171,13 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
     final cursor = page.nextCursor;
     return <Widget>[
       const SizedBox(height: 2),
-      for (final row in page.items)
+      for (final (index, row) in page.items.indexed)
         MemeTokenCard(
           row: row,
+          // Ages are read against the page's own observation, so a list and
+          // its source line tell one moment.
+          now: page.observedAt,
+          divider: index < page.items.length - 1,
           onTap: () => widget.onNavigate(MemeRoute.token(row.memeTokenId)),
         ),
       if (controller.appendFailed && !state.busy)
@@ -192,7 +198,9 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
             type: LoopSkeletonType.priceRow,
             rows: 2,
             rowHeight: memeCardHeight,
-            leadingSize: memeCardLogoSize,
+            leadingSize: memeRowLogoSize,
+            leadingRadius: LoopRadius.tileValue,
+            trailingPill: false,
           ),
       ] else
         // The list ends on space and its source line, not on 「没有更多」.

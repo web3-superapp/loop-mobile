@@ -377,16 +377,17 @@ void main() {
       await _pump(tester, MemeScreen(onNavigate: opened.add), meme: meme);
 
       expect(meme.listCalls.first, (MemeListTab.fresh, null));
-      // Decision 0122: the OKX row — ticker over 市值, price over its 1h
-      // move, the progress pill on the right.
+      // Decision 0173 (design 35 列表 A): ticker + age over 交易量 · 名称,
+      // 市值 over the 56 px bar on the right.
       expect(find.text('FROG'), findsOneWidget);
+      expect(find.text('3 小时'), findsOneWidget);
+      expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
       expect(find.text('市值 \$9,891'), findsOneWidget);
-      expect(_key('meme-row-price'), findsOneWidget);
-      expect(find.text('+76.89% 1h'), findsOneWidget);
+      expect(_key('meme-row-price'), findsNothing);
       // The 「快打满」 strip shows the server's graduating list above it.
       expect(_key('meme-graduating-strip'), findsOneWidget);
       expect(_key('meme-hero-$memeTokenIdA'), findsOneWidget);
-      expect(_key('meme-progress-fill'), findsOneWidget);
+      expect(_key('meme-row-progress'), findsOneWidget);
       expect(_key('meme-graduated-tag'), findsNothing);
       expect(_key('meme-list-provenance'), findsOneWidget);
 
@@ -404,7 +405,7 @@ void main() {
       // 已毕业 replaces the progress bar with its tag, and an unpriced
       // graduated token says why.
       expect(_key('meme-graduated-tag'), findsOneWidget);
-      expect(_key('meme-progress-fill'), findsNothing);
+      expect(_key('meme-row-progress'), findsNothing);
       expect(find.text('暂无外盘报价'), findsOneWidget);
 
       await tester.tap(_key('meme-row-$memeTokenIdA'));

@@ -2970,6 +2970,8 @@ class LoopSkeleton extends StatelessWidget {
     this.leadingSize = 44,
     this.subtitleLines = 1,
     this.rowHeight = 58,
+    this.leadingRadius,
+    this.trailingPill = true,
   });
 
   /// Inline list rows, for a block that already sits inside page padding.
@@ -2998,6 +3000,15 @@ class LoopSkeleton extends StatelessWidget {
 
   /// [LoopSkeletonType.priceRow]: the list's fixed row height.
   final double rowHeight;
+
+  /// [LoopSkeletonType.priceRow]: the leading tile's corner; `null` is a
+  /// round mark (half of [leadingSize]). A list of `.tile-img` rows passes
+  /// `LoopRadius.tileValue` (decision 0173).
+  final double? leadingRadius;
+
+  /// [LoopSkeletonType.priceRow]: whether the row ends on the 96 × 44 change
+  /// pill. The MEME 经典 rows end on their figures (decision 0173).
+  final bool trailingPill;
 
   @override
   Widget build(BuildContext context) {
@@ -3155,6 +3166,8 @@ class LoopSkeleton extends StatelessWidget {
             rowHeight: rowHeight,
             rows: rows,
             leadingSize: leadingSize,
+            leadingRadius: leadingRadius ?? leadingSize / 2,
+            trailingPill: trailingPill,
           ),
           LoopSkeletonType.figure => const Column(
             key: ValueKey<String>('loop-skeleton-figure'),
@@ -3299,11 +3312,15 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
     required this.rowHeight,
     required this.rows,
     required this.leadingSize,
+    required this.leadingRadius,
+    required this.trailingPill,
   });
 
   final double rowHeight;
   final int rows;
   final double leadingSize;
+  final double leadingRadius;
+  final bool trailingPill;
 
   static const List<double> _nameWidths = <double>[0.3, 0.42, 0.36, 0.26];
 
@@ -3328,7 +3345,7 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
                   LoopSkeletonBlock(
                     width: leadingSize,
                     height: leadingSize,
-                    radius: leadingSize / 2,
+                    radius: leadingRadius,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -3355,12 +3372,14 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
                       LoopSkeletonBlock(width: 40, height: 10),
                     ],
                   ),
-                  const SizedBox(width: 12),
-                  LoopSkeletonBlock(
-                    width: loopSkeletonPillSize.width,
-                    height: loopSkeletonPillSize.height,
-                    radius: 10,
-                  ),
+                  if (trailingPill) ...<Widget>[
+                    const SizedBox(width: 12),
+                    LoopSkeletonBlock(
+                      width: loopSkeletonPillSize.width,
+                      height: loopSkeletonPillSize.height,
+                      radius: 10,
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -39,6 +39,9 @@ Map<String, Object?> memeRowJson({
   bool creator = true,
   bool image = true,
   int holderCount = 12,
+  String? volume = '1980',
+  String? createdAt = '2026-10-08T00:00:00.000Z',
+  bool listingFields = true,
 }) => <String, Object?>{
   'memeTokenId': id,
   'tokenAddress': tokenAddress,
@@ -59,10 +62,10 @@ Map<String, Object?> memeRowJson({
   'priceUsd1': price,
   'marketCapUsd1': cap,
   'change1hPct': change,
-  'volume24hUsd1': '1980',
+  if (listingFields) 'volume24hUsd1': volume,
   'holderCount': holderCount,
   'tradeCount': 40,
-  'createdAt': '2026-10-08T00:00:00.000Z',
+  if (listingFields) 'createdAt': createdAt,
   'graduatedAt': graduatedAt,
   'pool': pool,
   'priceSource': price == null

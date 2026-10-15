@@ -65,14 +65,6 @@ enum MemeListTab {
   final String wireName;
   final String label;
 
-  /// The chip's sprite glyph (decision 0122).
-  String get icon => switch (this) {
-    MemeListTab.fresh => 'launch',
-    MemeListTab.hot => 'chart',
-    MemeListTab.graduating => 'target',
-    MemeListTab.graduated => 'graduate',
-  };
-
   static MemeListTab? tryParse(String value) {
     for (final tab in values) {
       if (tab.wireName == value) return tab;
@@ -155,10 +147,10 @@ final class MemeTokenRow {
     required this.symbol,
     required this.status,
     required this.progressBps,
-    required this.volume24hUsd1,
     required this.holderCount,
     required this.tradeCount,
-    required this.createdAt,
+    this.volume24hUsd1,
+    this.createdAt,
     this.tokenAddress,
     this.imageUrl,
     this.creator,
@@ -188,10 +180,16 @@ final class MemeTokenRow {
 
   /// The one-hour move in percent points; `null` = not applicable.
   final Decimal? change1hPct;
-  final Decimal volume24hUsd1;
+
+  /// The last 24 hours' traded volume in USD1; `null` when the server did not
+  /// send it (decision 0173: the list row then prints the name alone).
+  final Decimal? volume24hUsd1;
   final int holderCount;
   final int tradeCount;
-  final DateTime createdAt;
+
+  /// When the token went live; `null` when the server did not send it
+  /// (decision 0173: the list row then draws no age).
+  final DateTime? createdAt;
   final DateTime? graduatedAt;
   final String? pool;
   final MemePriceProvenance? priceSource;

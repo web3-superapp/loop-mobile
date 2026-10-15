@@ -1138,7 +1138,11 @@ class _ProgressStats extends StatelessWidget {
             ),
             LoopStat(
               label: '24h 交易量',
-              value: memeCapLabel(row.volume24hUsd1),
+              // Decision 0173: the listing field is optional; 暂无 when absent.
+              value: switch (row.volume24hUsd1) {
+                final volume? => memeCapLabel(volume),
+                _ => '暂无',
+              },
               statKey: const ValueKey<String>('meme-token-stat-volume'),
             ),
           ],

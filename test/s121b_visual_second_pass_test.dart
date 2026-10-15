@@ -10,10 +10,13 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/intel/intel_rank_board.dart';
+import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 
@@ -120,52 +123,159 @@ void main() {
     });
   });
 
-  group('发射台 row', () {
-    testWidgets('trading: ticker, cap, price, the 1h move and the pill', (
+  group('发射台 row · 列表 A (decision 0173)', () {
+    final observed = DateTime.utc(2026, 10, 8, 3, 0, 5);
+
+    testWidgets('trading: tile, ticker + age, volume · name, cap and bar', (
       tester,
     ) async {
-      await _pump(tester, MemeTokenCard(row: _row()));
-      expect(_key('meme-progress-fill'), findsOneWidget);
-      expect(_key('meme-graduated-tag'), findsNothing);
+      await _pump(tester, MemeTokenCard(row: _row(), now: observed));
       expect(find.text('FROG'), findsOneWidget);
+      // Created 00:00, observed 03:00:05.
+      expect(find.text('3 小时'), findsOneWidget);
+      expect(
+        tester.widget<Text>(_key('meme-row-age')).style!.color,
+        LoopColors.lime,
+      );
+      expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
       expect(find.text('市值 \$9,891'), findsOneWidget);
-      expect(find.text(r'$0.0₅9891'), findsOneWidget);
-      expect(find.text('+76.89% 1h'), findsOneWidget);
+      final cap = tester.widget<Text>(_key('meme-row-cap'));
+      expect(cap.style!.fontSize, 13);
+      expect(cap.style!.fontWeight, FontWeight.w700);
+      // The 56 px `.bar` and the Lime percentage beside it.
+      expect(tester.getSize(_key('meme-row-progress')), const Size(56, 6));
+      expect(find.byType(LoopProgressBar), findsOneWidget);
       expect(find.text('33%'), findsOneWidget);
+      final label = tester.widget<Text>(_key('meme-progress-label'));
+      expect(label.style!.color, LoopColors.lime);
+      expect(label.style!.fontSize, 11);
+      expect(
+        tester.getRect(_key('meme-progress-label')).left,
+        greaterThan(tester.getRect(_key('meme-row-progress')).right),
+      );
+      // The row no longer prints the price or the trading move.
+      expect(_key('meme-row-price'), findsNothing);
+      expect(_key('meme-change'), findsNothing);
+      expect(_key('meme-graduated-tag'), findsNothing);
+      // The 44 tile with the r15 corner.
+      final logo = tester.widget<MemeLogo>(find.byType(MemeLogo));
+      expect(logo.size, 44);
+      expect(logo.radius, LoopRadius.tileValue);
+      // 14 + 44 + 14 and a hairline.
+      expect(
+        tester.getSize(find.byType(MemeTokenCard)).height,
+        moreOrLessEquals(memeCardHeight + 1, epsilon: 0.5),
+      );
     });
 
-    testWidgets('full: the pill is filled, the cap is not drawn', (
+    testWidgets('full: the bar is filled to 100%', (tester) async {
+      await _pump(
+        tester,
+        MemeTokenCard(
+          row: _row(status: 'full', progressBps: 10000),
+          now: observed,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('100%'), findsOneWidget);
+      final fill = tester.getSize(
+        find
+            .descendant(
+              of: _key('meme-row-progress'),
+              matching: find.byType(FractionallySizedBox),
+            )
+            .first,
+      );
+      expect(fill.width, moreOrLessEquals(56, epsilon: 0.5));
+      expect(_key('meme-graduated-tag'), findsNothing);
+    });
+
+    testWidgets('graduated: the 已毕业 badge and the 1h move in price colour', (
       tester,
     ) async {
       await _pump(
         tester,
-        MemeTokenCard(row: _row(status: 'full', progressBps: 10000)),
+        MemeTokenCard(
+          row: _row(status: 'graduated', progressBps: 10000, change: '8.20'),
+          now: observed,
+        ),
       );
-      expect(_key('meme-progress-fill'), findsOneWidget);
-      expect(_key('meme-graduated-tag'), findsNothing);
-      expect(find.text('100%'), findsOneWidget);
-    });
+      final badge = tester.widget<LoopBadge>(_key('meme-graduated-tag'));
+      expect(badge.kind, LoopBadgeKind.launch);
+      expect(find.text('已毕业'), findsOneWidget);
+      expect(_key('meme-row-age'), findsNothing);
+      expect(_key('meme-row-progress'), findsNothing);
+      expect(find.text('市值 \$9,891'), findsOneWidget);
+      expect(find.text('+8.20% 1h'), findsOneWidget);
+      expect(
+        tester.widget<Text>(_key('meme-change')).style!.color,
+        LoopPriceMove.up.color,
+      );
 
-    testWidgets('graduated: the pill says so', (tester) async {
       await _pump(
         tester,
         MemeTokenCard(
           row: _row(status: 'graduated', progressBps: 10000, change: null),
+          now: observed,
         ),
       );
-      expect(_key('meme-graduated-tag'), findsOneWidget);
-      expect(_key('meme-progress-fill'), findsNothing);
-      expect(find.text('已毕业'), findsOneWidget);
       // An unreported move draws nothing rather than a dash or a zero.
       expect(_key('meme-change'), findsNothing);
+      expect(_key('meme-graduated-tag'), findsOneWidget);
     });
 
-    testWidgets('a long ticker gives way; price and pill stay inside', (
+    testWidgets('missing volume, launch time and cap: name only, the reason', (
+      tester,
+    ) async {
+      final bare = memePage(
+        items: <Map<String, Object?>>[
+          memeRowJson(listingFields: false, price: null, cap: null),
+        ],
+      ).items.single;
+      expect(bare.volume24hUsd1, isNull);
+      expect(bare.createdAt, isNull);
+      await _pump(tester, MemeTokenCard(row: bare, now: observed));
+      expect(tester.takeException(), isNull);
+      expect(find.text('Frog'), findsOneWidget);
+      expect(_key('meme-row-age'), findsNothing);
+      expect(find.textContaining('交易量'), findsNothing);
+      expect(_key('meme-row-cap'), findsNothing);
+      expect(find.text('价格暂时读不到'), findsOneWidget);
+      expect(_key('meme-row-progress'), findsOneWidget);
+
+      // Sent as null, or malformed, reads the same: not a bad row.
+      final nulled = memePage(
+        items: <Map<String, Object?>>[
+          memeRowJson(volume: null, createdAt: null),
+          memeRowJson(id: memeTokenIdB, volume: 'lots', createdAt: 'yesterday'),
+        ],
+      ).items;
+      for (final row in nulled) {
+        expect(row.volume24hUsd1, isNull);
+        expect(row.createdAt, isNull);
+      }
+    });
+
+    test('ages read in minutes, hours, then days', () {
+      final launched = DateTime.utc(2026, 10, 1);
+      String at(Duration age) => memeAgeLabel(launched, now: launched.add(age));
+      expect(at(const Duration(seconds: 20)), '刚刚');
+      expect(at(const Duration(minutes: 11)), '11 分钟');
+      expect(at(const Duration(hours: 12, minutes: 5)), '12 小时');
+      expect(at(const Duration(days: 1, hours: 3)), '1 天');
+      expect(at(const Duration(days: 10)), '10 天');
+      expect(at(const Duration(minutes: -5)), '刚刚');
+    });
+
+    testWidgets('a long ticker gives way; cap and bar stay inside', (
       tester,
     ) async {
       await _pump(
         tester,
-        MemeTokenCard(row: _row(symbol: 'WZPD4YLWZPD4YLWZ')),
+        MemeTokenCard(
+          row: _row(symbol: 'WZPD4YLWZPD4YLWZ'),
+          now: observed,
+        ),
         width: 320,
       );
       expect(tester.takeException(), isNull);
@@ -173,14 +283,10 @@ void main() {
         find.text('WZPD4YLWZPD4YLWZ'),
       );
       expect(ticker.didExceedMaxLines, isTrue);
-      final price = tester.renderObject<RenderParagraph>(
-        find.byKey(const ValueKey<String>('meme-row-price')),
-      );
-      expect(price.didExceedMaxLines, isFalse);
       final rowBox = tester.getRect(find.byType(MemeTokenCard));
       expect(
-        tester.getRect(_key('meme-progress-fill')).left,
-        greaterThan(tester.getRect(_key('meme-row-price')).right),
+        tester.getRect(_key('meme-row-cap')).left,
+        greaterThan(tester.getRect(find.text('WZPD4YLWZPD4YLWZ')).right),
       );
       expect(
         tester.getRect(find.text('33%')).right,
