@@ -278,6 +278,16 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
         : null;
     final subline = <String>[?fiatText, ?widget.address].join(' · ');
     final fullAddress = widget.fullAddress;
+    // Decision 0194: a stale rate wears the market figures' stale badge
+    // right after the ¥ amount; the line's words do not change.
+    final fiatStale = fiatText != null && fiat!.stale;
+    final staleMarker = loopFactQualityMarker(LoopFactQuality.stale)!;
+    final sublineStyle = LoopType.caption.copyWith(color: auxiliary);
+    final address = widget.address;
+    final sublineLabel = <String>[
+      if (fiatStale) '$fiatText，$staleMarker' else ?fiatText,
+      ?address,
+    ].join(' · ');
 
     final left = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,6 +317,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
               onTap: () => showWalletTotalInfoSheet(
                 context,
                 balances: balances,
+                fiat: fiat,
                 keyPrefix: keyPrefix,
               ),
               child: LoopIcon('info', size: 14, color: auxiliary),
@@ -333,7 +344,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
         if (subline.isNotEmpty)
           Semantics(
             button: fullAddress != null,
-            label: fullAddress == null ? subline : '$subline，复制钱包地址',
+            label: fullAddress == null ? sublineLabel : '$sublineLabel，复制钱包地址',
             excludeSemantics: true,
             child: LoopPressable(
               key: ValueKey<String>('$keyPrefix-address-copy'),
@@ -349,13 +360,40 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Flexible(
-                      child: Text(
-                        subline,
-                        key: ValueKey<String>('$keyPrefix-total-subline'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.caption.copyWith(color: auxiliary),
-                      ),
+                      child: fiatStale
+                          ? Text.rich(
+                              TextSpan(
+                                children: <InlineSpan>[
+                                  TextSpan(text: fiatText),
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 6),
+                                      child: LoopBadge(
+                                        staleMarker,
+                                        key: ValueKey<String>(
+                                          '$keyPrefix-total-fiat-stale',
+                                        ),
+                                        kind: LoopBadgeKind.down,
+                                      ),
+                                    ),
+                                  ),
+                                  if (address != null)
+                                    TextSpan(text: ' · $address'),
+                                ],
+                              ),
+                              key: ValueKey<String>('$keyPrefix-total-subline'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: sublineStyle,
+                            )
+                          : Text(
+                              subline,
+                              key: ValueKey<String>('$keyPrefix-total-subline'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: sublineStyle,
+                            ),
                     ),
                     if (fullAddress != null) ...<Widget>[
                       const SizedBox(width: 4),
@@ -477,9 +515,11 @@ class _HeaderGlyphButton extends StatelessWidget {
 Future<void> showWalletTotalInfoSheet(
   BuildContext context, {
   required LoopWalletBalances? balances,
+  LoopNetWorthFiat? fiat,
   String keyPrefix = 'wallet',
 }) {
   final netWorth = balances?.netWorth;
+  final fx = fiat == null ? null : walletFxProvenanceText(fiat);
   final snapshot = balances?.snapshot;
   return showLoopSheet<void>(
     context,
@@ -507,6 +547,15 @@ Future<void> showWalletTotalInfoSheet(
                     key: ValueKey<String>('$keyPrefix-not-spendable'),
                     style: LoopType.bodySm.copyWith(color: secondary),
                   ),
+                  // Decision 0194: where the ≈¥ beside the total came from.
+                  if (fx != null) ...<Widget>[
+                    const SizedBox(height: 8),
+                    Text(
+                      fx,
+                      key: ValueKey<String>('$keyPrefix-info-fx'),
+                      style: LoopType.bodySm.copyWith(color: secondary),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   if (netWorth
                       case final LoopNetWorthValued valued) ...<Widget>[

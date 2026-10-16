@@ -405,7 +405,48 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
     final amount = _lenientDecimal(raw['amount']);
     if (currency is! String || rate == null || amount == null) return null;
     if (!RegExp(r'^[A-Z]{3}$').hasMatch(currency)) return null;
-    return LoopNetWorthFiat(currency: currency, rate: rate, amount: amount);
+    // Decision 0194: the rate's provenance. Any of the four missing or
+    // unreadable is the pre-0194 shape — the ¥ still draws, with no source.
+    // A quality that is neither known word is read as stale, never fresh.
+    final source = _lenientWord(raw['source']);
+    final asOf = _lenientDay(raw['asOf']);
+    final fetchedAt = _lenientTime(raw['fetchedAt']);
+    final rawQuality = raw['quality'];
+    if (source == null ||
+        asOf == null ||
+        fetchedAt == null ||
+        rawQuality == null) {
+      return LoopNetWorthFiat(currency: currency, rate: rate, amount: amount);
+    }
+    return LoopNetWorthFiat(
+      currency: currency,
+      rate: rate,
+      amount: amount,
+      source: source,
+      asOf: asOf,
+      fetchedAt: fetchedAt,
+      quality: rawQuality == 'fresh'
+          ? LoopFactQuality.fresh
+          : LoopFactQuality.stale,
+    );
+  }
+
+  /// A publication day: `yyyy-MM-dd`, or a full ISO instant whose UTC date
+  /// is the day. Kept at UTC midnight so no time zone moves it.
+  static DateTime? _lenientDay(Object? raw) {
+    if (raw is! String || raw.length > 64) return null;
+    final day = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(raw);
+    final DateTime? at;
+    if (day != null) {
+      final month = int.parse(day.group(2)!);
+      final date = int.parse(day.group(3)!);
+      if (month < 1 || month > 12 || date < 1 || date > 31) return null;
+      at = DateTime.utc(int.parse(day.group(1)!), month, date);
+    } else {
+      at = DateTime.tryParse(raw)?.toUtc();
+    }
+    if (at == null) return null;
+    return DateTime.utc(at.year, at.month, at.day);
   }
 
   @override

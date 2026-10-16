@@ -943,4 +943,242 @@ void main() {
       expect(key('wallet-distribution'), findsNothing);
     });
   });
+
+  // Decision 0194: the ≈¥ carries its rate's source and observation time.
+  group('≈¥ · rate provenance (0194)', () {
+    LoopNetWorthHistory decode(Object? body) =>
+        DioLoopV2WalletApi.decodeNetWorthHistory(
+          body,
+          range: LoopNetWorthRange.week,
+        );
+
+    Map<String, Object?> fxBody({String quality = 'fresh'}) =>
+        <String, Object?>{
+          'currency': 'CNY',
+          'rate': '6.6921',
+          'amount': '913.27',
+          'source': 'ecb',
+          'asOf': '2026-10-15',
+          'fetchedAt': '2026-10-16T03:20:00.000Z',
+          'quality': quality,
+        };
+
+    LoopNetWorthFiat fx({
+      String source = 'ecb',
+      LoopFactQuality? quality = LoopFactQuality.fresh,
+      DateTime? fetchedAt,
+    }) => LoopNetWorthFiat(
+      currency: 'CNY',
+      rate: Decimal.parse('6.6921'),
+      amount: Decimal.parse('913.27'),
+      source: quality == null ? null : source,
+      asOf: quality == null ? null : DateTime.utc(2026, 10, 15),
+      fetchedAt: quality == null ? null : (fetchedAt ?? DateTime.now()),
+      quality: quality,
+    );
+
+    _FakeHistory port(LoopNetWorthFiat fiat) => _FakeHistory(
+      answers: <LoopNetWorthRange, LoopNetWorthHistory>{
+        LoopNetWorthRange.week: _history(LoopNetWorthRange.week, fiat: fiat),
+      },
+    );
+
+    const freshHead = '人民币按欧洲央行参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 ';
+
+    test('the new shape decodes source, publication day, fetch time and '
+        'quality', () {
+      final fiat = decode(_body(fiat: fxBody())).fiat!;
+      expect(fiat.amount, Decimal.parse('913.27'));
+      expect(fiat.rate, Decimal.parse('6.6921'));
+      expect(fiat.source, 'ecb');
+      expect(fiat.asOf, DateTime.utc(2026, 10, 15));
+      expect(fiat.fetchedAt, DateTime.utc(2026, 10, 16, 3, 20));
+      expect(fiat.quality, LoopFactQuality.fresh);
+      expect(fiat.hasProvenance, isTrue);
+      expect(fiat.stale, isFalse);
+
+      expect(
+        decode(_body(fiat: fxBody(quality: 'stale'))).fiat!.quality,
+        LoopFactQuality.stale,
+      );
+      // A word the client does not know is never read as fresh.
+      expect(
+        decode(_body(fiat: fxBody(quality: 'derived'))).fiat!.quality,
+        LoopFactQuality.stale,
+      );
+      // A full instant names its UTC day.
+      expect(
+        decode(_body(fiat: fxBody()..['asOf'] = '2026-10-15T14:00:00Z'))
+            .fiat!
+            .asOf,
+        DateTime.utc(2026, 10, 15),
+      );
+    });
+
+    test('the old shape, or any provenance key missing or unreadable, still '
+        'draws ¥ with no provenance', () {
+      final legacy = decode(_body()).fiat!;
+      expect(legacy.amount, Decimal.parse('913.27'));
+      expect(legacy.hasProvenance, isFalse);
+      expect(legacy.source, isNull);
+      expect(legacy.quality, isNull);
+      for (final missing in const <String>[
+        'source',
+        'asOf',
+        'fetchedAt',
+        'quality',
+      ]) {
+        final fiat = decode(_body(fiat: fxBody()..remove(missing))).fiat!;
+        expect(fiat.amount, Decimal.parse('913.27'), reason: missing);
+        expect(fiat.hasProvenance, isFalse, reason: missing);
+        expect(fiat.source, isNull, reason: missing);
+        expect(fiat.asOf, isNull, reason: missing);
+        expect(fiat.fetchedAt, isNull, reason: missing);
+        expect(fiat.quality, isNull, reason: missing);
+      }
+      expect(
+        decode(_body(fiat: fxBody()..['asOf'] = 'yesterday'))
+            .fiat!
+            .hasProvenance,
+        isFalse,
+      );
+      expect(walletFxProvenanceText(legacy), isNull);
+    });
+
+    test(
+      'the sentence: publisher in Chinese, day, local clock, stale tail',
+      () {
+        final now = DateTime(2026, 10, 16, 12);
+        final seen = DateTime(2026, 10, 16, 11, 20);
+        expect(
+          walletFxProvenanceText(fx(fetchedAt: seen), now: now),
+          '人民币按欧洲央行参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 11:20）折算',
+        );
+        expect(
+          walletFxProvenanceText(
+            fx(fetchedAt: seen, quality: LoopFactQuality.stale),
+            now: now,
+          ),
+          '人民币按欧洲央行参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 11:20）折算，数据可能过期',
+        );
+        // An unknown publisher is 「参考汇率」, never its identifier.
+        expect(
+          walletFxProvenanceText(
+            fx(source: 'boc', fetchedAt: seen),
+            now: now,
+          ),
+          '人民币按参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 11:20）折算',
+        );
+        // Observed on an earlier day: the date comes with the clock.
+        expect(
+          walletFxProvenanceText(
+            fx(fetchedAt: seen),
+            now: DateTime(2026, 10, 17, 9),
+          ),
+          contains('观察于 10-16 11:20）'),
+        );
+      },
+    );
+
+    testWidgets('fresh: the subline is unchanged and (i) says where ¥ came '
+        'from', (tester) async {
+      final fiat = fx();
+      await pumpWallet(tester, history: port(fiat));
+      final subline = tester.widget<Text>(key('wallet-total-subline'));
+      expect(subline.data, startsWith('≈ ¥913.27 · '));
+      expect(key('wallet-total-fiat-stale'), findsNothing);
+
+      await tester.tap(key('wallet-info'));
+      await tester.pumpAndSettle();
+      final line = tester.widget<Text>(key('wallet-info-fx'));
+      expect(line.data, walletFxProvenanceText(fiat));
+      expect(line.data, startsWith(freshHead));
+      expect(line.data, endsWith('）折算'));
+      expect(find.text('ecb'), findsNothing);
+      expect(find.textContaining('ecb'), findsNothing);
+    });
+
+    testWidgets('stale: the ¥ wears the stale badge and (i) says so', (
+      tester,
+    ) async {
+      final fiat = fx(quality: LoopFactQuality.stale);
+      await pumpWallet(tester, history: port(fiat));
+      final subline = tester.widget<Text>(key('wallet-total-subline'));
+      final plain = subline.textSpan!.toPlainText(includePlaceholders: false);
+      expect(plain, startsWith('≈ ¥913.27 · '));
+      final badge = tester.widget<LoopBadge>(key('wallet-total-fiat-stale'));
+      expect(badge.text, '数据可能过期');
+      expect(badge.kind, LoopBadgeKind.down);
+
+      await tester.tap(key('wallet-info'));
+      await tester.pumpAndSettle();
+      final line = tester.widget<Text>(key('wallet-info-fx'));
+      expect(line.data, startsWith(freshHead));
+      expect(line.data, endsWith('）折算，数据可能过期'));
+    });
+
+    testWidgets('hidden amounts mask the ¥ but keep the stale badge', (
+      tester,
+    ) async {
+      await pumpWallet(
+        tester,
+        history: port(fx(quality: LoopFactQuality.stale)),
+      );
+      await tester.tap(key('wallet-eye'));
+      await tester.pumpAndSettle();
+      final plain = tester
+          .widget<Text>(key('wallet-total-subline'))
+          .textSpan!
+          .toPlainText(includePlaceholders: false);
+      expect(plain, startsWith('≈ ¥$walletMaskedFigure · '));
+      expect(key('wallet-total-fiat-stale'), findsOneWidget);
+      await tester.tap(key('wallet-eye'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the old shape draws ¥ and no rate line anywhere', (
+      tester,
+    ) async {
+      await pumpWallet(tester, history: port(fx(quality: null)));
+      expect(
+        tester.widget<Text>(key('wallet-total-subline')).data,
+        startsWith('≈ ¥913.27 · '),
+      );
+      expect(key('wallet-total-fiat-stale'), findsNothing);
+      await tester.tap(key('wallet-networth-expand'));
+      await tester.pumpAndSettle();
+      expect(key('wallet-networth-provenance'), findsOneWidget);
+      expect(key('wallet-networth-fx-provenance'), findsNothing);
+      await tester.tap(key('wallet-networth-collapse'));
+      await tester.pumpAndSettle();
+      await tester.tap(key('wallet-info'));
+      await tester.pumpAndSettle();
+      expect(key('wallet-info-sheet'), findsOneWidget);
+      expect(key('wallet-info-fx'), findsNothing);
+    });
+
+    testWidgets('the panel repeats the rate under the provenance line', (
+      tester,
+    ) async {
+      final fiat = fx();
+      await pumpWallet(tester, history: port(fiat));
+      await tester.tap(key('wallet-networth-expand'));
+      await tester.pumpAndSettle();
+      final provenance = key('wallet-networth-provenance');
+      final line = key('wallet-networth-fx-provenance');
+      expect(provenance, findsOneWidget);
+      expect(line, findsOneWidget);
+      expect(
+        tester.getTopLeft(line).dy,
+        greaterThan(tester.getTopLeft(provenance).dy),
+      );
+      final text = tester.widget<Text>(line);
+      expect(text.data, walletFxProvenanceText(fiat));
+      expect(text.data, startsWith(freshHead));
+      expect(text.style!.fontSize, LoopType.captionSm.fontSize);
+      expect(text.style!.color, LoopGround.secondaryOf(tester.element(line)));
+      await tester.tap(key('wallet-networth-collapse'));
+      await tester.pumpAndSettle();
+    });
+  });
 }

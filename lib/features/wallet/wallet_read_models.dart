@@ -671,17 +671,58 @@ final class LoopNetWorthPoint {
 }
 
 /// The fiat restatement the server published (`CNY` only today).
+///
+/// Decision 0194: the rate carries where it came from ([source]), the day
+/// the publisher fixed it ([asOf]), when LOOP read it ([fetchedAt]) and
+/// whether it is still current ([quality], `fresh` or `stale` only). The
+/// four come as one: a body missing any of them is the pre-0194 shape, and
+/// the ¥ figure is still drawn but with no provenance — [hasProvenance] is
+/// false and all four are null.
 @immutable
 final class LoopNetWorthFiat {
   const LoopNetWorthFiat({
     required this.currency,
     required this.rate,
     required this.amount,
-  });
+    this.source,
+    this.asOf,
+    this.fetchedAt,
+    this.quality,
+  }) : assert(
+         (source == null) == (asOf == null) &&
+             (asOf == null) == (fetchedAt == null) &&
+             (fetchedAt == null) == (quality == null),
+         'The rate provenance is all four fields or none.',
+       ),
+       assert(
+         quality == null ||
+             quality == LoopFactQuality.fresh ||
+             quality == LoopFactQuality.stale,
+         'A rate is either fresh or stale.',
+       );
 
   final String currency;
+
+  /// 1 USD = [rate] [currency].
   final Decimal rate;
   final Decimal amount;
+
+  /// The publisher's identifier as sent (`ecb`, …); never printed raw.
+  final String? source;
+
+  /// The publication day of the rate, a calendar date kept at UTC midnight.
+  final DateTime? asOf;
+
+  /// When LOOP read the rate from [source] (UTC).
+  final DateTime? fetchedAt;
+
+  /// [LoopFactQuality.fresh] or [LoopFactQuality.stale].
+  final LoopFactQuality? quality;
+
+  bool get hasProvenance =>
+      source != null && asOf != null && fetchedAt != null && quality != null;
+
+  bool get stale => quality == LoopFactQuality.stale;
 }
 
 /// `GET …/networth/history?range=…`.

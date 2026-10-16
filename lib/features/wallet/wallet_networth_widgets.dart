@@ -336,7 +336,10 @@ class WalletNetWorthPanel extends StatelessWidget {
   Widget _provenance(LoopNetWorthHistory history) {
     final source = history.source;
     final parsed = source == null ? null : LoopFactSource.tryParse(source);
-    return LoopProvenanceLine(
+    final fx = history.fiat == null
+        ? null
+        : walletFxProvenanceText(history.fiat!);
+    final line = LoopProvenanceLine(
       key: const ValueKey<String>('wallet-networth-provenance'),
       prefix: '净值快照',
       sources: <String>[
@@ -348,7 +351,73 @@ class WalletNetWorthPanel extends StatelessWidget {
           '不是可用余额。',
       padding: EdgeInsets.zero,
     );
+    if (fx == null) return line;
+    // Decision 0194: the ¥ beside the total is a restatement at a published
+    // rate, so the rate says where it came from right under the chart too.
+    return Builder(
+      builder: (context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          line,
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              fx,
+              key: const ValueKey<String>('wallet-networth-fx-provenance'),
+              style: LoopType.captionSm.copyWith(
+                color: LoopGround.secondaryOf(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+}
+
+/// zh-CN name of a rate publisher. An identifier LOOP does not know is
+/// 「参考汇率」, never the raw word.
+String walletFxSourceLabel(String source) => switch (source) {
+  'ecb' => '欧洲央行参考汇率',
+  _ => '参考汇率',
+};
+
+/// Decision 0194: the sentence that says where the ¥ came from —
+/// 「人民币按欧洲央行参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 11:20）折算」,
+/// with 「，数据可能过期」 when the rate is stale. `null` for a non-CNY
+/// restatement or a pre-0194 body without provenance: nothing is invented.
+///
+/// The publication day is a calendar date (UTC); the observation time is
+/// the device's local clock, with its date when it is not today.
+String? walletFxProvenanceText(LoopNetWorthFiat fiat, {DateTime? now}) {
+  final source = fiat.source;
+  final asOf = fiat.asOf;
+  final fetchedAt = fiat.fetchedAt;
+  if (fiat.currency != 'CNY' ||
+      !fiat.hasProvenance ||
+      source == null ||
+      asOf == null ||
+      fetchedAt == null) {
+    return null;
+  }
+  String two(int value) => value.toString().padLeft(2, '0');
+  final today = (now ?? DateTime.now()).toLocal();
+  final seen = fetchedAt.toLocal();
+  final sameDay =
+      seen.year == today.year &&
+      seen.month == today.month &&
+      seen.day == today.day;
+  final observed = sameDay
+      ? loopClockLabel(seen)
+      : '${two(seen.month)}-${two(seen.day)} ${loopClockLabel(seen)}';
+  final published = '${two(asOf.month)}-${two(asOf.day)}';
+  final rate = loopFormatDecimal(fiat.rate, maxFractionDigits: 6);
+  final stale = fiat.stale
+      ? '，${loopFactQualityMarker(LoopFactQuality.stale)}'
+      : '';
+  return '人民币按${walletFxSourceLabel(source)} 1 USD = $rate CNY'
+      '（$published 发布，观察于 $observed）折算$stale';
 }
 
 /// The 200-high area chart: a Lime line over a Lime wash that fades from

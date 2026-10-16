@@ -38,6 +38,7 @@ Accepted 2026-10-15。基线 `integration/v2` 449ad64（含 0166 ~ 0187）。来
 - 大数字 `LoopType.figureXl`（28，最接近设计 34 的 figure 档）+ 小字 `USD`（figure 14，key `wallet-total-unit`）。
 - 下一行（key `wallet-total-subline`）「≈ ¥913.27 · 0x1d27…86ed」+ copy 字形，整行点按经 `LoopCopy` 复制完整地址
   （key `wallet-address-copy`）。¥ 只在 `fiat.currency == CNY` 时画，`fiat` 缺失只剩地址。
+  （**0194 修订**：¥ 仍只在 `fiat.currency == CNY` 时画；`fiat.quality == stale` 时 ¥ 金额后加市场数字同款 stale 徽标「数据可能过期」，汇率来源与观察时间写在 (i) 说明与展开图来源行下，旧形状（无来源四字段）照画 ¥、不画来源。）
 - 原弱化说明行（未计入项数、过期、不可用理由）保留，地址移到上一行。
 - 今日盈亏（key `wallet-pnl` / `wallet-pnl-value`）：读的是 **7 天历史**的 `change24h`，`+$12.08 (+10.4%)`，色只经
   `LoopPriceMove`（0117 rise / fall）；`change24h` 为 null 写「今日盈亏 暂无」；历史读不到整行不画。末尾 chevron，点按展开大图。
@@ -116,3 +117,8 @@ Accepted 2026-10-15。基线 `integration/v2` 449ad64（含 0166 ~ 0187）。来
 
 §2 右侧小折线位：点数 < 2 画占位 `WalletNetWorthSparkPlaceholder`（虚线 + 「净值走势 · 记录中」，可展开），读取中画同尺寸骨架，读失败仍不画；
 §3 ⌄ / ⌃ 加「净值走势」/「收起」标签，空区间文案加「· 每小时记一次，有资产后开始画线」。详见 0193。
+
+## 0194 修订
+
+§2 的 ¥：`LoopNetWorthFiat` 加 `source` / `asOf` / `fetchedAt` / `quality`；`stale`（或未知 quality）时 ¥ 后加 stale 徽标；
+(i) 说明与展开面板来源行下各一句「人民币按欧洲央行参考汇率 1 USD = x CNY（MM-dd 发布，观察于 HH:mm）折算」。详见 0194。
