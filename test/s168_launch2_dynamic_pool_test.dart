@@ -1203,7 +1203,10 @@ void main() {
       expect(inRow('pot', '45 USD1'), findsOneWidget);
       expect(inRow('my-weight', '25 USD1 · 占 25%'), findsOneWidget);
       expect(_key('launch2-dyn-candle-end'), findsOneWidget);
-      expect(find.text('出现一根收盘不低于开盘的 5 分钟 K 线即结束（收涨、收平或无成交都算）'), findsOneWidget);
+      expect(
+        find.text('出现一根收盘不低于开盘的 5 分钟 K 线即结束（收涨、收平或无成交都算）'),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
