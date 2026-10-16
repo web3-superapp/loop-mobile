@@ -38,6 +38,7 @@ PINNED_DEPENDENCIES = {
     "stream_chat_flutter": "10.3.0",
     "stream_chat_persistence": "10.3.0",
     "stream_video_flutter": "1.4.3",
+    "url_launcher": "6.3.2",
     "uuid": "4.6.0",
 }
 PINNED_SQLITE_GRAPH = {

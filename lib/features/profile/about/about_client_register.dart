@@ -98,6 +98,11 @@ const List<LoopOpenSourceEntry> loopClientOpenSourceEntries =
         purpose: '系统分享',
         license: 'BSD-3-Clause',
       ),
+      LoopOpenSourceEntry(
+        name: 'url_launcher',
+        purpose: '用系统浏览器打开活动链接',
+        license: 'BSD-3-Clause',
+      ),
       LoopOpenSourceEntry(name: 'uuid', purpose: '本地生成的唯一标识', license: 'MIT'),
       LoopOpenSourceEntry(
         name: 'cupertino_icons',

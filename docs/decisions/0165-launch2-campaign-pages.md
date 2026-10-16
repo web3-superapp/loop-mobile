@@ -59,6 +59,7 @@ GET /v2/launch2/campaigns → { items: [{ campaignId, title, subtitle|null, cove
 - `url`：只接受 `https`、有 host、无 user info；交给 `launch2ExternalLinkOpenerProvider`。项目里没有应用内浏览器，
   `url_launcher` 只是 stream_chat 的传递依赖、不在直接依赖里（按 AGENTS.md 新增直接依赖需两端原生构建与单独决策）；
   外部地址在项目里一贯的处理是复制（区块浏览器行），所以默认实现 = `LoopCopy.text` 复制链接并 toast「链接已复制，可在浏览器打开」。
+  **已由 0196 修订**：默认实现改为 `url_launcher` 系统浏览器打开，失败回退复制并 toast「没能打开浏览器，链接已复制」。
   端口可在以后换成真正的外部打开，不动卡片。
 
 ### 5. 公共部件改动
@@ -69,7 +70,7 @@ GET /v2/launch2/campaigns → { items: [{ campaignId, title, subtitle|null, cove
 ## Consequences
 - 发射台账本分页从此有两类页：事件页（0164）与活动页（本决策），页序与 ≤5 的上限由 `launch2DeskPages` 一处决定；后台改活动不需要发版。
 - 活动接口不可用、返回坏数据或为空时，分页退回 0164 的纯事件页，列表其它块不受影响；没有新的失败面。
-- `url` 外链暂为复制链接，真正打开浏览器需要新增直接依赖与原生构建，另立决策（见 docs/34 第 23 题）。
+- `url` 外链暂为复制链接，真正打开浏览器需要新增直接依赖与原生构建，另立决策（见 docs/34 第 23 题）。**已由 0196 落地**：点按直接跳系统浏览器。
 - `LoopFolioPrimary` 多了 `aside` 等可选参数，其它调用方像素不变；活动卡成为今后「封面 + 文字」账本卡的唯一写法。
 
 ## 与方案 A 参考图的差异

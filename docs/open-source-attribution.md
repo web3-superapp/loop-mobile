@@ -22,6 +22,7 @@ Review date: 2026-09-03. Versions are locked by `pubspec.yaml` and `pubspec.lock
 | stream_chat_flutter | 10.3.0 | Stream Source Code License Agreement | Chat SDK and UI |
 | stream_chat_persistence | 10.3.0 | Stream Source Code License Agreement | Official bounded chat persistence |
 | stream_video_flutter | 1.4.3 | Stream Source Code License Agreement | Video/audio calling SDK |
+| url_launcher | 6.3.2 | BSD-3-Clause | Opens a campaign card's `https` link in the system browser on tap only (decision 0196) |
 | uuid | 4.6.0 | MIT | Fresh call and idempotency identifiers |
 
 Flutter, Dart, `flutter_test`, and their SDK artifacts are governed by the licenses distributed with the pinned Flutter SDK.

@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/integrations/browser/system_external_browser.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -747,9 +748,7 @@ void main() {
       expect(launch2CampaignRoute('/launch2/nft?id=x'), '/launch2/nft?id=x');
     });
 
-    testWidgets('the default opener copies the link and says so', (
-      tester,
-    ) async {
+    Future<List<String>> mockClipboard(WidgetTester tester) async {
       final copied = <String>[];
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
@@ -768,6 +767,16 @@ void main() {
           null,
         ),
       );
+      return copied;
+    }
+
+    // Decision 0196: the real opener, with the system browser replaced.
+    Future<void> pumpCampaign(
+      WidgetTester tester, {
+      required LoopExternalBrowser browser,
+      required Launch2CampaignLink link,
+      List<String>? pushed,
+    }) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 800);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -776,31 +785,87 @@ void main() {
         ProviderScope(
           overrides: <Override>[
             launch2ClockProvider.overrideWithValue(() => l2Now),
+            loopExternalBrowserProvider.overrideWithValue(browser),
           ],
           child: MaterialApp(
             theme: LoopTheme.dark,
             home: Scaffold(
               body: Launch2DeskPager(
                 pages: <Launch2DeskPage>[
-                  Launch2DeskCampaignPage(
-                    _campaign(
-                      'c1',
-                      link: const Launch2CampaignLink.url(
-                        'https://loop.example/rules',
-                      ),
-                    ),
-                  ),
+                  Launch2DeskCampaignPage(_campaign('c1', link: link)),
                 ],
                 chainId: 'eip155:97',
-                onNavigate: (_) {},
+                onNavigate: (location) => pushed?.add(location),
               ),
             ),
           ),
         ),
       );
+    }
+
+    testWidgets('0196 · a url opens in the system browser on the tap, '
+        'nothing copied', (tester) async {
+      final copied = await mockClipboard(tester);
+      final browsed = <Uri>[];
+      await pumpCampaign(
+        tester,
+        browser: (uri) async {
+          browsed.add(uri);
+          return true;
+        },
+        link: const Launch2CampaignLink.url('https://loop.example/rules'),
+      );
+      // Nothing is opened before the tap.
+      expect(browsed, isEmpty);
       await tester.tap(_key('launch2-desk-page-campaign-c1'));
       await tester.pump();
-      expect(copied, <String>['https://loop.example/rules']);
+      expect(browsed, <Uri>[Uri.parse('https://loop.example/rules')]);
+      expect(copied, isEmpty);
+      expect(find.text('没能打开浏览器，链接已复制'), findsNothing);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    for (final (name, LoopExternalBrowser browser)
+        in <(String, LoopExternalBrowser)>[
+          ('refuses', (uri) async => false),
+          ('throws', (uri) async => throw StateError('no browser')),
+        ]) {
+      testWidgets(
+        '0196 · a browser that $name falls back to copying the link',
+        (tester) async {
+          final copied = await mockClipboard(tester);
+          await pumpCampaign(
+            tester,
+            browser: browser,
+            link: const Launch2CampaignLink.url('https://loop.example/rules'),
+          );
+          await tester.tap(_key('launch2-desk-page-campaign-c1'));
+          await tester.pump();
+          expect(copied, <String>['https://loop.example/rules']);
+          expect(find.text('没能打开浏览器，链接已复制'), findsOneWidget);
+          await tester.pump(const Duration(seconds: 5));
+        },
+      );
+    }
+
+    testWidgets('0196 · an in-app route is pushed, the browser untouched', (
+      tester,
+    ) async {
+      final browsed = <Uri>[];
+      final pushed = <String>[];
+      await pumpCampaign(
+        tester,
+        browser: (uri) async {
+          browsed.add(uri);
+          return true;
+        },
+        link: const Launch2CampaignLink.route('/launch2/nft?id=x'),
+        pushed: pushed,
+      );
+      await tester.tap(_key('launch2-desk-page-campaign-c1'));
+      await tester.pump();
+      expect(pushed, <String>['/launch2/nft?id=x']);
+      expect(browsed, isEmpty);
       await tester.pump(const Duration(seconds: 5));
     });
   });

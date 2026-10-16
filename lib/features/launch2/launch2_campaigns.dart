@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/integrations/browser/system_external_browser.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -188,21 +189,37 @@ String launch2CampaignStamp(Launch2DeskCampaign campaign, DateTime now) {
 
 // ---- where a card leads -------------------------------------------------------
 
-/// Opens an `https` page outside the app. Decision 0165: LOOP has no
-/// in-app browser and no launcher dependency; an outside page is handed
-/// over the way every other outside address in the app is (the block
-/// explorer rows): the link is copied and the toast says so.
+/// Hands an `https` page to the outside. Decision 0196 (revising 0165): the
+/// page opens in the system browser on the tap; when the platform cannot
+/// open it the link is copied instead and the toast says so.
 typedef Launch2ExternalLinkOpener = Future<void> Function(
   BuildContext context,
   Uri uri,
 );
 
-Future<void> _copyExternalLink(BuildContext context, Uri uri) =>
-    LoopCopy.text(context, uri.toString(), message: '链接已复制，可在浏览器打开');
+/// Opens [uri] with [browser]; a refusal or a throw falls back to copying.
+Future<void> launch2OpenExternalLink(
+  BuildContext context,
+  Uri uri, {
+  required LoopExternalBrowser browser,
+}) async {
+  bool opened;
+  try {
+    opened = await browser(uri);
+  } catch (_) {
+    opened = false;
+  }
+  if (opened || !context.mounted) return;
+  await LoopCopy.text(context, uri.toString(), message: '没能打开浏览器，链接已复制');
+}
 
-final launch2ExternalLinkOpenerProvider = Provider<Launch2ExternalLinkOpener>(
-  (ref) => _copyExternalLink,
-);
+final launch2ExternalLinkOpenerProvider = Provider<Launch2ExternalLinkOpener>((
+  ref,
+) {
+  final browser = ref.watch(loopExternalBrowserProvider);
+  return (context, uri) =>
+      launch2OpenExternalLink(context, uri, browser: browser);
+});
 
 /// An in-app location the card may open: one leading slash, never `//host`,
 /// no scheme. Anything else is `null`.

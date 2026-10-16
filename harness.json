@@ -35,6 +35,7 @@
       "Decimal 3.2.6 / UUID 4.6.0",
       "flutter_svg 2.3.0 / prototype SVG sprite, token, network and brand assets",
       "share_plus 12.0.2 / on-device merged-image export to the system share sheet only",
+      "url_launcher 6.3.2 / campaign-card https links handed to the system browser on tap only",
       "Flutter Secure Storage 10.3.1 / V2 device-session journal only"
     ],
     "identity_boundary": [
