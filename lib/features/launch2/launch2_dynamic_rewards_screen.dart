@@ -430,7 +430,7 @@ class _Launch2DynamicRewardsScreenState
           key: ValueKey<String>('launch2-dyn-rewards-empty'),
           illustration: LoopIllustration.history,
           title: '还没有外盘奖励',
-          message: '$launch2DynamicIdleText。开启后在 LOOP 里买入即计入本轮权重，本轮结束后在这里领取。',
+          message: '$launch2DynamicIdleText。开启后用任何软件买入都计入本轮权重，本轮结束后在这里领取。',
           compact: true,
         ),
       ];

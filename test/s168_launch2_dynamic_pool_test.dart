@@ -1175,7 +1175,7 @@ void main() {
       );
       expect(_key('launch2-pool-mode-caption'), findsNothing);
       expect(_key('launch2-pool-mode-exactOut'), findsNothing);
-      expect(find.text('在 LOOP 里买入才保证记入奖励'), findsOneWidget);
+      expect(find.text('用任何软件买入都计入奖励，记给收到 MEME 的地址'), findsOneWidget);
       expect(find.text('外盘税 2% + 卖出动态税'), findsOneWidget);
       expect(_key('launch2-go-swap'), findsNothing);
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
@@ -1203,7 +1203,7 @@ void main() {
       expect(inRow('pot', '45 USD1'), findsOneWidget);
       expect(inRow('my-weight', '25 USD1 · 占 25%'), findsOneWidget);
       expect(_key('launch2-dyn-candle-end'), findsOneWidget);
-      expect(find.text('出现一根收绿的 5 分钟 K 线即结束'), findsOneWidget);
+      expect(find.text('出现一根收盘不低于开盘的 5 分钟 K 线即结束（收涨、收平或无成交都算）'), findsOneWidget);
       await _drain(tester);
     });
 

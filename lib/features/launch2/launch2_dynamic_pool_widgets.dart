@@ -17,7 +17,7 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 const String launch2DynamicIdleText = '价格 5 分钟内跌超 10% 将开启动态税与买入奖励';
 
 /// How a running round ends.
-const String launch2DynamicEndText = '出现一根收绿的 5 分钟 K 线即结束';
+const String launch2DynamicEndText = '出现一根收盘不低于开盘的 5 分钟 K 线即结束（收涨、收平或无成交都算）';
 
 /// The round card's rows for one state, label first (decision 0159:
 /// `currentDropBps`, `potUsd1`, `viewer.currentRoundWeightUsd1` and its

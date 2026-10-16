@@ -657,7 +657,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    '在 LOOP 里买入才保证记入奖励',
+                    '用任何软件买入都计入奖励，记给收到 MEME 的地址',
                     key: const ValueKey<String>('launch2-dyn-panel-note'),
                     style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
