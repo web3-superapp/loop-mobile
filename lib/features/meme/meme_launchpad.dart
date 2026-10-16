@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -102,7 +103,11 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           _LaunchpadTools(
             createEnabled: !blocked,
             onSearch: () => widget.onNavigate('/search'),
-            onCreate: () => widget.onNavigate(MemeRoute.createPath),
+            // Decision 0195: the classic create entry is not drawn while
+            // classic launches are retired; the search stays.
+            onCreate: _classic
+                ? () => widget.onNavigate(MemeRoute.createPath)
+                : null,
           ),
         // Decision 0176 (design 35 首页): balance + 充值, 每周最佳交易, the
         // three tabs, then the chips and the list as before.
@@ -139,6 +144,10 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
       ],
     );
   }
+
+  /// Decision 0195: whether a classic token may still be created here.
+  bool get _classic =>
+      ref.watch(loopFeatureSwitchesProvider).classicMemeLaunchVisible;
 
   Future<void> _refresh() async {
     final now = ref.read(loopReadClockProvider)();
@@ -199,7 +208,7 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           keyPrefix: keyBase,
           phase: state.phase,
           failureKind: state.failureKind,
-          emptyMessage: '还没有代币，来创建第一个',
+          emptyMessage: _classic ? '还没有代币，来创建第一个' : '这里还没有代币',
           onRetry: () => unawaited(controller.reload()),
         ),
       ];
@@ -210,15 +219,19 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           key: ValueKey<String>('$keyBase-empty'),
           illustration: LoopIllustration.launchpad,
           title: _tab == MemeListTab.fresh ? '还没有代币' : '「${_tab.label}」里还没有代币',
-          message: _tab == MemeListTab.fresh
+          message: !_classic
+              ? '经典发射已停用，新代币请走 v2 发射'
+              : _tab == MemeListTab.fresh
               ? '来创建第一个，打满自动上 PancakeSwap'
               : null,
-          action: LoopButton(
-            key: const ValueKey<String>('meme-empty-create'),
-            label: '创建第一个',
-            icon: 'plus',
-            onPressed: () => widget.onNavigate(MemeRoute.createPath),
-          ),
+          action: _classic
+              ? LoopButton(
+                  key: const ValueKey<String>('meme-empty-create'),
+                  label: '创建第一个',
+                  icon: 'plus',
+                  onPressed: () => widget.onNavigate(MemeRoute.createPath),
+                )
+              : null,
         ),
       ];
     }
@@ -361,7 +374,9 @@ class _LaunchpadTools extends StatelessWidget {
 
   final bool createEnabled;
   final VoidCallback onSearch;
-  final VoidCallback onCreate;
+
+  /// `null` draws no create entry (decision 0195).
+  final VoidCallback? onCreate;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -407,14 +422,16 @@ class _LaunchpadTools extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        // Decision 0176: 「充值」 is the screen's one full-Lime body.
-        LoopButton(
-          key: const ValueKey<String>('meme-create-entry'),
-          label: '创建代币',
-          icon: 'plus',
-          onPressed: createEnabled ? onCreate : null,
-        ),
+        if (onCreate case final create?) ...<Widget>[
+          const SizedBox(width: 10),
+          // Decision 0176: 「充值」 is the screen's one full-Lime body.
+          LoopButton(
+            key: const ValueKey<String>('meme-create-entry'),
+            label: '创建代币',
+            icon: 'plus',
+            onPressed: createEnabled ? create : null,
+          ),
+        ],
       ],
     ),
   );

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -274,7 +275,15 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
               ? null
               : LoopButton(
                   key: ValueKey<String>('$_keyBase-empty-action'),
-                  label: graduated ? '看正在发射的' : '看经典发射',
+                  // Decision 0195: the curve segment is 「历史」 while
+                  // classic launches are retired.
+                  label: graduated
+                      ? '看正在发射的'
+                      : ref
+                            .watch(loopFeatureSwitchesProvider)
+                            .classicMemeLaunchVisible
+                      ? '看经典发射'
+                      : '看历史代币',
                   primary: true,
                   onPressed: widget.onEmptyAction,
                 ),

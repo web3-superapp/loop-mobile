@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -22,6 +24,7 @@ import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -81,14 +84,22 @@ String? memeCreateFieldError(MemeCreateField field, String raw) {
 /// the shared signing exit, approval first when there is a first buy. A
 /// broadcast is 「已广播」; the page opens the token once the intent reads
 /// `confirmed`.
+///
+/// Decision 0195: while [LoopFeatureSwitchValues.classicMemeLaunchVisible]
+/// is off the route stays mounted but draws only the 「经典发射已停用」 notice
+/// — no form, no draft read, no request — with the way to v2 发射.
 class MemeCreateScreen extends ConsumerStatefulWidget {
   const MemeCreateScreen({
     super.key,
     this.draftId,
     this.onBack,
     this.onOpenToken,
+    this.onOpenLaunch2Create,
     this.clock,
   });
+
+  /// Opens the v2 (Loop Hook) create page from the retired notice.
+  final VoidCallback? onOpenLaunch2Create;
 
   /// A draft this account already owns, resumed at the confirm step.
   final String? draftId;
@@ -412,8 +423,38 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
     _step = MemeCreateStep.confirm;
   }
 
+  /// Decision 0195: the page a deep link or a direct route lands on while
+  /// classic launches are retired.
+  Widget _retired() {
+    final openV2 = widget.onOpenLaunch2Create;
+    return LoopFocusPage(
+      key: const ValueKey<String>('meme-create-retired'),
+      archetype: LoopPageArchetype.action,
+      title: '创建代币',
+      onBack: widget.onBack,
+      body: <Widget>[
+        LoopEmptyState(
+          illustration: LoopIllustration.launchpad,
+          title: '经典发射已停用',
+          message: '请使用 Loop Hook 发射（v2 发射）创建新代币。已有的经典代币仍可在 MEME 的「历史」里查看和买卖。',
+          action: openV2 == null
+              ? null
+              : LoopButton(
+                  key: const ValueKey<String>('meme-create-retired-open-v2'),
+                  label: '去 v2 发射',
+                  primary: true,
+                  onPressed: openV2,
+                ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!ref.watch(loopFeatureSwitchesProvider).classicMemeLaunchVisible) {
+      return _retired();
+    }
     final capability = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.meme),
     );

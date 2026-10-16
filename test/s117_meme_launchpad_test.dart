@@ -5,6 +5,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
@@ -14,6 +15,7 @@ import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_create_screen.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
@@ -309,6 +311,9 @@ Future<void> _pump(
   _RecordingWallet? wallet,
   LoopV2MetaSnapshot? meta,
   bool settle = true,
+  // Decision 0195: these pages are the classic launch as it stands when its
+  // switch is on; the retired branch has its own tests.
+  bool classic = true,
   List<Override> overrides = const <Override>[],
 }) => pumpS7Page(
   tester,
@@ -320,6 +325,9 @@ Future<void> _pump(
     wallets: <LoopWalletAccount>[_wallet()],
   ),
   overrides: <Override>[
+    loopFeatureSwitchesProvider.overrideWithValue(
+      LoopFeatureSwitchValues(classicMemeLaunchVisible: classic),
+    ),
     memeGatewayProvider.overrideWithValue(meme),
     memePollingProvider.overrideWithValue(
       const MemePolling(
@@ -1545,6 +1553,172 @@ void main() {
       );
       expect(find.text(r'$FROG · 动态'), findsOneWidget);
       expect(_key('meme-trade-side-buy'), findsOneWidget);
+      await _drain(tester);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // S216 · decision 0195: classic launch retired, classic tokens kept
+  // -------------------------------------------------------------------------
+
+  group('0195 · classic launch retired', () {
+    test('the build ships with the classic launch hidden', () {
+      expect(LoopFeatureSwitches.classicMemeLaunchVisible, isFalse);
+      expect(const LoopFeatureSwitchValues().classicMemeLaunchVisible, isFalse);
+    });
+
+    testWidgets('发射台 keeps its rows and search but draws no create entry', (
+      tester,
+    ) async {
+      final meme = _FakeMeme(
+        list: (tab, cursor) => _Answer<MemeTokenPage>.value(memePage()),
+      );
+      final opened = <String>[];
+      await _pump(
+        tester,
+        MemeScreen(onNavigate: opened.add),
+        meme: meme,
+        classic: false,
+      );
+      expect(_key('meme-row-$memeTokenIdA'), findsOneWidget);
+      expect(_key('meme-search-entry'), findsOneWidget);
+      expect(_key('meme-create-entry'), findsNothing);
+      expect(find.text('创建代币'), findsNothing);
+      // An existing classic token still opens.
+      await tester.tap(_key('meme-row-$memeTokenIdA'));
+      expect(opened.single, MemeRoute.token(memeTokenIdA));
+      await _drain(tester);
+    });
+
+    testWidgets('an empty chip no longer invites a classic token', (
+      tester,
+    ) async {
+      final meme = _FakeMeme(
+        list: (tab, cursor) => _Answer<MemeTokenPage>.value(
+          memePage(items: const <Map<String, Object?>>[]),
+        ),
+      );
+      await _pump(tester, const MemeScreen(), meme: meme, classic: false);
+      expect(find.text('还没有代币'), findsOneWidget);
+      expect(find.text('经典发射已停用，新代币请走 v2 发射'), findsOneWidget);
+      expect(_key('meme-empty-create'), findsNothing);
+      expect(find.text('创建第一个'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('the create route draws the retired notice: no form, no read', (
+      tester,
+    ) async {
+      final meme = _FakeMeme();
+      var openedV2 = 0;
+      await _pump(
+        tester,
+        MemeCreateScreen(
+          draftId: memeTokenIdA,
+          onOpenLaunch2Create: () => openedV2 += 1,
+        ),
+        meme: meme,
+        classic: false,
+      );
+      expect(_key('meme-create-retired'), findsOneWidget);
+      expect(_key('meme-create-screen'), findsNothing);
+      expect(_key('meme-create-name'), findsNothing);
+      expect(find.text('经典发射已停用'), findsOneWidget);
+      expect(find.textContaining('Loop Hook'), findsOneWidget);
+      // A deep link to a draft reads nothing and creates nothing.
+      expect(meme.detailReads, 0);
+      expect(meme.createCalls, isEmpty);
+      expect(meme.uploads, 0);
+      await tester.tap(_key('meme-create-retired-open-v2'));
+      expect(openedV2, 1);
+      await _drain(tester);
+    });
+
+    testWidgets('switch on: the create route is the classic form as before', (
+      tester,
+    ) async {
+      await _pump(tester, const MemeCreateScreen(), meme: _FakeMeme());
+      expect(_key('meme-create-screen'), findsOneWidget);
+      expect(_key('meme-create-retired'), findsNothing);
+      expect(_key('meme-create-name'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('an existing classic token still trades: 买入 / 卖出 / 快买', (
+      tester,
+    ) async {
+      final meme = _FakeMeme(
+        details: <_Answer<MemeTokenDetail>>[
+          _Answer<MemeTokenDetail>.value(memeDetail()),
+        ],
+        candles: _Answer<MemeCandleSeries>.value(memeCandles()),
+        holders: (cursor) => _Answer<MemeHolderPage>.value(memeHolders()),
+        trades: (cursor) => _Answer<MemeTradePage>.value(memeTrades()),
+      );
+      await _pump(
+        tester,
+        MemeTokenScreen(memeTokenId: memeTokenIdA, onNavigate: (_) {}),
+        meme: meme,
+        classic: false,
+      );
+      expect(find.text('FROG'), findsOneWidget);
+      expect(_key('meme-token-buy'), findsOneWidget);
+      expect(_key('meme-token-sell'), findsOneWidget);
+      expect(_key('meme-token-quick-buy'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a classic draft cannot be finished while retired', (
+      tester,
+    ) async {
+      MemeTokenDetail draft() => memeDetail(
+        status: 'draft',
+        tokenAddress: null,
+        price: null,
+        quoteUnavailable: 'MEME_TOKEN_NOT_ON_CHAIN',
+        curve: memeFreshCurveJson(),
+        change: null,
+      );
+      final retired = _FakeMeme(
+        details: <_Answer<MemeTokenDetail>>[
+          _Answer<MemeTokenDetail>.value(draft()),
+        ],
+        candles: _Answer<MemeCandleSeries>.value(memeCandles()),
+        holders: (cursor) => _Answer<MemeHolderPage>.value(memeHolders()),
+        trades: (cursor) => _Answer<MemeTradePage>.value(memeTrades()),
+      );
+      await _pump(
+        tester,
+        MemeTokenScreen(memeTokenId: memeTokenIdA, onNavigate: (_) {}),
+        meme: retired,
+        classic: false,
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+      expect(_key('meme-token-resume'), findsNothing);
+      expect(_key('meme-token-resume-retired'), findsOneWidget);
+      expect(
+        tester.widget<LoopButton>(_key('meme-token-resume-retired')).onPressed,
+        isNull,
+      );
+      await _drain(tester);
+
+      final open = _FakeMeme(
+        details: <_Answer<MemeTokenDetail>>[
+          _Answer<MemeTokenDetail>.value(draft()),
+        ],
+        candles: _Answer<MemeCandleSeries>.value(memeCandles()),
+        holders: (cursor) => _Answer<MemeHolderPage>.value(memeHolders()),
+        trades: (cursor) => _Answer<MemeTradePage>.value(memeTrades()),
+      );
+      await _pump(
+        tester,
+        MemeTokenScreen(memeTokenId: memeTokenIdA, onNavigate: (_) {}),
+        meme: open,
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+      expect(_key('meme-token-resume'), findsOneWidget);
       await _drain(tester);
     });
   });

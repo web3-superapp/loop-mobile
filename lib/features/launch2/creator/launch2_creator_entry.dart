@@ -66,6 +66,10 @@ class Launch2MyProjectsEntry extends ConsumerWidget {
 /// chooser — v2 发射 (this module's create page) or 经典发射 (the MEME curve
 /// create page, passed in as [classicCreatePath] so this module does not
 /// import the MEME feature).
+///
+/// Decision 0195: with [LoopFeatureSwitchValues.classicMemeLaunchVisible]
+/// off there is nothing to choose between, so 「发起」 opens the v2 create
+/// page at once instead of a one-row sheet.
 class Launch2CreatorActions extends ConsumerWidget {
   const Launch2CreatorActions({
     required this.onNavigate,
@@ -79,6 +83,9 @@ class Launch2CreatorActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!launch2CreatorEntryVisible(ref)) return const SizedBox.shrink();
+    final classic = ref.watch(
+      loopFeatureSwitchesProvider.select((s) => s.classicMemeLaunchVisible),
+    );
     return Row(
       key: const ValueKey<String>('launch2-creator-actions'),
       mainAxisSize: MainAxisSize.min,
@@ -94,7 +101,9 @@ class Launch2CreatorActions extends ConsumerWidget {
           key: const ValueKey<String>('launch2-create-action'),
           icon: 'plus',
           label: '发起',
-          onPressed: () => unawaited(_choose(context)),
+          onPressed: classic
+              ? () => unawaited(_choose(context))
+              : () => onNavigate(Launch2CreatorRoute.createPath),
         ),
       ],
     );

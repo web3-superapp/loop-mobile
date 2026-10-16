@@ -49,6 +49,11 @@ class MemeScreen extends ConsumerWidget {
   /// instances. The `meme` market category stays on 行情 (`/market`).
   static const v2Segments = <String>['v2 发射', '经典', '已毕业'];
 
+  /// Decision 0195: while classic launches are retired the curve segment
+  /// keeps its tokens (they stay readable and tradable) under 「历史」, so a
+  /// new reader is not told 经典 is a way to launch.
+  static const v2SegmentsClassicRetired = <String>['v2 发射', '历史', '已毕业'];
+
   /// The index of the IDO segment while the switch is on.
   static const int idoSegment = 2;
 
@@ -138,11 +143,17 @@ class MemeScreen extends ConsumerWidget {
     void select(int index) =>
         ref.read(loopTabSegmentMemoryProvider.notifier).select('meme', index);
     final idoIndex = v2Segments.length;
+    final classic = ref
+        .watch(loopFeatureSwitchesProvider)
+        .classicMemeLaunchVisible;
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('meme-screen'),
       tabKey: 'meme',
       title: 'MEME',
-      segments: <String>[...v2Segments, if (ido) 'IDO'],
+      segments: <String>[
+        ...(classic ? v2Segments : v2SegmentsClassicRetired),
+        if (ido) 'IDO',
+      ],
       actionsBuilder: (context, index) => index == idoIndex && ido
           ? <Widget>[
               Consumer(
@@ -189,15 +200,18 @@ class MemeScreen extends ConsumerWidget {
                         label: '搜索代币',
                         onPressed: () => open('/search'),
                       ),
-                      const SizedBox(width: 6),
-                      LoopIconButton(
-                        key: const ValueKey<String>('meme-create-entry'),
-                        icon: 'plus',
-                        label: '创建代币',
-                        onPressed: blocked
-                            ? null
-                            : () => open(MemeRoute.createPath),
-                      ),
+                      // Decision 0195: no classic create while retired.
+                      if (classic) ...<Widget>[
+                        const SizedBox(width: 6),
+                        LoopIconButton(
+                          key: const ValueKey<String>('meme-create-entry'),
+                          icon: 'plus',
+                          label: '创建代币',
+                          onPressed: blocked
+                              ? null
+                              : () => open(MemeRoute.createPath),
+                        ),
+                      ],
                     ],
                   );
                 },

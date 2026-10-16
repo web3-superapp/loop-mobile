@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
@@ -204,7 +205,13 @@ Future<void> _pumpCreate(WidgetTester tester, VoidCallback onBack) =>
           ),
         ],
       ),
-      overrides: [memeGatewayProvider.overrideWithValue(_IdleMeme())],
+      overrides: [
+        memeGatewayProvider.overrideWithValue(_IdleMeme()),
+        // Decision 0195: the classic form exists only with its switch on.
+        loopFeatureSwitchesProvider.overrideWithValue(
+          const LoopFeatureSwitchValues(classicMemeLaunchVisible: true),
+        ),
+      ],
     );
 
 void main() {

@@ -1803,6 +1803,9 @@ final List<RouteBase> _memeRoutes = <RouteBase>[
       onBack: () => _popOrHome(context),
       onOpenToken: (memeTokenId) =>
           context.pushReplacement(MemeRoute.token(memeTokenId)),
+      // Decision 0195: the retired notice's way to v2 发射.
+      onOpenLaunch2Create: () =>
+          context.pushReplacement(Launch2CreatorRoute.createPath),
     ),
   ),
   GoRoute(

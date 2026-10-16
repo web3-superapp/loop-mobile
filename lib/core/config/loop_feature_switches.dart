@@ -41,6 +41,12 @@ abstract final class LoopFeatureSwitches {
   // S136 · 决策 0139：用户侧页面已落地，开关打开；入口仍只在能力位
   // `launch2 == available` 时出现（MEME Tab 的 v2 分段、钱包两行）。
   static const bool launch2Visible = true;
+
+  /// S216 · 决策 0195：需求方 2026-10-16「正常发射从 App 和 H5 移除，统一
+  /// Loop Hook 发射」。经典发射（旧 MEME 联合曲线 `meme-create`）的入口隐藏，
+  /// 创建页只画停用占位；已有经典代币的代币页、列表、持仓、交易照常。
+  /// 页面、路由与请求代码保留，改 true 即恢复。
+  static const bool classicMemeLaunchVisible = false;
 }
 
 /// The switch values one build runs with.
@@ -61,6 +67,8 @@ final class LoopFeatureSwitchValues {
         LoopFeatureSwitches.searchOutboundDomainsVisible,
     this.appleLoginVisible = LoopFeatureSwitches.appleLoginVisible,
     this.launch2Visible = LoopFeatureSwitches.launch2Visible,
+    this.classicMemeLaunchVisible =
+        LoopFeatureSwitches.classicMemeLaunchVisible,
   });
 
   final bool idoLaunchVisible;
@@ -71,6 +79,7 @@ final class LoopFeatureSwitchValues {
   final bool searchOutboundDomainsVisible;
   final bool appleLoginVisible;
   final bool launch2Visible;
+  final bool classicMemeLaunchVisible;
 
   /// Whether a channel draws its members as their real Stream user (name,
   /// image, tap to the public profile) rather than as a channel-scoped name.

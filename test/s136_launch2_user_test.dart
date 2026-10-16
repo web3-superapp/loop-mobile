@@ -316,6 +316,8 @@ Future<void> _pump(
   _RecordingWallet? wallet,
   LoopV2MetaSnapshot? meta,
   bool switchOn = true,
+  // Decision 0195: classic launch visible unless a test says otherwise.
+  bool classic = true,
   _Clock? clock,
   bool settle = true,
   List<Override> overrides = const <Override>[],
@@ -342,7 +344,10 @@ Future<void> _pump(
         ),
       ),
       loopFeatureSwitchesProvider.overrideWithValue(
-        LoopFeatureSwitchValues(launch2Visible: switchOn),
+        LoopFeatureSwitchValues(
+          launch2Visible: switchOn,
+          classicMemeLaunchVisible: classic,
+        ),
       ),
       if (wallet != null)
         walletSigningGatewayProvider.overrideWithValue(wallet),
@@ -2217,6 +2222,62 @@ void main() {
       await tester.tap(_key('meme-segment-1'));
       await tester.pumpAndSettle();
       expect(_key('launch2-creator-actions'), findsNothing);
+      await _drain(tester);
+    });
+
+    // S216 · decision 0195.
+    testWidgets('classic retired: 发起 opens v2 at once, no chooser, no 经典', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        MemeScreen(onNavigate: opened.add),
+        launch2: _FakeLaunch2(
+          list: (stage, cursor) => _Answer<Launch2InstancePage>.value(
+            l2Page(<Map<String, Object?>>[l2RowJson()]),
+          ),
+        ),
+        classic: false,
+        overrides: <Override>[
+          memeGatewayProvider.overrideWithValue(const UnavailableMemeGateway()),
+        ],
+      );
+      expect(find.text('经典'), findsNothing);
+      expect(find.text('历史'), findsOneWidget);
+      await tester.tap(_key('launch2-create-action'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-chooser'), findsNothing);
+      expect(find.text('经典发射'), findsNothing);
+      expect(opened.single, Launch2CreatorRoute.createPath);
+
+      // 历史 keeps its search; the classic create is gone.
+      await tester.tap(_key('meme-segment-1'));
+      await tester.pumpAndSettle();
+      expect(_key('meme-search-entry'), findsOneWidget);
+      expect(_key('meme-create-entry'), findsNothing);
+      expect(_key('meme-launchpad'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('classic retired: an empty v2 list points at 历史, not 经典', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const MemeScreen(),
+        launch2: _FakeLaunch2(
+          list: (stage, cursor) => _Answer<Launch2InstancePage>.value(
+            l2Page(const <Map<String, Object?>>[]),
+          ),
+        ),
+        classic: false,
+        overrides: <Override>[
+          memeGatewayProvider.overrideWithValue(const UnavailableMemeGateway()),
+        ],
+      );
+      expect(find.text('看历史代币'), findsOneWidget);
+      expect(find.text('看经典发射'), findsNothing);
       await _drain(tester);
     });
 

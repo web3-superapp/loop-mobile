@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -476,6 +477,19 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               : () => _open(MemeRoute.swap(detail: detail)),
         ),
       ),
+      // Decision 0195: a draft is a creation not yet on chain; while classic
+      // launches are retired it cannot be finished.
+      MemeTokenStatus.draft
+          when !ref
+              .watch(loopFeatureSwitchesProvider)
+              .classicMemeLaunchVisible =>
+        const _BarShell(
+          child: LoopButton(
+            key: ValueKey<String>('meme-token-resume-retired'),
+            label: '经典发射已停用',
+            block: true,
+          ),
+        ),
       MemeTokenStatus.draft => _BarShell(
         child: LoopButton(
           key: const ValueKey<String>('meme-token-resume'),
