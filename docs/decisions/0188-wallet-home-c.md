@@ -42,10 +42,11 @@ Accepted 2026-10-15。基线 `integration/v2` 449ad64（含 0166 ~ 0187）。来
 - 今日盈亏（key `wallet-pnl` / `wallet-pnl-value`）：读的是 **7 天历史**的 `change24h`，`+$12.08 (+10.4%)`，色只经
   `LoopPriceMove`（0117 rise / fall）；`change24h` 为 null 写「今日盈亏 暂无」；历史读不到整行不画。末尾 chevron，点按展开大图。
   旧的 `balances.netWorth.change24h` 那一行（`wallet-change24h*`）删除：按清单「404 / 503 → 不画盈亏」，不退回另一个来源。
-- 右侧 88×44 小折线（`WalletNetWorthSpark`，`LoopSparkline` lime）：7 天历史点数 ≥ 2 才画，展开时隐藏。
+- 右侧 88×44 小折线（`WalletNetWorthSpark`，`LoopSparkline` lime）：7 天历史点数 ≥ 2 才画，展开时隐藏（**0193 修订**：读到但点数 < 2 时画同尺寸占位「净值走势 · 记录中」+ 虚线，读取中画骨架，读失败仍不画）。
 
 ### 3. 原地展开（`WalletNetWorthPanel`）
-- 下方 ⌄（`wallet-networth-expand`）或小折线、今日盈亏都可展开；⌃（`wallet-networth-collapse`）收起。
+- 下方 ⌄（`wallet-networth-expand`）或小折线、今日盈亏都可展开；⌃（`wallet-networth-collapse`）收起
+  （**0193 修订**：⌄ / ⌃ 前加文字「净值走势」/「收起」，captionSm text2；占位同样可展开）。
   展开态 `walletNetWorthExpandedProvider`、区间 `walletNetWorthRangeProvider` 都是本次运行内记忆（非 autoDispose，不落盘）。
   历史端口 Unavailable（preview 组装、缺 session）时 ⌄ 也不画。
 - 面积图 `WalletNetWorthChart`：200 高、lime 2 px 线 + `lime` 28% → 0 的纵向渐变（token 色的透明档），
@@ -54,7 +55,7 @@ Accepted 2026-10-15。基线 `integration/v2` 449ad64（含 0166 ~ 0187）。来
   `source` 不是已知 `LoopFactSource` 时写「LOOP 净值快照」而不是打印服务端标识符。
 - 五个 `LoopSeg(quiet)` 区间胶囊（`wallet-networth-range-{wire}`），一行放不下时整行 scaleDown。
 - 读取中 200 高骨架；读不到 `LoopInlineUnavailable`「净值走势暂时读不到」+ 重试（一行，不占满 200）；
-  区间内点数 < 2 写「这个区间还没有净值记录」。
+  区间内点数 < 2 写「这个区间还没有净值记录」（**0193 修订**为「这个区间还没有净值记录 · 每小时记一次，有资产后开始画线」）。
 
 ### 4. 四个圆键、领取测试币卡
 不变（0119 / 0171：只有兑换满 lime；`wallet-pay-entry` 等 key 不变）。
@@ -110,3 +111,8 @@ Accepted 2026-10-15。基线 `integration/v2` 449ad64（含 0166 ~ 0187）。来
 
 `WalletBalanceRow` 的字号回到账本行四档：ticker 14/700 → `title` 15/600，副行 11 → `caption` 12，数额 14/700 → `figure` 13/600，估值 11/600 → `figureXs` 11/400，24h 变动 `figureXs`@600；
 读不到余额的行 ticker 与之同为 15。两个说明弹层标题改用 `LoopSheetHeading`（20/600）。
+
+## 0193 修订
+
+§2 右侧小折线位：点数 < 2 画占位 `WalletNetWorthSparkPlaceholder`（虚线 + 「净值走势 · 记录中」，可展开），读取中画同尺寸骨架，读失败仍不画；
+§3 ⌄ / ⌃ 加「净值走势」/「收起」标签，空区间文案加「· 每小时记一次，有资产后开始画线」。详见 0193。

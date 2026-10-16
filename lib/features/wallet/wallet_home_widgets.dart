@@ -221,6 +221,19 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
         : _watchHistory((walletId: walletId, range: range));
     final week = weekState?.value;
     final fiat = week?.fiat;
+    // The 88 × 44 slot beside the total (decision 0193): the line when it
+    // can be drawn, a placeholder when the history came back with fewer
+    // than two snapshots, a skeleton while it is read — and nothing at all
+    // when the read failed (0188: 404 / 503 draw nothing).
+    final Widget? sparkSlot = week != null
+        ? week.drawable
+              ? WalletNetWorthSpark(history: week, onTap: _toggle)
+              : WalletNetWorthSparkPlaceholder(onTap: _toggle)
+        : weekState != null &&
+              (weekState.phase == LoopChainViewPhase.loading ||
+                  weekState.failureKind == null)
+        ? const WalletNetWorthSparkSkeleton()
+        : null;
 
     final caption = <String>[
       if (netWorth case LoopNetWorthValued(
@@ -388,10 +401,10 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Expanded(child: left),
-              if (!expanded && week != null && week.drawable)
+              if (!expanded && sparkSlot != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 38, left: 10, right: 8),
-                  child: WalletNetWorthSpark(history: week, onTap: _toggle),
+                  child: sparkSlot,
                 ),
             ],
           ),

@@ -80,7 +80,111 @@ class WalletNetWorthSpark extends StatelessWidget {
   }
 }
 
-/// ⌄ / ⌃ — the one-line switch that opens or closes the chart.
+/// The 88 × 44 slot when the 7-day history was read but cannot be drawn
+/// (fewer than two snapshots — a new or empty wallet): a dashed Text3
+/// baseline over 「净值走势 · 记录中」, so the slot still says a chart lives
+/// here (decision 0193). It carries no figure, so 隐藏余额 leaves it alone.
+/// Tapping it opens the chart, as the sparkline does.
+class WalletNetWorthSparkPlaceholder extends StatelessWidget {
+  const WalletNetWorthSparkPlaceholder({required this.onTap, super.key});
+
+  static const String caption = '净值走势 · 记录中';
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final auxiliary = LoopGround.auxiliaryOf(context);
+    final secondary = LoopGround.secondaryOf(context);
+    return Semantics(
+      button: true,
+      label: '净值走势记录中，点按展开',
+      excludeSemantics: true,
+      child: LoopPressable(
+        key: const ValueKey<String>('wallet-networth-spark-placeholder'),
+        onTap: onTap,
+        child: SizedBox.fromSize(
+          size: WalletNetWorthSpark.size,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                child: CustomPaint(
+                  key: const ValueKey<String>(
+                    'wallet-networth-spark-placeholder-line',
+                  ),
+                  painter: WalletNetWorthDashPainter(color: auxiliary),
+                ),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  caption,
+                  key: const ValueKey<String>(
+                    'wallet-networth-spark-placeholder-text',
+                  ),
+                  maxLines: 1,
+                  style: LoopType.captionSm.copyWith(color: secondary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One dashed horizontal line through the middle of its box.
+class WalletNetWorthDashPainter extends CustomPainter {
+  const WalletNetWorthDashPainter({required this.color});
+
+  final Color color;
+
+  static const double dash = 4;
+  static const double gap = 3;
+  static const double strokeWidth = 1;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    final y = size.height / 2;
+    for (var x = 0.0; x < size.width; x += dash + gap) {
+      canvas.drawLine(
+        Offset(x, y),
+        Offset(math.min(x + dash, size.width), y),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(WalletNetWorthDashPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+/// The same slot while the 7-day history is being read.
+class WalletNetWorthSparkSkeleton extends StatelessWidget {
+  const WalletNetWorthSparkSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.fromSize(
+      key: const ValueKey<String>('wallet-networth-spark-loading'),
+      size: WalletNetWorthSpark.size,
+      child: LoopSkeletonBlock(
+        width: WalletNetWorthSpark.size.width,
+        height: WalletNetWorthSpark.size.height,
+      ),
+    );
+  }
+}
+
+/// ⌄ / ⌃ — the one-line switch that opens or closes the chart, labelled
+/// 「净值走势」 closed and 「收起」 open (decision 0193).
 class WalletNetWorthChevron extends StatelessWidget {
   const WalletNetWorthChevron({
     required this.expanded,
@@ -108,12 +212,24 @@ class WalletNetWorthChevron extends StatelessWidget {
         child: SizedBox(
           height: LoopTouch.minimum,
           width: double.infinity,
-          child: Center(
-            child: RotatedBox(
-              // The chevron sprite points right; a quarter turn points down.
-              quarterTurns: expanded ? 3 : 1,
-              child: LoopIcon('chevron', size: 14, color: auxiliary),
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                expanded ? '收起' : '净值走势',
+                key: const ValueKey<String>('wallet-networth-chevron-label'),
+                maxLines: 1,
+                style: LoopType.captionSm.copyWith(
+                  color: LoopGround.secondaryOf(context),
+                ),
+              ),
+              const SizedBox(width: 4),
+              RotatedBox(
+                // The chevron sprite points right; a quarter turn points down.
+                quarterTurns: expanded ? 3 : 1,
+                child: LoopIcon('chevron', size: 14, color: auxiliary),
+              ),
+            ],
           ),
         ),
       ),
@@ -164,7 +280,7 @@ class WalletNetWorthPanel extends StatelessWidget {
           : const LoopInlineUnavailable(
               key: ValueKey<String>('wallet-networth-chart-empty'),
               icon: 'info',
-              message: '这个区间还没有净值记录',
+              message: '这个区间还没有净值记录 · 每小时记一次，有资产后开始画线',
               padding: EdgeInsets.zero,
             );
     } else if (read == null ||
