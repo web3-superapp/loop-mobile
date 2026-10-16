@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -165,6 +166,102 @@ class Launch2DynamicRoundCard extends StatelessWidget {
         observedAt: observedAt,
         padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 4),
         detail: '跌幅按 5 分钟 K 线计算；回购买入不计奖励权重。',
+      ),
+    ],
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 费用累计 · the Hook's fee totals (client decision 0197)
+// ---------------------------------------------------------------------------
+
+/// The base buy fee total(s), by `buyFeeToken` (decision 0197): an S209
+/// Hook 「买入基础税累计 x USD1」 (`summary.buyFeesUsd1`), an older one
+/// 「x MEME」 (`summary.buyFeesMeme`); both rows when both totals hold
+/// fees. [ticker] names the MEME (`$T`); without it the row says MEME.
+List<(String key, String label, String value)> launch2DynamicBuyFeeRows(
+  Launch2DynamicPoolState state, {
+  String? ticker,
+}) {
+  final summary = state.summary;
+  final usd1 = summary.buyFeesUsd1 ?? Decimal.zero;
+  final meme = summary.buyFeesMeme;
+  final usd1Hook = state.buyFeeToken == Launch2BuyFeeToken.usd1;
+  final showUsd1 = usd1Hook || usd1 > Decimal.zero;
+  final showMeme = !usd1Hook || meme > Decimal.zero;
+  const label = '买入基础税累计';
+  return <(String, String, String)>[
+    if (showUsd1)
+      ('buy-fees-usd1', label, launch2Usd1Label(usd1, maxFractionDigits: 4)),
+    if (showMeme)
+      (
+        'buy-fees-meme',
+        label,
+        ticker == null || ticker.isEmpty
+            ? '${launch2MemeFigure(meme)} MEME'
+            : launch2MemeLabel(meme, ticker),
+      ),
+  ];
+}
+
+/// The fee totals' rows: the dynamic and base sell fees (USD1), then
+/// [launch2DynamicBuyFeeRows].
+List<(String key, String label, String value)> launch2DynamicFeeRows(
+  Launch2DynamicPoolState state, {
+  String? ticker,
+}) {
+  final summary = state.summary;
+  return <(String, String, String)>[
+    (
+      'dynamic-fees',
+      '动态税累计',
+      launch2Usd1Label(summary.dynamicFeesUsd1, maxFractionDigits: 4),
+    ),
+    (
+      'sell-fees',
+      '卖出基础税累计',
+      launch2Usd1Label(summary.baseSellFeesUsd1, maxFractionDigits: 4),
+    ),
+    ...launch2DynamicBuyFeeRows(state, ticker: ticker),
+  ];
+}
+
+/// 费用累计: what the Hook has taken since the pool opened, under the round
+/// card on the project page and above the rounds on 外盘奖励.
+class Launch2DynamicFeeSummaryCard extends StatelessWidget {
+  const Launch2DynamicFeeSummaryCard({
+    required this.state,
+    super.key,
+    this.ticker,
+  });
+
+  final Launch2DynamicPoolState state;
+  final String? ticker;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    key: const ValueKey<String>('launch2-dyn-fees'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      const Launch2SectionLabel('费用累计'),
+      LoopRecordCard(
+        key: const ValueKey<String>('launch2-dyn-fees-card'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final (key, label, value) in launch2DynamicFeeRows(
+              state,
+              ticker: ticker,
+            ))
+              LoopKeyValue(
+                key: ValueKey<String>('launch2-dyn-$key'),
+                label: label,
+                value: value,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+          ],
+        ),
       ),
     ],
   );

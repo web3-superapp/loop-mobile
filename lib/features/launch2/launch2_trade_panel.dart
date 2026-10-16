@@ -26,7 +26,8 @@ const String launch2PriceMovedText = '价格已变化，已刷新';
 /// The S117 panel's shape — side, one amount field, the server's quote, one
 /// confirm key that sits above the keypad — drawn inline on the project page
 /// (no sheet over a sheet), plus what the v2 curve adds: the server's MAX
-/// key, the cumulative quota bar (已用 / 5,000,000), the 10% tax line and the
+/// key, the cumulative quota bar (已用 / the instance's cap, decision 0197),
+/// the 10% tax line and the
 /// holder-list badge. In the priority hour a wallet outside the list sees
 /// the panel greyed with the reason; a quote that expired or was overtaken
 /// re-quotes in place with one line, never a toast or an error page.
@@ -359,7 +360,9 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
     final template = _detail.template;
     final quote = _quote;
     final amount = _entered;
-    final cap = quote?.quotaCap ?? template.perAddressCap;
+    // Decision 0197: the instance's own cap (S209 Factory parameter); a
+    // missing figure reads as the old 5,000,000.
+    final cap = launch2CurveCapOf(quote?.quotaCap ?? template.perAddressCap);
     final used = quote?.quotaUsed ?? viewer?.curve.cumulativeBought;
     final taxBps = _side == Launch2Side.buy
         ? template.curveBuyTaxBps
@@ -435,6 +438,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           failure: _quoteFailure,
           side: _side,
           ticker: _ticker,
+          cap: cap,
           onFillMax: _fillMax,
         ),
         if (_notice case final String line)
@@ -451,6 +455,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           _PrepareFailureLine(
             failure: launch2ActionFailure(
               failure,
+              fallback: (failure) => _failureText(failure, cap),
               requested: _preparedAmount,
               ticker: _ticker,
             ),
@@ -543,8 +548,14 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
   }
 }
 
-/// 累计额度：已用 / 5,000,000 (both rounds share it; selling does not
-/// restore it).
+/// A curve refusal, with the instance's cap in `LAUNCH2_QUOTA_EXHAUSTED`.
+String _failureText(LoopChainException failure, Decimal cap) =>
+    failure.reasonCode == 'LAUNCH2_QUOTA_EXHAUSTED'
+    ? launch2QuotaExhaustedText(cap)
+    : launch2FailureText(failure);
+
+/// 累计额度：已用 / the instance's cap (decision 0197; both rounds share it;
+/// selling does not restore it).
 class _QuotaBar extends StatelessWidget {
   const _QuotaBar({
     required this.used,
@@ -585,7 +596,7 @@ class _QuotaBar extends StatelessWidget {
           semanticLabel: value == null
               ? '累计额度暂时读不到'
               : '累计额度已用 ${launch2MemeFigure(value)} \$$ticker，'
-                    '上限 ${launch2MemeFigure(cap)}',
+                    '${launch2CurveCapSentence(cap)}',
         ),
       ],
     );
@@ -632,6 +643,7 @@ class _QuoteLines extends StatelessWidget {
     required this.failure,
     required this.side,
     required this.ticker,
+    required this.cap,
     required this.onFillMax,
   });
 
@@ -640,6 +652,9 @@ class _QuoteLines extends StatelessWidget {
   final LoopChainException? failure;
   final Launch2Side side;
   final String ticker;
+
+  /// The instance's per-address cap (decision 0197).
+  final Decimal cap;
   final VoidCallback onFillMax;
 
   @override
@@ -648,7 +663,7 @@ class _QuoteLines extends StatelessWidget {
     if (failure != null) {
       return LoopInlineUnavailable(
         key: const ValueKey<String>('launch2-trade-quote-failed'),
-        message: '没有取到报价 · ${launch2FailureText(failure!)}',
+        message: '没有取到报价 · ${_failureText(failure!, cap)}',
         padding: EdgeInsets.zero,
       );
     }
@@ -672,7 +687,7 @@ class _QuoteLines extends StatelessWidget {
                 Expanded(
                   child: Launch2WarnLine(
                     '超出可${side == Launch2Side.buy ? '买' : '卖'}上限'
-                    '（${launch2LimitedByText(value.limitedBy)}）',
+                    '（${launch2LimitedByText(value.limitedBy, cap: value.quotaCap)}）',
                     key: const ValueKey<String>('launch2-trade-exceeds'),
                   ),
                 ),

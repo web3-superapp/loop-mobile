@@ -783,6 +783,71 @@ void main() {
       },
     );
 
+    test('decision 0197: the per-address cap is the instance figure, whole '
+        'tokens with separators; missing or 0 reads as 5,000,000', () {
+      expect(launch2CurveCapOf(null), Decimal.fromInt(5000000));
+      expect(launch2CurveCapOf(Decimal.zero), Decimal.fromInt(5000000));
+      expect(launch2CurveCapFigure(Decimal.fromInt(3000000)), '3,000,000');
+      expect(launch2CurveCapFigure(Decimal.parse('2500000.75')), '2,500,000');
+      expect(launch2CurveCapFigure(null), '5,000,000');
+      expect(
+        launch2CurveCapSentence(Decimal.fromInt(3000000)),
+        '每个地址最多买 3,000,000 枚',
+      );
+      expect(launch2CurveCapSentence(null), '每个地址最多买 5,000,000 枚');
+      expect(
+        launch2LimitedByText(
+          Launch2LimitedBy.quota,
+          cap: Decimal.fromInt(3000000),
+        ),
+        '单地址累计上限 3,000,000 枚',
+      );
+      expect(
+        launch2LimitedByText(Launch2LimitedBy.quota),
+        '单地址累计上限 5,000,000 枚',
+      );
+      expect(
+        launch2QuotaExhaustedText(Decimal.fromInt(3000000)),
+        '已用完单地址累计 3,000,000 枚额度',
+      );
+      expect(launch2QuotaExhaustedText(null), '已用完单地址累计 5,000,000 枚额度');
+      // Without an instance the sentence names no figure.
+      expect(launch2ReasonText('LAUNCH2_QUOTA_EXHAUSTED'), '已用完单地址累计买入额度');
+    });
+
+    testWidgets('decision 0197: 发射规则 and the quota bar read the instance '
+        'cap; an old instance reads 5,000,000', (tester) async {
+      await open(
+        tester,
+        l2Detail(
+          stage: 'upcoming',
+          perAddressCap: '3000000',
+          perAddressCapBps: 30,
+        ),
+      );
+      await _scrollTo(tester, find.text('3,000,000 枚（0.3%）'));
+      expect(find.text('3,000,000 枚（0.3%）'), findsOneWidget);
+      await _drain(tester);
+
+      await open(tester, l2Detail(stage: 'upcoming'));
+      await _scrollTo(tester, find.text('5,000,000 枚（0.5%）'));
+      expect(find.text('5,000,000 枚（0.5%）'), findsOneWidget);
+      await _drain(tester);
+
+      await open(
+        tester,
+        l2Detail(
+          stage: 'public',
+          noNextChange: true,
+          perAddressCap: '3000000',
+          perAddressCapBps: 30,
+          viewer: l2ViewerJson(member: true, eligibleNow: true, bought: '1000'),
+        ),
+      );
+      expect(find.text('1,000 / 3,000,000'), findsOneWidget);
+      await _drain(tester);
+    });
+
     testWidgets(
       'priority / public: curve, panel with MAX, quota bar, 10% tax',
       (tester) async {
@@ -1154,6 +1219,38 @@ void main() {
       expect(field.controller!.text, '185185.18');
       expect(gateway.quoteCalls.last.$2, Decimal.parse('185185.18'));
       expect(_key('launch2-trade-exceeds'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('decision 0197: the MAX reason and a quota refusal name the '
+        'instance cap', (tester) async {
+      await openPriority(
+        tester,
+        quotes: <_Answer<Launch2Quote>>[
+          _Answer<Launch2Quote>.value(
+            l2Quote(
+              exceedsMax: true,
+              requested: '1000000',
+              amountIn: '185185.18',
+              capMeme: '3000000',
+            ),
+          ),
+          const _Answer<Launch2Quote>.fail(
+            LoopChainFailureKind.validationFailed,
+            reasonCode: 'LAUNCH2_QUOTA_EXHAUSTED',
+          ),
+        ],
+      );
+      await tester.enterText(_key('launch2-trade-amount'), '1000000');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(find.text('超出可买上限（单地址累计上限 3,000,000 枚）'), findsOneWidget);
+      expect(find.text('0 / 3,000,000'), findsOneWidget);
+      await tester.enterText(_key('launch2-trade-amount'), '2');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      // No quote: the detail's cap, the old 5,000,000 here.
+      expect(find.text('没有取到报价 · 已用完单地址累计 5,000,000 枚额度'), findsOneWidget);
       await _drain(tester);
     });
 

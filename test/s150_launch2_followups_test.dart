@@ -245,8 +245,9 @@ void main() {
       );
     });
 
-    test('another wallet, a buy taxed in USD1, a wrong token pair or an '
-        'unknown key is refused', () {
+    test('another wallet, a sell taxed in MEME, a wrong token pair or an '
+        'unknown key is refused; an S209 buy taxed in USD1 reads '
+        '(decision 0197)', () {
       void refuses(void Function(Map<String, Object?> root) edit) {
         final root = body();
         edit(root);
@@ -264,8 +265,27 @@ void main() {
           (root['trades']! as List<Object?>).last! as Map<String, Object?>;
 
       refuses((r) => r['walletId'] = '00000000-0000-4000-8000-000000000001');
-      refuses((r) => buy(r)['taxToken'] = 'usd1');
+      final sell = (body()['trades']! as List<Object?>)
+          .cast<Map<String, Object?>>()
+          .indexWhere((t) => t['side'] == 'sell');
+      expect(sell, isNonNegative);
+      refuses(
+        (r) =>
+            ((r['trades']! as List<Object?>)[sell]!
+                    as Map<String, Object?>)['taxToken'] =
+                'meme',
+      );
+      refuses((r) => buy(r)['taxToken'] = 'MEME');
       refuses((r) => buy(r)['inputToken'] = 'meme');
+      // Decision 0197: an S209 LoopDynamic buy keeps its fee in USD1.
+      final usd1Buy = body();
+      buy(usd1Buy)['taxToken'] = 'usd1';
+      final trades = LoopV2Launch2PoolCodec.trades(
+        usd1Buy,
+        instanceId: l2InstanceA,
+        walletId: l2WalletId,
+      );
+      expect(trades.trades.last.taxToken, Launch2PoolTaxToken.usd1);
       refuses((r) => buy(r)['extra'] = 1);
       refuses((r) => r.remove('lastPoolTradeAt'));
     });

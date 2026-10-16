@@ -84,6 +84,10 @@ abstract final class LoopV2Launch2PoolCodec {
     'rewardWeight',
   };
 
+  /// Decision 0197 (loop-api 0152): `dynamic.baseTaxToken`, the token of
+  /// `baseTaxAmount`. A server before S209 omits it: the buy fee is MEME.
+  static const dynamicOptionalKeys = <String>{'baseTaxToken'};
+
   static const poolKeyKeys = <String>{
     'currency0',
     'currency1',
@@ -176,14 +180,7 @@ abstract final class LoopV2Launch2PoolCodec {
     final taxToken = rawTax is String
         ? Launch2PoolTaxToken.tryParse(rawTax)
         : null;
-    // The tax is taken from the output token: MEME on a buy, USD1 on a sell.
-    if (taxToken == null ||
-        taxToken !=
-            (side == Launch2Side.buy
-                ? Launch2PoolTaxToken.meme
-                : Launch2PoolTaxToken.usd1)) {
-      _invalid();
-    }
+    if (taxToken == null) _invalid();
     final balance = LoopV2Contract.strictMap(map['balance'], const <String>{
       'usd1',
       'meme',
@@ -202,6 +199,21 @@ abstract final class LoopV2Launch2PoolCodec {
             hooks: LoopV2Launch2Codec.anyCaseAddress(poolKey, 'hooks'),
           )
         : null;
+    final taxAmount = LoopV2Launch2Codec.amount(map, 'taxAmount');
+    final taxUsd1 = LoopV2Launch2Codec.amount(map, 'taxUsd1');
+    // A sell is taxed in USD1. A buy is taxed in MEME from the output —
+    // except on an S209 LoopDynamic Hook, whose `dynamic.baseTaxToken` says
+    // USD1 from the input (decision 0197); then `taxUsd1` is that fee.
+    final buyTaxToken = loopDynamic?.baseTaxToken ?? Launch2PoolTaxToken.meme;
+    if (taxToken !=
+            (side == Launch2Side.buy
+                ? buyTaxToken
+                : Launch2PoolTaxToken.usd1) ||
+        (side == Launch2Side.buy &&
+            taxToken == Launch2PoolTaxToken.usd1 &&
+            taxUsd1 != taxAmount)) {
+      _invalid();
+    }
     LoopV2ChainCodec.requireInt(poolKey, 'fee', maximum: 1000000);
     LoopV2ChainCodec.requireInt(poolKey, 'tickSpacing', maximum: 32767);
     final basis = LoopV2Contract.strictMap(map['basis'], const <String>{
@@ -232,9 +244,9 @@ abstract final class LoopV2Launch2PoolCodec {
         maximum: 5000,
       ),
       taxBps: taxBps,
-      taxAmount: LoopV2Launch2Codec.amount(map, 'taxAmount'),
+      taxAmount: taxAmount,
       taxToken: taxToken,
-      taxUsd1: LoopV2Launch2Codec.amount(map, 'taxUsd1'),
+      taxUsd1: taxUsd1,
       priceBeforeUsd1: LoopV2Launch2Codec.amount(map, 'priceBeforeUsd1'),
       averagePriceUsd1: LoopV2Launch2Codec.amount(map, 'averagePriceUsd1'),
       balanceUsd1: LoopV2Launch2Codec.amount(balance, 'usd1'),
@@ -261,7 +273,27 @@ abstract final class LoopV2Launch2PoolCodec {
     required int taxBps,
     required String hooks,
   }) {
-    final map = LoopV2Contract.strictMap(raw, dynamicKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      dynamicKeys,
+      dynamicOptionalKeys,
+    );
+    // Decision 0197: absent = a server before S209 (buy: MEME). A sell is
+    // always USD1.
+    final Launch2PoolTaxToken baseTaxToken;
+    if (map.containsKey('baseTaxToken')) {
+      final text = map['baseTaxToken'];
+      baseTaxToken =
+          (text is String ? Launch2PoolTaxToken.tryParse(text) : null) ??
+          _invalid();
+    } else {
+      baseTaxToken = side == Launch2Side.buy
+          ? Launch2PoolTaxToken.meme
+          : Launch2PoolTaxToken.usd1;
+    }
+    if (side == Launch2Side.sell && baseTaxToken != Launch2PoolTaxToken.usd1) {
+      _invalid();
+    }
     final timingText = map['priceTiming'];
     final timing = timingText is String
         ? Launch2PriceTiming.tryParse(timingText)
@@ -286,6 +318,7 @@ abstract final class LoopV2Launch2PoolCodec {
       priceTiming: timing,
       baseTaxBps: baseTaxBps,
       baseTaxAmount: LoopV2Launch2Codec.amount(map, 'baseTaxAmount'),
+      baseTaxToken: baseTaxToken,
       dynamicTaxBps: dynamicTaxBps,
       dynamicTaxAmount: dynamicTaxAmount,
       armed: LoopV2ChainCodec.requireBool(map, 'armed'),
@@ -430,7 +463,8 @@ abstract final class LoopV2Launch2PoolCodec {
       _ => _invalid(),
     };
     final buy = side == Launch2Side.buy;
-    // A buy is USD1 → MEME and is taxed in MEME; a sell the other way.
+    // A buy is USD1 → MEME, a sell the other way. A sell is taxed in USD1;
+    // a buy in MEME, or in USD1 on an S209 LoopDynamic Hook (decision 0197).
     if (map['inputToken'] != (buy ? 'usd1' : 'meme') ||
         map['outputToken'] != (buy ? 'meme' : 'usd1')) {
       _invalid();
@@ -439,9 +473,7 @@ abstract final class LoopV2Launch2PoolCodec {
     final taxToken = taxText is String
         ? Launch2PoolTaxToken.tryParse(taxText)
         : null;
-    if (taxToken == null ||
-        taxToken !=
-            (buy ? Launch2PoolTaxToken.meme : Launch2PoolTaxToken.usd1)) {
+    if (taxToken == null || (!buy && taxToken != Launch2PoolTaxToken.usd1)) {
       _invalid();
     }
     LoopV2Launch2Codec.anyCaseAddress(map, 'recipientAddress');

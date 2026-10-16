@@ -120,15 +120,26 @@ final class Launch2PoolDynamicQuote {
     required this.armed,
     required this.rewardWeight,
     this.roundId,
+    this.baseTaxToken = Launch2PoolTaxToken.meme,
   });
 
   /// The pool's LoopDynamicHook (lower case).
   final String hook;
   final Launch2PriceTiming priceTiming;
 
-  /// Buy: 2% in MEME from the output; sell: 2% in USD1.
+  /// Buy: 2% — before S209 in MEME from the output, on an S209 Hook in USD1
+  /// from the input (decision 0197, [baseTaxToken]); sell: 2% in USD1.
   final int baseTaxBps;
   final Decimal baseTaxAmount;
+
+  /// Decision 0197 (loop-api 0152): the token of [baseTaxAmount]. A server
+  /// before S209 omits it and reads as before: MEME on a buy, USD1 on a
+  /// sell.
+  final Launch2PoolTaxToken baseTaxToken;
+
+  /// An S209 buy: the pool swapped `amountIn − tax` and the MEME output is
+  /// untaxed.
+  bool get buyFeeFromUsd1 => baseTaxToken == Launch2PoolTaxToken.usd1;
 
   /// Sell: the dynamic fee in bps of the post-base output (after this trade
   /// for `POST_SWAP`); buy: 0.

@@ -78,6 +78,7 @@ S117 `MemeTradePanel` 绑死 v1 的 `MemeTokenDetail` / `MemeQuote` / 端口，�
 - **MAX = 服务端 `max.amountIn`**：有报价用报价的，没有就为这个键单独报一次价（amount=1），填入后重报。
 - `exceedsMax: true` → 一行「超出可买上限（限额原因）」+「填入 X」一键填 MAX，确认键关闭（报价数字已是 MAX 的）。
 - 累计额度条：已用 / 5,000,000（`quota` 优先，否则 viewer `cumulativeBought` 与模板上限），两轮共用、卖出不恢复。
+  （**0197 修订**：上限按实例读 `quote.quota.capMeme` / `template.perAddressCap`，缺或 0 回退 5,000,000；「单地址累计上限 N 枚」与 `LAUNCH2_QUOTA_EXHAUSTED` 文案同步。）
 - 税率一行「税率 10%」（模板 `curveBuyTaxBps` / `curveSellTaxBps`）；报价块：预计 / 最少获得（到手）、税、退回、价格前→后、来源行。
 - 名单资格徽章（仅 `priority`）：「名单内」Lime / 「不在名单」灰。提前购阶段 viewer `eligibleNow=false`、报价
   `eligibility.eligible=false` 或 prepare `LAUNCH2_NOT_IN_SNAPSHOT` → 面板灰态（同上灰度）+「提前购仅限名单内持有人，

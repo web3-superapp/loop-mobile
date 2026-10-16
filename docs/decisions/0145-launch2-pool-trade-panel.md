@@ -33,7 +33,7 @@ loop-api 0124 给出了官方池（Uniswap v4 + OfficialTaxHook）的报价与�
   0.5% / 1% / 3% / 自定义（0.01–50%，两位小数，默认 1%）；确认键贴在键盘上方。
 - 报价：输入、口径、方向、滑点任一变化即丢弃旧报价，350 ms 防抖后请求 `pool/quote`（`walletId` 必带、`slippageBps` 必带）；
   `expiresAt` 到期静默重报。报价行：exactIn「预计获得 / 最少获得」（卖：预计到手 / 最少到手），exactOut「预计支付 / 最多支付」
-  （卖：预计卖出 / 最多卖出）；「外盘税 2%」按 `taxToken` 显示——**买入的税是 MEME（从到手里扣），卖出的税是 USD1**；成交均价；
+  （卖：预计卖出 / 最多卖出）；「外盘税 2%」按 `taxToken` 显示——**买入的税是 MEME（从到手里扣），卖出的税是 USD1**（**0197 修订**：LoopDynamic S209 Hook 的买入税改从付出的 USD1 扣，`taxToken = usd1`，以报价 `dynamic.baseTaxToken` 为准；OfficialTax 不变）；成交均价；
   滑点上限；来源行「官方池路由 · 按区块 N 计算，已扣 2% 外盘税」。
 - 持仓：合同里只有报价带钱包余额（`balance.usd1 / meme`），详情和 `me/positions` 都没有毕业后的钱包余额。所以报价后显示
   「持有 X $T · 可卖 X $T」（取报价块上的 MEME 余额）；报价前若 `viewer.curve.net > 0` 只说「内盘净买入 X $T · 钱包余额报价后显示」，

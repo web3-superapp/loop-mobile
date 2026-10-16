@@ -138,14 +138,39 @@ String launch2HoldReasonText(Launch2HoldReason? reason) => switch (reason) {
   null => '平台正在核对这个项目',
 };
 
+/// The pre-S209 constant per-address curve cap, 5,000,000 MEME (decision
+/// 0197): the fallback when an instance's own cap is not readable.
+final Decimal launch2DefaultCurveCap = Decimal.fromInt(5000000);
+
+/// Decision 0197 (loop-api 0152): an instance's per-address curve cap is a
+/// Factory parameter from S209 on. The server reads it from the verified
+/// curve into `template.perAddressCap` / `quote.quota.capMeme`; a missing or
+/// non-positive figure reads as the old 5,000,000.
+Decimal launch2CurveCapOf(Decimal? cap) =>
+    cap == null || cap <= Decimal.zero ? launch2DefaultCurveCap : cap;
+
+/// A whole-token count with thousands separators: 「5,000,000」.
+String launch2CurveCapFigure(Decimal? cap) =>
+    loopFormatDecimal(launch2CurveCapOf(cap).floor(), maxFractionDigits: 0);
+
+/// 「每个地址最多买 N 枚」 for an instance's cap (decision 0197).
+String launch2CurveCapSentence(Decimal? cap) =>
+    '每个地址最多买 ${launch2CurveCapFigure(cap)} 枚';
+
+/// `LAUNCH2_QUOTA_EXHAUSTED` for an instance's cap (decision 0197).
+String launch2QuotaExhaustedText(Decimal? cap) =>
+    '已用完单地址累计 ${launch2CurveCapFigure(cap)} 枚额度';
+
 /// What bounds the MAX, said as the reason a larger amount is refused.
-String launch2LimitedByText(Launch2LimitedBy limitedBy) => switch (limitedBy) {
-  Launch2LimitedBy.quota => '单地址累计上限 5,000,000 枚',
-  Launch2LimitedBy.inventory => '内盘剩余库存',
-  Launch2LimitedBy.balance => '钱包余额',
-  Launch2LimitedBy.soldSupply => '内盘可卖数量',
-  Launch2LimitedBy.closed => '当前阶段不可交易',
-};
+/// [cap] is the instance's per-address curve cap (decision 0197).
+String launch2LimitedByText(Launch2LimitedBy limitedBy, {Decimal? cap}) =>
+    switch (limitedBy) {
+      Launch2LimitedBy.quota => '单地址累计上限 ${launch2CurveCapFigure(cap)} 枚',
+      Launch2LimitedBy.inventory => '内盘剩余库存',
+      Launch2LimitedBy.balance => '钱包余额',
+      Launch2LimitedBy.soldSupply => '内盘可卖数量',
+      Launch2LimitedBy.closed => '当前阶段不可交易',
+    };
 
 /// The buyback's `nextOrderBlockedReason` in zh-CN; `null` reads as ready
 /// (loop-api decision 0122 redefined the set: the v3 executor has no price
@@ -358,7 +383,9 @@ String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   launch2StageMismatchCode => '当前阶段不能交易，已重新读取项目状态',
   'LAUNCH2_SELL_NOT_OPEN' => '提前购阶段只能买入，公开内盘开始后可卖出',
   'LAUNCH2_SOLD_OUT' => '内盘已卖满',
-  'LAUNCH2_QUOTA_EXHAUSTED' => '已用完单地址累计 5,000,000 枚额度',
+  // Decision 0197: the cap is per instance; the trade panel names it
+  // ([launch2QuotaExhaustedText]).
+  'LAUNCH2_QUOTA_EXHAUSTED' => '已用完单地址累计买入额度',
   'LAUNCH2_INSTANCE_PAUSED' => '项目已暂停',
   'LAUNCH2_NFT_ALREADY_MINTED' => '这个钱包已经买过 NFT（每个地址终身 1 枚）',
   'LAUNCH2_PRICE_MOVED' => '价格已变化，已刷新',

@@ -426,6 +426,7 @@ class _Launch2DynamicRewardsScreenState
     if (rewards.rounds.isEmpty) {
       return <Widget>[
         ...widgets,
+        Launch2DynamicFeeSummaryCard(state: pool, ticker: detail.row.ticker),
         const LoopEmptyState(
           key: ValueKey<String>('launch2-dyn-rewards-empty'),
           illustration: LoopIllustration.history,
@@ -441,6 +442,8 @@ class _Launch2DynamicRewardsScreenState
     return <Widget>[
       ...widgets,
       if (hold != null) Launch2TradingHoldBanner(hold: hold),
+      // Decision 0197: the Hook's fee totals, the buy fee by its token.
+      Launch2DynamicFeeSummaryCard(state: pool, ticker: detail.row.ticker),
       for (final round in rewards.rounds)
         _RoundRow(
           key: ValueKey<String>('launch2-dyn-round-${round.roundId}'),

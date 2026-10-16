@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_rewards_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
@@ -988,7 +989,10 @@ void main() {
     test('a LoopDynamic buy says the MEME tax and the weight; a sell the '
         'base + dynamic tax from quote.dynamic, with the split', () {
       final buy = launch2PoolQuoteLines(_quote(Launch2Side.buy), 'FROG');
-      expect(buy.firstWhere((l) => l.key == 'tax').label, '外盘税 2%（扣 MEME）');
+      expect(
+        buy.firstWhere((l) => l.key == 'tax').label,
+        '基础税 2%（从到手的 MEME 扣）',
+      );
       final weight = buy.firstWhere((l) => l.key == 'reward-weight');
       expect(weight.label, '本笔计入奖励权重');
       expect(weight.value, '100 USD1');
@@ -1257,7 +1261,7 @@ void main() {
       );
       await _type(tester, '100');
       expect(launch2.quoteModes.last, Launch2PoolMode.exactIn);
-      expect(find.text('外盘税 2%（扣 MEME）'), findsOneWidget);
+      expect(find.text('基础税 2%（从到手的 MEME 扣）'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('launch2-pool-line-reward-weight'),
@@ -1576,6 +1580,299 @@ void main() {
       expect(_key('launch2-sign-sheet'), findsNothing);
       expect(wallet.handed, isEmpty);
       expect(find.textContaining('交易内容与确认内容不一致'), findsOneWidget);
+      await _drain(tester);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // decision 0197 · S209 buy fee in USD1, fee totals by token
+  // -------------------------------------------------------------------------
+  group('decision 0197', () {
+    /// The S168b buy quote as an S209 Hook answers it: the 2% kept out of
+    /// the 100 USD1 paid in, the MEME out untaxed (the server's figure).
+    Map<String, Object?> usd1Buy([
+      void Function(Map<String, Object?> quote)? edit,
+    ]) {
+      final body = _fx('pool_quote_buy_dynamic');
+      final quote = body['quote']! as Map<String, Object?>;
+      quote
+        ..['taxAmount'] = '2'
+        ..['taxToken'] = 'usd1'
+        ..['taxUsd1'] = '2'
+        ..['expectedOut'] = '159999.9'
+        ..['minOut'] = '158399.9';
+      (quote['dynamic']! as Map<String, Object?>)
+        ..['baseTaxAmount'] = '2'
+        ..['baseTaxToken'] = 'usd1';
+      edit?.call(quote);
+      return body;
+    }
+
+    Map<String, Object?> dyn(Map<String, Object?> quote) =>
+        quote['dynamic']! as Map<String, Object?>;
+
+    test('quote codec: baseTaxToken absent reads as the old MEME buy fee; '
+        'usd1 reads with taxToken usd1 and taxUsd1 = taxAmount', () {
+      final legacy = _quote(Launch2Side.buy);
+      expect(legacy.taxToken, Launch2PoolTaxToken.meme);
+      expect(legacy.loopDynamic!.baseTaxToken, Launch2PoolTaxToken.meme);
+      expect(legacy.loopDynamic!.buyFeeFromUsd1, isFalse);
+      final legacySell = _quote(Launch2Side.sell);
+      expect(legacySell.loopDynamic!.baseTaxToken, Launch2PoolTaxToken.usd1);
+
+      final explicitMeme = _fx('pool_quote_buy_dynamic');
+      _quoteDynamic(explicitMeme)['baseTaxToken'] = 'meme';
+      expect(
+        _quote(Launch2Side.buy, explicitMeme).loopDynamic!.baseTaxToken,
+        Launch2PoolTaxToken.meme,
+      );
+
+      final s209 = _quote(Launch2Side.buy, usd1Buy());
+      expect(s209.taxToken, Launch2PoolTaxToken.usd1);
+      expect(s209.taxUsd1, Decimal.fromInt(2));
+      expect(s209.loopDynamic!.buyFeeFromUsd1, isTrue);
+      expect(s209.expectedOut, Decimal.parse('159999.9'));
+
+      final sell = _fx('pool_quote_sell_dynamic');
+      _quoteDynamic(sell)['baseTaxToken'] = 'usd1';
+      expect(
+        _quote(Launch2Side.sell, sell).loopDynamic!.baseTaxToken,
+        Launch2PoolTaxToken.usd1,
+      );
+    });
+
+    test('quote codec refuses a token that disagrees with the generation', () {
+      void refuses(Launch2Side side, Map<String, Object?> body) =>
+          expect(() => _quote(side, body), _invalid);
+
+      // A USD1 buy fee without the S209 key, or with it saying MEME.
+      refuses(Launch2Side.buy, usd1Buy((q) => dyn(q).remove('baseTaxToken')));
+      refuses(Launch2Side.buy, usd1Buy((q) => dyn(q)['baseTaxToken'] = 'meme'));
+      // The S209 key saying USD1 while the quote is taxed in MEME.
+      final mismatch = _fx('pool_quote_buy_dynamic');
+      _quoteDynamic(mismatch)['baseTaxToken'] = 'usd1';
+      refuses(Launch2Side.buy, mismatch);
+      // taxUsd1 must be the USD1 buy fee.
+      refuses(Launch2Side.buy, usd1Buy((q) => q['taxUsd1'] = '0'));
+      // Wire case is exact; a sell is never taxed in MEME.
+      refuses(Launch2Side.buy, usd1Buy((q) => dyn(q)['baseTaxToken'] = 'USD1'));
+      final sell = _fx('pool_quote_sell_dynamic');
+      _quoteDynamic(sell)['baseTaxToken'] = 'meme';
+      refuses(Launch2Side.sell, sell);
+      // An OfficialTax buy stays MEME-taxed.
+      final official = _s146('pool_quote_buy_exact_in');
+      final officialQuote = official['quote']! as Map<String, Object?>;
+      officialQuote
+        ..['taxToken'] = 'usd1'
+        ..['taxUsd1'] = officialQuote['taxAmount'];
+      expect(
+        () => LoopV2Launch2PoolCodec.quote(
+          official,
+          instanceId: l2InstanceA,
+          side: Launch2Side.buy,
+          mode: Launch2PoolMode.exactIn,
+          walletId: l2WalletId,
+        ),
+        _invalid,
+      );
+    });
+
+    test('quote lines: S209 「从付出的 USD1 扣」, before 「从到手的 MEME 扣」; '
+        'the expected MEME is the server figure', () {
+      final s209 = launch2PoolQuoteLines(
+        _quote(Launch2Side.buy, usd1Buy()),
+        'FROG',
+      );
+      final tax = s209.firstWhere((l) => l.key == 'tax');
+      expect(tax.label, '基础税 2%（从付出的 USD1 扣）');
+      expect(tax.value, '2 USD1');
+      expect(
+        s209.firstWhere((l) => l.key == 'expected').value,
+        '159,999.9 \$FROG',
+      );
+      final legacy = launch2PoolQuoteLines(_quote(Launch2Side.buy), 'FROG');
+      final old = legacy.firstWhere((l) => l.key == 'tax');
+      expect(old.label, '基础税 2%（从到手的 MEME 扣）');
+      expect(old.value, '3,200 \$FROG');
+      expect(
+        legacy.firstWhere((l) => l.key == 'expected').value,
+        '156,800 \$FROG',
+      );
+    });
+
+    test('dynamic-pool codec: buyFeeToken / buyFeesUsd1 absent = MEME, '
+        'present = read; the 0144 / 0146 keys are accepted', () {
+      final legacy = _state(armed: true);
+      expect(legacy.buyFeeToken, Launch2BuyFeeToken.meme);
+      expect(legacy.summary.buyFeesUsd1, isNull);
+      expect(legacy.summary.buyFeesMeme, Decimal.fromInt(1000));
+
+      final s209 = _state(
+        armed: true,
+        edit: (p) {
+          p['buyFeeToken'] = 'usd1';
+          (p['summary']! as Map<String, Object?>)
+            ..['buyFeesMeme'] = '0'
+            ..['buyFeesUsd1'] = '12.5';
+          p
+            ..['maxDynamicFeeWad'] = '0.2'
+            ..['maxDynamicFeeBps'] = 2000
+            ..['currentDynamicTaxBps'] = 2000
+            ..['roundCloseRule'] = 'closeAtOrAboveOpen'
+            ..['armedAfterRoll'] = true
+            ..['currentRoundBuyers'] = <String, Object?>{
+              'roundId': '3',
+              'buyerCount': 0,
+              'buyers': <Object?>[],
+            };
+        },
+      );
+      expect(s209.buyFeeToken, Launch2BuyFeeToken.usd1);
+      expect(s209.summary.buyFeesUsd1, Decimal.parse('12.5'));
+
+      // not_applicable answers the new keys as null.
+      final official = _poolJson('dynamic_pool_not_applicable')
+        ..['buyFeeToken'] = null
+        ..['maxDynamicFeeBps'] = null;
+      expect(_kindWith(official), isA<Launch2OfficialTaxPool>());
+    });
+
+    test('dynamic-pool codec refuses a bad buyFeeToken or a stray key', () {
+      void refuses(void Function(Map<String, Object?> pool) edit) {
+        final pool = _poolJson('dynamic_pool_active_armed');
+        edit(pool);
+        expect(() => _kindWith(pool), _invalid);
+      }
+
+      Map<String, Object?> summary(Map<String, Object?> p) =>
+          p['summary']! as Map<String, Object?>;
+
+      refuses((p) => p['buyFeeToken'] = 'USD1');
+      refuses((p) => p['buyFeeToken'] = null);
+      refuses((p) => p['buyFeeToken'] = 2);
+      refuses((p) => summary(p)['buyFeesUsd1'] = 12);
+      refuses((p) => summary(p)['buyFeesExtra'] = '1');
+      refuses((p) => p['roundCloseRule'] = 'sometimes');
+      refuses((p) => p['maxDynamicFeeBps'] = 20000);
+      refuses((p) => p['somethingElse'] = 1);
+      final official = _poolJson('dynamic_pool_not_applicable')
+        ..['buyFeeToken'] = 'meme';
+      expect(() => _kindWith(official), _invalid);
+    });
+
+    test('fee rows: an S209 Hook says USD1, an older one MEME, both when '
+        'both totals hold fees', () {
+      List<(String, String)> rows(Launch2DynamicPoolState state) =>
+          <(String, String)>[
+            for (final (key, _, value) in launch2DynamicBuyFeeRows(
+              state,
+              ticker: 'FROG',
+            ))
+              (key, value),
+          ];
+      expect(rows(_state()), <(String, String)>[
+        ('buy-fees-meme', '1,000 \$FROG'),
+      ]);
+      expect(
+        launch2DynamicBuyFeeRows(_state()).single.$3,
+        '1,000 MEME',
+        reason: 'no ticker: the row names MEME',
+      );
+      final usd1 = _state(
+        edit: (p) {
+          p['buyFeeToken'] = 'usd1';
+          (p['summary']! as Map<String, Object?>)
+            ..['buyFeesMeme'] = '0'
+            ..['buyFeesUsd1'] = '12.5';
+        },
+      );
+      expect(rows(usd1), <(String, String)>[('buy-fees-usd1', '12.5 USD1')]);
+      final both = _state(
+        edit: (p) {
+          p['buyFeeToken'] = 'usd1';
+          (p['summary']! as Map<String, Object?>)['buyFeesUsd1'] = '12.5';
+        },
+      );
+      expect(rows(both), <(String, String)>[
+        ('buy-fees-usd1', '12.5 USD1'),
+        ('buy-fees-meme', '1,000 \$FROG'),
+      ]);
+      expect(
+        launch2DynamicBuyFeeRows(both).map((row) => row.$2).toSet(),
+        <String>{'买入基础税累计'},
+      );
+      expect(
+        launch2DynamicFeeRows(_state(armed: true)).map((row) => row.$1),
+        <String>['dynamic-fees', 'sell-fees', 'buy-fees-meme'],
+      );
+    });
+
+    testWidgets('project page: an S209 buy quote says the USD1 fee; the fee '
+        'card says 买入基础税累计 in USD1', (tester) async {
+      final launch2 = _FakeLaunch2(
+        quoteAnswer: (side) async =>
+            side == Launch2Side.buy ? _quote(side, usd1Buy()) : _quote(side),
+      );
+      await _openInstance(
+        tester,
+        launch2: launch2,
+        dynamicPool: _FakeDynamic(
+          kind: Launch2LoopDynamicPool(
+            _state(
+              armed: true,
+              edit: (p) {
+                p['buyFeeToken'] = 'usd1';
+                (p['summary']! as Map<String, Object?>)
+                  ..['buyFeesMeme'] = '0'
+                  ..['buyFeesUsd1'] = '12.5';
+              },
+            ),
+          ),
+        ),
+      );
+      await _scrollTo(tester, _key('launch2-dyn-buy-fees-usd1'));
+      expect(
+        find.descendant(
+          of: _key('launch2-dyn-buy-fees-usd1'),
+          matching: find.text('12.5 USD1'),
+        ),
+        findsOneWidget,
+      );
+      expect(_key('launch2-dyn-buy-fees-meme'), findsNothing);
+      await _type(tester, '100');
+      expect(find.text('基础税 2%（从付出的 USD1 扣）'), findsOneWidget);
+      expect(find.text('基础税 2%（从到手的 MEME 扣）'), findsNothing);
+      expect(
+        find.descendant(
+          of: _key('launch2-pool-line-tax'),
+          matching: find.text('2 USD1'),
+        ),
+        findsOneWidget,
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('外盘奖励: the fee card above the rounds, in MEME before S209', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2DynamicRewardsScreen(instanceId: l2InstanceA),
+        launch2: _FakeLaunch2(),
+        dynamicPool: _FakeDynamic(
+          kind: Launch2LoopDynamicPool(_state(armed: true)),
+          rewards: _rewards(),
+        ),
+      );
+      expect(_key('launch2-dyn-fees'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch2-dyn-buy-fees-meme'),
+          matching: find.text('1,000 \$FROG'),
+        ),
+        findsOneWidget,
+      );
+      expect(_key('launch2-dyn-buy-fees-usd1'), findsNothing);
       await _drain(tester);
     });
   });

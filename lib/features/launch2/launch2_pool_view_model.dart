@@ -216,6 +216,24 @@ List<Launch2PoolLine> launch2PoolQuoteLines(
   ];
 }
 
+/// Decision 0197 · a LoopDynamic buy's base-tax line, by
+/// `dynamic.baseTaxToken`: 「基础税 2%（从付出的 USD1 扣）」 = `taxUsd1`, or
+/// before S209 「基础税 2%（从到手的 MEME 扣）」 = `taxAmount` MEME.
+Launch2PoolLine launch2DynamicBuyTaxLine(
+  Launch2PoolQuote quote,
+  String ticker,
+  Launch2PoolDynamicQuote loopDynamic,
+) {
+  final rate = launch2BpsLabel(loopDynamic.baseTaxBps);
+  return loopDynamic.buyFeeFromUsd1
+      ? Launch2PoolLine('tax', '基础税 $rate（从付出的 USD1 扣）', _usd1(quote.taxUsd1))
+      : Launch2PoolLine(
+          'tax',
+          '基础税 $rate（从到手的 MEME 扣）',
+          launch2MemeLabel(quote.taxAmount, ticker),
+        );
+}
+
 /// Decision 0159 · a LoopDynamic quote (exactIn only, §3.12.2). The amounts
 /// are already net of every tax: a buy's line is the 2% MEME tax and the
 /// weight it adds to the round; a sell's is the base and the dynamic tax
@@ -233,13 +251,10 @@ List<Launch2PoolLine> launch2DynamicQuoteLines(
     Launch2PoolLine('expected', buy ? '预计获得' : '预计到手', out(quote.expectedOut)),
     Launch2PoolLine('min', buy ? '最少获得' : '最少到手', out(quote.minOut)),
     if (buy) ...<Launch2PoolLine>[
-      // S165: a LoopDynamic buy pays the same 2% pool tax, out of the MEME
-      // it receives.
-      Launch2PoolLine(
-        'tax',
-        '外盘税 ${launch2BpsLabel(loopDynamic.baseTaxBps)}（扣 MEME）',
-        launch2MemeLabel(quote.taxAmount, ticker),
-      ),
+      // Decision 0197: an S209 Hook keeps the 2% out of the USD1 paid in
+      // (the MEME out is untaxed); an older one takes it from the MEME
+      // received. The expected MEME is the server's, never re-derived.
+      launch2DynamicBuyTaxLine(quote, ticker, loopDynamic),
       loopDynamic.armed
           ? Launch2PoolLine(
               'reward-weight',
@@ -402,8 +417,8 @@ Launch2PoolTradeView launch2PoolTradeView({
     provenance: quote == null
         ? null
         : quote.loopDynamic != null
-        ? '按区块 ${quote.quotedAtBlock} 的官方池计算，已扣 '
-              '${quote.side == Launch2Side.buy ? '${launch2BpsLabel(quote.taxBps)} 外盘税' : '基础税与动态税（按成交${quote.loopDynamic!.priceTiming == Launch2PriceTiming.postSwap ? '后' : '前'}跌幅模拟）'}'
+        ? '按区块 ${quote.quotedAtBlock} 的官方池计算，'
+              '${quote.side == Launch2Side.buy ? (quote.loopDynamic!.buyFeeFromUsd1 ? '已从付出的 USD1 扣 ${launch2BpsLabel(quote.taxBps)} 基础税' : '已扣 ${launch2BpsLabel(quote.taxBps)} 外盘税') : '已扣基础税与动态税（按成交${quote.loopDynamic!.priceTiming == Launch2PriceTiming.postSwap ? '后' : '前'}跌幅模拟）'}'
               '；到期自动重新报价。'
         : '按区块 ${quote.quotedAtBlock} 的官方池计算，已扣 '
               '${launch2BpsLabel(quote.taxBps)} 外盘税；到期自动重新报价。',

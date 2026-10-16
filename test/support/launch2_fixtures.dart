@@ -208,6 +208,8 @@ Map<String, Object?> l2DetailJson({
   Map<String, Object?>? keeper,
   Map<String, Object?>? pool,
   bool includePool = false,
+  String perAddressCap = '5000000',
+  int perAddressCapBps = 50,
 }) {
   // loop-api decision 0122: a v3 sale with no NFT minted opens the public
   // round without a list.
@@ -240,8 +242,8 @@ Map<String, Object?> l2DetailJson({
         'officialPoolTaxBps': 200,
         'lpFee': 2500,
         'tickSpacing': 60,
-        'perAddressCap': '5000000',
-        'perAddressCapBps': 50,
+        'perAddressCap': perAddressCap,
+        'perAddressCapBps': perAddressCapBps,
         'nftPriceUsd1': '100',
         'nftSaleSeconds': 604800,
         'earlyRoundSeconds': 3600,
@@ -372,6 +374,7 @@ Map<String, Object?> l2QuoteJson({
   bool? eligible = true,
   String? eligibilityReason,
   DateTime? deadline,
+  String capMeme = '5000000',
 }) => <String, Object?>{
   'quote': <String, Object?>{
     'instanceId': l2InstanceA,
@@ -396,9 +399,9 @@ Map<String, Object?> l2QuoteJson({
       'limitedBy': limitedBy,
     },
     'quota': <String, Object?>{
-      'capMeme': '5000000',
+      'capMeme': capMeme,
       'usedMeme': '0',
-      'remainingMeme': '5000000',
+      'remainingMeme': capMeme,
     },
     'inventory': <String, Object?>{
       'saleSupply': '800000000',
@@ -591,8 +594,12 @@ Launch2InstanceDetail l2Detail({
   bool openedWithoutHolders = false,
   Map<String, Object?>? keeper,
   Map<String, Object?>? pool,
+  String perAddressCap = '5000000',
+  int perAddressCapBps = 50,
 }) => LoopV2Launch2Codec.detail(
   l2DetailJson(
+    perAddressCap: perAddressCap,
+    perAddressCapBps: perAddressCapBps,
     openedWithoutHolders: openedWithoutHolders,
     keeper: keeper,
     stage: stage,
@@ -615,8 +622,10 @@ Launch2Quote l2Quote({
   bool? eligible = true,
   DateTime? deadline,
   String requested = '50',
+  String capMeme = '5000000',
 }) => LoopV2Launch2Codec.quote(
   l2QuoteJson(
+    capMeme: capMeme,
     exceedsMax: exceedsMax,
     amountIn: amountIn,
     maxIn: maxIn,

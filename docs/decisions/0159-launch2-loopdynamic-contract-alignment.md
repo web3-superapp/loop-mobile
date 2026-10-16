@@ -39,6 +39,7 @@ S168 开工时 S166 未发布契约，0157 按草案与未提交迁移自拟了�
 
 - 金额（`potUsd1`、`carryUsd1`、`roundExtraFeesUsd1`、`roundTotalBuyWeightUsd1`、`reservedRewardsUsd1`、`priceUsd1`、
   `viewer.currentRoundWeightUsd1`、`summary.*Usd1` / `buyFeesMeme`、轮次与领取的全部 `*Usd1`）：18 位小数串 → `Decimal`。
+  （**0197 修订**：`summary.buyFeesUsd1` 与顶层 `buyFeeToken` 为可选新键，缺 = 旧代 MEME；loop-api 0144 / 0146 的六个键接受并校验类型，不展示。）
 - `currentDropWad`：小数比例串（`"0.3"` = 30%），> 1 无效；卡片展示用 `currentDropBps`（整数 bps → `30%`）。
 - id（`currentRoundId`、`candleId`、`roundId`、`startCandle`、`endCandle`、`blockNumber`）：十进制整数串 → `BigInt`。
 - 计数与 bps（`roundCount`、`closedRoundCount`、`candleSeconds`、`buyTaxBps`、`baseSellTaxBps`、`currentDropBps`、
@@ -88,10 +89,10 @@ S168 开工时 S166 未发布契约，0157 按草案与未提交迁移自拟了�
 
 ### 8. 报价（`quote.dynamic`）
 
-- 报价根对象只多一个可选键 `dynamic`（严格 10 键）；S168 的顶层 `dynamicTaxBps` / `rewardWeight` 作为未知键无效。
+- 报价根对象只多一个可选键 `dynamic`（严格 10 键；**0197 修订**：另有可选第 11 键 `baseTaxToken`）；S168 的顶层 `dynamicTaxBps` / `rewardWeight` 作为未知键无效。
 - `dynamic` 要求：`hookKind == loopDynamic`、`hook == poolKey.hooks`、`baseTaxBps == taxBps`、模式 exactIn；买入
   `dynamicTaxBps == 0` 且 `dynamicTaxAmount == 0`，卖出 `rewardWeight == 0`。
-- 报价行按 `quote.dynamic` 是否存在切换（不再依赖页面的种类答案）。买入：「外盘税 2%（扣 MEME）」= `taxAmount`；激活时
+- 报价行按 `quote.dynamic` 是否存在切换（不再依赖页面的种类答案）。买入：「外盘税 2%（扣 MEME）」= `taxAmount`（**0197 修订**：S209 Hook `dynamic.baseTaxToken = usd1` 时为「基础税 2%（从付出的 USD1 扣）」= `taxUsd1`，旧代「基础税 2%（从到手的 MEME 扣）」= `taxAmount`）；激活时
   「本笔计入奖励权重」= `rewardWeight` USD1，未激活「奖励权重：当前未激活，不计奖励」。卖出：「基础税 2% + 当前动态税 X%（扣 USD1）」
   = `taxAmount`（基础 + 动态），X = `dynamic.dynamicTaxBps / 100`；下一行「其中动态税」= `dynamicTaxAmount`；预计到手即 `expectedOut`
   （已扣两种税）。来源行写「已扣基础税与动态税（按成交后 / 前跌幅模拟）」（按 `priceTiming`）。S168 的「成交后按跌幅计」占位删除。

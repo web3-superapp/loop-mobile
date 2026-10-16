@@ -77,6 +77,7 @@ final class Launch2DynamicSummary {
     required this.dynamicFeesUsd1,
     required this.baseSellFeesUsd1,
     required this.buyFeesMeme,
+    this.buyFeesUsd1,
   });
 
   final int roundCount;
@@ -85,7 +86,30 @@ final class Launch2DynamicSummary {
   final Decimal claimedUsd1;
   final Decimal dynamicFeesUsd1;
   final Decimal baseSellFeesUsd1;
+
+  /// Σ buy fees of pre-S209 Hooks, taken from the MEME output.
   final Decimal buyFeesMeme;
+
+  /// Decision 0197 (loop-api 0152): Σ buy fees of S209 Hooks, taken from the
+  /// USD1 input. `null` from a server before S209.
+  final Decimal? buyFeesUsd1;
+}
+
+/// Decision 0197: which token a LoopDynamic Hook takes its base buy fee in
+/// (`dynamic-pool.buyFeeToken`).
+enum Launch2BuyFeeToken {
+  meme('meme'),
+  usd1('usd1');
+
+  const Launch2BuyFeeToken(this.wireName);
+
+  final String wireName;
+
+  static Launch2BuyFeeToken? tryParse(String value) => switch (value) {
+    'meme' => meme,
+    'usd1' => usd1,
+    _ => null,
+  };
 }
 
 /// `GET /v2/launch2/instances/{id}/dynamic-pool` with `status: active`: the
@@ -120,6 +144,7 @@ final class Launch2DynamicPoolState {
     required this.basisBlockNumber,
     this.currentRoundId,
     this.viewer,
+    this.buyFeeToken = Launch2BuyFeeToken.meme,
   });
 
   final String instanceId;
@@ -135,6 +160,10 @@ final class Launch2DynamicPoolState {
   final Launch2RoutingPolicy routingPolicy;
   final Launch2PriceTiming priceTiming;
   final int buyTaxBps;
+
+  /// Decision 0197: the token of the base buy fee; a server before S209
+  /// omits `buyFeeToken` and reads as MEME.
+  final Launch2BuyFeeToken buyFeeToken;
   final int baseSellTaxBps;
   final bool excludeBuybackFromRewards;
 

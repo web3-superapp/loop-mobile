@@ -665,6 +665,11 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           onOpenRewards: () =>
               _open(Launch2Route.dynamicRewards(detail.instanceId)),
         ),
+      if (dynamicPool != null)
+        Launch2DynamicFeeSummaryCard(
+          state: dynamicPool,
+          ticker: detail.row.ticker,
+        ),
       Launch2PoolStats(detail: detail),
       if (dynamicBlocked != null)
         Launch2DynamicUnavailableBlock(
@@ -983,7 +988,8 @@ class _TemplateCard extends StatelessWidget {
         LoopKeyValue(
           label: '单地址上限',
           value:
-              '${launch2MemeCompact(t.perAddressCap)}（${launch2BpsLabel(t.perAddressCapBps)}）',
+              // Decision 0197: the instance's own cap, whole tokens.
+              '${launch2CurveCapFigure(t.perAddressCap)} 枚（${launch2BpsLabel(t.perAddressCapBps)}）',
         ),
       ],
     );

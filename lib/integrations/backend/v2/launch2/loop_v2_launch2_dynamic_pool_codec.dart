@@ -45,6 +45,23 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
     'basis',
   };
 
+  /// Decision 0197 (loop-api 0152): `buyFeeToken`, the token of the base
+  /// buy fee. A server before S209 omits it (= MEME).
+  static const buyFeeKeys = <String>{'buyFeeToken'};
+
+  /// loop-api 0144 / 0146 keys this client does not show yet. Accepted (and
+  /// type-checked) so that a server which sends them still answers this
+  /// page and its decision 0197 `buyFeeToken` reaches it; absent on a server
+  /// before them.
+  static const acceptedKeys = <String>{
+    'maxDynamicFeeWad',
+    'maxDynamicFeeBps',
+    'currentDynamicTaxBps',
+    'roundCloseRule',
+    'armedAfterRoll',
+    'currentRoundBuyers',
+  };
+
   /// The keys that stay set on a `not_applicable` / `not_graduated` answer;
   /// every other one is `null` (§3.12.1).
   static const _alwaysSet = <String>{
@@ -66,6 +83,9 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
     'baseSellFeesUsd1',
     'buyFeesMeme',
   };
+
+  /// Decision 0197: `summary.buyFeesUsd1` (S209 Hooks); absent before.
+  static const summaryOptionalKeys = <String>{'buyFeesUsd1'};
 
   static const rewardsKeys = <String>{
     'instanceId',
@@ -135,8 +155,13 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
   /// `GET …/dynamic-pool` (200), checked against the instance asked for.
   static Launch2PoolKind pool(Object? raw, {required String instanceId}) {
     final root = _root(raw, const <String>{'dynamicPool', 'contractVersion'});
-    final map = LoopV2Contract.strictMap(root['dynamicPool'], poolKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      root['dynamicPool'],
+      poolKeys,
+      <String>{...buyFeeKeys, ...acceptedKeys},
+    );
     if (LoopV2Launch2Codec.uuid(map, 'instanceId') != instanceId) _invalid();
+    _checkAccepted(map);
     final hookKind = _hookKind(map);
     final status = map['status'];
     if (LoopV2ChainCodec.requireInt(map, 'candleSeconds') != candleSeconds) {
@@ -145,7 +170,7 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
     switch ((hookKind, status)) {
       case ('officialTax', 'not_applicable'):
       case ('loopDynamic', 'not_graduated'):
-        for (final key in poolKeys.difference(_alwaysSet)) {
+        for (final key in map.keys.toSet().difference(_alwaysSet)) {
           if (map[key] != null) _invalid();
         }
         return hookKind == 'officialTax'
@@ -159,6 +184,37 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
       default:
         _invalid();
     }
+  }
+
+  /// The [acceptedKeys] when present: their schema types, nothing more.
+  static void _checkAccepted(Map<String, Object?> map) {
+    if (map['maxDynamicFeeWad'] != null) {
+      LoopV2Launch2Codec.amount(map, 'maxDynamicFeeWad');
+    }
+    for (final key in const <String>[
+      'maxDynamicFeeBps',
+      'currentDynamicTaxBps',
+    ]) {
+      if (map[key] != null) LoopV2Launch2Codec.bps(map, key);
+    }
+    final rule = map['roundCloseRule'];
+    if (rule != null &&
+        rule != 'closeAtOrAboveOpen' &&
+        rule != 'closeAboveOpen') {
+      _invalid();
+    }
+    final after = map['armedAfterRoll'];
+    if (after != null && after is! bool) _invalid();
+    final buyers = map['currentRoundBuyers'];
+    if (buyers != null && buyers is! Map) _invalid();
+  }
+
+  /// Decision 0197: `buyFeeToken` on an `active` answer; absent = MEME.
+  static Launch2BuyFeeToken _buyFeeToken(Map<String, Object?> map) {
+    if (!map.containsKey('buyFeeToken')) return Launch2BuyFeeToken.meme;
+    final text = map['buyFeeToken'];
+    return (text is String ? Launch2BuyFeeToken.tryParse(text) : null) ??
+        _invalid();
   }
 
   static Launch2DynamicPoolState _active(
@@ -194,7 +250,11 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
         currentRoundWeightUsd1: weight,
       );
     }
-    final summary = LoopV2Contract.strictMap(map['summary'], summaryKeys);
+    final summary = LoopV2Contract.strictMapWithOptional(
+      map['summary'],
+      summaryKeys,
+      summaryOptionalKeys,
+    );
     final roundCount = LoopV2ChainCodec.requireInt(summary, 'roundCount');
     final closedCount = LoopV2ChainCodec.requireInt(
       summary,
@@ -215,6 +275,7 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
       routingPolicy: policy,
       priceTiming: timing,
       buyTaxBps: LoopV2Launch2Codec.bps(map, 'buyTaxBps'),
+      buyFeeToken: _buyFeeToken(map),
       baseSellTaxBps: LoopV2Launch2Codec.bps(map, 'baseSellTaxBps'),
       excludeBuybackFromRewards: LoopV2ChainCodec.requireBool(
         map,
@@ -249,6 +310,9 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
           'baseSellFeesUsd1',
         ),
         buyFeesMeme: LoopV2Launch2Codec.amount(summary, 'buyFeesMeme'),
+        buyFeesUsd1: summary.containsKey('buyFeesUsd1')
+            ? LoopV2Launch2Codec.amount(summary, 'buyFeesUsd1')
+            : null,
       ),
       basisBlockNumber: LoopV2Launch2Codec.integer(basis, 'blockNumber'),
     );
