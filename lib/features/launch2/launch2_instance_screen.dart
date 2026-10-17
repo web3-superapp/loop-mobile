@@ -455,10 +455,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           child: LoopButton(
             key: const ValueKey<String>('launch2-buy-nft'),
             label: held
-                ? '已持有 NFT'
+                ? '已持有勋章'
                 : _preparingNft
                 ? '正在准备…'
-                : '购买 NFT',
+                : '铸造勋章',
             primary: true,
             block: true,
             onPressed: held || busy ? null : () => unawaited(_buyNft(detail)),
@@ -501,7 +501,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       // Decision 0161: the chain guard's hold, above every trade panel.
       if (detail.tradingHold case final Launch2TradingHold hold)
         Launch2TradingHoldBanner(hold: hold),
-      if (capability.evidencePending && !paused)
+      if (launch2EvidenceNoticeShown(capability) && !paused)
         const LoopInlineUnavailable(
           key: ValueKey<String>('launch2-evidence-pending'),
           icon: 'info',
@@ -587,13 +587,13 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     String? dynamicBlocked,
   }) => switch (detail.stage) {
     Launch2Stage.upcoming => <Widget>[
-      const LoopLabel('NFT 发售'),
+      const LoopLabel('勋章铸造'),
       _Figures(
         keyName: 'launch2-upcoming',
         rows: <(String, String)>[
-          ('开售时间', loopDateTimeLabel(detail.row.nftSale.startAt)),
+          ('铸造开始', loopDateTimeLabel(detail.row.nftSale.startAt)),
           ('NFT 价格', launch2Usd1Label(detail.row.nftSale.priceUsd1)),
-          ('发售时长', launch2SaleDurationLabel(detail.row.nftSale)),
+          ('铸造时长', launch2SaleDurationLabel(detail.row.nftSale)),
         ],
       ),
       _TemplateCard(detail: detail),
@@ -615,7 +615,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       _Figures(
         keyName: 'launch2-snapshot-figures',
         rows: <(String, String)>[
-          ('NFT 已售', '${detail.row.nftSale.soldCount} 枚'),
+          ('已铸', '${detail.row.nftSale.soldCount} 枚'),
           (
             '我的 NFT',
             detail.viewer == null ? '未激活钱包' : '${detail.viewer!.nftHeld} / 1',
@@ -764,7 +764,7 @@ bool launch2InstanceHeadingLit(Launch2Stage stage) => switch (stage) {
 
 /// The words before the folio stamp's countdown (decision 0166).
 String launch2InstanceStampPrefix(Launch2Stage stage) =>
-    stage == Launch2Stage.upcoming ? '距开售 ' : '剩 ';
+    stage == Launch2Stage.upcoming ? '距铸造 ' : '剩 ';
 
 /// The folio caption (decision 0166): the project's name, then the stage's
 /// line without the countdown words the stamp now carries.
@@ -773,7 +773,7 @@ String launch2InstanceFolioCaption(Launch2InstanceDetail detail) {
   final line = switch (row.stage) {
     Launch2Stage.upcoming =>
       '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚 · '
-          '发售 ${launch2SaleDurationLabel(row.nftSale)}',
+          '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
     Launch2Stage.nftSale => '每地址 1 枚 · 已售 ${row.nftSale.soldCount} 枚',
     Launch2Stage.priority => '持有人优先',
     Launch2Stage.snapshotPending ||
@@ -880,14 +880,14 @@ class _ClosedBlock extends StatelessWidget {
             illustration: LoopIllustration.holders,
             title: launch2ClosedNoHoldersText,
             message:
-                'NFT 发售结束时没有人认购。这个项目使用旧版合约，'
+                '铸造期内没有人铸造。这个项目使用旧版合约，'
                 '名单无法生成，提前购和公开内盘不会开始。',
             compact: true,
           ),
           _Figures(
             keyName: 'launch2-closed-figures',
             rows: <(String, String)>[
-              ('NFT 已售', '${detail.row.nftSale.soldCount} 枚'),
+              ('已铸', '${detail.row.nftSale.soldCount} 枚'),
               if (closure != null) ...<(String, String)>[
                 (
                   '截止块',
@@ -956,9 +956,9 @@ class _TemplateCard extends StatelessWidget {
                     body: '每个 v2 项目用同一套参数，项目方不能修改。',
                   ),
                   LoopInfoNote(
-                    title: '三段发售',
+                    title: '三段发射',
                     body:
-                        'NFT 发售（${launch2Usd1Label(t.nftPriceUsd1)} 一枚，每个地址终身 1 枚）→ '
+                        '勋章铸造（${launch2Usd1Label(t.nftPriceUsd1)} 一枚，每个地址终身 1 枚）→ '
                         '快照名单与 1 小时提前购 → 公开内盘。任何一轮卖满 '
                         '${launch2MemeCompact(t.curveSaleSupply)} 枚即自动建官方池毕业。',
                   ),
@@ -1038,7 +1038,7 @@ class _NftSaleBlock extends ConsumerWidget {
                 notes: const <LoopInfoNote>[
                   LoopInfoNote(
                     body:
-                        '每个地址终身只能买 1 枚。发售结束时持有 NFT 的地址进入快照名单，'
+                        '每个地址终身只能铸 1 枚。铸造结束时持有勋章的地址进入快照名单，'
                         '名单发布后有 1 小时提前购。',
                   ),
                   LoopInfoNote(
@@ -1074,7 +1074,7 @@ class _NftSaleBlock extends ConsumerWidget {
               Row(
                 children: <Widget>[
                   Text(
-                    '发售进度',
+                    '铸造进度',
                     style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                   ),
                   const Spacer(),
@@ -1084,7 +1084,7 @@ class _NftSaleBlock extends ConsumerWidget {
               const SizedBox(height: 11),
               LoopProgressBar(
                 value: elapsed,
-                semanticLabel: '发售时间$elapsedText',
+                semanticLabel: '铸造时间$elapsedText',
               ),
               const SizedBox(height: 3),
               Row(
@@ -1626,3 +1626,20 @@ class _BuybackPanel extends ConsumerWidget {
     );
   }
 }
+
+/// The module-wide marker loop-api puts on `launch2` while it is enabled and
+/// no BSC Testnet run is recorded (`v2Launch2EvidencePendingReasonCode`). The
+/// server never lifts it (its evidence is `pending` by construction and the
+/// client refuses `confirmed` on `launch2`, decision 0137 §3).
+const String launch2TestnetEvidencePendingCode =
+    'LAUNCH2_TESTNET_EVIDENCE_PENDING';
+
+/// Whether the project page says 「测试网合约还在核对」 (decision 0200).
+///
+/// Only for a pending reason other than the module-wide marker: that marker
+/// is a constant of the module, not a fact about this instance's contracts,
+/// and showing it made the line permanent on every project page. The
+/// instance's own guard is the trading hold (decision 0161).
+bool launch2EvidenceNoticeShown(LoopCapabilityProjection capability) =>
+    capability.evidencePending &&
+    capability.evidenceReasonCode != launch2TestnetEvidencePendingCode;

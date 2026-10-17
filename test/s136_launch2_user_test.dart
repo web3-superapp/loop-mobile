@@ -598,8 +598,8 @@ void main() {
         clock: clock,
       );
       expect(find.text('01:00:05'), findsOneWidget);
-      expect(find.text('后开售'), findsOneWidget);
-      expect(find.text('NFT 已售 42'), findsOneWidget);
+      expect(find.text('后开始铸造'), findsOneWidget);
+      expect(find.text('已铸 42'), findsOneWidget);
       expect(find.text('剩 2天 03:00:00'), findsOneWidget);
       expect(find.text('33.27%'), findsOneWidget);
       // The priority row's price caption and, since decision 0146, the
@@ -742,9 +742,9 @@ void main() {
       await open(tester, l2Detail(stage: 'upcoming'));
       expect(_key('launch2-stage-upcoming'), findsOneWidget);
       expect(_key('launch2-instance-folio'), findsOneWidget);
-      expect(find.text('即将开售'), findsOneWidget);
+      expect(find.text('即将铸造'), findsOneWidget);
       expect(_key('launch2-countdown'), findsOneWidget);
-      expect(find.text('开售时间'), findsOneWidget);
+      expect(find.text('铸造开始'), findsOneWidget);
       expect(_key('launch2-template'), findsOneWidget);
       await tester.tap(_key('launch2-template-info'));
       await tester.pumpAndSettle();
@@ -1128,7 +1128,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('已持有 NFT'), findsOneWidget);
+      expect(find.text('已持有勋章'), findsOneWidget);
       expect(find.text('1 / 1'), findsOneWidget);
       await _drain(tester);
     });
@@ -1404,7 +1404,7 @@ void main() {
       expect(button.bottom, lessThanOrEqualTo(640));
       expect(liveRegionIn(bar), findsOneWidget);
       expect(_key('launch2-action-failed'), findsOneWidget);
-      expect(find.text('购买 NFT'), findsOneWidget);
+      expect(find.text('铸造勋章'), findsOneWidget);
       expect(wallet.handed, isEmpty);
 
       await tester.tap(_key('launch2-bar-topup'));
@@ -1998,7 +1998,7 @@ void main() {
       );
       expect(_key('launch2-stage-closed_no_holders'), findsOneWidget);
       expect(find.text('已关闭'), findsOneWidget);
-      expect(find.text('无人认购，已关闭'), findsWidgets);
+      expect(find.text('无人铸造，已关闭'), findsWidgets);
       expect(_key('launch2-closed-no-holders'), findsOneWidget);
       expect(find.text('#1,234'), findsOneWidget);
       expect(find.text('关闭时间'), findsOneWidget);

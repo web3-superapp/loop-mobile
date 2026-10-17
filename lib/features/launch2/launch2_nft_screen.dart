@@ -109,14 +109,14 @@ Launch2NftView launch2NftView(
   switch (row.stage) {
     case Launch2Stage.upcoming:
       return Launch2NftView(
-        status: next == null ? '开售时间待定' : '开售倒计时',
+        status: next == null ? '铸造时间待定' : '铸造倒计时',
         countdownTo: next,
-        stampPrefix: '距开售 ',
+        stampPrefix: '距铸造 ',
         statusLit: false,
         statusDetail:
             '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚 · '
-            '发售 ${launch2SaleDurationLabel(row.nftSale)}',
-        buttonLabel: '开售后可铸造',
+            '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
+        buttonLabel: '开始后可铸造',
         action: Launch2NftAction.none,
         brassRing: false,
         medalLabel: medal,
@@ -162,7 +162,7 @@ Launch2NftView launch2NftView(
     case Launch2Stage.public:
       return Launch2NftView(
         status: detail.snapshot.openedWithoutHolders != null
-            ? '发售结束时无人铸造，已直接进入公开轮'
+            ? '铸造期内无人铸造，已直接进入公开轮'
             : '内盘已开放',
         statusLit: true,
         statusDetail: minted,
@@ -185,7 +185,7 @@ Launch2NftView launch2NftView(
       // Decision 0120 / 0142: a legacy sale with no holder is closed for
       // good — neither round opens, so the page does not say it did.
       return Launch2NftView(
-        status: '发售结束时无人铸造，项目已关闭',
+        status: '铸造期内无人铸造，项目已关闭',
         statusLit: false,
         buttonLabel: '去项目页',
         action: Launch2NftAction.openProject,
@@ -219,7 +219,7 @@ String launch2NftHoldingText(Launch2InstanceDetail detail) {
 }
 
 /// The toast once a mint shows up in the read model (docs/32 §4.3).
-const String launch2NftMintedToast = '已铸造 · 等待发售结束进入名单';
+const String launch2NftMintedToast = '已铸造 · 等待铸造结束进入名单';
 
 class Launch2NftScreen extends ConsumerStatefulWidget {
   const Launch2NftScreen({
@@ -539,7 +539,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
       LoopRecordGroup(
         key: const ValueKey<String>('launch2-nft-benefits'),
         rows: <LoopRecordRow>[
-          _entry('ticket', '进快照名单', '发售结束时持有，进入快照名单；名单发布后有 1 小时提前购内盘'),
+          _entry('ticket', '进快照名单', '铸造结束时持有，进入快照名单；名单发布后有 1 小时提前购内盘'),
           _entry(
             'droplet',
             '托管与回购',
@@ -560,7 +560,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
           ),
           _entry(
             'clock',
-            '发售 ${launch2SaleDurationLabel(row.nftSale)}',
+            '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
             '截止 ${loopDateTimeLabel(row.nftSale.endAt)}',
           ),
           _entry('warn', '风险', '$launch2NftRiskSentence。'),

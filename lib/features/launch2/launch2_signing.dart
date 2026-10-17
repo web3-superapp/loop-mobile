@@ -71,7 +71,7 @@ final class Launch2SignOutcome {
 }
 
 String launch2IntentNoun(Launch2IntentKind kind) => switch (kind) {
-  Launch2IntentKind.nftMint => '购买 NFT',
+  Launch2IntentKind.nftMint => '铸造',
   Launch2IntentKind.buy => '买入',
   Launch2IntentKind.sell => '卖出',
   Launch2IntentKind.rewardClaim => '领取奖励',
@@ -138,9 +138,7 @@ List<IntentField> launch2IntentFields(
       label: '操作',
       value: switch (intent.kind) {
         Launch2IntentKind.nftMint =>
-          noun == null
-              ? '购买 $meme 项目 NFT（每个地址 1 枚）'
-              : '$noun $ticker 共识勋章（每个地址 1 枚）',
+          '${noun ?? launch2IntentNoun(intent.kind)} $ticker 共识勋章（每个地址 1 枚）',
         Launch2IntentKind.buy =>
           intent.venue == Launch2Venue.officialPool
               ? '在官方池买入 $meme'
@@ -1009,14 +1007,14 @@ Future<bool> showLaunch2NftConfirmSheet(
   required String ticker,
   required String priceLabel,
   String? heading,
-  String confirmLabel = '继续购买',
+  String confirmLabel = '继续铸造',
 }) async {
   final confirmed = await showLoopSheet<bool>(
     context,
     builder: (context) => _Launch2NftConfirm(
       ticker: ticker,
       priceLabel: priceLabel,
-      heading: heading ?? '购买 ${loopTickerLabel(ticker)} 项目 NFT',
+      heading: heading ?? '铸造 $ticker 共识勋章',
       confirmLabel: confirmLabel,
     ),
   );

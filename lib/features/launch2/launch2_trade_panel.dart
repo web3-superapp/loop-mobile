@@ -727,6 +727,15 @@ class _QuoteLines extends StatelessWidget {
               : launch2Usd1Label(value.minOut, maxFractionDigits: 4),
           padding: pad,
         ),
+        // Decision 0200: the curve has no slippage choice (0139: the
+        // server's own tolerance is already inside `minOut`); say so next
+        // to the figure instead of leaving the panel looking incomplete
+        // beside the official pool's 0.5 / 1 / 3% selector.
+        Text(
+          launch2CurveMinOutNote(value.slippageBps),
+          key: const ValueKey<String>('launch2-trade-min-out-note'),
+          style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+        ),
         LoopKeyValue(
           label: '税 ${launch2BpsLabel(value.taxBps)}',
           value: launch2Usd1Label(value.taxUsd1, maxFractionDigits: 4),
@@ -782,3 +791,7 @@ class _PrepareFailureLine extends StatelessWidget {
     onFaucet: failure.topUp ? onFaucet : null,
   );
 }
+
+/// The line under the curve's 「最少获得 / 最少到手」 (decision 0200).
+String launch2CurveMinOutNote(int slippageBps) =>
+    '按当前曲线价计算，已含 ${launch2BpsLabel(slippageBps)} 滑点保护，成交以链上为准';

@@ -118,6 +118,12 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   String? _uploadFailure;
 
   bool _prefilled = false;
+
+  /// Decision 0200: the rejection the edit answers, shown above the form.
+  /// `null` for a new project and for one that is not rejected.
+  LaunchRejection? _rejection;
+  bool _rejectedConfiguration = false;
+  String? _returnedReason;
   LaunchProject? _existing;
   Launch2HooksDraft? _existingDraft;
 
@@ -443,6 +449,13 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     final draft = value.draft;
     _existing = project;
     _existingDraft = draft;
+    if (value.status == Launch2CreatorStatus.rejected) {
+      _rejection = value.rejection;
+      _rejectedConfiguration =
+          project.reviewStatus != LaunchReviewStatus.rejected &&
+          project.reviewStatus != LaunchReviewStatus.returned;
+      _returnedReason = project.reviewReasonText;
+    }
     _minSaleLead = value.config.minSaleLead;
     _fixedRecipient = value.config.fixedBuybackRecipient;
     _fixedRecipientRead = true;
@@ -522,6 +535,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           labels: launch2CreateSteps,
           current: _step,
         ),
+        ..._rejectionBanner(),
         ...switch (_step) {
           0 => _profileStep(),
           1 => _communityStep(),
@@ -537,6 +551,35 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       },
       child: page,
     );
+  }
+
+  /// Decision 0200: what the reviewer said, on every step of the edit, so
+  /// the owner fixes it without going back to the project page. A resubmitted
+  /// version is awaiting review again and the banner is gone.
+  List<Widget> _rejectionBanner() {
+    final rejection = _rejection;
+    if (rejection != null) {
+      return <Widget>[
+        KeyedSubtree(
+          key: const ValueKey<String>('launch2-create-rejection'),
+          child: Launch2RejectionNotice(
+            rejection: rejection,
+            configuration: _rejectedConfiguration,
+          ),
+        ),
+      ];
+    }
+    final reason = _returnedReason;
+    if (reason == null) return const <Widget>[];
+    return <Widget>[
+      LoopNotice(
+        key: const ValueKey<String>('launch2-create-rejection'),
+        icon: 'warn',
+        tone: LoopNoticeTone.warn,
+        title: '审核意见',
+        body: reason,
+      ),
+    ];
   }
 
   Widget _field(

@@ -89,7 +89,7 @@ String launch2HeroLocation(Launch2InstanceRow row) => switch (row.stage) {
 /// The stage sentence (状态句).
 String launch2HeroHeadline(Launch2Stage stage, {required bool sprint}) =>
     switch (stage) {
-      Launch2Stage.upcoming => '开售倒计时',
+      Launch2Stage.upcoming => '铸造倒计时',
       Launch2Stage.nftSale => '共识勋章铸造中',
       Launch2Stage.snapshotPending => '名单生成中',
       Launch2Stage.priority => '白名单提前购',
@@ -109,7 +109,7 @@ String launch2HeroDetail(Launch2InstanceRow row) {
   final sale = row.nftSale;
   final perNft = '${launch2Usd1Label(sale.priceUsd1)} / 枚';
   return switch (row.stage) {
-    Launch2Stage.upcoming => '$perNft · 发售 ${launch2SaleDurationLabel(sale)}',
+    Launch2Stage.upcoming => '$perNft · 铸造期 ${launch2SaleDurationLabel(sale)}',
     Launch2Stage.nftSale => '已铸 ${sale.soldCount} 枚 · $perNft',
     Launch2Stage.snapshotPending => '名单发布后 1 小时提前购',
     Launch2Stage.priority =>
@@ -165,7 +165,7 @@ String launch2HeroSpokenLabel(Launch2InstanceRow row, DateTime now) {
     row.ticker,
     launch2HeroHeadline(row.stage, sprint: sprint),
     ...switch (row.stage) {
-      Launch2Stage.upcoming => <String>[left == null ? '开售时间待定' : '距开售 $left'],
+      Launch2Stage.upcoming => <String>[left == null ? '铸造时间待定' : '距铸造 $left'],
       Launch2Stage.nftSale => <String>[
         if (left != null) '剩 $left',
         '已铸 ${row.nftSale.soldCount} 枚',
@@ -194,7 +194,7 @@ String launch2ShortDateTime(DateTime at) {
 }
 
 /// The ledger card's second heading line: 共识勋章铸造中 / 白名单提前购 /
-/// 内盘冲刺 82% / 开售倒计时.
+/// 内盘冲刺 82% / 铸造倒计时.
 String launch2DeskStatus(Launch2InstanceRow row) {
   final sprint = row.curve.soldBps >= launch2HeroSprintBps;
   final headline = launch2HeroHeadline(row.stage, sprint: sprint);
@@ -221,16 +221,16 @@ String launch2DeskCaption(Launch2InstanceRow row) {
     Launch2Stage.public =>
       '${launch2HeroPrice(row.curve.priceUsd1)} · 卖满 8 亿自动毕业',
     Launch2Stage.upcoming =>
-      '${launch2ShortDateTime(sale.startAt)} 开售 · $perNft · '
-          '发售 ${launch2SaleDurationLabel(sale)}',
+      '${launch2ShortDateTime(sale.startAt)} 开始铸造 · $perNft · '
+          '铸造期 ${launch2SaleDurationLabel(sale)}',
     _ => launch2HeroDetail(row),
   };
 }
 
-/// The words before the stamp's countdown: 「剩」 while it runs, 「距开售」
+/// The words before the stamp's countdown: 「剩」 while it runs, 「距铸造」
 /// before it opens.
 String launch2DeskStampPrefix(Launch2Stage stage) =>
-    stage == Launch2Stage.upcoming ? '距开售 ' : '剩 ';
+    stage == Launch2Stage.upcoming ? '距铸造 ' : '剩 ';
 
 /// The record card's second line, after the name.
 String launch2RecordSubtitle(Launch2InstanceRow row) {
@@ -238,12 +238,12 @@ String launch2RecordSubtitle(Launch2InstanceRow row) {
   final next = row.nextChangeAt;
   final tail = switch (row.stage) {
     Launch2Stage.nftSale =>
-      'NFT 发售 ${launch2SaleDurationLabel(sale)} · '
+      '铸造期 ${launch2SaleDurationLabel(sale)} · '
           '截止 ${launch2ShortDateTime(sale.endAt)}',
     Launch2Stage.priority =>
       next == null ? '白名单提前购' : '白名单提前购 · 截止 ${launch2ShortDateTime(next)}',
     Launch2Stage.public => '公开内盘 · 人人可买，卖满即毕业',
-    Launch2Stage.upcoming => '${launch2ShortDateTime(sale.startAt)} 开售',
+    Launch2Stage.upcoming => '${launch2ShortDateTime(sale.startAt)} 开始铸造',
     _ => launch2StageLabel(row.stage),
   };
   return '${row.name} · $tail';
@@ -253,7 +253,7 @@ String launch2RecordSubtitle(Launch2InstanceRow row) {
 String launch2RecordFigureCaption(Launch2Stage stage) => switch (stage) {
   Launch2Stage.nftSale => '铸造剩余',
   Launch2Stage.priority => '提前购剩余',
-  Launch2Stage.upcoming => '距开售',
+  Launch2Stage.upcoming => '距铸造',
   _ => '内盘进度',
 };
 
@@ -267,5 +267,5 @@ bool launch2RecordCountsDown(Launch2Stage stage) =>
 String launch2RecordFoot(Launch2InstanceRow row, DateTime now) {
   if (row.stage != Launch2Stage.nftSale) return launch2HeroDetail(row);
   final past = ((launch2HeroFuse(row, now) ?? 0) * 100).round();
-  return '发售已过 $past% · ${launch2HeroDetail(row)}';
+  return '铸造期已过 $past% · ${launch2HeroDetail(row)}';
 }

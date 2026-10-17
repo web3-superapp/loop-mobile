@@ -19,8 +19,8 @@ import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
 /// The stage's short name, as the list pill and the page's stage bar say it.
 String launch2StageLabel(Launch2Stage stage) => switch (stage) {
-  Launch2Stage.upcoming => '即将开售',
-  Launch2Stage.nftSale => 'NFT 发售中',
+  Launch2Stage.upcoming => '即将铸造',
+  Launch2Stage.nftSale => '铸造中',
   Launch2Stage.snapshotPending => '名单生成中',
   Launch2Stage.closedNoHolders => '已关闭',
   Launch2Stage.priority => '提前购',
@@ -34,7 +34,7 @@ const String launch2StageMismatchCode = 'LAUNCH2_STAGE_MISMATCH';
 
 /// The one sentence for `closed_no_holders` (decision 0142). Only instances
 /// of a v2-generation Factory can still reach it (loop-api decision 0122).
-const String launch2ClosedNoHoldersText = '无人认购，已关闭';
+const String launch2ClosedNoHoldersText = '无人铸造，已关闭';
 
 /// A v3 sale that ended with no NFT minted opened the public round directly
 /// (`snapshot.status = opened_without_holders`, decision 0144).
@@ -42,7 +42,7 @@ const String launch2OpenedWithoutHoldersText = '无 NFT 持有人，直接开放
 
 /// The second half of the stage bar (contract §2 「App」 column).
 String launch2StageCaption(Launch2Stage stage) => switch (stage) {
-  Launch2Stage.upcoming => '开售倒计时',
+  Launch2Stage.upcoming => '铸造倒计时',
   Launch2Stage.nftSale => '剩余',
   Launch2Stage.snapshotPending => '名单发布后开始 1 小时提前购',
   Launch2Stage.closedNoHolders => launch2ClosedNoHoldersText,

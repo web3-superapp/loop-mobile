@@ -193,10 +193,10 @@ String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
     '${row.name} ${loopTickerLabel(row.ticker)}',
     launch2StageLabel(row.stage),
     switch (row.stage) {
-      Launch2Stage.upcoming => left == null ? '开售时间待定' : '距开售 $left',
+      Launch2Stage.upcoming => left == null ? '铸造时间待定' : '距铸造 $left',
       Launch2Stage.nftSale =>
-        'NFT 已售 ${row.nftSale.soldCount}${left == null ? '' : '，剩余 $left'}',
-      Launch2Stage.snapshotPending => 'NFT 已售 ${row.nftSale.soldCount}',
+        '已铸 ${row.nftSale.soldCount}${left == null ? '' : '，剩余 $left'}',
+      Launch2Stage.snapshotPending => '已铸 ${row.nftSale.soldCount}',
       Launch2Stage.closedNoHolders => launch2ClosedNoHoldersText,
       Launch2Stage.priority || Launch2Stage.public =>
         '内盘进度 ${launch2BpsLabel(row.curve.soldBps)}，'
@@ -306,7 +306,7 @@ class Launch2WarnLine extends StatelessWidget {
 /// One v2 row in the OKX quote shape (S121 §1.1.1): logo 36 · ticker over
 /// name · two stage lines on the right · the stage pill in the fixed slot.
 ///
-/// The right two lines follow the stage: 开售倒计时 while upcoming, NFT 已售
+/// The right two lines follow the stage: 铸造倒计时 while upcoming, NFT 已售
 /// and the sale's countdown, the curve's progress and price while it trades,
 /// the last curve price over 毕业价 once graduated. Only the countdown text
 /// redraws every second.
@@ -344,7 +344,7 @@ class Launch2InstanceTile extends ConsumerWidget {
       Launch2Stage.upcoming => (
         null,
         next == null
-            ? countdown('开售 ')
+            ? countdown('铸造 ')
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -355,16 +355,13 @@ class Launch2InstanceTile extends ConsumerWidget {
                     style: figure,
                   ),
                   const SizedBox(height: 2),
-                  Text('后开售', style: words),
+                  Text('后开始铸造', style: words),
                 ],
               ),
       ),
-      Launch2Stage.nftSale => (
-        'NFT 已售 ${row.nftSale.soldCount}',
-        countdown('剩 '),
-      ),
+      Launch2Stage.nftSale => ('已铸 ${row.nftSale.soldCount}', countdown('剩 ')),
       Launch2Stage.snapshotPending => (
-        'NFT 已售 ${row.nftSale.soldCount}',
+        '已铸 ${row.nftSale.soldCount}',
         Text('名单生成中', style: words),
       ),
       // Grey like every waiting stage; no figure, nothing counts down.

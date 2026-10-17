@@ -405,6 +405,14 @@ void main() {
         await _type(tester, 'launch2-trade-amount', '50');
         expect(gateway.curveQuotes, 1);
         expect(_key('launch2-trade-quote'), findsOneWidget);
+        // Decision 0200: the curve's 「最少获得」 says how it is computed.
+        expect(
+          find.descendant(
+            of: _key('launch2-trade-quote'),
+            matching: _key('launch2-trade-min-out-note'),
+          ),
+          findsOneWidget,
+        );
         if (kind == null) {
           expect(_onPressed(tester, 'launch2-trade-confirm'), isNotNull);
           expect(_key('launch2-trade-hold'), findsNothing);

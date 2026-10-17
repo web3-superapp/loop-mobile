@@ -13,6 +13,8 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_controllers
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_widgets.dart'
+    show Launch2CountdownBuilder;
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_step_track.dart';
@@ -62,33 +64,44 @@ class Launch2ProjectScreen extends ConsumerWidget {
       scheduleMicrotask(() => unawaited(ref.read(provider.notifier).load()));
     }
     final value = state.value;
-    final now = (clock ?? DateTime.now)();
-    return LoopStreamPage(
-      key: const ValueKey<String>('launch2-project-screen'),
-      archetype: LoopPageArchetype.record,
-      title: value?.project.name ?? '项目',
-      onBack: onBack,
-      updating: state.refreshing,
-      onRefresh: ref.read(provider.notifier).reload,
-      collection: ListView(
-        key: const ValueKey<String>('launch2-project-body'),
-        children: value == null
-            ? <Widget>[
-                LoopChainStateBlock(
-                  keyPrefix: 'launch2-project',
-                  phase: state.phase,
-                  failureKind: state.failureKind,
-                  emptyMessage: '找不到这个项目',
-                  onRetry: () =>
-                      unawaited(ref.read(provider.notifier).reload()),
-                ),
-              ]
-            : _body(value, now),
+    final clock = this.clock ?? DateTime.now;
+    // Decision 0200: the page stays mounted under 修改 / 签名 / 部署进度;
+    // coming back re-reads it.
+    return Launch2RefreshOnReturn(
+      onReturn: () {
+        final current = ref.read(provider);
+        if (current.value == null || current.busy || current.refreshing) {
+          return;
+        }
+        unawaited(ref.read(provider.notifier).reload());
+      },
+      child: LoopStreamPage(
+        key: const ValueKey<String>('launch2-project-screen'),
+        archetype: LoopPageArchetype.record,
+        title: value?.project.name ?? '项目',
+        onBack: onBack,
+        updating: state.refreshing,
+        onRefresh: ref.read(provider.notifier).reload,
+        collection: ListView(
+          key: const ValueKey<String>('launch2-project-body'),
+          children: value == null
+              ? <Widget>[
+                  LoopChainStateBlock(
+                    keyPrefix: 'launch2-project',
+                    phase: state.phase,
+                    failureKind: state.failureKind,
+                    emptyMessage: '找不到这个项目',
+                    onRetry: () =>
+                        unawaited(ref.read(provider.notifier).reload()),
+                  ),
+                ]
+              : _body(value, clock),
+        ),
       ),
     );
   }
 
-  List<Widget> _body(Launch2CreatorProject value, DateTime now) {
+  List<Widget> _body(Launch2CreatorProject value, DateTime Function() clock) {
     final project = value.project;
     final draft = value.draft;
     final status = value.status;
@@ -142,9 +155,14 @@ class Launch2ProjectScreen extends ConsumerWidget {
       ..._next(value, status),
       if (draft != null) ...<Widget>[
         const LoopLabel('发射配置'),
-        LoopKeyValue(
-          label: 'NFT 开售',
-          value: launch2SaleStartLabel(draft.nftSaleStart, now),
+        // Decision 0200: 「（N 小时后）」 follows the clock, not the build.
+        Launch2CountdownBuilder(
+          target: draft.nftSaleStart,
+          builder: (context, _) => LoopKeyValue(
+            key: const ValueKey<String>('launch2-project-sale-start'),
+            label: 'NFT 开售',
+            value: launch2SaleStartLabel(draft.nftSaleStart, clock()),
+          ),
         ),
         LoopKeyValue(
           label: '回购收币地址',
@@ -197,7 +215,7 @@ class Launch2ProjectScreen extends ConsumerWidget {
       case Launch2CreatorStatus.awaitingApproval:
         // 等审核页 (decision 0142). A rejection shows under `rejected`
         // (decision 0144); a resubmitted version is awaiting again.
-        final submitted = project.submittedAt;
+        final submitted = launch2LatestSubmission(value);
         return <Widget>[
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-review'),
@@ -335,4 +353,16 @@ class Launch2ProjectScreen extends ConsumerWidget {
         ];
     }
   }
+}
+
+/// When the owner last submitted (decision 0200): the catalogue's
+/// `submittedAt` is the project's first submission, and a resubmission after
+/// a rejected launch configuration only saves a new configuration version,
+/// so the later of the two is the submission under review now.
+DateTime? launch2LatestSubmission(Launch2CreatorProject value) {
+  final submitted = value.project.submittedAt;
+  final saved = value.draft?.updatedAt;
+  if (submitted == null) return null;
+  if (saved == null || !saved.isAfter(submitted)) return submitted;
+  return saved;
 }

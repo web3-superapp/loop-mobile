@@ -34,24 +34,28 @@ Matcher get _invalid => throwsA(
   ),
 );
 
-Future<void> _stats(WidgetTester tester, Map<String, Object?> pool) =>
-    pumpS7Page(
-      tester,
-      Scaffold(
-        body: ListView(
-          children: <Widget>[
-            Launch2PoolStats(
-              detail: l2Detail(
-                stage: 'graduated',
-                noNextChange: true,
-                pool: pool,
-              ),
-            ),
-          ],
+Future<void> _stats(
+  WidgetTester tester,
+  Map<String, Object?> pool, {
+  String buybacksExecuted = '0',
+}) => pumpS7Page(
+  tester,
+  Scaffold(
+    body: ListView(
+      children: <Widget>[
+        Launch2PoolStats(
+          detail: l2Detail(
+            stage: 'graduated',
+            noNextChange: true,
+            pool: pool,
+            buybacksExecuted: buybacksExecuted,
+          ),
         ),
-      ),
-      size: const Size(360, 800),
-    );
+      ],
+    ),
+  ),
+  size: const Size(360, 800),
+);
 
 Finder _key(String key) => find.byKey(ValueKey<String>(key));
 
@@ -178,6 +182,26 @@ void main() {
       );
       expect(find.text('0 笔用户成交 · 另有回购 6 笔'), findsOneWidget);
       expect(find.text('0 / 0 USD1'), findsOneWidget);
+    });
+
+    // Decision 0200 D10 (S221): the pool split said 0 while the buyback
+    // card said 2 笔; the ledger count fills the line.
+    testWidgets('the pool split names no buyback: the ledger count does', (
+      tester,
+    ) async {
+      await _stats(
+        tester,
+        _pool()
+          ..['tradeCount'] = '13'
+          ..['userTradeCount'] = '13',
+        buybacksExecuted: '2',
+      );
+      expect(find.text('13 笔用户成交 · 另有回购 2 笔'), findsOneWidget);
+    });
+
+    testWidgets('the pool split wins when it names buybacks', (tester) async {
+      await _stats(tester, _pool(), buybacksExecuted: '1');
+      expect(find.text('3 笔用户成交 · 另有回购 3 笔'), findsOneWidget);
     });
 
     testWidgets('a server before S151 keeps the pool-wide line', (

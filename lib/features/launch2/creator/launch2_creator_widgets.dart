@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -361,6 +363,50 @@ class Launch2RejectionNotice extends StatelessWidget {
   }
 }
 
+/// 「已拒绝 · 材料不完整」: a rejected project's row in 我的项目 (decision 0200).
+String launch2RejectedRowText(LaunchRejection rejection) =>
+    '已拒绝 · ${rejection.reason.label}';
+
 /// 「审核未通过：材料不完整」.
 String launch2RejectionTitle(LaunchRejection rejection) =>
     '审核未通过：${rejection.reason.label}';
+
+/// Calls [onReturn] when the page it wraps becomes the top route again after
+/// another page covered it (decision 0200). 我的项目 and the project page stay
+/// mounted under the pages they open, so without this the owner came back to
+/// the answer read before the edit, the resubmission or the review.
+class Launch2RefreshOnReturn extends StatefulWidget {
+  const Launch2RefreshOnReturn({
+    required this.onReturn,
+    required this.child,
+    super.key,
+  });
+
+  final VoidCallback onReturn;
+  final Widget child;
+
+  @override
+  State<Launch2RefreshOnReturn> createState() => _Launch2RefreshOnReturnState();
+}
+
+class _Launch2RefreshOnReturnState extends State<Launch2RefreshOnReturn> {
+  bool _covered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final current = ModalRoute.isCurrentOf(context) ?? true;
+    if (!current) {
+      _covered = true;
+      return;
+    }
+    if (!_covered) return;
+    _covered = false;
+    scheduleMicrotask(() {
+      if (mounted) widget.onReturn();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}

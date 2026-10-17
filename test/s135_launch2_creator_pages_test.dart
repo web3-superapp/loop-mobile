@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
@@ -22,6 +23,8 @@ import 'package:loop_mobile/features/launch2/creator/launch2_deployment_screen.d
 import 'package:loop_mobile/features/launch2/creator/launch2_project_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_projects_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_sign_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart'
+    show launch2ClockProvider;
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
@@ -395,6 +398,7 @@ Future<void> _pump(
         deploymentInterval: Duration(milliseconds: 20),
         instanceInterval: Duration(milliseconds: 20),
         instanceMaxAttempts: 3,
+        submitRecheckDelay: Duration.zero,
       ),
     ),
     memeGatewayProvider.overrideWithValue(meme ?? _FakeMeme()),
@@ -1805,7 +1809,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('审核未通过：其他原因'), findsOneWidget);
+      expect(find.text('已拒绝 · 其他原因'), findsOneWidget);
       expect(find.text('回购收币地址需要更新'), findsOneWidget);
       await tester.tap(_key('launch2-project-row-$second'));
       expect(opened.single, Launch2CreatorRoute.project(second));
@@ -1979,6 +1983,342 @@ void main() {
       );
       expect(_key('launch2-projects-list'), findsNothing);
       expect(_key('launch2-project-row-$_projectId'), findsNothing);
+    });
+  });
+
+  group('S224 · decision 0200', () {
+    /// The sample draft, saved at [updatedAt].
+    Launch2HooksConfig awaiting({DateTime? updatedAt}) {
+      final base = _config('hooks_config_draft');
+      final d = base.draft!;
+      return Launch2HooksConfig(
+        draft: Launch2HooksDraft(
+          projectId: d.projectId,
+          version: d.version,
+          templateVersion: d.templateVersion,
+          templateHash: d.templateHash,
+          name: d.name,
+          ticker: d.ticker,
+          logoAssetUrl: d.logoAssetUrl,
+          description: d.description,
+          links: d.links,
+          nftSaleStartAt: d.nftSaleStartAt,
+          buybackRecipient: d.buybackRecipient,
+          economics: d.economics,
+          configHash: d.configHash,
+          updatedAt: updatedAt ?? d.updatedAt,
+        ),
+        approval: base.approval,
+        latestDeployment: base.latestDeployment,
+        minSaleLead: base.minSaleLead,
+        fixedBuybackRecipient: base.fixedBuybackRecipient,
+      );
+    }
+
+    testWidgets('我的项目 re-reads when it is on top again: a rejection made '
+        'while a page covered it shows as 已拒绝 · 类别', (tester) async {
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(awaiting()),
+          _A<Launch2HooksConfig>.value(_config('hooks_config_rejected')),
+        ],
+      );
+      await _pump(
+        tester,
+        Builder(
+          builder: (context) => Launch2ProjectsScreen(
+            onNavigate: (location) => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const Scaffold(body: Text('covered')),
+              ),
+            ),
+          ),
+        ),
+        launch: _FakeLaunch(
+          page: _page(<LaunchProject>[
+            s7Project(
+              projectId: _projectId,
+              reviewStatus: LaunchReviewStatus.submitted,
+              kind: LaunchProjectKind.launch2,
+            ),
+          ]),
+        ),
+        creator: creator,
+      );
+      expect(_key('launch2-status-awaiting_approval'), findsOneWidget);
+      expect(creator.configReads, 1);
+
+      await tester.tap(_key('launch2-project-row-$_projectId'));
+      await tester.pumpAndSettle();
+      expect(find.text('covered'), findsOneWidget);
+      // Covered: nothing is read behind the page.
+      expect(creator.configReads, 1);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(creator.configReads, 2);
+      expect(find.text('已拒绝 · 其他原因'), findsOneWidget);
+      expect(_key('launch2-status-rejected'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('the edit form carries the rejection: category and the '
+        "reviewer's words", (tester) async {
+      await _pump(
+        tester,
+        const Launch2CreateScreen(projectId: _projectId),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.submitted,
+            kind: LaunchProjectKind.launch2,
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_rejected')),
+          ],
+        ),
+      );
+      expect(_key('launch2-create-rejection'), findsOneWidget);
+      expect(find.text('审核未通过：其他原因'), findsOneWidget);
+      expect(find.textContaining('审核意见：Logo 与官网不一致，请替换后重提'), findsOneWidget);
+      expect(find.textContaining('发射配置未通过审核'), findsOneWidget);
+      // The banner stays on every step.
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-step-2'), findsOneWidget);
+      expect(_key('launch2-create-rejection'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('a resubmitted version awaiting review has no banner', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2CreateScreen(projectId: _projectId),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.submitted,
+            kind: LaunchProjectKind.launch2,
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(awaiting()),
+          ],
+        ),
+      );
+      expect(_key('launch2-create-step-1'), findsOneWidget);
+      expect(_key('launch2-create-rejection'), findsNothing);
+      await _drain(tester);
+    });
+
+    test('the submission under review is the later of the catalogue '
+        'submission and the newest configuration version', () {
+      final first = DateTime.utc(2026, 10, 17, 5, 29);
+      final resubmitted = DateTime.utc(2026, 10, 17, 6, 50);
+      Launch2CreatorProject value(DateTime? submittedAt, DateTime saved) =>
+          Launch2CreatorProject(
+            project: s7Project(
+              projectId: _projectId,
+              reviewStatus: LaunchReviewStatus.submitted,
+              kind: LaunchProjectKind.launch2,
+              submittedAt: submittedAt,
+            ),
+            config: awaiting(updatedAt: saved),
+          );
+      expect(launch2LatestSubmission(value(first, resubmitted)), resubmitted);
+      // The version saved just before the first submission.
+      expect(
+        launch2LatestSubmission(
+          value(first, first.subtract(const Duration(seconds: 1))),
+        ),
+        first,
+      );
+      expect(launch2LatestSubmission(value(null, resubmitted)), isNull);
+    });
+
+    testWidgets('the project page says when the newest version was '
+        'submitted', (tester) async {
+      final first = DateTime.utc(2026, 10, 8, 1);
+      final resubmitted = DateTime.utc(2026, 10, 9, 2, 30);
+      await _pump(
+        tester,
+        const Launch2ProjectScreen(projectId: _projectId),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.submitted,
+            kind: LaunchProjectKind.launch2,
+            submittedAt: first,
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(awaiting(updatedAt: resubmitted)),
+          ],
+        ),
+      );
+      expect(
+        find.textContaining('${loopLocalTimestampLabel(resubmitted)} 提交'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('${loopLocalTimestampLabel(first)} 提交'),
+        findsNothing,
+      );
+      await _drain(tester);
+    });
+
+    testWidgets("「（N 小时后）」 follows the clock while the page is open", (
+      tester,
+    ) async {
+      final start = awaiting().draft!.nftSaleStart;
+      var now = start.subtract(const Duration(minutes: 61));
+      DateTime clock() => now;
+      await _pump(
+        tester,
+        Launch2ProjectScreen(projectId: _projectId, clock: clock),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.submitted,
+            kind: LaunchProjectKind.launch2,
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(awaiting()),
+          ],
+        ),
+        overrides: <Override>[launch2ClockProvider.overrideWithValue(clock)],
+      );
+      String sale() =>
+          tester.widget<LoopKeyValue>(_key('launch2-project-sale-start')).value;
+      expect(sale(), endsWith('（1 小时后）'));
+      now = now.add(const Duration(minutes: 2));
+      await tester.pump(const Duration(seconds: 1));
+      expect(sale(), endsWith('（59 分钟后）'));
+      now = start.add(const Duration(minutes: 1));
+      await tester.pump(const Duration(seconds: 1));
+      expect(sale(), loopLocalTimestampLabel(start));
+      await _drain(tester);
+    });
+
+    Future<List<(String, String)>> signOnce(
+      WidgetTester tester,
+      _FakeCreator creator,
+    ) async {
+      final submitted = <(String, String)>[];
+      await _pump(
+        tester,
+        Launch2SignScreen(
+          projectId: _projectId,
+          clock: _beforeDeadline,
+          onSubmitted: (project, job) => submitted.add((project, job)),
+        ),
+        creator: creator,
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(_key('launch2-sign-submit'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('签名'));
+      await tester.pumpAndSettle();
+      return submitted;
+    }
+
+    testWidgets('a submission that ended without an answer is replayed '
+        'with the same signature before anything is said', (tester) async {
+      final creator = _FakeCreator(
+        requests: <_A<Launch2SigningRequest>>[
+          _A<Launch2SigningRequest>.value(_request()),
+        ],
+        submits: <_A<Launch2DeploymentJob>>[
+          const _A<Launch2DeploymentJob>.fail(LoopChainFailureKind.unexpected),
+          _A<Launch2DeploymentJob>.value(_job('hooks_deployment_created')),
+        ],
+      );
+      final submitted = await signOnce(tester, creator);
+      expect(creator.submittedSignatures, hasLength(2));
+      expect(
+        creator.submittedSignatures.first,
+        creator.submittedSignatures.last,
+      );
+      expect(submitted.single, (_projectId, _jobId));
+      expect(find.text('操作没有完成，请稍后再试。'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('still no answer: the newest task of the signed version is '
+        'the one this signature created', (tester) async {
+      final creator = _FakeCreator(
+        requests: <_A<Launch2SigningRequest>>[
+          _A<Launch2SigningRequest>.value(_request()),
+        ],
+        submits: <_A<Launch2DeploymentJob>>[
+          const _A<Launch2DeploymentJob>.fail(LoopChainFailureKind.offline),
+        ],
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_deploying')),
+        ],
+      );
+      final submitted = await signOnce(tester, creator);
+      expect(creator.submittedSignatures, hasLength(2));
+      expect(creator.configReads, 1);
+      expect(submitted.single, (_projectId, _jobId));
+      await _drain(tester);
+    });
+
+    testWidgets('no task either: the failure is said once, and a refusal is '
+        'never replayed', (tester) async {
+      final unanswered = _FakeCreator(
+        requests: <_A<Launch2SigningRequest>>[
+          _A<Launch2SigningRequest>.value(_request()),
+        ],
+        submits: <_A<Launch2DeploymentJob>>[
+          const _A<Launch2DeploymentJob>.fail(LoopChainFailureKind.unexpected),
+        ],
+      );
+      expect(await signOnce(tester, unanswered), isEmpty);
+      expect(unanswered.submittedSignatures, hasLength(2));
+      expect(unanswered.configReads, 1);
+      expect(find.text('操作没有完成，请稍后再试。'), findsOneWidget);
+      await _drain(tester);
+
+      final refused = _FakeCreator(
+        requests: <_A<Launch2SigningRequest>>[
+          _A<Launch2SigningRequest>.value(_request()),
+        ],
+        submits: <_A<Launch2DeploymentJob>>[
+          const _A<Launch2DeploymentJob>.fail(
+            LoopChainFailureKind.permissionDenied,
+          ),
+        ],
+      );
+      expect(await signOnce(tester, refused), isEmpty);
+      expect(refused.submittedSignatures, hasLength(1));
+      expect(refused.configReads, 0);
+      await _drain(tester);
+    });
+
+    test('which failures carry no answer', () {
+      for (final kind in LoopChainFailureKind.values) {
+        expect(
+          launch2SubmissionUnanswered(kind),
+          <LoopChainFailureKind>{
+            LoopChainFailureKind.offline,
+            LoopChainFailureKind.timedOut,
+            LoopChainFailureKind.cancelled,
+            LoopChainFailureKind.outcomeUnknown,
+            LoopChainFailureKind.unexpected,
+          }.contains(kind),
+          reason: kind.name,
+        );
+      }
     });
   });
 }

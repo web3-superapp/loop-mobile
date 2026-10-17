@@ -109,22 +109,34 @@ class Launch2ProjectsScreen extends ConsumerWidget {
         ],
       );
     }
-    return LoopStreamPage(
-      key: const ValueKey<String>('launch2-projects-screen'),
-      archetype: LoopPageArchetype.listing,
-      title: '我的项目',
-      onBack: onBack,
-      updating: state.refreshing,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('launch2-projects-create'),
-          icon: 'plus',
-          label: '发起 v2 发射',
-          onPressed: () => onNavigate?.call(Launch2CreatorRoute.createPath),
-        ),
-      ],
-      onRefresh: controller.reload,
-      collection: collection,
+    // Decision 0200: the list stays mounted under the pages a row opens.
+    // Coming back re-reads, so an edit, a resubmission or a review made in
+    // the meantime shows instead of the answer read before.
+    return Launch2RefreshOnReturn(
+      onReturn: () {
+        final current = ref.read(provider);
+        if (current.value == null || current.busy || current.refreshing) {
+          return;
+        }
+        unawaited(ref.read(provider.notifier).reload());
+      },
+      child: LoopStreamPage(
+        key: const ValueKey<String>('launch2-projects-screen'),
+        archetype: LoopPageArchetype.listing,
+        title: '我的项目',
+        onBack: onBack,
+        updating: state.refreshing,
+        actions: <Widget>[
+          LoopIconButton(
+            key: const ValueKey<String>('launch2-projects-create'),
+            icon: 'plus',
+            label: '发起 v2 发射',
+            onPressed: () => onNavigate?.call(Launch2CreatorRoute.createPath),
+          ),
+        ],
+        onRefresh: controller.reload,
+        collection: collection,
+      ),
     );
   }
 }
@@ -133,9 +145,11 @@ class Launch2ProjectsScreen extends ConsumerWidget {
 String _projectSubtitle(Launch2CreatorRow row) {
   final draft = row.draft;
   return switch (row.status) {
+    // Decision 0200: 「已拒绝 · 原因类别」; the reviewer's own words are on
+    // the project page and the edit form.
     Launch2CreatorStatus.rejected => switch (row.rejection) {
-      final LaunchRejection rejection => launch2RejectionTitle(rejection),
-      null => row.project.reviewReasonText ?? '审核未通过',
+      final LaunchRejection rejection => launch2RejectedRowText(rejection),
+      null => row.project.reviewReasonText ?? '已拒绝',
     },
     Launch2CreatorStatus.approved when row.config.recipientOutdated =>
       '回购收币地址需要更新',

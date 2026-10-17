@@ -69,7 +69,12 @@ final class Launch2CreatorPolling {
     this.deploymentInterval = const Duration(seconds: 5),
     this.instanceInterval = const Duration(seconds: 6),
     this.instanceMaxAttempts = 10,
+    this.submitRecheckDelay = const Duration(seconds: 2),
   });
+
+  /// Decision 0200: how long the sign page waits before it asks again about
+  /// a deployment submission that ended without an answer.
+  final Duration submitRecheckDelay;
 
   final Duration deploymentInterval;
 
@@ -420,6 +425,11 @@ final class Launch2SaveController extends Notifier<Launch2SaveState> {
         minSaleLead: lead,
         fixedBuybackRecipient: recipient,
       );
+      // Decision 0200: what 我的项目 and the project page read before this
+      // save is stale (old version, old sale start, the rejection answered).
+      ref
+        ..invalidate(launch2ProjectControllerProvider(id))
+        ..invalidate(launch2CreatorListControllerProvider);
       return id;
     } on LoopChainException catch (error) {
       state = Launch2SaveState(
@@ -597,15 +607,27 @@ final class Launch2SignController extends Notifier<Launch2SignState> {
       return null;
     }
     state = state.copyWith(phase: Launch2SignPhase.submitting);
+    Future<Launch2DeploymentJob> submit() => ref
+        .read(launch2CreatorGatewayProvider)
+        .submitDeployment(
+          projectId: projectId,
+          walletId: walletId,
+          request: request,
+          signature: signature,
+        );
     try {
-      final job = await ref
-          .read(launch2CreatorGatewayProvider)
-          .submitDeployment(
-            projectId: projectId,
-            walletId: walletId,
-            request: request,
-            signature: signature,
-          );
+      Launch2DeploymentJob job;
+      try {
+        job = await submit();
+      } on LoopChainException catch (first) {
+        if (!launch2SubmissionUnanswered(first.kind)) rethrow;
+        // Decision 0200: no answer is not a refusal. Ask again before saying
+        // anything: the gateway replays the same idempotency key for the same
+        // signature, and the server's newest task is checked last.
+        final found = await _recheckSubmission(request, submit);
+        if (found == null) rethrow;
+        job = found;
+      }
       if (!ref.mounted) return job;
       state = state.copyWith(phase: Launch2SignPhase.submitted, job: job);
       return job;
@@ -628,7 +650,65 @@ final class Launch2SignController extends Notifier<Launch2SignState> {
       return null;
     }
   }
+
+  /// One replay of the same submission (same signature, so the same
+  /// idempotency key), then one read of `hooks-config`: a task for the
+  /// signed configuration version that is not cancelled or finally failed is
+  /// the one this signature created. `null` = still no answer.
+  Future<Launch2DeploymentJob?> _recheckSubmission(
+    Launch2SigningRequest request,
+    Future<Launch2DeploymentJob> Function() submit,
+  ) async {
+    final delay = ref.read(launch2CreatorPollingProvider).submitRecheckDelay;
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
+    if (!ref.mounted) return null;
+    try {
+      return await submit();
+    } on LoopChainException catch (error) {
+      // A conflict after a replay is the server's answer; the caller
+      // handles it like the first one (re-read and sign again) unless the
+      // task is already there.
+      if (!ref.mounted) return null;
+      final job = await _taskFor(request);
+      if (job != null) return job;
+      if (!launch2SubmissionUnanswered(error.kind)) rethrow;
+      return null;
+    } catch (_) {
+      if (!ref.mounted) return null;
+      return _taskFor(request);
+    }
+  }
+
+  Future<Launch2DeploymentJob?> _taskFor(Launch2SigningRequest request) async {
+    try {
+      final config = await ref
+          .read(launch2CreatorGatewayProvider)
+          .loadConfig(projectId);
+      final job = config.latestDeployment;
+      if (job == null || job.configVersion != request.configVersion) {
+        return null;
+      }
+      if (job.status == Launch2JobStatus.cancelled) return null;
+      if (job.status == Launch2JobStatus.failed &&
+          job.failure?.retryable != true) {
+        return null;
+      }
+      return job;
+    } on Object {
+      return null;
+    }
+  }
 }
+
+/// A deployment submission that ended without a server answer (decision
+/// 0200): the connection dropped, timed out or broke mid-response, so the
+/// server may have created the task. A refusal is an answer and is not here.
+bool launch2SubmissionUnanswered(LoopChainFailureKind kind) =>
+    kind == LoopChainFailureKind.offline ||
+    kind == LoopChainFailureKind.timedOut ||
+    kind == LoopChainFailureKind.cancelled ||
+    kind == LoopChainFailureKind.outcomeUnknown ||
+    kind == LoopChainFailureKind.unexpected;
 
 final launch2SignControllerProvider = NotifierProvider.autoDispose
     .family<Launch2SignController, Launch2SignState, String>(

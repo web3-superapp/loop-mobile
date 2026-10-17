@@ -754,8 +754,7 @@ class Launch2PoolStats extends StatelessWidget {
             label: '外盘成交',
             value: <String>[
               '${loopGroupedFigure(user.toString())} 笔用户成交',
-              if (pool.buybackTradeCount case final BigInt buybacks
-                  when buybacks > BigInt.zero)
+              if (launch2PoolBuybackCount(detail) case final BigInt buybacks)
                 '另有回购 ${loopGroupedFigure(buybacks.toString())} 笔',
             ].join(' · '),
           ),
@@ -830,4 +829,17 @@ class Launch2PoolSwapLink extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// 「另有回购 M 笔」 (decision 0150; source widened by decision 0200 D10).
+///
+/// The pool's own split (`tradeCount - userTradeCount`) when it names any
+/// buyback swap; otherwise the buyback ledger's `executedCount` — the same
+/// figure the 回购 card shows. S221 saw the card say 2 笔 while the pool
+/// split was 0, so the line was missing. `null` = nothing to say.
+BigInt? launch2PoolBuybackCount(Launch2InstanceDetail detail) {
+  final fromPool = detail.pool?.buybackTradeCount;
+  if (fromPool != null && fromPool > BigInt.zero) return fromPool;
+  final fromLedger = detail.buyback.executedCount;
+  return fromLedger > BigInt.zero ? fromLedger : null;
 }

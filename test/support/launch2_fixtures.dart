@@ -177,10 +177,11 @@ Map<String, Object?> l2BuybackSummaryJson({
   bool latest = false,
   bool legacy = true,
   Map<String, Object?>? keeper,
+  String? executedCount,
 }) => <String, Object?>{
   'recipient': '0x28816c4c4792467390c90e5b426f198570e29307',
   'paused': false,
-  'executedCount': latest ? '1' : '0',
+  'executedCount': executedCount ?? (latest ? '1' : '0'),
   'totalUsd1': latest ? '100' : '0',
   'totalMeme': latest ? '150000' : '0',
   'lastExecutedAt': latest ? '2027-01-24T08:00:00.000Z' : null,
@@ -210,6 +211,7 @@ Map<String, Object?> l2DetailJson({
   bool includePool = false,
   String perAddressCap = '5000000',
   int perAddressCapBps = 50,
+  String? buybacksExecuted,
 }) {
   // loop-api decision 0122: a v3 sale with no NFT minted opens the public
   // round without a list.
@@ -317,6 +319,7 @@ Map<String, Object?> l2DetailJson({
       'buyback': l2BuybackSummaryJson(
         latest: stage == 'graduated',
         keeper: keeper,
+        executedCount: buybacksExecuted,
       ),
       'recentTrades': trades,
       'viewer': noViewer ? null : (viewer ?? l2ViewerJson()),
@@ -596,8 +599,10 @@ Launch2InstanceDetail l2Detail({
   Map<String, Object?>? pool,
   String perAddressCap = '5000000',
   int perAddressCapBps = 50,
+  String? buybacksExecuted,
 }) => LoopV2Launch2Codec.detail(
   l2DetailJson(
+    buybacksExecuted: buybacksExecuted,
     perAddressCap: perAddressCap,
     perAddressCapBps: perAddressCapBps,
     openedWithoutHolders: openedWithoutHolders,

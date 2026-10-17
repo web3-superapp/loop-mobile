@@ -21,18 +21,15 @@ import 'package:loop_mobile/features/meme/meme_wallet.dart';
 // instance until `viewer.nft` shows the mint. Both pages call this one
 // function; neither keeps its own copy of the trip.
 
-/// Where the mint started (decision 0163): the action keeps one name from
-/// the confirm sheet to the wallet — 「购买 NFT」 from the project page,
-/// 「铸造」 from 共识勋章.
+/// Where the mint started (decision 0163). The action keeps one name from
+/// the confirm sheet to the wallet; since decision 0200 that name is 「铸造」
+/// from both entries (the App no longer mixes 「购买 NFT / 发售」 with 「铸造」).
 enum Launch2NftMintEntry {
   projectPage,
   mintPage;
 
-  /// The action's name on the signing exit; `null` keeps the kind's own.
-  String? get noun => switch (this) {
-    projectPage => null,
-    mintPage => '铸造',
-  };
+  /// The action's name on the signing exit.
+  String get noun => '铸造';
 }
 
 /// How one trip through [launch2MintNft] ended.
@@ -82,20 +79,19 @@ Future<Launch2NftMintResult> launch2MintNft(
   VoidCallback? onPrepared,
   Launch2NftMintEntry entry = Launch2NftMintEntry.projectPage,
 }) async {
-  final mintPage = entry == Launch2NftMintEntry.mintPage;
   final confirmed = await showLaunch2NftConfirmSheet(
     context,
     ticker: detail.row.ticker,
     priceLabel: launch2Usd1Label(detail.row.nftSale.priceUsd1),
-    heading: mintPage ? '铸造 ${detail.row.ticker} 共识勋章' : null,
-    confirmLabel: mintPage ? '继续铸造' : '继续购买',
+    heading: '${entry.noun} ${detail.row.ticker} 共识勋章',
+    confirmLabel: '继续${entry.noun}',
   );
   if (!confirmed || !context.mounted) return const Launch2NftMintCancelled();
   final wallet = memeReadActiveWallet(ref);
   final walletId = wallet.walletId ?? detail.viewer?.walletId;
   if (walletId == null) {
     return const Launch2NftMintRefused(
-      Launch2ActionFailure('还没有可用的钱包，激活钱包后再购买'),
+      Launch2ActionFailure('还没有可用的钱包，激活钱包后再铸造'),
     );
   }
   onPreparing?.call();

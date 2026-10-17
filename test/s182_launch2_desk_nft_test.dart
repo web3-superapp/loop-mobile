@@ -520,13 +520,13 @@ void main() {
 
     test('upcoming: 开售倒计时, the start, price and duration', () {
       final row = at(1);
-      expect(launch2DeskStatus(row), '开售倒计时');
+      expect(launch2DeskStatus(row), '铸造倒计时');
       expect(
         launch2DeskCaption(row),
-        '${launch2ShortDateTime(row.nftSale.startAt)} 开售 · '
-        '100 USD1 / 枚 · 发售 7 天',
+        '${launch2ShortDateTime(row.nftSale.startAt)} 开始铸造 · '
+        '100 USD1 / 枚 · 铸造期 7 天',
       );
-      expect(launch2DeskStampPrefix(row.stage), '距开售 ');
+      expect(launch2DeskStampPrefix(row.stage), '距铸造 ');
       expect(launch2HeroLocation(row), Launch2Route.nft(_id(1)));
     });
 
@@ -670,7 +670,7 @@ void main() {
       expect(dot(2), active);
       expect(
         _folio(tester, 'launch2-desk-page-${_id(3)}').stamp,
-        startsWith('距开售 '),
+        startsWith('距铸造 '),
       );
       await _drain(tester);
     });
@@ -849,7 +849,7 @@ void main() {
       final row = _rows(<Map<String, Object?>>[_rowJson(1, 'nft_sale')]).single;
       expect(
         tester.widget<Text>(_key('launch2-desk-record-sub-$id')).data,
-        'Frog Launch · NFT 发售 7 天 · '
+        'Frog Launch · 铸造期 7 天 · '
         '截止 ${launch2ShortDateTime(row.nftSale.endAt)}',
       );
       expect(
@@ -870,7 +870,7 @@ void main() {
       );
       expect(
         tester.widget<Text>(_key('launch2-desk-record-foot-$id')).data,
-        '发售已过 57% · 已铸 2 枚 · 100 USD1 / 枚',
+        '铸造期已过 57% · 已铸 2 枚 · 100 USD1 / 枚',
       );
       // Not drawn twice: no minting group, no row.
       expect(_key('launch2-group-minting'), findsNothing);
@@ -933,7 +933,7 @@ void main() {
       expect(_key('launch2-desk-bar-${_id(1)}'), findsNothing);
       expect(
         tester.widget<Text>(_key('launch2-desk-record-foot-${_id(1)}')).data,
-        '100 USD1 / 枚 · 发售 7 天',
+        '100 USD1 / 枚 · 铸造期 7 天',
       );
       await _drain(tester);
     });
@@ -1199,9 +1199,9 @@ void main() {
       expect(_key('launch2-nft-screen'), findsOneWidget);
       expect(
         _statusText(tester),
-        '开售倒计时 · 100 USD1 / 枚 · 发售 7 天 | 距开售 2天 03:00:00',
+        '铸造倒计时 · 100 USD1 / 枚 · 铸造期 7 天 | 距铸造 2天 03:00:00',
       );
-      expect(_button(tester).label, '开售后可铸造');
+      expect(_button(tester).label, '开始后可铸造');
       expect(_button(tester).onPressed, isNull);
       expect(_medal(tester).brass, isFalse);
       expect(_medal(tester).bottomLabel, '共识勋章');
@@ -1329,7 +1329,7 @@ void main() {
           ],
         ),
       );
-      expect(_statusText(tester), '发售结束时无人铸造，已直接进入公开轮 · 已铸 2 枚');
+      expect(_statusText(tester), '铸造期内无人铸造，已直接进入公开轮 · 已铸 2 枚');
       await _drain(tester);
     });
 
@@ -1343,7 +1343,7 @@ void main() {
           details: <Launch2InstanceDetail>[_detail(stage: 'closed_no_holders')],
         ),
       );
-      expect(_statusText(tester), '发售结束时无人铸造，项目已关闭');
+      expect(_statusText(tester), '铸造期内无人铸造，项目已关闭');
       expect(
         _folio(tester, 'launch2-nft-status').headingTone,
         LoopFolioHeadingTone.neutral,
@@ -1678,15 +1678,17 @@ void main() {
       );
     });
 
-    testWidgets('from the project page: 购买 NFT as before', (tester) async {
+    testWidgets('from the project page: 铸造 too (decision 0200)', (
+      tester,
+    ) async {
       await walk(
         tester,
         page: const Launch2InstanceScreen(instanceId: l2InstanceA),
         startKey: 'launch2-buy-nft',
-        heading: '购买 \$FROG 项目 NFT',
-        confirm: '继续购买',
-        noun: '购买 NFT',
-        absent: '铸造',
+        heading: '铸造 FROG 共识勋章',
+        confirm: '继续铸造',
+        noun: '铸造',
+        absent: '购买',
       );
     });
   });
@@ -1828,7 +1830,7 @@ void main() {
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.archetype, LoopFolioArchetype.record);
       expect(folio.ring, isFalse);
-      expect(folio.kicker, 'NFT 发售中');
+      expect(folio.kicker, '铸造中');
       expect(folio.heading, 'FROG');
       expect(folio.headingTone, LoopFolioHeadingTone.accent);
       expect(folio.caption, startsWith('Frog Launch · '));
@@ -1915,7 +1917,7 @@ void main() {
         find.byType(LoopFolioPrimary),
       );
       expect(folio.headingTone, LoopFolioHeadingTone.neutral);
-      expect(folio.stamp, startsWith('距开售 '));
+      expect(folio.stamp, startsWith('距铸造 '));
       await _drain(tester);
       await _pump(
         tester,
