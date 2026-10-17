@@ -153,6 +153,12 @@ Decimal launch2CurveCapOf(Decimal? cap) =>
 String launch2CurveCapFigure(Decimal? cap) =>
     loopFormatDecimal(launch2CurveCapOf(cap).floor(), maxFractionDigits: 0);
 
+/// Where a LoopDynamic buy's base fee is taken from (decision 0197): the
+/// one wording the pool quote and the creator's template card share
+/// (decision 0198).
+String launch2BuyFeeSideText({required bool fromUsd1}) =>
+    fromUsd1 ? '从付出的 USD1 扣' : '从到手的 MEME 扣';
+
 /// 「每个地址最多买 N 枚」 for an instance's cap (decision 0197).
 String launch2CurveCapSentence(Decimal? cap) =>
     '每个地址最多买 ${launch2CurveCapFigure(cap)} 枚';

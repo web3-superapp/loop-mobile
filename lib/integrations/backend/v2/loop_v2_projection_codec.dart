@@ -342,7 +342,8 @@ abstract final class LoopV2ProjectionCodec {
     // out of the detail reader.
     final rowMap = <String, Object?>{...map}
       ..remove('boundAsset')
-      ..remove('viewerMembership');
+      ..remove('viewerMembership')
+      ..remove('application');
     return _community(
       rowMap,
       miningPower: power,
@@ -356,7 +357,14 @@ abstract final class LoopV2ProjectionCodec {
 
   /// Row-level tails of `GET /v2/communities` (S111 §1, decision 0116). An
   /// API that predates them answers without either key.
-  static const _communityRowOptionalKeys = <String>{'viewerMembership'};
+  /// `application` rides only on a `membership=owned` directory page, which
+  /// this client never asks for (it reads owned communities from the home
+  /// aggregate); accepted and ignored so such a row is not refused (decision
+  /// 0198).
+  static const _communityRowOptionalKeys = <String>{
+    'viewerMembership',
+    'application',
+  };
 
   /// `boundAsset` on a directory row: `{ assetId, symbol, logoUrl }`, or
   /// `null` for a community that binds nothing. The registry row's other two

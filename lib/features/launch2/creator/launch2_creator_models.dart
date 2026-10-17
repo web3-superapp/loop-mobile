@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 
 // ---------------------------------------------------------------------------
 // MEME v2 · project side (S135, client decision 0138)
@@ -118,11 +119,20 @@ final class Launch2FixedEconomics {
   /// Immutable LoopDynamic parameters; null for an OfficialTax template.
   final Launch2LoopDynamicEconomics? loopDynamic;
 
+  /// The per-address curve cap this template's Factory enforces: the
+  /// LoopDynamic Factory's own `maxCumulativeBuy` (decision 0198, loop-api
+  /// 0152) when it states a positive one, otherwise the template constant.
+  BigInt get curveCapRaw {
+    final factoryCap = loopDynamic?.maxCumulativeBuyRaw;
+    return factoryCap != null && factoryCap > BigInt.zero
+        ? factoryCap
+        : perAddressLifetimeBuyCapRaw;
+  }
+
   /// The per-address cap as basis points of the total supply.
   int? get perAddressCapBps => memeTotalSupplyRaw == BigInt.zero
       ? null
-      : (perAddressLifetimeBuyCapRaw * BigInt.from(10000) ~/ memeTotalSupplyRaw)
-            .toInt();
+      : (curveCapRaw * BigInt.from(10000) ~/ memeTotalSupplyRaw).toInt();
 }
 
 /// The template the create page shows before a draft exists.
@@ -795,14 +805,47 @@ typedef Launch2CreatorRow = Launch2CreatorProject;
 
 /// One page of 我的项目.
 @immutable
-final class Launch2CreatorPage {
-  const Launch2CreatorPage({required this.rows, required this.nextCursor});
+/// One project of 我的项目, in the catalogue's order (decision 0198): either
+/// read in full, or a catalogue project whose own `hooks-config` answer this
+/// build could not read. One unreadable project no longer fails the page.
+sealed class Launch2CreatorListEntry {
+  const Launch2CreatorListEntry();
 
-  final List<Launch2CreatorRow> rows;
+  LaunchProject get project;
+}
+
+final class Launch2CreatorReadableListEntry extends Launch2CreatorListEntry {
+  const Launch2CreatorReadableListEntry(this.row);
+
+  final Launch2CreatorRow row;
+
+  @override
+  LaunchProject get project => row.project;
+}
+
+/// The catalogue project is known; its launch configuration is not, so no
+/// state is claimed for it.
+final class Launch2CreatorUnreadableListEntry extends Launch2CreatorListEntry {
+  const Launch2CreatorUnreadableListEntry(this.project);
+
+  @override
+  final LaunchProject project;
+}
+
+final class Launch2CreatorPage {
+  const Launch2CreatorPage({required this.entries, required this.nextCursor});
+
+  final List<Launch2CreatorListEntry> entries;
   final String? nextCursor;
 
+  /// The projects read in full.
+  List<Launch2CreatorRow> get rows => <Launch2CreatorRow>[
+    for (final entry in entries)
+      if (entry is Launch2CreatorReadableListEntry) entry.row,
+  ];
+
   Launch2CreatorPage append(Launch2CreatorPage next) => Launch2CreatorPage(
-    rows: <Launch2CreatorRow>[...rows, ...next.rows],
+    entries: <Launch2CreatorListEntry>[...entries, ...next.entries],
     nextCursor: next.nextCursor,
   );
 }
@@ -819,6 +862,9 @@ final class Launch2LoopDynamicEconomics {
     required this.routingPolicy,
     required this.routerRegistryAdmin,
     required this.excludeBuybackFromRewards,
+    this.maxDynamicFeeWad,
+    this.maxCumulativeBuyRaw,
+    this.buyFeeToken,
   });
 
   final String router;
@@ -829,4 +875,17 @@ final class Launch2LoopDynamicEconomics {
   final String routingPolicy;
   final String routerRegistryAdmin;
   final bool excludeBuybackFromRewards;
+
+  /// loop-api 0144: the Factory's dynamic sell-rate cap, a raw 18-decimal
+  /// integer (0 = uncapped). Null on a pre-S193 Factory's template.
+  final BigInt? maxDynamicFeeWad;
+
+  /// loop-api 0152: the Factory's per-address curve purchase cap, raw MEME.
+  /// Null on a pre-S209 Factory's template ([Launch2FixedEconomics.curveCapRaw]
+  /// then falls back to the template constant).
+  final BigInt? maxCumulativeBuyRaw;
+
+  /// loop-api 0152: which side the buy fee is taken from. Null when the
+  /// template does not say — the page then says nothing about the side.
+  final Launch2BuyFeeToken? buyFeeToken;
 }

@@ -184,6 +184,39 @@ abstract final class LoopV2Contract {
     return result;
   }
 
+  /// Known keys strict, unknown keys ignored (client decision 0198).
+  ///
+  /// Only for the objects a decision names as growing with each contract
+  /// generation — the launch2 template and its economics. Every key in
+  /// [expectedKeys] must be present and every known key is still validated
+  /// by the caller; a key outside [expectedKeys] ∪ [optionalKeys] is dropped
+  /// from the result, so no caller can read it by accident. A non-map, a
+  /// non-string key or a repeated key is still an invalid payload.
+  static Map<String, Object?> knownKeysMap(
+    Object? value,
+    Set<String> expectedKeys, [
+    Set<String> optionalKeys = const <String>{},
+  ]) {
+    if (value is! Map) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    final seen = <String>{};
+    final result = <String, Object?>{};
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String || !seen.add(key)) {
+        throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+      }
+      if (expectedKeys.contains(key) || optionalKeys.contains(key)) {
+        result[key] = entry.value;
+      }
+    }
+    if (!expectedKeys.every(result.containsKey)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    return result;
+  }
+
   static String requiredString(
     Map<String, Object?> source,
     String key, {

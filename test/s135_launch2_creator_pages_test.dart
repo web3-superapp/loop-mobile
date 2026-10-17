@@ -545,7 +545,8 @@ void main() {
       expect(find.text('133,333.332 USD1'), findsOneWidget);
       expect(find.text('10%'), findsOneWidget);
       expect(find.text('2%'), findsOneWidget);
-      expect(find.text('0.5%'), findsOneWidget);
+      // Decision 0198: the cap in tokens, the 0197 way.
+      expect(find.text('5,000,000 枚（0.5%）'), findsOneWidget);
       expect(find.text('100 USD1'), findsOneWidget);
       expect(find.text('由平台模板固定，不能修改。'), findsOneWidget);
 
@@ -1809,6 +1810,175 @@ void main() {
       await tester.tap(_key('launch2-project-row-$second'));
       expect(opened.single, Launch2CreatorRoute.project(second));
       await _drain(tester);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // S222 · decision 0198: the S209 template no longer stops the owner
+  // -------------------------------------------------------------------------
+  group('S222 · decision 0198', () {
+    Future<void> toSubmit(WidgetTester tester) async {
+      await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('launch2-create-name'), 'MoonCat');
+      await tester.enterText(_key('launch2-create-ticker'), 'mcat');
+      await tester.pump();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('launch2-create-x'), 'https://x.com/mooncat');
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-sale-start'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-sale-start-confirm'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('提交审核 reads and saves an S209 LoopDynamic config, then '
+        'submits', (tester) async {
+      // Both answers are decoded from the staging shape S221 met (build 26
+      // refused it as invalid data and never sent the submit).
+      final s209 = _config('hooks_config_draft_loop_dynamic_0152');
+      final launch = _FakeLaunch();
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[_A<Launch2HooksConfig>.value(s209)],
+        saves: <_A<Launch2HooksDraft>>[
+          _A<Launch2HooksDraft>.value(s209.draft!),
+        ],
+      );
+      final submitted = <String>[];
+      await _pump(
+        tester,
+        Launch2CreateScreen(onSubmitted: submitted.add),
+        launch: launch,
+        creator: creator,
+      );
+      await toSubmit(tester);
+      expect(find.text('重试提交'), findsNothing);
+      expect(creator.configReads, greaterThanOrEqualTo(1));
+      expect(creator.saveVersions, <int>[1]);
+      expect(launch.submitted, <String>[_projectId]);
+      expect(submitted, <String>[_projectId]);
+      await _drain(tester);
+    });
+
+    testWidgets('the project page says the Factory cap and the fee side', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2ProjectScreen(projectId: _projectId),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.inReview,
+            submittedAt: DateTime.utc(2026, 10, 9, 7),
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(
+              _config('hooks_config_draft_loop_dynamic_0152'),
+            ),
+          ],
+        ),
+      );
+      await tester.scrollUntilVisible(_key('launch2-template-card'), 200);
+      expect(find.text('单地址上限'), findsOneWidget);
+      expect(find.text('3,000,000 枚（0.3%）'), findsOneWidget);
+      expect(find.text('外盘买入税'), findsOneWidget);
+      expect(find.text('2%（从付出的 USD1 扣）'), findsOneWidget);
+    });
+
+    testWidgets('an older template says the constant cap and no fee side', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2ProjectScreen(projectId: _projectId),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.inReview,
+            submittedAt: DateTime.utc(2026, 10, 9, 7),
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(
+              _config('hooks_config_draft_loop_dynamic'),
+            ),
+          ],
+        ),
+      );
+      await tester.scrollUntilVisible(_key('launch2-template-card'), 200);
+      expect(find.text('5,000,000 枚（0.5%）'), findsOneWidget);
+      expect(find.text('外盘买入税'), findsNothing);
+    });
+
+    testWidgets('我的项目: one project this build cannot read is its own row; '
+        'the page and the other rows stay', (tester) async {
+      const unreadableId = '4fa85f64-5717-4562-b3fc-2c963f66afa7';
+      final launch = _FakeLaunch(
+        page: _page(<LaunchProject>[
+          s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.approved,
+          ),
+          s7Project(
+            projectId: unreadableId,
+            reviewStatus: LaunchReviewStatus.inReview,
+          ),
+        ]),
+      );
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_approved')),
+          const _A<Launch2HooksConfig>.fail(LoopChainFailureKind.invalidData),
+        ],
+      );
+      final opened = <String>[];
+      await _pump(
+        tester,
+        Launch2ProjectsScreen(onNavigate: opened.add),
+        launch: launch,
+        creator: creator,
+      );
+      expect(_key('launch2-projects-list'), findsOneWidget);
+      expect(_key('launch2-project-row-$_projectId'), findsOneWidget);
+      expect(_key('launch2-project-unreadable-$unreadableId'), findsOneWidget);
+      expect(find.text('发射配置暂时读不到，下拉刷新或点开重试'), findsOneWidget);
+      // It claims no state: one badge, the readable project's.
+      expect(find.byType(LoopBadge), findsOneWidget);
+      await tester.tap(_key('launch2-project-unreadable-$unreadableId'));
+      expect(opened.single, Launch2CreatorRoute.project(unreadableId));
+    });
+
+    testWidgets('我的项目: a failure that is not the payload is still the '
+        "page's", (tester) async {
+      final launch = _FakeLaunch(
+        page: _page(<LaunchProject>[
+          s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.approved,
+          ),
+        ]),
+      );
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          const _A<Launch2HooksConfig>.fail(LoopChainFailureKind.offline),
+        ],
+      );
+      await _pump(
+        tester,
+        const Launch2ProjectsScreen(),
+        launch: launch,
+        creator: creator,
+      );
+      expect(_key('launch2-projects-list'), findsNothing);
+      expect(_key('launch2-project-row-$_projectId'), findsNothing);
     });
   });
 }

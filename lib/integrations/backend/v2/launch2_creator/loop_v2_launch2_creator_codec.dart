@@ -1,4 +1,6 @@
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
@@ -10,7 +12,10 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 /// `getV2HooksLaunchSigningRequest`, `submitV2HooksLaunchDeployment`,
 /// `getV2HooksLaunchDeployment` and `listV2Launch2Instances`. Every object is
 /// read with its exact key set; an unknown or missing key is an invalid
-/// payload, never a default.
+/// payload, never a default — except the template's `fixedEconomics` and its
+/// `loopDynamic` block, which grow with each contract generation: there the
+/// known keys stay strict and a key a later generation adds is ignored
+/// (decision 0198).
 abstract final class LoopV2Launch2CreatorCodec {
   static Never invalid() => LoopV2ChainCodec.invalid();
 
@@ -247,14 +252,23 @@ abstract final class LoopV2Launch2CreatorCodec {
     'excludeBuybackFromRewards',
   };
 
+  /// Factory parameters later generations added to `loopDynamic`: 0144's
+  /// `maxDynamicFeeWad` (S193) and 0152's `maxCumulativeBuy` / `buyFeeToken`
+  /// (S209). Each is absent on an older Factory's template (decision 0198).
+  static const Set<String> loopDynamicOptionalKeys = <String>{
+    'maxDynamicFeeWad',
+    'maxCumulativeBuy',
+    'buyFeeToken',
+  };
+
   static Launch2FixedEconomics economics(Object? raw) {
     // S172: a LoopDynamic template adds the Hook kind and its immutable
     // parameters (0131/0132); an OfficialTax template omits both keys.
-    final map = LoopV2Contract.strictMapWithOptional(
-      raw,
-      economicsKeys,
-      const <String>{'officialPoolHookKind', 'loopDynamic'},
-    );
+    // Decision 0198: known keys strict, keys of a later generation ignored.
+    final map = LoopV2Contract.knownKeysMap(raw, economicsKeys, const <String>{
+      'officialPoolHookKind',
+      'loopDynamic',
+    });
     final hookKindRaw = map['officialPoolHookKind'];
     if (hookKindRaw != null &&
         hookKindRaw != 'officialTax' &&
@@ -309,7 +323,21 @@ abstract final class LoopV2Launch2CreatorCodec {
   }
 
   static Launch2LoopDynamicEconomics _loopDynamic(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, loopDynamicKeys);
+    final map = LoopV2Contract.knownKeysMap(
+      raw,
+      loopDynamicKeys,
+      loopDynamicOptionalKeys,
+    );
+    BigInt? optionalUint(String key) => map.containsKey(key)
+        ? BigInt.parse(LoopV2ChainCodec.requireString(map, key, pattern: _uint))
+        : null;
+    Launch2BuyFeeToken? buyFeeToken;
+    if (map.containsKey('buyFeeToken')) {
+      final text = map['buyFeeToken'];
+      buyFeeToken =
+          (text is String ? Launch2BuyFeeToken.tryParse(text) : null) ??
+          invalid();
+    }
     final priceTiming = map['priceTiming'];
     if (priceTiming != 'PRE_SWAP' && priceTiming != 'POST_SWAP') invalid();
     final routingPolicy = map['routingPolicy'];
@@ -341,6 +369,9 @@ abstract final class LoopV2Launch2CreatorCodec {
         pattern: _address,
       ),
       excludeBuybackFromRewards: exclude,
+      maxDynamicFeeWad: optionalUint('maxDynamicFeeWad'),
+      maxCumulativeBuyRaw: optionalUint('maxCumulativeBuy'),
+      buyFeeToken: buyFeeToken,
     );
   }
 
@@ -849,7 +880,13 @@ abstract final class LoopV2Launch2CreatorCodec {
     final list = LoopV2ChainCodec.requireList(root['instances'], maximum: 50);
     final rows = <Launch2InstanceRef>[];
     for (final item in list) {
-      final row = LoopV2Contract.strictMap(item, instanceRowKeys);
+      // loop-api S180 (decision 0163) added the project `summary` and
+      // `links`; the project side does not show them (decision 0198).
+      final row = LoopV2Contract.strictMapWithOptional(
+        item,
+        instanceRowKeys,
+        LoopV2Launch2Codec.rowOptionalKeys,
+      );
       LoopV2Contract.strictMap(row['nftSale'], const <String>{
         'priceUsd1',
         'soldCount',

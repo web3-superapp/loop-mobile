@@ -1876,6 +1876,72 @@ void main() {
       await _drain(tester);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // S222 · decision 0198: the loop-api 0146 keys on viewer and rounds
+  // -------------------------------------------------------------------------
+  group('decision 0198', () {
+    test('dynamic-pool viewer: the 0146 index weight and reconciled flag '
+        'are accepted; bad types are not', () {
+      final state = _state(
+        armed: true,
+        edit: (p) => (p['viewer']! as Map<String, Object?>)
+          ..['indexedCurrentRoundWeightUsd1'] = '25'
+          ..['weightReconciled'] = true,
+      );
+      expect(state.viewer?.currentRoundWeightUsd1, Decimal.fromInt(25));
+      // Null on both is the server's "no round armed".
+      _state(
+        armed: true,
+        edit: (p) => (p['viewer']! as Map<String, Object?>)
+          ..['indexedCurrentRoundWeightUsd1'] = null
+          ..['weightReconciled'] = null,
+      );
+      void refuses(void Function(Map<String, Object?> viewer) edit) {
+        final pool = _poolJson('dynamic_pool_active_armed');
+        edit(pool['viewer']! as Map<String, Object?>);
+        expect(() => _kindWith(pool), _invalid);
+      }
+
+      refuses((v) => v['weightReconciled'] = 'yes');
+      refuses((v) => v['indexedCurrentRoundWeightUsd1'] = 25);
+      refuses((v) => v['somethingElse'] = 1);
+    });
+
+    test('rewards rounds: the 0146 credit totals and entries are accepted; '
+        'bad types are not', () {
+      final rewards = _rewardsWith((rounds) {
+        for (final round in rounds) {
+          round
+            ..['creditedUsd1'] = '25'
+            ..['movedInUsd1'] = '0'
+            ..['movedOutUsd1'] = '0'
+            ..['credits'] = <Object?>[
+              <String, Object?>{
+                'direction': 'in',
+                'attribution': 'loopRouter',
+                'counterparty': null,
+                'amountUsd1': '25',
+                'transactionHash': '0x${'ab' * 32}',
+                'logIndex': 3,
+                'creditedAt': '2026-10-16T07:00:00.000Z',
+              },
+            ];
+        }
+      });
+      expect(rewards.rounds, hasLength(3));
+      for (final edit in <void Function(Map<String, Object?> round)>[
+        (r) => r['creditedUsd1'] = 25,
+        (r) => r['movedInUsd1'] = '-1',
+        (r) => r['credits'] = 'none',
+        (r) => r['credits'] = <Object?>[1],
+        (r) => r['credits'] = List<Object?>.filled(21, <String, Object?>{}),
+        (r) => r['somethingElse'] = 1,
+      ]) {
+        expect(() => _rewardsWith((rounds) => edit(rounds.first)), _invalid);
+      }
+    });
+  });
 }
 
 extension<T> on T {

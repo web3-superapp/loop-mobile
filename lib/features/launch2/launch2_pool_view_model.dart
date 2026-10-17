@@ -226,10 +226,14 @@ Launch2PoolLine launch2DynamicBuyTaxLine(
 ) {
   final rate = launch2BpsLabel(loopDynamic.baseTaxBps);
   return loopDynamic.buyFeeFromUsd1
-      ? Launch2PoolLine('tax', '基础税 $rate（从付出的 USD1 扣）', _usd1(quote.taxUsd1))
+      ? Launch2PoolLine(
+          'tax',
+          '基础税 $rate（${launch2BuyFeeSideText(fromUsd1: true)}）',
+          _usd1(quote.taxUsd1),
+        )
       : Launch2PoolLine(
           'tax',
-          '基础税 $rate（从到手的 MEME 扣）',
+          '基础税 $rate（${launch2BuyFeeSideText(fromUsd1: false)}）',
           launch2MemeLabel(quote.taxAmount, ticker),
         );
 }

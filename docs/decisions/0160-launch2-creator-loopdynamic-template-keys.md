@@ -18,10 +18,10 @@ App 的创建者编解码对 `config` 与 `fixedEconomics` 都是严格键集，
 
 1. `config` 允许可选键 `poolHookKind`，值只能是 `loopDynamic`；读进 `Launch2HooksDraft.poolHookKind`（OfficialTax 为 null）。
 2. `fixedEconomics` 允许可选键 `officialPoolHookKind`（`officialTax` / `loopDynamic`）与 `loopDynamic`；两者必须同时出现或同时缺席
-   （`officialPoolHookKind == loopDynamic` ⇔ 有 `loopDynamic` 对象），否则判无效。`loopDynamic` 对象本身是严格八键，
+   （`officialPoolHookKind == loopDynamic` ⇔ 有 `loopDynamic` 对象），否则判无效。`loopDynamic` 对象本身是严格八键（**0198 修订**：`fixedEconomics` 与 `loopDynamic` 改为「已知键严格、未知键忽略」，并收下可选键 `maxDynamicFeeWad` / `maxCumulativeBuy` / `buyFeeToken`），
    `priceTiming` 只认 `PRE_SWAP` / `POST_SWAP`，`routingPolicy` 只认 `LoopRouterOnly` / `Open`，地址按小写 40 位十六进制，
    ppm 上限 1 000 000。读进新模型 `Launch2LoopDynamicEconomics`。
-3. 页面暂不消费这些字段：创建者流程的展示与 PUT 体不变（PUT 仍只送七个 owner 字段）。后续若要在创建者页展示「外盘 Hook 种类」，
+3. 页面暂不消费这些字段（**0198 修订**：模板卡读 `maxCumulativeBuy` 显示单地址上限、读 `buyFeeToken` 显示买入税方向）：创建者流程的展示与 PUT 体不变（PUT 仍只送七个 owner 字段）。后续若要在创建者页展示「外盘 Hook 种类」，
    以此模型为数据源。
 
 ## Consequences

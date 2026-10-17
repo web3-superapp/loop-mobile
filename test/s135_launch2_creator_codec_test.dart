@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
@@ -865,6 +866,131 @@ void main() {
           ),
         ),
         '发射工厂暂时不可用（或正在计算地址），稍后再试。',
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // S222 · client decision 0198 (loop-api 861031d: 0144 / 0152 template keys)
+  // -------------------------------------------------------------------------
+  group('S222 · decision 0198 template keys', () {
+    final threeMillion = BigInt.parse('3${'0' * 24}');
+
+    Map<String, Object?> economicsOf(Object? body) => _copy(
+      (((body! as Map)['draft']! as Map)['config']! as Map)['fixedEconomics'],
+    );
+
+    test('the S209 template reads its cap, fee side and fee cap', () {
+      final draft = LoopV2Launch2CreatorCodec.configEnvelope(
+        _body('hooks_config_draft_loop_dynamic_0152'),
+        projectId: _projectId,
+      ).draft!;
+      final dynamic = draft.economics.loopDynamic!;
+      expect(dynamic.maxCumulativeBuyRaw, threeMillion);
+      expect(dynamic.buyFeeToken, Launch2BuyFeeToken.usd1);
+      expect(dynamic.maxDynamicFeeWad, BigInt.parse('2${'0' * 17}'));
+      // The Factory's own cap wins over the template constant.
+      expect(draft.economics.curveCapRaw, threeMillion);
+      expect(draft.economics.perAddressCapBps, 30);
+    });
+
+    test('older templates read as before: no new field, the constant cap', () {
+      for (final name in <String>[
+        'hooks_config_draft_loop_dynamic',
+        'hooks_config_draft',
+      ]) {
+        final economics = LoopV2Launch2CreatorCodec.configEnvelope(
+          _body(name),
+          projectId: _projectId,
+        ).draft!.economics;
+        expect(economics.loopDynamic?.maxCumulativeBuyRaw, isNull);
+        expect(economics.loopDynamic?.buyFeeToken, isNull);
+        expect(economics.loopDynamic?.maxDynamicFeeWad, isNull);
+        expect(economics.curveCapRaw, economics.perAddressLifetimeBuyCapRaw);
+        expect(economics.perAddressCapBps, 50);
+      }
+    });
+
+    test('a key a later generation adds to the template is ignored', () {
+      final body = _copy(_body('hooks_config_draft_loop_dynamic_0152'));
+      final economics =
+          ((body['draft']! as Map)['config']! as Map)['fixedEconomics']! as Map;
+      economics['someFutureParameter'] = '1';
+      (economics['loopDynamic']! as Map)['someFutureHookParameter'] = true;
+      final draft = LoopV2Launch2CreatorCodec.configEnvelope(
+        body,
+        projectId: _projectId,
+      ).draft!;
+      expect(draft.economics.loopDynamic!.buyFeeToken, Launch2BuyFeeToken.usd1);
+      // The owner config itself stays exact: 'an unknown key, a foreign
+      // project or an override is invalid' above still holds.
+    });
+
+    test('known keys stay strict: a bad value or a missing key is invalid', () {
+      final base = economicsOf(_body('hooks_config_draft_loop_dynamic_0152'));
+      Map<String, Object?> withDynamic(String key, Object? value) {
+        final copy = _copy(base);
+        (copy['loopDynamic']! as Map)[key] = value;
+        return copy;
+      }
+
+      final noRouter = _copy(base);
+      (noRouter['loopDynamic']! as Map).remove('router');
+      final noCap = _copy(base)..remove('perAddressLifetimeBuyCapRaw');
+      for (final bad in <Map<String, Object?>>[
+        withDynamic('buyFeeToken', 'USD1'),
+        withDynamic('buyFeeToken', 'eth'),
+        withDynamic('buyFeeToken', null),
+        withDynamic('maxCumulativeBuy', '-1'),
+        withDynamic('maxCumulativeBuy', '1.5'),
+        withDynamic('maxCumulativeBuy', 5),
+        withDynamic('maxDynamicFeeWad', null),
+        withDynamic('priceTiming', 'LATER'),
+        noRouter,
+        noCap,
+      ]) {
+        expect(
+          () => LoopV2Launch2CreatorCodec.economics(bad),
+          throwsA(isA<LoopBackendFailure>()),
+          reason: '$bad',
+        );
+      }
+    });
+
+    test('GET and PUT hooks-config with the S209 shape go through the '
+        'gateway', () async {
+      final record = _record('hooks_config_draft_loop_dynamic_0152');
+      final put = <String, Object?>{
+        ...record,
+        'body': _copy((record['body']! as Map)['draft']),
+      };
+      final script = _Script(<Object>[record, put]);
+      final gateway = _gateway(script);
+      final config = await gateway.loadConfig(_projectId);
+      expect(
+        config.draft!.economics.loopDynamic!.buyFeeToken,
+        Launch2BuyFeeToken.usd1,
+      );
+      final saved = await gateway.saveConfig(
+        projectId: _projectId,
+        expectedVersion: config.draft!.version,
+        input: _input(),
+      );
+      expect(saved.economics.curveCapRaw, threeMillion);
+      expect(script.sent.map((o) => o.method), <String>['GET', 'PUT']);
+    });
+
+    test('the instance list rows of loop-api S180 (summary, links) read; '
+        'another key does not', () {
+      final page = LoopV2Launch2CreatorCodec.instancePage(
+        _body('launch2_instances_summary_links'),
+      );
+      expect(page.rows.single.projectId, _projectId);
+      final extra = _copy(_body('launch2_instances_summary_links'));
+      ((extra['instances']! as List).single as Map)['unknownRowKey'] = 1;
+      expect(
+        () => LoopV2Launch2CreatorCodec.instancePage(extra),
+        throwsA(isA<LoopBackendFailure>()),
       );
     });
   });

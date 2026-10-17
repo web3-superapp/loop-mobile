@@ -6,6 +6,9 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart'
+    show launch2BuyFeeSideText, launch2CurveCapFigure;
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 // ---------------------------------------------------------------------------
@@ -158,17 +161,28 @@ class Launch2TemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cap = economics.perAddressCapBps;
+    final capBps = economics.perAddressCapBps;
+    // Decision 0198: the Factory's own cap (loop-api 0152), said the way the
+    // instance's 发射规则 says it (decision 0197): 「N 枚（x%）」.
+    final capFigure =
+        '${launch2CurveCapFigure(launch2Units(economics.curveCapRaw))} 枚';
+    final loopDynamic = economics.loopDynamic;
+    final buyFeeToken = loopDynamic?.buyFeeToken;
     final rows = <(String, String)>[
       ('内盘可售', launch2SupplyLabel(economics.curveSaleSupplyRaw)),
       ('毕业储备', launch2Usd1Label(economics.graduationReserveUsd1Raw)),
       ('内盘买卖税', launch2BpsLabel(economics.curveBuyTaxBps)),
       ('外盘买卖税', launch2BpsLabel(economics.officialPoolBuyTaxBps)),
+      // Only when the template says which side; never inferred.
+      if (loopDynamic != null && buyFeeToken != null)
+        (
+          '外盘买入税',
+          '${launch2BpsLabel(loopDynamic.buyFeePpm ~/ 100)}（'
+              '${launch2BuyFeeSideText(fromUsd1: buyFeeToken == Launch2BuyFeeToken.usd1)}）',
+        ),
       (
-        '单地址累计上限',
-        cap == null
-            ? launch2SupplyLabel(economics.perAddressLifetimeBuyCapRaw)
-            : launch2BpsLabel(cap),
+        '单地址上限',
+        capBps == null ? capFigure : '$capFigure（${launch2BpsLabel(capBps)}）',
       ),
       ('NFT 价格', launch2Usd1Label(economics.nftPriceUsd1Raw)),
       (

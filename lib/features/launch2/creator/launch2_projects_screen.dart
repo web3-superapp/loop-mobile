@@ -51,7 +51,7 @@ class Launch2ProjectsScreen extends ConsumerWidget {
           ),
         ],
       );
-    } else if (page.rows.isEmpty) {
+    } else if (page.entries.isEmpty) {
       collection = ListView(
         children: <Widget>[
           LoopEmptyState(
@@ -76,14 +76,25 @@ class Launch2ProjectsScreen extends ConsumerWidget {
         children: <Widget>[
           LoopRecordGroup(
             rows: <LoopRecordRow>[
-              for (final row in page.rows)
-                _projectRow(
-                  row,
-                  // Straight to where the owner left off (decision 0142).
-                  () => onNavigate?.call(
-                    Launch2CreatorRoute.resume(row.projectId, row.resume),
+              for (final entry in page.entries)
+                switch (entry) {
+                  Launch2CreatorReadableListEntry(:final row) => _projectRow(
+                    row,
+                    // Straight to where the owner left off (decision 0142).
+                    () => onNavigate?.call(
+                      Launch2CreatorRoute.resume(row.projectId, row.resume),
+                    ),
                   ),
-                ),
+                  // Decision 0198: the project page reads it again and
+                  // says what it can.
+                  Launch2CreatorUnreadableListEntry(:final project) =>
+                    _unreadableRow(
+                      project,
+                      () => onNavigate?.call(
+                        Launch2CreatorRoute.project(project.projectId),
+                      ),
+                    ),
+                },
             ],
           ),
           LoopLoadMoreFooter(
@@ -149,6 +160,22 @@ LoopRecordRow _projectRow(Launch2CreatorRow row, VoidCallback onTap) {
     subtitle: _projectSubtitle(row),
     trailingBadge: Launch2StatusPill(status: status),
     semanticLabel: '${project.name}，${status.label}',
+    onTap: () {
+      LoopHaptics.selection();
+      onTap();
+    },
+  );
+}
+
+/// Decision 0198: a project whose launch configuration this build could not
+/// read. It names the project and claims no state.
+LoopRecordRow _unreadableRow(LaunchProject project, VoidCallback onTap) {
+  return LoopRecordRow(
+    key: ValueKey<String>('launch2-project-unreadable-${project.projectId}'),
+    leading: MemeLogo(symbol: project.ticker, size: 36, radius: 18),
+    title: project.name,
+    subtitle: '发射配置暂时读不到，下拉刷新或点开重试',
+    semanticLabel: '${project.name}，发射配置暂时读不到',
     onTap: () {
       LoopHaptics.selection();
       onTap();

@@ -108,23 +108,34 @@ final class Launch2CreatorListController
           .listProjects(cursor: cursor, kind: LaunchProjectKind.launch2),
     );
     final creator = ref.read(launch2CreatorGatewayProvider);
-    final rows = await Future.wait<Launch2CreatorProject>(
-      <Future<Launch2CreatorProject>>[
-        for (final project in page.items) _row(creator, project),
+    final entries = await Future.wait<Launch2CreatorListEntry>(
+      <Future<Launch2CreatorListEntry>>[
+        for (final project in page.items) _entry(creator, project),
       ],
     );
-    return Launch2CreatorPage(rows: rows, nextCursor: page.nextCursor);
+    return Launch2CreatorPage(entries: entries, nextCursor: page.nextCursor);
   }
 
-  static Future<Launch2CreatorProject> _row(
+  /// Decision 0198: a project whose `hooks-config` answer this build cannot
+  /// read becomes its own unreadable row. Every other failure (offline,
+  /// permission, unavailable) is the page's, as before.
+  static Future<Launch2CreatorListEntry> _entry(
     Launch2CreatorGateway creator,
     LaunchProject project,
   ) async {
-    final config = await creator.loadConfig(project.projectId);
-    return Launch2CreatorProject(
-      project: project,
-      config: config,
-      instance: await _instanceOf(creator, project.projectId, config),
+    final Launch2HooksConfig config;
+    try {
+      config = await creator.loadConfig(project.projectId);
+    } on LoopChainException catch (error) {
+      if (error.kind != LoopChainFailureKind.invalidData) rethrow;
+      return Launch2CreatorUnreadableListEntry(project);
+    }
+    return Launch2CreatorReadableListEntry(
+      Launch2CreatorProject(
+        project: project,
+        config: config,
+        instance: await _instanceOf(creator, project.projectId, config),
+      ),
     );
   }
 

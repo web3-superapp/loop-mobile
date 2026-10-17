@@ -113,6 +113,24 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
     'closedAt',
   };
 
+  /// loop-api 0146 (delivery attribution) keys on a round of
+  /// `…/dynamic-pool/rewards`. Accepted and type-checked, not shown yet
+  /// (decision 0198); absent on a server before them.
+  static const roundAcceptedKeys = <String>{
+    'creditedUsd1',
+    'movedInUsd1',
+    'movedOutUsd1',
+    'credits',
+  };
+
+  /// loop-api 0146 keys on `dynamicPool.viewer`: the index's merged weight
+  /// and whether it equals the basis weight. Accepted and type-checked, not
+  /// shown yet (decision 0198).
+  static const viewerAcceptedKeys = <String>{
+    'indexedCurrentRoundWeightUsd1',
+    'weightReconciled',
+  };
+
   static const claimKeys = <String>{'roundId', 'hook', 'claimableUsd1'};
 
   static const reportKeys = <String>{
@@ -209,6 +227,33 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
     if (buyers != null && buyers is! Map) _invalid();
   }
 
+  /// The [viewerAcceptedKeys] when present: their schema types only.
+  static void _checkViewerAccepted(Map<String, Object?> map) {
+    if (map['indexedCurrentRoundWeightUsd1'] != null) {
+      LoopV2Launch2Codec.amount(map, 'indexedCurrentRoundWeightUsd1');
+    }
+    final reconciled = map['weightReconciled'];
+    if (reconciled != null && reconciled is! bool) _invalid();
+  }
+
+  /// The [roundAcceptedKeys] when present: their schema types only.
+  static void _checkRoundAccepted(Map<String, Object?> map) {
+    for (final key in const <String>[
+      'creditedUsd1',
+      'movedInUsd1',
+      'movedOutUsd1',
+    ]) {
+      if (map.containsKey(key)) LoopV2Launch2Codec.amount(map, key);
+    }
+    if (map.containsKey('credits')) {
+      final credits = map['credits'];
+      if (credits is! List || credits.length > 20) _invalid();
+      for (final credit in credits) {
+        if (credit is! Map) _invalid();
+      }
+    }
+  }
+
   /// Decision 0197: `buyFeeToken` on an `active` answer; absent = MEME.
   static Launch2BuyFeeToken _buyFeeToken(Map<String, Object?> map) {
     if (!map.containsKey('buyFeeToken')) return Launch2BuyFeeToken.meme;
@@ -239,10 +284,12 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
     if (timing == null || policy == null) _invalid();
     Launch2DynamicViewer? viewer;
     if (map['viewer'] != null) {
-      final raw = LoopV2Contract.strictMap(map['viewer'], const <String>{
-        'walletId',
-        'currentRoundWeightUsd1',
-      });
+      final raw = LoopV2Contract.strictMapWithOptional(
+        map['viewer'],
+        const <String>{'walletId', 'currentRoundWeightUsd1'},
+        viewerAcceptedKeys,
+      );
+      _checkViewerAccepted(raw);
       final weight = LoopV2Launch2Codec.amount(raw, 'currentRoundWeightUsd1');
       if (weight > total) _invalid();
       viewer = Launch2DynamicViewer(
@@ -353,7 +400,12 @@ abstract final class LoopV2Launch2DynamicPoolCodec {
   }
 
   static Launch2DynamicRound _round(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, roundKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      roundKeys,
+      roundAcceptedKeys,
+    );
+    _checkRoundAccepted(map);
     final statusText = map['status'];
     final status = statusText is String
         ? Launch2DynamicRoundStatus.tryParse(statusText)

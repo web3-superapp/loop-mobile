@@ -545,8 +545,12 @@ abstract final class LoopV2Launch2Codec {
     );
   }
 
+  /// The instance's template grows with each contract generation (0197 added
+  /// `perAddressCap`): its known keys are strict, a key a later generation
+  /// adds is ignored rather than failing the whole project page (decision
+  /// 0198).
   static Launch2Template _template(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, templateKeys);
+    final map = LoopV2Contract.knownKeysMap(raw, templateKeys);
     if (map['templateVersion'] != 'hooks_launch_v1') invalid();
     return Launch2Template(
       templateVersion: 'hooks_launch_v1',

@@ -1,0 +1,50 @@
+{
+  "_handwritten": "Handwritten (S222, 2026-10-17) from launch2_instances.json plus the row keys loop-api S180 (decision 0163) made required: summary and links (decision 0198).",
+  "route": "GET /v2/launch2/instances?limit=50",
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store",
+    "x-request-id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "instances": [
+      {
+        "instanceId": "8b9f3c1e-2d4a-4f6b-9c8d-1e2f3a4b5c6d",
+        "projectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "launchId": "0x3333333333333333333333333333333333333333333333333333333333333333",
+        "chainId": "eip155:97",
+        "name": "MoonCat",
+        "ticker": "MCAT",
+        "logoUrl": null,
+        "memeAddress": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa6666",
+        "stage": "upcoming",
+        "nextChangeAt": "2026-10-16T07:00:00.000Z",
+        "holdReason": null,
+        "activatedAt": "2026-10-09T00:02:40.000Z",
+        "nftSale": {
+          "priceUsd1": "100",
+          "soldCount": "0",
+          "startAt": "2026-10-16T07:00:00.000Z",
+          "endAt": "2026-10-23T07:00:00.000Z"
+        },
+        "curve": {
+          "saleSupply": "800000000",
+          "soldSupply": "0",
+          "soldBps": 0,
+          "reserveUsd1": "0",
+          "graduationReserveUsd1": "133333.332",
+          "reserveBps": 0,
+          "priceUsd1": "0.00004166666625"
+        },
+        "graduatedAt": null,
+        "summary": "A launch project",
+        "links": [
+          "https://mooncat.example/"
+        ]
+      }
+    ],
+    "nextCursor": null,
+    "contractVersion": "2.0"
+  }
+}
