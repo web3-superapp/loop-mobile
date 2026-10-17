@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -189,7 +190,7 @@ String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
   final next = row.nextChangeAt;
   final left = next == null ? null : launch2CountdownText(next.difference(now));
   return <String>[
-    '${row.name} \$${row.ticker}',
+    '${row.name} ${loopTickerLabel(row.ticker)}',
     launch2StageLabel(row.stage),
     switch (row.stage) {
       Launch2Stage.upcoming => left == null ? '开售时间待定' : '距开售 $left',

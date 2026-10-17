@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -74,7 +75,7 @@ String launch2MemeFigure(Decimal value) =>
     loopFormatDecimal(value, maxFractionDigits: 2);
 
 String launch2MemeLabel(Decimal value, String ticker) =>
-    '${launch2MemeFigure(value)} \$$ticker';
+    '${launch2MemeFigure(value)} ${loopTickerLabel(ticker)}';
 
 /// A MEME amount in a summary slot: exact below 100,000, `K`/`M`/`B` above.
 String launch2MemeCompact(Decimal value) {

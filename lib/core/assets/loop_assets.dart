@@ -425,9 +425,14 @@ abstract final class LoopIdentitySlots {
   };
 }
 
+final RegExp _monogramDrop = RegExp(r'[^\p{L}\p{N}]', unicode: true);
+
 /// Monogram fallback: up to two upper-case characters from [source].
+///
+/// Decision 0199: any script's letters and digits count (Chinese, kana,
+/// hangul, accented Latin), not just ASCII and CJK.
 String loopMonogram(String source) {
-  final cleaned = source.trim().replaceAll(RegExp(r'[^A-Za-z0-9一-鿿]'), '');
+  final cleaned = source.trim().replaceAll(_monogramDrop, '');
   if (cleaned.isEmpty) return '·';
   final runes = cleaned.runes.toList(growable: false);
   final take = runes.length >= 2 ? 2 : 1;

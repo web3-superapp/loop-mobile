@@ -1159,7 +1159,7 @@ class _ApplyForm extends StatelessWidget {
             controller: name,
             enabled: enabled,
             decoration: InputDecoration(
-              labelText: '项目名称（1–80）',
+              labelText: '项目名称（最多 64 个字，中文 21 个）',
               errorText: _errorFor(LaunchDraftField.name),
             ),
           ),

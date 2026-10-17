@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -118,7 +119,7 @@ class Launch2ProjectScreen extends ConsumerWidget {
                     style: LoopType.headingSm,
                   ),
                   Text(
-                    '\$${project.ticker}',
+                    loopTickerLabel(project.ticker),
                     style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
                 ],

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -283,7 +284,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
       const SizedBox(height: 8),
       const LoopLabel('签名内容'),
       LoopKeyValue(label: '名称', value: request.name),
-      LoopKeyValue(label: '代码', value: '\$${request.ticker}'),
+      LoopKeyValue(label: '代码', value: loopTickerLabel(request.ticker)),
       LoopKeyValue(
         label: 'NFT 开售',
         value: loopLocalTimestampLabel(request.nftSaleStartAt),
@@ -513,7 +514,7 @@ class _Launch2SignSheetState extends ConsumerState<_Launch2SignSheet> {
             : null,
         confirmLabel: '签名',
         facts: <LoopSignFact>[
-          LoopSignFact('操作', '授权部署 \$${request.ticker}'),
+          LoopSignFact('操作', '授权部署 ${loopTickerLabel(request.ticker)}'),
           LoopSignFact('代币地址', loopTruncatedAddress(request.memeAddress)),
           LoopSignFact('签名钱包', loopTruncatedAddress(request.projectOwner)),
           LoopSignFact('有效期至', loopLocalTimestampLabel(request.deadlineAt)),

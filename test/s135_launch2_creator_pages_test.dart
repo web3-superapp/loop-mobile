@@ -500,7 +500,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('launch2-create-step-1'), findsOneWidget);
       expect(_key('launch2-create-logo-missing'), findsOneWidget);
-      expect(find.text('代码 2–12 位字母或数字'), findsOneWidget);
+      expect(find.text('代码暂只支持 2–12 位英文字母或数字（链上合约限制）'), findsOneWidget);
 
       await fillProfile(tester);
       await tester.tap(_key('launch2-create-next'));

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -131,7 +132,7 @@ List<IntentField> launch2IntentFields(
   String? noun,
 }) {
   final approval = intent.approval;
-  final meme = '\$$ticker';
+  final meme = loopTickerLabel(ticker);
   return <IntentField>[
     IntentField(
       label: '操作',
@@ -1015,7 +1016,7 @@ Future<bool> showLaunch2NftConfirmSheet(
     builder: (context) => _Launch2NftConfirm(
       ticker: ticker,
       priceLabel: priceLabel,
-      heading: heading ?? '购买 \$$ticker 项目 NFT',
+      heading: heading ?? '购买 ${loopTickerLabel(ticker)} 项目 NFT',
       confirmLabel: confirmLabel,
     ),
   );

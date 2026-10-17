@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
@@ -89,7 +90,7 @@ List<IntentField> memeIntentFields(
   MemeIntent intent, {
   required String symbol,
 }) {
-  final ticker = '\$$symbol';
+  final ticker = loopTickerLabel(symbol);
   final approval = intent.approval;
   return <IntentField>[
     IntentField(label: '操作', value: '${memeIntentNoun(intent.kind)} $ticker'),

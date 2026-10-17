@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/launch/launch_chain_models.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 
@@ -463,13 +464,12 @@ final class LaunchProjectDraft {
 
   /// The first field the local shape check rejects, or `null`.
   LaunchDraftField? get invalidField {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty || trimmed.runes.length > 80) {
-      return LaunchDraftField.name;
-    }
+    // Decision 0199 (backend 0154): any script; the factory's 64 bytes.
+    if (loopTokenNameError(name) != null) return LaunchDraftField.name;
     if (!tickerPattern.hasMatch(ticker)) return LaunchDraftField.ticker;
     final story = narrative;
-    if (story != null && (story.isEmpty || story.runes.length > 2000)) {
+    if (story != null &&
+        (story.trim().isEmpty || loopTokenDescriptionError(story) != null)) {
       return LaunchDraftField.narrative;
     }
     for (final link in <String?>[
@@ -545,9 +545,9 @@ final class LaunchDraftCommunity {
 enum LaunchDraftField { name, ticker, narrative, officialLinks, community }
 
 String launchDraftFieldReason(LaunchDraftField field) => switch (field) {
-  LaunchDraftField.name => '项目名称需要 1–80 个字符。',
-  LaunchDraftField.ticker => 'Ticker 只能是 2–12 位大写字母或数字。',
-  LaunchDraftField.narrative => '叙事最多 2000 个字符；留空表示不提交这一项。',
+  LaunchDraftField.name => '项目名称最多 64 个字（中文最多 21 个字），不能含换行或不可见字符。',
+  LaunchDraftField.ticker => 'Ticker 暂只支持 2–12 位大写英文字母或数字（链上合约限制）。',
+  LaunchDraftField.narrative => '叙事最多 2000 个字，不能含控制符；留空表示不提交这一项。',
   LaunchDraftField.officialLinks => '官方链接必须是 https:// 开头且不超过 512 个字符。',
   LaunchDraftField.community => '关联社区的标识无效，请重新选择。',
 };

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -43,14 +44,16 @@ final RegExp _tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
 String? launch2FieldError(Launch2Field field, String raw) {
   final value = raw.trim();
   switch (field) {
+    // Decision 0199: name and description take any language or script.
     case Launch2Field.name:
-      if (value.isEmpty || value.length > 64) return '名称 1–64 个字符';
+      return loopTokenNameError(raw);
     case Launch2Field.ticker:
+      // The launch factory's on-chain `_validTicker`, not a language rule.
       if (!_tickerPattern.hasMatch(value.toUpperCase())) {
-        return '代码 2–12 位字母或数字';
+        return '代码暂只支持 2–12 位英文字母或数字（链上合约限制）';
       }
     case Launch2Field.description:
-      if (value.length > 2000) return '简介最多 2000 字';
+      return loopTokenDescriptionError(raw);
     case Launch2Field.x:
     case Launch2Field.telegram:
     case Launch2Field.website:
@@ -178,6 +181,11 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     Launch2Field.website => _website,
     Launch2Field.discord => _discord,
   };
+
+  /// Decision 0199: the factory counts UTF-8 bytes (an English letter 1,
+  /// a Chinese character 3, an emoji 4), so the name shows what it uses.
+  String get _nameCounter =>
+      '${loopUtf8Length(_name.text.trim())}/$loopTokenNameMaxBytes 字节';
 
   String? _error(Launch2Field field) =>
       _showErrors ? launch2FieldError(field, _controller(field).text) : null;
@@ -540,6 +548,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     TextInputType? keyboard,
     String? prefix,
     bool upper = false,
+    String? counter,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: TextField(
@@ -556,6 +565,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         labelText: label,
         hintText: hint,
         prefixText: prefix,
+        counterText: counter,
         errorText: _error(field),
       ),
     ),
@@ -627,13 +637,13 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             _field(
               Launch2Field.name,
               label: '名称',
-              hint: '1–64 个字符',
-              maxLength: 64,
+              hint: '中文、英文、emoji 都可以',
+              counter: _nameCounter,
             ),
             _field(
               Launch2Field.ticker,
               label: '代码',
-              hint: '2–12 位字母或数字',
+              hint: '2–12 位英文字母或数字',
               maxLength: 12,
               prefix: r'$',
               upper: true,

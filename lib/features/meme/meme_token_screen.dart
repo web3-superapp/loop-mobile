@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/qr/loop_qr_code.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -281,14 +282,14 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
   Future<void> _share(MemeTokenDetail detail) async {
     final address = detail.row.tokenAddress ?? detail.predictedAddress;
     final text = <String>[
-      '${detail.row.name} \$${detail.row.symbol}',
+      '${detail.row.name} ${loopTickerLabel(detail.row.symbol)}',
       if (address != null) '合约 $address',
       '在 LOOP 发射台查看',
     ].join('\n');
     await showLoopSheet<void>(
       context,
       builder: (context) => _MemeShareSheet(
-        title: '${detail.row.name} \$${detail.row.symbol}',
+        title: '${detail.row.name} ${loopTickerLabel(detail.row.symbol)}',
         address: address,
         onCopy: () => unawaited(_copy(text, '已复制')),
         onShare: () async {
@@ -378,7 +379,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     return LoopDashboardPage(
       key: ValueKey<String>('meme-token-screen-$memeTokenId'),
       archetype: LoopPageArchetype.record,
-      title: detail == null ? '代币' : '\$${detail.row.symbol}',
+      title: detail == null ? '代币' : loopTickerLabel(detail.row.symbol),
       titleField: detail == null
           ? null
           : _TokenTitle(
@@ -1139,7 +1140,7 @@ class _HoldingRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Text(
         <String>[
-          '持有 ${memeTokenLabel(balance, '\$${detail.row.symbol}')}',
+          '持有 ${memeTokenLabel(balance, loopTickerLabel(detail.row.symbol))}',
           if (value != null) '≈${loopFormatUsd(value)}',
         ].join(' · '),
         style: LoopType.body.copyWith(color: LoopColors.text2),
@@ -1414,7 +1415,7 @@ List<Widget> memeHolderSections(
       ),
     ];
   }
-  final symbol = '\$${detail.row.symbol}';
+  final symbol = loopTickerLabel(detail.row.symbol);
   return <Widget>[
     Padding(
       key: ValueKey<String>('$keyPrefix-count'),
@@ -1568,7 +1569,7 @@ List<Widget> memeTradeSections(
       ),
     ];
   }
-  final symbol = '\$${detail.row.symbol}';
+  final symbol = loopTickerLabel(detail.row.symbol);
   return <Widget>[
     if (onOpenAll != null)
       Align(
@@ -1840,7 +1841,9 @@ class MemeTokenListScreen extends ConsumerWidget {
     return LoopDashboardPage(
       key: ValueKey<String>('$keyPrefix-$id'),
       archetype: LoopPageArchetype.listing,
-      title: detail == null ? title : '\$${detail.row.symbol} · $title',
+      title: detail == null
+          ? title
+          : '${loopTickerLabel(detail.row.symbol)} · $title',
       onBack: onBack,
       onRefresh: blocked
           ? null

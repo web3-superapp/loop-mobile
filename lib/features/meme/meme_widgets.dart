@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
@@ -315,7 +316,7 @@ String memeTokenSpokenLabel(MemeTokenRow row) {
   final cap = row.marketCapUsd1;
   final change = row.change1hPct;
   return <String>[
-    '${row.name} \$${row.symbol}',
+    '${row.name} ${loopTickerLabel(row.symbol)}',
     if (price == null)
       memeQuoteUnavailableText(row.quoteUnavailableReason)
     else
@@ -636,7 +637,7 @@ class MemeHeroCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     <String>[
-                      '\$${row.symbol}',
+                      loopTickerLabel(row.symbol),
                       if (cap != null) '市值 ${memeCapLabel(cap)}',
                     ].join(' · '),
                     maxLines: 1,

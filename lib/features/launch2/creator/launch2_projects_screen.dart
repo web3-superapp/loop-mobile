@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -140,7 +141,7 @@ String _projectSubtitle(Launch2CreatorRow row) {
       '回购收币地址需要更新',
     Launch2CreatorStatus.draft when draft == null => '还没有发射配置',
     _ when draft != null => '开售 ${loopLocalTimestampLabel(draft.nftSaleStart)}',
-    _ => '\$${row.project.ticker}',
+    _ => loopTickerLabel(row.project.ticker),
   };
 }
 

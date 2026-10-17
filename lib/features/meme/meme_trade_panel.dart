@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
@@ -147,7 +148,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
   }
 
   MemeTokenDetail get _detail => widget.detail;
-  String get _ticker => '\$${_detail.row.symbol}';
+  String get _ticker => loopTickerLabel(_detail.row.symbol);
 
   @override
   void initState() {

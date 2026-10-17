@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -315,7 +316,7 @@ class _Launch2DynamicRewardsScreenState
       key: ValueKey<String>('launch2-dyn-rewards-$instanceId'),
       archetype: LoopPageArchetype.listing,
       title: '外盘奖励',
-      subtitle: detail == null ? null : '\$${detail.row.ticker}',
+      subtitle: detail == null ? null : loopTickerLabel(detail.row.ticker),
       onBack: widget.onBack,
       updating:
           (rewardsState?.refreshing ?? false) ||

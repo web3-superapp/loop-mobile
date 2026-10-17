@@ -665,7 +665,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.created, isEmpty);
-      expect(find.textContaining('Ticker 只能是'), findsOneWidget);
+      expect(find.textContaining('Ticker 暂只支持'), findsOneWidget);
     });
 
     testWidgets('a valid draft is created and then submitted', (tester) async {

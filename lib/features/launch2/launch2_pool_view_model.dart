@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -166,8 +167,14 @@ String launch2PoolFailureText(LoopChainException failure) {
   String ticker,
 ) => switch ((side, mode)) {
   (Launch2Side.buy, Launch2PoolMode.exactIn) => ('支付（含税）', 'USD1'),
-  (Launch2Side.buy, Launch2PoolMode.exactOut) => ('想买入', '\$$ticker'),
-  (Launch2Side.sell, Launch2PoolMode.exactIn) => ('卖出', '\$$ticker'),
+  (Launch2Side.buy, Launch2PoolMode.exactOut) => (
+    '想买入',
+    loopTickerLabel(ticker),
+  ),
+  (Launch2Side.sell, Launch2PoolMode.exactIn) => (
+    '卖出',
+    loopTickerLabel(ticker),
+  ),
   (Launch2Side.sell, Launch2PoolMode.exactOut) => ('想到手', 'USD1'),
 };
 
@@ -349,7 +356,7 @@ Launch2PoolTradeView launch2PoolTradeView({
       ? side == Launch2Side.buy
             ? 'USD1 余额不足：最多需要 ${_usd1(quote.maxIn)}，'
                   '钱包有 ${_usd1(quote.balanceUsd1)}'
-            : '\$$ticker 余额不足：最多需要 ${launch2MemeLabel(quote.maxIn, ticker)}，'
+            : '${loopTickerLabel(ticker)} 余额不足：最多需要 ${launch2MemeLabel(quote.maxIn, ticker)}，'
                   '钱包有 ${launch2MemeLabel(quote.balanceMeme, ticker)}'
       : null;
   final failureLine = quoteFailure == null

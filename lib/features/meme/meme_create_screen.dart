@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -821,7 +822,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    '${draft.row.name} \$$symbol',
+                    '${draft.row.name} ${loopTickerLabel(symbol)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopType.titleLg,
@@ -916,7 +917,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
             0,
           ),
           child: Text(
-            '约得 ${memeTokenLabel(estimate.out, '\$$symbol')}，'
+            '约得 ${memeTokenLabel(estimate.out, loopTickerLabel(symbol))}，'
             '手续费 ${memeUsd1Label(estimate.fee, maxFractionDigits: 4)}；'
             '上限 ${memeTokenFigure(curve.walletCapTokens)} 枚。签名前以服务端报价为准。',
             style: LoopType.caption.copyWith(color: LoopColors.text2),

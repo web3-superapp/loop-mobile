@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -427,7 +428,9 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           decoration: InputDecoration(
             labelText: _side == Launch2Side.buy ? '支付（含税）' : '卖出',
             hintText: '0',
-            suffixText: _side == Launch2Side.buy ? 'USD1' : '\$$_ticker',
+            suffixText: _side == Launch2Side.buy
+                ? 'USD1'
+                : loopTickerLabel(_ticker),
             suffixIcon: _MaxKey(onTap: _disabled ? null : _fillMax),
           ),
         ),
@@ -595,7 +598,7 @@ class _QuotaBar extends StatelessWidget {
           value: value == null ? null : launch2Share(value, cap),
           semanticLabel: value == null
               ? '累计额度暂时读不到'
-              : '累计额度已用 ${launch2MemeFigure(value)} \$$ticker，'
+              : '累计额度已用 ${launch2MemeFigure(value)} ${loopTickerLabel(ticker)}，'
                     '${launch2CurveCapSentence(cap)}',
         ),
       ],

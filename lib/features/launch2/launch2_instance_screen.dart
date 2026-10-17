@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -396,7 +397,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     return LoopDashboardPage(
       key: ValueKey<String>('launch2-instance-$instanceId'),
       archetype: LoopPageArchetype.record,
-      title: detail == null ? 'MEME v2' : '\$${detail.row.ticker}',
+      title: detail == null ? 'MEME v2' : loopTickerLabel(detail.row.ticker),
       onBack: widget.onBack,
       updating: state?.refreshing ?? false,
       onRefresh: blocked ? null : () => _reload(instanceId),
