@@ -5,6 +5,9 @@
 // page reads the project page's own instance read and mints through the
 // project page's own trip (`launch2MintNft`). The samples are the S136
 // fixtures; `summary` and `links` (loop-api S180) are added by hand.
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -15,6 +18,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
@@ -43,6 +47,7 @@ import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
 
@@ -310,6 +315,8 @@ Future<void> _pump(
   bool settle = true,
   bool reduceMotion = false,
   DateTime Function()? clock,
+  Launch2Polling? polling,
+  List<Override> extra = const <Override>[],
 }) => pumpS7Page(
   tester,
   reduceMotion
@@ -333,11 +340,13 @@ Future<void> _pump(
     launch2GatewayProvider.overrideWithValue(gateway),
     launch2ClockProvider.overrideWithValue(clock ?? () => l2Now),
     launch2PollingProvider.overrideWithValue(
-      const Launch2Polling(
-        detailInterval: Duration(hours: 1),
-        tradingInterval: Duration(hours: 1),
-        listInterval: Duration(hours: 1),
-      ),
+      polling ??
+          const Launch2Polling(
+            detailInterval: Duration(hours: 1),
+            tradingInterval: Duration(hours: 1),
+            listInterval: Duration(hours: 1),
+            snapshotInterval: Duration(hours: 1),
+          ),
     ),
     loopFeatureSwitchesProvider.overrideWithValue(
       const LoopFeatureSwitchValues(launch2Visible: true),
@@ -345,6 +354,7 @@ Future<void> _pump(
     if (wallet != null) walletSigningGatewayProvider.overrideWithValue(wallet),
     if (overview != null)
       launch2OverviewGatewayProvider.overrideWithValue(overview),
+    ...extra,
   ],
 );
 
@@ -512,9 +522,9 @@ void main() {
       expect(launch2HeroLocation(row), Launch2Route.nft(_id(2)));
     });
 
-    test('priority: 白名单提前购, minted, sold share and price', () {
+    test('priority: 提前购进行中, minted, sold share and price', () {
       final row = at(4);
-      expect(launch2DeskStatus(row), '白名单提前购');
+      expect(launch2DeskStatus(row), '提前购进行中');
       expect(launch2DeskCaption(row), '已铸 2 枚 · 内盘已售 35% · 0.0₄4167 USD1');
       expect(launch2DeskStampPrefix(row.stage), '剩 ');
       expect(launch2HeroLocation(row), Launch2Route.instance(_id(4)));
@@ -668,7 +678,7 @@ void main() {
       expect(dot(1), active);
       expect(
         _folio(tester, 'launch2-desk-page-${_id(2)}').heading,
-        'FROG\n白名单提前购',
+        'FROG\n提前购进行中',
       );
       await tester.tap(_key('launch2-desk-page-${_id(2)}'));
       await tester.pump();
@@ -2090,6 +2100,238 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await _drain(tester);
+    });
+  });
+
+  // S233 · client decision 0202 (S227-2, S227-3). test/fixtures/s233/ holds
+  // the S171 BSC testnet instance with only its stage and snapshot moved.
+  group('S233 · decision 0202', () {
+    const instance = '8cf88c44-adf8-4c3f-9de2-46a895af3d1d';
+    const tx =
+        '0x3e83a226db47ebd5807162fd4e2b1ed855b40e0f3f63cc1f2f37a7d49caa2e92';
+    const signer = '0x3e8739bf1b2fda26c008fdef26e7554777c19316';
+    final publishedAt = DateTime.utc(2026, 10, 13, 19, 36, 13);
+    DateTime clock() => DateTime.utc(2026, 10, 13, 19, 40);
+
+    Launch2InstanceDetail s233(String name) => LoopV2Launch2Codec.detail(
+      (jsonDecode(File('test/fixtures/s233/$name.json').readAsStringSync())
+          as Map<String, Object?>)['body'],
+      mediaUrl: (_) => null,
+    );
+
+    final generating = s233('instance_snapshot_pending_generating');
+    final broadcast = s233('instance_snapshot_pending_broadcast');
+    final confirmed = s233('instance_snapshot_pending_confirmed');
+    final priority = s233('instance_priority_published');
+
+    testWidgets('共识勋章 · snapshot_pending follows the publication: 名单生成中, '
+        '名单发布中, 名单已上链，同步中', (tester) async {
+      for (final (detail, title) in <(Launch2InstanceDetail, String)>[
+        (generating, '名单生成中'),
+        (broadcast, '名单发布中'),
+        (confirmed, '名单已上链，同步中'),
+      ]) {
+        await _pump(
+          tester,
+          const Launch2NftScreen(instanceId: instance),
+          _Fake(details: <Launch2InstanceDetail>[detail]),
+          clock: clock,
+        );
+        expect(_statusText(tester), '铸造已结束 · $title · 已铸 3 枚');
+        expect(launch2SnapshotPendingTitle(detail.snapshot), title);
+        expect(_key('launch2-snapshot-published'), findsNothing);
+        await _drain(tester);
+      }
+    });
+
+    testWidgets('共识勋章 · snapshot_pending is read every 3 s, so 名单发布中 is '
+        'seen; 提前购 goes back to the page\'s own interval', (tester) async {
+      final gateway = _Fake(
+        details: <Launch2InstanceDetail>[generating, broadcast, priority],
+      );
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: instance),
+        gateway,
+        clock: clock,
+        polling: const Launch2Polling(),
+        settle: false,
+      );
+      await tester.pump();
+      expect(gateway.detailReads, 1);
+      expect(_statusText(tester), '铸造已结束 · 名单生成中 · 已铸 3 枚');
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      expect(gateway.detailReads, 2);
+      expect(_statusText(tester), '铸造已结束 · 名单发布中 · 已铸 3 枚');
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      expect(gateway.detailReads, 3);
+      expect(_statusText(tester), startsWith('提前购进行中 · 已铸 3 枚'));
+      // 提前购 on this page waits the detail interval (15 s) again.
+      await tester.pump(const Duration(seconds: 14));
+      await tester.pump();
+      expect(gateway.detailReads, 3);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(gateway.detailReads, 4);
+      await _drain(tester);
+    });
+
+    testWidgets('project page · snapshot_pending is read every 3 s; 提前购 '
+        'returns to the trading interval', (tester) async {
+      final gateway = _Fake(
+        details: <Launch2InstanceDetail>[generating, broadcast, priority],
+      );
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: instance),
+        gateway,
+        clock: clock,
+        polling: const Launch2Polling(),
+        settle: false,
+      );
+      await tester.pump();
+      expect(gateway.detailReads, 1);
+      Finder pendingTitle(String text) => find.descendant(
+        of: _key('launch2-snapshot-pending'),
+        matching: find.text(text),
+      );
+      expect(pendingTitle('名单生成中'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      expect(gateway.detailReads, 2);
+      expect(pendingTitle('名单发布中'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      expect(gateway.detailReads, 3);
+      expect(_key('launch2-snapshot-pending'), findsNothing);
+      // 提前购 trades: the trading interval (5 s), not 3 s.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump();
+      expect(gateway.detailReads, 3);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(gateway.detailReads, 4);
+      await _drain(tester);
+    });
+
+    test('the snapshot interval applies to snapshot_pending alone', () {
+      const polling = Launch2Polling();
+      expect(
+        polling.intervalFor(Launch2Stage.snapshotPending, fast: false),
+        const Duration(seconds: 3),
+      );
+      expect(
+        polling.intervalFor(Launch2Stage.nftSale, fast: false),
+        const Duration(seconds: 15),
+      );
+      expect(
+        polling.intervalFor(Launch2Stage.priority, fast: true),
+        const Duration(seconds: 5),
+      );
+    });
+
+    Future<void> expectPublishedBlock(
+      WidgetTester tester,
+      List<Uri> opened,
+    ) async {
+      final block = _key('launch2-snapshot-published');
+      await tester.scrollUntilVisible(
+        _key('launch2-snapshot-explorer'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(block, findsOneWidget);
+      String value(String key) => tester.widget<LoopKeyValue>(_key(key)).value;
+      expect(value('launch2-snapshot-members'), '3 人');
+      expect(
+        value('launch2-snapshot-published-at'),
+        loopDateTimeLabel(publishedAt),
+      );
+      expect(value('launch2-snapshot-verification'), '已核验');
+      expect(value('launch2-snapshot-tx'), launch2ShortAddress(tx));
+      // Decision 0118: the list's addresses are never on the page.
+      expect(find.textContaining(signer), findsNothing);
+      expect(find.textContaining(tx), findsNothing);
+      await tester.tap(_key('launch2-snapshot-explorer'));
+      await tester.pump();
+      expect(opened, <Uri>[Uri.parse('https://testnet.bscscan.com/tx/$tx')]);
+    }
+
+    testWidgets('project page · 提前购: the 名单已发布 block with count, time, '
+        '已核验 and the BscScan link', (tester) async {
+      final opened = <Uri>[];
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: instance),
+        _Fake(details: <Launch2InstanceDetail>[priority]),
+        clock: clock,
+        extra: <Override>[
+          launch2ExternalLinkOpenerProvider.overrideWithValue(
+            (context, uri) async => opened.add(uri),
+          ),
+        ],
+      );
+      await expectPublishedBlock(tester, opened);
+      await _drain(tester);
+    });
+
+    testWidgets('共识勋章 · 提前购: the same block', (tester) async {
+      final opened = <Uri>[];
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: instance),
+        _Fake(details: <Launch2InstanceDetail>[priority]),
+        clock: clock,
+        extra: <Override>[
+          launch2ExternalLinkOpenerProvider.overrideWithValue(
+            (context, uri) async => opened.add(uri),
+          ),
+        ],
+      );
+      expect(_statusText(tester), startsWith('提前购进行中 · 已铸 3 枚'));
+      await expectPublishedBlock(tester, opened);
+      await _drain(tester);
+    });
+
+    test('the block: from 提前购 on, never for a public round opened without '
+        'holders; BscScan by chain', () {
+      expect(launch2SnapshotPublishedShown(priority), isTrue);
+      expect(launch2SnapshotPublishedShown(broadcast), isFalse);
+      expect(launch2SnapshotPublishedShown(_detail(stage: 'public')), isTrue);
+      expect(
+        launch2SnapshotPublishedShown(
+          _detail(stage: 'public', openedWithoutHolders: true),
+        ),
+        isFalse,
+      );
+      expect(
+        launch2SnapshotPublishedShown(_detail(stage: 'graduated')),
+        isTrue,
+      );
+      expect(
+        launch2ExplorerTxUri('eip155:56', tx).toString(),
+        'https://bscscan.com/tx/$tx',
+      );
+      expect(
+        launch2ExplorerTxUri('eip155:97', tx).toString(),
+        'https://testnet.bscscan.com/tx/$tx',
+      );
+      expect(launch2ExplorerTxUri('eip155:97', null), isNull);
+      expect(launch2SnapshotVerificationText(null), isNull);
+    });
+
+    test('提前购 is 提前购进行中 on the list rows too', () {
+      final row = _rows(<Map<String, Object?>>[
+        _rowJson(1, 'priority', nextIn: const Duration(minutes: 30)),
+      ]).single;
+      expect(launch2HeroHeadline(row.stage, sprint: false), '提前购进行中');
+      expect(
+        launch2RecordSubtitle(row),
+        startsWith('Frog Launch · 提前购进行中 · 截止 '),
+      );
     });
   });
 }

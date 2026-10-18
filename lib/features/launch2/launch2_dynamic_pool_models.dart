@@ -349,6 +349,69 @@ final class Launch2DynamicRewards {
   final List<Launch2DynamicRound> rounds;
 }
 
+/// One row of 外盘奖励 (decision 0202): a round of the project, with this
+/// wallet's record of it when it has one.
+///
+/// `…/dynamic-pool/rewards` lists only the rounds the wallet has weight in
+/// (loop-api `listDynamicRewards` joins on the buy weights), so a reader
+/// who bought nothing in a round would not see that round at all. The
+/// Hook numbers rounds 1, 2, 3 … (`++currentRoundId`), and `dynamic-pool`
+/// says how many there are (`summary.roundCount`) and which one runs now
+/// (`currentRoundId` while armed); the rounds the wallet is absent from are
+/// those ids.
+@immutable
+final class Launch2DynamicRewardEntry {
+  const Launch2DynamicRewardEntry({
+    required this.roundId,
+    required this.open,
+    this.round,
+  });
+
+  final BigInt roundId;
+
+  /// The round still runs.
+  final bool open;
+
+  /// This wallet's record of the round; `null` when it has no weight in it.
+  final Launch2DynamicRound? round;
+}
+
+/// The most rounds the page lists without a wallet record (the rewards
+/// read's own default page).
+const int launch2DynamicRewardEntryLimit = 50;
+
+/// Every round of the project, newest first: the wallet's own rounds as
+/// sent, and the others as 本轮没有可领取的奖励 rows. Empty only while the
+/// project never ran a round.
+List<Launch2DynamicRewardEntry> launch2DynamicRewardEntries(
+  Launch2DynamicRewards rewards,
+  Launch2DynamicPoolState pool,
+) {
+  final own = <BigInt, Launch2DynamicRound>{
+    for (final round in rewards.rounds) round.roundId: round,
+  };
+  final armed = pool.armed ? pool.currentRoundId : null;
+  final others = <BigInt>{
+    for (var id = 1; id <= pool.summary.roundCount; id++) BigInt.from(id),
+    ?armed,
+  }.difference(own.keys.toSet()).toList()..sort((a, b) => b.compareTo(a));
+  final ids = <BigInt>[
+    ...own.keys,
+    ...others.take(launch2DynamicRewardEntryLimit),
+  ]..sort((a, b) => b.compareTo(a));
+  return <Launch2DynamicRewardEntry>[
+    for (final id in ids)
+      if (own[id] case final Launch2DynamicRound round)
+        Launch2DynamicRewardEntry(
+          roundId: id,
+          open: !round.closed,
+          round: round,
+        )
+      else
+        Launch2DynamicRewardEntry(roundId: id, open: id == armed),
+  ];
+}
+
 /// `claim` of `POST …/dynamic-pool/claim/prepare`: what the server
 /// simulated for the round.
 @immutable

@@ -424,7 +424,10 @@ class _Launch2DynamicRewardsScreenState
         ),
       ];
     }
-    if (rewards.rounds.isEmpty) {
+    // Decision 0202: the project's rounds, the reader's own and the ones
+    // it has no weight in; the empty state only while no round ever ran.
+    final entries = launch2DynamicRewardEntries(rewards, pool);
+    if (entries.isEmpty) {
       return <Widget>[
         ...widgets,
         Launch2DynamicFeeSummaryCard(state: pool, ticker: detail.row.ticker),
@@ -445,19 +448,25 @@ class _Launch2DynamicRewardsScreenState
       if (hold != null) Launch2TradingHoldBanner(hold: hold),
       // Decision 0197: the Hook's fee totals, the buy fee by its token.
       Launch2DynamicFeeSummaryCard(state: pool, ticker: detail.row.ticker),
-      for (final round in rewards.rounds)
-        _RoundRow(
-          key: ValueKey<String>('launch2-dyn-round-${round.roundId}'),
-          round: round,
-          preparing: _preparing == round.roundId,
-          busy: _preparing != null || hold != null,
-          broadcast: _broadcast.contains(round.roundId),
-          confirmed: _confirmed.contains(round.roundId),
-          failure: _failure != null && _failure!.$1 == round.roundId
-              ? _failure!.$2
-              : null,
-          onClaim: () => unawaited(_claim(detail, pool, rewardsKey, round)),
-        ),
+      for (final entry in entries)
+        if (entry.round case final Launch2DynamicRound round)
+          _RoundRow(
+            key: ValueKey<String>('launch2-dyn-round-${round.roundId}'),
+            round: round,
+            preparing: _preparing == round.roundId,
+            busy: _preparing != null || hold != null,
+            broadcast: _broadcast.contains(round.roundId),
+            confirmed: _confirmed.contains(round.roundId),
+            failure: _failure != null && _failure!.$1 == round.roundId
+                ? _failure!.$2
+                : null,
+            onClaim: () => unawaited(_claim(detail, pool, rewardsKey, round)),
+          )
+        else
+          _NoWeightRoundRow(
+            key: ValueKey<String>('launch2-dyn-round-${entry.roundId}'),
+            entry: entry,
+          ),
       LoopProvenanceLine(
         key: const ValueKey<String>('launch2-dyn-rewards-provenance'),
         sources: const <String>['LoopHook'],
@@ -512,7 +521,7 @@ class _RoundRow extends StatelessWidget {
       ? '领取确认中…'
       : switch (round.status) {
           Launch2DynamicRoundStatus.open => '本轮结束后可领',
-          Launch2DynamicRoundStatus.noReward => '本轮无可领金额',
+          Launch2DynamicRoundStatus.noReward => launch2DynamicNoRewardText,
           _ => round.canClaim ? '领取' : '没有可领',
         };
 
@@ -599,6 +608,56 @@ class _RoundRow extends StatelessWidget {
               onPressed: round.canClaim && !broadcast && !confirmed && !busy
                   ? onClaim
                   : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A round's line when the reader has nothing to claim in it (decision 0202).
+const String launch2DynamicNoRewardText = '本轮没有可领取的奖励';
+
+/// A round the reader has no weight in (decision 0202): its number, whether
+/// it still runs, and that there is nothing to claim.
+class _NoWeightRoundRow extends StatelessWidget {
+  const _NoWeightRoundRow({required this.entry, super.key});
+
+  final Launch2DynamicRewardEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = entry.roundId.toString();
+    final open = entry.open;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Launch2SectionLabel(
+            '第 $id 轮',
+            trailing: LoopBadge(
+              open ? '进行中' : '已结束',
+              kind: open ? LoopBadgeKind.launch : LoopBadgeKind.mute,
+            ),
+          ),
+          LoopRecordCard(
+            key: ValueKey<String>('launch2-dyn-round-$id-none'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  open ? '你在本轮还没有买入' : launch2DynamicNoRewardText,
+                  style: LoopType.bodySm,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  open ? '轮次开启期间买入即计入本轮权重，本轮结束后在这里领取。' : '你在本轮没有买入，没有奖励权重。',
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                ),
+              ],
             ),
           ),
         ],

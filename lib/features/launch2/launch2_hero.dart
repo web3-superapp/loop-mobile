@@ -25,7 +25,7 @@ const int launch2HeroLimit = 5;
 const int launch2HeroSprintBps = 7000;
 
 /// The rows the hero shows, in its order (docs/32 §3.1): activities first —
-/// NFT 铸造中, then 白名单提前购, then a public curve at ≥ 70 % (内盘冲刺) —
+/// NFT 铸造中, then 提前购进行中, then a public curve at ≥ 70 % (内盘冲刺) —
 /// then the previews (`upcoming`), nearest sale start first; at most
 /// [launch2HeroLimit]. Within an activity group the row that ends soonest
 /// (the NFT sale, the early round) or the curve sold furthest comes first;
@@ -92,7 +92,7 @@ String launch2HeroHeadline(Launch2Stage stage, {required bool sprint}) =>
       Launch2Stage.upcoming => '铸造倒计时',
       Launch2Stage.nftSale => '共识勋章铸造中',
       Launch2Stage.snapshotPending => '名单生成中',
-      Launch2Stage.priority => '白名单提前购',
+      Launch2Stage.priority => '提前购进行中',
       Launch2Stage.public => sprint ? '内盘冲刺' : '公开内盘',
       _ => launch2StageLabel(stage),
     };
@@ -193,7 +193,7 @@ String launch2ShortDateTime(DateTime at) {
       '${two(local.hour)}:${two(local.minute)}';
 }
 
-/// The ledger card's second heading line: 共识勋章铸造中 / 白名单提前购 /
+/// The ledger card's second heading line: 共识勋章铸造中 / 提前购进行中 /
 /// 内盘冲刺 82% / 铸造倒计时.
 String launch2DeskStatus(Launch2InstanceRow row) {
   final sprint = row.curve.soldBps >= launch2HeroSprintBps;
@@ -241,7 +241,7 @@ String launch2RecordSubtitle(Launch2InstanceRow row) {
       '铸造期 ${launch2SaleDurationLabel(sale)} · '
           '截止 ${launch2ShortDateTime(sale.endAt)}',
     Launch2Stage.priority =>
-      next == null ? '白名单提前购' : '白名单提前购 · 截止 ${launch2ShortDateTime(next)}',
+      next == null ? '提前购进行中' : '提前购进行中 · 截止 ${launch2ShortDateTime(next)}',
     Launch2Stage.public => '公开内盘 · 人人可买，卖满即毕业',
     Launch2Stage.upcoming => '${launch2ShortDateTime(sale.startAt)} 开始铸造',
     _ => launch2StageLabel(row.stage),

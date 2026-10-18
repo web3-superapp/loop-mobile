@@ -571,6 +571,40 @@ String launch2SnapshotPendingMessage(Launch2Snapshot snapshot) {
   return '截止块 #${loopGroupedFigure(block.toString())}，名单发布后开始 1 小时提前购';
 }
 
+/// Whether the page draws the 名单已发布 block (decision 0202): the list was
+/// published and the instance has moved past it (提前购, 公开内盘, 已毕业).
+/// A public round opened without holders has no list.
+bool launch2SnapshotPublishedShown(Launch2InstanceDetail detail) =>
+    detail.snapshot.published &&
+    detail.snapshot.openedWithoutHolders == null &&
+    (detail.stage == Launch2Stage.priority ||
+        detail.stage == Launch2Stage.public ||
+        detail.stage == Launch2Stage.graduated);
+
+/// 核验 in the 名单已发布 block (`snapshot.verification`); `null` when the
+/// server said nothing.
+String? launch2SnapshotVerificationText(
+  Launch2SnapshotVerification? verification,
+) => switch (verification) {
+  null => null,
+  Launch2SnapshotVerification.verified => '已核验',
+  Launch2SnapshotVerification.pending => '核验中',
+  Launch2SnapshotVerification.mismatch => '核验不一致，平台处理中',
+};
+
+/// The BscScan page of [hash] on [chainId] (decision 0202): the main
+/// network's for the primary slot, the testnet's for the Launch testnet,
+/// nothing for a chain LOOP does not publish or a missing hash.
+Uri? launch2ExplorerTxUri(String chainId, String? hash) {
+  if (hash == null) return null;
+  final host = switch (chainId) {
+    loopPrimaryChainId => 'bscscan.com',
+    loopLaunchTestnetChainId => 'testnet.bscscan.com',
+    _ => null,
+  };
+  return host == null ? null : Uri.https(host, '/tx/$hash');
+}
+
 /// How long an NFT sale runs: 「7 天」, 「1 小时」 or 「90 分钟」.
 String launch2SaleDurationLabel(Launch2NftSale sale) {
   final minutes = sale.endAt.difference(sale.startAt).inMinutes;

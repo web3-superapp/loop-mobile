@@ -32,7 +32,16 @@ Future<Uint8List?> Function(BuildContext context, Uint8List bytes)?
 debugLaunch2CropOverride;
 
 /// The three steps of `launch2-create`.
-const List<String> launch2CreateSteps = <String>['资料', '社区', '发售'];
+/// Decision 0202: step 2 holds only the outside links, so it is named for
+/// them; binding a community is done on the community side.
+const List<String> launch2CreateSteps = <String>['资料', '链接', '发售'];
+
+/// Step 2's heading, its line, and the line on where a community is bound.
+const String launch2CreateLinksHeading = '外部链接';
+const String launch2CreateLinksLine =
+    '项目的 X / Telegram / 官网 / Discord，都可不填；审核与用户都会看到。';
+const String launch2CreateLinksCommunityHint =
+    '要绑定社区，请由社区群主在社区侧「社区管理 → 绑定代币」里操作。';
 
 /// The fields the form checks before the server does.
 enum Launch2Field { name, ticker, description, x, telegram, website, discord }
@@ -538,7 +547,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         ..._rejectionBanner(),
         ...switch (_step) {
           0 => _profileStep(),
-          1 => _communityStep(),
+          1 => _linksStep(),
           _ => _saleStep(save),
         },
       ],
@@ -703,7 +712,11 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     ];
   }
 
-  List<Widget> _communityStep() => <Widget>[
+  List<Widget> _linksStep() => <Widget>[
+    const LoopLabel(
+      launch2CreateLinksHeading,
+      key: ValueKey<String>('launch2-create-links-heading'),
+    ),
     Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -711,9 +724,21 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         LoopSpacing.page,
         12,
       ),
-      child: Text(
-        '绑定项目的社区，审核与用户都会看到。',
-        style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            launch2CreateLinksLine,
+            key: const ValueKey<String>('launch2-create-links-line'),
+            style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            launch2CreateLinksCommunityHint,
+            key: const ValueKey<String>('launch2-create-links-community-hint'),
+            style: LoopType.caption.copyWith(color: LoopColors.text3),
+          ),
+        ],
       ),
     ),
     Padding(

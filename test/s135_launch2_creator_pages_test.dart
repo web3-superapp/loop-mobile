@@ -2321,4 +2321,82 @@ void main() {
       }
     });
   });
+
+  group('S233 · decision 0202', () {
+    testWidgets('step 2 is 外部链接: it says links only and where a community '
+        'is bound; nothing says 绑定项目的社区', (tester) async {
+      await _pump(tester, const Launch2CreateScreen());
+      expect(
+        tester.widget<LoopStepTrack>(_key('launch2-create-step-1')).labels,
+        <String>['资料', '链接', '发售'],
+      );
+      await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('launch2-create-name'), 'MoonCat');
+      await tester.enterText(_key('launch2-create-ticker'), 'mcat');
+      await tester.pump();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-step-2'), findsOneWidget);
+      expect(find.text('外部链接'), findsOneWidget);
+      expect(
+        find.text('项目的 X / Telegram / 官网 / Discord，都可不填；审核与用户都会看到。'),
+        findsOneWidget,
+      );
+      expect(find.text('要绑定社区，请由社区群主在社区侧「社区管理 → 绑定代币」里操作。'), findsOneWidget);
+      expect(find.textContaining('绑定项目的社区'), findsNothing);
+      expect(_key('launch2-create-x'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    testWidgets('部署进度 replaced the signing page; back on the project page '
+        'it reads again and says 已激活 without a pull (S227-9)', (tester) async {
+      final creator = _FakeCreator(
+        configs: <_A<Launch2HooksConfig>>[
+          _A<Launch2HooksConfig>.value(_config('hooks_config_approved')),
+          _A<Launch2HooksConfig>.value(_config('hooks_config_activated')),
+        ],
+      );
+      await _pump(
+        tester,
+        Builder(
+          builder: (context) => Launch2ProjectScreen(
+            projectId: _projectId,
+            // The App's own trip: 去签名部署 pushes the signing page, which
+            // replaces itself with 部署进度 once submitted.
+            onNavigate: (location) => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (signContext) => Scaffold(
+                  body: TextButton(
+                    onPressed: () => Navigator.of(signContext).pushReplacement(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const Scaffold(body: Text('部署进度')),
+                      ),
+                    ),
+                    child: const Text('签名并提交'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        creator: creator,
+      );
+      expect(_key('launch2-status-approved'), findsOneWidget);
+      expect(creator.configReads, 1);
+      await tester.tap(_key('launch2-project-sign'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('签名并提交'));
+      await tester.pumpAndSettle();
+      expect(find.text('部署进度'), findsOneWidget);
+      expect(creator.configReads, 1);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(creator.configReads, 2);
+      expect(_key('launch2-status-active'), findsOneWidget);
+      expect(_key('launch2-status-approved'), findsNothing);
+      await _drain(tester);
+    });
+  });
 }

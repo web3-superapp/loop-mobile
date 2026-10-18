@@ -176,7 +176,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     if (_poll != null || detail.stage.terminal) return;
     final polling = ref.read(launch2PollingProvider);
     final fast = detail.stage.tradable || _pending != null;
-    _poll = Timer(fast ? polling.tradingInterval : polling.detailInterval, () {
+    _poll = Timer(polling.intervalFor(detail.stage, fast: fast), () {
       _poll = null;
       if (!mounted) return;
       unawaited(
@@ -652,6 +652,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         ),
       ),
       _RecentTrades(detail: detail),
+      // Decision 0202: the published list, without its addresses.
+      if (launch2SnapshotPublishedShown(detail))
+        Launch2SnapshotPublishedBlock(detail: detail),
     ],
     Launch2Stage.graduated => <Widget>[
       _GraduatedBlock(detail: detail),
@@ -713,6 +716,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           ),
         ),
       _BuybackPanel(detail: detail),
+      if (launch2SnapshotPublishedShown(detail))
+        Launch2SnapshotPublishedBlock(detail: detail),
     ],
     Launch2Stage.paused => <Widget>[_TemplateCard(detail: detail)],
   };

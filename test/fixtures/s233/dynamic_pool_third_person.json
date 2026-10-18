@@ -1,0 +1,51 @@
+{
+  "_derived": "Unedited s171 dynamic_pool_round_closed.json except viewer.walletId: one round, closed, idle, viewer weight 0.",
+  "body": {
+    "dynamicPool": {
+      "instanceId": "8cf88c44-adf8-4c3f-9de2-46a895af3d1d",
+      "hookKind": "loopDynamic",
+      "status": "active",
+      "hook": "0x3257cf5512f52ca1ecf4addb062b341d80a810c4",
+      "poolId": "0x5c67b8c478d148f0cb8c4349e217ba0a83f5874d72f84644f5a833269fcffc2f",
+      "router": "0x7d1577a63007620db1cbee3eab3572b9d148aefe",
+      "routerRegistry": "0xbed2c2e1f9341c1a821182d8f96df98d52dfabe5",
+      "routingPolicy": "open",
+      "priceTiming": "POST_SWAP",
+      "buyTaxBps": 200,
+      "baseSellTaxBps": 200,
+      "excludeBuybackFromRewards": true,
+      "armed": false,
+      "currentRoundId": null,
+      "candleId": "5973089",
+      "candleSeconds": 300,
+      "candleEndsAt": "2026-10-13T21:30:00.000Z",
+      "rollPending": false,
+      "currentDropWad": "0",
+      "currentDropBps": 0,
+      "potUsd1": "14.895863776745470596",
+      "carryUsd1": "14.895863776745470596",
+      "roundExtraFeesUsd1": "0",
+      "roundTotalBuyWeightUsd1": "0",
+      "reservedRewardsUsd1": "14.895863776745470595",
+      "priceUsd1": "0.000568776669134707",
+      "viewer": {
+        "walletId": "5c0ffee0-0000-4000-8000-000000000233",
+        "currentRoundWeightUsd1": "0"
+      },
+      "summary": {
+        "roundCount": 1,
+        "closedRoundCount": 1,
+        "allocatedUsd1": "14.895863776745470595",
+        "claimedUsd1": "0",
+        "dynamicFeesUsd1": "29.791727553490941191",
+        "baseSellFeesUsd1": "206.939978650981205811",
+        "buyFeesMeme": "5971.018897779050155475"
+      },
+      "basis": {
+        "blockNumber": "136621691",
+        "blockHash": "0x11f4216f8f68fa8e371f289a43907b844fb198c83749cc1f60c86c43adb138a0"
+      }
+    },
+    "contractVersion": "2.0"
+  }
+}

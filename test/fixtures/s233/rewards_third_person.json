@@ -1,0 +1,12 @@
+{
+  "_derived": "Derived from s171 rewards_claimable.json: the same response for a wallet with no buy weight in any round (rounds [] — loop-api listDynamicRewards joins on buy weights). Mirrors S227 账号 3 on S227W round 1.",
+  "body": {
+    "instanceId": "8cf88c44-adf8-4c3f-9de2-46a895af3d1d",
+    "walletId": "5c0ffee0-0000-4000-8000-000000000233",
+    "hookKind": "loopDynamic",
+    "claimableUsd1": "0",
+    "claimedUsd1": "0",
+    "rounds": [],
+    "contractVersion": "2.0"
+  }
+}

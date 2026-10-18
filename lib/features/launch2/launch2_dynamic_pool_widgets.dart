@@ -46,7 +46,9 @@ List<(String key, String label, String value)> launch2DynamicRoundRows(
     (
       'my-weight',
       '本轮我的权重',
-      viewer == null
+      // Decision 0202: no wallet, or no buy in this round, is 暂无 — not
+      // 「0 USD1 · 占 0%」.
+      viewer == null || viewer.currentRoundWeightUsd1 <= Decimal.zero
           ? '暂无'
           : share == null
           ? launch2Usd1Label(

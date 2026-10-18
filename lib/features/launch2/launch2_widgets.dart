@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
@@ -641,4 +642,97 @@ class Launch2BarShell extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// 名单已发布 (decision 0202): what the published snapshot list says without
+/// its addresses (loop-api decision 0118 never sends them) — how many are on
+/// it, when it was published, whether it was verified, and its publication
+/// transaction on BscScan, opened in the system browser. Drawn on the
+/// project page and the 共识勋章 page from 提前购 on.
+class Launch2SnapshotPublishedBlock extends ConsumerWidget {
+  const Launch2SnapshotPublishedBlock({required this.detail, super.key});
+
+  final Launch2InstanceDetail detail;
+
+  static const EdgeInsets _kvPadding = EdgeInsets.symmetric(vertical: 6);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = detail.snapshot;
+    final publication = snapshot.publication;
+    final members = snapshot.memberCount ?? publication?.memberCount;
+    final at = snapshot.publishedAt;
+    final verification = launch2SnapshotVerificationText(snapshot.verification);
+    final hash = publication?.txHash;
+    final explorer = launch2ExplorerTxUri(detail.row.chainId, hash);
+    return Column(
+      key: const ValueKey<String>('launch2-snapshot-published'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        const LoopLabel('名单已发布'),
+        LoopRecordCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (members != null)
+                LoopKeyValue(
+                  key: const ValueKey<String>('launch2-snapshot-members'),
+                  padding: _kvPadding,
+                  label: '名单人数',
+                  value: '$members 人',
+                ),
+              if (at != null)
+                LoopKeyValue(
+                  key: const ValueKey<String>('launch2-snapshot-published-at'),
+                  padding: _kvPadding,
+                  label: '发布时间',
+                  value: loopDateTimeLabel(at),
+                ),
+              if (verification != null)
+                LoopKeyValue(
+                  key: const ValueKey<String>('launch2-snapshot-verification'),
+                  padding: _kvPadding,
+                  label: '核验',
+                  value: verification,
+                ),
+              if (hash != null)
+                LoopKeyValue(
+                  key: const ValueKey<String>('launch2-snapshot-tx'),
+                  padding: _kvPadding,
+                  label: '发布交易',
+                  value: launch2ShortAddress(hash),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  '名单地址不在 App 内列出，可在发布交易里核对。',
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (explorer != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              LoopSpacing.card,
+            ),
+            child: LoopButton(
+              key: const ValueKey<String>('launch2-snapshot-explorer'),
+              label: '在 BscScan 查看发布交易',
+              icon: 'link',
+              block: true,
+              onPressed: () => unawaited(
+                ref.read(launch2ExternalLinkOpenerProvider)(context, explorer),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }

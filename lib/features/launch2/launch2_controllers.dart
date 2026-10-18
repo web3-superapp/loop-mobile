@@ -52,6 +52,7 @@ final class Launch2Polling {
     this.detailInterval = const Duration(seconds: 15),
     this.tradingInterval = const Duration(seconds: 5),
     this.listInterval = const Duration(seconds: 60),
+    this.snapshotInterval = const Duration(seconds: 3),
   });
 
   /// Every stage that only waits for a time or an event.
@@ -62,6 +63,19 @@ final class Launch2Polling {
 
   /// A v2 list while it is on screen (decision 0148).
   final Duration listInterval;
+
+  /// `snapshot_pending` only (decision 0202): the list is computed, signed
+  /// and published within seconds, so 名单发布中 is visible only when the
+  /// page asks this often. Any other stage goes back to its own interval.
+  final Duration snapshotInterval;
+
+  /// The wait before the next read of an instance at [stage]; [fast] is a
+  /// stage that trades or a broadcast the page is waiting for.
+  Duration intervalFor(Launch2Stage stage, {required bool fast}) {
+    if (fast) return tradingInterval;
+    if (stage == Launch2Stage.snapshotPending) return snapshotInterval;
+    return detailInterval;
+  }
 }
 
 final launch2PollingProvider = Provider<Launch2Polling>(

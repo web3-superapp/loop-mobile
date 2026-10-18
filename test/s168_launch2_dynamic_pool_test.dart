@@ -1377,7 +1377,15 @@ void main() {
       await openRewards(
         tester,
         _FakeDynamic(
-          kind: Launch2LoopDynamicPool(_state()),
+          // Decision 0202: the empty state is for a project that never ran
+          // a round; the idle sample has three.
+          kind: Launch2LoopDynamicPool(
+            _state(
+              edit: (p) => (p['summary']! as Map<String, Object?>)
+                ..['roundCount'] = 0
+                ..['closedRoundCount'] = 0,
+            ),
+          ),
           rewards: _rewardsWith((rounds) => rounds.clear()),
         ),
       );
@@ -1940,6 +1948,152 @@ void main() {
       ]) {
         expect(() => _rewardsWith((rounds) => edit(rounds.first)), _invalid);
       }
+    });
+  });
+
+  // S233 · client decision 0202 (S227-1, S227-7). The payloads are
+  // test/fixtures/s233/, derived from the S171 BSC testnet captures.
+  group('S233 · decision 0202', () {
+    Map<String, Object?> s233(String name) =>
+        _copy(_file('s233', name)['body']);
+
+    /// The S171 instance the fixtures were captured on.
+    const s171Instance = '8cf88c44-adf8-4c3f-9de2-46a895af3d1d';
+
+    Launch2PoolKind kindOf(Map<String, Object?> body) =>
+        LoopV2Launch2DynamicPoolCodec.pool(body, instanceId: s171Instance);
+
+    Launch2DynamicPoolState poolOf(String name) =>
+        (kindOf(s233(name)) as Launch2LoopDynamicPool).state;
+
+    Launch2DynamicRewards rewardsOf(String name) {
+      final body = s233(name);
+      return LoopV2Launch2DynamicPoolCodec.rewards(
+        body,
+        instanceId: s171Instance,
+        walletId: body['walletId']! as String,
+      );
+    }
+
+    Future<void> openRewards(WidgetTester tester, _FakeDynamic dynamicPool) =>
+        _pump(
+          tester,
+          const Launch2DynamicRewardsScreen(instanceId: l2InstanceA),
+          launch2: _FakeLaunch2(),
+          dynamicPool: dynamicPool,
+        );
+
+    testWidgets('third person after one closed round: round 1 is listed as '
+        '本轮没有可领取的奖励, not 还没有外盘奖励', (tester) async {
+      await openRewards(
+        tester,
+        _FakeDynamic(
+          kind: Launch2LoopDynamicPool(poolOf('dynamic_pool_third_person')),
+          rewards: rewardsOf('rewards_third_person'),
+        ),
+      );
+      expect(_key('launch2-dyn-rewards-empty'), findsNothing);
+      expect(find.text('还没有外盘奖励'), findsNothing);
+      expect(find.text('第 1 轮'), findsOneWidget);
+      expect(find.text('已结束'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch2-dyn-round-1-none'),
+          matching: find.text('本轮没有可领取的奖励'),
+        ),
+        findsOneWidget,
+      );
+      // Nothing to press for a round the reader has no weight in.
+      expect(_key('launch2-dyn-claim-1'), findsNothing);
+      await _drain(tester);
+    });
+
+    testWidgets('the latest round without weight is listed above the '
+        'claimed one', (tester) async {
+      await openRewards(
+        tester,
+        _FakeDynamic(
+          kind: Launch2LoopDynamicPool(poolOf('dynamic_pool_two_rounds')),
+          rewards: rewardsOf('rewards_latest_round_without_weight'),
+        ),
+      );
+      expect(_key('launch2-dyn-round-2-none'), findsOneWidget);
+      expect(_key('launch2-dyn-round-1-card'), findsOneWidget);
+      expect(find.text('已领取'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('第 2 轮')).dy,
+        lessThan(tester.getTopLeft(find.text('第 1 轮')).dy),
+      );
+      await _drain(tester);
+    });
+
+    testWidgets('a project that never ran a round keeps 还没有外盘奖励', (
+      tester,
+    ) async {
+      final pool = s233('dynamic_pool_third_person');
+      final summary =
+          (pool['dynamicPool']! as Map<String, Object?>)['summary']!
+              as Map<String, Object?>;
+      summary['roundCount'] = 0;
+      summary['closedRoundCount'] = 0;
+      await openRewards(
+        tester,
+        _FakeDynamic(
+          kind: kindOf(pool),
+          rewards: rewardsOf('rewards_third_person'),
+        ),
+      );
+      expect(_key('launch2-dyn-rewards-empty'), findsOneWidget);
+      expect(find.text('还没有外盘奖励'), findsOneWidget);
+      await _drain(tester);
+    });
+
+    test(
+      'entries: own rounds as sent, the others by id, the armed one open',
+      () {
+        final armed = _state(armed: true);
+        final none = launch2DynamicRewardEntries(
+          _rewardsWith((rounds) => rounds.clear()),
+          armed,
+        );
+        expect(none.map((e) => e.roundId.toInt()), <int>[3, 2, 1]);
+        expect(none.map((e) => e.open), <bool>[true, false, false]);
+        expect(none.every((e) => e.round == null), isTrue);
+        final own = launch2DynamicRewardEntries(
+          _rewardsWith((rounds) => rounds.removeAt(1)),
+          armed,
+        );
+        expect(own.map((e) => e.roundId.toInt()), <int>[3, 2, 1]);
+        expect(own.map((e) => e.round != null), <bool>[true, false, true]);
+      },
+    );
+
+    testWidgets('armed, the reader bought nothing this round: 本轮我的权重 暂无 '
+        '(not 0 USD1 · 占 0%)', (tester) async {
+      await _openInstance(
+        tester,
+        launch2: _FakeLaunch2(),
+        dynamicPool: _FakeDynamic(
+          kind: Launch2LoopDynamicPool(
+            _state(
+              armed: true,
+              edit: (p) => p['viewer'] = <String, Object?>{
+                'walletId': l2WalletId,
+                'currentRoundWeightUsd1': '0',
+              },
+            ),
+          ),
+        ),
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-dyn-my-weight'),
+          matching: find.text('暂无'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('占 0%'), findsNothing);
+      await _drain(tester);
     });
   });
 }

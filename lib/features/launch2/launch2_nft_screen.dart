@@ -141,8 +141,10 @@ Launch2NftView launch2NftView(
         medalLabel: medal,
       );
     case Launch2Stage.snapshotPending:
+      // Decision 0202: the publication attempt's own words, as on the
+      // project page (名单生成中 → 名单发布中 → …).
       return Launch2NftView(
-        status: '铸造已结束 · 名单生成中',
+        status: '铸造已结束 · ${launch2SnapshotPendingTitle(detail.snapshot)}',
         statusLit: false,
         statusDetail: minted,
         buttonLabel: held ? '等待名单发布' : '铸造已结束',
@@ -313,7 +315,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
     if (_poll != null || detail.stage.terminal) return;
     final polling = ref.read(launch2PollingProvider);
     final fast = _pending?.locked ?? false;
-    _poll = Timer(fast ? polling.tradingInterval : polling.detailInterval, () {
+    _poll = Timer(polling.intervalFor(detail.stage, fast: fast), () {
       _poll = null;
       if (!mounted) return;
       unawaited(_controller(id).reload());
@@ -616,6 +618,9 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
         label: '已铸',
         value: '${row.nftSale.soldCount} 枚',
       ),
+      // Decision 0202: the published list, as on the project page.
+      if (launch2SnapshotPublishedShown(detail))
+        Launch2SnapshotPublishedBlock(detail: detail),
       LoopProvenanceLine(
         key: const ValueKey<String>('launch2-nft-provenance'),
         sources: const <String>['LOOP 链上索引'],
