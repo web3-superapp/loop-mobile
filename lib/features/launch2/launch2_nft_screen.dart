@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -20,6 +21,7 @@ import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -273,6 +275,37 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
     unawaited(context.push(location));
   }
 
+  /// 「去充值」 (decision 0201, same target as the project page): the
+  /// wallet's own receive page, for the active wallet when it has a
+  /// canonical id.
+  void _openTopUp(Launch2InstanceDetail detail) {
+    final walletId =
+        memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId;
+    _open(
+      walletId != null && WalletRoute.isCanonical(walletId)
+          ? WalletRoute.receive(walletId)
+          : WalletRoute.receivePath,
+    );
+  }
+
+  /// 「领取测试币」 next to 「去充值」 (decision 0154), only while the server
+  /// publishes `testnetFaucet` as available and the wallet has a canonical
+  /// id. A grant re-reads this instance so the balance follows.
+  VoidCallback? _faucetAction(Launch2InstanceDetail detail) {
+    if (!testnetFaucetVisible(ref)) return null;
+    final active = memeReadActiveWallet(ref);
+    final walletId = active.walletId ?? detail.viewer?.walletId;
+    if (walletId == null || !WalletRoute.isCanonical(walletId)) return null;
+    return () => unawaited(
+      showTestnetFaucetSheet(
+        context,
+        walletId: walletId,
+        address: active.address,
+        onGranted: () => unawaited(_controller(detail.instanceId).reload()),
+      ),
+    );
+  }
+
   Launch2InstanceController _controller(String id) =>
       ref.read(launch2InstanceControllerProvider(id).notifier);
 
@@ -460,6 +493,12 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
           : Launch2ActionFailureLine(
               key: const ValueKey<String>('launch2-nft-bar-failure'),
               message: failure.text,
+              // Decision 0201: a balance refusal offers 「去充值」 here too,
+              // as on the project page (docs/22 §3 mints from this page).
+              topUpKey: const ValueKey<String>('launch2-nft-bar-topup'),
+              onTopUp: failure.topUp ? () => _openTopUp(detail) : null,
+              faucetKey: const ValueKey<String>('launch2-nft-bar-faucet'),
+              onFaucet: _faucetAction(detail),
             ),
       child: LoopButton(
         key: const ValueKey<String>('launch2-nft-mint'),

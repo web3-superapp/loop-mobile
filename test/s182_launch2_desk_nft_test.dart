@@ -124,14 +124,21 @@ Launch2InstanceDetail _detail({
 }
 
 final class _Fake implements Launch2Gateway {
-  _Fake({this.page, List<Launch2InstanceDetail>? details, this.intent})
-    : details = details ?? <Launch2InstanceDetail>[];
+  _Fake({
+    this.page,
+    List<Launch2InstanceDetail>? details,
+    this.intent,
+    this.nftError,
+  }) : details = details ?? <Launch2InstanceDetail>[];
 
   final Launch2InstancePage? page;
 
   /// The detail reads, in order; the last one repeats.
   final List<Launch2InstanceDetail> details;
   final Launch2Intent? intent;
+
+  /// Decision 0201: what prepareNftMint refuses with, when set.
+  final LoopChainException? nftError;
   int detailReads = 0;
   int listReads = 0;
   int nftCalls = 0;
@@ -170,6 +177,8 @@ final class _Fake implements Launch2Gateway {
     required String walletId,
   }) {
     nftCalls += 1;
+    final error = nftError;
+    if (error != null) return Future<Launch2Intent>.error(error);
     final value = intent;
     return value == null ? _unavailable() : Future<Launch2Intent>.value(value);
   }
@@ -1484,6 +1493,74 @@ void main() {
       expect(_key('launch2-nft-bar-failure'), findsOneWidget);
       expect(_key('launch2-nft-action-failed'), findsOneWidget);
       expect(wallet.handed, isEmpty);
+      await _drain(tester);
+    });
+  });
+
+  group('S230 · decision 0201', () {
+    testWidgets('USD1 short on the 勋章 page: the figure above the button and '
+        '去充值 opens receive (docs/22 §3)', (tester) async {
+      final wallet = _RecordingWallet();
+      final navigated = <String>[];
+      final gateway = _Fake(
+        details: <Launch2InstanceDetail>[_detail()],
+        // loop-api `POST …/nft/mint/prepare`: 409 INSUFFICIENT_BALANCE /
+        // LAUNCH2_USD1_BALANCE_INSUFFICIENT, detailsSafe.requiredUsd1 and
+        // balanceUsd1.
+        nftError: const LoopChainException(
+          LoopChainFailureKind.insufficientBalance,
+          reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+          requiredUsd1: '100',
+          balanceUsd1: '0',
+        ),
+      );
+      await _pump(
+        tester,
+        Launch2NftScreen(instanceId: l2InstanceA, onNavigate: navigated.add),
+        gateway,
+        wallet: wallet,
+      );
+      await tester.tap(_key('launch2-nft-mint'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+      final bar = _key('launch2-nft-bar-failure');
+      expect(
+        find.descendant(
+          of: bar,
+          matching: find.text('USD1 余额不足：需要 100 USD1，当前 0 USD1'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: bar, matching: _key('launch2-nft-bar-topup')),
+        findsOneWidget,
+      );
+      expect(wallet.handed, isEmpty);
+      await tester.tap(_key('launch2-nft-bar-topup'));
+      await tester.pumpAndSettle();
+      expect(navigated, <String>['/wallet/receive?walletId=$l2WalletId']);
+      await _drain(tester);
+    });
+
+    testWidgets('a refusal that is not about balance offers no 去充值', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: l2InstanceA),
+        _Fake(details: <Launch2InstanceDetail>[_detail()]),
+      );
+      await tester.tap(_key('launch2-nft-mint'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-nft-bar-failure'), findsOneWidget);
+      expect(_key('launch2-nft-bar-topup'), findsNothing);
       await _drain(tester);
     });
   });
