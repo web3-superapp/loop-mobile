@@ -34,7 +34,7 @@ debugLaunch2CropOverride;
 /// The three steps of `launch2-create`.
 /// Decision 0202: step 2 holds only the outside links, so it is named for
 /// them; binding a community is done on the community side.
-const List<String> launch2CreateSteps = <String>['资料', '链接', '发售'];
+const List<String> launch2CreateSteps = <String>['资料', '链接', '发射'];
 
 /// Step 2's heading, its line, and the line on where a community is bound.
 const String launch2CreateLinksHeading = '外部链接';

@@ -12,6 +12,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -453,9 +454,18 @@ class WalletNetWorthCard extends StatelessWidget {
 /// On a testnet slot one line says the total above counts the main chain
 /// only.
 class WalletLaunchChainCard extends StatelessWidget {
-  const WalletLaunchChainCard({required this.launchChain, super.key});
+  const WalletLaunchChainCard({
+    required this.launchChain,
+    super.key,
+    this.hidden = false,
+  });
 
   final LoopLaunchChainBalance launchChain;
+
+  /// 「隐藏余额」 (decisions 0175 / 0188; 0203): tBNB and USD1 print
+  /// [walletMaskedFigure], like the assets above. The gas reserve is a
+  /// policy figure and stays, as on the main rows.
+  final bool hidden;
 
   @override
   Widget build(BuildContext context) {
@@ -491,13 +501,15 @@ class WalletLaunchChainCard extends StatelessWidget {
             // only the reserve (decision 0123, one element removed).
             subtitle: launchChain.isTestnet ? null : launchChain.name,
             subtitleMark: '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
-            value: loopFormatDecimal(native.displayBalance),
+            value: hidden
+                ? walletMaskedFigure
+                : loopFormatDecimal(native.displayBalance),
             valueCaption: Text(
-              '可动用 ${loopFormatDecimal(native.spendableBalance)}',
+              '可动用 ${hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance)}',
             ),
             semanticLabel:
                 '${launchChain.name} ${native.symbol} '
-                '${loopFormatDecimal(native.displayBalance)}',
+                '${hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance)}',
           ),
           WalletSnapshotFooter(
             key: const ValueKey<String>('wallet-launch-chain-snapshot'),
@@ -517,13 +529,15 @@ class WalletLaunchChainCard extends StatelessWidget {
                 ? const LoopTestnetBadge()
                 : null,
             subtitle: launchChain.isTestnet ? null : launchChain.name,
-            value: loopFormatDecimal(
-              walletLaunchUsd1Figure(usd1.balance),
-              maxFractionDigits: 2,
-            ),
+            value: hidden
+                ? walletMaskedFigure
+                : loopFormatDecimal(
+                    walletLaunchUsd1Figure(usd1.balance),
+                    maxFractionDigits: 2,
+                  ),
             semanticLabel:
                 '${launchChain.name} $usd1Symbol '
-                '${loopFormatDecimal(walletLaunchUsd1Figure(usd1.balance), maxFractionDigits: 2)}',
+                '${hidden ? walletMaskedFigure : loopFormatDecimal(walletLaunchUsd1Figure(usd1.balance), maxFractionDigits: 2)}',
           ),
         if (launchChain.isTestnet)
           Padding(
@@ -548,7 +562,7 @@ class WalletLaunchChainCard extends StatelessWidget {
 /// reads the total above as including these balances (loop-api decision
 /// 0038: the main asset area stays on the main chain).
 const String walletLaunchChainTotalNote =
-    'Launch 链是 BSC 测试网余额，没有真实价值，不计入总资产；总资产只统计 BNB Smart Chain 主网。';
+    'Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。';
 
 /// The Launch slot's USD1 symbol: 「tUSD1」 on a testnet, as the faucet
 /// names it, 「USD1」 otherwise.

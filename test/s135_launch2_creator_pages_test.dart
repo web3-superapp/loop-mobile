@@ -2329,7 +2329,7 @@ void main() {
       await _pump(tester, const Launch2CreateScreen());
       expect(
         tester.widget<LoopStepTrack>(_key('launch2-create-step-1')).labels,
-        <String>['资料', '链接', '发售'],
+        <String>['资料', '链接', '发射'],
       );
       await tester.tap(_key('launch2-create-upload'));
       await tester.pumpAndSettle();

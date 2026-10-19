@@ -508,7 +508,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     )
                   : null,
             ),
-            WalletLaunchChainCard(launchChain: launch),
+            WalletLaunchChainCard(launchChain: launch, hidden: hidden),
           ],
         ],
         const SizedBox(height: LoopSpacing.group),

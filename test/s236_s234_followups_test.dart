@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
@@ -114,6 +115,44 @@ void main() {
       await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
       expect(_key('wallet-launch-chain-unavailable'), findsOneWidget);
       expect(_key('wallet-launch-chain-usd1-row'), findsOneWidget);
+    });
+
+    testWidgets('隐藏余额 masks tBNB and tUSD1 together; the note stays', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: Scaffold(
+            body: WalletLaunchChainCard(
+              launchChain: _balances(_launchChainWire()).launchChain!,
+              hidden: true,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('4,850'), findsNothing);
+      expect(find.text('2.5'), findsNothing);
+      expect(find.textContaining('2.495'), findsNothing);
+      expect(
+        find.descendant(
+          of: _key('wallet-launch-chain-usd1-row'),
+          matching: find.text(walletMaskedFigure),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('wallet-launch-chain-row'),
+          matching: find.text(walletMaskedFigure),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('可动用 $walletMaskedFigure'), findsOneWidget);
+      expect(
+        find.text('Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a main-chain Launch slot: USD1, no note', (tester) async {
