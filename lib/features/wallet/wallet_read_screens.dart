@@ -484,13 +484,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     )
                   : null,
             ),
-            // Decision 0208: the USD1 row reads the MEME v2 USD1 from
-            // `me/positions`, not the IDO contract's `launchChain.usd1`.
-            WalletLaunchChainCard(
-              launchChain: launch,
-              usd1: launch2WalletUsd1(ref, walletId: walletId),
-              hidden: hidden,
-            ),
+            WalletLaunchChainCard(launchChain: launch, hidden: hidden),
           ],
         ],
         const SizedBox(height: LoopSpacing.group),

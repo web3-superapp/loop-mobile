@@ -1,9 +1,9 @@
 // S237b · client decision 0208: the S237 acceptance follow-ups.
 //
-// A. 钱包「Launch 链」 USD1 read the hidden IDO contract's USD1
-//    (`launchChain.usd1`, 0 on staging) instead of the MEME v2 USD1 the
-//    wallet actually holds. Both fixtures under test/fixtures/s237b/ are
-//    the real staging responses for the demo account (see their `_derived`).
+// A. 钱包「Launch 链」 USD1 keeps `launchChain.usd1` as its source (the 0 on
+//    staging is loop-api reading the IDO contract's USD1, fixed server-side);
+//    an absent pair prints 「—」 with its reason, never 0. The fixture under
+//    test/fixtures/s237b/ is the real staging block (see its `_derived`).
 // B. Leftover wording and the IDO chain block's screen-reader sentence.
 // C. The LoopDynamic buy tax on the signing sheet matches the trade panel.
 import 'dart:convert';
@@ -11,26 +11,20 @@ import 'dart:io';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
-import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
-import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
-import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
 
@@ -43,95 +37,45 @@ Finder _key(String value) => find.byKey(ValueKey<String>(value));
 Map<String, Object?> _json(String path) =>
     jsonDecode(File(path).readAsStringSync()) as Map<String, Object?>;
 
-/// The staging wallet id both real responses carry.
-const String _stagingWalletId = '4b1f36d8-0884-49ca-a2e2-a8519a352cef';
-
 Map<String, Object?> _launchChainWire() =>
     _json(
           'test/fixtures/s237b/wallet_balances_launch_chain_ido_usd1.json',
         )['launchChain']!
         as Map<String, Object?>;
 
-/// The real `me/positions` body, re-keyed to [walletId].
-Map<String, Object?> _positionsBody({String walletId = _stagingWalletId}) {
-  final body =
-      _json('test/fixtures/s237b/launch2_positions_wanfeng.json')['body']!
-          as Map<String, Object?>;
-  for (final item in body['positions']! as List<Object?>) {
-    (item! as Map<String, Object?>)['walletId'] = walletId;
-  }
-  return body;
-}
+LoopLaunchChainBalance _slot(Map<String, Object?> wire) =>
+    DioLoopV2WalletApi.decodeBalances(
+      s5BalancesBody()..['launchChain'] = wire,
+      walletId: s5WalletId,
+    ).launchChain!;
 
-Launch2Positions _positions({String walletId = _stagingWalletId}) =>
-    LoopV2Launch2Codec.positions(
-      _positionsBody(walletId: walletId),
-      mediaUrl: (_) => null,
-    );
+/// The real block with the USD1 the wallet actually holds (the Hooks
+/// Factory `usd1()` balance read on chain at the same time), i.e. what the
+/// block says once loop-api reads that token.
+Map<String, Object?> _factoryUsd1Wire() => _launchChainWire()
+  ..['usd1'] = <String, Object?>{
+    'balance': '2892006687595931906156',
+    'allowance': '0',
+  };
 
-LoopChainResourceState<Launch2Positions> _ready(Launch2Positions value) =>
-    LoopChainResourceState<Launch2Positions>(
-      mode: LoopChainGatewayMode.production,
-      phase: LoopChainViewPhase.ready,
-      value: value,
-    );
-
-LoopChainResourceState<Launch2Positions> _phase(LoopChainViewPhase phase) =>
-    LoopChainResourceState<Launch2Positions>(
-      mode: LoopChainGatewayMode.production,
-      phase: phase,
-    );
-
-/// A MEME v2 port that only answers `me/positions`.
-final class _PositionsOnly implements Launch2Gateway {
-  _PositionsOnly(this.answer);
-
-  final Future<Launch2Positions> Function() answer;
-
-  @override
-  LoopChainGatewayMode get mode => LoopChainGatewayMode.preview;
-
-  @override
-  Future<Launch2Positions> loadPositions() => answer();
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) =>
-      throw UnsupportedError('${invocation.memberName}');
-}
-
-Future<void> _pumpWallet(
-  WidgetTester tester,
-  Future<Launch2Positions> Function() positions,
-) => pumpS5Page(
-  tester,
-  const WalletScreen(),
-  wallet: FakeWalletReadGateway(
-    balances: S5Answer<LoopWalletBalances>(
-      value: DioLoopV2WalletApi.decodeBalances(
-        s5BalancesBody()..['launchChain'] = _launchChainWire(),
-        walletId: s5WalletId,
+Future<void> _pumpWallet(WidgetTester tester, Map<String, Object?> wire) =>
+    pumpS5Page(
+      tester,
+      const WalletScreen(),
+      wallet: FakeWalletReadGateway(
+        balances: S5Answer<LoopWalletBalances>(
+          value: DioLoopV2WalletApi.decodeBalances(
+            s5BalancesBody()..['launchChain'] = wire,
+            walletId: s5WalletId,
+          ),
+        ),
       ),
-    ),
-  ),
-  overrides: <Override>[
-    launch2GatewayProvider.overrideWithValue(_PositionsOnly(positions)),
-    loopFeatureSwitchesProvider.overrideWithValue(
-      const LoopFeatureSwitchValues(launch2Visible: true),
-    ),
-  ],
-);
+    );
 
-Widget _card(WalletLaunchUsd1 usd1, {bool hidden = false}) => MaterialApp(
+Widget _card(Map<String, Object?> wire, {bool hidden = false}) => MaterialApp(
   theme: LoopTheme.dark,
   home: Scaffold(
-    body: WalletLaunchChainCard(
-      launchChain: DioLoopV2WalletApi.decodeBalances(
-        s5BalancesBody()..['launchChain'] = _launchChainWire(),
-        walletId: s5WalletId,
-      ).launchChain!,
-      usd1: usd1,
-      hidden: hidden,
-    ),
+    body: WalletLaunchChainCard(launchChain: _slot(wire), hidden: hidden),
   ),
 );
 
@@ -139,81 +83,32 @@ void main() {
   loopWatchGround();
 
   group('A · Launch 链 USD1 (decision 0208)', () {
-    test('codec: the real balances block decodes; its usd1 is the IDO '
+    test('codec: the real staging block decodes; its usd1 is the IDO '
         "token's 0", () {
-      final slot = DioLoopV2WalletApi.decodeBalances(
-        s5BalancesBody()..['launchChain'] = _launchChainWire(),
-        walletId: s5WalletId,
-      ).launchChain!;
+      final slot = _slot(_launchChainWire());
       expect(slot.chainId, 'eip155:97');
       expect(slot.nativeBalance!.displayBalance, Decimal.parse('0.0498699991'));
       expect(slot.usd1!.balance, '0');
+      expect(walletLaunchUsd1Reason(slot), isNull);
     });
 
-    test('codec: the real positions carry the MEME v2 USD1 at one block', () {
-      final positions = _positions();
-      expect(positions.items, hasLength(3));
-      final read = positions.items
-          .where((p) => p.holding?.balancesRead ?? false)
-          .toList();
-      expect(read, hasLength(2));
-      for (final position in read) {
-        expect(
-          position.holding!.usd1Balance,
-          Decimal.parse('2892.006687595931906156'),
-        );
-        expect(position.holding!.blockNumber, BigInt.from(137710132));
-      }
-    });
-
-    test('resolver: a read holding wins; phases without a value give a '
-        'reason, never a zero', () {
-      final read = launch2WalletUsd1Of(
-        _ready(_positions()),
-        walletId: _stagingWalletId,
-      );
-      expect(read.balance, Decimal.parse('2892.006687595931906156'));
-      expect(read.reason, isNull);
-
-      // Another wallet's positions are not this wallet's balance.
-      final other = launch2WalletUsd1Of(
-        _ready(_positions()),
-        walletId: s5WalletId,
-      );
-      expect(other.balance, isNull);
-      expect(other.reason, walletLaunchUsd1NoReading);
-
+    test('reason: a pair has none; no pair on a read slot is 暂不可用, on a '
+        'failed slot 读取失败', () {
+      expect(walletLaunchUsd1Reason(_slot(_factoryUsd1Wire())), isNull);
       expect(
-        launch2WalletUsd1Of(
-          _ready(const Launch2Positions(items: <Launch2Position>[])),
-          walletId: _stagingWalletId,
-        ).reason,
-        walletLaunchUsd1NoReading,
+        walletLaunchUsd1Reason(_slot(_launchChainWire()..remove('usd1'))),
+        walletLaunchUsd1Unavailable,
       );
-      final cases = <LoopChainViewPhase, String>{
-        LoopChainViewPhase.loading: walletLaunchUsd1Loading,
-        LoopChainViewPhase.empty: walletLaunchUsd1NoReading,
-        LoopChainViewPhase.error: walletLaunchUsd1Failed,
-        LoopChainViewPhase.offline: walletLaunchUsd1Failed,
-        LoopChainViewPhase.permission: walletLaunchUsd1Failed,
-        LoopChainViewPhase.unavailable: walletLaunchUsd1Closed,
-      };
-      cases.forEach((phase, reason) {
-        final value = launch2WalletUsd1Of(
-          _phase(phase),
-          walletId: _stagingWalletId,
-        );
-        expect(value.balance, isNull, reason: '$phase');
-        expect(value.reason, reason, reason: '$phase');
-      });
+      final failed = _launchChainWire()
+        ..remove('usd1')
+        ..['availability'] = 'unavailable'
+        ..['reasonCode'] = 'LAUNCH_CHAIN_RPC_UNREACHABLE'
+        ..['nativeBalance'] = null;
+      expect(walletLaunchUsd1Reason(_slot(failed)), walletLaunchUsd1Failed);
     });
 
-    testWidgets('card: a reading prints the figure, two decimals', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        _card(WalletLaunchUsd1.read(Decimal.parse('2892.0066875959'))),
-      );
+    testWidgets('card: a pair prints its figure, two decimals', (tester) async {
+      await tester.pumpWidget(_card(_factoryUsd1Wire()));
       final row = _key('wallet-launch-chain-usd1-row');
       expect(
         find.descendant(of: row, matching: find.text('2,892.01')),
@@ -222,87 +117,30 @@ void main() {
       expect(_key('wallet-launch-chain-usd1-reason'), findsNothing);
     });
 
-    testWidgets('card: no reading prints 「—」 and the reason, never 0', (
+    testWidgets('card: no pair prints 「—」 and the reason, never 0', (
       tester,
     ) async {
-      for (final reason in <String>[
-        walletLaunchUsd1Loading,
-        walletLaunchUsd1Failed,
-        walletLaunchUsd1Closed,
-        walletLaunchUsd1NoReading,
-      ]) {
-        await tester.pumpWidget(_card(WalletLaunchUsd1.missing(reason)));
-        final row = _key('wallet-launch-chain-usd1-row');
-        expect(
-          find.descendant(
-            of: row,
-            matching: find.text(walletLaunchUsd1Missing),
-          ),
-          findsOneWidget,
-          reason: reason,
-        );
-        expect(
-          find.descendant(of: row, matching: find.text(reason)),
-          findsOneWidget,
-        );
-        expect(
-          find.descendant(of: row, matching: find.text('0')),
-          findsNothing,
-        );
-      }
-    });
-
-    testWidgets('card: 隐藏余额 masks a reading', (tester) async {
-      await tester.pumpWidget(
-        _card(WalletLaunchUsd1.read(Decimal.fromInt(2892)), hidden: true),
-      );
-      expect(
-        find.descendant(
-          of: _key('wallet-launch-chain-usd1-row'),
-          matching: find.text(walletMaskedFigure),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('2,892'), findsNothing);
-    });
-
-    testWidgets('wallet page (ready): the IDO 0 is gone, the MEME v2 USD1 '
-        'from me/positions is drawn', (tester) async {
-      await _pumpWallet(tester, () async => _positions(walletId: s5WalletId));
-      await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
-      final row = _key('wallet-launch-chain-usd1-row');
-      expect(
-        find.descendant(of: row, matching: find.text('2,892.01')),
-        findsOneWidget,
-      );
-      expect(find.descendant(of: row, matching: find.text('0')), findsNothing);
-    });
-
-    testWidgets('wallet page (error): 「—」 with 读取失败', (tester) async {
-      await _pumpWallet(
-        tester,
-        () async =>
-            throw const LoopChainException(LoopChainFailureKind.readFailed),
-      );
-      await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
+      await tester.pumpWidget(_card(_launchChainWire()..remove('usd1')));
       final row = _key('wallet-launch-chain-usd1-row');
       expect(
         find.descendant(of: row, matching: find.text(walletLaunchUsd1Missing)),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: row, matching: find.text(walletLaunchUsd1Failed)),
+        find.descendant(
+          of: row,
+          matching: find.text(walletLaunchUsd1Unavailable),
+        ),
         findsOneWidget,
       );
-    });
+      expect(find.descendant(of: row, matching: find.text('0')), findsNothing);
 
-    testWidgets('wallet page (offline): 「—」 with 读取失败', (tester) async {
-      await _pumpWallet(
-        tester,
-        () async =>
-            throw const LoopChainException(LoopChainFailureKind.offline),
-      );
-      await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
+      final failed = _launchChainWire()
+        ..remove('usd1')
+        ..['availability'] = 'unavailable'
+        ..['reasonCode'] = 'LAUNCH_CHAIN_RPC_UNREACHABLE'
+        ..['nativeBalance'] = null;
+      await tester.pumpWidget(_card(failed));
       expect(
         find.descendant(
           of: _key('wallet-launch-chain-usd1-row'),
@@ -312,17 +150,48 @@ void main() {
       );
     });
 
-    testWidgets('wallet page (empty): no graduated holding, 「—」 with the '
-        'reason', (tester) async {
-      await _pumpWallet(
-        tester,
-        () async => const Launch2Positions(items: <Launch2Position>[]),
+    testWidgets('card: 隐藏余额 masks a figure; 「—」 stays 「—」', (tester) async {
+      await tester.pumpWidget(_card(_factoryUsd1Wire(), hidden: true));
+      final row = _key('wallet-launch-chain-usd1-row');
+      expect(
+        find.descendant(of: row, matching: find.text(walletMaskedFigure)),
+        findsOneWidget,
       );
+      expect(find.text('2,892.01'), findsNothing);
+
+      await tester.pumpWidget(
+        _card(_launchChainWire()..remove('usd1'), hidden: true),
+      );
+      expect(
+        find.descendant(
+          of: _key('wallet-launch-chain-usd1-row'),
+          matching: find.text(walletLaunchUsd1Missing),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('wallet page: the USD1 row reads launchChain.usd1', (
+      tester,
+    ) async {
+      await _pumpWallet(tester, _factoryUsd1Wire());
       await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
       expect(
         find.descendant(
           of: _key('wallet-launch-chain-usd1-row'),
-          matching: find.text(walletLaunchUsd1NoReading),
+          matching: find.text('2,892.01'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('wallet page: no pair, 「—」 暂不可用', (tester) async {
+      await _pumpWallet(tester, _launchChainWire()..remove('usd1'));
+      await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
+      expect(
+        find.descendant(
+          of: _key('wallet-launch-chain-usd1-row'),
+          matching: find.text(walletLaunchUsd1Unavailable),
         ),
         findsOneWidget,
       );

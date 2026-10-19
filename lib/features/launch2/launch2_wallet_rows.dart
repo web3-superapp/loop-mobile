@@ -9,70 +9,9 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
-import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
-
-/// Decision 0208 (S237b-A): the wallet's MEME v2 USD1 — the figure the
-/// Launch chain block draws — out of the `me/positions` read. Every position
-/// with balances read carries the same `usd1Balance` (the Hooks Factory's
-/// `usd1()` at its block); the one at the highest block wins. No reading is a
-/// reason, never a zero.
-WalletLaunchUsd1 launch2WalletUsd1Of(
-  LoopChainResourceState<Launch2Positions> state, {
-  required String walletId,
-}) {
-  final value = state.value;
-  if (value == null) {
-    return switch (state.phase) {
-      LoopChainViewPhase.loading => const WalletLaunchUsd1.missing(
-        walletLaunchUsd1Loading,
-      ),
-      LoopChainViewPhase.unavailable => const WalletLaunchUsd1.missing(
-        walletLaunchUsd1Closed,
-      ),
-      LoopChainViewPhase.ready || LoopChainViewPhase.empty =>
-        const WalletLaunchUsd1.missing(walletLaunchUsd1NoReading),
-      LoopChainViewPhase.error ||
-      LoopChainViewPhase.offline ||
-      LoopChainViewPhase.permission => const WalletLaunchUsd1.missing(
-        walletLaunchUsd1Failed,
-      ),
-    };
-  }
-  Decimal? balance;
-  BigInt? block;
-  for (final position in value.items) {
-    if (position.walletId != walletId) continue;
-    final holding = position.holding;
-    final usd1 = holding?.usd1Balance;
-    final at = holding?.blockNumber;
-    if (holding == null || !holding.balancesRead || usd1 == null) continue;
-    if (block == null || (at != null && at > block)) {
-      balance = usd1;
-      block = at ?? block;
-    }
-  }
-  return balance == null
-      ? const WalletLaunchUsd1.missing(walletLaunchUsd1NoReading)
-      : WalletLaunchUsd1.read(balance);
-}
-
-/// [launch2WalletUsd1Of] over the live positions read; a closed or blocked
-/// MEME v2 surface reads nothing.
-WalletLaunchUsd1 launch2WalletUsd1(WidgetRef ref, {required String walletId}) {
-  if (!launch2SurfaceVisible(ref) || launch2ReadsBlocked(ref)) {
-    return const WalletLaunchUsd1.missing(walletLaunchUsd1Closed);
-  }
-  final state = ref.watch(launch2PositionsControllerProvider);
-  launch2LoadOnce(
-    ref,
-    state,
-    () => ref.read(launch2PositionsControllerProvider.notifier).load(),
-  );
-  return launch2WalletUsd1Of(state, walletId: walletId);
-}
 
 /// 钱包 · 资产 · the MEME v2 rows (decision 0139): one row for an instance's
 /// curve holding and one for its NFT, read from `me/positions`. Nothing else

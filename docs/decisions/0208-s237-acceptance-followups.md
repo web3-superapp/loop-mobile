@@ -14,7 +14,7 @@ MEME 买入面板读到的余额正常）；0204 的禁词守卫漏了三处「�
 
 ## Decision
 
-### A. 钱包 Launch 链 USD1 改读 MEME v2 的 USD1（根因：读的是另一个代币）
+### A. 钱包 Launch 链 USD1 显示 0（根因：后端读的是另一个代币；前端不绕，只改「—」与原因）
 
 **定位（2026-10-19 21:35，staging，晚风账号，钱包 4b1f36d8…）**
 
@@ -30,17 +30,16 @@ MEME 买入面板读到的余额正常）；0204 的禁词守卫漏了三处「�
 **根因**：0203 §E（S236）把 `launchChain.usd1` 当成「Launch 链上的 USD1」画进钱包卡片，但那对数字是 IDO Launch 合约的 `balanceOf / allowance`
 （loop-api 0077，用于 IDO 授权），在测试网槽上和用户实际持有、MEME v2 实际花的 USD1 不是同一个代币。显示 0 不是解码错误，是读错了来源。
 
-**修法（App）**
+**主代理裁决（2026-10-19，追加提交）：前端不绕。** 数据源错位由后端修：loop-api 的 Launch 槽 USD1 改读 Hooks Factory `usd1()`（另派 loop-api 单），
+staging 环境变量随后一并切换。App 继续以 `launchChain.usd1` 为唯一来源（同 0203 §E）。初版提交 4691af06 曾改从 `me/positions` 的 `usd1Balance` 取数，
+但只有持有已毕业代币的账号才有这个读数，太脆，已在追加提交中撤掉（解析函数、`launch2_positions_wanfeng.json` fixture 与相关测试一并删除）。
 
-- 新视图模型 `WalletLaunchUsd1`（`wallet_read_models.dart`）：要么是读到的数，要么是一句原因，二者恰有其一。
-- 来源改为 `me/positions`：`launch2WalletUsd1Of(state, walletId:)`（`launch2_wallet_rows.dart`）取本钱包、`balanceStatus = available` 的持仓里
-  `usd1Balance`，多条时取块高最大的一条。钱包页已在读 `me/positions`（0139 的 MEME v2 行），不新增请求。
-- 卡片的 USD1 行**一直画**：有数显示数（两位小数，隐藏余额时 `****`）；没数显示「—」并在下方写原因，绝不显示 0。原因四种：
-  读取中 / 读取失败（error、offline、permission）/ MEME 暂未开放（开关关或能力不可用）/ 持有已毕业代币后显示（读到了但没有已毕业持仓——服务端只对已毕业持仓读 USD1）。
-- `launchChain.usd1` 不再进钱包卡片，只保留它原本的用途（旧 IDO 授权闸门，`launch_approval.dart`）。
+**修法（App，只保留显示上的改进）**
 
-**留给后端 / 主代理**：没有任何已毕业持仓的账号，钱包卡片只能显示「—」。要让所有账号都有数，需要 loop-api 在钱包级发布 MEME v2 USD1
-（例如让 `launchChain.usd1` 读 Factory `usd1()`，或新增字段），或把 staging 的 `LAUNCH_USD1_ADDRESS` 指到同一个代币——后者会影响旧 IDO，需主代理裁决。
+- 卡片的 USD1 行**一直画**：有 `usd1` 显示数（18 位精度换算，两位小数，隐藏余额时 `****`）；没有 `usd1` 时显示「—」并在下方写原因，绝不显示 0。
+- 原因由 `walletLaunchUsd1Reason(launchChain)` 给出：槽读失败（`availability: unavailable`）→「读取失败」；槽读成功但服务端没给 USD1 对 →「暂不可用」。
+  「读取中」不在卡片上出现：卡片只在余额接口答复之后才存在，之前由页面自己的加载态承担。
+- 后端修好之前，staging 上晚风账号这一行仍会如实显示 0（服务端读到的 IDO 代币余额就是 0）；这是数据问题，不由 App 掩盖。
 
 ### B. 漏网文案与守卫
 
@@ -64,18 +63,18 @@ MEME 买入面板读到的余额正常）；0204 的禁词守卫漏了三处「�
 
 ## Consequences
 
-- 晚风账号钱包「Launch 链」USD1 显示约 2,892.01；没有已毕业持仓的账号显示「—」+「持有已毕业代币后显示」，不再出现假 0。
-- 旧 IDO 恢复时，其授权闸门仍读 `launchChain.usd1`，行为不变。
+- 钱包「Launch 链」USD1 仍读 `launchChain.usd1`；后端改读 Factory `usd1()` 并切 staging env 后，晚风账号显示约 2,892.01，App 无需再改。
+- 服务端没给 USD1 对时显示「—」+ 原因，不再是「不画这一行」。
+- 旧 IDO 恢复时，其授权闸门读的也是 `launchChain.usd1`；后端改代币来源时需一并考虑 IDO 授权目标（由 loop-api 单处理）。
 - S227W 一类外盘买入：签名单与输入页都写「基础税 2%（从付出的 USD1 扣） 0.1 USD1」。
 - 「名单核验中」「Launch 合约正在完成链上校验」；开关关时旧 IDO 的链说明整块不出现。
 
 ## Tests
 
-- `test/fixtures/s237b/`（`_derived` 写明）：`wallet_balances_launch_chain_ido_usd1.json` 是 staging 晚风账号 balances 响应的 `launchChain` 原样；
-  `launch2_positions_wanfeng.json` 是同一时刻 `me/positions` 原样（仅 `logoUrl` 置空）。
-- `test/s237b_acceptance_followups_test.dart`：两份真实响应解码（`launchChain.usd1 = 0`、持仓 `usd1Balance = 2892.0066…`）；解析函数在 ready / 他人钱包 /
-  空 / loading / empty / error / offline / permission / unavailable 下的数或原因；卡片有数、四种原因「—」、隐藏；钱包页级 ready（2,892.01、无 0）、
-  error、offline、empty；B 的两句文案与 `LaunchChainBlock` 门控；C 用 S146 外盘买意图（`taxUsd1 = 0`）+ S168b 动态买报价改成 S209（0.1 USD1）拼出 prepare，
+- `test/fixtures/s237b/wallet_balances_launch_chain_ido_usd1.json`（`_derived` 写明）：staging 晚风账号 balances 响应的 `launchChain` 原样（`usd1.balance = "0"`）。
+- `test/s237b_acceptance_followups_test.dart`：真实块解码（`usd1 = 0`、无原因）；`walletLaunchUsd1Reason` 三种情况；卡片：Factory 链上余额派生块显示 2,892.01，
+  无 `usd1` 显示「—」+「暂不可用」、槽失败显示「读取失败」、都不出现 0，隐藏余额遮数、「—」不变；钱包页级：有数、无 `usd1`；
+  B 的两句文案与 `LaunchChainBlock` 门控；C 用 S146 外盘买意图（`taxUsd1 = 0`）+ S168b 动态买报价改成 S209（0.1 USD1）拼出 prepare，
   断言签名单标签与数值和输入页一致，普通外盘买仍是「外盘税 2%」MEME。
-- 改动的旧测试：`s236_s234_followups_test.dart`（钱包页不再画 `launchChain.usd1` 的 4,850，无 `usd1` 时行仍在且为「—」；卡片构造加 `usd1`）；
-  `s9_dual_chain_pages_test.dart`（USD1 行也带徽章，徽章断言限定到 tBNB 行）；`s237_source_guard_test.dart`（禁词与链 ID 规则，加两条自测）。
+- 改动的旧测试：`s236_s234_followups_test.dart`（无 `usd1` 时行仍在，「—」+「暂不可用」，不出现 0）；
+  `s9_dual_chain_pages_test.dart`（USD1 行一直画、也带徽章，徽章断言限定到 tBNB 行）；`s237_source_guard_test.dart`（禁词与链 ID 规则，加两条自测）。

@@ -1,5 +1,5 @@
 {
-  "_derived": "Verbatim `launchChain` block of the staging GET /v2/wallets/4b1f36d8-…/balances for the demo account 晚风 (0xbcc0…5ef8), read 2026-10-19 21:35 +08 during S237b. `usd1.balance` is \"0\": loop-api reads balanceOf on LAUNCH_USD1_ADDRESS (the hidden IDO contract's USD1, 0x17d5…ce2b), while the wallet's ~2,892 USD1 sits on the MEME v2 / faucet USD1 (Hooks Factory usd1(), 0x3a12…0195; eth_call balanceOf at the same time = 2892.0066875959). Merged into s5BalancesBody() by test/s237b_acceptance_followups_test.dart. Client decision 0208 (S237b-A).",
+  "_derived": "Verbatim `launchChain` block of the staging GET /v2/wallets/4b1f36d8-…/balances for the demo account 晚风 (0xbcc0…5ef8), read 2026-10-19 21:35 +08 during S237b. `usd1.balance` is \"0\": loop-api reads balanceOf on LAUNCH_USD1_ADDRESS (the hidden IDO contract's MockUSD1, 0x17d5…ce2b), while the wallet's ~2,892 USD1 sits on the MEME v2 / faucet USD1 (Hooks Factory usd1(), 0x3a12…0195; eth_call balanceOf at the same time = 2892.0066875959). test/s237b_acceptance_followups_test.dart merges it into s5BalancesBody(), and derives two variants from it: `usd1` set to that on-chain Factory balance (what the block says once loop-api reads the Factory token), and `usd1` removed. Client decision 0208 (S237b-A).",
   "launchChain": {
     "chainId": "eip155:97",
     "availability": "available",
