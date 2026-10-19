@@ -96,7 +96,7 @@ abstract final class LoopV2IntentCodec {
         pattern: LoopV2ChainCodec.addressPattern,
         maxLength: 42,
       ),
-      symbol: LoopV2ChainCodec.requireText(map, 'symbol', maxLength: 32),
+      symbol: LoopV2ChainCodec.requireSymbol(map, 'symbol'),
       decimals: LoopV2ChainCodec.requireInt(map, 'decimals', maximum: 36),
     );
   }
@@ -1037,7 +1037,7 @@ abstract final class LoopV2IntentCodec {
     }
     return LoopApprovalRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
-      symbol: LoopV2ChainCodec.requireText(map, 'symbol', maxLength: 32),
+      symbol: LoopV2ChainCodec.requireSymbol(map, 'symbol'),
       decimals: LoopV2ChainCodec.requireInt(map, 'decimals', maximum: 36),
       spender: LoopApprovalSpender(
         address: _address(spender, 'address'),

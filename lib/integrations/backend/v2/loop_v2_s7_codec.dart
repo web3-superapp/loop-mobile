@@ -133,6 +133,21 @@ abstract final class LoopV2S7Codec {
     return requireText(source, key, maxLength: maxLength);
   }
 
+  /// A token symbol (decision 0206): the ticker rule within [maxLength].
+  static String? optionalSymbol(
+    Map<String, Object?> source,
+    String key, {
+    int maxLength = 32,
+  }) {
+    final value = source[key];
+    if (value == null) return null;
+    if (value is! String ||
+        !loopTokenTickerIsWellFormed(value, maxUnits: maxLength)) {
+      invalid();
+    }
+    return value;
+  }
+
   static String requirePattern(
     Map<String, Object?> source,
     String key,

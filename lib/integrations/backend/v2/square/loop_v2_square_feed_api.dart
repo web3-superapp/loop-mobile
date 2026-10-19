@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
@@ -176,7 +177,14 @@ abstract final class LoopV2SquareFeedCodec {
     final token = _map(raw);
     if (token == null) return null;
     final kind = SquareFeedTokenKind.tryParse(token['kind']);
-    final symbol = _displayText(token['symbol'], 32);
+    final rawSymbol = token['symbol'];
+    final trimmedSymbol = rawSymbol is String ? rawSymbol.trim() : null;
+    // Decision 0206: a symbol takes the ticker rule (ZWJ emoji included).
+    final symbol =
+        trimmedSymbol != null &&
+            loopTokenTickerIsWellFormed(trimmedSymbol, maxUnits: 32)
+        ? trimmedSymbol
+        : null;
     if (kind == null || symbol == null) return null;
     final memeTokenId = _uuid(token['memeTokenId']);
     final instanceId = _uuid(token['instanceId']);

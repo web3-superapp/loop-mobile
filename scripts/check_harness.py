@@ -8040,7 +8040,7 @@ MARKET_ASSET_IDENTITY_CODEC_FRAGMENTS = (
     "MarketAssetIdentityUnavailable(",
 )
 CHAT_TOKEN_CARD_UNREGISTERED_CODEC_FRAGMENTS = (
-    "optionalText(map, 'symbol', maxLength: 32)",
+    "optionalSymbol(map, 'symbol')",  # decision 0206: ticker rule, still optional
     "optionalInt(map, 'decimals', maximum: 36)",
 )
 CHAT_TOKEN_CARD_COMPOSER_SCREENS = (

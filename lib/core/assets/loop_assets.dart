@@ -440,18 +440,43 @@ abstract final class LoopIdentitySlots {
 }
 
 final RegExp _monogramLead = RegExp(r'^[\p{L}\p{N}]', unicode: true);
-final RegExp _monogramVisible = RegExp(r'^[^\p{Z}\p{C}\p{P}]', unicode: true);
+final RegExp _monogramVisible = RegExp(
+  r'^[^\p{Z}\p{C}\p{P}\p{M}]',
+  unicode: true,
+);
+final RegExp _monogramMark = RegExp(r'^\p{M}$', unicode: true);
+
+/// A cluster with at most two combining marks after its base, so a stack
+/// of accents cannot grow the monogram past its tile.
+String _monogramClip(String cluster) {
+  final kept = StringBuffer();
+  var marks = 0;
+  for (final rune in cluster.runes) {
+    final char = String.fromCharCode(rune);
+    if (kept.isNotEmpty && _monogramMark.hasMatch(char) && ++marks > 2) {
+      continue;
+    }
+    kept.write(char);
+  }
+  return kept.toString();
+}
 
 /// Monogram fallback: up to two upper-case characters from [source].
 ///
 /// Decisions 0199 / 0206: any script's letters and digits count (Chinese,
 /// kana, hangul, accented Latin), taken as whole grapheme clusters so a
-/// combining accent stays on its letter. A source with no letter or digit
-/// (`🐸`) shows its first visible cluster; only a blank one gets `·`.
+/// combining accent stays on its letter (two marks at most). A source with
+/// no letter or digit shows its first visible cluster (an emoji); a
+/// cluster that starts with a mark never leads, and only a blank source
+/// gets `·`.
 String loopMonogram(String source) {
   final clusters = source.trim().characters;
-  final letters = clusters.where(_monogramLead.hasMatch).take(2).join();
+  final letters = clusters
+      .where(_monogramLead.hasMatch)
+      .take(2)
+      .map(_monogramClip)
+      .join();
   if (letters.isNotEmpty) return letters.toUpperCase();
   final first = clusters.where(_monogramVisible.hasMatch).firstOrNull;
-  return first ?? '·';
+  return first == null ? '·' : _monogramClip(first);
 }

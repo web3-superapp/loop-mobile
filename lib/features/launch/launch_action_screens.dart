@@ -678,8 +678,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
 
   LaunchProjectDraft _draft() => LaunchProjectDraft(
     name: _name.text.trim(),
-    // The server requires upper case; normalising here avoids a round trip
-    // rather than widening what it accepts.
+    // Decision 0206: sent as typed (trimmed), never upper-cased.
     ticker: _ticker.text.trim(),
     narrative: _optional(_narrative),
     // All four links round-trip: a link the server holds must survive an
@@ -1168,7 +1167,7 @@ class _ApplyForm extends StatelessWidget {
             key: const ValueKey<String>('launch-apply-ticker'),
             controller: ticker,
             enabled: enabled,
-            textCapitalization: TextCapitalization.characters,
+            textCapitalization: TextCapitalization.none,
             decoration: InputDecoration(
               labelText: '代码（1–20 个字，可用中文、字母、数字、emoji）',
               errorText: _errorFor(LaunchDraftField.ticker),

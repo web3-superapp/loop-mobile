@@ -275,9 +275,7 @@ abstract final class LoopV2PublicProfileCodec {
   }
 
   static String _symbol(Map<String, Object?> map) {
-    final symbol = LoopV2ProjectionCodec.requireText(map, 'symbol');
-    if (symbol.length > 32) LoopV2ProjectionCodec.invalid();
-    return symbol;
+    return LoopV2ProjectionCodec.requireSymbol(map, 'symbol', maxLength: 32);
   }
 
   static Decimal _decimal(Map<String, Object?> map, String key) {

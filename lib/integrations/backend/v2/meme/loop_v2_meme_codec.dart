@@ -326,10 +326,9 @@ abstract final class LoopV2MemeCodec {
       memeTokenId: uuid(map, 'memeTokenId'),
       tokenAddress: optionalAddress(map, 'tokenAddress'),
       name: text(map, 'name', minLength: 1, maxLength: 64),
-      symbol: text(
+      symbol: LoopV2ChainCodec.requireSymbol(
         map,
         'symbol',
-        minLength: 1,
         maxLength: loopTokenTextMaxUnits,
       ),
       imageUrl: mediaId == null ? null : mediaUrl(mediaId),

@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -247,6 +248,30 @@ abstract final class LoopV2ChainCodec {
       ? null
       : requireText(source, key, maxLength: maxLength);
 
+  /// A token or asset symbol (decision 0206): the ticker rule's characters
+  /// — so a Chinese, emoji, ZWJ-sequence or tag-flag symbol decodes — within
+  /// the field's own published bound. Other text keeps [displayTextPattern].
+  static String requireSymbol(
+    Map<String, Object?> source,
+    String key, {
+    int maxLength = 32,
+  }) {
+    final value = source[key];
+    if (value is! String ||
+        !loopTokenTickerIsWellFormed(value, maxUnits: maxLength)) {
+      invalid();
+    }
+    return value;
+  }
+
+  static String? optionalSymbol(
+    Map<String, Object?> source,
+    String key, {
+    int maxLength = 32,
+  }) => source[key] == null
+      ? null
+      : requireSymbol(source, key, maxLength: maxLength);
+
   static String requireText(
     Map<String, Object?> source,
     String key, {
@@ -276,20 +301,37 @@ abstract final class LoopV2ChainCodec {
     String key, {
     required int maxLength,
     int minLength = 0,
+    bool keepEmojiJoiners = false,
   }) {
     final value = source[key];
     if (value is! String) invalid();
     final length = value.runes.length;
     if (length < minLength || length > maxLength) invalid();
-    return sanitizeProviderText(value);
+    return sanitizeProviderText(value, keepEmojiJoiners: keepEmojiJoiners);
   }
 
   /// Strips the control, format, surrogate and separator code points that a
   /// line of display text must never carry, then trims the edges the removal
   /// may have left behind. The result may be empty: a Provider is allowed to
   /// publish a nameless pool, and the page says so rather than dropping it.
-  static String sanitizeProviderText(String value) =>
-      value.replaceAll(_unsafeDisplayCodePoints, '').trim();
+  ///
+  /// With [keepEmojiJoiners] (decision 0206: a token symbol) the zero-width
+  /// joiner and the emoji tag characters stay, so a family emoji and the
+  /// subdivision flags keep their shape; every other hazard is still removed.
+  static String sanitizeProviderText(
+    String value, {
+    bool keepEmojiJoiners = false,
+  }) => value
+      .replaceAll(
+        keepEmojiJoiners ? _unsafeSymbolCodePoints : _unsafeDisplayCodePoints,
+        '',
+      )
+      .trim();
+
+  static final RegExp _unsafeSymbolCodePoints = RegExp(
+    r'(?![\u{200D}\u{E0020}-\u{E007F}])[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]',
+    unicode: true,
+  );
 
   static final RegExp _unsafeDisplayCodePoints = RegExp(
     r'[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]',
@@ -479,7 +521,7 @@ abstract final class LoopV2ChainCodec {
       'status',
     });
     return LoopAssetSummary(
-      symbol: requireText(map, 'symbol', maxLength: 32),
+      symbol: requireSymbol(map, 'symbol'),
       name: requireText(map, 'name'),
       decimals: requireInt(map, 'decimals', maximum: 36),
       status: requireAssetStatus(map, 'status'),
@@ -693,7 +735,7 @@ abstract final class LoopV2ChainCodec {
       ),
       // A provider that reported no ticker, no name or no precision leaves
       // them null; the surface shows the address and formats no quantity.
-      symbol: optionalText(map, 'symbol', maxLength: 32),
+      symbol: optionalSymbol(map, 'symbol'),
       name: optionalText(map, 'name'),
       decimals: optionalInt(map, 'decimals', maximum: 36),
       status: requireAssetStatus(map, 'status'),

@@ -174,7 +174,7 @@ class Launch2DeploymentScreen extends ConsumerWidget {
         if (!failure.retryable && launch2JobFailureNeedsEdit(failure.code))
           _action(
             'launch2-deployment-edit',
-            '修改铸造开始时间',
+            launch2JobFailureEditLabel(failure.code),
             () => onEdit?.call(project),
           )
         else if (!failure.retryable)

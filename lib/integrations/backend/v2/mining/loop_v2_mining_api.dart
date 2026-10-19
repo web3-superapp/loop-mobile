@@ -287,7 +287,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       ),
       // Required, and null only when the registry has no row: the key's
       // absence would leave the page naming assets by address again.
-      symbol: LoopV2S7Codec.optionalText(map, 'symbol', maxLength: 32),
+      symbol: LoopV2S7Codec.optionalSymbol(map, 'symbol'),
       holding: _decimal(map, 'holding'),
       referencePriceUsd: _decimal(map, 'referencePriceUsd'),
       referencePriceQuality: quality,
@@ -319,7 +319,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         LoopV2S7Codec.holdingAssetIdPattern,
         maxLength: 80,
       ),
-      symbol: LoopV2S7Codec.optionalText(map, 'symbol', maxLength: 32),
+      symbol: LoopV2S7Codec.optionalSymbol(map, 'symbol'),
       reasonCode: LoopV2S7Codec.requireReasonCode(map, 'reasonCode'),
     );
   }

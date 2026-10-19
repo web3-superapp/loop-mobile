@@ -1,3 +1,4 @@
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -75,6 +76,21 @@ abstract final class LoopV2ProjectionCodec {
         value.isEmpty ||
         value.length > maximumTextLength ||
         !aliasPattern.hasMatch(value)) {
+      invalid();
+    }
+    return value;
+  }
+
+  /// A token symbol (decision 0206): the ticker rule's characters within
+  /// the field's bound; other text keeps [aliasPattern].
+  static String requireSymbol(
+    Map<String, Object?> source,
+    String key, {
+    int maxLength = maximumTextLength,
+  }) {
+    final value = source[key];
+    if (value is! String ||
+        !loopTokenTickerIsWellFormed(value, maxUnits: maxLength)) {
       invalid();
     }
     return value;
@@ -291,7 +307,7 @@ abstract final class LoopV2ProjectionCodec {
         'assetId',
         pattern: boundAssetKeyPattern,
       ),
-      symbol: requireText(map, 'symbol'),
+      symbol: requireSymbol(map, 'symbol'),
       name: optionalText(map, 'name'),
       logoUrl: logoUrl as String?,
       hasRegisteredPool: requireBool(map, 'hasRegisteredPool'),
@@ -385,7 +401,7 @@ abstract final class LoopV2ProjectionCodec {
         'assetId',
         pattern: boundAssetKeyPattern,
       ),
-      symbol: requireText(map, 'symbol'),
+      symbol: requireSymbol(map, 'symbol'),
       logoUrl: logoUrl as String?,
     );
   }

@@ -94,6 +94,10 @@ String launch2JobFailureText(String code) => switch (code) {
   'HOOKS_OWNER_NONCE_CONSUMED' => '钱包 nonce 已变化，请重新签名。',
   'HOOKS_LAUNCH_ALREADY_DEPLOYED' => '该版本已在链上部署，请联系平台。',
   'HOOKS_ACTIVATION_WINDOW_CLOSED' => '距铸造开始太近无法激活，修改铸造开始时间后重新提交。',
+  // Decision 0206 (backend 0164, contracts 0016 `InvalidName` /
+  // `InvalidTicker`): the name or ticker broke the 1–20 rule.
+  'HOOKS_LAUNCH_NAME_INVALID' ||
+  'HOOKS_LAUNCH_TICKER_INVALID' => '名称 / 代码不合规，请修改后重新提交。',
   'HOOKS_VERIFICATION_MISMATCH' => '部署核验不一致，项目未激活，请联系平台。',
   'HOOKS_EXECUTOR_FUNDS_INSUFFICIENT' ||
   'HOOKS_BROADCAST_REJECTED' ||
@@ -110,9 +114,19 @@ bool launch2JobFailureResignable(String code) => const <String>{
   'HOOKS_OWNER_NONCE_CONSUMED',
 }.contains(code);
 
-/// The failure the owner answers by editing the sale time.
-bool launch2JobFailureNeedsEdit(String code) =>
-    code == 'HOOKS_ACTIVATION_WINDOW_CLOSED';
+/// The failures the owner answers by editing the project: the sale time,
+/// or (decision 0206) a name or ticker the rule refused.
+bool launch2JobFailureNeedsEdit(String code) => const <String>{
+  'HOOKS_ACTIVATION_WINDOW_CLOSED',
+  'HOOKS_LAUNCH_NAME_INVALID',
+  'HOOKS_LAUNCH_TICKER_INVALID',
+}.contains(code);
+
+/// The edit button for a [launch2JobFailureNeedsEdit] failure.
+String launch2JobFailureEditLabel(String code) => switch (code) {
+  'HOOKS_LAUNCH_NAME_INVALID' || 'HOOKS_LAUNCH_TICKER_INVALID' => '修改名称或代码',
+  _ => '修改铸造开始时间',
+};
 
 /// §9.1: the job's own status, in the owner's words.
 String launch2JobStatusText(Launch2DeploymentJob job) => switch (job.status) {

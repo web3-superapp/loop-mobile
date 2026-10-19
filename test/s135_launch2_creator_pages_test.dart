@@ -2562,5 +2562,26 @@ void main() {
         '距铸造开始太近无法激活，修改铸造开始时间后重新提交。',
       );
     });
+
+    test('decision 0206: a refused name or ticker asks for an edit', () {
+      for (final code in <String>[
+        'HOOKS_LAUNCH_NAME_INVALID',
+        'HOOKS_LAUNCH_TICKER_INVALID',
+      ]) {
+        expect(launch2JobFailureText(code), '名称 / 代码不合规，请修改后重新提交。');
+        expect(launch2JobFailureNeedsEdit(code), isTrue);
+        expect(launch2JobFailureResignable(code), isFalse);
+        expect(launch2JobFailureEditLabel(code), '修改名称或代码');
+      }
+      expect(
+        launch2JobFailureNeedsEdit('HOOKS_ACTIVATION_WINDOW_CLOSED'),
+        isTrue,
+      );
+      expect(
+        launch2JobFailureEditLabel('HOOKS_ACTIVATION_WINDOW_CLOSED'),
+        '修改铸造开始时间',
+      );
+      expect(launch2JobFailureNeedsEdit('HOOKS_SIGNATURE_EXPIRED'), isFalse);
+    });
   });
 }

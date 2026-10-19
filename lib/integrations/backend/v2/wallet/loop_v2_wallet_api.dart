@@ -504,7 +504,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         if (direction == null) LoopV2ChainCodec.invalid();
         final entry = LoopWalletActivityEntry(
           assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
-          symbol: LoopV2ChainCodec.requireText(map, 'symbol', maxLength: 32),
+          symbol: LoopV2ChainCodec.requireSymbol(map, 'symbol'),
           decimals: LoopV2ChainCodec.requireInt(map, 'decimals', maximum: 36),
           direction: direction,
           counterpartyAddress: LoopV2ChainCodec.requireString(
@@ -760,7 +760,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
     return LoopAssetBalanceRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
       logoUrl: LoopV2ChainCodec.logoUrl(map['logo']),
-      symbol: LoopV2ChainCodec.requireText(map, 'symbol', maxLength: 32),
+      symbol: LoopV2ChainCodec.requireSymbol(map, 'symbol'),
       name: LoopV2ChainCodec.requireText(map, 'name'),
       decimals: LoopV2ChainCodec.requireInt(map, 'decimals', maximum: 36),
       address: LoopV2ChainCodec.optionalString(
@@ -1005,7 +1005,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       nativeBalance: LoopLaunchChainNativeBalance(
         assetId: assetId,
         logoUrl: logoUrl,
-        symbol: LoopV2ChainCodec.requireText(balance, 'symbol', maxLength: 32),
+        symbol: LoopV2ChainCodec.requireSymbol(balance, 'symbol'),
         decimals: LoopV2ChainCodec.requireInt(balance, 'decimals', maximum: 36),
         rawValue: LoopV2ChainCodec.requireRawAmount(balance, 'rawValue'),
         displayBalance: LoopV2ChainCodec.requireDecimal(

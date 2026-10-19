@@ -14,7 +14,7 @@ void main() {
       'Loop Doge',
       '狗狗 Doge 2026',
       '🐸 Pepe 青蛙',
-      '👨‍👩‍👧 家族',
+      '👨\u{200D}👩\u{200D}👧 家族',
       'ミーム코인',
       'Ünïcödé',
     ]) {
@@ -52,11 +52,11 @@ void main() {
       'doge',
       '2DOGE',
       '牛虾🔶',
-      '👨‍👩‍👧',
-      '🏳️‍🌈',
+      '👨\u{200D}👩\u{200D}👧',
+      '🏳\u{FE0F}\u{200D}🌈',
       '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
       '쌀밥',
-      '中　文',
+      '中\u{3000}文',
     ]) {
       expect(loopTokenTickerError(ticker), isNull, reason: ticker);
       expect(launch2FieldError(Launch2Field.ticker, ticker), isNull);
@@ -71,12 +71,12 @@ void main() {
     // still carries an edge space is not one the rule produces.
     expect(loopTokenTickerIsWellFormed(' DOGE'), isFalse);
     expect(loopTokenTickerIsWellFormed('DOGE '), isFalse);
-    expect(loopTokenTickerIsWellFormed('　狗'), isFalse);
+    expect(loopTokenTickerIsWellFormed('\u{3000}狗'), isFalse);
     for (final ticker in <String>[
-      'a b',
-      'a b',
-      '‍狗',
-      '狗‍',
+      'a\u{00A0}b',
+      'a\u{2002}b',
+      '\u{200D}狗',
+      '狗\u{200D}',
       'aㅤb',
       'a⠀b',
       'a${String.fromCharCode(0xd800)}b',
@@ -139,11 +139,18 @@ void main() {
     expect(loopMonogram('狗狗币'), '狗狗');
     expect(loopMonogram('ミーム'), 'ミー');
     expect(loopMonogram('élan'), 'ÉL');
-    expect(loopMonogram('élan'), 'ÉL');
+    expect(loopMonogram('e\u{0301}lan'), 'E\u{0301}L');
     expect(loopMonogram('フリーダム'), 'フリ');
     expect(loopMonogram('쌀밥'), '쌀밥');
     expect(loopMonogram(r'$1'), '1');
     expect(loopMonogram('🐸'), '🐸');
     expect(loopMonogram('  '), '·');
+    // A cluster keeps at most two marks; a bare mark never leads.
+    expect(
+      loopMonogram('e\u{0301}\u{0302}\u{0303}\u{0304}x'),
+      'E\u{0301}\u{0302}X',
+    );
+    expect(loopMonogram('\u{0301}\u{0302}'), '·');
+    expect(loopMonogram('\u{0301} 🐸'), '🐸');
   });
 }

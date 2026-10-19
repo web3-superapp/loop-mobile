@@ -93,11 +93,7 @@ abstract final class LoopV2MemeBestTradesCodec {
           !LoopV2Contract.uuidV4Pattern.hasMatch(memeTokenId)) {
         return null;
       }
-      final symbol = LoopV2ChainCodec.requireText(
-        token,
-        'symbol',
-        maxLength: 32,
-      );
+      final symbol = LoopV2ChainCodec.requireSymbol(token, 'symbol');
       final realized = LoopV2ChainCodec.requireDecimal(row, 'realizedUsd1');
       if (realized.sign <= 0) return null;
       return MemeBestTrade(

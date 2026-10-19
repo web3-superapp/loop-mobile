@@ -862,6 +862,37 @@ void main() {
       await expectLater(list(_project(kind: 'meme')), throwsA(anything));
     });
 
+    // S243 · decision 0206: the catalogue ticker takes the four.meme rule.
+    test('a Chinese ticker lists; one off the rule is invalid', () async {
+      Future<LaunchProjectPage> list(String ticker) => DioLoopV2LaunchApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: <String, Object?>{
+              'items': <Object?>[_project()..['ticker'] = ticker],
+              'nextCursor': null,
+              'contractVersion': '2.0',
+            },
+          ),
+        ),
+      ).listProjects(accessToken: _token, clientVersion: _clientVersion);
+      expect((await list('狗狗币')).items.single.ticker, '狗狗币');
+      expect((await list('mcat')).items.single.ticker, 'mcat');
+      for (final ticker in <String>['', 'DO\u{0007}GE', '中' * 21, ' MCAT']) {
+        await expectLater(
+          list(ticker),
+          throwsA(
+            isA<LoopBackendFailure>().having(
+              (failure) => failure.kind,
+              'kind',
+              LoopBackendFailureKind.invalidPayload,
+            ),
+          ),
+          reason: ticker,
+        );
+      }
+    });
+
     // S145 · decision 0144 (loop-api 0122): the reviewer rejection.
     test(
       'a rejected project carries its rejection; rejected is editable',

@@ -1412,6 +1412,7 @@ abstract final class LoopV2Launch2Codec {
         map,
         'ticker',
         maxLength: loopTokenTextMaxUnits,
+        keepEmojiJoiners: true,
       ),
       logoUrl: logoUrl(map, 'logoUrl', mediaUrl: mediaUrl),
       memeAddress: address(map, 'memeAddress'),

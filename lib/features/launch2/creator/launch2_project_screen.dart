@@ -326,7 +326,7 @@ class Launch2ProjectScreen extends ConsumerWidget {
           if (edit)
             _action(
               'launch2-project-edit',
-              '修改铸造开始时间',
+              launch2JobFailureEditLabel(code),
               () => _go(Launch2CreatorRoute.edit(id)),
             )
           else
