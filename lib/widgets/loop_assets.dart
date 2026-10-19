@@ -738,21 +738,22 @@ class LoopBrandMark extends StatelessWidget {
   final double height;
   final String? semanticLabel;
 
-  /// Draw the flat SVG instead of the rendered WebP. The WebP is opaque
+  /// Draw the flat SVG instead of the raster. The app-icon WebP is opaque
   /// (lossy VP8, no alpha, black ground), so on anything but a black ground
-  /// it shows as a black plate; the SVG has a transparent ground.
+  /// it shows as a black plate; the SVG has a transparent ground. The crown
+  /// wordmark PNG (decision 0204) is transparent already.
   final bool vector;
 
   @override
   Widget build(BuildContext context) {
-    final (webp, svg, label) = switch (kind) {
+    final (raster, svg, label) = switch (kind) {
       LoopBrandMarkKind.appIcon => (
         LoopBrandAssets.appIconWebp,
         LoopBrandAssets.appIconSvg,
         'LOOP app icon',
       ),
       LoopBrandMarkKind.wordmark => (
-        LoopBrandAssets.wordmarkWebp,
+        LoopBrandAssets.wordmarkPng,
         LoopBrandAssets.wordmarkSvg,
         'LOOP',
       ),
@@ -770,7 +771,7 @@ class LoopBrandMark extends StatelessWidget {
     );
     if (vector) return vectorMark;
     return Image.asset(
-      webp,
+      raster,
       height: height,
       semanticLabel: semanticLabel ?? label,
       errorBuilder: (context, error, stackTrace) => vectorMark,

@@ -1078,10 +1078,9 @@ class _OnboardingCommunitiesEnteringState
         key: ValueKey<String>('onboarding-entering-wordmark'),
         kind: LoopBrandMarkKind.wordmark,
         height: 40,
+        // Decision 0204: the crown PNG has a transparent ground, so it sits
+        // on the Lime glow without a plate.
         semanticLabel: 'LOOP',
-        // The WebP wordmark carries an opaque black plate that shows against
-        // the Lime glow; the SVG has a transparent ground.
-        vector: true,
       ),
     ),
   );

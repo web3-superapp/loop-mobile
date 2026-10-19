@@ -70,7 +70,7 @@ void main() {
       LoopAssetPaths.communities,
       LoopBrandAssets.appIconWebp,
       LoopBrandAssets.appIconSvg,
-      LoopBrandAssets.wordmarkWebp,
+      LoopBrandAssets.wordmarkPng,
       LoopBrandAssets.wordmarkSvg,
       'assets/fonts/IBMPlexMono-Regular.ttf',
       'assets/fonts/IBMPlexMono-Medium.ttf',

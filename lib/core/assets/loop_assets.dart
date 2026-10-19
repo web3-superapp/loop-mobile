@@ -201,13 +201,17 @@ abstract final class LoopNetworkAssets {
   }
 }
 
-/// Brand marks. WebP first, SVG fallback (chapter 4.5).
+/// Brand marks. Raster first, SVG fallback (chapter 4.5).
 abstract final class LoopBrandAssets {
   static const String appIconWebp =
       '${LoopAssetPaths.brand}/loop-app-icon-u3d.webp';
   static const String appIconSvg = '${LoopAssetPaths.brand}/loop-app-icon.svg';
-  static const String wordmarkWebp =
-      '${LoopAssetPaths.brand}/loop-wordmark-u3d.webp';
+
+  /// S237 · decision 0204: the crown wordmark (需求方 2026-10-19, 480×310,
+  /// transparent ground, yellow crown over a white brush LOOP). Its white
+  /// letters need the Ink ground every carrying page already has.
+  static const String wordmarkPng =
+      '${LoopAssetPaths.brand}/loop-wordmark-crown.png';
   static const String wordmarkSvg = '${LoopAssetPaths.brand}/loop-wordmark.svg';
 }
 
