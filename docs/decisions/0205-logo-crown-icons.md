@@ -3,6 +3,7 @@
 ## Status
 
 Accepted 2026-10-19。基线 `fix/S237-test-hints-and-logo` 7624a2c（决策 0204 已换 wordmark）。
+**部分被 0207 取代**：iOS AppIcon、Android 启动器图标、Web 图标、登录页 104 pt 标志改用需求方正式方图；本决策的矢量皇冠、wordmark、启动帧、推送图标仍有效。
 依据：需求方裁决「Logo 先按方图走」——不等大图，用现有 `LOOP/docs/assets/logo-loop-crown-2026-10-19.png` 自行做方形版本，背景必须黑色 `#050604`（`LoopColors.ink`）。
 不新增 Dart 依赖、字体、颜色 token；`pubspec.lock`、`pubspec.yaml` 不变（`assets/brand/` 目录声明已覆盖 `2.0x/`、`3.0x/` 变体）；路由不变。
 

@@ -102,7 +102,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                     children: <Widget>[
                       const LoopBrandMark(
                         key: ValueKey<String>('privy-auth-mark'),
-                        kind: LoopBrandMarkKind.appIcon,
+                        kind: LoopBrandMarkKind.officialIcon,
                         height: 104,
                         semanticLabel: 'LOOP',
                       ),

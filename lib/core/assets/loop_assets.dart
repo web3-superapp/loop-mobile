@@ -208,7 +208,15 @@ abstract final class LoopNetworkAssets {
 /// tracing of the crown logo (`loop-logo-crown.svg`, yellow crown over a
 /// white brush LOOP) by `tool/brand/make_crown_icons.py`.
 abstract final class LoopBrandAssets {
-  /// The square app icon: Ink #050604 ground, logo 72 % wide, lossless.
+  /// The official square app icon (需求方 2026-10-19, decision 0207): the
+  /// full-bleed neon artwork, 512 px, no alpha. The same picture as the
+  /// launcher icon; only for large marks (the 104 pt login mark) — below
+  /// about 64 pt its texture and drips turn to mush.
+  static const String officialIconWebp =
+      '${LoopAssetPaths.brand}/loop-app-icon-official.webp';
+
+  /// The small mark (decision 0205): the vector crown logo, Ink #050604
+  /// ground, logo 72 % wide, lossless. Stays on the 54 / 32 / 18 pt marks.
   static const String appIconWebp =
       '${LoopAssetPaths.brand}/loop-app-icon-crown.webp';
 

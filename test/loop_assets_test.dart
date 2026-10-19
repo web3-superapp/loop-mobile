@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart' show CachingAssetBundle;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -69,6 +71,7 @@ void main() {
     for (final path in <String>[
       LoopAssetPaths.people,
       LoopAssetPaths.communities,
+      LoopBrandAssets.officialIconWebp,
       LoopBrandAssets.appIconWebp,
       LoopBrandAssets.appIconSvg,
       LoopBrandAssets.wordmarkPng,
@@ -218,6 +221,166 @@ void main() {
       final manifest = File('web/manifest.json').readAsStringSync();
       expect(manifest, contains('"background_color": "#050604"'));
       expect(manifest, contains('"theme_color": "#050604"'));
+    });
+  });
+
+  group('S244b official square icon (decision 0207)', () {
+    const res = 'android/app/src/main/res';
+    const densities = <String, double>{
+      'mdpi': 1,
+      'hdpi': 1.5,
+      'xhdpi': 2,
+      'xxhdpi': 3,
+      'xxxhdpi': 4,
+    };
+
+    (int, int, int) header(String path) {
+      final bytes = File(path).readAsBytesSync();
+      final data = ByteData.sublistView(bytes);
+      return (data.getUint32(16), data.getUint32(20), bytes[25]);
+    }
+
+    Future<(int, Uint8List)> rgba(WidgetTester tester, String path) async {
+      final result = await tester.runAsync(() async {
+        final codec = await ui.instantiateImageCodec(
+          File(path).readAsBytesSync(),
+        );
+        final frame = await codec.getNextFrame();
+        final data = await frame.image.toByteData();
+        final width = frame.image.width;
+        frame.image.dispose();
+        codec.dispose();
+        return (width, data!.buffer.asUint8List());
+      });
+      return result!;
+    }
+
+    bool stroke(Uint8List p, int i) =>
+        p[i + 3] > 128 && p[i] > 120 && p[i + 1] > 96 && p[i + 2] < p[i] * 0.6;
+
+    double farthestStroke(int width, Uint8List p) {
+      var r2 = 0.0;
+      final c = width / 2;
+      for (var i = 0; i < p.length; i += 4) {
+        if (!stroke(p, i)) continue;
+        final x = (i ~/ 4) % width + 0.5 - c;
+        final y = (i ~/ 4) ~/ width + 0.5 - c;
+        r2 = r2 > x * x + y * y ? r2 : x * x + y * y;
+      }
+      return r2 == 0 ? 0 : math.sqrt(r2);
+    }
+
+    test('login mark asset is a lossy WebP without alpha', () {
+      final webp = File(LoopBrandAssets.officialIconWebp).readAsBytesSync();
+      expect(String.fromCharCodes(webp.sublist(0, 4)), 'RIFF');
+      // Simple-format VP8 carries no alpha chunk (VP8X would).
+      expect(String.fromCharCodes(webp.sublist(8, 16)), 'WEBPVP8 ');
+    });
+
+    testWidgets('iOS AppIcon is the full-bleed artwork', (tester) async {
+      const path =
+          'ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png';
+      expect(header(path), (180, 180, 2));
+      final (width, pixels) = await rgba(tester, path);
+      // The vector mark kept its strokes inside r 36 %; the artwork runs
+      // corner to corner, past r 50 %.
+      expect(farthestStroke(width, pixels) / width, greaterThan(0.5));
+    });
+
+    testWidgets('adaptive foreground: transparent corners, strokes in the '
+        '66dp safe circle', (tester) async {
+      for (final MapEntry(key: bucket, value: density) in densities.entries) {
+        final path = '$res/mipmap-$bucket/ic_launcher_foreground.png';
+        final size = (108 * density).round();
+        expect(header(path), (size, size, 6), reason: path);
+        final (width, pixels) = await rgba(tester, path);
+        for (final (x, y) in <(int, int)>[
+          (0, 0),
+          (width - 1, 0),
+          (0, width - 1),
+          (width - 1, width - 1),
+        ]) {
+          expect(pixels[(y * width + x) * 4 + 3], 0, reason: '$path $x,$y');
+        }
+        expect(
+          farthestStroke(width, pixels) / density,
+          lessThanOrEqualTo(33),
+          reason: path,
+        );
+        expect(
+          farthestStroke(width, pixels) / density,
+          greaterThan(28),
+          reason: '$path: the artwork should fill the safe circle',
+        );
+      }
+    });
+
+    testWidgets('adaptive background is opaque, text-free texture', (
+      tester,
+    ) async {
+      for (final MapEntry(key: bucket, value: density) in densities.entries) {
+        final path = '$res/mipmap-$bucket/ic_launcher_background.png';
+        final size = (108 * density).round();
+        expect(header(path), (size, size, 2), reason: path);
+      }
+      final (width, pixels) = await rgba(
+        tester,
+        '$res/mipmap-xxxhdpi/ic_launcher_background.png',
+      );
+      expect(farthestStroke(width, pixels), 0);
+      for (final name in <String>['ic_launcher', 'ic_launcher_round']) {
+        final xml = File('$res/mipmap-anydpi-v26/$name.xml').readAsStringSync();
+        expect(xml, contains('@mipmap/ic_launcher_background'), reason: name);
+        expect(xml, contains('@mipmap/ic_launcher_foreground'), reason: name);
+      }
+      for (final MapEntry(key: bucket, value: density) in densities.entries) {
+        final legacy = (48 * density).round();
+        expect(header('$res/mipmap-$bucket/ic_launcher.png'), (
+          legacy,
+          legacy,
+          2,
+        ));
+      }
+    });
+
+    testWidgets('only the login mark takes the official artwork', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const Directionality(
+          textDirection: TextDirection.ltr,
+          child: Column(
+            children: <Widget>[
+              LoopBrandMark(kind: LoopBrandMarkKind.officialIcon, height: 104),
+              LoopBrandMark(kind: LoopBrandMarkKind.appIcon, height: 54),
+            ],
+          ),
+        ),
+      );
+      final images = tester.widgetList<Image>(find.byType(Image)).toList();
+      expect(
+        images.map((image) => (image.image as AssetImage).assetName),
+        <String>[LoopBrandAssets.officialIconWebp, LoopBrandAssets.appIconWebp],
+      );
+      final clip = tester.widget<ClipRRect>(find.byType(ClipRRect));
+      expect(clip.borderRadius, BorderRadius.circular(104 * 0.225));
+      final login = File('lib/features/account/privy_login_screen.dart')
+          .readAsStringSync();
+      expect(
+        RegExp(r'LoopBrandMarkKind\.officialIcon').allMatches(login),
+        hasLength(1),
+      );
+      for (final small in <String>[
+        'lib/features/account/account_screens.dart',
+        'lib/features/shell/loop_shell.dart',
+        'lib/features/square/square_feed_view.dart',
+      ]) {
+        expect(
+          File(small).readAsStringSync(),
+          isNot(contains('LoopBrandMarkKind.officialIcon')),
+          reason: small,
+        );
+      }
     });
   });
 
