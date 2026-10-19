@@ -60,6 +60,7 @@ staging 环境变量随后一并切换。App 继续以 `launchChain.usd1` 为唯
 - 修法：池子 prepare 的解码（`loop_v2_launch2_pool_codec.dart`）在买入且报价 `taxToken = usd1` 时，把同一响应里报价的 `taxUsd1` 交给意图
   （与已有的 `taxMeme` 同一做法）；并把 `quote.dynamic.baseTaxToken` 记在意图的 `dynamicBuyTaxToken` 上，签名单标签按它写成与输入页相同的
   「基础税 2%（从付出的 USD1 扣 / 从到手的 MEME 扣）」。数值同为 `launch2Usd1Label(…, maxFractionDigits: 4)`。普通外盘买入（MEME 计税）与卖出不变。
+- 连带变化：LoopDynamic 的 MEME 计税买入（S209 之前的 Hook，`baseTaxToken = meme`），签名单标签也由「外盘税 2%」变为「基础税 2%（从到手的 MEME 扣）」，与输入页一致；数值不变（仍是 `taxMeme`）。
 
 ## Consequences
 

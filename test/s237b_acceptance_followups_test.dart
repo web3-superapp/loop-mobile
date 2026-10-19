@@ -117,6 +117,18 @@ void main() {
       expect(_key('wallet-launch-chain-usd1-reason'), findsNothing);
     });
 
+    testWidgets('card: the verbatim staging pair (balance "0") prints 0 '
+        'with no reason line', (tester) async {
+      await tester.pumpWidget(_card(_launchChainWire()));
+      final row = _key('wallet-launch-chain-usd1-row');
+      expect(find.descendant(of: row, matching: find.text('0')), findsOneWidget);
+      expect(_key('wallet-launch-chain-usd1-reason'), findsNothing);
+      expect(
+        find.descendant(of: row, matching: find.text(walletLaunchUsd1Missing)),
+        findsNothing,
+      );
+    });
+
     testWidgets('card: no pair prints 「—」 and the reason, never 0', (
       tester,
     ) async {
