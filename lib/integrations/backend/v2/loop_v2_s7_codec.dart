@@ -1,3 +1,4 @@
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -19,7 +20,6 @@ abstract final class LoopV2S7Codec {
   static final RegExp priceVersionPattern = RegExp(
     r'^[A-Za-z0-9][A-Za-z0-9._:-]{0,191}$',
   );
-  static final RegExp tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
   static final RegExp digestPattern = RegExp(r'^[0-9a-f]{64}$');
   static final RegExp blockHashPattern = RegExp(r'^0x[0-9a-f]{64}$');
   static final RegExp blockNumberPattern = RegExp(r'^(0|[1-9][0-9]{0,19})$');
@@ -153,6 +153,13 @@ abstract final class LoopV2S7Codec {
   }) {
     if (source[key] == null) return null;
     return requirePattern(source, key, pattern, maxLength: maxLength);
+  }
+
+  /// A launch ticker: four.meme's 1–20 rule, as sent (decision 0206).
+  static String requireTicker(Map<String, Object?> source, String key) {
+    final value = source[key];
+    if (value is! String || !loopTokenTickerIsWellFormed(value)) invalid();
+    return value;
   }
 
   static String requireId(Map<String, Object?> source, String key) =>

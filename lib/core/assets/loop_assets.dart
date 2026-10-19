@@ -18,6 +18,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show StringCharacters;
 
 abstract final class LoopAssetPaths {
   static const String icons = 'assets/icons';
@@ -438,16 +439,19 @@ abstract final class LoopIdentitySlots {
   };
 }
 
-final RegExp _monogramDrop = RegExp(r'[^\p{L}\p{N}]', unicode: true);
+final RegExp _monogramLead = RegExp(r'^[\p{L}\p{N}]', unicode: true);
+final RegExp _monogramVisible = RegExp(r'^[^\p{Z}\p{C}\p{P}]', unicode: true);
 
 /// Monogram fallback: up to two upper-case characters from [source].
 ///
-/// Decision 0199: any script's letters and digits count (Chinese, kana,
-/// hangul, accented Latin), not just ASCII and CJK.
+/// Decisions 0199 / 0206: any script's letters and digits count (Chinese,
+/// kana, hangul, accented Latin), taken as whole grapheme clusters so a
+/// combining accent stays on its letter. A source with no letter or digit
+/// (`🐸`) shows its first visible cluster; only a blank one gets `·`.
 String loopMonogram(String source) {
-  final cleaned = source.trim().replaceAll(_monogramDrop, '');
-  if (cleaned.isEmpty) return '·';
-  final runes = cleaned.runes.toList(growable: false);
-  final take = runes.length >= 2 ? 2 : 1;
-  return String.fromCharCodes(runes.take(take)).toUpperCase();
+  final clusters = source.trim().characters;
+  final letters = clusters.where(_monogramLead.hasMatch).take(2).join();
+  if (letters.isNotEmpty) return letters.toUpperCase();
+  final first = clusters.where(_monogramVisible.hasMatch).firstOrNull;
+  return first ?? '·';
 }

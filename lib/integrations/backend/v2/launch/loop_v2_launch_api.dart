@@ -229,12 +229,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       launchId: LoopV2S7Codec.requireId(map, 'launchId'),
       projectId: LoopV2S7Codec.requireId(map, 'projectId'),
       name: LoopV2S7Codec.requireText(map, 'name'),
-      ticker: LoopV2S7Codec.requirePattern(
-        map,
-        'ticker',
-        LoopV2S7Codec.tickerPattern,
-        maxLength: 12,
-      ),
+      ticker: LoopV2S7Codec.requireTicker(map, 'ticker'),
       // Decision 0038: a launch carries the chain slot it was created on.
       // The set is closed — an unknown chain is an invalid payload, never a
       // network the client silently adopts.
@@ -390,12 +385,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     return LaunchProject(
       projectId: LoopV2S7Codec.requireId(map, 'projectId'),
       name: LoopV2S7Codec.requireText(map, 'name'),
-      ticker: LoopV2S7Codec.requirePattern(
-        map,
-        'ticker',
-        LoopV2S7Codec.tickerPattern,
-        maxLength: 12,
-      ),
+      ticker: LoopV2S7Codec.requireTicker(map, 'ticker'),
       narrative: LoopV2S7Codec.optionalText(map, 'narrative'),
       officialLinks: _officialLinks(map['officialLinks']),
       materialVersion: LoopV2S7Codec.requirePositiveInt(map, 'materialVersion'),
@@ -793,12 +783,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         project: LaunchProjectBrief(
           projectId: LoopV2S7Codec.requireId(project, 'projectId'),
           name: LoopV2S7Codec.requireText(project, 'name'),
-          ticker: LoopV2S7Codec.requirePattern(
-            project,
-            'ticker',
-            LoopV2S7Codec.tickerPattern,
-            maxLength: 12,
-          ),
+          ticker: LoopV2S7Codec.requireTicker(project, 'ticker'),
           narrative: LoopV2S7Codec.optionalText(project, 'narrative'),
           officialLinks: _officialLinks(project['officialLinks']),
           materialVersion: LoopV2S7Codec.requirePositiveInt(

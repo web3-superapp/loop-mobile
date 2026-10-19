@@ -4,8 +4,9 @@ import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_create_screen.dart';
 
-/// Decision 0199 (backend 0154): no language or script rule on a token's
-/// name or description.
+/// Decisions 0199 / 0206 (backend 0154 / 0164, contracts 0016): no language
+/// or script rule on a token's name, ticker or description; name and ticker
+/// share four.meme's 1–20 UTF-16 units.
 void main() {
   test('Chinese, English, mixed and emoji names pass', () {
     for (final name in <String>[
@@ -22,14 +23,66 @@ void main() {
     }
   });
 
-  test('the name is 64 characters and the factory’s 64 UTF-8 bytes', () {
-    expect(loopTokenNameError('a' * 64), isNull);
-    expect(loopTokenNameError('a' * 65), loopTokenNameLengthMessage);
-    expect(loopUtf8Length('中' * 21), 63);
-    expect(loopTokenNameError('中' * 21), isNull);
-    expect(loopTokenNameError('中' * 22), loopTokenNameLengthMessage);
-    expect(loopTokenNameError('🐸' * 16), isNull);
-    expect(loopTokenNameError('🐸' * 17), loopTokenNameLengthMessage);
+  test('name and ticker share four.meme’s 1–20 UTF-16 units', () {
+    for (final check in <String? Function(String)>[
+      loopTokenNameError,
+      loopTokenTickerError,
+    ]) {
+      expect(check('a' * 20), isNull);
+      expect(check('中' * 20), isNull);
+      expect(check('🐸' * 10), isNull);
+      expect(check('a' * 21), isNotNull);
+      expect(check('中' * 21), isNotNull);
+      expect(check('🐸' * 10 + 'a'), isNotNull);
+      expect(check('  ${'中' * 20}  '), isNull, reason: 'trimmed first');
+    }
+    expect(loopTokenNameError('a' * 21), loopTokenNameLengthMessage);
+    expect(loopTokenTickerError('a' * 21), loopTokenTickerLengthMessage);
+    expect(loopTokenTextUnits(' 🐸狗 '), 3);
+  });
+
+  test('four.meme tickers pass as typed, never upper-cased', () {
+    for (final ticker in <String>[
+      '狗狗币',
+      r'$1',
+      '四',
+      '4',
+      'フリーダム.オブ.マネー',
+      'Hand recognizes hand',
+      'doge',
+      '2DOGE',
+      '牛虾🔶',
+      '👨‍👩‍👧',
+      '🏳️‍🌈',
+      '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
+      '쌀밥',
+      '中　文',
+    ]) {
+      expect(loopTokenTickerError(ticker), isNull, reason: ticker);
+      expect(launch2FieldError(Launch2Field.ticker, ticker), isNull);
+      expect(loopTokenTickerIsWellFormed(ticker), isTrue, reason: ticker);
+    }
+  });
+
+  test('blank, edge spaces, odd spaces and edge joiners are refused', () {
+    expect(loopTokenTickerError('   '), '请填写代码');
+    expect(loopTokenNameError(''), '请填写名称');
+    // The form trims before it checks and before it submits; a value that
+    // still carries an edge space is not one the rule produces.
+    expect(loopTokenTickerIsWellFormed(' DOGE'), isFalse);
+    expect(loopTokenTickerIsWellFormed('DOGE '), isFalse);
+    expect(loopTokenTickerIsWellFormed('　狗'), isFalse);
+    for (final ticker in <String>[
+      'a b',
+      'a b',
+      '‍狗',
+      '狗‍',
+      'aㅤb',
+      'a⠀b',
+      'a${String.fromCharCode(0xd800)}b',
+    ]) {
+      expect(loopTokenTickerError(ticker), isNotNull, reason: ticker);
+    }
   });
 
   test('blank, control and invisible characters are refused', () {
@@ -55,23 +108,19 @@ void main() {
     expect(loopTokenDescriptionError('a\u202eb'), isNotNull);
   });
 
-  test('the ticker stays on the factory pattern', () {
-    expect(launch2FieldError(Launch2Field.ticker, 'doge'), isNull);
-    expect(
-      launch2FieldError(Launch2Field.ticker, '狗狗'),
-      '代码暂只支持 2–12 位英文字母或数字（链上合约限制）',
-    );
-  });
-
-  test('the catalogue draft takes a Chinese name within 64 bytes', () {
-    LaunchProjectDraft draft(String name) => LaunchProjectDraft(
-      name: name,
-      ticker: 'DOGE',
-      narrative: '中文简介\n第二行',
-      officialLinks: const LaunchOfficialLinks(),
-    );
+  test('the catalogue draft takes a Chinese name and ticker', () {
+    LaunchProjectDraft draft(String name, [String ticker = 'DOGE']) =>
+        LaunchProjectDraft(
+          name: name,
+          ticker: ticker,
+          narrative: '中文简介\n第二行',
+          officialLinks: const LaunchOfficialLinks(),
+        );
     expect(draft('狗狗币 Doge').invalidField, isNull);
-    expect(draft('中' * 22).invalidField, LaunchDraftField.name);
+    expect(draft('狗狗币', '狗狗币').invalidField, isNull);
+    expect(draft('Doge', r'$1').invalidField, isNull);
+    expect(draft('中' * 21).invalidField, LaunchDraftField.name);
+    expect(draft('Doge', 'a' * 21).invalidField, LaunchDraftField.ticker);
   });
 
   test(r'only an ASCII ticker gets the `$`', () {
@@ -79,6 +128,10 @@ void main() {
     expect(loopTickerLabel('狗狗'), '狗狗');
     expect(loopTickerLabel('🐸'), '🐸');
     expect(loopTickerLabel('PEPE中'), 'PEPE中');
+    expect(loopTickerLabel('doge'), r'$doge');
+    expect(loopTickerLabel(r'$1'), r'$1');
+    expect(loopTickerLabel(r'$DOGE'), r'$DOGE');
+    expect(loopTickerLabel('Hand recognizes hand'), 'Hand recognizes hand');
     expect(loopTickerLabel(''), '');
   });
 
@@ -86,5 +139,11 @@ void main() {
     expect(loopMonogram('狗狗币'), '狗狗');
     expect(loopMonogram('ミーム'), 'ミー');
     expect(loopMonogram('élan'), 'ÉL');
+    expect(loopMonogram('élan'), 'ÉL');
+    expect(loopMonogram('フリーダム'), 'フリ');
+    expect(loopMonogram('쌀밥'), '쌀밥');
+    expect(loopMonogram(r'$1'), '1');
+    expect(loopMonogram('🐸'), '🐸');
+    expect(loopMonogram('  '), '·');
   });
 }

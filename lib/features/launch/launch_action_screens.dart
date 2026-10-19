@@ -680,7 +680,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
     name: _name.text.trim(),
     // The server requires upper case; normalising here avoids a round trip
     // rather than widening what it accepts.
-    ticker: _ticker.text.trim().toUpperCase(),
+    ticker: _ticker.text.trim(),
     narrative: _optional(_narrative),
     // All four links round-trip: a link the server holds must survive an
     // edit that did not touch it.
@@ -1159,7 +1159,7 @@ class _ApplyForm extends StatelessWidget {
             controller: name,
             enabled: enabled,
             decoration: InputDecoration(
-              labelText: '项目名称（最多 64 个字，中文 21 个）',
+              labelText: '项目名称（1–20 个字）',
               errorText: _errorFor(LaunchDraftField.name),
             ),
           ),
@@ -1170,7 +1170,7 @@ class _ApplyForm extends StatelessWidget {
             enabled: enabled,
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
-              labelText: 'Ticker（2–12 位大写字母或数字）',
+              labelText: '代码（1–20 个字，可用中文、字母、数字、emoji）',
               errorText: _errorFor(LaunchDraftField.ticker),
             ),
           ),

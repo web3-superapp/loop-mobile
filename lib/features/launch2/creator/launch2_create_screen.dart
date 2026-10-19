@@ -46,21 +46,17 @@ const String launch2CreateLinksCommunityHint =
 /// The fields the form checks before the server does.
 enum Launch2Field { name, ticker, description, x, telegram, website, discord }
 
-final RegExp _tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
-
 /// Why one field is refused, or `null` (hooks-config §3 and the catalogue
 /// project's own limits; the stricter of the two).
 String? launch2FieldError(Launch2Field field, String raw) {
   final value = raw.trim();
   switch (field) {
-    // Decision 0199: name and description take any language or script.
+    // Decisions 0199 / 0206: any script; the name and the ticker share
+    // four.meme's 1–20 rule, and the ticker is kept as typed.
     case Launch2Field.name:
       return loopTokenNameError(raw);
     case Launch2Field.ticker:
-      // The launch factory's on-chain `_validTicker`, not a language rule.
-      if (!_tickerPattern.hasMatch(value.toUpperCase())) {
-        return '代码暂只支持 2–12 位英文字母或数字（链上合约限制）';
-      }
+      return loopTokenTickerError(raw);
     case Launch2Field.description:
       return loopTokenDescriptionError(raw);
     case Launch2Field.x:
@@ -197,10 +193,17 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     Launch2Field.discord => _discord,
   };
 
-  /// Decision 0199: the factory counts UTF-8 bytes (an English letter 1,
-  /// a Chinese character 3, an emoji 4), so the name shows what it uses.
-  String get _nameCounter =>
-      '${loopUtf8Length(_name.text.trim())}/$loopTokenNameMaxBytes 字节';
+  /// Decision 0206: the name and the ticker count UTF-16 units once
+  /// trimmed (a Chinese character 1, most emoji 2), as four.meme does; a
+  /// `maxLength` would count grapheme clusters instead, so neither has one.
+  String _unitsCounter(TextEditingController controller) =>
+      '${loopTokenTextUnits(controller.text)}/$loopTokenTextMaxUnits 字';
+
+  /// The ticker field's `$`, shown only where [loopTickerLabel] adds one.
+  String? get _tickerPrefix {
+    final ticker = _ticker.text.trim();
+    return ticker.isNotEmpty && loopTickerLabel(ticker) != ticker ? r'$' : null;
+  }
 
   String? _error(Launch2Field field) =>
       _showErrors ? launch2FieldError(field, _controller(field).text) : null;
@@ -308,7 +311,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       discord: _link(_discord),
     );
     final description = _description.text.trim();
-    final ticker = _ticker.text.trim().toUpperCase();
+    final ticker = _ticker.text.trim();
     final name = _name.text.trim();
     final id = await ref
         .read(launch2SaveControllerProvider(_scope).notifier)
@@ -599,7 +602,6 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     int maxLines = 1,
     TextInputType? keyboard,
     String? prefix,
-    bool upper = false,
     String? counter,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
@@ -610,9 +612,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       maxLines: maxLines,
       minLines: 1,
       keyboardType: keyboard,
-      textCapitalization: upper
-          ? TextCapitalization.characters
-          : TextCapitalization.none,
+      textCapitalization: TextCapitalization.none,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -625,7 +625,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
 
   List<Widget> _profileStep() {
     final picker = ref.watch(avatarImagePickerProvider);
-    final ticker = _ticker.text.trim().toUpperCase();
+    final ticker = _ticker.text.trim();
     final logoMissing = _showErrors && _logoUrl == null;
     return <Widget>[
       Padding(
@@ -689,16 +689,23 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             _field(
               Launch2Field.name,
               label: '名称',
-              hint: '中文、英文、emoji 都可以',
-              counter: _nameCounter,
+              hint: '1–20 个字，可用中文、字母、数字、emoji',
+              counter: _unitsCounter(_name),
             ),
             _field(
               Launch2Field.ticker,
               label: '代码',
-              hint: '2–12 位英文字母或数字',
-              maxLength: 12,
-              prefix: r'$',
-              upper: true,
+              hint: '1–20 个字，可用中文、字母、数字、emoji',
+              counter: _unitsCounter(_ticker),
+              prefix: _tickerPrefix,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                loopTokenTextRule,
+                key: const ValueKey<String>('launch2-create-text-rule'),
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+              ),
             ),
             _field(
               Launch2Field.description,

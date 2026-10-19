@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -325,7 +326,12 @@ abstract final class LoopV2MemeCodec {
       memeTokenId: uuid(map, 'memeTokenId'),
       tokenAddress: optionalAddress(map, 'tokenAddress'),
       name: text(map, 'name', minLength: 1, maxLength: 64),
-      symbol: text(map, 'symbol', minLength: 1, maxLength: 16),
+      symbol: text(
+        map,
+        'symbol',
+        minLength: 1,
+        maxLength: loopTokenTextMaxUnits,
+      ),
       imageUrl: mediaId == null ? null : mediaUrl(mediaId),
       creator: account(map['creator']),
       status: status,

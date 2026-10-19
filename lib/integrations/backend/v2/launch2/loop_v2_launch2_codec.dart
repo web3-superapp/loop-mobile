@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
@@ -26,7 +27,13 @@ abstract final class LoopV2Launch2Codec {
   static final RegExp quantityPattern = RegExp(
     r'^0x(0|[1-9a-f][0-9a-f]{0,63})$',
   );
-  static final RegExp tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
+
+  /// A launch ticker: four.meme's 1–20 rule, as sent (decision 0206).
+  static String ticker(Map<String, Object?> map, String key) {
+    final value = map[key];
+    if (value is! String || !loopTokenTickerIsWellFormed(value)) invalid();
+    return value;
+  }
 
   /// `/v2/media/{mediaId}.webp`: a logo our own media service serves.
   static final RegExp mediaPathPattern = RegExp(
@@ -457,12 +464,7 @@ abstract final class LoopV2Launch2Codec {
       hold = holdRaw is String ? Launch2HoldReason.tryParse(holdRaw) : null;
       if (hold == null) invalid();
     }
-    final ticker = LoopV2ChainCodec.requireString(
-      map,
-      'ticker',
-      pattern: tickerPattern,
-      maxLength: 12,
-    );
+    final ticker = LoopV2Launch2Codec.ticker(map, 'ticker');
     final stageValue = stage(map, 'stage');
     final nextChangeAt = LoopV2ChainCodec.optionalTimestamp(
       map,
@@ -1406,7 +1408,11 @@ abstract final class LoopV2Launch2Codec {
     return Launch2Position(
       instanceId: uuid(map, 'instanceId'),
       name: LoopV2ChainCodec.providerText(map, 'name', maxLength: 64),
-      ticker: LoopV2ChainCodec.providerText(map, 'ticker', maxLength: 16),
+      ticker: LoopV2ChainCodec.providerText(
+        map,
+        'ticker',
+        maxLength: loopTokenTextMaxUnits,
+      ),
       logoUrl: logoUrl(map, 'logoUrl', mediaUrl: mediaUrl),
       memeAddress: address(map, 'memeAddress'),
       stage: stage(map, 'stage'),

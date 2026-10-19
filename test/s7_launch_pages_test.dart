@@ -659,13 +659,13 @@ void main() {
       );
       await tester.enterText(
         find.byKey(const ValueKey<String>('launch-apply-ticker')),
-        'x',
+        'x' * 21,
       );
       await tester.tap(find.byKey(const ValueKey<String>('launch-apply-save')));
       await tester.pumpAndSettle();
 
       expect(gateway.created, isEmpty);
-      expect(find.textContaining('Ticker 暂只支持'), findsOneWidget);
+      expect(find.textContaining('代码需 1–20 个字'), findsOneWidget);
     });
 
     testWidgets('a valid draft is created and then submitted', (tester) async {
@@ -684,8 +684,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.created, hasLength(1));
-      // The ticker is upper-cased before it leaves the device.
-      expect(gateway.created.single.ticker, 'MCAT');
+      // Decision 0206: the ticker leaves the device as typed.
+      expect(gateway.created.single.ticker, 'mcat');
 
       await scrollToS7Section(
         tester,

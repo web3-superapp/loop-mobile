@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
@@ -76,8 +77,7 @@ abstract final class LoopV2Launch2OverviewCodec {
       final kind = Launch2ActivityKind.tryParse(map['kind']);
       if (kind == null) return null;
       final ticker = map['ticker'];
-      if (ticker is! String ||
-          !LoopV2Launch2Codec.tickerPattern.hasMatch(ticker)) {
+      if (ticker is! String || !loopTokenTickerIsWellFormed(ticker)) {
         return null;
       }
       final name = map['name'];

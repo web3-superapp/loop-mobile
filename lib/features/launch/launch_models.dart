@@ -442,7 +442,6 @@ final class LaunchProjectDraft {
     this.community = const LaunchDraftCommunity.keep(),
   });
 
-  static final RegExp tickerPattern = RegExp(r'^[A-Z0-9]{2,12}$');
   static final RegExp httpsPattern = RegExp(r'^https://[^\s@]{1,500}$');
 
   final String name;
@@ -464,9 +463,10 @@ final class LaunchProjectDraft {
 
   /// The first field the local shape check rejects, or `null`.
   LaunchDraftField? get invalidField {
-    // Decision 0199 (backend 0154): any script; the factory's 64 bytes.
+    // Decisions 0199 / 0206 (backend 0154 / 0164): any script; name and
+    // ticker share four.meme's 1–20 rule.
     if (loopTokenNameError(name) != null) return LaunchDraftField.name;
-    if (!tickerPattern.hasMatch(ticker)) return LaunchDraftField.ticker;
+    if (loopTokenTickerError(ticker) != null) return LaunchDraftField.ticker;
     final story = narrative;
     if (story != null &&
         (story.trim().isEmpty || loopTokenDescriptionError(story) != null)) {
@@ -545,8 +545,8 @@ final class LaunchDraftCommunity {
 enum LaunchDraftField { name, ticker, narrative, officialLinks, community }
 
 String launchDraftFieldReason(LaunchDraftField field) => switch (field) {
-  LaunchDraftField.name => '项目名称最多 64 个字（中文最多 21 个字），不能含换行或不可见字符。',
-  LaunchDraftField.ticker => 'Ticker 暂只支持 2–12 位大写英文字母或数字（链上合约限制）。',
+  LaunchDraftField.name => '项目名称需 1–20 个字（emoji 算 2 个字），不能含换行或不可见字符。',
+  LaunchDraftField.ticker => '代码需 1–20 个字，可用中文、字母、数字、emoji，不能含换行或不可见字符。',
   LaunchDraftField.narrative => '叙事最多 2000 个字，不能含控制符；留空表示不提交这一项。',
   LaunchDraftField.officialLinks => '官方链接必须是 https:// 开头且不超过 512 个字符。',
   LaunchDraftField.community => '关联社区的标识无效，请重新选择。',

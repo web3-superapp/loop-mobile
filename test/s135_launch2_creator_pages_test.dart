@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
+import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -498,6 +499,29 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    testWidgets('decision 0206: a Chinese ticker passes as typed; both '
+        'fields count 1–20 units; 21 is refused', (tester) async {
+      await _pump(tester, const Launch2CreateScreen());
+      await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('launch2-create-name'), '狗狗币 🐸');
+      await tester.enterText(_key('launch2-create-ticker'), '中' * 21);
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(find.text('6/20 字'), findsOneWidget);
+      expect(find.text('21/20 字'), findsOneWidget);
+      expect(find.text(loopTokenTickerLengthMessage), findsOneWidget);
+      expect(_key('launch2-create-step-2'), findsNothing);
+
+      await tester.enterText(_key('launch2-create-ticker'), '狗狗币');
+      await tester.pump();
+      expect(find.text('3/20 字'), findsOneWidget);
+      expect(find.text(loopTokenTickerLengthMessage), findsNothing);
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-step-2'), findsOneWidget);
+    });
+
     testWidgets('three steps: the first refuses until picture, name and '
         'ticker are there; back goes one step', (tester) async {
       await _pump(tester, const Launch2CreateScreen());
@@ -510,7 +534,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('launch2-create-step-1'), findsOneWidget);
       expect(_key('launch2-create-logo-missing'), findsOneWidget);
-      expect(find.text('代码暂只支持 2–12 位英文字母或数字（链上合约限制）'), findsOneWidget);
+      expect(find.text('请填写代码'), findsOneWidget);
+      expect(find.text(loopTokenTextRule), findsOneWidget);
 
       await fillProfile(tester);
       await tester.tap(_key('launch2-create-next'));
@@ -570,11 +595,12 @@ void main() {
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
 
-      expect(launch.created.single.ticker, 'MCAT');
+      // Decision 0206: the ticker is sent as typed, never upper-cased.
+      expect(launch.created.single.ticker, 'mcat');
       expect(launch.created.single.officialLinks.x, 'https://x.com/mooncat');
       expect(creator.saveVersions, <int>[0]);
       final input = creator.saved.single;
-      expect(input.ticker, 'MCAT');
+      expect(input.ticker, 'mcat');
       expect(input.links, <String>['https://x.com/mooncat']);
       // The server's fixed recipient read just before the save (0144).
       expect(input.buybackRecipient, _fixedRecipient);

@@ -26,7 +26,6 @@ abstract final class LoopV2Launch2CreatorCodec {
   static final RegExp _bytes32AnyCase = RegExp(r'^0x[0-9a-fA-F]{64}$');
   static final RegExp _uint64 = RegExp(r'^(0|[1-9][0-9]{0,19})$');
   static final RegExp _uint = RegExp(r'^(0|[1-9][0-9]{0,77})$');
-  static final RegExp _ticker = RegExp(r'^[A-Z0-9]{2,12}$');
   static final RegExp _code = RegExp(r'^[A-Z0-9_]{1,64}$');
   static final RegExp _kind = RegExp(r'^[a-z_]{1,40}$');
   static final RegExp _decimal = RegExp(
@@ -211,11 +210,7 @@ abstract final class LoopV2Launch2CreatorCodec {
         pattern: _anything,
         maxLength: 64,
       ),
-      ticker: LoopV2ChainCodec.requireString(
-        config,
-        'ticker',
-        pattern: _ticker,
-      ),
+      ticker: LoopV2Launch2Codec.ticker(config, 'ticker'),
       logoAssetUrl: _httpsUrl(config['logoAssetUrl']),
       description: description,
       links: List<String>.unmodifiable(links),
@@ -476,11 +471,7 @@ abstract final class LoopV2Launch2CreatorCodec {
       pattern: _anything,
       maxLength: 64,
     );
-    final ticker = LoopV2ChainCodec.requireString(
-      request,
-      'ticker',
-      pattern: _ticker,
-    );
+    final ticker = LoopV2Launch2Codec.ticker(request, 'ticker');
     final nftSaleStart = LoopV2ChainCodec.requireString(
       request,
       'nftSaleStart',
