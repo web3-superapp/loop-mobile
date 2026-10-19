@@ -50,7 +50,7 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 /// says the stage moved — never a new page. The page counts down to the
 /// server's `nextChangeAt` and re-reads; it never advances a stage itself.
 ///
-/// - `upcoming` — 开售时间 and the fixed template behind (i).
+/// - `upcoming` — 铸造开始时间 and the fixed template behind (i).
 /// - `nft_sale` — 100 USD1, 我的持有 0/1, 已售 and 「购买 NFT」.
 /// - `snapshot_pending` — the line illustration and the cutoff block.
 /// - `priority` / `public` — the curve, the trade panel, the latest trades.
@@ -238,6 +238,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       ticker: detail.row.ticker,
       clock: ref.read(launch2ClockProvider),
       refresh: refresh,
+      confirmation: launch2ReadModelConfirmation(ref, detail, intent),
     );
     if (!mounted || outcome == null) return;
     _record(detail, intent, outcome);
@@ -263,6 +264,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     if (outcome.broadcast) {
       _poll?.cancel();
       _poll = null;
+      // Decision 0203: the signing sheet may already have watched the read
+      // show it; settle on what is on screen before asking again.
+      final shown = ref
+          .read(launch2InstanceControllerProvider(detail.instanceId))
+          .value;
+      if (shown != null) _settle(shown);
       unawaited(
         ref
             .read(launch2InstanceControllerProvider(detail.instanceId).notifier)
@@ -592,7 +599,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         keyName: 'launch2-upcoming',
         rows: <(String, String)>[
           ('铸造开始', loopDateTimeLabel(detail.row.nftSale.startAt)),
-          ('NFT 价格', launch2Usd1Label(detail.row.nftSale.priceUsd1)),
+          ('铸造价格', launch2Usd1Label(detail.row.nftSale.priceUsd1)),
           ('铸造时长', launch2SaleDurationLabel(detail.row.nftSale)),
         ],
       ),
@@ -779,7 +786,7 @@ String launch2InstanceFolioCaption(Launch2InstanceDetail detail) {
     Launch2Stage.upcoming =>
       '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚 · '
           '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
-    Launch2Stage.nftSale => '每地址 1 枚 · 已售 ${row.nftSale.soldCount} 枚',
+    Launch2Stage.nftSale => '每地址 1 枚 · 已铸 ${row.nftSale.soldCount} 枚',
     Launch2Stage.priority => '持有人优先',
     Launch2Stage.snapshotPending ||
     Launch2Stage.closedNoHolders ||
@@ -818,7 +825,7 @@ class _InstanceFolio extends StatelessWidget {
       headingTone: launch2InstanceHeadingLit(row.stage)
           ? LoopFolioHeadingTone.accent
           : LoopFolioHeadingTone.neutral,
-      kicker: launch2StageLabel(row.stage),
+      kicker: launch2InstanceStageLabel(detail),
       heading: launch2HeroTicker(row.ticker),
       headingMaxLines: 1,
       trailing: MemeLogo(
@@ -1064,7 +1071,7 @@ class _NftSaleBlock extends ConsumerWidget {
               statKey: const ValueKey<String>('launch2-nft-price'),
             ),
             LoopStat(
-              label: '已售',
+              label: '已铸',
               value: '${sale.soldCount} 枚',
               statKey: const ValueKey<String>('launch2-nft-sold'),
             ),

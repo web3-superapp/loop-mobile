@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -331,6 +333,53 @@ String launch2BroadcastText(
   return '已广播（${launch2ShortAddress(hash)}）。广播不代表已成交，'
       '链上确认后这里会更新。';
 }
+
+/// What the read model says about the viewer's own position for [intent]'s
+/// kind, or `null` when it carries no signal of the viewer's own (decision
+/// 0203). It changes only when the viewer's own mint, curve trade or pool
+/// trade lands: `viewer.nftHeld`, `viewer.curve` bought / sold, or the
+/// wallet's own pool count (decision 0148). Another wallet's trade never
+/// moves it, so a change after a broadcast is that broadcast confirmed.
+String? launch2OwnConfirmationSignature(
+  Launch2InstanceDetail detail,
+  Launch2Intent intent,
+) {
+  final viewer = detail.viewer;
+  if (viewer == null || viewer.walletId != intent.walletId) return null;
+  return switch (intent.kind) {
+    Launch2IntentKind.nftMint => 'nft:${viewer.nftHeld}',
+    Launch2IntentKind.buy || Launch2IntentKind.sell => switch (intent.venue) {
+      Launch2Venue.curve => 'curve:${viewer.curve.bought}:${viewer.curve.sold}',
+      Launch2Venue.officialPool => switch (viewer.holding) {
+        final Launch2WalletHolding own =>
+          'pool:${own.poolTradeCount}:'
+              '${own.lastPoolTradeAt?.toIso8601String() ?? '-'}',
+        null => null,
+      },
+      Launch2Venue.loopDynamicRewards => null,
+    },
+    Launch2IntentKind.rewardClaim => null,
+  };
+}
+
+/// The read model watched after a broadcast (decision 0203, S234-4): it
+/// completes [confirmed] once the instance the page keeps reading shows the
+/// viewer's own change. [close] stops it; a closed watch never completes.
+abstract interface class Launch2ConfirmationWatch {
+  Future<void> get confirmed;
+  void close();
+}
+
+/// Starts a [Launch2ConfirmationWatch] at the broadcast. Supplied by the
+/// page that opened the sheet, which owns the instance's read model.
+typedef Launch2ConfirmationProbe = Launch2ConfirmationWatch Function();
+
+/// How long the sheet shows 「已确认」 before it closes itself.
+const Duration launch2SignConfirmedCloseDelay = Duration(seconds: 2);
+
+/// The sheet's line once the read model shows the broadcast (the same
+/// sentence the project page uses).
+String launch2ConfirmedText(String noun) => '$noun已在链上确认。';
 
 /// Where a two-transaction trip through the exit is (approval, then the
 /// trade): the sheet draws it as a two-step strip.
@@ -670,6 +719,7 @@ Future<Launch2SignOutcome?> showLaunch2SignSheet(
   DateTime Function()? clock,
   Launch2IntentRefresher? refresh,
   String? noun,
+  Launch2ConfirmationProbe? confirmation,
 }) async {
   final latch = MoneySignLatch();
   final outcome = await showLoopSheet<Launch2SignOutcome>(
@@ -684,6 +734,7 @@ Future<Launch2SignOutcome?> showLaunch2SignSheet(
       latch: latch,
       refresh: refresh,
       noun: noun,
+      confirmation: confirmation,
     ),
   );
   if (outcome != null) return outcome;
@@ -706,6 +757,8 @@ class Launch2SignSheet extends StatefulWidget {
     this.latch,
     this.refresh,
     this.noun,
+    this.confirmation,
+    this.confirmedCloseDelay = launch2SignConfirmedCloseDelay,
   });
 
   final Launch2Intent intent;
@@ -722,6 +775,13 @@ class Launch2SignSheet extends StatefulWidget {
   /// Re-quotes and re-prepares the same trade when the approval took the
   /// quote too close to its expiry (decision 0148).
   final Launch2IntentRefresher? refresh;
+
+  /// Decision 0203 (S234-4): after a broadcast the sheet watches the read
+  /// model through this, turns 「已确认」 when it shows the change and closes
+  /// itself [confirmedCloseDelay] later. `null`: the sheet stays at
+  /// 「已广播」 until it is closed by hand.
+  final Launch2ConfirmationProbe? confirmation;
+  final Duration confirmedCloseDelay;
 
   @override
   State<Launch2SignSheet> createState() => _Launch2SignSheetState();
@@ -741,6 +801,11 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
   /// the trade is signed from after a refresh.
   late Launch2Intent _intent = widget.intent;
   bool _refreshed = false;
+
+  /// Decision 0203: the read model showed the broadcast.
+  bool _confirmed = false;
+  Launch2ConfirmationWatch? _watch;
+  Timer? _autoClose;
 
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
 
@@ -819,6 +884,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
           widget.intent.kind,
           noun: widget.noun,
         );
+        _watchConfirmation(outcome);
       } else {
         _state = LoopSignSheetState.simulationFailed;
         final noun = _noun;
@@ -837,6 +903,39 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
         _submitted = outcome.approvalTxHash != null;
       }
     });
+  }
+
+  /// Decision 0203 (S234-4): a broadcast with a hash is watched on the read
+  /// model; a locked outcome (no hash, or the wallet's answer unknown) is
+  /// never declared confirmed here.
+  void _watchConfirmation(Launch2SignOutcome outcome) {
+    final probe = widget.confirmation;
+    if (probe == null ||
+        outcome.status != MoneySignStatus.submitted ||
+        outcome.txHash == null) {
+      return;
+    }
+    final watch = probe();
+    _watch = watch;
+    unawaited(
+      watch.confirmed.then((_) {
+        if (!mounted || _confirmed) return;
+        setState(() {
+          _confirmed = true;
+          _reason = launch2ConfirmedText(_noun);
+        });
+        _autoClose = Timer(widget.confirmedCloseDelay, () {
+          if (mounted) Navigator.of(context).pop(_outcome);
+        });
+      }),
+    );
+  }
+
+  @override
+  void dispose() {
+    _autoClose?.cancel();
+    _watch?.close();
+    super.dispose();
   }
 
   @override
@@ -863,6 +962,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
           LoopSignFact(field.label, field.value),
       ],
       reason: _reason,
+      completeLabel: _confirmed ? '已确认' : '已广播',
       onConfirm: _submitted ? null : _confirm,
       onCancel: () => Navigator.of(context).pop(_outcome),
     );
@@ -876,6 +976,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
                 _state,
                 locked: _outcome?.status == MoneySignStatus.locked,
               ),
+              signCaption: _confirmed ? '已确认' : null,
             )
           : Column(
               mainAxisSize: MainAxisSize.min,
@@ -886,6 +987,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
                   verify: stepUpStep,
                   approval: _approvalStatus,
                   main: _mainStatus,
+                  mainConfirmed: _confirmed,
                 ),
                 if (_refreshed)
                   Padding(
@@ -955,11 +1057,16 @@ class Launch2SignStepStrip extends StatelessWidget {
     required this.main,
     super.key,
     this.verify,
+    this.mainConfirmed = false,
   });
 
   final String noun;
   final Launch2StepStatus approval;
   final Launch2StepStatus main;
+
+  /// Decision 0203: the read model showed the trade, so its step says
+  /// 「已确认」 instead of 「已广播」.
+  final bool mainConfirmed;
 
   /// The step-up's own step, or `null` when it does not run.
   final LoopStepUpStep? verify;
@@ -988,7 +1095,9 @@ class Launch2SignStepStrip extends StatelessWidget {
         id: 'main',
         label: noun,
         status: main,
-        caption: _status(main),
+        caption: mainConfirmed && main == Launch2StepStatus.done
+            ? '已确认'
+            : _status(main),
       ),
     ],
   );

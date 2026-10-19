@@ -445,6 +445,13 @@ class WalletNetWorthCard extends StatelessWidget {
 /// no pending amount, no valuation and no cross-check, so nothing here may be
 /// added to the wallet's net worth or read as a spendable main-chain figure.
 /// A failed read renders the server's own reason and never a `0`.
+///
+/// Decision 0203 (S234-8): the slot's USD1 (`launchChain.usd1`, loop-api
+/// decision 0077, read at one block with its allowance) is a second row
+/// under the native one. It is a testnet figure like tBNB: no price, never
+/// added to the net worth. An absent `usd1` is 「未读取」 and draws no row.
+/// On a testnet slot one line says the total above counts the main chain
+/// only.
 class WalletLaunchChainCard extends StatelessWidget {
   const WalletLaunchChainCard({required this.launchChain, super.key});
 
@@ -453,6 +460,8 @@ class WalletLaunchChainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final native = launchChain.nativeBalance;
+    final usd1 = launchChain.usd1;
+    final usd1Symbol = walletLaunchUsd1Symbol(launchChain);
     return Column(
       key: const ValueKey<String>('wallet-launch-chain'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -495,10 +504,63 @@ class WalletLaunchChainCard extends StatelessWidget {
             snapshot: native.snapshot,
           ),
         ],
+        if (usd1 != null)
+          LoopQuoteRow(
+            key: const ValueKey<String>('wallet-launch-chain-usd1-row'),
+            leading: LoopTokenLogo(
+              assetSymbol: 'USD1',
+              fallbackMonogram: usd1Symbol,
+              size: 36,
+            ),
+            title: usd1Symbol,
+            titleTrailing: launchChain.isTestnet
+                ? const LoopTestnetBadge()
+                : null,
+            subtitle: launchChain.isTestnet ? null : launchChain.name,
+            value: loopFormatDecimal(
+              walletLaunchUsd1Figure(usd1.balance),
+              maxFractionDigits: 2,
+            ),
+            semanticLabel:
+                '${launchChain.name} $usd1Symbol '
+                '${loopFormatDecimal(walletLaunchUsd1Figure(usd1.balance), maxFractionDigits: 2)}',
+          ),
+        if (launchChain.isTestnet)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              8,
+              LoopSpacing.page,
+              0,
+            ),
+            child: Text(
+              walletLaunchChainTotalNote,
+              key: const ValueKey<String>('wallet-launch-chain-total-note'),
+              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+            ),
+          ),
       ],
     );
   }
 }
+
+/// Decision 0203: what the Launch block says on a testnet slot, so nobody
+/// reads the total above as including these balances (loop-api decision
+/// 0038: the main asset area stays on the main chain).
+const String walletLaunchChainTotalNote =
+    'Launch 链是 BSC 测试网余额，没有真实价值，不计入总资产；总资产只统计 BNB Smart Chain 主网。';
+
+/// The Launch slot's USD1 symbol: 「tUSD1」 on a testnet, as the faucet
+/// names it, 「USD1」 otherwise.
+String walletLaunchUsd1Symbol(LoopLaunchChainBalance launchChain) =>
+    launchChain.isTestnet ? 'tUSD1' : 'USD1';
+
+/// An exact 18-decimal USD1 integer string as a [Decimal] (USD1 has 18
+/// decimals on both slots, loop-api decision 0077).
+Decimal walletLaunchUsd1Figure(String raw) =>
+    (Decimal.fromBigInt(BigInt.parse(raw)) /
+            Decimal.fromBigInt(BigInt.from(10).pow(18)))
+        .toDecimal();
 
 /// The "this account owns no wallet yet" block.
 ///

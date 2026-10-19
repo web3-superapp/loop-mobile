@@ -564,6 +564,15 @@ String launch2SnapshotPendingTitle(Launch2Snapshot snapshot) =>
       Launch2PublicationStatus.mismatch => '名单发布异常，平台处理中',
     };
 
+/// The project page's stage label (the folio kicker). Decision 0203
+/// (S234-3): while the snapshot is pending it is the same publication state
+/// as the body ([launch2SnapshotPendingTitle]), so the card never says
+/// 「名单生成中」 over a body that already reads 「名单发布中」.
+String launch2InstanceStageLabel(Launch2InstanceDetail detail) =>
+    detail.row.stage == Launch2Stage.snapshotPending
+    ? launch2SnapshotPendingTitle(detail.snapshot)
+    : launch2StageLabel(detail.row.stage);
+
 /// The line under it: the cutoff block and what opens next.
 String launch2SnapshotPendingMessage(Launch2Snapshot snapshot) {
   final block = snapshot.cutoffBlockNumber ?? snapshot.publication?.cutoffBlock;

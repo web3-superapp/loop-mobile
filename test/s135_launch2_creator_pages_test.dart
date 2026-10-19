@@ -19,6 +19,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_entry.dart'
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_deployment_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_project_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_projects_screen.dart';
@@ -606,7 +607,7 @@ void main() {
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-failed-config'), findsOneWidget);
-      expect(find.textContaining('NFT 开售时间太早'), findsOneWidget);
+      expect(find.textContaining('铸造开始时间太早'), findsOneWidget);
       expect(find.text('重试提交'), findsOneWidget);
       expect(submitted, isEmpty);
 
@@ -1465,7 +1466,7 @@ void main() {
       // The picker offers nothing earlier than now + lead.
       await tester.tap(_key('launch2-create-sale-start'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('平台要求至少提前 720 小时开售'), findsOneWidget);
+      expect(find.textContaining('平台要求至少提前 720 小时开始铸造'), findsOneWidget);
       await tester.tap(_key('launch2-sale-start-confirm'));
       await tester.pumpAndSettle();
       await tester.tap(_key('launch2-create-next'));
@@ -2397,6 +2398,108 @@ void main() {
       expect(_key('launch2-status-active'), findsOneWidget);
       expect(_key('launch2-status-approved'), findsNothing);
       await _drain(tester);
+    });
+  });
+
+  group('S236 · decision 0203', () {
+    // S234-1: the creator side says 铸造 the way the user side does (0200).
+    final old = RegExp('NFT 开售|NFT 发售|NFT 价格|开售时间');
+
+    void expectNoOldWords(WidgetTester tester) {
+      final texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((text) => text.data ?? text.textSpan?.toPlainText() ?? '');
+      for (final text in texts) {
+        expect(text, isNot(matches(old)), reason: text);
+      }
+    }
+
+    testWidgets('step 3: 铸造开始时间, 选择铸造开始时间, 铸造价格 and 铸造期', (tester) async {
+      await _pump(tester, const Launch2CreateScreen());
+      await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('launch2-create-name'), 'S234 Walk');
+      await tester.enterText(_key('launch2-create-ticker'), 's234w');
+      await tester.pump();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-step-3'), findsOneWidget);
+      expect(find.text('铸造开始时间'), findsOneWidget);
+      expect(find.text('选择铸造开始时间'), findsOneWidget);
+      expect(find.text('铸造价格'), findsOneWidget);
+      expect(find.text('铸造期'), findsOneWidget);
+      expectNoOldWords(tester);
+      // Nothing picked yet: the page asks in the same words.
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(find.text('请先选择铸造开始时间。'), findsOneWidget);
+      // The picker sheet and its lead hint.
+      await tester.tap(_key('launch2-create-sale-start'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: _key('launch2-sale-start-sheet'),
+          matching: find.text('铸造开始时间'),
+        ),
+        findsOneWidget,
+      );
+      expectNoOldWords(tester);
+      await _drain(tester);
+    });
+
+    testWidgets('project page: 铸造开始 and the template in 铸造 words', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2ProjectScreen(projectId: _projectId),
+        launch: _FakeLaunch(
+          project: s7Project(
+            projectId: _projectId,
+            reviewStatus: LaunchReviewStatus.submitted,
+            kind: LaunchProjectKind.launch2,
+          ),
+        ),
+        creator: _FakeCreator(
+          configs: <_A<Launch2HooksConfig>>[
+            _A<Launch2HooksConfig>.value(_config('hooks_config_draft')),
+          ],
+        ),
+      );
+      expect(
+        tester.widget<LoopKeyValue>(_key('launch2-project-sale-start')).label,
+        '铸造开始',
+      );
+      expect(find.text('铸造价格'), findsOneWidget);
+      expect(find.text('铸造期'), findsOneWidget);
+      expectNoOldWords(tester);
+      await _drain(tester);
+    });
+
+    testWidgets('signing page: the signed start is 铸造开始', (tester) async {
+      await _pump(
+        tester,
+        Launch2SignScreen(projectId: _projectId, clock: _beforeDeadline),
+        creator: _FakeCreator(
+          requests: <_A<Launch2SigningRequest>>[
+            _A<Launch2SigningRequest>.value(_request()),
+          ],
+        ),
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('铸造开始'), findsOneWidget);
+      expectNoOldWords(tester);
+      await _drain(tester);
+    });
+
+    test('failure lines name 铸造开始时间', () {
+      expect(
+        launch2JobFailureText('HOOKS_ACTIVATION_WINDOW_CLOSED'),
+        '距铸造开始太近无法激活，修改铸造开始时间后重新提交。',
+      );
     });
   });
 }

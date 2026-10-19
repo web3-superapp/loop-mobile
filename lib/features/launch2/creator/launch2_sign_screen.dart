@@ -286,7 +286,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
       LoopKeyValue(label: '名称', value: request.name),
       LoopKeyValue(label: '代码', value: loopTickerLabel(request.ticker)),
       LoopKeyValue(
-        label: 'NFT 开售',
+        label: '铸造开始',
         value: loopLocalTimestampLabel(request.nftSaleStartAt),
       ),
       LoopKeyValue(

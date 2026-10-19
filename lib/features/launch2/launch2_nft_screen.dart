@@ -387,6 +387,12 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
         if (outcome.broadcast) {
           _poll?.cancel();
           _poll = null;
+          // Decision 0203: the signing sheet may already have watched the
+          // read show the mint; settle on what is on screen first.
+          final shown = ref
+              .read(launch2InstanceControllerProvider(detail.instanceId))
+              .value;
+          if (shown != null) _settle(shown);
           unawaited(_controller(detail.instanceId).reload());
         }
     }

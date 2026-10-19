@@ -24,7 +24,9 @@ import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_mint.dart';
 import 'package:loop_mobile/features/launch2/launch2_nft_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
@@ -2331,6 +2333,230 @@ void main() {
       expect(
         launch2RecordSubtitle(row),
         startsWith('Frog Launch · 提前购进行中 · 截止 '),
+      );
+    });
+  });
+
+  group('S236 · decision 0203', () {
+    const instance = '8cf88c44-adf8-4c3f-9de2-46a895af3d1d';
+    const viewerWallet = '7dd2bf27-5c36-428d-95cb-54298d0fa974';
+    final at = DateTime.utc(2026, 10, 19, 4, 33, 40);
+    DateTime clock() => at;
+
+    Launch2InstanceDetail s236(String name) => LoopV2Launch2Codec.detail(
+      (jsonDecode(File('test/fixtures/s236/$name.json').readAsStringSync())
+          as Map<String, Object?>)['body'],
+      mediaUrl: (_) => null,
+    );
+
+    final broadcast = s236('instance_snapshot_pending_broadcast');
+    final before = s236('instance_nft_sale_before_mint');
+    final after = s236('instance_nft_sale_after_mint');
+
+    /// The NFT mint intent for this instance and this viewer, live at [at].
+    Launch2Intent mintIntent() {
+      final body = l2IntentJson();
+      final intent = body['launch2Intent']! as Map<String, Object?>;
+      intent['instanceId'] = instance;
+      intent['walletId'] = viewerWallet;
+      intent['createdAt'] = _iso(at);
+      intent['deadline'] = _iso(at.add(const Duration(minutes: 5)));
+      intent['expiresAt'] = _iso(at.add(const Duration(minutes: 5)));
+      return LoopV2Launch2Codec.intent(body);
+    }
+
+    LoopFolioPrimary folio(WidgetTester tester) =>
+        tester.widget<LoopFolioPrimary>(_key('launch2-instance-folio'));
+
+    testWidgets('S234-3 · 名单发布中: the card label and the body say the same '
+        'state', (tester) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: instance),
+        _Fake(details: <Launch2InstanceDetail>[broadcast]),
+        clock: clock,
+      );
+      expect(folio(tester).kicker, '名单发布中');
+      expect(
+        find.descendant(
+          of: _key('launch2-snapshot-pending'),
+          matching: find.text('名单发布中'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('名单生成中'), findsNothing);
+      expect(launch2InstanceStageLabel(broadcast), '名单发布中');
+      // Every other stage keeps its own label.
+      expect(launch2InstanceStageLabel(before), '铸造中');
+      await _drain(tester);
+    });
+
+    testWidgets('S234-2 · 铸造中: the card and the figure say 已铸, not 已售', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Launch2InstanceScreen(instanceId: instance),
+        _Fake(details: <Launch2InstanceDetail>[after]),
+        clock: clock,
+      );
+      expect(folio(tester).caption, 'S234 Walk · 每地址 1 枚 · 已铸 2 枚');
+      expect(launch2InstanceFolioCaption(after), contains('已铸 2 枚'));
+      final stats = tester
+          .widgetList<LoopStatGrid>(find.byType(LoopStatGrid))
+          .expand((grid) => grid.stats);
+      expect(stats.map((stat) => stat.label), contains('已铸'));
+      expect(stats.map((stat) => stat.label), isNot(contains('已售')));
+      expect(find.text('已售'), findsNothing);
+      await _drain(tester);
+    });
+
+    Future<_Fake> mintUntilBroadcast(
+      WidgetTester tester,
+      Widget page,
+      String startKey,
+      List<Launch2InstanceDetail> details,
+    ) async {
+      final gateway = _Fake(details: details, intent: mintIntent());
+      await _pump(
+        tester,
+        page,
+        gateway,
+        wallet: _RecordingWallet(),
+        clock: clock,
+        polling: const Launch2Polling(
+          detailInterval: Duration(hours: 1),
+          tradingInterval: Duration(seconds: 1),
+          listInterval: Duration(hours: 1),
+          snapshotInterval: Duration(hours: 1),
+        ),
+      );
+      await tester.tap(_key(startKey));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('确认签名'));
+      await tester.pump();
+      await tester.pump();
+      // The wallet broadcast: 已广播, nothing confirmed yet.
+      expect(_key('loop-sign-sheet-complete'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('loop-sign-sheet-complete'),
+          matching: find.text('已广播'),
+        ),
+        findsOneWidget,
+      );
+      return gateway;
+    }
+
+    Future<void> expectConfirmedThenClosed(WidgetTester tester) async {
+      // The watch re-reads after `tradingInterval`; the read shows the mint.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump();
+      final sheet = _key('loop-sign-sheet-complete');
+      expect(
+        find.descendant(of: sheet, matching: find.text('已确认')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sheet, matching: find.text('铸造已在链上确认。')),
+        findsOneWidget,
+      );
+      // The step strip says it too.
+      expect(find.text('已确认'), findsWidgets);
+      // It closes itself without a tap.
+      await tester.pump(launch2SignConfirmedCloseDelay);
+      await tester.pumpAndSettle();
+      expect(_key('launch2-sign-sheet'), findsNothing);
+    }
+
+    testWidgets('S234-4 · 共识勋章: the sheet turns 已确认 when the read shows '
+        'the mint and closes itself; the page holds the NFT', (tester) async {
+      final gateway = await mintUntilBroadcast(
+        tester,
+        const Launch2NftScreen(instanceId: instance),
+        'launch2-nft-mint',
+        <Launch2InstanceDetail>[before, after],
+      );
+      await expectConfirmedThenClosed(tester);
+      expect(gateway.detailReads, greaterThanOrEqualTo(2));
+      expect(_medal(tester).bottomLabel, '#2');
+      expect(_button(tester).label, '已持有 · 每地址 1 枚');
+      expect(find.text(launch2NftMintedToast), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      await _drain(tester);
+    });
+
+    testWidgets('S234-4 · project page: the same sheet, the same signal', (
+      tester,
+    ) async {
+      await mintUntilBroadcast(
+        tester,
+        const Launch2InstanceScreen(instanceId: instance),
+        'launch2-buy-nft',
+        <Launch2InstanceDetail>[before, after],
+      );
+      await expectConfirmedThenClosed(tester);
+      expect(find.textContaining('铸造已在链上确认'), findsWidgets);
+      await _drain(tester);
+    });
+
+    testWidgets('S234-4 · no change in the read: 已广播 stays, the reads stop '
+        'at the limit, and 关闭 still closes it', (tester) async {
+      final gateway = await mintUntilBroadcast(
+        tester,
+        const Launch2NftScreen(instanceId: instance),
+        'launch2-nft-mint',
+        <Launch2InstanceDetail>[before],
+      );
+      for (var i = 0; i < launch2ConfirmationReads + 4; i++) {
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump();
+      }
+      final sheet = _key('loop-sign-sheet-complete');
+      expect(
+        find.descendant(of: sheet, matching: find.text('已广播')),
+        findsOneWidget,
+      );
+      expect(find.text('已确认'), findsNothing);
+      // One initial read plus at most the watch's own limit.
+      expect(
+        gateway.detailReads,
+        lessThanOrEqualTo(1 + launch2ConfirmationReads),
+      );
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-sign-sheet'), findsNothing);
+      await _drain(tester);
+    });
+
+    test('the signal is the viewer\'s own: NFT held, curve bought / sold, '
+        'own pool count; nothing for a claim, another wallet or no viewer', () {
+      final intent = mintIntent();
+      expect(launch2OwnConfirmationSignature(before, intent), 'nft:0');
+      expect(launch2OwnConfirmationSignature(after, intent), 'nft:1');
+      // A sale by someone else (soldCount) never moves it.
+      expect(launch2OwnConfirmationSignature(broadcast, intent), 'nft:1');
+      final buy = LoopV2Launch2Codec.intent(
+        l2IntentJson(kind: 'buy', approval: false),
+      );
+      final curveDetail = _detail(stage: 'priority');
+      expect(
+        launch2OwnConfirmationSignature(curveDetail, buy),
+        startsWith('curve:'),
+      );
+      expect(
+        launch2OwnConfirmationSignature(before, buy),
+        isNull,
+        reason: 'the intent is for another wallet than the viewer',
+      );
+      expect(
+        launch2OwnConfirmationSignature(_detail(noViewer: true), buy),
+        isNull,
       );
     });
   });

@@ -404,7 +404,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopSheetHeading('NFT 开售时间'),
+          const LoopSheetHeading('铸造开始时间'),
           SizedBox(
             height: 200,
             child: CupertinoTheme(
@@ -424,7 +424,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             child: Text(
               lead == null
                   ? '最早可选时间由平台决定，太早会被退回。'
-                  : '平台要求至少提前 ${_leadLabel(lead)}开售，最早 '
+                  : '平台要求至少提前 ${_leadLabel(lead)}开始铸造，最早 '
                         '${loopLocalTimestampLabel(earliest)}。',
               key: const ValueKey<String>('launch2-sale-start-hint'),
               style: LoopType.captionSm.copyWith(color: LoopColors.text3),
@@ -777,7 +777,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     final failure = save.failure;
     final draft = _existingDraft;
     return <Widget>[
-      const LoopLabel('NFT 开售时间'),
+      const LoopLabel('铸造开始时间'),
       Padding(
         padding: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
@@ -787,7 +787,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         ),
         child: LoopButton(
           key: const ValueKey<String>('launch2-create-sale-start'),
-          label: start == null ? '选择开售时间' : launch2SaleStartLabel(start, _now),
+          label: start == null
+              ? '选择铸造开始时间'
+              : launch2SaleStartLabel(start, _now),
           icon: 'clock',
           block: true,
           onPressed: save.busy ? null : () => unawaited(_pickSaleStart()),
@@ -798,7 +800,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           key: ValueKey<String>('launch2-create-sale-start-missing'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          body: '请先选择 NFT 开售时间。',
+          body: '请先选择铸造开始时间。',
         ),
       const LoopLabel('回购收币地址'),
       Launch2FixedRecipient(address: _shownRecipient),
@@ -814,7 +816,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           icon: 'warn',
           tone: LoopNoticeTone.warn,
           body:
-              '开售时间太早：平台要求至少提前 '
+              '铸造开始时间太早：平台要求至少提前 '
               '${_leadLabel(save.minSaleLead ?? Duration.zero)}，'
               '最早 ${loopLocalTimestampLabel(earliest)}，请重新选择。',
         ),

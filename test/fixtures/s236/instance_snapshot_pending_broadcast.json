@@ -1,0 +1,137 @@
+{
+  "_derived": "Derived from test/fixtures/s233/instance_snapshot_pending_broadcast.json (itself from the S171 BSC testnet capture, loop-api ee58f98). S234 (2026-10-19, staging, loop-api 40921be) recorded the App's screens and UI dumps only, no raw responses, so its facts are written onto that captured shape: project d88f89f5-0184-4635-bd66-62cbb995ad84, S234 Walk / S234W, token 0xe84cbcea5969ed7c4388c90bea88012bded76666 (logs/A-deploy-poll.log), config v8, mint 12:30-13:30 +08, 2 minted, logo dropped. Stage snapshot_pending with publication broadcast at cutoff 137646108 and 2 members, as S234 shot D-project-4 (13:30:17). The publication txHash is S233's: S234 noted only 0x4995…70d4. S236 / client decision 0203 (S234-3).",
+  "body": {
+    "instance": {
+      "instanceId": "8cf88c44-adf8-4c3f-9de2-46a895af3d1d",
+      "projectId": "d88f89f5-0184-4635-bd66-62cbb995ad84",
+      "launchId": "0x9785e8b1eb59d0833481990e40e066651ea415f0a7715d2fa3a672ac300978ef",
+      "chainId": "eip155:97",
+      "name": "S234 Walk",
+      "ticker": "S234W",
+      "logoUrl": null,
+      "memeAddress": "0xe84cbcea5969ed7c4388c90bea88012bded76666",
+      "stage": "snapshot_pending",
+      "nextChangeAt": null,
+      "holdReason": null,
+      "activatedAt": "2026-10-19T02:39:07.000Z",
+      "nftSale": {
+        "priceUsd1": "100",
+        "soldCount": "2",
+        "startAt": "2026-10-19T04:30:00.000Z",
+        "endAt": "2026-10-19T05:30:00.000Z"
+      },
+      "curve": {
+        "saleSupply": "800000000",
+        "soldSupply": "0",
+        "soldBps": 0,
+        "reserveUsd1": "0",
+        "graduationReserveUsd1": "133333.332",
+        "reserveBps": 0,
+        "priceUsd1": "0.00004166666625"
+      },
+      "graduatedAt": null,
+      "viewerIsProjectOwner": false,
+      "projectOwnerAddress": "0xb70b4880380cf9c0cd59b9ec90906a3b89bfcc1f",
+      "configVersion": 8,
+      "configHash": "0x0c78903b9d72fafa04ac8c95ec1fb73e5087a00ed8a9142770b4151029d5c71a",
+      "buybackRecipient": "0x28816c4c4792467390c90e5b426f198570e29307",
+      "template": {
+        "templateVersion": "hooks_launch_v1",
+        "memeTotalSupply": "1000000000",
+        "curveSaleSupply": "800000000",
+        "initialLiquiditySupply": "200000000",
+        "graduationReserveUsd1": "133333.332",
+        "curveBuyTaxBps": 1000,
+        "curveSellTaxBps": 1000,
+        "officialPoolTaxBps": 200,
+        "lpFee": 2500,
+        "tickSpacing": 60,
+        "perAddressCap": "5000000",
+        "perAddressCapBps": 50,
+        "nftPriceUsd1": "100",
+        "nftSaleSeconds": 3600,
+        "earlyRoundSeconds": 3600,
+        "buybackOrderUsd1": "100",
+        "buybackMinIntervalSeconds": 10
+      },
+      "contracts": {
+        "factory": "0xaf077cab35385027592f959aca185f815c3c5a5a",
+        "meme": "0xe84cbcea5969ed7c4388c90bea88012bded76666",
+        "hook": "0x0000000000000000000000000000000000000000",
+        "nft": "0xc65d3b8a74c5e859a56455d96dcc538b2e154658",
+        "curve": "0x533144186ce3ff3cd47dce8de7c0d655b58f3523",
+        "gate": "0xd214f39b7c6dc48f494ff90146e3649e5bed39b1",
+        "escrow": "0x6803a8f9d4d5494ac30bafa68c4bac687903dd80",
+        "snapshots": "0x463bba8cc8e8c7a9101b6786ef075f35187af4d0",
+        "graduationAdapter": "0x65a7cb9ef4e713dd8a95686face55fab05358ce4",
+        "buybackAdapter": "0x4f33fa82003a72b270b82da0e3e4b7bbf0742893",
+        "priceRecorder": "0x0000000000000000000000000000000000000000",
+        "buybackExecutor": "0xf433b5942e65957fcd6929b56ef4035c9ed7be35"
+      },
+      "snapshot": {
+        "status": "pending",
+        "verification": null,
+        "root": null,
+        "dataHash": null,
+        "cutoffBlockNumber": "137646108",
+        "cutoffBlockHash": null,
+        "publishedAt": null,
+        "earlyRoundEndsAt": null,
+        "memberCount": null,
+        "signers": null,
+        "publication": {
+          "status": "broadcast",
+          "txHash": "0x3e83a226db47ebd5807162fd4e2b1ed855b40e0f3f63cc1f2f37a7d49caa2e92",
+          "cutoffBlock": "137646108",
+          "memberCount": 2
+        },
+        "closure": null,
+        "openedWithoutHolders": null
+      },
+      "graduation": null,
+      "buyback": {
+        "recipient": "0x28816c4c4792467390c90e5b426f198570e29307",
+        "paused": false,
+        "executedCount": "0",
+        "totalUsd1": "0",
+        "totalMeme": "0",
+        "lastExecutedAt": null,
+        "escrowRecordedUsd1": "300",
+        "escrowAvailableUsd1": "300",
+        "latest": null,
+        "keeper": null
+      },
+      "recentTrades": [],
+      "viewer": {
+        "memeBalance": "689823.086910383095868736",
+        "usd1Balance": "139.415604018529648273",
+        "balanceStatus": "available",
+        "balanceReasonCode": null,
+        "balanceBlockNumber": "136621759",
+        "poolTradeCount": "0",
+        "lastPoolTradeAt": null,
+        "walletId": "7dd2bf27-5c36-428d-95cb-54298d0fa974",
+        "nft": {
+          "mintedTokenId": "1",
+          "held": 1
+        },
+        "snapshot": {
+          "member": false,
+          "eligibleNow": false
+        },
+        "curve": {
+          "bought": "0",
+          "sold": "0",
+          "net": "0",
+          "cumulativeBought": "0",
+          "remainingQuota": "5000000",
+          "usd1Spent": "0",
+          "usd1Received": "0",
+          "taxUsd1": "0"
+        }
+      },
+      "projectedAt": "2026-10-19T05:30:17.000Z"
+    },
+    "contractVersion": "2.0"
+  }
+}

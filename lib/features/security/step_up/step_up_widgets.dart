@@ -171,6 +171,7 @@ mixin LoopStepUpSheetMixin<T extends StatefulWidget> on State<T> {
     Widget sheet, {
     required String signLabel,
     required LoopSignStepStatus signStatus,
+    String? signCaption,
   }) {
     final step = stepUpStep;
     if (step == null) return sheet;
@@ -186,7 +187,7 @@ mixin LoopStepUpSheetMixin<T extends StatefulWidget> on State<T> {
               id: 'sign',
               label: signLabel,
               status: signStatus,
-              caption: loopSignStepCaption(signStatus),
+              caption: signCaption ?? loopSignStepCaption(signStatus),
             ),
           ],
         ),

@@ -154,7 +154,8 @@ String _projectSubtitle(Launch2CreatorRow row) {
     Launch2CreatorStatus.approved when row.config.recipientOutdated =>
       '回购收币地址需要更新',
     Launch2CreatorStatus.draft when draft == null => '还没有发射配置',
-    _ when draft != null => '开售 ${loopLocalTimestampLabel(draft.nftSaleStart)}',
+    _ when draft != null =>
+      '${loopLocalTimestampLabel(draft.nftSaleStart)} 开始铸造',
     _ => loopTickerLabel(row.project.ticker),
   };
 }

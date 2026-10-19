@@ -1,0 +1,32 @@
+{
+  "_derived": "The `launchChain` block of GET /v2/wallets/{id}/balances, in the shape test/s83c2_launch_approve_test.dart `_launchChainWire` freezes (loop-api decision 0038 + 0077, client decision 0088), with tBNB as there. S234 recorded no raw wallet response; the tUSD1 figure is S234 report ④'s estimate for account 2 (0xf75d…8239) after its mint: about 4,850 tUSD1 = 4850000000000000000000 raw (18 decimals). The allowance is 0 (the hidden IDO Launch contract). Merged into s5BalancesBody() by test/s236_s234_followups_test.dart. S236 / client decision 0203 (S234-8).",
+  "launchChain": {
+    "chainId": "eip155:97",
+    "availability": "available",
+    "reasonCode": null,
+    "nativeBalance": {
+      "assetId": "eip155:97:native",
+      "symbol": "tBNB",
+      "logo": {
+        "status": "unavailable",
+        "reasonCode": "TOKEN_LOGO_CHAIN_UNSUPPORTED"
+      },
+      "decimals": 18,
+      "rawValue": "2500000000000000000",
+      "displayBalance": "2.5",
+      "availableBalance": "2.5",
+      "spendableBalance": "2.495",
+      "gasReserve": "0.005",
+      "snapshot": {
+        "blockNumber": "52000000",
+        "blockHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "observedAt": "2026-09-09T10:45:05.000Z",
+        "confirmations": 5
+      }
+    },
+    "usd1": {
+      "balance": "4850000000000000000000",
+      "allowance": "0"
+    }
+  }
+}

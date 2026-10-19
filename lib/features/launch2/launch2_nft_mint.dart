@@ -128,9 +128,103 @@ Future<Launch2NftMintResult> launch2MintNft(
     ticker: detail.row.ticker,
     clock: ref.read(launch2ClockProvider),
     noun: entry.noun,
+    confirmation: launch2ReadModelConfirmation(ref, detail, intent),
   );
   if (outcome == null) return const Launch2NftMintCancelled();
   return Launch2NftMintSigned(intent: intent, outcome: outcome);
+}
+
+/// Decision 0203 (S234-4): the sheet's own view of the read model after a
+/// broadcast. [detail] is what the page showed when the action started; its
+/// [launch2OwnConfirmationSignature] is the baseline. The watch listens to
+/// the instance the page keeps reading and, while the sheet is open, asks
+/// for it again every `tradingInterval` (at most [launch2ConfirmationReads]
+/// times), so the sheet does not wait on the page's slower 15 s read.
+/// `null` when the read model carries no signal of the viewer's own.
+Launch2ConfirmationProbe? launch2ReadModelConfirmation(
+  WidgetRef ref,
+  Launch2InstanceDetail detail,
+  Launch2Intent intent,
+) {
+  final baseline = launch2OwnConfirmationSignature(detail, intent);
+  if (baseline == null) return null;
+  return () => _ReadModelConfirmation(
+    ref,
+    instanceId: detail.instanceId,
+    intent: intent,
+    baseline: baseline,
+    interval: ref.read(launch2PollingProvider).tradingInterval,
+  );
+}
+
+/// How many extra reads one watch asks for (the project page's own limit).
+const int launch2ConfirmationReads = 36;
+
+final class _ReadModelConfirmation implements Launch2ConfirmationWatch {
+  _ReadModelConfirmation(
+    this._ref, {
+    required this.instanceId,
+    required this.intent,
+    required this.baseline,
+    required this.interval,
+  }) {
+    _subscription = _ref
+        .listenManual<LoopChainResourceState<Launch2InstanceDetail>>(
+          launch2InstanceControllerProvider(instanceId),
+          (_, next) => _check(next.value),
+          fireImmediately: true,
+        );
+    _arm();
+  }
+
+  final WidgetRef _ref;
+  final String instanceId;
+  final Launch2Intent intent;
+  final String baseline;
+  final Duration interval;
+  final Completer<void> _done = Completer<void>();
+  ProviderSubscription<LoopChainResourceState<Launch2InstanceDetail>>?
+  _subscription;
+  Timer? _timer;
+  int _reads = 0;
+  bool _closed = false;
+
+  @override
+  Future<void> get confirmed => _done.future;
+
+  void _check(Launch2InstanceDetail? value) {
+    if (_closed || _done.isCompleted || value == null) return;
+    final now = launch2OwnConfirmationSignature(value, intent);
+    if (now != null && now != baseline) {
+      _done.complete();
+      _timer?.cancel();
+    }
+  }
+
+  void _arm() {
+    if (_closed || _done.isCompleted || _reads >= launch2ConfirmationReads) {
+      return;
+    }
+    _timer = Timer(interval, () async {
+      _reads += 1;
+      if (_closed || _done.isCompleted) return;
+      try {
+        await _ref
+            .read(launch2InstanceControllerProvider(instanceId).notifier)
+            .reload();
+      } catch (_) {
+        // A failed read is the page's to show; the watch only asks again.
+      }
+      _arm();
+    });
+  }
+
+  @override
+  void close() {
+    _closed = true;
+    _timer?.cancel();
+    _subscription?.close();
+  }
 }
 
 /// What the page says about a signing outcome until the read model shows

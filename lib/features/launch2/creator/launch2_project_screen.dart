@@ -160,7 +160,7 @@ class Launch2ProjectScreen extends ConsumerWidget {
           target: draft.nftSaleStart,
           builder: (context, _) => LoopKeyValue(
             key: const ValueKey<String>('launch2-project-sale-start'),
-            label: 'NFT 开售',
+            label: '铸造开始',
             value: launch2SaleStartLabel(draft.nftSaleStart, clock()),
           ),
         ),
@@ -326,7 +326,7 @@ class Launch2ProjectScreen extends ConsumerWidget {
           if (edit)
             _action(
               'launch2-project-edit',
-              '修改开售时间',
+              '修改铸造开始时间',
               () => _go(Launch2CreatorRoute.edit(id)),
             )
           else

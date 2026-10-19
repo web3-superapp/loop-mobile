@@ -73,7 +73,7 @@ String launch2FailureText(LoopChainException failure) {
   }
   return switch (failure.kind) {
     LoopChainFailureKind.invalidData =>
-      '服务端没有接受这份资料。最常见的原因是 NFT 开售时间太早，'
+      '服务端没有接受这份资料。最常见的原因是铸造开始时间太早，'
           '需要给部署和激活留出时间，往后调整后再提交。',
     LoopChainFailureKind.versionConflict => '资料在别处被改过，已重新读取，请确认后再提交。',
     LoopChainFailureKind.idempotencyConflict => '这次提交和上一次内容不同，请重新签名。',
@@ -93,7 +93,7 @@ String launch2JobFailureText(String code) => switch (code) {
   'HOOKS_AUTHORIZATION_INVALID' => '签名无效，请重新签名。',
   'HOOKS_OWNER_NONCE_CONSUMED' => '钱包 nonce 已变化，请重新签名。',
   'HOOKS_LAUNCH_ALREADY_DEPLOYED' => '该版本已在链上部署，请联系平台。',
-  'HOOKS_ACTIVATION_WINDOW_CLOSED' => '距开售太近无法激活，修改开售时间后重新提交。',
+  'HOOKS_ACTIVATION_WINDOW_CLOSED' => '距铸造开始太近无法激活，修改铸造开始时间后重新提交。',
   'HOOKS_VERIFICATION_MISMATCH' => '部署核验不一致，项目未激活，请联系平台。',
   'HOOKS_EXECUTOR_FUNDS_INSUFFICIENT' ||
   'HOOKS_BROADCAST_REJECTED' ||
@@ -186,9 +186,9 @@ class Launch2TemplateCard extends StatelessWidget {
         '单地址上限',
         capBps == null ? capFigure : '$capFigure（${launch2BpsLabel(capBps)}）',
       ),
-      ('NFT 价格', launch2Usd1Label(economics.nftPriceUsd1Raw)),
+      ('铸造价格', launch2Usd1Label(economics.nftPriceUsd1Raw)),
       (
-        'NFT 发售期',
+        '铸造期',
         fromServer
             ? launch2DurationLabel(economics.nftSaleDurationSeconds)
             : '由实例决定',

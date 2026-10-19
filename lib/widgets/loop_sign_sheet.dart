@@ -47,6 +47,7 @@ class LoopSignSheet extends StatelessWidget {
     this.confirmLabel = '确认签名',
     this.cancelLabel = '取消',
     this.signingTitle = '正在签名并广播',
+    this.completeLabel = '已广播',
   });
 
   final LoopSignSheetState state;
@@ -78,6 +79,11 @@ class LoopSignSheet extends StatelessWidget {
   /// What the busy body says. Decision 0152: 「正在验证身份」 while the
   /// device's own prompt runs before the wallet opens.
   final String signingTitle;
+
+  /// The state badge in [LoopSignSheetState.complete]. Decision 0203: an
+  /// owner that watched the read model show the broadcast may say 「已确认」;
+  /// the sheet itself never decides that.
+  final String completeLabel;
 
   bool get confirmEnabled =>
       state == LoopSignSheetState.pending && onConfirm != null;
@@ -115,7 +121,7 @@ class LoopSignSheet extends StatelessWidget {
       LoopSignSheetState.policyRejected => '被策略拒绝',
       // Decision 0089: the sheet closes on a broadcast, never on a result.
       // What the chain did is the result page's to say.
-      LoopSignSheetState.complete => '已广播',
+      LoopSignSheetState.complete => completeLabel,
     };
     return _SignOutcomeHaptics(
       state: state,
