@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -87,7 +88,7 @@ String memeReasonText(String? reasonCode) => switch (reasonCode) {
   'MEME_INTENT_ALREADY_REPORTED' => '这笔交易已失效，请重新发起',
   'MEME_USD1_BALANCE_INSUFFICIENT' => 'USD1 余额不足',
   'MEME_SELL_EXCEEDS_BALANCE' => '卖出数量超过持有',
-  'MEME_GAS_INSUFFICIENT' => 'tBNB 手续费不足',
+  'MEME_GAS_INSUFFICIENT' => '$loopLaunchNativeSymbolText 手续费不足',
   'MEME_WALLET_CAP_EXCEEDED' => '超过单钱包 4,000 万枚上限',
   'MEME_BELOW_MIN_BUY' => '最少买入 1 USD1',
   'MEME_METADATA_INVALID' => '资料不符合要求，请检查名称、符号、简介和链接',

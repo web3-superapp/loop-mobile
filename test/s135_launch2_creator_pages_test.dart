@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -38,6 +39,7 @@ import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/test_hints.dart';
 
 // ---------------------------------------------------------------------------
 // S135 · MEME v2 project side pages (client decision 0138)
@@ -421,6 +423,9 @@ LaunchProjectPage _page(List<LaunchProject> items) =>
     LaunchProjectPage(items: items, nextCursor: null);
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   loopWatchGround();
 
   setUp(() {
@@ -949,6 +954,36 @@ void main() {
   });
 
   group('签名部署', () {
+    // S237 · decision 0204: with the test-hints switch off the sign page and
+    // the sheet name the chain 「BNB Smart Chain」 and draw no testnet badge.
+    testWidgets('switch off: 网络 is BNB Smart Chain, the sheet has no badge', (
+      tester,
+    ) async {
+      debugSetLoopTestHintsVisible(false);
+      addTearDown(() => debugSetLoopTestHintsVisible(true));
+      final creator = _FakeCreator(
+        requests: <_A<Launch2SigningRequest>>[
+          _A<Launch2SigningRequest>.value(_request()),
+        ],
+      );
+      await _pump(
+        tester,
+        Launch2SignScreen(projectId: _projectId, clock: _beforeDeadline),
+        creator: creator,
+        signer: _Signer(),
+        settle: false,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('BNB Smart Chain'), findsOneWidget);
+      expect(find.textContaining('测试网'), findsNothing);
+      await tester.tap(_key('launch2-sign-submit'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-sign-sheet'), findsOneWidget);
+      expect(find.textContaining('测试网'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('测试网')), findsNothing);
+      await _drain(tester);
+    });
+
     testWidgets('the predicted address and the EIP-712 summary are signed '
         'through the sign sheet and submitted as one job', (tester) async {
       final signer = _Signer();

@@ -1901,7 +1901,7 @@ void main() {
         'LOOP 代币上线后公布',
       );
       expect(find.text('1,000,000'), findsNothing);
-      expect(find.text('占位产量'), findsNothing);
+      expect(find.text('预估产量'), findsNothing);
     });
 
     testWidgets('the development baseline prints its weights and its budget', (
@@ -1948,7 +1948,7 @@ void main() {
       );
       await scrollToS7Section(tester, output);
       expect(find.text('1,000,000'), findsOneWidget);
-      expect(find.text('占位产量'), findsOneWidget);
+      expect(find.text('预估产量'), findsOneWidget);
 
       final notice = find.byKey(
         const ValueKey<String>('mining-rules-baseline-notice'),

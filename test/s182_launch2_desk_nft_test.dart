@@ -47,6 +47,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
+import 'support/test_hints.dart';
 
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -404,6 +405,9 @@ LoopSeg _seg(WidgetTester tester, String label) => tester.widget<LoopSeg>(
 );
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   loopWatchGround();
 
   group('desk · the main event and its order', () {

@@ -974,9 +974,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
         venue: widget.intent.venue,
         noun: widget.noun,
       ),
-      networkBadge: loopIsTestnetChainId(widget.intent.chainId)
-          ? loopTestnetBadgeLabel
-          : null,
+      networkBadge: loopTestnetBadgeFor(widget.intent.chainId),
       facts: <LoopSignFact>[
         for (final IntentField field in fields)
           LoopSignFact(field.label, field.value),

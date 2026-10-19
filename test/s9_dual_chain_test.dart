@@ -18,6 +18,7 @@ import 'package:loop_mobile/integrations/privy/privy_production_adapter.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 
 import 'support/s5_fixtures.dart';
+import 'support/test_hints.dart';
 
 /// Decision 0038 gave LOOP exactly two named chain slots: `primary`, which
 /// never moves, and `launch`, which may point at the BSC testnet. These tests
@@ -29,6 +30,9 @@ import 'support/s5_fixtures.dart';
 /// primary chain omits all three keys, and every parse below must then produce
 /// exactly what it produced before S9.
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   const accessToken = 'privy-access-token';
 
   group('chain status · launchChain', () {

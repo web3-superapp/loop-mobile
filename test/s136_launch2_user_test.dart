@@ -36,6 +36,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
+import 'support/test_hints.dart';
 import 'support/testnet_faucet_fakes.dart';
 
 // ---------------------------------------------------------------------------
@@ -372,6 +373,9 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   loopWatchGround();
 
   group('codec (strict keys, contract 0114 / 0117 / 0118)', () {
@@ -1654,7 +1658,7 @@ void main() {
       await confirmNft(tester);
       expect(_key('launch2-bar-topup'), findsOneWidget);
       expect(_key('launch2-bar-faucet'), findsNothing);
-      expect(find.text('领取测试币'), findsNothing);
+      expect(find.text('获取资金'), findsNothing);
       await _drain(tester);
     });
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/theme/loop_scroll_behavior.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 
@@ -771,6 +772,32 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   }
 }
 
+/// The pages that only show component specimens or fixtures (decision 0204):
+/// no product entry opens them, and each says 组件样例 or 开发预览.
+const Set<String> loopSpecimenLocations = <String>{
+  '/preview/token-card',
+  '/preview/contract-facts',
+  '/preview/asset-message',
+  '/preview/toast',
+  '/preview/loading',
+  '/system/offline',
+  '/system/error',
+  '/system/maintenance',
+  '/system/permission',
+  '/system/token-card',
+  '/system/sign-sheet',
+};
+
+/// Whether [location] is a specimen page closed in this build: the
+/// test-hints switch is off and the session is not a Development Preview.
+bool loopSpecimenLocationClosed(
+  String location, {
+  required bool previewSession,
+}) =>
+    !loopTestHintsVisible &&
+    !previewSession &&
+    loopSpecimenLocations.contains(location);
+
 /// Chooses between the labelled Development Preview surface and the V2
 /// production page for one chat route.
 ///
@@ -863,6 +890,17 @@ GoRouter _buildRouter(
       if (linkedCommunity != null) {
         profileLinks.takeCommunity();
         return communityProfileLocation(linkedCommunity);
+      }
+      // S237 · decision 0204: the component-specimen and fixture pages have
+      // no entry in the product and say 组件样例 / 开发预览 / preview. With
+      // the test-hints switch off they are closed outside a Development
+      // Preview session, like any unknown location.
+      if (loopSpecimenLocationClosed(
+        location,
+        previewSession: session.isPreview,
+      )) {
+        routingErrors.record(state.uri.toString());
+        return LoopRouteManifest.defaultPath;
       }
       return null;
     },

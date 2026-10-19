@@ -5,8 +5,12 @@ import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 import 'support/system_surface_harness.dart';
+import 'support/test_hints.dart';
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   testWidgets('production token-card-states route draws all five cards', (
     tester,
   ) async {

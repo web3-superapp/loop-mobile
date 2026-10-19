@@ -10,6 +10,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/test_hints.dart';
 
 /// The order of the blocks on each Launch page, pinned.
 ///
@@ -20,6 +21,9 @@ import 'support/s7_page_harness.dart';
 /// regressions an assertion about presence cannot catch, so this file asserts
 /// position: block A is above block B, on the page as it renders.
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   /// The vertical offset of [key], which must be built exactly once.
   double topOf(WidgetTester tester, String key) {
     final finder = find.byKey(ValueKey<String>(key));

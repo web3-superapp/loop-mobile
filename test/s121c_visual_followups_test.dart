@@ -18,9 +18,13 @@ import 'support/loop_ground_probe.dart';
 import 'support/meme_fixtures.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
+import 'support/test_hints.dart';
 
 /// Decision 0123 (S121c): the visual follow-ups to S121b.
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   loopWatchGround();
   Finder key(String value) => find.byKey(ValueKey<String>(value));
 

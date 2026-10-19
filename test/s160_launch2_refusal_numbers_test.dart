@@ -5,9 +5,14 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
 
+import 'support/test_hints.dart';
+
 /// Client decision 0156 §1: the launch2 balance refusals carry the wallet's
 /// own figures (loop-api decision 0129 §1) and the failure line says them.
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   LoopChainException mapped(Map<String, Object?> detailsSafe) =>
       loopChainExceptionForV2(
         LoopBackendFailure(
@@ -162,7 +167,7 @@ void main() {
       });
       expect(
         launch2ActionFailure(none),
-        const Launch2ActionFailure(launch2GasShortText, topUp: true),
+        Launch2ActionFailure(launch2GasShortText, topUp: true),
       );
       final requiredOnly = mapped(<String, Object?>{
         'reasonCode': 'LAUNCH2_GAS_INSUFFICIENT',

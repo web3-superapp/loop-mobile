@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
-import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
@@ -615,9 +614,7 @@ class _LaunchSignSheetState extends State<LaunchSignSheet>
           state: _state,
           signingTitle: stepUpSigningTitle,
           title: launchIntentTitle(_intent.kind),
-          networkBadge: loopIsTestnetChainId(_intent.chainId)
-              ? loopTestnetBadgeLabel
-              : null,
+          networkBadge: loopTestnetBadgeFor(_intent.chainId),
           facts: <LoopSignFact>[
             for (final IntentField field in fields)
               LoopSignFact(field.label, field.value),

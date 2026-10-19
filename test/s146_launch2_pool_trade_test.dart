@@ -31,6 +31,7 @@ import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
+import 'support/test_hints.dart';
 
 // ---------------------------------------------------------------------------
 // S146 · MEME v2 外盘交易 on the graduated page (client decision 0145)
@@ -427,6 +428,9 @@ VoidCallback? _confirmCallback(WidgetTester tester) =>
         as VoidCallback?;
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   loopWatchGround();
 
   group('codec (loop-api S146 pool routes)', () {

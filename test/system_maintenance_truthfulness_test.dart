@@ -3,8 +3,12 @@ import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 
 import 'support/system_surface_harness.dart';
+import 'support/test_hints.dart';
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   testWidgets('production maintenance route draws the specimen', (
     tester,
   ) async {

@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -399,7 +400,7 @@ String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_QUOTE_EXPIRED' => '报价已过期，已重新报价',
   'LAUNCH2_USD1_BALANCE_INSUFFICIENT' => 'USD1 余额不足',
   'LAUNCH2_MEME_BALANCE_INSUFFICIENT' => '卖出数量超过持有',
-  'LAUNCH2_GAS_INSUFFICIENT' => 'tBNB 手续费不足，充值后再试',
+  'LAUNCH2_GAS_INSUFFICIENT' => '$loopLaunchNativeSymbolText 手续费不足，充值后再试',
   'LAUNCH2_AMOUNT_INVALID' => '金额不正确',
   'LAUNCH2_AMOUNT_ABOVE_MAX' => '超出可买上限',
   'LAUNCH2_DEADLINE_TOO_FAR' || 'LAUNCH2_QUOTE_ZERO' => '报价已变化，请重新报价',
@@ -455,9 +456,12 @@ final class Launch2ActionFailure {
   int get hashCode => Object.hash(text, topUp);
 }
 
-/// zh-CN for the tBNB gas refusal at the button when the refusal carries no
-/// figure: names the token and the fee.
-const String launch2GasShortText = 'tBNB 手续费不足：钱包里的 tBNB 不够付这笔的网络手续费，充值后再试';
+/// zh-CN for the native-gas refusal at the button when the refusal carries
+/// no figure: names the token and the fee. The symbol goes through
+/// [loopDisplaySymbol] (decision 0204).
+String get launch2GasShortText =>
+    '$loopLaunchNativeSymbolText 手续费不足：钱包里的 $loopLaunchNativeSymbolText '
+    '不够付这笔的网络手续费，充值后再试';
 
 /// The gas refusal's line with the server's figures (decision 0156): the
 /// fee ceiling the check compared and the wallet's tBNB. A missing figure
@@ -466,13 +470,13 @@ String launch2GasFailureText(LoopChainException failure) {
   final required = _detailFigure(failure.requiredBnb);
   final balance = _detailFigure(failure.balanceBnb);
   String bnb(Decimal value) =>
-      '${loopFormatDecimal(value, maxFractionDigits: 8)} tBNB';
+      '${loopFormatDecimal(value, maxFractionDigits: 8)} $loopLaunchNativeSymbolText';
   if (required == null && balance == null) return launch2GasShortText;
   final parts = <String>[
     if (required != null) '这笔约需 ${bnb(required)}',
     if (balance != null) '钱包有 ${bnb(balance)}',
   ];
-  return 'tBNB 手续费不足：${parts.join('，')}，充值后再试';
+  return '$loopLaunchNativeSymbolText 手续费不足：${parts.join('，')}，充值后再试';
 }
 
 Decimal? _detailFigure(String? raw) =>

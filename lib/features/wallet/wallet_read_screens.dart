@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/loop_backend_identity.dart';
 import 'package:loop_mobile/app/loop_balance_visibility.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/qr/loop_qr_code.dart';
@@ -28,9 +29,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
-import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart'; // S136
-import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_image_share.dart';
@@ -278,11 +277,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
     final hideZero = ref.watch(walletHideZeroBalancesProvider);
     final directoryEmpty = _directoryIsEmpty(directory);
-    // Decision 0158: the server grants only to the signed-in embedded wallet,
-    // so an external (or not yet read) active wallet gets no entry at all.
-    final faucetVisible =
-        testnetFaucetVisible(ref) &&
-        directory.value?.active?.kind == LoopWalletKind.embedded;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallet-screen'),
@@ -429,28 +423,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               ),
             ],
           ),
-          // Decision 0154: the testnet faucet, drawn only while the server
-          // publishes `testnetFaucet` as available. A mainnet backend never
-          // does, so there is not even a placeholder there.
-          if (faucetVisible)
-            TestnetFaucetEntry(
-              onTap: () => unawaited(
-                showTestnetFaucetSheet(
-                  context,
-                  walletId: walletId,
-                  address: directory.value?.active?.address,
-                  onGranted: () {
-                    if (ref.exists(launch2PositionsControllerProvider)) {
-                      unawaited(
-                        ref
-                            .read(launch2PositionsControllerProvider.notifier)
-                            .reload(),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
+          // S237 · decision 0204: the faucet card under the quick actions is
+          // gone; 获取资金 opens from 充值 on 我 and MEME, and from the
+          // MEME v2 insufficient-balance link.
           // Decision 0188 · 持仓分布: only over a complete set of valuations.
           if (balances != null)
             if (walletHoldingShares(balances) case final shares?)
@@ -497,11 +472,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               title: 'Launch 链',
               // Audit m14 (decision 0133): the testnet explanation is behind
               // this (i), not a five-line card in the asset list.
-              trailing: launch.isTestnet
+              // Decision 0204: a test-only hint, behind the switch.
+              trailing: launch.isTestnet && loopTestHintsVisible
                   ? LoopIconButton(
                       key: const ValueKey<String>('wallet-launch-chain-info'),
                       icon: 'info',
-                      label: '关于 Launch 测试网',
+                      label: loopTestnetInfoButtonText,
                       color: LoopColors.text2,
                       onPressed: () =>
                           unawaited(showLoopTestnetInfoSheet(context)),
@@ -1165,7 +1141,9 @@ String _assetChainName(String assetId) {
 String? _assetChainStamp(String assetId) =>
     switch (assetId.substring(0, assetId.lastIndexOf(':'))) {
       loopPrimaryChainId => 'BSC',
-      loopLaunchTestnetChainId => 'BSC TESTNET',
+      // Decision 0204: the testnet stamp is a test-only hint.
+      loopLaunchTestnetChainId =>
+        loopTestHintsVisible ? loopTestnetStampText : 'BSC',
       _ => null,
     };
 
@@ -2567,7 +2545,7 @@ class WalletActivityDetailSheet extends StatelessWidget {
                   LoopKeyValue(
                     label: '数量',
                     value:
-                        '${loopFormatDecimal(entry.displayValue)} ${entry.symbol}',
+                        '${loopFormatDecimal(entry.displayValue)} ${loopDisplaySymbol(entry.symbol)}',
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                   LoopKeyValue(
@@ -2814,22 +2792,24 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                   subtitleMaxLines: 2,
                   trailingBadge: const LoopBadge('不可用'),
                 ),
-                LoopRecordRow(
-                  key: const ValueKey<String>('networks-testnet'),
-                  title: '测试网',
-                  // Decision 0038: the Launch slot is the only testnet the
-                  // product has, and it is published by the server, never
-                  // toggled here.
-                  subtitle: status.launchChain == null
-                      ? '没有已发布的测试网'
-                      : '${status.launchChain!.name} · 只有 Launch 使用',
-                  trailingBadge: LoopBadge(
-                    status.launchChain == null ? '已关闭' : '已发布',
-                    kind: status.launchChain == null
-                        ? LoopBadgeKind.mute
-                        : LoopBadgeKind.launch,
+                // Decision 0204: the whole row is a test-only hint.
+                if (loopTestHintsVisible)
+                  LoopRecordRow(
+                    key: const ValueKey<String>('networks-testnet'),
+                    title: loopTestnetNetworkRowTitle,
+                    // Decision 0038: the Launch slot is the only testnet the
+                    // product has, and it is published by the server, never
+                    // toggled here.
+                    subtitle: status.launchChain == null
+                        ? loopTestnetNetworkRowAbsent
+                        : '${status.launchChain!.name} · 只有 Launch 使用',
+                    trailingBadge: LoopBadge(
+                      status.launchChain == null ? '已关闭' : '已发布',
+                      kind: status.launchChain == null
+                          ? LoopBadgeKind.mute
+                          : LoopBadgeKind.launch,
+                    ),
                   ),
-                ),
               ],
             ),
             // The endpoint list, the indexer lanes, the chain id, the reorg

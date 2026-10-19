@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -809,12 +810,16 @@ class LoopTestnetBadge extends StatelessWidget {
 
   final bool onLedger;
 
+  // S237 · decision 0204: a test-only hint; nothing is drawn while the
+  // test-hints switch is off.
   @override
-  Widget build(BuildContext context) => LoopBadge(
-    key: const ValueKey<String>('loop-testnet-badge'),
-    loopTestnetBadgeLabel,
-    onLedger: onLedger,
-  );
+  Widget build(BuildContext context) => loopTestHintsVisible
+      ? LoopBadge(
+          key: const ValueKey<String>('loop-testnet-badge'),
+          loopTestnetBadgeLabel,
+          onLedger: onLedger,
+        )
+      : const SizedBox.shrink();
 }
 
 /// The testnet explanation behind an (i) (decision 0133, audit m14).
@@ -827,7 +832,7 @@ Future<void> showLoopTestnetInfoSheet(BuildContext context) =>
       context,
       title: loopTestnetNoticeTitle,
       sheetKey: 'loop-testnet-info-sheet',
-      notes: const <LoopInfoNote>[LoopInfoNote(body: loopTestnetNoticeBody)],
+      notes: <LoopInfoNote>[LoopInfoNote(body: loopTestnetNoticeBody)],
     );
 
 /// The one-time explanation that accompanies the badge.
@@ -858,7 +863,9 @@ class LoopTestnetNotice extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!visible || ref.watch(loopTestnetNoticeDismissedProvider)) {
+    if (!visible ||
+        !loopTestHintsVisible ||
+        ref.watch(loopTestnetNoticeDismissedProvider)) {
       return const SizedBox.shrink();
     }
     return LoopNotice(
@@ -870,7 +877,7 @@ class LoopTestnetNotice extends ConsumerWidget {
       trailing: LoopIconButton(
         key: const ValueKey<String>('loop-testnet-notice-dismiss'),
         icon: 'close',
-        label: '关闭测试网说明',
+        label: loopTestnetNoticeDismissText,
         onPressed: () =>
             ref.read(loopTestnetNoticeDismissedProvider.notifier).dismiss(),
       ),

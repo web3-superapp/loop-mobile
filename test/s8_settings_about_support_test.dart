@@ -241,7 +241,7 @@ void main() {
       for (final (module, name) in <(String, String)>[
         ('productPolicy', '产品策略'),
         ('support', '客服工单规则'),
-        ('bscWriteCanary', '链上写入灰度规则'),
+        ('bscWriteCanary', '链上写入规则'),
       ]) {
         final row = find.byKey(ValueKey<String>('about-config-$module'));
         await scrollToS8Section(tester, row);

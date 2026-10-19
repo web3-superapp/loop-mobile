@@ -50,7 +50,7 @@ String marketMoveLabel(Decimal percent) {
 /// was not read (decision 0100 §12). The server's reason, said in a few words;
 /// never a zero and never a dash.
 String marketQuoteUnavailableLabel(String? reasonCode) => switch (reasonCode) {
-  'MARKET_CHAIN_NOT_PRICED' => '测试网代币不报价',
+  'MARKET_CHAIN_NOT_PRICED' => '暂无报价',
   'MARKET_PROVIDER_RATE_LIMITED' => '行情限流中',
   'MARKET_PROVIDER_UNREACHABLE' => '行情暂时取不到',
   'MARKET_PROVIDER_DEXSCREENER_DISABLED' => '行情源未开启',

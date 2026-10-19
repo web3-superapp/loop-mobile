@@ -20,6 +20,7 @@ import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/s83c_fixtures.dart';
 import 'support/s88d_meta_server.dart';
+import 'support/test_hints.dart';
 
 /// Decision 0088 · the Launch pages against the `available` branches.
 ///
@@ -163,6 +164,9 @@ Future<void> _fillAndSubmit(WidgetTester tester) async {
 }
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   group('S88d · the purchase sheet opens on the server\'s current '
       'capability', () {
     testWidgets('a request pair goes out before the sheet, and the sign '

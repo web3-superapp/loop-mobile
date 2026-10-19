@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 
 /// Which LOOP backend this build talks to, read from the build-time
 /// `LOOP_BACKEND_BASE_URL` (decision 0100). Pure: no request is made, and the
@@ -45,8 +46,11 @@ String loopRuntimeBuildMode({bool? release, bool? profile}) {
 
 /// The tag drawn on the wallet hero, or `null` when none is drawn: a release
 /// binary never shows one, and neither does a build with no backend.
+///
+/// S237 · decision 0204: DEV / STAGING is a test-only hint, so nothing is
+/// drawn either while the test-hints switch is off.
 String? loopEnvironmentTag(String baseUrl, {required bool release}) {
-  if (release) return null;
+  if (release || !loopTestHintsVisible) return null;
   final host = loopBackendHost(baseUrl);
   return host == null ? null : loopBackendTier(host);
 }

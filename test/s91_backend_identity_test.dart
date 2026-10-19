@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_backend_identity.dart';
-import 'package:loop_mobile/features/profile/about/about_screen.dart';
+import 'package:loop_mobile/features/profile/about/network_diagnostics_screen.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/widgets/loop_environment_tag.dart';
 
 import 'support/s5_page_harness.dart';
 import 'support/s8_harness.dart';
+import 'support/test_hints.dart';
 
 /// Decision 0100 · which backend this build talks to. Read from the
 /// build-time `LOOP_BACKEND_BASE_URL`; no request is made for it.
@@ -28,6 +29,9 @@ List<Override> _overrides(String baseUrl, {required bool release}) =>
     ];
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   group('host → tier', () {
     test('the configured hosts', () {
       final cases = <String, (String?, String?)>{
@@ -117,12 +121,13 @@ void main() {
     });
   });
 
-  group('about · 服务端', () {
+  // S237 · decision 0204: 服务端 and 构建模式 moved from 关于 to 网络诊断,
+  // behind the test-hints switch.
+  group('网络诊断 · 服务端', () {
     testWidgets('the host and the declared build mode', (tester) async {
       await pumpS8Page(
         tester,
-        const AboutScreen(),
-        about: FakeAboutGateway(),
+        const NetworkDiagnosticsScreen(),
         overrides: _overrides(
           'https://api-dev.quant-dinger.cc',
           release: false,
@@ -151,8 +156,7 @@ void main() {
     testWidgets('no backend configured says so', (tester) async {
       await pumpS8Page(
         tester,
-        const AboutScreen(),
-        about: FakeAboutGateway(),
+        const NetworkDiagnosticsScreen(),
         overrides: _overrides('', release: false),
       );
       final row = find.byKey(const ValueKey<String>('about-backend-host'));

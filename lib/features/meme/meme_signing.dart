@@ -573,9 +573,7 @@ class _MemeSignSheetState extends State<MemeSignSheet>
           state: _state,
           signingTitle: stepUpSigningTitle,
           title: memeIntentTitle(widget.intent.kind),
-          networkBadge: loopIsTestnetChainId(widget.intent.chainId)
-              ? loopTestnetBadgeLabel
-              : null,
+          networkBadge: loopTestnetBadgeFor(widget.intent.chainId),
           facts: <LoopSignFact>[
             for (final IntentField field in fields)
               LoopSignFact(field.label, field.value),

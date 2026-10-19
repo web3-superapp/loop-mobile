@@ -554,7 +554,7 @@ class Launch2ActionFailureLine extends StatelessWidget {
                     if (faucet != null)
                       _FailureLink(
                         key: faucetKey,
-                        label: '领取测试币',
+                        label: '获取资金',
                         onTap: faucet,
                       ),
                   ],

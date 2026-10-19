@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -11,7 +12,6 @@ import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gatewa
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -41,14 +41,13 @@ bool testnetFaucetVisible(WidgetRef ref) {
 // Copy
 // ---------------------------------------------------------------------------
 
-const String testnetFaucetTitle = '领取测试币';
+// S237 · decision 0204: the sheet never says 测试 / 水龙头 / 没有价值. It is
+// 「获取资金」, opened from 充值 and from the MEME v2 insufficient-balance
+// link; symbols go through [loopDisplaySymbol].
+const String testnetFaucetTitle = '获取资金';
 
-/// The wallet entry reads no status, so it names no period: the cooldown is
-/// the server's `cooldownSeconds` and is said only once it is read
-/// (decision 0158).
-const String testnetFaucetEntrySubtitle = '测试网专用 · 领 tBNB 与 tUSD1';
 const String testnetFaucetBusyLabel = '正在发放…（约 30 秒）';
-const String testnetFaucetOperatorLowText = '测试币池暂时不足，请稍后再试';
+const String testnetFaucetOperatorLowText = '资金池暂时不足，请稍后再试';
 const String testnetFaucetNotOwnedText = '只能给当前登录的内置钱包领取';
 const String testnetFaucetInFlightLaterText = '结果稍后在这里查看';
 const String testnetFaucetTimedOutLaterText = '发放还在进行，稍后再进来看';
@@ -98,18 +97,20 @@ String testnetFaucetPartialText(
 }) {
   final again = _againText(cooldownSeconds);
   if (partial.unconfirmed) {
-    return 'tBNB 已发出但还没确认，tUSD1 这次没发；$again';
+    return '$loopLaunchNativeSymbolText 已发出但还没确认，$loopLaunchUsd1SymbolText 这次没发；$again';
   }
   final bnb = partial.bnbTransactionHash != null;
   final usd1 = partial.usd1TransactionHash != null;
   if (partial.readBack && bnb && !usd1) {
-    // A record read back proves the tBNB transfer was sent, not that it
+    // A record read back proves the native transfer was sent, not that it
     // arrived (decision 0158).
-    return 'tBNB 已发出，tUSD1 这次没发；$again';
+    return '$loopLaunchNativeSymbolText 已发出，$loopLaunchUsd1SymbolText 这次没发；$again';
   }
-  if (usd1 && !bnb) return 'tUSD1 已到账，tBNB 这次没成功，$again';
-  if (!bnb && !usd1) return '这次只发出了一部分测试币，$again';
-  return 'tBNB 已到账，tUSD1 这次没成功，$again';
+  if (usd1 && !bnb) {
+    return '$loopLaunchUsd1SymbolText 已到账，$loopLaunchNativeSymbolText 这次没成功，$again';
+  }
+  if (!bnb && !usd1) return '这次只发出了一部分，$again';
+  return '$loopLaunchNativeSymbolText 已到账，$loopLaunchUsd1SymbolText 这次没成功，$again';
 }
 
 /// One refusal or failure, in the owner's words.
@@ -123,17 +124,17 @@ String testnetFaucetFailureText(
     case TestnetFaucetReason.walletNotOwned:
       return testnetFaucetNotOwnedText;
     case TestnetFaucetReason.disabled:
-      return '测试币领取已关闭';
+      return '领取已关闭';
     case TestnetFaucetReason.wrongChain:
-      return '当前网络不是测试网，不能领取测试币';
+      return '当前网络不支持领取';
     case TestnetFaucetReason.operatorNotConfigured:
     case TestnetFaucetReason.capabilityAbsent:
     case TestnetFaucetReason.usd1NotConfigured:
     case TestnetFaucetReason.rpcNotConfigured:
     case TestnetFaucetReason.runtimeUnavailable:
-      return '测试币领取暂时不可用，稍后再试';
+      return '领取暂时不可用，稍后再试';
     case TestnetFaucetReason.usd1Unavailable:
-      return 'tUSD1 合约暂时不可用，稍后再试';
+      return '$loopLaunchUsd1SymbolText 合约暂时不可用，稍后再试';
     case TestnetFaucetReason.chainReadFailed:
       return '链上读数暂时取不到，稍后再试';
     case TestnetFaucetReason.busy:
@@ -149,33 +150,6 @@ String testnetFaucetFailureText(
   return loopChainFailureReason(failure.kind);
 }
 
-// ---------------------------------------------------------------------------
-// The wallet entry
-// ---------------------------------------------------------------------------
-
-/// The one-row card under the balance on the wallet tab. Its parent draws it
-/// only while [testnetFaucetVisible] holds.
-class TestnetFaucetEntry extends StatelessWidget {
-  const TestnetFaucetEntry({required this.onTap, super.key});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => LoopRecordGroup(
-    key: const ValueKey<String>('wallet-faucet-group'),
-    rows: <LoopRecordRow>[
-      LoopRecordRow(
-        key: const ValueKey<String>('wallet-faucet-entry'),
-        leading: const LoopRowIcon(icon: 'droplet'),
-        title: testnetFaucetTitle,
-        subtitle: testnetFaucetEntrySubtitle,
-        subtitleMaxLines: 2,
-        onTap: onTap,
-      ),
-    ],
-  );
-}
-
 /// Opens the faucet sheet for [walletId]. [address] is what the page already
 /// knows about the wallet; the sheet replaces it with the server's own once
 /// read. [onGranted] runs after any grant that sent something, next to the
@@ -187,7 +161,7 @@ Future<void> showTestnetFaucetSheet(
   VoidCallback? onGranted,
 }) => showLoopSheet<void>(
   context,
-  barrierLabel: '关闭领取测试币',
+  barrierLabel: '关闭获取资金',
   builder: (_) => TestnetFaucetSheet(
     walletId: walletId,
     address: address,
@@ -441,12 +415,12 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               status == null
-                  ? '测试网专用。每个内置钱包可以定期领 tBNB 和 tUSD1，'
-                        '用来在测试网上付手续费和试用买卖。测试币没有价值。'
-                  : '测试网专用。这次会发 ${loopFormatDecimal(status.bnbAmount)} tBNB 和 '
-                        '${loopFormatDecimal(status.usd1Amount)} tUSD1，'
-                        '每个内置钱包每 ${testnetFaucetCooldownText(status.cooldownSeconds)}'
-                        '可以领一次。测试币没有价值。',
+                  ? '领取 $loopLaunchNativeSymbolText 与 $loopLaunchUsd1SymbolText 到当前钱包，'
+                        '用来支付手续费和买卖，每 24 小时一次。'
+                  : '这次会发 ${loopFormatDecimal(status.bnbAmount)} $loopLaunchNativeSymbolText 和 '
+                        '${loopFormatDecimal(status.usd1Amount)} $loopLaunchUsd1SymbolText 到当前钱包，'
+                        '每 ${testnetFaucetCooldownText(status.cooldownSeconds)}'
+                        '可以领一次。',
               key: const ValueKey<String>('testnet-faucet-intro'),
               style: LoopType.bodySm.copyWith(color: secondary),
             ),
@@ -585,15 +559,21 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
       child: Semantics(
         liveRegion: true,
         child: Text(
-          '已发出 ${loopFormatDecimal(granted.bnb.amount)} tBNB 和 '
-          '${loopFormatDecimal(granted.usd1.amount)} tUSD1，到账以链上确认为准，余额会自动刷新。',
+          '已发出 ${loopFormatDecimal(granted.bnb.amount)} $loopLaunchNativeSymbolText 和 '
+          '${loopFormatDecimal(granted.usd1.amount)} $loopLaunchUsd1SymbolText，到账以链上确认为准，余额会自动刷新。',
           key: const ValueKey<String>('testnet-faucet-granted'),
           style: LoopType.bodySm,
         ),
       ),
     ),
-    TestnetFaucetTxRow(label: 'tBNB', hash: granted.bnb.transactionHash),
-    TestnetFaucetTxRow(label: 'tUSD1', hash: granted.usd1.transactionHash),
+    TestnetFaucetTxRow(
+      label: loopLaunchNativeSymbolText,
+      hash: granted.bnb.transactionHash,
+    ),
+    TestnetFaucetTxRow(
+      label: loopLaunchUsd1SymbolText,
+      hash: granted.usd1.transactionHash,
+    ),
   ];
 
   List<Widget> _partial(TestnetFaucetPartial partial) => <Widget>[
@@ -605,9 +585,9 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
       ),
     ),
     if (partial.bnbTransactionHash case final String hash)
-      TestnetFaucetTxRow(label: 'tBNB', hash: hash),
+      TestnetFaucetTxRow(label: loopLaunchNativeSymbolText, hash: hash),
     if (partial.usd1TransactionHash case final String hash)
-      TestnetFaucetTxRow(label: 'tUSD1', hash: hash),
+      TestnetFaucetTxRow(label: loopLaunchUsd1SymbolText, hash: hash),
   ];
 }
 

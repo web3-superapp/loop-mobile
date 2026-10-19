@@ -1154,7 +1154,7 @@ void main() {
         // S118: the testnet has no in-app swap.
         expect(_key('meme-token-swap'), findsNothing);
         expect(_key('meme-token-swap-testnet'), findsOneWidget);
-        expect(find.text('测试网不支持站内兑换'), findsOneWidget);
+        expect(find.text('暂不支持站内兑换'), findsOneWidget);
         expect(_key('meme-token-copy-pool'), findsOneWidget);
         expect(opened, isEmpty);
         await _drain(tester);

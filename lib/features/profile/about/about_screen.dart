@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
-import 'package:loop_mobile/app/loop_backend_identity.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/about/about_client_register.dart';
@@ -43,10 +42,6 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     final about = state.value;
     final config = ref.watch(appConfigProvider);
     final clientVersion = config.loopClientVersionForCurrentBuild;
-    final backendHost = loopBackendHost(config.backendBaseUrl);
-    final declaredMode = config.declaredBuildModeName.isEmpty
-        ? '未声明'
-        : config.declaredBuildModeName;
 
     // Decision 0126: flat sections; the version that the folio printed
     // stays in the 本机构建 row it was already in.
@@ -99,29 +94,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                     : null,
                 position: LoopRowPosition.first,
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('about-backend-host'),
-                title: '服务端',
-                // Decision 0100: which backend this build was pointed at, read
-                // from the build configuration; no request is made for it.
-                subtitle: backendHost == null
-                    ? '构建配置里没有服务端地址'
-                    : '${loopBackendTier(backendHost)} · 来自这次构建的配置',
-                trailing: backendHost,
-                trailingBadge: backendHost == null
-                    ? const LoopBadge('未配置')
-                    : null,
-                position: LoopRowPosition.middle,
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('about-build-mode'),
-                title: '构建模式',
-                subtitle:
-                    '声明 $declaredMode · 运行时 ${loopRuntimeBuildMode()} · '
-                    '${config.declaredModeMatchesRuntime ? '一致' : '不一致'}',
-                trailing: declaredMode,
-                position: LoopRowPosition.middle,
-              ),
+              // S237 · decision 0204: 服务端（环境标签与主机名）and 构建模式
+              // moved to 网络诊断, behind the test-hints switch.
               LoopRecordRow(
                 key: const ValueKey<String>('about-network-diagnostics'),
                 title: '网络诊断',

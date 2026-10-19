@@ -329,9 +329,7 @@ class _MoneySignSheetState extends State<MoneySignSheet>
           // Decision 0038: the sheet names the chain whenever it is not the
           // primary one. Money actions never are, so this is `null` in every
           // delivered build — the sheet reads the intent rather than assuming.
-          networkBadge: loopIsTestnetChainId(widget.intent.chainId)
-              ? loopTestnetBadgeLabel
-              : null,
+          networkBadge: loopTestnetBadgeFor(widget.intent.chainId),
           facts: <LoopSignFact>[
             for (final IntentField field in fields)
               LoopSignFact(
@@ -485,13 +483,13 @@ String moneyPolicyRefusalText(LoopChainException failure) {
           '范围由 LOOP 维护，不能在应用里调整；请换一个在范围内的资产。',
     MoneyPolicyRule.counterpartyNotInAllowlist =>
       '这个收款地址不在当前允许的收款名单里，这笔操作没有通过，也没有提交任何交易。'
-          '名单由 LOOP 在灰度期间维护，不能在应用里调整；请换一个名单内的地址。',
+          '名单由 LOOP 维护，不能在应用里调整；请换一个名单内的地址。',
     MoneyPolicyRule.canaryCeilingExceeded =>
       '$figures这笔操作超过了单笔金额上限，没有提交任何交易。'
-          '上限由 LOOP 在灰度期间设定，请降低本次金额后再试。',
+          '上限由 LOOP 设定，请降低本次金额后再试。',
     MoneyPolicyRule.canaryDailyCeilingExceeded =>
       '$figures$budget这笔操作会超过 24 小时内的累计金额上限，没有提交任何交易。'
-          '上限由 LOOP 在灰度期间设定，请降低金额，或等累计额度滚过这 24 小时。',
+          '上限由 LOOP 设定，请降低金额，或等累计额度滚过这 24 小时。',
     MoneyPolicyRule.unlimitedExposureExceedsCeiling =>
       '$figures无限授权按当前余额计算敞口，已超过单笔上限。'
           '请改用限额授权，或先降低这个资产的余额。',

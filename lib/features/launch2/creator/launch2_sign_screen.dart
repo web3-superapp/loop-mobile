@@ -510,7 +510,7 @@ class _Launch2SignSheetState extends ConsumerState<_Launch2SignSheet> {
         networkBadge:
             request.domainChainId ==
                 loopChainReference(loopLaunchTestnetChainId)
-            ? loopTestnetBadgeLabel
+            ? loopTestnetBadgeFor(loopLaunchTestnetChainId)
             : null,
         confirmLabel: '签名',
         facts: <LoopSignFact>[

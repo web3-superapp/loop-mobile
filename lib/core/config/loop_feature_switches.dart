@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/app_config.dart';
 
 /// Product switches that hide a finished surface without removing it
 /// (decision 0110).
@@ -47,6 +48,15 @@ abstract final class LoopFeatureSwitches {
   /// 创建页只画停用占位；已有经典代币的代币页、列表、持仓、交易照常。
   /// 页面、路由与请求代码保留，改 true 即恢复。
   static const bool classicMemeLaunchVisible = false;
+
+  /// S237 · 决策 0204：需求方 2026-10-19「页面不要有测试相关提示」。所有
+  /// 用户可见的测试网 / 测试币 / 环境标签 / 组件样例路由都经这一个开关，
+  /// 默认关。走查包用 `--dart-define=LOOP_TEST_HINTS_VISIBLE=true`，或在
+  /// `--dart-define-from-file` 的 config json 里加
+  /// `"LOOP_TEST_HINTS_VISIBLE": "true"` 打开。读取一律经
+  /// `loopTestHintsVisible`（`lib/core/config/loop_test_hints.dart`），
+  /// 没有 `ref` 的格式化函数也能读到同一个值。
+  static const bool testHintsVisible = AppConfig.testHintsVisibleDefine;
 }
 
 /// The switch values one build runs with.

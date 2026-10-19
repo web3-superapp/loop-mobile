@@ -512,7 +512,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         const LoopInlineUnavailable(
           key: ValueKey<String>('launch2-evidence-pending'),
           icon: 'info',
-          message: '测试网合约还在核对，交易可能暂时不可用',
+          message: '合约核对中，交易可能暂时不可用',
         ),
       if (pending != null)
         LoopNotice(

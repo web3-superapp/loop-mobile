@@ -15,6 +15,7 @@ import 'support/s5_page_harness.dart';
 import 'support/s6_fixtures.dart';
 import 'support/s6_page_harness.dart';
 import 'support/s8_harness.dart';
+import 'support/test_hints.dart';
 
 /// The wallet module's block order, pinned page by page.
 ///
@@ -29,6 +30,9 @@ import 'support/s8_harness.dart';
 /// with, so each page below asserts the vertical order of its blocks. A block
 /// that moves, or one that goes missing, fails here rather than in a build.
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   /// Asserts that [keys] appear top to bottom in the order given.
   void expectOrder(WidgetTester tester, List<Key> keys) {
     var previous = double.negativeInfinity;

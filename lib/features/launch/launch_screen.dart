@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
@@ -297,7 +298,9 @@ String launchOverviewCaption(
 }) {
   if (overview != null && launchOverviewReadsChain(overview)) {
     return '目录、申请与轮次配置由 LOOP 提供；链上状态读自 '
-        '${testnet ? 'BSC 测试网' : 'BSC 主网'}。';
+        // Decision 0204: the hidden IDO page is left as it was; the testnet
+        // name now comes from the one hints file.
+        '${testnet ? loopTestnetChainLabel : 'BSC 主网'}。';
   }
   return '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。';
 }

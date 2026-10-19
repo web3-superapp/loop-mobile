@@ -495,7 +495,7 @@ void main() {
       // The unpriced row says why, inline, and prints no price.
       final unpriced = _key('market-asset-$s5UsdtAssetId');
       expect(
-        find.descendant(of: unpriced, matching: find.text('测试网代币不报价')),
+        find.descendant(of: unpriced, matching: find.text('暂无报价')),
         findsOneWidget,
       );
       expect(

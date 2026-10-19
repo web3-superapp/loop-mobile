@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
@@ -198,11 +199,12 @@ List<Launch2InstanceRow> launch2DeskRecordRows(List<Launch2InstanceRow> hero) =>
       if (hero.length > 1 && launch2HeroLit(hero[1].stage)) hero[1],
     ];
 
-/// `LAUNCH DESK · BSC TESTNET`, `· BSC` on the main network.
+/// `LAUNCH DESK · BSC` (decision 0204: the testnet stamp is a test-only
+/// hint, drawn only while the test-hints switch is on).
 String launch2DeskKicker(String? chainId) {
   if (chainId == null) return 'LAUNCH DESK';
-  return loopIsTestnetChainId(chainId)
-      ? 'LAUNCH DESK · BSC TESTNET'
+  return loopTestnetBadgeFor(chainId) != null
+      ? 'LAUNCH DESK · $loopTestnetStampText'
       : 'LAUNCH DESK · BSC';
 }
 

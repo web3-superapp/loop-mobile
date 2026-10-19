@@ -340,9 +340,7 @@ class _MiningClaimSignSheetState extends State<MiningClaimSignSheet> {
         key: const ValueKey<String>('mining-claim-sign-sheet'),
         state: _state,
         title: '确认领取',
-        networkBadge: loopIsTestnetChainId(widget.intent.chainId)
-            ? loopTestnetBadgeLabel
-            : null,
+        networkBadge: loopTestnetBadgeFor(widget.intent.chainId),
         facts: <LoopSignFact>[
           for (final IntentField field in fields)
             LoopSignFact(field.label, field.value),

@@ -4,12 +4,14 @@ import 'dart:convert';
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gateway.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_models.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
@@ -639,20 +641,15 @@ void main() {
         ),
         overrides: [testnetFaucetGatewayProvider.overrideWithValue(faucet)],
       );
-      expect(key('wallet-faucet-entry'), findsOneWidget);
-      expect(find.text(testnetFaucetEntrySubtitle), findsOneWidget);
-      // Under the balance block, above the asset list.
-      expect(
-        tester.getRect(key('wallet-faucet-entry')).top,
-        greaterThan(tester.getRect(key('wallet-receive-entry')).bottom),
-      );
-
-      await tester.tap(key('wallet-faucet-entry'));
-      await tester.pumpAndSettle();
+      // S237 · decision 0204: the wallet tab draws no faucet card any more;
+      // 获取资金 opens from 充值 (我 / MEME) and the MEME v2 balance link.
+      expect(key('wallet-faucet-entry'), findsNothing);
+      await _openSheet(tester, faucet, wallet: wallet);
       expect(key('testnet-faucet-sheet'), findsOneWidget);
+      expect(find.text('获取资金'), findsOneWidget);
       expect(faucet.statusReads, <String>[s5WalletId]);
       expect(find.text('0xabcd…1234'), findsOneWidget);
-      expect(find.textContaining('0.02 tBNB 和 500 tUSD1'), findsOneWidget);
+      expect(find.textContaining('0.02 BNB 和 500 USD1'), findsOneWidget);
       final readsBefore = wallet.balanceReads;
 
       await tester.tap(key('testnet-faucet-claim'));
@@ -667,11 +664,11 @@ void main() {
 
       expect(faucet.claims, <String>[s5WalletId]);
       expect(key('testnet-faucet-granted'), findsOneWidget);
-      expect(key('testnet-faucet-tx-tBNB'), findsOneWidget);
-      expect(key('testnet-faucet-tx-tUSD1'), findsOneWidget);
+      expect(key('testnet-faucet-tx-BNB'), findsOneWidget);
+      expect(key('testnet-faucet-tx-USD1'), findsOneWidget);
       expect(find.text('0x1111…1111'), findsOneWidget);
       expect(find.text('0x2222…2222'), findsOneWidget);
-      expect(key('testnet-faucet-copy-link-tBNB'), findsOneWidget);
+      expect(key('testnet-faucet-copy-link-BNB'), findsOneWidget);
       expect(wallet.balanceReads, greaterThan(readsBefore));
       // The button is off until the server's next time.
       final next = faucet.claimResult! as TestnetFaucetGranted;
@@ -747,7 +744,7 @@ void main() {
       await _openSheet(tester, faucet);
       expect(
         tester.widget<Text>(key('testnet-faucet-intro')).data,
-        contains('每个内置钱包每 1 小时可以领一次'),
+        contains('每 1 小时可以领一次'),
       );
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
@@ -809,10 +806,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         lineText(tester, 'testnet-faucet-partial'),
-        'tBNB 已到账，tUSD1 这次没成功，24 小时后可再领',
+        'BNB 已到账，USD1 这次没成功，24 小时后可再领',
       );
-      expect(key('testnet-faucet-tx-tBNB'), findsOneWidget);
-      expect(key('testnet-faucet-tx-tUSD1'), findsNothing);
+      expect(key('testnet-faucet-tx-BNB'), findsOneWidget);
+      expect(key('testnet-faucet-tx-USD1'), findsNothing);
       expect(wallet.balanceReads, greaterThan(readsBefore));
     });
 
@@ -876,7 +873,7 @@ void main() {
       expect(faucet.statusReads, hasLength(3));
       expect(faucet.claims, hasLength(1));
       expect(key('testnet-faucet-granted'), findsOneWidget);
-      expect(key('testnet-faucet-tx-tUSD1'), findsOneWidget);
+      expect(key('testnet-faucet-tx-USD1'), findsOneWidget);
       expect(wallet.balanceReads, greaterThan(readsBefore));
     });
 
@@ -930,7 +927,7 @@ void main() {
       // that it arrived.
       expect(
         lineText(tester, 'testnet-faucet-partial'),
-        'tBNB 已发出，tUSD1 这次没发；24 小时后可再领',
+        'BNB 已发出，USD1 这次没发；24 小时后可再领',
       );
       expect(find.textContaining('已到账'), findsNothing);
     });
@@ -976,9 +973,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         lineText(tester, 'testnet-faucet-partial'),
-        'tBNB 已发出但还没确认，tUSD1 这次没发；24 小时后可再领',
+        'BNB 已发出但还没确认，USD1 这次没发；24 小时后可再领',
       );
-      expect(key('testnet-faucet-tx-tBNB'), findsOneWidget);
+      expect(key('testnet-faucet-tx-BNB'), findsOneWidget);
     });
 
     testWidgets('transfer failed: 这次没有发出，可以重试, and the button stays on', (
@@ -1053,9 +1050,9 @@ void main() {
         'TESTNET_FAUCET_RPC_NOT_CONFIGURED',
         'TESTNET_FAUCET_RUNTIME_UNAVAILABLE',
       ]) {
-        expect(text(code), '测试币领取暂时不可用，稍后再试');
+        expect(text(code), '领取暂时不可用，稍后再试');
       }
-      expect(text('TESTNET_FAUCET_USD1_UNAVAILABLE'), 'tUSD1 合约暂时不可用，稍后再试');
+      expect(text('TESTNET_FAUCET_USD1_UNAVAILABLE'), 'USD1 合约暂时不可用，稍后再试');
       expect(text('TESTNET_FAUCET_CHAIN_READ_FAILED'), '链上读数暂时取不到，稍后再试');
       expect(text('TESTNET_FAUCET_BUSY'), '正在给别人发放，几秒后再试');
       expect(text('TESTNET_FAUCET_TRANSFER_FAILED'), '这次没有发出，可以重试');
@@ -1067,14 +1064,14 @@ void main() {
           const TestnetFaucetPartial(usd1TransactionHash: faucetUsd1Hash),
           cooldownSeconds: 86400,
         ),
-        'tUSD1 已到账，tBNB 这次没成功，24 小时后可再领',
+        'USD1 已到账，BNB 这次没成功，24 小时后可再领',
       );
       // Decision 0158: without the server's cooldown no period is named.
       expect(
         testnetFaucetPartialText(
           const TestnetFaucetPartial(usd1TransactionHash: faucetUsd1Hash),
         ),
-        'tUSD1 已到账，tBNB 这次没成功，稍后可再领',
+        'USD1 已到账，BNB 这次没成功，稍后可再领',
       );
       expect(
         testnetFaucetPartialText(
@@ -1084,7 +1081,7 @@ void main() {
           ),
           cooldownSeconds: 86400,
         ),
-        'tBNB 已发出，tUSD1 这次没发；24 小时后可再领',
+        'BNB 已发出，USD1 这次没发；24 小时后可再领',
       );
     });
 
@@ -1111,7 +1108,8 @@ void main() {
   });
 }
 
-/// Opens the faucet sheet from the wallet tab.
+/// Opens the faucet sheet the way 充值 does (decision 0204: the wallet tab
+/// has no faucet card any more).
 Future<void> _openSheet(
   WidgetTester tester,
   FakeTestnetFaucetGateway faucet, {
@@ -1119,13 +1117,41 @@ Future<void> _openSheet(
 }) async {
   await pumpS5Page(
     tester,
-    const WalletScreen(),
+    const _FaucetOpener(),
     wallet: wallet ?? FakeWalletReadGateway(),
     meta: s5MetaSnapshot(testnetFaucet: LoopV2CapabilityAvailability.available),
     overrides: [testnetFaucetGatewayProvider.overrideWithValue(faucet)],
   );
-  await tester.tap(find.byKey(const ValueKey<String>('wallet-faucet-entry')));
+  await tester.tap(find.byKey(const ValueKey<String>('open-faucet')));
   await tester.pumpAndSettle();
+}
+
+class _FaucetOpener extends ConsumerWidget {
+  const _FaucetOpener();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // The page that opened the sheet shows this wallet's balances, so a grant
+    // has a balance read to refresh — as on 我 and MEME.
+    ref.watch(walletBalancesControllerProvider(s5WalletId));
+    return _opener(context);
+  }
+
+  Widget _opener(BuildContext context) => Scaffold(
+    body: Center(
+      child: LoopButton(
+        key: const ValueKey<String>('open-faucet'),
+        label: '充值',
+        onPressed: () => unawaited(
+          showTestnetFaucetSheet(
+            context,
+            walletId: s5WalletId,
+            address: '0xabcd000000000000000000000000000000001234',
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 DioLoopV2TestnetFaucetApi _api(_Adapter adapter) {

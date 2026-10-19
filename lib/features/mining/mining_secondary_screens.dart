@@ -1481,7 +1481,7 @@ class _FormulaVersionBlock extends StatelessWidget {
             ? null
             : !live
             ? 'LOOP 代币上线后公布'
-            : (version.dailyOutput!.isPlaceholder ? '占位产量' : '当日产量'),
+            : (version.dailyOutput!.isPlaceholder ? '预估产量' : '当日产量'),
         position: LoopRowPosition.middle,
       ),
       LoopRecordRow(

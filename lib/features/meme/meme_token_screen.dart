@@ -453,7 +453,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               const Expanded(
                 child: LoopInlineUnavailable(
                   key: ValueKey<String>('meme-token-swap-testnet'),
-                  message: '测试网不支持站内兑换',
+                  message: '暂不支持站内兑换',
                   padding: EdgeInsets.zero,
                 ),
               ),
@@ -588,7 +588,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
         const LoopInlineUnavailable(
           key: ValueKey<String>('meme-token-evidence-pending'),
           icon: 'info',
-          message: '发射台合约还在核对，交易可能暂时不可用',
+          message: '合约核对中，交易可能暂时不可用',
         ),
       if (row.priceSource case final source?)
         MemeProvenance(

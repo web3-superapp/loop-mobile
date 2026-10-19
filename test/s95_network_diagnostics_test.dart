@@ -15,6 +15,7 @@ import 'package:loop_mobile/integrations/diagnostics/loop_network_probe.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s8_harness.dart';
+import 'support/test_hints.dart';
 
 /// Decision 0102 · 网络诊断. The real Dio transport runs against a fake HTTP
 /// adapter: nothing leaves the test process.
@@ -158,6 +159,9 @@ const _ids = <String>[
 ];
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   test('targets: nine probes, the reviewed hosts and methods', () {
     final targets = loopNetworkDiagnosticTargets(
       backendBaseUrl: 'https://api-dev.example.com/',

@@ -9,6 +9,8 @@
 /// silently adopts.
 library;
 
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
+
 /// The primary chain slot. It never moves.
 const String loopPrimaryChainId = 'eip155:56';
 
@@ -28,9 +30,13 @@ const Set<String> loopKnownChainIds = <String>{
 /// throws instead of falling back to the primary chain: labelling an unknown
 /// chain "BNB Smart Chain" would tell the owner something the payload never
 /// said.
+///
+/// S237 · decision 0204: with the test-hints switch off the Launch slot is
+/// named 「BNB Smart Chain」 too; the testnet name is a test-only hint.
 String loopChainName(String chainId) => switch (chainId) {
   loopPrimaryChainId => 'BNB Smart Chain',
-  loopLaunchTestnetChainId => 'BSC 测试网',
+  loopLaunchTestnetChainId =>
+    loopTestHintsVisible ? loopTestnetChainLabel : 'BNB Smart Chain',
   _ => throw ArgumentError.value(chainId, 'chainId', 'not a known chain slot'),
 };
 
@@ -39,6 +45,14 @@ String loopChainName(String chainId) => switch (chainId) {
 /// never closes a surface.
 bool loopIsTestnetChainId(String chainId) =>
     chainId == loopLaunchTestnetChainId;
+
+/// The testnet badge text for a surface bound to [chainId], or `null` when
+/// none is drawn: the chain is not the testnet, or the test-hints switch is
+/// off (decision 0204).
+String? loopTestnetBadgeFor(String chainId) =>
+    loopTestHintsVisible && loopIsTestnetChainId(chainId)
+    ? loopTestnetBadgeText
+    : null;
 
 /// The numeric EIP-155 reference of one known chain id, e.g. `56`.
 ///

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_backend_identity.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_controller.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_models.dart';
@@ -105,6 +106,10 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
             title: '所有探测都没有连上',
             body: '请先确认这台设备已经联网，再重新诊断。',
           ),
+        // S237 · decision 0204: the build's backend (with its DEV / STAGING
+        // tier and host name) and build mode, moved here from 关于 and
+        // drawn only while the test-hints switch is on.
+        if (loopTestHintsVisible) ..._buildRows(ref),
         const LoopLabel('探测项'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
@@ -137,6 +142,42 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
     );
   }
 
+  List<Widget> _buildRows(WidgetRef ref) {
+    final config = ref.watch(appConfigProvider);
+    final backendHost = loopBackendHost(config.backendBaseUrl);
+    final declaredMode = config.declaredBuildModeName.isEmpty
+        ? '未声明'
+        : config.declaredBuildModeName;
+    return <Widget>[
+      const LoopLabel('本机构建'),
+      LoopRecordGroup(
+        rows: <LoopRecordRow>[
+          LoopRecordRow(
+            key: const ValueKey<String>('about-backend-host'),
+            title: '服务端',
+            // Decision 0100: which backend this build was pointed at, read
+            // from the build configuration; no request is made for it.
+            subtitle: backendHost == null
+                ? '构建配置里没有服务端地址'
+                : '${loopBackendTier(backendHost)} · 来自这次构建的配置',
+            trailing: backendHost,
+            trailingBadge: backendHost == null ? const LoopBadge('未配置') : null,
+            position: LoopRowPosition.first,
+          ),
+          LoopRecordRow(
+            key: const ValueKey<String>('about-build-mode'),
+            title: '构建模式',
+            subtitle:
+                '声明 $declaredMode · 运行时 ${loopRuntimeBuildMode()} · '
+                '${config.declaredModeMatchesRuntime ? '一致' : '不一致'}',
+            trailing: declaredMode,
+            position: LoopRowPosition.last,
+          ),
+        ],
+      ),
+    ];
+  }
+
   LoopRecordRow _row(NetworkProbeResult result, int index, int count) {
     final target = result.target;
     final badgeKind = switch (result.status) {
@@ -149,7 +190,9 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
     return LoopRecordRow(
       key: ValueKey<String>('network-probe-${target.id}'),
       title: target.name,
-      subtitle: '${target.host}\n$detail',
+      // Decision 0204: a host such as api-staging.… is a test hint; with the
+      // switch off the row says what the probe is for, not where it went.
+      subtitle: loopTestHintsVisible ? '${target.host}\n$detail' : detail,
       subtitleMaxLines: 2,
       trailingBadge: LoopBadge(
         networkProbeStatusLabel(result.status),
@@ -181,7 +224,11 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
       context: NetworkDiagnosticsContext(
         appVersion: version.isEmpty ? '未配置' : version,
         buildMode: '声明 $declared · 运行时 ${loopRuntimeBuildMode()}',
-        serverHost: host == null ? '未配置' : '$host（${loopBackendTier(host)}）',
+        serverHost: host == null
+            ? '未配置'
+            : loopTestHintsVisible
+            ? '$host（${loopBackendTier(host)}）'
+            : host,
         platform: ref.read(networkDiagnosticsPlatformProvider),
       ),
       results: state.results,

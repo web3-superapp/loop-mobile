@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 
 /// Narrow, feature-facing failure taxonomy shared by the S5 ports
 /// (`chain`, `wallet`, `market`, `watchlist`, `alerts`, `notifications`).
@@ -355,10 +356,11 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'BSC_RPC_UNREACHABLE' => '链上节点暂时连不上，与你的网络无关，稍后再看。',
   'BSC_CHAIN_ID_MISMATCH' => '连接到的不是 BNB Smart Chain，这一页不可用。',
   // launch chain slot (decision 0038) — only ever about the testnet slot
-  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => 'Launch 运行在 BSC 测试网，测试网数据暂时读不到。',
-  'LAUNCH_CHAIN_VERIFICATION_PENDING' => '正在校验测试网连接，暂时不显示测试网数字。',
-  'LAUNCH_CHAIN_RPC_UNREACHABLE' => '测试网节点暂时连不上，与你的网络无关，稍后再看。',
-  'LAUNCH_CHAIN_ID_MISMATCH' => '连接到的不是 BSC 测试网，Launch 相关内容不可用。',
+  // S237 · decision 0204: no 测试网 in the sentence; the slot is named Launch.
+  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => 'Launch 链上数据暂时读不到。',
+  'LAUNCH_CHAIN_VERIFICATION_PENDING' => '正在校验 Launch 链连接，暂时不显示链上数字。',
+  'LAUNCH_CHAIN_RPC_UNREACHABLE' => 'Launch 链节点暂时连不上，与你的网络无关，稍后再看。',
+  'LAUNCH_CHAIN_ID_MISMATCH' => '连接到的不是 Launch 链，Launch 相关内容不可用。',
   'BSC_BALANCE_CALL_FAILED' => '这次余额没有读到，因此不显示数字。',
   'BSC_INDEXER_NOT_STARTED' => '转账记录暂时读不到。',
   'BSC_POOL_INDEXER_NOT_STARTED' => '成交与 K 线暂时读不到。',
@@ -496,19 +498,20 @@ String loopReasonCodeSummaryText(String? reasonCode) => switch (reasonCode) {
 };
 
 /// The badge every Launch surface and every sign sheet shows while the Launch
-/// chain slot is the BSC testnet. It is a statement of fact, never a blocker.
-const String loopTestnetBadgeLabel = 'BSC 测试网';
+/// chain slot is the BSC testnet and the test-hints switch is on (decision
+/// 0204). It is a statement of fact, never a blocker. Callers that draw it
+/// conditionally use [loopTestnetBadgeFor].
+const String loopTestnetBadgeLabel = loopTestnetBadgeText;
 
 /// Title of the one-time explanation that accompanies the badge.
-const String loopTestnetNoticeTitle = 'Launch 当前运行在 BSC 测试网';
+const String loopTestnetNoticeTitle = loopTestnetNoticeTitleText;
 
 /// The one-time explanation. It never says anything is broken: the Launch
 /// module points at `eip155:97` on purpose, and everything else stays on the
 /// main chain.
-const String loopTestnetNoticeBody =
-    'Launch 目录、详情与签名单当前指向 BSC 测试网（$loopLaunchTestnetChainId），'
-    '测试网上的代币没有真实价值。钱包余额、行情、兑换与授权仍然只走 BNB Smart Chain 主网，'
-    '不受影响。这条说明可以关闭，不会阻断任何操作。';
+final String loopTestnetNoticeBody = loopTestnetNoticeBodyText(
+  loopLaunchTestnetChainId,
+);
 
 /// The reviewed page states for an S5 surface.
 enum LoopChainViewPhase {

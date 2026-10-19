@@ -21,12 +21,16 @@ import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/test_hints.dart';
 
 /// The "BSC 测试网" badge and its one-time explanation appear on exactly the
 /// surfaces the Launch chain slot reaches, and nowhere else (decision 0038).
 /// A build whose Launch slot equals the primary chain must look exactly as it
 /// did before S9: no badge, no notice, no extra row.
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   // This file mounts pages through its own `pumpWidget`, so it arms the
   // ground probe itself; the page harnesses arm it for everybody else.
   loopWatchGround();

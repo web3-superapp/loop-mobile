@@ -19,6 +19,7 @@ import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.da
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
+import 'support/test_hints.dart';
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
 
@@ -36,6 +37,9 @@ LoopWalletBalances _balances(Map<String, Object?> launchChain) =>
     );
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   loopWatchGround();
 
   group('S236 · decision 0203 · Launch 链 tUSD1', () {

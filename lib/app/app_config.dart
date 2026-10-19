@@ -23,6 +23,14 @@ class AppConfig {
     this.declaredBuildModeName = '',
   });
 
+  /// S237 · decision 0204: `LOOP_TEST_HINTS_VISIBLE`, the build-time value
+  /// of `LoopFeatureSwitches.testHintsVisible`. Off unless a walkthrough
+  /// build passes `--dart-define=LOOP_TEST_HINTS_VISIBLE=true` (or the same
+  /// key in its own `--dart-define-from-file` json).
+  static const bool testHintsVisibleDefine = bool.fromEnvironment(
+    'LOOP_TEST_HINTS_VISIBLE',
+  );
+
   factory AppConfig.fromEnvironment({
     bool? releaseMode,
     String? declaredBuildMode,

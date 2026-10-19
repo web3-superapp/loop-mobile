@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 
 /// The two chain slots are a cross-cutting identity, not a chain-module fact:
@@ -201,8 +202,13 @@ final class LoopChainAsset {
 /// The word a surface prints for [asset].
 ///
 /// A provider that reported no ticker leaves the address to speak for itself.
-String loopAssetSymbolLabel(LoopChainAsset asset) =>
-    asset.symbol ?? loopTruncatedAssetId(asset.assetId);
+///
+/// Decision 0204: the symbol goes through [loopDisplaySymbol], so a testnet
+/// `tBNB` / `tUSD1` reads `BNB` / `USD1` while the test-hints switch is off.
+String loopAssetSymbolLabel(LoopChainAsset asset) => switch (asset.symbol) {
+  final String symbol => loopDisplaySymbol(symbol),
+  null => loopTruncatedAssetId(asset.assetId),
+};
 
 enum LoopAssetCapabilityValue {
   viewable('viewable'),

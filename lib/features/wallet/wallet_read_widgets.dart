@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
@@ -222,7 +223,7 @@ LoopRecordRow walletActivityRow(
           LoopTransferDirection.incoming => '收到',
           LoopTransferDirection.outgoing => '发出',
           LoopTransferDirection.self => '自转',
-        }} ${entry.symbol}',
+        }} ${loopDisplaySymbol(entry.symbol)}',
     subtitle: <String>[
       '${entry.direction == LoopTransferDirection.incoming ? '来自' : '发往'} '
           '${loopTruncatedAddress(entry.counterpartyAddress)}',
@@ -490,15 +491,17 @@ class WalletLaunchChainCard extends StatelessWidget {
             key: const ValueKey<String>('wallet-launch-chain-row'),
             leading: LoopTokenLogo(
               assetSymbol: native.symbol,
-              fallbackMonogram: native.symbol,
+              fallbackMonogram: loopDisplaySymbol(native.symbol),
               size: 36,
             ),
-            title: native.symbol,
+            title: loopDisplaySymbol(native.symbol),
             titleTrailing: launchChain.isTestnet
                 ? const LoopTestnetBadge()
                 : null,
             // The testnet badge already names the chain; the grey line keeps
-            // only the reserve (decision 0123, one element removed).
+            // only the reserve (decision 0123, one element removed). With the
+            // test-hints switch off there is no badge, and the heading above
+            // already says 「Launch 链」 (decision 0204).
             subtitle: launchChain.isTestnet ? null : launchChain.name,
             subtitleMark: '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
             value: hidden
@@ -508,7 +511,7 @@ class WalletLaunchChainCard extends StatelessWidget {
               '可动用 ${hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance)}',
             ),
             semanticLabel:
-                '${launchChain.name} ${native.symbol} '
+                '${launchChain.name} ${loopDisplaySymbol(native.symbol)} '
                 '${hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance)}',
           ),
           WalletSnapshotFooter(
@@ -539,7 +542,7 @@ class WalletLaunchChainCard extends StatelessWidget {
                 '${launchChain.name} $usd1Symbol '
                 '${hidden ? walletMaskedFigure : loopFormatDecimal(walletLaunchUsd1Figure(usd1.balance), maxFractionDigits: 2)}',
           ),
-        if (launchChain.isTestnet)
+        if (_badged(launchChain))
           Padding(
             padding: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
@@ -558,16 +561,23 @@ class WalletLaunchChainCard extends StatelessWidget {
   }
 }
 
+/// Whether the Launch block states its testnet slot: the slot is the testnet
+/// and the test-hints switch is on (decision 0204). Off, the block is just
+/// 「Launch 链」 with no badge and no note.
+bool _badged(LoopLaunchChainBalance launchChain) =>
+    launchChain.isTestnet && loopTestHintsVisible;
+
 /// Decision 0203: what the Launch block says on a testnet slot, so nobody
 /// reads the total above as including these balances (loop-api decision
-/// 0038: the main asset area stays on the main chain).
-const String walletLaunchChainTotalNote =
-    'Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。';
+/// 0038: the main asset area stays on the main chain). Drawn only while the
+/// test-hints switch is on (decision 0204).
+const String walletLaunchChainTotalNote = loopTestnetWalletTotalNoteText;
 
 /// The Launch slot's USD1 symbol: 「tUSD1」 on a testnet, as the faucet
-/// names it, 「USD1」 otherwise.
+/// names it, 「USD1」 otherwise — and 「USD1」 whenever the test-hints switch
+/// is off (decision 0204).
 String walletLaunchUsd1Symbol(LoopLaunchChainBalance launchChain) =>
-    launchChain.isTestnet ? 'tUSD1' : 'USD1';
+    launchChain.isTestnet ? loopLaunchUsd1SymbolText : 'USD1';
 
 /// An exact 18-decimal USD1 integer string as a [Decimal] (USD1 has 18
 /// decimals on both slots, loop-api decision 0077).

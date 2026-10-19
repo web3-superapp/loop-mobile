@@ -36,6 +36,7 @@ import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/s83c_fixtures.dart';
 import 'support/s88d_meta_server.dart';
+import 'support/test_hints.dart';
 
 /// Decision 0089 · the USD1 approval in front of a Launch purchase, the
 /// optional S83b intent keys, the broadcast report and two copy changes.
@@ -495,6 +496,9 @@ Future<LoopWalletBalances> _readBalances(Map<String, Object?> body) =>
     );
 
 void main() {
+  // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
+  loopShowTestHints();
+
   group('S88d · the approval sheet opens on the server\'s current '
       'capability', () {
     Future<S88dMetaServer> openApprove(WidgetTester tester) async {

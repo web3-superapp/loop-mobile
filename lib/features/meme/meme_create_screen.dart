@@ -935,7 +935,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
         const LoopNotice(
           key: ValueKey<String>('meme-create-evidence-pending'),
           icon: 'info',
-          body: '发射台合约还在核对，创建可能暂时不可用。',
+          body: '合约核对中，创建可能暂时不可用。',
         ),
       if (statusText != null)
         LoopNotice(

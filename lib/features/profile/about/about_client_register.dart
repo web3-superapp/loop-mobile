@@ -140,7 +140,7 @@ String? loopAboutModuleName(String module) => switch (module) {
   'accountSettings' => '账号设置规则',
   'support' => '客服工单规则',
   'swapPolicy' => '兑换规则',
-  'bscWriteCanary' => '链上写入灰度规则',
+  'bscWriteCanary' => '链上写入规则',
   _ => null,
 };
 

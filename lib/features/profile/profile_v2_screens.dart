@@ -909,7 +909,7 @@ class _ProfileFirstBuyCard extends StatelessWidget {
     return Semantics(
       key: const ValueKey<String>('profile-first-buy'),
       button: true,
-      label: '获取你的第一个代币，领取测试币后首次买入 0 手续费，立即买入',
+      label: '获取你的第一个代币，首次买入 0 手续费，立即买入',
       excludeSemantics: true,
       child: LoopRecordCard(
         onTap: onOpen,
@@ -924,7 +924,7 @@ class _ProfileFirstBuyCard extends StatelessWidget {
                   Text('获取你的第一个代币', style: LoopType.title),
                   const SizedBox(height: 4),
                   Text(
-                    '领取测试币后首次买入 0 手续费',
+                    '首次买入 0 手续费',
                     style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
                   const SizedBox(height: 8),
