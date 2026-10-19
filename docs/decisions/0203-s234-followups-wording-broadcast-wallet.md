@@ -65,12 +65,19 @@ S234 用 ec1bb61 包复核 0202，0202 各条通过，另记下四条低级缺�
   S227 没记，是因为当时测试者签完直接关了弹层。
 - **根因不在后端**：实例详情的 `viewer`（`nft.held`、`curve.bought/sold`、自己的外盘计数）已能反映这笔交易，页面就是靠它判定的；弹层没用上而已。无需后端配合。
 - **修法**：
-  - `launch2OwnConfirmationSignature(detail, intent)`：只取「自己」的信号——铸造看 `viewer.nftHeld`，内盘买卖看 `viewer.curve` 的 bought/sold，
-    外盘看自己的外盘计数（0148 的 `viewer.holding`）；外盘没有自己的计数、领取奖励、`viewer` 为空或钱包不是这笔意图的钱包时返回 `null`（不自动判定，
-    不用全池成交数，免得别人的成交被当成自己的确认）。
-  - `launch2ReadModelConfirmation(ref, detail, intent)`（`launch2_nft_mint.dart`）：以发起时页面上的 detail 为基线；广播后弹层启动监听，
-    订阅页面在读的同一个 `launch2InstanceControllerProvider(instanceId)`，并在弹层打开期间每 `tradingInterval`（5 s）自己再读一次，最多 36 次
-    （与页面的 `_settleLimit` 相同），所以不必等勋章页铸造期的 15 s。信号与基线不同即确认。
+  - **基线与方向判定**（审查后修订，见下）：
+    - `launch2OwnConfirmationFigure(detail, intent)`：只取这笔意图会动的那**一个**「自己」的数——铸造取 `viewer.nftHeld`，内盘买取 `viewer.curve.bought`，
+      内盘卖取 `viewer.curve.sold`，外盘取自己的外盘计数（0148 的 `viewer.holding.poolTradeCount`）。外盘没有自己的计数、领取奖励、`viewer` 为空，
+      或 `viewer.walletId` 不是这笔意图的钱包时返回 `null`，不自动判定。`nftSale.soldCount`、全池成交数这类别人也会动的数一律不用。
+    - `launch2OwnConfirmationAdvanced(kind, baseline:, now:)`：按方向判定——铸造只认 `nftHeld` 从 0 变为 >0（广播时已持有则永不判定），
+      买只认 bought 增加，卖只认 sold 增加，外盘只认自己的计数增加；相等或变小都不算。不再比较整串签名是否不同。
+    - **基线在广播那一刻取**：`launch2ReadModelConfirmation(ref, detail, intent)`（`launch2_nft_mint.dart`）只用发起时的 detail 判断有没有可用信号；
+      弹层在 `_watchConfirmation`（拿到哈希的广播）启动监听时，才从 `launch2InstanceControllerProvider(instanceId)` 的当前值读基线。
+      钱包打开期间页面读到的新数据因此不会被当成确认。
+    - 订阅不用 `fireImmediately`：基线就是当前值，启动当刻不做判定，只对之后的新读数判定。
+    - 弹层打开期间每 `tradingInterval`（5 s）自己再读一次，最多 36 次（与页面的 `_settleLimit` 相同），所以不必等勋章页铸造期的 15 s。
+    - 页面已卸载（`ref` 抛 `StateError`）时，监听直接 `close()`，不再读。
+    - 初版用的是发起时 detail 的整串签名、只要不相等就算确认：一是基线可能早于广播，二是方向不分，审查认为有误判风险，所以按上面改了。
   - 弹层收到确认：徽章「已广播」→「已确认」，说明换成「铸造已在链上确认。」（与项目页同句，`launch2ConfirmedText`），步骤条该步「已广播」→「已确认」，
     2 秒后（`launch2SignConfirmedCloseDelay`）自己关闭并把原 outcome 交回页面。始终可以手动「关闭」。只有拿到哈希的 `submitted` 才监听，
     `locked`（钱包结果未知）不会被宣布成功。
@@ -126,6 +133,9 @@ S234 用 ec1bb61 包复核 0202，0202 各条通过，另记下四条低级缺�
   页面无「NFT 开售 / NFT 发售 / NFT 价格 / 开售时间」；0202 组的步骤条断言改为「资料 / 链接 / 发射」；项目页「铸造开始」与模板卡；签名页「铸造开始」；部署失败说明。原两处断言改为新词。
 - `test/s182_launch2_desk_nft_test.dart` 组 `S236 · decision 0203`：名单发布中时顶部卡 kicker 与正文同为「名单发布中」、无「名单生成中」；
   铸造中顶部卡「已铸 2 枚」、统计格「已铸」、无「已售」；勋章页与项目页铸造：广播后「已广播」→ 读到 `after` →「已确认」+「铸造已在链上确认。」→ 2 秒后弹层自行关闭，
-  勋章页显示 #2、已持有与 toast；读数不变时停在「已广播」、读取不超过上限、「关闭」可关；`launch2OwnConfirmationSignature` 只认自己的信号。
+  勋章页显示 #2、已持有与 toast；读数不变时停在「已广播」、读取不超过上限、「关闭」可关；
+  他人铸造（before → before 但 `soldCount` + 1）弹层仍是「已广播」；结果未知（locked）停在「已广播」且不再发起读取；
+  `launch2OwnConfirmationFigure` 只取自己的那个数（买取 bought、卖取 sold、他人铸造不动），`launch2OwnConfirmationAdvanced` 的方向表。
 - `test/s236_s234_followups_test.dart`：fixture 解码；钱包页 Launch 链卡 tBNB 下有 tUSD1「4,850」与测试网徽章、说明句；无 `usd1` 不画行；原生币不可用仍画 USD1；
-  主网槽写「USD1」、无说明句；`hidden: true` 时 tBNB、可动用、tUSD1 都是 `****`，说明句仍在。
+  主网槽写「USD1」、无说明句；`hidden: true` 时 tBNB、可动用、tUSD1 都是 `****`，说明句仍在；
+  钱包页级：打开「隐藏余额」（`loopBalanceVisibilityStoreProvider` 读到 true）后，Launch 链两行都是 `****`。

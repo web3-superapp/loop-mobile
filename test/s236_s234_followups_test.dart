@@ -6,7 +6,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -117,6 +119,41 @@ void main() {
       expect(_key('wallet-launch-chain-usd1-row'), findsOneWidget);
     });
 
+    testWidgets('wallet page with 隐藏余额 on: both Launch 链 rows print ****', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(
+          balances: S5Answer<LoopWalletBalances>(
+            value: _balances(_launchChainWire()),
+          ),
+        ),
+        overrides: <Override>[
+          loopBalanceVisibilityStoreProvider.overrideWithValue(
+            const _Hidden(true),
+          ),
+        ],
+      );
+      await scrollToS5Section(tester, _key('wallet-launch-chain-total-note'));
+      for (final row in <String>[
+        'wallet-launch-chain-row',
+        'wallet-launch-chain-usd1-row',
+      ]) {
+        expect(
+          find.descendant(
+            of: _key(row),
+            matching: find.text(walletMaskedFigure),
+          ),
+          findsOneWidget,
+          reason: row,
+        );
+      }
+      expect(find.text('4,850'), findsNothing);
+      expect(find.text('2.5'), findsNothing);
+    });
+
     testWidgets('隐藏余额 masks tBNB and tUSD1 together; the note stays', (
       tester,
     ) async {
@@ -180,4 +217,16 @@ void main() {
       expect(_key('wallet-launch-chain-total-note'), findsNothing);
     });
   });
+}
+
+final class _Hidden implements LoopBalanceVisibilityStore {
+  const _Hidden(this.value);
+
+  final bool? value;
+
+  @override
+  Future<bool?> readHideBalance() => Future<bool?>.value(value);
+
+  @override
+  Future<void> writeHideBalance(bool value) => Future<void>.value();
 }

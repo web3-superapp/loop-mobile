@@ -135,25 +135,31 @@ Future<Launch2NftMintResult> launch2MintNft(
 }
 
 /// Decision 0203 (S234-4): the sheet's own view of the read model after a
-/// broadcast. [detail] is what the page showed when the action started; its
-/// [launch2OwnConfirmationSignature] is the baseline. The watch listens to
-/// the instance the page keeps reading and, while the sheet is open, asks
-/// for it again every `tradingInterval` (at most [launch2ConfirmationReads]
-/// times), so the sheet does not wait on the page's slower 15 s read.
-/// `null` when the read model carries no signal of the viewer's own.
+/// broadcast. `null` when [detail] (what the page showed when the action
+/// started) carries no signal of the viewer's own for [intent].
+///
+/// The baseline is **not** [detail]: it is read from the instance's provider
+/// at the moment the sheet starts the watch (the broadcast), so a read that
+/// landed while the wallet was open is not taken for the confirmation. The
+/// watch then listens without firing on the value it started from, and
+/// confirms only on [launch2OwnConfirmationAdvanced] — the figure this
+/// intent moves, in its own direction. While the sheet is open it also asks
+/// for the instance every `tradingInterval` (at most
+/// [launch2ConfirmationReads] times), so it does not wait on the page's
+/// slower 15 s read.
 Launch2ConfirmationProbe? launch2ReadModelConfirmation(
   WidgetRef ref,
   Launch2InstanceDetail detail,
   Launch2Intent intent,
 ) {
-  final baseline = launch2OwnConfirmationSignature(detail, intent);
-  if (baseline == null) return null;
+  if (launch2OwnConfirmationFigure(detail, intent) == null) return null;
+  final instanceId = detail.instanceId;
+  final interval = ref.read(launch2PollingProvider).tradingInterval;
   return () => _ReadModelConfirmation(
     ref,
-    instanceId: detail.instanceId,
+    instanceId: instanceId,
     intent: intent,
-    baseline: baseline,
-    interval: ref.read(launch2PollingProvider).tradingInterval,
+    interval: interval,
   );
 }
 
@@ -165,24 +171,38 @@ final class _ReadModelConfirmation implements Launch2ConfirmationWatch {
     this._ref, {
     required this.instanceId,
     required this.intent,
-    required this.baseline,
     required this.interval,
   }) {
-    _subscription = _ref
-        .listenManual<LoopChainResourceState<Launch2InstanceDetail>>(
-          launch2InstanceControllerProvider(instanceId),
-          (_, next) => _check(next.value),
-          fireImmediately: true,
-        );
+    try {
+      final provider = launch2InstanceControllerProvider(instanceId);
+      final current = _ref.read(provider).value;
+      _baseline = current == null
+          ? null
+          : launch2OwnConfirmationFigure(current, intent);
+      // Nothing to compare against: never confirmed, nothing read.
+      if (_baseline == null) {
+        _closed = true;
+        return;
+      }
+      _subscription = _ref
+          .listenManual<LoopChainResourceState<Launch2InstanceDetail>>(
+            provider,
+            (_, next) => _check(next.value),
+          );
+    } on StateError {
+      // The page that owns the read is gone.
+      close();
+      return;
+    }
     _arm();
   }
 
   final WidgetRef _ref;
   final String instanceId;
   final Launch2Intent intent;
-  final String baseline;
   final Duration interval;
   final Completer<void> _done = Completer<void>();
+  Decimal? _baseline;
   ProviderSubscription<LoopChainResourceState<Launch2InstanceDetail>>?
   _subscription;
   Timer? _timer;
@@ -193,9 +213,17 @@ final class _ReadModelConfirmation implements Launch2ConfirmationWatch {
   Future<void> get confirmed => _done.future;
 
   void _check(Launch2InstanceDetail? value) {
-    if (_closed || _done.isCompleted || value == null) return;
-    final now = launch2OwnConfirmationSignature(value, intent);
-    if (now != null && now != baseline) {
+    final baseline = _baseline;
+    if (_closed || _done.isCompleted || value == null || baseline == null) {
+      return;
+    }
+    final now = launch2OwnConfirmationFigure(value, intent);
+    if (now != null &&
+        launch2OwnConfirmationAdvanced(
+          intent.kind,
+          baseline: baseline,
+          now: now,
+        )) {
       _done.complete();
       _timer?.cancel();
     }
@@ -212,6 +240,10 @@ final class _ReadModelConfirmation implements Launch2ConfirmationWatch {
         await _ref
             .read(launch2InstanceControllerProvider(instanceId).notifier)
             .reload();
+      } on StateError {
+        // The page was unmounted: its ref is gone, stop for good.
+        close();
+        return;
       } catch (_) {
         // A failed read is the page's to show; the watch only asks again.
       }

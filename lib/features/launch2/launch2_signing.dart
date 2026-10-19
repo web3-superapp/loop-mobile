@@ -334,26 +334,31 @@ String launch2BroadcastText(
       '链上确认后这里会更新。';
 }
 
-/// What the read model says about the viewer's own position for [intent]'s
-/// kind, or `null` when it carries no signal of the viewer's own (decision
-/// 0203). It changes only when the viewer's own mint, curve trade or pool
-/// trade lands: `viewer.nftHeld`, `viewer.curve` bought / sold, or the
-/// wallet's own pool count (decision 0148). Another wallet's trade never
-/// moves it, so a change after a broadcast is that broadcast confirmed.
-String? launch2OwnConfirmationSignature(
+/// The one figure of the viewer's own position that [intent] moves, or
+/// `null` when the read model carries no signal of the viewer's own
+/// (decision 0203): `viewer.nftHeld` for a mint, `viewer.curve.bought` for a
+/// curve buy, `viewer.curve.sold` for a curve sell, the wallet's own pool
+/// trade count (decision 0148) for an official-pool trade. Another wallet's
+/// mint or trade (`nftSale.soldCount`, the pool's total) never moves it.
+/// `null` too for a reward claim, no viewer, or a viewer that is not the
+/// intent's wallet.
+Decimal? launch2OwnConfirmationFigure(
   Launch2InstanceDetail detail,
   Launch2Intent intent,
 ) {
   final viewer = detail.viewer;
   if (viewer == null || viewer.walletId != intent.walletId) return null;
   return switch (intent.kind) {
-    Launch2IntentKind.nftMint => 'nft:${viewer.nftHeld}',
+    Launch2IntentKind.nftMint => Decimal.fromInt(viewer.nftHeld),
     Launch2IntentKind.buy || Launch2IntentKind.sell => switch (intent.venue) {
-      Launch2Venue.curve => 'curve:${viewer.curve.bought}:${viewer.curve.sold}',
+      Launch2Venue.curve =>
+        intent.kind == Launch2IntentKind.buy
+            ? viewer.curve.bought
+            : viewer.curve.sold,
       Launch2Venue.officialPool => switch (viewer.holding) {
-        final Launch2WalletHolding own =>
-          'pool:${own.poolTradeCount}:'
-              '${own.lastPoolTradeAt?.toIso8601String() ?? '-'}',
+        final Launch2WalletHolding own => Decimal.fromBigInt(
+          own.poolTradeCount,
+        ),
         null => null,
       },
       Launch2Venue.loopDynamicRewards => null,
@@ -361,6 +366,21 @@ String? launch2OwnConfirmationSignature(
     Launch2IntentKind.rewardClaim => null,
   };
 }
+
+/// Whether [now] is [kind]'s own trade landing on top of [baseline], the
+/// figure read when the wallet broadcast (decision 0203): a mint only when
+/// `nftHeld` goes from 0 to more than 0, a buy only when `bought` grows, a
+/// sell only when `sold` grows, a pool trade only when the own count grows.
+/// Equal or smaller is never a confirmation.
+bool launch2OwnConfirmationAdvanced(
+  Launch2IntentKind kind, {
+  required Decimal baseline,
+  required Decimal now,
+}) => switch (kind) {
+  Launch2IntentKind.nftMint => baseline == Decimal.zero && now > Decimal.zero,
+  Launch2IntentKind.buy || Launch2IntentKind.sell => now > baseline,
+  Launch2IntentKind.rewardClaim => false,
+};
 
 /// The read model watched after a broadcast (decision 0203, S234-4): it
 /// completes [confirmed] once the instance the page keeps reading shows the

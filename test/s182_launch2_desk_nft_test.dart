@@ -310,7 +310,7 @@ Future<void> _pump(
   WidgetTester tester,
   Widget page,
   _Fake gateway, {
-  _RecordingWallet? wallet,
+  WalletSigningGateway? wallet,
   bool noWallet = false,
   Size size = const Size(390, 2600),
   Launch2OverviewGateway? overview,
@@ -2353,6 +2353,20 @@ void main() {
     final before = s236('instance_nft_sale_before_mint');
     final after = s236('instance_nft_sale_after_mint');
 
+    /// [detail] as read again after another wallet minted: only
+    /// `nftSale.soldCount` moves, the viewer holds what it held.
+    Launch2InstanceDetail withSoldCount(Launch2InstanceDetail detail, int n) {
+      final body = jsonDecode(
+        File('test/fixtures/s236/instance_nft_sale_before_mint.json')
+            .readAsStringSync(),
+      ) as Map<String, Object?>;
+      final instance =
+          (body['body']! as Map<String, Object?>)['instance']!
+              as Map<String, Object?>;
+      (instance['nftSale']! as Map<String, Object?>)['soldCount'] = '$n';
+      return LoopV2Launch2Codec.detail(body['body'], mediaUrl: (_) => null);
+    }
+
     /// The NFT mint intent for this instance and this viewer, live at [at].
     Launch2Intent mintIntent() {
       final body = l2IntentJson();
@@ -2534,30 +2548,126 @@ void main() {
       await _drain(tester);
     });
 
-    test('the signal is the viewer\'s own: NFT held, curve bought / sold, '
-        'own pool count; nothing for a claim, another wallet or no viewer', () {
+    test('the figure is the viewer\'s own and the check has a direction: '
+        'mint 0 → >0, buy bought up, sell sold up', () {
       final intent = mintIntent();
-      expect(launch2OwnConfirmationSignature(before, intent), 'nft:0');
-      expect(launch2OwnConfirmationSignature(after, intent), 'nft:1');
-      // A sale by someone else (soldCount) never moves it.
-      expect(launch2OwnConfirmationSignature(broadcast, intent), 'nft:1');
+      Decimal figure(Launch2InstanceDetail detail, Launch2Intent of) =>
+          launch2OwnConfirmationFigure(detail, of)!;
+      expect(figure(before, intent), Decimal.zero);
+      expect(figure(after, intent), Decimal.one);
+      // Another wallet's mint (soldCount 1 → 2) never moves it.
+      final othersMint = withSoldCount(before, 2);
+      expect(figure(othersMint, intent), Decimal.zero);
+      bool advanced(Launch2IntentKind kind, String from, String to) =>
+          launch2OwnConfirmationAdvanced(
+            kind,
+            baseline: Decimal.parse(from),
+            now: Decimal.parse(to),
+          );
+      expect(advanced(Launch2IntentKind.nftMint, '0', '1'), isTrue);
+      expect(advanced(Launch2IntentKind.nftMint, '0', '0'), isFalse);
+      // Already held at the broadcast: a mint never confirms from it.
+      expect(advanced(Launch2IntentKind.nftMint, '1', '1'), isFalse);
+      expect(advanced(Launch2IntentKind.buy, '100', '150'), isTrue);
+      expect(advanced(Launch2IntentKind.buy, '100', '100'), isFalse);
+      expect(advanced(Launch2IntentKind.buy, '100', '90'), isFalse);
+      expect(advanced(Launch2IntentKind.sell, '5', '8'), isTrue);
+      expect(advanced(Launch2IntentKind.sell, '5', '5'), isFalse);
+      expect(advanced(Launch2IntentKind.rewardClaim, '0', '9'), isFalse);
       final buy = LoopV2Launch2Codec.intent(
         l2IntentJson(kind: 'buy', approval: false),
       );
+      final sell = LoopV2Launch2Codec.intent(
+        l2IntentJson(kind: 'sell', approval: false),
+      );
       final curveDetail = _detail(stage: 'priority');
+      // A buy reads bought, a sell reads sold.
       expect(
-        launch2OwnConfirmationSignature(curveDetail, buy),
-        startsWith('curve:'),
+        launch2OwnConfirmationFigure(curveDetail, buy),
+        curveDetail.viewer!.curve.bought,
       );
       expect(
-        launch2OwnConfirmationSignature(before, buy),
+        launch2OwnConfirmationFigure(curveDetail, sell),
+        curveDetail.viewer!.curve.sold,
+      );
+      expect(
+        launch2OwnConfirmationFigure(before, buy),
         isNull,
         reason: 'the intent is for another wallet than the viewer',
       );
       expect(
-        launch2OwnConfirmationSignature(_detail(noViewer: true), buy),
+        launch2OwnConfirmationFigure(_detail(noViewer: true), buy),
         isNull,
       );
+    });
+
+    testWidgets('S234-4 · someone else mints meanwhile (before → before with '
+        'soldCount + 1): the sheet stays 已广播', (tester) async {
+      await mintUntilBroadcast(
+        tester,
+        const Launch2NftScreen(instanceId: instance),
+        'launch2-nft-mint',
+        <Launch2InstanceDetail>[before, withSoldCount(before, 2)],
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump();
+      }
+      final sheet = _key('loop-sign-sheet-complete');
+      expect(
+        find.descendant(of: sheet, matching: find.text('已广播')),
+        findsOneWidget,
+      );
+      expect(find.text('已确认'), findsNothing);
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      await _drain(tester);
+    });
+
+    testWidgets('S234-4 · a locked outcome (wallet answer unknown) stays '
+        '已广播 and asks for nothing more', (tester) async {
+      final gateway = _Fake(
+        details: <Launch2InstanceDetail>[before, after],
+        intent: mintIntent(),
+      );
+      await _pump(
+        tester,
+        const Launch2NftScreen(instanceId: instance),
+        gateway,
+        wallet: _UnknownMainWallet(),
+        clock: clock,
+        polling: const Launch2Polling(
+          detailInterval: Duration(hours: 1),
+          tradingInterval: Duration(seconds: 1),
+          listInterval: Duration(hours: 1),
+          snapshotInterval: Duration(hours: 1),
+        ),
+      );
+      await tester.tap(_key('launch2-nft-mint'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-risk-tick'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('launch2-nft-confirm-button'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('确认签名'));
+      await tester.pump();
+      await tester.pump();
+      final sheet = _key('loop-sign-sheet-complete');
+      expect(sheet, findsOneWidget);
+      expect(
+        find.descendant(of: sheet, matching: find.text('已广播')),
+        findsOneWidget,
+      );
+      final reads = gateway.detailReads;
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump();
+      }
+      expect(gateway.detailReads, reads);
+      expect(find.text('已确认'), findsNothing);
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+      await _drain(tester);
     });
   });
 }
@@ -2629,6 +2739,35 @@ final class _FakeOverview implements Launch2OverviewGateway {
         answers[index],
         mediaUrl: (_) => null,
       ),
+    );
+  }
+}
+
+/// Accepts the approval; the main transaction's wallet answer is unknown
+/// (a locked outcome, decision 0203).
+final class _UnknownMainWallet implements WalletSigningGateway {
+  @override
+  WalletGatewayAvailability get availability =>
+      WalletGatewayAvailability.available;
+
+  @override
+  String get label => 'test';
+
+  @override
+  Future<WalletHandoffResult> handoff(
+    SigningIntent intent, {
+    required DateTime now,
+  }) async {
+    if (intent.kind == IntentKind.launchApproval) {
+      return const WalletHandoffResult(
+        accepted: true,
+        code: 'wallet_accepted',
+        value: _txHash,
+      );
+    }
+    return const WalletHandoffResult(
+      accepted: false,
+      code: 'wallet_outcome_unknown',
     );
   }
 }
