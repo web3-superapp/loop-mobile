@@ -382,6 +382,13 @@ abstract final class LoopV2Launch2PoolCodec {
       dynamicTaxBps: side == Launch2Side.sell
           ? quote.loopDynamic?.dynamicTaxBps
           : null,
+      buyTaxUsd1:
+          side == Launch2Side.buy && quote.taxToken == Launch2PoolTaxToken.usd1
+          ? quote.taxUsd1
+          : null,
+      dynamicBuyTaxToken: side == Launch2Side.buy
+          ? quote.loopDynamic?.baseTaxToken
+          : null,
     );
     final kind = side == Launch2Side.buy
         ? Launch2IntentKind.buy

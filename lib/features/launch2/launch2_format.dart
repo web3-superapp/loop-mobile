@@ -410,7 +410,7 @@ String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易，请重新发起',
   'LAUNCH2_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝',
   'LAUNCH2_APPROVAL_REQUIRED' => '需要先授权，授权前无法试算',
-  'LAUNCH2_SNAPSHOT_UNVERIFIED' => '名单还在核对，提前购暂不可用',
+  'LAUNCH2_SNAPSHOT_UNVERIFIED' => '名单核验中，提前购暂不可用',
   'LAUNCH2_FACTORY_NOT_CONFIGURED' ||
   'LAUNCH2_CHAIN_NOT_CONFIGURED' => 'MEME v2 合约还没有配置',
   'LAUNCH2_REPOSITORY_UNAVAILABLE' ||

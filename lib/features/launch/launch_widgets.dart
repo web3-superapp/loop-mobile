@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -767,7 +768,10 @@ class LaunchChainBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!testnet) return const SizedBox.shrink();
+    // Decision 0208 (S237b-B): the whole statement — the chain id in the
+    // subtitle and the screen-reader sentence included — is a test-only
+    // hint, behind the switch (decision 0204).
+    if (!testnet || !loopTestHintsVisible) return const SizedBox.shrink();
     return Column(
       key: const ValueKey<String>('launch-chain-block'),
       crossAxisAlignment: CrossAxisAlignment.stretch,

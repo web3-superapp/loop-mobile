@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
@@ -118,6 +119,14 @@ String _taxLabel(Launch2Intent intent) {
   final dynamicBps = intent.dynamicTaxBps;
   if (intent.venue == Launch2Venue.officialPool && dynamicBps != null) {
     return '基础税 ${launch2BpsLabel(bps)} + 动态税 ${launch2BpsLabel(dynamicBps)}';
+  }
+  // Decision 0208 (S237b-C): a LoopDynamic buy reads as the trade panel's
+  // line ([launch2DynamicBuyTaxLine]).
+  final buyTaxToken = intent.dynamicBuyTaxToken;
+  if (intent.venue == Launch2Venue.officialPool && buyTaxToken != null) {
+    final fromUsd1 = buyTaxToken == Launch2PoolTaxToken.usd1;
+    return '基础税 ${launch2BpsLabel(bps)}'
+        '（${launch2BuyFeeSideText(fromUsd1: fromUsd1)}）';
   }
   return intent.venue == Launch2Venue.officialPool
       ? '外盘税 ${launch2BpsLabel(bps)}'

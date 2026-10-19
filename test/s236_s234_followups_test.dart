@@ -91,7 +91,8 @@ void main() {
       expect(find.text(walletLaunchChainTotalNote), findsOneWidget);
     });
 
-    testWidgets('no usd1 key: no row, the note stays', (tester) async {
+    testWidgets('no usd1 key: the row says 「—」 暂不可用, never 0 (decision '
+        '0208)', (tester) async {
       final wire = _launchChainWire()..remove('usd1');
       await pumpS5Page(
         tester,
@@ -101,7 +102,19 @@ void main() {
         ),
       );
       await scrollToS5Section(tester, _key('wallet-launch-chain-total-note'));
-      expect(_key('wallet-launch-chain-usd1-row'), findsNothing);
+      final row = _key('wallet-launch-chain-usd1-row');
+      expect(row, findsOneWidget);
+      expect(
+        find.descendant(of: row, matching: find.text(walletLaunchUsd1Missing)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: row,
+          matching: find.text(walletLaunchUsd1Unavailable),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('0'), findsNothing);
     });
 
