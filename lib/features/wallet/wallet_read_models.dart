@@ -450,6 +450,36 @@ final class LoopLaunchChainBalance {
   String get name => loopChainName(chainId);
 }
 
+/// The USD1 figure the wallet's Launch chain block draws (decision 0208,
+/// S237b-A): the USD1 every MEME v2 / launch2 trade spends — the Hooks
+/// Factory's `usd1()`, the one the faucet mints — read by the server with the
+/// wallet's MEME holdings (`me/positions`, decision 0148).
+///
+/// It is deliberately **not** `launchChain.usd1`: that pair is
+/// `balanceOf` / `allowance` of `LAUNCH_USD1_ADDRESS`, the (hidden) IDO
+/// Launch contract's USD1, which on the testnet slot is a different token
+/// (S237 acceptance: the IDO token read 0 while the wallet held ~2,892 of the
+/// MEME v2 USD1). That pair still gates the IDO approve step and nothing
+/// else.
+///
+/// Exactly one of [balance] and [reason] is set: a figure the server read,
+/// or the short reason no figure exists — the row then prints 「—」, never 0.
+@immutable
+final class WalletLaunchUsd1 {
+  const WalletLaunchUsd1.read(Decimal this.balance) : reason = null;
+
+  const WalletLaunchUsd1.missing(String this.reason) : balance = null;
+
+  final Decimal? balance;
+  final String? reason;
+}
+
+/// The reasons a [WalletLaunchUsd1] may carry (decision 0208).
+const String walletLaunchUsd1Loading = '读取中';
+const String walletLaunchUsd1Failed = '读取失败';
+const String walletLaunchUsd1Closed = 'MEME 暂未开放';
+const String walletLaunchUsd1NoReading = '持有已毕业代币后显示';
+
 /// USD1 on the Launch slot: the balance and the allowance towards the
 /// Launch contract, both exact 18-decimal integer strings read at one block.
 @immutable

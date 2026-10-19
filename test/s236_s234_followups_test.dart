@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -71,8 +72,16 @@ void main() {
         find.descendant(of: row, matching: find.text('tUSD1')),
         findsOneWidget,
       );
+      // Decision 0208: the figure is the MEME v2 USD1 from `me/positions`,
+      // never `launchChain.usd1` (the IDO contract's token). This harness
+      // has no MEME v2 surface, so the row says why it has no figure.
+      expect(find.text('4,850'), findsNothing);
       expect(
-        find.descendant(of: row, matching: find.text('4,850')),
+        find.descendant(of: row, matching: find.text(walletLaunchUsd1Missing)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row, matching: find.text(walletLaunchUsd1Closed)),
         findsOneWidget,
       );
       expect(
@@ -91,7 +100,8 @@ void main() {
       expect(find.text(walletLaunchChainTotalNote), findsOneWidget);
     });
 
-    testWidgets('no usd1 key: no row, the note stays', (tester) async {
+    testWidgets('no usd1 key: the row still says 「—」, never 0 (decision '
+        '0208)', (tester) async {
       final wire = _launchChainWire()..remove('usd1');
       await pumpS5Page(
         tester,
@@ -101,7 +111,14 @@ void main() {
         ),
       );
       await scrollToS5Section(tester, _key('wallet-launch-chain-total-note'));
-      expect(_key('wallet-launch-chain-usd1-row'), findsNothing);
+      expect(_key('wallet-launch-chain-usd1-row'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('wallet-launch-chain-usd1-row'),
+          matching: find.text(walletLaunchUsd1Missing),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('0'), findsNothing);
     });
 
@@ -141,10 +158,9 @@ void main() {
         ],
       );
       await scrollToS5Section(tester, _key('wallet-launch-chain-total-note'));
-      for (final row in <String>[
-        'wallet-launch-chain-row',
-        'wallet-launch-chain-usd1-row',
-      ]) {
+      // With no reading the USD1 row prints 「—」 masked or not (decision
+      // 0208); the masked figure is covered on the card below.
+      for (final row in <String>['wallet-launch-chain-row']) {
         expect(
           find.descendant(
             of: _key(row),
@@ -167,6 +183,7 @@ void main() {
           home: Scaffold(
             body: WalletLaunchChainCard(
               launchChain: _balances(_launchChainWire()).launchChain!,
+              usd1: WalletLaunchUsd1.read(Decimal.fromInt(4850)),
               hidden: true,
             ),
           ),
@@ -212,6 +229,7 @@ void main() {
                   allowance: '0',
                 ),
               ),
+              usd1: WalletLaunchUsd1.read(Decimal.fromInt(2)),
             ),
           ),
         ),

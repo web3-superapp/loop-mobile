@@ -912,6 +912,7 @@ final class Launch2Intent {
     this.taxBps,
     this.taxMeme,
     this.dynamicTaxBps,
+    this.dynamicBuyTaxToken,
   });
 
   final String intentId;
@@ -932,6 +933,12 @@ final class Launch2Intent {
   /// top of [taxBps] (`quote.dynamic.dynamicTaxBps`); [taxUsd1] is then the
   /// base and the dynamic tax together. `null` everywhere else.
   final int? dynamicTaxBps;
+
+  /// Decision 0208 (S237b-C) · a LoopDynamic buy: the token its base tax is
+  /// taken in (`quote.dynamic.baseTaxToken`), so the sheet names the line as
+  /// the quote does — 「基础税 2%（从付出的 USD1 扣）」 — with the quote's
+  /// figure. `null` for every other intent.
+  final Launch2PoolTaxToken? dynamicBuyTaxToken;
   final bool expired;
   final String instanceId;
   final String walletId;

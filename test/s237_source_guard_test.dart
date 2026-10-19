@@ -18,13 +18,17 @@ const List<String> _banned = <String>[
   '试运行',
   '占位产量',
   '占位预算',
-  '还在核对，交易',
-  '合约还在核对',
+  // Decision 0208 (S237b-B): the bare phrase, so 「名单还在核对」 and
+  // 「已配置，还在核对」 cannot slip past a longer pattern again.
+  '还在核对',
   '没有价值',
   'TESTNET',
   'STAGING',
   'tBNB',
   'tUSD1',
+  // Decision 0208: the testnet chain id inside a sentence. A literal that is
+  // exactly a CAIP-2 id is an identifier and skipped below.
+  'eip155:97',
 ];
 
 /// The only file that may hold the switch-on texts.
@@ -40,6 +44,10 @@ const Map<String, Set<String>> _allowed = <String, Set<String>>{
 /// Server reason codes and capability ids are identifiers, not words: a
 /// literal that is exactly one upper-snake code is skipped.
 final RegExp _code = RegExp(r'^[A-Z0-9]+(_[A-Z0-9]+)+$');
+
+/// A literal that is exactly one CAIP-2 chain id (`eip155:97`) is the
+/// identifier the chain table is keyed by, not a sentence (decision 0208).
+final RegExp _chainId = RegExp(r'^eip155:[0-9]+$');
 
 /// The string literals of one Dart source, as (line, text) pairs. Each
 /// literal piece of an interpolation is its own entry; the interpolated
@@ -181,6 +189,7 @@ multi
       final allowed = _allowed[path] ?? const <String>{};
       for (final (line, text) in dartStringLiterals(file.readAsStringSync())) {
         if (_code.hasMatch(text)) continue;
+        if (_chainId.hasMatch(text)) continue;
         for (final word in _banned) {
           if (allowed.contains(word)) continue;
           if (!text.contains(word)) continue;
@@ -195,6 +204,19 @@ multi
       }
     }
     expect(offences, isEmpty, reason: offences.join('\n'));
+  });
+
+  test('decision 0208: the two leftover sentences and a chain id in prose '
+      'are caught', () {
+    bool offends(String text) =>
+        !_code.hasMatch(text) &&
+        !_chainId.hasMatch(text) &&
+        _banned.any(text.contains);
+    expect(offends('名单还在核对，提前购暂不可用'), isTrue);
+    expect(offends('Launch 合约已配置，还在核对链上代码，请稍后刷新。'), isTrue);
+    expect(offends('Launch 运行在 BSC，eip155:97，主网功能不受影响'), isTrue);
+    expect(offends('eip155:97'), isFalse);
+    expect(offends('名单核验中，提前购暂不可用'), isFalse);
   });
 
   test('the hints file is where the switch-on words live', () {

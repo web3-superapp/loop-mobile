@@ -448,20 +448,25 @@ class WalletNetWorthCard extends StatelessWidget {
 /// added to the wallet's net worth or read as a spendable main-chain figure.
 /// A failed read renders the server's own reason and never a `0`.
 ///
-/// Decision 0203 (S234-8): the slot's USD1 (`launchChain.usd1`, loop-api
-/// decision 0077, read at one block with its allowance) is a second row
-/// under the native one. It is a testnet figure like tBNB: no price, never
-/// added to the net worth. An absent `usd1` is 「未读取」 and draws no row.
-/// On a testnet slot one line says the total above counts the main chain
-/// only.
+/// Decision 0203 (S234-8): the slot's USD1 is a second row under the native
+/// one. It is a testnet figure like tBNB: no price, never added to the net
+/// worth. Decision 0208 (S237b-A): the figure is [usd1] — the MEME v2 USD1
+/// read with the wallet's MEME holdings — not `launchChain.usd1`, which is
+/// the hidden IDO contract's own USD1 token. The row is always drawn; with
+/// no reading it prints 「—」 and the reason, never 0. On a testnet slot one
+/// line says the total above counts the main chain only.
 class WalletLaunchChainCard extends StatelessWidget {
   const WalletLaunchChainCard({
     required this.launchChain,
+    required this.usd1,
     super.key,
     this.hidden = false,
   });
 
   final LoopLaunchChainBalance launchChain;
+
+  /// The USD1 row's figure or its reason (decision 0208).
+  final WalletLaunchUsd1 usd1;
 
   /// 「隐藏余额」 (decisions 0175 / 0188; 0203): tBNB and USD1 print
   /// [walletMaskedFigure], like the assets above. The gas reserve is a
@@ -471,7 +476,12 @@ class WalletLaunchChainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final native = launchChain.nativeBalance;
-    final usd1 = launchChain.usd1;
+    final usd1Balance = usd1.balance;
+    final usd1Figure = usd1Balance == null
+        ? walletLaunchUsd1Missing
+        : hidden
+        ? walletMaskedFigure
+        : loopFormatDecimal(usd1Balance, maxFractionDigits: 2);
     final usd1Symbol = walletLaunchUsd1Symbol(launchChain);
     return Column(
       key: const ValueKey<String>('wallet-launch-chain'),
@@ -519,29 +529,32 @@ class WalletLaunchChainCard extends StatelessWidget {
             snapshot: native.snapshot,
           ),
         ],
-        if (usd1 != null)
-          LoopQuoteRow(
-            key: const ValueKey<String>('wallet-launch-chain-usd1-row'),
-            leading: LoopTokenLogo(
-              assetSymbol: 'USD1',
-              fallbackMonogram: usd1Symbol,
-              size: 36,
-            ),
-            title: usd1Symbol,
-            titleTrailing: launchChain.isTestnet
-                ? const LoopTestnetBadge()
-                : null,
-            subtitle: launchChain.isTestnet ? null : launchChain.name,
-            value: hidden
-                ? walletMaskedFigure
-                : loopFormatDecimal(
-                    walletLaunchUsd1Figure(usd1.balance),
-                    maxFractionDigits: 2,
-                  ),
-            semanticLabel:
-                '${launchChain.name} $usd1Symbol '
-                '${hidden ? walletMaskedFigure : loopFormatDecimal(walletLaunchUsd1Figure(usd1.balance), maxFractionDigits: 2)}',
+        LoopQuoteRow(
+          key: const ValueKey<String>('wallet-launch-chain-usd1-row'),
+          leading: LoopTokenLogo(
+            assetSymbol: 'USD1',
+            fallbackMonogram: usd1Symbol,
+            size: 36,
           ),
+          title: usd1Symbol,
+          titleTrailing: launchChain.isTestnet
+              ? const LoopTestnetBadge()
+              : null,
+          subtitle: launchChain.isTestnet ? null : launchChain.name,
+          value: usd1Figure,
+          valueCaption: usd1.reason == null
+              ? null
+              : Text(
+                  usd1.reason!,
+                  key: const ValueKey<String>(
+                    'wallet-launch-chain-usd1-reason',
+                  ),
+                ),
+          semanticLabel: <String>[
+            '${launchChain.name} $usd1Symbol $usd1Figure',
+            ?usd1.reason,
+          ].join('，'),
+        ),
         if (_badged(launchChain))
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -578,6 +591,9 @@ const String walletLaunchChainTotalNote = loopTestnetWalletTotalNoteText;
 /// is off (decision 0204).
 String walletLaunchUsd1Symbol(LoopLaunchChainBalance launchChain) =>
     launchChain.isTestnet ? loopLaunchUsd1SymbolText : 'USD1';
+
+/// What the Launch chain USD1 row prints with no reading (decision 0208).
+const String walletLaunchUsd1Missing = '—';
 
 /// An exact 18-decimal USD1 integer string as a [Decimal] (USD1 has 18
 /// decimals on both slots, loop-api decision 0077).

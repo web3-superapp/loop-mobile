@@ -163,7 +163,7 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // launch · contract baseline
   'LAUNCH_CONTRACT_BASELINE_PENDING' => 'Launch 合约还没有上线，链上状态、购买、退款与领取都暂时不可用。',
   // launch · contract adapter (loop-api decision 0076)
-  'LAUNCH_CONTRACT_VERIFICATION_PENDING' => 'Launch 合约已配置，还在核对链上代码，请稍后刷新。',
+  'LAUNCH_CONTRACT_VERIFICATION_PENDING' => 'Launch 合约正在完成链上校验，请稍后刷新。',
   'LAUNCH_CONTRACT_CODE_MISSING' => '配置的 Launch 合约地址上没有代码，链上状态暂时不可用。',
   'LAUNCH_CONTRACT_VERSION_UNSUPPORTED' => '当前 Launch 合约版本不受支持，链上状态暂时不可用。',
   'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => 'Launch 链还没有可用的节点，链上状态暂时不可用。',

@@ -236,7 +236,15 @@ void main() {
       expect(find.text('tBNB'), findsOneWidget);
       expect(find.text('2.5'), findsOneWidget);
       expect(find.textContaining('可动用 2.495'), findsOneWidget);
-      expect(testnetBadge, findsOneWidget);
+      // Decision 0208: the USD1 row under it is always drawn (「—」 with a
+      // reason when unread) and carries its own badge.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('wallet-launch-chain-row')),
+          matching: testnetBadge,
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the testnet explanation is behind an (i), not a card', (

@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
@@ -1188,6 +1189,8 @@ abstract final class LoopV2Launch2Codec {
     int? taxBps,
     Decimal? taxMeme,
     int? dynamicTaxBps,
+    Decimal? buyTaxUsd1,
+    Launch2PoolTaxToken? dynamicBuyTaxToken,
   }) {
     final map = LoopV2Contract.strictMap(raw, intentKeys);
     final rawKind = map['kind'];
@@ -1290,7 +1293,11 @@ abstract final class LoopV2Launch2Codec {
       amountIn: amount(map, 'amountIn'),
       expectedOut: amount(map, 'expectedOut'),
       minOut: amount(map, 'minOut'),
-      taxUsd1: amount(map, 'taxUsd1'),
+      // Decision 0208 (S237b-C): the pool's `launch2Intent.taxUsd1` is 0 on
+      // every buy (loop-api writes the sell tax only); a buy taxed in USD1
+      // (an S209 LoopDynamic Hook) shows the quote's `taxUsd1`, the figure
+      // the trade panel showed.
+      taxUsd1: buyTaxUsd1 ?? amount(map, 'taxUsd1'),
       refundUsd1: amount(map, 'refundUsd1'),
       deadline: LoopV2ChainCodec.requireTimestamp(map, 'deadline'),
       expiresAt: LoopV2ChainCodec.requireTimestamp(map, 'expiresAt'),
@@ -1314,6 +1321,7 @@ abstract final class LoopV2Launch2Codec {
       taxBps: taxBps,
       taxMeme: taxMeme,
       dynamicTaxBps: dynamicTaxBps,
+      dynamicBuyTaxToken: dynamicBuyTaxToken,
     );
   }
 
