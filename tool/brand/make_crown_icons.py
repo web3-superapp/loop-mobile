@@ -14,10 +14,12 @@ Pipeline, in order:
 2. Write `assets/brand/loop-logo-crown.svg` (480x310 viewBox, transparent).
    Every bitmap below is rendered from SVGs built on these paths; nothing is
    resampled from the source PNG.
-3. Compose the square app icon (Ink #050604 ground, logo 72 % wide) and the
-   Android adaptive foreground (transparent, logo inside the 66 dp circle of
-   the 108 dp canvas), then render iOS AppIcon, Android mipmaps, launch
-   images, web icons and in-app brand assets.
+3. Compose the square small mark (Ink #050604 ground, logo 72 % wide) and
+   render launch images and the in-app brand assets. Since decision 0207 the
+   iOS AppIcon, Android launcher mipmaps and web icons are cut from the
+   official square artwork by tool/brand/make_official_icons.py instead; the
+   vector mark stays for the small in-app sizes (54 / 32 / 18) where the
+   artwork would blur.
 4. Write the white crown silhouette as the Android notification vector.
 
 When a larger source arrives, run this again with it; step 1 is the only
@@ -25,7 +27,6 @@ place the source is read.
 """
 from __future__ import annotations
 
-import json
 import math
 import os
 import re
@@ -39,10 +40,8 @@ from PIL import Image, ImageFilter
 ROOT = Path(__file__).resolve().parent.parent.parent
 RENDER_JS = ROOT / "tool/brand/resvg_render.js"
 BRAND = ROOT / "assets/brand"
-IOS_ICON_SET = ROOT / "ios/Runner/Assets.xcassets/AppIcon.appiconset"
 IOS_LAUNCH_SET = ROOT / "ios/Runner/Assets.xcassets/LaunchImage.imageset"
 ANDROID_RES = ROOT / "android/app/src/main/res"
-WEB = ROOT / "web"
 PREVIEW = Path(os.environ.get("LOOP_LOGO_PREVIEW_DIR", ""))
 
 INK = "#050604"
@@ -55,9 +54,6 @@ THRESHOLD = 110  # coverage (0-255) that counts as ink; keeps the dry-brush gaps
 TURD = 60  # potrace: drop specks under 60 px² at 8x (~1 px² in the source)
 
 ICON_LOGO_WIDTH = 0.72  # square icon: logo bbox width / canvas
-FOREGROUND_RADIUS_DP = 32.0  # 66 dp keyline circle (r 33) minus 1 dp margin
-ROUND_RADIUS = 0.43  # legacy round icon: logo inside 86 % of the disc
-MASKABLE_RADIUS = 0.38  # web maskable: safe zone is r 40 %
 ANDROID_DENSITIES = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
 LAUNCH_WORDMARK_DP = 160  # launch frame wordmark width, iOS pt and Android dp
 
@@ -244,18 +240,7 @@ def main(source: Path) -> None:
         icon_clear = svg_doc(
             (1024, 1024), square(traced, box, 1024, icon_scale, None), provenance + "; square, transparent ground"
         )
-        fg_scale = FOREGROUND_RADIUS_DP / radius
-        foreground = svg_doc((108, 108), square(traced, box, 108, fg_scale, None), provenance + "; 108dp adaptive")
-        round_scale = min(icon_scale, ROUND_RADIUS * 1024 / radius)
-        round_icon = svg_doc(
-            (1024, 1024), square(traced, box, 1024, round_scale, INK, round_ground=True), provenance + "; round"
-        )
-        mask_scale = MASKABLE_RADIUS * 1024 / radius
-        maskable = svg_doc((1024, 1024), square(traced, box, 1024, mask_scale, INK), provenance + "; maskable")
-        print(
-            f"icon logo width {(x1 - x0) * icon_scale / 1024:.0%}; foreground logo "
-            f"{(x1 - x0) * fg_scale:.1f}x{(y1 - y0) * fg_scale:.1f} dp, radius {radius * fg_scale:.1f} dp"
-        )
+        print(f"icon logo width {(x1 - x0) * icon_scale / 1024:.0%}")
 
         # In-app brand assets.
         (BRAND / "loop-app-icon-crown.svg").write_text(icon_clear)
@@ -264,29 +249,14 @@ def main(source: Path) -> None:
         for folder, width in (("", 240), ("2.0x/", 480), ("3.0x/", 720)):
             render(logo_svg, BRAND / f"{folder}loop-wordmark-crown.png", width, work)
 
-        # iOS AppIcon: every slot the manifest names, opaque.
-        manifest = json.loads((IOS_ICON_SET / "Contents.json").read_text())
-        done: set[str] = set()
-        for entry in manifest["images"]:
-            name = entry.get("filename")
-            if not name or name in done:
-                continue
-            points = float(entry["size"].split("x")[0])
-            pixels = round(points * float(entry["scale"].rstrip("x")))
-            opaque(render(icon_dark, IOS_ICON_SET / name, pixels, work))
-            done.add(name)
-        print(f"iOS AppIcon: {len(done)} files")
-
         # iOS launch image: transparent wordmark on the storyboard's Ink.
         for suffix, factor in (("", 1), ("@2x", 2), ("@3x", 3)):
             render(logo_svg, IOS_LAUNCH_SET / f"LaunchImage{suffix}.png", LAUNCH_WORDMARK_DP * factor, work)
 
-        # Android mipmaps and launch bitmap.
+        # Android launch bitmap. Launcher mipmaps, iOS AppIcon and web icons
+        # come from the official artwork since decision 0207
+        # (tool/brand/make_official_icons.py).
         for bucket, density in ANDROID_DENSITIES.items():
-            mipmap = ANDROID_RES / f"mipmap-{bucket}"
-            render(foreground, mipmap / "ic_launcher_foreground.png", round(108 * density), work)
-            opaque(render(icon_dark, mipmap / "ic_launcher.png", round(48 * density), work))
-            render(round_icon, mipmap / "ic_launcher_round.png", round(48 * density), work)
             render(
                 logo_svg,
                 ANDROID_RES / f"drawable-{bucket}/launch_wordmark.png",
@@ -294,26 +264,11 @@ def main(source: Path) -> None:
                 work,
             )
 
-        # Web.
-        opaque(render(icon_dark, WEB / "favicon.png", 32, work))
-        for size in (192, 512):
-            opaque(render(icon_dark, WEB / f"icons/Icon-{size}.png", size, work))
-            opaque(render(maskable, WEB / f"icons/Icon-maskable-{size}.png", size, work))
-
         write_notification_icon(traced, work)
 
         if PREVIEW.parts:
             PREVIEW.mkdir(parents=True, exist_ok=True)
             opaque(render(icon_dark, PREVIEW / "loop-app-icon-crown-1024.png", 1024, work))
-            render(foreground, PREVIEW / "android-foreground-432.png", 432, work)
-            keyline = foreground.replace(
-                "</svg>",
-                f'<rect width="108" height="108" fill="none"/>'
-                f'<circle cx="54" cy="54" r="33" fill="none" stroke="#B8FF20" stroke-width="0.4"/>\n</svg>',
-            ).replace(
-                "\n<path", f'\n<rect width="108" height="108" fill="{INK}"/><path', 1
-            )
-            opaque(render(keyline, PREVIEW / "android-foreground-keyline-432.png", 432, work))
 
 
 def write_notification_icon(traced: dict[str, str], work: Path) -> None:

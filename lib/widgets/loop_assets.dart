@@ -722,7 +722,15 @@ class _LoopIdentityAvatarState extends State<LoopIdentityAvatar> {
   }
 }
 
-enum LoopBrandMarkKind { appIcon, wordmark }
+enum LoopBrandMarkKind {
+  /// The official square artwork (decision 0207), drawn with the app-icon
+  /// corner radius. Large marks only; it blurs below about 64 pt.
+  officialIcon,
+
+  /// The small vector crown mark (decision 0205) for 54 / 32 / 18 pt.
+  appIcon,
+  wordmark,
+}
 
 /// Brand mark: WebP first, SVG when the WebP fails to decode.
 class LoopBrandMark extends StatelessWidget {
@@ -747,6 +755,11 @@ class LoopBrandMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (raster, svg, label) = switch (kind) {
+      LoopBrandMarkKind.officialIcon => (
+        LoopBrandAssets.officialIconWebp,
+        LoopBrandAssets.appIconSvg,
+        'LOOP app icon',
+      ),
       LoopBrandMarkKind.appIcon => (
         LoopBrandAssets.appIconWebp,
         LoopBrandAssets.appIconSvg,
@@ -770,11 +783,18 @@ class LoopBrandMark extends StatelessWidget {
       ),
     );
     if (vector) return vectorMark;
-    return Image.asset(
+    final image = Image.asset(
       raster,
       height: height,
       semanticLabel: semanticLabel ?? label,
       errorBuilder: (context, error, stackTrace) => vectorMark,
+    );
+    if (kind != LoopBrandMarkKind.officialIcon) return image;
+    // The artwork is full-bleed and square; round it the way a home screen
+    // does so it reads as the app icon rather than a pasted photo.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height * 0.225),
+      child: image,
     );
   }
 }

@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Adaptive launcher icon (decision 0205). The background layer is the flat
-     LOOP Ink plate; the foreground layer is the crown logo on transparency,
-     kept inside the 66dp keyline circle of the 108dp canvas so neither the
-     launcher mask nor the Android 12+ splash mask can clip it. Never bake a
-     plate into the foreground PNG. -->
+<!-- Adaptive launcher icon (decision 0207). Both layers are cut from the
+     official square artwork by tool/brand/make_official_icons.py:
+     the background is the artwork's own text-free black texture, the
+     foreground is the whole artwork scaled so its farthest yellow stroke sits
+     32dp from the centre (inside the 66dp safe circle of the 108dp canvas),
+     feathered onto transparency, so neither the launcher mask nor the
+     Android 12+ splash mask can clip a letter. Keep the foreground corners
+     transparent. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background" />
+    <background android:drawable="@mipmap/ic_launcher_background" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>
