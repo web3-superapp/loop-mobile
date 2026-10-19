@@ -121,7 +121,10 @@ void main() {
         'with no reason line', (tester) async {
       await tester.pumpWidget(_card(_launchChainWire()));
       final row = _key('wallet-launch-chain-usd1-row');
-      expect(find.descendant(of: row, matching: find.text('0')), findsOneWidget);
+      expect(
+        find.descendant(of: row, matching: find.text('0')),
+        findsOneWidget,
+      );
       expect(_key('wallet-launch-chain-usd1-reason'), findsNothing);
       expect(
         find.descendant(of: row, matching: find.text(walletLaunchUsd1Missing)),
