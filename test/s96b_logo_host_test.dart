@@ -197,7 +197,7 @@ void main() {
     final asked = <String>[];
 
     setUpAll(() async {
-      final webp = await File('assets/brand/loop-app-icon-u3d.webp')
+      final webp = await File('assets/brand/loop-app-icon-crown.webp')
           .readAsBytes();
       // The extension is always `.png`; the bytes are what they are, and the
       // declared type is not what decides either.

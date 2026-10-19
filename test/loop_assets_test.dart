@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -72,6 +73,8 @@ void main() {
       LoopBrandAssets.appIconSvg,
       LoopBrandAssets.wordmarkPng,
       LoopBrandAssets.wordmarkSvg,
+      'assets/brand/2.0x/loop-wordmark-crown.png',
+      'assets/brand/3.0x/loop-wordmark-crown.png',
       'assets/fonts/IBMPlexMono-Regular.ttf',
       'assets/fonts/IBMPlexMono-Medium.ttf',
       'assets/fonts/IBMPlexMono-SemiBold.ttf',
@@ -83,6 +86,139 @@ void main() {
     // display face ships with the app any more.
     expect(File('assets/fonts/Sora-Variable.ttf').existsSync(), isFalse);
     expect(File('assets/fonts/OFL-Sora.txt').existsSync(), isFalse);
+  });
+
+  group('S244 crown logo (decision 0205)', () {
+    // PNG IHDR: width @16, height @20, bit depth @24, colour type @25.
+    (int, int, int) header(String path) {
+      final bytes = File(path).readAsBytesSync();
+      final data = ByteData.sublistView(bytes);
+      return (data.getUint32(16), data.getUint32(20), bytes[25]);
+    }
+
+    test('brand marks are the crown tracing, not the retired marks', () {
+      for (final retired in <String>[
+        'assets/brand/loop-app-icon-u3d.webp',
+        'assets/brand/loop-app-icon.svg',
+        'assets/brand/loop-wordmark.svg',
+      ]) {
+        expect(File(retired).existsSync(), isFalse, reason: retired);
+      }
+      final logo = File(LoopBrandAssets.wordmarkSvg).readAsStringSync();
+      expect(logo, contains('viewBox="0 0 480 310"'));
+      expect(logo, contains('fill="#FDEB00"'));
+      expect(logo, contains('fill="#FFFFFF"'));
+      final square = File(LoopBrandAssets.appIconSvg).readAsStringSync();
+      expect(square, contains('viewBox="0 0 1024 1024"'));
+      expect(square, isNot(contains('<rect')));
+      final webp = File(LoopBrandAssets.appIconWebp).readAsBytesSync();
+      expect(String.fromCharCodes(webp.sublist(0, 4)), 'RIFF');
+      expect(String.fromCharCodes(webp.sublist(8, 16)), 'WEBPVP8L');
+      // Wordmark variants keep the 480:310 aspect at 1x / 2x / 3x.
+      for (final (path, width) in <(String, int)>[
+        (LoopBrandAssets.wordmarkPng, 240),
+        ('assets/brand/2.0x/loop-wordmark-crown.png', 480),
+        ('assets/brand/3.0x/loop-wordmark-crown.png', 720),
+      ]) {
+        final (w, h, type) = header(path);
+        expect(
+          (w, h, type),
+          (width, (width * 310 / 480).round(), 6),
+          reason: path,
+        );
+      }
+    });
+
+    testWidgets('flutter_svg parses both traced SVGs', (tester) async {
+      for (final path in <String>[
+        LoopBrandAssets.wordmarkSvg,
+        LoopBrandAssets.appIconSvg,
+      ]) {
+        final info = await tester.runAsync(
+          () => vg.loadPicture(
+            SvgStringLoader(File(path).readAsStringSync()),
+            null,
+          ),
+        );
+        expect(info, isNotNull, reason: path);
+        expect(info!.size.width, greaterThan(0), reason: path);
+        info.picture.dispose();
+      }
+    });
+
+    test('every iOS AppIcon slot is opaque and sized as declared', () {
+      const set = 'ios/Runner/Assets.xcassets/AppIcon.appiconset';
+      final manifest = jsonDecode(
+        File('$set/Contents.json').readAsStringSync(),
+      ) as Map<String, dynamic>;
+      final images = (manifest['images'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      expect(images, hasLength(19));
+      for (final image in images) {
+        final path = '$set/${image['filename']}';
+        final points = double.parse((image['size'] as String).split('x')[0]);
+        final scale = int.parse((image['scale'] as String).replaceAll('x', ''));
+        final pixels = (points * scale).round();
+        // Colour type 2 = RGB, no alpha (App Store rejects alpha).
+        expect(header(path), (pixels, pixels, 2), reason: path);
+      }
+    });
+
+    test('launch frames carry the crown logo on Ink', () {
+      for (final (scale, width) in <(String, int)>[
+        ('', 160),
+        ('@2x', 320),
+        ('@3x', 480),
+      ]) {
+        final path =
+            'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage$scale.png';
+        expect(header(path).$1, width, reason: path);
+      }
+      const res = 'android/app/src/main/res';
+      for (final variant in <String>['drawable', 'drawable-v21']) {
+        final xml = File('$res/$variant/launch_background.xml')
+            .readAsStringSync();
+        expect(xml, contains('@color/loop_ink'));
+        expect(xml, contains('@drawable/launch_wordmark'));
+      }
+      for (final (bucket, width) in <(String, int)>[
+        ('mdpi', 160),
+        ('hdpi', 240),
+        ('xhdpi', 320),
+        ('xxhdpi', 480),
+        ('xxxhdpi', 640),
+      ]) {
+        expect(
+          header('$res/drawable-$bucket/launch_wordmark.png').$1,
+          width,
+          reason: bucket,
+        );
+        expect(header('$res/mipmap-$bucket/ic_launcher_round.png').$3, 6);
+      }
+      expect(
+        File('$res/values-v31/styles.xml').readAsStringSync(),
+        contains('@mipmap/ic_launcher_foreground'),
+      );
+      expect(
+        File('$res/mipmap-anydpi-v26/ic_launcher_round.xml').existsSync(),
+        isTrue,
+      );
+    });
+
+    test('notification icon is a white crown silhouette on 24dp', () {
+      final xml = File(
+        'android/app/src/main/res/drawable/ic_loop_notification.xml',
+      ).readAsStringSync();
+      expect(xml, contains('android:viewportWidth="24"'));
+      expect(xml, contains('android:fillColor="#FFFFFFFF"'));
+      expect(xml, isNot(contains('strokeColor')));
+    });
+
+    test('web manifest grounds on Ink', () {
+      final manifest = File('web/manifest.json').readAsStringSync();
+      expect(manifest, contains('"background_color": "#050604"'));
+      expect(manifest, contains('"theme_color": "#050604"'));
+    });
   });
 
   test('every sprite is drawn to the one sheet specification', () {

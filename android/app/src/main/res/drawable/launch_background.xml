@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pre-Android-12 launch frame: LOOP Ink ground, no mark (Android 12+ draws
-     the adaptive icon on windowSplashScreenBackground instead). -->
+<!-- Pre-Android-12 launch frame: LOOP Ink ground with the crown logo centred,
+     160dp wide (decision 0205; drawable-*dpi/launch_wordmark.png is rendered
+     from assets/brand/loop-logo-crown.svg). Android 12+ draws the adaptive
+     foreground on windowSplashScreenBackground instead (values-v31). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/loop_ink" />
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/launch_wordmark" />
+    </item>
 </layer-list>

@@ -202,17 +202,26 @@ abstract final class LoopNetworkAssets {
 }
 
 /// Brand marks. Raster first, SVG fallback (chapter 4.5).
+///
+/// S244 · decision 0205: every brand file is rendered from one potrace
+/// tracing of the crown logo (`loop-logo-crown.svg`, yellow crown over a
+/// white brush LOOP) by `tool/brand/make_crown_icons.py`.
 abstract final class LoopBrandAssets {
+  /// The square app icon: Ink #050604 ground, logo 72 % wide, lossless.
   static const String appIconWebp =
-      '${LoopAssetPaths.brand}/loop-app-icon-u3d.webp';
-  static const String appIconSvg = '${LoopAssetPaths.brand}/loop-app-icon.svg';
+      '${LoopAssetPaths.brand}/loop-app-icon-crown.webp';
 
-  /// S237 · decision 0204: the crown wordmark (需求方 2026-10-19, 480×310,
-  /// transparent ground, yellow crown over a white brush LOOP). Its white
-  /// letters need the Ink ground every carrying page already has.
+  /// The same square composition on a transparent ground.
+  static const String appIconSvg =
+      '${LoopAssetPaths.brand}/loop-app-icon-crown.svg';
+
+  /// The crown wordmark (需求方 2026-10-19). 1x / 2.0x / 3.0x variants on a
+  /// transparent ground; the white letters need the Ink ground every carrying
+  /// page already has.
   static const String wordmarkPng =
       '${LoopAssetPaths.brand}/loop-wordmark-crown.png';
-  static const String wordmarkSvg = '${LoopAssetPaths.brand}/loop-wordmark.svg';
+  static const String wordmarkSvg =
+      '${LoopAssetPaths.brand}/loop-logo-crown.svg';
 }
 
 /// One WebP identity atlas and its grid.

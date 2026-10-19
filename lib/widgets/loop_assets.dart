@@ -739,9 +739,9 @@ class LoopBrandMark extends StatelessWidget {
   final String? semanticLabel;
 
   /// Draw the flat SVG instead of the raster. The app-icon WebP is opaque
-  /// (lossy VP8, no alpha, black ground), so on anything but a black ground
+  /// (lossless, no alpha, Ink ground), so on anything but an Ink ground
   /// it shows as a black plate; the SVG has a transparent ground. The crown
-  /// wordmark PNG (decision 0204) is transparent already.
+  /// wordmark PNG (decisions 0204, 0205) is transparent already.
   final bool vector;
 
   @override
