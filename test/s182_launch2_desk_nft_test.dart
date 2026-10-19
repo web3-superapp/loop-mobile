@@ -2603,7 +2603,7 @@ void main() {
 
     testWidgets('S234-4 · someone else mints meanwhile (before → before with '
         'soldCount + 1): the sheet stays 已广播', (tester) async {
-      await mintUntilBroadcast(
+      final gateway = await mintUntilBroadcast(
         tester,
         const Launch2NftScreen(instanceId: instance),
         'launch2-nft-mint',
@@ -2618,6 +2618,8 @@ void main() {
         find.descendant(of: sheet, matching: find.text('已广播')),
         findsOneWidget,
       );
+      // The watch did read the second answer (soldCount 2).
+      expect(gateway.detailReads, greaterThanOrEqualTo(2));
       expect(find.text('已确认'), findsNothing);
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
