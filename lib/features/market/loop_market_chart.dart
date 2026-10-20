@@ -645,7 +645,7 @@ class LoopMarketChartState extends State<LoopMarketChart> {
       child: IgnorePointer(
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: widget.lineColor ?? LoopColors.lime,
+            color: widget.lineColor ?? LoopColors.yellow,
             borderRadius: LoopRadius.badge,
           ),
           child: Padding(
@@ -945,11 +945,12 @@ class _LoopMarketChartPainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
-          // Decision 0171 (docs/33 L5): the first average in Lime (the
-          // prototype's `--amber`), the second in Chalk; no warning yellow.
+          // Decision 0171 (docs/33 L5) as restated by S241b (decision
+          // 0210): the first average in Yellow, the second in Purple — the
+          // two looplabs accents; no warning orange.
           ..color = line == 0
-              ? LoopColors.lime.withValues(alpha: 0.85)
-              : LoopColors.chalk.withValues(alpha: 0.55)
+              ? LoopColors.yellow.withValues(alpha: 0.85)
+              : LoopColors.purple.withValues(alpha: 0.85)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.1,
       );

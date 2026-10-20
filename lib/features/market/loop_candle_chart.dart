@@ -340,23 +340,24 @@ class _LoopCandlePainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
+          // S241b: Yellow then Purple, the two looplabs accents.
           ..color = index == 0
-              ? LoopColors.lime.withValues(alpha: 0.72)
-              : LoopColors.chalk.withValues(alpha: 0.42)
+              ? LoopColors.yellow.withValues(alpha: 0.72)
+              : LoopColors.purple.withValues(alpha: 0.8)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.15,
       );
     }
   }
 
-  /// `.kline-last-line`: a dashed Lime rule at the latest close.
+  /// `.kline-last-line`: a dashed Yellow rule at the latest close.
   void _paintLastPrice(Canvas canvas, Rect plot, double y) {
     _drawDashedLine(
       canvas,
       Offset(plot.left, y),
       Offset(plot.right, y),
       Paint()
-        ..color = LoopColors.lime.withValues(alpha: 0.68)
+        ..color = LoopColors.yellow.withValues(alpha: 0.68)
         ..strokeWidth = 0.8,
     );
   }

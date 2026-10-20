@@ -11,6 +11,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/crypto/loop_keccak.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
@@ -1231,7 +1232,8 @@ void main() {
         findsOneWidget,
       );
       final folio = _heroFolio(tester);
-      expect(folio.variant, LoopFolioVariant.lime);
+      // S241b (decision 0210): the flat dark card, not a full-Yellow block.
+      expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.archetype, LoopFolioArchetype.record);
       expect(folio.kicker, '上一小时奖励');
       expect(folio.heading, '20.0000 LOOP');
@@ -1244,19 +1246,20 @@ void main() {
         ),
         findsOneWidget,
       );
-      // One full Lime per screen: the folio. The claim is not a Lime button.
+      // No full-Yellow block on the screen (S241b, decision 0210): the folio
+      // is the flat dark card. The claim is not a Yellow button.
       expect(
         tester
             .widgetList<LoopFolioPrimary>(find.byType(LoopFolioPrimary))
             .where((f) => f.variant == LoopFolioVariant.lime),
-        hasLength(1),
+        isEmpty,
       );
       expect(
         tester.widget<LoopButton>(_key('mining-claim-button')).primary,
         isFalse,
       );
       // M4: the summary is a stat grid; 可领取 > 0 takes the up tone.
-      final grid = tester.widget<LoopStatGrid>(find.byType(LoopStatGrid));
+      final grid = tester.widget<MemeStatFigures>(find.byType(MemeStatFigures));
       expect(grid.stats.map((s) => s.value), <String>[
         '200.0000',
         '80.0000',

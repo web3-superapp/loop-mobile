@@ -996,7 +996,7 @@ class LaunchTrackRoundDetail extends StatelessWidget {
             LoopAccordionTone.ended => LoopGround.auxiliaryOf(context),
             LoopAccordionTone.upcoming => LoopGround.secondaryOf(context),
             LoopAccordionTone.live ||
-            LoopAccordionTone.neutral => LoopColors.lime,
+            LoopAccordionTone.neutral => LoopColors.yellow,
           },
           semanticLabel: progress == null ? '本轮进度暂时读不到' : '本轮已募集占轮次上限的比例',
         ),

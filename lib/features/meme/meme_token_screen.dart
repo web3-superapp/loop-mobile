@@ -12,6 +12,7 @@ import 'package:loop_mobile/core/qr/loop_qr_code.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
@@ -1173,7 +1174,7 @@ class _ProgressStats extends StatelessWidget {
       key: const ValueKey<String>('meme-token-progress'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopStatGrid(
+        MemeStatFigures(
           key: const ValueKey<String>('meme-token-stats'),
           margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
           stats: <LoopStat>[
@@ -1319,7 +1320,7 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
         // Decision 0174: one Lime line over the page itself — no card, no
         // volume strip — with the current price as a Lime tag.
         showVolume: false,
-        lineColor: LoopColors.lime,
+        lineColor: LoopColors.yellow,
         lastPriceTag: true,
         semanticLabel:
             '${series.candles.length} 根${widget.interval.label}'
@@ -1740,10 +1741,7 @@ class _MemeShareSheet extends StatelessWidget {
                   width: 180,
                   height: 180,
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: LoopColors.chalk,
-                    borderRadius: BorderRadius.circular(LoopRadius.innerValue),
-                  ),
+                  decoration: BoxDecoration(color: LoopColors.chalk),
                   child: LoopQrView(code: code, semanticLabel: '代币合约地址二维码'),
                 ),
               if (address != null) ...<Widget>[

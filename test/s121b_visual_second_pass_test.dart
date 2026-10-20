@@ -135,7 +135,8 @@ void main() {
       expect(find.text('3 小时'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('meme-row-age')).style!.color,
-        LoopColors.lime,
+        // S241b (decision 0210): the age is the site's Purple index colour.
+        LoopColors.purple,
       );
       expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
       expect(find.text('市值 \$9,891'), findsOneWidget);

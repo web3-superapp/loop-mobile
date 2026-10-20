@@ -137,7 +137,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
       primary: LoopFolioPrimary(
         // `.lime-page .folio-primary` — the catalogue and the trade page are
         // the two saturated Lime heroes in the module.
-        variant: LoopFolioVariant.lime,
+        variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
         kicker: 'LAUNCH DESK',
         // No countdown, no graduation percentage, no "my tier": all three are

@@ -1229,7 +1229,7 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
                               ? Icons.check_box_rounded
                               : Icons.check_box_outline_blank_rounded,
                           size: 22,
-                          color: _ticked ? LoopColors.lime : LoopColors.text2,
+                          color: _ticked ? LoopColors.purple : LoopColors.text2,
                         ),
                       ),
                       const SizedBox(width: 10),

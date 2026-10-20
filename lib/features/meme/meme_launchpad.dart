@@ -323,7 +323,7 @@ class MemeGraduatingStrip extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 4, 0),
           child: Row(
             children: <Widget>[
-              const LoopIcon('target', size: 16, color: LoopColors.lime),
+              const LoopIcon('target', size: 16, color: LoopColors.yellow),
               const SizedBox(width: 6),
               Text(MemeListTab.graduating.label, style: LoopType.title),
               const Spacer(),

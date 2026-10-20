@@ -268,7 +268,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           key: const ValueKey<String>('token-watchlist-action'),
           icon: 'star',
           label: watchlistBlocked ? '自选当前不可用' : membership.actionLabel,
-          color: membership.isWatched ? LoopColors.lime : null,
+          color: membership.isWatched ? LoopColors.yellow : null,
           // An unread list has no on/off state to report; claiming
           // `false` would say the asset is not watched.
           toggled: watchlistBlocked || !membership.isKnown
@@ -1389,10 +1389,10 @@ class TokenFactCell extends StatelessWidget {
             DecoratedBox(
               key: ValueKey<String>('token-fact-dot-${fact.fact}'),
               decoration: BoxDecoration(
-                // Decision 0171 (docs/33 L5): a risk fact is marked in Lime
-                // (the prototype's `--amber`), never the v1 warning yellow.
-                color: risk ? LoopColors.lime : LoopColors.text3,
-                shape: BoxShape.circle,
+                // Decision 0171 (docs/33 L5): a risk fact is marked in the
+                // accent (Lime then, Yellow since decision 0210), never the
+                // v1 warning colour; S241b makes the mark square.
+                color: risk ? LoopColors.yellow : LoopColors.text3,
               ),
               child: const SizedBox.square(dimension: 6),
             ),

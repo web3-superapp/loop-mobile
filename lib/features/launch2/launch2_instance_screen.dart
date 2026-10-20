@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -1063,7 +1064,7 @@ class _NftSaleBlock extends ConsumerWidget {
             ),
           ),
         ),
-        LoopStatGrid(
+        MemeStatFigures(
           stats: <LoopStat>[
             LoopStat(
               label: '价格 / 枚',
@@ -1190,7 +1191,7 @@ class _CurveBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         const LoopLabel('内盘'),
-        LoopStatGrid(
+        MemeStatFigures(
           stats: <LoopStat>[
             LoopStat(
               label: '当前价 · USD1',
