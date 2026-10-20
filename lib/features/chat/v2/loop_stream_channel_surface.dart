@@ -833,7 +833,7 @@ class LoopStreamChannelStateBlock extends StatelessWidget {
     // top of the page rather than floating in the middle of it.
     if (loading) {
       return const Padding(
-        padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: EdgeInsets.fromLTRB(LoopSpacing.page, 12, LoopSpacing.page, 0),
         child: Align(
           alignment: Alignment.topCenter,
           child: LoopSkeleton(type: LoopSkeletonType.list, rows: 4),
@@ -875,7 +875,7 @@ class LoopStreamChannelStateBlock extends StatelessWidget {
     child: SingleChildScrollView(
       key: const ValueKey<String>('loop-stream-channel-state-block'),
       padding: const EdgeInsets.symmetric(
-        horizontal: 16,
+        horizontal: LoopSpacing.page,
         vertical: verticalMargin,
       ),
       child: child,
@@ -896,7 +896,12 @@ class LoopChannelPinnedNotice extends StatelessWidget {
     icon: 'pin',
     title: '置顶公告',
     body: reason,
-    margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+    margin: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      10,
+      LoopSpacing.page,
+      4,
+    ),
   );
 }
 
@@ -945,7 +950,12 @@ class LoopChatHeaderStrip extends StatelessWidget {
     }
     return Container(
       key: const ValueKey<String>('loop-chat-header-strip'),
-      padding: const EdgeInsets.fromLTRB(16, 7, 16, 7),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        7,
+        LoopSpacing.page,
+        7,
+      ),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: LoopColors.line)),
       ),
@@ -1038,7 +1048,12 @@ class LoopChatAiUnavailableBubble extends StatelessWidget {
     return Padding(
       key: const ValueKey<String>('loop-chat-ai-unavailable'),
       // `.msg{padding:8px 16px}`.
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        8,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

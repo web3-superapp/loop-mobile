@@ -144,7 +144,12 @@ Future<ChatInboxRowAction?> showChatInboxRowActionSheet(
       children: <Widget>[
         LoopSheetHeading(title),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

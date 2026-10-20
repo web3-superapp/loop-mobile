@@ -222,7 +222,12 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
             if (state.appendFailed && !state.loadingMore)
               // A failed next page keeps the rows and waits for the reader.
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  12,
+                  LoopSpacing.page,
+                  0,
+                ),
                 child: LoopButton(
                   key: const ValueKey<String>('square-voice-room-retry-more'),
                   label: '重试',
@@ -242,7 +247,12 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
               if (state.loadingMore)
                 const Padding(
                   key: ValueKey<String>('square-voice-room-loading-more'),
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    12,
+                    LoopSpacing.page,
+                    0,
+                  ),
                   child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
                 ),
             ] else
@@ -323,7 +333,12 @@ class LiveVoiceRoomCard extends StatelessWidget {
         ? const LoopBadge('直播中', kind: LoopBadgeKind.up)
         : const LoopBadge('需加入');
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        10,
+      ),
       child: Semantics(
         button: true,
         label:
@@ -331,14 +346,19 @@ class LiveVoiceRoomCard extends StatelessWidget {
             '${inRoom ? '，你已在房间里' : ''}'
             '${room.joinable ? '' : '，加入社区后可进入'}',
         excludeSemantics: true,
+        // Decision 0210 (S241b): the flat looplabs card — `#111114` behind
+        // a 1px `#38333E` edge, square, no lift; a press shows purple.
         child: Material(
           color: LoopColors.card,
-          borderRadius: BorderRadius.circular(LoopRadius.cardValue),
+          shape: const Border.fromBorderSide(
+            BorderSide(color: LoopColors.line2),
+          ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(LoopRadius.cardValue),
+            highlightColor: LoopColors.purpleSoft,
+            splashColor: LoopColors.purpleSoft,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(LoopSpacing.x4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
@@ -349,7 +369,6 @@ class LiveVoiceRoomCard extends StatelessWidget {
                         name: room.communityName,
                         logoRef: room.communityLogoRef,
                         size: 36,
-                        radius: 10,
                       ),
                       const SizedBox(width: 10),
                       Expanded(

@@ -271,7 +271,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       barrierLabel: '关闭更多操作',
       builder: (sheetContext) => Padding(
         key: const ValueKey<String>('user-profile-more-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          12,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -411,7 +416,12 @@ class _ProfileHeader extends StatelessWidget {
     final follow = onFollow;
     return Padding(
       key: const ValueKey<String>('user-profile-header'),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -545,6 +555,7 @@ class _ActionRow extends StatelessWidget {
         if (friendship != ProfileFriendship.friends)
           LoopRoundKey(
             key: ValueKey<String>('user-profile-friend-${friendship.wireName}'),
+            tone: LoopRoundKeyTone.primary,
             icon: switch (friendship) {
               ProfileFriendship.none => 'plus',
               ProfileFriendship.pendingIn => 'mail',
@@ -596,7 +607,12 @@ class _BlockedNotice extends StatelessWidget {
     tone: LoopNoticeTone.warn,
     title: '你已拉黑对方',
     body: '对方不能给你发消息或好友申请，你也看不到对方的持仓与交易。',
-    margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+    margin: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      16,
+      LoopSpacing.page,
+      0,
+    ),
     trailing: LoopButton(
       key: const ValueKey<String>('user-profile-unblock'),
       label: '解除',
@@ -710,7 +726,12 @@ class _HoldingsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -836,7 +857,12 @@ class _TradesSection extends StatelessWidget {
         for (final trade in state.items) _tradeRow(trade),
         if (state.appendFailed && !state.loadingMore)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              12,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: const ValueKey<String>('user-profile-trades-retry-more'),
               label: '重试',
@@ -852,7 +878,12 @@ class _TradesSection extends StatelessWidget {
           ),
           if (state.loadingMore)
             const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                12,
+                LoopSpacing.page,
+                0,
+              ),
               child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
             ),
         ],

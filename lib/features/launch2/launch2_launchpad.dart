@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -28,11 +29,12 @@ import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 // docs/32 §7)
 // ---------------------------------------------------------------------------
 //
-// The frozen prototype's Launch page, part for part: one full-Lime ledger
-// card for the main event, the segment counts, a record card for its
-// progress, then `.label` groups of rows, the 战绩 stat grid and the curation
-// notice. Lime is the ledger card and the progress; nothing on this page is
-// Brass (the medal keeps it on its own page).
+// The frozen prototype's Launch page, part for part: one ledger card for
+// the main event, the segment counts, a record card for its progress, then
+// `.label` groups of rows, the 战绩 stat figures and the curation notice.
+// S241b (decision 0210): the ledger card is the flat looplabs card — `#111114`
+// behind a 1px `#38333E` edge — with the ticker in Yellow and the stage line
+// in Purple; Yellow is otherwise kept for figures and the one text action.
 
 // ---- the live tape's words ---------------------------------------------
 
@@ -282,10 +284,11 @@ List<Launch2DeskPage> launch2DeskPages(
 }
 
 /// The pager's fixed height at text scale 1: two heading lines and a
-/// four-line caption at 360 dp.
-const double launch2DeskHeight = 220;
+/// four-line caption at 360 dp. 256 since decision 0210 (Anton heading,
+/// 20 card padding, 1.6 caption leading).
+const double launch2DeskHeight = 256;
 
-/// `.ledger-card.folio-primary` as a sideways pager: one full-Lime card per
+/// `.ledger-card.folio-primary` as a sideways pager: one flat card per
 /// page, the page width the screen less the two 16 gutters, dots at the
 /// right end of the kicker line from two pages on. It never moves by itself. One page looks
 /// exactly like the card alone.
@@ -320,25 +323,24 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
 
   Widget _card(Launch2DeskPage? page, int index) {
     final count = widget.pages.length;
-    // The dots ride the kicker line of each card, from two pages on: ink on
-    // the full-Lime event card, Lime on the quiet campaign card.
-    Widget? dots({required bool quiet}) => count >= 2
-        ? _DeskDots(count: count, current: index, quiet: quiet)
-        : null;
+    // The dots ride the kicker line of each card, from two pages on: the
+    // current page in Purple, the others in the outline grey (S241b).
+    Widget? dots() =>
+        count >= 2 ? _DeskDots(count: count, current: index) : null;
     return switch (page) {
       null => Launch2DeskFolio(row: null, chainId: widget.chainId),
       Launch2DeskEventPage(:final row) => Launch2DeskFolio(
         key: ValueKey<String>('launch2-desk-page-${row.instanceId}'),
         row: row,
         chainId: widget.chainId,
-        dots: dots(quiet: false),
+        dots: dots(),
         onTap: () => widget.onNavigate(launch2HeroLocation(row)),
         onElapsed: widget.onElapsed,
       ),
       Launch2DeskCampaignPage(:final campaign) => Launch2DeskCampaignCard(
         key: ValueKey<String>('launch2-desk-page-${page.id}'),
         campaign: campaign,
-        dots: dots(quiet: true),
+        dots: dots(),
         onNavigate: widget.onNavigate,
       ),
     };
@@ -367,17 +369,10 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
 }
 
 class _DeskDots extends StatelessWidget {
-  const _DeskDots({
-    required this.count,
-    required this.current,
-    this.quiet = false,
-  });
+  const _DeskDots({required this.count, required this.current});
 
   final int count;
   final int current;
-
-  /// On the quiet (dark) ledger: Lime dots instead of ink.
-  final bool quiet;
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
@@ -388,14 +383,12 @@ class _DeskDots extends StatelessWidget {
         for (var i = 0; i < count; i++)
           Container(
             key: ValueKey<String>('launch2-desk-dot-$i'),
-            width: 6,
+            // Square (decision 0210): the looplabs kicker mark, not a dot.
+            width: i == current ? 14 : 6,
             height: 6,
             margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: (quiet ? LoopColors.lime : LoopColors.ink).withValues(
-                alpha: i == current ? 1 : 0.3,
-              ),
+              color: i == current ? LoopColors.purple : LoopColors.line3,
             ),
           ),
       ],
@@ -433,24 +426,28 @@ class Launch2DeskFolio extends ConsumerWidget {
     final event = row;
     if (event == null) {
       return LoopFolioPrimary(
-        variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.listing,
         ring: false,
         margin: EdgeInsets.zero,
         kicker: kicker,
+        headingTone: LoopFolioHeadingTone.neutral,
         heading: '暂无进行中的发射',
         caption: 'NFT 预售开始后会出现在这里',
       );
     }
+    final ticker = launch2HeroTicker(event.ticker);
+    final status = launch2DeskStatus(event);
     Widget folio(String? stamp) => LoopFolioPrimary(
-      variant: LoopFolioVariant.lime,
       archetype: LoopFolioArchetype.listing,
       ring: false,
       margin: EdgeInsets.zero,
       kicker: kicker,
       kickerTrailing: dots,
-      heading:
-          '${launch2HeroTicker(event.ticker)}\n${launch2DeskStatus(event)}',
+      heading: '$ticker\n$status',
+      // S241b: the ticker in Yellow, the stage line in Purple (the site's
+      // two-colour heading), on the flat dark card.
+      headingBuilder: (heading) =>
+          memeTwoToneHeading(heading, first: ticker, second: status),
       caption: launch2DeskCaption(event),
       stamp: stamp,
     );
@@ -589,11 +586,11 @@ class _Launch2DeskCampaignCardState
                   style: LoopTypography.withWeight(
                     LoopType.label,
                     FontWeight.w600,
-                  ).copyWith(color: LoopColors.lime),
+                  ).copyWith(color: LoopColors.yellow),
                 ),
               ),
               const SizedBox(width: 2),
-              const LoopIcon('chevron', size: 12, color: LoopColors.lime),
+              const LoopIcon('chevron', size: 12, color: LoopColors.yellow),
             ],
           ),
         ),
@@ -626,7 +623,7 @@ class Launch2DeskRecordCard extends ConsumerWidget {
     final fraction = launch2HeroFuse(row, now);
     final next = row.nextChangeAt;
     // R4 / R5 / R6, the same steps as the list's rows (decision 0190 M23).
-    final figureStyle = LoopType.figure.copyWith(color: LoopColors.lime);
+    final figureStyle = LoopType.figure.copyWith(color: LoopColors.yellow);
     final figure = !launch2RecordCountsDown(row.stage)
         ? Text(
             launch2BpsLabel(row.curve.soldBps),
@@ -739,7 +736,7 @@ class Launch2DeskRecordCard extends ConsumerWidget {
 // ---- the live tape -----------------------------------------------------------
 
 /// `.tape`: the newest [shown] items as still lines on the card ground, the
-/// time in Lime; 「全部」 opens it to [expanded]. Empty: nothing is drawn (the
+/// time in Purple (S241b: the site's index colour); 「全部」 opens it to [expanded]. Empty: nothing is drawn (the
 /// caller checks).
 class Launch2DeskTape extends StatefulWidget {
   const Launch2DeskTape({
@@ -825,8 +822,7 @@ class _Launch2DeskTapeState extends State<Launch2DeskTape> {
           margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
           decoration: BoxDecoration(
             color: LoopColors.card,
-            borderRadius: LoopRadius.control,
-            border: Border.all(color: LoopColors.line),
+            border: Border.all(color: LoopColors.line2),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -893,8 +889,8 @@ class _TapeLine extends StatelessWidget {
                 time,
                 style: LoopTypography.withWeight(
                   LoopType.figureXs,
-                  FontWeight.w600,
-                ).copyWith(color: LoopColors.lime),
+                  FontWeight.w700,
+                ).copyWith(color: LoopColors.purple),
               ),
               const SizedBox(width: 10),
               Expanded(

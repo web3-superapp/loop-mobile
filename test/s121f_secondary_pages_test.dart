@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_stage.dart';
@@ -92,7 +93,7 @@ void main() {
       );
       expect(
         tester.widget<Text>(_key('community-profile-name')).style?.fontSize,
-        24, // R27 displaySm (decision 0191 M20)
+        LoopType.displaySm.fontSize, // R27 displaySm (decision 0191 M20)
       );
       expect(_key('community-profile-verification'), findsOneWidget);
       expect(find.text('已验证'), findsOneWidget);

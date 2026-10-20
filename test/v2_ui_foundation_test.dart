@@ -12,11 +12,12 @@ void main() {
   // ground probe itself; the page harnesses arm it for everybody else.
   loopWatchGround();
 
-  test('Lime Ledger foundation keeps the four canonical V2 colors', () {
-    expect(LoopColors.ink, const Color(0xFF050604));
-    expect(LoopColors.lime, const Color(0xFFB8FF20));
-    expect(LoopColors.chalk, const Color(0xFFF3F5EF));
-    expect(LoopColors.graphite, const Color(0xFF171A16));
+  test('the looplabs foundation keeps its canonical colors (0210)', () {
+    expect(LoopColors.ink, const Color(0xFF09090B));
+    expect(LoopColors.yellow, const Color(0xFFFFD600));
+    expect(LoopColors.purple, const Color(0xFF9C36FF));
+    expect(LoopColors.chalk, const Color(0xFFF2F2F4));
+    expect(LoopColors.graphite, const Color(0xFF111114));
     expect(
       _contrastRatio(LoopColors.muted, LoopColors.graphite),
       greaterThanOrEqualTo(4.5),
@@ -34,8 +35,8 @@ void main() {
         .resolve(unselected)!
         .color!;
 
-    expect(background, LoopColors.chalk);
-    expect(indicator, LoopColors.lime);
+    expect(background, LoopColors.ink);
+    expect(indicator, LoopColors.yellow);
     expect(
       _contrastRatio(Color.alphaBlend(selectedIcon, indicator), indicator),
       greaterThanOrEqualTo(3),

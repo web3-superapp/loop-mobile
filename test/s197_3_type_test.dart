@@ -260,7 +260,6 @@ void main() {
           find.descendant(of: row, matching: find.textContaining('+0.4')),
         ),
         LoopType.figure,
-        weight: FontWeight.w600,
         color: LoopColors.rise,
         reason: 'amount',
       );

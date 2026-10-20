@@ -252,7 +252,9 @@ void main() {
       final folio = tester.widget<LoopFolioPrimary>(
         find.byKey(const ValueKey<String>('devices-folio')),
       );
-      expect(folio.variant, LoopFolioVariant.chalk);
+      // S241b: a flat dark folio with a Chalk heading, no Chalk slab.
+      expect(folio.variant, LoopFolioVariant.quiet);
+      expect(folio.headingTone, LoopFolioHeadingTone.neutral);
     });
   });
 }

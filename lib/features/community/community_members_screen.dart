@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -183,7 +184,12 @@ class _CommunityMembersScreenState
           children: <Widget>[
             if (_searchOpen)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  4,
+                  LoopSpacing.page,
+                  0,
+                ),
                 child: TextField(
                   key: const ValueKey<String>('community-members-search-field'),
                   controller: _query,
@@ -213,7 +219,10 @@ class _CommunityMembersScreenState
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: LoopSpacing.page,
+                vertical: 10,
+              ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -301,7 +310,6 @@ class _CommunityMembersScreenState
                   name: community.name,
                   logoRef: community.logoRef,
                   size: 40,
-                  radius: 12,
                 ),
                 title: community.name,
                 subtitle: searching
@@ -344,7 +352,12 @@ class _CommunityMembersScreenState
               // community surface uses for this.
               if (state.refreshing)
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  padding: EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    0,
+                    LoopSpacing.page,
+                    10,
+                  ),
                   child: LoopUpdatingBadge(
                     key: ValueKey<String>('community-state-updating'),
                   ),
@@ -358,7 +371,12 @@ class _CommunityMembersScreenState
                   tone: LoopNoticeTone.warn,
                   title: '上一次操作没有完成',
                   body: communityFailureReason(state.failureKind),
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  margin: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    0,
+                    LoopSpacing.page,
+                    14,
+                  ),
                 ),
               for (final group in _groups(state.items)) ...<Widget>[
                 LoopLabel(group.$1),

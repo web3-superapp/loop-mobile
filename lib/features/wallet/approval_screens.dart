@@ -118,7 +118,9 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
       keyboardAccessory: true,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('approval-guard-folio'),
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         kicker: 'APPROVAL REQUEST',
         heading: intent == null

@@ -289,13 +289,15 @@ void main() {
       // `.refined-page .folio-body>.row{padding:13px 12px}` over a 44pt
       // `.row-ico`, plus the 1px hairline: 13 + 44 + 13 + 1 = 71.
       final rows = find.byType(LoopRecordRow);
-      expect(tester.getSize(rows.at(1)).height, 70);
+      // Decision 0210: every row carries its own hairline below.
+      expect(tester.getSize(rows.at(1)).height, 71);
       expect(
         tester.getTopLeft(rows.at(1)).dy - tester.getTopLeft(rows.at(0)).dy,
         72,
       );
-      // `.row{gap:12px}` after a 44pt mark inside a 16pt page margin.
-      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 84);
+      // `.row{gap:12px}` after a 44pt mark inside the 20pt page margin
+      // (decision 0210).
+      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 88);
     });
 
     testWidgets('第二行说成员数，右边只留 chevron', (tester) async {
@@ -336,7 +338,8 @@ void main() {
       final padding = tester.widget<Padding>(
         find.ancestor(of: chip, matching: find.byType(Padding)).at(1),
       );
-      expect(padding.padding, const EdgeInsets.fromLTRB(16, 0, 16, 16));
+      // Decision 0210: the page margin is 20.
+      expect(padding.padding, const EdgeInsets.fromLTRB(20, 0, 20, 16));
     });
   });
 

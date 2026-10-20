@@ -259,11 +259,14 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                   // An unrecognised code is read on a solid panel, not over
                   // the moving picture.
                   child: DecoratedBox(
+                    // S241b: a square panel with the card edge on top.
                     decoration: BoxDecoration(
                       color: unknown == null ? null : LoopColors.ink,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(LoopRadius.cardValue),
-                      ),
+                      border: unknown == null
+                          ? null
+                          : const Border(
+                              top: BorderSide(color: LoopColors.line2),
+                            ),
                     ),
                     child: SafeArea(
                       top: false,
@@ -416,16 +419,21 @@ class _ScanTool extends StatelessWidget {
               Container(
                 width: 56,
                 height: 56,
+                // S241b: square keys; an on toggle is a selected state, so
+                // purple rather than yellow. A solid raised square keeps the
+                // key readable over the live picture.
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: toggled == true
-                      ? LoopColors.lime
-                      : LoopColors.chalk.withValues(alpha: 0.16),
+                  color: toggled == true ? LoopColors.purple : LoopColors.card2,
+                  border: Border.all(
+                    color: toggled == true
+                        ? LoopColors.purple
+                        : LoopColors.line3,
+                  ),
                 ),
                 child: Icon(
                   icon,
                   size: 24,
-                  color: toggled == true ? LoopColors.ink : ink,
+                  color: toggled == true ? LoopColors.chalk : ink,
                 ),
               ),
               const SizedBox(height: 8),
@@ -476,12 +484,7 @@ class _MaskPainter extends CustomPainter {
     final veil = Path()
       ..fillType = PathFillType.evenOdd
       ..addRect(Offset.zero & size)
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          window,
-          const Radius.circular(LoopRadius.controlValue),
-        ),
-      );
+      ..addRect(window);
     canvas.drawPath(
       veil,
       Paint()..color = LoopColors.ink.withValues(alpha: 0.55),
@@ -551,7 +554,7 @@ class _ViewfinderState extends StatelessWidget {
   };
 }
 
-/// Four Lime corners: where to hold the code.
+/// Four yellow corners: where to hold the code.
 class _CornerPainter extends CustomPainter {
   const _CornerPainter();
 
@@ -559,10 +562,10 @@ class _CornerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const arm = 28.0;
     final paint = Paint()
-      ..color = LoopColors.lime
+      ..color = LoopColors.yellow
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.square;
     final w = size.width;
     final h = size.height;
     final path = Path()

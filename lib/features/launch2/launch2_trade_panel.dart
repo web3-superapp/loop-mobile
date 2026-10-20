@@ -630,7 +630,7 @@ class _MaxKey extends StatelessWidget {
             // R17 inline text action (decision 0190 L21).
             style: LoopTypography.withWeight(LoopType.label, FontWeight.w600)
                 .copyWith(
-                  color: onTap == null ? LoopColors.text3 : LoopColors.lime,
+                  color: onTap == null ? LoopColors.text3 : LoopColors.yellow,
                 ),
           ),
         ),
@@ -698,7 +698,7 @@ class _QuoteLines extends StatelessWidget {
                   key: const ValueKey<String>('launch2-trade-fill-max'),
                   onPressed: onFillMax,
                   style: TextButton.styleFrom(
-                    foregroundColor: LoopColors.lime,
+                    foregroundColor: LoopColors.yellow,
                     minimumSize: const Size(
                       LoopTouch.minimum,
                       LoopTouch.minimum,

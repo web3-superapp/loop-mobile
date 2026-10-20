@@ -42,6 +42,8 @@ Reown also resolves provider-internal storage and wallet-transport packages. LOO
 | Sora (variable) | SIL Open Font License 1.1 (`assets/fonts/OFL-Sora.txt`) | `assets/fonts/Sora-Variable.ttf` |
 | IBM Plex Mono Regular / Medium / SemiBold | SIL Open Font License 1.1 (`assets/fonts/OFL-IBMPlexMono.txt`) | `assets/fonts/IBMPlexMono-*.ttf` |
 | Noto Sans SC | SIL Open Font License 1.1 | Not bundled; platform CJK fallback (decision 0051) |
+| Anton Regular | SIL Open Font License 1.1 (`assets/fonts/OFL-Anton.txt`) | `assets/fonts/Anton-Regular.ttf`, google/fonts `ofl/anton` (decision 0210) |
+| Arimo Regular / Bold | SIL Open Font License 1.1 (`assets/fonts/OFL-Arimo.txt`) | `assets/fonts/Arimo-{Regular,Bold}.ttf`, static 400 / 700 instanced with fontTools from google/fonts `ofl/arimo/Arimo[wght].ttf` (decision 0210) |
 | LOOP sprite, token, network, brand and identity atlas assets | LOOP product assets from the frozen cliview.org prototype (`LOOP/docs/prototype`) | `assets/icons`, `assets/tokens`, `assets/networks`, `assets/brand`, `assets/people`, `assets/communities` |
 
 ## Inspiration register

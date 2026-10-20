@@ -299,7 +299,7 @@ void main() {
     );
     expect(
       (graduated.decoration! as BoxDecoration).border!.top.color,
-      LoopColors.lime.withValues(alpha: 0.32),
+      LoopColors.purpleLine,
     );
     expect(find.text('GRADUATED'), findsOneWidget);
     // The accent metric is a liquidity figure the owner can prove, not a tax.

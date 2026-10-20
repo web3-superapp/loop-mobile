@@ -250,8 +250,8 @@ class _EventRow extends StatelessWidget {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: failed ? LoopColors.chalk : LoopColors.lime,
-              shape: BoxShape.circle,
+              // S241b: a square mark (decision 0210), Yellow when done.
+              color: failed ? LoopColors.chalk : LoopColors.yellow,
             ),
           ),
           const SizedBox(width: 12),

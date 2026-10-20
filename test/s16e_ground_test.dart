@@ -110,18 +110,15 @@ void main() {
       );
       await tester.pump();
 
-      final decoration = tester
+      // Decision 0210: a secondary button is the ground and a 1px `#4A4754`
+      // edge — no fill — on the Ink page.
+      final edge = tester
           .widgetList<DecoratedBox>(find.byType(DecoratedBox))
           .map((box) => box.decoration)
           .whereType<BoxDecoration>()
-          .firstWhere((box) => box.color != null);
-      // `LoopGround` reads each weight off the token it replaces, so the dark
-      // rendering is unchanged to the byte.
-      expect(decoration.color!.toARGB32(), LoopColors.card2.toARGB32());
-      expect(
-        decoration.border!.top.color.toARGB32(),
-        LoopColors.line2.toARGB32(),
-      );
+          .firstWhere((box) => box.border != null);
+      expect(edge.color, isNull);
+      expect(edge.border!.top.color.toARGB32(), LoopColors.line3.toARGB32());
       expect(
         tester.widget<Text>(find.text('重试')).style!.color!.toARGB32(),
         LoopColors.chalk.toARGB32(),
@@ -210,12 +207,19 @@ void main() {
           LoopFolioVariant.lime || LoopFolioVariant.chalk => LoopColors.ink,
           LoopFolioVariant.quiet => LoopColors.chalk,
         };
+        // On a light folio the disc is the ground's ink at the card2 weight
+        // (10 %); on the Ink page it is the solid card2 token (decision 0210).
+        final expectedDisc = switch (variant) {
+          LoopFolioVariant.lime ||
+          LoopFolioVariant.chalk => LoopColors.ink.withValues(alpha: 0.10),
+          LoopFolioVariant.quiet => LoopColors.card2,
+        };
         final disc = tester.widget<Container>(
           find.byKey(const ValueKey<String>('loop-asset-monogram')),
         );
         expect(
           (disc.decoration! as BoxDecoration).color!.toARGB32(),
-          expected.withValues(alpha: LoopColors.card2.a).toARGB32(),
+          expectedDisc.toARGB32(),
         );
         expect(
           tester.widget<Text>(find.text('ZZ')).style!.color!.toARGB32(),
@@ -311,8 +315,16 @@ void main() {
 
   group('the probe itself states the rule it enforces', () {
     test('a soft token on its own ground moves nothing', () {
-      expect(loopGroundDelta(LoopColors.card2, LoopColors.chalk), lessThan(1));
-      expect(loopGroundDelta(LoopColors.line, LoopColors.chalk), lessThan(1));
+      // Decision 0210: the soft tokens are solid dark colours now. Named on a
+      // Chalk card they are a dark block, not nothing — which is still why a
+      // shared widget derives them from its ground instead.
+      expect(
+        loopGroundDelta(
+          LoopColors.ink.withValues(alpha: 0.004),
+          LoopColors.chalk,
+        ),
+        lessThan(1),
+      );
       // The same tokens on the Ink page are exactly what they were drawn for.
       expect(
         loopGroundDelta(LoopColors.card2, LoopColors.ink),

@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -477,7 +478,8 @@ void main() {
       expect(folio.heading, '暂无进行中的发射');
       expect(folio.caption, 'NFT 预售开始后会出现在这里');
       expect(folio.stamp, isNull);
-      expect(folio.variant, LoopFolioVariant.lime);
+      // S241b (decision 0210): the flat dark card.
+      expect(folio.variant, LoopFolioVariant.quiet);
       expect(find.byType(Launch2DeskRecordCard), findsNothing);
       expect(_key('launch2-tile-${_id(1)}'), findsOneWidget);
       expect(_key('launch2-tile-${_id(2)}'), findsOneWidget);
@@ -588,19 +590,30 @@ void main() {
       await tester.pump();
       await tester.pump();
       final folio = _folio(tester, 'launch2-desk');
-      expect(folio.variant, LoopFolioVariant.lime);
+      // S241b (decision 0210): the flat dark card, the ticker in Yellow
+      // over the stage line in Purple.
+      expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.kicker, 'LAUNCH DESK · BSC TESTNET');
       expect(folio.heading, 'FROG\n共识勋章铸造中');
       expect(folio.stamp, '剩 00:03');
-      // The one full-Lime block on the page.
+      // No full-Yellow block on the page (S241b); the heading is two-tone.
       expect(
         find.byWidgetPredicate(
           (widget) =>
               widget is LoopFolioPrimary &&
               widget.variant == LoopFolioVariant.lime,
         ),
-        findsOneWidget,
+        findsNothing,
       );
+      final heading = tester.widget<Text>(
+        find.descendant(
+          of: _key('launch2-desk'),
+          matching: find.text('FROG\n共识勋章铸造中'),
+        ),
+      );
+      expect(heading.style?.color, LoopColors.yellow);
+      final spans = (heading.textSpan! as TextSpan).children!;
+      expect((spans.last as TextSpan).style?.color, LoopColors.purple);
       now = l2Now.add(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
       expect(_folio(tester, 'launch2-desk').stamp, '剩 00:02');
@@ -645,8 +658,8 @@ void main() {
       );
       expect(_key('launch2-desk-pages'), findsOneWidget);
       expect(_key('launch2-desk-dots'), findsNothing);
-      // The page is the screen less the two 16 gutters.
-      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 358);
+      // The page is the screen less the two 20 gutters (decision 0210).
+      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 350);
       await _drain(tester);
     });
 
@@ -1012,7 +1025,8 @@ void main() {
             .first,
       );
       expect(time.data, '刚刚');
-      expect(time.style?.color, LoopColors.lime);
+      // S241b (decision 0210): the time is the site's Purple index colour.
+      expect(time.style?.color, LoopColors.purple);
 
       await tester.tap(_key('launch2-tape-more'));
       await tester.pumpAndSettle();
@@ -1170,10 +1184,10 @@ void main() {
         ]),
       );
       expect(find.text('战绩'), findsOneWidget);
-      final grid = tester.widget<LoopStatGrid>(
+      final grid = tester.widget<MemeStatFigures>(
         find.descendant(
           of: _key('launch2-stats'),
-          matching: find.byType(LoopStatGrid),
+          matching: find.byType(MemeStatFigures),
         ),
       );
       expect(grid.stats.map((stat) => '${stat.value}|${stat.label}'), <String>[
@@ -1946,7 +1960,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-nft-sale'),
-          matching: find.byType(LoopStatGrid),
+          matching: find.byType(MemeStatFigures),
         ),
         findsOneWidget,
       );
@@ -2421,7 +2435,7 @@ void main() {
       expect(folio(tester).caption, 'S234 Walk · 每地址 1 枚 · 已铸 2 枚');
       expect(launch2InstanceFolioCaption(after), contains('已铸 2 枚'));
       final stats = tester
-          .widgetList<LoopStatGrid>(find.byType(LoopStatGrid))
+          .widgetList<MemeStatFigures>(find.byType(MemeStatFigures))
           .expand((grid) => grid.stats);
       expect(stats.map((stat) => stat.label), contains('已铸'));
       expect(stats.map((stat) => stat.label), isNot(contains('已售')));

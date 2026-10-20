@@ -14,28 +14,30 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
-/// Lime, as Stream's brand ladder reads it.
+/// Purple (the second accent, decision 0210 / S241b), as Stream's brand
+/// ladder reads it.
 ///
 /// Stream uses `brand.shade100` as the ground of an outgoing ("end") surface
-/// and `brand.shade900` as the text on it, so the ladder is written to hold
-/// the prototype's pairing — Lime ground, Ink text — at every rung a message,
-/// a quote, a reply preview or a link card can land on.
+/// and `brand.shade900` as the text on it. looplabs keeps yellow for calls to
+/// action and marks selection with purple, so the reader's own bubble is the
+/// selected-state ground (purple 9 %) with Chalk text on every rung a
+/// message, a quote, a reply preview or a link card can land on.
 const StreamColorSwatch loopStreamBrandSwatch = StreamColorSwatch(
-  0xFFB8FF20,
+  0xFF9C36FF,
   <int, Color>{
     0: LoopColors.ink,
-    50: LoopColors.limeSoft,
-    100: LoopColors.lime,
-    150: LoopColors.limeHighlight,
-    200: LoopColors.limeHighlight,
-    300: LoopColors.ink,
-    400: LoopColors.ink,
-    500: LoopColors.lime,
-    600: LoopColors.lime,
-    700: LoopColors.ink,
-    800: LoopColors.ink,
-    900: LoopColors.ink,
-    1000: LoopColors.ink,
+    50: LoopColors.purpleSoft,
+    100: LoopColors.purpleSoft,
+    150: LoopColors.purpleSoft,
+    200: LoopColors.purpleLine,
+    300: LoopColors.purpleLine,
+    400: LoopColors.purple,
+    500: LoopColors.purple,
+    600: LoopColors.purple,
+    700: LoopColors.chalk,
+    800: LoopColors.chalk,
+    900: LoopColors.chalk,
+    1000: LoopColors.chalk,
   },
 );
 
@@ -63,18 +65,19 @@ const StreamColorSwatch loopStreamChromeSwatch = StreamColorSwatch(
 StreamColorScheme loopStreamColorScheme() => StreamColorScheme.dark(
   brand: loopStreamBrandSwatch,
   chrome: loopStreamChromeSwatch,
-  // Lime is the only accent; the send button and every primary control take
-  // it, with Ink as the text on top.
-  accentPrimary: LoopColors.lime,
+  // Yellow is the call-to-action accent; the send button and every primary
+  // control take it, with Ink as the text on top. Focus and selection are
+  // purple (decision 0210).
+  accentPrimary: LoopColors.yellow,
   accentNeutral: LoopColors.muted,
   accentError: LoopColors.danger,
   accentWarning: LoopColors.warning,
-  accentSuccess: LoopColors.lime,
+  accentSuccess: LoopColors.rise,
   textPrimary: LoopColors.chalk,
   textSecondary: LoopColors.text2,
   textTertiary: LoopColors.text3,
   textDisabled: LoopColors.muted,
-  textLink: LoopColors.lime,
+  textLink: LoopColors.yellow,
   textOnAccent: LoopColors.ink,
   textOnInverse: LoopColors.ink,
   backgroundApp: LoopColors.ink,
@@ -83,31 +86,31 @@ StreamColorScheme loopStreamColorScheme() => StreamColorScheme.dark(
   backgroundSurfaceStrong: LoopColors.card2,
   backgroundSurfaceCard: LoopColors.card,
   backgroundOnAccent: LoopColors.ink,
-  backgroundHighlight: LoopColors.limeSoft,
+  backgroundHighlight: LoopColors.purpleSoft,
   backgroundScrim: LoopColors.veil,
   backgroundDisabled: LoopColors.card,
   backgroundInverse: LoopColors.chalk,
   backgroundElevation0: LoopColors.ink,
-  // The composer's input field takes elevation 1; the prototype's
-  // `.composer input` ground is `--card`.
-  backgroundElevation1: LoopColors.card,
+  // The composer's input field takes elevation 1: the looplabs input ground
+  // `#16111C` (decision 0210).
+  backgroundElevation1: LoopColors.input,
   backgroundElevation2: LoopColors.card,
   backgroundElevation3: LoopColors.elevated,
-  backgroundSelected: LoopColors.limeSoft,
+  backgroundSelected: LoopColors.purpleSoft,
   borderDefault: LoopColors.line,
   borderSubtle: LoopColors.line,
   borderStrong: LoopColors.line2,
   borderOnAccent: LoopColors.ink,
   borderOnInverse: LoopColors.ink,
   borderOnSurface: LoopColors.line2,
-  borderFocus: LoopColors.lime,
-  borderActive: LoopColors.lime,
-  borderSelected: LoopColors.lime,
+  borderFocus: LoopColors.purple,
+  borderActive: LoopColors.purple,
+  borderSelected: LoopColors.purple,
   borderDisabled: LoopColors.line,
   borderDisabledOnSurface: LoopColors.line,
   borderError: LoopColors.danger,
   borderWarning: LoopColors.warning,
-  borderSuccess: LoopColors.lime,
+  borderSuccess: LoopColors.rise,
   systemText: LoopColors.chalk,
   systemScrollbar: LoopColors.line2,
 );
@@ -121,8 +124,11 @@ bool _isOutgoing(StreamMessageLayoutData layout) =>
 /// message *is* the primary body of the chat page, and it is set at the same
 /// 14px as the in-house bubble in `chat_components.dart`. Ink on Lime for the
 /// sender's own message, Chalk on Card for everyone else's.
+///
+/// Decision 0210: the bubble keeps a chat leading ([LoopType.message], 1.45)
+/// rather than the 1.7 prose leading.
 TextStyle _bubbleTextStyle(Color color) =>
-    LoopTypography.body(14, color: color);
+    LoopType.message.copyWith(color: color);
 
 /// The Lime Ledger message row: bubble, text and metadata.
 ///
@@ -171,14 +177,21 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
     backgroundColor: StreamMessageLayoutProperty.resolveWith(
       (layout) => switch (layout.contentKind) {
         StreamMessageContentKind.jumbomoji => Colors.transparent,
-        _ => _isOutgoing(layout) ? LoopColors.lime : LoopColors.card,
+        _ => _isOutgoing(layout) ? LoopColors.purpleSoft : LoopColors.card,
       },
     ),
-    // The prototype draws no outline on either bubble: the own bubble is a
-    // solid Lime fill and the other one is `--card` over the Ink page.
-    // Stream's default hairline on the incoming bubble is dropped rather than
-    // restated in a LOOP colour.
-    side: StreamMessageLayoutBorderSide.all(BorderSide.none),
+    // Decision 0210 (S241b): flat outlined surfaces. The other side's bubble
+    // is the `#111114` card with its `#38333E` edge; the reader's own is the
+    // purple selected-state ground with the purple line. Yellow stays on the
+    // send key, never on a message body.
+    side: StreamMessageLayoutBorderSide.resolveWith(
+      (layout) => switch (layout.contentKind) {
+        StreamMessageContentKind.jumbomoji => BorderSide.none,
+        _ => BorderSide(
+          color: _isOutgoing(layout) ? LoopColors.purpleLine : LoopColors.line2,
+        ),
+      },
+    ),
     // `.msg-txt{border-radius:5px 16px 16px 16px}` and `.msg.me
     // .msg-txt{border-radius:16px 5px 16px 16px}` — one rule each, with no
     // stacking selector. Every message in the prototype carries the tail on
@@ -213,20 +226,12 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
   ),
   text: StreamMessageTextStyle(
     textStyle: StreamMessageLayoutProperty.resolveWith(
-      (layout) => _bubbleTextStyle(
-        _isOutgoing(layout) ? LoopColors.ink : LoopColors.chalk,
-      ),
+      (layout) => _bubbleTextStyle(LoopColors.chalk),
     ),
-    textColor: StreamMessageLayoutProperty.resolveWith(
-      (layout) => _isOutgoing(layout) ? LoopColors.ink : LoopColors.chalk,
-    ),
-    linkColor: StreamMessageLayoutProperty.resolveWith(
-      (layout) => _isOutgoing(layout) ? LoopColors.ink : LoopColors.lime,
-    ),
-    mentionColor: StreamMessageLayoutProperty.all(LoopColors.lime),
-    mentionBackgroundColor: StreamMessageLayoutProperty.all(
-      LoopColors.limeSoft,
-    ),
+    textColor: StreamMessageLayoutProperty.all(LoopColors.chalk),
+    linkColor: StreamMessageLayoutProperty.all(LoopColors.yellow),
+    mentionColor: StreamMessageLayoutProperty.all(LoopColors.yellow),
+    mentionBackgroundColor: StreamMessageLayoutProperty.all(Colors.transparent),
   ),
   metadata: StreamMessageMetadataStyle(
     usernameTextStyle: StreamMessageLayoutProperty.all(
@@ -243,6 +248,20 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
   ),
 );
 
+/// Every Stream radius rung at zero (decision 0210).
+const StreamRadius loopStreamRadius = StreamRadius(
+  xxs: Radius.zero,
+  xs: Radius.zero,
+  sm: Radius.zero,
+  md: Radius.zero,
+  lg: Radius.zero,
+  xl: Radius.zero,
+  xxl: Radius.zero,
+  xxxl: Radius.zero,
+  xxxxl: Radius.zero,
+  max: Radius.zero,
+);
+
 /// The Lime Ledger [StreamTheme] injected above every official Stream widget.
 StreamTheme loopStreamTheme({TargetPlatform? platform}) {
   final colorScheme = loopStreamColorScheme();
@@ -250,6 +269,11 @@ StreamTheme loopStreamTheme({TargetPlatform? platform}) {
     brightness: Brightness.dark,
     platform: platform,
     colorScheme: colorScheme,
+    // Decision 0210 (S241b): looplabs is square. Every Stream radius rung —
+    // the composer field, its send key, the date chip, reaction and command
+    // chips — is drawn with a right angle. Avatars are LOOP's own widgets and
+    // stay round.
+    radius: loopStreamRadius,
     textTheme: StreamTextTheme(platform: platform).apply(
       color: LoopColors.chalk,
       fontFamily: LoopFonts.body,
@@ -266,7 +290,7 @@ StreamTheme loopStreamTheme({TargetPlatform? platform}) {
 StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
   messageListViewTheme: const StreamMessageListViewThemeData(
     backgroundColor: LoopColors.ink,
-    messageHighlightColor: LoopColors.limeSoft,
+    messageHighlightColor: LoopColors.purpleSoft,
   ),
   channelHeaderTheme: const StreamAppBarThemeData(
     style: StreamAppBarStyle(backgroundColor: LoopColors.ink),
@@ -279,8 +303,8 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
   ),
   quotedMessageTheme: StreamQuotedMessageThemeData(
     backgroundColor: LoopColors.card,
-    indicatorColor: LoopColors.lime,
-    side: const BorderSide(color: LoopColors.line),
+    indicatorColor: LoopColors.purple,
+    side: const BorderSide(color: LoopColors.line2),
     titleTextStyle: LoopTypography.label(12, color: LoopColors.text2),
     subtitleTextStyle: LoopTypography.caption(11),
   ),
@@ -620,9 +644,7 @@ class _LoopStreamMessageText extends StatelessWidget {
     }
 
     final themeStyle = StreamMessageItemTheme.of(context).text;
-    final fallback = _bubbleTextStyle(
-      _isOutgoing(layout) ? LoopColors.ink : LoopColors.chalk,
-    );
+    final fallback = _bubbleTextStyle(LoopColors.chalk);
     final style =
         props.style?.textStyle?.resolve(layout) ??
         themeStyle?.textStyle?.resolve(layout) ??
@@ -753,11 +775,14 @@ class LoopOutgoingQuotedMessage extends StatelessWidget {
 
   final StreamQuotedMessageProps props;
 
-  /// Ink at 12 %.
-  static final Color background = LoopColors.ink.withValues(alpha: 0.12);
+  /// The page ground, solid: a well inside the purple bubble.
+  static const Color background = LoopColors.ink;
 
-  /// Ink, the bubble's own text colour.
-  static const Color foreground = LoopColors.ink;
+  /// Chalk, the bubble's own text colour.
+  static const Color foreground = LoopColors.chalk;
+
+  /// The leading bar: purple, the bubble's own accent.
+  static const Color bar = LoopColors.purple;
 
   /// The leading bar's width.
   static const double barWidth = 3;
@@ -788,8 +813,8 @@ class LoopOutgoingQuotedMessage extends StatelessWidget {
                       key: const ValueKey<String>('loop-quoted-outgoing-bar'),
                       width: barWidth,
                       decoration: const BoxDecoration(
-                        color: foreground,
-                        borderRadius: LoopRadius.pill,
+                        color: bar,
+                        borderRadius: LoopRadius.badge,
                       ),
                     ),
                     const SizedBox(width: 8),

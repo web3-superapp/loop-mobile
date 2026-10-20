@@ -372,7 +372,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         // `#scr-voiceroom` and `#scr-voiceroom-full` are Chalk pages, and
         // their heading is a figure — `PEPE 语音房 · 13 人`, `13 人在麦上` —
         // not the word for all voice rooms (audit 2026-09-20 · B.8 / D-1).
-        variant: LoopFolioVariant.chalk,
+        variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
         ring: false,
         kicker: widget.expanded ? 'VOICE SESSION' : 'VOICE LOBBY',
@@ -2258,7 +2258,9 @@ class _VoiceRoomMinimizedBannerState
     final canLeave = session.role != VoiceRoomRole.host;
     return Material(
       key: const ValueKey<String>('voiceroom-minimized-banner'),
-      color: LoopColors.lime,
+      // Decision 0210 (S241b): a live-call strip is the looplabs marquee
+      // band — solid purple with Chalk words — not a yellow block.
+      color: LoopColors.purple,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -2302,7 +2304,7 @@ class _VoiceRoomMinimizedBannerState
                                   style: LoopTypography.withWeight(
                                     LoopType.bodySm,
                                     FontWeight.w600,
-                                  ).copyWith(color: LoopColors.ink),
+                                  ).copyWith(color: LoopColors.chalk),
                                 ),
                                 // No maxLines and no ellipsis: this line
                                 // wraps rather than drop a word of it.
@@ -2315,7 +2317,7 @@ class _VoiceRoomMinimizedBannerState
                                   style: LoopTypography.withWeight(
                                     LoopType.caption,
                                     FontWeight.w600,
-                                  ).copyWith(color: LoopColors.ink),
+                                  ).copyWith(color: LoopColors.chalk),
                                 ),
                               ],
                             ),
@@ -2358,7 +2360,9 @@ class _VoiceRoomMinimizedBannerState
                       child: Text(
                         '离开后你会退出这次通话，举手也会一并取消。',
                         maxLines: 2,
-                        style: LoopType.caption.copyWith(color: LoopColors.ink),
+                        style: LoopType.caption.copyWith(
+                          color: LoopColors.chalk,
+                        ),
                       ),
                     ),
                     const SizedBox(width: LoopSpacing.tight),
@@ -2497,7 +2501,7 @@ class _BannerAction extends StatelessWidget {
                 style: LoopTypography.withWeight(
                   LoopType.label,
                   onPressed == null ? FontWeight.w400 : FontWeight.w600,
-                ).copyWith(color: LoopColors.ink),
+                ).copyWith(color: LoopColors.chalk),
               ),
             ),
           ),

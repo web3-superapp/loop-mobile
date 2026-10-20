@@ -169,41 +169,48 @@ void main() {
   loopWatchGround();
 
   group('segments', () {
-    testWidgets('全部 / 代币 / 社区 / 用户, and only the chosen one is solid Lime', (
-      tester,
-    ) async {
-      await _pump(tester, search: _gateway(), store: _MemoryRecentStore(_seed));
+    testWidgets(
+      '全部 / 代币 / 社区 / 用户; the chosen one is purple, none solid yellow',
+      (tester) async {
+        await _pump(
+          tester,
+          search: _gateway(),
+          store: _MemoryRecentStore(_seed),
+        );
 
-      final segs = tester.widgetList<LoopSeg>(_segs).toList();
-      expect(segs.map((seg) => seg.label), <String>['全部', '代币', '社区', '用户']);
-      final xs = <double>[
-        for (final seg in segs) tester.getTopLeft(find.byWidget(seg)).dx,
-      ];
-      expect(xs, orderedEquals(List<double>.of(xs)..sort()));
-      // 算力榜 has no search domain on the server, so it is not drawn.
-      expect(find.text('算力榜'), findsNothing);
-      // The recent cards' capsules are LimeSoft: the chosen segment is the
-      // screen's one solid Lime.
-      expect(
-        find.byKey(const ValueKey<String>('search-recent-cards')),
-        findsOneWidget,
-      );
-      expect(_solidLime(tester), 1);
+        final segs = tester.widgetList<LoopSeg>(_segs).toList();
+        expect(segs.map((seg) => seg.label), <String>['全部', '代币', '社区', '用户']);
+        final xs = <double>[
+          for (final seg in segs) tester.getTopLeft(find.byWidget(seg)).dx,
+        ];
+        expect(xs, orderedEquals(List<double>.of(xs)..sort()));
+        // 算力榜 has no search domain on the server, so it is not drawn.
+        expect(find.text('算力榜'), findsNothing);
+        // Decision 0210 (S241b): the chosen segment carries the purple selected
+        // state, so no solid yellow block is left on the screen.
+        expect(
+          find.byKey(const ValueKey<String>('search-recent-cards')),
+          findsOneWidget,
+        );
+        expect(_solidLime(tester), 0);
 
-      await tester.tap(find.byKey(const ValueKey<String>('search-seg-assets')));
-      await tester.pumpAndSettle();
-      final chosen = tester.widget<LoopSeg>(
-        find.byKey(const ValueKey<String>('search-seg-assets')),
-      );
-      expect(chosen.selected, isTrue);
-      expect(chosen.quiet, isFalse);
-      final all = tester.widget<LoopSeg>(
-        find.byKey(const ValueKey<String>('search-seg-all')),
-      );
-      expect(all.selected, isFalse);
-      expect(all.quiet, isTrue);
-      expect(_solidLime(tester), 1);
-    });
+        await tester.tap(
+          find.byKey(const ValueKey<String>('search-seg-assets')),
+        );
+        await tester.pumpAndSettle();
+        final chosen = tester.widget<LoopSeg>(
+          find.byKey(const ValueKey<String>('search-seg-assets')),
+        );
+        expect(chosen.selected, isTrue);
+        expect(chosen.quiet, isTrue);
+        final all = tester.widget<LoopSeg>(
+          find.byKey(const ValueKey<String>('search-seg-all')),
+        );
+        expect(all.selected, isFalse);
+        expect(all.quiet, isTrue);
+        expect(_solidLime(tester), 0);
+      },
+    );
 
     testWidgets('全部 offers 更多 into a domain that has another page', (
       tester,

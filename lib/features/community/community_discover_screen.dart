@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -159,7 +160,7 @@ class _CommunityDiscoverScreenState
       embedded: widget.embedded,
       tabPage: widget.embedded,
       folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.chalk,
+        variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
         kicker: 'DISCOVERY DESK',
         // The directory answers one cursor page at a time and carries no
@@ -178,7 +179,12 @@ class _CommunityDiscoverScreenState
       // chips carry the prototype's own separation from the first row. LOOP
       // had 10 under them and 8 between them (decision 0086).
       filters: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          16,
+        ),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -189,6 +195,8 @@ class _CommunityDiscoverScreenState
                   child: LoopSeg(
                     key: ValueKey<String>('discover-seg-${segment.name}'),
                     label: segment.label,
+                    // Decision 0210 (S241b): the selected state is purple.
+                    quiet: true,
                     selected: segment == selectedSegment,
                     onSelected: () =>
                         unawaited(controller.selectSort(segment.sort)),
@@ -241,7 +249,12 @@ class _CommunityDiscoverScreenState
                   detailMaxLines: 4,
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  padding: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    0,
+                    LoopSpacing.page,
+                    10,
+                  ),
                   child: LoopButton(
                     key: const ValueKey<String>(
                       'community-discover-ordering-back',
@@ -279,7 +292,12 @@ class _CommunityDiscoverScreenState
             if (state.appendFailed && !state.loadingMore)
               // A failed next page keeps the rows and waits for the reader.
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  12,
+                  LoopSpacing.page,
+                  0,
+                ),
                 child: LoopButton(
                   key: const ValueKey<String>('community-discover-retry-more'),
                   label: '重试',
@@ -296,7 +314,12 @@ class _CommunityDiscoverScreenState
               if (state.loadingMore)
                 const Padding(
                   key: ValueKey<String>('community-discover-loading-more'),
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    12,
+                    LoopSpacing.page,
+                    0,
+                  ),
                   child: LoopSkeleton(type: LoopSkeletonType.record, rows: 2),
                 ),
             ]
@@ -315,7 +338,12 @@ class _CommunityDiscoverScreenState
             body:
                 '任何社区都可以提交申请。申请后状态为"审核中"，只有运维核验通过才会显示验证标记；'
                 '本页不代表任何 Mining 权重结论。',
-            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              16,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           // No application route exists in the frozen manifest, so the form
           // opens as a sheet from this block.

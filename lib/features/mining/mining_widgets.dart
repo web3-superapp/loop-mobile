@@ -329,10 +329,13 @@ class MiningSummaryHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = LoopColors.ink;
-    final muted = ink.withValues(alpha: 0.58);
-    final rule = ink.withValues(alpha: 0.16);
-    return LoopLedgerCard(
+    // Decision 0210 / S241b: the hero is the flat `#111114` card behind a
+    // 1px `#38333E` edge, not a yellow slab. Yellow is kept for the kicker,
+    // the power figure and the claim button.
+    const ink = LoopColors.chalk;
+    const muted = LoopColors.text3;
+    const rule = LoopColors.line;
+    return LoopRecordCard(
       key: const ValueKey<String>('mining-summary-hero'),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       child: Column(
@@ -344,7 +347,7 @@ class MiningSummaryHero extends StatelessWidget {
               Expanded(
                 child: Text(
                   'MINING POWER',
-                  style: LoopType.kicker.copyWith(color: muted),
+                  style: LoopType.kicker.copyWith(color: LoopColors.yellow),
                 ),
               ),
               if (rank != null)
@@ -376,7 +379,7 @@ class MiningSummaryHero extends StatelessWidget {
                 if (unit != null)
                   TextSpan(
                     text: ' $unit',
-                    style: LoopType.figureMd.copyWith(color: ink),
+                    style: LoopType.figureMd.copyWith(color: muted),
                   ),
               ],
             ),
@@ -386,15 +389,18 @@ class MiningSummaryHero extends StatelessWidget {
             // Decision 0192: the prototype's 44px `.mining-power-value` is the
             // page's hero figure (R22 `figureXl`); words in that slot are a
             // folio heading (R9 `displayXl`). Both are 28 on the ladder.
-            style: (unit == null ? LoopType.displayXl : LoopType.figureXl)
-                .copyWith(color: ink),
+            // S241b: a settled figure takes the Anton `statFigure` step in
+            // yellow; words stay a Chalk folio heading.
+            style: unit == null
+                ? LoopType.displayXl.copyWith(color: ink)
+                : LoopType.statFigure.copyWith(color: LoopColors.yellow),
           ),
           const SizedBox(height: 9),
           Text(
             caption,
             key: const ValueKey<String>('mining-summary-hero-caption'),
             style: LoopTypography.withWeight(
-              LoopType.captionSm.copyWith(color: ink.withValues(alpha: 0.67)),
+              LoopType.captionSm.copyWith(color: LoopColors.text2),
               FontWeight.w700,
             ),
           ),
@@ -412,7 +418,7 @@ class MiningSummaryHero extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 top: BorderSide(color: rule),
                 bottom: BorderSide(color: rule),
@@ -433,11 +439,7 @@ class MiningSummaryHero extends StatelessWidget {
                       decoration: BoxDecoration(
                         border: index == metrics.length - 1
                             ? null
-                            : Border(
-                                right: BorderSide(
-                                  color: ink.withValues(alpha: 0.14),
-                                ),
-                              ),
+                            : Border(right: BorderSide(color: rule)),
                       ),
                       child: Semantics(
                         container: true,
@@ -478,14 +480,13 @@ class MiningSummaryHero extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(
-                // `.mining-summary-actions button:first-child`: Ink on Lime.
+                // `.mining-summary-actions button:first-child`: the yellow CTA.
                 child: LoopButton(
                   key: const ValueKey<String>('mining-summary-hero-claim'),
                   // Decision 0184: before the token is live the page it
                   // opens counts power, so the button says so.
                   label: powerOnly ? '小时算力' : '领取奖励',
                   primary: true,
-                  tone: LoopButtonTone.ink,
                   onPressed: onClaim,
                   semanticLabel: powerOnly
                       ? '小时算力，打开挖矿奖励页'
@@ -507,9 +508,7 @@ class MiningSummaryHero extends StatelessWidget {
             Text(
               miningPowerOnlyNotice,
               key: const ValueKey<String>('mining-summary-hero-power-only'),
-              style: LoopType.caption.copyWith(
-                color: ink.withValues(alpha: 0.67),
-              ),
+              style: LoopType.caption.copyWith(color: LoopColors.text2),
             ),
           ],
         ],

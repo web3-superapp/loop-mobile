@@ -85,7 +85,10 @@ class _LoopChatImagePlaceholder extends StatelessWidget {
                   if (onRetry != null)
                     Text(
                       retryMessage,
-                      style: LoopTypography.caption(11, color: LoopColors.lime),
+                      style: LoopTypography.caption(
+                        11,
+                        color: LoopColors.yellow,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                 ],

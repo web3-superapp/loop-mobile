@@ -55,12 +55,12 @@ void main() {
       );
       // Decision 0190 H5 / H7: R4 / R6 / R7 (it was 14 bold / 14 bold / 11).
       expect(symbol.style!.fontSize, LoopType.title.fontSize);
-      expect(symbol.style!.fontWeight, FontWeight.w600);
+      expect(symbol.style!.fontWeight, LoopType.title.fontWeight);
       final amount = tester.widget<Text>(
         key('wallet-balance-amount-$s5NativeAssetId'),
       );
       expect(amount.style!.fontSize, LoopType.figure.fontSize);
-      expect(amount.style!.fontWeight, FontWeight.w600);
+      expect(amount.style!.fontWeight, LoopType.figure.fontWeight);
       final value = tester.widget<Text>(
         key('wallet-balance-value-$s5NativeAssetId'),
       );

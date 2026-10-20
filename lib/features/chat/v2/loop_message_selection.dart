@@ -297,15 +297,15 @@ class LoopSelectionCheck extends StatelessWidget {
     height: 22,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: selected ? LoopColors.lime : Colors.transparent,
+      color: selected ? LoopColors.purple : Colors.transparent,
       border: Border.all(
-        color: selected ? LoopColors.lime : LoopColors.line2,
+        color: selected ? LoopColors.purple : LoopColors.line2,
         width: 1.5,
       ),
     ),
     child: selected
         ? const Center(
-            child: LoopIcon('check', size: 14, color: LoopColors.ink),
+            child: LoopIcon('check', size: 14, color: LoopColors.chalk),
           )
         : null,
   );

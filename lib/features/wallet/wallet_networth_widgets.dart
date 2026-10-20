@@ -72,7 +72,7 @@ class WalletNetWorthSpark extends StatelessWidget {
               for (final point in history.points) point.netWorthUsd,
             ],
             semanticLabel: '7 天净值走势',
-            color: LoopColors.lime,
+            color: LoopColors.yellow,
           ),
         ),
       ),
@@ -566,8 +566,8 @@ class WalletNetWorthChartPainter extends CustomPainter {
 
   /// The wash's two stops, top to bottom.
   static List<Color> washColors() => <Color>[
-    LoopColors.lime.withValues(alpha: washAlpha),
-    LoopColors.lime.withValues(alpha: 0),
+    LoopColors.yellow.withValues(alpha: washAlpha),
+    LoopColors.yellow.withValues(alpha: 0),
   ];
 
   @override
@@ -594,7 +594,7 @@ class WalletNetWorthChartPainter extends CustomPainter {
     canvas.drawPath(
       line,
       Paint()
-        ..color = LoopColors.lime
+        ..color = LoopColors.yellow
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeJoin = StrokeJoin.round

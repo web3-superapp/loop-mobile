@@ -299,7 +299,7 @@ class LoopStatusPill extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: LoopRadius.pill,
+          borderRadius: LoopRadius.badge,
           border: Border.all(color: color.withValues(alpha: 0.26)),
         ),
         child: Padding(
@@ -533,7 +533,7 @@ class LoopContextRail extends StatelessWidget {
         padding: EdgeInsets.all(compact ? 5 : 7),
         decoration: BoxDecoration(
           color: LoopColors.basalt,
-          borderRadius: LoopRadius.pill,
+          borderRadius: LoopRadius.badge,
           border: Border.all(color: LoopColors.line),
         ),
         child: Row(
@@ -553,7 +553,7 @@ class LoopContextRail extends StatelessWidget {
                     color: selected
                         ? item.$2.withValues(alpha: 0.13)
                         : Colors.transparent,
-                    borderRadius: LoopRadius.pill,
+                    borderRadius: LoopRadius.badge,
                   ),
                   child: Text(
                     compact

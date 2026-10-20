@@ -70,7 +70,7 @@ void main() {
       );
       // The whole name, in the same bar, with all four tools still in it.
       expect(title.didExceedMaxLines, isFalse);
-      expect(title.text.style!.fontSize, 17);
+      expect(title.text.style!.fontSize, LoopType.headingSm.fontSize);
       expect(find.byType(LoopIconButton), findsNWidgets(5));
       expect(tester.getSize(find.byType(LoopTopbar)).height, lessThan(90));
     });
@@ -85,7 +85,7 @@ void main() {
             .text
             .style!
             .fontSize,
-        22,
+        LoopType.headingLg.fontSize,
       );
     });
   });

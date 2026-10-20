@@ -79,8 +79,9 @@ void main() {
     final title = tester.widget<Text>(
       find.descendant(of: find.byType(LoopTopbar), matching: find.text('验证邮箱')),
     );
-    expect(title.style?.fontSize, 24);
-    expect(title.style?.fontWeight, FontWeight.w700);
+    // Decision 0210: the step title is Anton.
+    expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
+    expect(title.style?.fontFamily, LoopFonts.display);
   });
 
   testWidgets('a rejected code spends one attempt and shows the remainder', (

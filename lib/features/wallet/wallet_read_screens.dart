@@ -894,6 +894,7 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
         ),
       ],
       primary: LoopFolioPrimary(
+        ring: false,
         key: const ValueKey<String>('wallet-asset-folio'),
         archetype: LoopFolioArchetype.record,
         kicker: '钱包资产',
@@ -1720,6 +1721,7 @@ class _ReceiveQrCard extends StatelessWidget {
         // the Card address capsule are gone.
         LoopChalkCard(
           key: const ValueKey<String>('receive-chalk-card'),
+          light: true,
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2760,7 +2762,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                       status.rpc.endpoints.isNotEmpty &&
                           status.rpc.healthyCount * 2 >=
                               status.rpc.endpoints.length
-                      ? LoopColors.lime
+                      ? LoopColors.yellow
                       : LoopColors.chalk,
                   // The 正常 / 异常 pill said the count's news twice; it stays
                   // only when there is no count to read.

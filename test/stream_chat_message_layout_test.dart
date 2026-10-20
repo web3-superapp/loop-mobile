@@ -54,8 +54,8 @@ void main() {
 
       final text = tester.widget<Text>(find.text('| 模拟器 |\nuuu'));
       expect(text.style!.fontSize, 14);
-      // Band 4 · body, 14/1.4 since decision 0080.
-      expect(text.style!.height, 1.4);
+      // Band 4 · the chat step, 14/1.45 since decision 0210.
+      expect(text.style!.height, LoopType.message.height);
       expect(text.style!.color, LoopColors.chalk);
 
       await _disposeHarness(tester, harness);
@@ -68,9 +68,9 @@ void main() {
       await _pumpMessage(tester, harness: harness);
 
       final box = tester.renderObject<RenderBox>(find.text('一行\n二行'));
-      // 2 × 14 × 1.4 = 39.2. A markdown-split message adds the style sheet's
-      // 8px block spacing on top of it.
-      expect(box.size.height, closeTo(2 * 14 * 1.4, 1));
+      // 2 × 14 × 1.45 = 40.6. A markdown-split message adds the style
+      // sheet's 8px block spacing on top of it.
+      expect(box.size.height, closeTo(2 * 14 * 1.45, 1));
 
       await _disposeHarness(tester, harness);
     });
@@ -250,7 +250,7 @@ void main() {
       await _disposeHarness(tester, harness);
     });
 
-    testWidgets('the bubble is Lime, Ink text, against the end margin', (
+    testWidgets('the bubble is purple, Chalk text, against the end margin', (
       tester,
     ) async {
       final harness = _ChannelHarness.group(
@@ -273,7 +273,10 @@ void main() {
         tester.getTopRight(bubble).dx,
         closeTo(pageWidth - LoopSpacing.page, 1),
       );
-      expect(tester.widget<Text>(find.text('gm')).style!.color, LoopColors.ink);
+      expect(
+        tester.widget<Text>(find.text('gm')).style!.color,
+        LoopColors.chalk,
+      );
 
       await _disposeHarness(tester, harness);
     });

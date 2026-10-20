@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
@@ -870,7 +871,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      final stats = tester.widget<LoopStatGrid>(_key('meme-token-stats'));
+      final stats = tester.widget<MemeStatFigures>(_key('meme-token-stats'));
       expect(stats.stats, hasLength(2));
       expect(stats.stats.first.tone, LoopStatTone.up);
       // Decision 0169: the family's 6 px `.bar`.

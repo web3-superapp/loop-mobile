@@ -118,7 +118,7 @@ class LoopStepTrack extends StatelessWidget {
                 height: segmentHeight,
                 decoration: BoxDecoration(
                   color: segmentColor(i),
-                  borderRadius: LoopRadius.pill,
+                  borderRadius: LoopRadius.badge,
                 ),
               ),
               const SizedBox(height: 6),

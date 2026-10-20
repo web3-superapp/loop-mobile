@@ -483,7 +483,7 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         // `.chalk-card.folio-state.folio-primary` resolves to
         // `background:var(--lime);color:var(--ink)` — the one solid Lime hero
         // in the prototype, and the app had none (audit 2026-09-20 · B.6).
-        variant: LoopFolioVariant.lime,
+        variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.state,
         kicker: 'SELECTED THREAD',
         heading: switch ((state.sourceLabel, selectedCount)) {
@@ -767,7 +767,12 @@ class _ChatMergePreviewScreenState
               tone: LoopNoticeTone.warn,
               title: '已截断',
               body: '一次最多合并 $chatMergeSelectionLimit 条，多出的部分不会出现在预览里。',
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                0,
+              ),
             ),
           LoopButtonPair(
             children: <Widget>[
@@ -860,7 +865,13 @@ class _MergeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LoopChalkCard(
-    margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    light: true,
+    margin: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      14,
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[

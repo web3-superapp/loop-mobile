@@ -311,7 +311,7 @@ class ConversationRow extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: tone,
-                                borderRadius: LoopRadius.pill,
+                                borderRadius: LoopRadius.badge,
                               ),
                               child: Text(
                                 '${conversation.unreadCount}',
@@ -700,7 +700,7 @@ class ChatMessageTile extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: LoopColors.elevated,
                                 border: Border.all(color: LoopColors.line),
-                                borderRadius: LoopRadius.pill,
+                                borderRadius: LoopRadius.badge,
                               ),
                               // Decision 0121: the glyph and the count.
                               child: Semantics(

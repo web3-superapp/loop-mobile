@@ -6,14 +6,15 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 /// The row height of an OKX-shaped quote list (decision 0122, S121 §1.1.1).
-const double loopQuoteRowHeight = 72;
+// 74 since decision 0210: the 1.35 title and 1.7 grey line of the new ladder.
+const double loopQuoteRowHeight = 74;
 
 /// The fixed size of the change pill at the right end of a quote row.
 const Size loopChangePillSize = Size(96, 44);
 
 /// The corner of that slot's pill, shared by [LoopChangePill] and the MEME
 /// list's progress pill so the two read as one column (decision 0122).
-const BorderRadius loopChangePillRadius = BorderRadius.all(Radius.circular(10));
+const BorderRadius loopChangePillRadius = LoopRadius.badge;
 
 /// `+2.50%` / `-1.01%` / `0.00%`: a move in percent points, signed.
 String loopSignedPercent(Decimal percent) {

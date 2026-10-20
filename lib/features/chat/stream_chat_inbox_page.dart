@@ -491,11 +491,13 @@ class _ChatSearchEntry extends StatelessWidget {
     label: '搜索聊天',
     excludeSemantics: true,
     child: Material(
-      color: LoopColors.card2,
-      shape: const StadiumBorder(),
+      color: LoopColors.input,
+      shape: const RoundedRectangleBorder(
+        side: BorderSide(color: LoopColors.inputLine),
+      ),
       child: InkWell(
         key: const ValueKey<String>('chat-search-entry'),
-        customBorder: const StadiumBorder(),
+        customBorder: const RoundedRectangleBorder(),
         onTap: () => unawaited(context.push<void>('/chat/search')),
         child: SizedBox(
           height: LoopTouch.minimum,

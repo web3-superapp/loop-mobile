@@ -542,7 +542,7 @@ class LoopBrandLoaderState extends State<LoopBrandLoader>
           Container(
             height: LoopBrandLoader.railThickness,
             decoration: BoxDecoration(
-              color: LoopColors.lime,
+              color: LoopColors.yellow,
               borderRadius: BorderRadius.circular(
                 LoopBrandLoader.railThickness / 2,
               ),
@@ -552,7 +552,7 @@ class LoopBrandLoaderState extends State<LoopBrandLoader>
             width: LoopBrandLoader.pointSize,
             height: LoopBrandLoader.pointSize,
             decoration: const BoxDecoration(
-              color: LoopColors.lime,
+              color: LoopColors.yellow,
               shape: BoxShape.circle,
             ),
           ),
@@ -606,8 +606,8 @@ class LoopBrandLoaderState extends State<LoopBrandLoader>
                                 ? Alignment.centerRight
                                 : Alignment.centerLeft,
                             colors: const <Color>[
-                              LoopColors.limeSoft,
-                              LoopColors.lime,
+                              LoopColors.yellowSoft,
+                              LoopColors.yellow,
                             ],
                           ),
                           borderRadius: BorderRadius.circular(
@@ -619,7 +619,7 @@ class LoopBrandLoaderState extends State<LoopBrandLoader>
                         width: LoopBrandLoader.pointSize,
                         height: LoopBrandLoader.pointSize,
                         decoration: const BoxDecoration(
-                          color: LoopColors.lime,
+                          color: LoopColors.yellow,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -900,7 +900,11 @@ class WalletCreateScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: done
-                    ? const LoopIcon('check', size: 15, color: LoopColors.lime)
+                    ? const LoopIcon(
+                        'check',
+                        size: 15,
+                        color: LoopColors.yellow,
+                      )
                     : Container(
                         width: 11,
                         height: 11,
@@ -942,7 +946,7 @@ class WalletCreateScreen extends StatelessWidget {
                 style: LoopTypography.withWeight(
                   LoopType.figureXs,
                   FontWeight.w500,
-                ).copyWith(color: done ? LoopColors.lime : LoopColors.text3),
+                ).copyWith(color: done ? LoopColors.yellow : LoopColors.text3),
               ),
             ],
           ),
@@ -1004,7 +1008,7 @@ class _WalletCreationRingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round
-        ..color = LoopColors.lime,
+        ..color = LoopColors.yellow,
     );
   }
 

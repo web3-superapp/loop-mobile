@@ -318,7 +318,7 @@ class LoopToastView extends StatelessWidget {
         borderRadius: LoopRadius.tile,
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Color(0x9E050604),
+            color: LoopColors.inkMuted,
             offset: Offset(0, 14),
             blurRadius: 38,
           ),

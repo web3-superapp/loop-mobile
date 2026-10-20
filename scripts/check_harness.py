@@ -9798,7 +9798,7 @@ def check_price_move_colour_contract(root: Path) -> list[str]:
             "static const Color fall = Color(0xFFEF4444);",
             "static const Color riseSoft = Color(0x2122C55E);",
             "static const Color fallSoft = Color(0x21EF4444);",
-            "Lime 是唯一品牌强调色；行情涨跌用 rise/fall，不计入品牌三色。",
+            "黄紫是品牌强调色；行情涨跌用 rise/fall，不计入品牌色。",
         ):
             if required not in theme:
                 errors.append(
@@ -15275,9 +15275,9 @@ ILLUSTRATION_NAMES = (
     "profile",
     "history",
 )
-# Lime for the main stroke, Chalk (at the text3 weight) for the secondary
+# Yellow for the main stroke (decision 0210), Chalk (at the text3 weight) for the secondary
 # one, and the two medal colours. Nothing else may be painted.
-ILLUSTRATION_COLOURS = frozenset({"#B8FF20", "#F3F5EF", "#D9B36A", "#B87B5A"})
+ILLUSTRATION_COLOURS = frozenset({"#FFD600", "#F2F2F4", "#D9B36A", "#B87B5A"})
 # Brass and copper are medal and illustration colours only.
 MEDAL_COLOUR_ALLOWLIST: dict[str, str] = {
     "lib/core/theme/loop_theme.dart": "the palette",
@@ -15882,14 +15882,6 @@ FEATURE_RADIUS_LITERAL_ALLOWLIST: dict[tuple[str, str], str] = {
     ),
     ("lib/features/market/loop_candle_chart.dart", "_candleCorner"): (
         "the candle body corner of the full chart"
-    ),
-    # The user's ruling (decision 0169, M1): the classic quick-fill card keeps
-    # decision 0122's r16 face untouched.
-    ("lib/features/meme/meme_widgets.dart", "MemeHeroCard"): (
-        "M1 quick-fill card, kept as 0122 drew it by user ruling"
-    ),
-    ("lib/features/community/community_home_widgets.dart", "_communityDiscoverHeroRadius"): (
-        "`.community-discover-hero{border-radius:19px}`, the prototype's own corner"
     ),
 }
 # 2. No v1 accent. `market / chat / danger / warning / elevated` survive only

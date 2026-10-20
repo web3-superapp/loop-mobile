@@ -171,7 +171,7 @@ class LoopStreamReactionBar extends StatelessWidget {
                         type: item.key,
                         size: glyphSize,
                         color: item.isSelected
-                            ? LoopColors.lime
+                            ? LoopColors.purple
                             : LoopColors.chalk,
                       ),
                     ),
@@ -336,8 +336,8 @@ class LoopReactionCapsule extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: LoopColors.elevated,
-        border: own ? Border.all(color: LoopColors.lime) : null,
-        borderRadius: LoopRadius.pill,
+        border: own ? Border.all(color: LoopColors.purple) : null,
+        borderRadius: LoopRadius.badge,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -345,7 +345,7 @@ class LoopReactionCapsule extends StatelessWidget {
           LoopReactionGlyph(
             type: type,
             size: 16,
-            color: own ? LoopColors.lime : LoopColors.chalk,
+            color: own ? LoopColors.purple : LoopColors.chalk,
           ),
           const SizedBox(width: 4),
           Text(

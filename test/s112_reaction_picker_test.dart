@@ -343,7 +343,7 @@ void main() {
         expect(glyph.name, loopReactionIconName(type), reason: type);
         expect(
           glyph.color,
-          type == 'love' ? LoopColors.lime : LoopColors.chalk,
+          type == 'love' ? LoopColors.purple : LoopColors.chalk,
           reason: type,
         );
         expect(
@@ -355,7 +355,7 @@ void main() {
       await room.dispose(tester);
     });
 
-    testWidgets('the reader\'s own reaction has a Lime edge and glyph', (
+    testWidgets('the reader\'s own reaction has a purple edge and glyph', (
       tester,
     ) async {
       final room = _Group(reacted: true, ownReaction: 'like');
@@ -372,13 +372,14 @@ void main() {
           ),
         ),
       );
-      expect(glyph.color, LoopColors.lime);
+      expect(glyph.color, LoopColors.purple);
       final pill = tester.widget<Container>(
         find.descendant(of: capsule, matching: find.byType(Container)).first,
       );
       final decoration = pill.decoration! as BoxDecoration;
       expect(decoration.color, LoopColors.elevated);
-      expect((decoration.border! as Border).top.color, LoopColors.lime);
+      // Decision 0210: the reader's own reaction is edged in Purple.
+      expect((decoration.border! as Border).top.color, LoopColors.purple);
       final count = tester.widget<Text>(
         find.descendant(of: capsule, matching: find.text('1')),
       );
@@ -447,7 +448,7 @@ void main() {
               ),
             )
             .color,
-        LoopColors.lime,
+        LoopColors.purple,
       );
       expect(find.byType(ReactionDetailSheet), findsNothing);
       await room.dispose(tester);

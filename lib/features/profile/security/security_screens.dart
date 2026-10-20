@@ -755,7 +755,9 @@ class _DeviceManagementScreenState
       // card. No stamp: LOOP has no trust signal to put in one.
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('devices-folio'),
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
         kicker: 'DEVICE SESSIONS',
         heading: directory == null
@@ -1038,7 +1040,9 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
       onBack: widget.onBack,
       folio: const LoopFolioPrimary(
         key: ValueKey<String>('key-export-folio'),
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
         kicker: 'WALLET KEY CONTROL',
         heading: '私钥由你控制',
@@ -1177,7 +1181,9 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
       onBack: widget.onBack,
       folio: const LoopFolioPrimary(
         key: ValueKey<String>('social-recovery-folio'),
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
         kicker: 'SOCIAL RECOVERY',
         heading: '2-of-3 守护人',

@@ -42,8 +42,7 @@ class LoopTrayDisclosure extends StatefulWidget {
   static const double defaultTrayInset = 10;
 
   /// How far the tray's top edge runs up under the card. It matches the
-  /// card radius, so the tray's corners are hidden and only its lower part
-  /// shows.
+  /// card radius (0 since decision 0210: square corners hide nothing).
   static const double defaultOverlap = LoopRadius.cardValue;
 
   /// The tray's corner radius: one step larger than a card's.
@@ -137,10 +136,15 @@ class _LoopTrayDisclosureState extends State<LoopTrayDisclosure>
               ),
               child: DecoratedBox(
                 key: const ValueKey<String>('loop-tray'),
+                // Decision 0210: square, flat, and edged like the card above
+                // it — the tray is the same surface, so the edge is what
+                // separates it from the page.
                 decoration: const BoxDecoration(
                   color: LoopColors.graphite,
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(LoopTrayDisclosure.trayRadius),
+                  border: Border(
+                    left: BorderSide(color: LoopColors.line2),
+                    right: BorderSide(color: LoopColors.line2),
+                    bottom: BorderSide(color: LoopColors.line2),
                   ),
                 ),
                 child: Padding(

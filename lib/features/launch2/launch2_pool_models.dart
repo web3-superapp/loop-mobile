@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/meme/meme_models.dart';
 
 // ---------------------------------------------------------------------------
 // MEME v2 · the official pool after graduation (client decision 0145,
@@ -280,6 +281,7 @@ final class Launch2PoolTrade {
     required this.tradedAt,
     required this.transactionHash,
     required this.blockNumber,
+    this.account,
   });
 
   final String poolTradeId;
@@ -301,6 +303,12 @@ final class Launch2PoolTrade {
   final DateTime tradedAt;
   final String transactionHash;
   final BigInt blockNumber;
+
+  /// The LOOP account behind the wallet (loop-api decision 0162 §A), sent
+  /// only with `LAUNCH2_TRADER_ACCOUNT_EMIT=on` (decision 0166). `null` when
+  /// the key is absent, when there is no active profile, or when the owner
+  /// keeps trade history to themselves: the row then shows the address.
+  final MemeAccountRef? account;
 }
 
 /// `GET /v2/launch2/instances/{id}/pool/trades?walletId=` (newest first).

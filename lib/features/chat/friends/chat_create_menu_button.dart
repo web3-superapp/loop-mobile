@@ -21,8 +21,8 @@ enum _ChatCreateAction { addFriend, createCommunity, createGroup, scan }
 class ChatCreateMenuButton extends ConsumerWidget {
   const ChatCreateMenuButton({super.key, this.floating = false});
 
-  /// The OKX round action key (decision 0122): a 56 Lime disc with an Ink
-  /// glyph, floated at the foot of 聊天 instead of the bar's 「＋」.
+  /// The OKX action key (decision 0122): a 56 yellow square (decision 0210)
+  /// with an Ink glyph, floated at the foot of 聊天 instead of the bar's 「＋」.
   final bool floating;
 
   @override
@@ -34,11 +34,14 @@ class ChatCreateMenuButton extends ConsumerWidget {
         excludeSemantics: true,
         child: Material(
           key: const ValueKey<String>('chat-create-menu'),
-          color: LoopColors.lime,
-          shape: const CircleBorder(),
+          // Decision 0210 (S241b): the looplabs primary key is square — a
+          // 56 yellow tile, pressed to the highlight yellow.
+          color: LoopColors.yellow,
+          shape: const RoundedRectangleBorder(),
           elevation: 0,
           child: InkWell(
-            customBorder: const CircleBorder(),
+            highlightColor: LoopColors.yellowHighlight,
+            splashColor: Colors.transparent,
             onTap: () => unawaited(_open(context, ref)),
             child: const SizedBox.square(
               dimension: 56,

@@ -129,7 +129,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             ),
           LoopFolioPrimary(
             key: const ValueKey<String>('community-folio'),
-            variant: LoopFolioVariant.lime,
+            variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.listing,
             kicker: 'COMMUNITY INDEX',
             // A read that is still running is not a read that failed.
@@ -234,7 +234,12 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           ],
           if (home.joinedTruncated || home.ownedTruncated)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                12,
+                LoopSpacing.page,
+                0,
+              ),
               child: LoopButton(
                 key: const ValueKey<String>('community-view-all-joined'),
                 label: '查看全部已加入的社区',
@@ -249,7 +254,12 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             body:
                 '推荐只按成员数与创建时间排列，'
                 '不是个性化算法推荐。',
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           CommunityObservedFootnote(
             key: const ValueKey<String>('community-observed-at'),

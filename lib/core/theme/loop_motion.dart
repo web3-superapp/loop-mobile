@@ -12,6 +12,24 @@ import 'package:flutter/widgets.dart';
 /// device-local 减弱动态效果 preference — every transition here collapses into
 /// an instant switch through [LoopMotion.reduced].
 abstract final class LoopMotion {
+  // --- Enter / exit (decision 0210, docs/42 附A §7) ------------------------
+
+  /// The looplabs enter curve, `cubic-bezier(.23,1,.32,1)` (easeOutQuint).
+  static const Curve enter = Cubic(0.23, 1, 0.32, 1);
+
+  /// The looplabs exit curve, `cubic-bezier(.7,0,.84,0)`.
+  static const Curve exit = Cubic(0.7, 0, 0.84, 0);
+
+  /// The default state transition, 150 ms `cubic-bezier(.4,0,.2,1)`.
+  static const Duration transition = Duration(milliseconds: 150);
+  static const Curve transitionCurve = Cubic(0.4, 0, 0.2, 1);
+
+  /// A card's pressed edge and lift, 180 ms.
+  static const Duration cardPress = Duration(milliseconds: 180);
+
+  /// How far a pressed primary button rises (`translateY(-2px)`).
+  static const double buttonLift = 2;
+
   // --- LoopAvatarStack ---------------------------------------------------
 
   /// One avatar's travel between the stacked and the spread position.

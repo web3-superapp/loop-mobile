@@ -685,7 +685,7 @@ class _ProfileTopRow extends StatelessWidget {
                 child: InkWell(
                   key: const ValueKey<String>('profile-hide-balance'),
                   onTap: onToggle,
-                  customBorder: const StadiumBorder(),
+                  customBorder: const RoundedRectangleBorder(),
                   child: Container(
                     constraints: const BoxConstraints(
                       minHeight: LoopTouch.minimum,
@@ -695,8 +695,8 @@ class _ProfileTopRow extends StatelessWidget {
                       vertical: 10,
                     ),
                     decoration: const ShapeDecoration(
-                      shape: StadiumBorder(
-                        side: BorderSide(color: LoopColors.line2),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: LoopColors.line3),
                       ),
                     ),
                     child: Row(
@@ -841,8 +841,9 @@ class _ProfileNetWorthPanel extends StatelessWidget {
                   key: const ValueKey<String>('profile-networth-figure'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.figureXl.copyWith(
-                    color: hidden ? LoopColors.text3 : LoopColors.chalk,
+                  // S241b: the key figure — Anton `statFigure`, yellow.
+                  style: LoopType.statFigure.copyWith(
+                    color: hidden ? LoopColors.text3 : LoopColors.yellow,
                   ),
                 ),
               if (caption != null)
@@ -935,7 +936,7 @@ class _ProfileFirstBuyCard extends StatelessWidget {
                     style: LoopTypography.withWeight(
                       LoopType.label,
                       FontWeight.w600,
-                    ).copyWith(color: LoopColors.lime),
+                    ).copyWith(color: LoopColors.yellow),
                   ),
                 ],
               ),
@@ -1650,9 +1651,9 @@ class _ProfileIdentityCard extends StatelessWidget {
                             width: 22,
                             height: 22,
                             alignment: Alignment.center,
+                            // S241b: the edit tag is a square yellow chip.
                             decoration: const BoxDecoration(
-                              color: LoopColors.chalk,
-                              shape: BoxShape.circle,
+                              color: LoopColors.yellow,
                             ),
                             child: const Icon(
                               Icons.edit_outlined,
@@ -1738,7 +1739,7 @@ class _ProfileIdentityCard extends StatelessWidget {
                   style: LoopTypography.withWeight(
                     LoopType.label,
                     FontWeight.w600,
-                  ).copyWith(color: LoopColors.lime),
+                  ).copyWith(color: LoopColors.yellow),
                 ),
               ),
             ),

@@ -308,7 +308,7 @@ class _FeedStateBlock extends StatelessWidget {
     if (state.phase == LoopChainViewPhase.loading) {
       return const Padding(
         key: ValueKey<String>('square-feed-loading'),
-        padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: EdgeInsets.fromLTRB(LoopSpacing.page, 12, LoopSpacing.page, 0),
         child: LoopSkeleton(type: LoopSkeletonType.record, rows: 4),
       );
     }
@@ -487,10 +487,12 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
     final move = squareFeedQuoteMove(token);
     return Material(
       color: LoopColors.card,
-      borderRadius: LoopRadius.control,
+      shape: const Border.fromBorderSide(BorderSide(color: LoopColors.line2)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         key: const ValueKey<String>('square-post-token'),
+        highlightColor: LoopColors.purpleSoft,
+        splashColor: LoopColors.purpleSoft,
         onTap: onTap,
         child: SizedBox(
           key: const ValueKey<String>('square-post-quote'),
@@ -929,7 +931,7 @@ class _LikeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = post.likedByViewer ? LoopColors.lime : LoopColors.text3;
+    final color = post.likedByViewer ? LoopColors.purple : LoopColors.text3;
     return Semantics(
       button: true,
       toggled: post.likedByViewer,
@@ -980,7 +982,12 @@ class _DeleteConfirm extends StatelessWidget {
     children: <Widget>[
       const LoopSheetHeading('删除这条动态？'),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          16,
+        ),
         child: Text(
           '删除后所有人都看不到它，也不能恢复。',
           // M18 R19 sheet support copy: bodySm 13 (decision 0191).
@@ -988,7 +995,12 @@ class _DeleteConfirm extends StatelessWidget {
         ),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          10,
+        ),
         child: LoopButton(
           key: const ValueKey<String>('square-post-delete-confirm'),
           label: '删除',
@@ -998,7 +1010,12 @@ class _DeleteConfirm extends StatelessWidget {
         ),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          16,
+        ),
         child: LoopButton(
           key: const ValueKey<String>('square-post-delete-cancel'),
           label: '取消',
@@ -1105,7 +1122,12 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
         if (recent.isNotEmpty) ...<Widget>[
           const LoopLabel('引用代币（可不选）'),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              12,
+            ),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -1143,7 +1165,12 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
             ),
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            4,
+            LoopSpacing.page,
+            16,
+          ),
           child: LoopButton(
             key: const ValueKey<String>('square-composer-send'),
             label: _sending ? '发布中…' : '发布',

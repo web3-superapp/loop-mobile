@@ -319,11 +319,12 @@ class MarketTabBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        // Decision 0122 / 0171 (docs/33 L3): the chosen
-                        // tab is underlined in Chalk; Lime stays for the
-                        // page's one primary body.
+                        // Decision 0122 / 0171 (docs/33 L3) as restated by
+                        // S241b (decision 0210): the chosen tab is underlined
+                        // in Purple, the selection colour; Yellow stays for
+                        // the page's one primary body.
                         color: index == selectedIndex
-                            ? LoopColors.chalk
+                            ? LoopColors.purple
                             : Colors.transparent,
                         width: 2,
                       ),
@@ -563,6 +564,7 @@ class MarketSegmentBar extends StatelessWidget {
                 opacity: enabled[index] ? 1 : 0.45,
                 child: LoopSeg(
                   key: ValueKey<String>('market-seg-${labels[index]}'),
+                  quiet: true,
                   label: labels[index],
                   selected:
                       enabled[index] &&
@@ -655,15 +657,14 @@ class MarketDirectionAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: inbound
-            ? LoopColors.limeSoft
-            : LoopColors.chalk.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(size / 3),
+        // S241b: a square tile (decision 0210), Yellow inbound.
+        color: inbound ? LoopColors.yellowSoft : LoopColors.card2,
+        border: Border.all(color: LoopColors.line2),
       ),
       child: LoopIcon(
         inbound ? 'arrow-up' : 'arrow-down',
         size: size * 0.5,
-        color: inbound ? LoopColors.lime : LoopColors.chalk,
+        color: inbound ? LoopColors.yellow : LoopColors.chalk,
       ),
     );
   }
@@ -791,15 +792,11 @@ class MarketTradeBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
     return DecoratedBox(
+      // S241b (decision 0210): the flat looplabs bar — the page ground
+      // behind a 1px rule, no fade.
       decoration: const BoxDecoration(
-        // The design fades the page into the bar rather than drawing a rule,
-        // so the rows underneath are seen to continue past it.
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[Color(0x00050604), LoopColors.ink, LoopColors.ink],
-          stops: <double>[0, 0.3, 1],
-        ),
+        color: LoopColors.ink,
+        border: Border(top: BorderSide(color: LoopColors.line)),
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(

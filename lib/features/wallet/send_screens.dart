@@ -620,7 +620,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
                 key: const ValueKey<String>('send-recipient-status'),
                 // R20 the note under a form field.
                 style: LoopType.caption.copyWith(
-                  color: preflight != null ? LoopColors.lime : LoopColors.text2,
+                  color: preflight != null
+                      ? LoopColors.yellow
+                      : LoopColors.text2,
                 ),
               ),
             ),

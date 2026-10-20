@@ -426,7 +426,12 @@ class _CommunityProfileScreenState
                 tone: LoopNoticeTone.warn,
                 title: '上一次操作没有完成',
                 body: communityFailureReason(state.failureKind),
-                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  14,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
             // 绑定代币: one OKX quote row.
             if (detail.community.hasBoundAsset)
@@ -693,7 +698,12 @@ class _CommunityHeader extends StatelessWidget {
     final description = community.description;
     return Padding(
       key: const ValueKey<String>('community-profile-header'),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -705,7 +715,6 @@ class _CommunityHeader extends StatelessWidget {
                 name: community.name,
                 logoRef: community.logoRef,
                 size: 72,
-                radius: 20,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -878,6 +887,7 @@ class _CommunityKeys extends ConsumerWidget {
               key: const ValueKey<String>('community-profile-open-chat'),
               icon: 'chat',
               label: '进群聊',
+              tone: LoopRoundKeyTone.primary,
               onPressed: chatOpenable ? onOpenChat : null,
             ),
             voiceKey,
@@ -901,7 +911,12 @@ class _CommunityKeys extends ConsumerWidget {
         ),
         if (reasons.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              4,
+              LoopSpacing.page,
+              0,
+            ),
             child: Text(
               reasons.join(' '),
               key: const ValueKey<String>('community-profile-action-reasons'),
@@ -926,9 +941,9 @@ class _JoinBar extends StatelessWidget {
     decoration: const BoxDecoration(color: LoopColors.ink),
     child: Padding(
       padding: EdgeInsets.fromLTRB(
-        16,
+        LoopSpacing.page,
         10,
-        16,
+        LoopSpacing.page,
         10 + MediaQuery.paddingOf(context).bottom,
       ),
       // Inside the flat page a primary block button is decision 0127's wide
@@ -1128,12 +1143,17 @@ class _MembershipFooter extends StatelessWidget {
         tone: LoopNoticeTone.danger,
         title: '你已被该社区封禁',
         body: '社区聊天与治理动作对你不可用。只有所有者或管理员可以解除封禁，解除后无需重新加入。',
-        margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
+        margin: EdgeInsets.fromLTRB(LoopSpacing.page, 22, LoopSpacing.page, 0),
       );
     }
     if (membership.role == CommunityRole.owner) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          24,
+          LoopSpacing.page,
+          0,
+        ),
         child: Text(
           '所有者需要先在「成员」页转让所有者，降为 Admin 后才能退出。',
           key: const ValueKey<String>('community-owner-cannot-leave'),

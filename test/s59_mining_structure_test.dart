@@ -65,13 +65,14 @@ void main() {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
       }
       // Decision 0167 (docs/33 L22): the card's two next steps are shared
-      // buttons — Ink on Lime for the first, the ground's outline for the
+      // buttons — the yellow CTA for the first (S241b: the card is flat, so
+      // the button is the default yellow tone), the ground's outline for the
       // second — not hand-drawn ones.
       final claim = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('mining-summary-hero-claim')),
       );
       expect(claim.primary, isTrue);
-      expect(claim.tone, LoopButtonTone.ink);
+      expect(claim.tone, LoopButtonTone.lime);
       // The baseline scope label is the folio's own stamp pill.
       expect(
         tester.widget(
@@ -183,7 +184,7 @@ void main() {
       );
     });
 
-    testWidgets('社区挖矿面板 carries the module\'s one Chalk card', (tester) async {
+    testWidgets('社区挖矿面板 carries the contribution card', (tester) async {
       await pumpS7Page(
         tester,
         const MiningCommunityScreen(communityId: s7CommunityId),
@@ -206,7 +207,14 @@ void main() {
         find.byKey(const ValueKey<String>('mining-community-contribution')),
         findsOneWidget,
       );
-      expect(find.byType(LoopChalkCard), findsOneWidget);
+      // S241b: the flat dark card, no Chalk slab.
+      expect(find.byType(LoopChalkCard), findsNothing);
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('mining-community-contribution')),
+        ),
+        isA<LoopRecordCard>(),
+      );
     });
 
     testWidgets('挖矿规则 states the bands, the factors and the guards', (
@@ -242,7 +250,13 @@ void main() {
       );
       // Decision 0147: the deprecated price guards are not shown.
       expect(_labels(tester), isNot(contains('Reference Price Guard')));
-      expect(find.byType(LoopChalkCard), findsWidgets);
+      expect(find.byType(LoopChalkCard), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>('mining-rules-approved-review-factors'),
+        ),
+        findsWidgets,
+      );
     });
   });
 }

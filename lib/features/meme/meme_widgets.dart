@@ -198,17 +198,21 @@ class MemeProgressRing extends StatelessWidget {
         width: size,
         height: size,
         alignment: Alignment.center,
-        // A closed ring on Lime's soft ground: complete, without a solid
-        // Lime disc on every graduated card of the list.
+        // A closed ring on Purple's soft ground (S241b: graduated is the
+        // Purple tone on every MEME page; Yellow stays for live figures).
         decoration: BoxDecoration(
-          color: LoopColors.limeSoft,
+          color: LoopColors.purpleSoft,
           shape: BoxShape.circle,
           border: Border.all(
-            color: LoopColors.lime,
+            color: LoopColors.purple,
             width: size >= 44 ? 4 : 3.5,
           ),
         ),
-        child: LoopIcon('graduate', size: size * 0.45, color: LoopColors.lime),
+        child: LoopIcon(
+          'graduate',
+          size: size * 0.45,
+          color: LoopColors.purple,
+        ),
       );
       return Semantics(
         label: '已毕业',
@@ -292,8 +296,8 @@ class _MemeRingPainter extends CustomPainter {
     final arc = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..color = LoopColors.lime;
+      ..strokeCap = StrokeCap.butt
+      ..color = LoopColors.yellow;
     // A sliver under one degree still shows as a dot, so a token that has
     // started its curve never reads as one that has not.
     canvas.drawArc(
@@ -397,7 +401,7 @@ class MemeTokenCard extends StatelessWidget {
             style: LoopTypography.withWeight(
               LoopType.figureXs,
               FontWeight.w600,
-            ).copyWith(color: LoopColors.lime),
+            ).copyWith(color: LoopColors.purple),
           ),
         ],
       ],
@@ -563,7 +567,7 @@ class _MemeRowProgress extends StatelessWidget {
             LoopType.figureSm,
             FontWeight.w600,
             // Line height 1 keeps the 44 tile the row's tallest part.
-          ).copyWith(color: LoopColors.lime, height: 1),
+          ).copyWith(color: LoopColors.yellow, height: 1),
         ),
       ],
     );
@@ -595,9 +599,7 @@ class MemeHeroCard extends StatelessWidget {
         child: Material(
           // OKX card: a flat grey face, no edge and no shadow.
           color: LoopColors.card2,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: LoopRadius.card),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             key: ValueKey<String>('meme-hero-${row.memeTokenId}'),

@@ -135,14 +135,15 @@ void main() {
       expect(find.text('3 小时'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('meme-row-age')).style!.color,
-        LoopColors.lime,
+        // S241b (decision 0210): the age is the site's Purple index colour.
+        LoopColors.purple,
       );
       expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
       expect(find.text('市值 \$9,891'), findsOneWidget);
       final cap = tester.widget<Text>(_key('meme-row-cap'));
       // Decision 0190 H4: the quote-row value, figureMd 17/600.
       expect(cap.style!.fontSize, LoopType.figureMd.fontSize);
-      expect(cap.style!.fontWeight, FontWeight.w600);
+      expect(cap.style!.fontWeight, LoopType.figureMd.fontWeight);
       // The 56 px `.bar` and the Lime percentage beside it.
       expect(tester.getSize(_key('meme-row-progress')), const Size(56, 6));
       expect(find.byType(LoopProgressBar), findsOneWidget);
@@ -447,6 +448,6 @@ void main() {
         .map((material) => material.color)
         .toList();
     expect(materials, isNot(contains(LoopColors.lime)));
-    expect(materials, contains(LoopColors.line));
+    expect(materials, contains(LoopColors.purpleSoft));
   });
 }

@@ -52,7 +52,8 @@ void main() {
           (widget) =>
               widget is Container &&
               widget.decoration is BoxDecoration &&
-              (widget.decoration! as BoxDecoration).color == LoopColors.chalk,
+              (widget.decoration! as BoxDecoration).color ==
+                  LoopColors.graphite,
         ),
       ),
     );
@@ -63,7 +64,9 @@ void main() {
     expect(844 - chalkRect.bottom, 34);
     final decoration = chalk.decoration! as BoxDecoration;
     expect(decoration.borderRadius, LoopRadius.tabBar);
-    expect(decoration.boxShadow, LoopDepth.tabBar);
+    // Decision 0210: flat — no lift, a 1px card edge painted over the bar.
+    expect(decoration.boxShadow, isNull);
+    expect(chalk.foregroundDecoration, isNotNull);
   });
 
   testWidgets('one Lime indicator marks the selection; the cells stay bare', (
@@ -115,11 +118,10 @@ void main() {
     expect(indicator, findsOneWidget);
     final decoration =
         tester.widget<Container>(indicator).decoration! as BoxDecoration;
-    expect(decoration.gradient, isA<LinearGradient>());
-    expect(
-      (decoration.gradient! as LinearGradient).colors.last,
-      LoopColors.lime,
-    );
+    // Decision 0210: a flat Purple selection ground with a Purple underline.
+    expect(decoration.gradient, isNull);
+    expect(decoration.color, LoopColors.purpleSoft);
+    expect((decoration.border! as Border).bottom.color, LoopColors.purple);
     expect(
       find.descendant(of: find.byType(LoopTabItem), matching: indicator),
       findsNothing,
@@ -152,8 +154,8 @@ void main() {
         )
         .style!
         .color!;
-    expect(labelColor('情报'), LoopColors.ink);
-    expect(labelColor('钱包'), LoopColors.inkMuted);
+    expect(labelColor('情报'), LoopColors.yellow);
+    expect(labelColor('钱包'), LoopColors.text3);
 
     expect(
       tester.getSize(find.widgetWithText(LoopTabItem, '钱包')).height,
@@ -190,8 +192,8 @@ void main() {
       ),
     );
     expect(travelling, lessThan(tester.getCenter(indicator).dx));
-    expect(labelColor('钱包'), LoopColors.ink);
-    expect(labelColor('情报'), LoopColors.inkMuted);
+    expect(labelColor('钱包'), LoopColors.yellow);
+    expect(labelColor('情报'), LoopColors.text3);
     semantics.dispose();
   });
 
@@ -247,7 +249,7 @@ void main() {
           )
           .style!
           .color,
-      LoopColors.ink,
+      LoopColors.yellow,
     );
   });
 

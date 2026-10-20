@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -74,7 +75,10 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
         stamp: 'PRIVATE',
       ),
       filters: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: LoopSpacing.page,
+          vertical: 10,
+        ),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -142,7 +146,12 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
                 tone: LoopNoticeTone.warn,
                 title: '上一次操作没有完成',
                 body: communityFailureReason(state.failureKind),
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  0,
+                  LoopSpacing.page,
+                  14,
+                ),
               ),
             LoopRecordGroup(
               rows: <LoopRecordRow>[
@@ -173,7 +182,12 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
             detail: '这两类屏蔽还没有开放，这里不会列出任何条目。',
             maxLines: 2,
             detailMaxLines: 4,
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              16,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const LoopNotice(
             key: ValueKey<String>('blocklist-precedence-notice'),
@@ -182,7 +196,12 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
             body:
                 '屏蔽会立即断开双向关注，并让对方从搜索、关注列表和陌生人请求中消失。'
                 '解除屏蔽不会自动恢复关注，需要重新关注。',
-            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              16,
+              LoopSpacing.page,
+              0,
+            ),
           ),
         ],
       ),

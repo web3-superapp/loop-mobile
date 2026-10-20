@@ -45,8 +45,9 @@ void main() {
       // others the family's quiet words (decision 0170).
       expect(segs.where((seg) => seg.selected), hasLength(1));
       expect(segs.first.selected, isTrue);
-      expect(segs.first.quiet, isFalse);
-      expect(segs.skip(1).every((seg) => seg.quiet), isTrue);
+      // Decision 0210 (S241b): every segment is quiet; the chosen one is
+      // told apart by the purple selected state.
+      expect(segs.every((seg) => seg.quiet), isTrue);
       expect(
         tester
             .getSize(find.byKey(const ValueKey<String>('search-seg-users')))

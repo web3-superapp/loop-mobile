@@ -608,27 +608,10 @@ class _LoopPayTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final content = Container(
       constraints: const BoxConstraints(minHeight: 64),
+      // Decision 0210: flat Yellow, square, no lift.
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[LoopColors.limeHighlight, LoopColors.lime],
-          stops: <double>[0, 0.62],
-        ),
+        color: LoopColors.yellow,
         borderRadius: LoopRadius.card,
-        border: Border.fromBorderSide(BorderSide(color: LoopColors.lime)),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Color(0x42B8FF20),
-            offset: Offset(0, 10),
-            blurRadius: 26,
-          ),
-          BoxShadow(
-            color: Color(0x6B050604),
-            offset: Offset(0, 2),
-            blurRadius: 6,
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1061,11 +1044,16 @@ class LoopFigureBox extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 /// The ground a [LoopLedgerComposite] is welded onto.
+///
+/// Since S241c both grounds draw the same flat dark strip — the `#111114`
+/// card behind the `#38333E` edge, with a `#2A292F` seam under the folio —
+/// so the strip always reads as the lower half of the card above it. The
+/// value is kept so callers need not change.
 enum LoopCompositeGround {
   /// `.ledger-composite{background:var(--graphite)}`.
   graphite,
 
-  /// `.launch-detail-composite{background:var(--chalk)}`.
+  /// `.launch-detail-composite`, once a Chalk strip; dark since S241c.
   chalk,
 }
 
@@ -1076,6 +1064,10 @@ enum LoopCompositeGround {
 /// `launch-history`, `launch-holders`, `loop-stake`, `launch-detail`). The
 /// folio handed in must carry `margin: EdgeInsets.zero` and
 /// `squareBottom: true`, because the strip shares its bottom edge.
+///
+/// The strip is the same card as the folio (decision 0210, S241c): the
+/// `#111114` ground, the `#38333E` edge continuing down both sides and
+/// across the bottom, and one `#2A292F` divider where the two halves meet.
 class LoopLedgerComposite extends StatelessWidget {
   const LoopLedgerComposite({
     required this.primary,
@@ -1083,7 +1075,12 @@ class LoopLedgerComposite extends StatelessWidget {
     super.key,
     this.ground = LoopCompositeGround.graphite,
     this.detailPadding = const EdgeInsets.fromLTRB(18, 16, 18, 17),
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      14,
+    ),
   });
 
   final Widget primary;
@@ -1094,56 +1091,46 @@ class LoopLedgerComposite extends StatelessWidget {
   final EdgeInsets detailPadding;
   final EdgeInsets margin;
 
+  /// The ink the dark strip declares: the page's Chalk (it is a dark ground,
+  /// not a light one).
+  static const Color _stripInk = LoopColors.chalk;
+
   @override
   Widget build(BuildContext context) {
-    final chalk = ground == LoopCompositeGround.chalk;
-    // The strip is the only half that changes ground: the folio welded above
-    // it paints its own surface and its own ink, so wrapping the whole
-    // composite in the Chalk text style would repaint a dark hero's copy.
-    Widget strip = Container(
+    final strip = Container(
+      key: const ValueKey<String>('loop-ledger-composite-detail'),
       padding: detailPadding,
-      decoration: BoxDecoration(
-        // A Chalk composite paints the light ground on the strip alone: the
-        // folio welded above it is a dark card whose own gradient is not
-        // opaque, and a Chalk box behind it would show through and drop its
-        // copy below the contrast floor.
-        color: chalk ? LoopColors.chalk : null,
+      decoration: const BoxDecoration(
+        color: LoopColors.card,
         border: Border(
-          top: BorderSide(
-            // `.ledger-composite-detail{border-top:1px solid
-            // rgba(243,245,239,.1)}` / `.is-chalk{rgba(5,6,4,.11)}`.
-            color: chalk
-                ? LoopColors.ink.withValues(alpha: 0.11)
-                : LoopColors.chalk.withValues(alpha: 0.1),
-          ),
+          top: BorderSide(color: LoopColors.line),
+          left: BorderSide(color: LoopColors.line2),
+          right: BorderSide(color: LoopColors.line2),
+          bottom: BorderSide(color: LoopColors.line2),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: detail,
-      ),
-    );
-    if (chalk) {
-      strip = DefaultTextStyle.merge(
-        style: const TextStyle(color: LoopColors.ink),
+      // The strip declares the dark ground it paints, so a guest that derives
+      // its ink from [LoopGround] (an identity strip, a hairline) reads it.
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: _stripInk),
         child: IconTheme.merge(
-          data: const IconThemeData(color: LoopColors.ink),
-          child: strip,
-        ),
-      );
-    }
-    return Padding(
-      padding: margin,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(LoopRadius.shellValue),
-        child: ColoredBox(
-          color: chalk ? LoopColors.ink : LoopColors.graphite,
+          data: const IconThemeData(color: _stripInk),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[primary, if (detail.isNotEmpty) strip],
+            children: detail,
           ),
+        ),
+      ),
+    );
+    return Padding(
+      padding: margin,
+      child: ColoredBox(
+        color: LoopColors.card,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[primary, if (detail.isNotEmpty) strip],
         ),
       ),
     );
@@ -1269,11 +1256,17 @@ class LoopHairline extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: margin,
-    child: Container(
-      height: 1,
-      color: LoopGround.inkOf(context).withValues(alpha: 0.16),
-    ),
+    child: Container(height: 1, color: _hairline(context)),
   );
+
+  /// `#2A292F` on the dark page (S241c: the one divider grey inside a card
+  /// or a composite strip); the ground's own ink at 16 % on a light card.
+  static Color _hairline(BuildContext context) {
+    final ink = LoopGround.inkOf(context);
+    return ink == LoopColors.chalk
+        ? LoopColors.line
+        : ink.withValues(alpha: 0.16);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1307,7 +1300,8 @@ class LoopProgressBar extends StatelessWidget {
       label: semanticLabel,
       child: ExcludeSemantics(
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
+          // Decision 0210: a progress bar is square, like every surface.
+          borderRadius: BorderRadius.zero,
           child: Container(
             height: 6,
             color: LoopGround.fillOf(context),

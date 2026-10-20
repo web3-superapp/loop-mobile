@@ -187,7 +187,6 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     final hidden = ref.watch(
       loopBalanceVisibilityProvider.select((visibility) => visibility.hidden),
     );
-    final ink = LoopGround.inkOf(context);
     final auxiliary = LoopGround.auxiliaryOf(context);
     final secondary = LoopGround.secondaryOf(context);
     final balances = widget.balances;
@@ -257,8 +256,10 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
             key: ValueKey<String>('$keyPrefix-total-figure'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            // S241b: the total is the page's key figure — the Anton
+            // `statFigure` step in yellow (docs/42 附A §2 stat-value).
             style: figureIsAmount
-                ? LoopType.figureXl.copyWith(color: ink)
+                ? LoopType.statFigure.copyWith(color: LoopColors.yellow)
                 : LoopType.headingSm.copyWith(color: secondary),
           ),
         ),
@@ -702,10 +703,10 @@ class _QuickActionTile extends StatelessWidget {
     final run = action.onPressed;
     final reason = action.blockedReason;
     final enabled = run != null;
-    // OKX round action keys (decision 0122): a 56 disc. Decision 0171: only
-    // the primary key (兑换) is solid Lime with an Ink glyph; the others are
-    // Card2 with a Chalk glyph, and a closed key keeps its place on the quiet
-    // card ground.
+    // Decision 0122's 56 keys, squared by S241b (looplabs: 0 radius). Only
+    // the primary key (兑换) is solid yellow with an Ink glyph (decision
+    // 0171); the others are outlined `#4A4754` squares with a Chalk glyph,
+    // and a closed key keeps its place on the quiet ground.
     final lime = enabled && action.primary;
     final ink = !enabled
         ? LoopGround.auxiliaryOf(context)
@@ -713,10 +714,11 @@ class _QuickActionTile extends StatelessWidget {
         ? LoopColors.ink
         : LoopColors.chalk;
     final disc = !enabled
-        ? LoopGround.fillOf(context)
+        ? LoopColors.bg2
         : lime
-        ? LoopColors.lime
-        : LoopColors.card2;
+        ? LoopColors.yellow
+        : LoopColors.card;
+    final edge = lime ? LoopColors.yellow : LoopColors.line3;
     final onTap = run ?? (reason == null ? null : () => onBlocked(reason));
     return Semantics(
       button: true,
@@ -738,7 +740,10 @@ class _QuickActionTile extends StatelessWidget {
                 key: ValueKey<String>('wallet-quick-disc-${action.label}'),
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(color: disc, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: disc,
+                  border: Border.all(color: edge),
+                ),
                 alignment: Alignment.center,
                 child: action.glyph(ink),
               ),
@@ -1145,12 +1150,13 @@ List<WalletHoldingShare>? walletHoldingShares(LoopWalletBalances balances) {
   ];
 }
 
-/// The four slice colours, in order: Lime, Chalk, Card2, Line.
+/// The four slice colours, in order: yellow, purple, Chalk, `#4A4754`
+/// (S241b: the two looplabs accents lead).
 const List<Color> walletHoldingColors = <Color>[
-  LoopColors.lime,
+  LoopColors.yellow,
+  LoopColors.purple,
   LoopColors.chalk,
-  LoopColors.card2,
-  LoopColors.line,
+  LoopColors.line3,
 ];
 
 /// 持仓分布 — one segmented bar and its legend in a record card.
@@ -1171,6 +1177,8 @@ class WalletHoldingsDistribution extends StatelessWidget {
         .join('，');
     return LoopRecordCard(
       key: const ValueKey<String>('wallet-distribution'),
+      // S241b: room under the square quick keys, which had touched the card.
+      margin: LoopRecordCard.defaultMargin.copyWith(top: 16),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Semantics(
         container: true,
@@ -1185,7 +1193,10 @@ class WalletHoldingsDistribution extends StatelessWidget {
             SizedBox(
               key: const ValueKey<String>('wallet-distribution-bar'),
               height: 6,
+              // Stretch: a childless DecoratedBox under a Row's loose cross
+              // axis collapsed to 0 high and the bar never painted.
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   for (var index = 0; index < shares.length; index++) ...[
                     if (index > 0) const SizedBox(width: 2),
@@ -1204,7 +1215,7 @@ class WalletHoldingsDistribution extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: walletHoldingColors[index],
-                          borderRadius: LoopRadius.pill,
+                          borderRadius: LoopRadius.badge,
                         ),
                       ),
                     ),
@@ -1226,7 +1237,6 @@ class WalletHoldingsDistribution extends StatelessWidget {
                         height: 8,
                         decoration: BoxDecoration(
                           color: walletHoldingColors[index],
-                          shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 4),

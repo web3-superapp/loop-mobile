@@ -112,6 +112,7 @@ void main() {
             button: true,
             enabled: false,
             child: const LoopChalkCard(
+              light: true,
               child: Text('未配置', style: TextStyle(color: LoopColors.chalk)),
             ),
           ),
