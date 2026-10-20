@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/social/public_profile/public_profile_gatewa
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:uuid/uuid.dart';
 
 /// The three page segments of `user-profile` (S107 §3).
@@ -38,11 +39,12 @@ final class PublicProfileTradesState {
   const PublicProfileTradesState({
     this.phase,
     this.status,
-    this.items = const <ProfileTrade>[],
+    this.items = const <ProfileTradeRow>[],
     this.nextCursor,
     this.failureKind,
     this.loadingMore = false,
     this.reasonCode,
+    this.launch2,
   });
 
   final CommunityViewPhase? phase;
@@ -50,13 +52,39 @@ final class PublicProfileTradesState {
 
   /// Why an `unavailable` page is unavailable; see [ProfileTradesPage].
   final String? reasonCode;
-  final List<ProfileTrade> items;
+
+  /// The merged rows (mainnet and Launch chain), in server order.
+  final List<ProfileTradeRow> items;
+
+  /// The first page's `launch2` block; `null` when the server sent none.
+  final LoopWalletLaunch2Leg? launch2;
   final String? nextCursor;
   final CommunityFailureKind? failureKind;
   final bool loadingMore;
 
   bool get appendFailed =>
       failureKind != null && items.isNotEmpty && nextCursor != null;
+}
+
+/// The 社区 segment (decision 0218): cursor pages of the account's joined
+/// communities, or the account keeping that list to itself.
+@immutable
+final class PublicProfileCommunitiesState {
+  const PublicProfileCommunitiesState({
+    this.phase,
+    this.hidden = false,
+    this.items = const <ProfileCommunity>[],
+    this.nextCursor,
+    this.failureKind,
+    this.loadingMore = false,
+  });
+
+  final CommunityViewPhase? phase;
+  final bool hidden;
+  final List<ProfileCommunity> items;
+  final String? nextCursor;
+  final CommunityFailureKind? failureKind;
+  final bool loadingMore;
 }
 
 @immutable
@@ -69,6 +97,7 @@ final class PublicProfileState {
     this.busy = false,
     this.holdings = const PublicProfileSectionState<ProfileHoldings>.idle(),
     this.trades = const PublicProfileTradesState(),
+    this.communities = const PublicProfileCommunitiesState(),
   });
 
   final CommunityGatewayMode mode;
@@ -80,6 +109,7 @@ final class PublicProfileState {
   final bool busy;
   final PublicProfileSectionState<ProfileHoldings> holdings;
   final PublicProfileTradesState trades;
+  final PublicProfileCommunitiesState communities;
 
   PublicProfileState copyWith({
     CommunityViewPhase? phase,
@@ -89,6 +119,7 @@ final class PublicProfileState {
     bool? busy,
     PublicProfileSectionState<ProfileHoldings>? holdings,
     PublicProfileTradesState? trades,
+    PublicProfileCommunitiesState? communities,
   }) => PublicProfileState(
     mode: mode,
     phase: phase ?? this.phase,
@@ -97,6 +128,7 @@ final class PublicProfileState {
     busy: busy ?? this.busy,
     holdings: holdings ?? this.holdings,
     trades: trades ?? this.trades,
+    communities: communities ?? this.communities,
   );
 }
 
@@ -263,6 +295,7 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
               items: previous.items,
               nextCursor: previous.nextCursor,
               loadingMore: true,
+              launch2: previous.launch2,
             )
           : const PublicProfileTradesState(phase: CommunityViewPhase.loading),
     );
@@ -277,19 +310,22 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
       if (!_current(generation)) return;
       final seen = <String>{
         if (append)
-          for (final item in previous.items) item.eventId,
+          for (final item in previous.items) item.rowId,
       };
-      final merged = <ProfileTrade>[
+      final merged = <ProfileTradeRow>[
         if (append) ...previous.items,
-        for (final item in page.items)
-          if (seen.add(item.eventId)) item,
+        for (final item in page.rows)
+          if (seen.add(item.rowId)) item,
       ];
       state = state.copyWith(
         trades: PublicProfileTradesState(
           phase: CommunityViewPhase.ready,
           status: page.status,
           reasonCode: page.reasonCode,
-          items: List<ProfileTrade>.unmodifiable(merged),
+          // The first page states whether the Launch chain was merged; a
+          // later page that omits the block does not take that back.
+          launch2: page.launch2 ?? (append ? previous.launch2 : null),
+          items: List<ProfileTradeRow>.unmodifiable(merged),
           // A page that answers with the cursor it was asked with ends here.
           nextCursor: append && page.nextCursor == previous.nextCursor
               ? null
@@ -306,6 +342,7 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
                 items: previous.items,
                 nextCursor: previous.nextCursor,
                 failureKind: error.kind,
+                launch2: previous.launch2,
               )
             : PublicProfileTradesState(
                 phase: communityPhaseForFailure(error.kind),
@@ -319,6 +356,103 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
           phase: CommunityViewPhase.error,
           failureKind: CommunityFailureKind.unexpected,
         ),
+      );
+    }
+  }
+
+  Future<void> loadCommunities({bool force = false}) async {
+    if (!force && state.communities.phase != null) return;
+    await _fetchCommunities(append: false);
+  }
+
+  Future<void> loadMoreCommunities() async {
+    final communities = state.communities;
+    if (communities.nextCursor == null || communities.loadingMore) return;
+    await _fetchCommunities(append: true);
+  }
+
+  Future<void> _fetchCommunities({required bool append}) async {
+    final record = state.record;
+    if (record == null) return;
+    final previous = state.communities;
+    state = state.copyWith(
+      communities: append
+          ? PublicProfileCommunitiesState(
+              phase: previous.phase,
+              items: previous.items,
+              nextCursor: previous.nextCursor,
+              loadingMore: true,
+            )
+          : const PublicProfileCommunitiesState(
+              phase: CommunityViewPhase.loading,
+            ),
+    );
+    final generation = _generation;
+    try {
+      final page = await ref
+          .read(publicProfileGatewayProvider)
+          .communities(
+            record.publicProfileId,
+            cursor: append ? previous.nextCursor : null,
+          );
+      if (!_current(generation)) return;
+      if (page.hidden) {
+        state = state.copyWith(
+          communities: const PublicProfileCommunitiesState(
+            phase: CommunityViewPhase.ready,
+            hidden: true,
+          ),
+        );
+        return;
+      }
+      final seen = <String>{
+        if (append)
+          for (final item in previous.items) item.communityId,
+      };
+      final merged = <ProfileCommunity>[
+        if (append) ...previous.items,
+        for (final item in page.items)
+          if (seen.add(item.communityId)) item,
+      ];
+      state = state.copyWith(
+        communities: PublicProfileCommunitiesState(
+          phase: CommunityViewPhase.ready,
+          items: List<ProfileCommunity>.unmodifiable(merged),
+          // A page that answers with the cursor it was asked with ends here.
+          nextCursor: append && page.nextCursor == previous.nextCursor
+              ? null
+              : page.nextCursor,
+        ),
+      );
+    } on CommunityGatewayException catch (error) {
+      if (!_current(generation)) return;
+      state = state.copyWith(
+        communities: append
+            ? PublicProfileCommunitiesState(
+                phase: previous.phase,
+                items: previous.items,
+                nextCursor: previous.nextCursor,
+                failureKind: error.kind,
+              )
+            : PublicProfileCommunitiesState(
+                phase: communityPhaseForFailure(error.kind),
+                failureKind: error.kind,
+              ),
+      );
+    } catch (_) {
+      if (!_current(generation)) return;
+      state = state.copyWith(
+        communities: append
+            ? PublicProfileCommunitiesState(
+                phase: previous.phase,
+                items: previous.items,
+                nextCursor: previous.nextCursor,
+                failureKind: CommunityFailureKind.unexpected,
+              )
+            : const PublicProfileCommunitiesState(
+                phase: CommunityViewPhase.error,
+                failureKind: CommunityFailureKind.unexpected,
+              ),
       );
     }
   }

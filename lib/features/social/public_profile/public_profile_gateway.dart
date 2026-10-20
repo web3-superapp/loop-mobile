@@ -18,6 +18,14 @@ abstract interface class PublicProfileGateway {
 
   Future<ProfileTradesPage> trades(String publicProfileId, {String? cursor});
 
+  /// The communities the account has joined, one cursor page at a time
+  /// (decision 0218). A page the account keeps to itself is
+  /// [ProfileCommunitiesPage.hidden], not a failure.
+  Future<ProfileCommunitiesPage> communities(
+    String publicProfileId, {
+    String? cursor,
+  });
+
   /// `DELETE /v2/friends/{publicProfileId}`: ends the friendship both ways.
   /// Idempotent; the page re-reads the record afterwards.
   Future<void> removeFriend(String publicProfileId);
@@ -43,6 +51,12 @@ final class UnavailablePublicProfileGateway implements PublicProfileGateway {
   @override
   Future<ProfileTradesPage> trades(String publicProfileId, {String? cursor}) =>
       _unavailable();
+
+  @override
+  Future<ProfileCommunitiesPage> communities(
+    String publicProfileId, {
+    String? cursor,
+  }) => _unavailable();
 
   @override
   Future<void> removeFriend(String publicProfileId) => _unavailable();

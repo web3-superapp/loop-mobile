@@ -136,8 +136,14 @@ final class _Profiles implements PublicProfileGateway {
     this.holdingsAnswer,
     this.holdingsFailure,
     List<ProfileTradesPage>? tradePages,
+    List<ProfileCommunitiesPage>? communityPages,
+    this.communitiesFailure,
     this.pending = false,
-  }) : tradePages = tradePages ?? <ProfileTradesPage>[];
+  }) : tradePages = tradePages ?? <ProfileTradesPage>[],
+       communityPages = communityPages ?? <ProfileCommunitiesPage>[];
+
+  final List<ProfileCommunitiesPage> communityPages;
+  CommunityFailureKind? communitiesFailure;
 
   PublicProfileRecord? record;
   CommunityFailureKind? failure;
@@ -174,6 +180,23 @@ final class _Profiles implements PublicProfileGateway {
   }) async {
     calls.add('trades:$cursor');
     return tradePages.removeAt(0);
+  }
+
+  @override
+  Future<ProfileCommunitiesPage> communities(
+    String publicProfileId, {
+    String? cursor,
+  }) async {
+    calls.add('communities:$cursor');
+    final kind = communitiesFailure;
+    if (kind != null) throw CommunityGatewayException(kind);
+    if (communityPages.isEmpty) {
+      return const ProfileCommunitiesPage.available(
+        items: <ProfileCommunity>[],
+        nextCursor: null,
+      );
+    }
+    return communityPages.removeAt(0);
   }
 
   @override
@@ -662,7 +685,7 @@ void main() {
         tester,
         profiles: _Profiles(
           record: _record(),
-          holdingsAnswer: const ProfileHoldings(
+          holdingsAnswer: ProfileHoldings(
             status: ProfileSectionStatus.unavailable,
             totalUsd: null,
             items: <ProfileHolding>[],
@@ -684,7 +707,7 @@ void main() {
         tester,
         profiles: _Profiles(
           record: _record(),
-          holdingsAnswer: const ProfileHoldings(
+          holdingsAnswer: ProfileHoldings(
             status: ProfileSectionStatus.unavailable,
             totalUsd: null,
             items: <ProfileHolding>[],
@@ -768,17 +791,23 @@ void main() {
       );
     });
 
-    testWidgets('the 社区 section states the count and no list', (tester) async {
-      await _pump(
-        tester,
-        profiles: _Profiles(
-          record: _record(),
-          holdingsAnswer: LoopV2PublicProfileCodec.holdings(_holdingsWire()),
-        ),
+    // Decision 0218: the 社区 segment reads the list (S261 tests cover the
+    // rows); the old 「社区列表暂未开放查看」 placeholder is gone.
+    testWidgets('the 社区 section reads the list', (tester) async {
+      final profiles = _Profiles(
+        record: _record(),
+        holdingsAnswer: LoopV2PublicProfileCodec.holdings(_holdingsWire()),
+        communitiesFailure: null,
       );
+      await _pump(tester, profiles: profiles);
       await tester.tap(find.text('社区').last);
       await tester.pumpAndSettle();
-      expect(find.text('已加入 4 个社区'), findsOneWidget);
+      expect(profiles.calls, contains('communities:null'));
+      expect(find.text('社区列表暂未开放查看。'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('user-profile-communities-empty')),
+        findsOneWidget,
+      );
     });
   });
 

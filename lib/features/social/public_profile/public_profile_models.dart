@@ -1,5 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 
 /// Another account, as `GET /v2/profiles/{id}` states it (S107 §3,
 /// decision 0112).
@@ -169,20 +171,122 @@ final class ProfileHolding {
   final Decimal? usdValue;
 }
 
+/// The two Launch-chain holding kinds `/holdings` may merge (decision 0218,
+/// loop-api S260). A kind this build does not know is skipped by the
+/// decoder, never turned into one of these.
+enum ProfileLaunch2HoldingKind {
+  meme('launch2_meme'),
+  nft('launch2_nft');
+
+  const ProfileLaunch2HoldingKind(this.wireName);
+
+  final String wireName;
+
+  static ProfileLaunch2HoldingKind? tryParse(String value) {
+    for (final kind in values) {
+      if (kind.wireName == value) return kind;
+    }
+    return null;
+  }
+}
+
+/// One Launch-chain MEME v2 holding of another account (decision 0218).
+///
+/// A MEME row carries [amountMeme]; a medal (NFT) row carries [nftCount].
+/// [valueUsd1] is the server's own valuation in USD1, `null` when it has
+/// none — never a zero. [stage] is `null` for a stage this build does not
+/// name yet; the row then says only 「Launch 链」.
+@immutable
+final class ProfileLaunch2Holding {
+  const ProfileLaunch2Holding({
+    required this.kind,
+    required this.chainId,
+    required this.instanceId,
+    required this.ticker,
+    required this.name,
+    required this.logoUrl,
+    required this.amountMeme,
+    required this.nftCount,
+    required this.stage,
+    required this.valueUsd1,
+  });
+
+  final ProfileLaunch2HoldingKind kind;
+  final String chainId;
+  final String instanceId;
+  final String ticker;
+  final String name;
+  final String? logoUrl;
+  final Decimal? amountMeme;
+  final int? nftCount;
+  final Launch2Stage? stage;
+  final Decimal? valueUsd1;
+
+  /// Stable list key; never collides with a mainnet `assetId`.
+  String get rowId => 'launch2:$chainId:$instanceId:${kind.wireName}';
+}
+
+/// One row of the merged holdings list, in server order.
+@immutable
+sealed class ProfileHoldingRow {
+  const ProfileHoldingRow();
+}
+
+final class ProfileAssetHoldingRow extends ProfileHoldingRow {
+  const ProfileAssetHoldingRow(this.holding);
+
+  final ProfileHolding holding;
+}
+
+final class ProfileLaunch2HoldingRow extends ProfileHoldingRow {
+  const ProfileLaunch2HoldingRow(this.holding);
+
+  final ProfileLaunch2Holding holding;
+}
+
 @immutable
 final class ProfileHoldings {
-  const ProfileHoldings({
+  /// [items] lists the mainnet holdings (the page before decision 0218);
+  /// [rows], when given, is the merged list in server order and [items] is
+  /// derived from it.
+  ProfileHoldings({
     required this.status,
     required this.totalUsd,
-    required this.items,
+    List<ProfileHolding> items = const <ProfileHolding>[],
+    List<ProfileHoldingRow>? rows,
     required this.observedAt,
     this.reasonCode,
-  });
+    this.launch2,
+  }) : assert(rows == null || items.isEmpty, 'pass items or rows, not both'),
+       rows = List<ProfileHoldingRow>.unmodifiable(
+         rows ??
+             <ProfileHoldingRow>[
+               for (final item in items) ProfileAssetHoldingRow(item),
+             ],
+       ),
+       items = List<ProfileHolding>.unmodifiable(
+         rows == null
+             ? items
+             : <ProfileHolding>[
+                 for (final row in rows)
+                   if (row is ProfileAssetHoldingRow) row.holding,
+               ],
+       );
 
   final ProfileSectionStatus status;
   final Decimal? totalUsd;
+
+  /// The mainnet holdings among [rows], in the same order.
   final List<ProfileHolding> items;
+
+  /// Every row, mainnet and Launch chain, as the server merged them.
+  final List<ProfileHoldingRow> rows;
   final DateTime? observedAt;
+
+  /// `null` when the server did not merge the Launch chain (switch
+  /// `PROFILE_LAUNCH2_EMIT` off). Reuses the wallet activity block's shape
+  /// (loop-api 0167 §C), which this root key copies.
+  final LoopWalletLaunch2Leg? launch2;
 
   /// Why an `unavailable` section is unavailable (`WALLET_NOT_BOUND`,
   /// `BSC_READ_UNAVAILABLE`, …); `null` for every other status.
@@ -236,21 +340,141 @@ final class ProfileTrade {
   final String? blockNumber;
 }
 
+/// One row of the merged trades list, in server order (decision 0218).
+@immutable
+sealed class ProfileTradeRow {
+  const ProfileTradeRow();
+
+  /// Stable list key and de-duplication identity across pages.
+  String get rowId;
+}
+
+final class ProfileAssetTradeRow extends ProfileTradeRow {
+  const ProfileAssetTradeRow(this.trade);
+
+  final ProfileTrade trade;
+
+  @override
+  String get rowId => trade.eventId;
+}
+
+/// A Launch-chain MEME v2 fact: the same fourteen-key row the wallet's
+/// activity tape carries (decision 0213), decoded into the wallet's model so
+/// the row is drawn by the wallet's own row builder.
+final class ProfileLaunch2TradeRow extends ProfileTradeRow {
+  const ProfileLaunch2TradeRow(this.entry);
+
+  final LoopWalletLaunch2ActivityEntry entry;
+
+  @override
+  String get rowId => entry.entryId;
+}
+
 @immutable
 final class ProfileTradesPage {
-  const ProfileTradesPage({
+  /// [items] lists the mainnet trades; [rows], when given, is the merged page
+  /// in server order and [items] is derived from it.
+  ProfileTradesPage({
     required this.status,
-    required this.items,
+    List<ProfileTrade> items = const <ProfileTrade>[],
+    List<ProfileTradeRow>? rows,
     required this.nextCursor,
     this.reasonCode,
-  });
+    this.launch2,
+  }) : assert(rows == null || items.isEmpty, 'pass items or rows, not both'),
+       rows = List<ProfileTradeRow>.unmodifiable(
+         rows ??
+             <ProfileTradeRow>[
+               for (final item in items) ProfileAssetTradeRow(item),
+             ],
+       ),
+       items = List<ProfileTrade>.unmodifiable(
+         rows == null
+             ? items
+             : <ProfileTrade>[
+                 for (final row in rows)
+                   if (row is ProfileAssetTradeRow) row.trade,
+               ],
+       );
 
   final ProfileSectionStatus status;
+
+  /// The mainnet trades among [rows], in the same order.
   final List<ProfileTrade> items;
+
+  /// Every row of the page, mainnet and Launch chain, in server order.
+  final List<ProfileTradeRow> rows;
   final String? nextCursor;
+
+  /// `null` when the server did not merge the Launch chain.
+  final LoopWalletLaunch2Leg? launch2;
 
   /// See [ProfileHoldings.reasonCode].
   final String? reasonCode;
+}
+
+/// A community's verification as `/v2/profiles/{id}/communities` states it
+/// (decision 0218). Only two values: the list is of communities the account
+/// is in, and a review in progress is the owner's business, not a viewer's.
+enum ProfileCommunityVerification {
+  verified('verified'),
+  unverified('unverified');
+
+  const ProfileCommunityVerification(this.wireName);
+
+  final String wireName;
+
+  static ProfileCommunityVerification? tryParse(Object? value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// One community another account has joined.
+@immutable
+final class ProfileCommunity {
+  const ProfileCommunity({
+    required this.communityId,
+    required this.name,
+    required this.slug,
+    required this.logoRef,
+    required this.memberCount,
+    required this.verificationStatus,
+    required this.joinedAt,
+  });
+
+  final String communityId;
+  final String name;
+  final String slug;
+  final String? logoRef;
+  final int memberCount;
+  final ProfileCommunityVerification verificationStatus;
+  final DateTime joinedAt;
+}
+
+/// One page of `/v2/profiles/{id}/communities`.
+///
+/// `hidden` is the account keeping its list to itself
+/// (`PROFILE_COMMUNITIES_HIDDEN`); such a page carries no rows and no cursor.
+@immutable
+final class ProfileCommunitiesPage {
+  const ProfileCommunitiesPage.available({
+    required this.items,
+    required this.nextCursor,
+  }) : hidden = false,
+       reasonCode = null;
+
+  const ProfileCommunitiesPage.hidden(String this.reasonCode)
+    : hidden = true,
+      items = const <ProfileCommunity>[],
+      nextCursor = null;
+
+  final bool hidden;
+  final String? reasonCode;
+  final List<ProfileCommunity> items;
+  final String? nextCursor;
 }
 
 /// How the profile page was asked for.

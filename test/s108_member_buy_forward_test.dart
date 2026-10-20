@@ -142,6 +142,15 @@ final class _Profiles implements PublicProfileGateway {
       throw UnimplementedError();
 
   @override
+  Future<ProfileCommunitiesPage> communities(
+    String publicProfileId, {
+    String? cursor,
+  }) async => const ProfileCommunitiesPage.available(
+    items: <ProfileCommunity>[],
+    nextCursor: null,
+  );
+
+  @override
   Future<void> removeFriend(String publicProfileId) =>
       throw UnimplementedError();
 }
