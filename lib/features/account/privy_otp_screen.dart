@@ -245,19 +245,17 @@ class _OtpGrid extends StatelessWidget {
                       // are the page, not a row of inputs inside it.
                       height: cellHeight,
                       alignment: Alignment.center,
+                      // S241b: the looplabs input — `#16111C` ground, square,
+                      // `#3B3045` edge; the cell waiting for a digit is the
+                      // focused one, so its edge is purple.
                       decoration: BoxDecoration(
-                        color: index < digits.length
-                            ? LoopColors.chalk.withValues(alpha: 0.09)
-                            : LoopColors.chalk.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(
-                          LoopRadius.innerValue,
-                        ),
+                        color: LoopColors.input,
                         border: Border.all(
                           color: index == digits.length && enabled
-                              ? LoopColors.lime
+                              ? LoopColors.purple
                               : index < digits.length
-                              ? LoopColors.line2
-                              : LoopColors.line,
+                              ? LoopColors.line3
+                              : LoopColors.inputLine,
                         ),
                       ),
                       child: ExcludeSemantics(

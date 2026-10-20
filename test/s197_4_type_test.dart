@@ -94,7 +94,7 @@ void main() {
     _expectStep(tester, 'RANK ', LoopType.kicker);
     _expectStep(tester, '持仓', LoopType.kicker);
     _expectStep(tester, '10', LoopType.figure);
-    _expectStep(tester, '1,234', LoopType.figureXl);
+    _expectStep(tester, '1,234', LoopType.statFigure);
     _expectStep(tester, ' MP', LoopType.figureMd);
   });
 

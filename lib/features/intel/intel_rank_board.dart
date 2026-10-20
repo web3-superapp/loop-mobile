@@ -45,7 +45,7 @@ const double intelRankShareBarWidth = 64;
 
 /// 情报 · 算力榜 (decisions 0118, 0122, 0182).
 ///
-/// The reader's own place is the page's one Lime ledger card; the three
+/// The reader's own place is the page.s one ledger card; the three
 /// boards sit behind chips under it — 社区 / 用户 / 推广 — then the first
 /// three on a podium and every later place as a row with its share of the
 /// leader's figure. The board reads on as the reader scrolls. What the
@@ -106,7 +106,8 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
         : state.phase == LaunchViewPhase.loading
         ? const LoopFolioPrimary(
             key: ValueKey<String>('intel-rank-me-loading'),
-            variant: LoopFolioVariant.lime,
+            // S241b: the flat dark ledger; the place reads in yellow.
+            variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.record,
             ring: false,
             kicker: intelRankLedgerKickerBase,
@@ -229,7 +230,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             illustration: LoopIllustration.rank,
             title: referrals ? '还没有人邀请到好友' : '这一次还没有条目上榜',
             message: referrals ? '邀请到第一位好友后，这里按直接邀请人数排名' : '下一次算力快照后再来看看',
-            // The ledger card is this page's one full Lime (decision 0182).
+            // The ledger card is this page.s one ledger card (decision 0182; flat since S241b).
             action: referrals
                 ? LoopButton(
                     key: const ValueKey<String>('intel-rank-empty-invite'),
@@ -582,7 +583,7 @@ String? intelRankTopShare(MiningRank rank) {
   return 'TOP $percent%';
 }
 
-/// 「我的名次」 as the page's Lime ledger card (decision 0182): kicker
+/// 「我的名次」 as the page.s ledger card (decision 0182): kicker
 /// 「POWER BOARD · 快照 …」, heading 「我的名次 / 第 N 名」, a caption with the
 /// figure and what can be read around it, and 「TOP x%」 when the board's
 /// size is known.
@@ -602,7 +603,8 @@ class IntelRankLedger extends StatelessWidget {
       label: <String>[heading.replaceAll('\n', '，'), caption, ?stamp].join('，'),
       excludeSemantics: true,
       child: LoopFolioPrimary(
-        variant: LoopFolioVariant.lime,
+        // S241b: the flat dark ledger; the place reads in yellow.
+        variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         ring: false,
         kicker: intelRankLedgerKicker(rank),
@@ -690,9 +692,9 @@ double? intelRankShare(Decimal? amount, Decimal? leader) {
   return share.clamp(0, 1).toDouble();
 }
 
-/// The colour of a medal: first Lime, second brass, third copper.
+/// The colour of a medal: first yellow, second brass, third copper.
 Color intelRankMedalColour(int place) => switch (place) {
-  1 => LoopColors.lime,
+  1 => LoopColors.yellow,
   2 => LoopColors.brass,
   _ => LoopColors.copper,
 };
@@ -762,7 +764,7 @@ class _PodiumCard extends StatelessWidget {
     final content = Column(
       children: <Widget>[
         if (first) ...<Widget>[
-          const LoopIcon('crown', size: 18, color: LoopColors.lime),
+          const LoopIcon('crown', size: 18, color: LoopColors.yellow),
           const SizedBox(height: 6),
         ] else
           // Second and third stand lower than the winner: the spare height
@@ -913,7 +915,7 @@ class IntelRankListHead extends StatelessWidget {
 /// One place from the fourth on (docs/35 定稿 · B row): position · face 40 ·
 /// name with its badge over a second line · the figure over its share of the
 /// leader's. No card; a hairline under it. The reader's own row is
-/// limeSoft with a Lime position and figure.
+/// purpleSoft with a yellow position and figure.
 class IntelRankRow extends StatelessWidget {
   const IntelRankRow({
     required this.position,
@@ -948,7 +950,7 @@ class IntelRankRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final place = position;
-    final accent = isSelf ? LoopColors.lime : null;
+    final accent = isSelf ? LoopColors.yellow : null;
     final content = Container(
       constraints: const BoxConstraints(minHeight: 64),
       padding: const EdgeInsets.symmetric(
@@ -956,7 +958,8 @@ class IntelRankRow extends StatelessWidget {
         vertical: 12,
       ),
       decoration: BoxDecoration(
-        color: isSelf ? LoopColors.limeSoft : null,
+        // S241b: the reader's own row is a selected row — purple 9 %.
+        color: isSelf ? LoopColors.purpleSoft : null,
         border: const Border(bottom: BorderSide(color: LoopColors.line)),
       ),
       child: Row(

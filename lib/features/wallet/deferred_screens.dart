@@ -44,7 +44,9 @@ class PayScreen extends ConsumerWidget {
       // deferred capability is still a page with a shape (audit §A.14).
       primary: const LoopFolioPrimary(
         key: ValueKey<String>('pay-folio'),
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'SCAN TO PAY',
@@ -94,6 +96,7 @@ class BridgeScreen extends ConsumerWidget {
       title: '跨链',
       onBack: onBack,
       primary: const LoopFolioPrimary(
+        ring: false,
         key: ValueKey<String>('bridge-folio'),
         archetype: LoopFolioArchetype.action,
         kicker: 'BRIDGE INTENT',
@@ -185,7 +188,9 @@ class BridgeStatusScreen extends ConsumerWidget {
       onBack: onBack,
       primary: const LoopFolioPrimary(
         key: ValueKey<String>('bridge-status-folio'),
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         archetype: LoopFolioArchetype.state,
         kicker: 'BRIDGE PROGRESS',
@@ -288,7 +293,9 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
           ),
           LoopFolioPrimary(
             key: const ValueKey<String>('dapp-folio'),
-            variant: LoopFolioVariant.chalk,
+            // S241b: flat dark card, Chalk heading (no light slab on Ink).
+            variant: LoopFolioVariant.quiet,
+            headingTone: LoopFolioHeadingTone.neutral,
             ring: false,
             archetype: LoopFolioArchetype.action,
             kicker: 'DAPP REVIEW · READ ONLY',

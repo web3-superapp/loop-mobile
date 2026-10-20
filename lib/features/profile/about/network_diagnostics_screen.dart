@@ -71,6 +71,7 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
       title: '网络诊断',
       onBack: onBack,
       primary: LoopFolioPrimary(
+        ring: false,
         key: const ValueKey<String>('network-diagnostics-folio'),
         archetype: LoopFolioArchetype.action,
         kicker: 'NETWORK CHECK',

@@ -284,12 +284,12 @@ void main() {
   });
 
   group('pay', () {
-    testWidgets('a Chalk primary over the viewfinder placeholder', (
+    testWidgets('a flat primary over the viewfinder placeholder', (
       tester,
     ) async {
       await pumpS8Page(tester, const PayScreen());
 
-      expect(variantOf(tester, 'pay-folio'), LoopFolioVariant.chalk);
+      expect(variantOf(tester, 'pay-folio'), LoopFolioVariant.quiet);
       expectOrder(tester, <Key>[
         const ValueKey<String>('pay-folio'),
         const ValueKey<String>('loop-placeholder-stage'),
@@ -327,7 +327,7 @@ void main() {
     ) async {
       await pumpS8Page(tester, const BridgeStatusScreen());
 
-      expect(variantOf(tester, 'bridge-status-folio'), LoopFolioVariant.chalk);
+      expect(variantOf(tester, 'bridge-status-folio'), LoopFolioVariant.quiet);
       expectOrder(tester, <Key>[
         const ValueKey<String>('bridge-status-folio'),
         const ValueKey<String>('bridge-status-page-block'),
@@ -345,7 +345,7 @@ void main() {
     ) async {
       await pumpS8Page(tester, const DappReviewScreen());
 
-      expect(variantOf(tester, 'dapp-folio'), LoopFolioVariant.chalk);
+      expect(variantOf(tester, 'dapp-folio'), LoopFolioVariant.quiet);
       expectOrder(tester, <Key>[
         const ValueKey<String>('dapp-omnibox'),
         const ValueKey<String>('dapp-folio'),

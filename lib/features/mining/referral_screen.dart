@@ -76,6 +76,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       // the page (audit 2026-09-21 §J.11).
       primary: overview == null
           ? LoopFolioPrimary(
+              ring: false,
               variant: LoopFolioVariant.quiet,
               archetype: LoopFolioArchetype.record,
               kicker: 'FINAL BOOST',
@@ -86,6 +87,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           : LoopLedgerComposite(
               key: const ValueKey<String>('referral-hero'),
               primary: LoopFolioPrimary(
+                ring: false,
                 variant: LoopFolioVariant.quiet,
                 archetype: LoopFolioArchetype.record,
                 kicker: 'FINAL BOOST',
@@ -290,23 +292,34 @@ class _LevelCell extends StatelessWidget {
       child: ExcludeSemantics(
         child: Container(
           padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
+          // Decision 0210 / S241b: the current depth is a selected cell —
+          // purple 9 % ground behind a purple edge, yellow figures — not a
+          // yellow slab; the other depths are flat outlined cells.
           decoration: BoxDecoration(
-            color: current ? LoopColors.lime : LoopColors.card2,
-            borderRadius: LoopRadius.control,
+            color: current ? LoopColors.purpleSoft : LoopColors.bg2,
+            border: Border.all(
+              color: current ? LoopColors.purple : LoopColors.line2,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(
-                'L${level.level} · ${level.boostPercent}%',
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                // R13 / R12, the steps `LoopStatGrid` draws (decision 0192);
-                // the five-across strip with its filled current depth is not
-                // a two-column grid, so the cell stays local.
-                style: LoopType.kicker.copyWith(
-                  color: current ? LoopColors.ink : LoopColors.text2,
+              // S249: a narrow cell scales the label down rather than
+              // clipping 「L1 · 10%」.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'L${level.level} · ${level.boostPercent}%',
+                  maxLines: 1,
+                  softWrap: false,
+                  // R13 / R12, the steps `LoopStatGrid` draws (decision
+                  // 0192); the five-across strip is not a two-column grid,
+                  // so the cell stays local.
+                  style: LoopType.kicker.copyWith(
+                    color: current ? LoopColors.yellow : LoopColors.text2,
+                  ),
                 ),
               ),
               const SizedBox(height: 7),
@@ -314,7 +327,7 @@ class _LevelCell extends StatelessWidget {
                 '${level.counts.valid}',
                 maxLines: 1,
                 style: LoopType.figure.copyWith(
-                  color: current ? LoopColors.ink : LoopColors.chalk,
+                  color: current ? LoopColors.yellow : LoopColors.chalk,
                 ),
               ),
             ],
@@ -388,13 +401,15 @@ class _LevelTile extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: level == 1 ? LoopColors.lime : LoopColors.card2,
-        borderRadius: LoopRadius.inner,
+        color: level == 1 ? LoopColors.purpleSoft : LoopColors.bg2,
+        border: Border.all(
+          color: level == 1 ? LoopColors.purpleLine : LoopColors.line2,
+        ),
       ),
       child: Text(
         'L$level',
         style: LoopType.figure.copyWith(
-          color: level == 1 ? LoopColors.ink : LoopColors.chalk,
+          color: level == 1 ? LoopColors.yellow : LoopColors.chalk,
         ),
       ),
     );

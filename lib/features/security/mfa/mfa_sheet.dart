@@ -294,10 +294,8 @@ class _LoopTotpSquare extends StatelessWidget {
       child: Container(
         key: const ValueKey<String>('mfa-sheet-qr'),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: LoopColors.chalk,
-          borderRadius: BorderRadius.circular(LoopRadius.innerValue),
-        ),
+        // A QR needs its light quiet zone; square since S241b.
+        decoration: const BoxDecoration(color: LoopColors.chalk),
         child: SizedBox(
           width: 180,
           height: 180,

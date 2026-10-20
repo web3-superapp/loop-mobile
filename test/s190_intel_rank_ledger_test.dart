@@ -327,7 +327,7 @@ void main() {
   });
 
   group('page', () {
-    testWidgets('社区: the Lime ledger card is the one full Lime', (
+    testWidgets('社区: the ledger card is flat, no yellow slab (S241b)', (
       tester,
     ) async {
       await pumpS7Page(
@@ -341,7 +341,7 @@ void main() {
       );
       expect(ledger, findsOneWidget);
       final folio = tester.widget<LoopFolioPrimary>(ledger);
-      expect(folio.variant, LoopFolioVariant.lime);
+      expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.archetype, LoopFolioArchetype.record);
       expect(find.text('我的名次\n第 12 名'), findsOneWidget);
       expect(find.text('算力 1,240'), findsOneWidget);
@@ -361,7 +361,7 @@ void main() {
         greaterThanOrEqualTo(tester.getRect(_key('intel-rank-me')).bottom),
       );
       // One full Lime surface on the screen: the ledger card.
-      expect(_filledBoxes(tester, LoopColors.lime), 1);
+      expect(_filledBoxes(tester, LoopColors.yellow), 0);
       expect(find.text('前三名'), findsOneWidget);
       for (final place in <int>[1, 2, 3]) {
         final medal = tester.widget<Container>(_key('intel-rank-medal-$place'));
@@ -460,15 +460,18 @@ void main() {
       final ground = tester.widget<Container>(
         find.descendant(of: self, matching: find.byType(Container)).first,
       );
-      expect((ground.decoration! as BoxDecoration).color, LoopColors.limeSoft);
+      expect(
+        (ground.decoration! as BoxDecoration).color,
+        LoopColors.purpleSoft,
+      );
       final position = tester.widget<Text>(
         find.descendant(of: self, matching: _key('intel-rank-row-position')),
       );
-      expect(position.style!.color, LoopColors.lime);
+      expect(position.style!.color, LoopColors.yellow);
       final figure = tester.widget<Text>(
         find.descendant(of: self, matching: _key('intel-rank-row-figure')),
       );
-      expect(figure.style!.color, LoopColors.lime);
+      expect(figure.style!.color, LoopColors.yellow);
     });
 
     testWidgets('the reader on the pages read: that row lights, none added', (
@@ -494,7 +497,10 @@ void main() {
       final ground = tester.widget<Container>(
         find.descendant(of: row, matching: find.byType(Container)).first,
       );
-      expect((ground.decoration! as BoxDecoration).color, LoopColors.limeSoft);
+      expect(
+        (ground.decoration! as BoxDecoration).color,
+        LoopColors.purpleSoft,
+      );
       final other = tester.widget<Container>(
         find
             .descendant(
@@ -548,7 +554,7 @@ void main() {
       expect(find.text('直接邀请 · 占第一名比例'), findsOneWidget);
       // 推广 rows carry no weight badge.
       expect(find.textContaining('权重'), findsNothing);
-      expect(_filledBoxes(tester, LoopColors.lime), 1);
+      expect(_filledBoxes(tester, LoopColors.yellow), 0);
     });
 
     testWidgets('no place: 还没有名次 and no stamp; empty 推广 button is quiet', (
@@ -578,7 +584,7 @@ void main() {
       expect(_key('intel-rank-empty'), findsOneWidget);
       final invite = tester.widget<LoopButton>(_key('intel-rank-empty-invite'));
       expect(invite.primary, isFalse);
-      expect(_filledBoxes(tester, LoopColors.lime), 1);
+      expect(_filledBoxes(tester, LoopColors.yellow), 0);
     });
   });
 }

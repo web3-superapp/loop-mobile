@@ -150,7 +150,9 @@ class _TransactionResultScreenState
         onBack: widget.onBack,
         folio: const LoopFolioPrimary(
           key: ValueKey<String>('tx-result-folio'),
-          variant: LoopFolioVariant.chalk,
+          // S241b: flat dark card, Chalk heading (no light slab on Ink).
+          variant: LoopFolioVariant.quiet,
+          headingTone: LoopFolioHeadingTone.neutral,
           ring: false,
           kicker: 'TRANSACTION RESULT',
           heading: '没有可展示的结果',
@@ -196,7 +198,9 @@ class _TransactionResultScreenState
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('tx-result-folio'),
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         kicker: 'TRANSACTION RESULT',
         heading: intent == null ? '正在读取结果' : _headline(intent),

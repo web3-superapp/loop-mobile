@@ -894,6 +894,7 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
         ),
       ],
       primary: LoopFolioPrimary(
+        ring: false,
         key: const ValueKey<String>('wallet-asset-folio'),
         archetype: LoopFolioArchetype.record,
         kicker: '钱包资产',
@@ -2760,7 +2761,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                       status.rpc.endpoints.isNotEmpty &&
                           status.rpc.healthyCount * 2 >=
                               status.rpc.endpoints.length
-                      ? LoopColors.lime
+                      ? LoopColors.yellow
                       : LoopColors.chalk,
                   // The 正常 / 异常 pill said the count's news twice; it stays
                   // only when there is no count to read.
