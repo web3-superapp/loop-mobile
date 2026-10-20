@@ -244,7 +244,7 @@ class VoiceRoomSpeakingRing extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: speaking ? LoopColors.lime : Colors.transparent,
+          color: speaking ? LoopColors.purple : Colors.transparent,
           width: width,
         ),
       ),

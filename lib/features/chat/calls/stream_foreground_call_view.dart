@@ -1181,7 +1181,7 @@ class _ParticipantCard extends StatelessWidget {
     );
     // Decision 0170: the `.record-card` ground. A speaker is marked by a
     // Lime hairline and a Lime glyph, never by the amber conversation accent.
-    final accent = participant.isSpeaking ? LoopColors.lime : LoopColors.line;
+    final accent = participant.isSpeaking ? LoopColors.purple : LoopColors.line;
     return DecoratedBox(
       key: ValueKey<String>(
         participant.isSpeaking

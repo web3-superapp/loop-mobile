@@ -44,7 +44,7 @@ class CommunityMemberStrip extends StatelessWidget {
     height: 80,
     child: ListView.separated(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
       itemCount: members.length,
       separatorBuilder: (_, _) => const SizedBox(width: 12),
       itemBuilder: (context, index) {

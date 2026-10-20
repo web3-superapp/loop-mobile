@@ -312,7 +312,9 @@ void main() {
   });
 
   group('2 · a quote inside the reader\'s own bubble', () {
-    testWidgets('is Ink on Ink 12 % with a 3 dp Ink bar; incoming keeps '
+    // Decision 0210 (S241b): the own bubble is purple 9 %, so its quote is a
+    // solid Ink well with Chalk words and a purple bar.
+    testWidgets('is Chalk on solid Ink with a 3 dp purple bar; incoming keeps '
         'Stream\'s card', (tester) async {
       final room = _Room(quoteOwn: true);
       await room.pump(tester);
@@ -324,13 +326,13 @@ void main() {
       final card = tester.widget<Material>(
         find.byKey(const ValueKey<String>('loop-quoted-outgoing')),
       );
-      expect(card.color, LoopColors.ink.withValues(alpha: 0.12));
-      expect(card.color, isNot(LoopColors.lime));
+      expect(card.color, LoopColors.ink);
+      expect(card.color, isNot(LoopColors.yellow));
 
       final bar = tester.widget<Container>(
         find.byKey(const ValueKey<String>('loop-quoted-outgoing-bar')),
       );
-      expect((bar.decoration! as BoxDecoration).color, LoopColors.ink);
+      expect((bar.decoration! as BoxDecoration).color, LoopColors.purple);
       expect(
         tester
             .getSize(
@@ -340,13 +342,13 @@ void main() {
         3,
       );
 
-      // Every word in the card is Ink: the resolved name when there is one,
+      // Every word in the card is Chalk: the resolved name when there is one,
       // and the preview.
       for (final text in tester.widgetList<Text>(
         find.descendant(of: outgoing, matching: find.byType(Text)),
       )) {
         final color = text.style?.color;
-        if (color != null) expect(color, LoopColors.ink);
+        if (color != null) expect(color, LoopColors.chalk);
       }
       final preview = tester.widget<DefaultTextStyle>(
         find
@@ -356,7 +358,7 @@ void main() {
             )
             .first,
       );
-      expect(preview.style.color, LoopColors.ink);
+      expect(preview.style.color, LoopColors.chalk);
 
       // The incoming bubble keeps Stream's own card on the global theme.
       expect(find.byType(DefaultStreamQuotedMessage), findsOneWidget);

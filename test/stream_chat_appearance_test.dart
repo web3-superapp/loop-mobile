@@ -17,19 +17,21 @@ const StreamMessageLayoutData _outgoing = StreamMessageLayoutData(
 
 void main() {
   group('bubble tokens', () {
-    test('own message is Lime over Ink text, other message is Card over '
+    // Decision 0210 (S241b): the own bubble is the purple selected-state
+    // ground with Chalk text; yellow stays on the send key.
+    test('own message is purple over Chalk text, other message is Card over '
         'Chalk', () {
       final theme = loopStreamMessageItemTheme();
       final background = theme.bubble!.backgroundColor!;
-      expect(background.resolve(_outgoing), LoopColors.lime);
+      expect(background.resolve(_outgoing), LoopColors.purpleSoft);
       expect(background.resolve(_incoming), LoopColors.card);
 
       final textColor = theme.text!.textColor!;
-      expect(textColor.resolve(_outgoing), LoopColors.ink);
+      expect(textColor.resolve(_outgoing), LoopColors.chalk);
       expect(textColor.resolve(_incoming), LoopColors.chalk);
 
       final textStyle = theme.text!.textStyle!;
-      expect(textStyle.resolve(_outgoing)!.color, LoopColors.ink);
+      expect(textStyle.resolve(_outgoing)!.color, LoopColors.chalk);
       expect(textStyle.resolve(_incoming)!.color, LoopColors.chalk);
       // Band 4 (`LoopType.body`), the same size as the in-house bubble in
       // chat_components.dart. See decisions 0069 and 0080.
@@ -63,19 +65,19 @@ void main() {
     test('no colour outside the Lime Ledger token set reaches the scheme', () {
       final scheme = loopStreamColorScheme();
       // The send button, the primary control and the read receipt.
-      expect(scheme.accentPrimary, LoopColors.lime);
+      expect(scheme.accentPrimary, LoopColors.yellow);
       expect(scheme.textOnAccent, LoopColors.ink);
       // Page and surface grounds.
       expect(scheme.backgroundApp, LoopColors.ink);
       expect(scheme.backgroundSurface, LoopColors.card);
-      expect(scheme.backgroundHighlight, LoopColors.limeSoft);
+      expect(scheme.backgroundHighlight, LoopColors.purpleSoft);
       // Text ladder.
       expect(scheme.textPrimary, LoopColors.chalk);
       expect(scheme.textSecondary, LoopColors.text2);
       expect(scheme.textTertiary, LoopColors.text3);
       // Outgoing surfaces Stream reads straight off the brand ladder.
-      expect(scheme.brand.shade100, LoopColors.lime);
-      expect(scheme.brand.shade900, LoopColors.ink);
+      expect(scheme.brand.shade100, LoopColors.purpleSoft);
+      expect(scheme.brand.shade900, LoopColors.chalk);
       expect(scheme.borderDefault, LoopColors.line);
     });
   });
@@ -299,13 +301,13 @@ void main() {
       expect(localizations!.todayLabel, '今天');
 
       final streamTheme = StreamTheme.of(captured);
-      expect(streamTheme.colorScheme.accentPrimary, LoopColors.lime);
+      expect(streamTheme.colorScheme.accentPrimary, LoopColors.yellow);
       expect(streamTheme.colorScheme.backgroundApp, LoopColors.ink);
 
       final itemTheme = StreamMessageItemTheme.of(captured);
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_outgoing),
-        LoopColors.lime,
+        LoopColors.purpleSoft,
       );
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_incoming),

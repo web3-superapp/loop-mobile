@@ -350,7 +350,7 @@ class _FriendPreviewNotice extends StatelessWidget {
     icon: 'info',
     title: '开发预览 · 仅本次运行',
     body: '好友、请求与新群组只保存在内存中，不会写入 LOOP 后端或 Stream。',
-    margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+    margin: EdgeInsets.fromLTRB(LoopSpacing.page, 14, LoopSpacing.page, 0),
   );
 }
 

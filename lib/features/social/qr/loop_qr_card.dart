@@ -157,7 +157,12 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
           LoopCommunityQrCard() => '社区二维码名片',
         }),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -337,7 +342,6 @@ class LoopSharePoster extends StatelessWidget {
           name: name,
           logoRef: logoRef,
           size: 56,
-          radius: 16,
         ),
     };
     return Semantics(

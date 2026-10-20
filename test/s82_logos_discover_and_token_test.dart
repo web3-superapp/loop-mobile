@@ -338,7 +338,8 @@ void main() {
       final padding = tester.widget<Padding>(
         find.ancestor(of: chip, matching: find.byType(Padding)).at(1),
       );
-      expect(padding.padding, const EdgeInsets.fromLTRB(16, 0, 16, 16));
+      // Decision 0210: the page margin is 20.
+      expect(padding.padding, const EdgeInsets.fromLTRB(20, 0, 20, 16));
     });
   });
 

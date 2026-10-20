@@ -255,7 +255,12 @@ class _PublicProfileSheetState<T extends Object>
     );
     return Padding(
       key: const ValueKey<String>('public-profile-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        8,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -211,13 +211,23 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
                   icon: 'info',
                   title: '只给数据和事实',
                   body: 'AI 只提供标注出处和时间的客观信息，不输出评级或结论，也不替你做投资决定。',
-                  margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  margin: EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    14,
+                    LoopSpacing.page,
+                    0,
+                  ),
                 ),
                 if (overview.exampleQuestions.isNotEmpty) ...<Widget>[
                   const LoopLabel('试试这些'),
                   Padding(
                     key: const ValueKey<String>('community-ai-samples'),
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    padding: const EdgeInsets.fromLTRB(
+                      LoopSpacing.page,
+                      0,
+                      LoopSpacing.page,
+                      10,
+                    ),
                     child: Wrap(
                       spacing: 7,
                       runSpacing: 7,
@@ -475,7 +485,12 @@ class _CommunityAiQuestionBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        12,
+        LoopSpacing.page,
+        4,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
@@ -483,7 +498,7 @@ class _CommunityAiQuestionBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: LoopColors.limeSoft,
+                color: LoopColors.purpleSoft,
                 borderRadius: const BorderRadiusDirectional.only(
                   topStart: Radius.circular(LoopRadius.controlValue),
                   topEnd: LoopRadius.bubbleTail,
@@ -516,7 +531,12 @@ class _CommunityAiReply extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       // `.msg{padding:8px 16px;gap:10px}`.
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        8,
+      ),
       child: _CommunityAiTurn(
         bubble: Text(
           body,
@@ -619,7 +639,12 @@ class _CommunityAiAnswerBubble extends StatelessWidget {
         onLongPress: reported ? null : onReport,
         behavior: HitTestBehavior.opaque,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            8,
+            LoopSpacing.page,
+            8,
+          ),
           child: _CommunityAiTurn(
             bubble: _CommunityAiAnswerText(runs: runs),
             after: <Widget>[
@@ -835,7 +860,7 @@ class _CommunityAiGeneratedMark extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: padded
-          ? const EdgeInsets.fromLTRB(16, 8, 16, 0)
+          ? const EdgeInsets.fromLTRB(LoopSpacing.page, 8, LoopSpacing.page, 0)
           : const EdgeInsets.only(top: 6),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -865,7 +890,12 @@ class _CommunityAiDisclaimer extends StatelessWidget {
     return Container(
       key: const ValueKey<String>('community-ai-disclaimer'),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        8,
+      ),
       decoration: const BoxDecoration(
         color: LoopColors.ink,
         border: Border(top: BorderSide(color: LoopColors.line)),
@@ -894,7 +924,12 @@ Future<void> showCommunityAiSourceSheet(
     children: <Widget>[
       LoopSheetHeading(source.label),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -936,7 +971,12 @@ Future<CommunityAiReportReason?> showCommunityAiReportSheet(
     children: <Widget>[
       const LoopSheetHeading('举报这条回答'),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1067,12 +1107,22 @@ class _CommunityAiClosedPage extends ConsumerWidget {
             icon: 'info',
             title: '只给数据和事实',
             body: '之后的 AI 只提供标注出处和时间的客观信息，不输出评级或结论，也不替你做投资决定。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const LoopLabel('试试这些'),
           Padding(
             key: const ValueKey<String>('community-ai-samples'),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              10,
+            ),
             child: Wrap(
               spacing: 7,
               runSpacing: 7,

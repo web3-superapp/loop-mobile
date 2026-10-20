@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -40,7 +41,7 @@ final class DirectMessageTarget {
 /// says only what kind of conversation it is.
 LoopFolioPrimary directMessageFolio(LoopPublicProfile? identity) =>
     LoopFolioPrimary(
-      variant: LoopFolioVariant.chalk,
+      variant: LoopFolioVariant.quiet,
       archetype: LoopFolioArchetype.listing,
       // A Chalk hero carries no `::after` ring in the prototype.
       ring: false,
@@ -198,7 +199,12 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
                 tone: LoopNoticeTone.warn,
                 title: '不要重复提交',
                 body: '这次请求已经记录，重复发起不会更快，只会多出一条待处理记录。',
-                margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                margin: EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  14,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
             ],
           ),
@@ -363,11 +369,21 @@ class _FriendshipRequired extends StatelessWidget {
             tone: LoopNoticeTone.warn,
             title: '消息请求没有送出',
             body: directMessageRequestFailureReason(failure!),
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
         if (!requestSent)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: const ValueKey<String>('dm-send-message-request'),
               label: failure == null ? '发送消息请求' : '重新发送消息请求',
@@ -381,7 +397,12 @@ class _FriendshipRequired extends StatelessWidget {
           icon: 'info',
           title: '不声明端到端加密',
           body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            0,
+          ),
         ),
       ],
     ),
