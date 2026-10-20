@@ -33,6 +33,124 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
 
   final Dio _dio;
 
+  /// The six keys every server sends (decision 0036).
+  static const overviewKeys = <String>{
+    'inviteCode',
+    'binding',
+    'levels',
+    'boost',
+    'rules',
+    'contractVersion',
+  };
+
+  /// Keys sent only with `REFERRAL_CENTER_EMIT=on` (loop-api decisions 0162
+  /// §B.2 / 0166). Absent, the overview decodes exactly as before; any key
+  /// outside both sets is still an invalid payload.
+  static const overviewOptionalKeys = <String>{'inviteLink', 'stats'};
+
+  static const statsKeys = <String>{
+    'directCount',
+    'validCount',
+    'level2to5Count',
+    'validAsOf',
+  };
+
+  static const boostAvailableKeys = <String>{
+    'status',
+    'referralPower',
+    'nftReferralPower',
+    'assetReferralPower',
+    'levels',
+    'epochId',
+    'hourStart',
+    'hourEnd',
+  };
+
+  static const boostLevelKeys = <String>{
+    'level',
+    'effectiveMembers',
+    'nftPower',
+    'assetPower',
+  };
+
+  /// Mining Power: at most 18 fraction digits (the server's `trim_scale`).
+  static final RegExp powerPattern = RegExp(
+    r'^(0|[1-9][0-9]{0,77})(\.[0-9]{1,18})?$',
+  );
+
+  /// `{PUBLIC_BASE_URL}/i/{code}`. An http(s) address without credentials
+  /// whose path ends in this account's own code; anything else is refused.
+  static String _inviteLink(Object? raw, String code) {
+    if (raw is! String ||
+        raw.length > 512 ||
+        !LoopV2S7Codec.textPattern.hasMatch(raw)) {
+      LoopV2S7Codec.invalid();
+    }
+    final uri = Uri.tryParse(raw);
+    if (uri == null ||
+        !(uri.scheme == 'https' || uri.scheme == 'http') ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        !uri.path.endsWith('/i/$code')) {
+      LoopV2S7Codec.invalid();
+    }
+    return raw;
+  }
+
+  static ReferralStats _stats(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, statsKeys);
+    final direct = LoopV2S7Codec.requireCount(map, 'directCount');
+    final valid = LoopV2S7Codec.requireCount(map, 'validCount');
+    if (valid > direct) LoopV2S7Codec.invalid();
+    return ReferralStats(
+      directCount: direct,
+      validCount: valid,
+      level2to5Count: LoopV2S7Codec.requireCount(map, 'level2to5Count'),
+      validAsOf: LoopV2S7Codec.optionalTimestamp(map, 'validAsOf'),
+    );
+  }
+
+  static ReferralBoostAvailable _boostAvailable(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, boostAvailableKeys);
+    if (map['status'] != 'available') LoopV2S7Codec.invalid();
+    String power(Map<String, Object?> source, String key) =>
+        LoopV2S7Codec.requirePattern(source, key, powerPattern, maxLength: 97);
+    final levels = <ReferralBoostLevel>[];
+    final seen = <int>{};
+    for (final entry in LoopV2S7Codec.requireList(map['levels'], maximum: 5)) {
+      final level = LoopV2Contract.strictMap(entry, boostLevelKeys);
+      final depth = LoopV2S7Codec.requirePositiveInt(level, 'level');
+      if (depth > 5 || !seen.add(depth)) LoopV2S7Codec.invalid();
+      levels.add(
+        ReferralBoostLevel(
+          level: depth,
+          effectiveMembers: LoopV2S7Codec.requireCount(
+            level,
+            'effectiveMembers',
+          ),
+          nftPower: power(level, 'nftPower'),
+          assetPower: power(level, 'assetPower'),
+        ),
+      );
+    }
+    if (levels.length != 5) LoopV2S7Codec.invalid();
+    levels.sort((a, b) => a.level.compareTo(b.level));
+    final hourStart = LoopV2S7Codec.requireTimestamp(map, 'hourStart');
+    final hourEnd = LoopV2S7Codec.requireTimestamp(map, 'hourEnd');
+    if (!hourEnd.isAfter(hourStart)) LoopV2S7Codec.invalid();
+    return ReferralBoostAvailable(
+      referralPower: power(map, 'referralPower'),
+      nftReferralPower: power(map, 'nftReferralPower'),
+      assetReferralPower: power(map, 'assetReferralPower'),
+      levels: List<ReferralBoostLevel>.unmodifiable(levels),
+      epochId: LoopV2S7Codec.requireId(map, 'epochId'),
+      hourStart: hourStart,
+      hourEnd: hourEnd,
+    );
+  }
+
   static ReferralClaimWindow _claimWindow(Object? raw) {
     if (raw is! Map) LoopV2S7Codec.invalid();
     if (raw['status'] == 'unavailable') {
@@ -130,14 +248,11 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'inviteCode',
-        'binding',
-        'levels',
-        'boost',
-        'rules',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        overviewKeys,
+        overviewOptionalKeys,
+      );
       LoopV2S7Codec.requireContractVersion(root);
       final code = LoopV2Contract.strictMap(root['inviteCode'], const <String>{
         'code',
@@ -206,19 +321,29 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
         'maximumDepth',
         'claimWindowDays',
       });
+      final inviteCode = LoopV2S7Codec.requirePattern(
+        code,
+        'code',
+        ReferralInviteCode.pattern,
+        maxLength: 10,
+      );
+      final boost = root['boost'];
+      final boostAvailable = boost is Map && boost['status'] == 'available'
+          ? _boostAvailable(boost)
+          : null;
       return ReferralOverview(
         inviteCode: ReferralInviteCode(
-          code: LoopV2S7Codec.requirePattern(
-            code,
-            'code',
-            ReferralInviteCode.pattern,
-            maxLength: 10,
-          ),
+          code: inviteCode,
           issuedAt: LoopV2S7Codec.requireTimestamp(code, 'issuedAt'),
         ),
         binding: _binding(root['binding']),
         levels: List<ReferralLevel>.unmodifiable(levels),
-        boost: LoopV2S7Codec.unavailable(root['boost']),
+        boost: boostAvailable == null ? LoopV2S7Codec.unavailable(boost) : null,
+        boostAvailable: boostAvailable,
+        inviteLink: root.containsKey('inviteLink')
+            ? _inviteLink(root['inviteLink'], inviteCode)
+            : null,
+        stats: root.containsKey('stats') ? _stats(root['stats']) : null,
         rules: ReferralRulesInfo(
           configVersion: LoopV2S7Codec.requireEnum(
             rules,

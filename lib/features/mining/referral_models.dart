@@ -178,6 +178,73 @@ final class ReferralRulesInfo {
   final int claimWindowDays;
 }
 
+/// `stats` of `GET /v2/referral` (loop-api decision 0162 §B.2), sent only
+/// while the server runs `REFERRAL_CENTER_EMIT=on` (decision 0166).
+@immutable
+final class ReferralStats {
+  const ReferralStats({
+    required this.directCount,
+    required this.validCount,
+    required this.level2to5Count,
+    required this.validAsOf,
+  });
+
+  /// Direct invitees in force (depth 1, not invalidated).
+  final int directCount;
+
+  /// Direct invitees whose own power was above zero in the newest settled
+  /// hour. Zero before the first settled hour.
+  final int validCount;
+
+  /// In-force relationships of depth 2 to 5.
+  final int level2to5Count;
+
+  /// `hourEnd` of the settled hour [validCount] was read from; `null` before
+  /// the first one.
+  final DateTime? validAsOf;
+}
+
+/// One depth of an available boost: Mining Power, never money.
+@immutable
+final class ReferralBoostLevel {
+  const ReferralBoostLevel({
+    required this.level,
+    required this.effectiveMembers,
+    required this.nftPower,
+    required this.assetPower,
+  });
+
+  final int level;
+  final int effectiveMembers;
+
+  /// Decimal strings as sent; the client never computes power itself.
+  final String nftPower;
+  final String assetPower;
+}
+
+/// The `available` branch of `boost` (loop-api decision 0162 §B.2): the
+/// newest settled mining hour's referral power. Mining Power, not money.
+@immutable
+final class ReferralBoostAvailable {
+  const ReferralBoostAvailable({
+    required this.referralPower,
+    required this.nftReferralPower,
+    required this.assetReferralPower,
+    required this.levels,
+    required this.epochId,
+    required this.hourStart,
+    required this.hourEnd,
+  });
+
+  final String referralPower;
+  final String nftReferralPower;
+  final String assetReferralPower;
+  final List<ReferralBoostLevel> levels;
+  final String epochId;
+  final DateTime hourStart;
+  final DateTime hourEnd;
+}
+
 @immutable
 final class ReferralOverview {
   const ReferralOverview({
@@ -186,14 +253,33 @@ final class ReferralOverview {
     required this.levels,
     required this.boost,
     required this.rules,
-  });
+    this.boostAvailable,
+    this.inviteLink,
+    this.stats,
+  }) : assert(
+         (boost == null) != (boostAvailable == null),
+         'exactly one boost branch',
+       );
 
   final ReferralInviteCode inviteCode;
   final ReferralBinding binding;
   final List<ReferralLevel> levels;
 
-  /// The final boost. Unavailable until a mining formula version is approved.
-  final LaunchUnavailable boost;
+  /// The `unavailable` boost projection; `null` exactly when
+  /// [boostAvailable] carries the settled figures instead.
+  final LaunchUnavailable? boost;
+
+  /// The `available` boost (decision 0162), `null` while the server sends
+  /// the unavailable projection — always so with `REFERRAL_CENTER_EMIT` off.
+  final ReferralBoostAvailable? boostAvailable;
+
+  /// `{PUBLIC_BASE_URL}/i/{code}`; `null` while the server does not send it
+  /// (decision 0166). Sharing then falls back to the code itself.
+  final String? inviteLink;
+
+  /// Direct / valid / depth 2–5 counts; `null` while the server does not send
+  /// them (decision 0166).
+  final ReferralStats? stats;
   final ReferralRulesInfo rules;
 
   /// Only `valid` edges may be counted as effective relationships.

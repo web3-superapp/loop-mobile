@@ -3448,7 +3448,7 @@ void main() {
       expect(overview.binding.canClaim, isTrue);
       // The boost's own code, not the formula baseline's: it is answered the
       // same way under an effective version.
-      expect(overview.boost.reasonCode, _referralBoostPending);
+      expect(overview.boost!.reasonCode, _referralBoostPending);
     });
 
     test('a count total that does not add up is refused', () {

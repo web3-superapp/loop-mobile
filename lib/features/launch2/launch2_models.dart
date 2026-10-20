@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
+import 'package:loop_mobile/features/meme/meme_models.dart';
 
 // ---------------------------------------------------------------------------
 // MEME v2 (`launch2`) read and intent models (client decision 0139,
@@ -528,6 +529,7 @@ final class Launch2Trade {
     required this.tradedAt,
     required this.transactionHash,
     required this.blockNumber,
+    this.account,
   });
 
   final String tradeId;
@@ -540,6 +542,12 @@ final class Launch2Trade {
   final DateTime tradedAt;
   final String transactionHash;
   final BigInt blockNumber;
+
+  /// The LOOP account behind the wallet (loop-api decision 0162 §A), sent
+  /// only with `LAUNCH2_TRADER_ACCOUNT_EMIT=on` (decision 0166). `null` when
+  /// the key is absent, when there is no active profile, or when the owner
+  /// keeps trade history to themselves: the row then shows the address.
+  final MemeAccountRef? account;
 }
 
 /// Whether [Launch2WalletHolding]'s balances were read (loop-api S150).

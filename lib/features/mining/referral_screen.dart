@@ -124,8 +124,12 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           _InviteCodeBlock(code: overview.inviteCode),
           const LoopLabel('关系深度如何计算'),
           _DepthExplainer(levels: overview.levels),
-          const LoopLabel('加成'),
-          LaunchUnavailableCard(label: 'Mining Power 加成', fact: overview.boost),
+          // S249: the `available` boost is decoded but drawn by the S239
+          // front-end batch; until then only the unavailable card shows.
+          if (overview.boost case final LaunchUnavailable boost) ...<Widget>[
+            const LoopLabel('加成'),
+            LaunchUnavailableCard(label: 'Mining Power 加成', fact: boost),
+          ],
           const LoopLabel('我的邀请人'),
           _BindingBlock(
             binding: overview.binding,
@@ -291,6 +295,7 @@ class _LevelCell extends StatelessWidget {
           '有效关系 ${level.counts.valid}，待验证 ${level.counts.pending}',
       child: ExcludeSemantics(
         child: Container(
+          key: ValueKey<String>('referral-level-cell-${level.level}'),
           padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
           // Decision 0210 / S241b: the current depth is a selected cell —
           // purple 9 % ground behind a purple edge, yellow figures — not a

@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
+import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_codec.dart';
 
 /// Strict decoders for the `launch2` module (MEME v2; loop-api decision 0114
 /// / 0117, `docs/frontend-v2-launch2-api.md`, OpenAPI tag `launch2`).
@@ -203,6 +204,12 @@ abstract final class LoopV2Launch2Codec {
     'transactionHash',
     'blockNumber',
   };
+
+  /// Sent only with `LAUNCH2_TRADER_ACCOUNT_EMIT=on` (loop-api decisions 0162
+  /// §A / 0166) on a curve trade, a pool trade and an overview activity item.
+  /// Its value is `{publicProfileId, displayName, avatarRef} | null`, the
+  /// MEME trade shape (decision 0101), read by [LoopV2MemeCodec.account].
+  static const traderAccountOptionalKeys = <String>{'account'};
 
   static const curvePositionKeys = <String>{
     'bought',
@@ -819,7 +826,11 @@ abstract final class LoopV2Launch2Codec {
   }
 
   static Launch2Trade _trade(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, tradeKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      tradeKeys,
+      traderAccountOptionalKeys,
+    );
     final side = map['side'];
     final parsed = side is String ? Launch2Side.tryParse(side) : null;
     if (parsed == null) invalid();
@@ -839,6 +850,7 @@ abstract final class LoopV2Launch2Codec {
       tradedAt: LoopV2ChainCodec.requireTimestamp(map, 'tradedAt'),
       transactionHash: hash(map, 'transactionHash'),
       blockNumber: integer(map, 'blockNumber'),
+      account: LoopV2MemeCodec.account(map['account']),
     );
   }
 
