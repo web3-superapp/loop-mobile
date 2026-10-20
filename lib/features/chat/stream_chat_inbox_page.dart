@@ -33,6 +33,7 @@ import 'package:loop_mobile/integrations/communication/communication_gateway.dar
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/stream_deleted_message_reconciler.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -989,6 +990,22 @@ final loopStreamLocalChannelListControllerProvider = Provider.autoDispose
       return controller;
     });
 
+/// How many inbox rows one pull reconciles with the server (decision 0216).
+const int loopInboxReconcileRows = 8;
+
+/// Compares the first [loopInboxReconcileRows] conversations of [channels]
+/// with the server, one after another, and drops what it deleted.
+Future<void> loopReconcileInboxChannels(
+  StreamChatClient client,
+  List<Channel> channels, {
+  LoopStreamDeletedMessageReconciler? reconciler,
+}) async {
+  final using = reconciler ?? loopStreamDeletedMessageReconcilerFor(client);
+  for (final channel in channels.take(loopInboxReconcileRows)) {
+    await using.reconcile(channel);
+  }
+}
+
 final Expando<({String userId, List<Channel> channels})> _inboxLocalSeeds =
     Expando<({String userId, List<Channel> channels})>('loop-inbox-seed');
 
@@ -1098,7 +1115,19 @@ class _StreamChannelListBodyState
             child: loopRefreshable(
               onRefresh: localOnly
                   ? () async {}
-                  : () => controller.refresh(resetValue: false),
+                  : () async {
+                      await controller.refresh(resetValue: false);
+                      // Decision 0216: a pull also asks the server which
+                      // messages it deleted, for the rows at the top.
+                      unawaited(
+                        loopReconcileInboxChannels(
+                          widget.client,
+                          controller.value.isSuccess
+                              ? controller.currentItems
+                              : const <Channel>[],
+                        ),
+                      );
+                    },
               child: ChatInboxSwipeScope(
                 child: StreamChannelListView(
                   controller: controller,

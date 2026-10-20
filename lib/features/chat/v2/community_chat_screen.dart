@@ -388,11 +388,20 @@ const String communityChatNeutralTitle = '社区群聊';
 /// `#scr-community-chat .topbar` prints `3,241 在线` under the name. It is one
 /// observation with one number; a community whose presence LOOP could not read
 /// gets no line at all rather than a dash or a zero.
-String? communityChatPresenceLine(CommunityDetail? detail) =>
-    switch (detail?.onlineCount) {
-      CommunityOnlineCountObserved(:final count) => '$count 在线',
-      _ => null,
-    };
+///
+/// S253: the line also states the room's size — the record's member count —
+/// the way the community's own record prints it, `128 成员 · 1 在线`.
+String? communityChatPresenceLine(CommunityDetail? detail) {
+  if (detail == null) return null;
+  final members = detail.community.memberCount;
+  final online = switch (detail.onlineCount) {
+    CommunityOnlineCountObserved(:final count) => '$count 在线',
+    _ => null,
+  };
+  final size = members > 0 ? '${communityCountLabel(members)} 成员' : null;
+  final parts = <String>[?size, ?online];
+  return parts.isEmpty ? null : parts.join(' · ');
+}
 
 /// The announcement this community pinned, or `null`.
 ///

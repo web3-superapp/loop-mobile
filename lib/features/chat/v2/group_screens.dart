@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/group_rename.dart';
+import 'package:loop_mobile/features/chat/v2/loop_channel_heading.dart';
 import 'package:loop_mobile/features/chat/v2/loop_channel_message_policy.dart';
 import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
@@ -75,27 +76,36 @@ class GroupChatScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               LoopSelectionAwareTopbar(
-                child: LoopTopbar(
-                  title: '群聊',
-                  kicker: communityPreviewKicker(mode),
-                  onBack: onBack,
-                  minHeight: 72,
-                  actions: <Widget>[
-                    if (cid != null) ...<Widget>[
-                      LoopIconButton(
-                        key: const ValueKey<String>('group-open-search'),
-                        icon: 'search',
-                        label: '搜索这个会话',
-                        onPressed: () => onOpenSearch?.call(cid),
-                      ),
-                      LoopIconButton(
-                        key: const ValueKey<String>('group-open-info'),
-                        icon: 'info',
-                        label: '群信息',
-                        onPressed: () => onOpenInfo?.call(cid),
-                      ),
+                // S253: the header names the group and states its size, from
+                // the channel this client holds; 「群聊」 only while it has
+                // neither (device report S240).
+                child: LoopStreamChannelHeadingBuilder(
+                  cid: blocked ? null : cid,
+                  builder: (context, heading) => LoopTopbar(
+                    title: groupChatTitle(heading),
+                    subtitle: loopChannelMemberLine(heading.memberCount),
+                    titleMaxLines: 1,
+                    dense: true,
+                    kicker: communityPreviewKicker(mode),
+                    onBack: onBack,
+                    minHeight: 72,
+                    actions: <Widget>[
+                      if (cid != null) ...<Widget>[
+                        LoopIconButton(
+                          key: const ValueKey<String>('group-open-search'),
+                          icon: 'search',
+                          label: '搜索这个会话',
+                          onPressed: () => onOpenSearch?.call(cid),
+                        ),
+                        LoopIconButton(
+                          key: const ValueKey<String>('group-open-info'),
+                          icon: 'info',
+                          label: '群信息',
+                          onPressed: () => onOpenInfo?.call(cid),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               Expanded(
@@ -152,6 +162,14 @@ class GroupChatScreen extends ConsumerWidget {
     );
   }
 }
+
+/// The `group` header title: the group's own name, or 「群聊」 while this
+/// client holds no name for it.
+String groupChatTitle(LoopChannelHeading heading) =>
+    heading.name ?? groupChatNeutralTitle;
+
+/// What the `group` header says when no name is known.
+const String groupChatNeutralTitle = '群聊';
 
 /// `group-info` · the group record and its one available action.
 ///

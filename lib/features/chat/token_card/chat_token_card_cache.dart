@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -24,6 +27,17 @@ const Duration loopChatTokenCardFreshness = Duration(seconds: 60);
 final chatTokenCardClockProvider = Provider<DateTime Function()>(
   (ref) => DateTime.now,
 );
+
+/// Whether a card that failed with [kind] is a transient failure — one that
+/// another read may well turn around — rather than an answer.
+///
+/// S253: these are the failures a card retries by itself, once, when the
+/// connection comes back or the card is shown again, and the ones it words as
+/// 「加载失败，点按重试」 unless the device really has no network.
+bool loopChatTokenCardFailureIsTransient(LoopChainFailureKind? kind) =>
+    kind == LoopChainFailureKind.offline ||
+    kind == LoopChainFailureKind.timedOut ||
+    kind == LoopChainFailureKind.readFailed;
 
 /// One address's answer, as the conversation currently holds it.
 ///
@@ -82,6 +96,10 @@ final class ChatTokenCardEntry {
 final class ChatTokenCardCache
     extends Notifier<Map<String, ChatTokenCardEntry>> {
   final Set<String> _reading = <String>{};
+
+  /// Addresses whose current failure already had its one automatic retry.
+  /// An answer that settles clears its address.
+  final Set<String> _autoRetried = <String>{};
   int _generation = 0;
 
   late LoopChainGatewayMode _mode;
@@ -102,7 +120,28 @@ final class ChatTokenCardCache
     // still in flight under the old one are discarded when they land.
     _generation += 1;
     _reading.clear();
+    _autoRetried.clear();
+    // S253: the connection coming back (or the App returning to the
+    // foreground) re-arms every card that failed transiently, once.
+    ref.listen<int>(loopNetworkRecoveryTickProvider, (_, _) {
+      for (final address in state.keys.toList()) {
+        unawaited(retryOnce(address));
+      }
+    });
     return const <String, ChatTokenCardEntry>{};
+  }
+
+  /// Retries [address] by itself, once per failure (S253).
+  ///
+  /// Only a transient failure qualifies — never an answer such as 「未收录」,
+  /// a closed capability or a rate limit — and only once until an answer
+  /// settles: a card scrolled past ten times is one more request, not ten.
+  Future<void> retryOnce(String address) async {
+    final held = state[address];
+    if (held == null || held.asset.value != null) return;
+    if (!loopChatTokenCardFailureIsTransient(held.asset.failureKind)) return;
+    if (!_autoRetried.add(address)) return;
+    await resolve(address, force: true);
   }
 
   /// What the conversation currently holds for [address], without asking for
@@ -180,9 +219,11 @@ final class ChatTokenCardCache
         final detail = await gateway.loadAsset(started.assetId);
         afterAsset = started.copyWith(asset: started.asset.ready(detail));
       } on LoopChainException catch (error) {
+        final kind = await _classify(error.kind);
+        if (!ref.mounted) return;
         _settle(
           generation,
-          started.copyWith(asset: started.asset.failed(error.kind)),
+          started.copyWith(asset: started.asset.failed(kind)),
         );
         return;
       } catch (_) {
@@ -195,6 +236,7 @@ final class ChatTokenCardCache
         return;
       }
       if (generation != _generation) return;
+      _autoRetried.remove(started.address);
       _write(
         generation,
         afterAsset.copyWith(candles: afterAsset.candles.loading()),
@@ -228,6 +270,23 @@ final class ChatTokenCardCache
     } finally {
       _reading.remove(address);
     }
+  }
+
+  /// S253: a connection failure is 「设备离线」 only when the device reports no
+  /// network at all. With a network up — or when the platform cannot say —
+  /// the request failed (a dropped socket, a token refresh that did not
+  /// arrive), and the card words it as a failed load that a tap retries.
+  Future<LoopChainFailureKind> _classify(LoopChainFailureKind kind) async {
+    if (kind != LoopChainFailureKind.offline) return kind;
+    bool? transport;
+    try {
+      transport = await ref.read(loopDeviceTransportProvider).hasTransport();
+    } catch (_) {
+      transport = null;
+    }
+    return transport == false
+        ? LoopChainFailureKind.offline
+        : LoopChainFailureKind.readFailed;
   }
 
   void _write(int generation, ChatTokenCardEntry entry) {
