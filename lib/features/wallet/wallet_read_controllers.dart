@@ -4,6 +4,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/integrations/media/loop_image_loader.dart';
 
 LoopChainGatewayMode _walletMode(Ref ref) =>
     ref.watch(walletReadGatewayProvider.select((gateway) => gateway.mode));
@@ -103,8 +104,16 @@ final class WalletBalancesController
   String? get snapshotResource => LoopSnapshotResource.walletBalances(walletId);
 
   @override
-  Future<LoopWalletBalances> fetch() =>
-      ref.read(walletReadGatewayProvider).loadBalances(walletId);
+  Future<LoopWalletBalances> fetch() async {
+    final balances = await ref
+        .read(walletReadGatewayProvider)
+        .loadBalances(walletId);
+    // Decision 0215 §4: warm the first screen of asset logos on arrival.
+    loopPrefetchImages(
+      balances.balances.take(loopImagePrefetchLimit).map((row) => row.logoUrl),
+    );
+    return balances;
+  }
 }
 
 final walletBalancesControllerProvider = NotifierProvider.autoDispose

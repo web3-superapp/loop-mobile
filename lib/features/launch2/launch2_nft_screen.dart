@@ -39,8 +39,9 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 // medal under it, what the medal does and the rules as `.label` rows, what
 // this wallet holds as `.kv` and the one button. The page reads the project page's own instance read
 // (`launch2InstanceControllerProvider`), and its 「铸造」 is the project
-// page's own trip ([launch2MintNft]). Brass marks the NFT here and nowhere
-// else; Lime stays the trading accent.
+// page's own trip ([launch2MintNft]). A Purple ring marks the medal here
+// (decision 0212, S257 — Brass retired from this page); the main button is
+// the ordinary yellow primary.
 
 /// What the main button does.
 enum Launch2NftAction {
@@ -63,7 +64,7 @@ final class Launch2NftView {
     required this.statusLit,
     required this.buttonLabel,
     required this.action,
-    required this.brassRing,
+    required this.litRing,
     required this.medalLabel,
     this.countdownTo,
     this.stampPrefix = '剩 ',
@@ -87,8 +88,8 @@ final class Launch2NftView {
   final String buttonLabel;
   final Launch2NftAction action;
 
-  /// A Brass ring; otherwise the greyed one.
-  final bool brassRing;
+  /// A lit (Purple) ring; otherwise the greyed one.
+  final bool litRing;
 
   /// The medal's lower arc: 「#tokenId」 once held, 「共识勋章」 before.
   final String medalLabel;
@@ -120,7 +121,7 @@ Launch2NftView launch2NftView(
             '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
         buttonLabel: '开始后可铸造',
         action: Launch2NftAction.none,
-        brassRing: false,
+        litRing: false,
         medalLabel: medal,
       );
     case Launch2Stage.nftSale:
@@ -137,7 +138,7 @@ Launch2NftView launch2NftView(
         action: held || !walletActive
             ? Launch2NftAction.none
             : Launch2NftAction.mint,
-        brassRing: true,
+        litRing: true,
         medalLabel: medal,
       );
     case Launch2Stage.snapshotPending:
@@ -149,7 +150,7 @@ Launch2NftView launch2NftView(
         statusDetail: minted,
         buttonLabel: held ? '等待名单发布' : '铸造已结束',
         action: Launch2NftAction.none,
-        brassRing: true,
+        litRing: true,
         medalLabel: medal,
       );
     case Launch2Stage.priority:
@@ -160,7 +161,7 @@ Launch2NftView launch2NftView(
         statusDetail: minted,
         buttonLabel: toProject,
         action: Launch2NftAction.openProject,
-        brassRing: held,
+        litRing: held,
         medalLabel: medal,
       );
     case Launch2Stage.public:
@@ -172,7 +173,7 @@ Launch2NftView launch2NftView(
         statusDetail: minted,
         buttonLabel: toProject,
         action: Launch2NftAction.openProject,
-        brassRing: held,
+        litRing: held,
         medalLabel: medal,
       );
     case Launch2Stage.graduated:
@@ -182,7 +183,7 @@ Launch2NftView launch2NftView(
         statusDetail: minted,
         buttonLabel: toProject,
         action: Launch2NftAction.openProject,
-        brassRing: held,
+        litRing: held,
         medalLabel: medal,
       );
     case Launch2Stage.closedNoHolders:
@@ -193,7 +194,7 @@ Launch2NftView launch2NftView(
         statusLit: false,
         buttonLabel: '去项目页',
         action: Launch2NftAction.openProject,
-        brassRing: false,
+        litRing: false,
         medalLabel: medal,
       );
     case Launch2Stage.paused:
@@ -203,7 +204,7 @@ Launch2NftView launch2NftView(
         statusDetail: launch2HoldReasonText(row.holdReason),
         buttonLabel: '去项目页',
         action: Launch2NftAction.openProject,
-        brassRing: false,
+        litRing: false,
         medalLabel: medal,
       );
   }
@@ -513,7 +514,6 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
         label: mint && _preparing ? '正在准备…' : view.buttonLabel,
         primary: true,
         block: true,
-        tone: LoopButtonTone.brass,
         onPressed: !enabled
             ? null
             : switch (view.action) {
@@ -562,7 +562,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
             logoUrl: row.logoUrl,
             identity: row.instanceId,
             bottomLabel: view.medalLabel,
-            brass: view.brassRing,
+            lit: view.litRing,
           ),
         ),
       ),
@@ -690,14 +690,14 @@ class _NftFolio extends StatelessWidget {
   }
 }
 
-/// 共识勋章 (docs/32 §4.1): a perfect circle — a 2 px outer ring (Brass, or
-/// the greyed tone), a Graphite face, the logo (56) in the middle, the
+/// 共识勋章 (docs/32 §4.1): a perfect circle — a 2 px outer ring (Purple,
+/// decision 0212 / S257, or the greyed tone), a dark Graphite face, the logo (56) in the middle, the
 /// ticker along the upper arc in mono and [bottomLabel] along the lower one.
 class Launch2NftMedal extends StatelessWidget {
   const Launch2NftMedal({
     required this.ticker,
     required this.bottomLabel,
-    required this.brass,
+    required this.lit,
     super.key,
     this.logoUrl,
     this.identity,
@@ -710,14 +710,23 @@ class Launch2NftMedal extends StatelessWidget {
 
   /// 「#tokenId」 or 「共识勋章」.
   final String bottomLabel;
-  final bool brass;
+
+  /// Purple ring and Chalk arc text; otherwise both greyed.
+  final bool lit;
   final double size;
 
   static const double logoSize = 56;
 
+  /// The outer ring: Purple when lit (decision 0212, S257), else greyed.
+  Color get ringColour => lit ? LoopColors.purple : LoopColors.text3;
+
+  /// The arc text: Chalk on the dark face when lit, else greyed.
+  Color get inkColour => lit ? LoopColors.chalk : LoopColors.text3;
+
   @override
   Widget build(BuildContext context) {
-    final tone = brass ? LoopColors.brass : LoopColors.text3;
+    final ring = ringColour;
+    final ink = inkColour;
     return Semantics(
       image: true,
       label: '$ticker 共识勋章，$bottomLabel',
@@ -727,7 +736,8 @@ class Launch2NftMedal extends StatelessWidget {
         height: size,
         child: CustomPaint(
           painter: _MedalPainter(
-            tone: tone,
+            tone: ring,
+            ink: ink,
             top: launch2HeroTicker(ticker),
             bottom: bottomLabel,
           ),
@@ -749,11 +759,15 @@ class Launch2NftMedal extends StatelessWidget {
 class _MedalPainter extends CustomPainter {
   const _MedalPainter({
     required this.tone,
+    required this.ink,
     required this.top,
     required this.bottom,
   });
 
   final Color tone;
+
+  /// The arc text.
+  final Color ink;
   final String top;
   final String bottom;
 
@@ -785,7 +799,7 @@ class _MedalPainter extends CustomPainter {
     final style = LoopTypography.withWeight(
       LoopType.figureXs,
       FontWeight.w600,
-    ).copyWith(color: tone, letterSpacing: 0);
+    ).copyWith(color: ink, letterSpacing: 0);
     final textRadius = radius - _band;
     _arc(canvas, center, textRadius, top, style, upper: true);
     _arc(canvas, center, textRadius, bottom, style, upper: false);
@@ -834,5 +848,8 @@ class _MedalPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MedalPainter old) =>
-      old.tone != tone || old.top != top || old.bottom != bottom;
+      old.tone != tone ||
+      old.ink != ink ||
+      old.top != top ||
+      old.bottom != bottom;
 }

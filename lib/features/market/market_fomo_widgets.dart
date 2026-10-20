@@ -10,6 +10,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
+import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
 // ---------------------------------------------------------------------------
 // 情报 · 行情 rows (decision 0118)
@@ -299,9 +300,14 @@ class _IntelPromotionCard extends StatelessWidget {
               fit: StackFit.expand,
               children: <Widget>[
                 if (image != null)
-                  Image.network(
-                    image,
+                  // S257 (decision 0215): through LoopRemoteAvatar's source
+                  // — this device's copy first, then the download — not a
+                  // bare network read. A cover, so it decodes at its size.
+                  Image(
+                    key: const ValueKey<String>('intel-promotion-image'),
+                    image: loopRemoteImageSource(image),
                     fit: BoxFit.cover,
+                    gaplessPlayback: true,
                     // A picture that does not arrive leaves the card's own
                     // ground; the words are on top either way.
                     errorBuilder: (_, _, _) => const SizedBox.shrink(),
