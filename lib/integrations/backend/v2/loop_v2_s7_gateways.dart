@@ -458,6 +458,15 @@ final class DioLoopV2ReferralGateway
   );
 
   @override
+  Future<ReferralInviteePage> loadInvitees({String? cursor}) => read(
+    (accessToken) => _api.getInvitees(
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      cursor: cursor,
+    ),
+  );
+
+  @override
   Future<ReferralBinding> claim(String inviteCode) async {
     if (!isReferralInviteCodeShaped(inviteCode)) {
       return Future<ReferralBinding>.error(

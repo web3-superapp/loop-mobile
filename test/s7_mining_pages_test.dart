@@ -340,10 +340,10 @@ void main() {
       // The boost is a card of its own now; a version is in effect and 我的算力
       // prints 1000 on this same page, so nothing here may claim that power,
       // output and rank are all unavailable.
-      final boost = find.text('邀请关系加成');
+      final boost = find.text('五级邀请加成');
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);
-      expect(find.textContaining('你的加成在邀请页查看'), findsOneWidget);
+      expect(find.textContaining('你的邀请加成在邀请中心查看'), findsOneWidget);
       expect(find.textContaining('当前加成 $launchMissingFigure'), findsNothing);
       expect(find.textContaining('算力、产量、排行与邀请加成都暂时不可用'), findsNothing);
     });
@@ -394,7 +394,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining(miningBaselineDetail), findsOneWidget);
       // Decision 0146: the drawer states the quantity basis, no price.
-      expect(find.textContaining('持有数量 × 挖矿权重'), findsOneWidget);
+      expect(find.textContaining('持有数量 × 社区币权重'), findsOneWidget);
       expect(find.textContaining('参考价'), findsNothing);
     });
 

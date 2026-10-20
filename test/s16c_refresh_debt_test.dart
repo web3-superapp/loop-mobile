@@ -170,6 +170,12 @@ final class _HeldReferralGateway implements ReferralGateway {
   @override
   Future<ReferralBinding> claim(String inviteCode) =>
       Future<ReferralBinding>.value(s7BoundBinding());
+
+  @override
+  Future<ReferralInviteePage> loadInvitees({String? cursor}) =>
+      Future<ReferralInviteePage>.value(
+        const ReferralInviteePage(items: <ReferralInvitee>[], nextCursor: null),
+      );
 }
 
 void main() {

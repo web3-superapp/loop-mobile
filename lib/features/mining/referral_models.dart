@@ -300,6 +300,69 @@ final class ReferralOverview {
   }
 }
 
+/// The three outward states of a direct invitee (loop-api decision 0162
+/// §B.1): `valid` = the invitee's own Mining Power was above zero in the
+/// newest settled hour, `invalid` = the relationship was invalidated,
+/// `pending` = anything else.
+enum ReferralInviteeStatus {
+  pending('pending'),
+  valid('valid'),
+  invalid('invalid');
+
+  const ReferralInviteeStatus(this.wireName);
+
+  final String wireName;
+
+  static ReferralInviteeStatus? tryParse(Object? value) {
+    for (final status in values) {
+      if (status.wireName == value) return status;
+    }
+    return null;
+  }
+}
+
+String referralInviteeStatusLabel(ReferralInviteeStatus status) =>
+    switch (status) {
+      ReferralInviteeStatus.valid => '有效',
+      ReferralInviteeStatus.pending => '待生效',
+      ReferralInviteeStatus.invalid => '已失效',
+    };
+
+/// One row of `GET /v2/referral/invitees`: a direct (L1) invitee.
+///
+/// [publicProfileId], [alias] and [avatarRef] are all null when the invitee
+/// has no active profile or blocked the reader; the row is still listed and
+/// still counted, but it opens nothing.
+@immutable
+final class ReferralInvitee {
+  const ReferralInvitee({
+    required this.publicProfileId,
+    required this.alias,
+    required this.avatarRef,
+    required this.boundAt,
+    required this.status,
+  });
+
+  final String? publicProfileId;
+  final String? alias;
+  final String? avatarRef;
+
+  /// When the invitee claimed the reader's code.
+  final DateTime boundAt;
+  final ReferralInviteeStatus status;
+}
+
+/// One page of direct invitees, newest binding first.
+@immutable
+final class ReferralInviteePage {
+  const ReferralInviteePage({required this.items, required this.nextCursor});
+
+  final List<ReferralInvitee> items;
+
+  /// Opaque; `null` at the end of the list.
+  final String? nextCursor;
+}
+
 /// zh-CN copy for one referral level. The description is a relationship depth,
 /// never a rank or a progression.
 String referralLevelDescription(int level) => switch (level) {

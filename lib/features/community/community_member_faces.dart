@@ -4,6 +4,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/social/profile_face_link.dart';
 
 /// How many faces the community record's 成员 strip draws (decision 0127).
 const int communityMemberStripFaces = 12;
@@ -51,8 +52,15 @@ class CommunityMemberStrip extends StatelessWidget {
         final member = members[index];
         final id = member.profile.publicProfileId;
         final open = onOpenProfile;
+        // S239: the reader's own face opens 我; anybody else's opens their
+        // page. A member without a public profile opens nothing.
+        final VoidCallback? tap = member.isSelf
+            ? () => LoopProfileFaceLink.push(context, loopOwnProfileLocation)
+            : id == null || open == null
+            ? null
+            : () => open(id);
         return Semantics(
-          button: id != null && open != null,
+          button: tap != null,
           label: member.profile.displayName,
           excludeSemantics: true,
           child: GestureDetector(
@@ -60,9 +68,7 @@ class CommunityMemberStrip extends StatelessWidget {
               'community-profile-member-${id ?? member.profile.loopId}',
             ),
             behavior: HitTestBehavior.opaque,
-            onTap: id == null || open == null || member.isSelf
-                ? null
-                : () => open(id),
+            onTap: tap,
             child: SizedBox(
               width: 56,
               child: Column(

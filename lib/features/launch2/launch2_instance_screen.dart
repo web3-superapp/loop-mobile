@@ -42,6 +42,8 @@ import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/features/social/profile_face_link.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 
 /// `launch2-instance` · one MEME v2 project (archetype `record`, layout
 /// `dashboard`, client decision 0139).
@@ -1254,6 +1256,50 @@ class _CurveBlock extends StatelessWidget {
   }
 }
 
+/// One curve trade. S239: with the trader's LOOP account attached (loop-api
+/// decision 0162 §A) the line names the account and its face opens the
+/// account's page; a bare address opens nothing.
+Widget _tradeRow(Launch2Trade trade) {
+  final account = trade.account;
+  final side = trade.side == Launch2Side.buy ? '买入' : '卖出';
+  final value =
+      '${launch2MemeCompact(trade.memeAmount)} · '
+      '${launch2Usd1Label(trade.usd1Gross)}';
+  if (account == null) {
+    return LoopKeyValue(
+      key: ValueKey<String>('launch2-trade-${trade.tradeId}'),
+      label: '$side · ${launch2ShortAddress(trade.traderAddress)}',
+      value: value,
+      valueUp: trade.side == Launch2Side.buy,
+    );
+  }
+  final name = account.displayName ?? launch2ShortAddress(trade.traderAddress);
+  return Row(
+    key: ValueKey<String>('launch2-trade-${trade.tradeId}'),
+    children: <Widget>[
+      const SizedBox(width: LoopSpacing.page - 8),
+      LoopProfileFaceLink(
+        key: ValueKey<String>('launch2-trade-face-${trade.tradeId}'),
+        publicProfileId: account.publicProfileId,
+        name: name,
+        child: LoopProfileAvatar(
+          avatarRef: account.avatarRef,
+          alias: account.displayName,
+          size: 24,
+        ),
+      ),
+      Expanded(
+        child: LoopKeyValue(
+          label: '$side · $name',
+          value: value,
+          valueUp: trade.side == Launch2Side.buy,
+          padding: const EdgeInsets.fromLTRB(4, 10, 16, 10),
+        ),
+      ),
+    ],
+  );
+}
+
 class _RecentTrades extends StatelessWidget {
   const _RecentTrades({required this.detail});
 
@@ -1275,17 +1321,7 @@ class _RecentTrades extends StatelessWidget {
             compact: true,
           )
         else
-          for (final trade in trades)
-            LoopKeyValue(
-              key: ValueKey<String>('launch2-trade-${trade.tradeId}'),
-              label:
-                  '${trade.side == Launch2Side.buy ? '买入' : '卖出'} · '
-                  '${launch2ShortAddress(trade.traderAddress)}',
-              value:
-                  '${launch2MemeCompact(trade.memeAmount)} · '
-                  '${launch2Usd1Label(trade.usd1Gross)}',
-              valueUp: trade.side == Launch2Side.buy,
-            ),
+          for (final trade in trades) _tradeRow(trade),
         LoopProvenanceLine(
           key: const ValueKey<String>('launch2-trades-provenance'),
           sources: const <String>['LOOP 链上索引'],

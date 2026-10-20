@@ -23,6 +23,13 @@ abstract interface class LoopV2ReferralApi {
     required String inviteCode,
     LoopV2WriteOrigin? origin,
   });
+
+  /// `GET /v2/referral/invitees` (loop-api decision 0162 §B.1).
+  Future<ReferralInviteePage> getInvitees({
+    required String accessToken,
+    required String clientVersion,
+    String? cursor,
+  });
 }
 
 final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
@@ -30,6 +37,19 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
 
   static const referralPath = '/v2/referral';
   static const claimPath = '/v2/referral/claim';
+  static const inviteesPath = '/v2/referral/invitees';
+
+  static const inviteeKeys = <String>{
+    'publicProfileId',
+    'alias',
+    'avatarRef',
+    'boundAt',
+    'validationStatus',
+  };
+
+  static final RegExp avatarRefPattern = RegExp(
+    r'^avatar:[A-Za-z0-9][A-Za-z0-9._/-]{0,126}$',
+  );
 
   final Dio _dio;
 
@@ -148,6 +168,32 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
       epochId: LoopV2S7Codec.requireId(map, 'epochId'),
       hourStart: hourStart,
       hourEnd: hourEnd,
+    );
+  }
+
+  static ReferralInvitee _invitee(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, inviteeKeys);
+    final status = ReferralInviteeStatus.tryParse(map['validationStatus']);
+    if (status == null) LoopV2S7Codec.invalid();
+    final id = LoopV2S7Codec.optionalId(map, 'publicProfileId');
+    final alias = LoopV2S7Codec.optionalText(map, 'alias', maxLength: 1024);
+    final avatar = LoopV2S7Codec.optionalPattern(
+      map,
+      'avatarRef',
+      avatarRefPattern,
+      maxLength: 134,
+    );
+    // A hidden profile hides all of it: an alias or a face without the id
+    // would draw a row that opens nothing while looking like it should.
+    if (id == null && (alias != null || avatar != null)) {
+      LoopV2S7Codec.invalid();
+    }
+    return ReferralInvitee(
+      publicProfileId: id,
+      alias: alias,
+      avatarRef: avatar,
+      boundAt: LoopV2S7Codec.requireTimestamp(map, 'boundAt'),
+      status: status,
     );
   }
 
@@ -401,6 +447,50 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
       throw LoopV2Contract.mapDioFailure(
         error,
         allowedCodes: LoopV2ModuleRequest.writeErrors,
+      );
+    }
+  }
+
+  @override
+  Future<ReferralInviteePage> getInvitees({
+    required String accessToken,
+    required String clientVersion,
+    String? cursor,
+  }) async {
+    if (cursor != null &&
+        (cursor.length < 3 ||
+            cursor.length > 1536 ||
+            !LoopV2S7Codec.cursorPattern.hasMatch(cursor))) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    try {
+      final response = await _dio.get<Object?>(
+        inviteesPath,
+        queryParameters: <String, Object?>{'cursor': ?cursor},
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final root = LoopV2Contract.strictMap(response.data, const <String>{
+        'items',
+        'nextCursor',
+        'contractVersion',
+      });
+      LoopV2S7Codec.requireContractVersion(root);
+      final items = <ReferralInvitee>[
+        for (final entry in LoopV2S7Codec.requireList(
+          root['items'],
+          maximum: 50,
+        ))
+          _invitee(entry),
+      ];
+      return ReferralInviteePage(
+        items: List<ReferralInvitee>.unmodifiable(items),
+        nextCursor: LoopV2S7Codec.cursor(root, 'nextCursor'),
+      );
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.readErrors,
       );
     }
   }

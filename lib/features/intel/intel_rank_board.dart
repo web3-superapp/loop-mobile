@@ -16,10 +16,12 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
+import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/owner_face.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart'
     show LoopProfileAvatar;
+import 'package:loop_mobile/features/social/profile_face_link.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart' show LoopProgressBar;
@@ -34,7 +36,7 @@ import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 String intelRankScopeLabel(MiningRankScope scope) => switch (scope) {
   MiningRankScope.communities => '社区',
   MiningRankScope.users => '用户',
-  MiningRankScope.referrals => '推广',
+  MiningRankScope.referrals => '邀请中心',
 };
 
 /// The face on a board row (docs/35 `.rank-row .face`).
@@ -116,6 +118,14 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
           )
         : null;
 
+    final scopeBar = LoopSegBar(
+      key: const ValueKey<String>('intel-rank-scope'),
+      labels: <String>[for (final scope in scopes) intelRankScopeLabel(scope)],
+      icons: <String>[for (final scope in scopes) intelRankScopeIcon(scope)],
+      selectedIndex: scopes.indexOf(state.scope),
+      onSelected: (index) => unawaited(controller.select(scopes[index])),
+    );
+
     // The three boards follow a sideways swipe as well as a tap on their
     // chips (S123 m7); past the first or last board the swipe moves 情报's
     // own segments.
@@ -141,17 +151,12 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             : null,
         primary: ledger,
         sections: <Widget>[
-          LoopSegBar(
-            key: const ValueKey<String>('intel-rank-scope'),
-            labels: <String>[
-              for (final scope in scopes) intelRankScopeLabel(scope),
-            ],
-            icons: <String>[
-              for (final scope in scopes) intelRankScopeIcon(scope),
-            ],
-            selectedIndex: scopes.indexOf(state.scope),
-            onSelected: (index) => unawaited(controller.select(scopes[index])),
-          ),
+          scopeBar,
+          // S239 · decision 0214: the third chip is 邀请中心 — my invite code
+          // with copy, link and poster, 我的邀请 counts and the way into the
+          // full page — over the 推广榜 it always was.
+          if (state.scope == MiningRankScope.referrals)
+            ReferralCenterCard(onNavigate: widget.onNavigate),
           if (rank == null)
             LaunchStateBlock(
               prefix: 'intel-rank',
@@ -285,6 +290,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
               amount: Decimal.fromInt(items[index].invitedCount),
               figure: '${items[index].invitedCount}',
               spoken: '邀请人数',
+              onTap: _profileTap(items[index].display, items[index].isSelf),
             ),
         ]);
     }
@@ -356,7 +362,18 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
       // A number its owner keeps to themselves is withheld, not unread.
       figure: row.power == null ? '仅本人可见' : loopGroupedFigure(row.power!),
       spoken: row.power == null ? null : '算力',
+      onTap: _profileTap(row.display, row.isSelf),
     );
+  }
+
+  /// S239: a named row opens its owner's page, the reader's own row opens
+  /// 我; an anonymous row opens nothing.
+  VoidCallback? _profileTap(MiningRankIdentity identity, bool isSelf) {
+    final location = loopProfileFaceLocation(
+      identity is MiningRankAlias ? identity.publicProfileId : null,
+      isSelf: isSelf,
+    );
+    return location == null ? null : () => widget.onNavigate(location);
   }
 
   static String _identityName(MiningRankIdentity identity, MiningRank rank) =>
@@ -1155,10 +1172,15 @@ class IntelRankSelfRow extends ConsumerWidget {
         size: intelRankRowFaceSize,
       );
     }
+    final selfTap =
+        rank.scope == MiningRankScope.communities && community != null
+        ? null
+        : () => LoopProfileFaceLink.push(context, loopOwnProfileLocation);
     return IntelRankRow(
       position: me.rank,
       leading: face,
       name: name,
+      onTap: selfTap,
       caption: referrals ? '直接邀请' : null,
       isSelf: true,
       figure: referrals ? me.value : loopGroupedFigure(me.value),

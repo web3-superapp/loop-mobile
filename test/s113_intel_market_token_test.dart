@@ -676,7 +676,7 @@ void main() {
       );
       // No me: 还没有名次 on the ledger card (decision 0182).
       expect(find.text('我的名次\n还没有名次'), findsOneWidget);
-      await tester.tap(find.text('推广'));
+      await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();
       expect(mining.reads.last, (MiningRankScope.referrals, null));
       expect(find.text('我的名次\n第 3 名'), findsOneWidget);

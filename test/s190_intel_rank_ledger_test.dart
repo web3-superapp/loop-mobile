@@ -543,7 +543,7 @@ void main() {
       );
       expect(bar.value, closeTo(3120 / 3420, 1e-9));
 
-      await tester.tap(find.text('推广'));
+      await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();
       expect(find.text('我的名次\n第 3 名'), findsOneWidget);
       expect(find.text('算力榜 · 实时'), findsOneWidget);
@@ -577,7 +577,7 @@ void main() {
       expect(find.text('我的名次\n还没有名次'), findsOneWidget);
       expect(find.textContaining('TOP '), findsNothing);
       expect(_key('intel-rank-self-row'), findsNothing);
-      await tester.tap(find.text('推广'));
+      await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();
       expect(_key('intel-rank-empty'), findsOneWidget);
       final invite = tester.widget<LoopButton>(_key('intel-rank-empty-invite'));

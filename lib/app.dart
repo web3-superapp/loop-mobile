@@ -33,6 +33,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
+import 'package:loop_mobile/core/navigation/invite_link.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -620,7 +621,8 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     final inbox = ref.read(loopProfileLinkInboxProvider);
     if (inbox.pending == null &&
         inbox.pendingRoom == null &&
-        inbox.pendingCommunity == null) {
+        inbox.pendingCommunity == null &&
+        inbox.pendingInvite == null) {
       return;
     }
     final location = router.routerDelegate.currentConfiguration.uri.path;
@@ -628,11 +630,14 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     final loopId = inbox.take();
     final roomCommunityId = inbox.takeRoom();
     final communityId = inbox.takeCommunity();
+    final inviteCode = inbox.takeInvite();
     final target = loopId != null
         ? userProfileLoopIdLocation(loopId)
         : roomCommunityId != null
         ? voiceRoomLinkLocation(roomCommunityId)
-        : communityProfileLocation(communityId!);
+        : communityId != null
+        ? communityProfileLocation(communityId)
+        : referralClaimLocation(inviteCode!);
     scheduleMicrotask(() {
       if (mounted) unawaited(router.push<void>(target));
     });
@@ -848,6 +853,10 @@ GoRouter _buildRouter(
       // delivered the same way. It opens the community's record.
       final linkedCommunity = communityIdFromLinkPath(state.uri.path);
       if (linkedCommunity != null) profileLinks.holdCommunity(linkedCommunity);
+      // Decision 0214: `/i/{code}` is an invite link, held and delivered the
+      // same way. It opens `referral` with the binding form pre-filled.
+      final linkedInvite = inviteCodeFromLinkPath(state.uri.path);
+      if (linkedInvite != null) profileLinks.holdInvite(linkedInvite);
       // Credential pages reachable before a verified session. Everything else
       // stays behind the gate.
       const signedOutRoutes = <String>{
@@ -890,6 +899,10 @@ GoRouter _buildRouter(
       if (linkedCommunity != null) {
         profileLinks.takeCommunity();
         return communityProfileLocation(linkedCommunity);
+      }
+      if (linkedInvite != null) {
+        profileLinks.takeInvite();
+        return referralClaimLocation(linkedInvite);
       }
       // S237 · decision 0204: the component-specimen and fixture pages have
       // no entry in the product and say 组件样例 / 开发预览 / preview. With
@@ -1679,6 +1692,10 @@ GoRouter _buildRouter(
       GoRoute(
         path: '/profile/referral',
         builder: (context, state) => ReferralScreen(
+          key: ValueKey<String>('referral-${state.uri.query}'),
+          initialInviteCode: referralClaimCodeFromQuery(
+            state.uri.queryParameters,
+          ),
           onBack: () => _popOrHome(context),
           onOpenMining: () => context.push(LoopRouteManifest.pathFor('mining')),
         ),

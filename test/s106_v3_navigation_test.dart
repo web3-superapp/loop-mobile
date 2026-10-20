@@ -500,7 +500,7 @@ void main() {
       );
       // Embedded: the tab page owns the bar.
       expect(find.text('算力排行榜'), findsNothing);
-      await tester.tap(find.text('推广'));
+      await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();
       expect(mining.scopes, contains(MiningRankScope.referrals));
       expect(

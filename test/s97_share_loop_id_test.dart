@@ -475,6 +475,39 @@ void main() {
       },
     );
 
+    // Decision 0214: `/i/{code}` invite links reuse the same hold-and-deliver
+    // path and open `referral` with the code.
+    testWidgets('an invite link opens 邀请中心 with the code', (tester) async {
+      await _pumpPreviewApp(tester);
+      await _enterPreview(tester);
+      await _pushPlatformRoute(tester, '/i/loop-7hjkm');
+      expect(find.byKey(const ValueKey<String>('referral-screen')), findsOne);
+      expect(
+        find.byKey(const ValueKey<String>('referral-code=LOOP-7HJKM')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an invite link before sign-in waits for the landing', (
+      tester,
+    ) async {
+      await _pumpPreviewApp(tester);
+      await _pushPlatformRoute(tester, '/i/LOOP-7HJKM');
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(LoopApp)),
+      );
+      expect(
+        container.read(loopProfileLinkInboxProvider).pendingInvite,
+        'LOOP-7HJKM',
+      );
+      await _enterPreview(tester);
+      expect(find.byKey(const ValueKey<String>('referral-screen')), findsOne);
+      expect(
+        container.read(loopProfileLinkInboxProvider).pendingInvite,
+        isNull,
+      );
+    });
+
     testWidgets('a malformed link is an unknown route, not a profile', (
       tester,
     ) async {

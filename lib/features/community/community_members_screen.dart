@@ -23,6 +23,7 @@ import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/features/social/profile_face_link.dart';
 
 /// The UI copy for one server-published governance command.
 ///
@@ -466,10 +467,22 @@ class _CommunityMembersScreenState
     return LoopPersonRow(
       key: ValueKey<String>('member-row-$identity'),
       height: 60,
-      leading: LoopProfileAvatar(
-        avatarRef: entry.profile.avatarRef,
-        alias: entry.profile.displayName,
-        size: 36,
+      // S239: the face opens the member's page (我 for the reader's own row)
+      // even where the row itself opens the governance sheet.
+      leading: LoopProfileFaceLink(
+        key: ValueKey<String>('member-face-$identity'),
+        publicProfileId: entry.profile.publicProfileId,
+        isSelf: entry.isSelf,
+        name: entry.profile.displayName,
+        onOpen: entry.isSelf || widget.onOpenProfile == null
+            ? null
+            : (location) =>
+                  widget.onOpenProfile!(entry.profile.publicProfileId!),
+        child: LoopProfileAvatar(
+          avatarRef: entry.profile.avatarRef,
+          alias: entry.profile.displayName,
+          size: 36,
+        ),
       ),
       title: entry.isSelf
           ? '我 · ${entry.profile.displayName}'

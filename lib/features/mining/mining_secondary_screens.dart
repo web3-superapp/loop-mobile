@@ -1479,7 +1479,7 @@ class _FormulaVersionBlock extends StatelessWidget {
       LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-referral-boost'),
         title: '邀请加成',
-        subtitle: '加成只计入 Mining Power',
+        subtitle: '邀请加成只计入算力',
         trailingCaption: miningFormulaStatusLabel(version.referralBoostStatus),
         position: LoopRowPosition.last,
       ),
