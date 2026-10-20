@@ -79,13 +79,13 @@ void main() {
       },
     );
 
-    testWidgets('a flat label is the 17 section title of decision 0127', (
-      tester,
-    ) async {
+    testWidgets('a flat label is the section title step (decision 0127, '
+        'S241c Arimo 700)', (tester) async {
       await _pumpFlat(tester, const LoopLabel('账号'));
       final label = tester.widget<Text>(find.text('账号'));
-      expect(label.style?.fontSize, LoopType.headingSm.fontSize);
-      expect(label.style?.fontWeight, LoopType.headingSm.fontWeight);
+      expect(label.style?.fontSize, LoopType.sectionTitle.fontSize);
+      expect(label.style?.fontWeight, LoopType.sectionTitle.fontWeight);
+      expect(label.style?.fontFamily, LoopFonts.body);
     });
 
     testWidgets('a flat block button is the 52 stadium Lime button', (
@@ -187,7 +187,8 @@ void main() {
       final destinations = <String>[];
       await _pumpProfile(tester, 'settings', onNavigate: destinations.add);
 
-      // 56 Lime discs, in order, at the head of the page. Decision 0133:
+      // 56 square outlined keys (S241c), in order, at the head of the page.
+      // None is Yellow: the row has no single main action. Decision 0133:
       // 好友 opened 关注与粉丝, a row below, under a second name, and is gone.
       final keys = <String>[
         'profile-share-loop-id',
@@ -209,25 +210,15 @@ void main() {
         expect(rect.bottom, lessThanOrEqualTo(tester.getRect(firstRow).top));
         if (previous != null) expect(rect.left, greaterThan(previous));
         previous = rect.left;
-        final disc = tester.widget<Container>(
-          find
-              .descendant(
-                of: finder,
-                matching: find.byWidgetPredicate(
-                  (widget) =>
-                      widget is Container &&
-                      widget.decoration is BoxDecoration &&
-                      (widget.decoration! as BoxDecoration).shape ==
-                          BoxShape.circle,
-                ),
-              )
-              .first,
+        final face = tester.widget<Container>(
+          find.descendant(
+            of: finder,
+            matching: find.byKey(const ValueKey<String>('loop-round-key-face')),
+          ),
         );
-        expect(
-          (disc.decoration! as BoxDecoration).color,
-          LoopColors.lime,
-          reason: key,
-        );
+        final decoration = face.decoration! as BoxDecoration;
+        expect(decoration.shape, BoxShape.rectangle, reason: key);
+        expect(decoration.color, LoopColors.card, reason: key);
       }
 
       expect(_labels(tester), containsAllInOrder(<String>['账号', '资产与挖矿']));

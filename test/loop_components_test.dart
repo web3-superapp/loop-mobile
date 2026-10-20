@@ -109,6 +109,7 @@ void main() {
             semanticLabel: '打开',
             child: const Text('chalk'),
           ),
+          const LoopChalkCard(light: true, child: Text('plate')),
           const LoopSurfaceCard(child: Text('card')),
           const LoopRecordCard(child: Text('record')),
         ],
@@ -128,9 +129,18 @@ void main() {
     expect(quiet.boxShadow, isNull);
     expect(quiet.color, LoopColors.card);
     expect(quiet.border, isNotNull);
+    // S241c: the default `.chalk-card` is the flat dark card with Chalk ink;
+    // `light: true` keeps the Chalk plate with Ink ink.
     final chalk = boxOf('chalk').decoration as BoxDecoration;
-    expect(chalk.color, LoopColors.chalk);
+    expect(chalk.color, LoopColors.card);
     expect(chalk.borderRadius, LoopRadius.card);
+    expect((chalk.border! as Border).top.color, LoopColors.line2);
+    final plate = boxOf('plate').decoration as BoxDecoration;
+    expect(plate.color, LoopColors.chalk);
+    expect(
+      DefaultTextStyle.of(tester.element(find.text('plate'))).style.color,
+      LoopColors.ink,
+    );
     final card = boxOf('card').decoration as BoxDecoration;
     expect(card.color, LoopColors.card);
     expect(card.boxShadow, isNull);
@@ -142,7 +152,7 @@ void main() {
     );
     expect(
       DefaultTextStyle.of(tester.element(find.text('chalk'))).style.color,
-      LoopColors.ink,
+      LoopColors.chalk,
     );
     expect(
       DefaultTextStyle.of(tester.element(find.text('quiet'))).style.color,

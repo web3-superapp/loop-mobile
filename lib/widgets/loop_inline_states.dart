@@ -32,7 +32,7 @@ class LoopInlineUnavailable extends StatelessWidget {
     this.onRetry,
     this.retrying = false,
     this.icon = 'warn',
-    this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    this.padding = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
     this.detail,
     this.maxLines = 1,
     this.detailMaxLines = 1,
@@ -195,7 +195,7 @@ class LoopProvenanceLine extends StatelessWidget {
     this.prefix,
     this.detail,
     this.now,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    this.padding = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
   });
 
   /// Provider labels, in the order they should be named. Duplicates are

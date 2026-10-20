@@ -478,7 +478,7 @@ class LoopFolioPrimary extends StatelessWidget {
     this.compact = false,
     this.trailing,
     this.headingTone = LoopFolioHeadingTone.accent,
-    this.ring = true,
+    this.ring = false,
     this.margin,
     this.squareBottom = false,
     this.headingLoading = false,
@@ -564,8 +564,9 @@ class LoopFolioPrimary extends StatelessWidget {
   /// The prototype draws it on one selector only —
   /// `.folio-primary.folio-state::after` — so a Chalk hero has no decorative
   /// circle in its top-right corner and LOOP's did (audit 2026-09-20 · B.4).
-  /// The default keeps every existing caller's pixels; a page checked against
-  /// the prototype turns it off.
+  /// Off by default since S241c: the flat looplabs card (decision 0210)
+  /// carries no ornament, and pages were turning it off one by one. A page
+  /// that still wants it passes `ring: true`.
   final bool ring;
 
   /// The room the card keeps around itself.
@@ -657,8 +658,20 @@ class LoopFolioPrimary extends StatelessWidget {
       // `#111114` surface behind a 1px `#38333E` edge, no glow, no lift.
       LoopFolioVariant.quiet => BoxDecoration(
         color: LoopColors.card,
-        borderRadius: radius,
-        border: Border.all(color: LoopColors.line2),
+        // Square either way (decision 0210); a radius beside an open side
+        // would make the border non-uniform with a radius, which Flutter
+        // refuses to paint.
+        borderRadius: squareBottom ? null : radius,
+        // A folio welded into a composite leaves its bottom edge open: the
+        // strip beneath draws the `#2A292F` seam, so the two read as one
+        // card with one divider rather than two stacked frames (S241c).
+        border: squareBottom
+            ? const Border(
+                top: BorderSide(color: LoopColors.line2),
+                left: BorderSide(color: LoopColors.line2),
+                right: BorderSide(color: LoopColors.line2),
+              )
+            : Border.all(color: LoopColors.line2),
       ),
     };
     final ringColor = variant == LoopFolioVariant.quiet
@@ -1202,13 +1215,21 @@ class LoopLedgerTexturePainter extends CustomPainter {
       oldDelegate.spec != spec;
 }
 
-/// `.chalk-card`: high-contrast explanation, confirmation or review surface.
+/// `.chalk-card`: the explanation, confirmation or review surface.
+///
+/// Since S241c (decision 0210) it is the flat dark looplabs card by default:
+/// the `#111114` ground behind a 1px `#38333E` edge, square, with Chalk ink
+/// declared for its subtree, so a heading inside it is Chalk. A press turns
+/// the edge Purple. [light] keeps the old Chalk plate with Ink copy for the
+/// few surfaces that must be light — a receive QR code that has to be
+/// scanned off the screen.
 class LoopChalkCard extends StatelessWidget {
   const LoopChalkCard({
     required this.child,
     super.key,
     this.onTap,
     this.semanticLabel,
+    this.light = false,
     this.padding = const EdgeInsets.all(LoopSpacing.card),
     this.margin = const EdgeInsets.fromLTRB(
       LoopSpacing.page,
@@ -1221,26 +1242,36 @@ class LoopChalkCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
   final String? semanticLabel;
+
+  /// The Chalk plate with Ink copy instead of the dark card.
+  final bool light;
   final EdgeInsets padding;
   final EdgeInsets margin;
 
   @override
   Widget build(BuildContext context) {
+    final ink = light ? LoopColors.ink : LoopColors.chalk;
     return Padding(
       padding: margin,
       child: _Pressable(
         key: const ValueKey<String>('loop-chalk-card'),
         onTap: onTap,
         semanticLabel: semanticLabel,
-        decoration: const BoxDecoration(
-          color: LoopColors.chalk,
-          borderRadius: LoopRadius.card,
-        ),
+        decoration: light
+            ? const BoxDecoration(
+                color: LoopColors.chalk,
+                borderRadius: LoopRadius.card,
+              )
+            : BoxDecoration(
+                color: LoopColors.card,
+                borderRadius: LoopRadius.card,
+                border: Border.all(color: LoopColors.line2),
+              ),
         borderRadius: LoopRadius.card,
         child: DefaultTextStyle.merge(
-          style: const TextStyle(color: LoopColors.ink),
+          style: TextStyle(color: ink),
           child: IconTheme.merge(
-            data: const IconThemeData(color: LoopColors.ink),
+            data: IconThemeData(color: ink),
             child: Padding(padding: padding, child: child),
           ),
         ),
@@ -2156,7 +2187,9 @@ class LoopBadge extends StatelessWidget {
   }
 }
 
-/// `.seg`: peer filter chip, 44px minimum, Lime when selected.
+/// `.seg`: peer filter chip, 44px minimum. The chosen chip wears the quiet
+/// selected state in both variants (S241c, decision 0210): Purple 9 % ground,
+/// a 2px Purple underline and a Yellow word.
 class LoopSeg extends StatelessWidget {
   const LoopSeg({
     required this.label,
@@ -2174,9 +2207,9 @@ class LoopSeg extends StatelessWidget {
   /// label is drawn in Text3 rather than Text2.
   final bool dimmed;
 
-  /// The OKX filter look (decision 0122): unselected is a plain word, the
-  /// selected chip a solid dark-grey pill with the label in Chalk. Lime stays
-  /// for primary buttons, round action keys, badges and progress.
+  /// The unframed filter look (decision 0122): an unselected chip is a plain
+  /// word with no frame. Unset, the chip keeps its 1px `#38333E` frame. Both
+  /// variants choose the same way (S241c).
   final bool quiet;
 
   final String label;
@@ -2212,23 +2245,26 @@ class LoopSeg extends StatelessWidget {
       enabled: onSelected != null,
       child: Material(
         // Decision 0210 (docs/42 附A §5, the hook-mode segment): a chosen
-        // quiet chip is a Purple 9 % ground with a 2px Purple underline and
-        // a Yellow word; a framed chip is square, Yellow when chosen.
-        color: quiet
-            ? (selected ? LoopColors.purpleSoft : Colors.transparent)
-            : (selected ? LoopColors.yellow : LoopColors.card),
-        shape: quiet
-            ? (selected
-                  ? const Border(
-                      bottom: BorderSide(color: LoopColors.purple, width: 2),
-                    )
-                  : const RoundedRectangleBorder())
-            : RoundedRectangleBorder(
-                borderRadius: LoopRadius.button,
-                side: BorderSide(
-                  color: selected ? LoopColors.yellow : LoopColors.line2,
-                ),
-              ),
+        // chip is a Purple 9 % ground with a 2px Purple underline and a
+        // Yellow word. S241c made the framed chip choose the same way — it
+        // keeps its `#38333E` frame on the other three sides — so Yellow is
+        // never a solid selection block.
+        color: selected
+            ? LoopColors.purpleSoft
+            : (quiet ? Colors.transparent : LoopColors.card),
+        shape: switch ((quiet, selected)) {
+          (_, true) => Border(
+            top: quiet ? BorderSide.none : _segFrame,
+            left: quiet ? BorderSide.none : _segFrame,
+            right: quiet ? BorderSide.none : _segFrame,
+            bottom: const BorderSide(color: LoopColors.purple, width: 2),
+          ),
+          (true, false) => const RoundedRectangleBorder(),
+          (false, false) => const RoundedRectangleBorder(
+            borderRadius: LoopRadius.button,
+            side: _segFrame,
+          ),
+        },
         child: InkWell(
           onTap: onSelected == null
               ? onBlocked
@@ -2268,11 +2304,12 @@ class LoopSeg extends StatelessWidget {
     );
   }
 
+  /// The framed chip's 1px `#38333E` edge.
+  static const BorderSide _segFrame = BorderSide(color: LoopColors.line2);
+
   Widget _segLabel() {
     final idle = dimmed ? LoopColors.text3 : LoopColors.text2;
-    final colour = quiet
-        ? (selected ? LoopColors.yellow : idle)
-        : (selected ? LoopColors.ink : idle);
+    final colour = selected ? LoopColors.yellow : idle;
     final text = Text(
       label,
       maxLines: 1,
@@ -2393,10 +2430,20 @@ class LoopButton extends StatelessWidget {
     this.icon,
     this.semanticLabel,
     this.tone = LoopButtonTone.lime,
+    this.selected,
   }) : assert(
          label != '' || (icon != null && semanticLabel != null),
          'A button with no label must carry a glyph and a semantic label.',
        );
+
+  /// Whether this button is one choice of a set and is the chosen one.
+  ///
+  /// `null` — the default — is an ordinary action button. A button used as
+  /// a choice never paints the chosen one as a solid Yellow block (S241c,
+  /// decision 0210): `true` is the quiet selected state the segments use —
+  /// Purple 9 % ground, a 2px Purple underline, a Yellow word — and `false`
+  /// is the outlined secondary button. [primary] is ignored for a choice.
+  final bool? selected;
 
   final String label;
   final VoidCallback? onPressed;
@@ -2416,15 +2463,21 @@ class LoopButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
+    final choice = selected;
+    final chosen = choice ?? false;
     // A disabled primary keeps the shape but not the fill (自选管理's 保存 was
     // read as "disabled-looking" while it was disabled).
-    final paintPrimary = primary && enabled;
+    final paintPrimary = primary && enabled && choice == null;
     final wide = block && LoopFlat.of(context);
     final inkFill = tone == LoopButtonTone.ink;
-    final foreground = paintPrimary
+    final foreground = chosen
+        ? LoopColors.yellow
+        : paintPrimary
         ? (inkFill ? LoopColors.chalk : LoopColors.ink)
         : LoopGround.inkOf(context);
-    final Color? fill = paintPrimary
+    final Color? fill = chosen
+        ? LoopColors.purpleSoft
+        : paintPrimary
         ? switch (tone) {
             LoopButtonTone.brass => LoopColors.brass,
             LoopButtonTone.ink => LoopColors.ink,
@@ -2439,12 +2492,13 @@ class LoopButton extends StatelessWidget {
     // `#4A4754` outline on the Ink page, the ground's own ink weight on a
     // light card.
     final onDarkGround = LoopGround.inkOf(context).computeLuminance() > 0.4;
-    final edge = paintPrimary
+    final edge = paintPrimary || chosen
         ? null
         : (onDarkGround ? LoopColors.line3 : LoopGround.edgeOf(context));
     return MergeSemantics(
       child: Semantics(
         button: true,
+        selected: choice,
         enabled: enabled,
         label: semanticLabel ?? label,
         child: Opacity(
@@ -2457,6 +2511,7 @@ class LoopButton extends StatelessWidget {
             fill: fill,
             pressedFill: pressedFill,
             edge: edge,
+            underline: chosen,
             lifts: paintPrimary,
             child: Container(
               constraints: BoxConstraints(
@@ -2505,12 +2560,16 @@ class _LoopButtonFace extends StatefulWidget {
     required this.lifts,
     required this.child,
     super.key,
+    this.underline = false,
   });
 
   final VoidCallback? onPressed;
   final Color? fill;
   final Color? pressedFill;
   final Color? edge;
+
+  /// The chosen choice's 2px Purple underline.
+  final bool underline;
   final bool lifts;
   final Widget child;
 
@@ -2544,7 +2603,13 @@ class _LoopButtonFaceState extends State<_LoopButtonFace> {
       ),
       // The edge is painted over the face rather than laid out around it, so
       // an outlined button is exactly as tall as a filled one.
-      foregroundDecoration: edge == null
+      foregroundDecoration: widget.underline
+          ? const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: LoopColors.purple, width: 2),
+              ),
+            )
+          : edge == null
           ? null
           : BoxDecoration(
               border: Border.fromBorderSide(

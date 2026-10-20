@@ -3,36 +3,43 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
-/// What a [LoopRoundKey] is for, which decides its disc.
+/// What a [LoopRoundKey] is for, which decides its face.
 enum LoopRoundKeyTone {
-  /// The OKX action key: a solid Lime disc with an Ink glyph.
+  /// The one main action of a key row: a flat Yellow square with an Ink
+  /// glyph. A page names it explicitly; it is no longer the default (S241c).
   primary,
 
-  /// A key on the card ground with a Chalk glyph — the voice-room bar, where
-  /// four Lime discs side by side would say nothing about which is on.
+  /// Every other key: the `#111114` card behind a 1px `#4A4754` edge with a
+  /// Chalk glyph (decision 0210). An [LoopRoundKey.active] key (an open
+  /// microphone, a raised hand) is selected, so it wears the Purple state —
+  /// Purple 9 % ground behind a Purple edge.
   quiet,
 
-  /// The leaving key (结束 / 离开): the fall colour.
+  /// The leaving key (结束 / 离开): the outlined card with the glyph in the
+  /// fall colour.
   fall,
 }
 
-/// The size of a round key's disc (decision 0127, OKX 4908).
+/// The side of a key's square face (decision 0127, OKX 4908). The name is
+/// retained from the round key; the face is square since S241c.
 const double loopRoundKeyDiameter = 56;
 
-/// One OKX round action key (decision 0127): a 56 disc, a 24 glyph in it and
-/// the word under it at 13. A key that cannot act keeps its place on the
-/// quiet ground in the auxiliary grey; if it was given a reason, a tap says
-/// it.
+/// One action key (decision 0127, reskinned by decision 0210 / S241c): a 56
+/// square face, a 24 glyph in it and the word under it at 13. The face is
+/// square and flat; a press turns its edge Purple. A key that cannot act
+/// keeps its place on the outlined card in the auxiliary grey; if it was
+/// given a reason, a tap says it.
 ///
-/// The wallet's four keys (decision 0122) are the same shape; this is the
-/// shared one for the secondary pages — community, voice room, user profile.
-class LoopRoundKey extends StatelessWidget {
+/// The default is the outlined [LoopRoundKeyTone.quiet] key; a row names its
+/// single main action [LoopRoundKeyTone.primary], so a row of keys never
+/// reads as several Yellow calls to action at once.
+class LoopRoundKey extends StatefulWidget {
   const LoopRoundKey({
     required this.icon,
     required this.label,
     required this.onPressed,
     super.key,
-    this.tone = LoopRoundKeyTone.primary,
+    this.tone = LoopRoundKeyTone.quiet,
     this.active = false,
     this.badge,
     this.semanticLabel,
@@ -45,10 +52,10 @@ class LoopRoundKey extends StatelessWidget {
   final LoopRoundKeyTone tone;
 
   /// A quiet key whose state is on (an open microphone, a raised hand) wears
-  /// the Lime disc.
+  /// the Purple selected face.
   final bool active;
 
-  /// A small Lime count over the disc (pending hands).
+  /// A small Yellow count over the face (pending hands).
   final String? badge;
   final String? semanticLabel;
 
@@ -56,96 +63,125 @@ class LoopRoundKey extends StatelessWidget {
   final VoidCallback? onBlocked;
 
   @override
+  State<LoopRoundKey> createState() => _LoopRoundKeyState();
+}
+
+class _LoopRoundKeyState extends State<LoopRoundKey> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value || !mounted) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    final Color disc;
+    final enabled = widget.onPressed != null;
+    final Color face;
+    final Color edge;
     final Color glyph;
     if (!enabled) {
-      disc = LoopColors.card2;
+      face = LoopColors.card;
+      edge = LoopColors.line;
       glyph = LoopColors.text3;
     } else {
-      switch (tone) {
+      switch (widget.tone) {
         case LoopRoundKeyTone.primary:
-          disc = LoopColors.lime;
+          face = LoopColors.yellow;
+          edge = LoopColors.yellow;
           glyph = LoopColors.ink;
         case LoopRoundKeyTone.quiet:
-          disc = active ? LoopColors.lime : LoopColors.card2;
-          glyph = active ? LoopColors.ink : LoopColors.chalk;
-        case LoopRoundKeyTone.fall:
-          disc = LoopColors.fall;
+          face = widget.active ? LoopColors.purpleSoft : LoopColors.card;
+          edge = widget.active ? LoopColors.purple : LoopColors.line3;
           glyph = LoopColors.chalk;
+        case LoopRoundKeyTone.fall:
+          face = LoopColors.card;
+          edge = LoopColors.line3;
+          glyph = LoopColors.fall;
       }
     }
-    final count = badge;
+    final pressed = _pressed && enabled;
+    final count = widget.badge;
+    final onTap = widget.onPressed ?? widget.onBlocked;
     return Semantics(
       button: true,
       enabled: enabled,
       label:
-          semanticLabel ??
-          (count == null ? label : '$label，$count') + (enabled ? '' : '，暂不可用'),
+          widget.semanticLabel ??
+          (count == null ? widget.label : '${widget.label}，$count') +
+              (enabled ? '' : '，暂不可用'),
       // The gesture below is excluded with the subtree; the tap is offered
       // here so a screen reader can press the key (decision 0126).
-      onTap: onPressed ?? onBlocked,
+      onTap: onTap,
       excludeSemantics: true,
-      child: LoopPressable(
-        onTap: onPressed ?? onBlocked,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 80, minWidth: 64),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Stack(
-                clipBehavior: Clip.none,
-                children: <Widget>[
-                  Container(
-                    width: loopRoundKeyDiameter,
-                    height: loopRoundKeyDiameter,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: disc,
-                      shape: BoxShape.circle,
-                    ),
-                    child: LoopIcon(icon, size: 24, color: glyph),
-                  ),
-                  if (count != null)
-                    Positioned(
-                      right: -4,
-                      top: -2,
-                      child: Container(
-                        constraints: const BoxConstraints(minWidth: 20),
-                        height: 20,
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: LoopColors.lime,
-                          borderRadius: LoopRadius.badge,
-                          border: Border.all(color: LoopColors.ink, width: 2),
-                        ),
-                        child: Text(
-                          count,
-                          style: LoopTypography.withWeight(
-                            LoopType.figureXs,
-                            FontWeight.w600,
-                          ).copyWith(color: LoopColors.ink),
+      child: Listener(
+        onPointerDown: (_) => _setPressed(true),
+        onPointerUp: (_) => _setPressed(false),
+        onPointerCancel: (_) => _setPressed(false),
+        child: LoopPressable(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 80, minWidth: 64),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    Container(
+                      key: const ValueKey<String>('loop-round-key-face'),
+                      width: loopRoundKeyDiameter,
+                      height: loopRoundKeyDiameter,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: face,
+                        borderRadius: LoopRadius.button,
+                        border: Border.all(
+                          color: pressed ? LoopColors.purple : edge,
                         ),
                       ),
+                      child: LoopIcon(widget.icon, size: 24, color: glyph),
                     ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    LoopTypography.withWeight(
-                      LoopType.titleSm,
-                      FontWeight.w600,
-                    ).copyWith(
-                      color: enabled ? LoopColors.chalk : LoopColors.text3,
-                    ),
-              ),
-            ],
+                    if (count != null)
+                      Positioned(
+                        right: -4,
+                        top: -2,
+                        child: Container(
+                          constraints: const BoxConstraints(minWidth: 20),
+                          height: 20,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: LoopColors.yellow,
+                            borderRadius: LoopRadius.badge,
+                            border: Border.all(color: LoopColors.ink, width: 2),
+                          ),
+                          child: Text(
+                            count,
+                            style: LoopTypography.withWeight(
+                              LoopType.figureXs,
+                              FontWeight.w600,
+                            ).copyWith(color: LoopColors.ink),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      LoopTypography.withWeight(
+                        LoopType.titleSm,
+                        FontWeight.w600,
+                      ).copyWith(
+                        color: enabled ? LoopColors.chalk : LoopColors.text3,
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

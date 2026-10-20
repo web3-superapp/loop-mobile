@@ -287,7 +287,7 @@ class LoopSectionTitle extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopType.headingSm,
+                style: LoopType.sectionTitle,
               ),
             ),
           ),

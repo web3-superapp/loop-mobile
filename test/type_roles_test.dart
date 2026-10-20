@@ -285,7 +285,8 @@ void main() {
       ),
     );
     _expectStep(tester, '资产', LoopType.eyebrow);
-    _expectStep(tester, '账户', LoopType.headingSm);
+    // S241c: a flat section title is Arimo 700, not Anton.
+    _expectStep(tester, '账户', LoopType.sectionTitle);
     _expectStep(tester, '卡片说明', LoopType.caption);
     _expectStep(tester, '平铺说明', LoopType.caption);
     _expectStep(tester, '余额读不到', LoopType.captionSm);

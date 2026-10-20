@@ -165,12 +165,7 @@ void main() {
       );
       final disc = find.descendant(
         of: share,
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is Container &&
-              widget.decoration is BoxDecoration &&
-              (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
-        ),
+        matching: find.byKey(const ValueKey<String>('loop-round-key-face')),
       );
       expect(tester.getSize(disc), const Size(56, 56));
       expect(

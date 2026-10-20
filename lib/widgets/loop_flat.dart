@@ -53,7 +53,7 @@ TextStyle loopFlatTitleStyle() => LoopType.flatTitle;
 
 /// The flat section title style: 17 semibold, the step `LoopSectionTitle`
 /// (decision 0127) uses, so both second-level passes read alike.
-TextStyle loopFlatSectionStyle() => LoopType.headingSm;
+TextStyle loopFlatSectionStyle() => LoopType.sectionTitle;
 
 /// Five-step account opening progress: one dot per step, the current one a
 /// Lime pill, the step's name beside it (decision 0126 replaces `04 / 05`).
@@ -240,7 +240,9 @@ class LoopFlatField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 6),
+            // On the field's own edge, the page gutter (S241c): an extra
+            // inset put the label four in from everything else on the page.
+            padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               label,
               style: LoopType.titleSm.copyWith(color: LoopColors.text3),
@@ -258,7 +260,7 @@ class LoopFlatField extends StatelessWidget {
             field,
           if (footnote case final String line)
             Padding(
-              padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+              padding: const EdgeInsets.only(top: 6),
               child: Text(
                 line,
                 style: LoopType.captionSm.copyWith(
