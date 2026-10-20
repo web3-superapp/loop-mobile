@@ -70,6 +70,14 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     if (session.mode == LoopSessionMode.signingOut) {
       return const PrivySessionSignOutScreen();
     }
+    // S253: a session that may enter the product is never a reason to draw
+    // the credential form. The restore answering 「signed in」 rebuilds this
+    // page in the same frame, while the router's move to the launch page
+    // only lands a frame or two later — and those frames were the welcome
+    // form flashing between 「正在恢复登录状态」 and 「正在准备你的账号」
+    // (device report S237 · 01c). The launch frame stays until the router
+    // takes the owner away.
+    if (session.canEnterProduct) return const PrivySessionHandoverFrame();
 
     final config = ref.watch(appConfigProvider);
     final previewEnabled = ref.watch(developmentPreviewEnabledProvider);
@@ -526,6 +534,32 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                 ],
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The frame `/auth` draws for a session that is already signed in (S253).
+///
+/// It only ever stands for the frame or two before the router moves the
+/// owner to the launch page, so it is the launch ground and the wordmark the
+/// frames on either side of it wear — nothing that animates, nothing to
+/// press, and no credential form.
+class PrivySessionHandoverFrame extends StatelessWidget {
+  const PrivySessionHandoverFrame({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      key: ValueKey<String>('privy-auth-handover'),
+      body: SafeArea(
+        child: Center(
+          child: LoopBrandMark(
+            kind: LoopBrandMarkKind.wordmark,
+            height: 88,
+            semanticLabel: 'LOOP',
           ),
         ),
       ),

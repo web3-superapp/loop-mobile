@@ -96,9 +96,11 @@ void main() {
       expect(title, findsOneWidget);
       // The column beside four tools is about 120pt wide. At the bar's 24pt
       // heading step that was four characters and an ellipsis; `dense` prints
-      // it at 18pt over at most two lines, which holds the whole name — and
-      // the ellipsis is still there for one that does not fit.
-      expect(tester.widget<Text>(title).maxLines, 2);
+      // it at 18pt, which holds the whole name — and the ellipsis is still
+      // there for one that does not fit. S253: the room's size now sits on
+      // the line under the name, so the bar gives the name one line.
+      expect(find.text('128 成员'), findsOneWidget);
+      expect(tester.widget<Text>(title).maxLines, 1);
       expect(tester.widget<Text>(title).overflow, TextOverflow.ellipsis);
       expect(
         tester.renderObject<RenderParagraph>(title).didExceedMaxLines,

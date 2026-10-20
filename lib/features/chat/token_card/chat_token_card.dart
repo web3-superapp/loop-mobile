@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
@@ -76,7 +77,7 @@ bool _statesAMechanism(MarketSecurityFact fact) {
 /// the 1H line, three metrics, the LOOP community, the contract facts it read,
 /// and four actions — two of which state why they cannot be taken rather than
 /// disappearing.
-class ChatTokenCard extends ConsumerWidget {
+class ChatTokenCard extends ConsumerStatefulWidget {
   const ChatTokenCard({required this.address, super.key, this.onNavigate});
 
   /// The lower-cased address [loopDetectChatTokenAddresses] found.
@@ -86,8 +87,32 @@ class ChatTokenCard extends ConsumerWidget {
   /// the router does it.
   final void Function(String location)? onNavigate;
 
+  @override
+  ConsumerState<ChatTokenCard> createState() => _ChatTokenCardState();
+}
+
+/// The words of a card whose read failed while the device has a network
+/// (S253). It is a failed load, not an offline device, and a tap retries it.
+const String loopChatTokenCardFailedMessage = '加载失败，点按重试';
+
+class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
+  String get address => widget.address;
+
+  @override
+  void initState() {
+    super.initState();
+    // S253: a card scrolled back into view after a transient failure asks
+    // once more by itself; the cache keeps that to one retry per failure.
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      unawaited(
+        ref.read(chatTokenCardCacheProvider.notifier).retryOnce(address),
+      );
+    });
+  }
+
   void _open(BuildContext context, String location) {
-    final navigate = onNavigate;
+    final navigate = widget.onNavigate;
     if (navigate != null) {
       navigate(location);
       return;
@@ -96,7 +121,7 @@ class ChatTokenCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final cache = ref.watch(chatTokenCardCacheProvider.notifier);
     final held = ref.watch(
       chatTokenCardCacheProvider.select((entries) => entries[address]),
@@ -173,17 +198,37 @@ class ChatTokenCard extends ConsumerWidget {
         maxLines: 2,
         detailMaxLines: 4,
       ),
-      LoopChainFailureKind.offline ||
-      LoopChainFailureKind.timedOut => LoopInlineUnavailable(
+      // The device reports no network at all: only this is 「离线」.
+      LoopChainFailureKind.offline => LoopInlineUnavailable(
         key: ValueKey<String>('chat-token-card-offline-$address'),
         icon: 'offline',
-        message: entry.asset.failureKind == LoopChainFailureKind.timedOut
-            ? 'LOOP 响应超时，没有读到这个合约'
-            : '设备离线，没有读这个合约',
+        message: '设备离线，没有读这个合约',
         detail: loopChainFailureReason(entry.asset.failureKind),
         maxLines: 2,
         detailMaxLines: 4,
         onRetry: () => unawaited(cache.resolve(address, force: true)),
+      ),
+      // S253: the request failed or ran out of time while the device had a
+      // network. That is a failed load, and the whole line retries it.
+      LoopChainFailureKind.timedOut ||
+      LoopChainFailureKind.readFailed => Semantics(
+        button: true,
+        label: loopChatTokenCardFailedMessage,
+        child: LoopPressable(
+          scale: false,
+          onTap: () => unawaited(cache.resolve(address, force: true)),
+          child: LoopInlineUnavailable(
+            key: ValueKey<String>('chat-token-card-failed-$address'),
+            icon: 'warn',
+            message: loopChatTokenCardFailedMessage,
+            detail: entry.asset.failureKind == LoopChainFailureKind.timedOut
+                ? 'LOOP 响应超时 · ${loopChatTokenShortAddress(address)}'
+                : '没有读到这个合约 · ${loopChatTokenShortAddress(address)}',
+            maxLines: 2,
+            detailMaxLines: 2,
+            onRetry: () => unawaited(cache.resolve(address, force: true)),
+          ),
+        ),
       ),
       // Nothing has failed and nothing has answered yet.
       null => LoopTokenCard(

@@ -7,7 +7,10 @@
 // conversation however many bubbles name it.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -107,6 +110,8 @@ Future<List<String>> _pumpCard(
   LoopV2MetaSnapshot? meta,
   bool settle = true,
   int cards = 1,
+  bool? transport,
+  List<Override> overrides = const <Override>[],
 }) async {
   final navigated = <String>[];
   await pumpS5Page(
@@ -127,8 +132,22 @@ Future<List<String>> _pumpCard(
     market: market,
     meta: meta,
     settle: settle,
+    overrides: <Override>[
+      loopDeviceTransportProvider.overrideWithValue(_Transport(transport)),
+      ...overrides,
+    ],
   );
   return navigated;
+}
+
+/// What the device reports about its network, held still for one test.
+final class _Transport implements LoopDeviceTransport {
+  const _Transport(this.value);
+
+  final bool? value;
+
+  @override
+  Future<bool?> hasTransport() async => value;
 }
 
 void main() {
@@ -479,6 +498,7 @@ void main() {
             failure: LoopChainFailureKind.offline,
           ),
         ),
+        transport: false,
       );
 
       expect(
@@ -492,6 +512,182 @@ void main() {
         isA<LoopInlineUnavailable>(),
       );
       expect(find.text('重试'), findsOneWidget);
+    });
+  });
+
+  // S253 (S237 / S240 device reports): a card read that failed while the
+  // network was up said 「设备离线」 and its retry seemed to do nothing.
+  group('S253 · a failed read is not an offline device', () {
+    void bumpRecovery(WidgetTester tester) {
+      ProviderScope.containerOf(
+        tester.element(find.byType(ChatTokenCard).first),
+      ).read(loopNetworkRecoveryTickProvider.notifier).bump();
+    }
+
+    testWidgets('a connection failure with a network up says 加载失败', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          value: s5Detail(),
+          failure: LoopChainFailureKind.offline,
+          failingResolves: 1,
+        ),
+      );
+      await _pumpCard(tester, market: market, transport: true);
+
+      expect(
+        find.byKey(ValueKey<String>('chat-token-card-offline-$_address')),
+        findsNothing,
+      );
+      expect(find.textContaining('设备离线'), findsNothing);
+      expect(
+        find.byKey(ValueKey<String>('chat-token-card-failed-$_address')),
+        findsOneWidget,
+      );
+      expect(find.text(loopChatTokenCardFailedMessage), findsOneWidget);
+
+      // The whole line is the retry, and the retry is a new read.
+      await tester.tap(find.text(loopChatTokenCardFailedMessage));
+      await tester.pumpAndSettle();
+      expect(market.assetReads, hasLength(2));
+      expect(
+        find.byKey(ValueKey<String>('chat-token-card-$_address')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a platform that cannot say is not offline either', (
+      tester,
+    ) async {
+      await _pumpCard(
+        tester,
+        market: FakeMarketReadGateway(
+          asset: S5Answer<MarketAssetDetail>(
+            failure: LoopChainFailureKind.offline,
+          ),
+        ),
+      );
+      expect(find.text(loopChatTokenCardFailedMessage), findsOneWidget);
+      expect(find.textContaining('设备离线'), findsNothing);
+    });
+
+    testWidgets('a timed-out read is a failed load with a retry', (
+      tester,
+    ) async {
+      await _pumpCard(
+        tester,
+        market: FakeMarketReadGateway(
+          asset: S5Answer<MarketAssetDetail>(
+            failure: LoopChainFailureKind.timedOut,
+          ),
+        ),
+        transport: true,
+      );
+      expect(find.text(loopChatTokenCardFailedMessage), findsOneWidget);
+    });
+
+    testWidgets('the connection coming back retries once, by itself', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          value: s5Detail(),
+          failure: LoopChainFailureKind.readFailed,
+          failingResolves: 1,
+        ),
+      );
+      await _pumpCard(tester, market: market, transport: true);
+      expect(find.text(loopChatTokenCardFailedMessage), findsOneWidget);
+      expect(market.assetReads, hasLength(1));
+
+      bumpRecovery(tester);
+      await tester.pumpAndSettle();
+      expect(market.assetReads, hasLength(2));
+      expect(
+        find.byKey(ValueKey<String>('chat-token-card-$_address')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('one failure buys one automatic retry, not one per tick', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          failure: LoopChainFailureKind.readFailed,
+        ),
+      );
+      await _pumpCard(tester, market: market, transport: true);
+      expect(market.assetReads, hasLength(1));
+
+      bumpRecovery(tester);
+      await tester.pumpAndSettle();
+      bumpRecovery(tester);
+      await tester.pumpAndSettle();
+      expect(market.assetReads, hasLength(2));
+      expect(find.text(loopChatTokenCardFailedMessage), findsOneWidget);
+    });
+
+    testWidgets('a card shown again after a failure asks once more', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          value: s5Detail(),
+          failure: LoopChainFailureKind.readFailed,
+          failingResolves: 1,
+        ),
+      );
+      final shown = ValueNotifier<bool>(true);
+      addTearDown(shown.dispose);
+      await pumpS5Page(
+        tester,
+        Scaffold(
+          body: ValueListenableBuilder<bool>(
+            valueListenable: shown,
+            builder: (context, visible, _) => ListView(
+              children: <Widget>[
+                const ChatTokenCard(key: ValueKey<int>(0), address: _address),
+                if (visible)
+                  const ChatTokenCard(key: ValueKey<int>(1), address: _address),
+              ],
+            ),
+          ),
+        ),
+        market: market,
+        overrides: <Override>[
+          loopDeviceTransportProvider.overrideWithValue(const _Transport(true)),
+        ],
+      );
+      expect(market.assetReads, hasLength(1));
+      expect(find.text(loopChatTokenCardFailedMessage), findsNWidgets(2));
+
+      // The second bubble scrolls out and back: a new card element mounts.
+      shown.value = false;
+      await tester.pumpAndSettle();
+      expect(market.assetReads, hasLength(1));
+      shown.value = true;
+      await tester.pumpAndSettle();
+      expect(market.assetReads, hasLength(2));
+      expect(
+        find.byKey(ValueKey<String>('chat-token-card-$_address')),
+        findsNWidgets(2),
+      );
+    });
+
+    testWidgets('an unlisted contract is an answer and is never retried', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          failure: LoopChainFailureKind.notFound,
+        ),
+      );
+      await _pumpCard(tester, market: market, transport: true);
+      bumpRecovery(tester);
+      await tester.pumpAndSettle();
+      expect(market.assetReads, hasLength(1));
     });
   });
 

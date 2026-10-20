@@ -16,6 +16,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_appearance.da
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_connection.dart';
+import 'package:loop_mobile/integrations/communication/stream_deleted_message_reconciler.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
 import 'package:loop_mobile/integrations/communication/stream_server_clock_source.dart';
@@ -219,6 +220,7 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
     this.query,
     this.mayPinMessages,
     this.mayPinMessagesFor,
+    this.reconciler,
   });
 
   final StreamChatClient client;
@@ -244,6 +246,10 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
   /// See [LoopStreamChannelSurface.mayPinMessagesFor].
   final bool Function(Channel channel, String userId)? mayPinMessagesFor;
 
+  /// Drops the messages the server deleted while this device was not
+  /// listening (S253 · decision 0216). Defaults to [client]'s own.
+  final LoopStreamDeletedMessageReconciler? reconciler;
+
   @override
   State<LoopStreamMemberChannelBody> createState() =>
       _LoopStreamMemberChannelBodyState();
@@ -257,6 +263,7 @@ class _LoopStreamMemberChannelBodyState
   LoopOutgoingMessageOrder? _outgoingOrder;
   Channel? _orderedChannel;
   StreamSubscription<Event>? _clockSource;
+  StreamSubscription<Event>? _recoveries;
 
   /// The channel this client already holds for [LoopStreamMemberChannelBody.cid]
   /// with this account as a member — the one the inbox row was drawn from —
@@ -281,8 +288,24 @@ class _LoopStreamMemberChannelBodyState
     _connection =
         widget.connection ?? LoopStreamClientConnection(widget.client);
     _clockSource = loopWatchStreamServerClock(widget.client);
+    _recoveries = _watchRecoveries(widget.client);
     _channel = _start();
   }
+
+  LoopStreamDeletedMessageReconciler get _reconciler =>
+      widget.reconciler ?? loopStreamDeletedMessageReconcilerFor(widget.client);
+
+  /// Decision 0216: a connection that comes back has missed whatever the
+  /// server deleted meanwhile, and Stream's own catch-up does not reach a
+  /// message outside the loaded window. The open conversation is compared
+  /// with the server once more.
+  StreamSubscription<Event> _watchRecoveries(StreamChatClient client) =>
+      client.on(EventType.connectionRecovered).listen((_) {
+        final channel = _orderedChannel ?? _cached;
+        if (channel != null && mounted) {
+          unawaited(_reconciler.reconcile(channel));
+        }
+      });
 
   void _takeCached() {
     final cached = loopStreamCachedMemberChannel(
@@ -313,9 +336,11 @@ class _LoopStreamMemberChannelBodyState
         oldWidget.cid != widget.cid ||
         oldWidget.userId != widget.userId) {
       unawaited(_clockSource?.cancel());
+      unawaited(_recoveries?.cancel());
       _connection =
           widget.connection ?? LoopStreamClientConnection(widget.client);
       _clockSource = loopWatchStreamServerClock(widget.client);
+      _recoveries = _watchRecoveries(widget.client);
       _reload();
     }
   }
@@ -327,6 +352,8 @@ class _LoopStreamMemberChannelBodyState
     _outgoingOrder = null;
     unawaited(_clockSource?.cancel());
     _clockSource = null;
+    unawaited(_recoveries?.cancel());
+    _recoveries = null;
     super.dispose();
   }
 
@@ -384,6 +411,9 @@ class _LoopStreamMemberChannelBodyState
       return null;
     }
     _orderOutgoing(channel);
+    // Decision 0216: the membership answer merged the server's newest page
+    // into this device's copy; it removed nothing the server deleted.
+    unawaited(_reconciler.reconcile(channel));
     return channel;
   }
 

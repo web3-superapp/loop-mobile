@@ -166,6 +166,52 @@ void main() {
     await tester.pump();
   });
 
+  // S253 (device report S237 · 01c): the restore answering 「signed in」
+  // rebuilt `/auth` before the router moved away, and that frame was the
+  // welcome form flashing between the two launch frames.
+  testWidgets('a restored session never draws the credential form', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        privyAuthGatewayProvider.overrideWithValue(_SigningOutGateway()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
+      ),
+    );
+    // Every frame from the first one on is a launch frame.
+    expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('privy-restoring-screen')),
+      findsOneWidget,
+    );
+    for (var frame = 0; frame < 6; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+      expect(find.byKey(const ValueKey('privy-auth-screen')), findsNothing);
+    }
+    await tester.pumpAndSettle();
+    expect(
+      container.read(loopSessionProvider).mode,
+      LoopSessionMode.authenticated,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('privy-auth-handover')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('privy-google-login-button')),
+      findsNothing,
+    );
+  });
+
   testWidgets(
     'signing out blocks every login entry until backend cleanup really ends',
     (tester) async {
