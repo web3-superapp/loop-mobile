@@ -15276,18 +15276,19 @@ ILLUSTRATION_NAMES = (
     "history",
 )
 # Yellow for the main stroke (decision 0210), Chalk (at the text3 weight) for the secondary
-# one, and the two medal colours. Nothing else may be painted.
-ILLUSTRATION_COLOURS = frozenset({"#FFD600", "#F2F2F4", "#D9B36A", "#B87B5A"})
-# Brass and copper are medal and illustration colours only.
+# one, the two podium medal colours and the 共识勋章 Purple (decision 0212,
+# S257). Nothing else may be painted.
+ILLUSTRATION_COLOURS = frozenset(
+    {"#FFD600", "#F2F2F4", "#D9B36A", "#B87B5A", "#9C36FF"}
+)
+# Brass and copper are podium-medal and illustration colours only.
 MEDAL_COLOUR_ALLOWLIST: dict[str, str] = {
     "lib/core/theme/loop_theme.dart": "the palette",
     "lib/features/intel/intel_rank_board.dart": "the podium medals",
-    # Decision 0163 (docs/32 §2): Brass is the MEME v2 NFT accent — the
-    # medal ring, the held mark and the mint page's main button — and
-    # nothing else on these surfaces. Decision 0164: the launchpad (the
-    # Launch Desk) paints none; the medal page keeps it. Decision 0166: the
-    # project page's 「铸造页」 link is Text2, so it paints none either.
-    "lib/features/launch2/launch2_nft_screen.dart": "共识勋章",
+    # Decision 0212 (S257): the MEME v2 共识勋章 ring is Purple and its mint
+    # button the ordinary yellow primary, so launch2_nft_screen.dart paints
+    # no Brass any more (it was decision 0163's NFT accent). The enum value
+    # stays defined in loop_components.dart with no caller.
     "lib/widgets/loop_components.dart": "LoopButtonTone.brass",
 }
 

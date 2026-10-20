@@ -1242,13 +1242,13 @@ void main() {
       );
       expect(_button(tester).label, '开始后可铸造');
       expect(_button(tester).onPressed, isNull);
-      expect(_medal(tester).brass, isFalse);
+      expect(_medal(tester).lit, isFalse);
       expect(_medal(tester).bottomLabel, '共识勋章');
       await _drain(tester);
     });
 
-    testWidgets('nft_sale, not held: Brass ring, the countdown, minted, the '
-        'Brass mint button; summary above 这枚勋章能做什么', (tester) async {
+    testWidgets('nft_sale, not held: Purple ring, the countdown, minted, the '
+        'yellow mint button; summary above 这枚勋章能做什么', (tester) async {
       await _pump(
         tester,
         const Launch2NftScreen(instanceId: l2InstanceA),
@@ -1271,8 +1271,12 @@ void main() {
       expect(_key('launch2-nft-rules'), findsOneWidget);
       expect(_button(tester).label, '铸造 1 枚 · 100 USD1');
       expect(_button(tester).onPressed, isNotNull);
-      expect(_button(tester).tone, LoopButtonTone.brass);
-      expect(_medal(tester).brass, isTrue);
+      // S257 (decision 0212): the ordinary yellow primary, a Purple ring,
+      // no Brass anywhere on the page.
+      expect(_button(tester).tone, LoopButtonTone.lime);
+      expect(_medal(tester).lit, isTrue);
+      expect(_medal(tester).ringColour, LoopColors.purple);
+      expect(_medal(tester).inkColour, LoopColors.chalk);
       expect(find.text('一只青蛙的共识实验'), findsOneWidget);
       expect(
         tester.getTopLeft(_key('launch2-nft-summary')).dy,
@@ -1317,7 +1321,7 @@ void main() {
       expect(_statusText(tester), '铸造已结束 · 名单生成中 · 已铸 2 枚');
       expect(_button(tester).label, '等待名单发布');
       expect(_button(tester).onPressed, isNull);
-      expect(_medal(tester).brass, isTrue);
+      expect(_medal(tester).lit, isTrue);
       await _drain(tester);
 
       await _pump(
@@ -1348,7 +1352,7 @@ void main() {
         );
         expect(_statusText(tester), status, reason: stage);
         expect(_button(tester).label, '去项目页交易', reason: stage);
-        expect(_medal(tester).brass, opened, reason: '$stage, not held');
+        expect(_medal(tester).lit, opened, reason: '$stage, not held');
         await tester.tap(_key('launch2-nft-mint'));
         await tester.pump();
         expect(navigated, <String>[Launch2Route.instance(l2InstanceA)]);
@@ -1389,7 +1393,7 @@ void main() {
       );
       expect(_button(tester).label, '去项目页');
       expect(_button(tester).onPressed, isNotNull);
-      expect(_medal(tester).brass, isFalse);
+      expect(_medal(tester).lit, isFalse);
       await _drain(tester);
     });
 

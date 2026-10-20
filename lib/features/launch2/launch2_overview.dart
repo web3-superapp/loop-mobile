@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/integrations/media/loop_image_loader.dart';
 
 // ---------------------------------------------------------------------------
 // 发射台总览 · `GET /v2/launch2/overview` (decision 0163 second phase,
@@ -153,8 +154,18 @@ final class Launch2OverviewController
       ref.watch(launch2OverviewGatewayProvider.select((g) => g.mode));
 
   @override
-  Future<Launch2Overview> fetch() =>
-      ref.read(launch2OverviewGatewayProvider).loadOverview();
+  Future<Launch2Overview> fetch() async {
+    final overview = await ref
+        .read(launch2OverviewGatewayProvider)
+        .loadOverview();
+    // Decision 0215 §4: the activity strip's logos on arrival.
+    loopPrefetchImages(
+      overview.activity
+          .take(loopImagePrefetchLimit)
+          .map((entry) => entry.logoUrl),
+    );
+    return overview;
+  }
 }
 
 final launch2OverviewControllerProvider =

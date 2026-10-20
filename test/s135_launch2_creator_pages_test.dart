@@ -522,6 +522,32 @@ void main() {
       expect(_key('launch2-create-step-2'), findsOneWidget);
     });
 
+    testWidgets('S257: a name or ticker with nothing visible is refused in '
+        'the form and nothing is sent', (tester) async {
+      final launch = _FakeLaunch();
+      await _pump(tester, const Launch2CreateScreen(), launch: launch);
+      await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_key('launch2-create-name'), '\u{FE0F}');
+      await tester.enterText(_key('launch2-create-ticker'), '\u{E0041}');
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(find.text(launch2NameInvisibleMessage), findsOneWidget);
+      expect(find.text(launch2TickerInvisibleMessage), findsOneWidget);
+      expect(_key('launch2-create-step-2'), findsNothing);
+      expect(launch.created, isEmpty);
+
+      await tester.enterText(_key('launch2-create-name'), '星夜');
+      await tester.enterText(_key('launch2-create-ticker'), r'$DOGE');
+      await tester.pump();
+      expect(find.text(launch2NameInvisibleMessage), findsNothing);
+      expect(find.text(launch2TickerInvisibleMessage), findsNothing);
+      await tester.tap(_key('launch2-create-next'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-create-step-2'), findsOneWidget);
+      await _drain(tester);
+    });
+
     testWidgets('three steps: the first refuses until picture, name and '
         'ticker are there; back goes one step', (tester) async {
       await _pump(tester, const Launch2CreateScreen());

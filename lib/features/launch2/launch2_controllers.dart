@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/media/loop_image_loader.dart';
 
 LoopChainGatewayMode _launch2Mode(Ref ref) =>
     ref.watch(launch2GatewayProvider.select((gateway) => gateway.mode));
@@ -115,6 +116,10 @@ final class Launch2ListController
     final head = await ref
         .read(launch2GatewayProvider)
         .listInstances(stage: scope.stage);
+    // Decision 0215 §4: the first screen of project logos on arrival.
+    loopPrefetchImages(
+      head.items.take(loopImagePrefetchLimit).map((row) => row.logoUrl),
+    );
     final current = state.value;
     if (!keep || current == null || _deeperPages == 0) {
       _deeperPages = 0;

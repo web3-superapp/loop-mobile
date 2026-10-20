@@ -912,6 +912,23 @@ void main() {
       expect(find.text('100 USD1'), findsWidgets);
       expect(find.text('官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%'), findsOneWidget);
       expect(find.textContaining('100 USD1 · 1 笔'), findsOneWidget);
+      // S257: 「最近一笔」 stacks label over a full-width value, short date,
+      // parts joined with 「，」 — no middle dots, one line at 360 wide.
+      final latestAt = DateTime.parse('2027-01-24T08:00:00.000Z').toLocal();
+      String two(int v) => v.toString().padLeft(2, '0');
+      final latestText = tester
+          .widget<Text>(_key('launch2-buyback-latest-value'))
+          .data!;
+      expect(
+        latestText,
+        '${two(latestAt.month)}-${two(latestAt.day)} '
+        '${two(latestAt.hour)}:${two(latestAt.minute)}，100 USD1，成交',
+      );
+      expect(latestText, isNot(contains('·')));
+      expect(
+        tester.getSize(_key('launch2-buyback-latest-value')).height,
+        lessThan(24),
+      );
       await tester.tap(_key('launch2-buyback-info'));
       await tester.pumpAndSettle();
       expect(find.text('回购不等于销毁'), findsOneWidget);

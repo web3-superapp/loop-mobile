@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/integrations/media/loop_image_loader.dart';
 
 LoopChainGatewayMode _memeMode(Ref ref) =>
     ref.watch(memeGatewayProvider.select((gateway) => gateway.mode));
@@ -71,8 +72,14 @@ final class MemeListController extends MemePagedController<MemeTokenPage> {
   final MemeListTab tab;
 
   @override
-  Future<MemeTokenPage> fetchFirst() =>
-      ref.read(memeGatewayProvider).listTokens(tab);
+  Future<MemeTokenPage> fetchFirst() async {
+    final page = await ref.read(memeGatewayProvider).listTokens(tab);
+    // Decision 0215 §4: the launchpad and list rows' first screen of logos.
+    loopPrefetchImages(
+      page.items.take(loopImagePrefetchLimit).map((row) => row.imageUrl),
+    );
+    return page;
+  }
 
   @override
   Future<MemeTokenPage> fetchAfter(String cursor) =>

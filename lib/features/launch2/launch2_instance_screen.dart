@@ -1132,7 +1132,7 @@ class _NftSaleBlock extends ConsumerWidget {
 }
 
 /// 「铸造页」 (decision 0163 entry, decision 0166 colour): a Text2 link with a
-/// chevron, 44 dp — Brass stays on the 共识勋章 page itself.
+/// chevron, 44 dp — the medal colour stays on the 共识勋章 page itself.
 class _MintPageLink extends StatelessWidget {
   const _MintPageLink({required this.onTap});
 
@@ -1496,6 +1496,55 @@ class _GraduatedBlock extends StatelessWidget {
 /// Decision 0150: the merged hold on two lines — the reason (wraps, never
 /// cut) and 「来源 · 时间」 — styled as [LoopInlineUnavailable], which is one
 /// line only and cut the retry time off at 360 wide.
+/// 「最近一笔」 value (S257): `MM-DD HH:mm，100 USD1，成交` in local time.
+/// The year is dropped and the parts are joined with 「，」 rather than
+/// middle dots (docs/42 附C) so the line fits one row at 360–430 wide.
+String launch2BuybackLatestText({
+  required DateTime executedAt,
+  required Decimal usd1Spent,
+  required String outcome,
+}) {
+  final local = executedAt.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(local.month)}-${two(local.day)} '
+      '${two(local.hour)}:${two(local.minute)}，'
+      '${launch2Usd1Label(usd1Spent)}，$outcome';
+}
+
+/// 「最近一笔」 as a stacked row (S257): the label on its own line and the
+/// value across the full width, so the sentence never wraps against a
+/// half-width column.
+class _BuybackLatestRow extends StatelessWidget {
+  const _BuybackLatestRow({required this.value, super.key});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            '最近一笔',
+            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            key: const ValueKey<String>('launch2-buyback-latest-value'),
+            style: LoopTypography.withWeight(
+              LoopType.figureXs,
+              FontWeight.w500,
+            ).copyWith(color: LoopColors.chalk),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BuybackHeldRow extends StatelessWidget {
   const _BuybackHeldRow({required this.line, super.key});
 
@@ -1627,14 +1676,17 @@ class _BuybackPanel extends ConsumerWidget {
           value:
               '${launch2Usd1Label(summary.totalUsd1)} · ${summary.executedCount} 笔',
         ),
-        LoopKeyValue(
+        _BuybackLatestRow(
           key: const ValueKey<String>('launch2-buyback-latest'),
-          label: '最近一笔',
           value: latest == null
               ? '还没有'
-              : '${loopDateTimeLabel(latest.executedAt)} · '
-                    '${launch2Usd1Label(latest.usd1Spent)} · '
-                    '${latest.executed ? '成交' : launch2BuybackBlockedText(latest.reasonCode)}',
+              : launch2BuybackLatestText(
+                  executedAt: latest.executedAt,
+                  usd1Spent: latest.usd1Spent,
+                  outcome: latest.executed
+                      ? '成交'
+                      : launch2BuybackBlockedText(latest.reasonCode),
+                ),
         ),
         if (held != null)
           _BuybackHeldRow(

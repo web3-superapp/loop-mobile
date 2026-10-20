@@ -46,6 +46,37 @@ const String launch2CreateLinksCommunityHint =
 /// The fields the form checks before the server does.
 enum Launch2Field { name, ticker, description, x, telegram, website, discord }
 
+/// S257 (with loop-api S256): a name or ticker made only of marks,
+/// variation selectors or stray tag characters passes the hazard rule but
+/// draws nothing. Three more rules, checked after the existing ones:
+/// ① at least one letter, number, symbol or punctuation
+/// (`\p{L}\p{N}\p{S}\p{P}`); ② tag characters U+E0020–E007F only inside a
+/// flag sequence that opens with U+1F3F4 and closes with U+E007F; ③ no
+/// leading combining mark (`\p{M}`).
+const String launch2NameInvisibleMessage = '名称需包含可见字符';
+const String launch2TickerInvisibleMessage = '代码需包含可见字符';
+
+final RegExp _launch2Visible = RegExp(r'[\p{L}\p{N}\p{S}\p{P}]', unicode: true);
+final RegExp _launch2TagFlag = RegExp(
+  r'\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F}',
+  unicode: true,
+);
+final RegExp _launch2Tag = RegExp(r'[\u{E0020}-\u{E007F}]', unicode: true);
+final RegExp _launch2LeadingMark = RegExp(r'^\p{M}', unicode: true);
+
+/// [message] when the trimmed [raw] breaks one of the three visible-text
+/// rules, otherwise `null`. Empty input is the required rule's to report.
+String? launch2VisibleTextError(String raw, String message) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+  if (!_launch2Visible.hasMatch(value)) return message;
+  if (_launch2Tag.hasMatch(value.replaceAll(_launch2TagFlag, ''))) {
+    return message;
+  }
+  if (_launch2LeadingMark.hasMatch(value)) return message;
+  return null;
+}
+
 /// Why one field is refused, or `null` (hooks-config §3 and the catalogue
 /// project's own limits; the stricter of the two).
 String? launch2FieldError(Launch2Field field, String raw) {
@@ -54,9 +85,11 @@ String? launch2FieldError(Launch2Field field, String raw) {
     // Decisions 0199 / 0206: any script; the name and the ticker share
     // four.meme's 1–20 rule, and the ticker is kept as typed.
     case Launch2Field.name:
-      return loopTokenNameError(raw);
+      return loopTokenNameError(raw) ??
+          launch2VisibleTextError(raw, launch2NameInvisibleMessage);
     case Launch2Field.ticker:
-      return loopTokenTickerError(raw);
+      return loopTokenTickerError(raw) ??
+          launch2VisibleTextError(raw, launch2TickerInvisibleMessage);
     case Launch2Field.description:
       return loopTokenDescriptionError(raw);
     case Launch2Field.x:
