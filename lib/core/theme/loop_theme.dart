@@ -157,6 +157,38 @@ abstract final class LoopColors {
   static const Color warning = Color(0xFFFF9F1C);
 }
 
+/// One initials-tile ground: a fill and the letter colour legible on it.
+typedef LoopMonogramGround = ({String id, Color fill, Color ink});
+
+/// The six grounds an initials tile (a community with no preset logo) is
+/// drawn on (S241c, decision 0210).
+///
+/// Greys and Purple only: Yellow is reserved for calls to action, labels and
+/// key figures, so an identity tile must never be Yellow or a Yellow blend.
+/// Purple at full strength measures 4.28:1 against Chalk and 4.15:1 against
+/// Ink — under the 4.5:1 floor — so it appears here only deepened over Ink
+/// (Chalk letters) or paled toward Chalk (Ink letters). Every pair clears
+/// 4.5:1; every fill stays clear of the page, card and Chalk grounds.
+abstract final class LoopMonogramPalette {
+  static const List<LoopMonogramGround> grounds = <LoopMonogramGround>[
+    /// Chalk at 75 % over Ink.
+    (id: 'chalk-dim', fill: Color(0xFFB8B8BA), ink: LoopColors.ink),
+    (id: 'muted', fill: LoopColors.muted, ink: LoopColors.ink),
+
+    /// Muted at 60 % over Ink.
+    (id: 'muted-deep', fill: Color(0xFF595660), ink: LoopColors.chalk),
+
+    /// Purple at 60 % over Ink.
+    (id: 'purple-deep', fill: Color(0xFF61249D), ink: LoopColors.chalk),
+
+    /// Purple and Chalk, half each.
+    (id: 'purple-pale', fill: Color(0xFFC794FA), ink: LoopColors.ink),
+
+    /// The strong outline grey.
+    (id: 'graphite', fill: LoopColors.line3, ink: LoopColors.chalk),
+  ];
+}
+
 /// The ink of the ground a widget was actually placed on.
 ///
 /// The palette is authored for the Ink page. A shared widget that can land on
@@ -625,7 +657,8 @@ abstract final class LoopTypography {
 /// | heading | `headingLg` | Anton | 24 | 1.15 | R1 page title |
 /// | heading | `flatTitle` | Anton | 22 | 1.15 | R1b flat second-level title |
 /// | heading | `heading` | Anton | 22 | 1.15 | R2 sheet title |
-/// | heading | `headingSm` | Anton | 18 | 1.15 | R1d dense top bar, R3b section title |
+/// | heading | `headingSm` | Anton | 18 | 1.15 | R1d dense top bar |
+/// | title | `sectionTitle` | Arimo 700 | 18 | 1.35 | R3b section / date / group heading |
 /// | title | `titleLg` | Arimo 700 | 16 | 1.35 | R15 wide button, R31 state title |
 /// | title | `title` | Arimo 700 | 15 | 1.35 | R4 row title |
 /// | title | `titleSm` | Arimo 700 | 13 | 1.35 | small control word, form label |
@@ -692,8 +725,14 @@ abstract final class LoopType {
   /// / `LoopSignSheet`.
   static final TextStyle heading = LoopTypography.heading(22);
 
-  /// R1d dense (chat) top bar; R3b section title on a flat page.
+  /// R1d dense (chat) top bar. Anton stays for page-level titles only.
   static final TextStyle headingSm = LoopTypography.heading(18);
+
+  /// R3b a section or group heading inside a page — a flat page's section
+  /// title, a date header over a day of history (「9月8日」), a group head.
+  /// Arimo 700 with the bundled Noto Sans SC Bold behind it (S241c): Anton's
+  /// narrow figures beside a bold Han run read as two faces in one word.
+  static final TextStyle sectionTitle = LoopTypography.title(18);
 
   // Band 3 · title.
   /// The quote-row title; R15 a flat wide button's word; R31 the title of a

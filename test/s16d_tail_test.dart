@@ -47,7 +47,7 @@ Widget _onInk(Widget child) => MaterialApp(
 Widget _onChalk(Widget child) => MaterialApp(
   theme: LoopTheme.dark,
   home: Scaffold(
-    body: Center(child: LoopChalkCard(child: child)),
+    body: Center(child: LoopChalkCard(light: true, child: child)),
   ),
 );
 
