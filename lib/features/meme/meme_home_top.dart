@@ -488,7 +488,7 @@ class MemeBestTradeCard extends StatelessWidget {
                   identity: trade.memeTokenId,
                   size: 26,
                   // Half of 26: the design's round `.avatar`.
-                  radius: LoopRadius.toolValue,
+                  radius: 13,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -501,7 +501,9 @@ class MemeBestTradeCard extends StatelessWidget {
                         'meme-best-trade-${trade.rank}-gain',
                       ),
                       maxLines: 1,
-                      style: LoopType.figureMd.copyWith(color: LoopColors.lime),
+                      style: LoopType.figureMd.copyWith(
+                        color: LoopColors.yellow,
+                      ),
                     ),
                   ),
                 ),

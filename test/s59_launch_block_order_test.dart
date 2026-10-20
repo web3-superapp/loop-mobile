@@ -68,10 +68,12 @@ void main() {
       'launch-open-economy',
       'launch-open-apply',
     ]);
-    // The catalogue's folio is the saturated Lime one the prototype gives it.
+    // The catalogue's folio was the prototype's saturated Lime; since S241b
+    // it is the flat dark card.
     expect(
       tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary)).variant,
-      LoopFolioVariant.lime,
+      // S241b (decision 0210): the flat dark card, no full-Yellow block.
+      LoopFolioVariant.quiet,
     );
   });
 
@@ -192,7 +194,8 @@ void main() {
     );
     expect(
       tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary)).variant,
-      LoopFolioVariant.lime,
+      // S241b (decision 0210): the flat dark card, no full-Yellow block.
+      LoopFolioVariant.quiet,
     );
   });
 

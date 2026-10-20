@@ -661,7 +661,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('dots ride the campaign card in Lime from two pages on', (
+    testWidgets('dots ride the campaign card in Purple from two pages on', (
       tester,
     ) async {
       await _pumpPager(tester, <Launch2DeskPage>[
@@ -670,7 +670,8 @@ void main() {
       ]);
       expect(_key('launch2-desk-dots'), findsOneWidget);
       final dot = tester.widget<Container>(_key('launch2-desk-dot-0'));
-      expect((dot.decoration! as BoxDecoration).color, LoopColors.lime);
+      // S241b (decision 0210): the current page in Purple.
+      expect((dot.decoration! as BoxDecoration).color, LoopColors.purple);
     });
   });
 

@@ -642,6 +642,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
               symbol: ticker,
               imageUrl: _logoUrl,
               size: 72,
+              // S241b: the upload slot is a square box (decision 0210).
+              radius: 0,
             ),
             const SizedBox(width: 14),
             Expanded(

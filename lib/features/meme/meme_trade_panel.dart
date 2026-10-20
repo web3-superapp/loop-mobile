@@ -424,6 +424,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                   for (final bps in memeSlippagePresets) ...<Widget>[
                     LoopSeg(
                       key: ValueKey<String>('meme-trade-slippage-$bps'),
+                      quiet: true,
                       label: memeBpsLabel(bps),
                       selected: !_customSelected && _slippageBps == bps,
                       onSelected: () => setState(() {
@@ -435,6 +436,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                   ],
                   LoopSeg(
                     key: const ValueKey<String>('meme-trade-slippage-custom'),
+                    quiet: true,
                     label: '自定义',
                     selected: _customSelected,
                     onSelected: () => setState(() => _customSelected = true),

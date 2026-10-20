@@ -679,6 +679,7 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
                         'alert-condition-${condition.wireName}',
                       ),
                       label: condition.label,
+                      quiet: true,
                       selected: condition == _condition,
                       onSelected: () => setState(() => _condition = condition),
                     ),

@@ -330,7 +330,8 @@ void main() {
   group('chalk · the five pages the prototype opens on a white hero', () {
     Future<void> expectChalk(WidgetTester tester, Widget page) async {
       final folio = _folios(tester).first;
-      expect(folio.variant, LoopFolioVariant.chalk);
+      // S241b (decision 0210): the white hero became the flat dark card.
+      expect(folio.variant, LoopFolioVariant.quiet);
       // `.folio-primary.folio-state::after` is the only selector that draws
       // the corner ring; a Chalk hero has none.
       expect(folio.ring, isFalse);

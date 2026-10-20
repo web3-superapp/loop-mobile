@@ -374,7 +374,7 @@ class Launch2AddressTail extends StatelessWidget {
             ),
             TextSpan(
               text: tail,
-              style: LoopType.figureMd.copyWith(color: LoopColors.lime),
+              style: LoopType.figureMd.copyWith(color: LoopColors.yellow),
             ),
           ],
         ),

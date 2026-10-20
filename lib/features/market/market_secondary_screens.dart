@@ -253,7 +253,7 @@ class _HolderDistributionScreenState
       // one colour (audit 2026-09-21 §G.4, §D item 2).
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('token-holders-folio'),
-        variant: LoopFolioVariant.chalk,
+        variant: LoopFolioVariant.quiet,
         ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: marketHoldersKicker,
@@ -403,7 +403,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('token-trades-folio'),
-        variant: LoopFolioVariant.chalk,
+        variant: LoopFolioVariant.quiet,
         ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: marketTradesKicker,
@@ -647,7 +647,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('new-pairs-folio'),
-        variant: LoopFolioVariant.chalk,
+        variant: LoopFolioVariant.quiet,
         ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: marketNewPairsKicker,
@@ -803,7 +803,7 @@ class _NewPairWatchAction extends ConsumerWidget {
       key: ValueKey<String>('new-pair-watchlist-$assetId'),
       icon: 'star',
       label: blocked ? '自选当前不可用' : membership.actionLabel,
-      color: membership.isWatched ? LoopColors.lime : null,
+      color: membership.isWatched ? LoopColors.yellow : null,
       // An unread list has no on/off state to report; claiming `false` would
       // say the asset is not watched.
       toggled: blocked || !membership.isKnown ? null : membership.isWatched,
@@ -851,7 +851,7 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
       onBack: widget.onBack,
       folio: const LoopFolioPrimary(
         key: ValueKey<String>('smart-money-folio'),
-        variant: LoopFolioVariant.chalk,
+        variant: LoopFolioVariant.quiet,
         ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: marketSmartMoneyKicker,

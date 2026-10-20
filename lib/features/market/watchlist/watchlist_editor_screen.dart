@@ -300,6 +300,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                         in state.groups.indexed) ...<Widget>[
                       LoopSeg(
                         key: ValueKey<String>('watchlist-group-${item.key}'),
+                        quiet: true,
                         label: '${item.name} ${item.items.length}',
                         selected: index == state.selectedGroupIndex,
                         onSelected: () => controller.selectGroup(index),

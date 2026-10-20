@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
@@ -501,7 +502,7 @@ class MiningMinuteHero extends StatelessWidget {
             settling ? 'mining-minute-settling' : 'mining-minute-displaying',
           ),
           primary: LoopFolioPrimary(
-            variant: LoopFolioVariant.lime,
+            variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.record,
             ring: false,
             margin: EdgeInsets.zero,
@@ -563,7 +564,7 @@ class MiningMinuteHero extends StatelessWidget {
       ),
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('mining-power-folio'),
-        variant: LoopFolioVariant.lime,
+        variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         ring: false,
         margin: EdgeInsets.zero,
@@ -658,7 +659,7 @@ class MiningRewardsSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopStatGrid(
+    return MemeStatFigures(
       stats: <LoopStat>[
         LoopStat(
           statKey: const ValueKey<String>('mining-summary-settled'),
@@ -697,7 +698,7 @@ class MiningPowerSummary extends StatelessWidget {
     final nft = view.nft?.totalPower;
     final asset = view.asset?.totalPower;
     final invites = view.invites?.total.activeMembers;
-    return LoopStatGrid(
+    return MemeStatFigures(
       key: const ValueKey<String>('mining-power-summary'),
       stats: <LoopStat>[
         LoopStat(

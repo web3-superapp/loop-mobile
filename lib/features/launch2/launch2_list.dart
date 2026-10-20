@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
@@ -19,7 +20,6 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -333,7 +333,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
         const LoopLabel('战绩'),
         KeyedSubtree(
           key: const ValueKey<String>('launch2-stats'),
-          child: LoopStatGrid(stats: launch2DeskStats(stats)),
+          child: MemeStatFigures(stats: launch2DeskStats(stats)),
         ),
       ],
       if (all) launch2CurationNotice,

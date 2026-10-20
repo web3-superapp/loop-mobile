@@ -1017,7 +1017,7 @@ class MemeAddressTail extends StatelessWidget {
             ),
             TextSpan(
               text: tail,
-              style: LoopType.code.copyWith(color: LoopColors.lime),
+              style: LoopType.code.copyWith(color: LoopColors.yellow),
             ),
           ],
         ),

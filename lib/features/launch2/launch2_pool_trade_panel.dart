@@ -553,6 +553,8 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             for (final bps in launch2PoolSlippagePresets) ...<Widget>[
               LoopSeg(
                 key: ValueKey<String>('launch2-pool-slippage-$bps'),
+                // S241b: a chosen step is the Purple selection, not Yellow.
+                quiet: true,
                 label: launch2BpsLabel(bps),
                 selected: !_customSelected && _presetSlippage == bps,
                 onSelected: () {
@@ -565,6 +567,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             ],
             LoopSeg(
               key: const ValueKey<String>('launch2-pool-slippage-custom'),
+              quiet: true,
               label: '自定义',
               selected: _customSelected,
               onSelected: () {
@@ -709,7 +712,7 @@ class _PoolMaxKey extends StatelessWidget {
             // R17 inline text action (decision 0190 L21).
             style: LoopTypography.withWeight(LoopType.label, FontWeight.w600)
                 .copyWith(
-                  color: onTap == null ? LoopColors.text3 : LoopColors.lime,
+                  color: onTap == null ? LoopColors.text3 : LoopColors.yellow,
                 ),
           ),
         ),

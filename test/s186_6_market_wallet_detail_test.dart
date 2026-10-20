@@ -102,7 +102,9 @@ void main() {
   });
 
   group('L3 / L4 · token page', () {
-    testWidgets('the chosen lower tab is underlined in Chalk', (tester) async {
+    testWidgets('the chosen lower tab is underlined in Purple (S241b)', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const TokenDetailScreen(assetId: s5WbnbAssetId),
@@ -118,7 +120,8 @@ void main() {
             .first,
       );
       final border = (underline.decoration! as BoxDecoration).border! as Border;
-      expect(border.bottom.color, LoopColors.chalk);
+      // S241b (decision 0210): selection is Purple.
+      expect(border.bottom.color, LoopColors.purple);
     });
 
     testWidgets('periods and chart switches are quiet segs', (tester) async {

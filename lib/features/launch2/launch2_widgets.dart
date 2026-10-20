@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -145,26 +146,27 @@ class Launch2StagePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = loopChangePillSize;
-    final lit =
-        stage == Launch2Stage.priority ||
-        stage == Launch2Stage.public ||
-        stage == Launch2Stage.graduated;
+    // S241b (decision 0210): the stages that take orders are a Yellow frame
+    // with a Yellow word, 已毕业 a Purple tag, every waiting stage grey.
+    final tone = switch (stage) {
+      Launch2Stage.priority || Launch2Stage.public => MemeTagTone.live,
+      Launch2Stage.graduated => MemeTagTone.done,
+      _ => MemeTagTone.idle,
+    };
+    final ink = memeTagInk(tone);
     return Container(
       key: ValueKey<String>('launch2-stage-pill-${stage.wireName}'),
       width: size.width,
       height: size.height,
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: lit ? LoopColors.limeSoft : LoopColors.card2,
-        borderRadius: LoopRadius.inner,
-      ),
+      decoration: memeTagDecoration(tone),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (stage == Launch2Stage.graduated) ...<Widget>[
-            const LoopIcon('graduate', size: 16, color: LoopColors.lime),
+            const LoopIcon('graduate', size: 16, color: LoopColors.purple),
             const SizedBox(width: 4),
           ],
           Flexible(
@@ -176,7 +178,7 @@ class Launch2StagePill extends StatelessWidget {
                 style: LoopTypography.withWeight(
                   LoopType.titleSm,
                   FontWeight.w600,
-                ).copyWith(color: lit ? LoopColors.lime : LoopColors.text2),
+                ).copyWith(color: ink),
               ),
             ),
           ),
@@ -276,8 +278,9 @@ class Launch2SectionLabel extends StatelessWidget {
   }
 }
 
-/// One warning line inside a block (decision 0166): the warn glyph in Lime
-/// (the prototype's `--amber` is Lime) and the sentence in Text2. It replaces
+/// One warning line inside a block (decision 0166): the warn glyph in the
+/// accent (Lime then, Yellow since decision 0210 — the v1 warning colour
+/// stays out of features, decision 0172) and the sentence in Text2. It replaces
 /// the v1 warning-yellow glyph and text of the trade panels and the failure
 /// line above a button.
 class Launch2WarnLine extends StatelessWidget {
@@ -291,7 +294,7 @@ class Launch2WarnLine extends StatelessWidget {
     children: <Widget>[
       const Padding(
         padding: EdgeInsets.only(top: 2),
-        child: LoopIcon('warn', size: 15, color: LoopColors.lime),
+        child: LoopIcon('warn', size: 15, color: LoopColors.yellow),
       ),
       const SizedBox(width: 8),
       Expanded(
