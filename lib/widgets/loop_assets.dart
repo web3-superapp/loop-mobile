@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_media_image.dart';
 
 /// Line icon from the prototype SVG sprite (`i-<name>.svg`).
 ///
@@ -244,8 +245,15 @@ Uri? loopRemoteLogoUri(String? raw) {
 /// remembered: on a cold start the logos of a whole list download at once and
 /// a slow one is still a good one. Successful artwork is held by Flutter's own
 /// [ImageCache], keyed by the address, so a symbol in 自选 and again in 热门 is
-/// decoded once. There is no on-disk cache: that needs a dependency, and the
-/// decision is not this widget's to take.
+/// decoded once, and on this device's disk ([LoopMediaImage], decision 0215),
+/// so a cold start draws the logo without a download.
+///
+/// The bundled artwork (decision 0215) is chosen by the token's chain and
+/// contract address when [logoUrl] is LOOP's logo proxy
+/// (`/v2/market/logos/{chainId}/{address}.png`) and that address is one of
+/// the mainstream tokens LOOP ships a drawing for; otherwise by symbol, as
+/// before. It is the first frame and the offline face; the registry artwork
+/// replaces it when its first frame arrives.
 class LoopTokenLogo extends StatefulWidget {
   const LoopTokenLogo({
     required this.assetSymbol,
@@ -443,7 +451,9 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
             child: child,
           );
     Widget bundled() {
-      final path = LoopTokenAssets.pathForSymbol(widget.assetSymbol);
+      final path =
+          LoopTokenAssets.pathForLogoUrl(widget.logoUrl) ??
+          LoopTokenAssets.pathForSymbol(widget.assetSymbol);
       if (path == null) {
         return _MonogramFallback(
           text: monogram,
@@ -483,7 +493,7 @@ class _LoopTokenLogoState extends State<LoopTokenLogo> {
     // Decoded at the pixels the tile shows, not the registry's 256 px source.
     final pixels = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
     final source =
-        debugLoopTokenLogoImageProvider?.call(url) ?? NetworkImage(url);
+        debugLoopTokenLogoImageProvider?.call(url) ?? LoopMediaImage(url);
     return SizedBox(
       width: size,
       height: size,
@@ -529,7 +539,8 @@ class LoopNetworkLogo extends StatelessWidget {
     this.semanticLabel,
   });
 
-  /// Network id: `base`, `bsc`/`bnb`, `ethereum`/`eth`, `solana`/`sol`.
+  /// Network id: `base`, `bsc`/`bnb`, `ethereum`/`eth`, `solana`/`sol`, or
+  /// the CAIP-2 id (`eip155:56`, `eip155:1`, `eip155:8453`).
   final String network;
   final double size;
   final String? semanticLabel;

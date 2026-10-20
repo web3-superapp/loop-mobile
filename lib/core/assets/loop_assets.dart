@@ -178,6 +178,54 @@ abstract final class LoopTokenAssets {
 
   static const String fallback = 'fallback';
 
+  /// Mainstream BNB Smart Chain tokens LOOP ships a drawing for (decision
+  /// 0215), keyed by `<chainId>/<lower-case address>` exactly as the logo
+  /// proxy path names them (`native` for BNB itself). The addresses are the
+  /// ones loop-api pre-warms (`token-logo-mainstream.ts`, decision 0161),
+  /// each checked there against DexScreener and Trust Wallet. A token is
+  /// matched by address, never by symbol, so a look-alike ticker does not
+  /// wear a mainstream drawing.
+  static const Map<String, String> byAddress = <String, String>{
+    'eip155:56/native': 'bnb',
+    'eip155:56/0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c': 'wbnb',
+    'eip155:56/0x55d398326f99059ff775485246999027b3197955': 'usdt',
+    'eip155:56/0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d': 'usdc',
+    'eip155:56/0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d': 'usd1',
+    'eip155:56/0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c': 'btcb',
+    'eip155:56/0x2170ed0880ac9a755fd29b2688956bd959f933f8': 'eth',
+    'eip155:56/0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82': 'cake',
+    'eip155:56/0xba2ae424d960c26247dd6c32edc70b295c744c43': 'doge',
+    'eip155:56/0x2859e4544c4bb03966803b044a93563bd2d0dd4d': 'shib',
+    'eip155:56/0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe': 'xrp',
+    'eip155:56/0x570a5d26f7765ecb712c0924e4de545b89fd43df': 'sol',
+    'eip155:56/0x25d887ce7a35172c62febfd67a1856f20faebb00': 'pepe',
+  };
+
+  /// The logo proxy path: `/v2/market/logos/{chainId}/{address}.png` (or
+  /// the `.webp` alias, decision 0161).
+  static final RegExp _logoProxyPath = RegExp(
+    r'/v2/market/logos/(eip155:\d+)/(0x[0-9a-fA-F]{40}|native)\.(?:png|webp)$',
+  );
+
+  /// `<chainId>/<address>` named by a logo proxy address, or `null`.
+  static String? keyForLogoUrl(String? url) {
+    final value = url?.trim();
+    if (value == null || value.isEmpty) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null) return null;
+    final match = _logoProxyPath.firstMatch(Uri.decodeComponent(uri.path));
+    if (match == null) return null;
+    return '${match.group(1)}/${match.group(2)!.toLowerCase()}';
+  }
+
+  /// The bundled drawing for the token a logo proxy address names, or
+  /// `null` when LOOP ships none for it.
+  static String? pathForLogoUrl(String? url) {
+    final key = keyForLogoUrl(url);
+    final file = key == null ? null : byAddress[key];
+    return file == null ? null : LoopAssetPaths.token(file);
+  }
+
   static String? pathForSymbol(String symbol) {
     final file = bySymbol[symbol.trim().toUpperCase()];
     return file == null ? null : LoopAssetPaths.token(file);
@@ -194,6 +242,10 @@ abstract final class LoopNetworkAssets {
     'eth': 'ethereum',
     'solana': 'solana',
     'sol': 'solana',
+    // CAIP-2 ids as the backend names chains (decision 0215).
+    'eip155:56': 'bsc',
+    'eip155:1': 'ethereum',
+    'eip155:8453': 'base',
   };
 
   static String? pathForId(String id) {

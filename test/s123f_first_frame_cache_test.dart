@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/cache/loop_image_disk_cache.dart';
 import 'package:loop_mobile/core/cache/loop_owner_face.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -782,8 +783,11 @@ void main() {
         () => Directory.systemTemp.createTemp('loop-media-'),
       );
       addTearDown(() => directory!.deleteSync(recursive: true));
-      LoopMediaDiskCache.debugDirectory = () async => directory;
-      addTearDown(() => LoopMediaDiskCache.debugDirectory = null);
+      final previous = LoopImageDiskCache.instance;
+      LoopImageDiskCache.instance = LoopImageDiskCache(
+        directory: () async => directory,
+      );
+      addTearDown(() => LoopImageDiskCache.instance = previous);
 
       // A 1×1 PNG, written as the cache would have written it.
       final png = await tester.runAsync(() async {
@@ -797,12 +801,17 @@ void main() {
         return data!.buffer.asUint8List();
       });
       const url = 'https://unreachable.invalid/v2/media/kept.webp';
-      await tester.runAsync(() => LoopMediaDiskCache.instance.write(url, png!));
-      final kept = await tester.runAsync(
-        () => LoopMediaDiskCache.instance.read(url),
+      await tester.runAsync(
+        () => LoopImageDiskCache.instance.write(
+          url,
+          png!,
+          maxAge: const Duration(days: 365),
+        ),
       );
-      expect(kept, isA<Uint8List>());
-      expect(kept, png);
+      final kept = await tester.runAsync(
+        () => LoopImageDiskCache.instance.read(url),
+      );
+      expect(kept?.bytes, png);
 
       final info = await tester.runAsync(() {
         final done = Completer<ImageInfo>();
@@ -821,10 +830,7 @@ void main() {
         return done.future;
       });
       expect(info!.image.width, 1);
-      expect(
-        LoopMediaDiskCache.fileNameFor(url),
-        isNot(contains('unreachable')),
-      );
+      expect(LoopImageDiskCache.keyFor(url), isNot(contains('unreachable')));
     });
   });
 }

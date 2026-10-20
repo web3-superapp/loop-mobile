@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">BTCB token</title>
+  <circle cx="32" cy="32" r="29" fill="#ffd600" stroke="#4a4754" stroke-width="2"/>
+  <path d="M24 18h11c5 0 8 3 8 7s-3 6-6 6c4 0 8 3 8 7 0 5-4 8-9 8H24Zm0 13h12" fill="none" stroke="#111114" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M29 13v6M35 13v6M29 45v6M35 45v6" fill="none" stroke="#111114" stroke-width="3" stroke-linecap="round"/>
+</svg>

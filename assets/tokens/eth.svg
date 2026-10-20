@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">ETH token</title>
+  <circle cx="32" cy="32" r="29" fill="#111114" stroke="#4a4754" stroke-width="2"/>
+  <path d="m32 10-14 22 14 8 14-8Z" fill="#f2f2f4" stroke="#09090b" stroke-width="2" stroke-linejoin="round"/>
+  <path d="m32 54-14-19 14 8 14-8Z" fill="#aeacb6" stroke="#09090b" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M32 10v30" fill="none" stroke="#4a4754" stroke-width="2"/>
+</svg>

@@ -9,6 +9,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_media_image.dart';
 
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
@@ -96,7 +97,7 @@ void main() {
       // Decision 0101: decoded at the tile's own pixel size.
       final resized = remote.image as ResizeImage;
       expect(
-        (resized.imageProvider as NetworkImage).url,
+        (resized.imageProvider as LoopMediaImage).url,
         'https://cdn.example.com/cake.png',
       );
       // A plaintext address and an empty string are both "no artwork", not a

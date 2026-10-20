@@ -23,9 +23,10 @@ ImageProvider<Object> loopRemoteImageSource(String url) =>
 /// address alone: every slot decodes at [loopMediaDecodeSide], so a picture
 /// decoded once in a chat row is the same cache entry on the profile page and
 /// the member list, and is drawn there from the first frame (decision 0132).
-/// Avatar addresses are content-addressed and immutable
-/// (`/v2/media/{mediaId}.webp`), so the bytes are also kept on disk
-/// ([LoopMediaImage]) and a cold start draws the picture, not the monogram.
+/// The bytes are also kept on disk ([LoopMediaImage], decision 0215: SHA-256
+/// names, server `max-age`, a 64 MB least-recently-used bound), so a cold
+/// start draws the picture, not the monogram, and an offline device keeps
+/// the last picture it saw.
 class LoopRemoteAvatar extends StatelessWidget {
   const LoopRemoteAvatar({
     required this.url,
