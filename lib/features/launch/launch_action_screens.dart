@@ -255,7 +255,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
             ? launchMissingHeading
             : '${economy.confirmedRoundCount} 个已确认轮次',
         caption: '这里只显示 LOOP 能核对的数量；总量、发行与生态税暂时读不到。',
-        stamp: economy == null ? null : 'LOOP DB',
+        stamp: economy == null ? null : 'LOOP 记录',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -278,7 +278,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('Launch'),
+          const LoopLabel('发射'),
           // `.chalk-card` with a 2x2 grid: the prototype's Launch half of the
           // ledger. The registry count is LOOP's own and is a number; the
           // other three need the contract and print the em dash.
@@ -307,7 +307,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
             economy: economy,
             contractLive: capability.evidenceConfirmed,
           ),
-          const LoopLabel('Value Flywheel'),
+          const LoopLabel('价值飞轮'),
           LoopRecordGroup(
             key: const ValueKey<String>('loop-economy-flywheel'),
             rows: <LoopRecordRow>[
@@ -531,7 +531,7 @@ class _EconomyOnChainCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   '读自区块 ${loopGroupedFigure(value.indexedBlockNumber)}'
-                  ' · LOOP 链上事件索引',
+                  '，LOOP 链上事件索引',
                   key: const ValueKey<String>('loop-economy-onchain-block'),
                   style: LoopType.figureXs.copyWith(
                     color: LoopGround.auxiliaryOf(context),
@@ -725,7 +725,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             : launchReviewStatusLabel(selected.reviewStatus),
         caption: '提交不代表通过。审核由人工进行，结果与上线时间以最新状态为准。',
         stamp: selected == null
-            ? '${_reviewPipeline.length} STEPS'
+            ? '${_reviewPipeline.length} 步'
             : 'v${selected.materialVersion}',
       ),
       block: blocked
@@ -754,7 +754,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
           // prototype opens on this block; the App opened straight onto the
           // form, so the page never said what submitting leads to
           // (visual audit 2026-09-21 §H.12).
-          const LoopLabel('Review Record'),
+          const LoopLabel('审核记录'),
           LoopRecordGroup(
             key: const ValueKey<String>('launch-apply-pipeline'),
             rows: <LoopRecordRow>[
@@ -921,7 +921,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       leading: LaunchTickerTile(ticker: project.ticker),
       title: project.name,
       subtitle:
-          '${project.ticker} · 资料版本 ${project.materialVersion} · '
+          '${project.ticker}，资料版本 ${project.materialVersion}，'
           '更新于 ${launchTimestampLabel(project.updatedAt)}',
       trailingBadge: LoopBadge(
         launchReviewStatusLabel(project.reviewStatus),
@@ -978,7 +978,7 @@ class _CurationCard extends StatelessWidget {
             style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
           const LoopHairline(),
-          Text('人工审核 · 上限配置 · 流动性方案', style: LoopType.captionSm),
+          Text('人工审核，上限配置，流动性方案', style: LoopType.captionSm),
         ],
       ),
     );

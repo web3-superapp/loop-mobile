@@ -1188,7 +1188,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
         kicker: '社交恢复',
         heading: '2-of-3 守护人',
         caption: '守护人只参与恢复确认，不能查看资产或发起交易。',
-        stamp: '2 OF 3',
+        stamp: '3 选 2',
         ring: false,
       ),
       body: <Widget>[

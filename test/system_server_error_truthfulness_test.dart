@@ -37,7 +37,7 @@ void main() {
     );
     expect(find.text(loopStateSpecimenLabel), findsOneWidget);
     expect(find.text('服务暂时不可用'), findsOneWidget);
-    expect(find.text('RETRY'), findsOneWidget);
+    expect(find.text('可重试'), findsOneWidget);
     expect(find.textContaining('追踪号 7f3a2c9e'), findsOneWidget);
     expect(find.text('返回 LOOP'), findsNothing);
     await tester.tap(find.text('重试'));
@@ -66,7 +66,7 @@ void main() {
       ),
     );
     expect(find.text('服务暂时不可用'), findsOneWidget);
-    expect(find.text('RETRY'), findsOneWidget);
+    expect(find.text('可重试'), findsOneWidget);
     expect(
       find.bySemanticsLabel(RegExp('错误 502.*追踪号 7f3a2c9e')),
       findsOneWidget,

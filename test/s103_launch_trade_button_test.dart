@@ -53,11 +53,11 @@ void main() {
         enabled: false,
       ));
       expect(launchTradeButtonSpec(_chain(sale: LaunchSaleState.ended)), (
-        label: '内盘已结束 · 等待最终化',
+        label: '内盘已结束，等待最终化',
         enabled: false,
       ));
       expect(launchTradeButtonSpec(_chain(sale: LaunchSaleState.failed)), (
-        label: '内盘已结束 · 未达软顶',
+        label: '内盘已结束，未达软顶',
         enabled: false,
       ));
       expect(launchTradeButtonSpec(_chain(sale: LaunchSaleState.cancelled)), (
@@ -75,7 +75,7 @@ void main() {
             liquidity: LaunchLiquidityState.preparing,
           ),
         ),
-        (label: '内盘已结束 · 募集成功', enabled: false),
+        (label: '内盘已结束，募集成功', enabled: false),
       );
       for (final liquidity in <LaunchLiquidityState>[
         LaunchLiquidityState.lpLocked,
@@ -89,7 +89,7 @@ void main() {
               liquidity: liquidity,
             ),
           ),
-          (label: '已毕业 · 内盘已关闭', enabled: false),
+          (label: '已毕业，内盘已关闭', enabled: false),
           reason: liquidity.wireName,
         );
       }

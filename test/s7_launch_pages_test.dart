@@ -103,7 +103,7 @@ void main() {
       expect(find.text('MoonCat'), findsOneWidget);
       expect(find.text('链上待确认'), findsWidgets);
       // The row carries the schedule and the configuration version only.
-      expect(find.textContaining('MCAT · 发射中 · 待确认'), findsOneWidget);
+      expect(find.textContaining('MCAT，发射中，待确认'), findsOneWidget);
       // No percentage, currency figure or countdown reaches the page.
       expect(_figures(tester), isEmpty);
     });
@@ -892,8 +892,8 @@ void main() {
       // A track with no stored record says so; it never reads as "started".
       expect(find.textContaining('尚无记录'), findsWidgets);
       // Alpha and spot are separate tracks and neither implies the other.
-      expect(find.textContaining('Binance · Alpha'), findsOneWidget);
-      expect(find.textContaining('Binance · 现货'), findsOneWidget);
+      expect(find.textContaining('Binance，Alpha'), findsOneWidget);
+      expect(find.textContaining('Binance，现货'), findsOneWidget);
     });
 
     testWidgets('LISTED and FEATURED keep their two evidence times apart', (

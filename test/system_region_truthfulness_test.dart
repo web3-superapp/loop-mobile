@@ -64,7 +64,7 @@ void main() {
     expect(find.text('部分功能在当前地区不可用'), findsOneWidget);
     // The stamp states the decision, never the server's own code for it.
     expect(find.text('REGION_BLOCKED'), findsNothing);
-    expect(find.text('RESTRICTED'), findsOneWidget);
+    expect(find.text('受限'), findsOneWidget);
     expect(find.textContaining('资产保持只读可见'), findsOneWidget);
     expect(find.text('地区策略还没有开放'), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
@@ -80,7 +80,7 @@ void main() {
         featureAvailabilityRestriction: LoopFeatureAvailabilityRestriction(),
       ),
     );
-    expect(find.text('RESTRICTED'), findsOneWidget);
+    expect(find.text('受限'), findsOneWidget);
     expect(find.textContaining('不列出未确认的可用范围'), findsOneWidget);
     // Every exit is still on the page, off, with the reason under it.
     expect(find.text('查看资产'), findsOneWidget);

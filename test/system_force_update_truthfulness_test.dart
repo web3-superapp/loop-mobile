@@ -102,7 +102,7 @@ void main() {
       ),
     );
     expect(find.text('请更新 LOOP 后继续'), findsOneWidget);
-    expect(find.text('REQUIRED'), findsOneWidget);
+    expect(find.text('需更新'), findsOneWidget);
     // The two floors are labelled separately and never merged.
     expect(find.text('强制更新下限'), findsOneWidget);
     expect(find.text('1.2.0'), findsOneWidget);

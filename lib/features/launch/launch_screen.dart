@@ -155,8 +155,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         stamp: overview == null
             ? null
             : launchOverviewReadsChain(overview)
-            ? 'ON-CHAIN'
-            : 'OFF-CHAIN',
+            ? '链上'
+            : '链下',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(

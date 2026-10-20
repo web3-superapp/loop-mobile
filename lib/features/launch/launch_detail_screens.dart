@@ -84,11 +84,11 @@ String launchDetailCaption(
 String launchEligibilityRowText(LaunchResourceState<LaunchEligibility> state) {
   final evaluated = state.value?.evaluated;
   if (evaluated == null) {
-    return '资格结果 $launchPendingConfirmationLabel · 由这次发射的资格模式决定';
+    return '资格结果 $launchPendingConfirmationLabel，由这次发射的资格模式决定';
   }
-  if (evaluated.rootIsZero) return '公开轮 · 无需资格';
+  if (evaluated.rootIsZero) return '公开轮，无需资格';
   final tier = state.value!.tier;
-  return 'Round ${evaluated.roundIndex} · '
+  return 'Round ${evaluated.roundIndex}，'
       '${tier == null ? '不在名单' : launchTierLabel(tier)}';
 }
 
@@ -126,11 +126,11 @@ String launchHistoryRowText(LaunchResourceState<LaunchHistory> state) {
       if (claimed > 0) '$claimed 笔领取',
       if (refunded > 0) '$refunded 笔退款',
     ];
-    return '${parts.join(' · ')} · 最近 ${launchTimestampLabel(latest!)}';
+    return '${parts.join('，')}，最近 ${launchTimestampLabel(latest!)}';
   }
   final block = loopGroupedFigure(indexed.indexedBlockNumber);
   if (history.isEmpty) return '暂无记录（已索引到区块 $block）';
-  return '暂无认购 · 有权益或退款记录（已索引到区块 $block）';
+  return '暂无认购，有权益或退款记录（已索引到区块 $block）';
 }
 
 /// One row of 我的参与记录: a purchase or a claim / refund (decision 0103).
@@ -711,7 +711,7 @@ class _TrackBlock extends StatelessWidget {
           for (final round in chainRounds) _roundItem(round),
           LoopAccordionItem(
             id: 'end',
-            shortTitle: 'END',
+            shortTitle: '终',
             dot: pending ? LoopAccordionDot.idle : LoopAccordionDot.live,
             tone: pending ? LoopAccordionTone.upcoming : LoopAccordionTone.live,
             stateLabel: '毕业',
@@ -804,7 +804,7 @@ class _TrackBlock extends StatelessWidget {
     final badge = _graduationBadge;
     return LoopRecordRow(
       key: const ValueKey<String>('launch-track-graduation'),
-      leading: const LoopMonoTile(label: 'END'),
+      leading: const LoopMonoTile(label: '终'),
       title: '毕业与迁移',
       subtitle: launchTrackEndDetail(onChain),
       trailingBadge: LoopBadge(
@@ -925,7 +925,7 @@ class LaunchTrackRoundDetail extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Text(
-          'Round ${round.roundIndex} · $access',
+          'Round ${round.roundIndex}，$access',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: LoopTypography.withWeight(
@@ -1267,7 +1267,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
           stamp: detail == null
               ? null
               : chainRounds.isNotEmpty
-              ? 'ON CHAIN'
+              ? '链上'
               : launchPendingConfirmationLabel,
           margin: EdgeInsets.zero,
           squareBottom: true,
@@ -1329,7 +1329,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('Access Timeline'),
+          const LoopLabel('准入时间线'),
           if (chainRounds.isNotEmpty)
             LoopRecordGroup(
               key: const ValueKey<String>('launch-rounds-list'),
@@ -1343,7 +1343,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             )
           else
             _AccessTimeline(rounds: detail.rounds, config: config),
-          const LoopLabel('Contract Limits'),
+          const LoopLabel('合约上限'),
           if (saleConfig != null) ...<Widget>[
             LaunchChainCapCard(config: saleConfig, rounds: chainRounds),
             LoopDisclosure(
@@ -1503,7 +1503,7 @@ class _LaunchGraduationScreenState
           caption: onChain == null
               ? '毕业进度看的是流动性。合约上线前还没有可核对的进度。'
               : '${launchStateProjection(onChain)}。步骤只由流动性与权益两条轴推导。',
-          stamp: onChain == null ? 'PENDING' : 'ON CHAIN',
+          stamp: onChain == null ? launchPendingConfirmationLabel : '链上',
           margin: EdgeInsets.zero,
           squareBottom: true,
         ),
@@ -1522,9 +1522,9 @@ class _LaunchGraduationScreenState
           const LoopHairline(),
           LoopCompositeDetailNote(
             onChain == null
-                ? '市值 $launchMissingFigure / 毕业线 $launchMissingFigure · 达线后立即触发迁移'
-                : '快照区块 ${loopGroupedFigure(onChain.snapshotBlockNumber)} · '
-                      '流动性 ${onChain.liquidityState.wireName} · '
+                ? '市值 $launchMissingFigure / 毕业线 $launchMissingFigure，达线后立即触发迁移'
+                : '快照区块 ${loopGroupedFigure(onChain.snapshotBlockNumber)}，'
+                      '流动性 ${onChain.liquidityState.wireName}，'
                       '权益 ${onChain.entitlementState.wireName}',
           ),
         ],
@@ -1550,7 +1550,7 @@ class _LaunchGraduationScreenState
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('Migration Rail'),
+          const LoopLabel('迁移步骤'),
           LoopRecordGroup(
             key: const ValueKey<String>('launch-graduation-steps'),
             rows: <LoopRecordRow>[
@@ -1891,7 +1891,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
               : '参与人数是在内盘买过的不同地址数，不是当前持币人数；'
                     '来自链上索引，索引到区块 '
                     '${loopGroupedFigure(count.indexedBlockNumber)}。',
-          stamp: count == null ? 'UNAVAILABLE' : 'INDEXED',
+          stamp: count == null ? '不可用' : '已索引',
           margin: EdgeInsets.zero,
           squareBottom: true,
         ),
@@ -1936,7 +1936,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('Top Holders'),
+          const LoopLabel('持有排行'),
           // The ranking has no source, so no address is invented. The one row
           // the reader owns keeps its place, with the Lime `YOU` tile.
           LoopRecordGroup(
@@ -1945,11 +1945,10 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
               if (position == null)
                 LoopRecordRow(
                   key: const ValueKey<String>('launch-holders-me'),
-                  leading: const LoopMonoTile(label: 'YOU', accent: true),
+                  leading: const LoopMonoTile(label: '我'),
                   selected: true,
                   title: '我的仓位',
-                  subtitle:
-                      '持仓 $launchMissingFigure · 还可买 $launchMissingFigure',
+                  subtitle: '持仓 $launchMissingFigure，还可买 $launchMissingFigure',
                   trailing: launchMissingFigure,
                   semanticLabel:
                       '我的仓位，'
@@ -1958,14 +1957,14 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
               else
                 LoopRecordRow(
                   key: const ValueKey<String>('launch-holders-me'),
-                  leading: const LoopMonoTile(label: 'YOU', accent: true),
+                  leading: const LoopMonoTile(label: '我'),
                   selected: true,
                   title: '我的仓位',
                   subtitle:
-                      '已认购 ${launchUnitsFigure(position.purchasedTokens)} 枚 · '
+                      '已认购 ${launchUnitsFigure(position.purchasedTokens)} 枚，'
                       '累计支付 ${launchUsd1Label(position.cumulativeUsd1)}\n'
-                      '可领取 ${launchUnitsFigure(position.claimableTokens)} 枚 · '
-                      '已领取 ${launchUnitsFigure(position.claimedTokens)} 枚 · '
+                      '可领取 ${launchUnitsFigure(position.claimableTokens)} 枚，'
+                      '已领取 ${launchUnitsFigure(position.claimedTokens)} 枚，'
                       '可退款 ${launchUsd1Label(position.refundableUsd1)}',
                   subtitleMaxLines: 3,
                   trailing: launchUnitsFigure(position.entitledTokens),
@@ -2069,7 +2068,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
               ? '购买、权益与退款记录都要看链上数据，目前读不到，因此不显示笔数或盈亏。'
               : '记录来自链上索引，索引到区块 '
                     '${loopGroupedFigure(indexed.indexedBlockNumber)}；不显示盈亏。',
-          stamp: indexed == null ? 'UNAVAILABLE' : 'INDEXED',
+          stamp: indexed == null ? '不可用' : '已索引',
           margin: EdgeInsets.zero,
           squareBottom: true,
         ),
@@ -2109,7 +2108,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else if (indexed == null) ...<Widget>[
-          const LoopLabel('Records'),
+          const LoopLabel('参与明细'),
           switch (history.source) {
             LaunchReadingUnavailable<LaunchIndexedSource>(:final fact) =>
               LaunchUnavailableCard(label: '购买、权益与退款记录', fact: fact),
@@ -2163,9 +2162,9 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
                     ),
                     title: '支付 ${launchUsd1Label(purchases[index].usd1Amount)}',
                     subtitle:
-                        '获得 ${launchUnitsFigure(purchases[index].tokenAmount)} 枚 · '
+                        '获得 ${launchUnitsFigure(purchases[index].tokenAmount)} 枚，'
                         '区块 ${loopGroupedFigure(purchases[index].blockNumber)}\n'
-                        '交易 ${launchShortHex(purchases[index].transactionHash)} · '
+                        '交易 ${launchShortHex(purchases[index].transactionHash)}，'
                         '观察于 ${launchTimestampLabel(purchases[index].observedAt)}',
                     subtitleMaxLines: 2,
                     trailingBadge: LoopBadge(
@@ -2275,9 +2274,9 @@ class _HistoryTimeline extends StatelessWidget {
         leading: LoopMonoTile(label: 'R${purchase.roundIndex}'),
         title: '支付 ${launchUsd1Label(purchase.usd1Amount)}',
         subtitle:
-            '获得 ${launchUnitsFigure(purchase.tokenAmount)} 枚 · '
+            '获得 ${launchUnitsFigure(purchase.tokenAmount)} 枚，'
             '区块 ${loopGroupedFigure(purchase.blockNumber)}\n'
-            '交易 ${launchShortHex(purchase.transactionHash)} · '
+            '交易 ${launchShortHex(purchase.transactionHash)}，'
             '观察于 ${launchTimestampLabel(purchase.observedAt)}',
         subtitleMaxLines: 2,
         trailingBadge: LoopBadge(
@@ -2304,12 +2303,12 @@ class _HistoryTimeline extends StatelessWidget {
       key: ValueKey<String>(
         'launch-history-settlement-${settlement.settlementRecordId}',
       ),
-      leading: LoopMonoTile(label: claimed ? 'CLM' : 'RFD'),
+      leading: LoopMonoTile(label: claimed ? '领' : '退'),
       title: '${claimed ? '领取' : '退回'} $amount',
       subtitle:
-          '$total · ${settlement.confirmationState.label} · '
+          '$total，${settlement.confirmationState.label}，'
           '区块 ${loopGroupedFigure(settlement.blockNumber)}\n'
-          '交易 ${launchShortHex(settlement.transactionHash)} · '
+          '交易 ${launchShortHex(settlement.transactionHash)}，'
           '观察于 ${launchTimestampLabel(settlement.observedAt)}',
       subtitleMaxLines: 2,
       trailingBadge: LoopBadge(

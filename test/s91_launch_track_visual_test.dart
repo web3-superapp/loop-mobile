@@ -269,7 +269,7 @@ void main() {
   testWidgets('the measuring copies are not on screen for finders or '
       'readers', (tester) async {
     await pumpDetail(tester);
-    expect(find.text('Round 2 · 公开轮'), findsOneWidget);
+    expect(find.text('Round 2，公开轮'), findsOneWidget);
     expect(find.text('毕业与迁移'), findsNothing);
     expect(
       find.descendant(

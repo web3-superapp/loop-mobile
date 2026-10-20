@@ -465,7 +465,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
       key: const ValueKey<String>('launch-trade-screen'),
       archetype: LoopPageArchetype.action,
       title: detail?.launch.ticker ?? 'Launch 认购',
-      subtitle: '内盘 · 只买不卖 · 手续费 ${fee ?? launchMissingFigure}',
+      subtitle: '内盘，只买不卖，手续费 ${fee ?? launchMissingFigure}',
       onBack: widget.onBack,
       keyboardAccessory: true,
       folioCollapsed: typing,
@@ -492,7 +492,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             ? '支付、获得、费用与剩余额度在签名前完成最终复核。提交后才有服务端报价。'
             : '报价来自区块 ${prepared.intent.snapshotBlockNumber} 的合约读数，'
                   '签名前以下方复核为准。',
-        stamp: purchasable ? 'LIVE' : 'DISABLED',
+        stamp: purchasable ? '可买入' : '不可买入',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -684,9 +684,9 @@ class _TradeInFlightBanner extends StatelessWidget {
     } else if (state == null || state == LaunchIntentState.submitted) {
       title = '已广播，等待链上索引';
     } else {
-      title = '已广播 · ${state.label}';
+      title = '已广播，${state.label}';
     }
-    final round = roundIndex == null ? '' : 'Round $roundIndex · ';
+    final round = roundIndex == null ? '' : 'Round $roundIndex，';
     final body = hash == null
         ? '$round这笔认购已锁定，不要重复签名。结果会出现在「我的参与记录」。'
         : '$round交易 ${launchShortHex(hash)}。广播不代表已成交，'
@@ -860,8 +860,8 @@ class _TradeQuoteCard extends StatelessWidget {
               ),
               const SizedBox(height: 7),
               Text(
-                '包含本轮手续费 ${feeLabel ?? launchMissingFigure} · '
-                'USD1 余额 $balance · 授权额度 $allowance',
+                '包含本轮手续费 ${feeLabel ?? launchMissingFigure}，'
+                'USD1 余额 $balance，授权额度 $allowance',
                 key: const ValueKey<String>('launch-trade-balance'),
                 style: LoopType.captionSm.copyWith(color: auxiliary),
               ),
@@ -955,7 +955,7 @@ class _TradeReview extends StatelessWidget {
             tone: LoopNoticeTone.warn,
             title: reported == null
                 ? '已提交给钱包，结果未确认'
-                : '已广播 · ${reported.state.label}',
+                : '已广播，${reported.state.label}',
             body:
                 launchBroadcastText(
                   LaunchSignOutcome(

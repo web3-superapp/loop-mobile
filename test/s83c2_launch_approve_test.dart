@@ -1314,7 +1314,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-locked')).title,
-        '已广播 · 已提交，等待链上索引',
+        '已广播，已提交，等待链上索引',
       );
       expect(_key('launch-trade-report-retry'), findsNothing);
       expect(_key('launch-trade-sign'), findsNothing);

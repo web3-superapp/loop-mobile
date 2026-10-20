@@ -357,14 +357,14 @@ void main() {
       );
       expect(find.text('2 个轮次'), findsOneWidget);
       final first = tester.widget<LoopRecordRow>(_key('launch-round-1'));
-      expect(first.title, 'Round 1 · 名单轮');
+      expect(first.title, 'Round 1，名单轮');
       expect(first.trailing, '0.01 USD1');
       expect(first.subtitle, contains('2026-09-21 14:13 UTC'));
       expect(first.subtitle, contains('轮次上限 40,000 USD1'));
       expect(first.subtitle, contains('钱包上限 500 USD1'));
       expect(first.subtitle, contains('已募集 1,234 USD1'));
       final second = tester.widget<LoopRecordRow>(_key('launch-round-2'));
-      expect(second.title, 'Round 2 · 公开轮');
+      expect(second.title, 'Round 2，公开轮');
       expect(find.text('Round 1 单钱包上限'), findsOneWidget);
       await openS7Disclosure(
         tester,
@@ -571,7 +571,7 @@ void main() {
         tester.widget<LoopButton>(_key('launch-trade-submit')).onPressed,
         isNull,
       );
-      expect(find.textContaining('已暂停 · 销售进行中'), findsOneWidget);
+      expect(find.textContaining('已暂停，销售进行中'), findsOneWidget);
     });
 
     testWidgets('a round LOOP has no id for cannot be chosen', (tester) async {

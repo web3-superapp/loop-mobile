@@ -96,20 +96,18 @@ void main() {
   });
 
   group('the Launch hero follows the catalogue rows', () {
-    testWidgets('no chain row: OFF-CHAIN and the cannot-read caption', (
-      tester,
-    ) async {
+    testWidgets('no chain row: 链下 and the cannot-read caption', (tester) async {
       await pumpS7Page(
         tester,
         const LaunchScreen(),
         launch: FakeLaunchGateway(),
       );
       final primary = folio(tester);
-      expect(primary.stamp, 'OFF-CHAIN');
+      expect(primary.stamp, '链下');
       expect(primary.caption, contains('链上状态、价格与毕业进度暂时读不到'));
     });
 
-    testWidgets('a chain row: ON-CHAIN, and the testnet named', (tester) async {
+    testWidgets('a chain row: 链上, and the testnet named', (tester) async {
       await pumpS7Page(
         tester,
         const LaunchScreen(),
@@ -132,7 +130,7 @@ void main() {
         ),
       );
       final primary = folio(tester);
-      expect(primary.stamp, 'ON-CHAIN');
+      expect(primary.stamp, '链上');
       expect(primary.caption, '目录、申请与轮次配置由 LOOP 提供；链上状态读自 BSC 测试网。');
     });
 
@@ -253,10 +251,10 @@ void main() {
       // 发射中 is the default segment: no chain reading → the segment's name.
       final liveRow = key('launch-row-live-1');
       expect(
-        find.descendant(of: liveRow, matching: find.text('MCAT · 发射中 · 待确认')),
+        find.descendant(of: liveRow, matching: find.text('MCAT，发射中，待确认')),
         findsOneWidget,
       );
-      expect(find.textContaining('待排期 ·'), findsNothing);
+      expect(find.textContaining('待排期，'), findsNothing);
 
       // The chips scroll sideways; bring this one into view first.
       await tester.ensureVisible(find.text('已结束 1'));
@@ -265,13 +263,10 @@ void main() {
       await tester.pumpAndSettle();
       final endedRow = key('launch-row-$s7LaunchId');
       expect(
-        find.descendant(
-          of: endedRow,
-          matching: find.text('MCAT · 销售已结束 · 待确认'),
-        ),
+        find.descendant(of: endedRow, matching: find.text('MCAT，销售已结束，待确认')),
         findsOneWidget,
       );
-      expect(find.textContaining('已批准 · 待排期'), findsNothing);
+      expect(find.textContaining('已批准，待排期'), findsNothing);
     });
 
     testWidgets('待排期 keeps the schedule wording', (tester) async {
@@ -282,7 +277,7 @@ void main() {
       );
       await tester.tap(find.text('待排期 1'));
       await tester.pumpAndSettle();
-      expect(find.text('MCAT · 已批准 · 待排期 · 待确认'), findsOneWidget);
+      expect(find.text('MCAT，已批准，待排期，待确认'), findsOneWidget);
     });
   });
 }

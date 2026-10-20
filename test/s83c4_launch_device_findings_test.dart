@@ -234,7 +234,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-in-flight')).title,
-        '已广播 · 已确认',
+        '已广播，已确认',
       );
     });
   });
@@ -247,7 +247,7 @@ void main() {
         tester,
         eligibility: S7Answer<LaunchEligibility>(value: _openEligibility()),
       );
-      expect(_subtitle(tester, 'launch-detail-open-tier'), '公开轮 · 无需资格');
+      expect(_subtitle(tester, 'launch-detail-open-tier'), '公开轮，无需资格');
     });
 
     testWidgets('launch-detail keeps 待确认 while no evaluator answered', (
@@ -256,7 +256,7 @@ void main() {
       await _pumpDetail(tester);
       expect(
         _subtitle(tester, 'launch-detail-open-tier'),
-        '资格结果 $launchPendingConfirmationLabel · 由这次发射的资格模式决定',
+        '资格结果 $launchPendingConfirmationLabel，由这次发射的资格模式决定',
       );
     });
 
@@ -267,10 +267,7 @@ void main() {
         tester,
         eligibility: S7Answer<LaunchEligibility>(value: s83cEligibility()),
       );
-      expect(
-        _subtitle(tester, 'launch-detail-open-tier'),
-        'Round 1 · Priority',
-      );
+      expect(_subtitle(tester, 'launch-detail-open-tier'), 'Round 1，Priority');
     });
 
     testWidgets('launch-tier says the round is open, never 待确认', (
@@ -298,7 +295,7 @@ void main() {
       );
       expect(
         _subtitle(tester, 'launch-detail-open-history'),
-        '1 笔认购 · 最近 ${launchTimestampLabel(DateTime.utc(2026, 9, 22, 14, 2))}',
+        '1 笔认购，最近 ${launchTimestampLabel(DateTime.utc(2026, 9, 22, 14, 2))}',
       );
     });
 

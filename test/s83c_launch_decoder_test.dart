@@ -720,7 +720,7 @@ void main() {
             LaunchOperationalState.paused,
           ),
         ),
-        '已暂停 · 销售进行中',
+        '已暂停，销售进行中',
       );
       expect(
         axes(

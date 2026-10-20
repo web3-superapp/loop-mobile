@@ -311,7 +311,7 @@ class _LaunchSettlementSectionState
           key: 'launch-settlement-claimable',
           title: '可领取 ${launchUnitsFigure(position!.claimableTokens)} 代币',
           subtitle:
-              '已领取 ${launchUnitsFigure(position.claimedTokens)} 代币 · $block\n'
+              '已领取 ${launchUnitsFigure(position.claimedTokens)} 代币，$block\n'
               '领取由合约执行，代币直接到当前钱包。',
           badge: '可领取',
           done: true,
@@ -322,13 +322,13 @@ class _LaunchSettlementSectionState
           title: '暂无可领取',
           subtitle:
               '份额 ${launchUnitsFigure(position!.entitledTokens)} 代币，'
-              '按释放计划成熟后可领取 · $block',
+              '按释放计划成熟后可领取，$block',
         );
       case LaunchSettlementStage.claimedSoFar:
         return row(
           key: 'launch-settlement-claimed-so-far',
           title: '已领取 ${launchUnitsFigure(position!.claimedTokens)} 代币',
-          subtitle: '当前没有可领取的部分，下一次释放后再来 · $block',
+          subtitle: '当前没有可领取的部分，下一次释放后再来，$block',
           badge: '已领取',
           done: true,
         );
@@ -337,7 +337,7 @@ class _LaunchSettlementSectionState
           key: 'launch-settlement-claimed-all',
           title: '已全部领取',
           subtitle:
-              '累计领取 ${launchUnitsFigure(position!.claimedTokens)} 代币 · $block',
+              '累计领取 ${launchUnitsFigure(position!.claimedTokens)} 代币，$block',
           badge: '已完成',
           done: true,
         );
@@ -346,7 +346,7 @@ class _LaunchSettlementSectionState
           key: 'launch-settlement-refundable',
           title: '可退款 ${launchUsd1Label(position!.refundableUsd1)}',
           subtitle:
-              '已退款 ${launchUsd1Label(position.refundedUsd1)} · $block\n'
+              '已退款 ${launchUsd1Label(position.refundedUsd1)}，$block\n'
               '退款由合约执行，一次退回全部，USD1 直接到当前钱包。',
           badge: '可退款',
           done: true,
@@ -355,7 +355,7 @@ class _LaunchSettlementSectionState
         return row(
           key: 'launch-settlement-refunded-all',
           title: '已全部退款',
-          subtitle: '累计退回 ${launchUsd1Label(position!.refundedUsd1)} · $block',
+          subtitle: '累计退回 ${launchUsd1Label(position!.refundedUsd1)}，$block',
           badge: '已完成',
           done: true,
         );
