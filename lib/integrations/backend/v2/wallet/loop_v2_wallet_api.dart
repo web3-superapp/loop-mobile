@@ -4,6 +4,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
@@ -57,11 +58,21 @@ abstract interface class LoopV2WalletApi {
 }
 
 final class DioLoopV2WalletApi implements LoopV2WalletApi {
-  DioLoopV2WalletApi(this._dio, {this._snapshotTap});
+  DioLoopV2WalletApi(
+    this._dio, {
+    this._snapshotTap,
+    String? Function(String mediaId)? mediaUrl,
+  }) : _mediaUrl = mediaUrl ?? _noMedia;
 
   /// Hands the body of a cold-start read to the snapshot store (decision
   /// 0095). `null` stores nothing.
   final LoopV2SnapshotTap? _snapshotTap;
+
+  /// Resolves a MEME v2 logo served by our own media service (decision 0213:
+  /// the activity page's Launch-chain rows carry the instance's `logoUrl`).
+  final String? Function(String mediaId) _mediaUrl;
+
+  static String? _noMedia(String mediaId) => null;
 
   static const walletsPath = '/v2/wallets';
   static const activeWalletPath = '/v2/wallets/active';
@@ -464,24 +475,46 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'walletId',
-        'items',
-        'nextCursor',
-        'freshness',
-        'nativeTransfers',
-        'crossChain',
-        'contractVersion',
-      });
+      // Decision 0213 (loop-api 0167): `launch2` is the one optional root
+      // key; every other key stays exactly as before.
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'walletId',
+          'items',
+          'nextCursor',
+          'freshness',
+          'nativeTransfers',
+          'crossChain',
+          'contractVersion',
+        },
+        const <String>{'launch2'},
+      );
       LoopV2ChainCodec.requireContractVersion(root);
       if (root['walletId'] != target) LoopV2ChainCodec.invalid();
+      final launch2 = root.containsKey('launch2')
+          ? _launch2Leg(root['launch2'])
+          : null;
 
-      final items = <LoopWalletActivityEntry>[];
+      final rows = <LoopWalletActivityRecord>[];
       final seen = <String>{};
       for (final raw in LoopV2ChainCodec.requireList(
         root['items'],
         maximum: 50,
       )) {
+        // A row with a `kind` key is a Launch-chain MEME v2 fact; a row
+        // without one is the transfer it always was. A kind this build does
+        // not know is skipped, so a later kind never closes the page.
+        if (raw is Map && raw.containsKey('kind')) {
+          final kind = raw['kind'];
+          if (kind is! String) LoopV2ChainCodec.invalid();
+          final parsed = LoopWalletLaunch2ActivityKind.tryParse(kind);
+          if (parsed == null) continue;
+          final entry = _launch2Entry(raw, parsed);
+          if (!seen.add(entry.entryId)) LoopV2ChainCodec.invalid();
+          rows.add(entry);
+          continue;
+        }
         final map = LoopV2Contract.strictMap(raw, const <String>{
           'assetId',
           'symbol',
@@ -538,16 +571,17 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
           observedAt: LoopV2ChainCodec.requireTimestamp(map, 'observedAt'),
         );
         if (!seen.add(entry.entryId)) LoopV2ChainCodec.invalid();
-        items.add(entry);
+        rows.add(entry);
       }
 
       return LoopWalletActivityPage(
         walletId: target,
-        items: items,
+        rows: rows,
         nextCursor: LoopV2ChainCodec.cursor(root, 'nextCursor'),
         freshness: LoopV2ChainCodec.freshness(root['freshness']),
         nativeTransfers: LoopV2ChainCodec.unavailable(root['nativeTransfers']),
         crossChain: LoopV2ChainCodec.unavailable(root['crossChain']),
+        launch2: launch2,
       );
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
@@ -555,6 +589,108 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         allowedCodes: LoopV2ModuleRequest.chainReadErrors,
       );
     }
+  }
+
+  /// The root `launch2` block: four keys when merged, two when not
+  /// (decision 0167 §C). Both shapes are exact.
+  static LoopWalletLaunch2Leg _launch2Leg(Object? raw) {
+    if (raw is! Map) LoopV2ChainCodec.invalid();
+    switch (raw['status']) {
+      case 'available':
+        final map = LoopV2Contract.strictMap(raw, const <String>{
+          'status',
+          'chainId',
+          'indexerBlockNumber',
+          'headBlockNumber',
+        });
+        return LoopWalletLaunch2Leg.available(
+          chainId: LoopV2ChainCodec.requireString(
+            map,
+            'chainId',
+            pattern: LoopV2ChainCodec.chainIdPattern,
+            maxLength: 17,
+          ),
+          indexerBlockNumber: LoopV2ChainCodec.requireBlockNumber(
+            map,
+            'indexerBlockNumber',
+          ),
+          headBlockNumber: LoopV2ChainCodec.optionalBlockNumber(
+            map,
+            'headBlockNumber',
+          ),
+        );
+      case 'unavailable':
+        return LoopWalletLaunch2Leg.unavailable(
+          LoopV2ChainCodec.unavailable(raw),
+        );
+      default:
+        LoopV2ChainCodec.invalid();
+    }
+  }
+
+  static const _launch2RowKeys = <String>{
+    'kind',
+    'chainId',
+    'instanceId',
+    'ticker',
+    'name',
+    'logoUrl',
+    'amountMeme',
+    'amountUsd1',
+    'taxUsd1',
+    'transactionHash',
+    'logIndex',
+    'blockNumber',
+    'occurredAt',
+    'confirmations',
+  };
+
+  static Decimal? _optionalAmount(Map<String, Object?> map, String key) =>
+      map[key] == null ? null : LoopV2Launch2Codec.amount(map, key);
+
+  /// One Launch-chain MEME v2 row: all fourteen keys, exactly (decision
+  /// 0167 §C). The ticker keeps the published bound (80 characters, so up to
+  /// 160 UTF-16 units) under the ticker rule; the name is provider text.
+  LoopWalletLaunch2ActivityEntry _launch2Entry(
+    Object? raw,
+    LoopWalletLaunch2ActivityKind kind,
+  ) {
+    final map = LoopV2Contract.strictMap(raw, _launch2RowKeys);
+    return LoopWalletLaunch2ActivityEntry(
+      kind: kind,
+      chainId: LoopV2ChainCodec.requireString(
+        map,
+        'chainId',
+        pattern: LoopV2ChainCodec.chainIdPattern,
+        maxLength: 17,
+      ),
+      instanceId: LoopV2Launch2Codec.uuid(map, 'instanceId'),
+      ticker: LoopV2ChainCodec.requireSymbol(map, 'ticker', maxLength: 160),
+      name: LoopV2ChainCodec.providerText(
+        map,
+        'name',
+        minLength: 1,
+        maxLength: 64,
+      ),
+      logoUrl: LoopV2Launch2Codec.logoUrl(map, 'logoUrl', mediaUrl: _mediaUrl),
+      amountMeme: _optionalAmount(map, 'amountMeme'),
+      amountUsd1: _optionalAmount(map, 'amountUsd1'),
+      taxUsd1: _optionalAmount(map, 'taxUsd1'),
+      transactionHash: LoopV2ChainCodec.requireString(
+        map,
+        'transactionHash',
+        pattern: LoopV2ChainCodec.hashPattern,
+        maxLength: 66,
+      ),
+      logIndex: LoopV2ChainCodec.requireInt(map, 'logIndex'),
+      blockNumber: LoopV2ChainCodec.requireBlockNumber(map, 'blockNumber'),
+      occurredAt: LoopV2ChainCodec.requireTimestamp(map, 'occurredAt'),
+      confirmations: LoopV2ChainCodec.optionalInt(
+        map,
+        'confirmations',
+        minimum: 0,
+      ),
+    );
   }
 
   @override

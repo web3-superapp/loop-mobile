@@ -522,10 +522,29 @@ enum LoopTransferDirection {
   }
 }
 
+/// One row of the `tx-history` tape, in the order the server merged it.
+///
+/// Decision 0167 (loop-api) / client 0213: with `WALLET_ACTIVITY_LAUNCH2_EMIT`
+/// on, the activity page interleaves the wallet's Launch-chain MEME v2 facts
+/// ([LoopWalletLaunch2ActivityEntry]) with the mainnet ERC-20 transfers
+/// ([LoopWalletActivityEntry]). The two shapes share nothing but an identity
+/// and a time; the page never converts one into the other.
+@immutable
+sealed class LoopWalletActivityRecord {
+  const LoopWalletActivityRecord();
+
+  /// Stable identity of the row, used for list keys and de-duplication.
+  String get entryId;
+
+  /// The moment the tape orders this row by (transfer: observed; MEME v2:
+  /// block time).
+  DateTime get at;
+}
+
 /// One indexed ERC-20 transfer. Each row carries its own transaction, log
 /// index, block and confirmation count so nothing is inferred from position.
 @immutable
-final class LoopWalletActivityEntry {
+final class LoopWalletActivityEntry extends LoopWalletActivityRecord {
   const LoopWalletActivityEntry({
     required this.assetId,
     required this.symbol,
@@ -559,22 +578,152 @@ final class LoopWalletActivityEntry {
   final DateTime observedAt;
 
   /// Stable identity of one indexed log, used for list keys and de-duplication.
+  @override
   String get entryId => '$transactionHash:$logIndex';
+
+  @override
+  DateTime get at => observedAt;
+}
+
+/// The seven Launch-chain fact kinds the activity page may merge (loop-api
+/// decision 0167 §B). A kind this build does not know is skipped by the
+/// decoder, never turned into one of these.
+enum LoopWalletLaunch2ActivityKind {
+  curveBuy('launch2_curve_buy'),
+  curveSell('launch2_curve_sell'),
+  poolBuy('launch2_pool_buy'),
+  poolSell('launch2_pool_sell'),
+  nftMint('launch2_nft_mint'),
+  rewardClaim('launch2_reward_claim'),
+  buyback('launch2_buyback');
+
+  const LoopWalletLaunch2ActivityKind(this.wireName);
+
+  final String wireName;
+
+  bool get isBuy => this == curveBuy || this == poolBuy;
+
+  bool get isSell => this == curveSell || this == poolSell;
+
+  static LoopWalletLaunch2ActivityKind? tryParse(String value) {
+    for (final kind in values) {
+      if (kind.wireName == value) return kind;
+    }
+    return null;
+  }
+}
+
+/// One MEME v2 fact of the wallet on the Launch chain (decision 0167 §C).
+///
+/// Amounts are exact decimals in token units (18 decimals on the wire);
+/// `null` where the kind has no such amount (§B). [confirmations] is counted
+/// against the Launch chain head and is `null` when that head was unreadable.
+@immutable
+final class LoopWalletLaunch2ActivityEntry extends LoopWalletActivityRecord {
+  const LoopWalletLaunch2ActivityEntry({
+    required this.kind,
+    required this.chainId,
+    required this.instanceId,
+    required this.ticker,
+    required this.name,
+    required this.logoUrl,
+    required this.amountMeme,
+    required this.amountUsd1,
+    required this.taxUsd1,
+    required this.transactionHash,
+    required this.logIndex,
+    required this.blockNumber,
+    required this.occurredAt,
+    required this.confirmations,
+  });
+
+  final LoopWalletLaunch2ActivityKind kind;
+  final String chainId;
+  final String instanceId;
+  final String ticker;
+  final String name;
+  final String? logoUrl;
+  final Decimal? amountMeme;
+  final Decimal? amountUsd1;
+  final Decimal? taxUsd1;
+  final String transactionHash;
+  final int logIndex;
+  final BigInt blockNumber;
+  final DateTime occurredAt;
+  final int? confirmations;
+
+  /// Chain, log and kind are all part of it: a Launch-chain hash never
+  /// collides with a mainnet transfer's key, and two facts of one log (were
+  /// the server ever to send them) stay two rows.
+  @override
+  String get entryId =>
+      'launch2:$chainId:$transactionHash:$logIndex:${kind.wireName}';
+
+  @override
+  DateTime get at => occurredAt;
+}
+
+/// The root `launch2` block of the activity page (decision 0167 §C). Absent
+/// on the wire — the switch is off — the page carries `null` and reads as it
+/// always did.
+@immutable
+final class LoopWalletLaunch2Leg {
+  const LoopWalletLaunch2Leg.available({
+    required String this.chainId,
+    required BigInt this.indexerBlockNumber,
+    required this.headBlockNumber,
+  }) : unavailable = null;
+
+  const LoopWalletLaunch2Leg.unavailable(LoopUnavailable this.unavailable)
+    : chainId = null,
+      indexerBlockNumber = null,
+      headBlockNumber = null;
+
+  final String? chainId;
+  final BigInt? indexerBlockNumber;
+  final BigInt? headBlockNumber;
+
+  /// Set when the MEME rows could not be merged: the page then holds the
+  /// transfers only, and that is not "no MEME records".
+  final LoopUnavailable? unavailable;
+
+  bool get isAvailable => unavailable == null;
 }
 
 @immutable
 final class LoopWalletActivityPage {
+  /// [items] lists transfers only (the page as it was before decision 0167);
+  /// [rows] lists the merged tape in server order and, when given, is the
+  /// page — [items] must then be left empty and is derived from it.
   LoopWalletActivityPage({
     required this.walletId,
-    required List<LoopWalletActivityEntry> items,
+    List<LoopWalletActivityEntry> items = const <LoopWalletActivityEntry>[],
+    List<LoopWalletActivityRecord>? rows,
     required this.nextCursor,
     required this.freshness,
     required this.nativeTransfers,
     required this.crossChain,
-  }) : items = List<LoopWalletActivityEntry>.unmodifiable(items);
+    this.launch2,
+  }) : assert(rows == null || items.isEmpty, 'pass items or rows, not both'),
+       rows = List<LoopWalletActivityRecord>.unmodifiable(rows ?? items),
+       items = List<LoopWalletActivityEntry>.unmodifiable(
+         (rows ?? items).whereType<LoopWalletActivityEntry>(),
+       );
 
   final String walletId;
+
+  /// Every row, transfers and MEME v2 facts, newest first as merged.
+  final List<LoopWalletActivityRecord> rows;
+
+  /// The ERC-20 transfers among [rows], in the same order.
   final List<LoopWalletActivityEntry> items;
+
+  /// The MEME v2 facts among [rows], in the same order.
+  List<LoopWalletLaunch2ActivityEntry> get launch2Items =>
+      rows.whereType<LoopWalletLaunch2ActivityEntry>().toList(growable: false);
+
+  /// `null` when the server did not merge the Launch chain (switch off).
+  final LoopWalletLaunch2Leg? launch2;
   final String? nextCursor;
   final LoopIndexerFreshness freshness;
 
