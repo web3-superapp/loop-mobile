@@ -200,7 +200,15 @@ class LoopTokenCard extends StatelessWidget {
                       left: 0,
                       top: 14,
                       bottom: 14,
-                      child: Container(width: 4, color: LoopColors.yellow),
+                      child: Container(
+                        width: 4,
+                        decoration: const BoxDecoration(
+                          color: LoopColors.yellow,
+                          borderRadius: BorderRadius.horizontal(
+                            right: Radius.circular(4),
+                          ),
+                        ),
+                      ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

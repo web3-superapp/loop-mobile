@@ -737,8 +737,9 @@ class LoopFolioPrimary extends StatelessWidget {
     // of every dashboard page. Text and a hairline border do not overlap
     // themselves, so the result is the same pixels.
     final stampInk = _faded(
-      variant == LoopFolioVariant.quiet ? LoopColors.lime : foreground,
-      variant == LoopFolioVariant.quiet ? 0.8 : 0.68,
+      // Decision 0212: a stamp is a status, never Yellow.
+      variant == LoopFolioVariant.quiet ? LoopColors.text2 : foreground,
+      variant == LoopFolioVariant.quiet ? 1 : 0.68,
     );
     final stampMaxWidth = contentWidth.isFinite
         ? contentWidth * stampMaxWidthFactor
@@ -911,11 +912,20 @@ class LoopFolioStamp extends StatelessWidget {
         color ??
         LoopGround.inkOf(context)
             .withValues(alpha: _LoopFolioStampMetrics.groundInkOpacity);
+    // Decision 0212: on the dark page a stamp is a filled raised capsule
+    // with no edge; on a light ground it keeps its hairline frame.
+    final onDark = LoopGround.inkOf(context).computeLuminance() > 0.4;
     return Container(
       padding: LoopFolioPrimary._stampPadding,
       decoration: BoxDecoration(
-        borderRadius: LoopRadius.badge,
-        border: Border.all(color: ink, width: LoopFolioPrimary._stampBorder),
+        borderRadius: LoopRadius.pill,
+        color: onDark ? LoopColors.card2 : null,
+        border: onDark
+            ? Border.all(
+                color: LoopColors.card2,
+                width: LoopFolioPrimary._stampBorder,
+              )
+            : Border.all(color: ink, width: LoopFolioPrimary._stampBorder),
       ),
       child: Text(
         label,
@@ -1572,7 +1582,12 @@ class LoopRecordRow extends StatelessWidget {
     );
     final content = Container(
       constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-      padding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
+      // Decision 0212 (水平对齐): the row's glyph and words start on the page
+      // margin itself, under the section title, and its chevron ends on the
+      // right margin — the hairlines already span exactly that width, so the
+      // 12 inner inset only pushed the content off the page's one left edge.
+      // A chosen row keeps room for its 3 px Purple bar.
+      padding: EdgeInsets.fromLTRB(selected ? 9 : 0, 13, 0, 13),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
@@ -1646,12 +1661,16 @@ class LoopRecordRow extends StatelessWidget {
     // Decision 0210: a divided list, not a filled card — a `#2A292F`
     // hairline above the first row and under every row, no fill, no shadow.
     // A chosen row takes the Purple selection ground.
+    // Decision 0212: only a chosen row has a ground to round; an unchosen
+    // row is unclipped, so the hairlines above the first row and under the
+    // last one run the full page width instead of stopping short of the
+    // rounded corners.
     final row = Container(
       decoration: BoxDecoration(
         color: selected ? LoopColors.purpleSoft : null,
-        borderRadius: radius,
+        borderRadius: selected ? radius : null,
       ),
-      clipBehavior: Clip.antiAlias,
+      clipBehavior: selected ? Clip.antiAlias : Clip.none,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2137,24 +2156,25 @@ class LoopBadge extends StatelessWidget {
         : switch (kind) {
             LoopBadgeKind.mining ||
             LoopBadgeKind.launch ||
-            // Decision 0210: the looplabs tag — Yellow ground, Ink word.
-            LoopBadgeKind.up => (LoopColors.yellow, LoopColors.ink),
+            // Decision 0212 (docs/42 附C §4): a tag is never solid Yellow —
+            // Yellow 13 % ground, Yellow word.
+            LoopBadgeKind.up => (LoopColors.yellowSoft, LoopColors.yellow),
             LoopBadgeKind.down || LoopBadgeKind.mute => (
               LoopGround.fillOf(context),
               LoopGround.secondaryOf(context),
             ),
           };
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: LoopRadius.badge,
+        borderRadius: LoopRadius.pill,
       ),
       child: Text(
         text,
         style: LoopTypography.withWeight(
           LoopType.label,
-          FontWeight.w700,
+          FontWeight.w600,
         ).copyWith(color: foreground),
       ),
     );
@@ -2223,16 +2243,13 @@ class LoopSeg extends StatelessWidget {
         // Yellow word. S241c made the framed chip choose the same way — it
         // keeps its `#38333E` frame on the other three sides — so Yellow is
         // never a solid selection block.
-        // Decision 0211: a chosen chip is a Purple 18 % block with a Yellow
-        // word — a capsule in the quiet filter bar, a 12 radius block
-        // otherwise. An unchosen quiet chip is transparent; an unchosen
-        // framed chip is the raised grey ground with no edge.
+        // Decision 0212 (docs/42 附C §4): every chip is a capsule; a chosen
+        // chip is solid Purple with a white word. An unchosen quiet chip is
+        // transparent; an unchosen framed chip is the raised grey ground.
         color: selected
             ? LoopColors.purpleSelected
             : (quiet ? Colors.transparent : LoopColors.card2),
-        shape: RoundedRectangleBorder(
-          borderRadius: quiet ? LoopRadius.pill : LoopRadius.button,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onSelected == null
@@ -2244,7 +2261,7 @@ class LoopSeg extends StatelessWidget {
                   if (!selected) LoopHaptics.selection();
                   onSelected!();
                 },
-          borderRadius: quiet ? LoopRadius.pill : LoopRadius.button,
+          borderRadius: LoopRadius.pill,
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minWidth: LoopTouch.minimum,
@@ -2274,7 +2291,7 @@ class LoopSeg extends StatelessWidget {
 
   Widget _segLabel() {
     final idle = dimmed ? LoopColors.text3 : LoopColors.text2;
-    final colour = selected ? LoopColors.yellow : idle;
+    final colour = selected ? LoopColors.onPurple : idle;
     final text = Text(
       label,
       maxLines: 1,
@@ -2436,7 +2453,7 @@ class LoopButton extends StatelessWidget {
     final wide = block && LoopFlat.of(context);
     final inkFill = tone == LoopButtonTone.ink;
     final foreground = chosen
-        ? LoopColors.yellow
+        ? LoopColors.onPurple
         : paintPrimary && tone == LoopButtonTone.danger
         ? LoopColors.danger
         : paintPrimary
@@ -2485,6 +2502,9 @@ class LoopButton extends StatelessWidget {
             pressedFill: pressedFill,
             edge: edge,
             child: Container(
+              // Every button keeps 48: docs/42 附C §4 asks 44 for a
+              // secondary one, but the Android 48 dp tap-target guideline the
+              // accessibility suite holds wins (decision 0212).
               constraints: BoxConstraints(
                 minHeight: LoopTouch.primaryButton,
                 minWidth: block ? double.infinity : LoopTouch.minimum,

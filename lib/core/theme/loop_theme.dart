@@ -39,15 +39,24 @@ abstract final class LoopColors {
   /// Purple at 9.4 % (`#9c36ff18`) — a selected ground.
   static const Color purpleSoft = Color(0x189C36FF);
 
-  /// Purple at 18 % — the selected ground of a segment, a tab or a chip
-  /// (decision 0211).
-  static const Color purpleSelected = Color(0x2E9C36FF);
+  /// The selected ground of a segment, a filter chip or a choice: solid
+  /// Purple with a [onPurple] word (decision 0212, docs/42 附C §1 — the 18 %
+  /// ground of decision 0211 read too pale and is retired).
+  static const Color purpleSelected = purple;
+
+  /// The word on a solid Purple ground. Pure white, because Chalk on Purple
+  /// measures 4.28:1 and white clears 4.5:1 (4.79:1).
+  static const Color onPurple = Color(0xFFFFFFFF);
+
+  /// Purple at 18 % — only the ground of the 「已毕业」 stage capsule
+  /// (docs/42 附C §4). Never a selected ground.
+  static const Color purpleTint = Color(0x2E9C36FF);
 
   /// Purple at 44 % (`#9c36ff70`) — a selected or focused edge.
   static const Color purpleLine = Color(0x709C36FF);
 
-  /// Text input ground · `#16111c`.
-  static const Color input = Color(0xFF16111C);
+  /// Text input ground: the card surface (decision 0212, docs/42 附C §4).
+  static const Color input = graphite;
 
   /// Text input edge · `#3b3045`.
   static const Color inputLine = Color(0xFF3B3045);
@@ -264,17 +273,17 @@ abstract final class LoopSpacing {
   /// 紧凑 · 8
   static const double tight = 8;
 
-  /// 卡内 · 20
-  static const double card = 20;
+  /// 卡内 · 16（decision 0212）
+  static const double card = 16;
 
   /// 组间 · 22
   static const double group = 22;
 
-  /// 章节间 · 40
-  static const double section = 40;
+  /// 章节间 · 28（decision 0212：40 把页面撑空了）
+  static const double section = 28;
 
-  /// 页面左右内容基线 · 20
-  static const double page = 20;
+  /// 页面左右内容基线 · 16（decision 0212）
+  static const double page = 16;
 
   /// 标题到正文 · 18
   static const double headingGap = 18;
@@ -685,7 +694,9 @@ abstract final class LoopTypography {
 /// | display | `displayXl` | Arimo 700 | 28 | 1.25 | R9 folio heading (intro / record / state) |
 /// | display | `display` | Arimo 700 | 26 | 1.25 | R9 folio heading (action) |
 /// | display | `displaySm` | Arimo 700 | 24 | 1.25 | R9 folio heading (index), R27 profile name |
-/// | display | `statFigure` | Anton | 30 | 1.1 | a big stat value |
+/// | display | `statFigure` | Arimo 700 tnum | 26 | 1.15 | a big stat value |
+/// | display | `keyFigure` | Arimo 700 tnum | 32 | 1.15 | total assets, my rank |
+/// | display | `heroFigure` | Anton | 30 | 1.1 | MEME project hero figures |
 /// | heading | `stepTitle` | Arimo 700 | 26 | 1.3 | R1c step-page title |
 /// | heading | `headingLg` | Arimo 700 | 22 | 1.3 | R1 page title |
 /// | heading | `flatTitle` | Arimo 700 | 20 | 1.3 | R1b flat second-level title |
@@ -740,8 +751,17 @@ abstract final class LoopType {
   /// the name on a person's or a community's home.
   static final TextStyle displaySm = LoopTypography.display(24);
 
-  /// A big stat value (`stat-value`, yellow at the call site, -0.025em).
-  static final TextStyle statFigure = LoopTypography.condensed(
+  /// A big stat value — Arimo 700 tabular (decision 0212: Anton is kept for
+  /// the MEME project page's hero figures only, [heroFigure]).
+  static final TextStyle statFigure = LoopTypography.figure(26, height: 1.15);
+
+  /// A key figure — total assets, my rank: Arimo 700 32, Yellow at the call
+  /// site (docs/42 附C §6).
+  static final TextStyle keyFigure = LoopTypography.figure(32, height: 1.15);
+
+  /// The MEME project page hero price and its big figures: the one place
+  /// Anton survives (docs/42 附C §2).
+  static final TextStyle heroFigure = LoopTypography.condensed(
     size: 30,
     height: 1.1,
     trackingEm: -0.025,
@@ -977,10 +997,7 @@ abstract final class LoopTheme {
         height: LoopTouch.tabBarHeight,
         elevation: 0,
         backgroundColor: LoopColors.ink,
-        indicatorColor: LoopColors.purpleSelected,
-        indicatorShape: const RoundedRectangleBorder(
-          borderRadius: LoopRadius.control,
-        ),
+        indicatorColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
@@ -1000,10 +1017,7 @@ abstract final class LoopTheme {
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: LoopColors.ink,
-        indicatorColor: LoopColors.purpleSelected,
-        indicatorShape: const RoundedRectangleBorder(
-          borderRadius: LoopRadius.control,
-        ),
+        indicatorColor: Colors.transparent,
         selectedIconTheme: const IconThemeData(
           color: LoopColors.yellow,
           size: 21,
@@ -1020,7 +1034,7 @@ abstract final class LoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: LoopColors.input,
+        fillColor: LoopColors.card,
         // R25: a field's placeholder and floating label are the input step,
         // the same size as what is typed into it (decision 0189).
         hintStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
@@ -1087,7 +1101,10 @@ abstract final class LoopTheme {
         backgroundColor: LoopColors.card2,
         selectedColor: LoopColors.purpleSelected,
         labelStyle: textTheme.labelMedium,
-        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.badge),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: LoopColors.onPurple,
+        ),
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       ),
       // A list tile's title stays prose (R18) now that `bodyLarge` is the

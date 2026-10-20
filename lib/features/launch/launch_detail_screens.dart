@@ -327,7 +327,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: 'LAUNCH RECORD',
+          kicker: '发射记录',
           heading: launchDetailHeading(detail, loading: loading),
           // Decision 0095/0097: while the record is being read the heading is
           // a skeleton of its own height and the caption says it is reading;
@@ -1252,7 +1252,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: 'ROUND CONFIGURATION',
+          kicker: '轮次配置',
           // The number of rounds comes from the configuration, never from a
           // fixed three-round story.
           heading: detail == null
@@ -1494,7 +1494,7 @@ class _LaunchGraduationScreenState
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: 'GRADUATION PROGRESS',
+          kicker: '毕业进度',
           // Never a percentage: progress is a count of steps the liquidity
           // and entitlement axes prove, and nothing without them.
           heading: onChain == null
@@ -1653,7 +1653,7 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: 'ELIGIBILITY',
+          kicker: '参与资格',
           // No evaluator: the heading says there is no value, never a guessed
           // "Public". An evaluator that answered `null` is "not listed".
           // Decision 0094: the server's open branch (an all-zero root) is a
@@ -1880,7 +1880,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: 'HOLDER DISTRIBUTION',
+          kicker: '持有分布',
           heading: count == null
               ? launchMissingHeading
               // Decision 0077 ruling 7 / 0089: `holderCount` counts distinct
@@ -2061,7 +2061,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: 'PARTICIPATION LOG',
+          kicker: '参与记录',
           heading: indexed == null
               ? launchMissingHeading
               : '${purchases.length} 笔认购',

@@ -206,11 +206,15 @@ class _SegmentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Decision 0211: the chosen segment is a Purple 18 % capsule with a
-    // Yellow word; the others are a grey word on nothing.
-    final style = LoopType.headingSm.copyWith(
-      color: selected ? LoopColors.yellow : LoopGround.auxiliaryOf(context),
+    // Decision 0212 (docs/42 附C §4): a top tab is a 20/700 word — Chalk
+    // when chosen, Text3 otherwise — with a 3px Yellow dash, 24 wide, under
+    // the chosen one. No capsule, no Purple.
+    final style = LoopType.flatTitle.copyWith(
+      color: selected
+          ? LoopGround.inkOf(context)
+          : LoopGround.auxiliaryOf(context),
     );
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       button: true,
       selected: selected,
@@ -218,7 +222,7 @@ class _SegmentTab extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: LoopRadius.pill,
+        borderRadius: LoopRadius.control,
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
         child: ConstrainedBox(
@@ -226,22 +230,29 @@ class _SegmentTab extends StatelessWidget {
             minHeight: LoopTouch.minimum,
             minWidth: LoopTouch.minimum,
           ),
-          child: Center(
-            widthFactor: 1,
-            child: AnimatedContainer(
-              key: ValueKey<String>('loop-segment-pill-$selected'),
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: selected
-                    ? LoopColors.purpleSelected
-                    : Colors.transparent,
-                borderRadius: LoopRadius.pill,
-              ),
-              child: Text(label, style: style),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 6),
+                Text(label, style: style),
+                const SizedBox(height: 6),
+                AnimatedContainer(
+                  key: ValueKey<String>('loop-segment-pill-$selected'),
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  width: 24,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: selected ? LoopColors.yellow : Colors.transparent,
+                    borderRadius: LoopRadius.pill,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

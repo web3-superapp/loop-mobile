@@ -256,10 +256,10 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
             key: ValueKey<String>('$keyPrefix-total-figure'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            // S241b: the total is the page's key figure — the Anton
-            // `statFigure` step in yellow (docs/42 附A §2 stat-value).
+            // Decision 0212: the total is the page's key figure — Arimo
+            // 32 / 700 in Yellow (docs/42 附C §6).
             style: figureIsAmount
-                ? LoopType.statFigure.copyWith(color: LoopColors.yellow)
+                ? LoopType.keyFigure.copyWith(color: LoopColors.yellow)
                 : LoopType.headingSm.copyWith(color: secondary),
           ),
         ),
@@ -703,21 +703,12 @@ class _QuickActionTile extends StatelessWidget {
     final run = action.onPressed;
     final reason = action.blockedReason;
     final enabled = run != null;
-    // Decision 0122's 56 keys, squared by S241b (looplabs: 0 radius). Only
-    // the primary key (兑换) is solid yellow with an Ink glyph (decision
-    // 0171); the others are outlined `#4A4754` squares with a Chalk glyph,
-    // and a closed key keeps its place on the quiet ground.
-    final lime = enabled && action.primary;
-    final ink = !enabled
-        ? LoopGround.auxiliaryOf(context)
-        : lime
-        ? LoopColors.ink
-        : LoopColors.chalk;
-    final disc = !enabled
-        ? LoopColors.bg2
-        : lime
-        ? LoopColors.yellow
-        : LoopColors.card2;
+    // Decision 0212 (docs/42 附C §6): all four keys are the raised grey
+    // ground with a Chalk glyph — 兑换 included, no solid Yellow — and a
+    // closed key keeps its place on the quiet ground. [primary] is kept on
+    // the model but no longer changes the paint.
+    final ink = enabled ? LoopColors.chalk : LoopGround.auxiliaryOf(context);
+    final disc = enabled ? LoopColors.card2 : LoopColors.bg2;
     final onTap = run ?? (reason == null ? null : () => onBlocked(reason));
     return Semantics(
       button: true,
@@ -789,7 +780,8 @@ class WalletSectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(LoopSpacing.page, top, 8, 2),
+      // Decision 0212 (水平对齐): the trailing tag ends on the page margin.
+      padding: EdgeInsets.fromLTRB(LoopSpacing.page, top, LoopSpacing.page, 2),
       child: Row(
         children: <Widget>[
           Semantics(

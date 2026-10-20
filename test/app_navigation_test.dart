@@ -412,7 +412,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Offline preview'), findsOneWidget);
-    expect(find.text('SIMULATED SEATS'), findsOneWidget);
+    expect(find.text('模拟座位'), findsOneWidget);
     expect(find.text('Close preview'), findsOneWidget);
   });
 }

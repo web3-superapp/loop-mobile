@@ -58,7 +58,7 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: 'STAKING POSITION',
+          kicker: '质押仓位',
           heading: '质押还没有开放',
           caption: '质押数量、可用余额与解除等待期都需要质押合约；本页不构造任何交易，也不打开签名。',
           stamp: '未开放',
@@ -249,7 +249,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: 'PUBLIC ECONOMY',
+        kicker: '公开经济',
         // The only provable headline is a count of approved rounds.
         heading: economy == null
             ? launchMissingHeading
@@ -716,7 +716,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
-        kicker: 'CURATED LAUNCH',
+        kicker: '精选发射',
         // The heading is a conclusion, not the page's own title: the length
         // of the review pipeline before a draft exists, the applicant's own
         // state once one does.
@@ -969,7 +969,7 @@ class _CurationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text('CURATED LAUNCH', style: LoopType.kicker),
+          Text('精选发射', style: LoopType.kicker),
           const SizedBox(height: 8),
           Text('先评估，再发射', style: LoopType.displaySm),
           const SizedBox(height: 5),

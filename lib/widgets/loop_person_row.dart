@@ -165,7 +165,7 @@ class LoopTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: lime ? LoopColors.limeSoft : LoopColors.card2,
-        borderRadius: LoopRadius.badge,
+        borderRadius: LoopRadius.pill,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

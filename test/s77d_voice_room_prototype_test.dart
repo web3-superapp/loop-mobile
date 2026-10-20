@@ -319,7 +319,7 @@ void main() {
       );
 
       final folio = _folio(tester);
-      expect(folio.kicker, 'VOICE SESSION');
+      expect(folio.kicker, '语音进行中');
       // `#scr-voiceroom-full` opens on 「13 人在麦上」.
       expect(folio.heading, '4 人在麦上');
       expect(folio.stamp, 'ON AIR');

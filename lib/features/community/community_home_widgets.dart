@@ -67,7 +67,7 @@ class CommunityToolButton extends StatelessWidget {
         label: loopUnreadBadgeLabel(count) == null
             ? label
             : '$label，${loopUnreadBadgeLabel(count)} 条未读',
-        color: open ? LoopColors.yellow : null,
+        color: open ? LoopColors.onPurple : null,
         toggled: toggled,
         onPressed: onPressed,
       ),
@@ -116,7 +116,7 @@ class CommunityDiscoverHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = verifiedCount;
-    final kicker = count == null ? 'DISCOVER' : 'DISCOVER · $count VERIFIED';
+    final kicker = count == null ? '发现' : '发现，$count 个已验证';
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,

@@ -1269,7 +1269,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             squareBottom: true,
           ),
           detail: <Widget>[
-            Text('DAILY OUTPUT', style: LoopType.eyebrow),
+            Text('每日产出', style: LoopType.eyebrow),
             const SizedBox(height: 8),
             Text.rich(
               TextSpan(

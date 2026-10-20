@@ -231,18 +231,15 @@ class LoopTabBar extends StatelessWidget {
     final indicator = FractionallySizedBox(
       widthFactor: 1 / count,
       heightFactor: 1,
-      // Decision 0211: the chosen cell's glyph sits in a Purple 18 %
-      // block with a 12 radius; its glyph and word turn Yellow.
-      child: Align(
-        alignment: const Alignment(0, -0.7),
-        child: Container(
-          key: const ValueKey<String>('loop-tab-indicator'),
+      // Decision 0212 (docs/42 附C §4): the bar carries no colour block —
+      // the chosen cell is told apart by its Yellow glyph and word alone. The
+      // keyed slot stays so the cell geometry the dock tracks is unchanged.
+      child: const Align(
+        alignment: Alignment(0, -0.7),
+        child: SizedBox(
+          key: ValueKey<String>('loop-tab-indicator'),
           width: 48,
           height: 30,
-          decoration: const BoxDecoration(
-            color: LoopColors.purpleSelected,
-            borderRadius: LoopRadius.control,
-          ),
         ),
       ),
     );
@@ -259,10 +256,10 @@ class LoopTabBar extends StatelessWidget {
             child: Container(
               height: LoopTouch.tabBarHeight,
               padding: const EdgeInsets.all(LoopLayout.tabBarPadding),
-              // Decision 0211: the bar is the raised card surface with a 20
-              // radius and no edge.
+              // Decision 0212: the bar is the card surface with a 20 radius,
+              // no edge and no selection block.
               decoration: const BoxDecoration(
-                color: LoopColors.card2,
+                color: LoopColors.card,
                 borderRadius: LoopRadius.tabBar,
               ),
               child: LoopDockBar(
@@ -477,7 +474,7 @@ class _DesktopRail extends StatelessWidget {
         minExtendedWidth: 212,
         groupAlignment: -0.72,
         backgroundColor: LoopColors.ink,
-        indicatorColor: LoopColors.purpleSelected,
+        indicatorColor: Colors.transparent,
         onDestinationSelected: onSelect,
         leading: Padding(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),

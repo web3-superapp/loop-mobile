@@ -27,11 +27,12 @@ void main() {
       expect(background.resolve(_incoming), LoopColors.card2);
 
       final textColor = theme.text!.textColor!;
-      expect(textColor.resolve(_outgoing), LoopColors.chalk);
+      // Decision 0212: the own bubble is solid Purple with a white word.
+      expect(textColor.resolve(_outgoing), LoopColors.onPurple);
       expect(textColor.resolve(_incoming), LoopColors.chalk);
 
       final textStyle = theme.text!.textStyle!;
-      expect(textStyle.resolve(_outgoing)!.color, LoopColors.chalk);
+      expect(textStyle.resolve(_outgoing)!.color, LoopColors.onPurple);
       expect(textStyle.resolve(_incoming)!.color, LoopColors.chalk);
       // Band 4 (`LoopType.body`), the same size as the in-house bubble in
       // chat_components.dart. See decisions 0069 and 0080.
@@ -70,14 +71,15 @@ void main() {
       // Page and surface grounds.
       expect(scheme.backgroundApp, LoopColors.ink);
       expect(scheme.backgroundSurface, LoopColors.card);
-      expect(scheme.backgroundHighlight, LoopColors.purpleSoft);
+      expect(scheme.backgroundHighlight, LoopColors.purpleTint);
       // Text ladder.
       expect(scheme.textPrimary, LoopColors.chalk);
       expect(scheme.textSecondary, LoopColors.text2);
       expect(scheme.textTertiary, LoopColors.text3);
       // Outgoing surfaces Stream reads straight off the brand ladder.
-      expect(scheme.brand.shade100, LoopColors.purpleSoft);
-      expect(scheme.brand.shade900, LoopColors.chalk);
+      // Decision 0212: solid Purple ground, white text.
+      expect(scheme.brand.shade100, LoopColors.purple);
+      expect(scheme.brand.shade900, LoopColors.onPurple);
       expect(scheme.borderDefault, LoopColors.line);
     });
   });

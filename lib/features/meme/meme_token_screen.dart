@@ -1175,6 +1175,7 @@ class _ProgressStats extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         MemeStatFigures(
+          hero: true,
           key: const ValueKey<String>('meme-token-stats'),
           margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
           stats: <LoopStat>[

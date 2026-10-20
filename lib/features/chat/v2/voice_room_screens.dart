@@ -375,7 +375,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
         ring: false,
-        kicker: widget.expanded ? 'VOICE SESSION' : 'VOICE LOBBY',
+        kicker: widget.expanded ? '语音进行中' : '语音大厅',
         heading: voiceRoomHeading(
           snapshot,
           phase: state.phase,

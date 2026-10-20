@@ -386,7 +386,7 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                       Row(
                         children: <Widget>[
                           const LoopStatusPill(
-                            label: 'VOICE',
+                            label: '语音',
                             tone: LoopTone.conversation,
                             icon: Icons.graphic_eq_rounded,
                           ),
@@ -771,7 +771,12 @@ class _MessageBubble extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        child: Text(message.text, style: LoopType.body),
+        child: Text(
+          message.text,
+          style: LoopType.body.copyWith(
+            color: message.isMine ? LoopColors.onPurple : LoopColors.chalk,
+          ),
+        ),
       ),
     );
   }

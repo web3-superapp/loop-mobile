@@ -628,10 +628,8 @@ class _MessageRequestsEntry extends ConsumerWidget {
         rows: <LoopRecordRow>[
           LoopRecordRow(
             key: const ValueKey<String>('stream-chat-message-requests-entry'),
-            leading: const LoopRowIcon(
-              icon: 'mail',
-              tone: LoopRowIconTone.accent,
-            ),
+            // Decision 0212: a quiet Text2 glyph, not a Yellow one.
+            leading: const LoopRowIcon(icon: 'mail'),
             title: '陌生人请求',
             subtitle: '$label 条待处理',
             semanticLabel: '陌生人请求，$label 条待处理',

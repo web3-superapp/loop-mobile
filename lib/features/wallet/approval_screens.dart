@@ -167,7 +167,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Text('APPROVAL GUARD · REQUEST', style: LoopType.eyebrow),
+                Text('授权检查', style: LoopType.eyebrow),
                 const SizedBox(height: 10),
                 LoopKeyValue(
                   label: '代币',

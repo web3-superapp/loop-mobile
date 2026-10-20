@@ -489,7 +489,7 @@ class _ReferralCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('REFERRAL POWER', style: LoopType.eyebrow),
+            Text('推广算力', style: LoopType.eyebrow),
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,

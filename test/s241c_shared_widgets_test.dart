@@ -104,8 +104,9 @@ void main() {
       expect(off.color, isNot(LoopColors.yellow));
 
       final on = _faceOf(tester, const ValueKey<String>('k-on'));
+      // Decision 0212: solid Purple, no edge, a white glyph.
       expect(on.color, LoopColors.purpleSelected);
-      expect((on.border! as Border).top.color, LoopColors.purple);
+      expect(on.border, isNull);
 
       // A press deepens the face; it never moves.
       final gesture = await tester.startGesture(
@@ -170,9 +171,10 @@ void main() {
         final shape = material.shape! as RoundedRectangleBorder;
         expect(shape.side, BorderSide.none, reason: key);
       }
+      // Decision 0212: every chip is a capsule.
       expect(
         (materialOf('framed-on').shape! as RoundedRectangleBorder).borderRadius,
-        LoopRadius.button,
+        LoopRadius.pill,
       );
       expect(
         (materialOf('quiet-on').shape! as RoundedRectangleBorder).borderRadius,
@@ -181,11 +183,11 @@ void main() {
       expect(materialOf('framed-off').color, LoopColors.card2);
       expect(
         tester.widget<Text>(find.text('A')).style?.color,
-        LoopColors.yellow,
+        LoopColors.onPurple,
       );
       expect(
         tester.widget<Text>(find.text('C')).style?.color,
-        LoopColors.yellow,
+        LoopColors.onPurple,
       );
       expect(
         tester.widget<Text>(find.text('B')).style?.color,
@@ -242,7 +244,7 @@ void main() {
       expect(on.foregroundDecoration, isNull);
       expect(
         tester.widget<Text>(find.text('一')).style?.color,
-        LoopColors.yellow,
+        LoopColors.onPurple,
       );
       final off = faceOf('b-off');
       expect((off.decoration! as BoxDecoration).color, LoopColors.card2);

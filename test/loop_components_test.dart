@@ -30,7 +30,7 @@ void main() {
       tester,
       LoopTopbar(
         title: '无网络',
-        kicker: 'SYSTEM',
+        kicker: '系统',
         onBack: () => backs += 1,
         actions: <Widget>[
           LoopIconButton(icon: 'search', label: '搜索', onPressed: () {}),
@@ -45,7 +45,7 @@ void main() {
     // Band 2 `headingLg`: Arimo 700 since decision 0211.
     expect(title.style?.fontSize, LoopType.headingLg.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
-    expect(find.text('SYSTEM'), findsOneWidget);
+    expect(find.text('系统'), findsOneWidget);
     expect(find.bySemanticsLabel('搜索'), findsOneWidget);
   });
 
@@ -314,12 +314,12 @@ void main() {
                     .decoration!
                 as BoxDecoration)
             .color!;
-    // Decision 0210: the looplabs tag, Yellow ground and Ink word.
-    expect(badgeGround('GRADUATED'), LoopColors.yellow);
+    // Decision 0212: a soft Yellow capsule with a Yellow word.
+    expect(badgeGround('GRADUATED'), LoopColors.yellowSoft);
     expect(badgeGround('MUTED'), LoopColors.card2);
     expect(
       tester.widget<Text>(find.text('GRADUATED')).style?.color,
-      LoopColors.ink,
+      LoopColors.yellow,
     );
     expect(
       tester.widget<Text>(find.text('ON LEDGER')).style?.color,

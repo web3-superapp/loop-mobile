@@ -1064,6 +1064,7 @@ class LoopChatAiUnavailableBubble extends StatelessWidget {
             decoration: BoxDecoration(
               color: LoopGround.fillOf(context),
               shape: BoxShape.circle,
+              border: Border.all(color: LoopGround.hairlineOf(context)),
             ),
             child: const LoopIcon('ai', size: 16, color: LoopColors.text3),
           ),

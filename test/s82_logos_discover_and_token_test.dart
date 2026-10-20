@@ -295,9 +295,9 @@ void main() {
         tester.getTopLeft(rows.at(1)).dy - tester.getTopLeft(rows.at(0)).dy,
         72,
       );
-      // `.row{gap:12px}` after a 44pt mark inside the 20pt page margin
-      // (decision 0210).
-      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 88);
+      // `.row{gap:12px}` after a 44pt mark that starts on the 16pt page
+      // margin itself (decision 0212, 水平对齐).
+      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 72);
     });
 
     testWidgets('第二行说成员数，右边只留 chevron', (tester) async {
@@ -338,8 +338,8 @@ void main() {
       final padding = tester.widget<Padding>(
         find.ancestor(of: chip, matching: find.byType(Padding)).at(1),
       );
-      // Decision 0210: the page margin is 20.
-      expect(padding.padding, const EdgeInsets.fromLTRB(20, 0, 20, 16));
+      // Decision 0212: the page margin is 16.
+      expect(padding.padding, const EdgeInsets.fromLTRB(16, 0, 16, 16));
     });
   });
 

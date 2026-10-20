@@ -658,8 +658,8 @@ void main() {
       );
       expect(_key('launch2-desk-pages'), findsOneWidget);
       expect(_key('launch2-desk-dots'), findsNothing);
-      // The page is the screen less the two 20 gutters (decision 0210).
-      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 350);
+      // The page is the screen less the two 16 gutters (decision 0212).
+      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 358);
       await _drain(tester);
     });
 
@@ -1025,8 +1025,8 @@ void main() {
             .first,
       );
       expect(time.data, '刚刚');
-      // S241b (decision 0210): the time is the site's Purple index colour.
-      expect(time.style?.color, LoopColors.purple);
+      // Decision 0212: the time is a quiet Text3 figure.
+      expect(time.style?.color, LoopColors.text3);
 
       await tester.tap(_key('launch2-tape-more'));
       await tester.pumpAndSettle();

@@ -1652,9 +1652,10 @@ class _ProfileIdentityCard extends StatelessWidget {
                             width: 22,
                             height: 22,
                             alignment: Alignment.center,
-                            // S241b: the edit tag is a square yellow chip.
+                            // Decision 0212: a round Yellow edit key.
                             decoration: const BoxDecoration(
                               color: LoopColors.yellow,
+                              shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.edit_outlined,

@@ -1275,7 +1275,8 @@ class LoopProgressBar extends StatelessWidget {
     required this.value,
     required this.semanticLabel,
     super.key,
-    this.fillColor = LoopColors.lime,
+    // docs/42 附C §1: progress is Purple.
+    this.fillColor = LoopColors.purple,
   });
 
   final double? value;

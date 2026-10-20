@@ -130,7 +130,7 @@ class _PreviewVoiceRoomPageState extends ConsumerState<_PreviewVoiceRoomPage> {
                             children: <Widget>[
                               Expanded(
                                 child: Text(
-                                  'SIMULATED SEATS',
+                                  '模拟座位',
                                   style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(letterSpacing: 1.1),
                                 ),
@@ -255,7 +255,7 @@ class _FeaturedSpeaker extends StatelessWidget {
               if (participant.isHost) ...<Widget>[
                 const SizedBox(width: 7),
                 const LoopStatusPill(
-                  label: 'HOST',
+                  label: '主持',
                   tone: LoopTone.conversation,
                   icon: Icons.stars_rounded,
                 ),

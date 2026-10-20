@@ -15,7 +15,7 @@ void main() {
     await expectProductionSpecimen(
       tester,
       location: '/system/permission',
-      kicker: 'PERMISSION CONTROL',
+      kicker: '权限控制',
       specimenKeys: <String>['permission-denied-specimen'],
       specimenText: <String>['通知权限', '相机权限', '生物识别', '通知权限已被系统关闭'],
     );

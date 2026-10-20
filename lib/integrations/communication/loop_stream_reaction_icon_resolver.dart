@@ -337,7 +337,7 @@ class LoopReactionCapsule extends StatelessWidget {
       decoration: BoxDecoration(
         color: LoopColors.elevated,
         border: own ? Border.all(color: LoopColors.purple) : null,
-        borderRadius: LoopRadius.badge,
+        borderRadius: LoopRadius.pill,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

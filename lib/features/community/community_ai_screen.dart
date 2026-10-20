@@ -508,7 +508,7 @@ class _CommunityAiQuestionBubble extends StatelessWidget {
               ),
               child: Text(
                 question,
-                style: LoopType.bodySm.copyWith(color: LoopColors.chalk),
+                style: LoopType.bodySm.copyWith(color: LoopColors.onPurple),
               ),
             ),
           ),

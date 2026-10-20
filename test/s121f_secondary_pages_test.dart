@@ -40,7 +40,7 @@ const List<String> _retired = <String>[
   'MESSAGE REQUESTS',
   'DISCOVERY DESK',
   'NEW GROUP',
-  'VOICE LOBBY',
+  '语音大厅',
 ];
 
 /// Every string on screen: no Emoji, no retired word, and no all-caps

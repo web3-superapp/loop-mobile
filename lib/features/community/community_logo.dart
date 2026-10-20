@@ -107,28 +107,12 @@ final class CommunityLogoGround {
 ///
 /// Each pair also clears 4.5:1 between the letters and the fill, which
 /// `community_logo_test.dart` measures rather than asserts by eye.
+///
+/// Decision 0212 (docs/42 附C §6, 前三名头像色块去黄): the grounds are the
+/// shared [LoopMonogramPalette] — greys and deepened / paled Purple — so no
+/// community tile is ever a Yellow block. Every pair still clears 4.5:1.
 final List<CommunityLogoGround> communityLogoGrounds = <CommunityLogoGround>[
-  CommunityLogoGround(id: 'lime', fill: LoopColors.lime, ink: LoopColors.ink),
-
-  /// Lime and Chalk, half each.
-  CommunityLogoGround(
-    id: 'lime-pale',
-    fill: Color.lerp(LoopColors.lime, LoopColors.chalk, 0.5)!,
-    ink: LoopColors.ink,
-  ),
-
-  /// Lime at 55% over Ink.
-  CommunityLogoGround(
-    id: 'lime-deep',
-    fill: Color.alphaBlend(
-      LoopColors.lime.withValues(alpha: 0.55),
-      LoopColors.ink,
-    ),
-    ink: LoopColors.ink,
-  ),
-
-  /// Chalk at 75% over Ink — light, but never Chalk itself, which would
-  /// disappear into a Chalk card.
+  /// Chalk at 75 % over Ink.
   CommunityLogoGround(
     id: 'chalk-dim',
     fill: Color.alphaBlend(
@@ -139,13 +123,37 @@ final List<CommunityLogoGround> communityLogoGrounds = <CommunityLogoGround>[
   ),
   CommunityLogoGround(id: 'muted', fill: LoopColors.muted, ink: LoopColors.ink),
 
-  /// Muted at 60% over Ink, the one ground dark enough to take Chalk letters.
+  /// Muted at 60 % over Ink.
   CommunityLogoGround(
     id: 'muted-deep',
     fill: Color.alphaBlend(
       LoopColors.muted.withValues(alpha: 0.6),
       LoopColors.ink,
     ),
+    ink: LoopColors.chalk,
+  ),
+
+  /// Purple at 60 % over Ink.
+  CommunityLogoGround(
+    id: 'purple-deep',
+    fill: Color.alphaBlend(
+      LoopColors.purple.withValues(alpha: 0.6),
+      LoopColors.ink,
+    ),
+    ink: LoopColors.chalk,
+  ),
+
+  /// Purple and Chalk, half each.
+  CommunityLogoGround(
+    id: 'purple-pale',
+    fill: Color.lerp(LoopColors.purple, LoopColors.chalk, 0.5)!,
+    ink: LoopColors.ink,
+  ),
+
+  /// The strong outline grey.
+  CommunityLogoGround(
+    id: 'graphite',
+    fill: LoopColors.line3,
     ink: LoopColors.chalk,
   ),
 ];

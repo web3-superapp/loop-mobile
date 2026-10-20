@@ -139,7 +139,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         // the two saturated Lime heroes in the module.
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'LAUNCH DESK',
+        kicker: '发射台',
         // No countdown, no graduation percentage, no "my tier": all three are
         // contract facts and none of them can be proven in this step.
         heading: overview == null

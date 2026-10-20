@@ -251,7 +251,7 @@ void main() {
     );
     _expectStep(tester, '1,024', LoopType.figure);
     _expectStep(tester, '持有人', LoopType.kicker);
-    _expectStep(tester, '已验证', LoopType.label, weight: FontWeight.w700);
+    _expectStep(tester, '已验证', LoopType.label, weight: FontWeight.w600);
     _expectStep(tester, '确认', LoopType.action);
     _expectStep(tester, '保存', LoopType.titleLg);
     _expectStep(tester, '全部', LoopType.label, weight: FontWeight.w700);

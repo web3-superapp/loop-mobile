@@ -13,7 +13,10 @@ void main() {
     expect(LoopColors.purple, const Color(0xFF9C36FF));
     expect(LoopColors.purpleSoft, const Color(0x189C36FF));
     expect(LoopColors.purpleLine, const Color(0x709C36FF));
-    expect(LoopColors.input, const Color(0xFF16111C));
+    expect(LoopColors.input, const Color(0xFF111114));
+    expect(LoopColors.purpleSelected, LoopColors.purple);
+    expect(LoopColors.onPurple, const Color(0xFFFFFFFF));
+    expect(LoopColors.purpleTint, const Color(0x2E9C36FF));
     expect(LoopColors.inputLine, const Color(0xFF3B3045));
     expect(LoopColors.chalk, const Color(0xFFF2F2F4));
     expect(LoopColors.graphite, const Color(0xFF111114));
@@ -71,10 +74,11 @@ void main() {
 
   test('spacing, radius, depth, z and touch tokens are complete', () {
     expect(LoopSpacing.tight, 8);
-    expect(LoopSpacing.card, 20);
+    // Decision 0212: 16 / 28 / 16.
+    expect(LoopSpacing.card, 16);
     expect(LoopSpacing.group, 22);
-    expect(LoopSpacing.section, 40);
-    expect(LoopSpacing.page, 20);
+    expect(LoopSpacing.section, 28);
+    expect(LoopSpacing.page, 16);
 
     // Decision 0211: app-shaped corners in the looplabs palette.
     expect(LoopRadius.shellValue, 20);
@@ -167,11 +171,17 @@ void main() {
   );
 
   test('the seven bands are the whole vocabulary', () {
-    // Decision 0211: Anton only for the hero line and the big figure.
+    // Decision 0212: Anton only for the hero line and the MEME project
+    // page's hero figures; the stat and key figures are Arimo.
     final condensed = <String, TextStyle>{
       'heroDisplay': LoopType.heroDisplay,
-      'statFigure': LoopType.statFigure,
+      'heroFigure': LoopType.heroFigure,
     };
+    for (final style in <TextStyle>[LoopType.statFigure, LoopType.keyFigure]) {
+      expect(style.fontFamily, LoopFonts.body);
+      expect(style.fontWeight, FontWeight.w700);
+    }
+    expect(LoopType.keyFigure.fontSize, 32);
     condensed.forEach((name, style) {
       expect(style.fontFamily, LoopFonts.display, reason: name);
       expect(style.fontWeight, FontWeight.w400, reason: name);
@@ -261,8 +271,8 @@ void main() {
     expect(bold.fontWeight, FontWeight.w700);
     expect(bold.fontSize, LoopType.body.fontSize);
     expect(
-      LoopTypography.withWeight(LoopType.statFigure, FontWeight.w700),
-      same(LoopType.statFigure),
+      LoopTypography.withWeight(LoopType.heroFigure, FontWeight.w700),
+      same(LoopType.heroFigure),
     );
   });
 

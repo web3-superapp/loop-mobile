@@ -18,7 +18,6 @@ import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -288,6 +287,9 @@ List<Launch2DeskPage> launch2DeskPages(
 /// heading, a 1.5 caption leading).
 const double launch2DeskHeight = 232;
 
+/// The campaign banner's height at text scale 1 (docs/42 附C §5).
+const double launch2DeskCampaignHeight = 200;
+
 /// The height of the dot row under the pager (decision 0211).
 const double launch2DeskDotsHeight = 18;
 
@@ -347,7 +349,12 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
   @override
   Widget build(BuildContext context) {
     final pages = widget.pages;
-    final height = MediaQuery.textScalerOf(context).scale(launch2DeskHeight);
+    // docs/42 附C §5: a pager of campaign banners only is 200 high; one
+    // that also carries an event folio keeps the folio's height.
+    final allCampaigns =
+        pages.isNotEmpty && pages.every((p) => p is Launch2DeskCampaignPage);
+    final height = MediaQuery.textScalerOf(context)
+        .scale(allCampaigns ? launch2DeskCampaignHeight : launch2DeskHeight);
     final count = pages.length;
     final current = _current.clamp(0, count == 0 ? 0 : count - 1);
     return Padding(
@@ -402,8 +409,8 @@ class _DeskDots extends StatelessWidget {
         for (var i = 0; i < count; i++)
           Container(
             key: ValueKey<String>('launch2-desk-dot-$i'),
-            // Decision 0211: round dots; the current one a short capsule.
-            width: i == current ? 14 : 6,
+            // docs/42 附C §5: 6 px round dots, the current one Purple.
+            width: 6,
             height: 6,
             margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
             decoration: BoxDecoration(
@@ -484,14 +491,15 @@ class Launch2DeskFolio extends ConsumerWidget {
   }
 }
 
-/// The campaign page (decision 0165, redrawn by decision 0211): a full-bleed
-/// picture card with a 16 radius. The cover fills the whole card; the lower
-/// 60 % carries an Ink gradient (transparent to 90 %), and on it, bottom
-/// left, the kicker 「活动 · MM-dd → MM-dd」, the title in Yellow (at most two
-/// lines), the subtitle in Chalk and the button words. The stamp 「剩 N 天」 /
-/// 「今天结束」 / 「MM-dd 开始」 is a Yellow capsule in the top right corner. A
-/// cover that does not load is no cover: the card keeps a Purple-to-Ink
-/// ground instead. The whole card is one tap.
+/// The campaign page (decision 0165, redrawn by decision 0212 — docs/42
+/// 附C §5): the one loud surface of the app. The cover fills the 16 radius
+/// card (`BoxFit.cover`, centred, never trusted to carry words); the lower
+/// 55 % carries an Ink gradient. On it: the title in Yellow (Noto Sans SC
+/// Bold 22, one line), the subtitle in Chalk (one line, ellipsised), the foot
+/// line 「10-19 至 10-26 · 剩 6 天」 in Text2, and a solid Yellow 「去参与」
+/// button, 36 high, at the bottom right. A cover that does not load is no
+/// cover: the card keeps an Ink-to-Purple ground instead. The whole card is
+/// one tap.
 class Launch2DeskCampaignCard extends ConsumerStatefulWidget {
   const Launch2DeskCampaignCard({
     required this.campaign,
@@ -505,7 +513,10 @@ class Launch2DeskCampaignCard extends ConsumerStatefulWidget {
   final void Function(String location) onNavigate;
 
   /// The share of the card's height the bottom gradient covers.
-  static const double scrimFraction = 0.6;
+  static const double scrimFraction = 0.55;
+
+  /// The 「去参与」 button's height.
+  static const double ctaHeight = 36;
 
   @override
   ConsumerState<Launch2DeskCampaignCard> createState() =>
@@ -565,12 +576,14 @@ class _Launch2DeskCampaignCardState
     final hasCover = cover != null && cover != _failedCover;
     final id = campaign.campaignId;
     final subtitle = campaign.subtitle;
+    final textScaler = MediaQuery.textScalerOf(context);
     return Semantics(
       button: true,
       label: <String>[
         '活动',
         campaign.title,
         ?subtitle,
+        launch2CampaignKicker(campaign),
         stamp,
         campaign.ctaLabel,
       ].join('，'),
@@ -585,7 +598,7 @@ class _Launch2DeskCampaignCardState
             builder: (context, constraints) {
               final height = constraints.maxHeight.isFinite
                   ? constraints.maxHeight
-                  : launch2DeskHeight;
+                  : textScaler.scale(launch2DeskCampaignHeight);
               return Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
@@ -604,30 +617,12 @@ class _Launch2DeskCampaignCardState
                             end: Alignment.bottomCenter,
                             colors: <Color>[
                               Color(0x0009090B),
-                              Color(0xE609090B),
+                              Color(0xB309090B),
+                              Color(0xF009090B),
                             ],
+                            stops: <double>[0, 0.45, 1],
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      key: ValueKey<String>('launch2-campaign-stamp-$id'),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: LoopColors.yellow,
-                        borderRadius: LoopRadius.pill,
-                      ),
-                      child: Text(
-                        stamp,
-                        maxLines: 1,
-                        style: LoopType.label.copyWith(color: LoopColors.ink),
                       ),
                     ),
                   ),
@@ -635,70 +630,58 @@ class _Launch2DeskCampaignCardState
                     left: LoopSpacing.x4,
                     right: LoopSpacing.x4,
                     bottom: LoopSpacing.x4,
-                    child: DefaultTextStyle.merge(
-                      style: const TextStyle(color: LoopColors.chalk),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                campaign.title,
+                                key: ValueKey<String>(
+                                  'launch2-campaign-title-$id',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: LoopType.headingLg.copyWith(
+                                  color: LoopColors.yellow,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            _CampaignCta(
+                              key: ValueKey<String>('launch2-campaign-cta-$id'),
+                              label: campaign.ctaLabel,
+                            ),
+                          ],
+                        ),
+                        if (subtitle != null) ...<Widget>[
+                          const SizedBox(height: 4),
                           Text(
-                            launch2CampaignKicker(campaign),
+                            subtitle,
                             key: ValueKey<String>(
-                              'launch2-campaign-kicker-$id',
+                              'launch2-campaign-subtitle-$id',
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: LoopType.caption.copyWith(
-                              color: LoopColors.text2,
+                            style: LoopType.bodySm.copyWith(
+                              color: LoopColors.chalk,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            campaign.title,
-                            key: ValueKey<String>('launch2-campaign-title-$id'),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: LoopType.headingLg.copyWith(
-                              color: LoopColors.yellow,
-                            ),
-                          ),
-                          if (subtitle != null) ...<Widget>[
-                            const SizedBox(height: 4),
-                            Text(
-                              subtitle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: LoopType.bodySm.copyWith(
-                                color: LoopColors.chalk,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 8),
-                          Row(
-                            key: ValueKey<String>('launch2-campaign-cta-$id'),
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Flexible(
-                                child: Text(
-                                  campaign.ctaLabel,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: LoopTypography.withWeight(
-                                    LoopType.titleSm,
-                                    FontWeight.w700,
-                                  ).copyWith(color: LoopColors.yellow),
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              const LoopIcon(
-                                'chevron',
-                                size: 12,
-                                color: LoopColors.yellow,
-                              ),
-                            ],
                           ),
                         ],
-                      ),
+                        const SizedBox(height: 6),
+                        Text(
+                          launch2CampaignFootLine(campaign, now),
+                          key: ValueKey<String>('launch2-campaign-stamp-$id'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.caption.copyWith(
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -711,8 +694,35 @@ class _Launch2DeskCampaignCardState
   }
 }
 
+/// The banner's solid Yellow 「去参与」: 36 high, 12 radius. The whole card is
+/// the tap target, so this is the visible call, not a second gesture.
+class _CampaignCta extends StatelessWidget {
+  const _CampaignCta({required this.label, super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    constraints: const BoxConstraints(
+      minHeight: Launch2DeskCampaignCard.ctaHeight,
+      maxWidth: 120,
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: const BoxDecoration(
+      color: LoopColors.yellow,
+      borderRadius: LoopRadius.button,
+    ),
+    child: Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: LoopType.action.copyWith(color: LoopColors.ink),
+    ),
+  );
+}
+
 /// The ground a campaign card keeps when it has no cover, or while its cover
-/// is loading: Purple deepened into Ink, so the Yellow title still reads.
+/// is loading: Ink into deep Purple, so the Yellow title still reads.
 class _CampaignGround extends StatelessWidget {
   const _CampaignGround();
 
@@ -721,9 +731,9 @@ class _CampaignGround extends StatelessWidget {
     key: ValueKey<String>('launch2-campaign-ground'),
     decoration: BoxDecoration(
       gradient: LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: <Color>[Color(0xFF3A1766), LoopColors.card2],
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+        colors: <Color>[LoopColors.ink, Color(0xFF2A1140)],
       ),
     ),
     child: SizedBox.expand(),
@@ -995,11 +1005,6 @@ class _TapeLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final time = launch2RelativeTime(item.at, now);
     final text = launch2ActivityText(item);
-    final amount = item.amountUsd1;
-    final figure = amount == null ? null : launch2Usd1Label(amount);
-    // `.tape-line b`: the amount, when the sentence ends on one, in Chalk.
-    final split = figure != null && text.endsWith(' $figure');
-    final mono = LoopType.figureXs;
     return Semantics(
       button: true,
       label: '$time $text',
@@ -1008,7 +1013,8 @@ class _TapeLine extends StatelessWidget {
         onTap: onTap,
         scale: false,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           decoration: BoxDecoration(
             border: last
                 ? null
@@ -1016,37 +1022,19 @@ class _TapeLine extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
+              // docs/42 附C §4: the time is a quiet Text3 figure.
               Text(
                 time,
-                style: LoopTypography.withWeight(
-                  LoopType.figureXs,
-                  FontWeight.w700,
-                ).copyWith(color: LoopColors.purple),
+                style: LoopType.figureXs.copyWith(color: LoopColors.text3),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text.rich(
-                  TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(
-                        text: split
-                            ? text.substring(0, text.length - figure.length)
-                            : text,
-                      ),
-                      if (split)
-                        TextSpan(
-                          text: figure,
-                          style: LoopTypography.withWeight(
-                            LoopType.figureXs,
-                            FontWeight.w600,
-                          ).copyWith(color: LoopColors.chalk),
-                        ),
-                    ],
-                  ),
+                  TextSpan(children: launch2TapeSpans(item)),
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,
-                  style: mono,
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
                 ),
               ),
             ],
@@ -1055,6 +1043,48 @@ class _TapeLine extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One tape line as spans (docs/42 附C §4 实时成交行): the address in Text2,
+/// 「买入」 in rise and 「卖出」 in fall, the ticker in Chalk and the amount in
+/// Chalk 600. Every other kind reads as one Text2 sentence with its amount in
+/// Chalk 600.
+List<InlineSpan> launch2TapeSpans(Launch2Activity item) {
+  final amount = item.amountUsd1;
+  final figure = amount == null ? null : launch2Usd1Label(amount);
+  final figureStyle = LoopTypography.withWeight(
+    LoopType.figureSm,
+    FontWeight.w600,
+  ).copyWith(color: LoopColors.chalk);
+  const tickerStyle = TextStyle(color: LoopColors.chalk);
+  final verb = switch (item.kind) {
+    Launch2ActivityKind.curveBuy => ('买入', LoopColors.rise),
+    Launch2ActivityKind.curveSell => ('卖出', LoopColors.fall),
+    _ => null,
+  };
+  if (verb != null) {
+    final who = item.actor == null ? '有人' : '${launch2TapeActor(item.actor)} ';
+    return <InlineSpan>[
+      TextSpan(text: who),
+      TextSpan(
+        text: verb.$1,
+        style: LoopTypography.withWeight(
+          LoopType.caption,
+          FontWeight.w600,
+        ).copyWith(color: verb.$2),
+      ),
+      TextSpan(text: ' ${item.ticker}', style: tickerStyle),
+      if (figure != null) TextSpan(text: ' $figure', style: figureStyle),
+    ];
+  }
+  final text = launch2ActivityText(item);
+  final split = figure != null && text.endsWith(' $figure');
+  return <InlineSpan>[
+    TextSpan(
+      text: split ? text.substring(0, text.length - figure.length) : text,
+    ),
+    if (split) TextSpan(text: figure, style: figureStyle),
+  ];
 }
 
 // ---- 战绩 ---------------------------------------------------------------------

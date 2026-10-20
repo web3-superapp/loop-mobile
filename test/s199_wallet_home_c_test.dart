@@ -309,7 +309,7 @@ void main() {
 
       expect(
         tester.widget<Text>(key('wallet-total-figure')).style!.fontSize,
-        LoopType.statFigure.fontSize,
+        LoopType.keyFigure.fontSize,
       );
       expect(key('wallet-total-unit'), findsOneWidget);
       expect(

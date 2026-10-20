@@ -365,10 +365,8 @@ void main() {
       expect(find.text('前三名'), findsOneWidget);
       for (final place in <int>[1, 2, 3]) {
         final medal = tester.widget<Container>(_key('intel-rank-medal-$place'));
-        expect(
-          (medal.decoration! as BoxDecoration).borderRadius,
-          LoopRadius.badge,
-        );
+        // Decision 0212: a round medal.
+        expect((medal.decoration! as BoxDecoration).shape, BoxShape.circle);
       }
       expect(
         find.descendant(

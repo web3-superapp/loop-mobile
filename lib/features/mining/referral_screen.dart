@@ -322,7 +322,7 @@ class _LevelCell extends StatelessWidget {
                   // 0192); the five-across strip is not a two-column grid,
                   // so the cell stays local.
                   style: LoopType.kicker.copyWith(
-                    color: current ? LoopColors.yellow : LoopColors.text2,
+                    color: current ? LoopColors.onPurple : LoopColors.text2,
                   ),
                 ),
               ),
@@ -411,7 +411,7 @@ class _LevelTile extends StatelessWidget {
       child: Text(
         'L$level',
         style: LoopType.figure.copyWith(
-          color: level == 1 ? LoopColors.yellow : LoopColors.chalk,
+          color: level == 1 ? LoopColors.onPurple : LoopColors.chalk,
         ),
       ),
     );

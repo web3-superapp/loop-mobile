@@ -317,8 +317,8 @@ class MarketTabBar extends StatelessWidget {
                       horizontal: 14,
                       vertical: 7,
                     ),
-                    // Decision 0211: the chosen tab is a Purple 18 % capsule
-                    // with a Yellow word; the rest are grey words.
+                    // Decision 0212: the chosen tab is a solid Purple capsule
+                    // with a white word; the rest are grey words.
                     decoration: BoxDecoration(
                       color: index == selectedIndex
                           ? LoopColors.purpleSelected
@@ -334,8 +334,8 @@ class MarketTabBar extends StatelessWidget {
                           ? LoopTypography.withWeight(
                               LoopType.action,
                               FontWeight.w700,
-                            ).copyWith(color: LoopColors.yellow)
-                          : LoopType.action.copyWith(color: LoopColors.text3),
+                            ).copyWith(color: LoopColors.onPurple)
+                          : LoopType.action.copyWith(color: LoopColors.text2),
                     ),
                   ),
                 ),

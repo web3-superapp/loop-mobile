@@ -557,10 +557,9 @@ void main() {
   });
 
   group('the campaign card', () {
-    testWidgets('live: a full-bleed card, kicker with the dates, title, '
-        'subtitle, button words and the 「剩 N 天」 capsule (0211)', (
-      tester,
-    ) async {
+    testWidgets('live: a full-bleed card, one-line title, one-line subtitle, '
+        'a solid Yellow button and the foot line with dates and 「剩 N 天」 '
+        '(0212)', (tester) async {
       final campaign = _campaign(
         'c1',
         length: const Duration(days: 7, hours: 2),
@@ -569,18 +568,37 @@ void main() {
         Launch2DeskCampaignPage(campaign),
       ]);
       expect(
-        find.text('活动 · ${_md(campaign.startsAt)} → ${_md(campaign.endsAt)}'),
+        find.text(
+          '${_md(campaign.startsAt)} 至 ${_md(campaign.endsAt)} · 剩 6 天',
+        ),
         findsOneWidget,
       );
       final title = tester.widget<Text>(find.text('发射季交易赛'));
-      expect(title.maxLines, 2);
+      expect(title.maxLines, 1);
       expect(title.style?.color, LoopColors.yellow);
-      expect(find.text('一句副标题'), findsOneWidget);
-      expect(find.text('剩 6 天'), findsOneWidget);
-      final stamp = tester.widget<Container>(_key('launch2-campaign-stamp-c1'));
-      final stampDecoration = stamp.decoration! as BoxDecoration;
-      expect(stampDecoration.color, LoopColors.yellow);
-      expect(stampDecoration.borderRadius, LoopRadius.pill);
+      expect(title.style?.fontSize, 22);
+      final subtitle = tester.widget<Text>(find.text('一句副标题'));
+      expect(subtitle.maxLines, 1);
+      final foot = tester.widget<Text>(_key('launch2-campaign-stamp-c1'));
+      expect(foot.style?.color, LoopColors.text2);
+      // The button: solid Yellow, 36 high, at the bottom right.
+      final cta = tester.widget<Container>(
+        find
+            .descendant(
+              of: _key('launch2-campaign-cta-c1'),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      expect((cta.decoration! as BoxDecoration).color, LoopColors.yellow);
+      expect(
+        tester.getSize(_key('launch2-campaign-cta-c1')).height,
+        Launch2DeskCampaignCard.ctaHeight,
+      );
+      expect(
+        tester.getRect(_key('launch2-campaign-card-c1')).height,
+        launch2DeskCampaignHeight,
+      );
       // No cover: the Purple-to-Ink ground fills the card.
       expect(_key('launch2-campaign-ground'), findsOneWidget);
       expect(_key('launch2-campaign-scrim'), findsOneWidget);
@@ -613,7 +631,13 @@ void main() {
         Launch2DeskCampaignPage(campaign),
       ]);
       expect(find.text('一句副标题'), findsNothing);
-      expect(find.text('${_md(campaign.startsAt)} 开始'), findsOneWidget);
+      expect(
+        find.text(
+          '${_md(campaign.startsAt)} 至 ${_md(campaign.endsAt)} · '
+          '${_md(campaign.startsAt)} 开始',
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-campaign-cta-c1'), findsOneWidget);
     });
 

@@ -400,7 +400,7 @@ class MemeTokenCard extends StatelessWidget {
             style: LoopTypography.withWeight(
               LoopType.figureXs,
               FontWeight.w600,
-            ).copyWith(color: LoopColors.purple),
+            ).copyWith(color: LoopColors.text3),
           ),
         ],
       ],

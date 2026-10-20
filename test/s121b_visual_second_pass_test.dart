@@ -135,8 +135,8 @@ void main() {
       expect(find.text('3 小时'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('meme-row-age')).style!.color,
-        // S241b (decision 0210): the age is the site's Purple index colour.
-        LoopColors.purple,
+        // Decision 0212: a quiet Text3 figure, Purple is for selection.
+        LoopColors.text3,
       );
       expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
       expect(find.text('市值 \$9,891'), findsOneWidget);
@@ -348,10 +348,7 @@ void main() {
       }
       final medal = tester.widget<Container>(_key('intel-rank-medal-2'));
       expect((medal.decoration! as BoxDecoration).color, LoopColors.brass);
-      expect(
-        (medal.decoration! as BoxDecoration).borderRadius,
-        LoopRadius.badge,
-      );
+      expect((medal.decoration! as BoxDecoration).shape, BoxShape.circle);
       expect(find.byType(LoopRecordCard), findsNWidgets(3));
       expect(find.text('权重 1.1'), findsOneWidget);
       expect(find.textContaining('人有算力'), findsNothing);

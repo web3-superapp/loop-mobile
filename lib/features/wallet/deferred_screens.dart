@@ -307,8 +307,8 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             },
             caption: '核对完全在本机完成：不会打开这个网址，不会跟随跳转，也不会连接钱包。',
             stamp: switch (review.verdict) {
-              LoopUrlVerdict.normalized => 'EXACT ORIGIN',
-              LoopUrlVerdict.flagged => 'CHECK ORIGIN',
+              LoopUrlVerdict.normalized => '来源一致',
+              LoopUrlVerdict.flagged => '核对来源',
               LoopUrlVerdict.blocked => typed.isEmpty ? null : 'BLOCKED',
             },
           ),

@@ -454,10 +454,9 @@ String? intelRankParticipantsDetail(MiningRank rank) {
 /// The kicker every board's ledger card opens with.
 const String intelRankLedgerKickerBase = '算力榜';
 
-/// 「POWER BOARD · 快照 10-15 04:00」 on the two power boards (the snapshot's
-/// own computation time, local), 「POWER BOARD · 实时」 on 推广, which reads
-/// the invite relation live, and the bare 「POWER BOARD」 when no snapshot was
-/// computed.
+/// 「算力榜 · 快照 10-15 04:00」 on the two power boards (the snapshot's own
+/// computation time, local), 「算力榜 · 实时」 on 推广, which reads the invite
+/// relation live, and the bare 「算力榜」 when no snapshot was computed.
 String intelRankLedgerKicker(MiningRank rank) {
   if (rank.scope == MiningRankScope.referrals) {
     return '$intelRankLedgerKickerBase · 实时';
@@ -610,10 +609,48 @@ class IntelRankLedger extends StatelessWidget {
         kicker: intelRankLedgerKicker(rank),
         heading: heading,
         headingMaxLines: 2,
+        // Decision 0212 (docs/42 附C §6): 「我的名次」 is a Chalk line and
+        // the place an Arimo 32 / 700 Yellow figure, not a two-line display.
+        headingBuilder: (built) => _IntelRankHeading(heading: heading),
         caption: caption,
         captionMaxLines: 3,
         stamp: stamp,
       ),
+    );
+  }
+}
+
+class _IntelRankHeading extends StatelessWidget {
+  const _IntelRankHeading({required this.heading});
+
+  final String heading;
+
+  @override
+  Widget build(BuildContext context) {
+    final cut = heading.indexOf('\n');
+    final first = cut < 0 ? heading : heading.substring(0, cut);
+    final rest = cut < 0 ? null : heading.substring(cut + 1);
+    return Text.rich(
+      TextSpan(
+        children: <InlineSpan>[
+          TextSpan(
+            text: first,
+            style: LoopType.sectionTitle.copyWith(color: LoopColors.text2),
+          ),
+          if (rest != null) ...<InlineSpan>[
+            const TextSpan(text: '\n'),
+            TextSpan(
+              text: rest,
+              // Yellow is for a number: 「还没有名次」 is a sentence.
+              style: rest.startsWith('第')
+                  ? LoopType.keyFigure.copyWith(color: LoopColors.yellow)
+                  : LoopType.headingLg.copyWith(color: LoopColors.chalk),
+            ),
+          ],
+        ],
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
@@ -692,9 +729,10 @@ double? intelRankShare(Decimal? amount, Decimal? leader) {
   return share.clamp(0, 1).toDouble();
 }
 
-/// The colour of a medal: first yellow, second brass, third copper.
+/// The colour of a medal: first Purple, second brass, third copper
+/// (decision 0212: Yellow is kept for calls to action and key figures).
 Color intelRankMedalColour(int place) => switch (place) {
-  1 => LoopColors.yellow,
+  1 => LoopColors.purple,
   2 => LoopColors.brass,
   _ => LoopColors.copper,
 };
@@ -764,7 +802,7 @@ class _PodiumCard extends StatelessWidget {
     final content = Column(
       children: <Widget>[
         if (first) ...<Widget>[
-          const LoopIcon('crown', size: 18, color: LoopColors.yellow),
+          const LoopIcon('crown', size: 18, color: LoopColors.purple),
           const SizedBox(height: 6),
         ] else
           // Second and third stand lower than the winner: the spare height
@@ -834,16 +872,19 @@ class _PodiumCard extends StatelessWidget {
                 width: intelRankMedalSize,
                 height: intelRankMedalSize,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: medal,
-                  borderRadius: LoopRadius.badge,
-                ),
+                decoration: BoxDecoration(color: medal, shape: BoxShape.circle),
                 child: Text(
                   '$number',
-                  style: LoopTypography.withWeight(
-                    LoopType.figureXs,
-                    FontWeight.w800,
-                  ).copyWith(color: LoopColors.ink, height: 1),
+                  style:
+                      LoopTypography.withWeight(
+                        LoopType.figureXs,
+                        FontWeight.w800,
+                      ).copyWith(
+                        color: place == 1
+                            ? LoopColors.onPurple
+                            : LoopColors.ink,
+                        height: 1,
+                      ),
                 ),
               ),
             ),

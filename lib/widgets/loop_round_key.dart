@@ -93,8 +93,8 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
           glyph = LoopColors.ink;
         case LoopRoundKeyTone.quiet:
           face = widget.active ? LoopColors.purpleSelected : LoopColors.card2;
-          edge = widget.active ? LoopColors.purple : null;
-          glyph = widget.active ? LoopColors.yellow : LoopColors.chalk;
+          edge = null;
+          glyph = widget.active ? LoopColors.onPurple : LoopColors.chalk;
         case LoopRoundKeyTone.fall:
           face = LoopColors.card2;
           edge = null;
