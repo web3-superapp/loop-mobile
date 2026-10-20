@@ -596,12 +596,12 @@ void main() {
           ),
         ],
       );
-      // Decision 0120: the IDO catalogue is the third segment.
+      // S259 · decision 0217: the IDO catalogue is the second segment.
       expect(
         find.byKey(const ValueKey<String>('launch-stake-action')),
         findsNothing,
       );
-      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-2')));
+      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-1')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('launch-screen')), findsOne);
       expect(
@@ -613,7 +613,7 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-1')));
+      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-0')));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('launch-stake-action')),

@@ -117,7 +117,22 @@ void main() {
       // The DEV / STAGING tag beside 总资产.
       expect(find.text('STAGING'), findsNothing);
       await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
-      expect(find.text('Launch 链'), findsOneWidget);
+      // S259 · decision 0217: no 「Launch 链」 heading; each Launch row
+      // carries it in its grey line.
+      expect(
+        find.descendant(
+          of: _key('wallet-launch-chain-row'),
+          matching: find.text('Launch 链'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('wallet-launch-chain-usd1-row'),
+          matching: find.text('Launch 链'),
+        ),
+        findsOneWidget,
+      );
       expect(_key('loop-testnet-badge'), findsNothing);
       expect(_key('wallet-launch-chain-info'), findsNothing);
       expect(_key('wallet-launch-chain-total-note'), findsNothing);

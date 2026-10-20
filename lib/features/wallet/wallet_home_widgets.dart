@@ -53,10 +53,6 @@ final class WalletSessionFlag extends Notifier<bool> {
   void toggle() => state = !state;
 }
 
-/// Whether rows holding exactly zero are folded away. On by default.
-final walletHideZeroBalancesProvider =
-    NotifierProvider<WalletSessionFlag, bool>(() => WalletSessionFlag(true));
-
 /// Whether the net-worth chart under 总资产 is open (decision 0188). Closed
 /// by default; an open chart stays open for the rest of the run.
 final walletNetWorthExpandedProvider =
@@ -78,9 +74,9 @@ final walletNetWorthRangeProvider =
 /// What a masked amount prints.
 const String walletMaskedFigure = '****';
 
-/// A row the zero-balance switch may fold: the chain read answered, the
-/// balance is exactly zero and nothing is on its way in. A row whose read
-/// failed is never zero and is never folded.
+/// A row the asset list leaves out (S259 · decision 0217): the chain read
+/// answered, the balance is exactly zero and nothing is on its way in. A row
+/// whose read failed is never zero and always stays.
 bool walletRowIsZero(LoopAssetBalanceRow row) {
   final balance = row.balance;
   if (balance is! LoopBalanceAvailable) return false;
@@ -1041,59 +1037,76 @@ class WalletAssetLine extends StatelessWidget {
   }
 }
 
-/// 「隐藏零余额资产」 — one line of text under the list that folds or shows
-/// the zero rows (decision 0123, OKX's text switch): folded it offers
-/// 「显示 N 项零余额资产」, open it offers 「隐藏零余额资产」.
-class WalletZeroBalanceToggle extends StatelessWidget {
-  const WalletZeroBalanceToggle({
-    required this.hideZero,
-    required this.zeroCount,
-    required this.onToggle,
+/// One row of the wallet's 「代币」 list and the figures it sorts by (S259 ·
+/// decision 0217): its USD value when it has one, else its amount.
+typedef WalletTokenEntry = ({Decimal? valueUsd, Decimal quantity, Widget row});
+
+/// The 「代币」 order: valued rows by value, largest first, then every row
+/// without a value by amount, largest first. Ties keep the order given.
+List<WalletTokenEntry> walletSortTokenEntries(List<WalletTokenEntry> entries) {
+  final indexed = <(int, WalletTokenEntry)>[
+    for (var i = 0; i < entries.length; i += 1) (i, entries[i]),
+  ];
+  indexed.sort((a, b) {
+    final av = a.$2.valueUsd;
+    final bv = b.$2.valueUsd;
+    if (av != null && bv == null) return -1;
+    if (av == null && bv != null) return 1;
+    final byValue = av != null && bv != null
+        ? bv.compareTo(av)
+        : b.$2.quantity.compareTo(a.$2.quantity);
+    return byValue != 0 ? byValue : a.$1.compareTo(b.$1);
+  });
+  return <WalletTokenEntry>[for (final (_, entry) in indexed) entry];
+}
+
+/// 「代币 / NFT」 over the wallet's asset area (S259 · decision 0217): two
+/// segment capsules — the chosen one solid Purple (docs/42 附C §4) — with
+/// [trailing] (产生算力) at the end of the line.
+class WalletAssetTabs extends StatelessWidget {
+  const WalletAssetTabs({
+    required this.selectedIndex,
+    required this.onSelected,
     super.key,
+    this.trailing,
   });
 
-  final bool hideZero;
-  final int zeroCount;
-  final VoidCallback onToggle;
+  static const List<String> labels = <String>['代币', 'NFT'];
+  static const int tokens = 0;
+  static const int nft = 1;
+  static const List<String> _keys = <String>['tokens', 'nft'];
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) {
-    final secondary = LoopGround.secondaryOf(context);
-    final label = hideZero ? '显示 $zeroCount 项零余额资产' : '隐藏零余额资产';
-    return Semantics(
-      button: true,
-      toggled: hideZero,
-      label: '隐藏零余额资产，$zeroCount 项',
-      excludeSemantics: true,
-      child: LoopPressable(
-        key: const ValueKey<String>('wallet-zero-toggle'),
-        scale: false,
-        onTap: onToggle,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  label,
-                  key: const ValueKey<String>('wallet-zero-toggle-label'),
-                  style: LoopType.body.copyWith(color: secondary),
-                ),
-                const SizedBox(width: 4),
-                RotatedBox(
-                  // The chevron points the way the list will move.
-                  quarterTurns: hideZero ? 1 : 3,
-                  child: LoopIcon('chevron', size: 14, color: secondary),
-                ),
-              ],
-            ),
+  Widget build(BuildContext context) => Padding(
+    key: const ValueKey<String>('wallet-asset-tabs'),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      LoopSpacing.group,
+      LoopSpacing.page,
+      2,
+    ),
+    child: Row(
+      children: <Widget>[
+        for (var index = 0; index < labels.length; index += 1) ...<Widget>[
+          if (index > 0) const SizedBox(width: 4),
+          LoopSeg(
+            key: ValueKey<String>('wallet-asset-tab-${_keys[index]}'),
+            label: labels[index],
+            quiet: true,
+            selected: index == selectedIndex,
+            capsuleHeight: LoopSegBar.capsuleHeight,
+            onSelected: () => onSelected(index),
           ),
-        ),
-      ),
-    );
-  }
+        ],
+        const Spacer(),
+        ?trailing,
+      ],
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -440,23 +440,44 @@ void main() {
   });
 
   group('meme', () {
-    testWidgets('IDO hidden by default: 发射台 is the MEME curve launchpad', (
-      tester,
-    ) async {
+    testWidgets('IDO hidden by default: the Tab is the v2 desk alone '
+        '(S259 · 0217)', (tester) async {
       final launch = FakeLaunchGateway();
       await pumpS7Page(tester, const MemeScreen(), launch: launch);
-      // Decision 0120: 发射台 is the curve launchpad; without its transport
-      // it says so inline instead of drawing an empty list.
+      // No segment row; without the `launch2` capability the desk says so
+      // inline instead of drawing an empty list or the classic launchpad.
       expect(
-        find.byKey(const ValueKey<String>('meme-launchpad-unavailable')),
+        find.byKey(const ValueKey<String>('launch2-list-all-unavailable')),
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey<String>('launch-screen')), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('meme-segment-2')),
+        find.byKey(const ValueKey<String>('meme-segment-0')),
         findsNothing,
       );
+      expect(
+        find.byKey(const ValueKey<String>('meme-launchpad-unavailable')),
+        findsNothing,
+      );
+    });
 
+    testWidgets('with the v2 switch off the curve launchpad is the fallback', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MemeScreen(),
+        launch: FakeLaunchGateway(),
+        overrides: <Override>[
+          loopFeatureSwitchesProvider.overrideWithValue(
+            const LoopFeatureSwitchValues(launch2Visible: false),
+          ),
+        ],
+      );
+      expect(
+        find.byKey(const ValueKey<String>('meme-launchpad-unavailable')),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey<String>('meme-segment-1')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('meme-market')), findsOneWidget);
@@ -473,8 +494,9 @@ void main() {
           ),
         ],
       );
-      // Decision 0120: the IDO catalogue comes back as a third segment.
-      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-2')));
+      // S259 · decision 0217: the IDO catalogue comes back as the second
+      // segment beside the v2 desk.
+      await tester.tap(find.byKey(const ValueKey<String>('meme-segment-1')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('launch-screen')), findsOne);
       // The embedded catalogue draws no bar, so its two tools stand on the

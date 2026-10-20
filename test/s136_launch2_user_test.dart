@@ -503,9 +503,8 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('capability not available: the Tab stays 发射台 / 行情', (
-      tester,
-    ) async {
+    testWidgets('capability not available: the v2 desk says so in one line, '
+        'never the classic list (S259 · 0217)', (tester) async {
       final launch2 = _FakeLaunch2();
       await _pump(
         tester,
@@ -513,20 +512,26 @@ void main() {
         launch2: launch2,
         meta: _meta(launch2: LoopV2CapabilityAvailability.deferred),
       );
-      expect(find.text('v2 发射'), findsNothing);
+      expect(_key('launch2-list-all-unavailable'), findsOneWidget);
+      expect(find.text('发射台'), findsNothing);
+      expect(find.text('行情'), findsNothing);
+      expect(_key('meme-launchpad-unavailable'), findsNothing);
       expect(launch2.listCalls, isEmpty);
       await _drain(tester);
     });
 
-    testWidgets('switch on + available: v2 发射 / 经典 / 已毕业, each list '
-        'reads its own scope', (tester) async {
+    testWidgets('switch on + available: the Tab is the v2 desk alone — no '
+        'segment row; 已毕业 is the desk chip (S259 · 0217)', (tester) async {
       final launch2 = _FakeLaunch2(
         list: (stage, cursor) => _Answer<Launch2InstancePage>.value(
-          stage == Launch2Stage.graduated
-              ? l2Page(<Map<String, Object?>>[
-                  l2RowJson(stage: 'graduated', noNextChange: true),
-                ])
-              : l2Page(<Map<String, Object?>>[l2RowJson()]),
+          l2Page(<Map<String, Object?>>[
+            l2RowJson(),
+            l2RowJson(
+              instanceId: l2InstanceB,
+              stage: 'graduated',
+              noNextChange: true,
+            ),
+          ]),
         ),
       );
       await _pump(
@@ -537,23 +542,27 @@ void main() {
           memeGatewayProvider.overrideWithValue(const UnavailableMemeGateway()),
         ],
       );
-      expect(find.text('v2 发射'), findsWidgets);
-      expect(find.text('经典'), findsOneWidget);
-      expect(find.text('已毕业'), findsWidgets);
-      expect(launch2.listCalls.first, (null, null));
+      expect(find.text('MEME'), findsWidgets);
+      expect(find.text('v2 发射'), findsNothing);
+      expect(find.text('经典'), findsNothing);
+      expect(find.text('历史'), findsNothing);
+      expect(_key('meme-segment-0'), findsNothing);
+      expect(_key('meme-segment-1'), findsNothing);
+      expect(_key('launch2-creator-actions'), findsOneWidget);
+      expect(launch2.listCalls.single, (null, null));
       // Decision 0164: the NFT sale is the desk's main event, drawn as its
       // record card rather than repeated as a row.
       expect(_key('launch2-desk-record-$l2InstanceA'), findsOneWidget);
-
-      await tester.tap(_key('meme-segment-2'));
+      expect(_key('launch2-desk-segs'), findsOneWidget);
+      // The 已毕业 chip scrolls to the desk's own group; no second list.
+      await tester.tap(find.textContaining('已毕业').first);
       await tester.pumpAndSettle();
-      expect(launch2.listCalls, contains((Launch2Stage.graduated, null)));
-      expect(_key('launch2-stage-pill-graduated'), findsOneWidget);
-
-      await tester.tap(_key('meme-segment-1'));
-      await tester.pumpAndSettle();
-      // 经典 is the S117 launchpad, closed here without its transport.
-      expect(_key('meme-launchpad-unavailable'), findsOneWidget);
+      expect(
+        launch2.listCalls,
+        isNot(contains((Launch2Stage.graduated, null))),
+      );
+      expect(_key('launch2-group-graduated'), findsOneWidget);
+      expect(_key('meme-launchpad-unavailable'), findsNothing);
       await _drain(tester);
     });
   });
@@ -2330,16 +2339,13 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('已毕业 carries the entry; 经典 keeps only its own line', (
-      tester,
-    ) async {
+    testWidgets('S259 · 0217: the entry is on the one bar; no 经典 / 历史 / '
+        '已毕业 segment to move to', (tester) async {
       await pumpMeme(tester, <String>[]);
-      await tester.tap(_key('meme-segment-2'));
-      await tester.pumpAndSettle();
       expect(_key('launch2-creator-actions'), findsOneWidget);
-      await tester.tap(_key('meme-segment-1'));
-      await tester.pumpAndSettle();
-      expect(_key('launch2-creator-actions'), findsNothing);
+      expect(_key('meme-segment-1'), findsNothing);
+      expect(_key('meme-segment-2'), findsNothing);
+      expect(_key('meme-search-entry'), findsNothing);
       await _drain(tester);
     });
 
@@ -2362,23 +2368,19 @@ void main() {
         ],
       );
       expect(find.text('经典'), findsNothing);
-      expect(find.text('历史'), findsOneWidget);
+      // S259 · 0217: 历史 has no entry on the MEME Tab any more.
+      expect(find.text('历史'), findsNothing);
       await tester.tap(_key('launch2-create-action'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-chooser'), findsNothing);
       expect(find.text('经典发射'), findsNothing);
       expect(opened.single, Launch2CreatorRoute.createPath);
-
-      // 历史 keeps its search; the classic create is gone.
-      await tester.tap(_key('meme-segment-1'));
-      await tester.pumpAndSettle();
-      expect(_key('meme-search-entry'), findsOneWidget);
+      expect(_key('meme-launchpad'), findsNothing);
       expect(_key('meme-create-entry'), findsNothing);
-      expect(_key('meme-launchpad'), findsOneWidget);
       await _drain(tester);
     });
 
-    testWidgets('classic retired: an empty v2 list points at 历史, not 经典', (
+    testWidgets('S259 · 0217: an empty v2 desk points at no classic list', (
       tester,
     ) async {
       await _pump(
@@ -2394,7 +2396,9 @@ void main() {
           memeGatewayProvider.overrideWithValue(const UnavailableMemeGateway()),
         ],
       );
-      expect(find.text('看历史代币'), findsOneWidget);
+      expect(_key('launch2-list-all-empty'), findsOneWidget);
+      expect(_key('launch2-list-all-empty-action'), findsNothing);
+      expect(find.text('看历史代币'), findsNothing);
       expect(find.text('看经典发射'), findsNothing);
       await _drain(tester);
     });
@@ -2720,9 +2724,9 @@ void main() {
         ),
       );
       expect(_key('launch2-wallet-meme-$l2InstanceA'), findsOneWidget);
-      expect(find.text('钱包余额'), findsOneWidget);
+      expect(find.text('Launch 链'), findsOneWidget);
       expect(find.text('7,333.18'), findsOneWidget);
-      expect(find.text('v2 内盘持仓'), findsNothing);
+      expect(find.text('Launch 链 · 内盘持仓'), findsNothing);
       await _drain(tester);
 
       await _pump(
@@ -2743,7 +2747,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('v2 内盘持仓'), findsOneWidget);
+      expect(find.text('Launch 链 · 内盘持仓'), findsOneWidget);
       expect(find.text('1,125,000.5'), findsOneWidget);
       await _drain(tester);
     });

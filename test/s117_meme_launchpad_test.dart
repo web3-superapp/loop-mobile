@@ -327,7 +327,12 @@ Future<void> _pump(
   ),
   overrides: <Override>[
     loopFeatureSwitchesProvider.overrideWithValue(
-      LoopFeatureSwitchValues(classicMemeLaunchVisible: classic),
+      // S259 · decision 0217: with the v2 switch on the MEME Tab is the v2
+      // desk alone; the curve launchpad stands only in a build with it off.
+      LoopFeatureSwitchValues(
+        classicMemeLaunchVisible: classic,
+        launch2Visible: false,
+      ),
     ),
     memeGatewayProvider.overrideWithValue(meme),
     memePollingProvider.overrideWithValue(
