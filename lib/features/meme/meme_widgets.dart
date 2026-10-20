@@ -76,7 +76,6 @@ class MemeLogo extends StatelessWidget {
       decoration: BoxDecoration(
         color: ground?.fill ?? LoopColors.card2,
         borderRadius: BorderRadius.circular(corner),
-        border: ground == null ? Border.all(color: LoopColors.line) : null,
       ),
       // Decision 0149: before a ticker is typed (the create pages' preview)
       // the slot shows the upload glyph, not a 「?」 that read as an error.
@@ -401,7 +400,7 @@ class MemeTokenCard extends StatelessWidget {
             style: LoopTypography.withWeight(
               LoopType.figureXs,
               FontWeight.w600,
-            ).copyWith(color: LoopColors.purple),
+            ).copyWith(color: LoopColors.text3),
           ),
         ],
       ],

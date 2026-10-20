@@ -90,7 +90,7 @@ void main() {
       ),
     );
 
-    _expectStep(tester, 'MINING POWER', LoopType.kicker);
+    _expectStep(tester, '挖矿算力', LoopType.kicker);
     _expectStep(tester, 'RANK ', LoopType.kicker);
     _expectStep(tester, '持仓', LoopType.kicker);
     _expectStep(tester, '10', LoopType.figure);

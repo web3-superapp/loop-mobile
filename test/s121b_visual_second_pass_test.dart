@@ -135,8 +135,8 @@ void main() {
       expect(find.text('3 小时'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('meme-row-age')).style!.color,
-        // S241b (decision 0210): the age is the site's Purple index colour.
-        LoopColors.purple,
+        // Decision 0212: a quiet Text3 figure, Purple is for selection.
+        LoopColors.text3,
       );
       expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
       expect(find.text('市值 \$9,891'), findsOneWidget);
@@ -164,10 +164,11 @@ void main() {
       final logo = tester.widget<MemeLogo>(find.byType(MemeLogo));
       expect(logo.size, 44);
       expect(logo.radius, LoopRadius.tileValue);
-      // 14 + 44 + 14 and a hairline.
+      // 14 + 44 + 14 and a hairline; the text column may make it a little
+      // shorter at the 1.5 leading (decision 0211), never taller.
       expect(
         tester.getSize(find.byType(MemeTokenCard)).height,
-        moreOrLessEquals(memeCardHeight + 1, epsilon: 0.5),
+        inInclusiveRange(14 + 44 + 14 + 1, memeCardHeight + 1.5),
       );
     });
 
@@ -347,10 +348,7 @@ void main() {
       }
       final medal = tester.widget<Container>(_key('intel-rank-medal-2'));
       expect((medal.decoration! as BoxDecoration).color, LoopColors.brass);
-      expect(
-        (medal.decoration! as BoxDecoration).borderRadius,
-        LoopRadius.badge,
-      );
+      expect((medal.decoration! as BoxDecoration).shape, BoxShape.circle);
       expect(find.byType(LoopRecordCard), findsNWidgets(3));
       expect(find.text('权重 1.1'), findsOneWidget);
       expect(find.textContaining('人有算力'), findsNothing);
@@ -448,6 +446,6 @@ void main() {
         .map((material) => material.color)
         .toList();
     expect(materials, isNot(contains(LoopColors.lime)));
-    expect(materials, contains(LoopColors.purpleSoft));
+    expect(materials, contains(LoopColors.purpleSelected));
   });
 }

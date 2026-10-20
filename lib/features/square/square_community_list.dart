@@ -383,9 +383,9 @@ class _SquareSearchEntry extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
+                color: LoopColors.input,
                 borderRadius: LoopRadius.control,
-                border: Border.all(color: LoopColors.line),
               ),
               child: Row(
                 children: <Widget>[
@@ -651,7 +651,8 @@ class SquareCommunityRow extends StatelessWidget {
         ),
         if (action != SquareMembershipAction.none)
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            // Decision 0212 (水平对齐): the action ends on the page margin.
+            padding: const EdgeInsets.only(right: LoopSpacing.page),
             child: _MembershipCapsule(
               communityId: id,
               action: action,
@@ -661,7 +662,7 @@ class SquareCommunityRow extends StatelessWidget {
             ),
           )
         else
-          const SizedBox(width: 8),
+          const SizedBox(width: LoopSpacing.page),
       ],
     );
   }
@@ -701,15 +702,13 @@ class _MembershipCapsule extends StatelessWidget {
       SquareMembershipAction.pending => ('pending', '审核中', false, onOpen),
       SquareMembershipAction.none => ('none', '', false, null),
     };
-    // Decision 0172: the row's action is the shared `LoopPillAction`. 「加入」
-    // is the soft forward step (LimeSoft ground, Lime word) so a list of
-    // communities never prints five solid Lime blocks; the others are the
-    // outlined quiet pill.
+    // Decision 0212 (docs/42 附C §6): 「加入」 is the Yellow primary step —
+    // the one thing on the row that asks to be tapped; 「已加入」 and the
+    // others are the quiet secondary pill.
     return LoopPillAction(
       key: ValueKey<String>('square-community-$key-$communityId'),
       label: joining ? '加入中' : label,
       primary: lime,
-      soft: lime,
       onPressed: onTap,
     );
   }

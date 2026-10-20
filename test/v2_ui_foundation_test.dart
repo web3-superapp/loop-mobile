@@ -36,9 +36,14 @@ void main() {
         .color!;
 
     expect(background, LoopColors.ink);
-    expect(indicator, LoopColors.yellow);
+    // Decision 0212: no block at all — the Yellow glyph alone marks it.
+    expect(indicator, Colors.transparent);
+    final indicatorOnInk = Color.alphaBlend(indicator, background);
     expect(
-      _contrastRatio(Color.alphaBlend(selectedIcon, indicator), indicator),
+      _contrastRatio(
+        Color.alphaBlend(selectedIcon, indicatorOnInk),
+        indicatorOnInk,
+      ),
       greaterThanOrEqualTo(3),
     );
     expect(

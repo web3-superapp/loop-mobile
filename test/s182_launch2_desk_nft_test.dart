@@ -558,8 +558,8 @@ void main() {
     });
 
     test('the kicker names the chain; the spoken sentence the event', () {
-      expect(launch2DeskKicker('eip155:97'), 'LAUNCH DESK · BSC TESTNET');
-      expect(launch2DeskKicker('eip155:56'), 'LAUNCH DESK · BSC');
+      expect(launch2DeskKicker('eip155:97'), '发射台 · BSC TESTNET');
+      expect(launch2DeskKicker('eip155:56'), '发射台 · BSC');
       expect(
         launch2HeroSpokenLabel(at(2), l2Now),
         'FROG，共识勋章铸造中，剩 2 天 3 小时，已铸 2 枚',
@@ -593,7 +593,7 @@ void main() {
       // S241b (decision 0210): the flat dark card, the ticker in Yellow
       // over the stage line in Purple.
       expect(folio.variant, LoopFolioVariant.quiet);
-      expect(folio.kicker, 'LAUNCH DESK · BSC TESTNET');
+      expect(folio.kicker, '发射台 · BSC TESTNET');
       expect(folio.heading, 'FROG\n共识勋章铸造中');
       expect(folio.stamp, '剩 00:03');
       // No full-Yellow block on the page (S241b); the heading is two-tone.
@@ -658,8 +658,8 @@ void main() {
       );
       expect(_key('launch2-desk-pages'), findsOneWidget);
       expect(_key('launch2-desk-dots'), findsNothing);
-      // The page is the screen less the two 20 gutters (decision 0210).
-      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 350);
+      // The page is the screen less the two 16 gutters (decision 0212).
+      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 358);
       await _drain(tester);
     });
 
@@ -780,10 +780,10 @@ void main() {
           ),
         ),
       );
-      final folio = _folio(tester, 'launch2-desk-page-campaign-c1');
-      expect(folio.heading, '十月共识周');
-      expect(folio.caption, '铸造勋章抽 USD1');
-      expect(folio.variant, LoopFolioVariant.quiet);
+      // Decision 0211: a full-bleed picture card, title and subtitle on it.
+      expect(find.text('十月共识周'), findsOneWidget);
+      expect(find.text('铸造勋章抽 USD1'), findsOneWidget);
+      expect(_key('launch2-campaign-card-c1'), findsOneWidget);
       await tester.tap(_key('launch2-desk-page-campaign-c1'));
       expect(opened, <String>['/launch2/nft']);
     });
@@ -1025,8 +1025,8 @@ void main() {
             .first,
       );
       expect(time.data, '刚刚');
-      // S241b (decision 0210): the time is the site's Purple index colour.
-      expect(time.style?.color, LoopColors.purple);
+      // Decision 0212: the time is a quiet Text3 figure.
+      expect(time.style?.color, LoopColors.text3);
 
       await tester.tap(_key('launch2-tape-more'));
       await tester.pumpAndSettle();
@@ -1256,7 +1256,7 @@ void main() {
       );
       expect(_statusText(tester), '铸造中 · 已铸 2 枚 | 剩 2天 03:00:00');
       final folio = _folio(tester, 'launch2-nft-status');
-      expect(folio.kicker, 'CONSENSUS MEDAL');
+      expect(folio.kicker, '共识勋章');
       expect(folio.heading, 'FROG');
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.headingTone, LoopFolioHeadingTone.accent);

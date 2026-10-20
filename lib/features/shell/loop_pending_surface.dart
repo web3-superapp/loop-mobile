@@ -74,7 +74,6 @@ class LoopPendingSurface extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: LoopColors.card,
                         borderRadius: LoopRadius.card,
-                        border: Border.all(color: LoopColors.line),
                         boxShadow: LoopDepth.liftCard,
                       ),
                       child: Column(

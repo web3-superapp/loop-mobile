@@ -323,7 +323,7 @@ void main() {
 
     // Decision 0171 (docs/33 M15, user ruling): one full-accent key, 兑换;
     // the other three are outlined Card squares with a Chalk glyph (S241b).
-    testWidgets('only 兑换 wears the yellow key', (tester) async {
+    testWidgets('no key wears yellow, 兑换 included (0212)', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -338,9 +338,8 @@ void main() {
           (tester.widget<Container>(key('wallet-quick-disc-$label')).decoration!
                   as BoxDecoration)
               .color;
-      expect(disc('兑换'), LoopColors.yellow);
-      for (final label in const <String>['接收', '发送', '扫码']) {
-        expect(disc(label), LoopColors.card, reason: label);
+      for (final label in const <String>['兑换', '接收', '发送', '扫码']) {
+        expect(disc(label), LoopColors.card2, reason: label);
       }
       final glyph = tester.widget<LoopIcon>(
         find.descendant(

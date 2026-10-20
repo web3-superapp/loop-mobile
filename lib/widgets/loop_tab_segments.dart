@@ -122,7 +122,7 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                                   index < segments.length;
                                   index += 1
                                 ) ...<Widget>[
-                                  if (index > 0) const SizedBox(width: 18),
+                                  if (index > 0) const SizedBox(width: 6),
                                   _SegmentTab(
                                     key: ValueKey<String>(
                                       '$tabKey-segment-$index',
@@ -206,10 +206,15 @@ class _SegmentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ink = LoopGround.inkOf(context);
-    final style = selected
-        ? LoopType.headingLg.copyWith(color: ink)
-        : LoopType.headingSm.copyWith(color: LoopGround.auxiliaryOf(context));
+    // Decision 0212 (docs/42 附C §4): a top tab is a 20/700 word — Chalk
+    // when chosen, Text3 otherwise — with a 3px Yellow dash, 24 wide, under
+    // the chosen one. No capsule, no Purple.
+    final style = LoopType.flatTitle.copyWith(
+      color: selected
+          ? LoopGround.inkOf(context)
+          : LoopGround.auxiliaryOf(context),
+    );
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       button: true,
       selected: selected,
@@ -225,24 +230,30 @@ class _SegmentTab extends StatelessWidget {
             minHeight: LoopTouch.minimum,
             minWidth: LoopTouch.minimum,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(label, style: style),
-              const SizedBox(height: 4),
-              AnimatedContainer(
-                duration: MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                height: 3,
-                width: selected ? 18 : 0,
-                // Decision 0210: the chosen tab's underline is the Purple
-                // second accent (docs/42 附A §5, the hook-mode segment).
-                decoration: const BoxDecoration(color: LoopColors.purple),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 6),
+                Text(label, style: style),
+                const SizedBox(height: 6),
+                AnimatedContainer(
+                  key: ValueKey<String>('loop-segment-pill-$selected'),
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  width: 24,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: selected ? LoopColors.yellow : Colors.transparent,
+                    borderRadius: LoopRadius.pill,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

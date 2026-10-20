@@ -424,11 +424,7 @@ class _ScanTool extends StatelessWidget {
                 // key readable over the live picture.
                 decoration: BoxDecoration(
                   color: toggled == true ? LoopColors.purple : LoopColors.card2,
-                  border: Border.all(
-                    color: toggled == true
-                        ? LoopColors.purple
-                        : LoopColors.line3,
-                  ),
+                  borderRadius: LoopRadius.control,
                 ),
                 child: Icon(
                   icon,

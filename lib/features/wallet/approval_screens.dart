@@ -122,14 +122,14 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
-        kicker: 'APPROVAL REQUEST',
+        kicker: '授权请求',
         heading: intent == null
             ? '${widget.request.symbol} 授权'
             : intent.review.amount.isUnlimited
             ? '无限 ${widget.request.symbol} 授权'
             : '${intent.review.amount.display} ${widget.request.symbol} 限额',
         caption: '代币、Spender、额度与解码后的调用在签名前完整显示。',
-        stamp: 'GUARDED',
+        stamp: '受保护',
       ),
       primaryAction: intent == null
           ? null
@@ -167,7 +167,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Text('APPROVAL GUARD · REQUEST', style: LoopType.eyebrow),
+                Text('授权检查', style: LoopType.eyebrow),
                 const SizedBox(height: 10),
                 LoopKeyValue(
                   label: '代币',

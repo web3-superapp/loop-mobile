@@ -56,20 +56,18 @@ class CommunityToolButton extends StatelessWidget {
     final open = toggled ?? false;
     final count = unreadCount;
     final tool = DecoratedBox(
-      // Decision 0210 (S241b): square tool; an open panel is the selected
-      // state, purple 9 % with the purple line, never a yellow block.
+      // Decision 0211: a 12 radius tool; an open panel is the Purple 18 %
+      // selected state, never a yellow block.
       decoration: BoxDecoration(
-        color: open ? LoopColors.purpleSoft : LoopColors.panel,
-        border: Border.all(
-          color: open ? LoopColors.purpleLine : LoopColors.line2,
-        ),
+        color: open ? LoopColors.purpleSelected : LoopColors.card2,
+        borderRadius: LoopRadius.tool,
       ),
       child: LoopIconButton(
         icon: icon,
         label: loopUnreadBadgeLabel(count) == null
             ? label
             : '$label，${loopUnreadBadgeLabel(count)} 条未读',
-        color: open ? LoopColors.yellow : null,
+        color: open ? LoopColors.onPurple : null,
         toggled: toggled,
         onPressed: onPressed,
       ),
@@ -118,7 +116,7 @@ class CommunityDiscoverHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = verifiedCount;
-    final kicker = count == null ? 'DISCOVER' : 'DISCOVER · $count VERIFIED';
+    final kicker = count == null ? '发现' : '发现，$count 个已验证';
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -138,12 +136,10 @@ class CommunityDiscoverHero extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(minHeight: 72),
               padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
-              // Decision 0210 (S241b): looplabs keeps yellow to accents, so
-              // the band is the flat card — `#111114` with the `#38333E`
-              // edge — and the yellow lives in its kicker and arrow.
+              // Decision 0211: the band is the `#111114` card with no edge;
+              // the yellow lives in its arrow.
               decoration: BoxDecoration(
                 color: LoopColors.card,
-                border: Border.all(color: LoopColors.line2),
                 borderRadius: _communityDiscoverHeroRadius,
               ),
               child: Row(

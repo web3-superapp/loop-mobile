@@ -148,7 +148,6 @@ class _LoopStatCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: LoopGround.tintOf(context),
           borderRadius: LoopRadius.control,
-          border: Border.all(color: LoopGround.hairlineOf(context)),
         ),
         child: ExcludeSemantics(
           child: Column(
@@ -163,7 +162,7 @@ class _LoopStatCell extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                stat.label.toUpperCase(),
+                stat.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: LoopType.kicker.copyWith(
@@ -250,7 +249,6 @@ class LoopChartPanel extends StatelessWidget {
         decoration: BoxDecoration(
           color: LoopColors.graphite,
           borderRadius: LoopRadius.card,
-          border: Border.all(color: LoopColors.line),
         ),
         // The panel is Graphite whatever it was put on, so it declares its
         // own ground: a caller that placed it on a Chalk card would otherwise
@@ -519,7 +517,6 @@ class _LoopActionTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: LoopGround.fillOf(context),
         borderRadius: LoopRadius.control,
-        border: Border.all(color: LoopGround.edgeOf(context)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -677,7 +674,6 @@ class _LoopCompactTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: LoopGround.fillOf(context),
         borderRadius: LoopRadius.card,
-        border: Border.all(color: LoopGround.edgeOf(context)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -807,9 +803,8 @@ class LoopOmnibox extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: LoopColors.card,
+          color: LoopColors.input,
           borderRadius: LoopRadius.control,
-          border: Border.all(color: LoopColors.line),
         ),
         child: Row(
           children: <Widget>[
@@ -919,7 +914,6 @@ class LoopPlaceholderStage extends StatelessWidget {
         decoration: BoxDecoration(
           color: LoopColors.graphite,
           borderRadius: LoopRadius.card,
-          border: Border.all(color: LoopColors.line),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -992,7 +986,6 @@ class LoopFigureBox extends StatelessWidget {
         decoration: BoxDecoration(
           color: LoopGround.tintOf(context),
           borderRadius: LoopRadius.control,
-          border: Border.all(color: LoopGround.hairlineOf(context)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1102,12 +1095,7 @@ class LoopLedgerComposite extends StatelessWidget {
       padding: detailPadding,
       decoration: const BoxDecoration(
         color: LoopColors.card,
-        border: Border(
-          top: BorderSide(color: LoopColors.line),
-          left: BorderSide(color: LoopColors.line2),
-          right: BorderSide(color: LoopColors.line2),
-          bottom: BorderSide(color: LoopColors.line2),
-        ),
+        border: Border(top: BorderSide(color: LoopColors.line)),
       ),
       // The strip declares the dark ground it paints, so a guest that derives
       // its ink from [LoopGround] (an identity strip, a hairline) reads it.
@@ -1125,12 +1113,16 @@ class LoopLedgerComposite extends StatelessWidget {
     );
     return Padding(
       padding: margin,
-      child: ColoredBox(
-        color: LoopColors.card,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[primary, if (detail.isNotEmpty) strip],
+      // Decision 0211: one card, one radius, no edge.
+      child: ClipRRect(
+        borderRadius: LoopRadius.card,
+        child: ColoredBox(
+          color: LoopColors.card,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[primary, if (detail.isNotEmpty) strip],
+          ),
         ),
       ),
     );
@@ -1283,7 +1275,8 @@ class LoopProgressBar extends StatelessWidget {
     required this.value,
     required this.semanticLabel,
     super.key,
-    this.fillColor = LoopColors.lime,
+    // docs/42 附C §1: progress is Purple.
+    this.fillColor = LoopColors.purple,
   });
 
   final double? value;
@@ -1300,8 +1293,8 @@ class LoopProgressBar extends StatelessWidget {
       label: semanticLabel,
       child: ExcludeSemantics(
         child: ClipRRect(
-          // Decision 0210: a progress bar is square, like every surface.
-          borderRadius: BorderRadius.zero,
+          // Decision 0211: a progress bar has round ends.
+          borderRadius: LoopRadius.pill,
           child: Container(
             height: 6,
             color: LoopGround.fillOf(context),

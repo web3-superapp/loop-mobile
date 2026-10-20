@@ -172,9 +172,14 @@ String _monthDay(DateTime at) {
   return '${two(local.month)}-${two(local.day)}';
 }
 
-/// 「活动 · 10-15 → 10-22」, on the reader's own calendar.
+/// 「10-15 至 10-22」, on the reader's own calendar (decision 0212 retired
+/// the 「活动 · 10-15 → 10-22」 eyebrow).
 String launch2CampaignKicker(Launch2DeskCampaign campaign) =>
-    '活动 · ${_monthDay(campaign.startsAt)} → ${_monthDay(campaign.endsAt)}';
+    '${_monthDay(campaign.startsAt)} 至 ${_monthDay(campaign.endsAt)}';
+
+/// The banner's foot line (docs/42 附C §5): 「10-19 至 10-26 · 剩 6 天」.
+String launch2CampaignFootLine(Launch2DeskCampaign campaign, DateTime now) =>
+    '${launch2CampaignKicker(campaign)} · ${launch2CampaignStamp(campaign, now)}';
 
 /// The stamp: 「剩 N 天」 while it runs (「今天结束」 under a day),
 /// 「MM-dd 开始」 before it starts.

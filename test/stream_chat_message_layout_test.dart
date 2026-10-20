@@ -275,7 +275,7 @@ void main() {
       );
       expect(
         tester.widget<Text>(find.text('gm')).style!.color,
-        LoopColors.chalk,
+        LoopColors.onPurple,
       );
 
       await _disposeHarness(tester, harness);

@@ -45,7 +45,6 @@ class VoiceMediaStateCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: LoopColors.card,
         borderRadius: LoopRadius.card,
-        border: Border.all(color: LoopColors.line),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

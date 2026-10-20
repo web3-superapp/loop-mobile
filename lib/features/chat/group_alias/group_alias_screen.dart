@@ -232,7 +232,7 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
         key: const ValueKey<String>('group-alias-folio'),
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: 'GROUP ALIAS',
+        kicker: '群昵称',
         heading: _groupAliasTitle,
         caption: '每个群可以使用不同昵称。首次保留后永久不可修改；前端不做跨群身份关联，但这不构成强匿名保证。',
         stamp: switch (state.mode) {

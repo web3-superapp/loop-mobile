@@ -375,7 +375,7 @@ class MoneyIntentReviewCard extends StatelessWidget {
             children: <Widget>[
               Text(
                 '${moneyActionTitle(intent.kind).replaceFirst('确认', '')} · '
-                'FINAL REVIEW',
+                '最终确认',
                 style: LoopType.eyebrow,
               ),
               const SizedBox(height: 10),

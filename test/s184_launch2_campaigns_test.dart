@@ -29,7 +29,6 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_campaigns_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
 import 'support/launch2_fixtures.dart';
@@ -214,14 +213,6 @@ Future<void> _pumpPager(
     ),
   );
 }
-
-LoopFolioPrimary _folio(WidgetTester tester, String campaignId) =>
-    tester.widget<LoopFolioPrimary>(
-      find.descendant(
-        of: _key('launch2-desk-page-campaign-$campaignId'),
-        matching: find.byType(LoopFolioPrimary),
-      ),
-    );
 
 // ---- the list page --------------------------------------------------------
 
@@ -566,8 +557,9 @@ void main() {
   });
 
   group('the campaign card', () {
-    testWidgets('live: the quiet ledger, kicker with the dates, title, '
-        'subtitle, button words and 「剩 N 天」', (tester) async {
+    testWidgets('live: a full-bleed card, one-line title, one-line subtitle, '
+        'a solid Yellow button and the foot line with dates and 「剩 N 天」 '
+        '(0212)', (tester) async {
       final campaign = _campaign(
         'c1',
         length: const Duration(days: 7, hours: 2),
@@ -575,17 +567,41 @@ void main() {
       await _pumpPager(tester, <Launch2DeskPage>[
         Launch2DeskCampaignPage(campaign),
       ]);
-      final folio = _folio(tester, 'c1');
-      expect(folio.variant, LoopFolioVariant.quiet);
       expect(
-        folio.kicker,
-        '活动 · ${_md(campaign.startsAt)} → ${_md(campaign.endsAt)}',
+        find.text(
+          '${_md(campaign.startsAt)} 至 ${_md(campaign.endsAt)} · 剩 6 天',
+        ),
+        findsOneWidget,
       );
-      expect(folio.heading, '发射季交易赛');
-      expect(folio.headingMaxLines, 2);
-      expect(folio.caption, '一句副标题');
-      expect(folio.stamp, '剩 6 天');
-      expect(folio.aside, isNull);
+      final title = tester.widget<Text>(find.text('发射季交易赛'));
+      expect(title.maxLines, 1);
+      expect(title.style?.color, LoopColors.yellow);
+      expect(title.style?.fontSize, 22);
+      final subtitle = tester.widget<Text>(find.text('一句副标题'));
+      expect(subtitle.maxLines, 1);
+      final foot = tester.widget<Text>(_key('launch2-campaign-stamp-c1'));
+      expect(foot.style?.color, LoopColors.text2);
+      // The button: solid Yellow, 36 high, at the bottom right.
+      final cta = tester.widget<Container>(
+        find
+            .descendant(
+              of: _key('launch2-campaign-cta-c1'),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      expect((cta.decoration! as BoxDecoration).color, LoopColors.yellow);
+      expect(
+        tester.getSize(_key('launch2-campaign-cta-c1')).height,
+        Launch2DeskCampaignCard.ctaHeight,
+      );
+      expect(
+        tester.getRect(_key('launch2-campaign-card-c1')).height,
+        launch2DeskCampaignHeight,
+      );
+      // No cover: the Purple-to-Ink ground fills the card.
+      expect(_key('launch2-campaign-ground'), findsOneWidget);
+      expect(_key('launch2-campaign-scrim'), findsOneWidget);
       expect(find.text('查看'), findsOneWidget);
       // One page: no dots.
       expect(_key('launch2-desk-dots'), findsNothing);
@@ -614,13 +630,18 @@ void main() {
       await _pumpPager(tester, <Launch2DeskPage>[
         Launch2DeskCampaignPage(campaign),
       ]);
-      final folio = _folio(tester, 'c1');
-      expect(folio.caption, isNull);
-      expect(folio.stamp, '${_md(campaign.startsAt)} 开始');
+      expect(find.text('一句副标题'), findsNothing);
+      expect(
+        find.text(
+          '${_md(campaign.startsAt)} 至 ${_md(campaign.endsAt)} · '
+          '${_md(campaign.startsAt)} 开始',
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-campaign-cta-c1'), findsOneWidget);
     });
 
-    testWidgets('a cover is drawn on the right edge behind a 1 px rule', (
+    testWidgets('a cover fills the whole card under the bottom scrim', (
       tester,
     ) async {
       final image = await tester.runAsync(
@@ -631,33 +652,35 @@ void main() {
         Launch2DeskCampaignPage(_campaign('c1', coverUrl: _mediaUrl)),
       ]);
       await tester.pump();
-      expect(_folio(tester, 'c1').aside, isNotNull);
-      final strip = tester.getSize(_key('loop-folio-aside'));
-      expect(strip.width, LoopFolioPrimary.asideDefaultWidth);
-      // Inside the quiet card's 1 px border.
-      expect(strip.height, launch2DeskHeight - 2);
       expect(_key('launch2-campaign-cover-c1'), findsOneWidget);
-      final card = tester.getRect(_key('launch2-desk-page-campaign-c1'));
-      expect(tester.getRect(_key('loop-folio-aside')).right, card.right - 1);
-      // The text keeps out of the strip.
-      final title = tester.getRect(find.text('发射季交易赛'));
+      final card = tester.getRect(_key('launch2-campaign-card-c1'));
+      final cover = tester.getRect(_key('launch2-campaign-cover-c1'));
+      expect(cover, card);
+      final scrim = tester.getRect(_key('launch2-campaign-scrim'));
+      expect(scrim.bottom, card.bottom);
       expect(
-        title.right,
-        lessThanOrEqualTo(card.right - LoopFolioPrimary.asideDefaultWidth),
+        scrim.height,
+        moreOrLessEquals(
+          card.height * Launch2DeskCampaignCard.scrimFraction,
+          epsilon: 0.5,
+        ),
       );
+      // The text sits on the scrim, bottom left.
+      final title = tester.getRect(find.text('发射季交易赛'));
+      expect(title.top, greaterThanOrEqualTo(scrim.top));
     });
 
-    testWidgets('a cover that does not load is no cover: the text takes the '
-        'whole card', (tester) async {
+    testWidgets('a cover that does not load is no cover: the ground stays', (
+      tester,
+    ) async {
       debugLoopRemoteAvatarImageProvider = (url) => const _BrokenImage();
       await _pumpPager(tester, <Launch2DeskPage>[
         Launch2DeskCampaignPage(_campaign('c1', coverUrl: _mediaUrl)),
       ]);
-      expect(_folio(tester, 'c1').aside, isNotNull);
       await tester.pump();
       await tester.pump();
-      expect(_folio(tester, 'c1').aside, isNull);
-      expect(_key('loop-folio-aside'), findsNothing);
+      expect(_key('launch2-campaign-cover-c1'), findsNothing);
+      expect(_key('launch2-campaign-ground'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -670,8 +693,9 @@ void main() {
       ]);
       expect(_key('launch2-desk-dots'), findsOneWidget);
       final dot = tester.widget<Container>(_key('launch2-desk-dot-0'));
-      // S241b (decision 0210): the current page in Purple.
+      // Decision 0211: round dots, the current page in Purple.
       expect((dot.decoration! as BoxDecoration).color, LoopColors.purple);
+      expect((dot.decoration! as BoxDecoration).borderRadius, LoopRadius.pill);
     });
   });
 

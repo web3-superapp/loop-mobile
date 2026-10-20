@@ -126,11 +126,9 @@ class _FreshnessLine extends StatelessWidget {
                 ? LoopColors.warning.withValues(alpha: 0.08)
                 : LoopColors.card,
             borderRadius: LoopRadius.control,
-            border: Border.all(
-              color: failed
-                  ? LoopColors.warning.withValues(alpha: 0.32)
-                  : LoopColors.line,
-            ),
+            border: failed
+                ? Border.all(color: LoopColors.warning.withValues(alpha: 0.32))
+                : null,
           ),
           child: Row(
             children: <Widget>[

@@ -451,7 +451,10 @@ void main() {
     /// The card's own content box, which both prototype ceilings measure
     /// against: the folio's page margin plus its padding taken off the width
     /// the keyed Container reports (`.folio-primary{margin:0 16px;padding:18px}`).
-    double contentWidth(WidgetTester tester, {double padding = 18}) =>
+    double contentWidth(
+      WidgetTester tester, {
+      double padding = LoopSpacing.card,
+    }) =>
         tester
             .getSize(find.byKey(const ValueKey<String>('loop-folio-primary')))
             .width -
@@ -465,7 +468,7 @@ void main() {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             LoopFolioPrimary(
-              kicker: 'MINING POWER',
+              kicker: '挖矿算力',
               heading: '暂无数值',
               caption: caption,
               stamp: stamp,

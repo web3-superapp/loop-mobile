@@ -165,7 +165,7 @@ class LoopTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: lime ? LoopColors.limeSoft : LoopColors.card2,
-        borderRadius: LoopRadius.badge,
+        borderRadius: LoopRadius.pill,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -217,7 +217,8 @@ class LoopPillAction extends StatelessWidget {
         ? LoopColors.limeSoft
         : primary
         ? LoopColors.lime
-        : Colors.transparent;
+        // Decision 0211: a secondary chip is the raised ground, no edge.
+        : LoopColors.card2;
     final ink = !enabled
         ? LoopColors.text3
         : soft
@@ -243,9 +244,6 @@ class LoopPillAction extends StatelessWidget {
               decoration: BoxDecoration(
                 color: ground,
                 borderRadius: LoopRadius.button,
-                border: primary || soft || !enabled
-                    ? null
-                    : Border.all(color: LoopColors.line2),
               ),
               child: Text(
                 label,

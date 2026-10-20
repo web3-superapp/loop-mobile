@@ -34,13 +34,14 @@ class ChatCreateMenuButton extends ConsumerWidget {
         excludeSemantics: true,
         child: Material(
           key: const ValueKey<String>('chat-create-menu'),
-          // Decision 0210 (S241b): the looplabs primary key is square — a
-          // 56 yellow tile, pressed to the highlight yellow.
+          // Decision 0211: a floating action is a round Yellow key,
+          // deepened while pressed.
           color: LoopColors.yellow,
-          shape: const RoundedRectangleBorder(),
+          shape: const CircleBorder(),
           elevation: 0,
           child: InkWell(
-            highlightColor: LoopColors.yellowHighlight,
+            customBorder: const CircleBorder(),
+            highlightColor: LoopColors.yellowPressed,
             splashColor: Colors.transparent,
             onTap: () => unawaited(_open(context, ref)),
             child: const SizedBox.square(

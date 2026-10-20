@@ -239,14 +239,13 @@ class MarketSearchField extends StatelessWidget {
         child: InkWell(
           key: const ValueKey<String>('market-search-field'),
           onTap: onPressed,
-          borderRadius: LoopRadius.inner,
+          borderRadius: LoopRadius.control,
           child: Container(
             height: LoopTouch.minimum,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: LoopColors.card,
-              borderRadius: LoopRadius.inner,
-              border: Border.all(color: LoopColors.line),
+            decoration: const BoxDecoration(
+              color: LoopColors.input,
+              borderRadius: LoopRadius.control,
             ),
             child: Row(
               children: <Widget>[
@@ -293,15 +292,12 @@ class MarketTabBar extends StatelessWidget {
   final String keyPrefix;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: LoopColors.line)),
-    ),
+  Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
     child: Row(
       children: <Widget>[
         for (var index = 0; index < labels.length; index += 1) ...<Widget>[
-          if (index > 0) const SizedBox(width: 20),
+          if (index > 0) const SizedBox(width: 4),
           Semantics(
             button: true,
             selected: index == selectedIndex,
@@ -310,37 +306,37 @@ class MarketTabBar extends StatelessWidget {
               child: InkWell(
                 key: ValueKey<String>('$keyPrefix-${labels[index]}'),
                 onTap: () => onSelected(index),
+                borderRadius: LoopRadius.pill,
                 child: Container(
                   constraints: const BoxConstraints(
                     minHeight: LoopTouch.minimum,
                   ),
                   alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        // Decision 0122 / 0171 (docs/33 L3) as restated by
-                        // S241b (decision 0210): the chosen tab is underlined
-                        // in Purple, the selection colour; Yellow stays for
-                        // the page's one primary body.
-                        color: index == selectedIndex
-                            ? LoopColors.purple
-                            : Colors.transparent,
-                        width: 2,
-                      ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
                     ),
-                  ),
-                  // R16 the quiet segment's word (decision 0190 M24): `action`
-                  // 14 at 600, 700 when chosen — the step `LoopSeg(quiet:)`
-                  // draws; the underline stays the strip's own.
-                  child: Text(
-                    labels[index],
-                    style: index == selectedIndex
-                        ? LoopTypography.withWeight(
-                            LoopType.action,
-                            FontWeight.w700,
-                          )
-                        : LoopType.action.copyWith(color: LoopColors.text3),
+                    // Decision 0212: the chosen tab is a solid Purple capsule
+                    // with a white word; the rest are grey words.
+                    decoration: BoxDecoration(
+                      color: index == selectedIndex
+                          ? LoopColors.purpleSelected
+                          : Colors.transparent,
+                      borderRadius: LoopRadius.pill,
+                    ),
+                    // R16 the quiet segment's word (decision 0190 M24): `action`
+                    // 14 at 600, 700 when chosen — the step `LoopSeg(quiet:)`
+                    // draws; the underline stays the strip's own.
+                    child: Text(
+                      labels[index],
+                      style: index == selectedIndex
+                          ? LoopTypography.withWeight(
+                              LoopType.action,
+                              FontWeight.w700,
+                            ).copyWith(color: LoopColors.onPurple)
+                          : LoopType.action.copyWith(color: LoopColors.text2),
+                    ),
                   ),
                 ),
               ),
@@ -657,9 +653,9 @@ class MarketDirectionAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        // S241b: a square tile (decision 0210), Yellow inbound.
+        // Decision 0211: a 10 radius tile, Yellow inbound, no edge.
         color: inbound ? LoopColors.yellowSoft : LoopColors.card2,
-        border: Border.all(color: LoopColors.line2),
+        borderRadius: LoopRadius.tile,
       ),
       child: LoopIcon(
         inbound ? 'arrow-up' : 'arrow-down',

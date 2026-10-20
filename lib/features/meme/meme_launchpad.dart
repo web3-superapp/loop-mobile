@@ -398,14 +398,13 @@ class _LaunchpadTools extends StatelessWidget {
               child: InkWell(
                 key: const ValueKey<String>('meme-search-entry'),
                 onTap: onSearch,
-                borderRadius: LoopRadius.inner,
+                borderRadius: LoopRadius.control,
                 child: Container(
                   height: LoopTouch.minimum,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: LoopColors.card,
-                    borderRadius: LoopRadius.inner,
-                    border: Border.all(color: LoopColors.line),
+                  decoration: const BoxDecoration(
+                    color: LoopColors.input,
+                    borderRadius: LoopRadius.control,
                   ),
                   child: Row(
                     children: <Widget>[

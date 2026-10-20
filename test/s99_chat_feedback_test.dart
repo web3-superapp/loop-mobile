@@ -312,10 +312,11 @@ void main() {
   });
 
   group('2 · a quote inside the reader\'s own bubble', () {
-    // Decision 0210 (S241b): the own bubble is purple 9 %, so its quote is a
-    // solid Ink well with Chalk words and a purple bar.
-    testWidgets('is Chalk on solid Ink with a 3 dp purple bar; incoming keeps '
-        'Stream\'s card', (tester) async {
+    // Decision 0212: the conversation is back to its pre-S241 shape — the
+    // own bubble is solid Purple, so its quote is an Ink 12 % well with
+    // white words and a 3 dp white bar.
+    testWidgets('is white on an Ink 12 % well with a 3 dp white bar; incoming '
+        'keeps Stream\'s card', (tester) async {
       final room = _Room(quoteOwn: true);
       await room.pump(tester);
 
@@ -326,13 +327,13 @@ void main() {
       final card = tester.widget<Material>(
         find.byKey(const ValueKey<String>('loop-quoted-outgoing')),
       );
-      expect(card.color, LoopColors.ink);
+      expect(card.color, LoopColors.ink.withValues(alpha: 0.12));
       expect(card.color, isNot(LoopColors.yellow));
 
       final bar = tester.widget<Container>(
         find.byKey(const ValueKey<String>('loop-quoted-outgoing-bar')),
       );
-      expect((bar.decoration! as BoxDecoration).color, LoopColors.purple);
+      expect((bar.decoration! as BoxDecoration).color, LoopColors.onPurple);
       expect(
         tester
             .getSize(
@@ -348,7 +349,7 @@ void main() {
         find.descendant(of: outgoing, matching: find.byType(Text)),
       )) {
         final color = text.style?.color;
-        if (color != null) expect(color, LoopColors.chalk);
+        if (color != null) expect(color, LoopColors.onPurple);
       }
       final preview = tester.widget<DefaultTextStyle>(
         find
@@ -358,7 +359,7 @@ void main() {
             )
             .first,
       );
-      expect(preview.style.color, LoopColors.chalk);
+      expect(preview.style.color, LoopColors.onPurple);
 
       // The incoming bubble keeps Stream's own card on the global theme.
       expect(find.byType(DefaultStreamQuotedMessage), findsOneWidget);

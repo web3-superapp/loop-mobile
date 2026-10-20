@@ -74,7 +74,7 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
         ring: false,
         key: const ValueKey<String>('network-diagnostics-folio'),
         archetype: LoopFolioArchetype.action,
-        kicker: 'NETWORK CHECK',
+        kicker: '网络检查',
         heading: heading,
         caption: '这个页面只测连通性和耗时，不发送账号信息。',
         // Seconds, one decimal: the stamp upper-cases its text, and a

@@ -215,7 +215,7 @@ void main() {
     testWidgets('the day header is a LoopLabel', (tester) async {
       await _pump(tester, const WalletActivityDayHeader(label: '今天'));
       expect(find.byType(LoopLabel), findsOneWidget);
-      _expectStep(_painted(tester, find.text('今天')), LoopType.eyebrow);
+      _expectStep(_painted(tester, find.text('今天')), LoopType.sectionTitle);
     });
 
     testWidgets('a provenance footer is captionSm text3', (tester) async {

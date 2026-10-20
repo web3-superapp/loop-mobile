@@ -492,12 +492,12 @@ class _ChatSearchEntry extends StatelessWidget {
     excludeSemantics: true,
     child: Material(
       color: LoopColors.input,
-      shape: const RoundedRectangleBorder(
-        side: BorderSide(color: LoopColors.inputLine),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
       child: InkWell(
         key: const ValueKey<String>('chat-search-entry'),
-        customBorder: const RoundedRectangleBorder(),
+        customBorder: const RoundedRectangleBorder(
+          borderRadius: LoopRadius.control,
+        ),
         onTap: () => unawaited(context.push<void>('/chat/search')),
         child: SizedBox(
           height: LoopTouch.minimum,
@@ -628,10 +628,8 @@ class _MessageRequestsEntry extends ConsumerWidget {
         rows: <LoopRecordRow>[
           LoopRecordRow(
             key: const ValueKey<String>('stream-chat-message-requests-entry'),
-            leading: const LoopRowIcon(
-              icon: 'mail',
-              tone: LoopRowIconTone.accent,
-            ),
+            // Decision 0212: a quiet Text2 glyph, not a Yellow one.
+            leading: const LoopRowIcon(icon: 'mail'),
             title: '陌生人请求',
             subtitle: '$label 条待处理',
             semanticLabel: '陌生人请求，$label 条待处理',

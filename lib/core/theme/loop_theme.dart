@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 /// LOOP colour tokens — the looplabs.meme palette (decision 0210, docs/42
 /// 附A §3). Ink ground, flat solid surfaces, a Yellow first accent and a
-/// Purple second accent; every corner square.
+/// Purple second accent; app-shaped corners (decision 0211).
 ///
 /// Yellow is the primary brand accent and Purple the secondary one (focus,
 /// pressed edges, selected grounds). The retired Lime names ([lime],
@@ -27,6 +27,9 @@ abstract final class LoopColors {
   /// Pressed / highlighted primary · `#ffe34d`.
   static const Color yellowHighlight = Color(0xFFFFE34D);
 
+  /// A pressed primary button: Yellow deepened (decision 0211).
+  static const Color yellowPressed = Color(0xFFE0BC00);
+
   /// Yellow at 13 % — hints, badges, soft emphasis ground.
   static const Color yellowSoft = Color(0x21FFD600);
 
@@ -36,11 +39,24 @@ abstract final class LoopColors {
   /// Purple at 9.4 % (`#9c36ff18`) — a selected ground.
   static const Color purpleSoft = Color(0x189C36FF);
 
+  /// The selected ground of a segment, a filter chip or a choice: solid
+  /// Purple with a [onPurple] word (decision 0212, docs/42 附C §1 — the 18 %
+  /// ground of decision 0211 read too pale and is retired).
+  static const Color purpleSelected = purple;
+
+  /// The word on a solid Purple ground. Pure white, because Chalk on Purple
+  /// measures 4.28:1 and white clears 4.5:1 (4.79:1).
+  static const Color onPurple = Color(0xFFFFFFFF);
+
+  /// Purple at 18 % — only the ground of the 「已毕业」 stage capsule
+  /// (docs/42 附C §4). Never a selected ground.
+  static const Color purpleTint = Color(0x2E9C36FF);
+
   /// Purple at 44 % (`#9c36ff70`) — a selected or focused edge.
   static const Color purpleLine = Color(0x709C36FF);
 
-  /// Text input ground · `#16111c`.
-  static const Color input = Color(0xFF16111C);
+  /// Text input ground: the card surface (decision 0212, docs/42 附C §4).
+  static const Color input = graphite;
 
   /// Text input edge · `#3b3045`.
   static const Color inputLine = Color(0xFF3B3045);
@@ -153,6 +169,9 @@ abstract final class LoopColors {
   static const Color chat = Color(0xFFF2B562);
   static const Color danger = Color(0xFFFF6B82);
 
+  /// Danger at 13 % — a pressed danger button's ground (decision 0211).
+  static const Color dangerSoft = Color(0x21FF6B82);
+
   /// Warning · orange `#FF9F1C`, kept apart from the Yellow accent.
   static const Color warning = Color(0xFFFF9F1C);
 }
@@ -254,17 +273,17 @@ abstract final class LoopSpacing {
   /// 紧凑 · 8
   static const double tight = 8;
 
-  /// 卡内 · 20
-  static const double card = 20;
+  /// 卡内 · 16（decision 0212）
+  static const double card = 16;
 
   /// 组间 · 22
   static const double group = 22;
 
-  /// 章节间 · 40
-  static const double section = 40;
+  /// 章节间 · 28（decision 0212：40 把页面撑空了）
+  static const double section = 28;
 
-  /// 页面左右内容基线 · 20
-  static const double page = 20;
+  /// 页面左右内容基线 · 16（decision 0212）
+  static const double page = 16;
 
   /// 标题到正文 · 18
   static const double headingGap = 18;
@@ -284,41 +303,67 @@ abstract final class LoopSpacing {
   static const double x10 = 40;
 }
 
-/// Corner radii (decision 0210): every surface corner is square. The step
-/// names survive so that call sites keep their meaning, but each is 0. Only
-/// [pill] / [round] is round, and only for an avatar, a dot, a ring or a
-/// progress end — never a card, a button, a field or a tag.
+/// Corner radii (decision 0211, which revises 0210's square corners). The
+/// looplabs palette stays; the shape is an app's again: a sheet, the shell and
+/// the tab bar at 20, a card at 16, a control and a button at 12, an inner
+/// tile at 10, a badge or tag at 6, and [pill] / [round] for avatars, dots and
+/// capsules.
 abstract final class LoopRadius {
-  static const double shellValue = 0;
-  static const double cardValue = 0;
-  static const double controlValue = 0;
-  static const double innerValue = 0;
+  static const double shellValue = 20;
+  static const double cardValue = 16;
+  static const double controlValue = 12;
+  static const double innerValue = 10;
 
-  /// The tab bar: square, like everything else (decision 0210).
-  static const double tabBarValue = 0;
+  /// The bottom tab bar (decision 0211).
+  static const double tabBarValue = 20;
 
-  /// Chat bubble tail corner — square like the other three.
-  static const double bubbleTailValue = 0;
+  /// Chat bubble tail corner — the one tighter corner of a 16 bubble.
+  static const double bubbleTailValue = 6;
 
-  static const double tileValue = 0;
-  static const double buttonValue = 0;
-  static const double toolValue = 0;
-  static const double badgeValue = 0;
-  static const double wideButtonValue = 0;
+  static const double tileValue = 10;
+  static const double buttonValue = 12;
+  static const double toolValue = 12;
+  static const double badgeValue = 6;
+  static const double wideButtonValue = 12;
 
-  static const BorderRadius shell = BorderRadius.zero;
-  static const BorderRadius card = BorderRadius.zero;
-  static const BorderRadius control = BorderRadius.zero;
-  static const BorderRadius inner = BorderRadius.zero;
-  static const BorderRadius tabBar = BorderRadius.zero;
-  static const Radius bubbleTail = Radius.zero;
-  static const BorderRadius tile = BorderRadius.zero;
-  static const BorderRadius button = BorderRadius.zero;
-  static const BorderRadius tool = BorderRadius.zero;
-  static const BorderRadius badge = BorderRadius.zero;
-  static const BorderRadius wideButton = BorderRadius.zero;
+  /// A chat bubble (decision 0211).
+  static const double bubbleValue = 16;
 
-  /// Fully round — avatars, dots, rings and progress ends only.
+  static const BorderRadius shell = BorderRadius.all(
+    Radius.circular(shellValue),
+  );
+  static const BorderRadius card = BorderRadius.all(Radius.circular(cardValue));
+  static const BorderRadius control = BorderRadius.all(
+    Radius.circular(controlValue),
+  );
+  static const BorderRadius inner = BorderRadius.all(
+    Radius.circular(innerValue),
+  );
+  static const BorderRadius tabBar = BorderRadius.all(
+    Radius.circular(tabBarValue),
+  );
+  static const Radius bubbleTail = Radius.circular(bubbleTailValue);
+  static const BorderRadius tile = BorderRadius.all(Radius.circular(tileValue));
+  static const BorderRadius button = BorderRadius.all(
+    Radius.circular(buttonValue),
+  );
+  static const BorderRadius tool = BorderRadius.all(Radius.circular(toolValue));
+  static const BorderRadius badge = BorderRadius.all(
+    Radius.circular(badgeValue),
+  );
+  static const BorderRadius wideButton = BorderRadius.all(
+    Radius.circular(wideButtonValue),
+  );
+  static const BorderRadius bubble = BorderRadius.all(
+    Radius.circular(bubbleValue),
+  );
+
+  /// The top corners of a sheet.
+  static const BorderRadius sheetTop = BorderRadius.vertical(
+    top: Radius.circular(shellValue),
+  );
+
+  /// Fully round — avatars, dots, rings, capsules and progress ends.
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
   static const BorderRadius round = pill;
 
@@ -378,8 +423,8 @@ abstract final class LoopTouch {
   /// Minimum hit target for every tappable element.
   static const double minimum = 44;
 
-  /// Primary button height (`min-height 52`, decision 0210).
-  static const double primaryButton = 52;
+  /// Primary button height (48, decision 0211).
+  static const double primaryButton = 48;
 
   /// Floating tab bar height and its minimum cell height.
   static const double tabBarHeight = 70;
@@ -566,17 +611,20 @@ abstract final class LoopTypography {
   // `fontFamily` — see `scripts/check_harness.py`.
   // ---------------------------------------------------------------------
 
-  /// Band 1 · display — Anton, tracked -0.02em (`--heading-font`).
+  /// Band 1 · display — a folio heading: Arimo 700 with Noto Sans SC Bold
+  /// behind it, no tracking (decision 0211). Anton is kept for the hero line
+  /// and the big stat figure only ([LoopType.heroDisplay],
+  /// [LoopType.statFigure]).
   static TextStyle display(double size, {Color color = LoopColors.chalk}) =>
-      condensed(size: size, height: 1.1, trackingEm: -0.02, color: color);
+      sans(size: size, weight: FontWeight.w700, height: 1.25, color: color);
 
-  /// Band 2 · heading — Anton at page-title sizes, tracked -0.01em. The
-  /// weight argument survives for call sites; Anton has only one.
+  /// Band 2 · heading — page and sheet titles, Arimo 700 / Noto Sans SC Bold,
+  /// sentence case and no tracking (decision 0211).
   static TextStyle heading(
     double size, {
-    FontWeight weight = FontWeight.w400,
+    FontWeight weight = FontWeight.w700,
     Color color = LoopColors.chalk,
-  }) => condensed(size: size, height: 1.15, trackingEm: -0.01, color: color);
+  }) => sans(size: size, weight: weight, height: 1.3, color: color);
 
   /// Band 3 · title — card and row titles, Arimo 700 (`16 / w700`).
   static TextStyle title(
@@ -585,13 +633,13 @@ abstract final class LoopTypography {
     Color color = LoopColors.chalk,
   }) => sans(size: size, weight: weight, height: 1.35, color: color);
 
-  /// Band 4 · body — running prose, Arimo 400 at a 1.7 leading.
+  /// Band 4 · body — running prose, Arimo 400 at a 1.5 leading (0211).
   static TextStyle body(double size, {Color color = LoopColors.chalk}) =>
-      sans(size: size, weight: FontWeight.w400, height: 1.7, color: color);
+      sans(size: size, weight: FontWeight.w400, height: 1.5, color: color);
 
-  /// Band 5 · caption — supporting copy, 1.6 leading.
+  /// Band 5 · caption — supporting copy, 1.5 leading.
   static TextStyle caption(double size, {Color color = LoopColors.text3}) =>
-      sans(size: size, weight: FontWeight.w400, height: 1.6, color: color);
+      sans(size: size, weight: FontWeight.w400, height: 1.5, color: color);
 
   /// Band 6 · label — controls and inline labels, 700.
   static TextStyle label(
@@ -600,16 +648,10 @@ abstract final class LoopTypography {
     Color color = LoopColors.text3,
   }) => sans(size: size, weight: weight, height: 1.3, color: color);
 
-  /// Band 6b · eyebrow / kicker — 800, tracked +0.15em, uppercased by the
-  /// widget that draws it (`LoopType.caps`).
+  /// Band 6b · eyebrow / kicker — a small 700 label, sentence case and no
+  /// tracking (decision 0211 retired the uppercase +0.15em kicker).
   static TextStyle eyebrow(double size, {Color color = LoopColors.text3}) =>
-      sans(
-        size: size,
-        weight: FontWeight.w800,
-        height: 1.3,
-        letterSpacing: size * 0.15,
-        color: color,
-      );
+      sans(size: size, weight: FontWeight.w700, height: 1.3, color: color);
 
   /// Band 7 · figure — every number the product shows, in the body face with
   /// [FontFeature.tabularFigures]. Addresses and hashes are [code].
@@ -649,29 +691,31 @@ abstract final class LoopTypography {
 /// | band | step | face | size | height | roles |
 /// | --- | --- | --- | --- | --- | --- |
 /// | display | `heroDisplay` | Anton | 56 | 1.0 | a hero line (intro pages) |
-/// | display | `displayXl` | Anton | 36 | 1.1 | R9 folio heading (intro / record / state) |
-/// | display | `display` | Anton | 32 | 1.1 | R9 folio heading (action) |
-/// | display | `displaySm` | Anton | 28 | 1.1 | R9 folio heading (index), R27 profile name |
-/// | display | `statFigure` | Anton | 30 | 1.1 | a big stat value |
-/// | heading | `stepTitle` | Anton | 28 | 1.15 | R1c step-page title |
-/// | heading | `headingLg` | Anton | 24 | 1.15 | R1 page title |
-/// | heading | `flatTitle` | Anton | 22 | 1.15 | R1b flat second-level title |
-/// | heading | `heading` | Anton | 22 | 1.15 | R2 sheet title |
-/// | heading | `headingSm` | Anton | 18 | 1.15 | R1d dense top bar |
-/// | title | `sectionTitle` | Arimo 700 | 18 | 1.35 | R3b section / date / group heading |
+/// | display | `displayXl` | Arimo 700 | 28 | 1.25 | R9 folio heading (intro / record / state) |
+/// | display | `display` | Arimo 700 | 26 | 1.25 | R9 folio heading (action) |
+/// | display | `displaySm` | Arimo 700 | 24 | 1.25 | R9 folio heading (index), R27 profile name |
+/// | display | `statFigure` | Arimo 700 tnum | 26 | 1.15 | a big stat value |
+/// | display | `keyFigure` | Arimo 700 tnum | 32 | 1.15 | total assets, my rank |
+/// | display | `heroFigure` | Anton | 30 | 1.1 | MEME project hero figures |
+/// | heading | `stepTitle` | Arimo 700 | 26 | 1.3 | R1c step-page title |
+/// | heading | `headingLg` | Arimo 700 | 22 | 1.3 | R1 page title |
+/// | heading | `flatTitle` | Arimo 700 | 20 | 1.3 | R1b flat second-level title |
+/// | heading | `heading` | Arimo 700 | 18 | 1.3 | R2 sheet title |
+/// | heading | `headingSm` | Arimo 700 | 17 | 1.3 | R1d dense top bar |
+/// | title | `sectionTitle` | Arimo 700 | 16 | 1.35 | R3b section / date / group heading |
 /// | title | `titleLg` | Arimo 700 | 16 | 1.35 | R15 wide button, R31 state title |
 /// | title | `title` | Arimo 700 | 15 | 1.35 | R4 row title |
 /// | title | `titleSm` | Arimo 700 | 13 | 1.35 | small control word, form label |
-/// | body | `bodyLg` | Arimo 400 | 15 | 1.6 | R25 text input |
-/// | body | `body` | Arimo 400 | 14 | 1.7 | R18 prose |
+/// | body | `bodyLg` | Arimo 400 | 15 | 1.5 | R25 text input |
+/// | body | `body` | Arimo 400 | 14 | 1.5 | R18 prose |
 /// | body | `message` | Arimo 400 | 14 | 1.45 | a chat message bubble |
-/// | body | `bodySm` | Arimo 400 | 13 | 1.7 | R19 sheet support copy |
-/// | caption | `caption` | Arimo 400 | 12 | 1.6 | R5 row subtitle, R20 notice |
-/// | caption | `captionSm` | Arimo 400 | 11 | 1.6 | R21 footnote |
-/// | label | `action` | Arimo 800 | 13 | 1.3 | button word |
+/// | body | `bodySm` | Arimo 400 | 13 | 1.5 | R19 sheet support copy |
+/// | caption | `caption` | Arimo 400 | 12 | 1.5 | R5 row subtitle, R20 notice |
+/// | caption | `captionSm` | Arimo 400 | 11 | 1.5 | R21 footnote |
+/// | label | `action` | Arimo 700 | 14 | 1.3 | button word |
 /// | label | `label` | Arimo 700 | 12 | 1.3 | R14 badge, R16 seg, R17 inline action |
-/// | label | `eyebrow` | Arimo 800 +0.15em | 12 | 1.3 | R3 section label |
-/// | label | `kicker` | Arimo 800 +0.15em | 11 | 1.3 | R8 folio kicker, R13 stat label |
+/// | label | `eyebrow` | Arimo 700 | 12 | 1.3 | R3 small group label |
+/// | label | `kicker` | Arimo 700 | 11 | 1.3 | R8 folio kicker, R13 stat label |
 /// | figure | `figureXl` | Arimo 700 tnum | 28 | 1.2 | R22 hero figure |
 /// | figure | `figureLg` | Arimo 700 tnum | 20 | 1.25 | R24 amount input |
 /// | figure | `figureMd` | Arimo 700 tnum | 17 | 1.3 | R23 secondary hero |
@@ -684,7 +728,10 @@ abstract final class LoopType {
   /// Uppercase the Latin letters of a heading or a kicker
   /// (`text-transform: uppercase`). Han characters have no case and pass
   /// through untouched, so a Chinese title is unchanged.
-  static String caps(String text) => text.toUpperCase();
+  ///
+  /// Decision 0211 retired the uppercase kicker: this is now the identity, so
+  /// a label reads exactly as it was written.
+  static String caps(String text) => text;
 
   // Band 1 · display.
   /// A hero line — the one statement on an intro page (`-0.035em`).
@@ -695,17 +742,26 @@ abstract final class LoopType {
   );
 
   /// R9 folio heading on the intro / record / state archetypes.
-  static final TextStyle displayXl = LoopTypography.display(36);
+  static final TextStyle displayXl = LoopTypography.display(28);
 
   /// R9 folio heading on the action archetype.
-  static final TextStyle display = LoopTypography.display(32);
+  static final TextStyle display = LoopTypography.display(26);
 
   /// R9 folio heading on the index archetype and every compact folio; R27
   /// the name on a person's or a community's home.
-  static final TextStyle displaySm = LoopTypography.display(28);
+  static final TextStyle displaySm = LoopTypography.display(24);
 
-  /// A big stat value (`stat-value`, yellow at the call site, -0.025em).
-  static final TextStyle statFigure = LoopTypography.condensed(
+  /// A big stat value — Arimo 700 tabular (decision 0212: Anton is kept for
+  /// the MEME project page's hero figures only, [heroFigure]).
+  static final TextStyle statFigure = LoopTypography.figure(26, height: 1.15);
+
+  /// A key figure — total assets, my rank: Arimo 700 32, Yellow at the call
+  /// site (docs/42 附C §6).
+  static final TextStyle keyFigure = LoopTypography.figure(32, height: 1.15);
+
+  /// The MEME project page hero price and its big figures: the one place
+  /// Anton survives (docs/42 附C §2).
+  static final TextStyle heroFigure = LoopTypography.condensed(
     size: 30,
     height: 1.1,
     trackingEm: -0.025,
@@ -713,26 +769,26 @@ abstract final class LoopType {
 
   // Band 2 · heading.
   /// R1c the heading of an account-opening step page.
-  static final TextStyle stepTitle = LoopTypography.heading(28);
+  static final TextStyle stepTitle = LoopTypography.heading(26);
 
   /// R1 page title of a first-level tab or a ledger second-level page.
-  static final TextStyle headingLg = LoopTypography.heading(24);
+  static final TextStyle headingLg = LoopTypography.heading(22);
 
   /// R1b the one-line title of a flat second-level page (decision 0126).
-  static final TextStyle flatTitle = LoopTypography.heading(22);
+  static final TextStyle flatTitle = LoopTypography.heading(20);
 
   /// R2 every sheet's title — drawn only by `LoopSheetHeading` / `LoopSheet`
   /// / `LoopSignSheet`.
-  static final TextStyle heading = LoopTypography.heading(22);
+  static final TextStyle heading = LoopTypography.heading(18);
 
   /// R1d dense (chat) top bar. Anton stays for page-level titles only.
-  static final TextStyle headingSm = LoopTypography.heading(18);
+  static final TextStyle headingSm = LoopTypography.heading(17);
 
   /// R3b a section or group heading inside a page — a flat page's section
   /// title, a date header over a day of history (「9月8日」), a group head.
   /// Arimo 700 with the bundled Noto Sans SC Bold behind it (S241c): Anton's
   /// narrow figures beside a bold Han run read as two faces in one word.
-  static final TextStyle sectionTitle = LoopTypography.title(18);
+  static final TextStyle sectionTitle = LoopTypography.title(16);
 
   // Band 3 · title.
   /// The quote-row title; R15 a flat wide button's word; R31 the title of a
@@ -750,7 +806,7 @@ abstract final class LoopType {
   static final TextStyle bodyLg = LoopTypography.sans(
     size: 15,
     weight: FontWeight.w400,
-    height: 1.6,
+    height: 1.5,
   );
 
   /// R18 running prose; R26 a search field's placeholder.
@@ -780,8 +836,8 @@ abstract final class LoopType {
   // Band 6 · label.
   /// The button word (`13 / w800`) and the Material button slot.
   static final TextStyle action = LoopTypography.label(
-    13,
-    weight: FontWeight.w800,
+    14,
+    weight: FontWeight.w700,
     color: LoopColors.chalk,
   );
 
@@ -941,14 +997,13 @@ abstract final class LoopTheme {
         height: LoopTouch.tabBarHeight,
         elevation: 0,
         backgroundColor: LoopColors.ink,
-        indicatorColor: LoopColors.yellow,
-        indicatorShape: const RoundedRectangleBorder(),
+        indicatorColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
             size: 21,
             color: states.contains(WidgetState.selected)
-                ? LoopColors.ink
+                ? LoopColors.yellow
                 : LoopColors.text3,
           );
         }),
@@ -962,9 +1017,11 @@ abstract final class LoopTheme {
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: LoopColors.ink,
-        indicatorColor: LoopColors.yellow,
-        indicatorShape: const RoundedRectangleBorder(),
-        selectedIconTheme: const IconThemeData(color: LoopColors.ink, size: 21),
+        indicatorColor: Colors.transparent,
+        selectedIconTheme: const IconThemeData(
+          color: LoopColors.yellow,
+          size: 21,
+        ),
         unselectedIconTheme: const IconThemeData(
           color: LoopColors.text2,
           size: 21,
@@ -977,7 +1034,7 @@ abstract final class LoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: LoopColors.input,
+        fillColor: LoopColors.card,
         // R25: a field's placeholder and floating label are the input step,
         // the same size as what is typed into it (decision 0189).
         hintStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
@@ -986,13 +1043,15 @@ abstract final class LoopTheme {
           horizontal: 14,
           vertical: 12,
         ),
+        // Decision 0211: a field is a filled ground with no edge until it
+        // takes focus, when it draws 1px Purple.
         border: const OutlineInputBorder(
           borderRadius: LoopRadius.control,
-          borderSide: BorderSide(color: LoopColors.inputLine),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: const OutlineInputBorder(
           borderRadius: LoopRadius.control,
-          borderSide: BorderSide(color: LoopColors.inputLine),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: LoopRadius.control,
@@ -1008,18 +1067,19 @@ abstract final class LoopTheme {
           backgroundColor: LoopColors.yellow,
           foregroundColor: LoopColors.ink,
           minimumSize: const Size(LoopTouch.minimum, LoopTouch.primaryButton),
-          padding: const EdgeInsets.symmetric(horizontal: 23, vertical: 14),
-          shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: const RoundedRectangleBorder(borderRadius: LoopRadius.button),
           textStyle: textTheme.labelLarge,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: LoopColors.chalk,
+          backgroundColor: LoopColors.card2,
           minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          side: const BorderSide(color: LoopColors.line3),
-          shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          side: BorderSide.none,
+          shape: const RoundedRectangleBorder(borderRadius: LoopRadius.button),
           textStyle: textTheme.labelLarge,
         ),
       ),
@@ -1037,11 +1097,14 @@ abstract final class LoopTheme {
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
-        side: const BorderSide(color: LoopColors.line2),
-        backgroundColor: LoopColors.card,
-        selectedColor: LoopColors.purpleSoft,
+        side: BorderSide.none,
+        backgroundColor: LoopColors.card2,
+        selectedColor: LoopColors.purpleSelected,
         labelStyle: textTheme.labelMedium,
-        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.badge),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: LoopColors.onPurple,
+        ),
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       ),
       // A list tile's title stays prose (R18) now that `bodyLarge` is the
@@ -1055,30 +1118,19 @@ abstract final class LoopTheme {
         modalBackgroundColor: LoopColors.graphite,
         modalBarrierColor: LoopColors.veil,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(LoopRadius.shellValue),
-          ),
-          side: BorderSide(color: LoopColors.line2),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: LoopRadius.sheetTop),
       ),
       dialogTheme: const DialogThemeData(
         backgroundColor: LoopColors.graphite,
         surfaceTintColor: Colors.transparent,
         barrierColor: LoopColors.veil,
-        shape: RoundedRectangleBorder(
-          borderRadius: LoopRadius.shell,
-          side: BorderSide(color: LoopColors.line2),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: LoopRadius.shell),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: LoopColors.graphite,
         contentTextStyle: LoopType.body,
         behavior: SnackBarBehavior.floating,
-        shape: const RoundedRectangleBorder(
-          borderRadius: LoopRadius.control,
-          side: BorderSide(color: LoopColors.line2),
-        ),
+        backgroundColor: LoopColors.card2,
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
       ),
       focusColor: LoopColors.purpleSoft,
     );

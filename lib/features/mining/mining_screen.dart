@@ -408,7 +408,7 @@ LoopFolioPrimary _hero(MiningSummary? summary, LaunchViewPhase phase) {
     ring: false,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
-    kicker: 'MINING POWER',
+    kicker: '挖矿算力',
     heading: loading ? '正在读取' : launchMissingHeading,
     caption: loading ? '算力与产出读到之后显示在这里。' : '这一页还没有读到算力数据。',
   );
@@ -489,7 +489,7 @@ class _ReferralCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('REFERRAL POWER', style: LoopType.eyebrow),
+            Text('推广算力', style: LoopType.eyebrow),
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,

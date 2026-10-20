@@ -162,7 +162,7 @@ class _CommunityDiscoverScreenState
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'DISCOVERY DESK',
+        kicker: '社区发现',
         // The directory answers one cursor page at a time and carries no
         // total, so a heading may only count what is loaded — and it says
         // that it is what it is counting until the last page is in.

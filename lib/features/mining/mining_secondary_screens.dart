@@ -525,7 +525,7 @@ LoopFolioPrimary _rankHero(MiningRank? rank) {
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
-    kicker: 'NETWORK POSITION',
+    kicker: '全网位置',
     heading: heading,
     caption: caption,
     // `.folio-stamp` on this page is `50,000 H` — the settled power behind the
@@ -979,7 +979,7 @@ LoopFolioPrimary _communityHero(
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
-    kicker: 'COMMUNITY POWER',
+    kicker: '社区算力',
     heading: heading,
     caption: caption,
     // The heading is a figure and the page title is the community's name, so
@@ -1269,7 +1269,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             squareBottom: true,
           ),
           detail: <Widget>[
-            Text('DAILY OUTPUT', style: LoopType.eyebrow),
+            Text('每日产出', style: LoopType.eyebrow),
             const SizedBox(height: 8),
             Text.rich(
               TextSpan(

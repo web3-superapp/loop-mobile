@@ -154,35 +154,41 @@ class Launch2StagePill extends StatelessWidget {
       _ => MemeTagTone.idle,
     };
     final ink = memeTagInk(tone);
-    return Container(
+    // Decision 0212 (docs/42 附C §4): the stage is a small capsule — 12 / 600
+    // on a soft ground — at the right of the row's fixed slot, never a block
+    // that reads as a button.
+    return SizedBox(
       key: ValueKey<String>('launch2-stage-pill-${stage.wireName}'),
       width: size.width,
       height: size.height,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: memeTagDecoration(tone),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (stage == Launch2Stage.graduated) ...<Widget>[
-            const LoopIcon('graduate', size: 16, color: LoopColors.purple),
-            const SizedBox(width: 4),
-          ],
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                launch2StageLabel(stage),
-                maxLines: 1,
-                style: LoopTypography.withWeight(
-                  LoopType.titleSm,
-                  FontWeight.w600,
-                ).copyWith(color: ink),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: memeTagDecoration(tone),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (stage == Launch2Stage.graduated) ...<Widget>[
+                const LoopIcon('graduate', size: 14, color: LoopColors.purple),
+                const SizedBox(width: 4),
+              ],
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    launch2StageLabel(stage),
+                    maxLines: 1,
+                    style: LoopTypography.withWeight(
+                      LoopType.label,
+                      FontWeight.w600,
+                    ).copyWith(color: ink),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

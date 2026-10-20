@@ -338,7 +338,7 @@ void main() {
         await tester.tap(find.text(label));
         await tester.pumpAndSettle();
         expect(card, findsOneWidget, reason: label);
-        expect(find.text('NETWORK POSITION'), findsNothing);
+        expect(find.text('全网位置'), findsNothing);
       }
     });
   });

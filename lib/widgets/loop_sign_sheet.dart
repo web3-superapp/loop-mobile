@@ -106,13 +106,14 @@ class LoopSignSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final background = switch (state) {
       LoopSignSheetState.simulationFailed => LoopColors.yellowSoft,
-      LoopSignSheetState.policyRejected => LoopColors.card2,
+      LoopSignSheetState.policyRejected => LoopColors.card,
       _ => LoopColors.card,
     };
     final borderColor = switch (state) {
       LoopSignSheetState.simulationFailed ||
       LoopSignSheetState.policyRejected => Colors.transparent,
-      _ => LoopColors.line2,
+      // Decision 0211: the card is its ground; no edge.
+      _ => Colors.transparent,
     };
     final stateLabel = switch (state) {
       LoopSignSheetState.pending => '待确认',

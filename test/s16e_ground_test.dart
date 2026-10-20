@@ -110,15 +110,15 @@ void main() {
       );
       await tester.pump();
 
-      // Decision 0210: a secondary button is the ground and a 1px `#4A4754`
-      // edge — no fill — on the Ink page.
-      final edge = tester
+      // Decision 0211: a secondary button is the raised `#1C1B22` ground
+      // with no edge on the Ink page.
+      final face = tester
           .widgetList<DecoratedBox>(find.byType(DecoratedBox))
           .map((box) => box.decoration)
           .whereType<BoxDecoration>()
-          .firstWhere((box) => box.border != null);
-      expect(edge.color, isNull);
-      expect(edge.border!.top.color.toARGB32(), LoopColors.line3.toARGB32());
+          .firstWhere((box) => box.borderRadius == LoopRadius.button);
+      expect(face.color!.toARGB32(), LoopColors.card2.toARGB32());
+      expect(face.border, isNull);
       expect(
         tester.widget<Text>(find.text('重试')).style!.color!.toARGB32(),
         LoopColors.chalk.toARGB32(),
@@ -158,10 +158,8 @@ void main() {
       );
       final decoration = container.decoration! as BoxDecoration;
       expect(decoration.color!.toARGB32(), LoopColors.card.toARGB32());
-      expect(
-        decoration.border!.top.color.toARGB32(),
-        LoopColors.line.toARGB32(),
-      );
+      // Decision 0211: no edge.
+      expect(decoration.border, isNull);
     });
   });
 

@@ -1065,6 +1065,7 @@ class _NftSaleBlock extends ConsumerWidget {
           ),
         ),
         MemeStatFigures(
+          hero: true,
           stats: <LoopStat>[
             LoopStat(
               label: '价格 / 枚',
@@ -1192,6 +1193,7 @@ class _CurveBlock extends StatelessWidget {
       children: <Widget>[
         const LoopLabel('内盘'),
         MemeStatFigures(
+          hero: true,
           stats: <LoopStat>[
             LoopStat(
               label: '当前价 · USD1',

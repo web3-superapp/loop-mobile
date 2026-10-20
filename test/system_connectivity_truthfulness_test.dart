@@ -43,7 +43,7 @@ void main() {
     // The prototype page, drawn in full — under a bar that says it is one.
     expect(find.text(loopStateSpecimenLabel), findsOneWidget);
     expect(find.text('当前设备离线'), findsOneWidget);
-    expect(find.text('LAST SYNC · 09:38'), findsOneWidget);
+    expect(find.text('上次同步 09:38'), findsOneWidget);
     expect(find.text('OFFLINE'), findsOneWidget);
     expect(find.text('无法连接到服务器'), findsOneWidget);
     expect(find.text('部分故障（另一种态）'), findsOneWidget);
@@ -95,11 +95,7 @@ void main() {
       );
       expect(find.text('返回 LOOP'), findsNothing, reason: scope.name);
       // No lastSyncAt and no per-chain source: neither may be invented.
-      expect(
-        find.textContaining('LAST SYNC'),
-        findsNothing,
-        reason: scope.name,
-      );
+      expect(find.textContaining('上次同步'), findsNothing, reason: scope.name);
       await scrollPageTo(
         tester,
         find.byKey(const ValueKey<String>('partial-outage-source-unavailable')),
@@ -141,8 +137,8 @@ void main() {
       ),
     );
 
-    expect(find.text('LAST SYNC · 09:38'), findsOneWidget);
-    expect(find.text('DEVICE OFFLINE'), findsNothing);
+    expect(find.text('上次同步 09:38'), findsOneWidget);
+    expect(find.text('设备离线'), findsNothing);
     await scrollPageTo(
       tester,
       find.byKey(const ValueKey<String>('partial-outage-notice')),
@@ -168,8 +164,8 @@ void main() {
       ),
     );
 
-    expect(find.text('DEVICE OFFLINE'), findsOneWidget);
-    expect(find.textContaining('LAST SYNC'), findsNothing);
+    expect(find.text('设备离线'), findsOneWidget);
+    expect(find.textContaining('上次同步'), findsNothing);
   });
 
   testWidgets('connectivity banner announces and retries', (tester) async {

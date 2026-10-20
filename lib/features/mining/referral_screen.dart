@@ -60,7 +60,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: 'Referral Boost',
-      kicker: 'MINING POWER · SERVER VERIFIED',
+      kicker: '挖矿算力 · 服务端核验',
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
@@ -79,7 +79,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
               ring: false,
               variant: LoopFolioVariant.quiet,
               archetype: LoopFolioArchetype.record,
-              kicker: 'FINAL BOOST',
+              kicker: '最终加成',
               // The boost has no value: it depends on the unapproved formula.
               heading: launchMissingHeading,
               caption: '加成只计入 Mining Power，不是收入、佣金或返佣。',
@@ -90,7 +90,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                 ring: false,
                 variant: LoopFolioVariant.quiet,
                 archetype: LoopFolioArchetype.record,
-                kicker: 'FINAL BOOST',
+                kicker: '最终加成',
                 heading: launchMissingHeading,
                 caption:
                     '${overview.validRelationships} 个有效关系 · '
@@ -300,11 +300,10 @@ class _LevelCell extends StatelessWidget {
           // Decision 0210 / S241b: the current depth is a selected cell —
           // purple 9 % ground behind a purple edge, yellow figures — not a
           // yellow slab; the other depths are flat outlined cells.
+          // Decision 0211: filled tiles with a 10 radius, no edge.
           decoration: BoxDecoration(
-            color: current ? LoopColors.purpleSoft : LoopColors.bg2,
-            border: Border.all(
-              color: current ? LoopColors.purple : LoopColors.line2,
-            ),
+            color: current ? LoopColors.purpleSelected : LoopColors.card2,
+            borderRadius: LoopRadius.tile,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,7 +322,7 @@ class _LevelCell extends StatelessWidget {
                   // 0192); the five-across strip is not a two-column grid,
                   // so the cell stays local.
                   style: LoopType.kicker.copyWith(
-                    color: current ? LoopColors.yellow : LoopColors.text2,
+                    color: current ? LoopColors.onPurple : LoopColors.text2,
                   ),
                 ),
               ),
@@ -406,15 +405,13 @@ class _LevelTile extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: level == 1 ? LoopColors.purpleSoft : LoopColors.bg2,
-        border: Border.all(
-          color: level == 1 ? LoopColors.purpleLine : LoopColors.line2,
-        ),
+        color: level == 1 ? LoopColors.purpleSelected : LoopColors.card2,
+        borderRadius: LoopRadius.tile,
       ),
       child: Text(
         'L$level',
         style: LoopType.figure.copyWith(
-          color: level == 1 ? LoopColors.yellow : LoopColors.chalk,
+          color: level == 1 ? LoopColors.onPurple : LoopColors.chalk,
         ),
       ),
     );

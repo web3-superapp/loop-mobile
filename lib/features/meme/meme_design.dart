@@ -43,15 +43,26 @@ Widget memeTwoToneHeading(
 }
 
 /// The looplabs stat block (`.stat-value`): pairs of flat cells, each figure
-/// in Anton [LoopType.statFigure] Yellow over an uppercase kicker label. A
+/// in [LoopType.statFigure] Yellow (Anton [LoopType.heroFigure] on the project
+/// page hero) over a small label. A
 /// figure wider than its cell scales down rather than wrapping. Each cell
 /// keeps its [LoopStat.statKey] and reads as one sentence, exactly as
 /// [LoopStatGrid] did.
 class MemeStatFigures extends StatelessWidget {
-  const MemeStatFigures({required this.stats, super.key, this.margin});
+  const MemeStatFigures({
+    required this.stats,
+    super.key,
+    this.margin,
+    this.hero = false,
+  });
 
   final List<LoopStat> stats;
   final EdgeInsets? margin;
+
+  /// The MEME project page's hero figures: the one place Anton survives
+  /// ([LoopType.heroFigure], docs/42 附C §2). Elsewhere the figures are the
+  /// Arimo [LoopType.statFigure].
+  final bool hero;
 
   static const double gap = 8;
 
@@ -67,12 +78,14 @@ class MemeStatFigures extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Expanded(child: _MemeStatCell(stat: left)),
+              Expanded(
+                child: _MemeStatCell(stat: left, hero: hero),
+              ),
               const SizedBox(width: gap),
               Expanded(
                 child: right == null
                     ? const SizedBox.shrink()
-                    : _MemeStatCell(stat: right),
+                    : _MemeStatCell(stat: right, hero: hero),
               ),
             ],
           ),
@@ -102,9 +115,10 @@ class MemeStatFigures extends StatelessWidget {
 }
 
 class _MemeStatCell extends StatelessWidget {
-  const _MemeStatCell({required this.stat});
+  const _MemeStatCell({required this.stat, required this.hero});
 
   final LoopStat stat;
+  final bool hero;
 
   @override
   Widget build(BuildContext context) {
@@ -121,9 +135,9 @@ class _MemeStatCell extends StatelessWidget {
       child: Container(
         key: stat.statKey,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: LoopColors.card,
-          border: Border.all(color: LoopColors.line2),
+          borderRadius: LoopRadius.control,
         ),
         child: ExcludeSemantics(
           child: Column(
@@ -136,17 +150,18 @@ class _MemeStatCell extends StatelessWidget {
                 child: Text(
                   stat.value,
                   maxLines: 1,
-                  style: LoopType.statFigure.copyWith(
-                    color: figureColor,
-                    fontFeatures: const <FontFeature>[
-                      FontFeature.tabularFigures(),
-                    ],
-                  ),
+                  style: (hero ? LoopType.heroFigure : LoopType.statFigure)
+                      .copyWith(
+                        color: figureColor,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                LoopType.caps(stat.label),
+                stat.label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: LoopType.kicker.copyWith(color: LoopColors.text3),
@@ -172,24 +187,27 @@ enum MemeTagTone {
   idle,
 }
 
-/// The decoration of a stage tag in [tone] (0 radius, no shadow).
+/// The decoration of a stage tag in [tone] (decision 0212, docs/42 附C §4:
+/// a capsule on a soft ground — Yellow 13 % live, Purple 18 % graduated,
+/// raised grey waiting; never solid Yellow).
 BoxDecoration memeTagDecoration(MemeTagTone tone) => switch (tone) {
-  MemeTagTone.live => BoxDecoration(
-    border: Border.all(color: LoopColors.yellow),
+  MemeTagTone.live => const BoxDecoration(
+    color: LoopColors.yellowSoft,
+    borderRadius: LoopRadius.pill,
   ),
-  MemeTagTone.done => BoxDecoration(
-    color: LoopColors.purpleSoft,
-    border: Border.all(color: LoopColors.purpleLine),
+  MemeTagTone.done => const BoxDecoration(
+    color: LoopColors.purpleTint,
+    borderRadius: LoopRadius.pill,
   ),
-  MemeTagTone.idle => BoxDecoration(
+  MemeTagTone.idle => const BoxDecoration(
     color: LoopColors.card2,
-    border: Border.all(color: LoopColors.line2),
+    borderRadius: LoopRadius.pill,
   ),
 };
 
 /// The word colour of a stage tag in [tone].
 Color memeTagInk(MemeTagTone tone) => switch (tone) {
   MemeTagTone.live => LoopColors.yellow,
-  MemeTagTone.done => LoopColors.chalk,
+  MemeTagTone.done => LoopColors.purple,
   MemeTagTone.idle => LoopColors.text2,
 };

@@ -177,15 +177,11 @@ class LoopTokenCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: chalk ? LoopColors.chalk : LoopColors.graphite,
             borderRadius: LoopRadius.card,
-            // Decision 0210: flat — a 1px card edge, Purple for a
-            // graduated token, and no lift.
-            border: Border.all(
-              color: state == LoopTokenCardState.graduated
-                  ? LoopColors.purpleLine
-                  : chalk
-                  ? foreground.withValues(alpha: 0.16)
-                  : LoopColors.line2,
-            ),
+            // Decision 0211: no edge, except the Purple one a graduated
+            // token keeps.
+            border: state == LoopTokenCardState.graduated
+                ? Border.all(color: LoopColors.purpleLine)
+                : null,
           ),
           clipBehavior: Clip.antiAlias,
           // The Chalk variant is a light ground, so it declares itself: the
@@ -204,7 +200,15 @@ class LoopTokenCard extends StatelessWidget {
                       left: 0,
                       top: 14,
                       bottom: 14,
-                      child: Container(width: 4, color: LoopColors.yellow),
+                      child: Container(
+                        width: 4,
+                        decoration: const BoxDecoration(
+                          color: LoopColors.yellow,
+                          borderRadius: BorderRadius.horizontal(
+                            right: Radius.circular(4),
+                          ),
+                        ),
+                      ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -535,7 +539,7 @@ class _Metrics extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      metrics[index].label.toUpperCase(),
+                      metrics[index].label,
                       style: LoopType.kicker.copyWith(color: labelColor),
                     ),
                     Text(

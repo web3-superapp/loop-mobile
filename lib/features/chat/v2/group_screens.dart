@@ -314,10 +314,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       primary: const LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: 'GROUP RECORD',
+        kicker: '群资料',
         heading: '群信息',
         caption: '成员、通知与退出按风险从低到高排列。这里只显示已确认的信息。',
-        stamp: 'PRIVATE',
+        stamp: '私密',
       ),
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '群信息'),

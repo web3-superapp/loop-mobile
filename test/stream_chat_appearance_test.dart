@@ -23,15 +23,16 @@ void main() {
         'Chalk', () {
       final theme = loopStreamMessageItemTheme();
       final background = theme.bubble!.backgroundColor!;
-      expect(background.resolve(_outgoing), LoopColors.purpleSoft);
-      expect(background.resolve(_incoming), LoopColors.card);
+      expect(background.resolve(_outgoing), LoopColors.purpleSelected);
+      expect(background.resolve(_incoming), LoopColors.card2);
 
       final textColor = theme.text!.textColor!;
-      expect(textColor.resolve(_outgoing), LoopColors.chalk);
+      // Decision 0212: the own bubble is solid Purple with a white word.
+      expect(textColor.resolve(_outgoing), LoopColors.onPurple);
       expect(textColor.resolve(_incoming), LoopColors.chalk);
 
       final textStyle = theme.text!.textStyle!;
-      expect(textStyle.resolve(_outgoing)!.color, LoopColors.chalk);
+      expect(textStyle.resolve(_outgoing)!.color, LoopColors.onPurple);
       expect(textStyle.resolve(_incoming)!.color, LoopColors.chalk);
       // Band 4 (`LoopType.body`), the same size as the in-house bubble in
       // chat_components.dart. See decisions 0069 and 0080.
@@ -43,7 +44,7 @@ void main() {
       );
     });
 
-    test('the tail corner sits on the sender side, 5 against 16', () {
+    test('the tail corner sits on the sender side, 6 against 16', () {
       final shape = loopStreamMessageItemTheme().bubble!.shape!;
       final outgoing = shape.resolve(_outgoing)! as RoundedRectangleBorder;
       final incoming = shape.resolve(_incoming)! as RoundedRectangleBorder;
@@ -53,12 +54,12 @@ void main() {
       expect(outgoingRadius.topEnd, LoopRadius.bubbleTail);
       expect(
         outgoingRadius.topStart,
-        const Radius.circular(LoopRadius.controlValue),
+        const Radius.circular(LoopRadius.bubbleValue),
       );
       expect(incomingRadius.topStart, LoopRadius.bubbleTail);
       expect(
         incomingRadius.topEnd,
-        const Radius.circular(LoopRadius.controlValue),
+        const Radius.circular(LoopRadius.bubbleValue),
       );
     });
 
@@ -70,14 +71,15 @@ void main() {
       // Page and surface grounds.
       expect(scheme.backgroundApp, LoopColors.ink);
       expect(scheme.backgroundSurface, LoopColors.card);
-      expect(scheme.backgroundHighlight, LoopColors.purpleSoft);
+      expect(scheme.backgroundHighlight, LoopColors.purpleTint);
       // Text ladder.
       expect(scheme.textPrimary, LoopColors.chalk);
       expect(scheme.textSecondary, LoopColors.text2);
       expect(scheme.textTertiary, LoopColors.text3);
       // Outgoing surfaces Stream reads straight off the brand ladder.
-      expect(scheme.brand.shade100, LoopColors.purpleSoft);
-      expect(scheme.brand.shade900, LoopColors.chalk);
+      // Decision 0212: solid Purple ground, white text.
+      expect(scheme.brand.shade100, LoopColors.purple);
+      expect(scheme.brand.shade900, LoopColors.onPurple);
       expect(scheme.borderDefault, LoopColors.line);
     });
   });
@@ -307,11 +309,11 @@ void main() {
       final itemTheme = StreamMessageItemTheme.of(captured);
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_outgoing),
-        LoopColors.purpleSoft,
+        LoopColors.purpleSelected,
       );
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_incoming),
-        LoopColors.card,
+        LoopColors.card2,
       );
 
       // MaterialLocalizations must survive: LOOP adds a delegate, it does not

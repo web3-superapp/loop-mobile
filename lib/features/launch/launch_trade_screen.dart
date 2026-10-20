@@ -482,7 +482,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
-        kicker: 'FINAL BUY QUOTE',
+        kicker: '最终买入报价',
         // The quote is the server's, after prepare; nothing before it.
         heading: prepared == null
             ? launchMissingHeading

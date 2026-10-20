@@ -171,8 +171,8 @@ void main() {
     });
 
     test('launch2 kicker: no TESTNET', () {
-      expect(launch2DeskKicker(loopLaunchTestnetChainId), 'LAUNCH DESK · BSC');
-      expect(launch2DeskKicker(loopPrimaryChainId), 'LAUNCH DESK · BSC');
+      expect(launch2DeskKicker(loopLaunchTestnetChainId), '发射台 · BSC');
+      expect(launch2DeskKicker(loopPrimaryChainId), '发射台 · BSC');
     });
 
     test('环境标签: no DEV / STAGING tag', () {
@@ -239,10 +239,7 @@ void main() {
     test('the chain, the kicker and the environment tag say testnet', () {
       expect(loopChainName(loopLaunchTestnetChainId), 'BSC 测试网');
       expect(loopTestnetBadgeFor(loopLaunchTestnetChainId), 'BSC 测试网');
-      expect(
-        launch2DeskKicker(loopLaunchTestnetChainId),
-        'LAUNCH DESK · BSC TESTNET',
-      );
+      expect(launch2DeskKicker(loopLaunchTestnetChainId), '发射台 · BSC TESTNET');
       expect(loopEnvironmentTag(_stagingUrl, release: false), 'STAGING');
       expect(loopDisplaySymbol('tBNB'), 'tBNB');
       expect(memeReasonText('MEME_GAS_INSUFFICIENT'), 'tBNB 手续费不足');

@@ -58,13 +58,13 @@ void _expectStep(
 
 void main() {
   test('the new steps hold their documented values', () {
-    // Decision 0210: the looplabs ladder.
+    // Decision 0211: the app-shaped ladder in the looplabs palette.
     expect(LoopType.kicker.fontSize, 11);
-    expect(LoopType.kicker.fontWeight, FontWeight.w800);
-    expect(LoopType.stepTitle.fontSize, 28);
-    expect(LoopType.stepTitle.fontFamily, LoopFonts.display);
-    expect(LoopType.flatTitle.fontSize, 22);
-    expect(LoopType.flatTitle.fontFamily, LoopFonts.display);
+    expect(LoopType.kicker.fontWeight, FontWeight.w700);
+    expect(LoopType.stepTitle.fontSize, 26);
+    expect(LoopType.stepTitle.fontFamily, LoopFonts.body);
+    expect(LoopType.flatTitle.fontSize, 20);
+    expect(LoopType.flatTitle.fontFamily, LoopFonts.body);
     expect(LoopType.figure.fontSize, 13);
     expect(LoopType.figure.fontWeight, FontWeight.w700);
   });
@@ -251,7 +251,7 @@ void main() {
     );
     _expectStep(tester, '1,024', LoopType.figure);
     _expectStep(tester, '持有人', LoopType.kicker);
-    _expectStep(tester, '已验证', LoopType.label, weight: FontWeight.w700);
+    _expectStep(tester, '已验证', LoopType.label, weight: FontWeight.w600);
     _expectStep(tester, '确认', LoopType.action);
     _expectStep(tester, '保存', LoopType.titleLg);
     _expectStep(tester, '全部', LoopType.label, weight: FontWeight.w700);
@@ -284,7 +284,8 @@ void main() {
         ],
       ),
     );
-    _expectStep(tester, '资产', LoopType.eyebrow);
+    // Decision 0211: a section label is the section title step.
+    _expectStep(tester, '资产', LoopType.sectionTitle);
     // S241c: a flat section title is Arimo 700, not Anton.
     _expectStep(tester, '账户', LoopType.sectionTitle);
     _expectStep(tester, '卡片说明', LoopType.caption);

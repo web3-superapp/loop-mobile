@@ -829,7 +829,6 @@ class _MonogramFallback extends StatelessWidget {
         // page, where a fixed Chalk-on-Chalk fill would vanish.
         color: LoopGround.fillOf(context),
         shape: shape,
-        border: Border.all(color: LoopGround.hairlineOf(context)),
         borderRadius: shape == BoxShape.rectangle
             ? BorderRadius.circular(radius ?? LoopRadius.innerValue)
             : null,

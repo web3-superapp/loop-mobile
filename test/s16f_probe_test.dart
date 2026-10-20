@@ -503,11 +503,12 @@ void main() {
       LoopColors.ink,
     ).map((probe) => probe.ground.toARGB32()).toSet();
 
-    // The light ground the Wallet page renders is its one round Lime key,
-    // 兑换 (decision 0171: the other three keys moved to Card2). The Market
-    // page used to carry this premise on its selected chip, which is a
-    // dark-grey pill since decision 0122.
-    testWidgets('the Wallet page renders a light key ground', (tester) async {
+    // Decision 0212 took the last light ground off the Wallet page: all four
+    // keys, 兑换 included, are the raised Card2 ground. The probe still reads
+    // the real page and finds only dark key grounds there.
+    testWidgets('the Wallet page renders only dark key grounds', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -518,10 +519,9 @@ void main() {
         ),
       );
 
-      expect(
-        groundsOf(tester, find.byType(WalletScreen)),
-        contains(LoopColors.lime.toARGB32()),
-      );
+      final grounds = groundsOf(tester, find.byType(WalletScreen));
+      expect(grounds, isNot(contains(LoopColors.lime.toARGB32())));
+      expect(grounds, contains(LoopColors.card2.toARGB32()));
     });
 
     // Decision 0171 (docs/33 L15): the code and the address now share the

@@ -305,7 +305,7 @@ class LoopSelectionCheck extends StatelessWidget {
     ),
     child: selected
         ? const Center(
-            child: LoopIcon('check', size: 14, color: LoopColors.chalk),
+            child: LoopIcon('check', size: 14, color: LoopColors.onPurple),
           )
         : null,
   );

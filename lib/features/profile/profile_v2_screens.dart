@@ -685,7 +685,9 @@ class _ProfileTopRow extends StatelessWidget {
                 child: InkWell(
                   key: const ValueKey<String>('profile-hide-balance'),
                   onTap: onToggle,
-                  customBorder: const RoundedRectangleBorder(),
+                  customBorder: const RoundedRectangleBorder(
+                    borderRadius: LoopRadius.button,
+                  ),
                   child: Container(
                     constraints: const BoxConstraints(
                       minHeight: LoopTouch.minimum,
@@ -694,10 +696,9 @@ class _ProfileTopRow extends StatelessWidget {
                       horizontal: 14,
                       vertical: 10,
                     ),
-                    decoration: const ShapeDecoration(
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(color: LoopColors.line3),
-                      ),
+                    decoration: const BoxDecoration(
+                      color: LoopColors.card2,
+                      borderRadius: LoopRadius.button,
                     ),
                     child: Row(
                       children: <Widget>[
@@ -1651,9 +1652,10 @@ class _ProfileIdentityCard extends StatelessWidget {
                             width: 22,
                             height: 22,
                             alignment: Alignment.center,
-                            // S241b: the edit tag is a square yellow chip.
+                            // Decision 0212: a round Yellow edit key.
                             decoration: const BoxDecoration(
                               color: LoopColors.yellow,
+                              shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.edit_outlined,

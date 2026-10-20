@@ -62,8 +62,8 @@ void main() {
       );
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.ring, isFalse);
-      expect(folio.kicker, 'DIRECT MESSAGE');
-      expect(folio.stamp, 'PRIVATE');
+      expect(folio.kicker, '私聊');
+      expect(folio.stamp, '私密');
       // The heading names the conversation; it is not the page's own title.
       expect(folio.heading, '和 NightOwl 的私聊');
       expect(folio.heading, isNot('私聊'));

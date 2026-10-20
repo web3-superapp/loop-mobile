@@ -485,7 +485,7 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         // in the prototype, and the app had none (audit 2026-09-20 · B.6).
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.state,
-        kicker: 'SELECTED THREAD',
+        kicker: '已选消息',
         heading: switch ((state.sourceLabel, selectedCount)) {
           (final String source?, final int count) => '$source · $count 条',
           (null, final int count) => '$count 条已选择',
@@ -493,7 +493,7 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         caption:
             '一次最多转发 $chatForwardSelectionLimit 条，目标只能是你已加入的会话。'
             '已删除或没有正文的消息会被跳过并计数。',
-        stamp: '$selectedCount SELECTED',
+        stamp: '已选 $selectedCount',
       ),
       sections: <Widget>[
         if (widget.sourceCid == null)
@@ -734,12 +734,12 @@ class _ChatMergePreviewScreenState
           ? const LoopFolioPrimary(
               variant: LoopFolioVariant.quiet,
               archetype: LoopFolioArchetype.state,
-              kicker: 'ANONYMOUS BY DEFAULT',
+              kicker: '默认匿名',
               heading: '0 条内容',
               caption:
                   '合并预览只输出「$chatMergeAnonymousLabel」、时间与正文，'
                   '不含昵称、LOOP ID 或钱包地址。',
-              stamp: 'ANONYMOUS',
+              stamp: '匿名',
             )
           : RepaintBoundary(
               key: _cardKey,

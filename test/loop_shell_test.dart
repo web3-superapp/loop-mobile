@@ -52,8 +52,7 @@ void main() {
           (widget) =>
               widget is Container &&
               widget.decoration is BoxDecoration &&
-              (widget.decoration! as BoxDecoration).color ==
-                  LoopColors.graphite,
+              (widget.decoration! as BoxDecoration).color == LoopColors.card,
         ),
       ),
     );
@@ -64,9 +63,9 @@ void main() {
     expect(844 - chalkRect.bottom, 34);
     final decoration = chalk.decoration! as BoxDecoration;
     expect(decoration.borderRadius, LoopRadius.tabBar);
-    // Decision 0210: flat — no lift, a 1px card edge painted over the bar.
+    // Decision 0212: no lift, no edge, no block; a 20 radius card bar.
     expect(decoration.boxShadow, isNull);
-    expect(chalk.foregroundDecoration, isNotNull);
+    expect(chalk.foregroundDecoration, isNull);
   });
 
   testWidgets('one Lime indicator marks the selection; the cells stay bare', (
@@ -116,12 +115,8 @@ void main() {
     // draw no background of their own, so nothing can appear or disappear.
     final indicator = find.byKey(const ValueKey<String>('loop-tab-indicator'));
     expect(indicator, findsOneWidget);
-    final decoration =
-        tester.widget<Container>(indicator).decoration! as BoxDecoration;
-    // Decision 0210: a flat Purple selection ground with a Purple underline.
-    expect(decoration.gradient, isNull);
-    expect(decoration.color, LoopColors.purpleSoft);
-    expect((decoration.border! as Border).bottom.color, LoopColors.purple);
+    // Decision 0212: the slot paints nothing — no colour block in the bar.
+    expect(tester.widget(indicator), isA<SizedBox>());
     expect(
       find.descendant(of: find.byType(LoopTabItem), matching: indicator),
       findsNothing,
@@ -387,7 +382,7 @@ void main() {
     final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
     expect(rail.selectedIndex, 3);
     expect(rail.backgroundColor, LoopColors.ink);
-    expect(rail.indicatorColor, LoopColors.lime);
+    expect(rail.indicatorColor, Colors.transparent);
     expect(rail.destinations.map((d) => (d.label as Text).data), <String>[
       '聊天',
       '广场',

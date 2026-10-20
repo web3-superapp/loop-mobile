@@ -52,9 +52,9 @@ void main() {
     await _pump(tester, showApple: false);
 
     final title = tester.widget<Text>(find.text('欢迎来到 LOOP'));
-    // Decision 0210: the step title is Anton.
+    // Decision 0211: the step title is bold Arimo / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
-    expect(title.style?.fontFamily, LoopFonts.display);
+    expect(title.style?.fontFamily, LoopFonts.body);
     final subtitle = tester.widget<Text>(find.text('登录后自动创建钱包，持仓即产生算力。'));
     expect(subtitle.style?.fontSize, 14);
     final field = find.byKey(const ValueKey('privy-email'));
