@@ -554,7 +554,7 @@ Future<void> showLoopForceUpdateDialog(
     builder: (context) => PopScope(
       canPop: false,
       child: AlertDialog(
-        icon: const LoopIcon('upgrade', size: 34, color: LoopColors.lime),
+        icon: const LoopIcon('upgrade', size: 34, color: LoopColors.yellow),
         title: const Text('请更新 LOOP 后继续'),
         content: Text(
           '已批准的版本策略要求受支持的版本${requirement.forceUpdateBelow == null ? '' : '（强制更新下限 ${requirement.forceUpdateBelow}）'}。安装受支持的版本后再回到 LOOP。',
@@ -900,6 +900,7 @@ class _OfflinePage extends StatelessWidget {
         kicker: loopStateSpecimenLabel,
         onBack: onBack,
         folio: const LoopFolioPrimary(
+          ring: false,
           key: ValueKey<String>('connectivity-specimen'),
           kicker: 'LAST SYNC · 09:38',
           heading: '当前设备离线',
@@ -945,6 +946,7 @@ class _OfflinePage extends StatelessWidget {
       title: '无网络',
       onBack: onBack,
       folio: LoopFolioPrimary(
+        ring: false,
         kicker:
             observation.lastSyncKicker ??
             (fullyOffline ? 'DEVICE OFFLINE' : 'SERVICE INTERRUPTED'),
@@ -1033,6 +1035,7 @@ class _ServerErrorPage extends StatelessWidget {
         kicker: loopStateSpecimenLabel,
         onBack: onBack,
         folio: const LoopFolioPrimary(
+          ring: false,
           key: ValueKey<String>('service-error-specimen'),
           kicker: 'SERVICE STATUS',
           heading: '服务暂时不可用',
@@ -1062,6 +1065,7 @@ class _ServerErrorPage extends StatelessWidget {
       title: '服务状态',
       onBack: onBack,
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'SERVICE STATUS',
         heading: '服务暂时不可用',
         caption: '钱包仍在你的设备上；稍后重试或联系支持。',
@@ -1117,11 +1121,14 @@ class _ForceUpdatePage extends StatelessWidget {
         title: '强制更新',
         onBack: onBack,
         folio: const LoopFolioPrimary(
+          ring: false,
           kicker: 'VERSION POLICY',
           heading: '版本策略还没有开放',
           caption: '打开此页不代表当前版本不受支持或不安全。',
           stamp: 'UNKNOWN',
-          variant: LoopFolioVariant.chalk,
+          // S241b: flat dark card, Chalk heading (no light slab on Ink).
+          variant: LoopFolioVariant.quiet,
+          headingTone: LoopFolioHeadingTone.neutral,
           archetype: LoopFolioArchetype.state,
         ),
         body: const <Widget>[
@@ -1136,11 +1143,14 @@ class _ForceUpdatePage extends StatelessWidget {
     }
     return _PolicyGatePage(
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'RELEASE GATE',
         heading: '请更新 LOOP 后继续',
         caption: '已批准的版本策略要求受支持的版本，此要求不可跳过。',
         stamp: 'REQUIRED',
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.state,
       ),
       facts: <Widget>[
@@ -1215,6 +1225,7 @@ class _MaintenancePage extends StatelessWidget {
         kicker: loopStateSpecimenLabel,
         onBack: onBack,
         folio: const LoopFolioPrimary(
+          ring: false,
           key: ValueKey<String>('maintenance-specimen'),
           kicker: 'MAINTENANCE WINDOW',
           heading: '03:00–05:00 UTC',
@@ -1242,6 +1253,7 @@ class _MaintenancePage extends StatelessWidget {
       title: '计划维护',
       onBack: onBack,
       folio: LoopFolioPrimary(
+        ring: false,
         kicker: 'MAINTENANCE WINDOW',
         heading: notice.windowLabel ?? '维护通知已生效',
         caption: '期间暂停社区互动；钱包与 Mining 数据保持只读。',
@@ -1303,11 +1315,14 @@ class _RegionPage extends StatelessWidget {
         title: '地区限制',
         onBack: onBack,
         folio: const LoopFolioPrimary(
+          ring: false,
           kicker: 'ACCESS POLICY',
           heading: '地区策略还没有开放',
           caption: '打开此页不代表你所在的地区或账号受限。',
           stamp: 'UNKNOWN',
-          variant: LoopFolioVariant.chalk,
+          // S241b: flat dark card, Chalk heading (no light slab on Ink).
+          variant: LoopFolioVariant.quiet,
+          headingTone: LoopFolioHeadingTone.neutral,
           archetype: LoopFolioArchetype.state,
         ),
         body: const <Widget>[
@@ -1325,13 +1340,16 @@ class _RegionPage extends StatelessWidget {
       // off this page, so it does not trap the back gesture.
       blocking: false,
       folio: LoopFolioPrimary(
+        ring: false,
         kicker: 'ACCESS POLICY',
         heading: '部分功能在当前地区不可用',
         caption: restriction.readOnlyAssetAccess == true
             ? '资产保持只读可见；受限功能按各自页面的当前状态显示。'
             : '受限功能按各自页面的当前状态显示；此页不列出未确认的可用范围。',
         stamp: 'RESTRICTED',
-        variant: LoopFolioVariant.chalk,
+        // S241b: flat dark card, Chalk heading (no light slab on Ink).
+        variant: LoopFolioVariant.quiet,
+        headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.state,
       ),
       facts: const <Widget>[
@@ -1419,6 +1437,7 @@ class _PermissionPage extends StatelessWidget {
       title: '权限说明',
       onBack: onBack,
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'PERMISSION CONTROL',
         heading: '使用前再申请',
         caption: '相机、通知和生物识别只在对应动作发生时请求。',
@@ -1524,6 +1543,7 @@ class _ToastStatesPage extends StatelessWidget {
       kicker: hasFeedback ? null : loopComponentSpecimenLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'FEEDBACK SURFACE',
         heading: 'Toast 三态',
         caption: '成功、警告与错误共用同一位置和清晰语义。',
@@ -1594,6 +1614,7 @@ class _SkeletonStatesPage extends StatelessWidget {
       kicker: valid ? null : loopComponentSpecimenLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'LOADING SYSTEM',
         heading: '骨架屏三类',
         caption: '列表、详情和图表分别保留稳定布局，避免内容跳动。',
@@ -1662,6 +1683,7 @@ class _TokenCardStatesPage extends StatelessWidget {
       kicker: showcase.sourceLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'TOKEN CARD SYSTEM',
         heading: '5 种卡片状态',
         stamp: '5 STATES',
@@ -1717,6 +1739,7 @@ class _SignSheetStatesPage extends StatelessWidget {
       kicker: showcase.sourceLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'ONE SIGNING EXIT',
         heading: '4 种签名状态',
         caption: '发送、兑换、DApp 与跨链统一进入同一签名出口。',
@@ -1789,6 +1812,7 @@ class _UnknownSystemPage extends StatelessWidget {
       title: '系统',
       onBack: onBack,
       folio: const LoopFolioPrimary(
+        ring: false,
         kicker: 'SYSTEM',
         heading: '此页面不可用',
         caption: 'LOOP 无法识别请求的系统页面。',

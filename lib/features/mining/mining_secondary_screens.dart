@@ -253,6 +253,7 @@ LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
     null => '这一页还没有读到算力明细。',
   };
   return LoopFolioPrimary(
+    ring: false,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: '算力公式',
@@ -1038,7 +1039,8 @@ class _MyContributionCard extends StatelessWidget {
         launchReasonCodeText(reasonCode),
       ),
     };
-    return LoopChalkCard(
+    // S241b: the flat dark card instead of a Chalk slab on Ink.
+    return LoopRecordCard(
       key: const ValueKey<String>('mining-community-contribution'),
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Semantics(
@@ -1058,16 +1060,11 @@ class _MyContributionCard extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                child: Container(
-                  height: 1,
-                  color: LoopColors.ink.withValues(alpha: 0.14),
-                ),
+                child: Container(height: 1, color: LoopColors.line),
               ),
               Text(
                 '权重由平台审核结果授予，已经算在上面的算力里。',
-                style: LoopType.captionSm.copyWith(
-                  color: LoopColors.ink.withValues(alpha: 0.58),
-                ),
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
             ],
           ),
@@ -1084,15 +1081,10 @@ class _MyContributionCard extends StatelessWidget {
         value,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: LoopType.figureMd.copyWith(color: LoopColors.ink),
+        style: LoopType.figureMd.copyWith(color: LoopColors.yellow),
       ),
       const SizedBox(height: 4),
-      Text(
-        label,
-        style: LoopType.kicker.copyWith(
-          color: LoopColors.ink.withValues(alpha: 0.58),
-        ),
-      ),
+      Text(label, style: LoopType.kicker.copyWith(color: LoopColors.text3)),
     ],
   );
 }
@@ -1584,7 +1576,7 @@ class _FormulaVersionBlock extends StatelessWidget {
           rows: weightRows,
         ),
         const LoopLabel('Review Factors'),
-        LoopChalkCard(
+        LoopRecordCard(
           key: ValueKey<String>('$keyPrefix-review-factors'),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           child: Column(
@@ -1597,21 +1589,16 @@ class _FormulaVersionBlock extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
                     miningRuleKeyText(factor),
-                    style: LoopType.captionSm.copyWith(color: LoopColors.ink),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.chalk),
                   ),
                 ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                child: Container(
-                  height: 1,
-                  color: LoopColors.ink.withValues(alpha: 0.14),
-                ),
+                child: Container(height: 1, color: LoopColors.line),
               ),
               Text(
                 '具体量化分值不公开，权重以平台综合评定结果为准。',
-                style: LoopType.captionSm.copyWith(
-                  color: LoopColors.ink.withValues(alpha: 0.62),
-                ),
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
             ],
           ),

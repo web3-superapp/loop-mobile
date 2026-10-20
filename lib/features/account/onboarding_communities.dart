@@ -1000,7 +1000,7 @@ class _OnboardingCommunitiesEnteringState
         scale: _pop,
         child: const DecoratedBox(
           decoration: BoxDecoration(
-            color: LoopColors.lime,
+            color: LoopColors.yellow,
             shape: BoxShape.circle,
           ),
           child: SizedBox.square(
@@ -1029,9 +1029,9 @@ class _OnboardingCommunitiesEnteringState
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: <Color>[
-                  LoopColors.lime.withValues(alpha: 0.05),
-                  LoopColors.lime.withValues(alpha: 0.55),
-                  LoopColors.lime.withValues(alpha: 0),
+                  LoopColors.yellow.withValues(alpha: 0.05),
+                  LoopColors.yellow.withValues(alpha: 0.55),
+                  LoopColors.yellow.withValues(alpha: 0),
                 ],
                 stops: const <double>[0.55, 0.85, 1],
               ),
@@ -1059,8 +1059,8 @@ class _OnboardingCommunitiesEnteringState
           shape: BoxShape.circle,
           gradient: RadialGradient(
             colors: <Color>[
-              LoopColors.lime.withValues(alpha: 0.45),
-              LoopColors.lime.withValues(alpha: 0),
+              LoopColors.yellow.withValues(alpha: 0.45),
+              LoopColors.yellow.withValues(alpha: 0),
             ],
           ),
         ),
@@ -1086,8 +1086,8 @@ class _OnboardingCommunitiesEnteringState
   );
 }
 
-/// The Lime tick circle of a chosen community (decision 0126): a filled Lime
-/// disc with an Ink tick, or an empty ring. The state word stays its name.
+/// The tick of a chosen community (decision 0126; squared and purple since
+/// S241b): a filled purple square with a Chalk tick, or an empty square. The state word stays its name.
 class _OnboardingTick extends StatelessWidget {
   const _OnboardingTick({required this.state, required this.on, super.key});
 
@@ -1103,13 +1103,14 @@ class _OnboardingTick extends StatelessWidget {
         width: 24,
         height: 24,
         alignment: Alignment.center,
+        // S241b: a chosen community is a selected state — a purple square
+        // with a Chalk tick; unchosen is an empty `#4A4754` square.
         decoration: BoxDecoration(
-          color: on ? LoopColors.lime : Colors.transparent,
-          shape: BoxShape.circle,
-          border: on ? null : Border.all(color: LoopColors.line2, width: 1.5),
+          color: on ? LoopColors.purple : Colors.transparent,
+          border: on ? null : Border.all(color: LoopColors.line3, width: 1.5),
         ),
         child: on
-            ? const LoopIcon('check', size: 15, color: LoopColors.ink)
+            ? const LoopIcon('check', size: 15, color: LoopColors.chalk)
             : null,
       ),
     );
