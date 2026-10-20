@@ -94,6 +94,36 @@ final class MemoryPublicProfileGateway implements PublicProfileGateway {
     nextCursor: null,
   );
 
+  /// Preview only (decision 0218): two communities, both visibly part of
+  /// the 演示数据 page — the notice above the page says so.
+  @override
+  Future<ProfileCommunitiesPage> communities(
+    String publicProfileId, {
+    String? cursor,
+  }) async => ProfileCommunitiesPage.available(
+    items: <ProfileCommunity>[
+      ProfileCommunity(
+        communityId: '5b0c4f1e-2d3a-4b6c-8d9e-0f1a2b3c4d01',
+        name: '预览社区',
+        slug: 'preview-community',
+        logoRef: null,
+        memberCount: 312,
+        verificationStatus: ProfileCommunityVerification.verified,
+        joinedAt: _now.subtract(const Duration(days: 12)),
+      ),
+      ProfileCommunity(
+        communityId: '5b0c4f1e-2d3a-4b6c-8d9e-0f1a2b3c4d02',
+        name: '演示数据小组',
+        slug: 'preview-group',
+        logoRef: null,
+        memberCount: 18,
+        verificationStatus: ProfileCommunityVerification.unverified,
+        joinedAt: _now.subtract(const Duration(days: 3)),
+      ),
+    ],
+    nextCursor: null,
+  );
+
   @override
   Future<void> removeFriend(String publicProfileId) async {
     _friendship = ProfileFriendship.none;

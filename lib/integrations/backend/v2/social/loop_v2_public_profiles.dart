@@ -3,18 +3,23 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
+import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_profile_communities.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/media/loop_v2_media.dart';
 import 'package:uuid/uuid.dart';
 
 /// Strict codecs for the S107 §3 public-profile routes (decision 0112).
@@ -146,9 +151,58 @@ abstract final class LoopV2PublicProfileCodec {
     );
   }
 
-  static ProfileHoldings holdings(Object? raw, {Uri? origin}) {
-    final map = LoopV2Contract.strictMap(raw, holdingsKeys);
+  /// Decision 0218 (loop-api S260): `launch2` is the one optional root key
+  /// of `/holdings` and `/trades`; every other key stays exactly as before.
+  static const launch2OptionalKeys = <String>{'launch2'};
+
+  static const launch2HoldingKeys = <String>{
+    'kind',
+    'chainId',
+    'instanceId',
+    'ticker',
+    'name',
+    'logoUrl',
+    'amountMeme',
+    'nftCount',
+    'stage',
+    'valueUsd1',
+  };
+
+  /// The fourteen keys of a Launch-chain trade row: the wallet activity row
+  /// of loop-api 0167 §C / client decision 0213, unchanged.
+  static const launch2TradeKeys = <String>{
+    'kind',
+    'chainId',
+    'instanceId',
+    'ticker',
+    'name',
+    'logoUrl',
+    'amountMeme',
+    'amountUsd1',
+    'taxUsd1',
+    'transactionHash',
+    'logIndex',
+    'blockNumber',
+    'occurredAt',
+    'confirmations',
+  };
+
+  static String? _noMedia(String mediaId) => null;
+
+  static ProfileHoldings holdings(
+    Object? raw, {
+    Uri? origin,
+    String? Function(String mediaId) mediaUrl = _noMedia,
+  }) {
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      holdingsKeys,
+      launch2OptionalKeys,
+    );
     LoopV2ProjectionCodec.requireContractVersion(map);
+    final launch2 = map.containsKey('launch2')
+        ? launch2Leg(map['launch2'])
+        : null;
     final status = ProfileSectionStatus.tryParse(map['status']);
     if (status == null) LoopV2ProjectionCodec.invalid();
     final items = LoopV2ProjectionCodec.requireList(
@@ -167,17 +221,162 @@ abstract final class LoopV2PublicProfileCodec {
       LoopV2ProjectionCodec.invalid();
     }
     final reasonCode = _reasonCode(map, status);
-    final holdings = <ProfileHolding>[
-      for (final item in items) holding(item, origin: origin),
-    ];
-    final ids = holdings.map((item) => item.assetId).toSet();
-    if (ids.length != holdings.length) LoopV2ProjectionCodec.invalid();
+    final rows = <ProfileHoldingRow>[];
+    final ids = <String>{};
+    for (final item in items) {
+      // A row with a `kind` key is a Launch-chain holding; a row without one
+      // is the mainnet holding it always was. A kind this build does not
+      // know is skipped, so a later kind never closes the section.
+      if (item is Map && item.containsKey('kind')) {
+        final kind = item['kind'];
+        if (kind is! String) LoopV2ProjectionCodec.invalid();
+        final parsed = ProfileLaunch2HoldingKind.tryParse(kind);
+        if (parsed == null) continue;
+        final row = launch2Holding(item, parsed, mediaUrl: mediaUrl);
+        if (!ids.add(row.rowId)) LoopV2ProjectionCodec.invalid();
+        rows.add(ProfileLaunch2HoldingRow(row));
+        continue;
+      }
+      final row = holding(item, origin: origin);
+      if (!ids.add(row.assetId)) LoopV2ProjectionCodec.invalid();
+      rows.add(ProfileAssetHoldingRow(row));
+    }
     return ProfileHoldings(
       status: status,
       totalUsd: totalUsd,
-      items: List<ProfileHolding>.unmodifiable(holdings),
+      rows: rows,
       observedAt: observedAt,
       reasonCode: reasonCode,
+      launch2: launch2,
+    );
+  }
+
+  /// The root `launch2` block: four keys when merged, two when not. The same
+  /// two shapes as the wallet activity page (copied from
+  /// `loop_v2_wallet_api.dart` `_launch2Leg`, decision 0213).
+  static LoopWalletLaunch2Leg launch2Leg(Object? raw) {
+    if (raw is! Map) LoopV2ProjectionCodec.invalid();
+    switch (raw['status']) {
+      case 'available':
+        final map = LoopV2Contract.strictMap(raw, const <String>{
+          'status',
+          'chainId',
+          'indexerBlockNumber',
+          'headBlockNumber',
+        });
+        return LoopWalletLaunch2Leg.available(
+          chainId: LoopV2ChainCodec.requireString(
+            map,
+            'chainId',
+            pattern: LoopV2ChainCodec.chainIdPattern,
+            maxLength: 17,
+          ),
+          indexerBlockNumber: LoopV2ChainCodec.requireBlockNumber(
+            map,
+            'indexerBlockNumber',
+          ),
+          headBlockNumber: LoopV2ChainCodec.optionalBlockNumber(
+            map,
+            'headBlockNumber',
+          ),
+        );
+      case 'unavailable':
+        return LoopWalletLaunch2Leg.unavailable(
+          LoopV2ChainCodec.unavailable(raw),
+        );
+      default:
+        LoopV2ProjectionCodec.invalid();
+    }
+  }
+
+  static Decimal? _optionalLaunch2Amount(
+    Map<String, Object?> map,
+    String key,
+  ) => map[key] == null ? null : LoopV2Launch2Codec.amount(map, key);
+
+  static String _launch2ChainId(Map<String, Object?> map) =>
+      LoopV2ChainCodec.requireString(
+        map,
+        'chainId',
+        pattern: LoopV2ChainCodec.chainIdPattern,
+        maxLength: 17,
+      );
+
+  static String _launch2Ticker(Map<String, Object?> map) =>
+      LoopV2ChainCodec.requireSymbol(map, 'ticker', maxLength: 160);
+
+  static String _launch2Name(Map<String, Object?> map) =>
+      LoopV2ChainCodec.providerText(map, 'name', minLength: 1, maxLength: 64);
+
+  /// One Launch-chain holding: all ten keys, exactly. A MEME row states its
+  /// amount, a medal row its count; a row that states neither is refused.
+  static ProfileLaunch2Holding launch2Holding(
+    Object? raw,
+    ProfileLaunch2HoldingKind kind, {
+    String? Function(String mediaId) mediaUrl = _noMedia,
+  }) {
+    final map = LoopV2Contract.strictMap(raw, launch2HoldingKeys);
+    final rawStage = map['stage'];
+    if (rawStage is! String || rawStage.isEmpty || rawStage.length > 32) {
+      LoopV2ProjectionCodec.invalid();
+    }
+    final amountMeme = _optionalLaunch2Amount(map, 'amountMeme');
+    final nftCount = LoopV2ChainCodec.optionalInt(map, 'nftCount', minimum: 0);
+    switch (kind) {
+      case ProfileLaunch2HoldingKind.meme:
+        if (amountMeme == null) LoopV2ProjectionCodec.invalid();
+      case ProfileLaunch2HoldingKind.nft:
+        if (nftCount == null) LoopV2ProjectionCodec.invalid();
+    }
+    return ProfileLaunch2Holding(
+      kind: kind,
+      chainId: _launch2ChainId(map),
+      instanceId: LoopV2Launch2Codec.uuid(map, 'instanceId'),
+      ticker: _launch2Ticker(map),
+      name: _launch2Name(map),
+      logoUrl: LoopV2Launch2Codec.logoUrl(map, 'logoUrl', mediaUrl: mediaUrl),
+      amountMeme: amountMeme,
+      nftCount: nftCount,
+      // A stage this build has no word for is not a broken row: the row
+      // then names the chain alone.
+      stage: Launch2Stage.tryParse(rawStage),
+      valueUsd1: _optionalLaunch2Amount(map, 'valueUsd1'),
+    );
+  }
+
+  /// One Launch-chain trade row: all fourteen keys, exactly. Copied from
+  /// `loop_v2_wallet_api.dart` `_launch2Entry` (decision 0213) so the row is
+  /// the wallet's own model.
+  static LoopWalletLaunch2ActivityEntry launch2Trade(
+    Object? raw,
+    LoopWalletLaunch2ActivityKind kind, {
+    String? Function(String mediaId) mediaUrl = _noMedia,
+  }) {
+    final map = LoopV2Contract.strictMap(raw, launch2TradeKeys);
+    return LoopWalletLaunch2ActivityEntry(
+      kind: kind,
+      chainId: _launch2ChainId(map),
+      instanceId: LoopV2Launch2Codec.uuid(map, 'instanceId'),
+      ticker: _launch2Ticker(map),
+      name: _launch2Name(map),
+      logoUrl: LoopV2Launch2Codec.logoUrl(map, 'logoUrl', mediaUrl: mediaUrl),
+      amountMeme: _optionalLaunch2Amount(map, 'amountMeme'),
+      amountUsd1: _optionalLaunch2Amount(map, 'amountUsd1'),
+      taxUsd1: _optionalLaunch2Amount(map, 'taxUsd1'),
+      transactionHash: LoopV2ChainCodec.requireString(
+        map,
+        'transactionHash',
+        pattern: LoopV2ChainCodec.hashPattern,
+        maxLength: 66,
+      ),
+      logIndex: LoopV2ChainCodec.requireInt(map, 'logIndex'),
+      blockNumber: LoopV2ChainCodec.requireBlockNumber(map, 'blockNumber'),
+      occurredAt: LoopV2ChainCodec.requireTimestamp(map, 'occurredAt'),
+      confirmations: LoopV2ChainCodec.optionalInt(
+        map,
+        'confirmations',
+        minimum: 0,
+      ),
     );
   }
 
@@ -197,9 +396,19 @@ abstract final class LoopV2PublicProfileCodec {
     );
   }
 
-  static ProfileTradesPage trades(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, tradesKeys);
+  static ProfileTradesPage trades(
+    Object? raw, {
+    String? Function(String mediaId) mediaUrl = _noMedia,
+  }) {
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      tradesKeys,
+      launch2OptionalKeys,
+    );
     LoopV2ProjectionCodec.requireContractVersion(map);
+    final launch2 = map.containsKey('launch2')
+        ? launch2Leg(map['launch2'])
+        : null;
     final status = ProfileSectionStatus.tryParse(map['status']);
     if (status == null) LoopV2ProjectionCodec.invalid();
     final items = LoopV2ProjectionCodec.requireList(
@@ -212,14 +421,38 @@ abstract final class LoopV2PublicProfileCodec {
       LoopV2ProjectionCodec.invalid();
     }
     final reasonCode = _reasonCode(map, status);
-    final trades = <ProfileTrade>[for (final item in items) trade(item)];
-    final ids = trades.map((item) => item.eventId).toSet();
-    if (ids.length != trades.length) LoopV2ProjectionCodec.invalid();
+    final rows = <ProfileTradeRow>[];
+    final ids = <String>{};
+    for (final item in items) {
+      // The mainnet trade row has its own `kind` (buy / sell / transfer_*)
+      // and always an `eventId`; the Launch-chain row has no `eventId`. So a
+      // row with an `eventId` is decoded as it always was — an unknown kind
+      // there is still a broken row — and any other row with a `kind` is a
+      // Launch-chain fact, skipped when its kind is not one this build knows.
+      if (item is Map &&
+          !item.containsKey('eventId') &&
+          item.containsKey('kind')) {
+        final kind = item['kind'];
+        if (kind is! String) LoopV2ProjectionCodec.invalid();
+        final parsed = LoopWalletLaunch2ActivityKind.tryParse(kind);
+        if (parsed == null) continue;
+        final row = ProfileLaunch2TradeRow(
+          launch2Trade(item, parsed, mediaUrl: mediaUrl),
+        );
+        if (!ids.add(row.rowId)) LoopV2ProjectionCodec.invalid();
+        rows.add(row);
+        continue;
+      }
+      final row = ProfileAssetTradeRow(trade(item));
+      if (!ids.add(row.rowId)) LoopV2ProjectionCodec.invalid();
+      rows.add(row);
+    }
     return ProfileTradesPage(
       status: status,
-      items: List<ProfileTrade>.unmodifiable(trades),
+      rows: rows,
       nextCursor: cursor,
       reasonCode: reasonCode,
+      launch2: launch2,
     );
   }
 
@@ -306,7 +539,13 @@ abstract final class LoopV2PublicProfileCodec {
 
 /// Transport for the four routes. Reading the provider issues no request.
 final class DioLoopV2PublicProfileApi {
-  DioLoopV2PublicProfileApi(this._dio, {this._uuid = const Uuid()});
+  DioLoopV2PublicProfileApi(
+    this._dio, {
+    this._uuid = const Uuid(),
+    String? Function(String mediaId)? mediaUrl,
+  }) : _mediaUrl = mediaUrl ?? _noMedia;
+
+  static String? _noMedia(String mediaId) => null;
 
   static const profilesPath = '/v2/profiles';
   static const byLoopIdPath = '/v2/profiles/by-loop-id';
@@ -351,6 +590,10 @@ final class DioLoopV2PublicProfileApi {
   final Dio _dio;
   final Uuid _uuid;
 
+  /// Resolves this backend's own media path, so a Launch-chain logo served
+  /// from it passes the logo rule (decision 0213 §4).
+  final String? Function(String mediaId) _mediaUrl;
+
   Uri? get _origin => Uri.tryParse(_dio.options.baseUrl);
 
   Future<PublicProfileRecord> load({
@@ -387,7 +630,11 @@ final class DioLoopV2PublicProfileApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      return LoopV2PublicProfileCodec.holdings(response.data, origin: _origin);
+      return LoopV2PublicProfileCodec.holdings(
+        response.data,
+        origin: _origin,
+        mediaUrl: _mediaUrl,
+      );
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
     }
@@ -415,7 +662,39 @@ final class DioLoopV2PublicProfileApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      return LoopV2PublicProfileCodec.trades(response.data);
+      return LoopV2PublicProfileCodec.trades(
+        response.data,
+        mediaUrl: _mediaUrl,
+      );
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
+    }
+  }
+
+  /// `GET /v2/profiles/{id}/communities` (decision 0218, loop-api S260).
+  Future<ProfileCommunitiesPage> communities({
+    required String accessToken,
+    required String clientVersion,
+    required String publicProfileId,
+    String? cursor,
+  }) async {
+    if (cursor != null &&
+        (cursor.length < 3 ||
+            cursor.length > LoopV2ProjectionCodec.maximumCursorLength ||
+            !LoopV2ProjectionCodec.cursorPattern.hasMatch(cursor))) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    try {
+      final response = await _dio.get<Object?>(
+        '$profilesPath/${_uuidSegment(publicProfileId)}/communities',
+        queryParameters: <String, Object?>{
+          'cursor': ?cursor,
+          if (cursor == null) 'limit': 20,
+        },
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      return LoopV2ProfileCommunitiesCodec.page(response.data);
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
     }
@@ -540,6 +819,19 @@ final class DioLoopV2PublicProfileGateway implements PublicProfileGateway {
       );
 
   @override
+  Future<ProfileCommunitiesPage> communities(
+    String publicProfileId, {
+    String? cursor,
+  }) => _run(
+    (token) => _api.communities(
+      accessToken: token,
+      clientVersion: _clientMetadata.clientVersion,
+      publicProfileId: publicProfileId,
+      cursor: cursor,
+    ),
+  );
+
+  @override
   Future<void> removeFriend(String publicProfileId) => _run(
     (token) => _api.removeFriend(
       accessToken: token,
@@ -560,7 +852,10 @@ final loopV2PublicProfileGatewayProvider = Provider<PublicProfileGateway>((
     return const UnavailablePublicProfileGateway();
   }
   return DioLoopV2PublicProfileGateway(
-    api: DioLoopV2PublicProfileApi(dio),
+    api: DioLoopV2PublicProfileApi(
+      dio,
+      mediaUrl: ref.watch(loopV2MediaUrlResolverProvider).urlFor,
+    ),
     clientMetadata: metadata,
     session: session,
   );

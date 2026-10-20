@@ -3,18 +3,27 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_link.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/features/launch2/launch2_routes.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_controller.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -75,6 +84,7 @@ class UserProfileScreen extends ConsumerStatefulWidget {
     this.onOpenDirectMessage,
     this.onOpenFriendRequests,
     this.onOpenToken,
+    this.onNavigate,
   });
 
   final PublicProfileTarget? target;
@@ -86,6 +96,10 @@ class UserProfileScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenFriendRequests;
   final ValueChanged<String>? onOpenToken;
 
+  /// Opens a location this page links to — a community's record, a Launch
+  /// project (decision 0218). `null` pushes it on the app's router.
+  final ValueChanged<String>? onNavigate;
+
   @override
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
@@ -93,6 +107,15 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   var _section = PublicProfileSection.holdings;
   var _handedToSelf = false;
+
+  void _open(String location) {
+    final navigate = widget.onNavigate;
+    if (navigate != null) {
+      navigate(location);
+    } else {
+      unawaited(GoRouter.of(context).push<void>(location));
+    }
+  }
 
   void _handToSelf() {
     if (_handedToSelf) return;
@@ -209,15 +232,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   state: state.holdings,
                   onLoad: controller.loadHoldings,
                   onOpenToken: widget.onOpenToken,
+                  onOpen: _open,
                 ),
                 PublicProfileSection.trades => _TradesSection(
                   record: record,
                   state: state.trades,
                   onLoad: controller.loadTrades,
                   onLoadMore: controller.loadMoreTrades,
+                  onOpen: _open,
                 ),
                 PublicProfileSection.communities => _CommunitiesSection(
-                  record: record,
+                  state: state.communities,
+                  onLoad: controller.loadCommunities,
+                  onLoadMore: controller.loadMoreCommunities,
+                  onOpen: _open,
                 ),
               },
             ],
@@ -676,12 +704,14 @@ class _HoldingsSection extends StatelessWidget {
     required this.state,
     required this.onLoad,
     required this.onOpenToken,
+    required this.onOpen,
   });
 
   final PublicProfileRecord record;
   final PublicProfileSectionState<ProfileHoldings> state;
   final Future<void> Function({bool force}) onLoad;
   final ValueChanged<String>? onOpenToken;
+  final ValueChanged<String> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -754,7 +784,20 @@ class _HoldingsSection extends StatelessWidget {
             ],
           ),
         ),
-        if (value.items.isEmpty)
+        // Decision 0218: the Launch chain could not be merged. The mainnet
+        // rows below still stand; this is not "no MEME".
+        if (value.launch2?.unavailable case final LoopUnavailable missing)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: LoopUnavailableLine.fact(
+              key: const ValueKey<String>(
+                'user-profile-holdings-launch2-unavailable',
+              ),
+              label: 'MEME 持仓暂不可用',
+              fact: missing,
+            ),
+          ),
+        if (value.rows.isEmpty)
           const LoopEmptyState(
             key: ValueKey<String>('user-profile-holdings-empty'),
             illustration: LoopIllustration.watchlist,
@@ -763,8 +806,55 @@ class _HoldingsSection extends StatelessWidget {
             compact: true,
           )
         else
-          for (final item in value.items) _holdingRow(item),
+          for (final row in value.rows)
+            switch (row) {
+              ProfileAssetHoldingRow(:final holding) => _holdingRow(holding),
+              ProfileLaunch2HoldingRow(:final holding) => _launch2Row(holding),
+            },
       ],
+    );
+  }
+
+  /// One Launch-chain holding (decision 0218): the project's logo, its
+  /// ticker over its name and 「Launch 链，阶段」, the amount — MEME, or
+  /// 「× N」 medals — over the server's USD1 value when it has one. Opens
+  /// the project.
+  Widget _launch2Row(ProfileLaunch2Holding item) {
+    final ticker = loopDisplaySymbol(item.ticker);
+    final stage = item.stage;
+    final where = stage == null
+        ? 'Launch 链'
+        : 'Launch 链，${launch2StageLabel(stage)}';
+    final amount = switch (item.kind) {
+      ProfileLaunch2HoldingKind.meme => launch2MemeFigure(item.amountMeme!),
+      ProfileLaunch2HoldingKind.nft => '× ${item.nftCount}',
+    };
+    final usd1 = switch (item.valueUsd1) {
+      final Decimal value => '≈ ${launch2Usd1Label(value)}',
+      null => null,
+    };
+    return LoopQuoteRow(
+      key: ValueKey<String>('user-profile-holding-${item.rowId}'),
+      leading: MemeLogo(
+        symbol: item.ticker,
+        imageUrl: item.logoUrl,
+        identity: item.instanceId,
+        size: 36,
+        radius: 18,
+      ),
+      title: ticker,
+      subtitle: item.name,
+      subtitleMark: where,
+      value: amount,
+      valueCaption: usd1 == null ? null : Text(usd1),
+      onTap: () => onOpen(Launch2Route.instance(item.instanceId)),
+      semanticLabel: <String>[
+        ticker,
+        item.name,
+        where,
+        amount,
+        ?usd1,
+      ].join('，'),
     );
   }
 
@@ -799,12 +889,14 @@ class _TradesSection extends StatelessWidget {
     required this.state,
     required this.onLoad,
     required this.onLoadMore,
+    required this.onOpen,
   });
 
   final PublicProfileRecord record;
   final PublicProfileTradesState state;
   final Future<void> Function({bool force}) onLoad;
   final Future<void> Function() onLoadMore;
+  final ValueChanged<String> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -841,20 +933,51 @@ class _TradesSection extends StatelessWidget {
       case null:
         break;
     }
+    final launch2Missing = switch (state.launch2?.unavailable) {
+      final LoopUnavailable missing => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: LoopUnavailableLine.fact(
+          key: const ValueKey<String>(
+            'user-profile-trades-launch2-unavailable',
+          ),
+          label: 'MEME 记录暂不可用',
+          fact: missing,
+        ),
+      ),
+      null => null,
+    };
     if (state.items.isEmpty) {
-      return const LoopEmptyState(
-        key: ValueKey<String>('user-profile-trades-empty'),
-        illustration: LoopIllustration.chartEmpty,
-        title: '还没有交易',
-        message: '对方的钱包还没有可显示的买卖或转账。',
-        compact: true,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          ?launch2Missing,
+          const LoopEmptyState(
+            key: ValueKey<String>('user-profile-trades-empty'),
+            illustration: LoopIllustration.chartEmpty,
+            title: '还没有交易',
+            message: '对方的钱包还没有可显示的买卖或转账。',
+            compact: true,
+          ),
+        ],
       );
     }
     return Column(
       key: const ValueKey<String>('user-profile-trades'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        for (final trade in state.items) _tradeRow(trade),
+        ?launch2Missing,
+        for (final row in state.items)
+          switch (row) {
+            ProfileAssetTradeRow(:final trade) => _tradeRow(trade),
+            // The wallet tape's own row (decision 0213), opening the project.
+            ProfileLaunch2TradeRow(:final entry) => LoopFlat(
+              key: ValueKey<String>('user-profile-trade-${entry.entryId}'),
+              child: walletLaunch2ActivityRow(
+                entry,
+                onTap: () => onOpen(Launch2Route.instance(entry.instanceId)),
+              ),
+            ),
+          },
         if (state.appendFailed && !state.loadingMore)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -923,18 +1046,115 @@ class _TradesSection extends StatelessWidget {
   }
 }
 
+/// The 社区 segment (decision 0218): the communities the account joined, one
+/// row each — logo, name, 「已验证」 as a soft capsule, member count — opening
+/// the community's record; paged as the reader scrolls.
 class _CommunitiesSection extends StatelessWidget {
-  const _CommunitiesSection({required this.record});
+  const _CommunitiesSection({
+    required this.state,
+    required this.onLoad,
+    required this.onLoadMore,
+    required this.onOpen,
+  });
 
-  final PublicProfileRecord record;
+  final PublicProfileCommunitiesState state;
+  final Future<void> Function({bool force}) onLoad;
+  final Future<void> Function() onLoadMore;
+  final ValueChanged<String> onOpen;
 
   @override
-  Widget build(BuildContext context) => LoopInlineUnavailable(
-    key: const ValueKey<String>('user-profile-communities-unavailable'),
-    icon: 'community',
-    message: '已加入 ${record.counts.communities} 个社区',
-    detail: '社区列表暂未开放查看。',
-    maxLines: 2,
-    detailMaxLines: 4,
-  );
+  Widget build(BuildContext context) {
+    final phase = state.phase;
+    if (phase == null) {
+      scheduleMicrotask(() => unawaited(onLoad()));
+    }
+    if (phase == null || phase != CommunityViewPhase.ready) {
+      if (phase == CommunityViewPhase.unavailable) {
+        return const LoopInlineUnavailable(
+          key: ValueKey<String>('user-profile-communities-unavailable'),
+          icon: 'community',
+          message: '社区列表暂时读不到',
+          detail: '社区服务暂不可用，这里不会显示空列表代替。',
+          maxLines: 2,
+          detailMaxLines: 4,
+        );
+      }
+      return CommunityStateBlock(
+        key: const ValueKey<String>('user-profile-communities-state'),
+        phase: phase ?? CommunityViewPhase.loading,
+        failureKind: state.failureKind,
+        skeleton: LoopSkeletonType.record,
+        rows: 4,
+        onRetry: () => unawaited(onLoad(force: true)),
+      );
+    }
+    if (state.hidden) {
+      return const LoopEmptyState(
+        key: ValueKey<String>('user-profile-communities-hidden'),
+        illustration: LoopIllustration.watchlist,
+        title: '对方未公开社区列表',
+        message: '对方在隐私设置里没有公开加入的社区。',
+        compact: true,
+      );
+    }
+    if (state.items.isEmpty) {
+      return const LoopEmptyState(
+        key: ValueKey<String>('user-profile-communities-empty'),
+        illustration: LoopIllustration.watchlist,
+        title: '还没有加入社区',
+        message: '对方暂时没有加入任何社区。',
+        compact: true,
+      );
+    }
+    return Column(
+      key: const ValueKey<String>('user-profile-communities'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (final item in state.items) _row(item),
+        LoopLoadMoreFooter(
+          key: const ValueKey<String>('user-profile-communities-footer'),
+          keyPrefix: 'user-profile-communities',
+          cursor: state.nextCursor,
+          canLoadMore: !state.loadingMore,
+          loading: state.loadingMore,
+          onLoadMore: onLoadMore,
+        ),
+      ],
+    );
+  }
+
+  Widget _row(ProfileCommunity item) {
+    final verified =
+        item.verificationStatus == ProfileCommunityVerification.verified;
+    final members =
+        '${loopFormatDecimal(Decimal.fromInt(item.memberCount), maxFractionDigits: 0)} 名成员';
+    return LoopFlat(
+      key: ValueKey<String>('user-profile-community-${item.communityId}'),
+      child: LoopRecordRow(
+        leading: CommunityLogo(
+          identity: item.communityId,
+          name: item.name,
+          logoRef: item.logoRef,
+          size: 40,
+          radius: 12,
+        ),
+        title: item.name,
+        subtitle: members,
+        // docs/42 附C: 「已验证」 is a yellowSoft capsule, never solid.
+        trailingBadge: verified
+            ? const LoopBadge(
+                '已验证',
+                key: ValueKey<String>('user-profile-community-verified'),
+                kind: LoopBadgeKind.launch,
+              )
+            : null,
+        semanticLabel: <String>[
+          item.name,
+          if (verified) '已验证',
+          members,
+        ].join('，'),
+        onTap: () => onOpen(communityProfileLocation(item.communityId)),
+      ),
+    );
+  }
 }
