@@ -29,6 +29,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart'; // S136
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -2133,12 +2134,23 @@ class _WalletList extends StatelessWidget {
 // tx-history
 // ---------------------------------------------------------------------------
 
-/// `tx-history` · indexed ERC-20 transfers for one wallet.
+/// `tx-history` · indexed ERC-20 transfers for one wallet, and — once the
+/// server merges them (decision 0213) — the wallet's Launch-chain MEME v2
+/// facts in the same tape.
 class TransactionHistoryScreen extends ConsumerStatefulWidget {
-  const TransactionHistoryScreen({super.key, this.walletId, this.onBack});
+  const TransactionHistoryScreen({
+    super.key,
+    this.walletId,
+    this.onBack,
+    this.onNavigate,
+  });
 
   final String? walletId;
   final VoidCallback? onBack;
+
+  /// Opens a location (a MEME v2 row opens its project page); `null` pushes
+  /// it on the app router.
+  final void Function(String location)? onNavigate;
 
   @override
   ConsumerState<TransactionHistoryScreen> createState() =>
@@ -2153,6 +2165,15 @@ class _TransactionHistoryScreenState
   /// A next page is on its way; one skeleton row stands at the end of the
   /// tape until it lands.
   bool _loadingMore = false;
+
+  void _open(String location) {
+    final navigate = widget.onNavigate;
+    if (navigate != null) {
+      navigate(location);
+      return;
+    }
+    unawaited(context.push(location));
+  }
 
   Future<void> _loadMore(String walletId) async {
     if (_loadingMore) return;
@@ -2383,7 +2404,7 @@ class _TransactionHistoryScreenState
                   key: ValueKey<String>('tx-history-loading-more'),
                   rows: 1,
                 ),
-            ] else if (page.items.isNotEmpty)
+            ] else if (page.rows.isNotEmpty)
               // S121 §1.1.1 #10: the end of the tape draws nothing.
               const SizedBox(
                 key: ValueKey<String>('tx-history-end'),
@@ -2434,11 +2455,24 @@ class _TransactionHistoryScreenState
           ),
         ];
       default:
-        return <Widget>[_activityList(page.items)];
+        return <Widget>[
+          // Decision 0213: the MEME rows the server could not merge are a
+          // stated gap at the head of the tape, never "no MEME records".
+          if (page.launch2?.unavailable case final LoopUnavailable missing)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: LoopUnavailableLine.fact(
+                key: const ValueKey<String>('tx-history-launch2-unavailable'),
+                label: 'MEME 记录暂不可用',
+                fact: missing,
+              ),
+            ),
+          _activityList(page.rows),
+        ];
     }
   }
 
-  Widget _activityList(List<LoopWalletActivityEntry> entries) {
+  Widget _activityList(List<LoopWalletActivityRecord> entries) {
     if (entries.isEmpty) {
       return const LoopEmptyState(
         key: ValueKey<String>('tx-history-empty'),
@@ -2463,19 +2497,26 @@ class _TransactionHistoryScreenState
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               for (final entry in day.entries)
-                walletActivityRow(
-                  entry,
-                  // A tape row used to take the tap and do nothing: the hash
-                  // it printed was truncated, could not be copied, and led
-                  // nowhere.
-                  onTap: () => unawaited(
-                    showLoopSheet<void>(
-                      context,
-                      builder: (sheetContext) =>
-                          WalletActivityDetailSheet(entry: entry),
+                switch (entry) {
+                  LoopWalletActivityEntry() => walletActivityRow(
+                    entry,
+                    // A tape row used to take the tap and do nothing: the
+                    // hash it printed was truncated, could not be copied, and
+                    // led nowhere.
+                    onTap: () => unawaited(
+                      showLoopSheet<void>(
+                        context,
+                        builder: (sheetContext) =>
+                            WalletActivityDetailSheet(entry: entry),
+                      ),
                     ),
                   ),
-                ),
+                  // A MEME v2 fact opens its project (decision 0213).
+                  LoopWalletLaunch2ActivityEntry() => walletLaunch2ActivityRow(
+                    entry,
+                    onTap: () => _open(Launch2Route.instance(entry.instanceId)),
+                  ),
+                },
             ],
           ),
         ],

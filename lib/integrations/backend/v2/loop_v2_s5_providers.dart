@@ -16,6 +16,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.da
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_snapshot.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/media/loop_v2_media.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_notifications_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_push_device_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
@@ -35,6 +36,9 @@ final loopV2WalletApiProvider = Provider<LoopV2WalletApi?>((ref) {
   return DioLoopV2WalletApi(
     dio,
     snapshotTap: ref.watch(loopV2SnapshotSessionProvider)?.record,
+    // Decision 0213: the activity page's MEME v2 rows carry a logo our own
+    // media service may serve.
+    mediaUrl: ref.watch(loopV2MediaUrlResolverProvider).urlFor,
   );
 });
 

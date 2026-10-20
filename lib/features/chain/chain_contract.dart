@@ -366,6 +366,9 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'BSC_POOL_INDEXER_NOT_STARTED' => '成交与 K 线暂时读不到。',
   'NATIVE_TRANSFER_SCAN_NOT_SUPPORTED' => 'BNB 转账记录暂时读不到。',
   'CROSS_CHAIN_ACTIVITY_NOT_SUPPORTED' => '跨链与挖矿领取记录暂时读不到。',
+  // Decision 0213 (loop-api 0167): the activity page's Launch-chain leg.
+  'LAUNCH2_INDEXER_NOT_STARTED' => 'Launch 链的 MEME 记录还没有开始同步，下面只列出转账。',
+  'LAUNCH2_ACTIVITY_READ_FAILED' => 'MEME 记录这次没有读到，下面只列出转账，稍后再看。',
   'PRIVY_ASSET_MAPPING_UNAVAILABLE' => '这个资产无法与钱包记录核对。',
   'PRIVY_WALLET_ID_UNAVAILABLE' => '外部钱包无法与钱包记录核对。',
   'PRIVY_BALANCE_CROSS_CHECK_FAILED' => '余额核对没有成功，链上数字不受影响。',

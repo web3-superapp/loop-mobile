@@ -13,6 +13,8 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -243,6 +245,128 @@ LoopRecordRow walletActivityRow(
   );
 }
 
+/// The side of the logo a MEME v2 activity row draws (docs/42 附C §4: 头像
+/// 40), so the row is at least 64 high on its own.
+const double walletLaunch2ActivityLogoSize = 40;
+
+/// The title of one MEME v2 fact (decision 0213): 「买入 星夜」「卖出 星夜」
+/// 「铸造勋章 · 星夜」「领取奖励 · 星夜」「回购 · 星夜」.
+String walletLaunch2ActivityTitle(LoopWalletLaunch2ActivityEntry entry) {
+  final ticker = loopDisplaySymbol(entry.ticker);
+  return switch (entry.kind) {
+    LoopWalletLaunch2ActivityKind.curveBuy ||
+    LoopWalletLaunch2ActivityKind.poolBuy => '买入 $ticker',
+    LoopWalletLaunch2ActivityKind.curveSell ||
+    LoopWalletLaunch2ActivityKind.poolSell => '卖出 $ticker',
+    LoopWalletLaunch2ActivityKind.nftMint => '铸造勋章 · $ticker',
+    LoopWalletLaunch2ActivityKind.rewardClaim => '领取奖励 · $ticker',
+    LoopWalletLaunch2ActivityKind.buyback => '回购 · $ticker',
+  };
+}
+
+/// The two figures on the right of a MEME v2 row: the USD1 that moved (paid
+/// is `-`, received is `+`) over the MEME that moved, and the colour of the
+/// first. A buy is painted `rise` and a sell `fall`, as the 实时成交 tape
+/// paints its direction words (docs/42 附C §4); a mint is neutral; a claim
+/// is money received. A buyback's recipient is credited MEME, not USD1: its
+/// first figure is the MEME delivered and the USD1 the buyback spent is the
+/// caption.
+({String? value, String? caption, Color? color}) walletLaunch2ActivityFigures(
+  LoopWalletLaunch2ActivityEntry entry,
+) {
+  final ticker = loopDisplaySymbol(entry.ticker);
+  String? usd1(String sign) => switch (entry.amountUsd1) {
+    final Decimal amount => '$sign${launch2Usd1Label(amount)}',
+    null => null,
+  };
+  String? meme(String sign) => switch (entry.amountMeme) {
+    final Decimal amount => '$sign${launch2MemeFigure(amount)} $ticker',
+    null => null,
+  };
+  return switch (entry.kind) {
+    LoopWalletLaunch2ActivityKind.curveBuy ||
+    LoopWalletLaunch2ActivityKind.poolBuy => (
+      value: usd1('-'),
+      caption: meme('+'),
+      color: LoopColors.rise,
+    ),
+    LoopWalletLaunch2ActivityKind.curveSell ||
+    LoopWalletLaunch2ActivityKind.poolSell => (
+      value: usd1('+'),
+      caption: meme('-'),
+      color: LoopColors.fall,
+    ),
+    LoopWalletLaunch2ActivityKind.nftMint => (
+      value: usd1('-'),
+      caption: null,
+      color: null,
+    ),
+    LoopWalletLaunch2ActivityKind.rewardClaim => (
+      value: usd1('+'),
+      caption: null,
+      color: LoopColors.rise,
+    ),
+    LoopWalletLaunch2ActivityKind.buyback => (
+      value: meme('+'),
+      caption: switch (entry.amountUsd1) {
+        final Decimal amount => '花费 ${launch2Usd1Label(amount)}',
+        null => null,
+      },
+      color: null,
+    ),
+  };
+}
+
+/// One Launch-chain MEME v2 fact on the `tx-history` tape (decision 0213):
+/// the project's logo (its first letters when there is none or it fails),
+/// what happened, when and on which chain, and the amounts on the right. A
+/// fact whose confirmations could not be counted says 「确认中」.
+LoopRecordRow walletLaunch2ActivityRow(
+  LoopWalletLaunch2ActivityEntry entry, {
+  DateTime? now,
+  VoidCallback? onTap,
+}) {
+  final figures = walletLaunch2ActivityFigures(entry);
+  final title = walletLaunch2ActivityTitle(entry);
+  // docs/42 附C §2: no 「A · B · C」 run in a secondary line.
+  final subtitle = <String>[
+    loopRelativeTime(entry.occurredAt, now: now),
+    'Launch 链',
+    if (entry.confirmations == null) '确认中',
+  ].join('，');
+  return LoopRecordRow(
+    key: ValueKey<String>('tx-entry-${entry.entryId}'),
+    onTap: onTap,
+    // A flat row is 56 with 8 above and below; the 48 slot makes this one
+    // 64 (docs/42 附C §4) whatever its text measures.
+    leading: SizedBox(
+      width: walletLaunch2ActivityLogoSize,
+      height: 48,
+      child: Center(
+        child: MemeLogo(
+          symbol: entry.ticker,
+          imageUrl: entry.logoUrl,
+          identity: entry.instanceId,
+          size: walletLaunch2ActivityLogoSize,
+          radius: walletLaunch2ActivityLogoSize / 2,
+        ),
+      ),
+    ),
+    title: title,
+    subtitle: subtitle,
+    trailing: figures.value,
+    trailingStrong: true,
+    trailingColor: figures.color,
+    trailingCaption: figures.caption,
+    semanticLabel: <String>[
+      title,
+      subtitle,
+      ?figures.value,
+      ?figures.caption,
+    ].join('，'),
+  );
+}
+
 /// The day header a transfer is listed under (decision 0133, audit m13):
 /// 今天, 昨天, 「9月16日」 within this year, 「2025年9月16日」 before it — all in
 /// the device's local calendar.
@@ -271,17 +395,17 @@ String walletActivityDayKey(DateTime at) {
 /// The tape is already newest-first; grouping never reorders it, so a day
 /// that appears twice (an out-of-order page) gets two headers rather than a
 /// row moved away from its neighbours.
-List<({String key, String label, List<LoopWalletActivityEntry> entries})>
-walletActivityDays(List<LoopWalletActivityEntry> entries, {DateTime? now}) {
-  final days =
-      <({String key, String label, List<LoopWalletActivityEntry> entries})>[];
+List<({String key, String label, List<T> entries})> walletActivityDays<
+  T extends LoopWalletActivityRecord
+>(List<T> entries, {DateTime? now}) {
+  final days = <({String key, String label, List<T> entries})>[];
   for (final entry in entries) {
-    final key = walletActivityDayKey(entry.observedAt);
+    final key = walletActivityDayKey(entry.at);
     if (days.isEmpty || days.last.key != key) {
       days.add((
         key: key,
-        label: walletActivityDayLabel(entry.observedAt, now: now),
-        entries: <LoopWalletActivityEntry>[],
+        label: walletActivityDayLabel(entry.at, now: now),
+        entries: <T>[],
       ));
     }
     days.last.entries.add(entry);
