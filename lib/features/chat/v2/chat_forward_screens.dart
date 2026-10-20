@@ -865,6 +865,7 @@ class _MergeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LoopChalkCard(
+    light: true,
     margin: const EdgeInsets.fromLTRB(
       LoopSpacing.page,
       0,

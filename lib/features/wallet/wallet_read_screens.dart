@@ -1721,6 +1721,7 @@ class _ReceiveQrCard extends StatelessWidget {
         // the Card address capsule are gone.
         LoopChalkCard(
           key: const ValueKey<String>('receive-chalk-card'),
+          light: true,
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

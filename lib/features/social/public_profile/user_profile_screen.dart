@@ -555,6 +555,7 @@ class _ActionRow extends StatelessWidget {
         if (friendship != ProfileFriendship.friends)
           LoopRoundKey(
             key: ValueKey<String>('user-profile-friend-${friendship.wireName}'),
+            tone: LoopRoundKeyTone.primary,
             icon: switch (friendship) {
               ProfileFriendship.none => 'plus',
               ProfileFriendship.pendingIn => 'mail',

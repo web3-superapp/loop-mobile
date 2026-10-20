@@ -887,6 +887,7 @@ class _CommunityKeys extends ConsumerWidget {
               key: const ValueKey<String>('community-profile-open-chat'),
               icon: 'chat',
               label: '进群聊',
+              tone: LoopRoundKeyTone.primary,
               onPressed: chatOpenable ? onOpenChat : null,
             ),
             voiceKey,
