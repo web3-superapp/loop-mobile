@@ -122,8 +122,12 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           _InviteCodeBlock(code: overview.inviteCode),
           const LoopLabel('关系深度如何计算'),
           _DepthExplainer(levels: overview.levels),
-          const LoopLabel('加成'),
-          LaunchUnavailableCard(label: 'Mining Power 加成', fact: overview.boost),
+          // S249: the `available` boost is decoded but drawn by the S239
+          // front-end batch; until then only the unavailable card shows.
+          if (overview.boost case final LaunchUnavailable boost) ...<Widget>[
+            const LoopLabel('加成'),
+            LaunchUnavailableCard(label: 'Mining Power 加成', fact: boost),
+          ],
           const LoopLabel('我的邀请人'),
           _BindingBlock(
             binding: overview.binding,
@@ -289,6 +293,7 @@ class _LevelCell extends StatelessWidget {
           '有效关系 ${level.counts.valid}，待验证 ${level.counts.pending}',
       child: ExcludeSemantics(
         child: Container(
+          key: ValueKey<String>('referral-level-cell-${level.level}'),
           padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
           decoration: BoxDecoration(
             color: current ? LoopColors.lime : LoopColors.card2,
@@ -298,15 +303,23 @@ class _LevelCell extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(
-                'L${level.level} · ${level.boostPercent}%',
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                // R13 / R12, the steps `LoopStatGrid` draws (decision 0192);
-                // the five-across strip with its filled current depth is not
-                // a two-column grid, so the cell stays local.
-                style: LoopType.kicker.copyWith(
-                  color: current ? LoopColors.ink : LoopColors.text2,
+              // S249: one unbroken line, scaled down when a fifth of the
+              // width cannot hold it. 「L1 · 10%」 is the only two-digit
+              // label; with a soft wrap and `maxLines: 1` it broke at the
+              // space and drew 「L1 ·」 alone.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  'L${level.level} · ${level.boostPercent}%',
+                  maxLines: 1,
+                  softWrap: false,
+                  // R13 / R12, the steps `LoopStatGrid` draws (decision
+                  // 0192); the five-across strip with its filled current
+                  // depth is not a two-column grid, so the cell stays local.
+                  style: LoopType.kicker.copyWith(
+                    color: current ? LoopColors.ink : LoopColors.text2,
+                  ),
                 ),
               ),
               const SizedBox(height: 7),

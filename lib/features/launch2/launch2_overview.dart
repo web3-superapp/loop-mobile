@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/features/meme/meme_models.dart';
 
 // ---------------------------------------------------------------------------
 // 发射台总览 · `GET /v2/launch2/overview` (decision 0163 second phase,
@@ -48,6 +49,7 @@ final class Launch2Activity {
     this.actor,
     this.amountUsd1,
     this.transactionHash,
+    this.account,
   });
 
   final Launch2ActivityKind kind;
@@ -61,6 +63,12 @@ final class Launch2Activity {
   final Decimal? amountUsd1;
   final DateTime at;
   final String? transactionHash;
+
+  /// The LOOP account behind [actor] (loop-api decision 0162 §A), sent only
+  /// with `LAUNCH2_TRADER_ACCOUNT_EMIT=on` (decision 0166); `null` when the
+  /// key is absent, unreadable, or the server has no visible account. It is
+  /// not part of [identity]: the same event keeps one identity either way.
+  final MemeAccountRef? account;
 
   /// One event, however often it is read again.
   String get identity =>

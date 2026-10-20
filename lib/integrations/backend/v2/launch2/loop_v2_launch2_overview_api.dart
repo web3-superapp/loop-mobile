@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
+import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
@@ -12,6 +13,7 @@ import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_code
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
+import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
@@ -104,7 +106,19 @@ abstract final class LoopV2Launch2OverviewCodec {
         transactionHash: hash is String && _hash.hasMatch(hash)
             ? hash.toLowerCase()
             : null,
+        account: _account(map['account']),
       );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The optional trader account (loop-api decisions 0162 §A / 0166). Like
+  /// the rest of this read it is forgiving: an unreadable account is `null`
+  /// (the tape shows the address) rather than a dropped item.
+  static MemeAccountRef? _account(Object? raw) {
+    try {
+      return LoopV2MemeCodec.account(raw);
     } catch (_) {
       return null;
     }

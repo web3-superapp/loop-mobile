@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
+import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_codec.dart';
 
 /// Strict decoders for the official-pool half of `launch2` (loop-api S146,
 /// client decision 0145): the detail's `pool` object, `GET …/pool/quote` and
@@ -462,7 +463,11 @@ abstract final class LoopV2Launch2PoolCodec {
   }
 
   static Launch2PoolTrade _trade(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, tradeKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      tradeKeys,
+      LoopV2Launch2Codec.traderAccountOptionalKeys,
+    );
     final sideText = map['side'];
     final side = switch (sideText) {
       'buy' => Launch2Side.buy,
@@ -498,6 +503,7 @@ abstract final class LoopV2Launch2PoolCodec {
       tradedAt: LoopV2ChainCodec.requireTimestamp(map, 'tradedAt'),
       transactionHash: LoopV2Launch2Codec.hash(map, 'transactionHash'),
       blockNumber: LoopV2Launch2Codec.integer(map, 'blockNumber'),
+      account: LoopV2MemeCodec.account(map['account']),
     );
   }
 }

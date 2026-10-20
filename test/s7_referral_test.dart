@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -91,6 +92,106 @@ void main() {
       expect(find.textContaining('待挖矿生效 1'), findsOneWidget);
       expect(find.textContaining('0 个有效关系'), findsOneWidget);
       expect(find.textContaining('3 个待验证'), findsOneWidget);
+    });
+
+    // S249: the filled L1 cell read 「L1 ·」 on a phone. 「L1 · 10%」 is the
+    // only two-digit label, so at a fifth of the width it was the one that
+    // soft-wrapped at the space and lost 「10%」 to `maxLines: 1`.
+    for (final width in <double>[320, 390]) {
+      testWidgets('every level cell shows its whole label at $width', (
+        tester,
+      ) async {
+        await pumpS7Page(
+          tester,
+          const ReferralScreen(),
+          referral: FakeReferralGateway(),
+          size: Size(width, 2600),
+        );
+
+        final strip = find.byKey(const ValueKey<String>('referral-levels'));
+        expect(strip, findsOneWidget);
+        for (final (level, percent) in <(int, String)>[
+          (1, '10'),
+          (2, '5'),
+          (3, '3'),
+          (4, '2'),
+          (5, '1'),
+        ]) {
+          final label = find.descendant(
+            of: strip,
+            matching: find.text('L$level · $percent%'),
+          );
+          expect(label, findsOneWidget, reason: 'L$level');
+          final paragraph = tester.renderObject<RenderParagraph>(label);
+          expect(paragraph.didExceedMaxLines, isFalse, reason: 'L$level');
+          final cell = find.byKey(
+            ValueKey<String>('referral-level-cell-$level'),
+          );
+          expect(
+            tester.getRect(label).right,
+            lessThanOrEqualTo(tester.getRect(cell).right),
+            reason: 'L$level',
+          );
+        }
+      });
+    }
+
+    // S249: the decoded center keys are not drawn yet (S239 front-end
+    // batch). An available boost only removes the unavailable card; nothing
+    // else on the page changes.
+    testWidgets('an available boost is decoded but not drawn yet', (
+      tester,
+    ) async {
+      final base = s7Referral();
+      await pumpS7Page(
+        tester,
+        const ReferralScreen(),
+        referral: FakeReferralGateway(
+          overview: S7Answer<ReferralOverview>(
+            value: ReferralOverview(
+              inviteCode: base.inviteCode,
+              binding: base.binding,
+              levels: base.levels,
+              boost: null,
+              boostAvailable: ReferralBoostAvailable(
+                referralPower: '12.5',
+                nftReferralPower: '10',
+                assetReferralPower: '2.5',
+                levels: <ReferralBoostLevel>[
+                  for (var level = 1; level <= 5; level += 1)
+                    ReferralBoostLevel(
+                      level: level,
+                      effectiveMembers: 0,
+                      nftPower: '0',
+                      assetPower: '0',
+                    ),
+                ],
+                epochId: '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
+                hourStart: DateTime.utc(2026, 10, 19, 8),
+                hourEnd: DateTime.utc(2026, 10, 19, 9),
+              ),
+              inviteLink: 'https://api.example.com/i/LOOP-7HJKM',
+              stats: ReferralStats(
+                directCount: 3,
+                validCount: 0,
+                level2to5Count: 0,
+                validAsOf: DateTime.utc(2026, 10, 19, 9),
+              ),
+              rules: base.rules,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('LOOP-7HJKM'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('launch-unavailable-Mining Power 加成'),
+        ),
+        findsNothing,
+      );
+      expect(find.textContaining('12.5'), findsNothing);
+      expect(find.textContaining('/i/LOOP-7HJKM'), findsNothing);
     });
 
     testWidgets('the boost stays unavailable with the formula reason', (
