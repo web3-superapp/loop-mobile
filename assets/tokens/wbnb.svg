@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Wrapped BNB token</title>
+  <circle cx="32" cy="32" r="29" fill="#f2f2f4" stroke="#4a4754" stroke-width="2"/>
+  <circle cx="32" cy="32" r="23" fill="#111114"/>
+  <path d="m32 15 7 7-3 3-4-4-4 4-3-3Zm-10 10 3 3-4 4 4 4-3 3-7-7Zm20 0 7 7-7 7-3-3 4-4-4-4ZM32 43l4-4 3 3-7 7-7-7 3-3Z" fill="#ffd600"/>
+  <path d="m32 27 5 5-5 5-5-5Z" fill="#aeacb6"/>
+</svg>

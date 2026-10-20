@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">XRP token</title>
+  <circle cx="32" cy="32" r="29" fill="#111114" stroke="#4a4754" stroke-width="2"/>
+  <path d="M16 18h5l8 8c2 2 4 2 6 0l8-8h5L35 30c-2 2-4 2-6 0ZM16 46h5l8-8c2-2 4-2 6 0l8 8h5L35 34c-2-2-4-2-6 0Z" fill="#f2f2f4" stroke="#f2f2f4" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

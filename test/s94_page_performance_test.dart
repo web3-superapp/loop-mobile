@@ -640,7 +640,11 @@ void main() {
           ),
         ),
       );
-      // `flutter_test` answers every network image with a 400.
+      // `flutter_test` answers every network image with a 400. The load
+      // first looks for a copy on disk (decision 0215), which is real I/O.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
       await tester.pumpAndSettle();
       expect(debugLoopTokenLogoFailed(url), isTrue);
       expect(find.text('RE'), findsOneWidget);

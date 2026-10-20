@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">DOGE token</title>
+  <circle cx="32" cy="32" r="29" fill="#ffd600" stroke="#4a4754" stroke-width="2"/>
+  <path d="M24 18h8c9 0 14 6 14 14s-5 14-14 14h-8Z" fill="none" stroke="#111114" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M18 32h18" fill="none" stroke="#111114" stroke-width="4" stroke-linecap="round"/>
+</svg>
