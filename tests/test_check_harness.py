@@ -5826,7 +5826,7 @@ class HarnessTests(unittest.TestCase):
                     target = root / "lib/features/launch/launch_screen.dart"
                     target.write_text(
                         target.read_text(encoding="utf-8").replace(
-                            "kicker: 'LAUNCH DESK',",
+                            "kicker: '发射台',",
                             f"kicker: '{retired}',",
                             1,
                         ),
