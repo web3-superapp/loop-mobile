@@ -102,7 +102,7 @@ void main() {
   });
 
   group('L3 / L4 · token page', () {
-    testWidgets('the chosen lower tab is underlined in Purple (S241b)', (
+    testWidgets('the chosen lower tab is a Purple capsule (0211)', (
       tester,
     ) async {
       await pumpS5Page(
@@ -111,17 +111,22 @@ void main() {
         market: FakeMarketReadGateway(),
       );
       await scrollToS5Section(tester, key('token-section-tabs'));
-      final underline = tester.widget<Container>(
+      final capsule = tester.widget<Container>(
         find
             .descendant(
               of: key('token-tab-${TokenSectionTab.holders.label}'),
-              matching: find.byType(Container),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is Container && widget.decoration is BoxDecoration,
+              ),
             )
             .first,
       );
-      final border = (underline.decoration! as BoxDecoration).border! as Border;
-      // S241b (decision 0210): selection is Purple.
-      expect(border.bottom.color, LoopColors.purple);
+      final decoration = capsule.decoration! as BoxDecoration;
+      // Decision 0211: selection is a Purple 18 % capsule, no underline.
+      expect(decoration.color, LoopColors.purpleSelected);
+      expect(decoration.borderRadius, LoopRadius.pill);
+      expect(decoration.border, isNull);
     });
 
     testWidgets('periods and chart switches are quiet segs', (tester) async {

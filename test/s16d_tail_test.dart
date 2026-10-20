@@ -172,7 +172,7 @@ void main() {
       );
       final decoration = tile.decoration! as BoxDecoration;
       expect(_isTranslucentChalk(decoration.color!), isFalse);
-      expect(_isTranslucentChalk(decoration.border!.top.color), isFalse);
+      expect(decoration.border, isNull);
     });
   });
 

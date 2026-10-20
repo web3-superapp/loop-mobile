@@ -4,7 +4,6 @@ import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
-import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -267,7 +266,6 @@ class LoopIconButton extends StatelessWidget {
                   ? BoxDecoration(
                       color: LoopGround.tintOf(context),
                       borderRadius: LoopRadius.tool,
-                      border: Border.all(color: LoopGround.hairlineOf(context)),
                     )
                   : null,
               child: Center(
@@ -361,9 +359,11 @@ class LoopLabel extends StatelessWidget {
   }
 }
 
-/// The looplabs kicker (decision 0210, docs/42 附A §5): a 6px Yellow square,
-/// then the words in Yellow `11 / w800 / +0.15em`, uppercase. [large] is the
-/// 12px section-label step. [color] restates the ink on a light ground.
+/// A small label line (decision 0211 retired the looplabs kicker — the 6px
+/// Yellow square and the uppercase +0.15em words). The default is a 12 / 700
+/// grey label in the words' own case; [large] is a section heading in the
+/// [LoopType.sectionTitle] step, Chalk. [color] restates the ink on a light
+/// ground or for an accent.
 class LoopKicker extends StatelessWidget {
   const LoopKicker(
     this.text, {
@@ -380,31 +380,14 @@ class LoopKicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ink = color ?? LoopColors.yellow;
-    final style = (large ? LoopType.eyebrow : LoopType.kicker).copyWith(
-      color: ink,
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        ExcludeSemantics(
-          child: Container(
-            key: const ValueKey<String>('loop-kicker-square'),
-            width: 6,
-            height: 6,
-            color: ink,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            LoopType.caps(text),
-            maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
-            style: style,
-          ),
-        ),
-      ],
+    final style = large
+        ? LoopType.sectionTitle.copyWith(color: color ?? LoopColors.chalk)
+        : LoopType.eyebrow.copyWith(color: color ?? LoopColors.text3);
+    return Text(
+      text,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: style,
     );
   }
 }
@@ -606,7 +589,7 @@ class LoopFolioPrimary extends StatelessWidget {
   /// prototype's fixed budget, because the stamp itself is capped at 42%.
   double _stampWidth(BuildContext context, String label, double contentWidth) {
     final painter = TextPainter(
-      text: TextSpan(text: label.toUpperCase(), style: LoopType.kicker),
+      text: TextSpan(text: label, style: LoopType.kicker),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
@@ -640,9 +623,9 @@ class LoopFolioPrimary extends StatelessWidget {
         : LoopColors.ink;
     final radius = squareBottom
         ? const BorderRadius.vertical(
-            top: Radius.circular(LoopRadius.shellValue),
+            top: Radius.circular(LoopRadius.cardValue),
           )
-        : LoopRadius.shell;
+        : LoopRadius.card;
     final decoration = switch (variant) {
       LoopFolioVariant.lime => BoxDecoration(
         color: LoopColors.lime,
@@ -654,24 +637,12 @@ class LoopFolioPrimary extends StatelessWidget {
         borderRadius: radius,
         boxShadow: squareBottom ? null : LoopDepth.liftPrimaryLight,
       ),
-      // Decision 0210: the quiet folio is the flat looplabs card — the
-      // `#111114` surface behind a 1px `#38333E` edge, no glow, no lift.
+      // Decision 0211: the quiet folio is the `#111114` card surface with
+      // no edge and the card radius; a folio welded into a composite keeps
+      // only its top corners round.
       LoopFolioVariant.quiet => BoxDecoration(
         color: LoopColors.card,
-        // Square either way (decision 0210); a radius beside an open side
-        // would make the border non-uniform with a radius, which Flutter
-        // refuses to paint.
-        borderRadius: squareBottom ? null : radius,
-        // A folio welded into a composite leaves its bottom edge open: the
-        // strip beneath draws the `#2A292F` seam, so the two read as one
-        // card with one divider rather than two stacked frames (S241c).
-        border: squareBottom
-            ? const Border(
-                top: BorderSide(color: LoopColors.line2),
-                left: BorderSide(color: LoopColors.line2),
-                right: BorderSide(color: LoopColors.line2),
-              )
-            : Border.all(color: LoopColors.line2),
+        borderRadius: radius,
       ),
     };
     final ringColor = variant == LoopFolioVariant.quiet
@@ -826,7 +797,7 @@ class LoopFolioPrimary extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        kicker!.toUpperCase(),
+                        kicker!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: LoopType.kicker.copyWith(
@@ -843,7 +814,7 @@ class LoopFolioPrimary extends StatelessWidget {
                   widthFactor: 0.72,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    kicker!.toUpperCase(),
+                    kicker!,
                     style: LoopType.kicker.copyWith(
                       color: _faded(foreground, kickerOpacity),
                     ),
@@ -947,7 +918,7 @@ class LoopFolioStamp extends StatelessWidget {
         border: Border.all(color: ink, width: LoopFolioPrimary._stampBorder),
       ),
       child: Text(
-        label.toUpperCase(),
+        label,
         // `white-space:nowrap`: the pill is one line, and a stamp too long
         // for its ceiling ends in an ellipsis instead of running under the
         // caption.
@@ -995,17 +966,16 @@ class LoopLedgerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Decision 0210: flat. The quiet card is the `#111114` surface behind a
-    // 1px card edge; the primary one is flat Yellow.
+    // Decision 0211: the quiet card is the `#111114` surface with no edge;
+    // the primary one is flat Yellow. Both take the card radius.
     final decoration = quiet
         ? const BoxDecoration(
             color: LoopColors.card,
-            borderRadius: LoopRadius.shell,
-            border: Border.fromBorderSide(BorderSide(color: LoopColors.line2)),
+            borderRadius: LoopRadius.card,
           )
         : const BoxDecoration(
             color: LoopColors.yellow,
-            borderRadius: LoopRadius.shell,
+            borderRadius: LoopRadius.card,
           );
     final body = DefaultTextStyle.merge(
       style: TextStyle(color: quiet ? LoopColors.chalk : LoopColors.ink),
@@ -1021,7 +991,7 @@ class LoopLedgerCard extends StatelessWidget {
         onTap: onTap,
         semanticLabel: semanticLabel,
         decoration: decoration,
-        borderRadius: LoopRadius.shell,
+        borderRadius: LoopRadius.card,
         // `.ledger-card::before`: a static dot texture under the content. It
         // is painted, never animated, so reduced motion changes nothing here.
         // The boundary keeps the grid out of the parent's repaints, and
@@ -1262,10 +1232,9 @@ class LoopChalkCard extends StatelessWidget {
                 color: LoopColors.chalk,
                 borderRadius: LoopRadius.card,
               )
-            : BoxDecoration(
+            : const BoxDecoration(
                 color: LoopColors.card,
                 borderRadius: LoopRadius.card,
-                border: Border.all(color: LoopColors.line2),
               ),
         borderRadius: LoopRadius.card,
         child: DefaultTextStyle.merge(
@@ -1312,7 +1281,8 @@ class LoopSurfaceCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: background ?? LoopColors.card,
           borderRadius: LoopRadius.card,
-          border: Border.all(color: borderColor ?? LoopColors.line2),
+          // Decision 0211: no edge unless the caller asks for one.
+          border: borderColor == null ? null : Border.all(color: borderColor!),
         ),
         borderRadius: LoopRadius.card,
         child: Padding(padding: padding, child: child),
@@ -1363,7 +1333,6 @@ class LoopRecordCard extends StatelessWidget {
         decoration: const BoxDecoration(
           color: LoopColors.card,
           borderRadius: LoopRadius.card,
-          border: Border.fromBorderSide(BorderSide(color: LoopColors.line2)),
         ),
         borderRadius: LoopRadius.card,
         child: Padding(padding: padding, child: child),
@@ -1436,7 +1405,8 @@ class _PressedEdgeState extends State<_PressedEdge> {
   @override
   Widget build(BuildContext context) {
     final decoration = widget.decoration;
-    final painted = _pressed && decoration.border != null
+    // Decision 0211: an edgeless card draws a 1px Purple edge while held.
+    final painted = _pressed
         ? decoration.copyWith(border: Border.all(color: LoopColors.purple))
         : decoration;
     return widget.builder(_onHighlightChanged, painted);
@@ -2013,7 +1983,7 @@ class LoopNotice extends StatelessWidget {
               LoopColors.warning.withValues(alpha: 0.13),
               LoopColors.warning.withValues(alpha: 0.44),
             ),
-            LoopNoticeTone.danger => (LoopColors.card2, LoopColors.line2),
+            LoopNoticeTone.danger => (LoopColors.card, LoopColors.line2),
           };
     final foreground = chalk ? LoopColors.ink : LoopColors.chalk;
     final bodyStyle = LoopType.caption.copyWith(color: foreground);
@@ -2036,8 +2006,12 @@ class LoopNotice extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
             decoration: BoxDecoration(
               color: background,
-              borderRadius: LoopRadius.tile,
-              border: Border.all(color: border),
+              borderRadius: LoopRadius.control,
+              // Decision 0211: the tone is the ground; the warning keeps a
+              // hairline in its own colour, the others none.
+              border: tone == LoopNoticeTone.warn && !chalk
+                  ? Border.all(color: border)
+                  : null,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2249,22 +2223,17 @@ class LoopSeg extends StatelessWidget {
         // Yellow word. S241c made the framed chip choose the same way — it
         // keeps its `#38333E` frame on the other three sides — so Yellow is
         // never a solid selection block.
+        // Decision 0211: a chosen chip is a Purple 18 % block with a Yellow
+        // word — a capsule in the quiet filter bar, a 12 radius block
+        // otherwise. An unchosen quiet chip is transparent; an unchosen
+        // framed chip is the raised grey ground with no edge.
         color: selected
-            ? LoopColors.purpleSoft
-            : (quiet ? Colors.transparent : LoopColors.card),
-        shape: switch ((quiet, selected)) {
-          (_, true) => Border(
-            top: quiet ? BorderSide.none : _segFrame,
-            left: quiet ? BorderSide.none : _segFrame,
-            right: quiet ? BorderSide.none : _segFrame,
-            bottom: const BorderSide(color: LoopColors.purple, width: 2),
-          ),
-          (true, false) => const RoundedRectangleBorder(),
-          (false, false) => const RoundedRectangleBorder(
-            borderRadius: LoopRadius.button,
-            side: _segFrame,
-          ),
-        },
+            ? LoopColors.purpleSelected
+            : (quiet ? Colors.transparent : LoopColors.card2),
+        shape: RoundedRectangleBorder(
+          borderRadius: quiet ? LoopRadius.pill : LoopRadius.button,
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onSelected == null
               ? onBlocked
@@ -2275,8 +2244,7 @@ class LoopSeg extends StatelessWidget {
                   if (!selected) LoopHaptics.selection();
                   onSelected!();
                 },
-          customBorder: quiet ? const RoundedRectangleBorder() : null,
-          borderRadius: quiet ? null : LoopRadius.button,
+          borderRadius: quiet ? LoopRadius.pill : LoopRadius.button,
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minWidth: LoopTouch.minimum,
@@ -2303,9 +2271,6 @@ class LoopSeg extends StatelessWidget {
       ),
     );
   }
-
-  /// The framed chip's 1px `#38333E` edge.
-  static const BorderSide _segFrame = BorderSide(color: LoopColors.line2);
 
   Widget _segLabel() {
     final idle = dimmed ? LoopColors.text3 : LoopColors.text2;
@@ -2472,29 +2437,37 @@ class LoopButton extends StatelessWidget {
     final inkFill = tone == LoopButtonTone.ink;
     final foreground = chosen
         ? LoopColors.yellow
+        : paintPrimary && tone == LoopButtonTone.danger
+        ? LoopColors.danger
         : paintPrimary
         ? (inkFill ? LoopColors.chalk : LoopColors.ink)
         : LoopGround.inkOf(context);
+    // Decision 0211: a secondary button is the raised `#1C1B22` ground with
+    // no edge on the Ink page; on a light card it keeps the ground's own
+    // edge, because a grey fill there would read as disabled.
+    final onDarkGround = LoopGround.inkOf(context).computeLuminance() > 0.4;
+    final danger = paintPrimary && tone == LoopButtonTone.danger;
     final Color? fill = chosen
-        ? LoopColors.purpleSoft
+        ? LoopColors.purpleSelected
         : paintPrimary
         ? switch (tone) {
             LoopButtonTone.brass => LoopColors.brass,
             LoopButtonTone.ink => LoopColors.ink,
-            LoopButtonTone.danger => LoopColors.chalk,
+            LoopButtonTone.danger => null,
             LoopButtonTone.lime => LoopColors.yellow,
           }
-        : null;
-    final Color? pressedFill = paintPrimary
-        ? (tone == LoopButtonTone.lime ? LoopColors.yellowHighlight : fill)
-        : null;
-    // A secondary button's edge comes from the ground it was put on: the
-    // `#4A4754` outline on the Ink page, the ground's own ink weight on a
-    // light card.
-    final onDarkGround = LoopGround.inkOf(context).computeLuminance() > 0.4;
-    final edge = paintPrimary || chosen
+        : (onDarkGround ? LoopColors.card2 : null);
+    final Color? pressedFill = switch (fill) {
+      LoopColors.yellow => LoopColors.yellowPressed,
+      LoopColors.card2 => LoopColors.line,
+      final Color other => other,
+      null => danger ? LoopColors.dangerSoft : null,
+    };
+    final edge = danger
+        ? LoopColors.danger
+        : paintPrimary || chosen || onDarkGround
         ? null
-        : (onDarkGround ? LoopColors.line3 : LoopGround.edgeOf(context));
+        : LoopGround.edgeOf(context);
     return MergeSemantics(
       child: Semantics(
         button: true,
@@ -2511,8 +2484,6 @@ class LoopButton extends StatelessWidget {
             fill: fill,
             pressedFill: pressedFill,
             edge: edge,
-            underline: chosen,
-            lifts: paintPrimary,
             child: Container(
               constraints: BoxConstraints(
                 minHeight: LoopTouch.primaryButton,
@@ -2548,29 +2519,22 @@ class LoopButton extends StatelessWidget {
   }
 }
 
-/// The square face of a [LoopButton]: its fill, its edge and the pressed
-/// answer — the highlight fill and a 2px rise for a primary, the Purple edge
-/// for a secondary. Reduced motion keeps the colour and drops the rise.
+/// The 12 radius face of a [LoopButton] (decision 0211): its fill, its edge
+/// and the pressed answer — a deeper fill, never a movement.
 class _LoopButtonFace extends StatefulWidget {
   const _LoopButtonFace({
     required this.onPressed,
     required this.fill,
     required this.pressedFill,
     required this.edge,
-    required this.lifts,
     required this.child,
     super.key,
-    this.underline = false,
   });
 
   final VoidCallback? onPressed;
   final Color? fill;
   final Color? pressedFill;
   final Color? edge;
-
-  /// The chosen choice's 2px Purple underline.
-  final bool underline;
-  final bool lifts;
   final Widget child;
 
   @override
@@ -2587,41 +2551,33 @@ class _LoopButtonFaceState extends State<_LoopButtonFace> {
 
   @override
   Widget build(BuildContext context) {
-    final reduced = LoopMotion.reduced(context);
     final pressed = _pressed && widget.onPressed != null;
     final edge = widget.edge;
     // Not animated: a fill that tweened between "off" and "on" would paint
     // the word of one state over half the ground of the other.
     return Container(
-      transform: Matrix4.translationValues(
-        0,
-        pressed && widget.lifts && !reduced ? -LoopMotion.buttonLift : 0,
-        0,
-      ),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: pressed ? widget.pressedFill ?? widget.fill : widget.fill,
+        borderRadius: LoopRadius.button,
       ),
       // The edge is painted over the face rather than laid out around it, so
       // an outlined button is exactly as tall as a filled one.
-      foregroundDecoration: widget.underline
-          ? const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: LoopColors.purple, width: 2),
-              ),
-            )
-          : edge == null
+      foregroundDecoration: edge == null
           ? null
           : BoxDecoration(
-              border: Border.fromBorderSide(
-                BorderSide(color: pressed ? LoopColors.purple : edge),
-              ),
+              borderRadius: LoopRadius.button,
+              border: Border.fromBorderSide(BorderSide(color: edge)),
             ),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
           onTap: widget.onPressed,
           onHighlightChanged: _setPressed,
-          highlightColor: widget.fill == null ? null : const Color(0x00000000),
+          borderRadius: LoopRadius.button,
+          highlightColor: widget.pressedFill == null
+              ? null
+              : const Color(0x00000000),
           child: ExcludeSemantics(child: widget.child),
         ),
       ),
@@ -2811,26 +2767,26 @@ class _LoopComposerState extends State<LoopComposer> {
                   hintText: widget.hintText,
                   isDense: true,
                   filled: true,
-                  fillColor: LoopColors.card,
+                  fillColor: LoopColors.input,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 12,
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: LoopRadius.tile,
-                    borderSide: const BorderSide(color: LoopColors.line),
+                  border: const OutlineInputBorder(
+                    borderRadius: LoopRadius.control,
+                    borderSide: BorderSide.none,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: LoopRadius.tile,
-                    borderSide: const BorderSide(color: LoopColors.line),
+                  enabledBorder: const OutlineInputBorder(
+                    borderRadius: LoopRadius.control,
+                    borderSide: BorderSide.none,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: LoopRadius.tile,
-                    borderSide: const BorderSide(color: LoopColors.purple),
+                  focusedBorder: const OutlineInputBorder(
+                    borderRadius: LoopRadius.control,
+                    borderSide: BorderSide(color: LoopColors.purple),
                   ),
-                  disabledBorder: OutlineInputBorder(
-                    borderRadius: LoopRadius.tile,
-                    borderSide: const BorderSide(color: LoopColors.line),
+                  disabledBorder: const OutlineInputBorder(
+                    borderRadius: LoopRadius.control,
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
@@ -3294,8 +3250,7 @@ class LoopSkeleton extends StatelessWidget {
               // Same rule as the block it contains: a skeleton is the ground
               // plus a little, on either ground.
               color: LoopGround.tintOf(context),
-              borderRadius: LoopRadius.control,
-              border: Border.all(color: LoopGround.hairlineOf(context)),
+              borderRadius: LoopRadius.card,
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3801,8 +3756,8 @@ class LoopErrorState extends StatelessWidget {
         liveRegion: true,
         child: LoopSurfaceCard(
           key: const ValueKey<String>('loop-error-state'),
-          background: LoopColors.card2,
-          borderColor: LoopColors.line2,
+          // Decision 0211: the card ground with no edge, so the `#1C1B22`
+          // secondary button on it reads.
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -3926,9 +3881,10 @@ class LoopOfflineState extends StatelessWidget {
           key: const ValueKey<String>('loop-offline-state'),
           padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           decoration: BoxDecoration(
-            color: LoopColors.card2,
-            borderRadius: LoopRadius.tile,
-            border: Border.all(color: LoopColors.line2),
+            // Decision 0211: the card ground, so the `#1C1B22` secondary
+            // button on it stays visible.
+            color: LoopColors.card,
+            borderRadius: LoopRadius.card,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -4065,8 +4021,7 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       decoration: BoxDecoration(
         color: LoopColors.card,
-        borderRadius: LoopRadius.tile,
-        border: Border.all(color: LoopColors.line),
+        borderRadius: LoopRadius.card,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

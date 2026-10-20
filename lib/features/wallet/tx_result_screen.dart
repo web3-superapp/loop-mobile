@@ -154,7 +154,7 @@ class _TransactionResultScreenState
           variant: LoopFolioVariant.quiet,
           headingTone: LoopFolioHeadingTone.neutral,
           ring: false,
-          kicker: 'TRANSACTION RESULT',
+          kicker: '交易结果',
           heading: '没有可展示的结果',
           caption: '结果页只展示一笔具体操作，需要指定是哪一笔。',
         ),
@@ -202,7 +202,7 @@ class _TransactionResultScreenState
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
-        kicker: 'TRANSACTION RESULT',
+        kicker: '交易结果',
         heading: intent == null ? '正在读取结果' : _headline(intent),
         caption: intent == null ? '结果以链上核对为准，这一页不会自己判断成败。' : _caption(intent),
         stamp: intent == null

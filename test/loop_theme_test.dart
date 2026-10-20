@@ -76,22 +76,23 @@ void main() {
     expect(LoopSpacing.section, 40);
     expect(LoopSpacing.page, 20);
 
-    // Decision 0210: every surface corner is square; only `pill` is round.
-    for (final value in <double>[
-      LoopRadius.shellValue,
-      LoopRadius.cardValue,
-      LoopRadius.controlValue,
-      LoopRadius.innerValue,
-      LoopRadius.tabBarValue,
-      LoopRadius.tileValue,
-      LoopRadius.buttonValue,
-      LoopRadius.toolValue,
-      LoopRadius.badgeValue,
-      LoopRadius.wideButtonValue,
-    ]) {
-      expect(value, 0);
-    }
-    expect(LoopRadius.card, BorderRadius.zero);
+    // Decision 0211: app-shaped corners in the looplabs palette.
+    expect(LoopRadius.shellValue, 20);
+    expect(LoopRadius.tabBarValue, 20);
+    expect(LoopRadius.cardValue, 16);
+    expect(LoopRadius.bubbleValue, 16);
+    expect(LoopRadius.controlValue, 12);
+    expect(LoopRadius.buttonValue, 12);
+    expect(LoopRadius.toolValue, 12);
+    expect(LoopRadius.wideButtonValue, 12);
+    expect(LoopRadius.innerValue, 10);
+    expect(LoopRadius.tileValue, 10);
+    expect(LoopRadius.badgeValue, 6);
+    expect(LoopRadius.card, const BorderRadius.all(Radius.circular(16)));
+    expect(
+      LoopRadius.sheetTop,
+      const BorderRadius.vertical(top: Radius.circular(20)),
+    );
     expect(LoopRadius.pill, const BorderRadius.all(Radius.circular(999)));
 
     // Flat: no lift anywhere, a coloured glow for emphasis.
@@ -115,62 +116,61 @@ void main() {
     expect(LoopZ.toast, 90);
 
     expect(LoopTouch.minimum, 44);
-    expect(LoopTouch.primaryButton, 52);
+    expect(LoopTouch.primaryButton, 48);
     expect(LoopTouch.tabBarHeight, 70);
     expect(LoopLayout.tabPageBottomReserve, 90);
     expect(LoopLayout.childPageBottomMinimum, 24);
     expect(LoopLayout.designBaseline, const Size(390, 844));
   });
 
-  test('headings are Anton, body is Arimo, figures are tabular', () {
-    final text = LoopTheme.dark.textTheme;
-    final title = text.headlineLarge!;
-    expect(title.fontFamily, 'Anton');
-    expect(title.fontSize, 24);
-    expect(title.fontWeight, FontWeight.w400);
-    expect(title.letterSpacing, closeTo(-0.24, 0.001));
-    // A Chinese run inside an Anton heading lands on bold Han.
-    expect(title.fontFamilyFallback!.first, LoopFonts.cjkDisplay);
-    expect(title.fontFamilyFallback, contains('Noto Sans SC'));
+  test(
+    'headings are bold Arimo / Noto, body is Arimo, figures are tabular',
+    () {
+      final text = LoopTheme.dark.textTheme;
+      final title = text.headlineLarge!;
+      // Decision 0211: a page title is Arimo 700 with Noto Sans SC behind it,
+      // in sentence case and untracked; Anton stays for the big figures.
+      expect(title.fontFamily, 'Arimo');
+      expect(title.fontSize, 22);
+      expect(title.fontWeight, FontWeight.w700);
+      expect(title.letterSpacing, 0);
+      expect(title.fontFamilyFallback!.first, LoopFonts.cjk);
 
-    expect(text.displayMedium!.fontSize, 32);
-    expect(text.bodyLarge, same(LoopType.bodyLg));
-    expect(text.bodyLarge!.fontFamily, 'Arimo');
-    expect(text.bodyMedium!.fontSize, 13);
-    expect(text.bodyMedium!.height, 1.7);
+      expect(text.displayMedium!.fontSize, 26);
+      expect(text.bodyLarge, same(LoopType.bodyLg));
+      expect(text.bodyLarge!.fontFamily, 'Arimo');
+      expect(text.bodyMedium!.fontSize, 13);
+      expect(text.bodyMedium!.height, 1.5);
 
-    for (final figure in <TextStyle>[
-      LoopMono.display,
-      LoopMono.headline,
-      LoopMono.value,
-      LoopMono.body,
-      LoopMono.stamp,
-    ]) {
-      expect(figure.fontFamily, LoopFonts.body);
-      expect(figure.fontFeatures, contains(const FontFeature.tabularFigures()));
-      expect(figure.fontFamilyFallback!.first, LoopFonts.cjk);
-    }
-    expect(LoopMono.display.fontSize, 28);
+      for (final figure in <TextStyle>[
+        LoopMono.display,
+        LoopMono.headline,
+        LoopMono.value,
+        LoopMono.body,
+        LoopMono.stamp,
+      ]) {
+        expect(figure.fontFamily, LoopFonts.body);
+        expect(
+          figure.fontFeatures,
+          contains(const FontFeature.tabularFigures()),
+        );
+        expect(figure.fontFamilyFallback!.first, LoopFonts.cjk);
+      }
+      expect(LoopMono.display.fontSize, 28);
 
-    // Fixed width survives for one job: addresses, hashes, code.
-    expect(LoopMono.address.fontFamily, LoopFonts.mono);
-    expect(LoopType.code.fontFamily, LoopFonts.mono);
-    expect(LoopType.codeSm.fontFamily, LoopFonts.mono);
-    expect(LoopTypography.mono(size: 12).fontFamily, 'IBM Plex Mono');
-  });
+      // Fixed width survives for one job: addresses, hashes, code.
+      expect(LoopMono.address.fontFamily, LoopFonts.mono);
+      expect(LoopType.code.fontFamily, LoopFonts.mono);
+      expect(LoopType.codeSm.fontFamily, LoopFonts.mono);
+      expect(LoopTypography.mono(size: 12).fontFamily, 'IBM Plex Mono');
+    },
+  );
 
   test('the seven bands are the whole vocabulary', () {
+    // Decision 0211: Anton only for the hero line and the big figure.
     final condensed = <String, TextStyle>{
       'heroDisplay': LoopType.heroDisplay,
-      'displayXl': LoopType.displayXl,
-      'display': LoopType.display,
-      'displaySm': LoopType.displaySm,
       'statFigure': LoopType.statFigure,
-      'stepTitle': LoopType.stepTitle,
-      'headingLg': LoopType.headingLg,
-      'flatTitle': LoopType.flatTitle,
-      'heading': LoopType.heading,
-      'headingSm': LoopType.headingSm,
     };
     condensed.forEach((name, style) {
       expect(style.fontFamily, LoopFonts.display, reason: name);
@@ -178,8 +178,24 @@ void main() {
       expect(style.fontFamilyFallback!.first, LoopFonts.cjkDisplay);
       // Anton is tracked in, never out.
       expect(style.letterSpacing, lessThan(0), reason: name);
-      expect(style.fontSize, greaterThanOrEqualTo(18), reason: name);
       expect(style.height, inInclusiveRange(1.0, 1.15), reason: name);
+    });
+    final headings = <String, TextStyle>{
+      'displayXl': LoopType.displayXl,
+      'display': LoopType.display,
+      'displaySm': LoopType.displaySm,
+      'stepTitle': LoopType.stepTitle,
+      'headingLg': LoopType.headingLg,
+      'flatTitle': LoopType.flatTitle,
+      'heading': LoopType.heading,
+      'headingSm': LoopType.headingSm,
+    };
+    headings.forEach((name, style) {
+      expect(style.fontFamily, LoopFonts.body, reason: name);
+      expect(style.fontWeight, FontWeight.w700, reason: name);
+      expect(style.fontFamilyFallback!.first, LoopFonts.cjk, reason: name);
+      expect(style.letterSpacing, 0, reason: name);
+      expect(style.fontSize, greaterThanOrEqualTo(17), reason: name);
     });
 
     final body = <String, TextStyle>{
@@ -206,17 +222,17 @@ void main() {
       expect(style.fontSize, greaterThanOrEqualTo(11), reason: name);
       expect(style.fontFeatures, isNull, reason: name);
     });
-    expect(LoopType.body.height, 1.7);
-    expect(LoopType.action.fontSize, 13);
-    expect(LoopType.action.fontWeight, FontWeight.w800);
+    expect(LoopType.body.height, 1.5);
+    expect(LoopType.action.fontSize, 14);
+    expect(LoopType.action.fontWeight, FontWeight.w700);
     expect(LoopType.title.fontWeight, FontWeight.w700);
 
-    // Kicker / eyebrow: 800, +0.15em (uppercased by the widget).
+    // Kicker / eyebrow (decision 0211): 700, untracked, in its own case.
     expect(LoopType.kicker.fontSize, 11);
-    expect(LoopType.kicker.fontWeight, FontWeight.w800);
-    expect(LoopType.kicker.letterSpacing, closeTo(1.65, 0.001));
+    expect(LoopType.kicker.fontWeight, FontWeight.w700);
+    expect(LoopType.kicker.letterSpacing, 0);
     expect(LoopType.eyebrow.fontSize, 12);
-    expect(LoopType.caps('loop 星夜'), 'LOOP 星夜');
+    expect(LoopType.caps('loop 星夜'), 'loop 星夜');
 
     for (final MapEntry<String, TextStyle> entry in <String, TextStyle>{
       'figureXl': LoopType.figureXl,
@@ -245,8 +261,8 @@ void main() {
     expect(bold.fontWeight, FontWeight.w700);
     expect(bold.fontSize, LoopType.body.fontSize);
     expect(
-      LoopTypography.withWeight(LoopType.headingLg, FontWeight.w700),
-      same(LoopType.headingLg),
+      LoopTypography.withWeight(LoopType.statFigure, FontWeight.w700),
+      same(LoopType.statFigure),
     );
   });
 

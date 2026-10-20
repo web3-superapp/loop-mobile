@@ -492,12 +492,12 @@ class _ChatSearchEntry extends StatelessWidget {
     excludeSemantics: true,
     child: Material(
       color: LoopColors.input,
-      shape: const RoundedRectangleBorder(
-        side: BorderSide(color: LoopColors.inputLine),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
       child: InkWell(
         key: const ValueKey<String>('chat-search-entry'),
-        customBorder: const RoundedRectangleBorder(),
+        customBorder: const RoundedRectangleBorder(
+          borderRadius: LoopRadius.control,
+        ),
         onTap: () => unawaited(context.push<void>('/chat/search')),
         child: SizedBox(
           height: LoopTouch.minimum,

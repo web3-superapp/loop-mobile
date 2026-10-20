@@ -49,10 +49,10 @@ class PayScreen extends ConsumerWidget {
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: 'SCAN TO PAY',
+        kicker: '扫一扫',
         heading: '扫码支付',
         caption: '识别结果不会直接发起签名；金额、网络与收款方会再次展示。',
-        stamp: 'CAMERA',
+        stamp: '相机',
       ),
       sections: <Widget>[
         // The prototype keeps the viewfinder's room, with the reason in it.
@@ -99,10 +99,10 @@ class BridgeScreen extends ConsumerWidget {
         ring: false,
         key: ValueKey<String>('bridge-folio'),
         archetype: LoopFolioArchetype.action,
-        kicker: 'BRIDGE INTENT',
+        kicker: '跨链意图',
         heading: '跨链尚未开放',
         caption: '先选来源链、目标链与数量，再显示预计费用和到账时间。',
-        stamp: 'REVIEW',
+        stamp: '核对',
       ),
       sections: <Widget>[
         // The prototype's 从 / 到 boxes keep their room. Each figure is a
@@ -193,10 +193,10 @@ class BridgeStatusScreen extends ConsumerWidget {
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         archetype: LoopFolioArchetype.state,
-        kicker: 'BRIDGE PROGRESS',
+        kicker: '跨链进度',
         heading: '跨链进度尚未开放',
         caption: '源链确认、桥接中和目标链到账是三个独立状态。',
-        stamp: 'NOT OPEN',
+        stamp: '未开放',
       ),
       sections: <Widget>[
         // The prototype's 步骤 group keeps its heading. Its three rows do not
@@ -298,7 +298,7 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             headingTone: LoopFolioHeadingTone.neutral,
             ring: false,
             archetype: LoopFolioArchetype.action,
-            kicker: 'DAPP REVIEW · READ ONLY',
+            kicker: 'DApp 检查 · 只读',
             heading: switch (review.verdict) {
               LoopUrlVerdict.normalized => review.host!,
               LoopUrlVerdict.flagged => review.host!,

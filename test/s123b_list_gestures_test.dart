@@ -489,7 +489,7 @@ void main() {
         watchlist: watchlist,
       );
       expect(find.textContaining('3 个自选资产'), findsOneWidget);
-      expect(find.text('MINING 3 · 拖动排序 · 左滑删除'), findsOneWidget);
+      expect(find.text('Mining 3 · 拖动排序 · 左滑删除'), findsOneWidget);
 
       final row = find.byKey(ValueKey<String>('watchlist-item-$s5WbnbAssetId'));
       await tester.ensureVisible(row);
@@ -565,7 +565,7 @@ void main() {
       // the list's own label says what the list shows.
       expect(find.textContaining('3 个自选资产'), findsOneWidget);
       expect(find.textContaining('4 个自选资产'), findsNothing);
-      expect(find.text('MINING 3 · 拖动排序 · 左滑删除'), findsOneWidget);
+      expect(find.text('Mining 3 · 拖动排序 · 左滑删除'), findsOneWidget);
     });
   });
 

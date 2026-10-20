@@ -9,10 +9,9 @@ enum LoopRoundKeyTone {
   /// glyph. A page names it explicitly; it is no longer the default (S241c).
   primary,
 
-  /// Every other key: the `#111114` card behind a 1px `#4A4754` edge with a
-  /// Chalk glyph (decision 0210). An [LoopRoundKey.active] key (an open
-  /// microphone, a raised hand) is selected, so it wears the Purple state —
-  /// Purple 9 % ground behind a Purple edge.
+  /// Every other key: the raised `#1C1B22` ground with a Chalk glyph and no
+  /// edge (decision 0211). An [LoopRoundKey.active] key (an open microphone,
+  /// a raised hand) is selected, so it wears the Purple state.
   quiet,
 
   /// The leaving key (结束 / 离开): the outlined card with the glyph in the
@@ -20,8 +19,8 @@ enum LoopRoundKeyTone {
   fall,
 }
 
-/// The side of a key's square face (decision 0127, OKX 4908). The name is
-/// retained from the round key; the face is square since S241c.
+/// The side of a key's face (decision 0127, OKX 4908). The face is a 12
+/// radius tile since decision 0211.
 const double loopRoundKeyDiameter = 56;
 
 /// One action key (decision 0127, reskinned by decision 0210 / S241c): a 56
@@ -77,26 +76,28 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
+    // Decision 0211: a filled 12 radius face with no edge; an active key is
+    // the Purple selected ground, and a press deepens the face.
     final Color face;
-    final Color edge;
+    final Color? edge;
     final Color glyph;
     if (!enabled) {
       face = LoopColors.card;
-      edge = LoopColors.line;
+      edge = null;
       glyph = LoopColors.text3;
     } else {
       switch (widget.tone) {
         case LoopRoundKeyTone.primary:
           face = LoopColors.yellow;
-          edge = LoopColors.yellow;
+          edge = null;
           glyph = LoopColors.ink;
         case LoopRoundKeyTone.quiet:
-          face = widget.active ? LoopColors.purpleSoft : LoopColors.card;
-          edge = widget.active ? LoopColors.purple : LoopColors.line3;
-          glyph = LoopColors.chalk;
+          face = widget.active ? LoopColors.purpleSelected : LoopColors.card2;
+          edge = widget.active ? LoopColors.purple : null;
+          glyph = widget.active ? LoopColors.yellow : LoopColors.chalk;
         case LoopRoundKeyTone.fall:
-          face = LoopColors.card;
-          edge = LoopColors.line3;
+          face = LoopColors.card2;
+          edge = null;
           glyph = LoopColors.fall;
       }
     }
@@ -134,11 +135,13 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
                       height: loopRoundKeyDiameter,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: face,
+                        color: pressed
+                            ? (face == LoopColors.yellow
+                                  ? LoopColors.yellowPressed
+                                  : LoopColors.line)
+                            : face,
                         borderRadius: LoopRadius.button,
-                        border: Border.all(
-                          color: pressed ? LoopColors.purple : edge,
-                        ),
+                        border: edge == null ? null : Border.all(color: edge),
                       ),
                       child: LoopIcon(widget.icon, size: 24, color: glyph),
                     ),
@@ -153,7 +156,7 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: LoopColors.yellow,
-                            borderRadius: LoopRadius.badge,
+                            borderRadius: LoopRadius.pill,
                             border: Border.all(color: LoopColors.ink, width: 2),
                           ),
                           child: Text(

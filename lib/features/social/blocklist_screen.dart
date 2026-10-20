@@ -67,12 +67,12 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: 'BLOCKED ENTITIES',
+        kicker: '屏蔽名单',
         heading: state.userCount == null
             ? communityMissingHeading
             : '${state.userCount} 个已屏蔽账号',
         caption: '屏蔽优先于关注与私聊。解除屏蔽不会恢复关注关系。',
-        stamp: 'PRIVATE',
+        stamp: '私密',
       ),
       filters: Padding(
         padding: const EdgeInsets.symmetric(

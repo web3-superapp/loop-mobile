@@ -121,9 +121,9 @@ class _MemeStatCell extends StatelessWidget {
       child: Container(
         key: stat.statKey,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: LoopColors.card,
-          border: Border.all(color: LoopColors.line2),
+          borderRadius: LoopRadius.control,
         ),
         child: ExcludeSemantics(
           child: Column(
@@ -146,7 +146,7 @@ class _MemeStatCell extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                LoopType.caps(stat.label),
+                stat.label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: LoopType.kicker.copyWith(color: LoopColors.text3),
@@ -172,18 +172,20 @@ enum MemeTagTone {
   idle,
 }
 
-/// The decoration of a stage tag in [tone] (0 radius, no shadow).
+/// The decoration of a stage tag in [tone] (decision 0211: a filled 6
+/// radius tag, no edge).
 BoxDecoration memeTagDecoration(MemeTagTone tone) => switch (tone) {
-  MemeTagTone.live => BoxDecoration(
-    border: Border.all(color: LoopColors.yellow),
+  MemeTagTone.live => const BoxDecoration(
+    color: LoopColors.yellowSoft,
+    borderRadius: LoopRadius.badge,
   ),
-  MemeTagTone.done => BoxDecoration(
-    color: LoopColors.purpleSoft,
-    border: Border.all(color: LoopColors.purpleLine),
+  MemeTagTone.done => const BoxDecoration(
+    color: LoopColors.purpleSelected,
+    borderRadius: LoopRadius.badge,
   ),
-  MemeTagTone.idle => BoxDecoration(
+  MemeTagTone.idle => const BoxDecoration(
     color: LoopColors.card2,
-    border: Border.all(color: LoopColors.line2),
+    borderRadius: LoopRadius.badge,
   ),
 };
 

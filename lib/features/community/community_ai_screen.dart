@@ -274,7 +274,7 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
         archetype: LoopFolioArchetype.listing,
         ring: false,
         headingTone: LoopFolioHeadingTone.neutral,
-        kicker: 'COMMUNITY BRIEF',
+        kicker: '社区简报',
         heading: communityAiBriefHeading(summary),
         caption: summary.summary,
       );
@@ -291,7 +291,7 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
       archetype: LoopFolioArchetype.listing,
       ring: false,
       headingTone: LoopFolioHeadingTone.neutral,
-      kicker: 'COMMUNITY BRIEF',
+      kicker: '社区简报',
       heading: absence.heading,
       caption: absence.caption,
     );
@@ -498,12 +498,12 @@ class _CommunityAiQuestionBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: LoopColors.purpleSoft,
+                color: LoopColors.purpleSelected,
                 borderRadius: const BorderRadiusDirectional.only(
-                  topStart: Radius.circular(LoopRadius.controlValue),
+                  topStart: Radius.circular(LoopRadius.bubbleValue),
                   topEnd: LoopRadius.bubbleTail,
-                  bottomStart: Radius.circular(LoopRadius.controlValue),
-                  bottomEnd: Radius.circular(LoopRadius.controlValue),
+                  bottomStart: Radius.circular(LoopRadius.bubbleValue),
+                  bottomEnd: Radius.circular(LoopRadius.bubbleValue),
                 ),
               ),
               child: Text(
@@ -571,7 +571,6 @@ class _CommunityAiTurn extends StatelessWidget {
           decoration: BoxDecoration(
             color: LoopGround.fillOf(context),
             shape: BoxShape.circle,
-            border: Border.all(color: LoopGround.hairlineOf(context)),
           ),
           child: const LoopIcon('ai', size: 16, color: LoopColors.text3),
         ),
@@ -597,9 +596,9 @@ class _CommunityAiTurn extends StatelessWidget {
                   color: LoopGround.fillOf(context),
                   borderRadius: const BorderRadiusDirectional.only(
                     topStart: LoopRadius.bubbleTail,
-                    topEnd: Radius.circular(LoopRadius.controlValue),
-                    bottomStart: Radius.circular(LoopRadius.controlValue),
-                    bottomEnd: Radius.circular(LoopRadius.controlValue),
+                    topEnd: Radius.circular(LoopRadius.bubbleValue),
+                    bottomStart: Radius.circular(LoopRadius.bubbleValue),
+                    bottomEnd: Radius.circular(LoopRadius.bubbleValue),
                   ),
                 ),
                 child: bubble,
@@ -1058,7 +1057,7 @@ class _CommunityAiClosedPage extends ConsumerWidget {
         // Lime is this app's success colour; a closed capability is not good
         // news, so the heading stays Chalk.
         headingTone: LoopFolioHeadingTone.neutral,
-        kicker: 'COMMUNITY BRIEF',
+        kicker: '社区简报',
         heading: communityAiHeadline,
         caption: communityAiHeroCaption(reason),
       ),

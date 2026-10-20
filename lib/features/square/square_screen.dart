@@ -346,13 +346,12 @@ class LiveVoiceRoomCard extends StatelessWidget {
             '${inRoom ? '，你已在房间里' : ''}'
             '${room.joinable ? '' : '，加入社区后可进入'}',
         excludeSemantics: true,
-        // Decision 0210 (S241b): the flat looplabs card — `#111114` behind
-        // a 1px `#38333E` edge, square, no lift; a press shows purple.
+        // Decision 0211: the `#111114` card, 16 radius, no edge; a press
+        // shows purple.
         child: Material(
           color: LoopColors.card,
-          shape: const Border.fromBorderSide(
-            BorderSide(color: LoopColors.line2),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: LoopRadius.card),
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
             highlightColor: LoopColors.purpleSoft,

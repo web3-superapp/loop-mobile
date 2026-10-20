@@ -759,7 +759,7 @@ class _DeviceManagementScreenState
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
-        kicker: 'DEVICE SESSIONS',
+        kicker: '设备会话',
         heading: directory == null
             ? '设备管理'
             : '${directory.deviceCount} 台设备 · ${directory.activeCount} 个会话',
@@ -1044,10 +1044,10 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
-        kicker: 'WALLET KEY CONTROL',
+        kicker: '钱包密钥',
         heading: '私钥由你控制',
         caption: '导出前完成风险阅读、身份验证与本地显示确认。',
-        stamp: 'SENSITIVE',
+        stamp: '敏感',
         ring: false,
       ),
       body: <Widget>[
@@ -1185,7 +1185,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
-        kicker: 'SOCIAL RECOVERY',
+        kicker: '社交恢复',
         heading: '2-of-3 守护人',
         caption: '守护人只参与恢复确认，不能查看资产或发起交易。',
         stamp: '2 OF 3',

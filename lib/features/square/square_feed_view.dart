@@ -486,8 +486,8 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
     final price = token.priceUsd1;
     final move = squareFeedQuoteMove(token);
     return Material(
-      color: LoopColors.card,
-      shape: const Border.fromBorderSide(BorderSide(color: LoopColors.line2)),
+      color: LoopColors.card2,
+      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         key: const ValueKey<String>('square-post-token'),

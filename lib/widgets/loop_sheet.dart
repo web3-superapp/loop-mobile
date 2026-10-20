@@ -64,7 +64,7 @@ Future<T?> showLoopSheet<T>(
 }
 
 // Decision 0210: the sheet is square like every other surface.
-const BorderRadius _radius = LoopRadius.shell;
+const BorderRadius _radius = LoopRadius.sheetTop;
 
 /// The sheet surface itself (also usable inline for showcase pages).
 class LoopSheet extends StatelessWidget {
@@ -118,7 +118,6 @@ class LoopSheet extends StatelessWidget {
             decoration: const BoxDecoration(
               color: LoopColors.ink,
               borderRadius: _radius,
-              border: Border(top: BorderSide(color: LoopColors.line2)),
             ),
             // Decision 0210: flat — no glow layer, no lift.
             child: DecoratedBox(

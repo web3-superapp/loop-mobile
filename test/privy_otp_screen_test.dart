@@ -79,9 +79,9 @@ void main() {
     final title = tester.widget<Text>(
       find.descendant(of: find.byType(LoopTopbar), matching: find.text('验证邮箱')),
     );
-    // Decision 0210: the step title is Anton.
+    // Decision 0211: the step title is bold Arimo / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
-    expect(title.style?.fontFamily, LoopFonts.display);
+    expect(title.style?.fontFamily, LoopFonts.body);
   });
 
   testWidgets('a rejected code spends one attempt and shows the remainder', (

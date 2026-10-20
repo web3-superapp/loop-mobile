@@ -717,8 +717,7 @@ class _QuickActionTile extends StatelessWidget {
         ? LoopColors.bg2
         : lime
         ? LoopColors.yellow
-        : LoopColors.card;
-    final edge = lime ? LoopColors.yellow : LoopColors.line3;
+        : LoopColors.card2;
     final onTap = run ?? (reason == null ? null : () => onBlocked(reason));
     return Semantics(
       button: true,
@@ -742,7 +741,7 @@ class _QuickActionTile extends StatelessWidget {
                 height: 56,
                 decoration: BoxDecoration(
                   color: disc,
-                  border: Border.all(color: edge),
+                  borderRadius: LoopRadius.control,
                 ),
                 alignment: Alignment.center,
                 child: action.glyph(ink),

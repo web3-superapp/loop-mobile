@@ -42,7 +42,7 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
-  group('1 · action keys are square and outlined', () {
+  group('1 · action keys are 12 radius filled tiles (0211)', () {
     testWidgets('default is the outlined key; primary is Yellow; '
         'a press turns the edge Purple', (tester) async {
       var taps = 0;
@@ -83,13 +83,13 @@ void main() {
 
       final main = _faceOf(tester, const ValueKey<String>('k-main'));
       expect(main.shape, BoxShape.rectangle);
-      expect(main.borderRadius, BorderRadius.zero);
+      expect(main.borderRadius, LoopRadius.button);
       expect(main.color, LoopColors.yellow);
 
       final share = _faceOf(tester, const ValueKey<String>('k-share'));
       expect(share.shape, BoxShape.rectangle);
-      expect(share.color, LoopColors.card);
-      expect((share.border! as Border).top.color, LoopColors.line3);
+      expect(share.color, LoopColors.card2);
+      expect(share.border, isNull);
       expect(
         tester.getSize(
           find.descendant(
@@ -104,27 +104,24 @@ void main() {
       expect(off.color, isNot(LoopColors.yellow));
 
       final on = _faceOf(tester, const ValueKey<String>('k-on'));
-      expect(on.color, LoopColors.purpleSoft);
+      expect(on.color, LoopColors.purpleSelected);
       expect((on.border! as Border).top.color, LoopColors.purple);
 
+      // A press deepens the face; it never moves.
       final gesture = await tester.startGesture(
         tester.getCenter(find.byKey(const ValueKey<String>('k-share'))),
       );
       await tester.pump();
       expect(
-        (_faceOf(tester, const ValueKey<String>('k-share')).border! as Border)
-            .top
-            .color,
-        LoopColors.purple,
+        _faceOf(tester, const ValueKey<String>('k-share')).color,
+        LoopColors.line,
       );
       await gesture.up();
       await tester.pump(const Duration(milliseconds: 300));
       expect(taps, 1);
       expect(
-        (_faceOf(tester, const ValueKey<String>('k-share')).border! as Border)
-            .top
-            .color,
-        LoopColors.line3,
+        _faceOf(tester, const ValueKey<String>('k-share')).color,
+        LoopColors.card2,
       );
     });
   });
@@ -165,18 +162,23 @@ void main() {
             )
             .first,
       );
+      // Decision 0211: a Purple 18 % block — 12 radius framed, a capsule
+      // quiet — with no underline and no edge.
       for (final key in <String>['framed-on', 'quiet-on']) {
         final material = materialOf(key);
-        expect(material.color, LoopColors.purpleSoft, reason: key);
-        final shape = material.shape! as Border;
-        expect(shape.bottom.color, LoopColors.purple, reason: key);
-        expect(shape.bottom.width, 2, reason: key);
+        expect(material.color, LoopColors.purpleSelected, reason: key);
+        final shape = material.shape! as RoundedRectangleBorder;
+        expect(shape.side, BorderSide.none, reason: key);
       }
       expect(
-        (materialOf('framed-on').shape! as Border).left.color,
-        LoopColors.line2,
+        (materialOf('framed-on').shape! as RoundedRectangleBorder).borderRadius,
+        LoopRadius.button,
       );
-      expect(materialOf('framed-off').color, LoopColors.card);
+      expect(
+        (materialOf('quiet-on').shape! as RoundedRectangleBorder).borderRadius,
+        LoopRadius.pill,
+      );
+      expect(materialOf('framed-off').color, LoopColors.card2);
       expect(
         tester.widget<Text>(find.text('A')).style?.color,
         LoopColors.yellow,
@@ -225,23 +227,25 @@ void main() {
               matching: find.byWidgetPredicate(
                 (widget) =>
                     widget is Container &&
-                    widget.foregroundDecoration is BoxDecoration,
+                    widget.decoration is BoxDecoration &&
+                    (widget.decoration! as BoxDecoration).borderRadius ==
+                        LoopRadius.button,
               ),
             )
             .first,
       );
       final on = faceOf('b-on');
-      expect((on.decoration! as BoxDecoration).color, LoopColors.purpleSoft);
-      final underline =
-          (on.foregroundDecoration! as BoxDecoration).border! as Border;
-      expect(underline.bottom.color, LoopColors.purple);
-      expect(underline.bottom.width, 2);
+      expect(
+        (on.decoration! as BoxDecoration).color,
+        LoopColors.purpleSelected,
+      );
+      expect(on.foregroundDecoration, isNull);
       expect(
         tester.widget<Text>(find.text('一')).style?.color,
         LoopColors.yellow,
       );
       final off = faceOf('b-off');
-      expect((off.decoration! as BoxDecoration).color, isNull);
+      expect((off.decoration! as BoxDecoration).color, LoopColors.card2);
       expect(
         tester.getSemantics(find.byKey(const ValueKey<String>('b-on'))),
         matchesSemantics(
@@ -277,10 +281,11 @@ void main() {
     );
     final decoration = strip.decoration! as BoxDecoration;
     expect(decoration.color, LoopColors.card);
+    // Decision 0211: only the seam above the strip is drawn.
     final border = decoration.border! as Border;
     expect(border.top.color, LoopColors.line);
-    expect(border.left.color, LoopColors.line2);
-    expect(border.bottom.color, LoopColors.line2);
+    expect(border.left, BorderSide.none);
+    expect(border.bottom, BorderSide.none);
     expect(
       DefaultTextStyle.of(tester.element(find.text('明细'))).style.color,
       LoopColors.chalk,
@@ -292,13 +297,16 @@ void main() {
       ),
     );
     expect(rule.color, LoopColors.line);
-    // The welded folio leaves its bottom open for the strip's seam.
+    // The welded folio keeps only its top corners round and has no edge.
     final folio = tester.widget<Container>(
       find.byKey(const ValueKey<String>('loop-folio-primary')),
     );
-    final folioBorder = (folio.decoration! as BoxDecoration).border! as Border;
-    expect(folioBorder.bottom, BorderSide.none);
-    expect(folioBorder.top.color, LoopColors.line2);
+    final folioDecoration = folio.decoration! as BoxDecoration;
+    expect(folioDecoration.border, isNull);
+    expect(
+      folioDecoration.borderRadius,
+      const BorderRadius.vertical(top: Radius.circular(LoopRadius.cardValue)),
+    );
   });
 
   testWidgets('4 · a folio draws no corner ring unless asked', (tester) async {

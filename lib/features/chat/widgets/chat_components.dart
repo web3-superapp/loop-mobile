@@ -699,8 +699,7 @@ class ChatMessageTile extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: LoopColors.elevated,
-                                border: Border.all(color: LoopColors.line),
-                                borderRadius: LoopRadius.badge,
+                                borderRadius: LoopRadius.pill,
                               ),
                               // Decision 0121: the glyph and the count.
                               child: Semantics(
@@ -758,23 +757,16 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: message.isMine
-            ? LoopColors.mint.withValues(alpha: 0.12)
-            : LoopColors.elevated,
-        border: Border.all(
-          color: message.isMine
-              ? LoopColors.mint.withValues(alpha: 0.25)
-              : LoopColors.line,
-        ),
+        color: message.isMine ? LoopColors.purpleSelected : LoopColors.elevated,
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(LoopRadius.tileValue),
-          topRight: const Radius.circular(LoopRadius.tileValue),
+          topLeft: const Radius.circular(LoopRadius.bubbleValue),
+          topRight: const Radius.circular(LoopRadius.bubbleValue),
           bottomLeft: message.isMine
-              ? const Radius.circular(LoopRadius.tileValue)
+              ? const Radius.circular(LoopRadius.bubbleValue)
               : LoopRadius.bubbleTail,
           bottomRight: message.isMine
               ? LoopRadius.bubbleTail
-              : const Radius.circular(LoopRadius.tileValue),
+              : const Radius.circular(LoopRadius.bubbleValue),
         ),
       ),
       child: Padding(
@@ -1065,10 +1057,7 @@ class ChatMiniVoiceBar extends ConsumerWidget {
         color: LoopColors.elevated,
         elevation: 12,
         shadowColor: Colors.black.withValues(alpha: 0.5),
-        shape: const RoundedRectangleBorder(
-          borderRadius: LoopRadius.medium,
-          side: BorderSide(color: LoopColors.line),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.card),
         child: InkWell(
           onTap: onOpen ?? () => context.push('/chat/voice'),
           borderRadius: LoopRadius.medium,

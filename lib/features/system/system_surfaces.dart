@@ -649,8 +649,8 @@ class _CenteredStateBlock extends StatelessWidget {
         container: true,
         child: DecoratedBox(
           decoration: BoxDecoration(
+            color: LoopColors.card,
             borderRadius: LoopRadius.card,
-            border: Border.all(color: LoopColors.line),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 22),

@@ -52,8 +52,7 @@ void main() {
           (widget) =>
               widget is Container &&
               widget.decoration is BoxDecoration &&
-              (widget.decoration! as BoxDecoration).color ==
-                  LoopColors.graphite,
+              (widget.decoration! as BoxDecoration).color == LoopColors.card2,
         ),
       ),
     );
@@ -64,9 +63,9 @@ void main() {
     expect(844 - chalkRect.bottom, 34);
     final decoration = chalk.decoration! as BoxDecoration;
     expect(decoration.borderRadius, LoopRadius.tabBar);
-    // Decision 0210: flat — no lift, a 1px card edge painted over the bar.
+    // Decision 0211: no lift and no edge; a 20 radius raised bar.
     expect(decoration.boxShadow, isNull);
-    expect(chalk.foregroundDecoration, isNotNull);
+    expect(chalk.foregroundDecoration, isNull);
   });
 
   testWidgets('one Lime indicator marks the selection; the cells stay bare', (
@@ -118,10 +117,11 @@ void main() {
     expect(indicator, findsOneWidget);
     final decoration =
         tester.widget<Container>(indicator).decoration! as BoxDecoration;
-    // Decision 0210: a flat Purple selection ground with a Purple underline.
+    // Decision 0211: a Purple 18 % block with a 12 radius around the glyph.
     expect(decoration.gradient, isNull);
-    expect(decoration.color, LoopColors.purpleSoft);
-    expect((decoration.border! as Border).bottom.color, LoopColors.purple);
+    expect(decoration.color, LoopColors.purpleSelected);
+    expect(decoration.borderRadius, LoopRadius.control);
+    expect(decoration.border, isNull);
     expect(
       find.descendant(of: find.byType(LoopTabItem), matching: indicator),
       findsNothing,
@@ -387,7 +387,7 @@ void main() {
     final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
     expect(rail.selectedIndex, 3);
     expect(rail.backgroundColor, LoopColors.ink);
-    expect(rail.indicatorColor, LoopColors.lime);
+    expect(rail.indicatorColor, LoopColors.purpleSelected);
     expect(rail.destinations.map((d) => (d.label as Text).data), <String>[
       '聊天',
       '广场',

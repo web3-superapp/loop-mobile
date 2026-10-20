@@ -150,7 +150,7 @@ void main() {
       final join = _key('community-join-action');
       expect(join, findsOneWidget);
       expect(tester.widget<LoopButton>(join).label, '加入社区');
-      expect(tester.getSize(join).height, 52);
+      expect(tester.getSize(join).height, LoopTouch.primaryButton);
       expect(_key('community-profile-manage'), findsNothing);
       // Without membership the directory is not read and no strip drawn.
       expect(_key('community-profile-member-strip'), findsNothing);

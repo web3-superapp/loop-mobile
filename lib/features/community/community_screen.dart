@@ -131,7 +131,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             key: const ValueKey<String>('community-folio'),
             variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.listing,
-            kicker: 'COMMUNITY INDEX',
+            kicker: '社区索引',
             // A read that is still running is not a read that failed.
             // The skeleton below was already saying 「正在读取」 while
             // this hero said 「暂无数值 / 社区数据暂时读不到」 for the

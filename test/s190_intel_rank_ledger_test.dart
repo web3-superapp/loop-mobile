@@ -163,11 +163,11 @@ void main() {
         intelRankLedgerKicker(
           _rank(MiningRankScope.communities, _communities()),
         ),
-        'POWER BOARD · 快照 ${intelRankMonthDayClock(snapshot.computedAt)}',
+        '算力榜 · 快照 ${intelRankMonthDayClock(snapshot.computedAt)}',
       );
       expect(
         intelRankLedgerKicker(_rank(MiningRankScope.referrals, _referrals)),
-        'POWER BOARD · 实时',
+        '算力榜 · 实时',
       );
       expect(
         intelRankLedgerKicker(
@@ -177,7 +177,7 @@ void main() {
             snapshot: const MiningSnapshotUnavailable('X'),
           ),
         ),
-        'POWER BOARD',
+        '算力榜',
       );
       expect(
         intelRankMonthDayClock(DateTime(2026, 10, 5, 4, 7)),
@@ -348,7 +348,7 @@ void main() {
       expect(find.text('TOP 8%'), findsOneWidget);
       expect(
         find.text(
-          'POWER BOARD · 快照 '
+          '算力榜 · 快照 '
           '${intelRankMonthDayClock(s7MiningSnapshot().computedAt)}',
         ),
         findsOneWidget,
@@ -548,7 +548,7 @@ void main() {
       await tester.tap(find.text('推广'));
       await tester.pumpAndSettle();
       expect(find.text('我的名次\n第 3 名'), findsOneWidget);
-      expect(find.text('POWER BOARD · 实时'), findsOneWidget);
+      expect(find.text('算力榜 · 实时'), findsOneWidget);
       expect(find.text('直接邀请 5 人 · 距第 2 名还差 3 人'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);
       expect(find.text('直接邀请 · 占第一名比例'), findsOneWidget);

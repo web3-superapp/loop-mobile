@@ -1064,7 +1064,6 @@ class LoopChatAiUnavailableBubble extends StatelessWidget {
             decoration: BoxDecoration(
               color: LoopGround.fillOf(context),
               shape: BoxShape.circle,
-              border: Border.all(color: LoopGround.hairlineOf(context)),
             ),
             child: const LoopIcon('ai', size: 16, color: LoopColors.text3),
           ),
@@ -1085,12 +1084,12 @@ class LoopChatAiUnavailableBubble extends StatelessWidget {
                     vertical: 10,
                   ),
                   decoration: const BoxDecoration(
-                    color: LoopColors.card,
+                    color: LoopColors.card2,
                     borderRadius: BorderRadiusDirectional.only(
                       topStart: Radius.circular(LoopRadius.bubbleTailValue),
-                      topEnd: Radius.circular(LoopRadius.controlValue),
-                      bottomStart: Radius.circular(LoopRadius.controlValue),
-                      bottomEnd: Radius.circular(LoopRadius.controlValue),
+                      topEnd: Radius.circular(LoopRadius.bubbleValue),
+                      bottomStart: Radius.circular(LoopRadius.bubbleValue),
+                      bottomEnd: Radius.circular(LoopRadius.bubbleValue),
                     ),
                   ),
                   child: Text(

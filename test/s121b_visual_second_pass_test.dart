@@ -164,10 +164,11 @@ void main() {
       final logo = tester.widget<MemeLogo>(find.byType(MemeLogo));
       expect(logo.size, 44);
       expect(logo.radius, LoopRadius.tileValue);
-      // 14 + 44 + 14 and a hairline.
+      // 14 + 44 + 14 and a hairline; the text column may make it a little
+      // shorter at the 1.5 leading (decision 0211), never taller.
       expect(
         tester.getSize(find.byType(MemeTokenCard)).height,
-        moreOrLessEquals(memeCardHeight + 1, epsilon: 0.5),
+        inInclusiveRange(14 + 44 + 14 + 1, memeCardHeight + 1.5),
       );
     });
 
@@ -448,6 +449,6 @@ void main() {
         .map((material) => material.color)
         .toList();
     expect(materials, isNot(contains(LoopColors.lime)));
-    expect(materials, contains(LoopColors.purpleSoft));
+    expect(materials, contains(LoopColors.purpleSelected));
   });
 }

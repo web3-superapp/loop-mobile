@@ -42,9 +42,9 @@ void main() {
     await tester.tap(back);
     expect(backs, 1);
     final title = tester.widget<Text>(find.text('无网络'));
-    // Band 2 `headingLg`: Anton 24 since decision 0210.
+    // Band 2 `headingLg`: Arimo 700 since decision 0211.
     expect(title.style?.fontSize, LoopType.headingLg.fontSize);
-    expect(title.style?.fontFamily, LoopFonts.display);
+    expect(title.style?.fontFamily, LoopFonts.body);
     expect(find.text('SYSTEM'), findsOneWidget);
     expect(find.bySemanticsLabel('搜索'), findsOneWidget);
   });
@@ -76,8 +76,9 @@ void main() {
         .toList();
     expect(folios, hasLength(3));
     final quiet = folios[0].decoration! as BoxDecoration;
-    expect(quiet.border, isNotNull);
-    // Decision 0210: flat — the card surface, no lift.
+    // Decision 0211: the card surface, 16 radius, no edge, no lift.
+    expect(quiet.border, isNull);
+    expect(quiet.borderRadius, LoopRadius.card);
     expect(quiet.color, LoopColors.card);
     expect(quiet.boxShadow, isNull);
     expect((folios[1].decoration! as BoxDecoration).color, LoopColors.lime);
@@ -123,18 +124,18 @@ void main() {
     );
     final ledger = boxOf('ledger').decoration as BoxDecoration;
     expect(ledger.color, LoopColors.lime);
-    expect(ledger.borderRadius, LoopRadius.shell);
+    expect(ledger.borderRadius, LoopRadius.card);
     expect(ledger.boxShadow, isNull);
     final quiet = boxOf('quiet').decoration as BoxDecoration;
     expect(quiet.boxShadow, isNull);
     expect(quiet.color, LoopColors.card);
-    expect(quiet.border, isNotNull);
+    expect(quiet.border, isNull);
     // S241c: the default `.chalk-card` is the flat dark card with Chalk ink;
     // `light: true` keeps the Chalk plate with Ink ink.
     final chalk = boxOf('chalk').decoration as BoxDecoration;
     expect(chalk.color, LoopColors.card);
     expect(chalk.borderRadius, LoopRadius.card);
-    expect((chalk.border! as Border).top.color, LoopColors.line2);
+    expect(chalk.border, isNull);
     final plate = boxOf('plate').decoration as BoxDecoration;
     expect(plate.color, LoopColors.chalk);
     expect(
@@ -144,7 +145,7 @@ void main() {
     final card = boxOf('card').decoration as BoxDecoration;
     expect(card.color, LoopColors.card);
     expect(card.boxShadow, isNull);
-    expect((card.border! as Border).top.color, LoopColors.line2);
+    expect(card.border, isNull);
     expect(
       tester.widget<Text>(find.text('ledger')).style?.color ??
           DefaultTextStyle.of(tester.element(find.text('ledger'))).style.color,
@@ -263,7 +264,7 @@ void main() {
       deco('loop-notice-warn').color,
       LoopColors.warning.withValues(alpha: 0.13),
     );
-    expect(deco('loop-notice-danger').color, LoopColors.card2);
+    expect(deco('loop-notice-danger').color, LoopColors.card);
     expect(find.textContaining('发生了什么'), findsOneWidget);
     expect(find.textContaining('影响什么'), findsOneWidget);
     expect(find.textContaining('下一步'), findsOneWidget);
@@ -334,9 +335,9 @@ void main() {
     final selectedMaterial = tester.widget<Material>(
       find.ancestor(of: find.text('全部'), matching: find.byType(Material)).first,
     );
-    // Decision 0210: the chosen quiet chip is the Purple selection ground
-    // with a Purple underline, never a Yellow fill.
-    expect(selectedMaterial.color, LoopColors.purpleSoft);
+    // Decision 0211: the chosen quiet chip is a Purple 18 % capsule, never
+    // a Yellow fill.
+    expect(selectedMaterial.color, LoopColors.purpleSelected);
     await tester.tap(find.text('资产'));
     await tester.pump();
     expect(selected, 2);
@@ -366,7 +367,8 @@ void main() {
 
     // Yellow at 40% over Ink is a dull olive carrying Ink-coloured text: it
     // reads as an enabled button in an odd colour, not as a disabled one.
-    expect(decorationAt(0).color, isNull);
+    // Decision 0211: a disabled primary falls back to the secondary ground.
+    expect(decorationAt(0).color, LoopColors.card2);
     expect(decorationAt(1).color, LoopColors.yellow);
   });
 

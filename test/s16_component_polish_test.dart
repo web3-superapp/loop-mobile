@@ -465,7 +465,7 @@ void main() {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             LoopFolioPrimary(
-              kicker: 'MINING POWER',
+              kicker: '挖矿算力',
               heading: '暂无数值',
               caption: caption,
               stamp: stamp,

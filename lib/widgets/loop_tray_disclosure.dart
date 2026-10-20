@@ -136,15 +136,12 @@ class _LoopTrayDisclosureState extends State<LoopTrayDisclosure>
               ),
               child: DecoratedBox(
                 key: const ValueKey<String>('loop-tray'),
-                // Decision 0210: square, flat, and edged like the card above
-                // it — the tray is the same surface, so the edge is what
-                // separates it from the page.
+                // Decision 0211: the tray is the card's own surface carried
+                // on below it, with the card's bottom corners and no edge.
                 decoration: const BoxDecoration(
-                  color: LoopColors.graphite,
-                  border: Border(
-                    left: BorderSide(color: LoopColors.line2),
-                    right: BorderSide(color: LoopColors.line2),
-                    bottom: BorderSide(color: LoopColors.line2),
+                  color: LoopColors.card2,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(LoopTrayDisclosure.trayRadius),
                   ),
                 ),
                 child: Padding(

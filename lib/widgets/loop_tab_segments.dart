@@ -122,7 +122,7 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                                   index < segments.length;
                                   index += 1
                                 ) ...<Widget>[
-                                  if (index > 0) const SizedBox(width: 18),
+                                  if (index > 0) const SizedBox(width: 6),
                                   _SegmentTab(
                                     key: ValueKey<String>(
                                       '$tabKey-segment-$index',
@@ -206,10 +206,11 @@ class _SegmentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ink = LoopGround.inkOf(context);
-    final style = selected
-        ? LoopType.headingLg.copyWith(color: ink)
-        : LoopType.headingSm.copyWith(color: LoopGround.auxiliaryOf(context));
+    // Decision 0211: the chosen segment is a Purple 18 % capsule with a
+    // Yellow word; the others are a grey word on nothing.
+    final style = LoopType.headingSm.copyWith(
+      color: selected ? LoopColors.yellow : LoopGround.auxiliaryOf(context),
+    );
     return Semantics(
       button: true,
       selected: selected,
@@ -217,7 +218,7 @@ class _SegmentTab extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: LoopRadius.control,
+        borderRadius: LoopRadius.pill,
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
         child: ConstrainedBox(
@@ -225,24 +226,23 @@ class _SegmentTab extends StatelessWidget {
             minHeight: LoopTouch.minimum,
             minWidth: LoopTouch.minimum,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(label, style: style),
-              const SizedBox(height: 4),
-              AnimatedContainer(
-                duration: MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                height: 3,
-                width: selected ? 18 : 0,
-                // Decision 0210: the chosen tab's underline is the Purple
-                // second accent (docs/42 附A §5, the hook-mode segment).
-                decoration: const BoxDecoration(color: LoopColors.purple),
+          child: Center(
+            widthFactor: 1,
+            child: AnimatedContainer(
+              key: ValueKey<String>('loop-segment-pill-$selected'),
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: selected
+                    ? LoopColors.purpleSelected
+                    : Colors.transparent,
+                borderRadius: LoopRadius.pill,
               ),
-            ],
+              child: Text(label, style: style),
+            ),
           ),
         ),
       ),

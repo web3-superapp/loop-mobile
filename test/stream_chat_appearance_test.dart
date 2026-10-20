@@ -23,8 +23,8 @@ void main() {
         'Chalk', () {
       final theme = loopStreamMessageItemTheme();
       final background = theme.bubble!.backgroundColor!;
-      expect(background.resolve(_outgoing), LoopColors.purpleSoft);
-      expect(background.resolve(_incoming), LoopColors.card);
+      expect(background.resolve(_outgoing), LoopColors.purpleSelected);
+      expect(background.resolve(_incoming), LoopColors.card2);
 
       final textColor = theme.text!.textColor!;
       expect(textColor.resolve(_outgoing), LoopColors.chalk);
@@ -43,7 +43,7 @@ void main() {
       );
     });
 
-    test('the tail corner sits on the sender side, 5 against 16', () {
+    test('the tail corner sits on the sender side, 6 against 16', () {
       final shape = loopStreamMessageItemTheme().bubble!.shape!;
       final outgoing = shape.resolve(_outgoing)! as RoundedRectangleBorder;
       final incoming = shape.resolve(_incoming)! as RoundedRectangleBorder;
@@ -53,12 +53,12 @@ void main() {
       expect(outgoingRadius.topEnd, LoopRadius.bubbleTail);
       expect(
         outgoingRadius.topStart,
-        const Radius.circular(LoopRadius.controlValue),
+        const Radius.circular(LoopRadius.bubbleValue),
       );
       expect(incomingRadius.topStart, LoopRadius.bubbleTail);
       expect(
         incomingRadius.topEnd,
-        const Radius.circular(LoopRadius.controlValue),
+        const Radius.circular(LoopRadius.bubbleValue),
       );
     });
 
@@ -307,11 +307,11 @@ void main() {
       final itemTheme = StreamMessageItemTheme.of(captured);
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_outgoing),
-        LoopColors.purpleSoft,
+        LoopColors.purpleSelected,
       );
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_incoming),
-        LoopColors.card,
+        LoopColors.card2,
       );
 
       // MaterialLocalizations must survive: LOOP adds a delegate, it does not

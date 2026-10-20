@@ -177,20 +177,14 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
     backgroundColor: StreamMessageLayoutProperty.resolveWith(
       (layout) => switch (layout.contentKind) {
         StreamMessageContentKind.jumbomoji => Colors.transparent,
-        _ => _isOutgoing(layout) ? LoopColors.purpleSoft : LoopColors.card,
+        _ => _isOutgoing(layout) ? LoopColors.purpleSelected : LoopColors.card2,
       },
     ),
-    // Decision 0210 (S241b): flat outlined surfaces. The other side's bubble
-    // is the `#111114` card with its `#38333E` edge; the reader's own is the
-    // purple selected-state ground with the purple line. Yellow stays on the
-    // send key, never on a message body.
+    // Decision 0211: filled bubbles with no edge. The other side's bubble is
+    // the raised `#1C1B22` ground; the reader's own is Purple 18 %. Yellow
+    // stays on the send key, never on a message body.
     side: StreamMessageLayoutBorderSide.resolveWith(
-      (layout) => switch (layout.contentKind) {
-        StreamMessageContentKind.jumbomoji => BorderSide.none,
-        _ => BorderSide(
-          color: _isOutgoing(layout) ? LoopColors.purpleLine : LoopColors.line2,
-        ),
-      },
+      (layout) => BorderSide.none,
     ),
     // `.msg-txt{border-radius:5px 16px 16px 16px}` and `.msg.me
     // .msg-txt{border-radius:16px 5px 16px 16px}` — one rule each, with no
@@ -204,15 +198,15 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
         borderRadius: switch (layout.alignment) {
           StreamMessageAlignment.start => const BorderRadiusDirectional.only(
             topStart: Radius.circular(LoopRadius.bubbleTailValue),
-            topEnd: Radius.circular(LoopRadius.controlValue),
-            bottomStart: Radius.circular(LoopRadius.controlValue),
-            bottomEnd: Radius.circular(LoopRadius.controlValue),
+            topEnd: Radius.circular(LoopRadius.bubbleValue),
+            bottomStart: Radius.circular(LoopRadius.bubbleValue),
+            bottomEnd: Radius.circular(LoopRadius.bubbleValue),
           ),
           StreamMessageAlignment.end => const BorderRadiusDirectional.only(
-            topStart: Radius.circular(LoopRadius.controlValue),
+            topStart: Radius.circular(LoopRadius.bubbleValue),
             topEnd: Radius.circular(LoopRadius.bubbleTailValue),
-            bottomStart: Radius.circular(LoopRadius.controlValue),
-            bottomEnd: Radius.circular(LoopRadius.controlValue),
+            bottomStart: Radius.circular(LoopRadius.bubbleValue),
+            bottomEnd: Radius.circular(LoopRadius.bubbleValue),
           ),
         },
       ),
@@ -304,7 +298,7 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
   quotedMessageTheme: StreamQuotedMessageThemeData(
     backgroundColor: LoopColors.card,
     indicatorColor: LoopColors.purple,
-    side: const BorderSide(color: LoopColors.line2),
+    side: BorderSide.none,
     titleTextStyle: LoopTypography.label(12, color: LoopColors.text2),
     subtitleTextStyle: LoopTypography.caption(11),
   ),
@@ -707,7 +701,6 @@ class _LoopStreamMessageLeading extends StatelessWidget {
             decoration: BoxDecoration(
               color: LoopGround.fillOf(context),
               shape: BoxShape.circle,
-              border: Border.all(color: LoopGround.hairlineOf(context)),
             ),
             child: LoopIcon(
               'users',

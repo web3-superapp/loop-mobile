@@ -36,9 +36,14 @@ void main() {
         .color!;
 
     expect(background, LoopColors.ink);
-    expect(indicator, LoopColors.yellow);
+    // Decision 0211: a Purple 18 % block behind a Yellow glyph.
+    expect(indicator, LoopColors.purpleSelected);
+    final indicatorOnInk = Color.alphaBlend(indicator, background);
     expect(
-      _contrastRatio(Color.alphaBlend(selectedIcon, indicator), indicator),
+      _contrastRatio(
+        Color.alphaBlend(selectedIcon, indicatorOnInk),
+        indicatorOnInk,
+      ),
       greaterThanOrEqualTo(3),
     );
     expect(

@@ -452,7 +452,7 @@ String? intelRankParticipantsDetail(MiningRank rank) {
 // ---------------------------------------------------------------------------
 
 /// The kicker every board's ledger card opens with.
-const String intelRankLedgerKickerBase = 'POWER BOARD';
+const String intelRankLedgerKickerBase = '算力榜';
 
 /// 「POWER BOARD · 快照 10-15 04:00」 on the two power boards (the snapshot's
 /// own computation time, local), 「POWER BOARD · 实时」 on 推广, which reads

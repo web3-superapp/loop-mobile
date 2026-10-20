@@ -340,7 +340,7 @@ void main() {
               .color;
       expect(disc('兑换'), LoopColors.yellow);
       for (final label in const <String>['接收', '发送', '扫码']) {
-        expect(disc(label), LoopColors.card, reason: label);
+        expect(disc(label), LoopColors.card2, reason: label);
       }
       final glyph = tester.widget<LoopIcon>(
         find.descendant(

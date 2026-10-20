@@ -231,15 +231,17 @@ class LoopTabBar extends StatelessWidget {
     final indicator = FractionallySizedBox(
       widthFactor: 1 / count,
       heightFactor: 1,
-      child: Container(
-        key: const ValueKey<String>('loop-tab-indicator'),
-        // Decision 0210 (the hook-mode segment, docs/42 附A §5): the chosen
-        // cell is a Purple 9 % ground over a 2px Purple underline; its glyph
-        // and word turn Yellow.
-        decoration: const BoxDecoration(
-          color: LoopColors.purpleSoft,
-          border: Border(
-            bottom: BorderSide(color: LoopColors.purple, width: 2),
+      // Decision 0211: the chosen cell's glyph sits in a Purple 18 %
+      // block with a 12 radius; its glyph and word turn Yellow.
+      child: Align(
+        alignment: const Alignment(0, -0.7),
+        child: Container(
+          key: const ValueKey<String>('loop-tab-indicator'),
+          width: 48,
+          height: 30,
+          decoration: const BoxDecoration(
+            color: LoopColors.purpleSelected,
+            borderRadius: LoopRadius.control,
           ),
         ),
       ),
@@ -257,18 +259,11 @@ class LoopTabBar extends StatelessWidget {
             child: Container(
               height: LoopTouch.tabBarHeight,
               padding: const EdgeInsets.all(LoopLayout.tabBarPadding),
-              // Decision 0210: the bar is the dark card surface behind a 1px
-              // card edge, square, with no lift.
+              // Decision 0211: the bar is the raised card surface with a 20
+              // radius and no edge.
               decoration: const BoxDecoration(
-                color: LoopColors.graphite,
+                color: LoopColors.card2,
                 borderRadius: LoopRadius.tabBar,
-              ),
-              // Painted over the bar rather than laid out inside it, so the
-              // cells keep their exact width.
-              foregroundDecoration: const BoxDecoration(
-                border: Border.fromBorderSide(
-                  BorderSide(color: LoopColors.line2),
-                ),
               ),
               child: LoopDockBar(
                 count: count,
@@ -482,7 +477,7 @@ class _DesktopRail extends StatelessWidget {
         minExtendedWidth: 212,
         groupAlignment: -0.72,
         backgroundColor: LoopColors.ink,
-        indicatorColor: LoopColors.lime,
+        indicatorColor: LoopColors.purpleSelected,
         onDestinationSelected: onSelect,
         leading: Padding(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),

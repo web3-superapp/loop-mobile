@@ -95,7 +95,10 @@ void main() {
         tester,
         LoopButton(label: '保存', primary: true, block: true, onPressed: () {}),
       );
-      expect(tester.getSize(find.byType(LoopButton)).height, 52);
+      expect(
+        tester.getSize(find.byType(LoopButton)).height,
+        LoopTouch.primaryButton,
+      );
       expect(tester.widget<Text>(find.text('保存')).style?.fontSize, 16);
     });
 
@@ -218,7 +221,7 @@ void main() {
         );
         final decoration = face.decoration! as BoxDecoration;
         expect(decoration.shape, BoxShape.rectangle, reason: key);
-        expect(decoration.color, LoopColors.card, reason: key);
+        expect(decoration.color, LoopColors.card2, reason: key);
       }
 
       expect(_labels(tester), containsAllInOrder(<String>['账号', '资产与挖矿']));
@@ -331,7 +334,7 @@ void main() {
         tester
             .getSize(find.byKey(const ValueKey<String>('profile-edit-save')))
             .height,
-        52,
+        LoopTouch.primaryButton,
       );
       _expectCleanCopy(tester);
     });

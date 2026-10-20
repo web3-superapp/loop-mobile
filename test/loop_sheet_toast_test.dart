@@ -51,9 +51,9 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sheet')),
       );
       final decoration = sheet.decoration! as BoxDecoration;
-      // Decision 0210: the sheet is square.
-      expect(decoration.borderRadius, BorderRadius.zero);
-      expect(decoration.border!.top.color, LoopColors.line2);
+      // Decision 0211: the sheet has 20 radius top corners and no edge.
+      expect(decoration.borderRadius, LoopRadius.sheetTop);
+      expect(decoration.border, isNull);
       expect(opener.hasFocus, isFalse);
 
       // Tapping the veil closes the sheet (background stays inert meanwhile).

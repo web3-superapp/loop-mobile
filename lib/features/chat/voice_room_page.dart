@@ -283,8 +283,7 @@ class _SpeakerCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: LoopColors.basalt.withValues(alpha: 0.82),
-        borderRadius: LoopRadius.medium,
-        border: Border.all(color: LoopColors.line),
+        borderRadius: LoopRadius.card,
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),

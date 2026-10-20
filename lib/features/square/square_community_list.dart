@@ -383,9 +383,9 @@ class _SquareSearchEntry extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
+                color: LoopColors.input,
                 borderRadius: LoopRadius.control,
-                border: Border.all(color: LoopColors.line),
               ),
               child: Row(
                 children: <Widget>[

@@ -335,10 +335,17 @@ void main() {
             )
             .first,
       );
-      expect((fill.decoration! as BoxDecoration).color, LoopColors.chalk);
+      // Decision 0211: a danger button is outlined in red with a red word.
+      expect((fill.decoration! as BoxDecoration).color, isNull);
+      expect(
+        ((fill.foregroundDecoration! as BoxDecoration).border! as Border)
+            .top
+            .color,
+        LoopColors.danger,
+      );
       expect(
         tester.widget<LoopIcon>(find.byType(LoopIcon)).color,
-        LoopColors.ink,
+        LoopColors.danger,
       );
       expect(find.bySemanticsLabel('断开语音连接'), findsOneWidget);
     });

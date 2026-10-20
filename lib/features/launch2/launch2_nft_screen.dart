@@ -671,7 +671,7 @@ class _NftFolio extends StatelessWidget {
       headingTone: view.statusLit
           ? LoopFolioHeadingTone.accent
           : LoopFolioHeadingTone.neutral,
-      kicker: 'CONSENSUS MEDAL',
+      kicker: '共识勋章',
       heading: launch2HeroTicker(row.ticker),
       caption: caption,
       stamp: stamp,

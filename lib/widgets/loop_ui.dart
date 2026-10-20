@@ -74,7 +74,7 @@ class LoopPage extends StatelessWidget {
                           children: <Widget>[
                             if (eyebrow != null) ...<Widget>[
                               Text(
-                                eyebrow!.toUpperCase(),
+                                eyebrow!,
                                 style: Theme.of(context).textTheme.labelMedium
                                     ?.copyWith(
                                       color: LoopColors.mint,
@@ -161,10 +161,12 @@ class LoopCard extends StatelessWidget {
     final card = DecoratedBox(
       decoration: BoxDecoration(
         color: LoopColors.basalt.withValues(alpha: 0.94),
-        borderRadius: LoopRadius.medium,
-        border: Border.all(
-          color: accent ? color.withValues(alpha: 0.42) : LoopColors.line,
-        ),
+        borderRadius: LoopRadius.card,
+        // Decision 0211: an accent card is marked by a Purple edge only;
+        // a plain card has none.
+        border: accent
+            ? Border.all(color: color.withValues(alpha: 0.42))
+            : null,
       ),
       child: ClipRRect(
         borderRadius: LoopRadius.medium,
@@ -265,13 +267,7 @@ class LoopSectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(top: 28, bottom: 11),
       child: Row(
         children: <Widget>[
-          Expanded(
-            child: Text(
-              label.toUpperCase(),
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(letterSpacing: 1.15),
-            ),
-          ),
+          Expanded(child: Text(label, style: LoopType.sectionTitle)),
           ?trailing,
         ],
       ),
@@ -300,7 +296,6 @@ class LoopStatusPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: LoopRadius.badge,
-          border: Border.all(color: color.withValues(alpha: 0.26)),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -533,8 +528,7 @@ class LoopContextRail extends StatelessWidget {
         padding: EdgeInsets.all(compact ? 5 : 7),
         decoration: BoxDecoration(
           color: LoopColors.basalt,
-          borderRadius: LoopRadius.badge,
-          border: Border.all(color: LoopColors.line),
+          borderRadius: LoopRadius.control,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

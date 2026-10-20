@@ -1029,7 +1029,6 @@ class _TrackCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: LoopGround.tintOf(context),
         borderRadius: LoopRadius.inner,
-        border: Border.all(color: LoopGround.hairlineOf(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 7, 8, 7),

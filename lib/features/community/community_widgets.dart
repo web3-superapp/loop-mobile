@@ -1778,11 +1778,7 @@ class _ApplyLogoSlot extends StatelessWidget {
       width: 72,
       height: 72,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: LoopColors.card,
-        shape: BoxShape.circle,
-        border: Border.all(color: LoopColors.line2),
-      ),
+      decoration: BoxDecoration(color: LoopColors.card, shape: BoxShape.circle),
       child: const LoopIcon('plus', size: 24, color: LoopColors.text2),
     );
   }

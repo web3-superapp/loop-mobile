@@ -359,8 +359,7 @@ class LoopSharePoster extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: LoopColors.ink,
-            borderRadius: LoopRadius.shell,
-            border: Border.all(color: LoopColors.line2),
+            borderRadius: LoopRadius.card,
           ),
           child: CustomPaint(
             key: const ValueKey<String>('qr-card-poster-texture'),

@@ -346,7 +346,7 @@ class MiningSummaryHero extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  'MINING POWER',
+                  '挖矿算力',
                   style: LoopType.kicker.copyWith(color: LoopColors.yellow),
                 ),
               ),
