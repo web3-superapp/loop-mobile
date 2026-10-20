@@ -21,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/features/social/profile_face_link.dart';
 
 /// `dm-requests` · accept, ignore or report a stranger request.
 ///
@@ -205,10 +206,16 @@ class _RequestRow extends StatelessWidget {
     return LoopPersonRow(
       key: ValueKey<String>('dm-request-row-$id'),
       height: 64,
-      leading: LoopProfileAvatar(
-        avatarRef: entry.profile.avatarRef,
-        alias: entry.profile.displayName,
-        size: 40,
+      // S239: the face opens the requester's page; the row keeps its sheet.
+      leading: LoopProfileFaceLink(
+        key: ValueKey<String>('dm-request-face-$id'),
+        publicProfileId: entry.profile.publicProfileId,
+        name: entry.profile.displayName,
+        child: LoopProfileAvatar(
+          avatarRef: entry.profile.avatarRef,
+          alias: entry.profile.displayName,
+          size: 40,
+        ),
       ),
       title: entry.profile.displayName,
       subtitle: entry.profile.loopId,

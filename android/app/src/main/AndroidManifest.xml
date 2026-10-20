@@ -102,7 +102,8 @@
                  above); MainActivity hands only this path to the router.
                  Voice-room links `/c/{communityId}/room` (decision 0105) share
                  the filter: `/c/` is matched here, the exact shape in
-                 MainActivity.
+                 MainActivity. Invite links `/i/{code}` (decision 0214,
+                 loop-api 0162 §5) join them the same way.
                  Verification needs /.well-known/assetlinks.json on each host. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -113,6 +114,7 @@
                 <data android:host="api-staging.quant-dinger.cc" />
                 <data android:pathPrefix="/u/" />
                 <data android:pathPrefix="/c/" />
+                <data android:pathPrefix="/i/" />
             </intent-filter>
         </activity>
         <!-- Privy OAuth callbacks are isolated from Reown's MainActivity

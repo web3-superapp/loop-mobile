@@ -95,6 +95,7 @@ class MainActivity : FlutterFragmentActivity() {
     // LOOP is already running. The router decides what the path means.
     // A `/c/{communityId}/room` link is handed over the same way, and so is a
     // community card link `/c/{communityId}` (decision 0113).
+    // Invite links `/i/{code}` (decision 0214) are handed over the same way.
     override fun getInitialRoute(): String? =
         profileLinkPath(intent) ?: super.getInitialRoute()
 
@@ -111,7 +112,8 @@ class MainActivity : FlutterFragmentActivity() {
         val path = data.path ?: return null
         return if (PROFILE_LINK_PATH.matches(path) ||
                 ROOM_LINK_PATH.matches(path) ||
-                COMMUNITY_LINK_PATH.matches(path)
+                COMMUNITY_LINK_PATH.matches(path) ||
+                INVITE_LINK_PATH.matches(path)
         ) {
             path
         } else null
@@ -151,6 +153,11 @@ class MainActivity : FlutterFragmentActivity() {
 
         // Community card links `/c/{communityId}` (decision 0113): the bare
         // path, a UUID only. Mirrored by `communityIdFromLinkPath`.
+        // Invite links `/i/{code}` (decision 0214): `LOOP-` optional, the
+        // code body as typed. Mirrored by `inviteCodeFromLinkPath`, which
+        // normalises and checks the shape.
+        val INVITE_LINK_PATH = Regex("^/i/[A-Za-z0-9-]{1,16}/?$")
+
         val COMMUNITY_LINK_PATH = Regex(
             "^/c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/?$",
         )

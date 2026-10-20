@@ -22,6 +22,8 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
+import 'package:loop_mobile/features/social/profile_face_link.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 
 // ---------------------------------------------------------------------------
 // 发射台 · the prototype's Launch Desk (decision 0164; data since 0163,
@@ -52,10 +54,19 @@ String launch2TapeActor(String? actor) {
   return '${actor.substring(0, 6)}…${actor.substring(actor.length - 2)}';
 }
 
+/// Who did it, as the tape names them: the LOOP account's name when the
+/// server attached one (loop-api decision 0162 §A, S239), else the short
+/// address, else 「有人」.
+String launch2ActivityWho(Launch2Activity item) {
+  final name = item.account?.displayName;
+  if (name != null && name.trim().isNotEmpty) return '$name ';
+  // 「有人买入」 runs on; an address takes a space before the verb.
+  return item.actor == null ? '有人' : '${launch2TapeActor(item.actor)} ';
+}
+
 /// One tape item's sentence, without its time.
 String launch2ActivityText(Launch2Activity item) {
-  // 「有人买入」 runs on; an address takes a space before the verb.
-  final who = item.actor == null ? '有人' : '${launch2TapeActor(item.actor)} ';
+  final who = launch2ActivityWho(item);
   final ticker = item.ticker;
   final amount = item.amountUsd1;
   final usd1 = amount == null ? '' : ' ${launch2Usd1Label(amount)}';
@@ -978,6 +989,7 @@ class _Launch2DeskTapeState extends State<Launch2DeskTape> {
                   last: index == lines.length - 1,
                   onTap: () =>
                       widget.onNavigate(Launch2Route.instance(item.instanceId)),
+                  onOpenProfile: widget.onNavigate,
                 ),
             ],
           ),
@@ -993,6 +1005,7 @@ class _TapeLine extends StatelessWidget {
     required this.now,
     required this.last,
     required this.onTap,
+    required this.onOpenProfile,
     super.key,
   });
 
@@ -1001,10 +1014,15 @@ class _TapeLine extends StatelessWidget {
   final bool last;
   final VoidCallback onTap;
 
+  /// S239: the account's face opens its page; the rest of the line opens
+  /// the project.
+  final ValueChanged<String> onOpenProfile;
+
   @override
   Widget build(BuildContext context) {
     final time = launch2RelativeTime(item.at, now);
     final text = launch2ActivityText(item);
+    final account = item.account;
     return Semantics(
       button: true,
       label: '$time $text',
@@ -1014,7 +1032,11 @@ class _TapeLine extends StatelessWidget {
         scale: false,
         child: Container(
           constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          // The face's 44 hit box sets the line's height on its own.
+          padding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: account == null ? 11 : 0,
+          ),
           decoration: BoxDecoration(
             border: last
                 ? null
@@ -1028,6 +1050,18 @@ class _TapeLine extends StatelessWidget {
                 style: LoopType.figureXs.copyWith(color: LoopColors.text3),
               ),
               const SizedBox(width: 10),
+              if (account != null)
+                LoopProfileFaceLink(
+                  key: const ValueKey<String>('launch2-tape-face'),
+                  publicProfileId: account.publicProfileId,
+                  name: account.displayName ?? '这位用户',
+                  onOpen: onOpenProfile,
+                  child: LoopProfileAvatar(
+                    avatarRef: account.avatarRef,
+                    alias: account.displayName,
+                    size: 22,
+                  ),
+                ),
               Expanded(
                 child: Text.rich(
                   TextSpan(children: launch2TapeSpans(item)),
@@ -1063,7 +1097,7 @@ List<InlineSpan> launch2TapeSpans(Launch2Activity item) {
     _ => null,
   };
   if (verb != null) {
-    final who = item.actor == null ? '有人' : '${launch2TapeActor(item.actor)} ';
+    final who = launch2ActivityWho(item);
     return <InlineSpan>[
       TextSpan(text: who),
       TextSpan(

@@ -19,8 +19,10 @@
 		<string>webcredentials:api-staging.quant-dinger.cc</string>
 		<!-- Profile links https://<host>/u/{loopId} (decision 0104) and
 		     voice-room links https://<host>/c/{communityId}/room (decision
-		     0105). Each host must serve /.well-known/apple-app-site-association
-		     whose components list both /u/* and /c/*. -->
+		     0105), and invite links https://<host>/i/{code} (decision 0214).
+		     Each host must serve /.well-known/apple-app-site-association
+		     whose components list /u/*, /c/* and /i/* (loop-api 0162 adds
+		     /i/*). -->
 		<string>applinks:api-dev.quant-dinger.cc</string>
 		<string>applinks:api-staging.quant-dinger.cc</string>
 	</array>

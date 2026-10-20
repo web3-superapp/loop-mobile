@@ -263,7 +263,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
                 key: const ValueKey<String>('mining-open-market'),
                 leading: const LoopRowIcon(icon: 'search'),
                 title: '发现有权重的社区币',
-                subtitle: '社区币的权重由服务端审核结果授予',
+                subtitle: '社区币权重由服务端审核结果授予',
                 onTap: widget.onOpenMarket,
                 position: LoopRowPosition.first,
               ),
@@ -322,7 +322,7 @@ String _heroCaption(MiningSummary summary, {required bool live}) =>
         MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
           reasonCode,
         ),
-        MiningFigureValue() => '持仓与社区权重共同构成当前算力，不是收益承诺。',
+        MiningFigureValue() => '持仓与社区币权重共同构成当前算力，不是收益承诺。',
       },
     };
 
@@ -483,13 +483,13 @@ class _ReferralCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: '邀请关系加成，${launchReasonCodeText(boost.reasonCode)}',
+      label: '邀请加成，${launchReasonCodeText(boost.reasonCode)}',
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('推广算力', style: LoopType.eyebrow),
+            Text('邀请加成', style: LoopType.eyebrow),
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -499,14 +499,14 @@ class _ReferralCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text('邀请关系加成', style: LoopType.headingSm),
+                      Text('五级邀请加成', style: LoopType.headingSm),
                       const SizedBox(height: 6),
                       Text(
                         // Decision 0149: the boost is never read on this
                         // page, so it says where it is instead of printing a
                         // dash before a full stop (「当前加成 —。」).
                         '一级至五级关系按服务端公布的比例增加算力，'
-                        '你的加成在邀请页查看。',
+                        '你的邀请加成在邀请中心查看。',
                         style: LoopType.captionSm.copyWith(
                           color: LoopColors.text2,
                         ),

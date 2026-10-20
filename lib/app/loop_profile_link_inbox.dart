@@ -38,6 +38,22 @@ final class LoopProfileLinkInbox {
     return id;
   }
 
+  String? _inviteCode;
+
+  /// The invite code whose link (`/i/{code}`, decision 0214) is waiting to
+  /// be opened, if any. Kept in memory only: a link that arrives before the
+  /// account exists is offered once the account has landed.
+  String? get pendingInvite => _inviteCode;
+
+  void holdInvite(String code) => _inviteCode = code;
+
+  /// Returns the waiting invite code and forgets it.
+  String? takeInvite() {
+    final code = _inviteCode;
+    _inviteCode = null;
+    return code;
+  }
+
   /// The LOOP ID waiting to be opened, if any.
   String? get pending => _loopId;
 

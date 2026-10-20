@@ -385,14 +385,31 @@ final class FakeMiningGateway implements MiningGateway {
 final class FakeReferralGateway implements ReferralGateway {
   FakeReferralGateway({
     S7Answer<ReferralOverview>? overview,
+    S7Answer<ReferralInviteePage>? invitees,
     this.claimFailure,
     this.mode = LaunchGatewayMode.production,
-  }) : overview = overview ?? S7Answer<ReferralOverview>(value: s7Referral());
+  }) : overview = overview ?? S7Answer<ReferralOverview>(value: s7Referral()),
+       invitees =
+           invitees ??
+           S7Answer<ReferralInviteePage>(
+             value: const ReferralInviteePage(
+               items: <ReferralInvitee>[],
+               nextCursor: null,
+             ),
+           );
 
   final S7Answer<ReferralOverview> overview;
+  final S7Answer<ReferralInviteePage> invitees;
   final LaunchFailureKind? claimFailure;
 
   final List<String> claims = <String>[];
+  final List<String?> inviteeCursors = <String?>[];
+
+  @override
+  Future<ReferralInviteePage> loadInvitees({String? cursor}) {
+    inviteeCursors.add(cursor);
+    return invitees.resolve();
+  }
 
   @override
   final LaunchGatewayMode mode;

@@ -136,10 +136,9 @@ void main() {
       });
     }
 
-    // S249: the decoded center keys are not drawn yet (S239 front-end
-    // batch). An available boost only removes the unavailable card; nothing
-    // else on the page changes.
-    testWidgets('an available boost is decoded but not drawn yet', (
+    // S239 (decision 0214): the decoded center keys are drawn — the available
+    // boost replaces the unavailable card, and the link is offered.
+    testWidgets('an available boost and the invite link are drawn', (
       tester,
     ) async {
       final base = s7Referral();
@@ -185,13 +184,15 @@ void main() {
 
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
       expect(
-        find.byKey(
-          const ValueKey<String>('launch-unavailable-Mining Power 加成'),
-        ),
+        find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),
         findsNothing,
       );
-      expect(find.textContaining('12.5'), findsNothing);
-      expect(find.textContaining('/i/LOOP-7HJKM'), findsNothing);
+      final boost = find.byKey(
+        const ValueKey<String>('referral-boost-available'),
+      );
+      await scrollToS7Section(tester, boost);
+      expect(find.text('12.5'), findsOneWidget);
+      expect(find.textContaining('/i/LOOP-7HJKM'), findsOneWidget);
     });
 
     testWidgets('the boost stays unavailable with the formula reason', (
@@ -204,7 +205,7 @@ void main() {
       );
 
       final boost = find.byKey(
-        const ValueKey<String>('launch-unavailable-Mining Power 加成'),
+        const ValueKey<String>('launch-unavailable-邀请加成'),
       );
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);

@@ -156,12 +156,12 @@ void main() {
       find.byKey(const ValueKey<String>('referral-explain-action')),
     );
     await tester.pumpAndSettle();
-    _expectStep(tester, 'Referral 说明', LoopType.heading);
+    _expectStep(tester, '邀请说明', LoopType.heading);
     final support = _painted(
       tester,
-      '每个账号只有一个邀请码。被邀请人激活 LOOP ID 并绑定钱包后，关系进入下一个验证阶段；'
-      '「有效」需要挖矿公式版本被批准，因此当前不会出现有效关系。'
-      '加成只计入 Mining Power，不是收入、佣金或返佣。',
+      '每个账号只有一个邀请码。被邀请人激活 LOOP ID 后 7 天内可以绑定；'
+      '被邀请人本人在最近一个结算小时有算力，才算有效成员。'
+      '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
     );
     expect(support.fontSize, LoopType.bodySm.fontSize);
     expect(support.color, LoopColors.text2);

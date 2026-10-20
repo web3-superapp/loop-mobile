@@ -232,7 +232,7 @@ const String miningBaselineLabel = '当前算力公式';
 
 /// What a source line's ⓘ says about a baseline formula (decision 0121).
 const String miningBaselineDetail =
-    '算力 = 持有数量 × 挖矿权重，按数量加权，不乘价格。'
+    '算力 = 持有数量 × 社区币权重，按数量加权，不乘价格。'
     '当前版本：每个资产的权重都定为 1，当日产量为预估值，奖励代币还没有确定。'
     '算出来的数字不是收益，也不构成承诺。';
 

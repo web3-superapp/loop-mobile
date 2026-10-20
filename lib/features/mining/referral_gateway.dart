@@ -13,6 +13,10 @@ abstract interface class ReferralGateway {
   /// Binds one invite code. Allowed only inside the activation window and only
   /// once; every refusal is the server's own decision.
   Future<ReferralBinding> claim(String inviteCode);
+
+  /// One page of this account's direct invitees (loop-api decision 0162
+  /// §B.1). [cursor] is the opaque value the previous page returned.
+  Future<ReferralInviteePage> loadInvitees({String? cursor});
 }
 
 /// Production default: every call fails closed with `unavailable`. No fixture
@@ -31,6 +35,9 @@ final class UnavailableReferralGateway implements ReferralGateway {
 
   @override
   Future<ReferralBinding> claim(String inviteCode) => _unavailable();
+
+  @override
+  Future<ReferralInviteePage> loadInvitees({String? cursor}) => _unavailable();
 }
 
 /// Overridden by the composition root with the authenticated V2 adapter.
