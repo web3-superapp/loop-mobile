@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -131,7 +132,12 @@ class GroupChatScreen extends ConsumerWidget {
                             body:
                                 '普通群没有社区币、没有 Mining Weight，也没有 Community AI。'
                                 '带币社区在「社区」栏。',
-                            margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
+                            margin: EdgeInsets.fromLTRB(
+                              LoopSpacing.page,
+                              10,
+                              LoopSpacing.page,
+                              4,
+                            ),
                           ),
                         ),
                       ],
@@ -391,7 +397,12 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             )
           else
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                4,
+                LoopSpacing.page,
+                0,
+              ),
               child: LoopButton(
                 key: const ValueKey<String>('group-info-leave'),
                 label: '退出群聊',
@@ -517,7 +528,12 @@ class _GroupRenameFormState extends State<_GroupRenameForm> {
     children: <Widget>[
       const LoopSheetHeading('修改群名称'),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

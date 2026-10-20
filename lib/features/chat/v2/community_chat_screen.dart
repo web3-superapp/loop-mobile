@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -337,7 +338,12 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                   body: pinned.byline == null
                       ? pinned.title
                       : '${pinned.title} · ${pinned.byline}',
-                  margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                  margin: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    10,
+                    LoopSpacing.page,
+                    4,
+                  ),
                 ),
               ),
           // The prototype's last message in this room is the community's AI
@@ -440,10 +446,20 @@ class _SyncingBlock extends StatelessWidget {
           body:
               '${communicationUnavailableReason(reasonCode)}'
               'LOOP 已经记录了你的成员身份，服务商侧还没跟上。稍后重试即可，不需要重新加入社区。',
-          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            0,
+          ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            0,
+          ),
           child: LoopButton(
             key: const ValueKey<String>('community-chat-syncing-retry'),
             label: '重新检查',
@@ -484,7 +500,12 @@ class _ChatBlock extends StatelessWidget {
         ),
         if (onRetry != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: ValueKey<String>('$blockKey-retry'),
               label: '重试',

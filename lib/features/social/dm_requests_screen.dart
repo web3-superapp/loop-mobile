@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -107,7 +108,12 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
                   tone: LoopNoticeTone.warn,
                   title: '上一次决定没有完成',
                   body: communityFailureReason(state.failureKind),
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  margin: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    0,
+                    LoopSpacing.page,
+                    14,
+                  ),
                 ),
               for (final entry in state.items)
                 _RequestRow(
@@ -223,7 +229,12 @@ class _RequestRow extends StatelessWidget {
         key: ValueKey<String>(
           'dm-request-actions-sheet-${entry.messageRequestId}',
         ),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

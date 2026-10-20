@@ -100,7 +100,12 @@ class CommunityPreviewNotice extends StatelessWidget {
       tone: LoopNoticeTone.warn,
       title: '演示数据',
       body: '$resource只存在于这次开发预览里，不会写入账号，也不会上传。',
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        0,
+      ),
     );
   }
 }
@@ -202,7 +207,7 @@ class CommunityUnavailableCard extends StatelessWidget {
     required this.label,
     required this.fact,
     super.key,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.margin = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
     this.action,
   });
 
@@ -280,7 +285,12 @@ Future<void> showCommunityPresenceMeaningSheet(
       children: <Widget>[
         const LoopSheetHeading('这里数的是连接，不是活跃'),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -511,7 +521,12 @@ class CommunityMiningSummaryCard extends StatelessWidget {
           child: Semantics(container: true, label: semantic, child: card),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            0,
+          ),
           child: Text(
             note,
             key: const ValueKey<String>('community-mining-summary-note'),
@@ -630,7 +645,12 @@ class CommunityOfficialLinkRow extends StatelessWidget {
         return SingleChildScrollView(
           key: const ValueKey<String>('community-links'),
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            0,
+          ),
           child: Row(
             children: <Widget>[
               for (var index = 0; index < items.length; index += 1) ...<Widget>[
@@ -663,7 +683,12 @@ class CommunityQuietLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        0,
+      ),
       child: Text(text, style: LoopType.caption),
     );
   }
@@ -678,7 +703,7 @@ class CommunityMiningPowerCard extends StatelessWidget {
     required this.label,
     required this.fact,
     super.key,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.margin = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
   });
 
   final String label;
@@ -977,12 +1002,17 @@ class CommunityApplicationStatusCard extends StatelessWidget {
       // appears. It is a count of milestones, never an estimate of how long
       // the review will take; the words on the card are unchanged.
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          14,
+        ),
         child: LoopProgressFill(
           key: const ValueKey<String>('community-application-progress'),
           progress: communityApplicationPendingProgress,
           from: 0,
-          fillColor: LoopColors.limeSoft,
+          fillColor: LoopColors.purpleSoft,
           borderRadius: LoopRadius.tile,
           child: LoopNotice(
             key: const ValueKey<String>('community-application-pending'),
@@ -1007,7 +1037,12 @@ class CommunityApplicationStatusCard extends StatelessWidget {
       body: reason == null || reason.isEmpty
           ? '运维没有给出原因。修改社区资料后可以重新提交。'
           : '原因：$reason',
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
       trailing: LoopButton(
         key: const ValueKey<String>('community-application-resubmit'),
         label: '修改资料后重新提交',
@@ -1185,7 +1220,12 @@ Future<bool> confirmCommunityAction(
       children: <Widget>[
         LoopSheetHeading(title),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1245,7 +1285,12 @@ Future<void> showCommunityApplicationSubmittedSheet(
       children: <Widget>[
         const LoopSheetHeading('申请已提交 · 审核中'),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1383,7 +1428,12 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
       children: <Widget>[
         const LoopSheetHeading('编辑社区资料'),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1547,7 +1597,12 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
       children: <Widget>[
         const LoopSheetHeading('创建社区'),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1585,10 +1640,9 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
                           height: 52,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
                             border: Border.all(
                               color: selected
-                                  ? LoopColors.lime
+                                  ? LoopColors.purple
                                   : Colors.transparent,
                               width: 2,
                             ),
@@ -1600,7 +1654,6 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
                                   alignment: Alignment.center,
                                   decoration: const BoxDecoration(
                                     color: LoopColors.card2,
-                                    shape: BoxShape.circle,
                                   ),
                                   child: const LoopIcon(
                                     'close',
@@ -1613,7 +1666,6 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
                                   name: _name.text,
                                   logoRef: reference,
                                   size: 44,
-                                  radius: 22,
                                 ),
                         ),
                       ),
@@ -1719,7 +1771,6 @@ class _ApplyLogoSlot extends StatelessWidget {
         name: name,
         logoRef: reference,
         size: 72,
-        radius: 36,
       );
     }
     return Container(

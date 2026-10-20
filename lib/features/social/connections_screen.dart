@@ -69,7 +69,10 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
         kicker: communityPreviewKicker(mode),
         onBack: widget.onBack,
         filters: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: LoopSpacing.page,
+            vertical: 10,
+          ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -144,7 +147,12 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   tone: LoopNoticeTone.warn,
                   title: '上一次操作没有完成',
                   body: communityFailureReason(state.failureKind),
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  margin: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    0,
+                    LoopSpacing.page,
+                    14,
+                  ),
                 ),
               for (final entry in state.items)
                 _connectionRow(entry, state, controller),
@@ -158,7 +166,12 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               ),
               // One switch, one name: the privacy centre calls it 可被发现.
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  20,
+                  LoopSpacing.page,
+                  0,
+                ),
                 child: Text(
                   '在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。',
                   key: const ValueKey<String>(
@@ -224,7 +237,12 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       barrierLabel: '关闭联系人操作',
       builder: (sheetContext) => Padding(
         key: const ValueKey<String>('connection-actions-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

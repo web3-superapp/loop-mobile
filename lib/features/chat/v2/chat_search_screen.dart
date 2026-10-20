@@ -416,7 +416,12 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           ? '${_scope.label} · 还没有检索'
           : '${_scope.label} · ${hits.length} 条',
       filters: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          8,
+        ),
         child: LoopSegBar(
           key: const ValueKey<String>('chat-search-scopes'),
           labels: <String>[for (final scope in _scopes) scope.label],

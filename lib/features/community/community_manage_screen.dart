@@ -106,7 +106,6 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
                   name: detail.community.name,
                   logoRef: detail.community.logoRef,
                   size: 48,
-                  radius: 14,
                 ),
                 title: detail.community.name,
                 tag: viewer?.membership == null
@@ -325,7 +324,12 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         ],
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          20,
+          LoopSpacing.page,
+          0,
+        ),
         child: Text(
           isOwner ? '社区图标、短链接与验证状态不能在这里修改；不提供解散社区。' : '社区图标、短链接与验证状态不能在这里修改。',
           key: const ValueKey<String>('community-manage-logo-note'),

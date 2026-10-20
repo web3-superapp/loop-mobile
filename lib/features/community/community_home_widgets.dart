@@ -51,23 +51,25 @@ class CommunityToolButton extends StatelessWidget {
   /// toggle state to report.
   final bool? toggled;
 
-  static const double _radius = 15;
-
   @override
   Widget build(BuildContext context) {
     final open = toggled ?? false;
     final count = unreadCount;
     final tool = DecoratedBox(
+      // Decision 0210 (S241b): square tool; an open panel is the selected
+      // state, purple 9 % with the purple line, never a yellow block.
       decoration: BoxDecoration(
-        color: open ? LoopColors.lime : LoopColors.panel,
-        borderRadius: BorderRadius.circular(_radius),
+        color: open ? LoopColors.purpleSoft : LoopColors.panel,
+        border: Border.all(
+          color: open ? LoopColors.purpleLine : LoopColors.line2,
+        ),
       ),
       child: LoopIconButton(
         icon: icon,
         label: loopUnreadBadgeLabel(count) == null
             ? label
             : '$label，${loopUnreadBadgeLabel(count)} 条未读',
-        color: open ? LoopColors.ink : null,
+        color: open ? LoopColors.yellow : null,
         toggled: toggled,
         onPressed: onPressed,
       ),
@@ -118,7 +120,12 @@ class CommunityDiscoverHero extends StatelessWidget {
     final count = verifiedCount;
     final kicker = count == null ? 'DISCOVER' : 'DISCOVER · $count VERIFIED';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
       child: Semantics(
         button: true,
         label: '$title，$body',
@@ -131,8 +138,12 @@ class CommunityDiscoverHero extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(minHeight: 72),
               padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
+              // Decision 0210 (S241b): looplabs keeps yellow to accents, so
+              // the band is the flat card — `#111114` with the `#38333E`
+              // edge — and the yellow lives in its kicker and arrow.
               decoration: BoxDecoration(
-                color: LoopColors.lime,
+                color: LoopColors.card,
+                border: Border.all(color: LoopColors.line2),
                 borderRadius: _communityDiscoverHeroRadius,
               ),
               child: Row(
@@ -142,33 +153,28 @@ class CommunityDiscoverHero extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Text(
-                          kicker,
-                          // L26 the small folio on the ladder: kicker /
-                          // headingSm / captionSm (decision 0191).
-                          style: LoopType.kicker.copyWith(
-                            color: LoopColors.inkMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
+                        // L26 the small folio on the ladder: kicker /
+                        // headingSm / captionSm (decision 0191).
+                        LoopKicker(kicker),
+                        const SizedBox(height: 6),
                         Text(
                           title,
                           style: LoopType.headingSm.copyWith(
-                            color: LoopColors.ink,
+                            color: LoopColors.chalk,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 4),
                         Text(
                           body,
                           style: LoopType.captionSm.copyWith(
-                            color: LoopColors.inkText2,
+                            color: LoopColors.text2,
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const LoopIcon('chevron', size: 18, color: LoopColors.ink),
+                  const LoopIcon('chevron', size: 18, color: LoopColors.yellow),
                 ],
               ),
             ),
@@ -193,7 +199,12 @@ class CommunityObservedFootnote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        18,
+        LoopSpacing.page,
+        0,
+      ),
       child: Text(
         '数据观察于 ${communityObservedAtLabel(observedAt)}',
         // L3 R21 provenance (decision 0191).

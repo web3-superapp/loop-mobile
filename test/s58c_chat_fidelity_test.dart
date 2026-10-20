@@ -50,7 +50,9 @@ void main() {
   loopWatchGround();
 
   group('B.3 · dm opens on the Chalk hero', () {
-    test('the page primary is the Chalk card, without the state ring', () {
+    // Decision 0210 (S241b): looplabs has no white or yellow hero blocks;
+    // the folio is the flat quiet card.
+    test('the page primary is the quiet card, without the state ring', () {
       final folio = directMessageFolio(
         testProfile(
           publicProfileId: testMemberId,
@@ -58,7 +60,7 @@ void main() {
           alias: 'NightOwl',
         ),
       );
-      expect(folio.variant, LoopFolioVariant.chalk);
+      expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.ring, isFalse);
       expect(folio.kicker, 'DIRECT MESSAGE');
       expect(folio.stamp, 'PRIVATE');
@@ -227,13 +229,13 @@ void main() {
       );
     });
 
-    testWidgets('the hero is the one solid Lime card in the app', (
-      tester,
-    ) async {
+    // Decision 0210 (S241b): the hero is the flat quiet card, not a solid
+    // yellow block.
+    testWidgets('the hero is the flat quiet state card', (tester) async {
       await pumpCommunityPage(tester, const ChatForwardScreen(sourceCid: null));
 
       final folio = _folio(tester);
-      expect(folio.variant, LoopFolioVariant.lime);
+      expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.archetype, LoopFolioArchetype.state);
     });
   });

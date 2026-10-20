@@ -297,7 +297,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     );
   }
 
-  /// `.seg.on` for the chosen segment, `.seg.quiet` for the rest.
+  /// Decision 0210 (S241b): every segment is quiet; the chosen one carries
+  /// the looplabs selected state (purple 9 % ground, purple underline, yellow
+  /// text) instead of a solid yellow block.
   Widget _seg({
     required String key,
     required String label,
@@ -308,7 +310,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     child: LoopSeg(
       key: ValueKey<String>(key),
       label: label,
-      quiet: !selected,
+      quiet: true,
       selected: selected,
       onSelected: onSelected,
     ),
@@ -335,7 +337,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         SingleChildScrollView(
           key: const ValueKey<String>('search-recent-cards'),
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            14,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -559,7 +566,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       border: Border(top: BorderSide(color: LoopColors.line)),
     ),
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        12,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

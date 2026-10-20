@@ -250,7 +250,7 @@ void main() {
       await _disposeHarness(tester, harness);
     });
 
-    testWidgets('the bubble is Lime, Ink text, against the end margin', (
+    testWidgets('the bubble is purple, Chalk text, against the end margin', (
       tester,
     ) async {
       final harness = _ChannelHarness.group(
@@ -273,7 +273,10 @@ void main() {
         tester.getTopRight(bubble).dx,
         closeTo(pageWidth - LoopSpacing.page, 1),
       );
-      expect(tester.widget<Text>(find.text('gm')).style!.color, LoopColors.ink);
+      expect(
+        tester.widget<Text>(find.text('gm')).style!.color,
+        LoopColors.chalk,
+      );
 
       await _disposeHarness(tester, harness);
     });

@@ -149,7 +149,12 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
               detailMaxLines: 4,
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                10,
+              ),
               child: LoopButton(
                 key: const ValueKey<String>('square-community-ordering-back'),
                 label: '按成员最多排序',
@@ -199,7 +204,12 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           ),
         if (state.appendFailed && !state.loadingMore)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              12,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: const ValueKey<String>('square-community-retry-more'),
               label: '重试',
@@ -216,7 +226,12 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           if (state.loadingMore)
             const Padding(
               key: ValueKey<String>('square-community-loading-more'),
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                12,
+                LoopSpacing.page,
+                0,
+              ),
               child: LoopSkeleton(type: LoopSkeletonType.record, rows: 2),
             ),
         ] else if (state.items.isNotEmpty)
@@ -348,7 +363,12 @@ class _SquareSearchEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        10,
+      ),
       child: Semantics(
         button: true,
         label: '搜索社区',
@@ -714,7 +734,12 @@ class _SquareRulesSheet extends StatelessWidget {
       children: <Widget>[
         const LoopSheetHeading('排序规则'),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
