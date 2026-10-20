@@ -282,8 +282,9 @@ List<Launch2DeskPage> launch2DeskPages(
 }
 
 /// The pager's fixed height at text scale 1: two heading lines and a
-/// four-line caption at 360 dp.
-const double launch2DeskHeight = 220;
+/// four-line caption at 360 dp. 256 since decision 0210 (Anton heading,
+/// 20 card padding, 1.6 caption leading).
+const double launch2DeskHeight = 256;
 
 /// `.ledger-card.folio-primary` as a sideways pager: one full-Lime card per
 /// page, the page width the screen less the two 16 gutters, dots at the

@@ -1,88 +1,120 @@
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
-/// Lime Ledger colour tokens (01 handover document, chapter 4.1).
+/// LOOP colour tokens — the looplabs.meme palette (decision 0210, docs/42
+/// 附A §3). Ink ground, flat solid surfaces, a Yellow first accent and a
+/// Purple second accent; every corner square.
 ///
-/// The translucent tokens are expressed as ARGB with the alpha rounded from
-/// the prototype `rgba(...)` values. Lime is the only brand accent; no blue or
-/// rainbow status palette may be added here.
-///
-/// Lime 是唯一品牌强调色；行情涨跌用 rise/fall，不计入品牌三色。
+/// Yellow is the primary brand accent and Purple the secondary one (focus,
+/// pressed edges, selected grounds). The retired Lime names ([lime],
+/// [limeSoft], [limeHighlight], [mint]) are aliases of the Yellow tokens so
+/// that existing call sites move with the palette; new code names [yellow].
 ///
 /// Price movement is not a brand colour. A market rise and fall are painted
 /// in [rise] / [fall] (decision 0117, v3 requirement §6.2.1), and only through
-/// `LoopPriceMove` or these two tokens — never through [lime] or [danger],
+/// `LoopPriceMove` or these two tokens — never through [yellow] or [danger],
 /// which keep their brand and error meanings. They do not count towards the
-/// three brand colours.
+/// brand colours.
+///
+/// 黄紫是品牌强调色；行情涨跌用 rise/fall，不计入品牌色。
 abstract final class LoopColors {
-  static const Color ink = Color(0xFF050604);
-  static const Color lime = Color(0xFFB8FF20);
-  static const Color chalk = Color(0xFFF3F5EF);
-  static const Color graphite = Color(0xFF171A16);
-  static const Color muted = Color(0xFF7F897B);
+  /// Page ground · `--background #09090b`.
+  static const Color ink = Color(0xFF09090B);
 
-  /// `--bg2` rgba(243,245,239,.025)
-  static const Color bg2 = Color(0x06F3F5EF);
+  /// Primary accent · `--primary/--yellow #ffd600`.
+  static const Color yellow = Color(0xFFFFD600);
 
-  /// Panel · rgba(243,245,239,.055)
-  static const Color panel = Color(0x0EF3F5EF);
+  /// Pressed / highlighted primary · `#ffe34d`.
+  static const Color yellowHighlight = Color(0xFFFFE34D);
 
-  /// Card · rgba(243,245,239,.06)
-  static const Color card = Color(0x0FF3F5EF);
+  /// Yellow at 13 % — hints, badges, soft emphasis ground.
+  static const Color yellowSoft = Color(0x21FFD600);
 
-  /// Card 2 · rgba(243,245,239,.10) — stronger inset or pressed state.
-  static const Color card2 = Color(0x1AF3F5EF);
+  /// Second accent · `--purple #9c36ff`: focus, pressed edge, selection.
+  static const Color purple = Color(0xFF9C36FF);
 
-  /// Line · rgba(243,245,239,.13) — default hairline.
-  static const Color line = Color(0x21F3F5EF);
+  /// Purple at 9.4 % (`#9c36ff18`) — a selected ground.
+  static const Color purpleSoft = Color(0x189C36FF);
 
-  /// Line 2 · rgba(243,245,239,.22) — strong edge.
-  static const Color line2 = Color(0x38F3F5EF);
+  /// Purple at 44 % (`#9c36ff70`) — a selected or focused edge.
+  static const Color purpleLine = Color(0x709C36FF);
 
-  /// Text 2 · rgba(243,245,239,.68) — secondary body.
-  static const Color text2 = Color(0xADF3F5EF);
+  /// Text input ground · `#16111c`.
+  static const Color input = Color(0xFF16111C);
 
-  /// Text 3 · rgba(243,245,239,.58) — auxiliary labels.
-  static const Color text3 = Color(0x94F3F5EF);
+  /// Text input edge · `#3b3045`.
+  static const Color inputLine = Color(0xFF3B3045);
 
-  /// Lime soft · rgba(184,255,32,.13) — hints, badges, soft emphasis ground.
-  static const Color limeSoft = Color(0x21B8FF20);
+  /// Foreground · `--foreground/--paper #f2f2f4`.
+  static const Color chalk = Color(0xFFF2F2F4);
 
-  /// Selected tab gradient start (`#c6ff45` in the prototype tab bar).
-  static const Color limeHighlight = Color(0xFFC6FF45);
+  /// Card / surface · `--card #111114`.
+  static const Color graphite = Color(0xFF111114);
 
-  /// `.ledger-card.ledger-quiet` glow over its 7.5 % tint, composited: the
-  /// centre stop (Lime 23 %) and the edge stop (Lime 7.5 %) of the quiet
-  /// folio's radial gradient (decision 0172 named them; values unchanged).
-  static const Color quietFolioGlow = Color(0x3BB8FF20);
-  static const Color quietFolioTint = Color(0x13B8FF20);
+  /// Third text grey · `#8e8a98`.
+  static const Color muted = Color(0xFF8E8A98);
 
-  /// `.record-card` glow over its Card tint, composited: Chalk 9.4 % at the
-  /// centre, Chalk 4.3 % at the edge.
-  static const Color recordCardGlow = Color(0x18F3F5EF);
-  static const Color recordCardTint = Color(0x0BF3F5EF);
+  /// Console / sunken ground · `#0e0e12`.
+  static const Color bg2 = Color(0xFF0E0E12);
 
-  /// `.btn-primary` glow: rgba(184,255,32,.24), the first shadow.
-  static const Color primaryGlow = Color(0x3DB8FF20);
+  /// Panel · the card surface.
+  static const Color panel = graphite;
 
-  /// rgba(5,6,4,.4): the contact shadow of `.btn-primary` and of a pressed
-  /// bottom-rounded selection card.
-  static const Color contactShadow = Color(0x66050604);
+  /// Card · `#111114`, solid. It no longer tints the ground it sits on.
+  static const Color card = graphite;
 
-  /// Ink at 62% — unselected tab icon and label on the Chalk bar.
-  static const Color inkMuted = Color(0x9E050604);
+  /// Card 2 · a stronger inset or a pressed card (`#1c1b22`).
+  static const Color card2 = Color(0xFF1C1B22);
 
-  /// Ink at 72% / 62% — secondary text on Lime or Chalk grounds.
-  static const Color inkText2 = Color(0xB8050604);
-  static const Color inkText3 = Color(0x9E050604);
+  /// Line · `--border #2a292f` — a divider hairline.
+  static const Color line = Color(0xFF2A292F);
 
-  /// Sheet veil · rgba(5,6,4,.76)
-  static const Color veil = Color(0xC2050604);
+  /// Line 2 · `#38333e` — a card edge.
+  static const Color line2 = Color(0xFF38333E);
 
-  /// The pressed-state wash every ink response paints (decision 0130): Muted
-  /// at 16 %, which darkens a Chalk ground and lifts an Ink one by about the
-  /// same step, so one value answers on both grounds. There is no ripple.
-  static const Color pressHighlight = Color(0x297F897B);
+  /// Line 3 · `#4a4754` — an outline button's edge.
+  static const Color line3 = Color(0xFF4A4754);
+
+  /// Text 2 · `#b8b4c0` — secondary body.
+  static const Color text2 = Color(0xFFB8B4C0);
+
+  /// Text 3 · `#aeacb6` — auxiliary labels.
+  static const Color text3 = Color(0xFFAEACB6);
+
+  /// Retired Lime names, now the Yellow tokens (decision 0210).
+  static const Color lime = yellow;
+  static const Color limeSoft = yellowSoft;
+  static const Color limeHighlight = yellowHighlight;
+
+  /// The quiet folio's two tints, now Yellow-based.
+  static const Color quietFolioGlow = Color(0x26FFD600);
+  static const Color quietFolioTint = Color(0x10FFD600);
+
+  /// The record card's two tints. Flat now: both are the card surface.
+  static const Color recordCardGlow = graphite;
+  static const Color recordCardTint = graphite;
+
+  /// The primary button's glow · `0 0 17px #ffd60035`.
+  static const Color primaryGlow = Color(0x35FFD600);
+
+  /// Ink at 40 % — a contact shadow, only where a floating layer needs one.
+  static const Color contactShadow = Color(0x6609090B);
+
+  /// Ink at 62% — an unselected glyph on a light ground.
+  static const Color inkMuted = Color(0x9E09090B);
+
+  /// Ink at 72% / 62% — secondary text on Yellow or Chalk grounds.
+  static const Color inkText2 = Color(0xB809090B);
+  static const Color inkText3 = Color(0x9E09090B);
+
+  /// Sheet veil · ink at 76 %.
+  static const Color veil = Color(0xC209090B);
+
+  /// Top bar ground · `#09090bf2`.
+  static const Color topbar = Color(0xF209090B);
+
+  /// The pressed-state wash every ink response paints (decision 0130).
+  static const Color pressHighlight = Color(0x298E8A98);
 
   /// Market rise · #22C55E. Price movement only (decision 0117).
   static const Color rise = Color(0xFF22C55E);
@@ -107,95 +139,103 @@ abstract final class LoopColors {
   // Semantic aliases retained for existing widgets.
   static const Color textSecondary = text2;
   static const Color textTertiary = text3;
-  static const Color hairline = Color(0xFF242523);
+  static const Color hairline = line;
   static const Color abyss = ink;
   static const Color basalt = graphite;
-  static const Color elevated = Color(0xFF1D1E1C);
+  static const Color elevated = card2;
   static const Color vapor = muted;
-  static const Color mint = lime;
+  static const Color mint = yellow;
 
-  // Legacy categorical accents used by not-yet-migrated feature slices. The
-  // prototype maps red/amber/cyan to Chalk or Lime; new surfaces must not use
-  // these and no further colour may be added to this group.
+  // Legacy categorical accents used by not-yet-migrated feature slices. New
+  // surfaces must not use these and no further colour may be added to this
+  // group.
   static const Color market = Color(0xFF68B9FF);
   static const Color chat = Color(0xFFF2B562);
   static const Color danger = Color(0xFFFF6B82);
-  static const Color warning = Color(0xFFFFC75F);
+
+  /// Warning · orange `#FF9F1C`, kept apart from the Yellow accent.
+  static const Color warning = Color(0xFFFF9F1C);
 }
 
 /// The ink of the ground a widget was actually placed on.
 ///
-/// Every soft token in [LoopColors] — `card`, `card2`, `line`, `text2`,
-/// `text3` — is Chalk at a low alpha, because the palette is authored for the
-/// Ink page. Painted on a Chalk card or a Lime folio they are Chalk on Chalk:
-/// the widget still lays out, still takes its 200px, and is simply not there.
-/// A shared widget that can land on either ground therefore derives its
-/// colours from the ambient [DefaultTextStyle] — which the light grounds
-/// already set to Ink — instead of naming a fixed token.
-///
-/// Each weight is read off the token it stands for, so on the Ink page every
-/// derived colour is the token itself and nothing about the dark rendering
-/// moves.
+/// The palette is authored for the Ink page. A shared widget that can land on
+/// a light ground (Chalk or Yellow) derives its colours from the ambient
+/// [DefaultTextStyle] — which the light grounds set to Ink — instead of
+/// naming a fixed token. On the Ink page (a light ambient ink) every derived
+/// colour is the solid token itself; on a light ground it is the ground's
+/// ink at the weight the token stands for.
 ///
 /// This only works because a light ground *declares itself*: the container
-/// that paints Chalk or Lime wraps its children in a [DefaultTextStyle] and an
-/// [IconTheme] carrying that ground's ink. A container that paints a light
-/// fill and declares nothing leaves every descendant reading the page's Chalk,
-/// and the derivation is silently wrong — which is why
+/// that paints Chalk or Yellow wraps its children in a [DefaultTextStyle] and
+/// an [IconTheme] carrying that ground's ink — which is why
 /// `scripts/check_harness.py` holds the declaration itself.
 abstract final class LoopGround {
-  /// The ground's own ink at full strength: Chalk on Ink, Ink on Chalk/Lime.
-  static Color inkOf(BuildContext context) =>
-      (DefaultTextStyle.of(context).style.color ?? LoopColors.chalk).withValues(
-        alpha: 1,
-      );
+  /// The ground's own ink at full strength: Chalk on Ink, Ink on Chalk/Yellow.
+  ///
+  /// The dark page's greys ([LoopColors.text2] / [LoopColors.text3]) are
+  /// solid colours since decision 0210, where they used to be Chalk at an
+  /// alpha; any light ambient ink therefore reads as the page's Chalk, so a
+  /// subtree set in a grey still derives from the Ink page.
+  static Color inkOf(BuildContext context) {
+    final ink = (DefaultTextStyle.of(context).style.color ?? LoopColors.chalk)
+        .withValues(alpha: 1);
+    return _onDark(ink) ? LoopColors.chalk : ink;
+  }
 
-  /// [LoopColors.card2]'s weight in the ground's ink — a filled inset or a
-  /// placeholder. The alpha is taken from the token itself, so on the Ink page
-  /// the result is the token, exactly.
+  /// Whether the ambient ink is the dark page's light ink.
+  static bool _onDark(Color ink) => ink.computeLuminance() > 0.3;
+
+  static Color _derive(BuildContext context, Color token, double alpha) {
+    final ink = inkOf(context);
+    return _onDark(ink) ? token : ink.withValues(alpha: alpha);
+  }
+
+  /// [LoopColors.card2] — a filled inset or a placeholder.
   static Color fillOf(BuildContext context) =>
-      inkOf(context).withValues(alpha: LoopColors.card2.a);
+      _derive(context, LoopColors.card2, 0.10);
 
-  /// [LoopColors.card]'s weight in the ground's ink — the softer panel tint a
-  /// placeholder or an inset panel sits on.
+  /// [LoopColors.card] — the panel a placeholder or an inset sits on.
   static Color tintOf(BuildContext context) =>
-      inkOf(context).withValues(alpha: LoopColors.card.a);
+      _derive(context, LoopColors.card, 0.06);
 
-  /// [LoopColors.line]'s weight in the ground's ink — a hairline edge.
+  /// [LoopColors.line] — a hairline edge.
   static Color hairlineOf(BuildContext context) =>
-      inkOf(context).withValues(alpha: LoopColors.line.a);
+      _derive(context, LoopColors.line, 0.13);
 
-  /// [LoopColors.line2]'s weight in the ground's ink — a strong edge, the one
-  /// a control draws around itself.
+  /// [LoopColors.line2] — a strong edge, the one a control draws around
+  /// itself.
   static Color edgeOf(BuildContext context) =>
-      inkOf(context).withValues(alpha: LoopColors.line2.a);
+      _derive(context, LoopColors.line2, 0.22);
 
-  /// [LoopColors.text2]'s weight in the ground's ink — secondary copy.
+  /// [LoopColors.text2] — secondary copy.
   static Color secondaryOf(BuildContext context) =>
-      inkOf(context).withValues(alpha: LoopColors.text2.a);
+      _derive(context, LoopColors.text2, 0.68);
 
-  /// [LoopColors.text3]'s weight in the ground's ink — auxiliary copy and
-  /// glyphs.
+  /// [LoopColors.text3] — auxiliary copy and glyphs.
   static Color auxiliaryOf(BuildContext context) =>
-      inkOf(context).withValues(alpha: LoopColors.text3.a);
+      _derive(context, LoopColors.text3, 0.58);
 }
 
-/// Spacing semantics (chapter 4.3).
+/// Spacing semantics (docs/42 附A §4, decision 0210).
 abstract final class LoopSpacing {
   /// 紧凑 · 8
   static const double tight = 8;
 
-  /// 卡内 · 14
-  static const double card = 14;
+  /// 卡内 · 20
+  static const double card = 20;
 
   /// 组间 · 22
   static const double group = 22;
 
-  /// 章节间 · 30
-  static const double section = 30;
+  /// 章节间 · 40
+  static const double section = 40;
 
-  /// 页面左右内容基线 · 16
-  static const double page = 16;
+  /// 页面左右内容基线 · 20
+  static const double page = 20;
+
+  /// 标题到正文 · 18
+  static const double headingGap = 18;
 
   // Existing aliases.
   static const double compact = tight;
@@ -212,64 +252,43 @@ abstract final class LoopSpacing {
   static const double x10 = 40;
 }
 
-/// Corner radii (chapter 4.3): shell 24 / card 20 / control 16 / inner 12.
+/// Corner radii (decision 0210): every surface corner is square. The step
+/// names survive so that call sites keep their meaning, but each is 0. Only
+/// [pill] / [round] is round, and only for an avatar, a dot, a ring or a
+/// progress end — never a card, a button, a field or a tag.
 abstract final class LoopRadius {
-  static const double shellValue = 24;
-  static const double cardValue = 20;
-  static const double controlValue = 16;
-  static const double innerValue = 12;
+  static const double shellValue = 0;
+  static const double cardValue = 0;
+  static const double controlValue = 0;
+  static const double innerValue = 0;
 
-  /// Floating Chalk tab bar radius (chapter 5.4).
-  static const double tabBarValue = 23;
+  /// The tab bar: square, like everything else (decision 0210).
+  static const double tabBarValue = 0;
 
-  /// Chat bubble tail corner (`.msg-txt` in `docs/prototype/style-v2.css`:
-  /// `border-radius:5px 16px 16px 16px`). The other three corners are
-  /// [controlValue].
-  static const double bubbleTailValue = 5;
+  /// Chat bubble tail corner — square like the other three.
+  static const double bubbleTailValue = 0;
 
-  /// `.row-ico` / `.tcard-logo` / `.notice` / `.power-hint` /
-  /// `.composer input` / `.sk-circle{border-radius:15px}`: the 44 tile and
-  /// the inline surfaces cut to the same corner (decision 0172).
-  static const double tileValue = 15;
+  static const double tileValue = 0;
+  static const double buttonValue = 0;
+  static const double toolValue = 0;
+  static const double badgeValue = 0;
+  static const double wideButtonValue = 0;
 
-  /// `.btn` / `.seg` / `.composer button{border-radius:14px}`.
-  static const double buttonValue = 14;
+  static const BorderRadius shell = BorderRadius.zero;
+  static const BorderRadius card = BorderRadius.zero;
+  static const BorderRadius control = BorderRadius.zero;
+  static const BorderRadius inner = BorderRadius.zero;
+  static const BorderRadius tabBar = BorderRadius.zero;
+  static const Radius bubbleTail = Radius.zero;
+  static const BorderRadius tile = BorderRadius.zero;
+  static const BorderRadius button = BorderRadius.zero;
+  static const BorderRadius tool = BorderRadius.zero;
+  static const BorderRadius badge = BorderRadius.zero;
+  static const BorderRadius wideButton = BorderRadius.zero;
 
-  /// `.back` / `.tool-btn{border-radius:13px}`: the 44 top-bar controls.
-  static const double toolValue = 13;
-
-  /// `.badge{border-radius:7px}`.
-  static const double badgeValue = 7;
-
-  /// The flat-page wide button (decision 0127): half of its 52 height.
-  static const double wideButtonValue = 26;
-
-  static const BorderRadius shell = BorderRadius.all(
-    Radius.circular(shellValue),
-  );
-  static const BorderRadius card = BorderRadius.all(Radius.circular(cardValue));
-  static const BorderRadius control = BorderRadius.all(
-    Radius.circular(controlValue),
-  );
-  static const BorderRadius inner = BorderRadius.all(
-    Radius.circular(innerValue),
-  );
-  static const BorderRadius tabBar = BorderRadius.all(
-    Radius.circular(tabBarValue),
-  );
-  static const Radius bubbleTail = Radius.circular(bubbleTailValue);
-  static const BorderRadius tile = BorderRadius.all(Radius.circular(tileValue));
-  static const BorderRadius button = BorderRadius.all(
-    Radius.circular(buttonValue),
-  );
-  static const BorderRadius tool = BorderRadius.all(Radius.circular(toolValue));
-  static const BorderRadius badge = BorderRadius.all(
-    Radius.circular(badgeValue),
-  );
-  static const BorderRadius wideButton = BorderRadius.all(
-    Radius.circular(wideButtonValue),
-  );
+  /// Fully round — avatars, dots, rings and progress ends only.
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
+  static const BorderRadius round = pill;
 
   // Existing aliases.
   static const BorderRadius container = shell;
@@ -278,58 +297,33 @@ abstract final class LoopRadius {
   static const BorderRadius small = inner;
 }
 
-/// Depth (chapter 4.4). Flutter has no inset box shadow; the prototype's
-/// inset top light edge is reproduced with [innerEdge] drawn as a 1px top
-/// border or gradient by the card widgets.
+/// Depth (decision 0210). The looplabs surface is flat: a 1px edge instead of
+/// a drop shadow, and a coloured glow — never a dark lift — on the one
+/// element a page wants to stand out. The lift names survive, empty, so call
+/// sites keep compiling; the edge colours are transparent.
 abstract final class LoopDepth {
-  /// `--lift-primary`: 0 18px 48px rgba(5,6,4,.62), 0 4px 12px rgba(5,6,4,.4).
-  static const List<BoxShadow> liftPrimary = <BoxShadow>[
-    BoxShadow(color: Color(0x9E050604), offset: Offset(0, 18), blurRadius: 48),
-    BoxShadow(color: Color(0x66050604), offset: Offset(0, 4), blurRadius: 12),
-  ];
-
-  /// Top light edge for [liftPrimary] on dark grounds: rgba(243,245,239,.1).
-  static const Color liftPrimaryEdge = Color(0x1AF3F5EF);
-
-  /// `--lift-primary-light`: primary cards on Lime / Chalk grounds.
-  static const List<BoxShadow> liftPrimaryLight = <BoxShadow>[
-    BoxShadow(color: Color(0x80050604), offset: Offset(0, 18), blurRadius: 48),
-    BoxShadow(color: Color(0x4D050604), offset: Offset(0, 4), blurRadius: 12),
-  ];
-
-  /// Top light edge for [liftPrimaryLight]: rgba(255,255,255,.42).
-  static const Color liftPrimaryLightEdge = Color(0x6BFFFFFF);
-
-  /// `--lift-card`: 0 6px 20px rgba(5,6,4,.42).
-  static const List<BoxShadow> liftCard = <BoxShadow>[
-    BoxShadow(color: Color(0x6B050604), offset: Offset(0, 6), blurRadius: 20),
-  ];
-
-  /// Top light edge for [liftCard]: rgba(243,245,239,.055).
-  static const Color liftCardEdge = Color(0x0EF3F5EF);
-
-  /// `--lift-inner`: inset only, no outer shadow.
+  static const List<BoxShadow> liftPrimary = <BoxShadow>[];
+  static const Color liftPrimaryEdge = Color(0x00000000);
+  static const List<BoxShadow> liftPrimaryLight = <BoxShadow>[];
+  static const Color liftPrimaryLightEdge = Color(0x00000000);
+  static const List<BoxShadow> liftCard = <BoxShadow>[];
+  static const Color liftCardEdge = Color(0x00000000);
   static const List<BoxShadow> liftInner = <BoxShadow>[];
+  static const Color innerEdge = Color(0x00000000);
+  static const List<BoxShadow> tabBar = <BoxShadow>[];
+  static const Color tabBarEdge = LoopColors.line;
+  static const List<BoxShadow> tabSelected = <BoxShadow>[];
+  static const Color tabSelectedEdge = Color(0x00000000);
 
-  /// Top light edge for [liftInner]: rgba(243,245,239,.04).
-  static const Color innerEdge = Color(0x0AF3F5EF);
-
-  /// Floating Chalk tab bar (chapter 5.4).
-  static const List<BoxShadow> tabBar = <BoxShadow>[
-    BoxShadow(color: Color(0x80050604), offset: Offset(0, -2), blurRadius: 24),
-    BoxShadow(color: Color(0x99050604), offset: Offset(0, 16), blurRadius: 40),
+  /// `0 0 24px #9c36ff22` — the Purple glow of a focused or featured card.
+  static const List<BoxShadow> glowPurple = <BoxShadow>[
+    BoxShadow(color: Color(0x229C36FF), blurRadius: 24),
   ];
 
-  /// Top light edge of the tab bar: rgba(255,255,255,.6).
-  static const Color tabBarEdge = Color(0x99FFFFFF);
-
-  /// Selected tab cell: 0 2px 8px rgba(5,6,4,.22).
-  static const List<BoxShadow> tabSelected = <BoxShadow>[
-    BoxShadow(color: Color(0x38050604), offset: Offset(0, 2), blurRadius: 8),
+  /// `0 0 17px #ffd60035` — the Yellow glow of a primary action or a tag.
+  static const List<BoxShadow> glowYellow = <BoxShadow>[
+    BoxShadow(color: LoopColors.primaryGlow, blurRadius: 17),
   ];
-
-  /// Top light edge of the selected tab: rgba(255,255,255,.5).
-  static const Color tabSelectedEdge = Color(0x80FFFFFF);
 }
 
 /// z-axis baseline (chapter 4.4). Flutter stacks by widget order; these
@@ -352,8 +346,8 @@ abstract final class LoopTouch {
   /// Minimum hit target for every tappable element.
   static const double minimum = 44;
 
-  /// Primary button height.
-  static const double primaryButton = 53;
+  /// Primary button height (`min-height 52`, decision 0210).
+  static const double primaryButton = 52;
 
   /// Floating tab bar height and its minimum cell height.
   static const double tabBarHeight = 70;
@@ -393,64 +387,61 @@ abstract final class LoopLayout {
   static const double topbarContentHeight = 74;
 }
 
-/// Font families (decision 0080, which replaces the display voice of chapter
-/// 4.2). LOOP ships no display face any more: every proportional band asks the
-/// platform for its own UI sans — SF Pro on iOS/macOS through the engine's
-/// `CupertinoSystem*` aliases, Roboto on Android — and Chinese resolves
-/// through the fallback chain, Apple's PingFang SC beside SF Pro and the
-/// bundled Noto Sans SC everywhere else. Both halves of a 中英 line therefore
-/// come from one vendor's stack.
+/// Font families (decision 0210, which supersedes decision 0080's platform
+/// sans). The looplabs.meme voice is Impact for headings and Arial for body;
+/// neither may be embedded (Monotype commercial licence), so LOOP bundles their
+/// open stand-ins:
 ///
-/// IBM Plex Mono survives for one job: addresses, hashes and code, where a
-/// fixed advance is the point. **Figures are no longer fixed-width.** They are
-/// the same system sans asked for `tabularFigures`, which is what a price
-/// column actually needs — equal digit advances inside the page's one voice.
+/// - **Anton** (SIL OFL 1.1) — the condensed display face of every heading
+///   band. It has Latin only; a Chinese heading falls through to
+///   [cjkDisplay], the bundled Noto Sans SC Bold, so the Han half of a 中英
+///   heading is bold as well.
+/// - **Arimo** (SIL OFL 1.1, Arial-metric compatible) — every other
+///   proportional band, 400 and 700. Its Han fallback is [cjk].
+/// - **IBM Plex Mono** — addresses, hashes and code, where a fixed advance is
+///   the point. Figures stay proportional-family tabular figures.
 abstract final class LoopFonts {
-  /// The system UI sans at text optical size. On iOS/macOS the engine maps it
-  /// to SF Pro Text; on every other platform it does not resolve and the head
-  /// of [systemFallback] takes the primary position.
-  static const String system = 'CupertinoSystemText';
+  /// The condensed display face (headings, hero figures).
+  static const String display = 'Anton';
 
-  /// The system UI sans at display optical size (SF Pro Display on Apple).
-  static const String systemDisplay = 'CupertinoSystemDisplay';
-
-  /// The size at which Apple switches from the text cut to the display cut.
-  static const double displayOpticalSize = 20;
-
-  /// Android's own UI sans. The `CupertinoSystem*` aliases resolve on Apple
-  /// platforms only; a family list whose primary name is unknown falls
-  /// through to the next entry, so Roboto has to lead the fallback chain.
-  static const String android = 'Roboto';
+  /// The body face (body, captions, labels, figures).
+  static const String body = 'Arimo';
 
   static const String mono = 'IBM Plex Mono';
 
-  /// The bundled CJK family — the controlled Chinese face for every device
-  /// whose platform stack we do not trust.
+  /// The bundled CJK family — the controlled Chinese face.
   static const String cjk = 'Noto Sans SC';
 
-  /// Names kept for the call sites that ask for "the body face" or "the
-  /// display face" rather than a band step.
-  static const String body = system;
-  static const String display = systemDisplay;
+  /// Noto Sans SC Bold registered as its own one-face family, so a heading
+  /// run in Anton (which asks for 400, Anton's only weight) still lands on
+  /// the bold Han face rather than the regular one.
+  static const String cjkDisplay = 'Noto Sans SC Display';
 
-  /// The optical cut a band step of [size] asks for.
-  static String familyFor(double size) =>
-      size >= displayOpticalSize ? systemDisplay : system;
+  /// Retained names: call sites that asked for "the system face".
+  static const String system = body;
+  static const String systemDisplay = display;
 
-  /// Fallback chain for the proportional bands: Android's Latin face, then
-  /// Apple's CJK companion to SF Pro, then the bundled file, then the OEM
-  /// stacks for scripts none of those carry.
+  /// Retired with decision 0210: a band no longer switches optical cut.
+  static String familyFor(double size) => body;
+
+  /// Fallback chain for the body bands: the bundled CJK face first, then the
+  /// platform stacks for scripts it does not carry.
   static const List<String> systemFallback = <String>[
-    android,
-    'PingFang SC',
     cjk,
+    'PingFang SC',
     'HarmonyOS Sans SC',
     'Source Han Sans SC',
     'Microsoft YaHei',
     'sans-serif',
   ];
 
-  /// Retained name for the same chain (Stream's theme adapter calls it).
+  /// Fallback chain for the display bands: bold Han, then [systemFallback].
+  static const List<String> displayFallback = <String>[
+    cjkDisplay,
+    ...systemFallback,
+  ];
+
+  /// Retained name for the body chain (Stream's theme adapter calls it).
   static const List<String> cjkFallback = systemFallback;
 
   /// Fallback chain for the fixed-width band. IBM Plex Mono has no Han
@@ -465,18 +456,11 @@ abstract final class LoopFonts {
   ];
 }
 
-/// Type builders. Every band is the platform's own sans; weight is matched by
-/// `fontWeight` alone, because neither the system face (which the engine
-/// instances itself) nor the bundled Noto Sans SC statics take a variation
-/// axis from us.
-///
-/// Leading is distributed evenly ([TextLeadingDistribution.even]) because a
-/// mixed 中英 line resolves two files with different ascent/descent ratios;
-/// proportional leading would shift the baseline whenever a run switches
-/// script.
+/// Type builders. Leading is distributed evenly
+/// ([TextLeadingDistribution.even]) because a mixed 中英 line resolves two
+/// files with different ascent/descent ratios.
 abstract final class LoopTypography {
-  /// The proportional builder behind bands 1–6 and, with [tabularFigures],
-  /// band 7.
+  /// The body builder (Arimo, Noto Sans SC behind it).
   static TextStyle sans({
     required double size,
     required FontWeight weight,
@@ -486,15 +470,14 @@ abstract final class LoopTypography {
     bool tabularFigures = false,
   }) {
     return TextStyle(
-      fontFamily: LoopFonts.familyFor(size),
+      fontFamily: LoopFonts.body,
       fontFamilyFallback: LoopFonts.systemFallback,
       fontSize: size,
       fontWeight: weight,
       height: height,
       leadingDistribution: TextLeadingDistribution.even,
       // Explicit, never null: a null tracking lets Material's own 2021
-      // typography (+0.5 on a label, +0.3 on a title) leak through the merge
-      // that builds a `Text`'s style, and the ladder stops being the ladder.
+      // typography leak through the merge that builds a `Text`'s style.
       letterSpacing: letterSpacing ?? 0,
       color: color,
       fontFeatures: tabularFigures
@@ -503,9 +486,29 @@ abstract final class LoopTypography {
     );
   }
 
+  /// The display builder: Anton, tracked in by [trackingEm] of its size, with
+  /// bold Noto Sans SC behind it. Anton has one weight, so the weight is
+  /// fixed at 400 (asking for more would only invite synthetic bolding).
+  static TextStyle condensed({
+    required double size,
+    required double height,
+    double trackingEm = 0,
+    Color color = LoopColors.chalk,
+  }) {
+    return TextStyle(
+      fontFamily: LoopFonts.display,
+      fontFamilyFallback: LoopFonts.displayFallback,
+      fontSize: size,
+      fontWeight: FontWeight.w400,
+      height: height,
+      leadingDistribution: TextLeadingDistribution.even,
+      letterSpacing: size * trackingEm,
+      color: color,
+    );
+  }
+
   /// Fixed width. Addresses, transaction hashes, contract identifiers and
-  /// code — never an amount, a price or a percentage: those are band 7, which
-  /// is the page's own voice with equal digit advances.
+  /// code — never an amount, a price or a percentage: those are band 7.
   static TextStyle mono({
     required double size,
     FontWeight weight = FontWeight.w500,
@@ -527,66 +530,60 @@ abstract final class LoopTypography {
   }
 
   // ---------------------------------------------------------------------
-  // The seven bands. Every band fixes weight and line height; tracking is 0
-  // everywhere, because a system UI sans is already spaced for the screen and
-  // Han glyphs have no business being tracked. A call site may only choose a
-  // step size from the band's documented ladder. Feature code never writes
-  // `fontSize`, `fontWeight` or `fontFamily` — see `scripts/check_harness.py`.
-  //
-  // Hierarchy is carried by weight and by the grey of the token, not by size:
-  // the whole ladder spans 11 → 28, where it used to span 11 → 42.
+  // The seven bands. Feature code never writes `fontSize`, `fontWeight` or
+  // `fontFamily` — see `scripts/check_harness.py`.
   // ---------------------------------------------------------------------
 
-  /// Band 1 · display — the one big statement on a page: a hero figure, a
-  /// folio heading. 26–28 semibold, not 32–42 extrabold.
+  /// Band 1 · display — Anton, tracked -0.02em (`--heading-font`).
   static TextStyle display(double size, {Color color = LoopColors.chalk}) =>
-      sans(size: size, weight: FontWeight.w600, height: 1.2, color: color);
+      condensed(size: size, height: 1.1, trackingEm: -0.02, color: color);
 
-  /// Band 2 · heading — page titles and section headings. 20–22 semibold.
+  /// Band 2 · heading — Anton at page-title sizes, tracked -0.01em. The
+  /// weight argument survives for call sites; Anton has only one.
   static TextStyle heading(
     double size, {
-    FontWeight weight = FontWeight.w600,
+    FontWeight weight = FontWeight.w400,
     Color color = LoopColors.chalk,
-  }) => sans(size: size, weight: weight, height: 1.25, color: color);
+  }) => condensed(size: size, height: 1.15, trackingEm: -0.01, color: color);
 
-  /// Band 3 · title — card and row titles. 15–16 at medium/semibold.
+  /// Band 3 · title — card and row titles, Arimo 700 (`16 / w700`).
   static TextStyle title(
     double size, {
-    FontWeight weight = FontWeight.w600,
+    FontWeight weight = FontWeight.w700,
     Color color = LoopColors.chalk,
-  }) => sans(size: size, weight: weight, height: 1.3, color: color);
+  }) => sans(size: size, weight: weight, height: 1.35, color: color);
 
-  /// Band 4 · body — running prose at 14 regular. 1.4 is the loose end of the
-  /// ladder's range, kept for prose because Han glyphs fill their em box.
+  /// Band 4 · body — running prose, Arimo 400 at a 1.7 leading.
   static TextStyle body(double size, {Color color = LoopColors.chalk}) =>
-      sans(size: size, weight: FontWeight.w400, height: 1.4, color: color);
+      sans(size: size, weight: FontWeight.w400, height: 1.7, color: color);
 
-  /// Band 5 · caption — supporting copy at 12, with the on-screen floor of 11
-  /// (`.scr :is(.label,.badge,…,small){font-size:11px}`).
+  /// Band 5 · caption — supporting copy, 1.6 leading.
   static TextStyle caption(double size, {Color color = LoopColors.text3}) =>
-      sans(size: size, weight: FontWeight.w400, height: 1.35, color: color);
+      sans(size: size, weight: FontWeight.w400, height: 1.6, color: color);
 
-  /// Band 6 · label — controls and inline labels.
+  /// Band 6 · label — controls and inline labels, 700.
   static TextStyle label(
     double size, {
-    FontWeight weight = FontWeight.w500,
+    FontWeight weight = FontWeight.w700,
     Color color = LoopColors.text3,
-  }) => sans(size: size, weight: weight, height: 1.25, color: color);
+  }) => sans(size: size, weight: weight, height: 1.3, color: color);
 
-  /// Band 6b · eyebrow — the small subheading over a group. It used to be an
-  /// uppercase, letter-spaced, fixed-width Latin stamp (`MARKET SIGNALS`); it
-  /// is now a 12px Chinese subheading in the page's own voice, told apart by
-  /// weight and grey. The strings themselves are each page's to restate.
+  /// Band 6b · eyebrow / kicker — 800, tracked +0.15em, uppercased by the
+  /// widget that draws it (`LoopType.caps`).
   static TextStyle eyebrow(double size, {Color color = LoopColors.text3}) =>
-      sans(size: size, weight: FontWeight.w500, height: 1.25, color: color);
+      sans(
+        size: size,
+        weight: FontWeight.w800,
+        height: 1.3,
+        letterSpacing: size * 0.15,
+        color: color,
+      );
 
-  /// Band 7 · figure — every number the product shows: amounts, prices,
-  /// percentages, counts, timestamps. The page's own sans with
-  /// [FontFeature.tabularFigures], so a right-aligned column lines up without
-  /// leaving the one voice. Addresses and hashes are [code], not this.
+  /// Band 7 · figure — every number the product shows, in the body face with
+  /// [FontFeature.tabularFigures]. Addresses and hashes are [code].
   static TextStyle figure(
     double size, {
-    FontWeight weight = FontWeight.w600,
+    FontWeight weight = FontWeight.w700,
     double height = 1.3,
     Color color = LoopColors.chalk,
   }) => sans(
@@ -597,9 +594,7 @@ abstract final class LoopTypography {
     tabularFigures: true,
   );
 
-  /// Band 7b · code — the fixed-width band, and the only one: an address, a
-  /// transaction hash, a contract identifier, a raw payload. A fixed advance
-  /// is what makes two hashes comparable by eye; nothing else needs it.
+  /// Band 7b · code — the fixed-width band.
   static TextStyle code(
     double size, {
     FontWeight weight = FontWeight.w500,
@@ -607,114 +602,128 @@ abstract final class LoopTypography {
     Color color = LoopColors.chalk,
   }) => mono(size: size, weight: weight, height: height, color: color);
 
-  /// Restate [style] at [weight]. Kept as the single sanctioned way to move a
-  /// weight: the bands no longer carry a variation axis, so this is now a
-  /// plain restatement, and call sites do not have to know that.
+  /// Restate [style] at [weight]. On an Anton step the weight is ignored —
+  /// Anton has one weight, and a heavier request would only fake-bold it.
   static TextStyle withWeight(TextStyle style, FontWeight weight) =>
-      style.copyWith(fontWeight: weight);
+      style.fontFamily == LoopFonts.display
+      ? style
+      : style.copyWith(fontWeight: weight);
 }
 
-/// The named steps of the seven bands — the type ladder, final since decision
-/// 0189 (docs/37 §1). This is the whole vocabulary available to pages:
-/// `lib/features/**` and `lib/widgets/**` take a step from here (or the
-/// `TextTheme` slot that mirrors it) and never a raw number. A weight may move
-/// only through [LoopTypography.withWeight], a colour only through
-/// `.copyWith(color: …)`; `scripts/check_harness.py` (G1) refuses a
-/// `LoopTypography.<band>(<number>)` call or a `copyWith(fontSize: …)` outside
-/// `lib/core/theme`, and (G2) any text below the 11px screen floor outside the
-/// chart canvases.
+/// The named steps of the seven bands (decision 0210 restates decision
+/// 0189's ladder in the looplabs voice; docs/42 附A §2). `lib/features/**`
+/// and `lib/widgets/**` take a step from here and never a raw number.
 ///
-/// Every role has exactly one step (R-numbers are docs/37 §1):
-///
-/// | band | step | size | weight | height | roles |
+/// | band | step | face | size | height | roles |
 /// | --- | --- | --- | --- | --- | --- |
-/// | display | `displayXl` | 28 | 600 | 1.2 | R9 folio heading (intro / record / state) |
-/// | display | `display` | 26 | 600 | 1.2 | R9 folio heading (action) |
-/// | display | `displaySm` | 24 | 600 | 1.2 | R9 folio heading (index / compact), R27 profile name |
-/// | heading | `stepTitle` | 24 | 700 | 1.25 | R1c step-page title |
-/// | heading | `headingLg` | 22 | 600 | 1.25 | R1 page title |
-/// | heading | `flatTitle` | 20 | 700 | 1.25 | R1b flat second-level page title |
-/// | heading | `heading` | 20 | 600 | 1.25 | R2 sheet title (only via `LoopSheetHeading`) |
-/// | heading | `headingSm` | 17 | 600 | 1.3 | R1d dense top bar, R3b flat section title |
-/// | title | `titleLg` | 16 | 600 | 1.3 | R15 flat wide button, R31 centred state title, quote-row title |
-/// | title | `title` | 15 | 600 | 1.3 | R4 row title (flat and ledger alike) |
-/// | title | `titleSm` | 13 | 500 | 1.3 | small control word |
-/// | body | `bodyLg` | 15 | 400 | 1.4 | R25 text input and its placeholder |
-/// | body | `body` | 14 | 400 | 1.4 | R18 prose, R26 search placeholder |
-/// | body | `bodySm` | 13 | 400 | 1.4 | R19 sheet support copy |
-/// | caption | `caption` | 12 | 400 | 1.35 | R5 row subtitle, R10 folio caption, R20 notice |
-/// | caption | `captionSm` | 11 | 400 | 1.35 | R21 provenance / version / footnote |
-/// | label | `action` | 14 | 600 | 1.25 | Material button slot |
-/// | label | `label` | 12 | 500 | 1.25 | R14 badge, R15 button, R16 seg, R17 inline action (at 600 / 700) |
-/// | label | `eyebrow` | 12 | 500 | 1.25 | R3 / R3c section label |
-/// | label | `kicker` | 11 | 500 | 1.25 | R8 folio kicker, R11 stamp, R13 stat label |
-/// | figure | `figureXl` | 28 | 600 | 1.2 | R22 hero figure (never bolder) |
-/// | figure | `figureLg` | 20 | 600 | 1.25 | R22b, R24 amount input |
-/// | figure | `figureMd` | 17 | 600 | 1.3 | R23 secondary hero, quote-row value |
-/// | figure | `figure` | 13 | 600 | 1.3 | R6 row value, R12 stat value |
-/// | figure | `figureSm` | 12 | 400 | 1.4 | quote-row secondary value |
-/// | figure | `figureXs` | 11 | 400 | 1.35 | R7 row secondary value (600 for a move) |
-/// | code | `code` | 13 | 500 | 1.4 | R30 address / hash |
-/// | code | `codeSm` | 11 | 500 | 1.35 | R30 compact address |
-///
-/// Tracking is 0 on every step. The figure steps are tabular figures in the
-/// page's own sans; only `code` is fixed-width.
+/// | display | `heroDisplay` | Anton | 56 | 1.0 | a hero line (intro pages) |
+/// | display | `displayXl` | Anton | 36 | 1.1 | R9 folio heading (intro / record / state) |
+/// | display | `display` | Anton | 32 | 1.1 | R9 folio heading (action) |
+/// | display | `displaySm` | Anton | 28 | 1.1 | R9 folio heading (index), R27 profile name |
+/// | display | `statFigure` | Anton | 30 | 1.1 | a big stat value |
+/// | heading | `stepTitle` | Anton | 28 | 1.15 | R1c step-page title |
+/// | heading | `headingLg` | Anton | 24 | 1.15 | R1 page title |
+/// | heading | `flatTitle` | Anton | 22 | 1.15 | R1b flat second-level title |
+/// | heading | `heading` | Anton | 22 | 1.15 | R2 sheet title |
+/// | heading | `headingSm` | Anton | 18 | 1.15 | R1d dense top bar, R3b section title |
+/// | title | `titleLg` | Arimo 700 | 16 | 1.35 | R15 wide button, R31 state title |
+/// | title | `title` | Arimo 700 | 15 | 1.35 | R4 row title |
+/// | title | `titleSm` | Arimo 700 | 13 | 1.35 | small control word, form label |
+/// | body | `bodyLg` | Arimo 400 | 15 | 1.6 | R25 text input |
+/// | body | `body` | Arimo 400 | 14 | 1.7 | R18 prose |
+/// | body | `message` | Arimo 400 | 14 | 1.45 | a chat message bubble |
+/// | body | `bodySm` | Arimo 400 | 13 | 1.7 | R19 sheet support copy |
+/// | caption | `caption` | Arimo 400 | 12 | 1.6 | R5 row subtitle, R20 notice |
+/// | caption | `captionSm` | Arimo 400 | 11 | 1.6 | R21 footnote |
+/// | label | `action` | Arimo 800 | 13 | 1.3 | button word |
+/// | label | `label` | Arimo 700 | 12 | 1.3 | R14 badge, R16 seg, R17 inline action |
+/// | label | `eyebrow` | Arimo 800 +0.15em | 12 | 1.3 | R3 section label |
+/// | label | `kicker` | Arimo 800 +0.15em | 11 | 1.3 | R8 folio kicker, R13 stat label |
+/// | figure | `figureXl` | Arimo 700 tnum | 28 | 1.2 | R22 hero figure |
+/// | figure | `figureLg` | Arimo 700 tnum | 20 | 1.25 | R24 amount input |
+/// | figure | `figureMd` | Arimo 700 tnum | 17 | 1.3 | R23 secondary hero |
+/// | figure | `figure` | Arimo 700 tnum | 13 | 1.3 | R6 row value |
+/// | figure | `figureSm` | Arimo 400 tnum | 12 | 1.4 | secondary value |
+/// | figure | `figureXs` | Arimo 400 tnum | 11 | 1.35 | R7 row secondary value |
+/// | code | `code` | Plex Mono | 13 | 1.4 | R30 address / hash |
+/// | code | `codeSm` | Plex Mono | 11 | 1.35 | R30 compact address |
 abstract final class LoopType {
+  /// Uppercase the Latin letters of a heading or a kicker
+  /// (`text-transform: uppercase`). Han characters have no case and pass
+  /// through untouched, so a Chinese title is unchanged.
+  static String caps(String text) => text.toUpperCase();
+
   // Band 1 · display.
+  /// A hero line — the one statement on an intro page (`-0.035em`).
+  static final TextStyle heroDisplay = LoopTypography.condensed(
+    size: 56,
+    height: 1.0,
+    trackingEm: -0.035,
+  );
+
   /// R9 folio heading on the intro / record / state archetypes.
-  static final TextStyle displayXl = LoopTypography.display(28);
+  static final TextStyle displayXl = LoopTypography.display(36);
 
   /// R9 folio heading on the action archetype.
-  static final TextStyle display = LoopTypography.display(26);
+  static final TextStyle display = LoopTypography.display(32);
 
   /// R9 folio heading on the index archetype and every compact folio; R27
   /// the name on a person's or a community's home.
-  static final TextStyle displaySm = LoopTypography.display(24);
+  static final TextStyle displaySm = LoopTypography.display(28);
+
+  /// A big stat value (`stat-value`, yellow at the call site, -0.025em).
+  static final TextStyle statFigure = LoopTypography.condensed(
+    size: 30,
+    height: 1.1,
+    trackingEm: -0.025,
+  );
 
   // Band 2 · heading.
-  /// R1c the heading of an account-opening step page (`LoopFlat(step:)`,
-  /// `LoopFlatHeading`), bold where a page title is semibold.
-  static final TextStyle stepTitle = LoopTypography.heading(
-    24,
-    weight: FontWeight.w700,
-  );
+  /// R1c the heading of an account-opening step page.
+  static final TextStyle stepTitle = LoopTypography.heading(28);
 
   /// R1 page title of a first-level tab or a ledger second-level page.
-  static final TextStyle headingLg = LoopTypography.heading(22);
+  static final TextStyle headingLg = LoopTypography.heading(24);
 
   /// R1b the one-line title of a flat second-level page (decision 0126).
-  static final TextStyle flatTitle = LoopTypography.heading(
-    20,
-    weight: FontWeight.w700,
-  );
+  static final TextStyle flatTitle = LoopTypography.heading(22);
 
   /// R2 every sheet's title — drawn only by `LoopSheetHeading` / `LoopSheet`
   /// / `LoopSignSheet`.
-  static final TextStyle heading = LoopTypography.heading(20);
+  static final TextStyle heading = LoopTypography.heading(22);
 
   /// R1d dense (chat) top bar; R3b section title on a flat page.
-  static final TextStyle headingSm = LoopTypography.heading(17);
+  static final TextStyle headingSm = LoopTypography.heading(18);
 
   // Band 3 · title.
-  /// The quote-row title (decision 0189 S1); R15 a flat wide button's word;
-  /// R31 the title of a centred state (empty / error / locked).
+  /// The quote-row title; R15 a flat wide button's word; R31 the title of a
+  /// centred state (empty / error / locked).
   static final TextStyle titleLg = LoopTypography.title(16);
 
-  /// R4 a row title — ledger rows, flat rows and person rows alike (0189 S2).
+  /// R4 a row title — ledger rows, flat rows and person rows alike.
   static final TextStyle title = LoopTypography.title(15);
 
   /// A small control word or a label over a form field.
-  static final TextStyle titleSm = LoopTypography.title(
-    13,
-    weight: FontWeight.w500,
-  );
+  static final TextStyle titleSm = LoopTypography.title(13);
 
   // Band 4 · body.
   /// R25 the text of a text input and its placeholder.
-  static final TextStyle bodyLg = LoopTypography.body(15);
+  static final TextStyle bodyLg = LoopTypography.sans(
+    size: 15,
+    weight: FontWeight.w400,
+    height: 1.6,
+  );
 
   /// R18 running prose; R26 a search field's placeholder.
   static final TextStyle body = LoopTypography.body(14);
+
+  /// A chat message: the body size at a chat leading (1.45), because a
+  /// conversation reads line by line, not as prose (decision 0210).
+  static final TextStyle message = LoopTypography.sans(
+    size: 14,
+    weight: FontWeight.w400,
+    height: 1.45,
+  );
 
   /// R19 the support copy under a sheet title; the quote-row grey line.
   static final TextStyle bodySm = LoopTypography.body(
@@ -723,47 +732,44 @@ abstract final class LoopType {
   );
 
   // Band 5 · caption.
-  /// R5 a row's second line; R10 a folio caption; R20 a notice or the note
-  /// under a form field.
+  /// R5 a row's second line; R10 a folio caption; R20 a notice.
   static final TextStyle caption = LoopTypography.caption(12);
 
   /// R21 one grey line of provenance, version or legal footnote.
   static final TextStyle captionSm = LoopTypography.caption(11);
 
   // Band 6 · label.
-  /// The Material button slot (`labelLarge`).
+  /// The button word (`13 / w800`) and the Material button slot.
   static final TextStyle action = LoopTypography.label(
-    14,
-    weight: FontWeight.w600,
+    13,
+    weight: FontWeight.w800,
     color: LoopColors.chalk,
   );
 
-  /// R14 badge (700), R15 button (700), R16 segment (600 / 700 selected), R17
-  /// inline text action (600).
+  /// R14 badge, R15 button, R16 segment, R17 inline text action.
   static final TextStyle label = LoopTypography.label(12);
 
   /// R3 the section label over a group, R3c the first line inside a card.
   static final TextStyle eyebrow = LoopTypography.eyebrow(12);
 
-  /// R8 folio kicker, R11 folio stamp, R13 stat-grid label — the 11px floor
-  /// of the prototype's `.scr :is(.label,.badge,…,small)` rule.
+  /// R8 folio kicker, R11 folio stamp, R13 stat-grid label (`11 / w800 /
+  /// +0.15em`).
   static final TextStyle kicker = LoopTypography.eyebrow(11);
 
-  // Band 7 · figure — tabular numbers in the page's own voice.
-  /// R22 the one hero figure on a page. 600, never bolder (decision 0080).
+  // Band 7 · figure — tabular numbers in the body face.
+  /// R22 the one hero figure on a page.
   static final TextStyle figureXl = LoopTypography.figure(28, height: 1.2);
 
   /// R22b the fraction of a hero figure; R24 an amount input.
   static final TextStyle figureLg = LoopTypography.figure(20, height: 1.25);
 
-  /// R23 a secondary hero figure; the quote-row value (0189 S1).
+  /// R23 a secondary hero figure; the quote-row value.
   static final TextStyle figureMd = LoopTypography.figure(17);
 
-  /// R6 a row's trailing value; R12 a stat-grid value. 600 since decision
-  /// 0189 (it was 500, a step thinner than the row that drew it).
+  /// R6 a row's trailing value; R12 a stat-grid value.
   static final TextStyle figure = LoopTypography.figure(13);
 
-  /// The quote-row secondary value (0189 S1).
+  /// The quote-row secondary value.
   static final TextStyle figureSm = LoopTypography.figure(
     12,
     weight: FontWeight.w400,
@@ -779,9 +785,7 @@ abstract final class LoopType {
     color: LoopColors.text2,
   );
 
-  // Retired aliases (decision 0189). Only two Preview-only chat files still
-  // call them; they are counted in G1's shrinking allowlist and go with
-  // those files. New code takes the step itself.
+  // Retired aliases (decision 0189).
   static final TextStyle monoTitle = figureLg;
   static final TextStyle monoStamp = figureXs;
 
@@ -823,15 +827,16 @@ abstract final class LoopMono {
 abstract final class LoopTheme {
   static ThemeData get dark {
     final colorScheme = const ColorScheme.dark(
-      primary: LoopColors.lime,
+      primary: LoopColors.yellow,
       onPrimary: LoopColors.ink,
-      secondary: LoopColors.chalk,
-      onSecondary: LoopColors.ink,
+      secondary: LoopColors.purple,
+      onSecondary: LoopColors.chalk,
       surface: LoopColors.graphite,
       onSurface: LoopColors.chalk,
       outline: LoopColors.line,
+      outlineVariant: LoopColors.line2,
       error: LoopColors.danger,
-    ).copyWith(tertiary: LoopColors.lime, onTertiary: LoopColors.ink);
+    ).copyWith(tertiary: LoopColors.purple, onTertiary: LoopColors.chalk);
 
     final base = ThemeData.dark(useMaterial3: true);
     // The Material slots are a view onto the seven bands; nothing here invents
@@ -896,28 +901,30 @@ abstract final class LoopTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: LoopTouch.tabBarHeight,
         elevation: 0,
-        backgroundColor: LoopColors.chalk,
-        indicatorColor: LoopColors.lime,
+        backgroundColor: LoopColors.ink,
+        indicatorColor: LoopColors.yellow,
+        indicatorShape: const RoundedRectangleBorder(),
         surfaceTintColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
             size: 21,
             color: states.contains(WidgetState.selected)
                 ? LoopColors.ink
-                : LoopColors.inkMuted,
+                : LoopColors.text3,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return textTheme.labelMedium?.copyWith(
             color: states.contains(WidgetState.selected)
-                ? LoopColors.ink
-                : LoopColors.inkMuted,
+                ? LoopColors.yellow
+                : LoopColors.text3,
           );
         }),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: LoopColors.ink,
-        indicatorColor: LoopColors.lime,
+        indicatorColor: LoopColors.yellow,
+        indicatorShape: const RoundedRectangleBorder(),
         selectedIconTheme: const IconThemeData(color: LoopColors.ink, size: 21),
         unselectedIconTheme: const IconThemeData(
           color: LoopColors.text2,
@@ -931,38 +938,38 @@ abstract final class LoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: LoopColors.card,
+        fillColor: LoopColors.input,
         // R25: a field's placeholder and floating label are the input step,
         // the same size as what is typed into it (decision 0189).
         hintStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
         labelStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 15,
+          horizontal: 14,
+          vertical: 12,
         ),
         border: const OutlineInputBorder(
           borderRadius: LoopRadius.control,
-          borderSide: BorderSide(color: LoopColors.line),
+          borderSide: BorderSide(color: LoopColors.inputLine),
         ),
         enabledBorder: const OutlineInputBorder(
           borderRadius: LoopRadius.control,
-          borderSide: BorderSide(color: LoopColors.line),
+          borderSide: BorderSide(color: LoopColors.inputLine),
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: LoopRadius.control,
-          borderSide: BorderSide(color: LoopColors.lime, width: 1.5),
+          borderSide: BorderSide(color: LoopColors.purple),
         ),
         errorBorder: const OutlineInputBorder(
           borderRadius: LoopRadius.control,
-          borderSide: BorderSide(color: LoopColors.line2),
+          borderSide: BorderSide(color: LoopColors.danger),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: LoopColors.lime,
+          backgroundColor: LoopColors.yellow,
           foregroundColor: LoopColors.ink,
           minimumSize: const Size(LoopTouch.minimum, LoopTouch.primaryButton),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 23, vertical: 14),
           shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
           textStyle: textTheme.labelLarge,
         ),
@@ -972,7 +979,7 @@ abstract final class LoopTheme {
           foregroundColor: LoopColors.chalk,
           minimumSize: const Size(LoopTouch.minimum, LoopTouch.minimum),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          side: const BorderSide(color: LoopColors.line2),
+          side: const BorderSide(color: LoopColors.line3),
           shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
           textStyle: textTheme.labelLarge,
         ),
@@ -991,11 +998,11 @@ abstract final class LoopTheme {
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
-        side: const BorderSide(color: LoopColors.line),
+        side: const BorderSide(color: LoopColors.line2),
         backgroundColor: LoopColors.card,
-        selectedColor: LoopColors.limeSoft,
+        selectedColor: LoopColors.purpleSoft,
         labelStyle: textTheme.labelMedium,
-        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
+        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.badge),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       ),
       // A list tile's title stays prose (R18) now that `bodyLarge` is the
@@ -1013,7 +1020,7 @@ abstract final class LoopTheme {
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(LoopRadius.shellValue),
           ),
-          side: BorderSide(color: LoopColors.line),
+          side: BorderSide(color: LoopColors.line2),
         ),
       ),
       dialogTheme: const DialogThemeData(
@@ -1022,7 +1029,7 @@ abstract final class LoopTheme {
         barrierColor: LoopColors.veil,
         shape: RoundedRectangleBorder(
           borderRadius: LoopRadius.shell,
-          side: BorderSide(color: LoopColors.line),
+          side: BorderSide(color: LoopColors.line2),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -1034,7 +1041,7 @@ abstract final class LoopTheme {
           side: BorderSide(color: LoopColors.line2),
         ),
       ),
-      focusColor: LoopColors.limeSoft,
+      focusColor: LoopColors.purpleSoft,
     );
   }
 }

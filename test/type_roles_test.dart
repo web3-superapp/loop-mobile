@@ -58,14 +58,15 @@ void _expectStep(
 
 void main() {
   test('the new steps hold their documented values', () {
+    // Decision 0210: the looplabs ladder.
     expect(LoopType.kicker.fontSize, 11);
-    expect(LoopType.kicker.fontWeight, FontWeight.w500);
-    expect(LoopType.stepTitle.fontSize, 24);
-    expect(LoopType.stepTitle.fontWeight, FontWeight.w700);
-    expect(LoopType.flatTitle.fontSize, 20);
-    expect(LoopType.flatTitle.fontWeight, FontWeight.w700);
+    expect(LoopType.kicker.fontWeight, FontWeight.w800);
+    expect(LoopType.stepTitle.fontSize, 28);
+    expect(LoopType.stepTitle.fontFamily, LoopFonts.display);
+    expect(LoopType.flatTitle.fontSize, 22);
+    expect(LoopType.flatTitle.fontFamily, LoopFonts.display);
     expect(LoopType.figure.fontSize, 13);
-    expect(LoopType.figure.fontWeight, FontWeight.w600);
+    expect(LoopType.figure.fontWeight, FontWeight.w700);
   });
 
   testWidgets('S1 · LoopQuoteRow and its change pill sit on the ladder', (
@@ -251,7 +252,7 @@ void main() {
     _expectStep(tester, '1,024', LoopType.figure);
     _expectStep(tester, '持有人', LoopType.kicker);
     _expectStep(tester, '已验证', LoopType.label, weight: FontWeight.w700);
-    _expectStep(tester, '确认', LoopType.label, weight: FontWeight.w700);
+    _expectStep(tester, '确认', LoopType.action);
     _expectStep(tester, '保存', LoopType.titleLg);
     _expectStep(tester, '全部', LoopType.label, weight: FontWeight.w700);
     _expectStep(tester, '收到', LoopType.label, weight: FontWeight.w600);

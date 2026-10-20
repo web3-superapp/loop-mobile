@@ -118,7 +118,7 @@ class LoopRoundKey extends StatelessWidget {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: LoopColors.lime,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: LoopRadius.badge,
                           border: Border.all(color: LoopColors.ink, width: 2),
                         ),
                         child: Text(

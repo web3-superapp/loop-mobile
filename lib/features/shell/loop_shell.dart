@@ -233,16 +233,14 @@ class LoopTabBar extends StatelessWidget {
       heightFactor: 1,
       child: Container(
         key: const ValueKey<String>('loop-tab-indicator'),
+        // Decision 0210 (the hook-mode segment, docs/42 附A §5): the chosen
+        // cell is a Purple 9 % ground over a 2px Purple underline; its glyph
+        // and word turn Yellow.
         decoration: const BoxDecoration(
-          borderRadius: LoopRadius.control,
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: <Color>[LoopColors.limeHighlight, LoopColors.lime],
-            stops: <double>[0, 0.64],
+          color: LoopColors.purpleSoft,
+          border: Border(
+            bottom: BorderSide(color: LoopColors.purple, width: 2),
           ),
-          boxShadow: LoopDepth.tabSelected,
-          border: Border(top: BorderSide(color: LoopDepth.tabSelectedEdge)),
         ),
       ),
     );
@@ -259,12 +257,17 @@ class LoopTabBar extends StatelessWidget {
             child: Container(
               height: LoopTouch.tabBarHeight,
               padding: const EdgeInsets.all(LoopLayout.tabBarPadding),
-              decoration: BoxDecoration(
-                color: LoopColors.chalk,
+              // Decision 0210: the bar is the dark card surface behind a 1px
+              // card edge, square, with no lift.
+              decoration: const BoxDecoration(
+                color: LoopColors.graphite,
                 borderRadius: LoopRadius.tabBar,
-                boxShadow: LoopDepth.tabBar,
-                border: const Border(
-                  top: BorderSide(color: LoopDepth.tabBarEdge),
+              ),
+              // Painted over the bar rather than laid out inside it, so the
+              // cells keep their exact width.
+              foregroundDecoration: const BoxDecoration(
+                border: Border.fromBorderSide(
+                  BorderSide(color: LoopColors.line2),
                 ),
               ),
               child: LoopDockBar(
@@ -357,10 +360,10 @@ class LoopTabItem extends StatelessWidget {
             curve: LoopTabBar.slideCurve,
             builder: (context, t, _) {
               final color = t <= 0
-                  ? LoopColors.inkMuted
+                  ? LoopColors.text3
                   : t >= 1
-                  ? LoopColors.ink
-                  : Color.lerp(LoopColors.inkMuted, LoopColors.ink, t)!;
+                  ? LoopColors.yellow
+                  : Color.lerp(LoopColors.text3, LoopColors.yellow, t)!;
               return ConstrainedBox(
                 constraints: const BoxConstraints(
                   minHeight: LoopTouch.tabCellMinHeight,

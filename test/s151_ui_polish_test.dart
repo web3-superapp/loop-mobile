@@ -156,7 +156,7 @@ void main() {
     var opened = 0;
     await _pump(tester, Launch2PoolSwapLink(onOpen: () => opened += 1));
     final link = find.byKey(const ValueKey<String>('launch2-go-swap'));
-    expect(tester.getTopLeft(link).dx, 16);
+    expect(tester.getTopLeft(link).dx, LoopSpacing.page);
     expect(tester.getSize(link).height, greaterThanOrEqualTo(44));
     await tester.tap(link);
     expect(opened, 1);

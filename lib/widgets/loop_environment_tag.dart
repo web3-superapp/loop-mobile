@@ -26,7 +26,7 @@ class LoopEnvironmentTag extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 5),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
+          borderRadius: LoopRadius.badge,
           border: Border.all(color: LoopGround.edgeOf(context)),
         ),
         child: Text(

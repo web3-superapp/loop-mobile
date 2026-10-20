@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
@@ -800,7 +801,7 @@ void main() {
             )
             .style
             ?.fontSize,
-        24, // R27 displaySm (decision 0191 H1)
+        LoopType.displaySm.fontSize, // R27 displaySm (decision 0191 H1)
       );
       expect(
         find.byKey(const ValueKey<String>('user-profile-loop-id')),

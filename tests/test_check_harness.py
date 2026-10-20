@@ -10277,11 +10277,8 @@ class FamilyGuardContractTests(unittest.TestCase):
             {
                 ("lib/features/market/loop_market_chart.dart", "_ChartCorner"),
                 ("lib/features/market/loop_candle_chart.dart", "_candleCorner"),
-                ("lib/features/meme/meme_widgets.dart", "MemeHeroCard"),
-                (
-                    "lib/features/community/community_home_widgets.dart",
-                    "_communityDiscoverHeroRadius",
-                ),
+                # Decision 0210 squared the M1 quick-fill card and the
+                # discover hero; their entries left the list with them.
             },
             set(check_harness.FEATURE_RADIUS_LITERAL_ALLOWLIST),
         )

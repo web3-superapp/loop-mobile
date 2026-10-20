@@ -14,14 +14,14 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
-/// Lime, as Stream's brand ladder reads it.
+/// Yellow (the primary accent, decision 0210), as Stream's brand ladder reads it.
 ///
 /// Stream uses `brand.shade100` as the ground of an outgoing ("end") surface
 /// and `brand.shade900` as the text on it, so the ladder is written to hold
 /// the prototype's pairing — Lime ground, Ink text — at every rung a message,
 /// a quote, a reply preview or a link card can land on.
 const StreamColorSwatch loopStreamBrandSwatch = StreamColorSwatch(
-  0xFFB8FF20,
+  0xFFFFD600,
   <int, Color>{
     0: LoopColors.ink,
     50: LoopColors.limeSoft,
@@ -121,8 +121,11 @@ bool _isOutgoing(StreamMessageLayoutData layout) =>
 /// message *is* the primary body of the chat page, and it is set at the same
 /// 14px as the in-house bubble in `chat_components.dart`. Ink on Lime for the
 /// sender's own message, Chalk on Card for everyone else's.
+///
+/// Decision 0210: the bubble keeps a chat leading ([LoopType.message], 1.45)
+/// rather than the 1.7 prose leading.
 TextStyle _bubbleTextStyle(Color color) =>
-    LoopTypography.body(14, color: color);
+    LoopType.message.copyWith(color: color);
 
 /// The Lime Ledger message row: bubble, text and metadata.
 ///
@@ -789,7 +792,7 @@ class LoopOutgoingQuotedMessage extends StatelessWidget {
                       width: barWidth,
                       decoration: const BoxDecoration(
                         color: foreground,
-                        borderRadius: LoopRadius.pill,
+                        borderRadius: LoopRadius.badge,
                       ),
                     ),
                     const SizedBox(width: 8),

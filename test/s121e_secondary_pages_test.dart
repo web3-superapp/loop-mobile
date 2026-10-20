@@ -160,7 +160,10 @@ void main() {
         find.byKey(const ValueKey<String>('profile-identity-card')),
         findsOneWidget,
       );
-      expect(tester.widget<Text>(find.text('Voyager_7')).style?.fontSize, 24);
+      expect(
+        tester.widget<Text>(find.text('Voyager_7')).style?.fontSize,
+        LoopType.displaySm.fontSize,
+      );
       expect(tester.widget<Text>(find.text(_loopId)).style?.fontSize, 13);
       expect(
         find.byKey(const ValueKey<String>('profile-open-edit')),

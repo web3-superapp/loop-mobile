@@ -20,8 +20,14 @@ class LoopSheetHeading extends StatelessWidget {
     return Semantics(
       header: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        // R2: the only sheet-title step (decision 0189).
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          12,
+        ),
+        // R2: the only sheet-title step (decision 0189), Anton since
+        // decision 0210.
         child: Text(title, style: LoopType.heading),
       ),
     );

@@ -51,10 +51,8 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sheet')),
       );
       final decoration = sheet.decoration! as BoxDecoration;
-      expect(
-        decoration.borderRadius,
-        const BorderRadius.vertical(top: Radius.circular(26)),
-      );
+      // Decision 0210: the sheet is square.
+      expect(decoration.borderRadius, BorderRadius.zero);
       expect(decoration.border!.top.color, LoopColors.line2);
       expect(opener.hasFocus, isFalse);
 

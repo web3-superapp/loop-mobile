@@ -95,7 +95,7 @@ class LoopStepDots extends StatelessWidget {
                 height: 6,
                 decoration: BoxDecoration(
                   color: index <= step ? LoopColors.lime : LoopColors.line2,
-                  borderRadius: LoopRadius.pill,
+                  borderRadius: LoopRadius.badge,
                 ),
               ),
               const SizedBox(width: 6),

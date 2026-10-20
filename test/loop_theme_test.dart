@@ -6,36 +6,34 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 
 void main() {
-  test('colour tokens match the 01 handover chapter 4.1 values', () {
-    expect(LoopColors.ink, const Color(0xFF050604));
-    expect(LoopColors.lime, const Color(0xFFB8FF20));
-    expect(LoopColors.chalk, const Color(0xFFF3F5EF));
-    expect(LoopColors.graphite, const Color(0xFF171A16));
-    expect(LoopColors.muted, const Color(0xFF7F897B));
-
-    Color chalkAt(double alpha) => LoopColors.chalk.withValues(alpha: alpha);
-    expect(LoopColors.panel.a, closeTo(0.055, 0.004));
-    expect(LoopColors.card.a, closeTo(0.06, 0.004));
-    expect(LoopColors.card2.a, closeTo(0.10, 0.004));
-    expect(LoopColors.line.a, closeTo(0.13, 0.004));
-    expect(LoopColors.line2.a, closeTo(0.22, 0.004));
-    expect(LoopColors.text2.a, closeTo(0.68, 0.004));
-    expect(LoopColors.text3.a, closeTo(0.58, 0.004));
-    expect(LoopColors.limeSoft.a, closeTo(0.13, 0.004));
+  test('colour tokens are the looplabs palette (decision 0210)', () {
+    expect(LoopColors.ink, const Color(0xFF09090B));
+    expect(LoopColors.yellow, const Color(0xFFFFD600));
+    expect(LoopColors.yellowHighlight, const Color(0xFFFFE34D));
+    expect(LoopColors.purple, const Color(0xFF9C36FF));
+    expect(LoopColors.purpleSoft, const Color(0x189C36FF));
+    expect(LoopColors.purpleLine, const Color(0x709C36FF));
+    expect(LoopColors.input, const Color(0xFF16111C));
+    expect(LoopColors.inputLine, const Color(0xFF3B3045));
+    expect(LoopColors.chalk, const Color(0xFFF2F2F4));
+    expect(LoopColors.graphite, const Color(0xFF111114));
+    expect(LoopColors.card, const Color(0xFF111114));
+    expect(LoopColors.text2, const Color(0xFFB8B4C0));
+    expect(LoopColors.text3, const Color(0xFFAEACB6));
+    expect(LoopColors.muted, const Color(0xFF8E8A98));
+    expect(LoopColors.line, const Color(0xFF2A292F));
+    expect(LoopColors.line2, const Color(0xFF38333E));
+    expect(LoopColors.line3, const Color(0xFF4A4754));
+    expect(LoopColors.warning, const Color(0xFFFF9F1C));
+    // Price movement keeps its own two hues.
+    expect(LoopColors.rise, const Color(0xFF22C55E));
+    expect(LoopColors.fall, const Color(0xFFEF4444));
+    // The retired Lime names are the Yellow tokens.
+    expect(LoopColors.lime, LoopColors.yellow);
+    expect(LoopColors.limeSoft, LoopColors.yellowSoft);
+    expect(LoopColors.limeHighlight, LoopColors.yellowHighlight);
+    expect(LoopColors.yellowSoft.withValues(alpha: 1), LoopColors.yellow);
     expect(LoopColors.veil.a, closeTo(0.76, 0.004));
-    expect(LoopColors.inkMuted.a, closeTo(0.62, 0.004));
-    for (final token in <Color>[
-      LoopColors.panel,
-      LoopColors.card,
-      LoopColors.card2,
-      LoopColors.line,
-      LoopColors.line2,
-      LoopColors.text2,
-      LoopColors.text3,
-    ]) {
-      expect(token.withValues(alpha: 1), chalkAt(1));
-    }
-    expect(LoopColors.limeSoft.withValues(alpha: 1), LoopColors.lime);
   });
 
   test('legacy market/chat accents gain no new consumers in lib/', () {
@@ -64,32 +62,46 @@ void main() {
       reason: 'new code must not use the legacy blue/amber accents',
     );
     final scheme = LoopTheme.dark.colorScheme;
-    expect(scheme.primary, LoopColors.lime);
-    expect(scheme.secondary, LoopColors.chalk);
-    expect(scheme.tertiary, LoopColors.lime);
+    expect(scheme.primary, LoopColors.yellow);
+    expect(scheme.secondary, LoopColors.purple);
+    expect(scheme.tertiary, LoopColors.purple);
     expect(scheme.surface, LoopColors.graphite);
     expect(scheme.outline, LoopColors.line);
   });
 
   test('spacing, radius, depth, z and touch tokens are complete', () {
     expect(LoopSpacing.tight, 8);
-    expect(LoopSpacing.card, 14);
+    expect(LoopSpacing.card, 20);
     expect(LoopSpacing.group, 22);
-    expect(LoopSpacing.section, 30);
-    expect(LoopSpacing.page, 16);
+    expect(LoopSpacing.section, 40);
+    expect(LoopSpacing.page, 20);
 
-    expect(LoopRadius.shellValue, 24);
-    expect(LoopRadius.cardValue, 20);
-    expect(LoopRadius.controlValue, 16);
-    expect(LoopRadius.innerValue, 12);
-    expect(LoopRadius.tabBarValue, 23);
+    // Decision 0210: every surface corner is square; only `pill` is round.
+    for (final value in <double>[
+      LoopRadius.shellValue,
+      LoopRadius.cardValue,
+      LoopRadius.controlValue,
+      LoopRadius.innerValue,
+      LoopRadius.tabBarValue,
+      LoopRadius.tileValue,
+      LoopRadius.buttonValue,
+      LoopRadius.toolValue,
+      LoopRadius.badgeValue,
+      LoopRadius.wideButtonValue,
+    ]) {
+      expect(value, 0);
+    }
+    expect(LoopRadius.card, BorderRadius.zero);
+    expect(LoopRadius.pill, const BorderRadius.all(Radius.circular(999)));
 
-    expect(LoopDepth.liftPrimary, hasLength(2));
-    expect(LoopDepth.liftPrimary.first.blurRadius, 48);
-    expect(LoopDepth.liftPrimaryLight, hasLength(2));
-    expect(LoopDepth.liftCard, hasLength(1));
+    // Flat: no lift anywhere, a coloured glow for emphasis.
+    expect(LoopDepth.liftPrimary, isEmpty);
+    expect(LoopDepth.liftPrimaryLight, isEmpty);
+    expect(LoopDepth.liftCard, isEmpty);
     expect(LoopDepth.liftInner, isEmpty);
-    expect(LoopDepth.tabBar, hasLength(2));
+    expect(LoopDepth.tabBar, isEmpty);
+    expect(LoopDepth.glowPurple.single.blurRadius, 24);
+    expect(LoopDepth.glowYellow.single.blurRadius, 17);
 
     expect(LoopZ.content, 1);
     expect(LoopZ.stickyHeader, 8);
@@ -103,35 +115,30 @@ void main() {
     expect(LoopZ.toast, 90);
 
     expect(LoopTouch.minimum, 44);
-    expect(LoopTouch.primaryButton, 53);
+    expect(LoopTouch.primaryButton, 52);
     expect(LoopTouch.tabBarHeight, 70);
     expect(LoopLayout.tabPageBottomReserve, 90);
     expect(LoopLayout.childPageBottomMinimum, 24);
     expect(LoopLayout.designBaseline, const Size(390, 844));
   });
 
-  test('the text theme is the platform sans; figures are tabular', () {
+  test('headings are Anton, body is Arimo, figures are tabular', () {
     final text = LoopTheme.dark.textTheme;
     final title = text.headlineLarge!;
-    // 22 semibold, the display optical cut, no tracking (decision 0080).
-    expect(title.fontFamily, LoopFonts.systemDisplay);
-    expect(title.fontSize, 22);
-    expect(title.fontWeight, FontWeight.w600);
-    expect(title.letterSpacing, 0);
-    expect(title.fontVariations, isNull);
+    expect(title.fontFamily, 'Anton');
+    expect(title.fontSize, 24);
+    expect(title.fontWeight, FontWeight.w400);
+    expect(title.letterSpacing, closeTo(-0.24, 0.001));
+    // A Chinese run inside an Anton heading lands on bold Han.
+    expect(title.fontFamilyFallback!.first, LoopFonts.cjkDisplay);
     expect(title.fontFamilyFallback, contains('Noto Sans SC'));
-    expect(title.fontFamilyFallback!.first, LoopFonts.android);
 
-    expect(text.displayMedium!.fontSize, 26);
-    // `bodyLarge` is the slot a bare TextField draws in: the input step
-    // (R25, decision 0189).
+    expect(text.displayMedium!.fontSize, 32);
     expect(text.bodyLarge, same(LoopType.bodyLg));
-    expect(text.bodyLarge!.fontWeight, FontWeight.w400);
+    expect(text.bodyLarge!.fontFamily, 'Arimo');
     expect(text.bodyMedium!.fontSize, 13);
-    expect(text.bodyMedium!.height, 1.4);
+    expect(text.bodyMedium!.height, 1.7);
 
-    // Every figure step is the page's own sans with equal digit advances, so
-    // a right-aligned price column lines up without a second voice.
     for (final figure in <TextStyle>[
       LoopMono.display,
       LoopMono.headline,
@@ -139,9 +146,9 @@ void main() {
       LoopMono.body,
       LoopMono.stamp,
     ]) {
-      expect(figure.fontFamily, LoopFonts.familyFor(figure.fontSize!));
+      expect(figure.fontFamily, LoopFonts.body);
       expect(figure.fontFeatures, contains(const FontFeature.tabularFigures()));
-      expect(figure.fontFamilyFallback, contains('Noto Sans SC'));
+      expect(figure.fontFamilyFallback!.first, LoopFonts.cjk);
     }
     expect(LoopMono.display.fontSize, 28);
 
@@ -153,16 +160,29 @@ void main() {
   });
 
   test('the seven bands are the whole vocabulary', () {
-    // Bands 1-6 are the platform's own UI sans: SF Pro through the engine's
-    // Cupertino aliases, Roboto at the head of the fallback chain, and
-    // Chinese from PingFang SC or the bundled Noto Sans SC.
-    final proportional = <String, TextStyle>{
+    final condensed = <String, TextStyle>{
+      'heroDisplay': LoopType.heroDisplay,
       'displayXl': LoopType.displayXl,
       'display': LoopType.display,
       'displaySm': LoopType.displaySm,
+      'statFigure': LoopType.statFigure,
+      'stepTitle': LoopType.stepTitle,
       'headingLg': LoopType.headingLg,
+      'flatTitle': LoopType.flatTitle,
       'heading': LoopType.heading,
       'headingSm': LoopType.headingSm,
+    };
+    condensed.forEach((name, style) {
+      expect(style.fontFamily, LoopFonts.display, reason: name);
+      expect(style.fontWeight, FontWeight.w400, reason: name);
+      expect(style.fontFamilyFallback!.first, LoopFonts.cjkDisplay);
+      // Anton is tracked in, never out.
+      expect(style.letterSpacing, lessThan(0), reason: name);
+      expect(style.fontSize, greaterThanOrEqualTo(18), reason: name);
+      expect(style.height, inInclusiveRange(1.0, 1.15), reason: name);
+    });
+
+    final body = <String, TextStyle>{
       'titleLg': LoopType.titleLg,
       'title': LoopType.title,
       'titleSm': LoopType.titleSm,
@@ -173,45 +193,31 @@ void main() {
       'captionSm': LoopType.captionSm,
       'action': LoopType.action,
       'label': LoopType.label,
-      'eyebrow': LoopType.eyebrow,
-      'kicker': LoopType.kicker,
-      'stepTitle': LoopType.stepTitle,
-      'flatTitle': LoopType.flatTitle,
     };
-    proportional.forEach((name, style) {
-      expect(
-        style.fontFamily,
-        LoopFonts.familyFor(style.fontSize!),
-        reason: name,
-      );
-      expect(style.fontFamilyFallback?.first, LoopFonts.android, reason: name);
-      expect(style.fontFamilyFallback, contains(LoopFonts.cjk), reason: name);
-      // Nothing carries a variation axis any more: the system face instances
-      // itself and the bundled Noto Sans SC statics are matched by weight.
-      expect(style.fontVariations, isNull, reason: name);
-      // Hierarchy is weight and grey, not tracking — and the 0 is written,
-      // not left null, so Material's own tracking cannot leak into a merge.
+    body.forEach((name, style) {
+      expect(style.fontFamily, LoopFonts.body, reason: name);
+      expect(style.fontFamilyFallback!.first, LoopFonts.cjk, reason: name);
       expect(style.letterSpacing, 0, reason: name);
       expect(
         style.leadingDistribution,
         TextLeadingDistribution.even,
         reason: name,
       );
-      // The ladder spans 11 to 28: nothing under the prototype's 11px screen
-      // floor, nothing shouting above 28.
       expect(style.fontSize, greaterThanOrEqualTo(11), reason: name);
-      expect(style.fontSize, lessThanOrEqualTo(28), reason: name);
-      expect(style.height, inInclusiveRange(1.2, 1.4), reason: name);
       expect(style.fontFeatures, isNull, reason: name);
     });
+    expect(LoopType.body.height, 1.7);
+    expect(LoopType.action.fontSize, 13);
+    expect(LoopType.action.fontWeight, FontWeight.w800);
+    expect(LoopType.title.fontWeight, FontWeight.w700);
 
-    // The eyebrow is no longer an uppercase fixed-width Latin stamp.
+    // Kicker / eyebrow: 800, +0.15em (uppercased by the widget).
+    expect(LoopType.kicker.fontSize, 11);
+    expect(LoopType.kicker.fontWeight, FontWeight.w800);
+    expect(LoopType.kicker.letterSpacing, closeTo(1.65, 0.001));
     expect(LoopType.eyebrow.fontSize, 12);
-    expect(LoopType.eyebrow.fontWeight, FontWeight.w500);
-    expect(LoopType.eyebrow.color, LoopColors.text3);
+    expect(LoopType.caps('loop 星夜'), 'LOOP 星夜');
 
-    // Band 7 is the same voice with tabular figures; band 7b is the only
-    // fixed-width one.
     for (final MapEntry<String, TextStyle> entry in <String, TextStyle>{
       'figureXl': LoopType.figureXl,
       'figureLg': LoopType.figureLg,
@@ -220,11 +226,7 @@ void main() {
       'figureSm': LoopType.figureSm,
       'figureXs': LoopType.figureXs,
     }.entries) {
-      expect(
-        entry.value.fontFamily,
-        LoopFonts.familyFor(entry.value.fontSize!),
-        reason: entry.key,
-      );
+      expect(entry.value.fontFamily, LoopFonts.body, reason: entry.key);
       expect(
         entry.value.fontFeatures,
         contains(const FontFeature.tabularFigures()),
@@ -233,35 +235,36 @@ void main() {
       expect(entry.value.fontSize, greaterThanOrEqualTo(11), reason: entry.key);
       expect(entry.value.fontSize, lessThanOrEqualTo(28), reason: entry.key);
     }
-    // Decision 0189: the figure steps that carry a row or a hero are 600;
-    // the two small secondary steps are 400 and move to 600 for a direction.
-    for (final style in <TextStyle>[
-      LoopType.figureXl,
-      LoopType.figureLg,
-      LoopType.figureMd,
-      LoopType.figure,
-    ]) {
-      expect(style.fontWeight, FontWeight.w600);
-    }
     expect(LoopType.figureSm.fontWeight, FontWeight.w400);
     expect(LoopType.figureXs.fontWeight, FontWeight.w400);
-    // The two retired `mono*` names still standing are those steps.
     expect(LoopType.monoTitle, LoopType.figureLg);
     expect(LoopType.monoStamp, LoopType.figureXs);
 
-    // Restating a weight is still the only sanctioned way to move one.
-    final bold = LoopTypography.withWeight(LoopType.body, FontWeight.w600);
-    expect(bold.fontWeight, FontWeight.w600);
+    // Restating a weight moves a body step; an Anton step has one weight.
+    final bold = LoopTypography.withWeight(LoopType.body, FontWeight.w700);
+    expect(bold.fontWeight, FontWeight.w700);
     expect(bold.fontSize, LoopType.body.fontSize);
+    expect(
+      LoopTypography.withWeight(LoopType.headingLg, FontWeight.w700),
+      same(LoopType.headingLg),
+    );
   });
 
-  test('the shipped font assets are the CJK face and the code face', () {
+  test('the shipped font assets are registered with their licences', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(pubspec, contains('family: Anton'));
+    expect(pubspec, contains('family: Arimo'));
+    expect(pubspec, contains('family: Noto Sans SC Display'));
     expect(pubspec, contains('family: Noto Sans SC'));
     expect(pubspec, contains('family: IBM Plex Mono'));
     expect(pubspec, isNot(contains('family: Sora')));
     expect(File('assets/fonts/Sora-Variable.ttf').existsSync(), isFalse);
     for (final asset in <String>[
+      'assets/fonts/Anton-Regular.ttf',
+      'assets/fonts/OFL-Anton.txt',
+      'assets/fonts/Arimo-Regular.ttf',
+      'assets/fonts/Arimo-Bold.ttf',
+      'assets/fonts/OFL-Arimo.txt',
       'assets/fonts/NotoSansSC-Regular.ttf',
       'assets/fonts/NotoSansSC-Medium.ttf',
       'assets/fonts/NotoSansSC-Bold.ttf',
@@ -278,7 +281,7 @@ void main() {
       filled.minimumSize!.resolve(<WidgetState>{})!.height,
       LoopTouch.primaryButton,
     );
-    expect(filled.backgroundColor!.resolve(<WidgetState>{}), LoopColors.lime);
+    expect(filled.backgroundColor!.resolve(<WidgetState>{}), LoopColors.yellow);
     expect(
       theme.iconButtonTheme.style!.minimumSize!.resolve(<WidgetState>{}),
       const Size.square(LoopTouch.minimum),

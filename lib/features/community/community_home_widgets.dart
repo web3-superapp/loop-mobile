@@ -90,11 +90,9 @@ class CommunityToolButton extends StatelessWidget {
   }
 }
 
-/// `.community-discover-hero{border-radius:19px}`: the prototype's own
-/// corner for this one Lime card, named once (decision 0172).
-const BorderRadius _communityDiscoverHeroRadius = BorderRadius.all(
-  Radius.circular(19),
-);
+/// The discover hero's corner: square since decision 0210 (it was the
+/// prototype's 19px, decision 0172).
+const BorderRadius _communityDiscoverHeroRadius = LoopRadius.card;
 
 /// `.community-discover-hero`: one compact Lime band above the index folio.
 ///

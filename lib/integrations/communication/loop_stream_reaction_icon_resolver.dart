@@ -336,8 +336,8 @@ class LoopReactionCapsule extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: LoopColors.elevated,
-        border: own ? Border.all(color: LoopColors.lime) : null,
-        borderRadius: LoopRadius.pill,
+        border: own ? Border.all(color: LoopColors.purple) : null,
+        borderRadius: LoopRadius.badge,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -42,9 +42,9 @@ void main() {
     await tester.tap(back);
     expect(backs, 1);
     final title = tester.widget<Text>(find.text('无网络'));
-    // Band 2 `headingLg`: 22 semibold since decision 0080.
-    expect(title.style?.fontSize, 22);
-    expect(title.style?.fontWeight, FontWeight.w600);
+    // Band 2 `headingLg`: Anton 24 since decision 0210.
+    expect(title.style?.fontSize, LoopType.headingLg.fontSize);
+    expect(title.style?.fontFamily, LoopFonts.display);
     expect(find.text('SYSTEM'), findsOneWidget);
     expect(find.bySemanticsLabel('搜索'), findsOneWidget);
   });
@@ -77,7 +77,9 @@ void main() {
     expect(folios, hasLength(3));
     final quiet = folios[0].decoration! as BoxDecoration;
     expect(quiet.border, isNotNull);
-    expect(quiet.boxShadow, LoopDepth.liftPrimary);
+    // Decision 0210: flat — the card surface, no lift.
+    expect(quiet.color, LoopColors.card);
+    expect(quiet.boxShadow, isNull);
     expect((folios[1].decoration! as BoxDecoration).color, LoopColors.lime);
     expect((folios[2].decoration! as BoxDecoration).color, LoopColors.chalk);
     expect(
@@ -121,16 +123,18 @@ void main() {
     final ledger = boxOf('ledger').decoration as BoxDecoration;
     expect(ledger.color, LoopColors.lime);
     expect(ledger.borderRadius, LoopRadius.shell);
-    expect(ledger.boxShadow, LoopDepth.liftPrimaryLight);
+    expect(ledger.boxShadow, isNull);
     final quiet = boxOf('quiet').decoration as BoxDecoration;
-    expect(quiet.boxShadow, LoopDepth.liftPrimary);
+    expect(quiet.boxShadow, isNull);
+    expect(quiet.color, LoopColors.card);
     expect(quiet.border, isNotNull);
     final chalk = boxOf('chalk').decoration as BoxDecoration;
     expect(chalk.color, LoopColors.chalk);
     expect(chalk.borderRadius, LoopRadius.card);
     final card = boxOf('card').decoration as BoxDecoration;
     expect(card.color, LoopColors.card);
-    expect(card.boxShadow, LoopDepth.liftCard);
+    expect(card.boxShadow, isNull);
+    expect((card.border! as Border).top.color, LoopColors.line2);
     expect(
       tester.widget<Text>(find.text('ledger')).style?.color ??
           DefaultTextStyle.of(tester.element(find.text('ledger'))).style.color,
@@ -244,7 +248,11 @@ void main() {
                 .decoration!
             as BoxDecoration;
     expect(deco('loop-notice-normal').color, LoopColors.card);
-    expect(deco('loop-notice-warn').color, LoopColors.limeSoft);
+    // Decision 0210: a warning is orange, kept apart from the Yellow accent.
+    expect(
+      deco('loop-notice-warn').color,
+      LoopColors.warning.withValues(alpha: 0.13),
+    );
     expect(deco('loop-notice-danger').color, LoopColors.card2);
     expect(find.textContaining('发生了什么'), findsOneWidget);
     expect(find.textContaining('影响什么'), findsOneWidget);
@@ -295,11 +303,12 @@ void main() {
                     .decoration!
                 as BoxDecoration)
             .color!;
-    expect(badgeGround('GRADUATED'), LoopColors.limeSoft);
+    // Decision 0210: the looplabs tag, Yellow ground and Ink word.
+    expect(badgeGround('GRADUATED'), LoopColors.yellow);
     expect(badgeGround('MUTED'), LoopColors.card2);
     expect(
       tester.widget<Text>(find.text('GRADUATED')).style?.color,
-      LoopColors.lime,
+      LoopColors.ink,
     );
     expect(
       tester.widget<Text>(find.text('ON LEDGER')).style?.color,
@@ -315,9 +324,9 @@ void main() {
     final selectedMaterial = tester.widget<Material>(
       find.ancestor(of: find.text('全部'), matching: find.byType(Material)).first,
     );
-    // Decision 0122: a filter strip is the OKX look — the chosen chip is a
-    // dark-grey pill, never Lime.
-    expect(selectedMaterial.color, LoopColors.line);
+    // Decision 0210: the chosen quiet chip is the Purple selection ground
+    // with a Purple underline, never a Yellow fill.
+    expect(selectedMaterial.color, LoopColors.purpleSoft);
     await tester.tap(find.text('资产'));
     await tester.pump();
     expect(selected, 2);
@@ -345,10 +354,10 @@ void main() {
                 .decoration!
             as BoxDecoration;
 
-    // Lime at 40% over Ink is a dull olive carrying Ink-coloured text: it
+    // Yellow at 40% over Ink is a dull olive carrying Ink-coloured text: it
     // reads as an enabled button in an odd colour, not as a disabled one.
-    expect(decorationAt(0).gradient, isNull);
-    expect(decorationAt(1).gradient, isNotNull);
+    expect(decorationAt(0).color, isNull);
+    expect(decorationAt(1).color, LoopColors.yellow);
   });
 
   testWidgets('LoopButton primary/secondary sizes, disabled semantics', (

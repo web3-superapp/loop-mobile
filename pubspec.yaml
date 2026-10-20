@@ -62,15 +62,31 @@ flutter:
     - assets/icons/
     # Empty-state line illustrations (decision 0122), drawn for LOOP.
     - assets/illustrations/
-  # The proportional voice is the platform's own UI sans (SF Pro on Apple,
-  # Roboto on Android) and is not bundled; decision 0080 dropped Sora with it.
-  # IBM Plex Mono stays for addresses, hashes and code — the one fixed-width
-  # job. Noto Sans SC ships as three static instances of the upstream variable
-  # file, subset to the GB2312 repertoire plus CJK and fullwidth punctuation
-  # (7.0 MB total instead of 17.7 MB per weight); it is the controlled Chinese
-  # face for every device whose own stack we do not trust. See decisions 0069
-  # and 0080.
+  # Decision 0210 (supersedes 0080's platform sans): the looplabs.meme voice.
+  # Anton (SIL OFL 1.1) stands in for Impact on every heading band and Arimo
+  # (SIL OFL 1.1, Arial-metric compatible; static 400/700 instanced from the
+  # upstream variable file) for Arial on every other proportional band —
+  # Impact and Arial are Monotype commercial faces and are not embedded.
+  # `Noto Sans SC Display` registers the bundled Bold file alone, so a
+  # Chinese run inside an Anton heading lands on bold Han. IBM Plex Mono stays
+  # for addresses, hashes and code. Noto Sans SC ships as three static
+  # instances subset to the GB2312 repertoire plus CJK and fullwidth
+  # punctuation (decision 0069).
   fonts:
+    - family: Anton
+      fonts:
+        - asset: assets/fonts/Anton-Regular.ttf
+          weight: 400
+    - family: Arimo
+      fonts:
+        - asset: assets/fonts/Arimo-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Arimo-Bold.ttf
+          weight: 700
+    - family: Noto Sans SC Display
+      fonts:
+        - asset: assets/fonts/NotoSansSC-Bold.ttf
+          weight: 700
     - family: Noto Sans SC
       fonts:
         - asset: assets/fonts/NotoSansSC-Regular.ttf

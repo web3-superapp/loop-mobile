@@ -645,8 +645,8 @@ void main() {
       );
       expect(_key('launch2-desk-pages'), findsOneWidget);
       expect(_key('launch2-desk-dots'), findsNothing);
-      // The page is the screen less the two 16 gutters.
-      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 358);
+      // The page is the screen less the two 20 gutters (decision 0210).
+      expect(tester.getSize(_key('launch2-desk-page-${_id(1)}')).width, 350);
       await _drain(tester);
     });
 

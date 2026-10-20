@@ -131,7 +131,12 @@ class LoopTokenCard extends StatelessWidget {
     super.key,
     this.actions = const <LoopTokenCardAction>[],
     this.chalk = false,
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 12),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      12,
+    ),
   });
 
   final LoopTokenCardState state;
@@ -147,7 +152,9 @@ class LoopTokenCard extends StatelessWidget {
     final muted = state == LoopTokenCardState.loading;
     final foreground = chalk ? LoopColors.ink : LoopColors.chalk;
     final secondary = chalk ? LoopColors.inkText3 : LoopColors.text3;
-    final cellGround = chalk ? const Color(0x0E050604) : LoopColors.ink;
+    final cellGround = chalk
+        ? LoopColors.ink.withValues(alpha: 0.055)
+        : LoopColors.ink;
     final stateLabel = switch (state) {
       LoopTokenCardState.normal => '正常',
       LoopTokenCardState.loading => '识别中',
@@ -170,39 +177,22 @@ class LoopTokenCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: chalk ? LoopColors.chalk : LoopColors.graphite,
             borderRadius: LoopRadius.card,
+            // Decision 0210: flat — a 1px card edge, Purple for a
+            // graduated token, and no lift.
             border: Border.all(
               color: state == LoopTokenCardState.graduated
-                  ? LoopColors.lime.withValues(alpha: 0.32)
-                  : foreground.withValues(alpha: 0.16),
+                  ? LoopColors.purpleLine
+                  : chalk
+                  ? foreground.withValues(alpha: 0.16)
+                  : LoopColors.line2,
             ),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0xA8050604),
-                offset: Offset(0, 22),
-                blurRadius: 56,
-              ),
-              BoxShadow(
-                color: Color(0x70050604),
-                offset: Offset(0, 6),
-                blurRadius: 16,
-              ),
-            ],
           ),
           clipBehavior: Clip.antiAlias,
           // The Chalk variant is a light ground, so it declares itself: the
           // hairlines, insets and glyphs below derive their colour from here
           // instead of naming a Chalk token that a Chalk card would swallow.
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: chalk
-                  ? null
-                  : const RadialGradient(
-                      center: Alignment(-0.88, -1.16),
-                      radius: 1.4,
-                      colors: <Color>[Color(0x13B8FF20), Color(0x00B8FF20)],
-                      stops: <double>[0, 0.58],
-                    ),
-            ),
+            decoration: const BoxDecoration(),
             child: DefaultTextStyle.merge(
               style: TextStyle(color: foreground),
               child: IconTheme.merge(
@@ -214,15 +204,7 @@ class LoopTokenCard extends StatelessWidget {
                       left: 0,
                       top: 14,
                       bottom: 14,
-                      child: Container(
-                        width: 4,
-                        decoration: const BoxDecoration(
-                          color: LoopColors.lime,
-                          borderRadius: BorderRadius.horizontal(
-                            right: Radius.circular(4),
-                          ),
-                        ),
-                      ),
+                      child: Container(width: 4, color: LoopColors.yellow),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

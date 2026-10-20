@@ -63,7 +63,8 @@ Future<T?> showLoopSheet<T>(
   return result;
 }
 
-const BorderRadius _radius = BorderRadius.vertical(top: Radius.circular(26));
+// Decision 0210: the sheet is square like every other surface.
+const BorderRadius _radius = LoopRadius.shell;
 
 /// The sheet surface itself (also usable inline for showcase pages).
 class LoopSheet extends StatelessWidget {
@@ -118,25 +119,10 @@ class LoopSheet extends StatelessWidget {
               color: LoopColors.ink,
               borderRadius: _radius,
               border: Border(top: BorderSide(color: LoopColors.line2)),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Color(0xD1050604),
-                  offset: Offset(0, -20),
-                  blurRadius: 60,
-                ),
-              ],
             ),
-            // The glow sits on that ground as its own layer.
+            // Decision 0210: flat — no glow layer, no lift.
             child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0, -1),
-                  radius: 1.1,
-                  colors: <Color>[Color(0x0DB8FF20), Color(0x00B8FF20)],
-                  stops: <double>[0, 0.64],
-                ),
-                borderRadius: _radius,
-              ),
+              decoration: const BoxDecoration(borderRadius: _radius),
               child: Padding(
                 // The grabber lives inside the same 20 px top margin the sheet
                 // always had (8 + 4 + 8), so a sheet with a handle is exactly
@@ -156,10 +142,7 @@ class LoopSheet extends StatelessWidget {
                                 'loop-sheet-drag-handle',
                               ),
                               decoration: const BoxDecoration(
-                                color: LoopColors.line2,
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(2),
-                                ),
+                                color: LoopColors.line3,
                               ),
                               child: SizedBox.fromSize(
                                 size: LoopSheet.dragHandleSize,
@@ -170,7 +153,12 @@ class LoopSheet extends StatelessWidget {
                       ),
                     if (title != null)
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        padding: const EdgeInsets.fromLTRB(
+                          LoopSpacing.page,
+                          0,
+                          LoopSpacing.page,
+                          12,
+                        ),
                         child: Text(title!, style: LoopType.heading),
                       ),
                     Flexible(child: SingleChildScrollView(child: child)),

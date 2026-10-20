@@ -165,7 +165,7 @@ class LoopTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: lime ? LoopColors.limeSoft : LoopColors.card2,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: LoopRadius.badge,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -242,7 +242,7 @@ class LoopPillAction extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: ground,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: LoopRadius.button,
                 border: primary || soft || !enabled
                     ? null
                     : Border.all(color: LoopColors.line2),
@@ -344,30 +344,30 @@ InputDecoration loopFormFieldDecoration({
   counterText: counterText,
   suffixIcon: suffix,
   filled: true,
-  fillColor: LoopColors.card,
+  fillColor: LoopColors.input,
   isDense: true,
   constraints: const BoxConstraints(minHeight: 52),
   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
   // R25: the placeholder is the input step itself (decision 0189).
   hintStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),
   border: const OutlineInputBorder(
-    borderRadius: BorderRadius.all(Radius.circular(12)),
+    borderRadius: LoopRadius.control,
     borderSide: BorderSide.none,
   ),
   enabledBorder: const OutlineInputBorder(
-    borderRadius: BorderRadius.all(Radius.circular(12)),
+    borderRadius: LoopRadius.control,
     borderSide: BorderSide.none,
   ),
   focusedBorder: const OutlineInputBorder(
-    borderRadius: BorderRadius.all(Radius.circular(12)),
-    borderSide: BorderSide(color: LoopColors.lime),
+    borderRadius: LoopRadius.control,
+    borderSide: BorderSide(color: LoopColors.purple),
   ),
   errorBorder: const OutlineInputBorder(
-    borderRadius: BorderRadius.all(Radius.circular(12)),
+    borderRadius: LoopRadius.control,
     borderSide: BorderSide(color: LoopColors.danger),
   ),
   focusedErrorBorder: const OutlineInputBorder(
-    borderRadius: BorderRadius.all(Radius.circular(12)),
+    borderRadius: LoopRadius.control,
     borderSide: BorderSide(color: LoopColors.danger),
   ),
 );

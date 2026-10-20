@@ -595,9 +595,7 @@ class MemeHeroCard extends StatelessWidget {
         child: Material(
           // OKX card: a flat grey face, no edge and no shadow.
           color: LoopColors.card2,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: LoopRadius.card),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             key: ValueKey<String>('meme-hero-${row.memeTokenId}'),

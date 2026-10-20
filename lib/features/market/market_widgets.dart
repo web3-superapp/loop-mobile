@@ -797,7 +797,7 @@ class MarketTradeBar extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: <Color>[Color(0x00050604), LoopColors.ink, LoopColors.ink],
+          colors: <Color>[Color(0x0009090B), LoopColors.ink, LoopColors.ink],
           stops: <double>[0, 0.3, 1],
         ),
       ),

@@ -685,7 +685,7 @@ class _ProfileTopRow extends StatelessWidget {
                 child: InkWell(
                   key: const ValueKey<String>('profile-hide-balance'),
                   onTap: onToggle,
-                  customBorder: const StadiumBorder(),
+                  customBorder: const RoundedRectangleBorder(),
                   child: Container(
                     constraints: const BoxConstraints(
                       minHeight: LoopTouch.minimum,
@@ -695,8 +695,8 @@ class _ProfileTopRow extends StatelessWidget {
                       vertical: 10,
                     ),
                     decoration: const ShapeDecoration(
-                      shape: StadiumBorder(
-                        side: BorderSide(color: LoopColors.line2),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: LoopColors.line3),
                       ),
                     ),
                     child: Row(

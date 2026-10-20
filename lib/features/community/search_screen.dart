@@ -591,7 +591,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   Widget _field(SearchController controller) {
     const border = OutlineInputBorder(
-      borderRadius: LoopRadius.pill,
+      borderRadius: LoopRadius.badge,
       borderSide: BorderSide.none,
     );
     return TextField(

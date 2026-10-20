@@ -1204,7 +1204,7 @@ class WalletHoldingsDistribution extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: walletHoldingColors[index],
-                          borderRadius: LoopRadius.pill,
+                          borderRadius: LoopRadius.badge,
                         ),
                       ),
                     ),

@@ -378,7 +378,8 @@ void main() {
       );
       final decoration = pill.decoration! as BoxDecoration;
       expect(decoration.color, LoopColors.elevated);
-      expect((decoration.border! as Border).top.color, LoopColors.lime);
+      // Decision 0210: the reader's own reaction is edged in Purple.
+      expect((decoration.border! as Border).top.color, LoopColors.purple);
       final count = tester.widget<Text>(
         find.descendant(of: capsule, matching: find.text('1')),
       );

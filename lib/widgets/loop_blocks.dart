@@ -608,27 +608,10 @@ class _LoopPayTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final content = Container(
       constraints: const BoxConstraints(minHeight: 64),
+      // Decision 0210: flat Yellow, square, no lift.
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[LoopColors.limeHighlight, LoopColors.lime],
-          stops: <double>[0, 0.62],
-        ),
+        color: LoopColors.yellow,
         borderRadius: LoopRadius.card,
-        border: Border.fromBorderSide(BorderSide(color: LoopColors.lime)),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Color(0x42B8FF20),
-            offset: Offset(0, 10),
-            blurRadius: 26,
-          ),
-          BoxShadow(
-            color: Color(0x6B050604),
-            offset: Offset(0, 2),
-            blurRadius: 6,
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1136,7 +1119,7 @@ class LoopLedgerComposite extends StatelessWidget {
     return Padding(
       padding: margin,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(LoopRadius.shellValue),
+        borderRadius: LoopRadius.shell,
         child: ColoredBox(
           color: chalk ? LoopColors.ink : LoopColors.graphite,
           child: Column(
@@ -1307,7 +1290,8 @@ class LoopProgressBar extends StatelessWidget {
       label: semanticLabel,
       child: ExcludeSemantics(
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
+          // Decision 0210: a progress bar is square, like every surface.
+          borderRadius: BorderRadius.zero,
           child: Container(
             height: 6,
             color: LoopGround.fillOf(context),

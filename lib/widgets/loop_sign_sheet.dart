@@ -105,14 +105,14 @@ class LoopSignSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final background = switch (state) {
-      LoopSignSheetState.simulationFailed => const Color(0x1CB8FF20),
+      LoopSignSheetState.simulationFailed => LoopColors.yellowSoft,
       LoopSignSheetState.policyRejected => LoopColors.card2,
       _ => LoopColors.card,
     };
     final borderColor = switch (state) {
       LoopSignSheetState.simulationFailed ||
       LoopSignSheetState.policyRejected => Colors.transparent,
-      _ => LoopColors.line,
+      _ => LoopColors.line2,
     };
     final stateLabel = switch (state) {
       LoopSignSheetState.pending => '待确认',
@@ -131,15 +131,14 @@ class LoopSignSheet extends StatelessWidget {
             ? '$title · $stateLabel'
             : '$title · $networkBadge · $stateLabel',
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
           child: Container(
             key: ValueKey<String>('loop-sign-sheet-${state.name}'),
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(LoopSpacing.card),
             decoration: BoxDecoration(
               color: background,
               borderRadius: LoopRadius.card,
               border: Border.all(color: borderColor),
-              boxShadow: LoopDepth.liftCard,
             ),
             child: state == LoopSignSheetState.signing
                 ? _SigningBody(cancelLabel: cancelLabel, title: signingTitle)
