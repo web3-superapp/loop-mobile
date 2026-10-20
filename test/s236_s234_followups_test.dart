@@ -82,11 +82,12 @@ void main() {
         ),
         findsOneWidget,
       );
-      // tBNB is still there, above it.
+      // tBNB is still there. S259 · decision 0217: the 「代币」 list sorts
+      // unvalued rows by amount, so the larger tUSD1 comes first.
       expect(_key('wallet-launch-chain-row'), findsOneWidget);
       expect(
         tester.getTopLeft(_key('wallet-launch-chain-row')).dy,
-        lessThan(tester.getTopLeft(row).dy),
+        greaterThan(tester.getTopLeft(row).dy),
       );
       expect(find.text(walletLaunchChainTotalNote), findsOneWidget);
     });

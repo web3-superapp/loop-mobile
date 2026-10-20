@@ -392,7 +392,7 @@ void main() {
   });
 
   group('zero balances', () {
-    testWidgets('fold by default; the switch shows them and is remembered', (
+    testWidgets('S259 · 0217: a zero row is not drawn; no fold switch', (
       tester,
     ) async {
       await pumpS5Page(
@@ -407,25 +407,9 @@ void main() {
 
       expect(key('wallet-balance-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-balance-$s5WbnbAssetId'), findsNothing);
-      expect(key('wallet-zero-toggle'), findsOneWidget);
-      expect(find.text('显示 1 项零余额资产'), findsOneWidget);
-
-      await tester.tap(key('wallet-zero-toggle'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-balance-$s5WbnbAssetId'), findsOneWidget);
-      final value = tester.widget<Text>(
-        key('wallet-balance-value-$s5WbnbAssetId'),
-      );
-      expect(value.data, '≈\$0');
-      // A zero holding moved by nothing in USD; the price's own 24h move
-      // still reads in fall (decision 0188's per-row 24h line).
-      final move = tester.widget<Text>(
-        key('wallet-balance-change-$s5WbnbAssetId'),
-      );
-      expect(move.data, '\$0 (-2.5%)');
-      expect(move.style!.color, LoopColors.fall);
-      // Open, the switch offers to fold them again.
-      expect(find.text('隐藏零余额资产'), findsOneWidget);
+      expect(key('wallet-zero-toggle'), findsNothing);
+      expect(find.textContaining('零余额'), findsNothing);
+      expect(find.text('余额都为 0，已收起'), findsNothing);
     });
 
     testWidgets('an unread row is never folded as zero', (tester) async {

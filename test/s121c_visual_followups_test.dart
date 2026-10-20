@@ -85,7 +85,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('the zero switch is one line of text', (tester) async {
+    testWidgets('S259 · 0217: a zero row is not drawn and there is no zero '
+        'switch', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -109,13 +110,12 @@ void main() {
           ),
         ),
       );
-      await scrollToS5Section(tester, key('wallet-zero-toggle'));
-      expect(find.text('显示 1 项零余额资产'), findsOneWidget);
+      await scrollToS5Section(tester, key('wallet-snapshot-footer'));
+      expect(key('wallet-zero-toggle'), findsNothing);
+      expect(find.textContaining('零余额'), findsNothing);
       expect(find.byType(Checkbox), findsNothing);
-      await tester.tap(key('wallet-zero-toggle'));
-      await tester.pumpAndSettle();
-      expect(find.text('隐藏零余额资产'), findsOneWidget);
-      expect(key('wallet-balance-$s5WbnbAssetId'), findsOneWidget);
+      expect(key('wallet-balance-open-$s5WbnbAssetId'), findsNothing);
+      expect(key('wallet-balance-open-$s5NativeAssetId'), findsOneWidget);
     });
 
     testWidgets('the Launch chain row has the same shape', (tester) async {

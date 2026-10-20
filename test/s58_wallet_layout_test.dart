@@ -66,7 +66,10 @@ void main() {
       );
 
       expect(find.text('总资产'), findsOneWidget);
-      expect(find.text('余额'), findsOneWidget);
+      // S259 · decision 0217: the 余额 label is the 代币 / NFT tab row.
+      expect(find.text('余额'), findsNothing);
+      expect(find.text('代币'), findsOneWidget);
+      expect(find.text('NFT'), findsOneWidget);
       expect(find.text('WALLET LEDGER'), findsNothing);
       expect(find.text('WALLET ASSETS'), findsNothing);
       await scrollToS5Section(

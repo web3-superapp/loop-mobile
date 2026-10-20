@@ -406,11 +406,9 @@ void main() {
                 onJump: () {},
                 onDismiss: () {},
               ),
-              WalletZeroBalanceToggle(
-                hideZero: true,
-                zeroCount: 3,
-                onToggle: () {},
-              ),
+              // S259 · decision 0217: the 代币 / NFT tabs replace the
+              // zero-balance switch.
+              WalletAssetTabs(selectedIndex: 0, onSelected: (_) {}),
               WalletQuickActions(
                 onBlocked: (_) {},
                 actions: <WalletQuickAction>[

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart'; // S136
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
@@ -188,6 +190,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   /// screen — retained, restored or refreshed — never blinks.
   bool _sawBalancesSkeleton = false;
 
+  /// The asset area's tab (S259 · decision 0217): 代币 or NFT.
+  int _assetTab = WalletAssetTabs.tokens;
+
   /// What a closed key answers with: the server's own sentence, on the tap.
   void _blocked(String reason) {
     LoopToast.show(context, message: reason, kind: LoopToastKind.warn);
@@ -276,8 +281,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final hidden = ref.watch(
       loopBalanceVisibilityProvider.select((visibility) => visibility.hidden),
     );
-    final hideZero = ref.watch(walletHideZeroBalancesProvider);
     final directoryEmpty = _directoryIsEmpty(directory);
+    // S136 · decision 0139: MEME v2 holdings and NFTs from `me/positions`;
+    // nothing unless the switch is on and the server publishes `launch2`.
+    final launch2 = launch2WalletEntries(ref, onOpen: _open, hidden: hidden);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallet-screen'),
@@ -431,62 +438,32 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           if (balances != null)
             if (walletHoldingShares(balances) case final shares?)
               WalletHoldingsDistribution(shares: shares),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: <Widget>[
-              // There is no list sort to offer, so the label stands alone
-              // with the mining note (decision 0188).
-              const Expanded(child: LoopLabel('余额', tight: true)),
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: WalletPowerTag(
-                  onTap: () => unawaited(
-                    showWalletPowerSheet(
-                      context,
-                      onOpenMining: () => _open('/mining'),
-                    ),
-                  ),
+          // S259 · decision 0217: 「代币 / NFT」 in place of the 余额 label,
+          // 产生算力 kept on the right of the same line.
+          WalletAssetTabs(
+            selectedIndex: _assetTab,
+            onSelected: (index) => setState(() => _assetTab = index),
+            trailing: WalletPowerTag(
+              onTap: () => unawaited(
+                showWalletPowerSheet(
+                  context,
+                  onOpenMining: () => _open('/mining'),
                 ),
               ),
-            ],
-          ),
-          ..._assetBody(
-            walletId: walletId,
-            chainClosed: chainClosed,
-            chainReason: bscGate.reasonCode,
-            state: balancesState,
-            hidden: hidden,
-            hideZero: hideZero,
-            sendGate: sendGate,
-            swapGate: swapGate,
-          ),
-          // S136 · decision 0139: MEME v2 holdings and NFTs, one row each,
-          // read from `me/positions`. Nothing is drawn unless the switch is
-          // on and the server publishes `launch2` as available.
-          Launch2WalletRows(onOpen: _open, hidden: hidden),
-          // Decision 0038: the Launch chain block exists only when the
-          // backend published one. Its balance is a testnet figure and is
-          // never added to the assets above or to the net worth.
-          if (balances?.launchChain
-              case final LoopLaunchChainBalance launch) ...<Widget>[
-            WalletSectionHeading(
-              title: 'Launch 链',
-              // Audit m14 (decision 0133): the testnet explanation is behind
-              // this (i), not a five-line card in the asset list.
-              // Decision 0204: a test-only hint, behind the switch.
-              trailing: launch.isTestnet && loopTestHintsVisible
-                  ? LoopIconButton(
-                      key: const ValueKey<String>('wallet-launch-chain-info'),
-                      icon: 'info',
-                      label: loopTestnetInfoButtonText,
-                      color: LoopColors.text2,
-                      onPressed: () =>
-                          unawaited(showLoopTestnetInfoSheet(context)),
-                    )
-                  : null,
             ),
-            WalletLaunchChainCard(launchChain: launch, hidden: hidden),
-          ],
+          ),
+          ...(_assetTab == WalletAssetTabs.nft
+              ? _nftBody(launch2: launch2, hidden: hidden)
+              : _tokenBody(
+                  walletId: walletId,
+                  chainClosed: chainClosed,
+                  chainReason: bscGate.reasonCode,
+                  state: balancesState,
+                  hidden: hidden,
+                  sendGate: sendGate,
+                  swapGate: swapGate,
+                  launch2: launch2,
+                )),
         ],
         const SizedBox(height: LoopSpacing.group),
         _entryGroup(),
@@ -495,22 +472,33 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
   }
 
-  /// The asset list in each of its states. A failed or closed read is one
-  /// weak line under the heading, never a block-sized card: the four keys
-  /// and the entry group around it still work.
-  List<Widget> _assetBody({
+  /// 「代币」 in each of its states (S259 · decision 0217). The main chain's
+  /// rows, the Launch chain's BNB and USD1 and the MEME v2 tokens are one
+  /// list: valued rows by value, then the rest by amount. A row holding
+  /// nothing is not drawn. A failed or closed main read is one weak line,
+  /// never a block-sized card: the four keys and the entry group around it
+  /// still work, and the Launch rows still stand.
+  List<Widget> _tokenBody({
     required String walletId,
     required bool chainClosed,
     required String? chainReason,
     required LoopChainResourceState<LoopWalletBalances>? state,
     required bool hidden,
-    required bool hideZero,
     required LoopCapabilityProjection sendGate,
     required LoopCapabilityProjection swapGate,
+    required Launch2WalletEntries launch2,
   }) {
     void retry() => unawaited(
       ref.read(walletBalancesControllerProvider(walletId).notifier).reload(),
     );
+    final launch2Rows = <Widget>[
+      for (final entry in walletSortTokenEntries(<WalletTokenEntry>[
+        for (final entry in launch2.tokens)
+          (valueUsd: null, quantity: entry.quantity, row: entry.row),
+      ]))
+        entry.row,
+      ?launch2.failure,
+    ];
     if (chainClosed) {
       return <Widget>[
         LoopInlineUnavailable(
@@ -519,6 +507,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             chainReason ?? 'BSC_CHAIN_RUNTIME_UNAVAILABLE',
           ),
         ),
+        ...launch2Rows,
       ];
     }
     if (state == null || state.phase == LoopChainViewPhase.loading) {
@@ -534,13 +523,15 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     }
     if (!state.isReady) {
       if (state.phase == LoopChainViewPhase.empty) {
-        return const <Widget>[
-          LoopEmptyState(
-            key: ValueKey<String>('wallet-balances-state-empty'),
-            illustration: LoopIllustration.history,
-            title: '这个钱包还没有可读资产',
-            compact: true,
-          ),
+        return <Widget>[
+          if (launch2Rows.isEmpty)
+            const LoopEmptyState(
+              key: ValueKey<String>('wallet-balances-state-empty'),
+              illustration: LoopIllustration.history,
+              title: '这个钱包还没有可读资产',
+              compact: true,
+            ),
+          ...launch2Rows,
         ];
       }
       final permission = state.phase == LoopChainViewPhase.permission;
@@ -553,27 +544,63 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           message: _balancesFailureLine(state.phase, state.failureKind),
           onRetry: permission ? null : retry,
         ),
+        ...launch2Rows,
       ];
     }
     final balances = state.value!;
-    if (balances.balances.isEmpty) {
-      return const <Widget>[
-        LoopEmptyState(
-          key: ValueKey<String>('wallet-balances-empty'),
-          illustration: LoopIllustration.history,
-          title: '还没有可读取的资产',
-          message: '登记资产后，这里会为每一个资产恒定保留一行。',
-          compact: true,
-        ),
-      ];
-    }
-    final zeroCount = balances.balances.where(walletRowIsZero).length;
-    final visible = hideZero
-        ? balances.balances
-              .where((row) => !walletRowIsZero(row))
-              .toList(growable: false)
-        : balances.balances;
     final netWorth = balances.netWorth;
+    final launch = balances.launchChain;
+    final launchNative = launch?.nativeBalance;
+    final launchUsd1 = launch?.usd1;
+    final entries = walletSortTokenEntries(<WalletTokenEntry>[
+      for (final row in balances.balances)
+        if (!walletRowIsZero(row))
+          (
+            valueUsd: switch (row.valuation) {
+              LoopValuationAvailable(valueUsd: final value) => value,
+              LoopValuationUnavailable() => null,
+            },
+            quantity: switch (row.balance) {
+              LoopBalanceAvailable(displayBalance: final value) => value,
+              _ => Decimal.zero,
+            },
+            row: WalletBalanceRow(
+              row: row,
+              hidden: hidden,
+              gasReserve: row.isNative
+                  ? balances.gasReservePolicy.nativeReserve
+                  : null,
+              onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
+              onRetry: retry,
+              onBlocked: _blocked,
+              actions: _rowActions(row, sendGate, swapGate),
+            ),
+          ),
+      // Decision 0038: the Launch rows exist only when the backend
+      // published a Launch slot. Their figures are never added to the
+      // total or to the net worth.
+      if (launch != null && launchNative != null)
+        if (launchNative.displayBalance > Decimal.zero)
+          (
+            valueUsd: null,
+            quantity: launchNative.displayBalance,
+            row: walletLaunchNativeRow(launch, launchNative, hidden: hidden),
+          ),
+      // A USD1 nobody read is not a zero: its row stays with its reason.
+      if (launch != null)
+        if (launchUsd1 == null ||
+            walletLaunchUsd1Figure(launchUsd1.balance) > Decimal.zero)
+          (
+            valueUsd: null,
+            quantity: launchUsd1 == null
+                ? Decimal.zero
+                : walletLaunchUsd1Figure(launchUsd1.balance),
+            row: walletLaunchUsd1Row(launch, hidden: hidden),
+          ),
+      for (final entry in launch2.tokens)
+        (valueUsd: null, quantity: entry.quantity, row: entry.row),
+    ]);
+    final launchSnapshot = launchNative?.snapshot;
     return <Widget>[
       LoopContentArrival(
         animate: _sawBalancesSkeleton,
@@ -582,38 +609,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            for (final row in visible)
-              WalletBalanceRow(
-                row: row,
-                hidden: hidden,
-                gasReserve: row.isNative
-                    ? balances.gasReservePolicy.nativeReserve
-                    : null,
-                onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
-                onRetry: retry,
-                onBlocked: _blocked,
-                actions: _rowActions(row, sendGate, swapGate),
-              ),
-            if (visible.isEmpty)
-              LoopInlineUnavailable(
-                key: const ValueKey<String>('wallet-balances-all-zero'),
-                icon: 'info',
-                message: '余额都为 0，已收起',
+            for (final entry in entries) entry.row,
+            if (launch != null && launchNative == null)
+              walletLaunchUnavailableLine(launch),
+            ?launch2.failure,
+            if (entries.isEmpty &&
+                launch2.failure == null &&
+                (launch == null || launchNative != null))
+              const LoopEmptyState(
+                key: ValueKey<String>('wallet-balances-empty'),
+                illustration: LoopIllustration.history,
+                title: '还没有资产',
+                message: '接收或兑换后，有余额的资产会出现在这里。',
+                compact: true,
               ),
           ],
         ),
       ),
-      if (zeroCount > 0)
-        WalletZeroBalanceToggle(
-          hideZero: hideZero,
-          zeroCount: zeroCount,
-          onToggle: () =>
-              ref.read(walletHideZeroBalancesProvider.notifier).toggle(),
-        ),
-      // One provenance line for the whole list: the block every balance was
+      if (launch != null && walletLaunchChainBadged(launch))
+        walletLaunchTotalNote(),
+      // One provenance line under the list: the block every balance was
       // read at, the price source and when it was observed. The full
-      // statement — confirmations and the gas reserve included — is one tap
-      // away.
+      // statement — confirmations, the gas reserve and the Launch chain's
+      // own block — is one tap away.
       LoopProvenanceLine(
         key: const ValueKey<String>('wallet-snapshot-footer'),
         prefix:
@@ -628,7 +646,67 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认）。'
             '原生 BNB 会保留 '
             '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB '
-            '作为手续费，不计入可动用。',
+            '作为手续费，不计入可动用。'
+            '${launchSnapshot == null ? '' : 'Launch 链余额读自区块 ${loopGroupedFigure(launchSnapshot.blockNumber.toString())}，不计入总资产。'}'
+            '余额为 0 的资产不显示。',
+      ),
+    ];
+  }
+
+  /// 「NFT」 (S259 · decision 0217): the project NFTs (共识勋章), one row
+  /// each, read from `me/positions`; a row opens the medal page.
+  List<Widget> _nftBody({
+    required Launch2WalletEntries launch2,
+    required bool hidden,
+  }) {
+    if (launch2.closed) {
+      return const <Widget>[
+        LoopInlineUnavailable(
+          key: ValueKey<String>('wallet-nft-unavailable'),
+          icon: 'info',
+          message: 'MEME v2 暂未开放，项目 NFT 暂时读不到',
+        ),
+      ];
+    }
+    if (launch2.loading) {
+      return const <Widget>[
+        LoopSkeleton(
+          key: ValueKey<String>('wallet-nft-loading'),
+          type: LoopSkeletonType.record,
+          rows: 2,
+          leadingSize: 40,
+          subtitleLines: 1,
+        ),
+      ];
+    }
+    if (launch2.failure case final Widget failure) return <Widget>[failure];
+    if (launch2.nfts.isEmpty) {
+      return const <Widget>[
+        LoopEmptyState(
+          key: ValueKey<String>('wallet-nft-empty'),
+          illustration: LoopIllustration.launchpad,
+          title: '还没有 NFT',
+          message: '参与 MEME 发射的 NFT 预售后，项目 NFT 会出现在这里。',
+          compact: true,
+        ),
+      ];
+    }
+    return <Widget>[
+      Column(
+        key: const ValueKey<String>('wallet-nft-list'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: launch2.nfts,
+      ),
+      Consumer(
+        builder: (context, ref, _) => LoopProvenanceLine(
+          key: const ValueKey<String>('wallet-nft-provenance'),
+          sources: const <String>['LOOP 链上索引'],
+          observedAt: ref
+              .read(launch2PositionsControllerProvider.notifier)
+              .valueObservedAt,
+          detail: '项目 NFT 读自 LOOP 链上索引，点开看共识勋章。',
+        ),
       ),
     ];
   }

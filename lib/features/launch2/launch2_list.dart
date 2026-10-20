@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
-import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -55,9 +54,19 @@ class Launch2ListSegment extends ConsumerStatefulWidget {
     super.key,
     this.onEmptyAction,
     this.onOpenGraduated,
+    this.tabTitle,
+    this.actions = const <Widget>[],
   });
 
   final Launch2ListScope scope;
+
+  /// S259 · decision 0217: the list is the MEME Tab itself (no segment row
+  /// above it), so it draws its own bar under this title with [actions].
+  /// `null` keeps the embedded segment body.
+  final String? tabTitle;
+
+  /// The bar's controls while [tabTitle] is set.
+  final List<Widget> actions;
   final void Function(String location) onNavigate;
 
   /// The empty list's one next step (another segment of the MEME Tab).
@@ -213,8 +222,11 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     return LoopDashboardPage(
       key: ValueKey<String>(_keyBase),
       archetype: LoopPageArchetype.listing,
-      title: scope == Launch2ListScope.all ? 'v2 发射' : '已毕业',
-      embedded: true,
+      title:
+          widget.tabTitle ?? (scope == Launch2ListScope.all ? 'v2 发射' : '已毕业'),
+      embedded: widget.tabTitle == null,
+      actions: widget.tabTitle == null ? const <Widget>[] : widget.actions,
+      updating: widget.tabTitle != null && (state?.refreshing ?? false),
       tabPage: true,
       onRefresh: blocked ? null : () => _pull(controller),
       sections: <Widget>[
@@ -275,15 +287,9 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
               ? null
               : LoopButton(
                   key: ValueKey<String>('$_keyBase-empty-action'),
-                  // Decision 0195: the curve segment is 「历史」 while
-                  // classic launches are retired.
-                  label: graduated
-                      ? '看正在发射的'
-                      : ref
-                            .watch(loopFeatureSwitchesProvider)
-                            .classicMemeLaunchVisible
-                      ? '看经典发射'
-                      : '看历史代币',
+                  // Decision 0217: the MEME Tab is the v2 desk alone; the
+                  // graduated list's step goes back to it.
+                  label: graduated ? '看正在发射的' : '看经典发射',
                   primary: true,
                   onPressed: widget.onEmptyAction,
                 ),

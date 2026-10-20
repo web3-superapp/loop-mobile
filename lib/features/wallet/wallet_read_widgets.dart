@@ -596,112 +596,138 @@ class WalletLaunchChainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final native = launchChain.nativeBalance;
-    final usd1 = launchChain.usd1;
-    final usd1Reason = walletLaunchUsd1Reason(launchChain);
-    final usd1Figure = usd1 == null
-        ? walletLaunchUsd1Missing
-        : hidden
-        ? walletMaskedFigure
-        : loopFormatDecimal(
-            walletLaunchUsd1Figure(usd1.balance),
-            maxFractionDigits: 2,
-          );
-    final usd1Symbol = walletLaunchUsd1Symbol(launchChain);
     return Column(
       key: const ValueKey<String>('wallet-launch-chain'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (native == null)
-          LoopUnavailableLine(
-            key: const ValueKey<String>('wallet-launch-chain-unavailable'),
-            label: '${launchChain.name}余额不可用',
-            reasonCode: launchChain.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
-          )
+          walletLaunchUnavailableLine(launchChain)
         else ...<Widget>[
-          // The same OKX row as the assets above (decision 0123). No pill:
-          // a testnet balance has no price and no 24h move.
-          LoopQuoteRow(
-            key: const ValueKey<String>('wallet-launch-chain-row'),
-            leading: LoopTokenLogo(
-              assetSymbol: native.symbol,
-              fallbackMonogram: loopDisplaySymbol(native.symbol),
-              size: 36,
-            ),
-            title: loopDisplaySymbol(native.symbol),
-            titleTrailing: launchChain.isTestnet
-                ? const LoopTestnetBadge()
-                : null,
-            // The testnet badge already names the chain; the grey line keeps
-            // only the reserve (decision 0123, one element removed). With the
-            // test-hints switch off there is no badge, and the heading above
-            // already says 「Launch 链」 (decision 0204).
-            subtitle: launchChain.isTestnet ? null : launchChain.name,
-            subtitleMark: '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
-            value: hidden
-                ? walletMaskedFigure
-                : loopFormatDecimal(native.displayBalance),
-            valueCaption: Text(
-              '可动用 ${hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance)}',
-            ),
-            semanticLabel:
-                '${launchChain.name} ${loopDisplaySymbol(native.symbol)} '
-                '${hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance)}',
-          ),
+          walletLaunchNativeRow(launchChain, native, hidden: hidden),
           WalletSnapshotFooter(
             key: const ValueKey<String>('wallet-launch-chain-snapshot'),
             snapshot: native.snapshot,
           ),
         ],
-        LoopQuoteRow(
-          key: const ValueKey<String>('wallet-launch-chain-usd1-row'),
-          leading: LoopTokenLogo(
-            assetSymbol: 'USD1',
-            fallbackMonogram: usd1Symbol,
-            size: 36,
-          ),
-          title: usd1Symbol,
-          titleTrailing: launchChain.isTestnet
-              ? const LoopTestnetBadge()
-              : null,
-          subtitle: launchChain.isTestnet ? null : launchChain.name,
-          value: usd1Figure,
-          valueCaption: usd1Reason == null
-              ? null
-              : Text(
-                  usd1Reason,
-                  key: const ValueKey<String>(
-                    'wallet-launch-chain-usd1-reason',
-                  ),
-                ),
-          semanticLabel: <String>[
-            '${launchChain.name} $usd1Symbol $usd1Figure',
-            ?usd1Reason,
-          ].join('，'),
-        ),
-        if (_badged(launchChain))
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              8,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Text(
-              walletLaunchChainTotalNote,
-              key: const ValueKey<String>('wallet-launch-chain-total-note'),
-              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-            ),
-          ),
+        walletLaunchUsd1Row(launchChain, hidden: hidden),
+        if (walletLaunchChainBadged(launchChain)) walletLaunchTotalNote(),
       ],
     );
   }
 }
 
+/// The grey line every Launch chain row of the wallet carries (S259 ·
+/// decision 0217): the rows sit in the 「代币」 list among the main chain's.
+const String walletLaunchChainLabel = 'Launch 链';
+
+/// The Launch chain's native balance could not be read.
+Widget walletLaunchUnavailableLine(LoopLaunchChainBalance launchChain) =>
+    LoopUnavailableLine(
+      key: const ValueKey<String>('wallet-launch-chain-unavailable'),
+      label: '${launchChain.name}余额不可用',
+      reasonCode: launchChain.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
+    );
+
+/// The Launch chain's native row: the same OKX row as the main assets
+/// (decision 0123), no pill — a testnet balance has no price and no 24h
+/// move — 手续费保留 in the grey line and 可动用 under the figure.
+Widget walletLaunchNativeRow(
+  LoopLaunchChainBalance launchChain,
+  LoopLaunchChainNativeBalance native, {
+  required bool hidden,
+}) => LoopQuoteRow(
+  key: const ValueKey<String>('wallet-launch-chain-row'),
+  leading: LoopTokenLogo(
+    assetSymbol: native.symbol,
+    fallbackMonogram: loopDisplaySymbol(native.symbol),
+    size: 36,
+  ),
+  title: loopDisplaySymbol(native.symbol),
+  titleTrailing: launchChain.isTestnet ? const LoopTestnetBadge() : null,
+  subtitle: walletLaunchChainLabel,
+  subtitleMark: '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
+  value: hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance),
+  valueCaption: Text(
+    '可动用 ${hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance)}',
+  ),
+  semanticLabel:
+      '$walletLaunchChainLabel ${loopDisplaySymbol(native.symbol)} '
+      '${hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance)}',
+);
+
+/// The Launch chain's USD1 row; with no reading it prints
+/// [walletLaunchUsd1Missing] and the reason (decision 0208).
+Widget walletLaunchUsd1Row(
+  LoopLaunchChainBalance launchChain, {
+  required bool hidden,
+}) {
+  final usd1 = launchChain.usd1;
+  final usd1Reason = walletLaunchUsd1Reason(launchChain);
+  final usd1Figure = usd1 == null
+      ? walletLaunchUsd1Missing
+      : hidden
+      ? walletMaskedFigure
+      : loopFormatDecimal(
+          walletLaunchUsd1Figure(usd1.balance),
+          maxFractionDigits: 2,
+        );
+  final usd1Symbol = walletLaunchUsd1Symbol(launchChain);
+  return LoopQuoteRow(
+    key: const ValueKey<String>('wallet-launch-chain-usd1-row'),
+    leading: LoopTokenLogo(
+      assetSymbol: 'USD1',
+      fallbackMonogram: usd1Symbol,
+      size: 36,
+    ),
+    title: usd1Symbol,
+    titleTrailing: launchChain.isTestnet ? const LoopTestnetBadge() : null,
+    subtitle: walletLaunchChainLabel,
+    value: usd1Figure,
+    valueCaption: usd1Reason == null
+        ? null
+        : Text(
+            usd1Reason,
+            key: const ValueKey<String>('wallet-launch-chain-usd1-reason'),
+          ),
+    semanticLabel: <String>[
+      '$walletLaunchChainLabel $usd1Symbol $usd1Figure',
+      ?usd1Reason,
+    ].join('，'),
+  );
+}
+
+/// Decision 0203: on a testnet slot, the line that keeps the Launch rows
+/// out of the total above (test-hints switch on only, decision 0204), with
+/// the testnet explanation behind its (i) (audit m14, decision 0133).
+Widget walletLaunchTotalNote() => Builder(
+  builder: (context) => Padding(
+    padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 8, 0),
+    child: Row(
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            walletLaunchChainTotalNote,
+            key: const ValueKey<String>('wallet-launch-chain-total-note'),
+            style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+          ),
+        ),
+        LoopIconButton(
+          key: const ValueKey<String>('wallet-launch-chain-info'),
+          icon: 'info',
+          label: loopTestnetInfoButtonText,
+          color: LoopColors.text2,
+          onPressed: () => unawaited(showLoopTestnetInfoSheet(context)),
+        ),
+      ],
+    ),
+  ),
+);
+
 /// Whether the Launch block states its testnet slot: the slot is the testnet
 /// and the test-hints switch is on (decision 0204). Off, the block is just
 /// 「Launch 链」 with no badge and no note.
-bool _badged(LoopLaunchChainBalance launchChain) =>
+bool walletLaunchChainBadged(LoopLaunchChainBalance launchChain) =>
     launchChain.isTestnet && loopTestHintsVisible;
 
 /// Decision 0203: what the Launch block says on a testnet slot, so nobody

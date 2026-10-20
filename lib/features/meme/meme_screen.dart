@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_entry.dart';
@@ -12,7 +13,9 @@ import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_launchpad.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 
 /// `meme` · MEME (decision 0110; MEME curve launchpad, decision 0120).
@@ -44,15 +47,9 @@ class MemeScreen extends ConsumerWidget {
 
   static const segments = <String>['发射台', '行情'];
 
-  /// S136 · decision 0139: the three segments while MEME v2 is shown —
-  /// v2 instances, the S117 curve launchpad as 「经典」, graduated v2
-  /// instances. The `meme` market category stays on 行情 (`/market`).
-  static const v2Segments = <String>['v2 发射', '经典', '已毕业'];
-
-  /// Decision 0195: while classic launches are retired the curve segment
-  /// keeps its tokens (they stay readable and tradable) under 「历史」, so a
-  /// new reader is not told 经典 is a way to launch.
-  static const v2SegmentsClassicRetired = <String>['v2 发射', '历史', '已毕业'];
+  /// S259 · decision 0217: with the IDO switch on, the v2 desk and IDO are
+  /// the only two segments; otherwise the MEME Tab has no segment row.
+  static const v2SegmentsWithIdo = <String>['发射台', 'IDO'];
 
   /// The index of the IDO segment while the switch is on.
   static const int idoSegment = 2;
@@ -61,9 +58,15 @@ class MemeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final switches = ref.watch(loopFeatureSwitchesProvider);
     final ido = switches.idoLaunchVisible;
-    // S136 · decision 0139: drawn only with the build switch on and the
-    // server's `launch2` capability available; otherwise exactly as before.
-    if (launch2SurfaceVisible(ref)) return _v2(context, ref, ido: ido);
+    // S136 · decision 0139: the v2 desk is drawn only with the build switch
+    // on and the server's `launch2` capability available.
+    // S259 · decision 0217: with the switch on but the capability closed or
+    // not read yet, the Tab says so in one line — never the retired classic
+    // list.
+    final v2 = launch2SurfaceVisible(ref);
+    if (v2 || switches.launch2Visible) {
+      return _v2(context, ref, ido: ido, available: v2);
+    }
     void open(String location) {
       final navigate = onNavigate;
       if (navigate != null) {
@@ -128,9 +131,16 @@ class MemeScreen extends ConsumerWidget {
     );
   }
 
-  // S136 · decision 0139: 「v2 发射 / 经典 / 已毕业」, IDO fourth when its
-  // switch is on.
-  Widget _v2(BuildContext context, WidgetRef ref, {required bool ido}) {
+  // S259 · decision 0217: the v2 desk is the whole Tab — no 「v2 发射 / 历史
+  // / 已毕业」 row. 已毕业 is the desk's own fourth stage chip; the classic
+  // curve list has no entry. IDO comes back as a second segment only while
+  // its switch is on.
+  Widget _v2(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool ido,
+    required bool available,
+  }) {
     void open(String location) {
       final navigate = onNavigate;
       if (navigate != null) {
@@ -140,21 +150,28 @@ class MemeScreen extends ConsumerWidget {
       context.push(location);
     }
 
-    void select(int index) =>
-        ref.read(loopTabSegmentMemoryProvider.notifier).select('meme', index);
-    final idoIndex = v2Segments.length;
-    final classic = ref
-        .watch(loopFeatureSwitchesProvider)
-        .classicMemeLaunchVisible;
+    Widget creatorActions() => Launch2CreatorActions(
+      onNavigate: open,
+      classicCreatePath: MemeRoute.createPath,
+    );
+    if (!ido && !available) return const _MemeV2Closed();
+    if (!ido) {
+      return KeyedSubtree(
+        key: const ValueKey<String>('meme-screen'),
+        child: Launch2ListSegment(
+          scope: Launch2ListScope.all,
+          onNavigate: open,
+          tabTitle: 'MEME',
+          actions: <Widget>[creatorActions()],
+        ),
+      );
+    }
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('meme-screen'),
       tabKey: 'meme',
       title: 'MEME',
-      segments: <String>[
-        ...(classic ? v2Segments : v2SegmentsClassicRetired),
-        if (ido) 'IDO',
-      ],
-      actionsBuilder: (context, index) => index == idoIndex && ido
+      segments: v2SegmentsWithIdo,
+      actionsBuilder: (context, index) => index == 1
           ? <Widget>[
               Consumer(
                 builder: (context, ref, _) {
@@ -175,77 +192,20 @@ class MemeScreen extends ConsumerWidget {
                 },
               ),
             ]
-          // S148 · decision 0146: 「我的项目」 + 「发起」 on the two v2
-          // lists; 经典 keeps its own 「创建代币」 line.
-          : index == 0 || index == 2
-          ? <Widget>[
-              Launch2CreatorActions(
-                onNavigate: open,
-                classicCreatePath: MemeRoute.createPath,
-              ),
-            ]
-          // Decision 0176 (design 35 首页): 经典's search and create sit in
-          // the bar, as the design's top bar carries its search.
-          : index == 1
-          ? <Widget>[
-              Consumer(
-                builder: (context, ref, _) {
-                  final blocked = memeReadsBlocked(ref);
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      LoopIconButton(
-                        key: const ValueKey<String>('meme-search-entry'),
-                        icon: 'search',
-                        label: '搜索代币',
-                        onPressed: () => open('/search'),
-                      ),
-                      // Decision 0195: no classic create while retired.
-                      if (classic) ...<Widget>[
-                        const SizedBox(width: 6),
-                        LoopIconButton(
-                          key: const ValueKey<String>('meme-create-entry'),
-                          icon: 'plus',
-                          label: '创建代币',
-                          onPressed: blocked
-                              ? null
-                              : () => open(MemeRoute.createPath),
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
-            ]
-          : const <Widget>[],
+          : <Widget>[creatorActions()],
       updating: (ref, index) => switch (index) {
         0 => ref.watch(
           launch2ListControllerProvider(Launch2ListScope.all)
               .select((state) => state.refreshing),
         ),
-        1 => ref.watch(
-          memeListControllerProvider(MemeListTab.fresh)
-              .select((state) => state.refreshing),
+        _ => ref.watch(
+          launchOverviewControllerProvider.select((state) => state.refreshing),
         ),
-        2 => ref.watch(
-          launch2ListControllerProvider(Launch2ListScope.graduated)
-              .select((state) => state.refreshing),
-        ),
-        _ => false,
       },
       builder: (context, index) => switch (index) {
-        0 => Launch2ListSegment(
-          scope: Launch2ListScope.all,
-          onNavigate: open,
-          onEmptyAction: () => select(1),
-          onOpenGraduated: () => select(2),
-        ),
-        1 => MemeLaunchpadSegment(
-          onNavigate: open,
-          onOpenGraduated: () => select(2),
-          toolsInTopbar: true,
-        ),
-        _ when ido && index == idoIndex => LaunchScreen(
+        0 when !available => const _MemeV2Closed(embedded: true),
+        0 => Launch2ListSegment(scope: Launch2ListScope.all, onNavigate: open),
+        _ => LaunchScreen(
           embedded: true,
           onOpenLaunch: onOpenLaunch,
           onOpenStake: onOpenStake,
@@ -253,12 +213,37 @@ class MemeScreen extends ConsumerWidget {
           onOpenEconomy: onOpenEconomy,
           onOpenApply: onOpenApply,
         ),
-        _ => Launch2ListSegment(
-          scope: Launch2ListScope.graduated,
-          onNavigate: open,
-          onEmptyAction: () => select(0),
-        ),
       },
+    );
+  }
+}
+
+/// The MEME Tab while the build shows MEME v2 but the server's `launch2`
+/// capability is closed or not read yet (S259 · decision 0217): the title
+/// and one inline line, no desk, no read, no classic list.
+class _MemeV2Closed extends ConsumerWidget {
+  const _MemeV2Closed({this.embedded = false});
+
+  /// The 发射台 segment beside IDO: the segment page draws the bar.
+  final bool embedded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.launch2),
+    );
+    return LoopDashboardPage(
+      key: ValueKey<String>(embedded ? 'meme-v2-closed' : 'meme-screen'),
+      archetype: LoopPageArchetype.state,
+      title: 'MEME',
+      tabPage: true,
+      embedded: embedded,
+      sections: <Widget>[
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('launch2-list-all-unavailable'),
+          message: 'MEME v2 暂时不可用 · ${launch2CapabilityText(capability)}',
+        ),
+      ],
     );
   }
 }

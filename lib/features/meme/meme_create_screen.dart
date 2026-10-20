@@ -437,7 +437,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
         LoopEmptyState(
           illustration: LoopIllustration.launchpad,
           title: '经典发射已停用',
-          message: '请使用 Loop Hook 发射（v2 发射）创建新代币。已有的经典代币仍可在 MEME 的「历史」里查看和买卖。',
+          message: '请使用 Loop Hook 发射（v2 发射）创建新代币。',
           action: openV2 == null
               ? null
               : LoopButton(
