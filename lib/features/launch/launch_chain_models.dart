@@ -240,7 +240,7 @@ String launchStateProjection(LaunchOnChainAvailable state) {
       };
   }
   return state.operationalState == LaunchOperationalState.paused
-      ? '已暂停 · $body'
+      ? '已暂停，$body'
       : body;
 }
 

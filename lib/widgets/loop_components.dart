@@ -2195,7 +2195,20 @@ class LoopSeg extends StatelessWidget {
     this.icon,
     this.quiet = false,
     this.dimmed = false,
+    this.capsuleHeight,
   });
+
+  /// The drawn height of the capsule, when it is lower than the finger's
+  /// target (S254, docs/42 附C §4: a segment capsule is 36 tall).
+  ///
+  /// Null keeps the chip at the 44 target with the capsule filling it. Set,
+  /// the capsule is drawn this tall and transparent room above and below
+  /// keeps the whole chip at least [segmentTarget] tall; a tap in that room
+  /// chooses the chip exactly as a tap on the capsule does.
+  final double? capsuleHeight;
+
+  /// The finger's target around a [capsuleHeight] capsule.
+  static const double segmentTarget = 48;
 
   /// The chip counts nothing now (a segment of zero, decision 0164): its
   /// label is drawn in Text3 rather than Text2.
@@ -2230,62 +2243,86 @@ class LoopSeg extends StatelessWidget {
   /// disabled appearance and the disabled semantics; only the silence goes.
   final VoidCallback? onBlocked;
 
+  VoidCallback? get _onTap => onSelected == null
+      ? onBlocked
+      : () {
+          // Decision 0130: choosing a peer (a filter, a slippage step, a
+          // chart period) is a selection. Re-choosing the chosen one is not.
+          if (!selected) LoopHaptics.selection();
+          onSelected!();
+        };
+
   @override
   Widget build(BuildContext context) {
+    final capsule = capsuleHeight;
+    final onTap = _onTap;
+    if (capsule != null) {
+      return Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        enabled: onSelected != null,
+        child: _LoopSegCapsule(
+          height: capsule,
+          ground: selected
+              ? LoopColors.purpleSelected
+              : (quiet ? Colors.transparent : LoopColors.card2),
+          block: block,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: ExcludeSemantics(child: _segLabel()),
+          ),
+        ),
+      );
+    }
+    final chip = Material(
+      // Decision 0210 (docs/42 附A §5, the hook-mode segment): a chosen
+      // chip is a Purple 9 % ground with a 2px Purple underline and a
+      // Yellow word. S241c made the framed chip choose the same way — it
+      // keeps its `#38333E` frame on the other three sides — so Yellow is
+      // never a solid selection block.
+      // Decision 0212 (docs/42 附C §4): every chip is a capsule; a chosen
+      // chip is solid Purple with a white word. An unchosen quiet chip is
+      // transparent; an unchosen framed chip is the raised grey ground.
+      color: selected
+          ? LoopColors.purpleSelected
+          : (quiet ? Colors.transparent : LoopColors.card2),
+      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: LoopRadius.pill,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: LoopTouch.minimum,
+            minHeight: LoopTouch.minimum,
+          ),
+          child: Align(
+            // The chip measures its own label. `Container(alignment:)`
+            // centres by growing to the constraints it is handed, and the
+            // loose bounded constraints a `Wrap` or a `Column` gives its
+            // children are the whole line: the five interest chips came out
+            // one per line and the three slippage steps stacked into three
+            // full-width buttons (walkthrough 2026-09-23 · h05).
+            // `widthFactor` measures instead of filling; a tight parent
+            // still wins, because constraints outrank the factor, and a
+            // page that wants the line says [block].
+            widthFactor: block ? null : 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: ExcludeSemantics(child: _segLabel()),
+            ),
+          ),
+        ),
+      ),
+    );
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       enabled: onSelected != null,
-      child: Material(
-        // Decision 0210 (docs/42 附A §5, the hook-mode segment): a chosen
-        // chip is a Purple 9 % ground with a 2px Purple underline and a
-        // Yellow word. S241c made the framed chip choose the same way — it
-        // keeps its `#38333E` frame on the other three sides — so Yellow is
-        // never a solid selection block.
-        // Decision 0212 (docs/42 附C §4): every chip is a capsule; a chosen
-        // chip is solid Purple with a white word. An unchosen quiet chip is
-        // transparent; an unchosen framed chip is the raised grey ground.
-        color: selected
-            ? LoopColors.purpleSelected
-            : (quiet ? Colors.transparent : LoopColors.card2),
-        shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onSelected == null
-              ? onBlocked
-              : () {
-                  // Decision 0130: choosing a peer (a filter, a slippage
-                  // step, a chart period) is a selection. Re-choosing the
-                  // chosen one is not.
-                  if (!selected) LoopHaptics.selection();
-                  onSelected!();
-                },
-          borderRadius: LoopRadius.pill,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: LoopTouch.minimum,
-              minHeight: LoopTouch.minimum,
-            ),
-            child: Align(
-              // The chip measures its own label. `Container(alignment:)`
-              // centres by growing to the constraints it is handed, and the
-              // loose bounded constraints a `Wrap` or a `Column` gives its
-              // children are the whole line: the five interest chips came out
-              // one per line and the three slippage steps stacked into three
-              // full-width buttons (walkthrough 2026-09-23 · h05).
-              // `widthFactor` measures instead of filling; a tight parent
-              // still wins, because constraints outrank the factor, and a
-              // page that wants the line says [block].
-              widthFactor: block ? null : 1,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: ExcludeSemantics(child: _segLabel()),
-              ),
-            ),
-          ),
-        ),
-      ),
+      child: chip,
     );
   }
 
@@ -2315,6 +2352,85 @@ class LoopSeg extends StatelessWidget {
   }
 }
 
+/// A [LoopSeg] drawn as a low capsule inside a taller target (S254,
+/// docs/42 附C §4).
+///
+/// The whole [LoopSeg.segmentTarget]-tall box answers the finger, and the
+/// pressed state is painted on the capsule itself wherever in the box the
+/// finger landed, so a tap in the room above or below the capsule still
+/// shows the capsule being pressed (decision 0130). There is no ripple: a
+/// ripple across the box would spill past the capsule's edge.
+class _LoopSegCapsule extends StatefulWidget {
+  const _LoopSegCapsule({
+    required this.height,
+    required this.ground,
+    required this.block,
+    required this.onTap,
+    required this.child,
+  });
+
+  final double height;
+  final Color ground;
+  final bool block;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  State<_LoopSegCapsule> createState() => _LoopSegCapsuleState();
+}
+
+class _LoopSegCapsuleState extends State<_LoopSegCapsule> {
+  bool _pressed = false;
+
+  @override
+  void didUpdateWidget(covariant _LoopSegCapsule oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onTap == null) _pressed = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ground = _pressed
+        ? Color.alphaBlend(LoopColors.pressHighlight, widget.ground)
+        : widget.ground;
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: widget.onTap,
+        onHighlightChanged: (pressed) {
+          if (pressed != _pressed) setState(() => _pressed = pressed);
+        },
+        splashFactory: NoSplash.splashFactory,
+        overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: math.max(0, (LoopSeg.segmentTarget - widget.height) / 2),
+          ),
+          child: DecoratedBox(
+            key: const ValueKey<String>('loop-seg-capsule'),
+            decoration: BoxDecoration(
+              color: ground,
+              borderRadius: LoopRadius.pill,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: LoopSeg.segmentTarget,
+                minHeight: widget.height,
+              ),
+              child: Align(
+                // As [LoopSeg]: the capsule measures its label unless the
+                // page asks for the whole line.
+                widthFactor: widget.block ? null : 1,
+                child: widget.child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// `.segs`: horizontal, scrollable seg row with 7px gaps and 16px gutters.
 ///
 /// Drawn in the quiet OKX look since decision 0122: words, and one solid
@@ -2326,7 +2442,7 @@ class LoopSegBar extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.icons,
-    this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 8),
     this.dimmed,
   }) : assert(icons == null || icons.length == labels.length),
        assert(dimmed == null || dimmed.length == labels.length);
@@ -2341,6 +2457,12 @@ class LoopSegBar extends StatelessWidget {
   /// Per label: the chip counts nothing now and is drawn dimmed
   /// ([LoopSeg.dimmed]); a tap on it still reaches [onSelected].
   final List<bool>? dimmed;
+
+  /// The drawn height of every capsule in the bar (docs/42 附C §4: 36).
+  /// Each chip still answers a finger [LoopSeg.segmentTarget] tall; the
+  /// default bottom inset of 8 plus the 6 of room under the capsule keeps
+  /// the 14 the bar has always left below its pills.
+  static const double capsuleHeight = 36;
 
   /// The bar's own inset. The default is the page gutter; a bar inside a
   /// block that already sits on the gutter (a trade panel) passes no
@@ -2363,6 +2485,7 @@ class LoopSegBar extends StatelessWidget {
               quiet: true,
               dimmed: dimmed?[index] ?? false,
               selected: index == selectedIndex,
+              capsuleHeight: capsuleHeight,
               onSelected: () => onSelected(index),
             ),
           ],

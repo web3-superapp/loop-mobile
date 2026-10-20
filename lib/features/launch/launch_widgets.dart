@@ -193,7 +193,7 @@ class LaunchEmptyMetric extends StatelessWidget {
 String launchMetricReasonLine({required String reasonCode, String? note}) =>
     note == null
     ? launchReasonCodeText(reasonCode)
-    : '$note · ${launchReasonCodeText(reasonCode)}';
+    : '$note，${launchReasonCodeText(reasonCode)}';
 
 /// A grid of [LaunchEmptyMetric]s. Every S7 dashboard block uses it so no page
 /// can accidentally render one figure and one placeholder side by side.
@@ -314,7 +314,7 @@ LoopRecordRow launchConfigSlotRow({
       key: ValueKey<String>('launch-slot-$label'),
       title: label,
       subtitle:
-          '$launchPendingConfirmationLabel · ${launchReasonCodeText(reasonCode)}',
+          '$launchPendingConfirmationLabel，${launchReasonCodeText(reasonCode)}',
       trailing: launchMissingFigure,
       position: position,
       semanticLabel: '$label，$launchPendingConfirmationLabel',
@@ -345,7 +345,7 @@ LoopRecordRow launchRoundRow({
     key: ValueKey<String>('launch-round-${round.roundIndex}'),
     leading: _RoundIndexTile(index: round.roundIndex),
     title: 'Round ${round.roundIndex}',
-    subtitle: parts.join(' · '),
+    subtitle: parts.join('，'),
     // Four pending facts joined by `·` ran past the value column and lost the
     // last one entirely; the row takes the second line the audit asks for.
     subtitleMaxLines: 2,
@@ -440,7 +440,7 @@ class LaunchSourceFooter extends StatelessWidget {
       key: const ValueKey<String>('launch-source-footer'),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
       child: Text(
-        '来源 ${launchSourceLabel(source, kind)} · '
+        '来源 ${launchSourceLabel(source, kind)}，'
         '观察于 ${launchTimestampLabel(observedAt)}',
         style: LoopType.captionSm,
       ),
@@ -470,7 +470,7 @@ LoopRecordRow launchCatalogRow({
           LaunchOnChainUnavailable() => saleSegmentLabel,
         }
       : switch (launch.scheduleStatus) {
-          LaunchScheduleStatus.unscheduled => '已批准 · 待排期',
+          LaunchScheduleStatus.unscheduled => '已批准，待排期',
           LaunchScheduleStatus.scheduled => '已排期',
           LaunchScheduleStatus.live => '发射中',
           LaunchScheduleStatus.ended => '已结束',
@@ -485,7 +485,7 @@ LoopRecordRow launchCatalogRow({
     key: ValueKey<String>('$keyPrefix-${launch.launchId}'),
     leading: LaunchTickerTile(ticker: launch.ticker),
     title: launch.name,
-    subtitle: '${launch.ticker} · $schedule · $config',
+    subtitle: '${launch.ticker}，$schedule，$config',
     // The trailing column is a state, never a figure: the four on-chain axes
     // are unavailable, so a number there would be an invention.
     trailingBadge: Column(
@@ -583,7 +583,7 @@ class LaunchAxisBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
-            '快照区块 ${loopGroupedFigure(chain.snapshotBlockNumber)} · '
+            '快照区块 ${loopGroupedFigure(chain.snapshotBlockNumber)}，'
             '状态摘要 ${launchShortHex(chain.stateTupleDigest)}',
             key: const ValueKey<String>('launch-axis-snapshot'),
             style: LoopType.captionSm,
@@ -627,7 +627,7 @@ class LaunchAxisBlock extends StatelessWidget {
 String launchSaleStateLabel(LaunchOnChainAvailable state) {
   if (state.operationalState == LaunchOperationalState.paused) return '已暂停';
   return switch (state.saleState) {
-    LaunchSaleState.scheduled => '已排期 · 未开售',
+    LaunchSaleState.scheduled => '已排期，未开售',
     LaunchSaleState.live => '销售进行中',
     LaunchSaleState.ended => '销售已结束',
     LaunchSaleState.succeeded => '销售成功',
@@ -641,7 +641,7 @@ String launchAxesBadge(LaunchOnChainState state) => switch (state) {
   final LaunchOnChainAvailable chain =>
     chain.operationalState == LaunchOperationalState.paused
         ? '已暂停'
-        : launchGraduationProjection(chain) ?? chain.saleState.wireName,
+        : launchGraduationProjection(chain) ?? launchSaleStateLabel(chain),
   LaunchOnChainUnavailable() => '链上待确认',
 };
 
@@ -657,7 +657,7 @@ LoopRecordRow launchChainRoundRow({
   final access = round.hasAllowlist ? '名单轮' : '公开轮';
   final lines = <String>[
     '${launchTimestampLabel(round.startAt)} – ${launchTimestampLabel(round.endAt)}',
-    '轮次上限 ${launchUsd1Label(round.roundCapUsd1)} · '
+    '轮次上限 ${launchUsd1Label(round.roundCapUsd1)}，'
         '钱包上限 ${launchUsd1Label(round.walletRoundCapUsd1)}',
     '已募集 ${launchUsd1Label(round.raisedUsd1)}',
     if (round.roundId == null) 'LOOP 没有这一轮的记录，不能在这里认购',
@@ -666,7 +666,7 @@ LoopRecordRow launchChainRoundRow({
   return LoopRecordRow(
     key: ValueKey<String>('$keyPrefix-${round.roundIndex}'),
     leading: LoopMonoTile(label: 'R${round.roundIndex}'),
-    title: 'Round ${round.roundIndex} · $access',
+    title: 'Round ${round.roundIndex}，$access',
     subtitle: lines.join('\n'),
     subtitleMaxLines: 4,
     trailing: price,
@@ -690,7 +690,7 @@ LoopRecordRow launchMilestoneRow({
   LoopRowPosition position = LoopRowPosition.single,
 }) {
   final track =
-      '${launchVenueLabel(milestone.venue)} · '
+      '${launchVenueLabel(milestone.venue)}，'
       '${launchMarketTypeLabel(milestone.marketType)}';
   final lines = <String>[];
   if (milestone.isImplicit) {
@@ -783,7 +783,7 @@ class LaunchChainBlock extends StatelessWidget {
               key: const ValueKey<String>('launch-chain-row'),
               title: loopChainName(loopLaunchTestnetChainId),
               subtitle:
-                  '$loopLaunchTestnetChainId · Launch 链；'
+                  '$loopLaunchTestnetChainId，Launch 链；'
                   '钱包余额、行情、兑换与授权仍在主网',
               trailingBadge: const LoopTestnetBadge(),
               semanticLabel:
@@ -952,7 +952,7 @@ LoopRecordRow launchTrackRow({
   final start = round.startsAt;
   final title = tier == null
       ? 'Round ${round.roundIndex}'
-      : 'Round ${round.roundIndex} · ${launchTierLabel(tier)}';
+      : 'Round ${round.roundIndex}，${launchTierLabel(tier)}';
   final subtitle = start == null
       ? '开放时间 $launchPendingConfirmationLabel'
       : '开放于 ${launchTimestampLabel(start)}';
@@ -1156,17 +1156,14 @@ class LaunchChainCapCard extends StatelessWidget {
     case LaunchSaleState.scheduled:
       return (label: '内盘未开始', enabled: false);
     case LaunchSaleState.ended:
-      return (label: '内盘已结束 · 等待最终化', enabled: false);
+      return (label: '内盘已结束，等待最终化', enabled: false);
     case LaunchSaleState.succeeded:
       final graduated =
           onChain.liquidityState == LaunchLiquidityState.lpLocked ||
           onChain.liquidityState == LaunchLiquidityState.completed;
-      return (
-        label: graduated ? '已毕业 · 内盘已关闭' : '内盘已结束 · 募集成功',
-        enabled: false,
-      );
+      return (label: graduated ? '已毕业，内盘已关闭' : '内盘已结束，募集成功', enabled: false);
     case LaunchSaleState.failed:
-      return (label: '内盘已结束 · 未达软顶', enabled: false);
+      return (label: '内盘已结束，未达软顶', enabled: false);
     case LaunchSaleState.cancelled:
       return (label: '内盘已取消', enabled: false);
   }

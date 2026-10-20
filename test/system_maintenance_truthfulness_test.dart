@@ -40,7 +40,7 @@ void main() {
     );
     expect(find.text(loopStateSpecimenLabel), findsOneWidget);
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
-    expect(find.text('2H WINDOW'), findsOneWidget);
+    expect(find.text('2 小时'), findsOneWidget);
     expect(find.text('Mining Power 正常累计'), findsOneWidget);
     expect(find.text('再次检查'), findsNothing);
     expect(find.text('查看服务状态'), findsNothing);
@@ -69,7 +69,7 @@ void main() {
       ),
     );
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
-    expect(find.text('WINDOW'), findsOneWidget);
+    expect(find.text('已排期'), findsOneWidget);
     expect(find.text(loopStateSpecimenLabel), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
     await tester.tap(find.text('再次检查'));
@@ -85,7 +85,7 @@ void main() {
       ),
     );
     expect(find.text('维护通知已生效'), findsOneWidget);
-    expect(find.text('ACTIVE'), findsOneWidget);
+    expect(find.text('生效中'), findsOneWidget);
     expect(find.textContaining('UTC'), findsNothing);
     expect(find.text('再次检查'), findsNothing);
   });

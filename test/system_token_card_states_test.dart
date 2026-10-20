@@ -24,7 +24,7 @@ void main() {
 
     // The page is the component's specification, so the cards are the page.
     expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
-    expect(find.text('演示数据 · 开发预览'), findsNothing);
+    expect(find.text('演示数据，开发预览'), findsNothing);
     for (final state in LoopTokenCardState.values) {
       final key = ValueKey<String>('loop-token-card-${state.name}');
       await scrollPageTo(tester, find.byKey(key));
@@ -52,15 +52,15 @@ void main() {
     router.go('/system/token-card');
     await tester.pumpAndSettle();
 
-    expect(find.text('演示数据 · 开发预览'), findsOneWidget);
+    expect(find.text('演示数据，开发预览'), findsOneWidget);
     expect(find.text(loopComponentSpecimenLabel), findsNothing);
-    expect(find.text('态 1 · 正常'.toUpperCase()), findsOneWidget);
+    expect(find.text('态 1，正常'.toUpperCase()), findsOneWidget);
     for (final state in LoopTokenCardState.values) {
       final key = ValueKey<String>('loop-token-card-${state.name}');
       await scrollPageTo(tester, find.byKey(key));
       expect(find.byKey(key), findsOneWidget, reason: state.name);
     }
-    expect(find.text('态 5 · 风险事实红条'.toUpperCase()), findsOneWidget);
+    expect(find.text('态 5，风险事实红条'.toUpperCase()), findsOneWidget);
     await scrollPageTo(
       tester,
       find.byKey(const ValueKey<String>('loop-token-card-risk-facts')),

@@ -189,7 +189,7 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
                       width: viewport,
                       height: viewport,
                       decoration: BoxDecoration(
-                        border: Border.all(color: LoopColors.yellow, width: 2),
+                        border: Border.all(color: LoopColors.purple, width: 2),
                       ),
                       child: ClipRect(
                         child: InteractiveViewer(

@@ -332,12 +332,21 @@ void main() {
       tester.getSize(find.byType(LoopSeg).first).height,
       greaterThanOrEqualTo(LoopTouch.minimum),
     );
-    final selectedMaterial = tester.widget<Material>(
-      find.ancestor(of: find.text('全部'), matching: find.byType(Material)).first,
+    // S254: a bar chip is a 36 capsule (a DecoratedBox) inside its target.
+    final selectedCapsule = tester.widget<DecoratedBox>(
+      find
+          .ancestor(
+            of: find.text('全部'),
+            matching: find.byKey(const ValueKey<String>('loop-seg-capsule')),
+          )
+          .first,
     );
-    // Decision 0211: the chosen quiet chip is a Purple 18 % capsule, never
+    // Decision 0212: the chosen quiet chip is a solid Purple capsule, never
     // a Yellow fill.
-    expect(selectedMaterial.color, LoopColors.purpleSelected);
+    expect(
+      (selectedCapsule.decoration as BoxDecoration).color,
+      LoopColors.purpleSelected,
+    );
     await tester.tap(find.text('资产'));
     await tester.pump();
     expect(selected, 2);

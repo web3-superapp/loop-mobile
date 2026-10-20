@@ -854,21 +854,21 @@ _connectivityCopy(LoopConnectivityScope scope) => switch (scope) {
   LoopConnectivityScope.fullyOffline => (
     title: '完全离线',
     body: '检查 Wi-Fi 或蜂窝数据。资产数据为最后一次同步的缓存，可能已过期。',
-    banner: '离线 · 实时信息已暂停',
+    banner: '离线，实时信息已暂停',
     icon: 'offline',
     tone: LoopNoticeTone.danger,
   ),
   LoopConnectivityScope.marketDataUnavailable => (
     title: '行情暂时不可用',
     body: '其他功能正常。价格与图表可能不准，依赖当前价格的动作已暂停。',
-    banner: '行情不可用 · 价格可能已过期',
+    banner: '行情不可用，价格可能已过期',
     icon: 'warn',
     tone: LoopNoticeTone.warn,
   ),
   LoopConnectivityScope.tradingServiceUnavailable => (
     title: '交易服务暂时不可用',
     body: '订单与账户变更无法提交；行情浏览与聊天仍可使用。',
-    banner: '交易服务中断 · 动作已暂停',
+    banner: '交易服务中断，动作已暂停',
     icon: 'warn',
     tone: LoopNoticeTone.warn,
   ),
@@ -905,7 +905,7 @@ class _OfflinePage extends StatelessWidget {
           kicker: '上次同步 09:38',
           heading: '当前设备离线',
           caption: '缓存仍可查看；发送、兑换与跨链已经暂停。',
-          stamp: 'OFFLINE',
+          stamp: '离线',
           archetype: LoopFolioArchetype.state,
         ),
         body: <Widget>[
@@ -952,7 +952,7 @@ class _OfflinePage extends StatelessWidget {
         caption: fullyOffline
             ? '缓存仍可查看；发送、兑换与跨链已经暂停。'
             : '其他部分仍可使用；受影响的动作在恢复前保持禁用。',
-        stamp: fullyOffline ? 'OFFLINE' : 'PARTIAL',
+        stamp: fullyOffline ? '离线' : '部分中断',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1038,7 +1038,7 @@ class _ServerErrorPage extends StatelessWidget {
           kicker: '服务状态',
           heading: '服务暂时不可用',
           caption: '钱包仍在你的设备上；稍后重试或联系支持。',
-          stamp: 'RETRY',
+          stamp: '可重试',
           archetype: LoopFolioArchetype.state,
         ),
         body: <Widget>[
@@ -1046,7 +1046,7 @@ class _ServerErrorPage extends StatelessWidget {
             icon: 'maintenance',
             tone: LoopNoticeTone.danger,
             title: '错误 502',
-            body: '追踪号 7f3a2c9e · Wallet 资产仍在链上，不受影响。',
+            body: '追踪号 7f3a2c9e，Wallet 资产仍在链上，不受影响。',
           ),
           LoopButtonPair(
             children: <Widget>[
@@ -1067,7 +1067,7 @@ class _ServerErrorPage extends StatelessWidget {
         kicker: '服务状态',
         heading: '服务暂时不可用',
         caption: '钱包仍在你的设备上；稍后重试或联系支持。',
-        stamp: 'RETRY',
+        stamp: '可重试',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1078,7 +1078,7 @@ class _ServerErrorPage extends StatelessWidget {
               ? '结果未确认'
               : '错误 ${observation.statusLabel}',
           body:
-              '${trace == null ? '追踪号未提供' : '追踪号 $trace'} · 不要假定成功或失败；重试前先查看最新状态。Wallet 资产仍在链上，不受影响。',
+              '${trace == null ? '追踪号未提供' : '追踪号 $trace'}，不要假定成功或失败；重试前先查看最新状态。Wallet 资产仍在链上，不受影响。',
         ),
         if (onRetry != null || onSupport != null)
           LoopButtonPair(
@@ -1123,7 +1123,7 @@ class _ForceUpdatePage extends StatelessWidget {
           kicker: '版本策略',
           heading: '版本策略还没有开放',
           caption: '打开此页不代表当前版本不受支持或不安全。',
-          stamp: 'UNKNOWN',
+          stamp: '未知',
           // S241b: flat dark card, Chalk heading (no light slab on Ink).
           variant: LoopFolioVariant.quiet,
           headingTone: LoopFolioHeadingTone.neutral,
@@ -1145,7 +1145,7 @@ class _ForceUpdatePage extends StatelessWidget {
         kicker: '发布闸门',
         heading: '请更新 LOOP 后继续',
         caption: '已批准的版本策略要求受支持的版本，此要求不可跳过。',
-        stamp: 'REQUIRED',
+        stamp: '需更新',
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
@@ -1228,7 +1228,7 @@ class _MaintenancePage extends StatelessWidget {
           kicker: '维护窗口',
           heading: '03:00–05:00 UTC',
           caption: '期间暂停社区互动；钱包与 Mining 数据保持只读。',
-          stamp: '2H WINDOW',
+          stamp: '2 小时',
           archetype: LoopFolioArchetype.state,
         ),
         body: const <Widget>[
@@ -1255,7 +1255,7 @@ class _MaintenancePage extends StatelessWidget {
         kicker: '维护窗口',
         heading: notice.windowLabel ?? '维护通知已生效',
         caption: '期间暂停社区互动；钱包与 Mining 数据保持只读。',
-        stamp: notice.windowLabel == null ? 'ACTIVE' : 'WINDOW',
+        stamp: notice.windowLabel == null ? '生效中' : '已排期',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1317,7 +1317,7 @@ class _RegionPage extends StatelessWidget {
           kicker: '访问策略',
           heading: '地区策略还没有开放',
           caption: '打开此页不代表你所在的地区或账号受限。',
-          stamp: 'UNKNOWN',
+          stamp: '未知',
           // S241b: flat dark card, Chalk heading (no light slab on Ink).
           variant: LoopFolioVariant.quiet,
           headingTone: LoopFolioHeadingTone.neutral,
@@ -1344,7 +1344,7 @@ class _RegionPage extends StatelessWidget {
         caption: restriction.readOnlyAssetAccess == true
             ? '资产保持只读可见；受限功能按各自页面的当前状态显示。'
             : '受限功能按各自页面的当前状态显示；此页不列出未确认的可用范围。',
-        stamp: 'RESTRICTED',
+        stamp: '受限',
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
@@ -1545,7 +1545,7 @@ class _ToastStatesPage extends StatelessWidget {
         kicker: '反馈',
         heading: 'Toast 三态',
         caption: '成功、警告与错误共用同一位置和清晰语义。',
-        stamp: '3 STATES',
+        stamp: '3 种状态',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1616,7 +1616,7 @@ class _SkeletonStatesPage extends StatelessWidget {
         kicker: '加载状态',
         heading: '骨架屏三类',
         caption: '列表、详情和图表分别保留稳定布局，避免内容跳动。',
-        stamp: '3 TYPES',
+        stamp: '3 种',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1684,7 +1684,7 @@ class _TokenCardStatesPage extends StatelessWidget {
         ring: false,
         kicker: '代币卡片',
         heading: '5 种卡片状态',
-        stamp: '5 STATES',
+        stamp: '5 种状态',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1741,7 +1741,7 @@ class _SignSheetStatesPage extends StatelessWidget {
         kicker: '统一签名出口',
         heading: '4 种签名状态',
         caption: '发送、兑换、DApp 与跨链统一进入同一签名出口。',
-        stamp: 'SECURE',
+        stamp: '安全',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[

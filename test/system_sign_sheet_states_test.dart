@@ -24,7 +24,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
-    expect(find.text('演示数据 · 开发预览'), findsNothing);
+    expect(find.text('演示数据，开发预览'), findsNothing);
     await scrollPageTo(
       tester,
       find.byKey(const ValueKey<String>('sign-sheet-trigger-pending')),
@@ -62,7 +62,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('演示数据 · 开发预览'), findsOneWidget);
+    expect(find.text('演示数据，开发预览'), findsOneWidget);
     expect(find.text(loopComponentSpecimenLabel), findsNothing);
     for (final state in <LoopSignSheetState>[
       LoopSignSheetState.simulationFailed,

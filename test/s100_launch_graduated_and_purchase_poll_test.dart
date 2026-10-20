@@ -401,7 +401,7 @@ void main() {
       // Same row as the catalogue: the chain's own sale-state sentence.
       expect(
         tester.widget<LoopRecordRow>(first).subtitle,
-        contains('MCAT · 销售成功'),
+        contains('MCAT，销售成功'),
       );
       await tester.tap(first);
       await tester.pumpAndSettle();
@@ -517,7 +517,7 @@ void main() {
       final idsBefore = gateway.requestedLaunchIds.length;
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-locked')).title,
-        '已广播 · 已提交，等待链上索引',
+        '已广播，已提交，等待链上索引',
       );
 
       await _tick(tester);

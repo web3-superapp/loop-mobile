@@ -436,15 +436,17 @@ void main() {
         onSelected: (_) {},
       ),
     );
+    // S254: a bar chip paints its capsule as a DecoratedBox.
     final materials = tester
-        .widgetList<Material>(
+        .widgetList<DecoratedBox>(
           find.descendant(
             of: find.byType(LoopSeg),
-            matching: find.byType(Material),
+            matching: find.byKey(const ValueKey<String>('loop-seg-capsule')),
           ),
         )
-        .map((material) => material.color)
+        .map((box) => (box.decoration as BoxDecoration).color)
         .toList();
+    expect(materials, hasLength(2));
     expect(materials, isNot(contains(LoopColors.lime)));
     expect(materials, contains(LoopColors.purpleSelected));
   });

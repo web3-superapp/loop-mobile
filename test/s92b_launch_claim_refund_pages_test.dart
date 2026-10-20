@@ -1009,7 +1009,7 @@ void main() {
           ]),
         ),
       );
-      expect(text, startsWith('1 笔认购 · 1 笔领取 · 最近'));
+      expect(text, startsWith('1 笔认购，1 笔领取，最近'));
     });
   });
 

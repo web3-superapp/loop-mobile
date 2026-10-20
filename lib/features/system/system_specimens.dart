@@ -20,7 +20,7 @@ const String loopComponentSpecimenLabel = '组件样例';
 ///
 /// `当前设备离线` and `03:00–05:00 UTC` are sentences about now. Drawn as
 /// specimens they need the stronger label.
-const String loopStateSpecimenLabel = '组件样例 · 不是当前状态';
+const String loopStateSpecimenLabel = '组件样例，不是当前状态';
 
 /// The five Token Cards and four signing sheets of the frozen prototype
 /// (`token-card-states.html`, `sign-sheet-states.html`; figures from its
@@ -37,7 +37,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
     sourceLabel: sourceLabel,
     tokenCards: <LoopTokenCardShowcaseItem>[
       LoopTokenCardShowcaseItem(
-        label: '态 1 · 正常',
+        label: '态 1，正常',
         state: LoopTokenCardState.normal,
         // The prototype draws the normal state, and only it, on Chalk.
         chalk: true,
@@ -54,11 +54,11 @@ LoopSystemShowcase buildLoopSystemSpecimens({
             LoopTokenMetric('流动性', r'$18.2M'),
             LoopTokenMetric('持有人', '284,912'),
           ],
-          communityLine: 'LOOP 社区 128,420 成员 · 0.35×',
-          chartRangeLabel: '1H · 固定演示',
+          communityLine: 'LOOP 社区 128,420 成员，0.35×',
+          chartRangeLabel: '1H，固定演示',
           chart: LoopSparkline(
             closes: _specimenCloses,
-            semanticLabel: 'PEPE 1 小时走势 · 组件样例',
+            semanticLabel: 'PEPE 1 小时走势，组件样例',
             color: LoopPriceMove.up.color,
           ),
         ),
@@ -70,7 +70,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
         ],
       ),
       const LoopTokenCardShowcaseItem(
-        label: '态 2 · 识别中',
+        label: '态 2，识别中',
         state: LoopTokenCardState.loading,
         model: LoopTokenCardModel(
           symbol: 'PEPE',
@@ -88,7 +88,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
         ],
       ),
       const LoopTokenCardShowcaseItem(
-        label: '态 3 · 已毕业（LOOP Launch 资产）',
+        label: '态 3，已毕业（LOOP Launch 资产）',
         state: LoopTokenCardState.graduated,
         model: LoopTokenCardModel(
           symbol: 'BONEZ',
@@ -96,14 +96,14 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           price: r'$0.0024',
           change: '+712%',
           move: LoopPriceMove.up,
-          badge: 'GRADUATED',
+          badge: '已毕业',
           metrics: <LoopTokenMetric>[
             LoopTokenMetric('市值', r'$2.4M'),
             LoopTokenMetric('流动性', r'$412K', accent: true),
             LoopTokenMetric('持有人', '4,120'),
           ],
           communityIcon: 'graduate',
-          communityLine: '08-22 毕业 · 外盘流动性已建立',
+          communityLine: '08-22 毕业，外盘流动性已建立',
         ),
         actions: <LoopTokenCardAction>[
           LoopTokenCardAction('买入', buy: true),
@@ -112,7 +112,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
         ],
       ),
       const LoopTokenCardShowcaseItem(
-        label: '态 4 · 数据缺失',
+        label: '态 4，数据缺失',
         state: LoopTokenCardState.partial,
         model: LoopTokenCardModel(
           symbol: 'UNKNOWN',
@@ -132,7 +132,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
         ],
       ),
       const LoopTokenCardShowcaseItem(
-        label: '态 5 · 风险事实红条',
+        label: '态 5，风险事实红条',
         state: LoopTokenCardState.risk,
         model: LoopTokenCardModel(
           symbol: 'PEPE',
@@ -167,7 +167,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
     ],
     signSheets: const <LoopSignSheetShowcaseItem>[
       LoopSignSheetShowcaseItem(
-        label: '态 1 · 待确认（正常）',
+        label: '态 1，待确认（正常）',
         state: LoopSignSheetState.pending,
         facts: <LoopSignFact>[
           LoopSignFact('操作', 'Swap'),
@@ -178,21 +178,21 @@ LoopSystemShowcase buildLoopSystemSpecimens({
         ],
       ),
       LoopSignSheetShowcaseItem(
-        label: '态 2 · 模拟失败',
+        label: '态 2，模拟失败',
         state: LoopSignSheetState.simulationFailed,
         facts: <LoopSignFact>[
           LoopSignFact('操作', 'Swap'),
-          LoopSignFact('模拟结果', '失败 · 无法预演', down: true),
+          LoopSignFact('模拟结果', '失败，无法预演', down: true),
         ],
         reason: '模拟服务未返回可验证结果。当前不能确认；可重试模拟或取消操作。',
       ),
       LoopSignSheetShowcaseItem(
-        label: '态 3 · 签名中',
+        label: '态 3，签名中',
         state: LoopSignSheetState.signing,
         facts: <LoopSignFact>[],
       ),
       LoopSignSheetShowcaseItem(
-        label: '态 4 · 被策略拒绝',
+        label: '态 4，被策略拒绝',
         state: LoopSignSheetState.policyRejected,
         facts: <LoopSignFact>[
           LoopSignFact('操作', '转账 5,000 USDC'),
@@ -207,7 +207,7 @@ LoopSystemShowcase buildLoopSystemSpecimens({
 /// The Development Preview alias. It exists so the explicit Preview root
 /// keeps naming its own label rather than relying on the default.
 LoopSystemShowcase buildLoopSystemShowcasePreview() =>
-    buildLoopSystemSpecimens(sourceLabel: '演示数据 · 开发预览');
+    buildLoopSystemSpecimens(sourceLabel: '演示数据，开发预览');
 
 /// The 24 hourly closes the normal card's line draws.
 ///

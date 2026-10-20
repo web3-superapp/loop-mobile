@@ -111,7 +111,7 @@ void main() {
     // Decision 0100: two small cards (window; price and round cap, the unit
     // in the label), raised over the bar, and the wallet cap as the footer.
     for (final text in <String>[
-      'Round 2 · 公开轮',
+      'Round 2，公开轮',
       '09-22 00:00',
       '09-23 00:00',
       '0.01',
@@ -162,7 +162,7 @@ void main() {
     expect(
       find.descendant(
         of: key('launch-track-detail-1'),
-        matching: find.text('Round 1 · 名单轮'),
+        matching: find.text('Round 1，名单轮'),
       ),
       findsOneWidget,
     );

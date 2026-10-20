@@ -44,7 +44,7 @@ void main() {
     expect(find.text(loopStateSpecimenLabel), findsOneWidget);
     expect(find.text('当前设备离线'), findsOneWidget);
     expect(find.text('上次同步 09:38'), findsOneWidget);
-    expect(find.text('OFFLINE'), findsOneWidget);
+    expect(find.text('离线'), findsOneWidget);
     expect(find.text('无法连接到服务器'), findsOneWidget);
     expect(find.text('部分故障（另一种态）'), findsOneWidget);
     expect(find.text('BSC 网络暂时不可用'), findsOneWidget);
@@ -108,7 +108,7 @@ void main() {
       if (scope == LoopConnectivityScope.fullyOffline) {
         expect(find.byType(LoopInlineUnavailable), findsOneWidget);
         expect(find.text('无法连接到服务器'), findsWidgets);
-        expect(find.text('OFFLINE'), findsOneWidget);
+        expect(find.text('离线'), findsOneWidget);
       }
       await tester.ensureVisible(find.text('重试'));
       await tester.tap(find.text('重试'));
@@ -181,7 +181,7 @@ void main() {
       ),
       textScale: 2,
     );
-    expect(find.text('行情不可用 · 价格可能已过期'), findsOneWidget);
+    expect(find.text('行情不可用，价格可能已过期'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('行情暂时不可用')), findsOneWidget);
     await tester.tap(find.text('重试'));
     expect(retries, 1);

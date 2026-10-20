@@ -230,7 +230,7 @@ void main() {
       expect(find.text('170 USD1'), findsOneWidget);
       expect(find.text('已登记发售'), findsOneWidget);
       expect(find.text('已锁 LP'), findsOneWidget);
-      expect(find.text('读自区块 67,123,456 · LOOP 链上事件索引'), findsOneWidget);
+      expect(find.text('读自区块 67,123,456，LOOP 链上事件索引'), findsOneWidget);
       expect(find.textContaining('loop_indexer'), findsNothing);
     });
 
