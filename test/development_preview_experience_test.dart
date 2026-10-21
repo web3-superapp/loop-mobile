@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
@@ -44,9 +45,7 @@ void main() {
     await tester.pump();
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
 
     router.go('/chat');
     await tester.pumpAndSettle();

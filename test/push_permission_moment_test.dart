@@ -43,7 +43,7 @@ void main() {
   ) async {
     final harness = await _pumpApp(tester, settle: false);
 
-    expect(harness.router.state.matchedLocation, isNot('/chat'));
+    expect(harness.router.state.matchedLocation, isNot('/meme'));
     expect(find.byType(LoopShell), findsNothing);
 
     // Frame by frame up to the first product frame. The landing is published
@@ -54,7 +54,7 @@ void main() {
     // looking at, which is the whole of what 0076 moved the dialog away from.
     var frames = 0;
     while (find.byType(LoopShell).evaluate().isEmpty) {
-      if (harness.router.state.matchedLocation != '/chat') {
+      if (harness.router.state.matchedLocation != '/meme') {
         expect(
           harness.source.permissionRequests,
           0,
@@ -69,7 +69,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(harness.router.state.matchedLocation, '/chat');
+    expect(harness.router.state.matchedLocation, '/meme');
     // Decision 0130 (audit 2026-10-09 M15): arriving no longer raises the
     // system dialog. LOOP waits for the owner to ask through its own card.
     expect(harness.source.permissionRequests, 0);

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
@@ -437,10 +438,7 @@ void main() {
     ) async {
       await _pumpPreviewApp(tester);
       await _enterPreview(tester);
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(MemeScreen), findsOneWidget);
 
       await _pushPlatformRoute(tester, '/u/loop-fe3emcpe');
 
@@ -468,10 +466,7 @@ void main() {
         // going back returns there.
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey<String>('chat-tab-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(MemeScreen), findsOneWidget);
       },
     );
 
@@ -514,10 +509,7 @@ void main() {
       await _pumpPreviewApp(tester);
       await _enterPreview(tester);
       await _pushPlatformRoute(tester, '/u/not-an-id');
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(MemeScreen), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('global-search-screen')),
         findsNothing,

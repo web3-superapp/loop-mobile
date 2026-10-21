@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
@@ -68,10 +69,7 @@ void main() {
 
         expect(repository.calls, 1);
         expect(tokens.calls, 1);
-        expect(
-          find.byKey(const ValueKey<String>('chat-tab-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(MemeScreen), findsOneWidget);
       },
     );
   }

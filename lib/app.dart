@@ -445,7 +445,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         if (landing != LoopProfileLanding.loopIdSetup) return;
         // Only lift an owner out of the credential, launch or landing pages.
         // A deep link the owner opened deliberately is never interrupted.
-        const liftable = <String>{'/auth', '/auth/otp', '/chat', '/splash'};
+        const liftable = <String>{'/auth', '/auth/otp', '/meme', '/splash'};
         final location = router.state.matchedLocation;
         if (liftable.contains(location)) _goToOnboardingStep();
       },
@@ -885,7 +885,7 @@ GoRouter _buildRouter(
       // still opening goes to the step it is on, never through Community.
       if (credentialRoutes.contains(location) || location == '/splash') {
         final step = readOnboarding().step;
-        return step == null ? '/chat' : LoopRouteManifest.pathFor(step.slug);
+        return step == null ? '/meme' : LoopRouteManifest.pathFor(step.slug);
       }
       if (linkedLoopId != null) {
         profileLinks.take();
@@ -918,7 +918,7 @@ GoRouter _buildRouter(
       return null;
     },
     routes: <RouteBase>[
-      GoRoute(path: '/', redirect: (context, state) => '/chat'),
+      GoRoute(path: '/', redirect: (context, state) => '/meme'),
       GoRoute(
         path: '/auth',
         builder: (context, state) => PrivyLoginScreen(
@@ -1113,7 +1113,7 @@ GoRouter _buildRouter(
           ),
         ],
       ),
-      GoRoute(path: '/home', redirect: (context, state) => '/chat'),
+      GoRoute(path: '/home', redirect: (context, state) => '/meme'),
       GoRoute(path: '/launchpad', redirect: (context, state) => '/launch'),
       // Decision 0110: the four v2 tabs stay mounted as ordinary pages. They
       // are reached from 我, from 广场 and by deep link, and each one now
@@ -1724,12 +1724,12 @@ GoRouter _buildRouter(
       ..._launch2Routes, // S136
       ..._miningRoutes,
       ..._pendingManifestRoutes,
-      // Illegal locations are recorded and land on 聊天.
+      // Illegal locations are recorded and land on MEME (decision 0221).
       GoRoute(
         path: '/:unmatched(.*)',
         redirect: (context, state) {
           routingErrors.record(state.uri.toString());
-          return '/chat';
+          return '/meme';
         },
       ),
     ],

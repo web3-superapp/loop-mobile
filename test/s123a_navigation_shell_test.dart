@@ -301,8 +301,11 @@ void main() {
   });
 
   group('B2 · back on a tab', () {
-    testWidgets('back on 广场 goes to 聊天, not out of the App', (tester) async {
+    testWidgets('back on 广场 goes to MEME, not out of the App '
+        '(decision 0221)', (tester) async {
       final router = await _pumpApp(tester);
+      // The App lands on MEME.
+      expect(_location(router), '/meme');
       await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
       await tester.pumpAndSettle();
       expect(_location(router), '/square');
@@ -310,11 +313,19 @@ void main() {
       final handled = await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(handled, isTrue);
-      expect(_location(router), '/chat');
+      expect(_location(router), '/meme');
       expect(find.byType(LoopTabBar), findsOneWidget);
+
+      // 聊天 goes back to MEME too.
+      await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+      await tester.pumpAndSettle();
+      expect(_location(router), '/chat');
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(_location(router), '/meme');
     });
 
-    testWidgets('the shell lets 聊天 close the App and holds every other tab', (
+    testWidgets('the shell lets MEME close the App and holds every other tab', (
       tester,
     ) async {
       final router = await _pumpMirror(tester);
@@ -326,8 +337,12 @@ void main() {
             )
             .first,
       );
+      // The mirror opens on 聊天, which now holds the back too.
+      expect(scope().canPop, isFalse);
+      router.go('/meme');
+      await tester.pumpAndSettle();
       expect(scope().canPop, isTrue);
-      for (final path in <String>['/square', '/meme', '/intel', '/wallet']) {
+      for (final path in <String>['/chat', '/square', '/intel', '/wallet']) {
         router.go(path);
         await tester.pumpAndSettle();
         expect(scope().canPop, isFalse, reason: path);

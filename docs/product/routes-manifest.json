@@ -3,8 +3,8 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "e2895fb0c137401d22ab5ec9bbae2c1ab141ea52dda763a8f076172a1a492327",
-  "defaultRoute": "chat",
+  "sha256": "511312bb7d4f4aa08eb8f2285156f5e1cb7c4baed942b9980d8ad97f218fe75d",
+  "defaultRoute": "meme",
   "tabs": [
     "chat",
     "square",

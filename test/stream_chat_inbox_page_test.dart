@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -286,9 +287,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-      );
+      final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
       router.go('/chat');
       await tester.pumpAndSettle();
 
@@ -358,6 +357,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(LoopTabBar), findsOneWidget);
+    // Decision 0221: the App lands on MEME; 「＋」 is on 聊天.
+    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey<String>('chat-create-menu')));
     await tester.pumpAndSettle();
@@ -434,6 +436,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // Decision 0221: the App lands on MEME; the inbox is on 聊天.
+    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.pumpAndSettle();
 
     // A request that has not been accepted is not a conversation and never
     // enters the channel list, so the inbox carries its own entry — only
@@ -469,9 +474,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-      );
+      final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
       router.go('/chat');
       await tester.pumpAndSettle();
 
@@ -626,9 +629,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
     const hex = '0123456789abcdef0123456789abcdef';
     for (final (cid, path) in <(String, String)>[
       ('messaging:loop_direct_$hex', '/chat/dm'),
@@ -644,7 +645,7 @@ void main() {
     // channel page.
     router.go('/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}');
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/chat');
+    expect(router.routeInformationProvider.value.uri.path, '/meme');
   });
 
   testWidgets(
@@ -665,9 +666,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final router = GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-      );
+      final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
       router.go(
         '/chat/channel/${Uri.encodeComponent('messaging:loop_group_12345678')}'
         '/alias',
@@ -678,7 +677,7 @@ void main() {
       // the LOOP group itself.
       expect(find.byType(StreamGroupAliasChannelRoutePage), findsNothing);
       expect(find.byType(GroupAliasChannelRoutePage), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, '/chat');
+      expect(router.routeInformationProvider.value.uri.path, '/meme');
       expect(resolver.calls, isEmpty);
     },
   );

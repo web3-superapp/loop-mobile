@@ -9,12 +9,13 @@ This document applies to the Flutter source at the repository root. Material und
 - LOOP is a Flutter iOS and Android app. Web output is only a local UI-verification target.
 - Decision 0110 (v3, 2026-10-08) replaces decision 0048's destinations with
   five primary destinations in this order: Chat, Square, Meme, Intel and
-  Wallet (聊天 / 广场 / MEME / 情报 / 钱包). Chat is the post-login home; 我
+  Wallet (聊天 / 广场 / MEME / 情报 / 钱包). Meme is the post-login home (decision 0221; Chat was
+  until then); 我
   (Profile) opens from the avatar on Chat rather than from the bottom
   navigation. The four v2 tabs `community`, `mining`, `launch` and `market`
   keep their routes and pages as ordinary child pages. Decision 0048's
   Community, Mining, Launch, Market and Wallet shell is history.
-- `/home` and `/launchpad` are compatibility redirects to `/chat` and
+- `/home` and `/launchpad` are compatibility redirects to `/meme` (decision 0221) and
   `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (105
   routes since decision 0120, mirrored by
   `lib/core/navigation/route_manifest.dart`) the only route inventory; every

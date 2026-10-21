@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
@@ -81,10 +82,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('chat-tab-screen')),
-      findsOneWidget,
-    );
+    // Decision 0221: the App lands on MEME.
+    expect(find.byType(MemeScreen), findsOneWidget);
     for (final destination in <String>['广场', 'MEME', '情报', '钱包', '聊天']) {
       await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
@@ -130,7 +129,7 @@ void main() {
   });
 
   testWidgets(
-    'retained Perp paths are unmounted and fall back to Chat with a logged error',
+    'retained Perp paths are unmounted and fall back to MEME with a logged error',
     (tester) async {
       final routingErrors = LoopRoutingErrorLog();
       await tester.pumpWidget(
@@ -155,7 +154,7 @@ void main() {
         router.go(path);
         await tester.pumpAndSettle();
 
-        expect(router.routeInformationProvider.value.uri.path, '/chat');
+        expect(router.routeInformationProvider.value.uri.path, '/meme');
         expect(routingErrors.last?.location, path, reason: path);
         expect(find.text('Perpetuals'), findsNothing, reason: path);
         expect(find.text('Positions'), findsNothing, reason: path);
@@ -323,9 +322,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
     router.go('/chat');
     await tester.pumpAndSettle();
 
@@ -356,9 +353,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
     router.go('/chat');
     await tester.pumpAndSettle();
 
@@ -391,9 +386,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-    );
+    final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
     // The Preview room is no longer listed on the 聊天 tab; it is reached by
     // its own guarded location.
     unawaited(router.push<void>('/chat/voice'));

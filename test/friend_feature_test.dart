@@ -958,17 +958,17 @@ void main() {
       // longer mounted and land back on Community as informational retirements.
       router.go('/profile/friends');
       await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/chat');
+      expect(router.routeInformationProvider.value.uri.path, '/meme');
 
       router.go('/chat/friends/add');
       await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/chat');
+      expect(router.routeInformationProvider.value.uri.path, '/meme');
 
       // Step 4 folded the V1 request inbox into `dm-requests`: the legacy
       // location is no longer mounted and lands back on Community.
       router.go('/chat/friends/requests');
       await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/chat');
+      expect(router.routeInformationProvider.value.uri.path, '/meme');
     },
   );
 }
