@@ -53,7 +53,8 @@ void main() {
           (widget) =>
               widget is Container &&
               widget.decoration is BoxDecoration &&
-              (widget.decoration! as BoxDecoration).color == LoopColors.card,
+              // Decision 0226: the card at 92 %.
+              (widget.decoration! as BoxDecoration).color == loopTabBarGround,
         ),
       ),
     );

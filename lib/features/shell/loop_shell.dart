@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
@@ -186,13 +187,19 @@ class _LoopShellState extends State<LoopShell> {
             ),
           );
         }
-        return LoopTabBarScope(
-          child: Scaffold(
-            extendBody: true,
-            body: widget.child,
-            bottomNavigationBar: LoopTabBar(
-              selectedIndex: selectedIndex,
-              onSelect: (index) => _select(context, index),
+        // Decision 0226: the page runs under the floating bar to the very
+        // bottom of the screen — the wall included — and the system
+        // navigation bar draws no scrim of its own over it.
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: loopTabSystemOverlay,
+          child: LoopTabBarScope(
+            child: Scaffold(
+              extendBody: true,
+              body: widget.child,
+              bottomNavigationBar: LoopTabBar(
+                selectedIndex: selectedIndex,
+                onSelect: (index) => _select(context, index),
+              ),
             ),
           ),
         );
@@ -213,6 +220,23 @@ class _LoopShellState extends State<LoopShell> {
     );
   }
 }
+
+/// The system bars over the five tabs (decision 0226): a clear navigation
+/// bar with no contrast scrim, so the page — on the wall, the wall — shows
+/// under the floating tab bar down to the screen's edge.
+const SystemUiOverlayStyle loopTabSystemOverlay = SystemUiOverlayStyle(
+  systemNavigationBarColor: Color(0x00000000),
+  systemNavigationBarDividerColor: Color(0x00000000),
+  systemNavigationBarIconBrightness: Brightness.light,
+  systemNavigationBarContrastEnforced: false,
+  statusBarColor: Color(0x00000000),
+  statusBarIconBrightness: Brightness.light,
+  statusBarBrightness: Brightness.dark,
+);
+
+/// The tab bar's ground (decision 0226): the card surface at 92 %, so the
+/// wall shows faintly through it. No blur.
+const Color loopTabBarGround = Color(0xEB111114);
 
 /// The floating Chalk tab bar.
 ///
@@ -287,7 +311,9 @@ class LoopTabBar extends StatelessWidget {
               // line runs along its top edge.
               foregroundDecoration: const _ChromeEdge(),
               decoration: const BoxDecoration(
-                color: LoopColors.card,
+                // Decision 0226: card at 92 %; the safe area under the bar
+                // is clear.
+                color: loopTabBarGround,
                 borderRadius: LoopRadius.tabBar,
               ),
               child: LoopDockBar(

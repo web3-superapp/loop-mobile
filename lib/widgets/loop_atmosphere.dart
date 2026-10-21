@@ -410,10 +410,13 @@ class LoopWallBackdrop extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
+                  // Decision 0226: the wash stops deepening past the middle,
+                  // so the foot of the page — behind the floating tab bar —
+                  // is wall, not a black band (it went to Ink 70 %).
                   colors: <Color>[
                     Color(0x2609090B),
                     Color(0x7309090B),
-                    Color(0xB309090B),
+                    Color(0x7309090B),
                   ],
                   stops: <double>[0, 0.55, 1],
                 ),
