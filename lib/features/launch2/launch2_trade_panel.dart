@@ -573,7 +573,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               _QuotaBar(used: used, cap: cap, ticker: _ticker),
-              const SizedBox(height: 12),
+              const SizedBox(height: LoopSpacing.segmentGap),
               if (blockedLine != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -627,19 +627,27 @@ class _QuotaBar extends StatelessWidget {
           children: <Widget>[
             Text(
               '累计额度',
-              style: LoopType.caption.copyWith(color: LoopColors.text2),
+              style: LoopType.body2.copyWith(color: LoopColors.text2),
             ),
-            const Spacer(),
-            Text(
-              value == null
-                  ? '— / ${launch2MemeFigure(cap)}'
-                  : '${launch2MemeFigure(value)} / ${launch2MemeFigure(cap)}',
-              key: const ValueKey<String>('launch2-quota-figure'),
-              style: LoopType.figure,
+            const SizedBox(width: 12),
+            // A long cap scales down rather than overflowing (decision 0229).
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  value == null
+                      ? '— / ${launch2MemeFigure(cap)}'
+                      : '${launch2MemeFigure(value)} / ${launch2MemeFigure(cap)}',
+                  key: const ValueKey<String>('launch2-quota-figure'),
+                  maxLines: 1,
+                  style: LoopType.figure,
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 10),
         LoopProgressBar(
           value: value == null ? null : launch2Share(value, cap),
           semanticLabel: value == null

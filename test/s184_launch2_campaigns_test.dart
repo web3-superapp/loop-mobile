@@ -575,12 +575,12 @@ void main() {
         ),
         findsOneWidget,
       );
-      // S264 (decision 0220): the title is Chalk 26 over the Purple brush;
-      // the subtitle may take two lines.
+      // S264 (decision 0220): the title is Chalk over the Purple brush, 28
+      // since decision 0229; the subtitle may take two lines.
       final title = tester.widget<Text>(find.text('发射季交易赛'));
       expect(title.maxLines, 1);
       expect(title.style?.color, LoopColors.chalk);
-      expect(title.style?.fontSize, 26);
+      expect(title.style?.fontSize, 28);
       final subtitle = tester.widget<Text>(find.text('一句副标题'));
       expect(subtitle.maxLines, 2);
       // The chrome hand hangs 14 / 16 past the card's right and bottom edges.

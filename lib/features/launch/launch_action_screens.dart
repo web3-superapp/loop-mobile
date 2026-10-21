@@ -126,7 +126,12 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
           LaunchUnavailableCard(
             label: '我的质押',
             fact: stake.stake,
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           LaunchChainBlock(
             testnet: launchSurfaceIsTestnet(capability: capability),
@@ -138,7 +143,12 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             body:
                 '质押用于 Launch 参与资格；某一次发射是否依赖质押，由它自己被批准的资格模式决定。'
                 '质押与挖矿算力的关系以批准的公式版本为准，这里不承诺任何倍率、等待期或权益。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -163,7 +173,12 @@ class _StakeAmountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopChalkCard(
       key: const ValueKey<String>('loop-stake-executable'),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        0,
+      ),
       child: Builder(
         builder: (context) {
           final ink = LoopGround.inkOf(context);
@@ -822,7 +837,12 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
               tone: LoopNoticeTone.danger,
               title: '这次提交没有完成',
               body: launchFailureReason(state.writeFailureKind),
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
+              ),
             ),
             LoopButtonPair(
               children: <Widget>[
@@ -876,7 +896,12 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             icon: 'info',
             title: '提交不代表通过',
             body: '审核由人工进行。通过后项目才会进入目录，再等待排期确认。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -1041,7 +1066,12 @@ class _MilestoneBlockState extends ConsumerState<_MilestoneBlock> {
           body:
               '每条赛道单独记录，互不推导。只有「已上线」与「已获推荐位」附有复核过的材料；'
               '复核记录时间与平台可核验时间是两个不同的事实，缺一不补。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            0,
+          ),
         ),
       ],
     );
@@ -1113,7 +1143,12 @@ class _ReviewStatusBlock extends StatelessWidget {
             tone: LoopNoticeTone.warn,
             title: '退回原因',
             body: reason,
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
       ],
     );

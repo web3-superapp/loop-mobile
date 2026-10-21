@@ -3015,6 +3015,11 @@ void main() {
 
       // A role segment is a different directory, not the same one narrowed.
       gateway.readDelay = const Duration(milliseconds: 500);
+      // The role row scrolls sideways at the v3 word size (decision 0229).
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('members-seg-admin')),
+      );
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey<String>('members-seg-admin')));
       await tester.pump();
       await tester.pump();

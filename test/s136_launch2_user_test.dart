@@ -2667,7 +2667,9 @@ void main() {
       ]) {
         final paragraph = tester.renderObject<RenderParagraph>(_key(key));
         expect(paragraph.didExceedMaxLines, isFalse);
-        expect(tester.getSize(_key(key)).height, lessThan(20));
+        // Decision 0229: at the 14 caption a line may wrap once at 360 wide;
+        // nothing is cut.
+        expect(tester.getSize(_key(key)).height, lessThan(44));
       }
       expect(tester.takeException(), isNull);
       await _drain(tester);

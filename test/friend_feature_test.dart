@@ -815,6 +815,10 @@ void main() {
         find.byKey(const ValueKey<String>('friend-group-name-input')),
         'Spot Research',
       );
+      // Decision 0229: at the v3 row height the second friend sits under the
+      // name field's keyboard bar; the reader closes the keyboard first.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       for (final index in <int>[0, 1]) {
         final friend = find.byKey(
           ValueKey<String>('friend-select-result-$index'),

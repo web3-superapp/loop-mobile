@@ -64,7 +64,8 @@ void main() {
       final value = tester.widget<Text>(
         key('wallet-balance-value-$s5NativeAssetId'),
       );
-      expect(value.style!.fontSize, 11);
+      // Decision 0229: the caption size, 14.
+      expect(value.style!.fontSize, 14);
       expect(value.style!.color, LoopColors.text2);
       // The native row's grey line is its gas reserve, from the policy.
       expect(
@@ -78,7 +79,7 @@ void main() {
         key('wallet-balance-mark-$s5NativeAssetId'),
       );
       expect(mark.data, contains('以 WBNB 计价'));
-      expect(mark.style!.fontSize, 11);
+      expect(mark.style!.fontSize, 14);
       expect(key('wallet-balance-change-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-balance-send-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-balance-swap-$s5NativeAssetId'), findsOneWidget);

@@ -188,7 +188,12 @@ class MiningStaleNotice extends StatelessWidget {
         attempt: source.latestAttempt,
         symbols: symbols,
       ),
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        0,
+      ),
     );
   }
 }

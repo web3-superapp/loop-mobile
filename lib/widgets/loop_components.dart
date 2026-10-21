@@ -19,8 +19,9 @@ import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 // Topbar (.topbar / .back)
 // ---------------------------------------------------------------------------
 
-/// `.topbar`: 44px back button, 24/800 title, 44px tool buttons; long titles
-/// truncate but never drop the leading business word.
+/// `.topbar`: 44px back button, the title (title1 28 on a page without a back
+/// control, title2 22 beside one — decision 0229), 44px tool buttons; long
+/// titles truncate but never drop the leading business word.
 class LoopTopbar extends StatelessWidget {
   const LoopTopbar({
     required this.title,
@@ -152,16 +153,24 @@ class LoopTopbar extends StatelessWidget {
                         // second line rather than the bar overflowing.
                         maxLines: flat
                             ? 1
-                            : subtitle == null
+                            : subtitle == null && kicker == null
                             ? titleMaxLines
                             : 1,
                         overflow: TextOverflow.ellipsis,
+                        // v3 (decision 0229): a page without a back control
+                        // states its title at title1 (28); beside a back
+                        // control, or with a line above or under it in the
+                        // 74 bar, the title is title2 (22).
                         style: flat
                             ? (LoopFlat.stepOf(context)
                                   ? LoopType.stepTitle
                                   : loopFlatTitleStyle())
                             : dense
                             ? theme.textTheme.headlineSmall
+                            : onBack != null ||
+                                  kicker != null ||
+                                  subtitle != null
+                            ? LoopType.title2
                             : theme.textTheme.headlineLarge,
                       ),
                     ),
@@ -172,7 +181,7 @@ class LoopTopbar extends StatelessWidget {
                           subtitle!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: LoopType.captionSm.copyWith(
+                          style: LoopType.caption.copyWith(
                             color: LoopColors.text2,
                           ),
                         ),
@@ -293,8 +302,8 @@ class LoopIconButton extends StatelessWidget {
 // Section label (.label)
 // ---------------------------------------------------------------------------
 
-/// `.label`: mono 10/600, .15em tracking, uppercase, text3; 30px above (22px
-/// when it follows another label) and 8px below.
+/// A section heading: [LoopType.headline] 18 / 700 Chalk, 36 above (24 when
+/// it follows another label) and 16 below (decision 0229).
 class LoopLabel extends StatelessWidget {
   const LoopLabel(
     this.text, {
@@ -348,12 +357,13 @@ class LoopLabel extends StatelessWidget {
         : followsLabel
         ? LoopSpacing.group
         : LoopSpacing.section;
+    // v3 (decision 0229): 36 above a section heading, 16 under it.
     return Padding(
       padding: EdgeInsets.fromLTRB(
         LoopSpacing.page,
         top,
         LoopSpacing.page,
-        LoopSpacing.tight,
+        tight ? LoopSpacing.tight : LoopSpacing.sectionBottom,
       ),
       child: Semantics(header: true, child: LoopKicker(text, large: true)),
     );
@@ -1312,12 +1322,13 @@ class LoopRecordCard extends StatelessWidget {
     this.margin = defaultMargin,
   });
 
-  /// The page gutter on both sides and the card gap below.
+  /// The page gutter on both sides and the card gap below (12, decision
+  /// 0229).
   static const EdgeInsets defaultMargin = EdgeInsets.fromLTRB(
     LoopSpacing.page,
     0,
     LoopSpacing.page,
-    14,
+    LoopSpacing.rowGap,
   );
 
   /// The card padding (decision 0210: 20).
@@ -1582,7 +1593,14 @@ class LoopRecordRow extends StatelessWidget {
           : Radius.zero,
     );
     final content = Container(
-      constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+      // v3 (decision 0229): a list row is at least 72 high, 80 with its
+      // second line; rows are told apart by that space, not by a line.
+      constraints: BoxConstraints(
+        minHeight: subtitle != null || subtitleSpans != null
+            ? LoopSpacing.rowMinWithSub
+            : LoopSpacing.rowMin,
+      ),
+      alignment: AlignmentDirectional.centerStart,
       // Decision 0212 (水平对齐): the row's glyph and words start on the page
       // margin itself, under the section title, and its chevron ends on the
       // right margin — the hairlines already span exactly that width, so the
@@ -1634,20 +1652,34 @@ class LoopRecordRow extends StatelessWidget {
           ],
           if (trailing != null || trailingCaption != null) ...<Widget>[
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (trailing != null)
-                  Text(
-                    trailing!,
-                    style: LoopType.figure.copyWith(
-                      color: trailingColor ?? LoopColors.chalk,
+            // v3 (decision 0229): the value is the row's 17 figure; a long
+            // one (a date, a sentence) scales down rather than overflowing.
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (trailing != null)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        trailing!,
+                        maxLines: 1,
+                        style: LoopType.figure.copyWith(
+                          color: trailingColor ?? LoopColors.chalk,
+                        ),
+                      ),
                     ),
-                  ),
-                if (trailingCaption != null)
-                  Text(trailingCaption!, style: _trailingCaptionStyle),
-              ],
+                  if (trailingCaption != null)
+                    Text(
+                      trailingCaption!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _trailingCaptionStyle,
+                    ),
+                ],
+              ),
             ),
           ],
           if (onTap != null && chevron) ...<Widget>[
@@ -1657,11 +1689,9 @@ class LoopRecordRow extends StatelessWidget {
         ],
       ),
     );
-    // Light top edge (first) and separator (not last) are drawn as rows so
-    // the rounded decoration keeps a uniform border.
-    // Decision 0210: a divided list, not a filled card — a `#2A292F`
-    // hairline above the first row and under every row, no fill, no shadow.
-    // A chosen row takes the Purple selection ground.
+    // Decision 0229 (v3) retired 0210's hairline above the first row and
+    // under every row: no fill, no line, no shadow — the row's own height
+    // keeps it apart. A chosen row takes the Purple selection ground.
     // Decision 0212: only a chosen row has a ground to round; an unchosen
     // row is unclipped, so the hairlines above the first row and under the
     // last one run the full page width instead of stopping short of the
@@ -1676,7 +1706,6 @@ class LoopRecordRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          if (topRadius) Container(height: 1, color: LoopColors.line),
           if (selected)
             IntrinsicHeight(
               child: Row(
@@ -1693,7 +1722,6 @@ class LoopRecordRow extends StatelessWidget {
             )
           else
             content,
-          Container(height: 1, color: LoopColors.line),
         ],
       ),
     );
@@ -2798,14 +2826,19 @@ class LoopButtonPair extends StatelessWidget {
 // Key/value (.kv)
 // ---------------------------------------------------------------------------
 
-/// `.kv`: label (Text2) on the left, mono value on the right.
+/// `.kv`: label (Text2) on the left, the value on the right. v3 (decision
+/// 0229): both at the body2 size — the label 400 Text2, the value 600 Chalk
+/// (the line's one primary) — 12 above and below, no line between rows.
 class LoopKeyValue extends StatelessWidget {
   const LoopKeyValue({
     required this.label,
     required this.value,
     super.key,
     this.valueUp,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: LoopSpacing.card,
+      vertical: 12,
+    ),
     this.labelFlex = 1,
     this.valueFlex = 1,
     this.valueAlign = TextAlign.right,
@@ -2846,7 +2879,7 @@ class LoopKeyValue extends StatelessWidget {
             flex: labelFlex,
             child: Text(
               label,
-              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+              style: LoopType.body2.copyWith(color: LoopColors.text2),
             ),
           ),
           const SizedBox(width: 14),
@@ -2856,17 +2889,13 @@ class LoopKeyValue extends StatelessWidget {
               value,
               key: valueKey,
               textAlign: valueAlign,
-              style:
-                  LoopTypography.withWeight(
-                    LoopType.figureXs,
-                    FontWeight.w500,
-                  ).copyWith(
-                    color: switch (valueUp) {
-                      true => LoopColors.lime,
-                      false => LoopColors.chalk,
-                      null => LoopColors.chalk,
-                    },
-                  ),
+              style: LoopType.figureBody.copyWith(
+                color: switch (valueUp) {
+                  true => LoopColors.lime,
+                  false => LoopColors.chalk,
+                  null => LoopColors.chalk,
+                },
+              ),
             ),
           ),
         ],
@@ -4204,7 +4233,12 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        0,
+      ),
       decoration: BoxDecoration(
         color: LoopColors.card,
         borderRadius: LoopRadius.card,

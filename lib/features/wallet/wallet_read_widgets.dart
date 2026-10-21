@@ -520,7 +520,12 @@ class WalletNetWorthCard extends StatelessWidget {
         }
         return LoopSurfaceCard(
           key: const ValueKey<String>('wallet-networth-card'),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            14,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[

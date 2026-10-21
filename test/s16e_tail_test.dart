@@ -79,13 +79,14 @@ void main() {
       await tester.pumpWidget(_app(LoopTopbar(title: '关于', onBack: () {})));
       await tester.pump();
 
+      // Decision 0229: beside a back control the full step is title2.
       expect(
         tester
             .renderObject<RenderParagraph>(find.text('关于'))
             .text
             .style!
             .fontSize,
-        LoopType.headingLg.fontSize,
+        LoopType.title2.fontSize,
       );
     });
   });

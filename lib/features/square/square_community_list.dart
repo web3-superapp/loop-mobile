@@ -196,7 +196,10 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
       else ...<Widget>[
         // Decision 0221: on the wall the rows sit on one card board; the
         // rows themselves stay flat.
-        if (state.items.isNotEmpty)
+        if (state.items.isNotEmpty) ...<Widget>[
+          // v3 (decision 0229): 16 from the chips to the board (the pinned
+          // chips keep 8 of it).
+          const SizedBox(height: LoopSpacing.segmentGap - 8),
           LoopAtmoBoard(
             key: const ValueKey<String>('square-community-board'),
             children: <Widget>[
@@ -213,6 +216,7 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
                 ),
             ],
           ),
+        ],
         if (state.appendFailed && !state.loadingMore)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -319,7 +323,7 @@ class _SquareHeaderLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       key: const ValueKey<String>('square-community-header'),
-      padding: const EdgeInsets.only(left: 16, right: 4),
+      padding: const EdgeInsets.only(left: LoopSpacing.page, right: 8),
       child: Row(
         children: <Widget>[
           Expanded(
@@ -376,9 +380,9 @@ class _SquareSearchEntry extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        0,
+        4,
         LoopSpacing.page,
-        10,
+        LoopSpacing.rowGap,
       ),
       child: Semantics(
         button: true,
@@ -392,19 +396,20 @@ class _SquareSearchEntry extends StatelessWidget {
             onTap: onTap,
             borderRadius: LoopRadius.control,
             child: Container(
-              constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              // v3 (decision 0229): the OKX search field, 52 high.
+              constraints: const BoxConstraints(minHeight: 52),
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.card),
               decoration: const BoxDecoration(
                 color: LoopColors.input,
                 borderRadius: LoopRadius.control,
               ),
               child: Row(
                 children: <Widget>[
-                  const LoopIcon('search', size: 17, color: LoopColors.text3),
+                  const LoopIcon('search', size: 19, color: LoopColors.text3),
                   const SizedBox(width: 10),
                   Text(
                     '搜索社区',
-                    // M41 R26 a search placeholder: body 14 text3 (decision 0191).
+                    // R26 a search placeholder: body2 15 text3 (decision 0229).
                     style: LoopType.body.copyWith(color: LoopColors.text3),
                   ),
                 ],
@@ -478,7 +483,7 @@ class _SquareChips extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       // Decision 0222: the chosen chip's splat reaches above its box.
       clipBehavior: Clip.none,
-      padding: const EdgeInsets.fromLTRB(16, 6, 9, 8),
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 9, 8),
       child: Row(
         children: <Widget>[
           for (final filter in CommunityMembershipFilter.values)
@@ -549,9 +554,10 @@ String squareCommunitySubline(
 ) {
   final members = '${community.memberCount} 成员';
   final ranked = communityDirectoryRowFigure(community, sort: sort);
-  if (ranked != null) return '$members · ${ranked.caption} ${ranked.value}';
+  // v3 (decision 0229): no centre-dot chain; a comma joins the two facts.
+  if (ranked != null) return '$members，${ranked.caption} ${ranked.value}';
   final symbol = community.assetSymbol;
-  return symbol == null ? members : '$members · \$$symbol';
+  return symbol == null ? members : '$members，\$$symbol';
 }
 
 /// One community, DeBox-club style (decision 0116): logo, name and its
@@ -573,7 +579,7 @@ class SquareCommunityRow extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback onJoin;
 
-  static const double height = 76;
+  static const double height = LoopSpacing.rowMinWithSub;
 
   @override
   Widget build(BuildContext context) {
@@ -603,7 +609,7 @@ class SquareCommunityRow extends StatelessWidget {
               child: SizedBox(
                 height: height,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 16),
+                  padding: const EdgeInsets.only(left: LoopSpacing.card),
                   child: Row(
                     children: <Widget>[
                       CommunityLogo(
@@ -627,7 +633,7 @@ class SquareCommunityRow extends StatelessWidget {
                                     community.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: LoopType.title,
+                                    style: LoopType.body1,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
@@ -650,9 +656,7 @@ class SquareCommunityRow extends StatelessWidget {
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: LoopType.caption.copyWith(
-                                color: LoopColors.text2,
-                              ),
+                              style: LoopType.caption,
                             ),
                           ],
                         ),
@@ -667,8 +671,8 @@ class SquareCommunityRow extends StatelessWidget {
         ),
         if (action != SquareMembershipAction.none)
           Padding(
-            // Decision 0212 (水平对齐): the action ends on the page margin.
-            padding: const EdgeInsets.only(right: LoopSpacing.page),
+            // The action ends on the board's own inner line (decision 0229).
+            padding: const EdgeInsets.only(right: LoopSpacing.card),
             child: _MembershipCapsule(
               communityId: id,
               action: action,
@@ -678,7 +682,7 @@ class SquareCommunityRow extends StatelessWidget {
             ),
           )
         else
-          const SizedBox(width: LoopSpacing.page),
+          const SizedBox(width: LoopSpacing.card),
       ],
     );
   }

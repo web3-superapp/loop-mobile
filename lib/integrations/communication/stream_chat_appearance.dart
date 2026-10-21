@@ -236,9 +236,7 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
     ),
   ),
   metadata: StreamMessageMetadataStyle(
-    usernameTextStyle: StreamMessageLayoutProperty.all(
-      LoopTypography.caption(11),
-    ),
+    usernameTextStyle: StreamMessageLayoutProperty.all(LoopType.caption),
     usernameColor: StreamMessageLayoutProperty.all(LoopColors.text3),
     // Every timestamp in LOOP is tabular mono (`LoopMono.stamp`).
     timestampTextStyle: StreamMessageLayoutProperty.all(LoopMono.stamp),
@@ -288,8 +286,15 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
     backgroundColor: LoopColors.card,
     indicatorColor: LoopColors.purple,
     side: const BorderSide(color: LoopColors.line),
-    titleTextStyle: LoopTypography.label(12, color: LoopColors.text2),
-    subtitleTextStyle: LoopTypography.caption(11),
+    titleTextStyle: LoopType.label.copyWith(color: LoopColors.text2),
+    subtitleTextStyle: LoopType.caption,
+  ),
+  // v3 (decision 0229): an inbox row is the conversation's name at body1
+  // (17 / 600) over its last message at body2 in Text2, the time a caption.
+  channelListItemTheme: StreamChannelListItemThemeData(
+    titleStyle: LoopType.body1,
+    subtitleStyle: LoopType.bodySm,
+    timestampStyle: LoopType.caption,
   ),
 );
 
@@ -439,8 +444,7 @@ class _LoopStreamMessageHeader extends StatelessWidget {
         !isOwnMessage) {
       final metadata = StreamMessageItemTheme.of(context).metadata;
       final style =
-          metadata?.usernameTextStyle?.resolve(layout) ??
-          LoopTypography.caption(11);
+          metadata?.usernameTextStyle?.resolve(layout) ?? LoopType.caption;
       final color = metadata?.usernameColor?.resolve(layout);
       usernameWidget = Text(
         label,

@@ -307,7 +307,12 @@ class _MiningRewardsHourlyScreenState
                     key: ValueKey<String>('mining-power-only-notice'),
                     icon: 'mine',
                     body: miningPowerOnlyNotice,
-                    margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                    margin: EdgeInsets.fromLTRB(
+                      LoopSpacing.page,
+                      14,
+                      LoopSpacing.page,
+                      0,
+                    ),
                   ),
                 ] else ...<Widget>[
                   const LoopLabel('奖励汇总'),

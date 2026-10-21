@@ -615,7 +615,12 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                       payAmount: payAmount,
                       allowance: allowance.status,
                     ),
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
+              ),
             ),
           if (prepared == null &&
               walletId != null &&
@@ -648,7 +653,12 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             icon: 'info',
             title: '未毕业只买不卖',
             body: '内盘阶段没有卖出接口。毕业并建立外部流动性之后，交易才会转到行情模块。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           LoopDisclosure(
             key: const ValueKey<String>('launch-trade-facts'),
@@ -697,7 +707,12 @@ class _TradeInFlightBanner extends StatelessWidget {
       tone: LoopNoticeTone.warn,
       title: title,
       body: body,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
     );
   }
 }
@@ -781,7 +796,12 @@ class _TradeQuoteCard extends StatelessWidget {
         : launchUsd1Label(reading.allowance);
     return LoopChalkCard(
       key: const ValueKey<String>('launch-trade-quote'),
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        0,
+      ),
       child: Builder(
         builder: (context) {
           final ink = LoopGround.inkOf(context);
@@ -935,7 +955,12 @@ class _TradeReview extends StatelessWidget {
                 icon: confirmed ? 'check' : 'clock',
                 title: text.title,
                 body: text.body,
-                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  14,
+                  LoopSpacing.page,
+                  0,
+                ),
               );
             },
           ),
@@ -968,7 +993,12 @@ class _TradeReview extends StatelessWidget {
                   ),
                 ) +
                 (trade.pollTimedOut ? '还没有读到链上结果，可以稍后重新查询。' : ''),
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           if (trade.pollTimedOut)
             Padding(
@@ -998,7 +1028,12 @@ class _TradeReview extends StatelessWidget {
               tone: LoopNoticeTone.warn,
               title: '没有签名',
               body: launchSignReasonText(reason),
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
+              ),
             ),
           LoopButtonPair(
             children: <Widget>[
@@ -1102,7 +1137,12 @@ class _AllowanceNotice extends StatelessWidget {
           tone: LoopNoticeTone.warn,
           title: title,
           body: body,
-          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            0,
+          ),
         ),
         if (reread)
           Padding(
@@ -1160,7 +1200,12 @@ class _FundingGuidance extends StatelessWidget {
           icon: 'wallet',
           title: gas ? '先补充网络费' : '先补充 USD1',
           body: '$fact。转入后重新读取余额，再重新买入。',
-          margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            10,
+            LoopSpacing.page,
+            0,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),

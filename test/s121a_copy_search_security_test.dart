@@ -77,7 +77,8 @@ void main() {
         ),
       );
       expect(hint.data, '按昵称只能搜到允许被发现的账号，LOOP ID 可以精确搜索');
-      expect(hint.style?.fontSize, 11);
+      // Decision 0229: the caption step, 14 (was 11).
+      expect(hint.style?.fontSize, 14);
       // Decision 0178: the field sits in the bottom bar, the hint right
       // above it, and the segments at the top of the page.
       final field = tester.getRect(
@@ -157,7 +158,7 @@ void main() {
           matching: find.byType(Text),
         ),
       );
-      expect(fallback.style?.fontSize, 11);
+      expect(fallback.style?.fontSize, 14);
       expect(fallback.maxLines, isNull);
       expect(find.byType(LoopNotice), findsNothing);
 

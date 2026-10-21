@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -433,10 +434,7 @@ class _TickerItem extends StatelessWidget {
             ),
             Text(
               item.ticker,
-              style: LoopTypography.withWeight(
-                LoopType.figure,
-                FontWeight.w600,
-              ).copyWith(color: LoopColors.onPurple),
+              style: LoopType.tickerFigure.copyWith(color: LoopColors.onPurple),
             ),
             if (amount != null) ...<Widget>[
               Text(
@@ -588,7 +586,10 @@ class _StageChip extends StatelessWidget {
                         const TextSpan(text: ' '),
                         TextSpan(
                           text: '${chip.count}',
-                          style: LoopType.figure.copyWith(color: ink),
+                          style: LoopTypography.withWeight(
+                            LoopType.figureSm,
+                            FontWeight.w600,
+                          ).copyWith(color: ink),
                         ),
                       ],
                     ),
@@ -719,24 +720,33 @@ class Launch2BoardStage extends StatelessWidget {
     };
     return Container(
       key: ValueKey<String>('launch2-stage-pill-${stage.wireName}'),
-      height: 26,
+      height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      alignment: Alignment.center,
       decoration: BoxDecoration(color: ground, borderRadius: LoopRadius.pill),
-      child: Text(
-        launch2StageLabel(stage),
-        maxLines: 1,
-        style: LoopTypography.withWeight(
-          LoopType.label,
-          FontWeight.w600,
-        ).copyWith(color: ink),
+      // Sized by its word, never by the column it stands in.
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          launch2StageLabel(stage),
+          maxLines: 1,
+          style: LoopTypography.withWeight(
+            LoopType.label,
+            FontWeight.w600,
+          ).copyWith(color: ink),
+        ),
       ),
     );
   }
 }
 
-/// One 72 high board row: face, name and ticker over the bar (or the stage's
-/// line), the stage capsule at the right.
+/// One board row (v3, decision 0229: 80 high, one primary line each side).
+///
+/// Left: the face, the name (body1 17) with its ticker (caption 13), and
+/// under it the bar with the share sold (or the stage's own caption line).
+/// Right: the price as the row's one figure (17 / 600) over the stage
+/// capsule; a row with no curve price yet keeps only the capsule. Before v3
+/// the price sat third on the caption line, behind the bar and the share,
+/// and was cut to 「$0.0₄…」 on a 390 screen.
 class Launch2BoardRow extends ConsumerWidget {
   const Launch2BoardRow({
     required this.row,
@@ -749,7 +759,7 @@ class Launch2BoardRow extends ConsumerWidget {
   final VoidCallback? onTap;
   final VoidCallback? onElapsed;
 
-  static const double height = 72;
+  static const double height = LoopSpacing.rowMinWithSub;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -769,31 +779,21 @@ class Launch2BoardRow extends ConsumerWidget {
             onElapsed: onElapsed,
             style: LoopType.figureSm,
           );
+    final trading =
+        row.stage == Launch2Stage.priority || row.stage == Launch2Stage.public;
     final List<Widget> meta = switch (row.stage) {
-      Launch2Stage.priority || Launch2Stage.public => <Widget>[
-        Launch2DripBar(
-          fraction: launch2Fraction(row.curve.soldBps),
-          identity: id,
-        ),
-        Text(
-          launch2BpsLabel(row.curve.soldBps),
-          key: ValueKey<String>('launch2-row-value-$id'),
-          style: pct,
-        ),
-        Flexible(
-          child: Text(
-            launch2PriceLabel(row.curve.priceUsd1),
-            key: const ValueKey<String>('launch2-row-price'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LoopType.figureSm,
-          ),
-        ),
-      ],
+      Launch2Stage.priority ||
+      Launch2Stage.public ||
       Launch2Stage.graduated => <Widget>[
-        Launch2DripBar(
-          fraction: launch2Fraction(row.curve.soldBps),
-          identity: id,
+        // The bar gives way first on a narrow screen; the share stays.
+        Flexible(
+          child: LayoutBuilder(
+            builder: (context, box) => Launch2DripBar(
+              fraction: launch2Fraction(row.curve.soldBps),
+              identity: id,
+              width: math.min(88, box.maxWidth),
+            ),
+          ),
         ),
         Text(
           launch2BpsLabel(row.curve.soldBps),
@@ -837,7 +837,7 @@ class Launch2BoardRow extends ConsumerWidget {
         child: SizedBox(
           height: height,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.card),
             child: Row(
               children: <Widget>[
                 Launch2ProjectAvatar(identity: id, logoUrl: row.logoUrl),
@@ -852,23 +852,23 @@ class Launch2BoardRow extends ConsumerWidget {
                         textBaseline: TextBaseline.alphabetic,
                         children: <Widget>[
                           Flexible(
+                            flex: 2,
                             child: Text(
                               row.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: LoopTypography.withWeight(
-                                LoopType.title,
-                                FontWeight.w600,
-                              ),
+                              style: LoopType.body1,
                             ),
                           ),
                           if (showTicker) ...<Widget>[
                             const SizedBox(width: 6),
-                            Text(
-                              row.ticker,
-                              maxLines: 1,
-                              style: LoopType.caption.copyWith(
-                                color: LoopColors.text3,
+                            // A long ticker gives way before the name does.
+                            Flexible(
+                              child: Text(
+                                row.ticker,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: LoopType.caption,
                               ),
                             ),
                           ],
@@ -886,8 +886,30 @@ class Launch2BoardRow extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                Launch2BoardStage(stage: row.stage),
+                const SizedBox(width: 12),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 132),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      if (trading) ...<Widget>[
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            launch2PriceLabel(row.curve.priceUsd1),
+                            key: const ValueKey<String>('launch2-row-price'),
+                            maxLines: 1,
+                            style: LoopType.figure,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      Launch2BoardStage(stage: row.stage),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

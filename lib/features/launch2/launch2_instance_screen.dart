@@ -1168,13 +1168,13 @@ class _NftSaleBlock extends ConsumerWidget {
                 children: <Widget>[
                   Text(
                     '铸造进度',
-                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+                    style: LoopType.body2.copyWith(color: LoopColors.text2),
                   ),
                   const Spacer(),
                   Text(elapsedText, style: LoopType.figure),
                 ],
               ),
-              const SizedBox(height: 11),
+              const SizedBox(height: 12),
               LoopProgressBar(
                 value: elapsed,
                 semanticLabel: '铸造时间$elapsedText',
@@ -1280,7 +1280,7 @@ class _CurveBlock extends StatelessWidget {
           hero: true,
           stats: <LoopStat>[
             LoopStat(
-              label: '当前价 · USD1',
+              label: '当前价（USD1）',
               value: launch2PriceLabel(curve.priceUsd1),
               statKey: const ValueKey<String>('launch2-curve-price'),
             ),
@@ -1299,35 +1299,35 @@ class _CurveBlock extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              // v3 (decision 0229): the share is the card's one figure;
+              // the supply moves under the bar.
               Row(
                 children: <Widget>[
-                  Text(
-                    '内盘进度',
-                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${launch2BpsLabel(curve.soldBps)} · '
-                      '${launch2MemeCompact(curve.soldSupply)} / '
-                      '${launch2MemeCompact(curve.saleSupply)}',
-                      key: const ValueKey<String>('launch2-curve-progress'),
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LoopType.figure,
+                      '内盘进度',
+                      style: LoopType.body2.copyWith(color: LoopColors.text2),
                     ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    launch2BpsLabel(curve.soldBps),
+                    key: const ValueKey<String>('launch2-curve-progress'),
+                    maxLines: 1,
+                    style: LoopType.figure,
                   ),
                 ],
               ),
-              const SizedBox(height: 11),
+              const SizedBox(height: 12),
               LoopProgressBar(
                 value: launch2Fraction(curve.soldBps),
                 semanticLabel: '内盘进度 ${launch2BpsLabel(curve.soldBps)}',
               ),
-              const SizedBox(height: 7),
+              const SizedBox(height: 10),
               Text(
-                '卖满 ${launch2MemeCompact(curve.saleSupply)} 自动建官方池毕业',
+                '已售 ${launch2MemeCompact(curve.soldSupply)} / '
+                '${launch2MemeCompact(curve.saleSupply)}，卖满自动建官方池毕业',
+                key: const ValueKey<String>('launch2-curve-supply'),
                 style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ],
@@ -1341,44 +1341,75 @@ class _CurveBlock extends StatelessWidget {
 /// One curve trade. S239: with the trader's LOOP account attached (loop-api
 /// decision 0162 §A) the line names the account and its face opens the
 /// account's page; a bare address opens nothing.
-Widget _tradeRow(Launch2Trade trade) {
+///
+/// v3 (decision 0229): one primary figure per line. Left, the side in its
+/// rise / fall colour and who traded; right, the USD1 amount as the line's
+/// figure over the MEME amount as its caption. Before v3 both amounts sat in
+/// one 13 string behind a centre dot.
+Widget _tradeRow(Launch2Trade trade, String ticker) {
   final account = trade.account;
-  final side = trade.side == Launch2Side.buy ? '买入' : '卖出';
-  final value =
-      '${launch2MemeCompact(trade.memeAmount)} · '
-      '${launch2Usd1Label(trade.usd1Gross)}';
-  if (account == null) {
-    return LoopKeyValue(
-      key: ValueKey<String>('launch2-trade-${trade.tradeId}'),
-      label: '$side · ${launch2ShortAddress(trade.traderAddress)}',
-      value: value,
-      valueUp: trade.side == Launch2Side.buy,
-    );
-  }
-  final name = account.displayName ?? launch2ShortAddress(trade.traderAddress);
-  return Row(
+  final buy = trade.side == Launch2Side.buy;
+  final name = account?.displayName ?? launch2ShortAddress(trade.traderAddress);
+  final who = Text.rich(
+    TextSpan(
+      children: <InlineSpan>[
+        TextSpan(
+          text: buy ? '买入' : '卖出',
+          style: LoopTypography.withWeight(
+            LoopType.body2,
+            FontWeight.w600,
+          ).copyWith(color: buy ? LoopColors.rise : LoopColors.fall),
+        ),
+        const TextSpan(text: '  '),
+        TextSpan(
+          text: name,
+          style: LoopType.body2.copyWith(color: LoopColors.text2),
+        ),
+      ],
+    ),
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+  );
+  final memeLine = ticker.trim().isEmpty
+      ? launch2MemeCompact(trade.memeAmount)
+      : '${launch2MemeCompact(trade.memeAmount)} ${loopTickerLabel(ticker)}';
+  return Padding(
     key: ValueKey<String>('launch2-trade-${trade.tradeId}'),
-    children: <Widget>[
-      const SizedBox(width: LoopSpacing.page - 8),
-      LoopProfileFaceLink(
-        key: ValueKey<String>('launch2-trade-face-${trade.tradeId}'),
-        publicProfileId: account.publicProfileId,
-        name: name,
-        child: LoopProfileAvatar(
-          avatarRef: account.avatarRef,
-          alias: account.displayName,
-          size: 24,
+    padding: const EdgeInsets.symmetric(
+      horizontal: LoopSpacing.page,
+      vertical: 10,
+    ),
+    child: Row(
+      children: <Widget>[
+        if (account != null) ...<Widget>[
+          LoopProfileFaceLink(
+            key: ValueKey<String>('launch2-trade-face-${trade.tradeId}'),
+            publicProfileId: account.publicProfileId,
+            name: name,
+            child: LoopProfileAvatar(
+              avatarRef: account.avatarRef,
+              alias: account.displayName,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+        Expanded(child: who),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            Text(
+              launch2Usd1Label(trade.usd1Gross),
+              maxLines: 1,
+              style: LoopType.figureBody,
+            ),
+            const SizedBox(height: 2),
+            Text(memeLine, maxLines: 1, style: LoopType.figureSm),
+          ],
         ),
-      ),
-      Expanded(
-        child: LoopKeyValue(
-          label: '$side · $name',
-          value: value,
-          valueUp: trade.side == Launch2Side.buy,
-          padding: const EdgeInsets.fromLTRB(4, 10, 16, 10),
-        ),
-      ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -1403,12 +1434,17 @@ class _RecentTrades extends StatelessWidget {
             compact: true,
           )
         else
-          for (final trade in trades) _tradeRow(trade),
+          for (final trade in trades) _tradeRow(trade, detail.row.ticker),
         LoopProvenanceLine(
           key: const ValueKey<String>('launch2-trades-provenance'),
           sources: const <String>['LOOP 链上索引'],
           observedAt: detail.projectedAt,
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            6,
+            LoopSpacing.page,
+            4,
+          ),
           detail: '最近 20 笔内盘成交，金额含 10% 税。',
         ),
       ],
@@ -1492,7 +1528,12 @@ class _MyPoolTrades extends ConsumerWidget {
             key: const ValueKey<String>('launch2-my-pool-trades-provenance'),
             sources: const <String>['LOOP 链上索引'],
             observedAt: ref.read(provider.notifier).valueObservedAt,
-            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              6,
+              LoopSpacing.page,
+              4,
+            ),
             detail: '只含经官方池路由成交的记录，最近 $launch2PoolTradesShown 笔；数量已扣 2% 外盘税。',
           ),
       ],

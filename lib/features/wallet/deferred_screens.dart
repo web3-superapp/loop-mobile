@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -68,7 +69,12 @@ class PayScreen extends ConsumerWidget {
           icon: 'info',
           title: '为什么现在不做',
           body: '支付涉及合规与支付商准入，需要独立评估。先把社区、挖矿与 Launch 的闭环跑通。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
         ),
         const SizedBox(height: 20),
       ],
@@ -151,7 +157,12 @@ class BridgeScreen extends ConsumerWidget {
           body:
               '跨链费、到账数量与预计时间只能由真实路由给出。没有路由就没有这些数字，'
               '这一页不会用示例数据代替它们。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
         ),
         const SizedBox(height: 20),
       ],
@@ -386,7 +397,12 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
               body:
                   '它看起来像 ${review.confusableReading}，但其中有不是拉丁字母的同形字符。'
                   '这是最常见的钓鱼手法，已阻止。',
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                12,
+                LoopSpacing.page,
+                0,
+              ),
             ),
           const LoopLabel('发现'),
           if (review.findings.isEmpty)

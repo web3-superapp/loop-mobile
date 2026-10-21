@@ -53,8 +53,8 @@ void main() {
       await _pumpMessage(tester, harness: harness);
 
       final text = tester.widget<Text>(find.text('| 模拟器 |\nuuu'));
-      expect(text.style!.fontSize, 14);
-      // Band 4 · the chat step, 14/1.45 since decision 0210.
+      expect(text.style!.fontSize, 16);
+      // Band 4 · the chat step, 16/1.45 since decision 0229 (14 under 0210).
       expect(text.style!.height, LoopType.message.height);
       expect(text.style!.color, LoopColors.chalk);
 
@@ -68,9 +68,9 @@ void main() {
       await _pumpMessage(tester, harness: harness);
 
       final box = tester.renderObject<RenderBox>(find.text('一行\n二行'));
-      // 2 × 14 × 1.45 = 40.6. A markdown-split message adds the style
-      // sheet's 8px block spacing on top of it.
-      expect(box.size.height, closeTo(2 * 14 * 1.45, 1));
+      // 2 × 16 × 1.45 = 46.4 (decision 0229). A markdown-split message adds
+      // the style sheet's 8px block spacing on top of it.
+      expect(box.size.height, closeTo(2 * 16 * 1.45, 1));
 
       await _disposeHarness(tester, harness);
     });
@@ -119,7 +119,8 @@ void main() {
       await _pumpMessage(tester, harness: harness);
 
       final style = tester.widget<Text>(find.text('星航员')).style!;
-      expect(style.fontSize, 11);
+      // Decision 0229: the caption step, 14 (was 11).
+      expect(style.fontSize, 14);
       expect(style.color, LoopColors.text3);
 
       await _disposeHarness(tester, harness);

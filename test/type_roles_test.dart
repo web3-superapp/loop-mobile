@@ -58,15 +58,15 @@ void _expectStep(
 
 void main() {
   test('the new steps hold their documented values', () {
-    // Decision 0211: the app-shaped ladder in the looplabs palette.
-    expect(LoopType.kicker.fontSize, 11);
+    // Decision 0229: the v3 ladder (docs/46 §2).
+    expect(LoopType.kicker.fontSize, 14);
     expect(LoopType.kicker.fontWeight, FontWeight.w700);
-    expect(LoopType.stepTitle.fontSize, 26);
+    expect(LoopType.stepTitle.fontSize, 28);
     expect(LoopType.stepTitle.fontFamily, LoopFonts.body);
-    expect(LoopType.flatTitle.fontSize, 20);
+    expect(LoopType.flatTitle.fontSize, 22);
     expect(LoopType.flatTitle.fontFamily, LoopFonts.body);
-    expect(LoopType.figure.fontSize, 13);
-    expect(LoopType.figure.fontWeight, FontWeight.w700);
+    expect(LoopType.figure.fontSize, 17);
+    expect(LoopType.figure.fontWeight, FontWeight.w600);
   });
 
   testWidgets('S1 · LoopQuoteRow and its change pill sit on the ladder', (
@@ -90,7 +90,8 @@ void main() {
       ),
     );
     _expectStep(tester, 'BNB', LoopType.titleLg);
-    _expectStep(tester, '市值 1.2B', LoopType.bodySm);
+    // Decision 0229: the second line is a caption.
+    _expectStep(tester, '市值 1.2B', LoopType.caption);
     _expectStep(tester, '以 WBNB 计价', LoopType.captionSm);
     _expectStep(tester, r'$612.40', LoopType.figureMd);
     _expectStep(tester, '0.52 BNB', LoopType.figureSm);
@@ -170,8 +171,10 @@ void main() {
     _expectStep(tester, '选择网络', LoopType.heading);
     _expectStep(tester, '确认转账', LoopType.heading);
     _expectStep(tester, '额度不足时需要先授权', LoopType.caption);
-    _expectStep(tester, '金额', LoopType.captionSm);
-    _expectStep(tester, '10 USDT', LoopType.figureXs, weight: FontWeight.w500);
+    // Decision 0229: a fact's label and value are both at the body2 size —
+    // the label 400, the value the line's 600 figure.
+    _expectStep(tester, '金额', LoopType.body2);
+    _expectStep(tester, '10 USDT', LoopType.figureBody);
   });
 
   testWidgets('R25 · a field types and hints in the input step', (

@@ -202,6 +202,7 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const ValueKey<String>('chat-preview-request-accept-r1')),
       );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('chat-preview-request-accept-r1')),
       );
@@ -289,6 +290,9 @@ Future<_RequestHarness> _pumpRequestHarness(
 Future<void> _tapRequestAction(WidgetTester tester, String key) async {
   final finder = find.byKey(ValueKey<String>(key));
   await tester.ensureVisible(finder);
+  // The scroll lands on the next frame; tap where the control is then
+  // (decision 0229: at the v3 sizes the action sits below the first view).
+  await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }

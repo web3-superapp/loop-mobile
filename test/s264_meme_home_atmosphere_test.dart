@@ -194,16 +194,18 @@ void main() {
         findsOneWidget,
       );
     }
-    // Rows: 72 high, the chrome medal, no letter tile.
-    expect(tester.getSize(_key('launch2-row-${_id(1)}')).height, 72);
+    // Rows: 80 high (decision 0229), the chrome medal, no letter tile.
+    expect(tester.getSize(_key('launch2-row-${_id(1)}')).height, 80);
     expect(_key('launch2-avatar-chrome-${_id(1)}'), findsOneWidget);
     expect(_key('launch2-avatar-chrome-${_id(2)}'), findsOneWidget);
     expect(find.text('天才'), findsOneWidget);
     expect(find.text('TC'), findsOneWidget);
-    // The drip hangs at the end of a bar past 0, at 25 % of 96.
+    // The drip hangs at the end of a bar past 0, at 25 % of its width (88
+    // at most since decision 0229; it gives way first on a narrow row).
     final bar = tester.getRect(_key('launch2-bar-${_id(1)}'));
     final drip = tester.getRect(_key('launch2-drip-${_id(1)}'));
-    expect(drip.left, moreOrLessEquals(bar.left + 96 * 0.25 - 3));
+    expect(bar.width, lessThanOrEqualTo(88));
+    expect(drip.left, moreOrLessEquals(bar.left + bar.width * 0.25 - 3));
     expect(_key('launch2-bar-${_id(2)}'), findsOneWidget);
     expect(_key('launch2-drip-${_id(2)}'), findsNothing);
     expect(_key('launch2-drip-${_id(3)}'), findsOneWidget);

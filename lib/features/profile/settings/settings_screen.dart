@@ -232,7 +232,12 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               tone: LoopNoticeTone.warn,
               title: '本机保存不可用',
               body: '减少动效仍会在本次运行内生效。重试只会再读一次本机存储，不会使用账号或后端。',
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                12,
+                LoopSpacing.page,
+                0,
+              ),
               trailing: LoopButton(
                 key: const ValueKey<String>('settings-retry-display-storage'),
                 label: '重试',

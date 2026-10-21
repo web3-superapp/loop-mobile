@@ -492,8 +492,9 @@ void main() {
       expect(captionRect.width, greaterThan(content * 0.57));
       // And never more than the caption's own ceiling (`max-width:80%`).
       expect(captionRect.width, lessThanOrEqualTo(content * 0.8 + 0.5));
-      // Two lines of the mining copy, not three at half the card's width.
-      expect(captionRect.height, lessThan(40));
+      // Two lines of the mining copy, not three at half the card's width
+      // (two 14 × 1.45 lines since decision 0229).
+      expect(captionRect.height, lessThan(44));
     });
 
     testWidgets('the caption gives way to exactly what the stamp uses', (

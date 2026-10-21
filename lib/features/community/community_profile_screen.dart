@@ -676,7 +676,10 @@ class _CommunityHeader extends StatelessWidget {
         const TextSpan(text: ' · '),
         TextSpan(
           text: '${communityCountLabel(observed.count)} 在线',
-          style: LoopType.figure.copyWith(color: LoopColors.lime),
+          style: LoopTypography.withWeight(
+            LoopType.figureSm,
+            FontWeight.w700,
+          ).copyWith(color: LoopColors.lime),
         ),
       ],
       if (symbol != null) TextSpan(text: ' · \$$symbol'),
@@ -684,11 +687,8 @@ class _CommunityHeader extends StatelessWidget {
     final countLine = Text.rich(
       TextSpan(
         children: counts,
-        // L12 the count line at figure 13 (decision 0191).
-        style: LoopTypography.withWeight(
-          LoopType.figure,
-          FontWeight.w400,
-        ).copyWith(color: LoopColors.text2),
+        // L12 the count line at the caption size (decision 0229).
+        style: LoopType.figureSm,
       ),
       key: const ValueKey<String>('community-profile-counts'),
       maxLines: 1,

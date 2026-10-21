@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -479,7 +480,9 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           },
         ),
       ),
-      const SizedBox(height: 8),
+      // v3 (decision 0229): 16 from the chips to what they choose between
+      // (the chip's own 44 target holds 4 of it).
+      const SizedBox(height: LoopSpacing.segmentGap - 4),
       for (final row in records)
         KeyedSubtree(
           key: _recordKey(row.instanceId),

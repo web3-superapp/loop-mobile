@@ -545,7 +545,12 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               : 'clock',
           body: statusText,
           trailing: _statusAction(submission, detail.memeTokenId),
-          margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            4,
+            LoopSpacing.page,
+            8,
+          ),
         ),
       if (_celebrate)
         _GraduationBanner(onClose: () => setState(() => _celebrate = false)),
@@ -1177,7 +1182,12 @@ class _ProgressStats extends StatelessWidget {
         MemeStatFigures(
           hero: true,
           key: const ValueKey<String>('meme-token-stats'),
-          margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            4,
+            LoopSpacing.page,
+            10,
+          ),
           stats: <LoopStat>[
             LoopStat(
               label: '打满进度',

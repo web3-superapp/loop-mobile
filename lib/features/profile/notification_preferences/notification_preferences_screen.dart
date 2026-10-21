@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -236,7 +237,12 @@ class _NotificationPreferencesScreenState
               body:
                   '${resource.deliveringEnabledCount} 项开启并生效。'
                   '目前只有价格提醒会生成应用内通知；安全事件始终开启。',
-              margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                4,
+                LoopSpacing.page,
+                4,
+              ),
             ),
           if (!state.isReady || resource == null)
             LoopChainStateBlock(

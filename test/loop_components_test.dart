@@ -22,7 +22,7 @@ Future<void> _pump(WidgetTester tester, Widget child, {Size? size}) async {
 }
 
 void main() {
-  testWidgets('LoopTopbar renders a 44px back button and a 22/600 title', (
+  testWidgets('LoopTopbar renders a 44px back button and a title2 title', (
     tester,
   ) async {
     var backs = 0;
@@ -42,8 +42,9 @@ void main() {
     await tester.tap(back);
     expect(backs, 1);
     final title = tester.widget<Text>(find.text('无网络'));
-    // Band 2 `headingLg`: Arimo 700 since decision 0211.
-    expect(title.style?.fontSize, LoopType.headingLg.fontSize);
+    // Decision 0229: beside a back control the bar title is title2 (22);
+    // a page without one states title1 (28). Arimo 700 since decision 0211.
+    expect(title.style?.fontSize, LoopType.title2.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
     expect(find.text('系统'), findsOneWidget);
     expect(find.bySemanticsLabel('搜索'), findsOneWidget);

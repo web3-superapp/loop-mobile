@@ -542,11 +542,14 @@ class _Metrics extends StatelessWidget {
                       metrics[index].label,
                       style: LoopType.kicker.copyWith(color: labelColor),
                     ),
+                    // A cell is a third of the card (94 at 390) and is
+                    // budgeted for seven characters at 13 (figureCompact,
+                    // decision 0229).
                     Text(
                       metrics[index].value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopType.figure.copyWith(
+                      style: LoopType.figureCompact.copyWith(
                         color: metrics[index].accent
                             ? LoopColors.lime
                             : valueColor,

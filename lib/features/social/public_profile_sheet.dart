@@ -298,11 +298,11 @@ class _PublicProfileSheetState<T extends Object>
                         copyKey: const ValueKey<String>(
                           'public-profile-copy-loop-id',
                         ),
-                        // M19 an inline LOOP ID: figure 13 at 500, text2.
+                        // M19 an inline LOOP ID: figureSm 13 at 500, text2 (decision 0229).
                         style: LoopTypography.withWeight(
-                          LoopType.figure,
+                          LoopType.figureSm,
                           FontWeight.w500,
-                        ).copyWith(color: LoopColors.text2),
+                        ),
                       ),
                     ],
                   ],

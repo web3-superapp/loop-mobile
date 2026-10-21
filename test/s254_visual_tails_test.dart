@@ -109,7 +109,10 @@ void main() {
       await tester.tapAt(Offset(second.center.dx, second.top + 2));
       await tester.pump();
       expect(chosen, 1);
-      // And so does a tap on the capsule itself.
+      // And so does a tap on the capsule itself — the bar scrolls it into
+      // view first at the v3 word size (decision 0229).
+      await tester.ensureVisible(chips.at(3));
+      await tester.pumpAndSettle();
       final fourth = tester.getRect(chips.at(3));
       await tester.tapAt(fourth.center);
       await tester.pump();

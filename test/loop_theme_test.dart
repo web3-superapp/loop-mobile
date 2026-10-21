@@ -74,11 +74,20 @@ void main() {
 
   test('spacing, radius, depth, z and touch tokens are complete', () {
     expect(LoopSpacing.tight, 8);
-    // Decision 0212: 16 / 28 / 16.
+    // Decision 0229 (v3, docs/46 §3.1): page 20, section 36 above / 16
+    // below, card 16, rows of 72 / 80 apart by 12.
     expect(LoopSpacing.card, 16);
-    expect(LoopSpacing.group, 22);
-    expect(LoopSpacing.section, 28);
-    expect(LoopSpacing.page, 16);
+    expect(LoopSpacing.group, 24);
+    expect(LoopSpacing.section, 36);
+    expect(LoopSpacing.sectionTop, 36);
+    expect(LoopSpacing.sectionBottom, 16);
+    expect(LoopSpacing.headingGap, 16);
+    expect(LoopSpacing.page, 20);
+    expect(LoopSpacing.rowGap, 12);
+    expect(LoopSpacing.rowMin, 72);
+    expect(LoopSpacing.rowMinWithSub, 80);
+    expect(LoopSpacing.bannerGap, 28);
+    expect(LoopSpacing.segmentGap, 16);
 
     // Decision 0211: app-shaped corners in the looplabs palette.
     expect(LoopRadius.shellValue, 20);
@@ -135,15 +144,16 @@ void main() {
       // Decision 0211: a page title is Arimo 700 with Noto Sans SC behind it,
       // in sentence case and untracked; Anton stays for the big figures.
       expect(title.fontFamily, 'Arimo');
-      expect(title.fontSize, 22);
+      // Decision 0229: title1, 28.
+      expect(title.fontSize, 28);
       expect(title.fontWeight, FontWeight.w700);
       expect(title.letterSpacing, 0);
       expect(title.fontFamilyFallback!.first, LoopFonts.cjk);
 
-      expect(text.displayMedium!.fontSize, 26);
+      expect(text.displayMedium!.fontSize, 28);
       expect(text.bodyLarge, same(LoopType.bodyLg));
       expect(text.bodyLarge!.fontFamily, 'Arimo');
-      expect(text.bodyMedium!.fontSize, 13);
+      expect(text.bodyMedium!.fontSize, 16);
       expect(text.bodyMedium!.height, 1.5);
 
       for (final figure in <TextStyle>[
@@ -229,19 +239,22 @@ void main() {
         TextLeadingDistribution.even,
         reason: name,
       );
-      expect(style.fontSize, greaterThanOrEqualTo(11), reason: name);
+      // Decision 0229: nothing on the ladder is under 13.
+      expect(style.fontSize, greaterThanOrEqualTo(13), reason: name);
       expect(style.fontFeatures, isNull, reason: name);
     });
     expect(LoopType.body.height, 1.5);
-    expect(LoopType.action.fontSize, 14);
+    // Decision 0229: button 16 / 700, a row title body1 17 / 600.
+    expect(LoopType.action.fontSize, 16);
     expect(LoopType.action.fontWeight, FontWeight.w700);
-    expect(LoopType.title.fontWeight, FontWeight.w700);
+    expect(LoopType.title.fontWeight, FontWeight.w600);
 
-    // Kicker / eyebrow (decision 0211): 700, untracked, in its own case.
-    expect(LoopType.kicker.fontSize, 11);
+    // Kicker / eyebrow (decision 0211): 700, untracked, in its own case; 13
+    // since decision 0229.
+    expect(LoopType.kicker.fontSize, 14);
     expect(LoopType.kicker.fontWeight, FontWeight.w700);
     expect(LoopType.kicker.letterSpacing, 0);
-    expect(LoopType.eyebrow.fontSize, 12);
+    expect(LoopType.eyebrow.fontSize, 14);
     expect(LoopType.caps('loop 星夜'), 'loop 星夜');
 
     for (final MapEntry<String, TextStyle> entry in <String, TextStyle>{
@@ -258,7 +271,7 @@ void main() {
         contains(const FontFeature.tabularFigures()),
         reason: entry.key,
       );
-      expect(entry.value.fontSize, greaterThanOrEqualTo(11), reason: entry.key);
+      expect(entry.value.fontSize, greaterThanOrEqualTo(13), reason: entry.key);
       expect(entry.value.fontSize, lessThanOrEqualTo(28), reason: entry.key);
     }
     expect(LoopType.figureSm.fontWeight, FontWeight.w400);

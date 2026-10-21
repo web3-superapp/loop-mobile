@@ -211,7 +211,12 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                   tone: LoopNoticeTone.danger,
                   title: '无法继续',
                   body: authState.errorMessage!,
-                  margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  margin: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    14,
+                    LoopSpacing.page,
+                    0,
+                  ),
                 ),
               const _AuthDivider(),
               _AuthMethod(

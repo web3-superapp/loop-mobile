@@ -165,7 +165,12 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                 icon: 'info',
                 title: '空列表是正常结果',
                 body: '计入与排除列表都是空的。这不代表你的钱包没有持仓，也不代表某个资产被排除。',
-                margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                margin: EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  14,
+                  LoopSpacing.page,
+                  0,
+                ),
               )
             else if (assets.included.isEmpty)
               const LoopEmptyState(
@@ -478,14 +483,24 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
                   '${miningRuleKeyText(rank.display.ruleKey)}'
                   '匿名时显示「${miningRuleKeyText(rank.display.anonymousMemberKey)}」。\n'
                   '${miningRuleKeyText(rank.display.powerRuleKey)}',
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
+              ),
             ),
             const LoopNotice(
               key: ValueKey<String>('mining-rank-notice'),
               icon: 'info',
               title: '排名不是静态权益',
               body: '其他账号或社区的算力变化会改变名次。榜单只来自最近一次算力快照，不会在这台设备上计算。',
-              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+              margin: EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
+              ),
             ),
           ],
           const SizedBox(height: 20),
@@ -875,7 +890,12 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
             icon: 'shield',
             title: '权重由平台综合评定',
             body: '权重按审核结果给出，评审因子公开、具体分值不公开。未通过审核的社区没有权重，也不会有算力。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -1042,7 +1062,12 @@ class _MyContributionCard extends StatelessWidget {
     // S241b: the flat dark card instead of a Chalk slab on Ink.
     return LoopRecordCard(
       key: const ValueKey<String>('mining-community-contribution'),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        0,
+      ),
       child: Semantics(
         container: true,
         label: '我的算力，$spokenContribution。社区权重，$spokenWeight',
@@ -1408,7 +1433,12 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                 icon: 'shield',
                 title: '草案不是生效规则',
                 body: '待批准的版本不会参与任何计算。权重区间只有规则条目，没有数值；批准之后才会公布。',
-                margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+                margin: EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  14,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
             const SizedBox(height: 20),
           ],
@@ -1578,7 +1608,12 @@ class _FormulaVersionBlock extends StatelessWidget {
         const LoopLabel('Review Factors'),
         LoopRecordCard(
           key: ValueKey<String>('$keyPrefix-review-factors'),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,

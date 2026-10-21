@@ -260,7 +260,7 @@ class Launch2SectionLabel extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(
               right: info == null ? LoopSpacing.page : 0,
-              bottom: info == null ? LoopSpacing.tight : 15,
+              bottom: info == null ? LoopSpacing.sectionBottom + 2 : 15,
             ),
             child: trailing,
           ),

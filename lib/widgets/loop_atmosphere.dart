@@ -718,7 +718,7 @@ Widget loopSplatted(Widget chosen, {Key? key}) => Stack(
 
 /// A section heading: with an [index] the Anton number in Yellow with a
 /// small splat at its top right (only for an order or a ranking), without
-/// one the 16 / 700 title with the splat after it. A Yellow 「全部」 when the
+/// one the 18 / 700 [LoopType.headline] with the splat after it. A Yellow 「全部」 when the
 /// section has somewhere to go.
 class LoopSprayHeading extends StatelessWidget {
   const LoopSprayHeading({
@@ -756,11 +756,13 @@ class LoopSprayHeading extends StatelessWidget {
       ),
     );
     return Padding(
+      // v3 (decision 0229): 36 above a section, 16 from its heading to the
+      // first row.
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        24,
+        LoopSpacing.sectionTop,
         LoopSpacing.page,
-        8,
+        LoopSpacing.sectionBottom,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -848,13 +850,14 @@ class LoopSprayHeading extends StatelessWidget {
 
 // ---- boards ----------------------------------------------------------------------
 
-/// One card-ground board, 16 radius, its rows split by 1 px lines (or not,
-/// when the rows draw their own).
+/// One card-ground board, 16 radius. v3 (decision 0229): its rows are told
+/// apart by their own height and space, not by a line — [dividers] keeps the
+/// 1 px line for a caller that still asks for it.
 class LoopAtmoBoard extends StatelessWidget {
   const LoopAtmoBoard({
     required this.children,
     super.key,
-    this.dividers = true,
+    this.dividers = false,
   });
 
   final List<Widget> children;

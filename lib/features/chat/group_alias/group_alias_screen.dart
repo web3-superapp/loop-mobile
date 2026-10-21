@@ -582,7 +582,12 @@ class _GroupAliasBoundaryNotice extends StatelessWidget {
       key: const ValueKey<String>('group-alias-boundary'),
       icon: unavailable ? 'warn' : 'shield',
       tone: unavailable ? LoopNoticeTone.warn : LoopNoticeTone.normal,
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        0,
+      ),
       title: switch (mode) {
         GroupAliasGatewayMode.preview => '开发预览 · 仅本次运行',
         GroupAliasGatewayMode.production => 'LOOP 群组身份边界',

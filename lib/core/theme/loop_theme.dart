@@ -280,25 +280,49 @@ abstract final class LoopGround {
       _derive(context, LoopColors.text3, 0.58);
 }
 
-/// Spacing semantics (docs/42 附A §4, decision 0210).
+/// Spacing semantics — docs/46 字体与间距规范 v3 §3 (decision 0229, which
+/// supersedes 0212's 16 / 28). OKX-calibrated: a 20 page margin, 36 above a
+/// section heading and 16 under it, rows of 72 (80 with a second line) told
+/// apart by space, never by a hairline.
 abstract final class LoopSpacing {
-  /// 紧凑 · 8
+  /// 紧凑 · 8 — between two words of one line, an icon and its label.
   static const double tight = 8;
 
-  /// 卡内 · 16（decision 0212）
+  /// 卡内 · 16 — the padding inside a card or a board.
   static const double card = 16;
 
-  /// 组间 · 22
-  static const double group = 22;
+  /// 组间 · 24 — a label that follows another label.
+  static const double group = 24;
 
-  /// 章节间 · 28（decision 0212：40 把页面撑空了）
-  static const double section = 28;
+  /// 区块上 · 36 — above a section heading (「内盘」「前三名」「余额」).
+  static const double section = 36;
 
-  /// 页面左右内容基线 · 16（decision 0212）
-  static const double page = 16;
+  /// 页边距 · 20 — the page's left and right content line.
+  static const double page = 20;
 
-  /// 标题到正文 · 18
-  static const double headingGap = 18;
+  /// 区块下 · 16 — from a section heading to its first row.
+  static const double headingGap = 16;
+
+  /// 区块上 · 36 (v3 name of [section]).
+  static const double sectionTop = section;
+
+  /// 区块下 · 16 (v3 name of [headingGap]).
+  static const double sectionBottom = headingGap;
+
+  /// 行间 / 卡间 · 12 — between two cards, two boards, two stacked blocks.
+  static const double rowGap = 12;
+
+  /// A list row with one line: at least 72 high.
+  static const double rowMin = 72;
+
+  /// A list row with a second (caption) line: at least 80 high.
+  static const double rowMinWithSub = 80;
+
+  /// From a banner (or a chrome plate) to the next block · 28.
+  static const double bannerGap = 28;
+
+  /// From a row of segment / filter capsules to the content under it · 16.
+  static const double segmentGap = 16;
 
   // Existing aliases.
   static const double compact = tight;
@@ -696,47 +720,33 @@ abstract final class LoopTypography {
       : style.copyWith(fontWeight: weight);
 }
 
-/// The named steps of the seven bands (decision 0210 restates decision
-/// 0189's ladder in the looplabs voice; docs/42 附A §2). `lib/features/**`
-/// and `lib/widgets/**` take a step from here and never a raw number.
+/// The named steps — docs/46 字体与间距规范 v3 (decision 0229, OKX-calibrated;
+/// it restates 0210 / 0212's ladder one step up and drops everything under
+/// 13). `lib/features/**` and `lib/widgets/**` take a step from here and
+/// never a raw number.
 ///
-/// | band | step | face | size | height | roles |
+/// The v3 ladder is eight steps; every older name is kept as an alias of the
+/// v3 step it now means, so a call site moves with the ladder:
+///
+/// | v3 step | face | size / weight | height | where | older names on it |
 /// | --- | --- | --- | --- | --- | --- |
-/// | display | `heroDisplay` | Anton | 56 | 1.0 | a hero line (intro pages) |
-/// | display | `displayXl` | Arimo 700 | 28 | 1.25 | R9 folio heading (intro / record / state) |
-/// | display | `display` | Arimo 700 | 26 | 1.25 | R9 folio heading (action) |
-/// | display | `displaySm` | Arimo 700 | 24 | 1.25 | R9 folio heading (index), R27 profile name |
-/// | display | `statFigure` | Arimo 700 tnum | 26 | 1.15 | a big stat value |
-/// | display | `keyFigure` | Arimo 700 tnum | 32 | 1.15 | total assets, my rank |
-/// | display | `heroFigure` | Anton | 30 | 1.1 | MEME project hero figures |
-/// | display | `plateFigure` | Anton | 40 | 1.0 | the chrome plates' figure (总资产, 我的名次) |
-/// | heading | `stepTitle` | Arimo 700 | 26 | 1.3 | R1c step-page title |
-/// | heading | `headingLg` | Arimo 700 | 22 | 1.3 | R1 page title |
-/// | heading | `flatTitle` | Arimo 700 | 20 | 1.3 | R1b flat second-level title |
-/// | heading | `heading` | Arimo 700 | 18 | 1.3 | R2 sheet title |
-/// | heading | `headingSm` | Arimo 700 | 17 | 1.3 | R1d dense top bar |
-/// | title | `sectionTitle` | Arimo 700 | 16 | 1.35 | R3b section / date / group heading |
-/// | title | `titleLg` | Arimo 700 | 16 | 1.35 | R15 wide button, R31 state title |
-/// | title | `title` | Arimo 700 | 15 | 1.35 | R4 row title |
-/// | title | `titleSm` | Arimo 700 | 13 | 1.35 | small control word, form label |
-/// | body | `bodyLg` | Arimo 400 | 15 | 1.5 | R25 text input |
-/// | body | `body` | Arimo 400 | 14 | 1.5 | R18 prose |
-/// | body | `message` | Arimo 400 | 14 | 1.45 | a chat message bubble |
-/// | body | `bodySm` | Arimo 400 | 13 | 1.5 | R19 sheet support copy |
-/// | caption | `caption` | Arimo 400 | 12 | 1.5 | R5 row subtitle, R20 notice |
-/// | caption | `captionSm` | Arimo 400 | 11 | 1.5 | R21 footnote |
-/// | label | `action` | Arimo 700 | 14 | 1.3 | button word |
-/// | label | `label` | Arimo 700 | 12 | 1.3 | R14 badge, R16 seg, R17 inline action |
-/// | label | `eyebrow` | Arimo 700 | 12 | 1.3 | R3 small group label |
-/// | label | `kicker` | Arimo 700 | 11 | 1.3 | R8 folio kicker, R13 stat label |
-/// | figure | `figureXl` | Arimo 700 tnum | 28 | 1.2 | R22 hero figure |
-/// | figure | `figureLg` | Arimo 700 tnum | 20 | 1.25 | R24 amount input |
-/// | figure | `figureMd` | Arimo 700 tnum | 17 | 1.3 | R23 secondary hero |
-/// | figure | `figure` | Arimo 700 tnum | 13 | 1.3 | R6 row value |
-/// | figure | `figureSm` | Arimo 400 tnum | 12 | 1.4 | secondary value |
-/// | figure | `figureXs` | Arimo 400 tnum | 11 | 1.35 | R7 row secondary value |
-/// | code | `code` | Plex Mono | 13 | 1.4 | R30 address / hash |
-/// | code | `codeSm` | Plex Mono | 11 | 1.35 | R30 compact address |
+/// | `plateFigure` | Anton | 40 | 1.0 | 牌面大数字（总资产、我的名次） | |
+/// | `sectionIndex` / `heroFigure` | Anton | 30 | 1.0–1.1 | 区块编号 01、项目页价格 | |
+/// | `title1` | Noto / Arimo 700 | 28 | 1.25 | 页标题（五个 Tab、无返回键的页） | `headingLg` `displayXl` `display` `displaySm` `stepTitle` |
+/// | `title2` | 700 | 22 | 1.3 | 二级页导航栏标题、banner 标题、卡片大标题、弹层标题 | `flatTitle` `heading` |
+/// | `headline` | 700 | 18 | 1.3 | 区块标题（内盘、前三名、余额） | `sectionTitle` `headingSm` |
+/// | `body1` | 600 | 17 | 1.35 | 行主标题、项目名、社区名、会话名、空态标题 | `title` `titleLg` |
+/// | `figure` | Arimo 600 tnum | 17 | 1.3 | 行右侧主数字（价格、数量、涨幅） | `figureMd` |
+/// | `body2` | 400 | 16 | 1.5 | 正文、帖子、说明段、输入框 | `body` `bodyLg` `bodySm`(text2) `message` |
+/// | `caption` | 400 | 14 | 1.45 | 副标、时间、辅助数字、胶囊文字 | `captionSm` `kicker` `eyebrow` `label` `titleSm` `figureSm` `figureXs` |
+/// | `button` | 700 | 16 | 1.3 | 按钮字 | `action` |
+/// | `tag` | 600 | 12 | 1.2 | 只给角标 / 未读数 / 极小标签 | |
+///
+/// Bigger figures keep their own steps: `keyFigure` 32, `figureXl` 28,
+/// `statFigure` 28, `figureLg` 22 (an amount input), `figureBody` 16,
+/// `figureCompact` 13 (a token card's narrow cell). Code (addresses,
+/// hashes) is IBM Plex Mono 13. Nothing on screen is under 13 except a
+/// `tag`.
 abstract final class LoopType {
   /// Uppercase the Latin letters of a heading or a kicker
   /// (`text-transform: uppercase`). Han characters have no case and pass
@@ -746,6 +756,59 @@ abstract final class LoopType {
   /// a label reads exactly as it was written.
   static String caps(String text) => text;
 
+  // ---- v3 steps (decision 0229) -------------------------------------------
+
+  /// title1 · 28 / 700 — a page title: the five Tabs and every page without
+  /// a back control.
+  static final TextStyle title1 = LoopTypography.sans(
+    size: 28,
+    weight: FontWeight.w700,
+    height: 1.25,
+  );
+
+  /// title2 · 22 / 700 — a second-level page's bar title (beside its back
+  /// control), a banner title, a card's big title, a sheet title.
+  static final TextStyle title2 = LoopTypography.heading(22);
+
+  /// headline · 18 / 700 — a section heading inside a page.
+  static final TextStyle headline = LoopTypography.heading(18);
+
+  /// body1 · 17 / 600 — the one primary line of a list row: a project, a
+  /// community, a conversation, a person; a centred state's title.
+  static final TextStyle body1 = LoopTypography.title(
+    17,
+    weight: FontWeight.w600,
+  );
+
+  /// body2 · 16 / 400 at 1.5 — prose, a post, a note, an input (OKX
+  /// calibration, docs/46 §1b: their body measures 16–17).
+  static final TextStyle body2 = LoopTypography.body(16);
+
+  /// caption · 14 / 400 Text3 — a row's second line, a time, a supporting
+  /// figure, a capsule's word; R5 / R10 / R20 (OKX labels measure 14).
+  static final TextStyle caption = LoopTypography.sans(
+    size: 14,
+    weight: FontWeight.w400,
+    height: 1.45,
+    color: LoopColors.text3,
+  );
+
+  /// button · 16 / 700 — the word on a button.
+  static final TextStyle button = LoopTypography.label(
+    16,
+    weight: FontWeight.w700,
+    color: LoopColors.chalk,
+  );
+
+  /// tag · 12 / 600 — a corner badge, an unread count, the smallest tag. The
+  /// only step under 13.
+  static final TextStyle tag = LoopTypography.sans(
+    size: 12,
+    weight: FontWeight.w600,
+    height: 1.2,
+    color: LoopColors.text2,
+  );
+
   // Band 1 · display.
   /// A hero line — the one statement on an intro page (`-0.035em`).
   static final TextStyle heroDisplay = LoopTypography.condensed(
@@ -754,19 +817,18 @@ abstract final class LoopType {
     trackingEm: -0.035,
   );
 
-  /// R9 folio heading on the intro / record / state archetypes.
-  static final TextStyle displayXl = LoopTypography.display(28);
+  /// R9 folio heading on the intro / record / state archetypes — [title1].
+  static final TextStyle displayXl = title1;
 
-  /// R9 folio heading on the action archetype.
-  static final TextStyle display = LoopTypography.display(26);
+  /// R9 folio heading on the action archetype — [title1].
+  static final TextStyle display = title1;
 
   /// R9 folio heading on the index archetype and every compact folio; R27
-  /// the name on a person's or a community's home.
-  static final TextStyle displaySm = LoopTypography.display(24);
+  /// the name on a person's or a community's home — [title1].
+  static final TextStyle displaySm = title1;
 
-  /// A big stat value — Arimo 700 tabular (decision 0212: Anton is kept for
-  /// the MEME project page's hero figures only, [heroFigure]).
-  static final TextStyle statFigure = LoopTypography.figure(26, height: 1.15);
+  /// A big stat value — Arimo 700 tabular, 28 (v3: one step with [title1]).
+  static final TextStyle statFigure = LoopTypography.figure(28, height: 1.15);
 
   /// A key figure — total assets, my rank: Arimo 700 32, Yellow at the call
   /// site (docs/42 附C §6).
@@ -797,121 +859,126 @@ abstract final class LoopType {
     trackingEm: 0.02,
   );
 
-  /// S264: the amount on the MEME home's live trade band.
-  static final TextStyle tickerFigure = LoopTypography.figure(14);
-
-  // Band 2 · heading.
-  /// R1c the heading of an account-opening step page.
-  static final TextStyle stepTitle = LoopTypography.heading(26);
-
-  /// R1 page title of a first-level tab or a ledger second-level page.
-  static final TextStyle headingLg = LoopTypography.heading(22);
-
-  /// R1b the one-line title of a flat second-level page (decision 0126).
-  static final TextStyle flatTitle = LoopTypography.heading(20);
-
-  /// R2 every sheet's title — drawn only by `LoopSheetHeading` / `LoopSheet`
-  /// / `LoopSignSheet`.
-  static final TextStyle heading = LoopTypography.heading(18);
-
-  /// R1d dense (chat) top bar. Anton stays for page-level titles only.
-  static final TextStyle headingSm = LoopTypography.heading(17);
-
-  /// R3b a section or group heading inside a page — a flat page's section
-  /// title, a date header over a day of history (「9月8日」), a group head.
-  /// Arimo 700 with the bundled Noto Sans SC Bold behind it (S241c): Anton's
-  /// narrow figures beside a bold Han run read as two faces in one word.
-  static final TextStyle sectionTitle = LoopTypography.title(16);
-
-  // Band 3 · title.
-  /// The quote-row title; R15 a flat wide button's word; R31 the title of a
-  /// centred state (empty / error / locked).
-  static final TextStyle titleLg = LoopTypography.title(16);
-
-  /// R4 a row title — ledger rows, flat rows and person rows alike.
-  static final TextStyle title = LoopTypography.title(15);
-
-  /// A small control word or a label over a form field.
-  static final TextStyle titleSm = LoopTypography.title(13);
-
-  // Band 4 · body.
-  /// R25 the text of a text input and its placeholder.
-  static final TextStyle bodyLg = LoopTypography.sans(
-    size: 15,
-    weight: FontWeight.w400,
-    height: 1.5,
+  /// A figure at the body2 size (16 / 600 tabular): a fact table's value, a
+  /// record line's amount.
+  static final TextStyle figureBody = LoopTypography.figure(
+    16,
+    weight: FontWeight.w600,
   );
 
-  /// R18 running prose; R26 a search field's placeholder.
-  static final TextStyle body = LoopTypography.body(14);
+  /// S264: the amount on the MEME home's live trade band — [figureBody].
+  static final TextStyle tickerFigure = figureBody;
 
-  /// A chat message: the body size at a chat leading (1.45), because a
+  // Band 2 · heading.
+  /// R1c the heading of an account-opening step page — [title1].
+  static final TextStyle stepTitle = title1;
+
+  /// R1 page title of a first-level tab or a ledger page — [title1].
+  static final TextStyle headingLg = title1;
+
+  /// R1b the one-line title of a flat second-level page, beside its back
+  /// control — [title2].
+  static final TextStyle flatTitle = title2;
+
+  /// R2 every sheet's title — drawn only by `LoopSheetHeading` / `LoopSheet`
+  /// / `LoopSignSheet` — [title2].
+  static final TextStyle heading = title2;
+
+  /// R1d dense (chat) top bar — [headline].
+  static final TextStyle headingSm = headline;
+
+  /// R3b a section or group heading inside a page — a flat page's section
+  /// title, a date header over a day of history (「9月8日」), a group head —
+  /// [headline].
+  static final TextStyle sectionTitle = headline;
+
+  // Band 3 · title.
+  /// The quote-row title; R31 the title of a centred state — [body1].
+  static final TextStyle titleLg = body1;
+
+  /// R4 a row title — ledger rows, flat rows and person rows alike — [body1].
+  static final TextStyle title = body1;
+
+  /// A small control word or a label over a form field: the caption size at
+  /// 600, Chalk.
+  static final TextStyle titleSm = LoopTypography.title(
+    14,
+    weight: FontWeight.w600,
+  );
+
+  // Band 4 · body.
+  /// R25 the text of a text input and its placeholder — [body2].
+  static final TextStyle bodyLg = body2;
+
+  /// R18 running prose; R26 a search field's placeholder — [body2].
+  static final TextStyle body = body2;
+
+  /// A chat message: the body2 size at a chat leading (1.45), because a
   /// conversation reads line by line, not as prose (decision 0210).
   static final TextStyle message = LoopTypography.sans(
-    size: 14,
+    size: 16,
     weight: FontWeight.w400,
     height: 1.45,
   );
 
-  /// R19 the support copy under a sheet title; the quote-row grey line.
+  /// R19 the support copy under a sheet title, a note on a page: [body2] in
+  /// Text2.
   static final TextStyle bodySm = LoopTypography.body(
-    13,
+    16,
     color: LoopColors.text2,
   );
 
   // Band 5 · caption.
-  /// R5 a row's second line; R10 a folio caption; R20 a notice.
-  static final TextStyle caption = LoopTypography.caption(12);
-
-  /// R21 one grey line of provenance, version or legal footnote.
-  static final TextStyle captionSm = LoopTypography.caption(11);
+  /// R21 one grey line of provenance, version or legal footnote — 13 (v3
+  /// retired 11).
+  static final TextStyle captionSm = caption;
 
   // Band 6 · label.
-  /// The button word (`13 / w800`) and the Material button slot.
-  static final TextStyle action = LoopTypography.label(
-    14,
-    weight: FontWeight.w700,
-    color: LoopColors.chalk,
-  );
+  /// The button word and the Material button slot — [button].
+  static final TextStyle action = button;
 
-  /// R14 badge, R15 button, R16 segment, R17 inline text action.
-  static final TextStyle label = LoopTypography.label(12);
+  /// R14 badge, R16 seg, R17 inline text action — the caption size at 700.
+  static final TextStyle label = LoopTypography.label(14);
 
-  /// R3 the section label over a group, R3c the first line inside a card.
-  static final TextStyle eyebrow = LoopTypography.eyebrow(12);
+  /// R3 the section label over a group, R3c the first line inside a card —
+  /// the caption size at 700.
+  static final TextStyle eyebrow = LoopTypography.eyebrow(14);
 
-  /// R8 folio kicker, R11 folio stamp, R13 stat-grid label (`11 / w800 /
-  /// +0.15em`).
-  static final TextStyle kicker = LoopTypography.eyebrow(11);
+  /// R8 folio kicker, R11 folio stamp, R13 stat-grid label — 13 (v3 retired
+  /// 11).
+  static final TextStyle kicker = LoopTypography.eyebrow(14);
 
   // Band 7 · figure — tabular numbers in the body face.
   /// R22 the one hero figure on a page.
   static final TextStyle figureXl = LoopTypography.figure(28, height: 1.2);
 
-  /// R22b the fraction of a hero figure; R24 an amount input.
-  static final TextStyle figureLg = LoopTypography.figure(20, height: 1.25);
+  /// R22b the fraction of a hero figure; R24 an amount input — 22.
+  static final TextStyle figureLg = LoopTypography.figure(22, height: 1.25);
 
-  /// R23 a secondary hero figure; the quote-row value.
-  static final TextStyle figureMd = LoopTypography.figure(17);
+  /// R23 a secondary hero figure; the quote-row value — [figure].
+  static final TextStyle figureMd = LoopTypography.figure(
+    17,
+    weight: FontWeight.w600,
+  );
 
-  /// R6 a row's trailing value; R12 a stat-grid value.
-  static final TextStyle figure = LoopTypography.figure(13);
+  /// figure · 17 / 600 tabular — a row's one trailing figure (price,
+  /// amount, change); R12 a stat-grid value.
+  static final TextStyle figure = figureMd;
 
-  /// The quote-row secondary value.
+  /// A secondary figure: the caption size, tabular, Text2.
   static final TextStyle figureSm = LoopTypography.figure(
-    12,
+    14,
     weight: FontWeight.w400,
     height: 1.4,
     color: LoopColors.text2,
   );
 
-  /// R7 a row's secondary value; a price move restates it at 600.
-  static final TextStyle figureXs = LoopTypography.figure(
-    11,
-    weight: FontWeight.w400,
-    height: 1.35,
-    color: LoopColors.text2,
-  );
+  /// A dense cell's figure — a third of a token card, budgeted for seven
+  /// characters: 13 / 700 tabular. Only for cells that narrow.
+  static final TextStyle figureCompact = LoopTypography.figure(13);
+
+  /// R7 a row's secondary figure — [figureSm] (v3 retired 11).
+  static final TextStyle figureXs = figureSm;
 
   // Retired aliases (decision 0189).
   static final TextStyle monoTitle = figureLg;
@@ -921,8 +988,8 @@ abstract final class LoopType {
   /// R30 an address, a hash, a contract identifier.
   static final TextStyle code = LoopTypography.code(13);
 
-  /// R30 the same at the compact size.
-  static final TextStyle codeSm = LoopTypography.code(11, height: 1.35);
+  /// R30 the same, compact leading (v3 retired the 11 size).
+  static final TextStyle codeSm = LoopTypography.code(13, height: 1.35);
 }
 
 /// Retired alias layer (decision 0189). These are [LoopType] steps under the

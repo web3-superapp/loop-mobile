@@ -608,7 +608,8 @@ void main() {
       expect(tester.widget<Text>(key('wallet-networth-high')).data, '\$141.9');
       expect(tester.widget<Text>(key('wallet-networth-low')).data, '\$106.12');
       final high = tester.widget<Text>(key('wallet-networth-high'));
-      expect(high.style!.fontSize, 11);
+      // Decision 0229: the caption size, 14.
+      expect(high.style!.fontSize, 14);
       expect(
         WalletNetWorthChartPainter.washColors().first,
         LoopColors.lime.withValues(alpha: 0.28),

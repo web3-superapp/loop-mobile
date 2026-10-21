@@ -343,7 +343,12 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                   '这样加入的资产进入默认分组「$watchlistDefaultGroupName」，'
                   '本页不能把它移到别的分组。'
                   '情报 · 行情里的每一行都能打开代币页。',
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                12,
+              ),
             ),
             // A control that greys out without a word looks broken. At the
             // ceiling it says which ceiling and what clears it.
@@ -354,7 +359,12 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 body:
                     '分组已达上限 $watchlistMaxGroups 个。'
                     '要新建一个，先删掉一个现有分组。',
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  0,
+                  LoopSpacing.page,
+                  12,
+                ),
               ),
           ],
           LoopButtonPair(
@@ -728,7 +738,12 @@ class _ConflictDiff extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopSurfaceCard(
       key: const ValueKey<String>('watchlist-conflict-diff'),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

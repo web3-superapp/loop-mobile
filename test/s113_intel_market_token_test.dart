@@ -731,6 +731,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(mining.reads, contains((MiningRankScope.users, 'users.two')));
       expect(find.text('member35'), findsOneWidget);
+      // Decision 0229: the 80-high rows put the card above the built range;
+      // back at the top it still says the reader's place.
+      await tester.scrollUntilVisible(
+        find.text('我的名次\n第 7 名'),
+        -400,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('我的名次\n第 7 名'), findsOneWidget);
     });
   });

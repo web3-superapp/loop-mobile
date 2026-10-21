@@ -535,27 +535,33 @@ class LoopContextRail extends StatelessWidget {
           children: stages
               .map((item) {
                 final selected = item.$1 == stage;
-                return AnimatedContainer(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 180),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 8 : 11,
-                    vertical: compact ? 6 : 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? item.$2.withValues(alpha: 0.13)
-                        : Colors.transparent,
-                    borderRadius: LoopRadius.badge,
-                  ),
-                  child: Text(
-                    compact
-                        ? item.$1.chip.characters.take(1).toString()
-                        : item.$1.chip,
-                    style: LoopType.captionSm.copyWith(
-                      color: selected ? item.$2 : LoopColors.vapor,
-                      letterSpacing: selected ? 0.7 : 0.4,
+                // v3 (decision 0229): the chips give way on a narrow rail
+                // now that their word is 13, never under it.
+                return Flexible(
+                  child: AnimatedContainer(
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 180),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 8 : 11,
+                      vertical: compact ? 6 : 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? item.$2.withValues(alpha: 0.13)
+                          : Colors.transparent,
+                      borderRadius: LoopRadius.badge,
+                    ),
+                    child: Text(
+                      compact
+                          ? item.$1.chip.characters.take(1).toString()
+                          : item.$1.chip,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopType.captionSm.copyWith(
+                        color: selected ? item.$2 : LoopColors.vapor,
+                        letterSpacing: selected ? 0.7 : 0.4,
+                      ),
                     ),
                   ),
                 );

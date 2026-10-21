@@ -247,7 +247,12 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
                 '按钱包持仓自动计算，不需要质押或授权。全网总算力 '
                     '$launchMissingFigure：${launchReasonCodeText(reasonCode)}',
             },
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -292,7 +297,12 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
               MiningFormulaEffective() =>
                 'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。',
             },
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],

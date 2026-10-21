@@ -437,7 +437,12 @@ class LoopChainPreviewNotice extends StatelessWidget {
       tone: LoopNoticeTone.warn,
       title: '演示数据',
       body: '$resource只存在于这次开发预览里，不会写入账号，也不会上传。',
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        0,
+      ),
     );
   }
 }
